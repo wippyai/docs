@@ -1,15 +1,15 @@
 ---
 title: "Observability"
-description: "Configure logging, metrics, and distributed tracing for Wippy applications."
+description: "Configure Wippy logging, Prometheus metrics, OpenTelemetry tracing, and runtime statistics."
 ---
 
 # Observability
 
-Configure logging, metrics, and distributed tracing for Wippy applications.
+Wippy exposes application and runtime behavior through logging, metrics, distributed tracing, and runtime statistics.
 
 ## Overview
 
-Wippy provides three observability pillars configured at boot time:
+Three observability areas are configured at boot:
 
 | Pillar | Backend | Configuration |
 |--------|---------|---------------|
@@ -19,14 +19,14 @@ Wippy provides three observability pillars configured at boot time:
 
 ## Logger Configuration
 
-### Basic Logger
+### Logger Encoding
 
 ```yaml
 logger:
   encoding: json       # json or console
 ```
 
-Level and output are controlled by CLI flags (`-v`, `-c`, `-s`) — only `encoding` is read from yaml.
+Level and output are controlled by CLI flags (`-v`, `-c`, `-s`); only `encoding` is read from YAML.
 
 ### Log Manager
 
@@ -36,10 +36,12 @@ The log manager controls log propagation and event streaming:
 logmanager:
   propagate_downstream: true   # Propagate to child components
   stream_to_events: false      # Forward logs to event bus
-  min_level: -1                # -1=debug (default), 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
 ```
 
 When `stream_to_events` is enabled, log entries become events that processes can subscribe to via the event bus.
+
+The embedded log-manager default is `-1`, but `wippy run` applies its CLI logging choice at startup: info (`0`) by default and debug (`-1`) with `-v` or `--very-verbose`.
 
 ### Automatic Context
 
@@ -56,7 +58,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Metrics are exposed at `/metrics` on the configured address.
+The Prometheus server starts only when `enabled` is `true` and `address` is non-empty. It exposes metrics at `/metrics` and the runtime liveness handler at `/livez` on that address.
 
 ### Scrape Configuration
 
@@ -73,7 +75,7 @@ For the Lua metrics API, see [Metrics Module](lua/system/metrics.md).
 
 ## OpenTelemetry
 
-OTEL provides distributed tracing and optional metrics export.
+OpenTelemetry (OTEL) provides distributed tracing and optional metrics export.
 
 ### Basic Configuration
 
@@ -84,7 +86,7 @@ otel:
   protocol: http/protobuf      # grpc or http/protobuf
   service_name: my-app
   service_version: "1.0.0"
-  insecure: false              # Allow non-TLS connections
+  insecure: true               # Use plaintext for a local collector
   sample_rate: 1.0             # 0.0 to 1.0
   traces_enabled: true
   metrics_enabled: false
@@ -107,7 +109,7 @@ otel:
   http:
     enabled: true
     extract_headers: true      # Read incoming trace context
-    inject_headers: true       # Write outgoing trace context
+    inject_headers: true       # Write trace context to the HTTP response
 
   # Process lifecycle tracing
   process:
@@ -121,8 +123,9 @@ otel:
   # Function call tracing
   interceptor:
     enabled: true
-    order: 100                 # Interceptor execution order
 ```
+
+When OTEL is enabled, HTTP tracing and propagation, process tracing and lifecycle spans, function interception, queue tracing, and trace export are enabled by default. Temporal tracing and metric export default to disabled. The pinned runtime registers the function interceptor at order 100; although an `interceptor.order` value can be decoded from configuration, it does not change that registration order.
 
 ### Temporal Workflows
 
@@ -140,7 +143,8 @@ otel:
 
 When enabled, the Temporal SDK's tracing interceptor is registered for both client and worker operations.
 
-Traced operations:
+Traced operations include:
+
 - Workflow starts and completions
 - Activity executions
 - Child workflow calls
@@ -152,13 +156,14 @@ Traced operations:
 |-----------|-----------|------------|
 | HTTP requests | `{METHOD} {route}` | http.method, http.url, http.host |
 | Function calls | Function ID | process.pid, frame.id |
-| Process lifecycle | `{source}.started/terminated` | process.pid |
-| Queue messages | Message topic | Trace context in headers |
-| Temporal workflows | Workflow/Activity name | workflow.id, run.id |
+| Process lifecycle | `<source-id>.started/terminated`, or `process.started/terminated` without a source frame | process.pid, lifecycle.event |
+| Queue publish | `<queue-id>.publish` | messaging attributes and trace context in headers |
+| Queue consume | Handler function ID | messaging attributes inherited by the function span |
+| Temporal workflows | Temporal SDK operation name | Temporal SDK workflow and run metadata |
 
 ### Context Propagation
 
-Trace context propagates automatically:
+The configured integrations propagate trace context through:
 
 - **HTTP → Function**: W3C Trace Context headers
 - **Function → Function**: Frame context inheritance
@@ -172,10 +177,12 @@ OTEL can be configured via environment:
 | Variable | Description |
 |----------|-------------|
 | `OTEL_SDK_DISABLED` | Set to `true` to disable OTEL |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Collector endpoint |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Collector endpoint; an `http://` or `https://` scheme is removed before exporter setup |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` or `http/protobuf` |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Set to `true` to use a plaintext collector connection |
 | `OTEL_SERVICE_NAME` | Service name |
 | `OTEL_SERVICE_VERSION` | Service version |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio`, or `parentbased_traceidratio` |
 | `OTEL_TRACES_SAMPLER_ARG` | Sample rate (0.0-1.0) |
 | `OTEL_PROPAGATORS` | Propagator list |
 
@@ -187,18 +194,20 @@ The `system` module provides internal runtime statistics:
 local system = require("system")
 
 -- Memory statistics
-local mem = system.memory.stats()
+local mem, mem_err = system.memory.stats()
 -- mem.alloc, mem.heap_alloc, mem.heap_objects, etc.
 
 -- Goroutine count
-local count = system.runtime.goroutines()
+local count, count_err = system.runtime.goroutines()
 
 -- Supervisor states
-local states = system.supervisor.states()
+local states, states_err = system.supervisor.states()
 ```
+
+These functions return `value, error`. They require the `system.read` permission in the current security scope.
 
 ## See Also
 
-- [Logger Module](lua/system/logger.md) - Lua logging API
-- [Metrics Module](lua/system/metrics.md) - Lua metrics API
-- [System Module](lua/system/system.md) - Runtime statistics
+- [Logger Module](lua/system/logger.md) — Lua logging API
+- [Metrics Module](lua/system/metrics.md) — Lua metrics API
+- [System Module](lua/system/system.md) — Runtime statistics

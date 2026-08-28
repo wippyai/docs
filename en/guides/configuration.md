@@ -1,13 +1,13 @@
 ---
 title: "Configuration Reference"
-description: "Wippy is configured via .wippy.yaml files. All options have sensible defaults."
+description: "Runtime configuration fields, profiles, composition rules, environment references, and command-line overrides."
 ---
 
 # Configuration Reference
 
-Wippy is configured via `.wippy.yaml` files. All options have sensible defaults.
+Wippy reads runtime configuration from `.wippy.yaml` files.
 
-Any value below can be overridden at launch with `wippy run --set section.path=value` (repeatable, takes precedence over the file). To override individual registry *entries* rather than these config sections, use the `override:` section or `-o` — see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
+Use the repeatable `wippy run --set section.path=value` option to override the configuration fields below at launch. To override individual registry *entries* rather than configuration sections, use the `override:` section or `-o`; see [Overriding Entries](guides/entry-kinds.md#overriding-entries).
 
 ## Config Composition
 
@@ -22,11 +22,11 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - The first file anchors the directory used to resolve relative paths.
 - Filenames carry no reserved meaning; nothing besides the default is auto-discovered.
 
-Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. For applications run from packs, packed runtime defaults sit below all of these (see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults)).
+Configuration applies in this order: composed files, selected `--profile` overlays, and then `--set` overrides. For applications run from packs, packed runtime defaults have lower precedence than all three; see [Publishing Runtime Defaults](guides/publishing.md#publishing-runtime-defaults).
 
 ## Profiles
 
-A config file may declare named overlays under `profiles:`. Each profile body mirrors the normal config sections; selecting it with `--profile <name>` overlays those values on the merged base config:
+A configuration file may declare named overlays under `profiles:`. Each profile body mirrors the standard configuration sections. Selecting it with `--profile <name>` applies those values over the merged base configuration:
 
 ```yaml
 version: "1.0"
@@ -63,7 +63,7 @@ wippy run --profile pg
 
 ## Logger
 
-Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override level/output; the only yaml-driven option is the encoding.
+Controls the zap logger encoder. CLI flags (`-v`, `-c`, `-s`) override the level and output; encoding is the only YAML-configured option.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -111,7 +111,7 @@ profiler:
   address: "localhost:6060"
 ```
 
-Access at `http://localhost:6060/debug/pprof/`
+When enabled with the default address, the profiler is available at `http://localhost:6060/debug/pprof/`.
 
 ## Security
 
@@ -119,7 +119,7 @@ Global security behavior. Individual policies are defined as [security.policy en
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Deny access when security context is incomplete |
+| `strict_mode` | bool | true | Deny access when security context is incomplete |
 
 ```yaml
 security:
@@ -252,11 +252,11 @@ Distributed tracing and metrics export via OTLP.
 | `metrics_enabled` | bool | false | Export metrics |
 | `http.enabled` | bool | true | Trace HTTP requests |
 | `http.extract_headers` | bool | true | Extract trace context from inbound headers |
-| `http.inject_headers` | bool | true | Inject trace context into outbound headers |
+| `http.inject_headers` | bool | true | Inject trace context into the HTTP response |
 | `process.enabled` | bool | true | Trace process lifecycle |
 | `process.trace_lifecycle` | bool | true | Emit spans for spawn/terminate |
 | `interceptor.enabled` | bool | true | Trace function calls |
-| `interceptor.order` | int | 100 | Interceptor priority |
+| `interceptor.order` | int | 100 | Decoded compatibility field; runtime v0.3.32a registers the interceptor at order 100 regardless of this value |
 | `queue.enabled` | bool | true | Trace queue publish/consume |
 | `temporal.enabled` | bool | false | Trace Temporal workflows |
 
@@ -369,22 +369,27 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 | `internode.auto_port` | bool | true | Discover the actual port at boot, pin it, and advertise it in gossip |
 | `internode.advertise_addr` | string | | Additional relay endpoint (IP or DNS name) published for upgraded peers — for NAT or load-balanced reachability |
 | `internode.advertise_port` | int | 0 | Port for `advertise_addr` (0 = bind port; requires `advertise_addr`) |
+| `internode.identity_key` | string | | Base64-encoded Ed25519 private seed or key; required unless `identity_key_file` is set |
+| `internode.identity_key_file` | string | | File containing a base64-encoded Ed25519 private seed or key; required unless `identity_key` is set |
+| `internode.trusted_peer_keys` | map | | Node-name to base64 public-key map; must include the local node and every trusted peer |
 
 `advertise_addr`/`advertise_port` publish an additive endpoint in node metadata while the bind endpoint stays advertised unchanged, so mixed-version clusters keep connecting during a rolling upgrade.
 
+Every clustered node needs its own internode private identity and a trusted-public-key map. Configure exactly one private-key source. Both inline values and key files must contain a base64-encoded 32-byte seed or 64-byte key; trusted values are base64-encoded public keys.
+
 ### Raft (consensus)
 
-Bounded Raft. Raft state is fs-durable by default, stored under `raft.data_dir` (default `~/.wippy/store`); a restarted node still rejoins quorum from peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through it. Bootstrap is gossip-driven (Consul/Nomad `bootstrap_expect` style).
+The bounded Raft core stores durable state under `raft.data_dir` by default (`~/.wippy/store`). A restarted node rejoins quorum from its peers. [`store.kv.raft`](system/store.md#cluster-kv-stores) entries replicate through this core, and gossip coordinates bootstrap using a `bootstrap_expect` model.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `raft.data_dir` | string | `~/.wippy/store` | Directory for fs-durable Raft state and durable CRDT snapshots (under `<data_dir>/_sys/`). Diskless only when no path resolves (no home dir and none set) |
 | `raft.enabled` | bool | true | Run a Raft node; `false` makes this a gossip-only client |
 | `raft.role` | string | server | `server` runs a Raft node; `client` is gossip-only |
-| `raft.eligible` | bool | true | Whether this node may be selected as a voter |
+| `raft.eligible` | bool | true | Whether this node may be selected as a voter or standby; false keeps it outside Raft as a client |
 | `raft.priority` | int | 100 | Voter selection priority (lower is preferred) |
-| `raft.bootstrap_expect` | int | 1 | Initial quorum size: `0`=join existing, `1`=single-node, `N`=wait for N eligible peers then form quorum |
-| `raft.max_voters` | int | 5 | Voter ceiling (must be odd); extra eligible nodes become standbys |
+| `raft.bootstrap_expect` | int | 1 | Initial quorum size: `0`=join existing, `1`=single-node, `N`=wait for N eligible nodes including the local node, then form quorum |
+| `raft.max_voters` | int | 5 | Voter ceiling (must be odd); up to `max_standbys` additional eligible nodes become standbys, and the rest remain clients |
 | `raft.max_standbys` | int | 4 | Non-voting members kept warm for promotion; nodes beyond voters+standbys are not Raft members |
 | `raft.reconcile_debounce` | duration | 2s | Coalesce window after a gossip event before the voter reconciler runs |
 | `raft.reconcile_timeout` | duration | 2s | Bound per reconcile pass |
@@ -405,6 +410,10 @@ Single-node (development) — clustering on, bootstraps itself immediately:
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -420,6 +429,12 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
     max_voters: 5
@@ -433,6 +448,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -443,7 +464,7 @@ Language Server Protocol server for editor integrations.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `enabled` | bool | false | Enable the TCP server |
+| `enabled` | bool | false | Enable the LSP service and TCP server; the HTTP transport also requires this |
 | `address` | string | :7777 | TCP listen address |
 | `http_enabled` | bool | false | Enable the HTTP transport |
 | `http_address` | string | :7778 | HTTP listen address |
@@ -533,7 +554,7 @@ extensions:
 
 ## See Also
 
-- [CLI Reference](guides/cli.md) - Command line options
-- [Cluster Guide](guides/cluster.md) - Clustering architecture and operations
-- [Entry Kinds](guides/entry-kinds.md) - All entry types
-- [Observability Guide](guides/observability.md) - Logging, metrics, tracing
+- [CLI Reference](guides/cli.md) — Command-line options
+- [Cluster Guide](guides/cluster.md) — Clustering architecture and operations
+- [Entry Kinds](guides/entry-kinds.md) — Entry types and fields
+- [Observability Guide](guides/observability.md) — Logging, metrics, and tracing

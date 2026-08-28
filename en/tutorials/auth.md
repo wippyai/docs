@@ -1,24 +1,50 @@
 ---
 title: "Crypto Ticker"
-description: "Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware…"
+description: "Build a streaming ticker demo with API-key exchange, bearer-token authentication, WebSockets, and process messaging."
 ---
 
 # Crypto Ticker
 
-Build a real-time crypto ticker with API key authentication and WebSocket streaming. This tutorial demonstrates token-based security, middleware configuration, and process-based WebSocket handling.
+Build a streaming ticker demo with API-key authentication and WebSocket delivery. The example covers token-based security, middleware configuration, and process-based connection handling.
+
+**Classification:** Runnable local tutorial. It includes the registry, Lua sources,
+browser client, ordered startup commands, and browser verification. Its permissive
+policies and in-memory token store are deliberately limited to a loopback demo.
 
 ## Overview
 
-- **API key exchange** — POST an API key, receive an HMAC-signed bearer token
-- **Token middleware** — Validates the bearer token and restores the security context (actor + policies) when present; the endpoint handler enforces auth by rejecting requests with no actor
-- **WebSocket fan-out** — One ticker process broadcasts to many connection handlers
-- **Static assets** — `http.static` serves the browser client
-- **SQLite** — Stores API keys; memory store backs the token store
+- **API-key exchange** — Submit an API key and receive an HMAC-signed bearer token
+- **Token middleware** — Validate a bearer token and restore its security context; the endpoint rejects requests without an actor
+- **WebSocket fan-out** — Broadcast from one ticker process to multiple connection handlers
+- **Static assets** — Serve the browser client with `http.static`
+- **Storage** — Keep API keys in SQLite and token data in memory
+
+## Prerequisites
+
+- Wippy runtime `v0.3.32a`.
+- A browser with WebSocket support.
+- An empty working directory. Create the project directories before adding the
+  files below:
+
+  ```bash
+  mkdir auth-ticker
+  cd auth-ticker
+  mkdir -p src/public data
+  ```
+
+  In PowerShell:
+
+  ```powershell
+  New-Item -ItemType Directory -Path auth-ticker\src\public -Force
+  New-Item -ItemType Directory -Path auth-ticker\data -Force
+  Set-Location auth-ticker
+  ```
 
 ## Project Structure
 
 ```
 auth-ticker/
+├── data/
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -41,7 +67,7 @@ flowchart TB
     end
 
     subgraph "HTTP Layer"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "Public Router"
@@ -68,13 +94,9 @@ flowchart TB
     end
 
     subgraph "Process Layer"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>per-connection]
         Ticker[ticker<br/>singleton]
-    end
-
-    subgraph "External"
-        CryptoAPI[Crypto Price API]
     end
 
     %% Client connections
@@ -108,23 +130,21 @@ flowchart TB
     Ticker -->|broadcast| WSHandler
     WSRelay <-->|"ws frames"| Browser
 
-    %% External
-    Ticker -->|fetch prices| CryptoAPI
 ```
 
 ## Security Flow
 
-1. **API Key Exchange**: Client POSTs API key to `/auth/token`. Handler validates against database, creates an actor with the `user_policy`, and issues an HMAC-signed token.
+1. **API-key exchange:** The client posts an API key to `/auth/token`. The handler validates it against the database, creates an actor with `user_policy`, and issues an HMAC-signed token.
 
-2. **Token Authentication**: WebSocket connections go through `token_auth` middleware which validates the Bearer token and restores the security context (actor + policies).
+2. **Token authentication:** WebSocket connections pass through `token_auth`, which validates the bearer token and restores its actor and policies.
 
-3. **Process Spawning**: The WebSocket endpoint spawns a handler process. Because the token includes the `user_policy`, the spawn is authorized.
+3. **Process spawning:** The WebSocket endpoint spawns a handler process. The token's `user_policy` authorizes the spawn.
 
-4. **Message Routing**: The `websocket_relay` middleware routes WebSocket frames to the handler process as messages.
+4. **Message routing:** The `websocket_relay` middleware routes WebSocket frames to the handler process as messages.
 
 ## Configuration
 
-Complete `_index.yaml`:
+Create `src/_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -150,7 +170,7 @@ entries:
     store: app:token_data
     token_length: 32
     default_expiration: "1h"
-    token_key: "demo-secret-key-change-in-production"
+    token_key: "local-demo-signing-key-do-not-deploy"
 
   # Security policy for authenticated users
   - name: user_policy
@@ -162,9 +182,37 @@ entries:
     groups:
       - user
 
+  # Capabilities for trusted background services
+  - name: service_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
+  # Capabilities for the public token-exchange handler
+  - name: token_issuer_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - security.actor.create
+        - security.policy.get
+        - security.scope.create
+        - security.token_store.get
+        - security.token.create
+      resources: "*"
+      effect: allow
+
   # Process host
   - name: processes
     kind: process.host
+    lifecycle:
+      auto_start: true
+
+  # Terminal host used by `wippy run -x app:migrate`
+  - name: terminal
+    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -174,13 +222,11 @@ entries:
     source: file://migrate.lua
     method: main
     modules: [sql, logger, crypto]
-
-  - name: migrate-service
-    kind: process.service
-    process: app:migrate
-    host: app:processes
-    lifecycle:
-      auto_start: true
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:service_policy
 
   # Ticker broadcaster
   - name: ticker
@@ -188,6 +234,11 @@ entries:
     source: file://ticker.lua
     method: main
     modules: [logger, time, json, crypto]
+    security:
+      actor:
+        id: app:ticker
+      policies:
+        - app:service_policy
 
   - name: ticker-service
     kind: process.service
@@ -206,9 +257,11 @@ entries:
   # HTTP server
   - name: gateway
     kind: http.service
-    addr: ":8081"
+    addr: "127.0.0.1:8081"
     lifecycle:
       auto_start: true
+      requires:
+        - app:ticker-service
 
   # Public router (no auth)
   - name: public_router
@@ -218,7 +271,7 @@ entries:
     middleware:
       - cors
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
 
   # WebSocket router (with auth)
   - name: ws_router
@@ -230,17 +283,17 @@ entries:
       - cors
       - token_auth
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
       token_auth.store: "app:tokens"
     post_middleware:
       - websocket_relay
     post_options:
-      wsrelay.allowed.origins: "*"
+      wsrelay.allowed.origins: "http://127.0.0.1:8081"
 
   # Static files
   - name: public_fs
     kind: fs.directory
-    directory: ./public
+    directory: ./src/public
 
   - name: static
     kind: http.static
@@ -258,6 +311,11 @@ entries:
     source: file://auth_token.lua
     method: handler
     modules: [http, sql, crypto, security, json]
+    security:
+      actor:
+        id: app:token-issuer
+      policies:
+        - app:token_issuer_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -283,11 +341,14 @@ entries:
     func: app:ws_ticker
 ```
 
-For production, use `token_key_env` to read the HMAC key from an environment variable instead of hardcoding it. See [Environment System](system/env.md).
+The signing key, wildcard user policy, raw API-key storage, and memory token store are
+appropriate only for this loopback demo. In production, use `token_key_env`, hash API
+keys before storage, narrow policy actions and resources, restrict allowed origins, and
+use a durable token store. See [Environment System](system/env.md).
 
 ## Token Exchange
 
-`auth_token.lua` - validates API keys and issues HMAC-signed tokens:
+`auth_token.lua` validates API keys and issues HMAC-signed tokens:
 
 ```lua
 local http = require("http")
@@ -381,7 +442,7 @@ return { handler = handler }
 
 ## WebSocket Endpoint
 
-`ws_ticker.lua` - spawns a handler process for each authenticated connection:
+`ws_ticker.lua` spawns a handler process for each authenticated connection:
 
 ```lua
 local http = require("http")
@@ -430,12 +491,13 @@ return { handler = handler }
 
 ## Connection Handler
 
-The `websocket_relay` middleware automatically sends lifecycle messages to the handler process:
-- `ws.join` - Connection established, includes `client_pid` for sending responses
-- `ws.message` - Client sent a message
-- `ws.leave` - Connection closed (sent automatically on disconnect)
+The `websocket_relay` middleware sends lifecycle messages to the handler process:
 
-`ws_handler.lua` - handles these lifecycle messages:
+- `ws.join` — Connection established; includes `client_pid` for responses
+- `ws.message` — Client sent a message
+- `ws.leave` — Connection closed; includes the same `client_pid` and metadata as `ws.join`
+
+`ws_handler.lua` handles these lifecycle messages:
 
 ```lua
 local logger = require("logger")
@@ -459,10 +521,13 @@ local function main(user_id)
             client_pid = data.client_pid
 
             -- Subscribe with our PID for crash monitoring
-            process.send("ticker", "subscribe", {
+            local _, subscribe_err = process.send("ticker", "subscribe", {
                 client_pid = client_pid,
                 handler_pid = process.pid()
             })
+            if subscribe_err then
+                error("failed to subscribe to ticker: " .. tostring(subscribe_err))
+            end
             subscribed = true
 
             -- Send welcome
@@ -474,7 +539,8 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            -- Text WebSocket frames arrive as string payloads.
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -484,7 +550,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- Relay sends this automatically on disconnect
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end
@@ -500,7 +566,8 @@ return { main = main }
 
 ## Broadcasting
 
-`ticker.lua` - maintains subscriptions and broadcasts price updates:
+`ticker.lua` maintains subscriptions and broadcasts locally simulated price updates;
+the tutorial does not call an external market-data service:
 
 ```lua
 local logger = require("logger")
@@ -526,7 +593,10 @@ end
 
 local function update_prices()
     for symbol, price in pairs(prices) do
-        local bytes = crypto.random.bytes(2)
+        local bytes, random_err = crypto.random.bytes(2)
+        if random_err then
+            error("failed to generate price movement: " .. tostring(random_err))
+        end
         local rand = (bytes:byte(1) * 256 + bytes:byte(2)) / 65535.0
         local factor = (rand - 0.5) * 0.002
         prices[symbol] = price * (1 + factor)
@@ -549,11 +619,14 @@ local function main()
     local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
-        return 1
+        error("failed to create ticker: " .. tostring(ticker_err))
     end
     local tick_ch = ticker:response()
 
-    process.registry.register("ticker")
+    local _, register_err = process.registry.register("ticker")
+    if register_err then
+        error("failed to register ticker: " .. tostring(register_err))
+    end
     logger:info("ticker started", {pid = process.pid()})
 
     while true do
@@ -611,7 +684,7 @@ return { main = main }
 
 ## Database Migration
 
-`migrate.lua` - creates the API keys table and generates a demo key:
+`migrate.lua` creates the API-keys table and generates a demo key:
 
 ```lua
 local sql = require("sql")
@@ -622,7 +695,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -638,25 +711,37 @@ local function main()
     if exec_err then
         db:release()
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
-    -- Check if demo key exists
-    local rows, _ = db:query("SELECT api_key FROM api_keys WHERE user_id = ?", {"demo"})
+    -- Create one random local-demo key. It is printed only on first creation.
+    local rows, query_err = db:query(
+        "SELECT api_key FROM api_keys WHERE user_id = ?",
+        {"demo"}
+    )
+    if query_err then
+        db:release()
+        error("failed to query demo API key: " .. tostring(query_err))
+    end
+
     if #rows == 0 then
         local demo_key, key_err = crypto.random.string(32)
         if key_err then
             db:release()
-            return 1
+            error("failed to generate demo API key: " .. tostring(key_err))
         end
 
-        db:execute(
+        local _, insert_err = db:execute(
             "INSERT INTO api_keys (api_key, user_id, role, created_at) VALUES (?, ?, ?, ?)",
             {demo_key, "demo", "user", os.time()}
         )
+        if insert_err then
+            db:release()
+            error("failed to store demo API key: " .. tostring(insert_err))
+        end
         logger:info("demo API key created", {api_key = demo_key})
     else
-        logger:info("demo API key exists", {api_key = rows[1].api_key})
+        logger:info("demo API key already exists; use the value saved from its first creation")
     end
 
     db:release()
@@ -666,17 +751,145 @@ end
 return { main = main }
 ```
 
+The raw demo key appears in logs only when it is first generated. Save it for the
+browser step. If it is lost, stop the app, remove `data/auth.db`, and run the
+migration again. Do not paste a production credential into this demo database.
+
+## Browser Client
+
+Create `src/public/index.html`. The browser exchanges the API key for a short-lived
+token, keeps that token only in memory, and sends it through the middleware's
+`x-auth-token` query parameter because the browser WebSocket API cannot set an
+`Authorization` header.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wippy Crypto Ticker</title>
+</head>
+<body>
+  <main>
+    <h1>Crypto Ticker</h1>
+    <form id="connect-form">
+      <label for="api-key">Demo API key</label>
+      <input id="api-key" name="api-key" autocomplete="off" required>
+      <button type="submit">Connect</button>
+    </form>
+    <p id="status">Disconnected</p>
+    <ul id="prices"></ul>
+  </main>
+
+  <script>
+    const form = document.querySelector('#connect-form');
+    const input = document.querySelector('#api-key');
+    const status = document.querySelector('#status');
+    const prices = document.querySelector('#prices');
+    let socket;
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function renderPrices(items) {
+      prices.replaceChildren(...items.map((item) => {
+        const row = document.createElement('li');
+        row.textContent = `${item.symbol}: $${Number(item.price).toFixed(2)}`;
+        return row;
+      }));
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (socket) socket.close();
+      setStatus('Authenticating...');
+
+      try {
+        const response = await fetch('/auth/token', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({api_key: input.value}),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+
+        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+        const url = `${scheme}://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(result.token)}`;
+        socket = new WebSocket(url);
+
+        socket.addEventListener('open', () => setStatus(`Connected as ${result.user_id}`));
+        socket.addEventListener('close', () => setStatus('Disconnected'));
+        socket.addEventListener('error', () => setStatus('WebSocket error'));
+        socket.addEventListener('message', (message) => {
+          const event = JSON.parse(message.data);
+          if (event.type === 'ticker') renderPrices(event.data);
+        });
+      } catch (error) {
+        setStatus(error.message);
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+Query-string bearer tokens can appear in access logs and browser history. This demo
+uses a one-hour token on loopback; production browser authentication should use a
+secure, HttpOnly cookie or a purpose-built, single-use WebSocket ticket.
+
 ## Running
+
+Initialize the lock, run the migration to completion, then start the long-running
+services. Running the migration as a separate command prevents the token endpoint
+from racing the table creation.
 
 ```bash
 wippy init
+wippy run -x app:migrate
 wippy run
 ```
 
-Open http://localhost:8081 and enter the demo API key shown in logs.
+Open `http://127.0.0.1:8081` and enter the demo API key from the migration log. The
+page should show `Connected as demo`, followed by BTC, ETH, and SOL prices that update
+once per second.
+
+You can also verify the exchange before opening the browser:
+
+```bash
+curl -X POST http://127.0.0.1:8081/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"api_key":"<demo-key-from-migration>"}'
+```
+
+In PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:8081/auth/token `
+  -ContentType 'application/json' `
+  -Body '{"api_key":"<demo-key-from-migration>"}'
+```
+
+A successful response contains `token`, `user_id: "demo"`, `role: "user"`, and
+`expires_in: 3600`. An invalid key returns HTTP 401.
+
+## Troubleshooting and Cleanup
+
+- `no such table: api_keys` means the migration command was skipped or failed. Stop
+  the runtime and rerun `wippy run -x app:migrate` before starting it again.
+- A 401 from `/auth/token` means the API key does not match the row in
+  `data/auth.db`. Reset the database if the one-time log value was lost.
+- A 401 or immediate close on the WebSocket usually means the query parameter was
+  removed or the in-memory token store was reset by a runtime restart. Exchange the
+  API key again after every restart.
+- An origin rejection means the browser URL does not exactly match
+  `http://127.0.0.1:8081`; use that URL or update both origin options together.
+- Stop the runtime with Ctrl+C. Delete `data/auth.db` to remove the demo API key.
 
 ## Next Steps
 
-- [WebSocket Relay](http/websocket-relay.md) - Middleware configuration
-- [Security Module](lua/security/security.md) - Actors, policies, token stores
-- [Process Management](lua/core/process.md) - Spawning and messaging
+- [WebSocket Relay](http/websocket-relay.md) — Middleware configuration
+- [Security Module](lua/security/security.md) — Actors, policies, and token stores
+- [Process Management](lua/core/process.md) — Process spawning and messaging

@@ -1,33 +1,39 @@
 ---
-title: "Channels und Nebenläufigkeit"
-description: "Go-Style-Channels für nebenläufige Programmierung innerhalb von Prozessen."
+title: "Channels und Nebenläufigkeit: Einführung"
+description: "Channel-Operationen und Muster zur Koordination von Coroutinen kennenlernen."
 ---
 
-# Channels und Nebenläufigkeit
+# Channels und Nebenläufigkeit: Einführung
 
-Go-Style-Channels für nebenläufige Programmierung innerhalb von Prozessen.
+Diese Seite führt Channels zur Koordination von Coroutinen innerhalb eines Prozesses ein. Die Beispiele behandeln Pufferung, Auswahl, Producer-Consumer-Flows, Fan-out, Fan-in und das Schließen von Channels.
+
+**Klassifizierung:** Referenz/API-Einführung. Die Snippets sind voneinander unabhängige Beispiele und keine eigenständige Anwendung.
+
+## Kontext und Abhängigkeiten
+
+Führen Sie diese Snippets in einer exportierten Funktion eines ausführbaren Lua-Eintrags wie `process.lua` aus. Die APIs `channel` und `coroutine` sind in diesem Ausführungskontext Umgebungs-Globals; sie benötigen weder `require()`-Aufrufe noch `modules`-Deklarationen. Jedes Snippet erstellt seine eigenen Channels und sollte separat ausgeführt werden.
 
 ## Channels erstellen
 
-Channels sind Kommunikationsröhren für Coroutines. Erstellen Sie mit `channel.new(capacity)`:
+Channels übertragen Werte zwischen Coroutinen. Erstellen Sie einen Channel mit `channel.new(capacity)`:
 
 ```lua
-local ch = channel.new(1)  -- Gepufferter Channel, Kapazität 1
+local ch = channel.new(1)  -- buffered channel, capacity 1
 ```
 
 ### Gepufferte Channels
 
-Gepufferte Channels erlauben Sends ohne Blockierung bis der Puffer voll ist:
+Ein Send an einen gepufferten Channel blockiert erst, wenn dessen Puffer voll ist:
 
 ```lua
-local ch = channel.new(3)  -- Puffer hält 3 Elemente
+local ch = channel.new(3)  -- buffer holds 3 items
 
--- Ohne Blockierung senden
+-- Send without blocking
 ch:send(1)
 ch:send(2)
 ch:send(3)
 
--- In FIFO-Reihenfolge empfangen
+-- Receive in FIFO order
 local v1, ok1 = ch:receive()  -- 1, true
 local v2, ok2 = ch:receive()  -- 2, true
 local v3, ok3 = ch:receive()  -- 3, true
@@ -38,21 +44,21 @@ local v3, ok3 = ch:receive()  -- 3, true
 Ungepufferte Channels (Kapazität 0) synchronisieren Sender und Empfänger:
 
 ```lua
-local ch = channel.new(0)  -- Ungepuffert
+local ch = channel.new(0)  -- unbuffered
 local done = channel.new(1)
 
 coroutine.spawn(function()
-    ch:send("from spawn")  -- Blockiert bis Empfänger bereit
+    ch:send("from spawn")  -- blocks until receiver ready
     done:send(true)
 end)
 
-local val = ch:receive()  -- Empfängt "from spawn"
+local val = ch:receive()  -- receives "from spawn"
 local completed = done:receive()
 ```
 
 ## Channel-Select
 
-`channel.select` wartet auf mehrere Channels, gibt die erste bereite Operation zurück:
+`channel.select` wartet auf mehrere Channel-Operationen und gibt die erste bereite Operation zurück:
 
 ```lua
 local ch1 = channel.new(1)
@@ -65,7 +71,7 @@ local result = channel.select{
     ch2:case_receive()
 }
 
--- result ist eine Tabelle mit: channel, value, ok
+-- result is a table with: channel, value, ok
 result.channel == ch1  -- true
 result.value           -- "ch1_value"
 result.ok              -- true
@@ -73,16 +79,19 @@ result.ok              -- true
 
 ### Select mit Send
 
-Verwenden Sie `case_send` um nicht-blockierende Sends zu versuchen:
+Verwenden Sie `case_send`, um eine Send-Operation in ein Select aufzunehmen. Ohne Default-Case wartet `channel.select`, bis einer seiner Cases bereit ist. Mit `default = true` wird der Versuch nicht blockierend:
 
 ```lua
 local ch = channel.new(1)
 
 local result = channel.select{
-    ch:case_send("sent")
+    ch:case_send("sent"),
+    default = true
 }
 
-result.ok  -- true (Send erfolgreich)
+if not result.default then
+    result.ok  -- true (send succeeded)
+end
 
 local v = ch:receive()  -- "sent"
 ```
@@ -148,7 +157,7 @@ Ein Producer, mehrere Consumer:
 local work = channel.new(10)
 local results = channel.new(10)
 
--- 3 Worker starten
+-- Spawn 3 workers
 for w = 1, 3 do
     coroutine.spawn(function()
         while true do
@@ -159,13 +168,13 @@ for w = 1, 3 do
     end)
 end
 
--- Arbeit senden
+-- Send work
 for i = 1, 6 do
     work:send(i)
 end
 work:close()
 
--- Ergebnisse sammeln
+-- Collect results
 local sum = 0
 for i = 1, 6 do
     local r = results:receive()
@@ -183,23 +192,24 @@ local output = channel.new(10)
 local producer_count = 4
 local items_per_producer = 5
 
--- Producer starten
+-- Spawn producers
 for p = 1, producer_count do
+    local producer_id = p
     coroutine.spawn(function()
         for i = 1, items_per_producer do
-            output:send({producer = p, item = i})
+            output:send({producer = producer_id, item = i})
         end
     end)
 end
 
--- Alle Nachrichten sammeln
+-- Collect all messages
 local received = {}
 for i = 1, producer_count * items_per_producer do
     local msg = output:receive()
     table.insert(received, msg)
 end
 
--- Verifizieren dass alle Producer ihre Items gesendet haben
+-- Verify all producers sent their items
 local counts = {}
 for _, msg in ipairs(received) do
     counts[msg.producer] = (counts[msg.producer] or 0) + 1
@@ -218,7 +228,7 @@ coroutine.spawn(function()
     local count = 0
     while true do
         local v, ok = ch:receive()
-        if not ok then break end  -- Channel geschlossen
+        if not ok then break end  -- channel closed
         count = count + 1
     end
     done:send(count)
@@ -227,24 +237,25 @@ end)
 for i = 1, 10 do
     ch:send(i)
 end
-ch:close()  -- Signalisiert keine weiteren Werte
+ch:close()  -- signal no more values
 
 local total = done:receive()
 ```
 
 ## Channel-Methoden
 
-Verfügbare Operationen:
+Channel-Operationen:
 
-- `channel.new(capacity)` - Channel mit Puffergröße erstellen
-- `ch:send(value)` - Wert senden (blockiert wenn Puffer voll)
-- `ch:receive()` - Wert empfangen, gibt `value, ok` zurück
-- `ch:close()` - Channel schließen
-- `ch:case_send(value)` - Send-Case für Select erstellen
-- `ch:case_receive()` - Receive-Case für Select erstellen
-- `channel.select{cases...}` - Auf mehrere Operationen warten
+- `channel.new(capacity)` — Einen Channel mit der angegebenen Puffergröße erstellen
+- `ch:send(value)` — Einen Wert senden und blockieren, wenn der Puffer voll ist; das Senden an einen geschlossenen Channel löst einen Fehler aus
+- `ch:receive()` — Einen Wert empfangen und `value, ok` zurückgeben
+- `ch:close()` — Den Channel schließen; erneutes Schließen löst einen Fehler aus
+- `ch:case_send(value)` — Einen Send-Case für `select` erstellen
+- `ch:case_receive()` — Einen Receive-Case für `select` erstellen
+- `channel.select{cases...}` — Auf mehrere Operationen warten und `channel`, `value` und `ok` zurückgeben
+- `channel.select{cases..., default = true}` — Sofort `{default = true, ok = true}` zurückgeben, wenn kein Case bereit ist
 
 ## Nächste Schritte
 
-- [Channel-Modul-Referenz](lua/core/channel.md) - Vollständige API-Dokumentation
-- [Prozesse](tutorials/processes.md) - Inter-Prozess-Kommunikation
+- [Channel-Modulreferenz](lua/core/channel.md) — Dokumentation der Channel-API
+- [Prozesse](tutorials/processes.md) — Kommunikation zwischen Prozessen

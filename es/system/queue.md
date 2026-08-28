@@ -1,21 +1,23 @@
 ---
 title: "Cola"
-description: "Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables."
+description: "Configure drivers de cola en memoria, AMQP o SQS, colas lógicas, consumidores, reconocimientos y publicación."
 ---
 
 # Cola
 
-Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables.
+El sistema de colas conecta publicadores de mensajes asíncronos, drivers, colas, consumidores y funciones handler.
+
+Esta página es una referencia de configuración y comportamiento. Los fences YAML son fragmentos para una lista de entradas existente salvo cuando muestran un documento completo; los ejemplos de drivers externos presuponen que ya existe el broker o servicio compatible con AWS.
 
 ## Arquitectura
 
 ```mermaid
 flowchart LR
-    P[Publicador] --> D[Driver]
-    D --> Q[Cola]
-    Q --> C[Consumidor]
-    C --> W[Pool de Workers]
-    W --> F[Función]
+    P[Publisher] --> D[Driver]
+    D --> Q[Queue]
+    Q --> C[Consumer]
+    C --> W[Worker Pool]
+    W --> F[Function]
 ```
 
 - **Driver** - Implementación de backend (memory, AMQP, SQS)
@@ -79,27 +81,27 @@ Para RabbitMQ y brokers compatibles con AMQP 0-9-1.
 | `connection_timeout` | duration | - | Timeout de conexión |
 | `reconnect_delay` | duration | `1s` | Backoff inicial de reconexión |
 | `reconnect_max_delay` | duration | `30s` | Backoff máximo de reconexión |
-| `default_message_ttl` | duration | - | TTL de mensaje por defecto aplicado a colas declaradas |
-| `default_queue_ttl` | duration | - | TTL por defecto aplicado a colas declaradas |
-| `default_queue_expiry` | duration | - | Expiración de cola por defecto para colas declaradas |
+| `default_message_ttl` | duration | - | Expiración por mensaje usada cuando el publicador no establece una |
+| `default_queue_ttl` | duration | - | TTL predeterminado de mensajes a nivel de cola (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Expiración predeterminada de colas sin usar (`x-expires`) |
 | `prefetch_count` | int | - | Tope de prefetch a nivel de canal |
 | `frame_size` | int | - | Límite de tamaño de frame AMQP |
 | `channel_max` | int | - | Máximo de canales por conexión |
 | `tls` | object | - | Configuración TLS (ver abajo) |
 
-Bloque TLS:
+Configure TLS bajo `tls`:
 
 ```yaml
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Los campos inline `cert`/`key`/`ca` contienen contenido PEM; las variantes `*_env` se resuelven a través del registro env. Las dos fuentes son mutuamente excluyentes por campo. `insecure_skip_verify` desactiva la verificación de certificado (solo desarrollo).
+`cert`/`key`/`ca` contienen datos PEM: en línea, mediante `file://` o mediante un marcador `${env:NAME}` resuelto a través del [registro de entorno](./env.md). `insecure_skip_verify` deshabilita la verificación del certificado (solo para desarrollo). Las directivas heredadas `cert_env`/`key_env`/`ca_env` también consultan el registro de entorno, pero conservan un valor en línea o cero cuando la consulta está ausente o vacía; los marcadores modernos sin valor predeterminado fallan si falta la variable. Las directivas heredadas están obsoletas.
 
 ### Driver SQS
 
@@ -109,8 +111,8 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -132,7 +134,7 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
 | `use_fips` | bool | `false` | Usar endpoints conformes a FIPS |
 | `use_dual_stack` | bool | `false` | Usar endpoints dual-stack (IPv4 + IPv6) |
 
-Las colas son creadas automáticamente por el driver en el primer uso. Use headers con prefijo SQS (`sqs.*`) para direccionar atributos específicos de SQS al publicar; las claves neutrales como `correlation_id` y `content_type` se traducen a atributos del sistema SQS cuando es posible.
+El driver crea las colas automáticamente en el primer uso. Use cabeceras con prefijo SQS para indicar campos propios de SQS al publicar: `sqs.delay_seconds`, `sqs.message_group_id` y `sqs.message_deduplication_id` se convierten en campos tipados de mensajes SQS. Todas las demás cabeceras (claves neutrales como `correlation_id` y `content_type`, además de cualquier clave `sqs.message_attributes.*`) se conservan literalmente como atributos de mensaje SQS.
 
 ## Configuración de Cola
 
@@ -156,8 +158,8 @@ Las colas son creadas automáticamente por el driver en el primer uso. Use heade
 | `codec` | string | No | Codificación de transporte para los cuerpos de mensaje. Por defecto `json/plain` (ver [Códecs](#codecs)) |
 | `queue_name` | string | No | Nombre externo de cola (por defecto el nombre de entrada) |
 | `driver_options` | object | No | Sub-bag por driver, indexado por kind del driver |
-| `dead_letter.queue` | ID de Registro | No | ID de cola para mensajes fallidos |
-| `dead_letter.max_attempts` | int | No | Intentos antes de enrutar a la DLQ |
+| `dead_letter.queue` | ID de Registro | No | ID de cola para mensajes fallidos (se acepta, pero ningún driver incorporado lo aplica todavía) |
+| `dead_letter.max_attempts` | int | No | Intentos antes de enrutar a la DLQ (se acepta, pero ningún driver incorporado lo aplica todavía) |
 
 ### Opciones de Driver
 
@@ -167,7 +169,7 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 
 | Clave | Descripción |
 |-------|-------------|
-| `max_length` | Tamaño de buffer acotado (0 = sin límite) |
+| `max_length` | Tamaño del buffer acotado (0 o ausente = valor predeterminado 1000) |
 
 **amqp:**
 
@@ -179,7 +181,7 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 | `queue_expiry` | Expiración de colas no utilizadas |
 | `max_length` | Máximo de mensajes retenidos |
 
-### Códecs {id="codecs"}
+### Códecs :id=codecs
 
 El `codec` selecciona cómo se serializa el cuerpo de un mensaje antes de entregarlo al broker. Es una cadena de formato de payload y por defecto es `json/plain`:
 
@@ -206,7 +208,7 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,8 +217,8 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
 | `queue` | requerido | ID de registro de la cola |
 | `func` | requerido | ID de registro de la función handler |
 | `concurrency` | 1 | Conteo de workers paralelos |
-| `prefetch` | 10 | Tamaño del buffer por worker |
-| `auto_ack` | false | Cuando es true, el runtime no llama al ack del broker; el éxito/fallo del handler es la única señal de settle |
+| `prefetch` | 10 | Tamaño compartido del buffer de entregas; AMQP también lo aplica como recuento de prefetch QoS del canal |
+| `auto_ack` | false | Opción de auto-ack propia del backend; en AMQP, `true` pide al broker que confirme al entregar |
 | `driver_options` | - | Sub-bag por driver (misma estructura que la cola) |
 
 **Opciones de consumidor amqp:**
@@ -229,20 +231,20 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
 | `consumer_tag` | Identificador para esta suscripción |
 
 <tip>
-Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure actor y políticas a nivel de ciclo de vida. Ver <a href="system/security.md">Seguridad</a>.
+Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure el actor y las políticas a nivel de lifecycle. Consulte <a href="./security.md">Seguridad</a>.
 </tip>
 
 ### Pool de Workers
 
-Los workers se ejecutan como goroutines concurrentes:
+Los workers se ejecutan de forma concurrente:
 
 ```
 concurrency: 3, prefetch: 10
 
-1. El driver entrega hasta 10 mensajes al buffer
-2. 3 workers extraen del buffer concurrentemente
-3. A medida que los workers terminan, el buffer se rellena
-4. Backpressure cuando todos los workers están ocupados y el buffer lleno
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
+3. As workers finish, buffer refills
+4. Backpressure when all workers busy and buffer full
 ```
 
 ## Función Handler
@@ -254,17 +256,21 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
-    local ok, err = process_task(body)
-    if err then
-        return false  -- nack: redelivery or DLQ
-    end
-    return true       -- ack: remove from queue
+    local _, task_err = process_task(body)
+    if task_err then return nil, task_err end
+    return true
 end
 
 return { main = main }
@@ -282,19 +288,18 @@ return { main = main }
 
 ### Reconocimiento
 
-El runtime hace settle automáticamente según el retorno del handler:
+Salvo que el handler resuelva explícitamente el mensaje, el consumidor lo resuelve según el resultado de la invocación de la función:
 
 | Resultado del Handler | Acción |
 |-----------------------|--------|
-| `true` o retorno no-`false` | Ack |
-| `false` | Nack (redelivery o dead-letter según el driver) |
-| Error lanzado | Nack |
+| Finaliza sin error de invocación | Ack |
+| Devuelve o lanza un error de invocación | Nack (redelivery según el driver) |
 
-Llame `msg:ack()` o `msg:nack()` explícitamente solo para hacer settle anticipado. El settlement es de un solo disparo: gana la primera llamada que llega.
+Los valores de retorno normales, incluido `false`, no seleccionan el comportamiento de reconocimiento. Llame a `msg:ack()` o `msg:nack()` para resolver el mensaje explícitamente. La resolución es de un solo disparo: gana la primera llamada que llega.
 
 ### Enrutamiento Dead-Letter
 
-Cuando `dead_letter` está configurado en la cola, un mensaje que es nack más allá de `max_attempts` es enrutado a la DLQ con los headers `x_dead_letter_reason` y `x_original_queue` establecidos por el driver. Los publicadores no deben establecer ningún header `x_*` — estos están reservados para el registro de DLQ.
+El enrutamiento dead-letter aún no está implementado. El bloque `dead_letter` (consulte [Configuración de cola](#configuración-de-cola)) se acepta en la configuración, pero ningún driver incorporado cuenta actualmente los intentos, enruta mensajes con nack a la DLQ configurada ni establece cabeceras `x_dead_letter_*`. Un mensaje con nack se vuelve a entregar según la política del propio driver. El namespace de cabeceras `x_*` se reserva para un futuro registro de DLQ, por lo que los publicadores deben evitar establecer cabeceras `x_*`.
 
 ## Publicando Mensajes
 
@@ -303,14 +308,16 @@ Desde código Lua:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-Ver [Módulo Queue](lua/storage/queue.md) para la API completa.
+Consulte el [módulo Queue](lua/storage/queue.md) para la API Lua de publicación y mensajes.
 
 ## Apagado Graceful
 
@@ -324,5 +331,5 @@ Al detener el consumidor:
 ## Ver También
 
 - [Módulo Queue](lua/storage/queue.md) - Referencia de API Lua
-- [Guía de Consumidores de Cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Supervisión](guides/supervision.md) - Gestión del ciclo de vida del consumidor
+- [Guía de consumidores de cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
+- [Supervisión](guides/supervision.md) - Gestión del lifecycle del consumidor

@@ -1,11 +1,11 @@
 ---
 title: "Linter"
-description: "Wippy enthalt einen integrierten Linter, der Typprufung und statische Analyse von Lua-Code durchfuhrt. Er wird mit wippy lint ausgefuhrt."
+description: "Verwenden Sie den integrierten Lua-Linter für Typprüfung, statische Analyse, Filterung, Caching und CI-Ausgabe."
 ---
 
 # Linter
 
-Wippy enthalt einen integrierten Linter, der Typprufung und statische Analyse von Lua-Code durchfuhrt. Er wird mit `wippy lint` ausgefuhrt.
+Führen Sie `wippy lint` aus, um Lua-Einträge typzuprüfen und statisch zu analysieren.
 
 ## Verwendung
 
@@ -36,7 +36,7 @@ Diagnosen haben drei Schweregrade:
 
 | Stufe | Beschreibung |
 |-------|--------------|
-| `error` | Typfehler und Korrektheitsprobleme, die behoben werden mussen |
+| `error` | Typfehler und Korrektheitsprobleme, die behoben werden müssen |
 | `warning` | Wahrscheinliche Fehler oder problematische Muster |
 | `hint` | Stilvorschlage und informative Hinweise |
 
@@ -58,7 +58,7 @@ wippy lint --level hint           # Everything
 
 ### Typprufungsfehler (E-Serie)
 
-Typprufungsfehler (`E0001`+) melden Probleme, die vom Typsystem erkannt werden: Typkonflikte, undefinierte Variablen, ungultige Operationen und ahnliche Korrektheitsprobleme. Diese werden immer als Fehler gemeldet.
+Typprüfungsfehler (`E0001`+) melden Probleme, die vom Typsystem erkannt werden: Typkonflikte, undefinierte Variablen, ungültige Operationen und ähnliche Korrektheitsprobleme. Diese werden immer als Fehler gemeldet.
 
 ```lua
 local x: number = "hello"         -- E: string not assignable to number
@@ -72,7 +72,7 @@ add("one", "two")                  -- E: string not assignable to number
 
 ### Nicht deklarierte Requires
 
-Ein String-Literal-`require("name")`, dessen Modul weder in den `imports`/`modules`-Deklarationen des Eintrags steht noch ein ambienter Builtin ist, schlagt fehl mit:
+Ein String-Literal-`require("name")`, dessen Modul weder in den `imports`/`modules`-Deklarationen des Eintrags steht noch ein ambienter Builtin ist, schlägt fehl mit:
 
 ```
 require("name") is not declared in _index.yaml imports or modules
@@ -87,7 +87,7 @@ modules:
   - funcs                    # bare module name
 ```
 
-Dynamische Requires (`require(variable)`) werden nicht untersucht. Die ambiente Menge — Module, die ohne Deklaration verfugbar sind, etwa `process` in ausfuhrbaren Kinds — wird zwischen Linter und Runtime geteilt, sodass Lint-Zeit- und Laufzeitauflosung nicht auseinanderdriften konnen.
+Dynamische Requires (`require(variable)`) werden nicht untersucht. Die ambiente Menge — Module, die ohne Deklaration verfügbar sind, etwa `process` in ausführbaren Kinds — wird zwischen Linter und Runtime geteilt, sodass Lint-Zeit- und Laufzeitauflösung nicht auseinanderdriften können.
 
 ### Lint-Regel-Warnungen (W-Serie)
 
@@ -105,7 +105,7 @@ wippy lint --rules
 | `W0004` | no-unused-vars | Unbenutzte lokale Variablen |
 | `W0005` | no-unused-params | Unbenutzte Funktionsparameter |
 | `W0006` | no-unused-imports | Unbenutzte Import-Anweisungen |
-| `W0007` | no-shadowed-vars | Variable uberschattet ausseren Gultigkeitsbereich |
+| `W0007` | no-shadowed-vars | Variable überschattet äußeren Gültigkeitsbereich |
 
 Ohne `--rules` wird nur die Typprufung (P- und E-Codes) durchgefuhrt.
 
@@ -113,7 +113,7 @@ Ohne `--rules` wird nur die Typprufung (P- und E-Codes) durchgefuhrt.
 
 ### Nach Namespace
 
-Prufen Sie bestimmte Namespaces mit `--ns`:
+Prüfen Sie bestimmte Namespaces mit `--ns`:
 
 ```bash
 wippy lint --ns app               # Exact namespace match
@@ -121,7 +121,7 @@ wippy lint --ns "app.*"           # All under app
 wippy lint --ns app --ns lib      # Multiple namespaces
 ```
 
-Abhangigkeiten der ausgewahlten Eintrage werden fur die Typprufung geladen, aber ihre Diagnosen werden nicht angezeigt.
+Abhängigkeiten der ausgewählten Einträge werden für die Typprüfung geladen, aber ihre Diagnosen werden nicht angezeigt.
 
 ### Nach Fehlercode
 
@@ -176,7 +176,7 @@ Checked 42 entries: 5 errors, 12 warnings
 
 ### JSON-Format
 
-Maschinenlesbare Ausgabe fur CI/CD-Integration:
+Maschinenlesbare Ausgabe für die CI-Verarbeitung:
 
 ```bash
 wippy lint --json
@@ -203,7 +203,7 @@ wippy lint --json
 
 ## Caching
 
-Der Linter speichert Ergebnisse im Cache, um wiederholte Durchlaufe zu beschleunigen. Cache-Schlussel basieren auf Quellcode-Hash, Methodenname, Abhangigkeiten und Typsystem-Konfiguration.
+Der Linter speichert Ergebnisse zwischen Aufrufen. Cache-Schlüssel umfassen Quellcode-Hash, Methodenname, Abhängigkeiten und Typsystemkonfiguration.
 
 Leeren Sie den Cache, wenn Ergebnisse veraltet erscheinen:
 
@@ -211,17 +211,23 @@ Leeren Sie den Cache, wenn Ergebnisse veraltet erscheinen:
 wippy lint --cache-reset
 ```
 
-## CI/CD-Integration
+## CI-Integration
 
-Verwenden Sie JSON-Ausgabe und Exit-Codes fur automatisierte Prufungen:
+Im Tabellen- und Zusammenfassungsmodus endet der Befehl mit einem von null verschiedenen Exit-Code, wenn das gefilterte Ergebnis Fehler enthält. Warnungen und Hinweise beeinflussen den Exit-Code nicht, auch wenn `--level warning` oder `--level hint` sie anzeigt.
+
+Der JSON-Modus verhält sich anders: Nach erfolgreicher Kodierung des Ergebnisses endet `wippy lint --json` mit Code 0, selbst wenn `error_count` nicht null ist. Ein CI-Job mit JSON-Ausgabe muss `error_count` selbst auswerten. Verwenden Sie einen Aufruf ohne JSON, wenn der Exit-Status als Gate dienen soll:
+
+```bash
+wippy lint --level error
+```
+
+Sie können einen Bericht getrennt erzeugen, ohne seinen Exit-Status als Linter-Ergebnis zu behandeln:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
 
-Der Linter beendet sich mit Code 0, wenn keine Fehler gefunden werden, andernfalls mit einem Wert ungleich null.
-
-Beispiel fur einen GitHub-Actions-Schritt:
+Beispiel für einen GitHub-Actions-Schritt:
 
 ```yaml
 - name: Lint
@@ -241,10 +247,12 @@ Beispiel fur einen GitHub-Actions-Schritt:
 | `--no-color` | | false | Farbige Ausgabe deaktivieren |
 | `--rules` | | false | Lint-Regeln aktivieren (W-Serie Stil-/Qualitatsprufungen) |
 | `--cache-reset` | | false | Cache vor dem Linting leeren |
+| `--profile` | | | Workspace-Profil aus der zusammengeführten Runtime-Konfiguration anwenden; wiederholen, um Profile der Reihe nach anzuwenden |
+| `--set` | | | Zusammengeführten Konfigurationswert als `section.path=value` überschreiben; für mehrere Überschreibungen wiederholen |
 | `--lock-file` | `-l` | wippy.lock | Pfad zur Lock-Datei |
 
 ## Siehe auch
 
-- [CLI](guides/cli.md) - Vollstandige CLI-Referenz
-- [Typen](lua/types.md) - Typsystem-Dokumentation
-- [LSP](guides/lsp.md) - Editor-Integration mit Live-Diagnosen
+- [CLI](guides/cli.md) — Vollständige CLI-Referenz
+- [Typen](lua/types.md) — Dokumentation des Typsystems
+- [LSP](guides/lsp.md) — Editorintegration mit Live-Diagnosen

@@ -1,15 +1,17 @@
 ---
 title: "アクティビティ"
-description: "アクティビティは非決定論的な操作を実行する関数です。任意のfunction.luaまたはprocess.luaエントリはメタデータを追加することでTemporalアクティビティとして登録できます。"
+description: "function.luaまたはprocess.luaエントリを、非決定論的な操作を行うTemporalアクティビティとして登録します。"
 ---
 
 # アクティビティ
 
-アクティビティは非決定論的な操作を実行する関数です。任意の`function.lua`または`process.lua`エントリはメタデータを追加することでTemporalアクティビティとして登録できます。
+Temporalアクティビティは非決定論的な操作を実行します。`function.lua`または`process.lua`エントリを、そのメタデータを通じてアクティビティとして登録します。
+
+各スニペットはAPIレシピです。支払いの例は説明用であり、アプリケーションが所有する環境エントリ、資格情報に対する`env.get`権限、プロバイダーURLに対する`http_client.request`権限、および決済プロバイダーの契約が必要です。
 
 ## アクティビティの登録
 
-関数をアクティビティとして登録するには`meta.temporal.activity`を追加：
+関数をアクティビティとして登録するには、`meta.temporal.activity`を追加します。
 
 ```yaml
 - name: charge_payment
@@ -17,6 +19,8 @@ description: "アクティビティは非決定論的な操作を実行する関
   source: file://payment.lua
   method: charge
   modules:
+    - env
+    - errors
     - http_client
     - json
   meta:
@@ -34,31 +38,56 @@ description: "アクティビティは非決定論的な操作を実行する関
 
 ## 実装
 
-アクティビティは通常のLua関数です：
+アクティビティは通常のLua関数です。Temporalはワークフロー入力を履歴に保存するため、資格情報をワークフロー入力に含めないでください。この例では、アクティビティ内で環境レジストリから支払いキーを読み取ります。プレースホルダーのプロバイダーはJSONの請求リクエストを受け取り、JSONレスポンスを返します。ステータスの対応付けはアプリケーション側のポリシーです。URL、リクエストフィールド、レスポンスフィールド、失敗時の対応付けを、利用するプロバイダーの契約に合わせて置き換えてください。
 
 ```lua
 -- payment.lua
 local http = require("http_client")
 local json = require("json")
+local env = require("env")
+local errors = require("errors")
+
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
 
 local function charge(input)
-    local response, err = http.post("https://api.stripe.com/v1/charges", {
+    local api_key, env_err = env.get("PAYMENTS_API_KEY")
+    if env_err then return nil, env_err end
+
+    local body, encode_err = json.encode({
+        amount = input.amount,
+        currency = input.currency,
+        payment_token = input.payment_token
+    })
+    if encode_err then
+        return nil, encode_err
+    end
+
+    local response, err = http.post("https://payments.example.com/v1/charges", {
         headers = {
-            ["Authorization"] = "Bearer " .. input.api_key,
+            ["Authorization"] = "Bearer " .. api_key,
             ["Content-Type"] = "application/json"
         },
-        body = json.encode({
-            amount = input.amount,
-            currency = input.currency,
-            source = input.token
-        })
+        body = body
     })
 
     if err then
         return nil, err
     end
 
-    return json.decode(response:body())
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
+    end
+
+    return json.decode(response.body)
 end
 
 return { charge = charge }
@@ -66,7 +95,7 @@ return { charge = charge }
 
 ## アクティビティの呼び出し
 
-ワークフローから`funcs`モジュールを使用：
+ワークフローからは`funcs`モジュールを使用します。
 
 ```lua
 local funcs = require("funcs")
@@ -74,8 +103,7 @@ local funcs = require("funcs")
 local result, err = funcs.call("app:charge_payment", {
     amount = 5000,
     currency = "usd",
-    token = "tok_visa",
-    api_key = ctx.stripe_key
+    payment_token = "payment-token-123"
 })
 
 if err then
@@ -85,7 +113,7 @@ end
 
 ## アクティビティオプション
 
-executor ビルダーを使用して、タイムアウト、リトライ動作、その他の実行パラメータを設定：
+executorビルダーを使用して、タイムアウト、再試行動作、その他の実行パラメータを設定します。
 
 ```lua
 local funcs = require("funcs")
@@ -105,7 +133,7 @@ local executor = funcs.new():with_options({
 local result, err = executor:call("app:charge_payment", input)
 ```
 
-executor は不変で再利用可能です。一度構築すれば複数の呼び出しに使用できます：
+executorは不変で再利用できます。一度構築すれば、複数の呼び出しに使用できます。
 
 ```lua
 local reliable = funcs.new():with_options({
@@ -119,7 +147,13 @@ local reliable = funcs.new():with_options({
 })
 
 local a, err = reliable:call("app:step_one", input)
+if err then
+    return nil, err
+end
 local b, err = reliable:call("app:step_two", a)
+if err then
+    return nil, err
+end
 ```
 
 ### オプションリファレンス
@@ -135,12 +169,31 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | アクティビティキャンセルを待機 |
 | `activity.disable_eager_execution` | boolean | false | イーガー実行を無効化 |
 | `activity.retry_policy` | table | - | リトライ設定（下記参照） |
+| `activity.versioning_intent` | string or number | - | アクティビティに対するワーカーのバージョニング意図 |
+| `activity.summary` | string | - | Temporalアクティビティのメタデータに表示される概要 |
+| `activity.priority` | table | - | 優先度キーと任意の公平性設定 |
+| `activity.name` | string | - | アクティビティ種別名の上書き |
 
 duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数値を受け付けます。
 
+新しいコードでは正規の`activity.*`名を使用してください。従来の`temporal.activity.*`エイリアスも互換性のため引き続き受け付けられます。
+
+```lua
+local executor = funcs.new():with_options({
+    ["activity.summary"] = "Charge the order payment",
+    ["activity.priority"] = {
+        priority_key = 10,
+        fairness_key = "customer-123",
+        fairness_weight = 1.0,
+    },
+    ["activity.name"] = "charge-payment",
+    ["activity.versioning_intent"] = "use_assignment_rules",
+})
+```
+
 ### リトライポリシー
 
-失敗したアクティビティの自動リトライ動作を設定：
+失敗したアクティビティの自動再試行動作を設定します。
 
 ```lua
 ["activity.retry_policy"] = {
@@ -149,8 +202,8 @@ duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数�
     maximum_interval = 300000,       -- max interval between retries (ms)
     maximum_attempts = 10,           -- max retry attempts (0 = unlimited)
     non_retryable_error_types = {    -- errors that skip retries
-        "INVALID",
-        "PERMISSION_DENIED"
+        "Invalid",
+        "PermissionDenied"
     }
 }
 ```
@@ -178,7 +231,7 @@ duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数�
 
 ## ローカルアクティビティ
 
-ローカルアクティビティはワークフローワーカープロセス内で、別のタスクキューポーリングなしで実行されます：
+アクティビティでは`local`フィールドを指定できます。
 
 ```yaml
 - name: validate_input
@@ -194,18 +247,11 @@ duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数�
         local: true
 ```
 
-特性：
-- ワークフローワーカープロセス内で実行
-- 低レイテンシー（タスクキューのラウンドトリップなし）
-- 別のタスクキューオーバーヘッドなし
-- 短い実行時間に限定（`local_activity_options.schedule_to_close_timeout` により制限され、通常は数秒）
-- ハートビートなし
-
-入力バリデーション、データ変換、キャッシュルックアップなどの高速で短い操作にローカルアクティビティを使用します。長時間実行される処理には、代わりに通常のアクティビティを使用してください。
+現在、`local: true`は解析されますが、通常のアクティビティと同じ動作をします。標準のアクティビティ経路を通じて登録・実行されます。まだ独立したローカルアクティビティ実行はないため、レイテンシー、タスクキューの動作、ハートビートは変わりません。
 
 ## アクティビティの命名
 
-アクティビティはフルエントリIDを名前として登録されます：
+アクティビティは、完全なエントリIDを名前として登録されます。
 
 ```yaml
 namespace: app
@@ -215,11 +261,11 @@ entries:
     # ...
 ```
 
-アクティビティ名：`app:charge_payment`
+アクティビティ名は`app:charge_payment`です。
 
 ## コンテキスト伝播
 
-ワークフローのスポーン時に設定されたコンテキスト値はアクティビティ内で利用可能です：
+ワークフローをスポーンするときに設定したコンテキスト値は、アクティビティ内で利用できます。
 
 ```lua
 -- Spawner sets context
@@ -227,7 +273,10 @@ local spawner = process.with_context({
     user_id = "user-1",
     tenant = "tenant-1",
 })
-local pid = spawner:spawn("app:order_workflow", "app:worker", order)
+local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
+if err then
+    return nil, err
+end
 ```
 
 ```lua
@@ -235,13 +284,15 @@ local pid = spawner:spawn("app:order_workflow", "app:worker", order)
 local ctx = require("ctx")
 
 local function process_order(input)
-    local user_id = ctx.get("user_id")   -- "user-1"
-    local tenant = ctx.get("tenant")     -- "tenant-1"
+    local user_id, user_err = ctx.get("user_id")   -- "user-1"
+    if user_err then return nil, user_err end
+    local tenant, tenant_err = ctx.get("tenant")   -- "tenant-1"
+    if tenant_err then return nil, tenant_err end
     -- use context for authorization, logging, etc.
 end
 ```
 
-`funcs.new():with_context()`で呼び出されたアクティビティもコンテキストを伝播します：
+`funcs.new():with_context()`で呼び出したアクティビティにも、コンテキストが伝播されます。
 
 ```lua
 -- Inside workflow
@@ -251,14 +302,26 @@ local result, err = executor:call("app:charge_payment", input)
 
 ## エラー処理
 
-標準のLuaパターンでエラーを返す：
+標準のLuaパターンでエラーを返します。
 
 ```lua
 local errors = require("errors")
 
+-- Replace this mapping with the payment provider's documented error contract.
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
+
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -266,17 +329,17 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
     end
 
-    return json.decode(response:body())
+    return json.decode(response.body)
 end
 ```
 
 ### エラーオブジェクト
 
-ワークフローに伝播されるアクティビティエラーは構造化されたメタデータを持つ：
+ワークフローに伝播されるアクティビティエラーには、構造化されたメタデータが含まれます。
 
 ```lua
 local result, err = funcs.call("app:charge_payment", input)
@@ -292,9 +355,9 @@ end
 | 障害 | エラー種別 | リトライ可能 | 説明 |
 |------|-----------|------------|------|
 | アプリケーションエラー | アクティビティが返したもの | 返されたエラーから継承 | `return nil, err` でアクティビティコードが返したエラー |
-| ランタイムクラッシュ | `INTERNAL` | はい | アクティビティ内の未処理Luaエラー |
-| アクティビティ未登録 | `NOT_FOUND` | いいえ | ワーカーに登録されていないアクティビティ |
-| タイムアウト | `TIMEOUT` | はい | アクティビティが設定されたタイムアウトを超過 |
+| ランタイムクラッシュ | `Internal` | false | アクティビティ内の未処理Luaエラー |
+| アクティビティ未登録 | `NotFound` | false | ワーカーに登録されていないアクティビティ |
+| タイムアウト | `Timeout` | false | アクティビティが設定されたタイムアウトを超過 |
 
 ```lua
 local executor = funcs.new():with_options({
@@ -303,14 +366,14 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```
 
 ## プロセスアクティビティ
 
-`process.lua`エントリも長時間実行操作用にアクティビティとして登録可能：
+`process.lua`エントリも、長時間実行する操作のアクティビティとして登録できます。
 
 ```yaml
 - name: long_task
@@ -328,6 +391,6 @@ end
 ## 関連項目
 
 - [概要](temporal/overview.md) - 設定
-- [ワークフロー](temporal/workflows.md) - ワークフロー実装
+- [ワークフロー](temporal/workflows.md) - ワークフローの実装
 - [関数](lua/core/funcs.md) - 関数モジュール
-- [エラー処理](lua/core/errors.md) - エラータイプとパターン
+- [エラー処理](lua/core/errors.md) - エラーの種別とパターン

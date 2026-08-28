@@ -1,20 +1,22 @@
 ---
 title: "ストア（キーバリュー）"
-description: "TTLサポート付きのキーバリューストア: インメモリ、SQLバックエンド、クラスタレプリケート（Raft および CRDT）。"
+description: "TTL をサポートする、インメモリ、SQL バックエンド、クラスターレプリケーション（Raft と CRDT）のキーバリューストア。"
 ---
 
 # ストア（キーバリュー）
 
-TTLサポート付きのキーバリューストア: インメモリ、SQLバックエンド、クラスタレプリケート（Raft および CRDT）。
+Wippy は、メモリ、SQL、Raft、または CRDT をバックエンドとする、TTL 対応のキーバリューストアを提供します。
+
+このページはエントリ設定のリファレンスです。YAML のコードブロックは既存のエントリリストに配置する断片であり、SQL のコードブロックは `store.sql` エントリを起動する前に実行する必要があるスキーマ設定です。
 
 ## エントリ種別
 
 | 種別 | 説明 |
 |------|------|
-| `store.memory` | 自動クリーンアップ付きインメモリストア |
-| `store.sql` | 永続化付きSQLバックエンドストア |
-| `store.kv.raft` | 共有 Raft 上のクラスタレプリケート、強整合性 KV |
-| `store.kv.crdt` | ゴシップ上のクラスタレプリケート、最終的整合性 KV（CRDT） |
+| `store.memory` | 自動クリーンアップ付きのインメモリストア |
+| `store.sql` | 永続化される SQL バックエンドのストア |
+| `store.kv.raft` | 共有 Raft 上でクラスターレプリケーションされる、強整合性 KV |
+| `store.kv.crdt` | ゴシップを介してクラスターレプリケーションされる、結果整合性 KV（CRDT） |
 
 ## メモリストア
 
@@ -29,12 +31,12 @@ TTLサポート付きのキーバリューストア: インメモリ、SQLバッ
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `max_size` | int | 10000 | 最大エントリ数（0 = 無制限） |
+| `max_size` | int | 10000 | 最大エントリ数。0 はデフォルト値（10000）に置き換えられる |
 | `cleanup_interval` | duration | 5m | 期限切れエントリのクリーンアップ間隔 |
 
-`max_size`に達すると、新しいエントリは拒否されます。データは再起動時に失われます。
+`max_size` に達すると、新しいエントリは拒否されます。データは再起動時に失われます。
 
-## SQLストア
+## SQL ストア
 
 ```yaml
 - name: cache
@@ -48,28 +50,28 @@ TTLサポート付きのキーバリューストア: インメモリ、SQLバッ
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `database` | reference | 必須 | データベースエントリ参照 |
-| `table_name` | string | 必須 | ストレージ用テーブル名 |
-| `id_column_name` | string | key | キー用カラム |
-| `payload_column_name` | string | value | 値用カラム |
-| `expire_column_name` | string | expires_at | 有効期限用カラム |
+| `database` | reference | 必須 | データベースエントリの参照 |
+| `table_name` | string | 必須 | ストレージ用のテーブル名 |
+| `id_column_name` | string | key | キー用のカラム |
+| `payload_column_name` | string | value | 値用のカラム |
+| `expire_column_name` | string | expires_at | 有効期限用のカラム |
 | `cleanup_interval` | duration | 0 | 期限切れエントリのクリーンアップ間隔 |
 
-カラム名はSQLインジェクションに対して検証されます。使用前にテーブルを作成してください：
+カラム名は SQL インジェクションを防ぐために検証されます。次の前提スキーマは PostgreSQL の DDL です。MySQL または SQLite では、同等のバイナリ／BLOB 型とタイムスタンプ型を使用してください。
 
 ```sql
 CREATE TABLE kv_store (
     key VARCHAR(255) PRIMARY KEY,
     value BYTEA NOT NULL,
-    expires_at BIGINT
+    expires_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
 ```
 
-## クラスタ KV ストア {id="cluster-kv-stores"}
+## クラスター KV ストア {id="cluster-kv-stores"}
 
-`store.kv.raft` と `store.kv.crdt` はキーバリューデータをクラスタノード間でレプリケートします。どちらも[クラスタリング](guides/cluster.md)が有効である必要があり、同じ[ストアモジュール](lua/storage/store.md)の Lua API を再利用します。各エントリはノード全体の単一エンジンへの名前空間付きビューです。`namespace` はこのエントリのキーを分離し、`^[a-z][a-z0-9._-]*$` に一致する必要があります（`_` で始めることはできません）。
+`store.kv.raft` と `store.kv.crdt` は、クラスターノード間でキーバリューデータをレプリケーションします。どちらも[クラスタリング](guides/cluster.md)を有効にする必要があり、同じ[ストアモジュール](lua/storage/store.md)の Lua API を再利用します。各エントリは、ノード全体で共有される単一のエンジンに対する名前空間付きのビューです。`namespace` はこのエントリのキーを分離し、`^[a-z][a-z0-9._-]*$` に一致する必要があります（`_` で始めることはできません）。
 
 ### Raft（強整合性）
 
@@ -81,11 +83,11 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 | フィールド | 型 | 必須 | 説明 |
 |------------|-----|------|------|
-| `namespace` | string | Yes | 共有エンジン内のキー名前空間 |
+| `namespace` | string | はい | 共有エンジン内のキー名前空間 |
 
-書き込みは共有 Raft を通じて提案され（フォロワーはリーダーに転送）、読み取りは線形化可能です。条件付き書き込み（`only_if_absent`/`if_version` 付きの `put`）がサポートされます。Raft 状態はデフォルトで `cluster.raft.data_dir`（デフォルト `~/.wippy/store`）の下に fs 永続化されます。[設定](guides/configuration.md#cluster)を参照。
+書き込みは共有 Raft を通じて提案され（フォロワーはリーダーに転送）、読み取りは線形化可能です。条件付き書き込み（`put` で `only_if_absent`／`if_version` を指定）もサポートされます。Raft の状態はデフォルトで `cluster.raft.data_dir`（デフォルト: `~/.wippy/store`）の下にファイルシステムへ永続化されます。[設定](guides/configuration.md#cluster)を参照してください。
 
-### CRDT（最終的整合性）
+### CRDT（結果整合性）
 
 ```yaml
 - name: sessions
@@ -96,24 +98,29 @@ CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL
 
 | フィールド | 型 | 必須 | デフォルト | 説明 |
 |------------|-----|------|------------|------|
-| `namespace` | string | Yes | - | キー名前空間 |
-| `durable` | bool | No | false | fs スナップショットを永続化し、クラスタ全体の再起動後も名前空間が存続するようにする |
+| `namespace` | string | はい | - | キー名前空間 |
+| `durable` | bool | いいえ | false | ファイルシステムにスナップショットを永続化し、クラスター全体の再起動後も名前空間を維持 |
 
-書き込みはローカル状態を変更しゴシップ経由で伝播します。競合する並行書き込みは last-writer-wins で収束します。読み取りはローカルです。条件付き書き込みはサポートされません。`durable: false` ではストアはインメモリでありピアから再構築されます。`durable: true` では `<data_dir>/_sys/kvcrdt` にスナップショットされます。
+書き込みはローカル状態を変更し、ゴシップを介して伝播します。競合する同時書き込みは last-writer-wins で収束します。読み取りはローカルです。条件付き書き込みはサポートされません。`durable: false` の場合、ストアはインメモリでピアから再構築されます。`durable: true` の場合は `<data_dir>/_sys/kvcrdt` にスナップショットを保存します。
 
 <note>
-<code>data_dir</code> はノードレベル（<code>cluster.raft.data_dir</code>）であり、エントリごとではありません。共有 Raft 状態と永続 CRDT スナップショットは <code>&lt;data_dir&gt;/_sys/</code> の下に存在します。
+<code>data_dir</code> はエントリごとではなく、ノードレベル（<code>cluster.raft.data_dir</code>）の設定です。共有 Raft の状態と永続 CRDT スナップショットは <code>&lt;data_dir&gt;/_sys/</code> の下に保存されます。
 </note>
 
-## TTL動作
+## TTL の動作
 
-両方のストアがtime-to-liveをサポートします。期限切れエントリは`cleanup_interval`でクリーンアップが実行されるまで一時的に残ります。自動クリーンアップを無効にするには`0`に設定してください。
+4 種類すべてのストアで time-to-live 値を指定できますが、有効期限の見え方はバックエンドによって異なります。
+
+- `store.memory` は、期限切れのキーを読み取り時に存在しないものとして扱い、`cleanup_interval`（デフォルト `5m`）で期限切れエントリを削除します。設定値が 0 の場合は、このデフォルト値に置き換えられます。
+- `store.sql` は読み取り時に期限切れの行を除外し、`cleanup_interval` で削除します。デフォルトの `0` はバックグラウンドクリーンアップを無効にしますが、期限切れの行が読み取り可能になるわけではありません。
+- `store.kv.raft` は、期限付きキーをリーダー駆動のリースに関連付けます。約 1 秒ごとのリーススイープが Raft を通じて削除を提案するため、その合意済みの削除が適用されるまでキーを読み取れる場合があります。
+- `store.kv.crdt` も約 1 秒ごとのリーススイープで期限切れのキーを削除し、その結果のトゥームストーンをゴシップします。リース期限は書き込みを受け付けたノードにのみ存在します。その発生元が期限切れ前に停止した場合、別のノードは独自に期限を再現しないため、後続の状態更新や管理者によるクリーンアップで削除されるまでキーが残ることがあります。
 
 ## Lua API
 
-操作については[ストアモジュール](lua/storage/store.md)を参照してください: `get`、`set`、`has`、`delete`、加えてバージョン管理付き・条件付きアクセスのための `put`、`entry`、`list`、`info`。
+操作については、[ストアモジュール](lua/storage/store.md)を参照してください。`get`、`set`、`has`、`delete` に加え、バージョン付きおよび条件付きアクセス用の `put`、`entry`、`list`、`info` を提供します。
 
 ## 関連項目
 
-- [ストアモジュール](lua/storage/store.md) - Lua APIリファレンス
-- [データベース](system/database.md) - `store.sql`のSQLバックエンド
+- [ストアモジュール](lua/storage/store.md) - Lua API リファレンス
+- [データベース](system/database.md) - `store.sql` の SQL バックエンド

@@ -5,7 +5,9 @@ description: "Configuração para entradas baseadas em Lua: funções, processos
 
 # Tipos de Entrada Lua
 
-Configuração para entradas baseadas em Lua: funções, processos, workflows e bibliotecas.
+Os tipos de entrada Lua definem como o código-fonte é carregado e executado como função, processo, workflow ou biblioteca.
+
+Esta página é uma referência de configuração. Os blocos YAML são definições parciais de entradas que devem ficar sob um mapeamento `entries:` em um índice Wippy; não são aplicações completas por si só. Os arquivos-fonte, imports, dependências, hosts de processos e políticas de segurança referenciados devem existir no projeto.
 
 ## Tipos de Entrada
 
@@ -15,9 +17,10 @@ Configuração para entradas baseadas em Lua: funções, processos, workflows e 
 | `process.lua` | Ator de longa duração com estado |
 | `workflow.lua` | Workflow durável (Temporal) |
 | `library.lua` | Código compartilhado importado por outras entradas |
-| `module.lua` | Superfície de módulo (biblioteca com vários métodos) |
 
-Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode`. Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos automaticamente ao empacotar.
+Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode '**'` ou por um padrão como `--bytecode 'app:**'`. Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos ao empacotar com essa opção.
+
+`module.lua` é reservado para definições de módulos integrados criadas pelo runtime. Não é uma entrada de código-fonte que possa ser criada pelo autor e não tem contraparte de bytecode.
 
 ## Campos Comuns
 
@@ -27,13 +30,15 @@ Todas as entradas Lua compartilham estes campos:
 |-------|-------------|-----------|
 | `name` | sim | Nome único dentro do namespace |
 | `kind` | sim | Um dos tipos Lua acima |
-| `source` | sim | Caminho do arquivo Lua (`file://path.lua`) |
+| `source` | sim | Código-fonte Lua inline ou referência `file://path.lua` resolvida quando o registro é carregado |
 | `method` | function/process/workflow | Função a exportar (bibliotecas não usam) |
 | `modules` | não | Módulos permitidos para `require()` |
 | `imports` | não | Outras entradas como módulos locais |
 | `meta` | não | Metadados pesquisáveis |
 
-## function.lua
+`pool` aplica-se apenas a `function.lua`. `security` aplica-se a `function.lua` e `process.lua`.
+
+## `function.lua`
 
 Função stateless chamada sob demanda. Cada invocação é independente.
 
@@ -49,7 +54,7 @@ Função stateless chamada sob demanda. Cada invocação é independente.
 
 Use para: HTTP handlers, transformações de dados, utilitários.
 
-## process.lua
+## `process.lua`
 
 Ator de longa duração que mantém estado entre mensagens. Comunica via passagem de mensagens.
 
@@ -59,7 +64,6 @@ Ator de longa duração que mantém estado entre mensagens. Comunica via passage
   source: file://worker.lua
   method: main
   modules:
-    - process
     - sql
 ```
 
@@ -78,7 +82,7 @@ Para executar como serviço supervisionado:
       max_attempts: 10
 ```
 
-## workflow.lua
+## `workflow.lua`
 
 Workflow durável que sobrevive a reinicializações. Estado é persistido no Temporal.
 
@@ -94,7 +98,7 @@ Workflow durável que sobrevive a reinicializações. Estado é persistido no Te
 
 Use para: Processos de negócio multi-etapa, orquestrações de longa duração.
 
-## library.lua
+## `library.lua`
 
 Código compartilhado que pode ser importado por outras entradas.
 
@@ -134,17 +138,13 @@ modules:
   - http
   - json
   - sql
-  - process
 ```
 
-`channel`, `print`, `subscribe` e `unsubscribe` são carregados como globais Lua e não precisam aparecer em `modules:`.
+`channel`, `payload`, `print`, `process`, `subscribe` e `unsubscribe` são carregados como globais Lua e não precisam aparecer em `modules:`. `require("process")` também é permitido sem uma declaração em `modules:`.
 
-Apenas módulos listados estão disponíveis. Isso fornece:
-- Segurança: Prevenir acesso a módulos de sistema
-- Dependências explícitas: Claro o que o código precisa
-- Determinismo: Workflows só recebem módulos determinísticos
+Apenas módulos integrados listados e aliases declarados em `imports` estão disponíveis. A allowlist de módulos limita o acesso a recursos do runtime, torna as dependências explícitas e restringe workflows a classes de módulos compatíveis com workflows.
 
-Veja [Lua Runtime](lua/overview.md) para módulos disponíveis.
+Veja [Runtime Lua](lua/overview.md) para os módulos disponíveis.
 
 ## Imports
 
@@ -158,9 +158,9 @@ imports:
 
 A chave se torna o nome do módulo no código Lua. O valor é o ID da entrada (`namespace:name`).
 
-## Configuração de Pool
+## Pools de Funções
 
-Configure pool de execução para funções:
+Use `pool` para configurar como uma entrada de função é executada:
 
 ```yaml
 - name: handler
@@ -168,26 +168,33 @@ Configure pool de execução para funções:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # padrão
-    size: 4           # workers iniciais
-    max_size: 16      # limite para pools elásticos
+    type: adaptive    # explicit; omit to use auto-select (lazy)
+    max_size: 16      # cap for elastic growth
 ```
 
 | Campo | Pools | Descrição |
 |-------|-------|-----------|
 | `type` | todos | Implementação do scheduler (ver tabela abaixo) |
-| `size` | static, lazy, adaptive | Quantidade inicial de workers |
-| `workers` | engine v2 | Quantidade de threads worker |
-| `buffer` | static, adaptive | Capacidade da fila de tarefas (padrão `workers * 64`) |
-| `warm_start` | adaptive | Pré-compilar entradas na inicialização |
-| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão 16) |
+| `workers` | static | Quantidade de workers; quando definido, `size` também deve ser positivo durante a validação da configuração |
+| `size` | static | Quantidade de workers quando `workers` não é definido; sem `type`, apenas um `size` positivo seleciona `inline` |
+| `buffer` | static | Capacidade da fila de tarefas (padrão: `workers * 64`) |
+| `max_size` | lazy, adaptive | Limite superior do crescimento elástico (padrão: 16 para um tipo explícito) |
+| `warm_start` | todos | Flag de configuração aceita; não tem efeito nesta versão do runtime |
 
 | Tipo | Comportamento |
 |------|---------------|
 | `inline` | Execução síncrona na goroutine do chamador. Latência mínima, sem isolamento entre chamadas. |
 | `lazy` | Sem workers ociosos, criados sob demanda, removidos quando ociosos. |
 | `static` | Pool de tamanho fixo baseado em canais. Previsível sob carga estável. |
-| `adaptive` | Pool com auto-escala — cresce sob carga, encolhe quando ocioso. Padrão. |
+| `adaptive` | Pool com autoescala — cresce sob carga e encolhe quando ocioso. |
+
+Quando `type` é omitido, o runtime seleciona:
+
+- `static` quando `workers` é positivo;
+- `lazy` quando `workers` é zero e `size` é zero ou `max_size` é positivo; ou
+- `inline` quando `size` é positivo e `max_size` é zero.
+
+O pool lazy selecionado automaticamente usa `max_size` quando positivo e, caso contrário, usa 100. Um pool `lazy` ou `adaptive` explícito usa 16 como padrão de `max_size`. Um pool `static` explícito usa `workers`, depois `size` e depois 8; o buffer padrão é o número selecionado de workers multiplicado por 64.
 
 ## Metadados
 
@@ -205,17 +212,23 @@ Use `meta` para roteamento e descoberta:
   modules:
     - http
     - json
+    - registry
 ```
 
 Metadados são pesquisáveis via registro:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers, err = registry.find({["meta.type"] = "handler"})
+if err then
+    return nil, err
+end
 ```
+
+A consulta retorna todas as entradas correspondentes no registro. O código Lua pertence a uma entrada executável cuja lista `modules` inclui `registry`, como a entrada `api_handler` acima.
 
 ## Veja Também
 
-- [Entry Kinds](guides/entry-kinds.md) - Referência de todos os tipos de entrada
-- [Compute Units](concepts/compute-units.md) - Funções vs processos vs workflows
-- [Lua Runtime](lua/overview.md) - Módulos disponíveis
+- [Tipos de Entrada](guides/entry-kinds.md) - Referência de todos os tipos de entrada
+- [Unidades de Computação](concepts/compute-units.md) - Funções, processos e workflows
+- [Runtime Lua](lua/overview.md) - Módulos disponíveis

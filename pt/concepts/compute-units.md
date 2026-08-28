@@ -1,68 +1,79 @@
 ---
 title: "Unidades de Computação"
-description: "O Wippy fornece três formas de executar código: funções, processos e workflows. Eles compartilham a mesma maquinaria subjacente, mas diferem em quanto…"
+description: "Compare funções, processos e workflows do Wippy por tempo de vida, estado, comunicação e tratamento de falhas."
 ---
 
 # Unidades de Computação
 
-O Wippy fornece três formas de executar código: funções, processos e workflows. Eles compartilham a mesma maquinaria subjacente, mas diferem em quanto tempo vivem, onde seu estado vai, e o que acontece quando as coisas falham.
+O Wippy fornece três formas de executar código: funções, processos e workflows. Elas compartilham os mesmos mecanismos subjacentes, mas diferem no tempo de vida, no destino do estado e no que acontece quando ocorrem falhas.
 
 ## Funções
 
-Funções são o modelo mais simples. Você as chama, elas executam, elas retornam um resultado. Nenhum estado persiste entre chamadas.
+Funções executam quando são chamadas e retornam um resultado. Trate cada chamada como stateless: o estado durável ou compartilhado deve residir em um banco de dados ou store. Pools de funções podem reutilizar estados Lua; portanto, globais de módulo e upvalues de closures são locais ao worker e não formam um store confiável entre chamadas.
 
 ```lua
-local result = funcs.call("app.math:add", 2, 3)
+local funcs = require("funcs")
+
+local result, err = funcs.call("app.math:add", 2, 3)
+if err then
+    return nil, err
+end
 ```
 
-Funções executam no contexto do chamador. Se o chamador cancela ou termina, quaisquer funções em execução são canceladas também. Isso mantém as coisas simples — você não precisa pensar em limpeza.
+Funções executam no contexto do chamador. Se ele for cancelado ou encerrar, as chamadas de função em execução também serão canceladas.
 
 <tip>
-Use funções para handlers HTTP, transformações de dados, e qualquer coisa que deva completar rapidamente e retornar um resultado.
+Use funções para handlers HTTP, transformações de dados e qualquer operação que deva terminar rapidamente e retornar um resultado.
 </tip>
 
 ## Processos
 
-Processos são atores. Eles mantêm estado através de múltiplas mensagens, executam independentemente de quem os iniciou, e se comunicam através de passagem de mensagens.
+Processos são atores. Eles mantêm estado entre várias mensagens, executam independentemente de quem os iniciou e se comunicam por passagem de mensagens.
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "job", {task = "process_data"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then return nil, err end
+
+local ok, send_err = process.send(pid, "job", {task = "process_data"})
+if send_err then return nil, send_err end
+return ok
 ```
 
-Quando você cria um processo, ele continua executando mesmo após seu código terminar. Processos podem monitorar uns aos outros, vincular-se juntos, e formar árvores de supervisão que automaticamente reiniciam filhos que falharam.
+Depois de iniciado, um processo executa independentemente do código que o criou. Processos podem monitorar ou vincular-se uns aos outros e participar de árvores de supervisão que reiniciam filhos que falharam.
 
-O agendador multiplexa milhares de processos através de um pool de workers. Cada processo cede quando aguarda I/O, permitindo que outros executem.
+O scheduler multiplexa milhares de processos em um pool de workers. Cada processo cede a execução enquanto aguarda I/O, permitindo que outros executem.
 
 <tip>
-Use processos para jobs em segundo plano, daemons de serviço, e qualquer coisa que precise sobreviver ao seu criador ou manter estado através de mensagens.
+Use processos para jobs em segundo plano, daemons de serviço e qualquer operação que precise sobreviver ao seu criador ou manter estado entre mensagens.
 </tip>
 
 ## Workflows
 
-Workflows são para operações que absolutamente não podem falhar. Eles persistem seu estado em um provedor de workflow (Temporal ou outros) e podem retomar exatamente de onde pararam após crashes, reinicializações ou mudanças de infraestrutura.
+Workflows destinam-se a operações duráveis que precisam se recuperar de interrupções. Um provedor de workflow, como o Temporal, registra o histórico de execução e o reproduz para reconstruir o estado após crashes, reinicializações ou mudanças de infraestrutura.
 
 ```lua
--- Isso pode executar por dias, sobreviver a reinicializações, e nunca perder progresso
-process.spawn("app.orders:process", "app:temporal_worker", order_id)
+-- The provider records this workflow so a worker restart can replay it.
+local pid, err = process.spawn("app.orders:process", "app:temporal_worker", order_id)
+if err then return nil, err end
+return pid
 ```
 
-O trade-off é latência. Cada passo é registrado, então workflows são mais lentos que funções ou processos. Mas para processos de negócio de múltiplas etapas ou orquestrações de longa duração, essa durabilidade vale a pena.
+A durabilidade acrescenta latência porque as operações do workflow são registradas. Use workflows quando a recuperação for mais importante do que a latência menor de funções ou processos, como em processos de negócio com várias etapas e orquestrações de longa duração.
 
 <note>
-O Wippy trata o determinismo automaticamente para workflows. Você não precisa aprender nenhuma técnica especial — escreva código normal e o runtime garante que ele se comporte corretamente durante o replay.
+O Wippy registra as operações de workflow compatíveis para que produzam os mesmos resultados durante o replay. O código de workflow usa a mesma sintaxe Lua das outras unidades de computação.
 </note>
 
-## Como Eles se Comparam
+## Comparação
 
 | | Funções | Processos | Workflows |
 |---|---|---|---|
-| **Estado** | Nenhum | Em memória | Persistido |
-| **Tempo de vida** | Chamada única | Até sair ou falhar | Sobrevive a tudo |
-| **Comunicação** | Valor de retorno + mensagens | Passagem de mensagens | Chamadas de atividade + mensagens |
-| **Tratamento de falhas** | Chamador trata | Árvores de supervisão | Retry automático |
+| **Estado** | Local à chamada; não dependa do reúso de workers | Em memória | Reconstruído a partir do histórico persistido |
+| **Tempo de vida** | Uma chamada | Até encerrar ou falhar | Persiste entre reinicializações |
+| **Comunicação** | Valor de retorno + mensagens | Passagem de mensagens | Chamadas de atividades + mensagens |
+| **Tratamento de falhas** | O chamador trata | Árvores de supervisão | Recuperação pelo provedor; retries seguem a política |
 | **Latência** | Mais baixa | Baixa | Mais alta |
 
-## Mesmo Código, Comportamento Diferente
+## Mesmo código, comportamento diferente
 
-Muitos módulos se adaptam ao seu contexto automaticamente. Por exemplo, `time.sleep()` em uma função bloqueia o worker, em um processo ele cede para deixar outros executarem, e em um workflow ele registra um timer que é reproduzido corretamente na recuperação.
+Muitos módulos se adaptam automaticamente ao contexto. Por exemplo, `time.sleep()` cede a execução tanto em funções quanto em processos, permitindo que outros trabalhos executem; em um workflow, o provedor também registra o timer para que o replay não inicie um segundo timer.

@@ -1,28 +1,22 @@
 ---
 title: "Licença"
-description: "O Wippy é distribuído sob a Mozilla Public License 2.0."
+description: "Licenciamento da documentação do Wippy, do runtime e dos componentes licenciados separadamente."
 ---
 
 # Licença
 
-O Wippy é distribuído sob a Mozilla Public License 2.0.
+Este repositório de documentação e o runtime do Wippy são disponibilizados sob a Mozilla Public License 2.0. Módulos e componentes individuais do Wippy podem usar licenças diferentes; o arquivo `LICENSE` de cada repositório é a fonte oficial.
 
 ## Mozilla Public License 2.0
 
-```
-Copyright 2025 Spiral Scout
+Leia a licença exata no [repositório da documentação](https://github.com/wippyai/docs/blob/main/LICENSE) ou no [repositório do runtime](https://github.com/wippyai/runtime/blob/main/LICENSE).
 
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
-```
+## O que isso significa
 
-## O Que Isso Significa
+A MPL-2.0 permite uso comercial, modificação e distribuição. Arquivos modificados cobertos pela MPL permanecem sob a MPL-2.0, enquanto esses arquivos podem ser combinados com código sob outras licenças em uma obra maior.
 
-Você pode usar o Wippy em projetos comerciais, modificar o código-fonte e distribuir suas modificações. Arquivos modificados devem permanecer sob MPL-2.0, mas você pode combinar o Wippy com código proprietário em uma obra maior.
-
-Você deve disponibilizar o código-fonte de qualquer arquivo MPL modificado ao distribuí-los.
+Ao distribuir arquivos modificados cobertos pela MPL, você deve disponibilizar o código-fonte desses arquivos sob a MPL-2.0. Consulte o texto da licença para conhecer todos os termos.
 
 ## Dependências
 
-O Wippy usa várias dependências open-source, cada uma com suas próprias licenças. Todas as dependências são compatíveis com uso comercial.
+As dependências mantêm suas próprias licenças. O repositório público [`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE), por exemplo, usa a licença MIT, e não a MPL-2.0.

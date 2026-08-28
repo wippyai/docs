@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter-Parsing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Quellcode parsen, konkrete Syntaxbäume untersuchen und Tree-sitter-Abfragen ausführen."
 ---
 
 # Tree-sitter-Parsing
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Parsen Sie Quellcode in konkrete Syntaxbäume mit [Tree-sitter](https://tree-sitter.github.io/tree-sitter/). Basiert auf [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter) Bindings.
+Das Modul `treesitter` parst Quellcode mit [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) über die [go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter)-Bindings in konkrete Syntaxbäume.
+
+Diese Seite ist eine API-Referenz mit Teilrezepten zum Parsen. Quellzeichenketten und Abfragemuster sind Anwendungseingaben; Ausschnitte auf Node-Ebene setzen einen aktiven Baum aus einem zuvor geprüften Parse-Vorgang voraus. Parser, Bäume, Abfragen und Cursor sind verwaltete Ressourcen: Schließen Sie jedes erfolgreich erstellte Handle, sobald die letzte davon abhängige Operation abgeschlossen ist.
 
 Tree-sitter produziert Syntaxbäume, die:
 - Die vollständige Struktur des Quellcodes repräsentieren
@@ -23,7 +25,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-Das treesitter-Modul ist optional — es ist nur in Builds enthalten, die das Build-Tag `treesitter` einschließen. Offizielle Wippy-Binaries enthalten es; um aus dem Quellcode zu bauen, verwenden Sie `make build-wippy` oder `go build -tags treesitter`. Ohne das Tag ist `require("treesitter")` nicht verfügbar.
+Das Modul `treesitter` ist optional und nur in Builds vorhanden, die das Build-Tag `treesitter` enthalten. Offizielle Wippy-Binärdateien enthalten es. Quell-Builds können `make build-wippy` oder `go build -tags treesitter` verwenden; ohne das Tag ist `require("treesitter")` nicht verfügbar.
 </note>
 
 ## Unterstützte Sprachen
@@ -63,9 +65,14 @@ if err then
     return nil, err
 end
 
-local root = tree:root_node()
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 print(root:kind())        -- "source_file"
-print(root:child_count()) -- Anzahl Top-Level-Deklarationen
+print(root:child_count()) -- number of top-level declarations
+tree:close()
 ```
 
 ### Syntaxbaum abfragen
@@ -76,30 +83,52 @@ func hello() {}
 func world() {}
 ]]
 
-local tree = treesitter.parse("go", code)
-local root = tree:root_node()
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
--- Alle Funktionsnamen finden
-local query = treesitter.query("go", [[
+-- Find all function names
+local query, query_err = treesitter.query("go", [[
     (function_declaration name: (identifier) @func_name)
 ]])
+if query_err then
+    tree:close()
+    return nil, query_err
+end
 
-local captures = query:captures(root, code)
+local captures, captures_err = query:captures(root, code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
     print(capture.name, capture.text)
 end
 -- "func_name"  "hello"
 -- "func_name"  "world"
+query:close()
+tree:close()
 ```
 
 ## Parsing
 
 ### Einfaches Parsing
 
-Quellcode in einen Syntaxbaum parsen. Erstellt intern einen temporären Parser.
+Parsen Sie Quellcode mit einem temporären internen Parser.
 
 ```lua
 local tree, err = treesitter.parse("go", code)
+if err then
+    return nil, err
+end
+-- Use the tree, then call tree:close().
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -114,18 +143,37 @@ local tree, err = treesitter.parse("go", code)
 Erstellen Sie einen Parser für wiederholtes Parsing oder inkrementelle Updates.
 
 ```lua
-local parser = treesitter.parser()
-parser:set_language("go")
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    return nil, language_err
+end
 
-local tree1 = parser:parse("package main")
+local tree1, first_err = parser:parse("package main")
+if first_err then
+    parser:close()
+    return nil, first_err
+end
 
--- Inkrementelles Parsing mit altem Baum
-local tree2 = parser:parse("package main\nfunc foo() {}", tree1)
+-- Parse another source with the reusable parser. For an incremental update,
+-- edit the old tree first as shown in the complete recipe below.
+local tree2, second_err = parser:parse("package main\nfunc foo() {}")
+if second_err then
+    tree1:close()
+    parser:close()
+    return nil, second_err
+end
 
+tree2:close()
+tree1:close()
 parser:close()
 ```
 
-**Gibt zurück:** `Parser`
+**Gibt zurück:** `Parser, error`
 
 ### Parser-Methoden
 
@@ -139,16 +187,31 @@ parser:close()
 | `reset()` | Parser-Zustand zurücksetzen |
 | `close()` | Parser-Ressourcen freigeben |
 
+Bäume, die ein wiederverwendbarer Parser erstellt, und der Parser selbst werden unabhängig voneinander verwaltet; schließen Sie jedes erfolgreiche Handle. Nodes leihen den Speicher ihres Baums und dürfen nach dessen Schließen nicht mehr verwendet werden. Cursor leihen ebenfalls einen Baum und müssen daher vor ihm geschlossen werden. Abfragen besitzen eigene native Ressourcen und erfordern ebenfalls `close()`; schließen Sie eine Abfrage, sobald ihre Captures oder Matches nicht mehr benötigt werden. Explizite Bereinigung ist deterministisch, während der Prozess-Ressourcenspeicher lediglich eine Rückfallebene für Handles ist, die beim Prozessende noch offen sind.
+
 ## Syntaxbäume
 
 ### Root-Node abrufen
 
 ```lua
-local tree = treesitter.parse("go", "package main")
-local root = tree:root_node()
+local tree, err = treesitter.parse("go", "package main")
+if err then
+    return nil, err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
 print(root:kind())  -- "source_file"
-print(root:text())  -- "package main"
+local source_text, text_err = root:text()
+if text_err then
+    tree:close()
+    return nil, text_err
+end
+print(source_text)  -- "package main"
+tree:close()
 ```
 
 ### Tree-Methoden
@@ -172,10 +235,13 @@ Aktualisieren Sie den Baum, wenn sich Quellcode ändert:
 
 ```lua
 local code = "func main() { x := 1 }"
-local tree = treesitter.parse("go", code)
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
 
--- Bearbeitung markieren: "1" zu "100" geändert bei Byte 19
-tree:edit({
+-- Mark edit: changed "1" to "100" at byte 19
+local _, edit_err = tree:edit({
     start_byte = 19,
     old_end_byte = 20,
     new_end_byte = 22,
@@ -186,48 +252,70 @@ tree:edit({
     new_end_row = 0,
     new_end_column = 22
 })
+if edit_err then
+    tree:close()
+    return nil, edit_err
+end
 
--- Mit bearbeitetem Baum neu parsen (schneller als vollständiges Parsing)
-local parser = treesitter.parser()
-parser:set_language("go")
-local new_tree = parser:parse("func main() { x := 100 }", tree)
+-- Re-parse with edited tree (faster than full parse)
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    tree:close()
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    tree:close()
+    return nil, language_err
+end
+local new_tree, new_tree_err = parser:parse("func main() { x := 100 }", tree)
+if new_tree_err then
+    parser:close()
+    tree:close()
+    return nil, new_tree_err
+end
+
+new_tree:close()
+parser:close()
+tree:close()
 ```
 
 ## Nodes
 
-Nodes repräsentieren Elemente im Syntaxbaum.
+Nodes repräsentieren Elemente im Syntaxbaum. In den einzelnen Ausschnitten unten sind `root`, `node` und `func_decl` von der Anwendung ausgewählte Nodes, die von einem noch offenen Baum geliehen werden.
 
 ### Node-Typen
 
 ```lua
 local node = root:child(0)
 
--- Typinformationen
+-- Type information
 print(node:kind())        -- "package_clause"
-print(node:type())        -- gleich wie kind()
-print(node:is_named())    -- true für signifikante Nodes
-print(node:grammar_name()) -- Grammatik-Regelname
+print(node:type())        -- same as kind()
+print(node:is_named())    -- true for significant nodes
+print(node:grammar_name()) -- grammar rule name
 ```
 
 ### Navigation
 
 ```lua
--- Kinder
-local child = node:child(0)           -- nach Index (0-basiert)
-local named = node:named_child(0)     -- nur benannte Kinder
+-- Children
+local child = node:child(0)           -- by index (0-based)
+local named = node:named_child(0)     -- named children only
 local count = node:child_count()
 local named_count = node:named_child_count()
 
--- Geschwister
+-- Siblings
 local next = node:next_sibling()
 local prev = node:prev_sibling()
 local next_named = node:next_named_sibling()
 local prev_named = node:prev_named_sibling()
 
--- Eltern
+-- Parent
 local parent = node:parent()
 
--- Nach Feldname
+-- By field name
 local name_node = func_decl:child_by_field_name("name")
 local field = node:field_name_for_child(0)
 ```
@@ -235,31 +323,34 @@ local field = node:field_name_for_child(0)
 ### Positionsinformationen
 
 ```lua
--- Byte-Offsets
+-- Byte offsets
 local start = node:start_byte()
 local end_ = node:end_byte()
 
--- Zeile/Spalte-Positionen (0-basiert)
+-- Row/column positions (0-based)
 local start_pt = node:start_point()  -- {row = 0, column = 0}
 local end_pt = node:end_point()      -- {row = 0, column = 12}
 
--- Quelltext
-local text = node:text()
+-- Source text
+local source_text, err = node:text()
+if err then
+    return nil, err
+end
 ```
 
 ### Fehlererkennung
 
 ```lua
 if root:has_error() then
-    -- Baum enthält Syntaxfehler
+    -- Tree contains syntax errors
 end
 
 if node:is_error() then
-    -- Dieser spezifische Node ist ein Fehler
+    -- This specific node is an error
 end
 
 if node:is_missing() then
-    -- Parser hat diesen zur Fehlerwiederherstellung eingefügt
+    -- Parser inserted this to recover from error
 end
 ```
 
@@ -272,7 +363,7 @@ local sexp = node:to_sexp()
 
 ## Queries
 
-Musterabgleich mit Tree-sitters Abfragesprache (S-Ausdrücke).
+Tree-sitter-Abfragen gleichen Muster in Form von S-Ausdrücken mit Syntaxbäumen ab.
 
 ### Query erstellen
 
@@ -283,6 +374,10 @@ local query, err = treesitter.query("go", [[
         parameters: (parameter_list) @params
     )
 ]])
+if err then
+    return nil, err
+end
+-- The owner calls query:close() after the final query operation.
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -295,43 +390,64 @@ local query, err = treesitter.query("go", [[
 ### Query ausführen
 
 ```lua
--- Alle Captures abrufen (flach)
-local captures = query:captures(root, source_code)
+-- Get all captures (flattened)
+local captures, captures_err = query:captures(root, source_code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
-    print(capture.text)   -- tatsächlicher Text
-    print(capture.index)  -- Capture-Index
-    -- capture.node ist das Node-Objekt
+    print(capture.name)   -- "func_name"
+    print(capture.text)   -- actual text
+    print(capture.index)  -- capture index
+    -- capture.node is the Node object
 end
 
--- Matches abrufen (nach Muster gruppiert)
-local matches = query:matches(root, source_code)
+-- Get matches (grouped by pattern)
+local matches, matches_err = query:matches(root, source_code)
+if matches_err then
+    query:close()
+    tree:close()
+    return nil, matches_err
+end
 for _, match in ipairs(matches) do
     print(match.id, match.pattern)
     for _, capture in ipairs(match.captures) do
-        print(capture.name, capture.node:text())
+        local captured_text, text_err = capture.node:text()
+        if text_err then
+            query:close()
+            tree:close()
+            return nil, text_err
+        end
+        print(capture.name, captured_text)
     end
 end
+
+query:close()
+tree:close()
 ```
+
+Wenn Userdata des falschen Typs anstelle eines Tree-sitter-`Node` übergeben wird, gibt die Methode `nil, error` zurück. Bei einem primitiven Wert oder einer Tabelle wird bereits vor dieser Prüfung ein Lua-Argumentfehler ausgelöst. `root`, `source_code` und `query` müssen hier von einem noch offenen Baum und einer erfolgreich erstellten Abfrage stammen. Der Ausschnitt verwendet das besitzende `tree`-Handle, um beide Ressourcen vor der Rückkehr zu schließen.
 
 ### Query-Steuerung
 
 ```lua
--- Query-Bereich begrenzen
+-- Limit query scope
 query:set_byte_range(0, 1000)
 query:set_point_range({row = 0, column = 0}, {row = 10, column = 0})
 
--- Matches begrenzen
+-- Limit matches
 query:set_match_limit(100)
 if query:did_exceed_match_limit() then
-    -- Mehr Matches existieren
+    -- More matches exist
 end
 
--- Timeout (String-Dauer oder Nanosekunden)
+-- Timeout (string duration or nanoseconds)
 query:set_timeout("500ms")
-query:set_timeout(1000000000)  -- 1 Sekunde in Nanosekunden
+query:set_timeout(1000000000)  -- 1 second in nanoseconds
 
--- Muster/Captures deaktivieren
+-- Disable patterns/captures
 query:disable_pattern(0)
 query:disable_capture("func_name")
 ```
@@ -347,28 +463,31 @@ local id = query:capture_index_for_name("func_name")
 
 ## Tree-Cursor
 
-Effiziente Traversierung ohne Node-Objekte bei jedem Schritt zu erstellen.
+Ein Tree-Cursor durchläuft einen Baum, ohne bei jedem Schritt ein Node-Objekt zu erstellen.
 
 ### Grundlegende Traversierung
 
 ```lua
-local cursor = tree:walk()
+local cursor, err = tree:walk()
+if err then
+    return nil, err
+end
 
--- Bei Root starten
+-- Start at root
 print(cursor:current_node():kind())  -- "source_file"
 print(cursor:current_depth())        -- 0
 
--- Navigieren
+-- Navigate
 if cursor:goto_first_child() then
     print(cursor:current_node():kind())
     print(cursor:current_depth())  -- 1
 end
 
 if cursor:goto_next_sibling() then
-    -- zum nächsten Geschwister gewechselt
+    -- moved to next sibling
 end
 
-cursor:goto_parent()  -- zurück zum Eltern
+cursor:goto_parent()  -- back to parent
 
 cursor:close()
 ```
@@ -398,19 +517,22 @@ cursor:close()
 ## Sprach-Metadaten
 
 ```lua
-local lang = treesitter.language("go")
+local lang, err = treesitter.language("go")
+if err then
+    return nil, err
+end
 
-print(lang:version())           -- ABI-Version
-print(lang:node_kind_count())   -- Anzahl Node-Typen
-print(lang:field_count())       -- Anzahl Felder
-print(lang:parse_state_count()) -- Anzahl Parse-States
+print(lang:version())           -- ABI version
+print(lang:node_kind_count())   -- number of node types
+print(lang:field_count())       -- number of fields
+print(lang:parse_state_count()) -- number of parse states
 
--- Node-Kind-Lookup
+-- Node kind lookup
 local kind = lang:node_kind_for_id(1)
 local id = lang:id_for_node_kind("identifier", true)
 local is_named = lang:node_kind_is_named(1)
 
--- Feld-Lookup
+-- Field lookup
 local field_name = lang:field_name_for_id(1)
 local field_id = lang:field_id_for_name("name")
 ```
@@ -424,38 +546,41 @@ local field_id = lang:field_id_for_name("name")
 | Ungültiges Query-Muster | `errors.INVALID` | nein |
 | Ungültige Positionen | `errors.INVALID` | nein |
 | Parsing fehlgeschlagen | `errors.INTERNAL` | nein |
+| Kein Ausführungskontext | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Das Schließen eines bereits geschlossenen Parsers, Baums, einer Abfrage oder eines Cursors ist sicher. Der Aufruf jeder anderen Methode für ein geschlossenes Handle löst einen Lua-Argumentfehler aus.
+
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).
 
 ## Query-Syntax-Referenz
 
 Tree-sitter-Queries verwenden S-Ausdruck-Muster:
 
 ```
-; Node-Typ matchen
+; Match a node type
 (identifier)
 
-; Mit Feldnamen matchen
+; Match with field names
 (function_declaration name: (identifier))
 
-; Mit @name capturen
+; Capture with @name
 (function_declaration name: (identifier) @func_name)
 
-; Mehrere Muster
+; Multiple patterns
 [
   (function_declaration)
   (method_declaration)
 ] @declaration
 
 ; Wildcards
-(_)           ; beliebiger Node
-(identifier)+ ; ein oder mehr
-(identifier)* ; null oder mehr
+(_)           ; any node
+(identifier)+ ; one or more
+(identifier)* ; zero or more
 (identifier)? ; optional
 
-; Prädikate
+; Predicates
 ((identifier) @var
-  (#match? @var "^_"))  ; Regex-Match
+  (#match? @var "^_"))  ; regex match
 ```
 
 Siehe [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) für vollständige Dokumentation.

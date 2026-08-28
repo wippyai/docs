@@ -5,7 +5,9 @@ description: "Pool de conexiones y configuración de bases de datos SQL. Soporta
 
 # Sistema de Base de Datos
 
-Pool de conexiones y configuración de bases de datos SQL. Soporta PostgreSQL, MySQL y SQLite.
+Wippy proporciona entradas SQL con pool de conexiones para PostgreSQL y MySQL, además de una entrada SQLite de una sola conexión.
+
+Esta página es una referencia de configuración. Salvo que un fence incluya `version`, `namespace` y `entries`, trátelo como un fragmento para colocarlo dentro de una lista de entradas existente.
 
 ## Tipos de Entrada
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,16 +49,16 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # Use :memory: para en memoria
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
-      max_open: 1
-      max_idle: 1
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+SQLite siempre funciona con una sola conexión (<code>max_open</code> y <code>max_idle</code> se fuerzan a <code>1</code>) y con el modo de journal <code>WAL</code>. De <code>pool</code> solo se aplica <code>max_lifetime</code>.
+</note>
 
 ## Campos de Conexión
 
@@ -78,34 +80,30 @@ entries:
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `file` | string | Ruta del archivo de base de datos o `:memory:` |
-| `pool` | object | Configuración del pool de conexiones |
-| `options` | map | Opciones específicas de SQLite |
+| `pool` | object | Solo se aplica `max_lifetime` (las conexiones se fijan en 1) |
+| `options` | map | Se acepta pero se ignora |
 | `lifecycle` | object | Configuración de ciclo de vida |
 
-### Campos de Variables de Entorno
+### Secretos y valores de entorno
 
-Use el sufijo `_env` para cargar valores desde variables de entorno o entradas [env.variable](system/env.md):
-
-| Campo | Descripción |
-|-------|-------------|
-| `host_env` | Host desde variable de entorno |
-| `port_env` | Puerto desde variable de entorno |
-| `database_env` | Nombre de base de datos desde entorno |
-| `username_env` | Usuario desde entorno |
-| `password_env` | Contraseña desde entorno |
+Obtenga los valores de conexión del [registro de entorno](system/env.md) con marcadores `${env:NAME}`, resueltos al decodificarse. `NAME` es el nombre público de una variable registrada o su ID de entrada (por ejemplo, `app.secrets:db_password`); no es una variable de entorno sin procesar del sistema operativo.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Referencia entrada env.variable
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT|5432}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>) que se resuelve del mismo modo. Esta forma está <b>obsoleta</b>: migre al marcador <code>${env:NAME}</code> mostrado arriba.
+</note>
+
 <warning>
-Evite codificar contraseñas en la configuración. Use variables de entorno o entradas <code>env.variable</code> para credenciales. Consulte <a href="system/env.md">Entorno</a> para gestión segura de secretos.
+Evite escribir contraseñas directamente en la configuración. Use entradas <code>env.variable</code> para las credenciales. Consulte <a href="./env.md">Entorno</a> para configurar secretos.
 </warning>
 
 ## Pool de Conexiones
@@ -115,14 +113,14 @@ Configure el comportamiento del pool de conexiones. La configuración del pool s
 | Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `max_open` | int | 0 | Conexiones máximas abiertas (0 = ilimitado) |
-| `max_idle` | int | 0 | Conexiones máximas inactivas (0 = ilimitado) |
+| `max_idle` | int | 0 | Máximo de conexiones inactivas (0 = no conservar conexiones inactivas) |
 | `max_lifetime` | duration | 1h | Tiempo de vida máximo de conexión |
 
 ```yaml
 pool:
-  max_open: 25      # Limitar conexiones concurrentes
-  max_idle: 5       # Mantener 5 conexiones listas
-  max_lifetime: "30m"  # Reciclar conexiones cada 30 minutos
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
@@ -131,25 +129,25 @@ Establezca <code>max_idle</code> menor o igual a <code>max_open</code>. Las cone
 
 ## Formatos DSN
 
-Cada tipo de base de datos construye un DSN desde la configuración:
+Cada tipo de base de datos construye un DSN desde la configuración. Las `options` se añaden ordenadas por clave; ninguna se incluye de forma predeterminada.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host=host port=port user=username password=password dbname=database [option=value ...]
 ```
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## Opciones de Base de Datos
@@ -161,7 +159,7 @@ Opciones comunes específicas de base de datos:
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Timeout de conexión en segundos
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -170,18 +168,13 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # Parsear valores de tiempo a time.Time
-  loc: "Local"            # Zona horaria
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite no aplica el mapa `options` a su DSN. Las bases de datos en archivo siempre se abren con `mode=rwc` y el modo de journal siempre se configura como `WAL`. El campo `options` se acepta pero se ignora.
 
 ## Ejemplos
 
@@ -194,7 +187,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -217,7 +210,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -234,41 +227,35 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### Configuración de Múltiples Bases de Datos
 
 ```yaml
 entries:
-  # Base de datos principal
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
-  # Base de datos de analíticas
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
-  # Cache local
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -278,14 +265,14 @@ entries:
 
 ## Registro en Tiempo de Ejecución
 
-Las bases de datos pueden registrarse en tiempo de ejecución usando el [módulo registry](lua/core/registry.md), habilitando configuración dinámica de base de datos basada en el estado de la aplicación o configuración externa.
+Las bases de datos pueden registrarse en tiempo de ejecución mediante el [módulo registry](lua/core/registry.md).
 
 ## API Lua
 
-Consulte el [Módulo SQL](lua/storage/sql.md) para la API de operaciones de base de datos.
+Consulte el [módulo SQL](lua/storage/sql.md) para las operaciones de consulta, transacción y conexión.
 
 ## Ver También
 
 - [Módulo SQL](lua/storage/sql.md) - Referencia de la API Lua
-- [Store](system/store.md) - Almacén clave-valor respaldado por `database.sql`
+- [Store](system/store.md) - Almacén clave-valor respaldado por una base de datos `db.sql.*`
 - [Queue](system/queue.md) - Handler de cola respaldado por SQL

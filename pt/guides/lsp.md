@@ -1,6 +1,6 @@
 ---
 title: "Servidor de Linguagem"
-description: "O Wippy inclui um servidor LSP (Language Server Protocol) integrado que fornece recursos de IDE para codigo Lua. O servidor e executado como parte do…"
+description: "Configure o servidor Language Server Protocol integrado do Wippy para recursos de edição Lua por TCP ou HTTP."
 ---
 
 # Servidor de Linguagem
@@ -23,12 +23,6 @@ O Wippy inclui um servidor LSP (Language Server Protocol) integrado que fornece 
 Habilite o servidor LSP em `.wippy.yaml`:
 
 ```yaml
-version: "1.0"
-
-lua:
-  type_system:
-    enabled: true
-
 lsp:
   enabled: true
   address: ":7777"
@@ -52,7 +46,7 @@ O servidor TCP utiliza JSON-RPC 2.0 com enquadramento de mensagens LSP padrao (c
 
 ### Transporte HTTP
 
-O transporte HTTP aceita requisicoes POST com payloads JSON-RPC. Util para editores baseados em navegador e ferramentas web. Cabecalhos CORS sao incluidos para acesso cross-origin.
+O transporte HTTP aceita requisições POST com payloads JSON-RPC. Ele oferece suporte a editores no navegador e ferramentas web, responde a requisições preflight CORS `OPTIONS` e inclui cabeçalhos CORS para acesso entre origens.
 
 ```yaml
 lsp:
@@ -89,6 +83,9 @@ Comportamentos principais:
 | Metodo | Descricao |
 |--------|-----------|
 | `initialize` | Negociacao de capacidades |
+| `initialized` | Notificação de conclusão da inicialização |
+| `shutdown` | Encerrar a sessão do protocolo |
+| `exit` | Notificação de saída |
 | `textDocument/didOpen` | Rastrear documentos abertos |
 | `textDocument/didChange` | Sincronizacao completa do documento |
 | `textDocument/didClose` | Liberar documentos |
@@ -121,7 +118,7 @@ Os diagnosticos sao calculados durante a indexacao e incluem:
 - Erros de verificacao de tipos (incompatibilidades, simbolos indefinidos)
 - Niveis de severidade: error, warning, information, hint
 
-Os diagnosticos sao atualizados conforme voce digita atraves do sistema de overlay de documentos.
+Notificações de alteração do documento completo atualizam o overlay usado para diagnósticos. Os clientes obtêm o resultado armazenado atual com `textDocument/diagnostic`; este servidor não envia notificações `textDocument/publishDiagnostics`. Uma falha de parsing interrompe a reindexação antes que novos diagnósticos sejam armazenados, de modo que o resultado obtido não relata esse erro de sintaxe e pode manter o último resultado bem-sucedido.
 
 ## Veja Tambem
 

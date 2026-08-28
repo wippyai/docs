@@ -1,13 +1,13 @@
 ---
 title: "Lua 모듈"
-description: "런타임 모듈은 새로운 기능으로 Lua 환경을 확장합니다. 모듈은 결정론적 유틸리티, I/O 작업, 또는 외부 시스템으로 yield하는 비동기 명령을 제공할 수 있습니다."
+description: "동기 함수, userdata, yield, 오류, 보안 검사, 테스트를 포함하는 typed Lua 런타임 모듈을 정의합니다."
 ---
 
 # Lua 모듈
 
-런타임 모듈은 새로운 기능으로 Lua 환경을 확장합니다. 모듈은 결정론적 유틸리티, I/O 작업, 또는 외부 시스템으로 yield하는 비동기 명령을 제공할 수 있습니다.
+런타임 모듈은 Lua 환경에 결정론적 유틸리티, I/O 작업, 비동기 명령을 추가합니다.
 
-> Lua 런타임 구현은 향후 버전에서 변경될 수 있습니다.
+이 페이지는 Go extension 레퍼런스입니다. 코드 조각은 부분적인 package 수준 예제이며, 각 섹션에서 이름으로 참조하는 import, command API, dispatcher, security resource, test fixture가 있다고 가정합니다.
 
 ## 모듈 정의
 
@@ -16,9 +16,9 @@ description: "런타임 모듈은 새로운 기능으로 Lua 환경을 확장합
 ```go
 var Module = &luaapi.ModuleDef{
     Name:        "mymodule",
-    Description: "내 커스텀 모듈",
+    Description: "My custom module",
     Class:       []string{luaapi.ClassDeterministic},
-    Types:       ModuleTypes,  // 도구를 위한 타입 정의
+    Types:       ModuleTypes,  // Type definitions for tooling
     Build: func() (*lua.LTable, []luaapi.YieldType) {
         mod := lua.CreateTable(0, 2)
         mod.RawSetString("hello", lua.LGoFunc(helloFunc))
@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | 출력이 다름 (시간, 랜덤) |
 | `ClassIO` | 외부 I/O 작업 |
 | `ClassNetwork` | 네트워크 작업 |
+| `ClassEncoding` | 인코딩 및 디코딩 작업 |
+| `ClassTime` | 시간 관련 작업 |
+| `ClassProcess` | 프로세스 관련 작업 |
+| `ClassSecurity` | 보안 관련 작업 |
 | `ClassStorage` | 데이터 지속성 |
 | `ClassWorkflow` | 워크플로우 안전 작업 |
 
-`ClassDeterministic`만 태그된 모듈은 워크플로우 안전합니다. I/O나 네트워크 클래스를 추가하면 모듈이 함수와 프로세스로 제한됩니다.
+워크플로우 compile은 `ClassDeterministic` 또는 `ClassWorkflow` 중 하나 이상을 가진 모듈을 허용합니다. class filtering은 포함 방식이므로 module class 중 하나라도 허용되면 통과합니다.
 
 ## 함수 노출
 
@@ -56,8 +60,8 @@ var Module = &luaapi.ModuleDef{
 
 ```go
 func greetFunc(l *lua.LState) int {
-    name := l.CheckString(1)           // 필수 인자
-    greeting := l.OptString(2, "Hello") // 기본값이 있는 선택적
+    name := l.CheckString(1)           // Required argument
+    greeting := l.OptString(2, "Hello") // Optional with default
 
     l.Push(lua.LString(greeting + ", " + name + "!"))
     return 1
@@ -80,7 +84,7 @@ Go와 Lua 사이에 전달되는 테이블은 기본적으로 가변입니다. �
 ```go
 mod := lua.CreateTable(0, 5)
 mod.RawSetString("func1", lua.LGoFunc(func1))
-mod.Immutable = true  // Lua가 내보내기를 수정하는 것 방지
+mod.Immutable = true  // Prevent Lua from modifying exports
 ```
 
 데이터 테이블은 일반 사용을 위해 가변으로 유지됩니다:
@@ -98,22 +102,26 @@ l.Push(result)
 
 ### 타입 정의 (도구)
 
-`Types` 필드는 IDE 지원 및 문서화를 위한 타입 시그니처를 제공합니다:
+`Types` 필드는 IDE 지원 및 문서화를 위한 type signature를 제공합니다. type은 `typ` package의 fluent builder로 만듭니다.
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +130,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | 타입 | 설명 |
 |------|-------------|
-| `types.String` | 문자열 프리미티브 |
-| `types.Number` | 숫자 값 |
-| `types.Boolean` | 불리언 값 |
-| `types.Any` | 모든 Lua 값 |
-| `types.LuaError` | 에러 타입 |
-| `types.Optional(t)` | 타입 t의 선택적 값 |
-| `types.InterfaceType` | 메서드가 있는 객체 |
-| `types.FunctionType` | 파라미터/반환이 있는 함수 시그니처 |
-| `types.RecordType` | 필드가 있는 구조체 유사 타입 |
-| `types.TableType` | 키/값 타입이 있는 테이블 |
+| `typ.String` | 문자열 원시 타입 |
+| `typ.Number` | 숫자 값 |
+| `typ.Integer` | 정수 값 |
+| `typ.Boolean` | 불리언 값 |
+| `typ.Any` | 모든 Lua 값 |
+| `typ.Self` | 메서드 수신자 타입 |
+| `typ.LuaError` | 오류 타입 |
+| `typ.NewOptional(t)` | 타입 t의 선택적 값 |
+| `typ.NewInterface(name, methods)` | 메서드가 있는 객체 |
+| `typ.Func()` | 함수 시그니처 빌더 |
+| `typ.NewRecord()` | `.Field`/`.OptField`를 사용하는 구조체 형태의 타입 빌더 |
+| `typ.NewArray(t)` | 요소 타입 t의 배열 |
+| `typ.NewMap(k, v)` | 키/값 타입을 가진 맵 |
 
-함수 시그니처는 가변 파라미터를 지원합니다:
+함수 builder는 `Param`, `OptParam`, `Variadic`, `Returns`를 chain합니다.
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-전체 타입 시스템은 go-lua의 `types` 패키지를 참조하세요.
+record는 `Field`로 필수 필드, `OptField`로 선택적 필드를 선언합니다.
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+추가 builder와 type 정의는 go-lua의 `typ` package를 참고하세요.
 
 ### UserData 바인딩 (런타임)
 
@@ -154,10 +175,10 @@ types.FunctionType{
 func init() {
     value.RegisterTypeMethods(nil, "mymodule.Object",
         map[string]lua.LGoFunc{
-            "__tostring": objectToString,  // 메타메서드
+            "__tostring": objectToString,  // Metamethods
         },
         map[string]lua.LGoFunc{
-            "get_value": objectGetValue,   // 일반 메서드
+            "get_value": objectGetValue,   // Regular methods
             "set_value": objectSetValue,
         },
     )
@@ -205,7 +226,7 @@ func fetchFunc(l *lua.LState) int {
     yield.URL = url
 
     l.Push(yield)
-    return -1  // 스택 카운트가 아닌 yield 시그널
+    return -1  // Signal yield, not stack count
 }
 ```
 
@@ -233,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-디스패처는 명령을 핸들러로 라우팅합니다. 핸들러 구현은 [명령 디스패치](internals/dispatch.md)를 참조하세요.
+dispatcher는 command를 handler로 라우팅합니다. handler 구현은 [명령 디스패치](internals/dispatch.md)를 참고하세요.
 
 ## 에러 처리
 
@@ -271,7 +292,7 @@ func myFunc(l *lua.LState) int {
         return 2
     }
 
-    // 작업 진행
+    // Proceed with operation
 }
 ```
 
@@ -305,6 +326,7 @@ yield 함수를 사용하는 Lua 코드를 테스트하려면 필요한 디스�
 type testScheduler struct {
     *actor.Scheduler
     clock   *clock.Dispatcher
+    node    *sysrelay.Node
     mu      sync.Mutex
     pending map[string]chan *runtime.Result
 }
@@ -313,7 +335,7 @@ func newTestScheduler() *testScheduler {
     ts := &testScheduler{pending: make(map[string]chan *runtime.Result)}
     reg := scheduler.NewRegistry()
 
-    // 모듈이 사용하는 yield를 위한 디스패처 등록
+    // Register dispatchers for yields your module uses
     clockSvc := clock.NewDispatcher()
     clockSvc.RegisterAll(func(id dispatcher.CommandID, h dispatcher.Handler) {
         reg.Register(id, h)
@@ -321,8 +343,23 @@ func newTestScheduler() *testScheduler {
     ts.clock = clockSvc
 
     ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
+
+    // Clock events return through the relay to the process host named by PID.Host.
+    ts.node = sysrelay.NewNode("module-test-node")
+    if err := ts.node.RegisterHost("module.test", ts.Scheduler); err != nil {
+        panic(err)
+    }
     return ts
 }
+
+// Stop wraps Scheduler.Stop, which requires a context.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+    _ = ts.clock.Stop(context.Background())
+}
+
+// OnStart satisfies process.Lifecycle alongside OnComplete.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
 
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
@@ -341,8 +378,18 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     ts.pending[p.UniqID] = resultCh
     ts.mu.Unlock()
 
+    // relay.WithNode requires an application context. Preserve the caller's
+    // frame context while attaching the relay used by the clock dispatcher.
+    if ctxapi.AppFromContext(ctx) == nil {
+        ctx = ctxapi.WithAppContext(ctx, ctxapi.NewAppContext())
+    }
+    ctx = relayapi.WithNode(ctx, ts.node)
+
     _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
     if err != nil {
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, err
     }
 
@@ -350,49 +397,90 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     case result := <-resultCh:
         return result, nil
     case <-ctx.Done():
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, ctx.Err()
     }
 }
+
+func testPID() pid.PID {
+    return pid.PID{Host: "module.test", UniqID: "test"}.Precomputed()
+}
 ```
 
-테스트하는 모듈로 Lua 스크립트에서 프로세스를 생성합니다:
+script가 사용하는 module로 process를 만드세요. 이 예제는 위에서 등록한 clock dispatcher가 실제 yield를 처리하도록 time module을 사용합니다.
 
 ```go
-func bindMyModule(l *lua.LState) {
-    tbl, _ := mymodule.Module.Build()
-    l.SetGlobal(mymodule.Module.Name, tbl)
+func bindTimeModule(l *lua.LState) error {
+    tbl, _ := timemod.Module.Build()
+    l.SetGlobal(timemod.Module.Name, tbl)
+    return nil
 }
 
-func newLuaProcess(script string) *engine.Process {
-    proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+func newLuaProcessWithChannels(script string) (*engine.Process, error) {
+    proto, err := lua.CompileString(script, "test.lua")
+    if err != nil {
+        return nil, err
+    }
+    proc, err := engine.NewProcess(
         engine.WithProto(proto),
-        engine.WithModuleBinder(bindMyModule),
+        engine.WithModuleBinder(func(l *lua.LState) error {
+            engine.LoadModuleDef(l, engine.ChannelModule)
+            return nil
+        }),
+        engine.WithModuleBinder(bindTimeModule),
     )
+    if err != nil {
+        return nil, err
+    }
+    return proc, nil
 }
 
-func TestMyModuleYields(t *testing.T) {
+func TestYieldDispatcher(t *testing.T) {
     sched := newTestScheduler()
     sched.Start()
     defer sched.Stop()
 
     script := `
-        local result = mymodule.fetch("http://example.com")
-        return result.status
+        local ticker, ticker_err = time.ticker(10 * time.MILLISECOND)
+        if ticker_err then error(ticker_err) end
+
+        local _, open = ticker:response():receive()
+        local stopped = ticker:stop()
+        if not stopped then error("ticker did not stop") end
+        if not open then error("ticker channel closed before the first tick") end
+        return "tick"
     `
 
     ctx, _ := ctxapi.OpenFrameContext(context.Background())
-    proc := newLuaProcess(script)
+    if err := runtime.SetFramePID(ctx, testPID()); err != nil {
+        t.Fatal(err)
+    }
 
-    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
+    proc, err := newLuaProcessWithChannels(script)
     if err != nil {
         t.Fatal(err)
     }
-    // 결과에 대해 Assert
+
+    started := time.Now()
+    result, err := sched.Execute(ctx, testPID(), proc, "", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    if result == nil {
+        t.Fatal("nil result")
+    }
+    if result.Error != nil {
+        t.Fatalf("script failed: %v", result.Error)
+    }
+    if elapsed := time.Since(started); elapsed < 5*time.Millisecond {
+        t.Fatalf("yield completed before the clock fired: %v", elapsed)
+    }
 }
 ```
 
-완전한 예제는 `runtime/lua/modules/time/integration_test.go`를 참조하세요.
+통합 테스트 예제는 `runtime/lua/modules/time/integration_test.go`를 참고하세요.
 
 ## 참고
 

@@ -1,244 +1,308 @@
 [
   {
-    "title": "Getting Started",
+    "title": "はじめに",
     "children": [
-      {"title": "What is Wippy", "path": "start/about"},
-      {"title": "Installation", "path": "start/installation"},
-      {"title": "Project Structure", "path": "start/structure"}
+      {"title": "Wippyとは - コンセプトとランタイム概要", "path": "start/about"},
+      {"title": "インストール", "path": "start/installation"},
+      {"title": "YAML & プロジェクト構造", "path": "start/structure"}
     ]
   },
   {
-    "title": "Guides",
+    "title": "ガイド",
     "children": [
-      {"title": "CLI", "path": "guides/cli"},
-      {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "CLI リファレンス", "path": "guides/cli"},
+      {"title": "設定リファレンス", "path": "guides/configuration"},
       {"title": "クラスタ", "path": "guides/cluster"},
-      {"title": "Linter", "path": "guides/linter"},
-      {"title": "Language Server", "path": "guides/lsp"},
-      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "リンター", "path": "guides/linter"},
+      {"title": "言語サーバー", "path": "guides/lsp"},
+      {"title": "依存関係管理", "path": "guides/dependency-management"},
+      {"title": "ビルド時アーティファクト", "path": "guides/artifacts"},
       {"title": "コンポーネントの構築", "path": "guides/components"},
-      {"title": "Entry Kinds", "path": "guides/entry-kinds"},
-      {"title": "Observability", "path": "guides/observability"},
-      {"title": "Queue Consumers", "path": "guides/queue-consumers"},
-      {"title": "Supervision", "path": "guides/supervision"},
-      {"title": "Publishing", "path": "guides/publishing"}
+      {"title": "エントリ種別リファレンス", "path": "guides/entry-kinds"},
+      {"title": "可観測性", "path": "guides/observability"},
+      {"title": "キューコンシューマ", "path": "guides/queue-consumers"},
+      {"title": "スーパービジョン", "path": "guides/supervision"},
+      {"title": "モジュールの公開", "path": "guides/publishing"}
     ]
   },
   {
-    "title": "Core Concepts",
+    "title": "コアコンセプト",
     "children": [
-      {"title": "Compute Units", "path": "concepts/compute-units"},
-      {"title": "アーキテクチャ", "path": "concepts/architecture"},
-      {"title": "Registry", "path": "concepts/registry"},
-      {"title": "Process Model", "path": "concepts/process-model"},
-      {"title": "クラスタ", "path": "concepts/cluster"},
-      {"title": "Functions", "path": "concepts/functions"},
-      {"title": "Workflows", "path": "concepts/workflows"}
+      {"title": "コンピュートユニット", "path": "concepts/compute-units"},
+      {"title": "アプリケーションアーキテクチャ", "path": "concepts/architecture"},
+      {"title": "レジストリ", "path": "concepts/registry"},
+      {"title": "セキュリティモデル：プロセス分離とポリシーチェック", "path": "concepts/security-model"},
+      {"title": "プロセスモデル", "path": "concepts/process-model"},
+      {"title": "クラスター", "path": "concepts/cluster"},
+      {"title": "関数", "path": "concepts/functions"},
+      {"title": "ワークフロー", "path": "concepts/workflows"}
     ]
   },
   {
-    "title": "Lua Runtime",
+    "title": "Lua ランタイム",
     "children": [
-      {"title": "Overview", "path": "lua/overview"},
-      {"title": "Types", "path": "lua/types"},
-      {"title": "Entries", "path": "lua/entries"},
+      {"title": "Luaランタイム", "path": "lua/overview"},
+      {"title": "Wippy が Lua を採用する理由", "path": "lua/why-lua"},
+      {"title": "型システム", "path": "lua/types"},
+      {"title": "Luaエントリ種別", "path": "lua/entries"},
       {
-        "title": "Core",
+        "title": "コア",
         "children": [
-          {"title": "Base", "path": "lua/core/base"},
-          {"title": "Errors", "path": "lua/core/errors"},
-          {"title": "Time", "path": "lua/core/time"},
-          {"title": "Channels", "path": "lua/core/channel"},
-          {"title": "Process", "path": "lua/core/process"},
+          {"title": "標準Luaライブラリ", "path": "lua/core/base"},
+          {"title": "エラー", "path": "lua/core/errors"},
+          {"title": "時間と期間", "path": "lua/core/time"},
+          {"title": "チャネルとコルーチン", "path": "lua/core/channel"},
+          {"title": "プロセス管理", "path": "lua/core/process"},
           {"title": "プロセスグループ", "path": "lua/core/pg"},
-          {"title": "Functions", "path": "lua/core/funcs"},
+          {"title": "関数呼び出し", "path": "lua/core/funcs"},
           {"title": "Future", "path": "lua/core/future"},
-          {"title": "Stream", "path": "lua/core/stream"},
-          {"title": "Context", "path": "lua/core/context"},
-          {"title": "Events", "path": "lua/core/events"},
-          {"title": "Registry", "path": "lua/core/registry"},
-          {"title": "Contract", "path": "lua/core/contract"}
+          {"title": "ストリーム", "path": "lua/core/stream"},
+          {"title": "リクエストコンテキスト", "path": "lua/core/context"},
+          {"title": "イベントバス", "path": "lua/core/events"},
+          {"title": "エントリレジストリ", "path": "lua/core/registry"},
+          {"title": "コントラクト", "path": "lua/core/contract"}
         ]
       },
       {
-        "title": "Data Formats",
+        "title": "データ形式",
         "children": [
-          {"title": "JSON", "path": "lua/data/json"},
-          {"title": "YAML", "path": "lua/data/yaml"},
-          {"title": "Base64", "path": "lua/data/base64"},
-          {"title": "Compress", "path": "lua/data/compress"},
-          {"title": "Payload", "path": "lua/data/payload"},
-          {"title": "Excel", "path": "lua/data/excel"}
+          {"title": "JSONエンコーディング", "path": "lua/data/json"},
+          {"title": "YAMLエンコーディング", "path": "lua/data/yaml"},
+          {"title": "Base64エンコーディング", "path": "lua/data/base64"},
+          {"title": "圧縮", "path": "lua/data/compress"},
+          {"title": "アーカイブ", "path": "lua/data/archive"},
+          {"title": "ペイロードエンコーディング", "path": "lua/data/payload"},
+          {"title": "Excelスプレッドシート", "path": "lua/data/excel"}
         ]
       },
       {
-        "title": "HTTP & Web",
+        "title": "HTTP と Web",
         "children": [
           {"title": "HTTP", "path": "lua/http/http"},
-          {"title": "HTTP Client", "path": "lua/http/client"},
-          {"title": "WebSocket", "path": "lua/http/websocket"},
-          {"title": "HTML", "path": "lua/http/html"}
+          {"title": "HTTPクライアント", "path": "lua/http/client"},
+          {"title": "WebSocket クライアント", "path": "lua/http/websocket"},
+          {"title": "HTMLサニタイズ", "path": "lua/http/html"}
         ]
       },
       {
-        "title": "Storage",
+        "title": "ストレージ",
         "children": [
-          {"title": "SQL", "path": "lua/storage/sql"},
-          {"title": "Store", "path": "lua/storage/store"},
-          {"title": "Filesystem", "path": "lua/storage/filesystem"},
-          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"}
+          {"title": "SQLデータベース", "path": "lua/storage/sql"},
+          {"title": "キーバリューストア", "path": "lua/storage/store"},
+          {"title": "ファイルシステム", "path": "lua/storage/filesystem"},
+          {"title": "クラウドストレージ", "path": "lua/storage/cloud"},
+          {"title": "メッセージキュー", "path": "lua/storage/queue"},
+          {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
-        "title": "System",
+        "title": "システム",
         "children": [
-          {"title": "System", "path": "lua/system/system"},
-          {"title": "Environment", "path": "lua/system/env"},
-          {"title": "Logger", "path": "lua/system/logger"},
-          {"title": "I/O", "path": "lua/system/io"},
-          {"title": "Metrics", "path": "lua/system/metrics"},
-          {"title": "OS Time", "path": "lua/system/ostime"},
+          {"title": "システム", "path": "lua/system/system"},
+          {"title": "環境変数", "path": "lua/system/env"},
+          {"title": "ロギング", "path": "lua/system/logger"},
+          {"title": "ターミナルI/O", "path": "lua/system/io"},
+          {"title": "メトリクス & テレメトリ", "path": "lua/system/metrics"},
+          {"title": "OS時間", "path": "lua/system/ostime"},
           {"title": "TTY", "path": "lua/system/tty"},
           {"title": "Hub", "path": "lua/system/hub"}
         ]
       },
       {
-        "title": "Text & Templates",
+        "title": "テキストとテンプレート",
         "children": [
-          {"title": "Text", "path": "lua/text/text"},
-          {"title": "Template", "path": "lua/text/template"},
-          {"title": "TreeSitter", "path": "lua/text/treesitter"}
+          {"title": "テキスト処理", "path": "lua/text/text"},
+          {"title": "テンプレートエンジン", "path": "lua/text/template"},
+          {"title": "Tree-sitterパース", "path": "lua/text/treesitter"}
         ]
       },
       {
-        "title": "Security",
+        "title": "セキュリティ",
         "children": [
-          {"title": "Security", "path": "lua/security/security"},
-          {"title": "Crypto", "path": "lua/security/crypto"},
-          {"title": "Hash", "path": "lua/security/hash"},
-          {"title": "UUID", "path": "lua/security/uuid"}
+          {"title": "セキュリティ & アクセス制御", "path": "lua/security/security"},
+          {"title": "暗号化 & 署名", "path": "lua/security/crypto"},
+          {"title": "ハッシュ関数", "path": "lua/security/hash"},
+          {"title": "UUID生成", "path": "lua/security/uuid"}
         ]
       },
       {
-        "title": "Dynamic",
+        "title": "動的機能",
         "children": [
-          {"title": "Eval", "path": "lua/dynamic/eval"},
-          {"title": "Exec", "path": "lua/dynamic/exec"},
-          {"title": "Expression", "path": "lua/dynamic/expression"}
+          {"title": "動的評価", "path": "lua/dynamic/eval"},
+          {"title": "コマンド実行", "path": "lua/dynamic/exec"},
+          {"title": "式言語", "path": "lua/dynamic/expression"}
         ]
       }
     ]
   },
   {
-    "title": "WASM Runtime",
+    "title": "WASM ランタイム",
     "children": [
-      {"title": "Overview", "path": "wasm/overview"},
-      {"title": "Functions", "path": "wasm/functions"},
-      {"title": "Host Functions", "path": "wasm/hosts"},
-      {"title": "Processes", "path": "wasm/processes"}
+      {"title": "WebAssembly ランタイム", "path": "wasm/overview"},
+      {"title": "WASM 関数", "path": "wasm/functions"},
+      {"title": "ホスト関数", "path": "wasm/hosts"},
+      {"title": "WASM プロセス", "path": "wasm/processes"}
     ]
   },
   {
-    "title": "Framework",
+    "title": "フレームワーク",
     "children": [
-      {"title": "Overview", "path": "framework/overview"},
+      {"title": "Framework", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
-      {"title": "Agents", "path": "framework/agents"},
-      {"title": "Testing", "path": "framework/testing"},
+      {"title": "エージェント", "path": "framework/agents"},
+      {"title": "テストフレームワーク", "path": "framework/testing"},
       {"title": "Dataflow", "path": "framework/dataflow"},
       {"title": "Relay", "path": "framework/relay"},
-      {"title": "Views", "path": "framework/views", "children": [
+      {"title": "ビュー", "path": "framework/views", "children": [
         {"title": "Facade", "path": "framework/facade"}
       ]},
       {"title": "Embeddings", "path": "framework/embeddings"},
       {"title": "Bootloader", "path": "framework/bootloader"},
-      {"title": "Migrations", "path": "framework/migration"},
-      {"title": "Usage Tracking", "path": "framework/usage"}
+      {"title": "Migration", "path": "framework/migration"},
+      {"title": "使用量トラッキング", "path": "framework/usage"}
+    ]
+  },
+  {
+    "title": "フロントエンド",
+    "children": [
+      {"title": "フロントエンド契約：はじめに", "path": "frontend/overview"},
+      {"title": "プラットフォームトポロジー", "path": "frontend/platform-topology"},
+      {"title": "Portable UI 契約", "path": "frontend/portable-ui-contract"},
+      {"title": "デザインレイヤー", "path": "frontend/design-layer"},
+      {
+        "title": "フロントエンドレジストリ",
+        "children": [
+          {"title": "レジストリエントリ", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend App（view.page）", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Component（view.component）", "path": "frontend/frontend-registry/view-component"},
+          {"title": "動的ルーティング", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Web Host 概要", "path": "frontend/web-host/overview"},
+          {"title": "Facade エントリポイント", "path": "frontend/web-host/entry-point"},
+          {"title": "ブートストラップシーケンス", "path": "frontend/web-host/bootstrap"},
+          {"title": "マルチパネルレイアウト", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "レンダリングエンジン", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy と分離", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS injection", "path": "frontend/web-host/css-injection"},
+          {"title": "テーマの永続化", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe パッケージ", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy Micro Frontend",
+        "children": [
+          {"title": "Wippy Micro Frontend", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Page Recipe", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Component", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Theme authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind 契約", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "テーマ設定: Micro Frontend App", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "テーマ設定: Web Component", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build と dependency の契約", "path": "frontend/micro-frontends/build-system"},
+          {"title": "設定と casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom composite", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Frontend compliance と publication gate", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "サポート対象外の project-bound module", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "Wippy FE のデバッグ", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
     ]
   },
   {
     "title": "Temporal",
     "children": [
-      {"title": "Overview", "path": "temporal/overview"},
-      {"title": "Activities", "path": "temporal/activities"},
-      {"title": "Workflows", "path": "temporal/workflows"}
+      {"title": "Temporal統合", "path": "temporal/overview"},
+      {"title": "アクティビティ", "path": "temporal/activities"},
+      {"title": "ワークフロー", "path": "temporal/workflows"}
     ]
   },
   {
-    "title": "System Components",
+    "title": "システムコンポーネント",
     "children": [
-      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "プロセスホスト", "path": "system/process-host"},
       {"title": "プロセスグループ", "path": "system/process-groups"},
-      {"title": "Terminal", "path": "system/terminal"},
-      {"title": "Database", "path": "system/database"},
-      {"title": "Store", "path": "system/store"},
-      {"title": "Queue", "path": "system/queue"},
-      {"title": "Network", "path": "system/network"},
-      {"title": "Filesystem", "path": "system/filesystem"},
-      {"title": "Cloud Storage", "path": "system/cloudstorage"},
-      {"title": "Environment", "path": "system/env"},
-      {"title": "Template", "path": "system/template"},
-      {"title": "Security", "path": "system/security"},
-      {"title": "Exec", "path": "system/exec"}
+      {"title": "ターミナル", "path": "system/terminal"},
+      {"title": "データベースシステム", "path": "system/database"},
+      {"title": "変更データキャプチャ", "path": "system/cdc"},
+      {"title": "ストア（キーバリュー）", "path": "system/store"},
+      {"title": "キュー", "path": "system/queue"},
+      {"title": "ネットワークオーバーレイ", "path": "system/network"},
+      {"title": "ファイルシステム", "path": "system/filesystem"},
+      {"title": "クラウドストレージ", "path": "system/cloudstorage"},
+      {"title": "環境変数システム", "path": "system/env"},
+      {"title": "テンプレートエンジン", "path": "system/template"},
+      {"title": "セキュリティモデル", "path": "system/security"},
+      {"title": "エグゼキューター", "path": "system/exec"}
     ]
   },
   {
     "title": "HTTP",
     "children": [
-      {"title": "Server", "path": "http/server"},
-      {"title": "Router", "path": "http/router"},
-      {"title": "Endpoint", "path": "http/endpoint"},
-      {"title": "Middleware", "path": "http/middleware"},
-      {"title": "Static Files", "path": "http/static"},
-      {"title": "WebSocket Relay", "path": "http/websocket-relay"},
+      {"title": "HTTPサーバー", "path": "http/server"},
+      {"title": "ルーティング", "path": "http/router"},
+      {"title": "HTTPエンドポイント", "path": "http/endpoint"},
+      {"title": "HTTPミドルウェア", "path": "http/middleware"},
+      {"title": "静的ファイル", "path": "http/static"},
+      {"title": "WebSocketリレー", "path": "http/websocket-relay"},
       {"title": "Server-Sent Events", "path": "http/sse"}
     ]
   },
   {
-    "title": "Tutorials",
+    "title": "チュートリアル",
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLI Applications", "path": "tutorials/cli"},
-      {"title": "Echo Service", "path": "tutorials/echo-service"},
-      {"title": "Channels", "path": "tutorials/channels"},
-      {"title": "Processes", "path": "tutorials/processes"},
-      {"title": "Supervision", "path": "tutorials/supervision"},
-      {"title": "Task Queue", "path": "tutorials/task-queue"},
-      {"title": "Testing", "path": "tutorials/testing"},
-      {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "CLIアプリケーション", "path": "tutorials/cli"},
+      {"title": "Echoサービス", "path": "tutorials/echo-service"},
+      {"title": "チャネルと並行処理の基礎", "path": "tutorials/channels"},
+      {"title": "プロセスとメッセージング入門", "path": "tutorials/processes"},
+      {"title": "プロセススーパービジョンのレシピ", "path": "tutorials/supervision"},
+      {"title": "タスクキュー", "path": "tutorials/task-queue"},
+      {"title": "テスト", "path": "tutorials/testing"},
+      {"title": "暗号通貨ティッカー", "path": "tutorials/auth"},
       {"title": "Frontend Facade", "path": "tutorials/facade"},
-      {"title": "Network Overlays", "path": "tutorials/network"},
-      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
-      {"title": "LLM Agent", "path": "tutorials/llm-agent"},
+      {"title": "ネットワークオーバーレイ", "path": "tutorials/network"},
+      {"title": "WippyでRustを実行する", "path": "tutorials/rust-wasm"},
+      {"title": "LLM エージェント", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
-      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
-      {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
+      {"title": "MCP 経由の Keeper", "path": "tutorials/keeper-mcp"},
+      {"title": "Dataflow: 永続DAGを実行する", "path": "tutorials/dataflow"},
+      {"title": "Retrieval-Augmented Generation (RAG)", "path": "tutorials/rag"}
     ]
   },
   {
-    "title": "Internals",
+    "title": "内部構造",
     "children": [
-      {"title": "Architecture", "path": "internals/architecture"},
-      {"title": "Registry", "path": "internals/registry"},
-      {"title": "Scheduler", "path": "internals/scheduler"},
-      {"title": "Dispatch", "path": "internals/dispatch"},
-      {"title": "Events", "path": "internals/events"},
-      {"title": "Modules", "path": "internals/modules"},
-      {"title": "Kinds", "path": "internals/kinds"}
+      {"title": "アーキテクチャ", "path": "internals/architecture"},
+      {"title": "レジストリ内部", "path": "internals/registry"},
+      {"title": "スケジューラ", "path": "internals/scheduler"},
+      {"title": "コマンドディスパッチ", "path": "internals/dispatch"},
+      {"title": "イベントバス", "path": "internals/events"},
+      {"title": "Lua モジュール", "path": "internals/modules"},
+      {"title": "エントリリスナーとオブザーバー", "path": "internals/kinds"}
     ]
   },
   {
-    "title": "About",
+    "title": "このドキュメントについて",
     "children": [
-      {"title": "Contributing", "path": "about/contributing"},
-      {"title": "License", "path": "about/license"}
+      {"title": "コントリビューション", "path": "about/contributing"},
+      {"title": "ライセンス", "path": "about/license"}
     ]
   },
   {
     "title": "LLM",
     "children": [
-      {"title": "Platform Brief", "path": "start/llm-brief"}
+      {"title": "LLM 向け概要", "path": "start/llm-brief"}
     ]
   }
 ]

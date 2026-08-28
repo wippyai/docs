@@ -1,12 +1,12 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='external'/"
+description: "Configure AWS credentials and S3-compatible object storage."
 ---
 
 # Cloud Storage
 <secondary-label ref="external"/>
 
-S3-compatible object storage with presigned URLs.
+Cloud storage entries configure AWS credentials and S3-compatible buckets used by the Lua storage API. This page is a configuration reference; the snippets assume the named bucket and credentials or SDK credential chain already exist.
 
 ## Entry Kinds
 
@@ -17,6 +17,8 @@ S3-compatible object storage with presigned URLs.
 
 ## AWS Configuration
 
+Static credentials registered through the environment system:
+
 ```yaml
 - name: aws_config
   kind: config.aws
@@ -25,18 +27,26 @@ S3-compatible object storage with presigned URLs.
   secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
+AWS SDK default credential chain (for example, IAM roles or instance profiles):
+
+```yaml
+- name: aws_config
+  kind: config.aws
+  region: ${env:AWS_REGION}
+```
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `region` | string | Yes | AWS region. Supply via `${env:NAME}` when it differs per deployment |
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credentials resolve from the [environment registry](system/env.md) at decode time. Both `access_key_id` and `secret_access_key` must resolve to non-empty values for static credentials to apply; otherwise the AWS SDK default credential chain is used (IAM roles, instance profiles, etc.).
+Credential fields resolve from the [environment registry](system/env.md) at decode time. A modern `${env:NAME}` placeholder without a default fails decoding when its variable is missing, so omit `access_key_id` and `secret_access_key` to use the AWS SDK default credential chain. Static credentials apply only when both fields resolve to non-empty values.
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
 <note>
-Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder shown above.
+Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that also looks up the environment registry. Unlike a modern placeholder without a default, an unregistered or empty legacy lookup preserves the inline or zero value. The legacy form is <b>deprecated</b> — migrate it deliberately, adding placeholder defaults where equivalent fallback behavior is required.
 </note>
 
 <note>
@@ -54,13 +64,13 @@ A single <code>config.aws</code> entry can be reused across AWS-backed services.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `bucket` | string | Conditional | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
+| `bucket` | string | Yes | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
 | `config` | reference | Yes | AWS config entry reference |
 | `endpoint` | string | No | Custom endpoint for S3-compatible services (inline or `${env:NAME}`) |
 
 ### S3-Compatible Services
 
-For MinIO or other S3-compatible services, set a custom endpoint:
+Set a custom endpoint for MinIO or another S3-compatible service:
 
 ```yaml
 - name: local_storage

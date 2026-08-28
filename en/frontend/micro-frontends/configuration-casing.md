@@ -5,6 +5,9 @@ description: "Casing rules at backend facade, registry, and frontend configurati
 
 # Configuration and Casing
 
+**Classification: schema-boundary reference.** The YAML block is a shape
+excerpt, not a complete registry entry.
+
 Casing follows the schema boundary. Never recursively convert a configuration object.
 
 | Boundary | Rule | Examples |
@@ -31,8 +34,6 @@ proxy:
 
 Only the backend wrapper keys are snake case in this example. Nested frontend objects are passed through and retain their defined casing.
 
-## Temporary mountRoute exception
+## `mountRoute` casing exception
 
-`meta.mountRoute` is a current backend compatibility bug. The intended backend field is `meta.mount_route`, but existing deployments require `mountRoute` until the backend correction ships. Treat it as one explicit exception, not evidence that registry or backend fields are generally camelCase.
-
-Compliance must version this exception so it can be removed when the backend schema changes.
+The current view registry schema reads `meta.mountRoute` and stores it in the registry's internal `mount_route` field; API output uses `mountRoute` again. Treat the authored lower-camel-case field as one documented exception, not evidence that registry or backend fields are generally camelCase.

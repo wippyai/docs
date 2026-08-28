@@ -1,9 +1,9 @@
 ---
-title: "Event Bus"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+title: "Barramento de eventos"
+description: "Publique e observe eventos best-effort do runtime e da aplicação."
 ---
 
-# Event Bus
+# Barramento de eventos :id=event-bus
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
@@ -11,7 +11,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 Publique e inscreva-se em eventos para observabilidade — monitoramento de atividade do runtime e da aplicação e reação a ela.
 
 <note>
-Use o event bus apenas para observação: monitoramento, logging, métricas e efeitos colaterais reativos. É um canal publish/subscribe de melhor esforço, não um transporte confiável — não construa lógica de negócio sobre ele nem dependa dele para entrega garantida. Para mensagens críticas de negócio, use mensagens de processo (`process.send`), channels ou a [fila de mensagens](lua/storage/queue.md).
+Use o barramento de eventos apenas para observação: monitoramento, registro, métricas e efeitos colaterais reativos. É um canal de publicação e assinatura de melhor esforço, não um transporte confiável — não construa lógica de negócio sobre ele nem dependa dele para entrega garantida. Para mensagens críticas de negócio, use mensagens de processo (`process.send`), canais ou a [fila de mensagens](lua/storage/queue.md).
 </note>
 
 ## Carregamento
@@ -22,33 +22,25 @@ local events = require("events")
 
 ## Inscrevendo-se em Eventos
 
+Uma assinatura pode filtrar sistema e tipo, por exemplo, `events.subscribe("users", "user.created")`; omitir o tipo aceita todos os eventos do sistema.
+
 Inscreva-se em eventos do event bus:
 
 ```lua
--- Inscreva-se em todos os eventos de pedidos
+-- Subscribe to all order events
 local sub, err = events.subscribe("orders.*")
 if err then
     return nil, err
 end
 
--- Inscreva-se em tipo de evento específico
-local sub = events.subscribe("users", "user.created")
-
--- Inscreva-se em todos os eventos de um sistema
-local sub = events.subscribe("payments")
-
--- Processar eventos
+-- Process events
 local ch = sub:channel()
 while true do
     local evt, ok = ch:receive()
     if not ok then break end
 
-    logger:info("Received event", {
-        system = evt.system,
-        kind = evt.kind,
-        path = evt.path
-    })
-    handle_event(evt)
+    print(evt.system, evt.kind, evt.path)
+    -- Process evt.data when the publisher supplied a payload.
 end
 ```
 
@@ -64,7 +56,7 @@ end
 Enviar um evento para o event bus:
 
 ```lua
--- Enviar evento de pedido criado
+-- Send order created event
 local ok, err = events.send("orders", "order.created", "/orders/123", {
     order_id = "123",
     customer_id = "456",
@@ -74,23 +66,11 @@ if err then
     return nil, err
 end
 
--- Enviar evento de usuário
-events.send("users", "user.registered", "/users/" .. user.id, {
-    user_id = user.id,
-    email = user.email,
-    created_at = time.now():format("2006-01-02T15:04:05Z07:00")
-})
-
--- Enviar evento de pagamento
-events.send("payments", "payment.completed", "/payments/" .. payment.id, {
-    payment_id = payment.id,
-    order_id = payment.order_id,
-    amount = payment.amount,
-    method = payment.method
-})
-
--- Enviar sem dados
-events.send("system", "heartbeat", "/health")
+-- Send without data
+local heartbeat_sent, heartbeat_err = events.send("system", "heartbeat", "/health")
+if heartbeat_err then
+    return nil, heartbeat_err
+end
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -102,6 +82,8 @@ events.send("system", "heartbeat", "/health")
 
 **Retorna:** `boolean, error`
 
+Um retorno bem-sucedido confirma apenas que o runtime aceitou o envio. Ele não confirma que algum subscriber recebeu ou processou o evento.
+
 ## Métodos de Subscription
 
 ### Obtendo o Channel
@@ -109,6 +91,7 @@ events.send("system", "heartbeat", "/health")
 Obter o channel para receber eventos:
 
 ```lua
+local json = require("json")
 local ch = sub:channel()
 
 local evt, ok = ch:receive()
@@ -116,18 +99,22 @@ if ok then
     print("System:", evt.system)
     print("Kind:", evt.kind)
     print("Path:", evt.path)
-    print("Data:", json.encode(evt.data))
+    local encoded, encode_err = json.encode(evt.data)
+    if encode_err then return nil, encode_err end
+    print("Data:", encoded)
 end
 ```
 
-Campos do evento: `system`, `kind`, `path`, `data`
+Cada evento contém `system`, `kind` e `path`. O campo `data` só está presente quando o publisher fornece um payload não nulo.
 
 ### Fechando Subscription
+
+O fechamento é idempotente. Depois que o channel fecha e os eventos em buffer são drenados, `receive()` retorna `nil, false`.
 
 Cancelar inscrição e fechar o channel:
 
 ```lua
-sub:close()
+local closed = sub:close() -- true
 ```
 
 ## Permissões
@@ -145,5 +132,6 @@ sub:close()
 | Tipo vazio | `errors.INVALID` | não |
 | Caminho vazio | `errors.INVALID` | não |
 | Política negou | `errors.INVALID` | não |
+| Contexto de execução ou processo ausente | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

@@ -1,16 +1,18 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Gestiona eventos de entrada del terminal y renderiza diseños de terminal con estilo."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Módulo de UI de terminal para eventos de entrada en bruto, salida estilizada y utilidades de diseño.
+El módulo `tty` gestiona eventos de entrada del terminal en bruto y proporciona utilidades de salida con estilo y diseño.
+
+Esta es una referencia de API. El bucle de entrada es una receta parcial de proceso de terminal; los fragmentos de estilo y diseño son ejemplos independientes.
 
 <note>
-Este módulo solo funciona dentro del contexto de terminal. No se puede usar desde funciones regulares — solo desde procesos que se ejecutan en un <a href="system/terminal.md">Terminal Host</a>.
+Este módulo solo está disponible para procesos ejecutados en un <a href="../../system/terminal.md">host de terminal</a>, no para funciones regulares.
 </note>
 
 ## Carga
@@ -28,31 +30,42 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
 ## Control de Entrada
 
-### tty.start()
+### `tty.start()`
 
 Habilita el modo de entrada en bruto del terminal. El terminal cambia al modo en bruto y comienza a emitir eventos.
 
@@ -62,7 +75,7 @@ local ok, err = tty.start()
 
 **Retorna:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Deshabilita la entrada en bruto y restaura el terminal al modo normal.
 
@@ -72,9 +85,9 @@ local ok, err = tty.stop()
 
 **Retorna:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
-Suscríbase a eventos del terminal y retorna un canal. Los eventos se entregan como tablas con un campo `type`.
+Suscríbase a eventos del terminal y devuelva su canal. Cada evento es una tabla con un campo `type`.
 
 ```lua
 local events = tty.events()
@@ -82,7 +95,7 @@ local events = tty.events()
 
 **Retorna:** `EventChannel, error`
 
-### tty.screen_size()
+### `tty.screen_size()`
 
 Consulta las dimensiones actuales del terminal.
 
@@ -92,7 +105,7 @@ local width, height, err = tty.screen_size()
 
 **Retorna:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Habilita o deshabilita el seguimiento de eventos del ratón.
 
@@ -183,14 +196,16 @@ if quit:matches(ev) then
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `keys` | string[] | Patrones de tecla a coincidir (ej. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Obligatorio. Patrones de tecla a coincidir (ej. `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Opcional. `{key = "...", desc = "..."}` para texto de ayuda |
 
 **Retorna:** `KeyBinding`
+
+El esquema de tipos exige `keys`. En tiempo de ejecución, una tabla `keys` omitida o vacía crea un binding que nunca coincide.
 
 ### Métodos de KeyBinding
 
@@ -203,7 +218,7 @@ end
 
 ## Estilos
 
-Cree salida de texto estilizada usando estilizado basado en lipgloss. Todos los métodos de estilo retornan un nuevo estilo (inmutable).
+Cree salida de terminal con estilo. Los valores de estilo son inmutables, por lo que cada método devuelve un valor nuevo.
 
 ```lua
 local tty = require("tty")
@@ -220,10 +235,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 Crea un nuevo estilo vacío.
 
@@ -296,7 +312,7 @@ tty.align.RIGHT   -- 1
 
 ## Utilidades de Texto
 
-Funciones de diseño y medición para texto estilizado. Disponibles bajo `tty.text`.
+La subtabla `tty.text` proporciona funciones de diseño y medición para texto estilizado.
 
 ### Medición
 
@@ -325,7 +341,7 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 
 ### Colocación
 
-Coloca una cadena dentro de una caja de dimensiones dadas:
+Coloca una cadena dentro de una caja con las dimensiones indicadas:
 
 ```lua
 -- Center in a 80x24 box
@@ -348,7 +364,17 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Errores
+
+Las funciones de control de entrada devuelven errores estructurados:
+
+| Condición | Tipo | Reintentable |
+|-----------|------|--------------|
+| Sin contexto de terminal ni controlador de entrada | `errors.UNAVAILABLE` | no |
+| La suscripción de eventos no tiene contexto de runtime o proceso | `errors.INTERNAL` | no |
+| La respuesta yield del terminal no es válida | `errors.INTERNAL` | no |
+
 ## Véase También
 
 - [I/O de Terminal](lua/system/io.md) — operaciones stdin/stdout/stderr
-- [Terminal Host](system/terminal.md) — Configuración del host de terminal
+- [Host de terminal](system/terminal.md) — Configuración del host de terminal

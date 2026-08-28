@@ -1,6 +1,6 @@
 ---
 title: "Entry Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Leia entradas e metadados do registro, inspecione versões e snapshots e aplique changesets."
 ---
 
 # Entry Registry
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Consulte e modifique entradas registradas. Acesse metadados, snapshots e historico de versoes.
+O módulo `registry` lê e modifica entradas e fornece acesso a snapshots e ao histórico de versões. Esta página é uma referência de API; os exemplos de mutação usam IDs ilustrativos e exigem políticas que autorizem exatamente esses recursos e tipos de entrada.
 
 ## Carregamento
 
@@ -21,13 +21,13 @@ local registry = require("registry")
 ```lua
 {
     id = "app.lib:assert",     -- string: "namespace:name"
-    kind = "function.lua",     -- string: tipo da entrada
-    meta = {type = "test"},    -- table: metadados pesquisaveis
-    data = {...}               -- any: payload da entrada
+    kind = "function.lua",     -- string: entry type
+    meta = {type = "test"},    -- table: searchable metadata
+    data = {...}               -- any: entry payload
 }
 ```
 
-## Obter Entry
+## Obter uma Entrada
 
 ```lua
 local entry, err = registry.get("app.lib:assert")
@@ -38,11 +38,11 @@ local entry, err = registry.get("app.lib:assert")
 ## Encontrar Entries
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Campos de filtro correspondem aos metadados da entrada.
+Os seletores raiz são `.kind`, `.name`, `.ns` e `.id`; seus valores aceitam correspondência por glob. Filtros de metadados usam o prefixo `meta.`, por exemplo `{["meta.type"] = "test"}`.
 
 ## Parse de ID
 
@@ -56,8 +56,8 @@ local id = registry.parse_id("app.lib:assert")
 Visao point-in-time do registry:
 
 ```lua
-local snap, err = registry.snapshot()           -- estado atual
-local snap, err = registry.snapshot_at(5)       -- na versão 5
+local snap, err = registry.snapshot()           -- current state
+local snap, err = registry.snapshot_at(5)       -- at version 5
 ```
 
 ### Métodos de Snapshot
@@ -71,16 +71,42 @@ local snap, err = registry.snapshot_at(5)       -- na versão 5
 | `snap:version()` | `Version` | Versão do snapshot |
 | `snap:changes()` | `Changes` | Criar changeset |
 
+## Overlays Locais ao Processo
+
+`registry.overlay(owner_id)` abre um overlay local ao processo para um proprietário lógico. Ele retorna um snapshot normal do registro efetivo; crie um changeset a partir desse snapshot e aplique-o da mesma forma que uma alteração durável:
+
+```lua
+local snap, err = registry.overlay("controllers:customer-db")
+if err then
+    return nil, err
+end
+
+local changes = snap:changes()
+changes:create({
+    id = "runtime.data_sources:customer-db",
+    kind = "db.sql.postgres",
+    data = {host = "db.example.com", database = "customer"}
+})
+
+local current_version, err = changes:apply()
+```
+
+As alterações do overlay afetam a topologia e os recursos do registro neste processo, mas não criam versões duráveis no histórico. Por isso, `changes:apply()` retorna a versão durável atual sem alteração. Um overlay sobrevive a commits normais de histórico e à seleção de versões; ele é limpo por um cold boot ou carregamento explícito do estado do registro e depois reconciliado por seu proprietário.
+
+Os snapshots de overlay usam concorrência otimista baseada em geração. Aplicar alterações de um snapshot obsoleto falha atomicamente com `errors.CONFLICT` retentável; reabra o overlay e reconstrua o changeset. Um changeset pode conter no máximo uma operação por ID de entrada. Os IDs de proprietário são normalizados para sua identidade canônica. O proprietário faz parte do estado do registro, não dos metadados da entrada, e tipos de entrada controlados por diretivas de expansão não podem ser alterados por um overlay.
+
+Chamadas regulares de `registry.get`, `find` e `snapshot` veem o registro efetivo composto e continuam exigindo `registry.get` para cada entrada; a permissão de overlay no nível do proprietário não substitui a autorização de leitura.
+
 ## Versoes
 
 ```lua
 local version, err = registry.current_version()
 local versions, err = registry.versions()
 
-print(version:id())       -- ID numerico
-print(version:string())   -- string de exibicao
-local prev = version:previous()  -- versão anterior ou nil
-local next = version:next()      -- próxima versão ou nil
+print(version:id())       -- numeric ID
+print(version:string())   -- display string
+local prev = version:previous()  -- previous version or nil
+local next = version:next()      -- next version or nil
 ```
 
 ## Historico
@@ -163,6 +189,11 @@ end
 | `registry.get` | ID da entrada | Ler entrada (também filtra resultados de find/entries) |
 | `registry.apply` | - | Aplicar changeset |
 | `registry.apply_version` | - | Aplicar/rollback versão |
+| `registry.overlay.get` | ID do proprietário | Abrir o overlay de um proprietário |
+| `registry.overlay.apply` | ID do proprietário | Aplicar um changeset de overlay |
+| `registry.overlay.create.<kind>` | ID da entrada | Criar uma entrada do tipo indicado em um overlay |
+| `registry.overlay.update.<kind>` | ID da entrada | Atualizar uma entrada do tipo indicado em um overlay |
+| `registry.overlay.delete.<kind>` | ID da entrada | Excluir uma entrada do tipo indicado em um overlay |
 
 ## Erros
 
@@ -172,7 +203,9 @@ end
 | Versão não encontrada | `errors.NOT_FOUND` |
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Parâmetro inválido | `errors.INVALID` |
-| Sem mudancas para aplicar | `errors.INVALID` |
+| Sem mudanças para aplicar | `errors.INVALID` |
+| Proprietário do overlay vazio ou tipo controlado por diretiva | `errors.INVALID` |
+| Snapshot de overlay obsoleto | `errors.CONFLICT` (retentável) |
 | Registry não disponível | `errors.INTERNAL` |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

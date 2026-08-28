@@ -1,11 +1,13 @@
 ---
 title: "Servicio de Eco"
-description: "Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervisión."
+description: "Crea un servicio de eco multiproceso con canales, coroutines, paso de mensajes y supervisión de procesos."
 ---
 
 # Servicio de Eco
 
-Construya un servicio de eco distribuido demostrando procesos, canales, coroutines, paso de mensajes y supervisión.
+Crea un servicio CLI de eco que utiliza varios procesos Wippy, canales, coroutines, paso de mensajes y supervisión de procesos.
+
+**Clasificación:** tutorial ejecutable. Proporciona el registro y las fuentes Lua completas para una aplicación CLI local de un solo nodo, además de los pasos de inicio y verificación.
 
 ## Resumen
 
@@ -18,16 +20,28 @@ Este tutorial crea un cliente CLI que envía mensajes a un servicio relay, que g
 - **Registro de procesos** - Encontrar procesos por nombre
 - **Monitoreo** - Rastrear ciclo de vida de procesos hijos
 
+## Requisitos previos
+
+- Entorno de ejecución Wippy `v0.3.32a` disponible como `wippy`. Confírmalo con `wippy version --short`.
+- Un terminal interactivo.
+- Un directorio de trabajo vacío. Crea el proyecto y el directorio de fuentes antes de añadir los archivos siguientes:
+
+  ```bash
+  mkdir echo-service
+  cd echo-service
+  mkdir src
+  ```
+
 ## Arquitectura
 
 ```mermaid
 flowchart TB
     subgraph terminal["terminal.host"]
-        CLI["Proceso CLI"]
+        CLI["CLI Process"]
     end
 
     subgraph processes["process.host"]
-        Relay["Proceso Relay<br/>(+ coroutine stats)"]
+        Relay["Relay Process<br/>(+ stats coroutine)"]
         W1["Worker 1"]
         W2["Worker 2"]
         W3["Worker N"]
@@ -63,6 +77,19 @@ version: "1.0"
 namespace: app
 
 entries:
+  # Capabilities used by the CLI, relay, and workers in strict mode
+  - name: process-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.registry.register
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -79,17 +106,25 @@ entries:
     method: main
     modules:
       - io
-      - process
       - time
+    security:
+      actor:
+        id: app:cli
+      policies:
+        - app:process-policy
 
   - name: relay
     kind: process.lua
     source: file://relay.lua
     method: main
     modules:
-      - process
       - logger
       - time
+    security:
+      actor:
+        id: app:relay
+      policies:
+        - app:process-policy
 
   - name: relay-service
     kind: process.service
@@ -103,8 +138,12 @@ entries:
     source: file://worker.lua
     method: main
     modules:
-      - process
       - time
+    security:
+      actor:
+        id: app:worker
+      policies:
+        - app:process-policy
 ```
 
 ## El Proceso Relay
@@ -136,7 +175,10 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    process.registry.register("relay")
+    local _, register_err = process.registry.register("relay")
+    if register_err then
+        error("cannot register relay: " .. tostring(register_err))
+    end
     logger:info("relay started", {pid = process.pid()})
 
     coroutine.spawn(stats_reporter)
@@ -169,7 +211,7 @@ local function main()
                 )
 
                 if err then
-                    logger:error("spawn failed", {error = err})
+                    logger:error("spawn failed", {error = tostring(err)})
                 else
                     stats.workers_spawned = stats.workers_spawned + 1
                 end
@@ -183,15 +225,15 @@ return { main = main }
 
 ### Patrones Clave {id="relay-key-patterns"}
 
-**Generación de Coroutines**
+**Creación de coroutines**
 
 ```lua
 coroutine.spawn(stats_reporter)
 ```
 
-Crea una coroutine concurrente compartiendo memoria con la función principal. Las coroutines ceden en operaciones I/O como `time.sleep`.
+Esto inicia una coroutine que comparte memoria con la función principal. Las coroutines ceden el control en operaciones de E/S como `time.sleep`.
 
-**Channel Select**
+**Selección de canales**
 
 ```lua
 local r = channel.select {
@@ -200,7 +242,7 @@ local r = channel.select {
 }
 ```
 
-Espera en múltiples canales. `r.channel` identifica cuál se activó, `r.value` contiene los datos.
+Espera en varios canales. `r.channel` identifica el canal seleccionado y `r.value` contiene sus datos.
 
 **Extracción de Payload**
 
@@ -208,7 +250,7 @@ Espera en múltiples canales. `r.channel` identifica cuál se activó, `r.value`
 local echo = msg:payload():data()
 ```
 
-Los mensajes tienen `msg:topic()` para el string del tópico y `msg:payload():data()` para el payload.
+Los mensajes proporcionan `msg:topic()` para la cadena del tema y `msg:payload():data()` para el payload.
 
 **Spawn con Monitoreo**
 
@@ -216,7 +258,7 @@ Los mensajes tienen `msg:topic()` para el string del tópico y `msg:payload():da
 local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", ...)
 ```
 
-Combina spawn y monitor. Cuando el worker termina, recibimos un evento EXIT.
+Esto crea el worker y comienza a supervisarlo. Cuando termina, el relay recibe un evento `EXIT`.
 
 ## El Proceso Worker
 
@@ -231,7 +273,10 @@ local function main(sender_pid, data)
         worker = process.pid()
     }
 
-    process.send(sender_pid, "echo_response", response)
+    local _, send_err = process.send(sender_pid, "echo_response", response)
+    if send_err then
+        error("cannot send echo response: " .. tostring(send_err))
+    end
 
     return 0
 end
@@ -258,7 +303,7 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- Esperar a que relay registre su nombre
+    -- Wait for relay to register its name
     local deadline = time.after("5s")
     while not process.registry.lookup("relay") do
         local tick = time.after("50ms")
@@ -270,11 +315,26 @@ local function main()
     end
 
     io.print(cyan("Echo Client"))
-    io.print(dim("Escriba mensajes para eco. Ctrl+C para salir.\n"))
+    io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
 
     while true do
-        io.write(yellow("> "))
-        local input = io.readline()
+        local _, write_err = io.write(yellow("> "))
+        if write_err then
+            io.eprint("cannot write prompt:", write_err)
+            return 1
+        end
+
+        local _, flush_err = io.flush()
+        if flush_err then
+            io.eprint("cannot flush prompt:", flush_err)
+            return 1
+        end
+
+        local input, read_err = io.readline()
+        if read_err then
+            io.eprint("cannot read input:", read_err)
+            return 1
+        end
 
         if not input or #input == 0 then
             break
@@ -284,9 +344,9 @@ local function main()
             sender = process.pid(),
             data = input
         }
-        local ok, err = process.send("relay", "echo", msg)
+        local _, err = process.send("relay", "echo", msg)
         if err then
-            io.print(dim("  error: relay no disponible"))
+            io.print(dim("  error: " .. tostring(err)))
         else
             local timeout = time.after("2s")
             local r = channel.select {
@@ -307,7 +367,7 @@ local function main()
         end
     end
 
-    io.print("\nAdiós!")
+    io.print("\nGoodbye!")
     return 0
 end
 
@@ -322,7 +382,7 @@ return { main = main }
 process.send("relay", "echo", msg)
 ```
 
-`process.send` acepta nombres registrados directamente. Retorna error si no se encuentra.
+`process.send` acepta un nombre registrado como destino y devuelve un error si no puede resolverlo.
 
 **Patrón de Timeout**
 
@@ -333,7 +393,7 @@ local r = channel.select {
     timeout:case_receive()
 }
 if r.channel == timeout then
-    -- timeout
+    -- timed out
 end
 ```
 
@@ -348,15 +408,25 @@ Salida de ejemplo:
 
 ```
 Echo Client
-Escriba mensajes para eco. Ctrl+C para salir.
+Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
   from worker: {app:processes|0x00004}
 ```
 
+El PID del worker se genera durante la ejecución y será diferente. Introduce varias líneas para confirmar que cada respuesta está en mayúsculas. Envía una línea vacía para salir correctamente.
+
+## Solución de problemas y limpieza
+
+- `relay not ready` significa que el relay iniciado automáticamente no se registró en cinco segundos. Consulta el log del entorno de ejecución en busca de un error de inicio, política o registro del relay.
+- `not allowed to spawn` o `not allowed to send` significa que las entradas de proceso no tienen el contexto de seguridad `app:process-policy` mostrado anteriormente.
+- `no terminal host found` significa que falta la entrada `terminal.host`. Si el proyecto contiene varios hosts de terminal, añade `--host app:terminal` al comando de ejecución.
+- Un timeout después del envío significa que el worker no devolvió una respuesta. Comprueba en el log del relay si falló la creación y confirma que `app:worker` y `app:processes` coinciden con los nombres de las entradas.
+- Envía una línea vacía para salir del CLI. Pulsa Ctrl+C si el entorno de ejecución sigue activo; después de salir del directorio, elimina `echo-service/` si solo era un ejercicio desechable.
+
 ## Siguientes Pasos
 
-- [Gestión de Procesos](lua/core/process.md)
-- [Canales](lua/core/channel.md)
-- [Tiempo y Duración](lua/core/time.md)
+- [Gestión de procesos](lua/core/process.md) — Referencia de la API de procesos
+- [Canales](lua/core/channel.md) — Referencia de la API de canales
+- [Tiempo y duración](lua/core/time.md) — Referencia de la API de tiempo

@@ -1,11 +1,14 @@
 ---
 title: "依存関係管理"
-description: "Wippyはロックファイルベースの依存関係システムを使用します。モジュールはハブに公開され、ソース内で依存関係として宣言され、正確なバージョンを追跡する wippy.lock ファイルに解決されます。"
+description: "ロックファイルを使用して Wippy モジュールの依存関係を宣言、解決、インストール、更新、置換、検証します。"
 ---
 
 # 依存関係管理
 
-Wippyはロックファイルベースの依存関係システムを使用します。モジュールはハブに公開され、ソース内で依存関係として宣言され、正確なバージョンを追跡する `wippy.lock` ファイルに解決されます。
+Wippy はソースの宣言からモジュール依存関係を解決し、正確なバージョンを `wippy.lock` に記録します。公開済みモジュールは Hub からプロジェクトのモジュールディレクトリへダウンロードされます。
+
+以下の `acme/*` モジュール名、バージョン、ハッシュ、ローカルパスは例です。
+実際のプロジェクトまたは Hub にあるモジュールと検証済みダイジェストに置き換えてください。
 
 ## プロジェクトファイル
 
@@ -149,7 +152,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # すべてのモジュールを再取得（--force と --repair はエイリアス）
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## モジュールストレージ
@@ -224,11 +227,11 @@ wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 
 ## 整合性検証
 
-ロックファイル内の各モジュールにはコンテンツハッシュがあります。インストール中、ダウンロードされたモジュールは期待されるハッシュと照合して検証されます。不一致のモジュールは拒否され、レジストリから再ダウンロードされます。
+ロックエントリのコンテンツハッシュは、インストールによって設定されるまでは省略可能です。期待されるダイジェストが存在する場合、インストールはキャッシュ済みモジュールとダウンロード済みモジュールをそのダイジェストに照らして検証します。キャッシュ済みモジュールが一致しない場合、インストールは停止します。`wippy install --refresh` を実行して、新しいコピーをダウンロードし検証してください。新しくダウンロードしたモジュールが検証に失敗した場合、そのモジュールは削除され、インストールは失敗します。
 
 ## 関連項目
 
-- [コンポーネントの構築](guides/components.md) - 作者側: `ns.requirement` と `parameters` による値の供給
-- [CLI](guides/cli.md) - コマンドリファレンス
-- [公開](guides/publishing.md) - ハブへのモジュール公開
-- [プロジェクト構成](start/structure.md) - プロジェクトレイアウト
+- [コンポーネントの構築](guides/components.md) — `parameters` を通じて要件を宣言し、値を提供する方法
+- [CLI](guides/cli.md) — コマンドリファレンス
+- [公開](guides/publishing.md) — Hub へのモジュール公開
+- [プロジェクト構成](start/structure.md) — プロジェクトレイアウト

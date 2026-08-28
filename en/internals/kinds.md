@@ -1,18 +1,20 @@
 ---
-title: "Entry Handlers"
-description: "Entry handlers process registry entries by kind. When entries are added, updated, or deleted, the registry dispatches events to matching handlers."
+title: "Entry Listeners and Observers"
+description: "How listeners and observers handle registry mutations for matching entry-kind patterns."
 ---
 
-# Entry Handlers
+# Entry Listeners and Observers
 
-Entry handlers process registry entries by kind. When entries are added, updated, or deleted, the registry dispatches events to matching handlers.
+Entry listeners and observers process registry mutations for matching entry-kind patterns.
+
+This is a Go extension reference. The registration and configuration snippets assume an existing boot component, manager, transcoder, and application config type.
 
 ## How It Works
 
-The registry maintains a map of kind patterns to handlers. When an entry changes:
+Boot collects listeners and observers with their kind patterns. When an entry changes:
 
 1. Registry emits event (`entry.create`, `entry.update`, `entry.delete`)
-2. Handler registry matches entry kind against registered patterns
+2. Each listener wrapper matches the entry kind against its registered pattern
 3. Matching handlers receive the entry
 4. Handlers process or reject the entry
 
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-Returning an error from `Add` rejects the entry.
+Returning an error from `Add`, `Update`, or `Delete` rejects that operation.
 
 ## Listener vs Observer
 
@@ -51,6 +53,8 @@ Returning an error from `Add` rejects the entry.
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+Observer errors from `Add`, `Update`, and `Delete` are ignored and do not emit an accept or reject event. A listener or observer that also implements `TransactionListener` participates in transaction barriers, where an error from `Begin`, `Commit`, or `Discard` rejects that transaction phase.
 
 ## Registering Handlers
 
@@ -72,7 +76,7 @@ func MyService() boot.Component {
 
 ## Decoding Entry Data
 
-Use `entry.DecodeEntryConfig` from `internal/entry` to unmarshal entry data. This helper lives under `internal/`, so it is only importable from inside the runtime module; out-of-tree extensions must copy the pattern or use the transcoder directly:
+Use `entry.DecodeEntryConfig` from `github.com/wippyai/runtime/system/entry` to unmarshal entry data. The package is importable by out-of-tree extensions:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +90,12 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 The decoder:
-1. Unmarshals `entry.Data` into your config struct
-2. Populates `ID` and `Meta` from the entry
-3. Calls `InitDefaults()` if implemented
-4. Calls `Validate()` if implemented
+1. Resolves modern `${env:...}` placeholders in the entry data
+2. Unmarshals the resolved data into your config struct
+3. Fills `ID` and `Meta` from the entry when the decoded fields are zero or nil
+4. Calls `InitDefaults()` if implemented
+5. Resolves legacy `*_env` fields through the environment registry
+6. Calls `Validate()` if implemented
 
 ## Config Structure
 

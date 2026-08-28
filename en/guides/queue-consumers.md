@@ -1,11 +1,11 @@
 ---
 title: "Queue Consumers"
-description: "Queue consumers process messages from queues using worker pools."
+description: "Configure queue consumers, worker pools, acknowledgments, shutdown behavior, and the in-memory driver."
 ---
 
 # Queue Consumers
 
-Queue consumers process messages from queues using worker pools.
+Queue consumers deliver messages from a queue to function handlers through a configurable worker pool.
 
 ## Overview
 
@@ -26,8 +26,8 @@ flowchart LR
 | `queue` | Required | - | Queue registry ID |
 | `func` | Required | - | Handler function registry ID |
 | `concurrency` | 1 | 1000 | Worker count |
-| `prefetch` | 10 | 10000 | Message buffer size |
-| `auto_ack` | false | - | Ack automatically before running the handler |
+| `prefetch` | 10 | 10000 | Shared delivery-buffer size; AMQP also applies it as the channel QoS prefetch count |
+| `auto_ack` | false | - | Backend-specific auto-ack option; for AMQP, `true` asks the broker to acknowledge on delivery |
 | `driver_options` | `{}` | - | Driver-specific consumer options |
 
 ## Entry Definition
@@ -41,56 +41,63 @@ flowchart LR
   prefetch: 20
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:orders
 ```
 
 ## Handler Function
 
-The handler function receives the message body:
+The handler function receives the body after the queue's codec decodes it. Use `queue.message()` to access the current delivery and its metadata:
 
 ```lua
 -- process_order.lua
-local json = require("json")
+local queue = require("queue")
+local logger = require("logger")
 
-local function handler(body)
-    local order = json.decode(body)
-
-    -- Process the order
-    local result, err = process_order(order)
-    if err then
-        -- Return error to trigger Nack (requeue)
-        return nil, err
+local function main(order)
+    local msg, msg_err = queue.message()
+    if msg_err then
+        return nil, msg_err
     end
 
-    -- Success triggers Ack
-    return result
+    logger:info("processing order", {
+        message_id = msg:id(),
+        order_id = order.id
+    })
+
+    return {processed = true, order_id = order.id}
 end
 
-return handler
+return {main = main}
 ```
 
 ```yaml
 - name: process_order
   kind: function.lua
   source: file://process_order.lua
+  method: main
   modules:
-    - json
+    - queue
+    - logger
 ```
 
 ## Acknowledgment
 
-| Result | Action | Effect |
-|--------|--------|--------|
-| Success | Ack | Message removed from queue |
-| Error | Nack | Message requeued (driver-dependent) |
+Unless the handler explicitly settles the delivery, the consumer uses the function invocation result:
+
+| Handler outcome | Action | Effect |
+|-----------------|--------|--------|
+| Completes without an invocation error | Ack | Message removed from queue |
+| Returns or raises an invocation error | Nack | Redelivery is driver-dependent |
+
+Ordinary return values, including `false`, do not select acknowledgment behavior. Call `msg:ack()` or `msg:nack()` to settle explicitly. Settlement is single-shot: the first settlement wins. With AMQP `auto_ack: true`, the broker acknowledges on delivery, so a later handler failure cannot cause broker redelivery.
 
 ## Worker Pool
 
-- Workers run as concurrent goroutines
-- Each worker processes one message at a time
-- Workers pull from a shared delivery channel; whichever worker is idle receives the next message (no guaranteed ordering or rotation across workers)
-- Prefetch buffer allows driver to deliver ahead
+- Workers run as concurrent goroutines.
+- Each worker processes one message at a time.
+- Workers pull from a shared delivery channel. The next idle worker receives the next message, without guaranteed ordering or rotation across workers.
+- The prefetch buffer allows the driver to deliver messages ahead of processing.
 
 ### Example
 
@@ -107,11 +114,12 @@ Flow:
 
 ## Graceful Shutdown
 
-On stop:
-1. Stop accepting new deliveries
-2. Cancel worker contexts
-3. Wait for in-flight messages (with timeout)
-4. Return timeout error if workers don't finish
+During shutdown, the consumer:
+
+1. Stops accepting new deliveries
+2. Cancels worker contexts
+3. Waits for in-flight handlers, up to the stop timeout
+4. Returns a timeout error if workers do not finish
 
 ## Queue Declaration
 
@@ -127,8 +135,8 @@ On stop:
   kind: queue.queue
   driver: app:queue_driver
   queue_name: orders        # Override name (default: entry name)
-  codec: json               # Payload codec (optional)
-  dead_letter:              # Dead-letter handling (optional)
+  codec: json/plain         # Payload codec (optional; json/plain is the default)
+  dead_letter:              # Accepted configuration; not enforced by built-in drivers
     queue: app:dlq
     max_attempts: 5
   driver_options:
@@ -140,26 +148,26 @@ On stop:
 |-------|-------------|
 | `queue_name` | Override queue name (default: entry ID name) |
 | `codec` | Payload codec name |
-| `dead_letter.queue` | Registry ID of dead-letter queue |
-| `dead_letter.max_attempts` | Max delivery attempts before routing to DLQ |
+| `dead_letter.queue` | Registry ID accepted for a dead-letter queue; not enforced by built-in drivers |
+| `dead_letter.max_attempts` | Attempt count accepted in configuration; not enforced by built-in drivers |
 | `driver_options` | Driver-specific settings keyed by driver name |
 
 <note>
-Dead-letter routing is driver-dependent. The runtime does not translate the dead_letter block into AMQP arguments. Dead-letter routing occurs only if a dead-letter exchange is configured directly on the broker (outside Wippy); the memory driver does not route to a DLQ.
+No built-in driver currently counts attempts or routes messages from the `dead_letter` block. The runtime does not translate that block into AMQP queue arguments, and ordinary AMQP consumer failures request requeue. Broker-side dead-lettering must therefore be configured and triggered outside this block. The memory driver does not route to a DLQ.
 </note>
 
 ## Memory Driver
 
-Built-in in-memory queue for development/testing:
+The built-in in-memory driver is intended for development and testing:
 
-- Kind: `queue.driver.memory`
-- Messages stored in memory
-- Nack re-enqueues the message to the tail of the queue
-- No persistence across restarts
+- Its kind is `queue.driver.memory`.
+- Messages are stored in memory.
+- Nack attempts to re-enqueue a cloned message at the end of the queue; that attempt can fail when the bounded queue is full.
+- Messages do not persist across restarts.
 
 ## See Also
 
-- [Message Queue](lua/storage/queue.md) - Queue module reference
-- [Queue Configuration](system/queue.md) - Queue drivers and entry definitions
-- [Supervision Trees](guides/supervision.md) - Consumer lifecycle
-- [Process Management](lua/core/process.md) - Process spawning and communication
+- [Message Queue](lua/storage/queue.md) — Queue module reference
+- [Queue Configuration](system/queue.md) — Queue drivers and entry definitions
+- [Supervision](guides/supervision.md) — Consumer lifecycle
+- [Process Management](lua/core/process.md) — Process spawning and communication

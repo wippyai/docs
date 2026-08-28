@@ -1,6 +1,6 @@
 ---
 title: "SQL Database"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Run parameterized SQL queries, transactions, and prepared statements against configured databases."
 ---
 
 # SQL Database
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Execute SQL queries against PostgreSQL, MySQL, and SQLite databases. Features include parameterized queries, transactions, prepared statements, and a fluent query builder.
+The `sql` module runs queries against configured PostgreSQL, MySQL, and SQLite databases. It supports parameterized queries, transactions, prepared statements, and query builders.
+
+This page is an API reference. Its snippets assume a configured database, permission to acquire it, and any tables named by the query. They illustrate individual calls rather than a standalone application. The combined recipe at the end states its additional schema and driver assumptions.
 
 For database configuration, see [Database](system/database.md).
 
@@ -19,9 +21,9 @@ For database configuration, see [Database](system/database.md).
 local sql = require("sql")
 ```
 
-## Acquiring a Connection
+## `sql.get`
 
-Get a database connection from the resource registry:
+Acquire a database connection from the resource registry:
 
 ```lua
 local db, err = sql.get("app.db:main")
@@ -29,9 +31,19 @@ if err then
     return nil, err
 end
 
-local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
-db:release()
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    return finish(nil, err)
+end
+
+return finish(rows)
 ```
 
 | Parameter | Type | Description |
@@ -41,11 +53,11 @@ db:release()
 **Returns:** `DB, error`
 
 <note>
-Connections are automatically returned to the pool when the function exits, but calling `db:release()` explicitly is recommended for long-running operations.
+Database leases are released during execution-frame cleanup. Call `db:release()` explicitly when database work finishes, especially in long-running operations.
 </note>
 
 <note>
-Placeholders are passed to the database driver unchanged; the runtime does not rewrite them. SQLite and MySQL use `?`, PostgreSQL uses `$1, $2` — write them in the form your driver expects. The examples below use `?` (SQLite/MySQL). For queries that target more than one engine, build them with the [query builder](#query-builder) and set the dialect's `placeholder_format`.
+Direct `db` and transaction queries pass placeholders to the database driver unchanged. SQLite and MySQL use `?`; PostgreSQL uses `$1`, `$2`, and so on. Builder `run_with` calls select dollar placeholders automatically for PostgreSQL. Other database types retain the builder's selected format, which defaults to `?`. Set `placeholder_format` when generating SQL with `to_sql` or when another format is required.
 </note>
 
 ## Constants
@@ -80,7 +92,9 @@ local insert = sql.builder.insert("users")
 
 ## Type Coercion
 
-### as.int
+### `sql.as.int`
+
+Coerce a value to the SQL integer type.
 
 ```lua
 local value = sql.as.int(42)
@@ -88,9 +102,9 @@ local value = sql.as.int(42)
 
 **Returns:** `userdata`
 
-## as.float
+### `sql.as.float`
 
-Coerces value to SQL float type.
+Coerce a value to the SQL float type.
 
 ```lua
 local value = sql.as.float(19.99)
@@ -98,9 +112,9 @@ local value = sql.as.float(19.99)
 
 **Returns:** `userdata`
 
-## as.text
+### `sql.as.text`
 
-Coerces value to SQL text type.
+Coerce a value to the SQL text type.
 
 ```lua
 local value = sql.as.text("hello")
@@ -108,9 +122,9 @@ local value = sql.as.text("hello")
 
 **Returns:** `userdata`
 
-## as.binary
+### `sql.as.binary`
 
-Coerces value to SQL binary type.
+Coerce a value to the SQL binary type.
 
 ```lua
 local value = sql.as.binary("binary data")
@@ -118,9 +132,9 @@ local value = sql.as.binary("binary data")
 
 **Returns:** `userdata`
 
-## as.null
+### `sql.as.null`
 
-Returns SQL NULL marker.
+Return the SQL `NULL` marker.
 
 ```lua
 local value = sql.as.null()
@@ -130,7 +144,9 @@ local value = sql.as.null()
 
 ## Query Builder
 
-### Creating Queries
+### `sql.builder.select`
+
+Create a `SELECT` query builder.
 
 ```lua
 local query = sql.builder.select("id", "name")
@@ -144,9 +160,9 @@ local query = sql.builder.select("id", "name")
 
 **Returns:** `SelectBuilder`
 
-## builder.insert
+### `sql.builder.insert`
 
-Creates INSERT query builder.
+Create an `INSERT` query builder.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -160,9 +176,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-## builder.update
+### `sql.builder.update`
 
-Creates UPDATE query builder.
+Create an `UPDATE` query builder.
 
 ```lua
 local query = sql.builder.update("users")
@@ -176,9 +192,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-## builder.delete
+### `sql.builder.delete`
 
-Creates DELETE query builder.
+Create a `DELETE` query builder.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -192,9 +208,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-## builder.expr
+### `sql.builder.expr`
 
-Creates raw SQL expression for use in where/having clauses.
+Create a raw SQL expression for use in `WHERE` or `HAVING` clauses.
 
 ```lua
 local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
@@ -207,9 +223,9 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 **Returns:** `Sqlizer`
 
-## builder.eq
+### `sql.builder.eq`
 
-Creates equality condition from table.
+Create equality conditions from a table.
 
 ```lua
 local cond = sql.builder.eq({active = 1, status = "open"})
@@ -221,9 +237,9 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 **Returns:** `Sqlizer`
 
-## builder.not_eq
+### `sql.builder.not_eq`
 
-Creates inequality condition from table.
+Create inequality conditions from a table.
 
 ```lua
 local cond = sql.builder.not_eq({status = "closed"})
@@ -235,9 +251,9 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 **Returns:** `Sqlizer`
 
-## builder.lt
+### `sql.builder.lt`
 
-Creates less-than condition from table.
+Create less-than conditions from a table.
 
 ```lua
 local cond = sql.builder.lt({age = 18})
@@ -249,9 +265,9 @@ local cond = sql.builder.lt({age = 18})
 
 **Returns:** `Sqlizer`
 
-## builder.lte
+### `sql.builder.lte`
 
-Creates less-than-or-equal condition from table.
+Create less-than-or-equal conditions from a table.
 
 ```lua
 local cond = sql.builder.lte({price = 100})
@@ -263,9 +279,9 @@ local cond = sql.builder.lte({price = 100})
 
 **Returns:** `Sqlizer`
 
-## builder.gt
+### `sql.builder.gt`
 
-Creates greater-than condition from table.
+Create greater-than conditions from a table.
 
 ```lua
 local cond = sql.builder.gt({score = 80})
@@ -277,9 +293,9 @@ local cond = sql.builder.gt({score = 80})
 
 **Returns:** `Sqlizer`
 
-## builder.gte
+### `sql.builder.gte`
 
-Creates greater-than-or-equal condition from table.
+Create greater-than-or-equal conditions from a table.
 
 ```lua
 local cond = sql.builder.gte({age = 21})
@@ -291,9 +307,9 @@ local cond = sql.builder.gte({age = 21})
 
 **Returns:** `Sqlizer`
 
-## builder.like
+### `sql.builder.like`
 
-Creates LIKE condition from table.
+Create `LIKE` conditions from a table.
 
 ```lua
 local cond = sql.builder.like({name = "john%"})
@@ -305,9 +321,9 @@ local cond = sql.builder.like({name = "john%"})
 
 **Returns:** `Sqlizer`
 
-## builder.not_like
+### `sql.builder.not_like`
 
-Creates NOT LIKE condition from table.
+Create `NOT LIKE` conditions from a table.
 
 ```lua
 local cond = sql.builder.not_like({email = "%@spam.com"})
@@ -319,9 +335,9 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 
 **Returns:** `Sqlizer`
 
-## builder.and_
+### `sql.builder.and_`
 
-Combines multiple conditions with AND.
+Combine multiple conditions with `AND`.
 
 ```lua
 local cond = sql.builder.and_({
@@ -336,9 +352,9 @@ local cond = sql.builder.and_({
 
 **Returns:** `Sqlizer`
 
-## builder.or_
+### `sql.builder.or_`
 
-Combines multiple conditions with OR.
+Combine multiple conditions with `OR`.
 
 ```lua
 local cond = sql.builder.or_({
@@ -353,9 +369,9 @@ local cond = sql.builder.or_({
 
 **Returns:** `Sqlizer`
 
-## builder.question
+### `sql.builder.question`
 
-Placeholder format for ? placeholders (default). Available as `sql.builder.default_placeholder` alias.
+Use `?` placeholders (default). This format is also available as `sql.builder.default_placeholder`.
 
 ```lua
 local query = sql.builder.select("*")
@@ -363,9 +379,9 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.question)
 ```
 
-## builder.dollar
+### `sql.builder.dollar`
 
-Placeholder format for $1, $2, ... placeholders.
+Use `$1, $2, ...` placeholders.
 
 ```lua
 local query = sql.builder.select("*")
@@ -373,21 +389,21 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
-## builder.at
+### `sql.builder.at`
 
-Placeholder format for `@p1, @p2, ...` placeholders (SQL Server style). Passed to `placeholder_format` like the formats above.
+Use `@p1, @p2, ...` placeholders (SQL Server style). Pass this format to `placeholder_format` like the formats above.
 
-## builder.colon
+### `sql.builder.colon`
 
-Placeholder format for `:1, :2, ...` placeholders. Passed to `placeholder_format` like the formats above.
+Use `:1, :2, ...` placeholders. Pass this format to `placeholder_format` like the formats above.
 
 ## Connection Methods
 
-Database connection handle returned by `sql.get()`.
+A connection handle returned by `sql.get()` provides query, transaction, statement, and pool operations.
 
-### db:type
+### `db:type`
 
-Returns database type constant.
+Return the database type constant.
 
 ```lua
 local dbtype, err = db:type()
@@ -395,9 +411,9 @@ local dbtype, err = db:type()
 
 **Returns:** `string, error`
 
-### db:query
+### `db:query`
 
-Executes SELECT query and returns rows.
+Run a `SELECT` query and return its rows.
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -410,9 +426,9 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **Returns:** `table[], error`
 
-### db:execute
+### `db:execute`
 
-Executes INSERT/UPDATE/DELETE query.
+Run an `INSERT`, `UPDATE`, or `DELETE` statement.
 
 ```lua
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -429,9 +445,9 @@ Returns table with fields:
 - `last_insert_id` - Last inserted ID
 - `rows_affected` - Number of rows affected
 
-### db:prepare
+### `db:prepare`
 
-Creates prepared statement for repeated execution.
+Create a prepared statement for repeated execution.
 
 ```lua
 local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
@@ -443,9 +459,9 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 
 **Returns:** `Statement, error`
 
-### db:begin
+### `db:begin`
 
-Begins database transaction.
+Begin a database transaction.
 
 ```lua
 local tx, err = db:begin({
@@ -464,9 +480,9 @@ Options table fields:
 
 **Returns:** `Transaction, error`
 
-### db:release
+### `db:release`
 
-Releases database resource back to pool.
+Release the database resource back to the pool.
 
 ```lua
 local ok, err = db:release()
@@ -474,9 +490,11 @@ local ok, err = db:release()
 
 **Returns:** `boolean, error`
 
-### db:stats
+The operation is idempotent.
 
-Returns connection pool statistics.
+### `db:stats`
+
+Return connection-pool statistics.
 
 ```lua
 local stats, err = db:stats()
@@ -497,11 +515,11 @@ Returns table with fields:
 
 ## Prepared Statements
 
-Prepared statement returned by `db:prepare()`.
+A prepared statement returned by `db:prepare()` can be queried or executed repeatedly.
 
-### stmt:query
+### `stmt:query`
 
-Executes prepared statement as SELECT.
+Run the prepared statement as a `SELECT` query.
 
 ```lua
 local rows, err = stmt:query({123})
@@ -513,9 +531,9 @@ local rows, err = stmt:query({123})
 
 **Returns:** `table[], error`
 
-### stmt:execute
+### `stmt:execute`
 
-Executes prepared statement as INSERT/UPDATE/DELETE.
+Run the prepared statement as an `INSERT`, `UPDATE`, or `DELETE` statement.
 
 ```lua
 local result, err = stmt:execute({"alice"})
@@ -531,9 +549,9 @@ Returns table with fields:
 - `last_insert_id` - Last inserted ID
 - `rows_affected` - Number of rows affected
 
-### stmt:close
+### `stmt:close`
 
-Closes prepared statement.
+Close the prepared statement.
 
 ```lua
 local ok, err = stmt:close()
@@ -543,11 +561,13 @@ local ok, err = stmt:close()
 
 ## Transactions
 
-Database transaction returned by `db:begin()`.
+A transaction returned by `db:begin()` provides query, statement, savepoint, commit, and rollback operations.
 
-### tx:db_type
+An active transaction is rolled back automatically during execution-frame cleanup. Commit or roll it back explicitly as soon as its work is complete.
 
-Returns database type constant.
+### `tx:db_type`
+
+Return the database type constant.
 
 ```lua
 local dbtype, err = tx:db_type()
@@ -555,9 +575,9 @@ local dbtype, err = tx:db_type()
 
 **Returns:** `string, error`
 
-### tx:query
+### `tx:query`
 
-Executes SELECT query within transaction.
+Run a `SELECT` query within the transaction.
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -570,9 +590,9 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **Returns:** `table[], error`
 
-### tx:execute
+### `tx:execute`
 
-Executes INSERT/UPDATE/DELETE within transaction.
+Run an `INSERT`, `UPDATE`, or `DELETE` statement within the transaction.
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -589,9 +609,9 @@ Returns table with fields:
 - `last_insert_id` - Last inserted ID
 - `rows_affected` - Number of rows affected
 
-### tx:prepare
+### `tx:prepare`
 
-Creates prepared statement within transaction.
+Create a prepared statement within the transaction.
 
 ```lua
 local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
@@ -603,9 +623,9 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 
 **Returns:** `Statement, error`
 
-### tx:commit
+### `tx:commit`
 
-Commits transaction.
+Commit the transaction.
 
 ```lua
 local ok, err = tx:commit()
@@ -613,9 +633,9 @@ local ok, err = tx:commit()
 
 **Returns:** `boolean, error`
 
-### tx:rollback
+### `tx:rollback`
 
-Rolls back transaction.
+Roll back the transaction.
 
 ```lua
 local ok, err = tx:rollback()
@@ -623,9 +643,9 @@ local ok, err = tx:rollback()
 
 **Returns:** `boolean, error`
 
-### tx:savepoint
+### `tx:savepoint`
 
-Creates named savepoint within transaction.
+Create a named savepoint within the transaction.
 
 ```lua
 local ok, err = tx:savepoint("sp1")
@@ -637,9 +657,9 @@ local ok, err = tx:savepoint("sp1")
 
 **Returns:** `boolean, error`
 
-### tx:rollback_to
+### `tx:rollback_to`
 
-Rolls back to named savepoint.
+Roll back to a named savepoint.
 
 ```lua
 local ok, err = tx:rollback_to("sp1")
@@ -651,9 +671,9 @@ local ok, err = tx:rollback_to("sp1")
 
 **Returns:** `boolean, error`
 
-### tx:release
+### `tx:release`
 
-Releases savepoint.
+Release a savepoint.
 
 ```lua
 local ok, err = tx:release("sp1")
@@ -667,11 +687,11 @@ local ok, err = tx:release("sp1")
 
 ## SELECT Builder
 
-Fluent interface for building SELECT queries.
+Build a `SELECT` query one clause at a time.
 
-### select:from
+### `select:from`
 
-Sets FROM clause.
+Set the `FROM` clause.
 
 ```lua
 local query = sql.builder.select("id", "name"):from("users")
@@ -683,9 +703,9 @@ local query = sql.builder.select("id", "name"):from("users")
 
 **Returns:** `SelectBuilder`
 
-### select:join
+### `select:join`
 
-Adds JOIN clause.
+Add a `JOIN` clause.
 
 ```lua
 local query = sql.builder.select("*")
@@ -700,9 +720,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:left_join
+### `select:left_join`
 
-Adds LEFT JOIN clause.
+Add a `LEFT JOIN` clause.
 
 ```lua
 local query = sql.builder.select("*")
@@ -717,9 +737,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:right_join
+### `select:right_join`
 
-Adds RIGHT JOIN clause.
+Add a `RIGHT JOIN` clause.
 
 ```lua
 local query = sql.builder.select("*")
@@ -734,9 +754,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:inner_join
+### `select:inner_join`
 
-Adds INNER JOIN clause.
+Add an `INNER JOIN` clause.
 
 ```lua
 local query = sql.builder.select("*")
@@ -751,9 +771,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:where
+### `select:where`
 
-Adds WHERE condition.
+Add a `WHERE` condition.
 
 ```lua
 local query = sql.builder.select("*")
@@ -766,16 +786,16 @@ local query = sql.builder.select("*")
 | `condition` | string\|table\|Sqlizer | WHERE condition |
 | `args` | ...any | Bind arguments (optional, when using string) |
 
-Supports three formats:
+The method accepts three formats:
 - String: `where("status = ?", "active")`
 - Table: `where({status = "active"})`
 - Sqlizer: `where(sql.builder.gt({score = 80}))`
 
 **Returns:** `SelectBuilder`
 
-### select:order_by
+### `select:order_by`
 
-Adds ORDER BY clause.
+Add an `ORDER BY` clause.
 
 ```lua
 local query = sql.builder.select("*")
@@ -789,9 +809,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:group_by
+### `select:group_by`
 
-Adds GROUP BY clause.
+Add a `GROUP BY` clause.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*)")
@@ -805,9 +825,9 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 **Returns:** `SelectBuilder`
 
-### select:having
+### `select:having`
 
-Adds HAVING condition.
+Add a `HAVING` condition.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*) as cnt")
@@ -823,9 +843,9 @@ local query = sql.builder.select("status", "COUNT(*) as cnt")
 
 **Returns:** `SelectBuilder`
 
-### select:limit
+### `select:limit`
 
-Sets LIMIT.
+Set the `LIMIT` value.
 
 ```lua
 local query = sql.builder.select("*")
@@ -839,9 +859,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:offset
+### `select:offset`
 
-Sets OFFSET.
+Set the `OFFSET` value.
 
 ```lua
 local query = sql.builder.select("*")
@@ -855,9 +875,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:columns
+### `select:columns`
 
-Adds columns to SELECT.
+Add columns to the `SELECT` list.
 
 ```lua
 local query = sql.builder.select():columns("id", "name", "email")
@@ -869,9 +889,9 @@ local query = sql.builder.select():columns("id", "name", "email")
 
 **Returns:** `SelectBuilder`
 
-### select:distinct
+### `select:distinct`
 
-Adds DISTINCT modifier.
+Add the `DISTINCT` modifier.
 
 ```lua
 local query = sql.builder.select("status")
@@ -881,9 +901,9 @@ local query = sql.builder.select("status")
 
 **Returns:** `SelectBuilder`
 
-### select:suffix
+### `select:suffix`
 
-Adds SQL suffix.
+Add an SQL suffix.
 
 ```lua
 local query = sql.builder.select("*")
@@ -898,9 +918,9 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:placeholder_format
+### `select:placeholder_format`
 
-Sets placeholder format.
+Set the placeholder format.
 
 ```lua
 local query = sql.builder.select("*")
@@ -914,22 +934,25 @@ local query = sql.builder.select("*")
 
 **Returns:** `SelectBuilder`
 
-### select:to_sql
+### `select:to_sql`
 
-Generates SQL string and bind arguments.
+Generate the SQL string and bind arguments.
 
 ```lua
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
-### select:run_with
+### `select:run_with`
 
-Creates executor for query.
+Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local rows, err = executor:query()
 ```
 
@@ -937,15 +960,15 @@ local rows, err = executor:query()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## INSERT Builder
 
-Fluent interface for building INSERT queries.
+Build an `INSERT` query one clause at a time.
 
-### insert:into
+### `insert:into`
 
-Sets table name.
+Set the table name.
 
 ```lua
 local query = sql.builder.insert():into("users")
@@ -957,9 +980,9 @@ local query = sql.builder.insert():into("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:columns
+### `insert:columns`
 
-Sets column names.
+Set the column names.
 
 ```lua
 local query = sql.builder.insert("users"):columns("name", "email")
@@ -971,9 +994,9 @@ local query = sql.builder.insert("users"):columns("name", "email")
 
 **Returns:** `InsertBuilder`
 
-### insert:values
+### `insert:values`
 
-Adds row values.
+Add row values.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -987,9 +1010,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:set_map
+### `insert:set_map`
 
-Sets columns and values from table.
+Set columns and values from a table.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1002,9 +1025,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:select
+### `insert:select`
 
-Inserts from SELECT query.
+Insert rows from a `SELECT` query.
 
 ```lua
 local select_query = sql.builder.select("name", "email"):from("temp_users")
@@ -1019,13 +1042,13 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:prefix
+### `insert:prefix`
 
-Adds SQL prefix.
+Add an SQL prefix.
 
 ```lua
 local query = sql.builder.insert("users")
-    :prefix("INSERT IGNORE INTO")
+    :prefix("/* audit import */")
 ```
 
 | Parameter | Type | Description |
@@ -1035,9 +1058,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:suffix
+### `insert:suffix`
 
-Adds SQL suffix.
+Add an SQL suffix.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1053,9 +1076,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:options
+### `insert:options`
 
-Adds INSERT options.
+Add `INSERT` options.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1068,9 +1091,9 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:placeholder_format
+### `insert:placeholder_format`
 
-Sets placeholder format.
+Set the placeholder format.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1083,22 +1106,25 @@ local query = sql.builder.insert("users")
 
 **Returns:** `InsertBuilder`
 
-### insert:to_sql
+### `insert:to_sql`
 
-Generates SQL string and bind arguments.
+Generate the SQL string and bind arguments.
 
 ```lua
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
-### insert:run_with
+### `insert:run_with`
 
-Creates executor for query.
+Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1106,15 +1132,15 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## UPDATE Builder
 
-Fluent interface for building UPDATE queries.
+Build an `UPDATE` query one clause at a time.
 
-### update:table
+### `update:table`
 
-Sets table name.
+Set the table name.
 
 ```lua
 local query = sql.builder.update():table("users")
@@ -1126,9 +1152,9 @@ local query = sql.builder.update():table("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:set
+### `update:set`
 
-Sets column value.
+Set a column value.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1143,9 +1169,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:set_map
+### `update:set_map`
 
-Sets multiple columns from table.
+Set multiple columns from a table.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1158,9 +1184,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:where
+### `update:where`
 
-Adds WHERE condition.
+Add a `WHERE` condition.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1175,9 +1201,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:order_by
+### `update:order_by`
 
-Adds ORDER BY clause.
+Add an `ORDER BY` clause.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1191,9 +1217,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:limit
+### `update:limit`
 
-Sets LIMIT.
+Set the `LIMIT` value.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1207,9 +1233,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:offset
+### `update:offset`
 
-Sets OFFSET.
+Set the `OFFSET` value.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1223,9 +1249,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:suffix
+### `update:suffix`
 
-Adds SQL suffix.
+Add an SQL suffix.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1240,9 +1266,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:from
+### `update:from`
 
-Adds FROM clause.
+Add a `FROM` clause.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1256,9 +1282,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:from_select
+### `update:from_select`
 
-Updates from SELECT query.
+Update rows from a `SELECT` query.
 
 ```lua
 local select_query = sql.builder.select("*"):from("temp_users")
@@ -1274,9 +1300,9 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:placeholder_format
+### `update:placeholder_format`
 
-Sets placeholder format.
+Set the placeholder format.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1289,22 +1315,25 @@ local query = sql.builder.update("users")
 
 **Returns:** `UpdateBuilder`
 
-### update:to_sql
+### `update:to_sql`
 
-Generates SQL string and bind arguments.
+Generate the SQL string and bind arguments.
 
 ```lua
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
-### update:run_with
+### `update:run_with`
 
-Creates executor for query.
+Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1312,15 +1341,15 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## DELETE Builder
 
-Fluent interface for building DELETE queries.
+Build a `DELETE` query one clause at a time.
 
-### delete:from
+### `delete:from`
 
-Sets table name.
+Set the table name.
 
 ```lua
 local query = sql.builder.delete():from("users")
@@ -1332,9 +1361,9 @@ local query = sql.builder.delete():from("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:where
+### `delete:where`
 
-Adds WHERE condition.
+Add a `WHERE` condition.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1348,9 +1377,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:order_by
+### `delete:order_by`
 
-Adds ORDER BY clause.
+Add an `ORDER BY` clause.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1364,9 +1393,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:limit
+### `delete:limit`
 
-Sets LIMIT.
+Set the `LIMIT` value.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1380,9 +1409,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:offset
+### `delete:offset`
 
-Sets OFFSET.
+Set the `OFFSET` value.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1396,9 +1425,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:suffix
+### `delete:suffix`
 
-Adds SQL suffix.
+Add an SQL suffix.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1413,9 +1442,9 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:placeholder_format
+### `delete:placeholder_format`
 
-Sets placeholder format.
+Set the placeholder format.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1428,22 +1457,25 @@ local query = sql.builder.delete("users")
 
 **Returns:** `DeleteBuilder`
 
-### delete:to_sql
+### `delete:to_sql`
 
-Generates SQL string and bind arguments.
+Generate the SQL string and bind arguments.
 
 ```lua
 local sql_str, args = query:to_sql()
 ```
 
-**Returns:** `string, table`
+**Returns:** `string, table` on success; `nil, error` for an invalid builder state
 
-### delete:run_with
+### `delete:run_with`
 
-Creates executor for query.
+Create an executor for the query.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1451,15 +1483,15 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | Database or transaction handle |
 
-**Returns:** `QueryExecutor`
+**Returns:** `QueryExecutor, error`
 
 ## Executing Queries
 
 The query executor runs builder-generated queries.
 
-### executor:query
+### `executor:query`
 
-Executes query and returns rows (for SELECT).
+Run the query and return rows for a `SELECT` statement.
 
 ```lua
 local rows, err = executor:query()
@@ -1467,9 +1499,9 @@ local rows, err = executor:query()
 
 **Returns:** `table[], error`
 
-### executor:exec
+### `executor:exec`
 
-Executes query and returns result (for INSERT/UPDATE/DELETE).
+Run the query and return the result of an `INSERT`, `UPDATE`, or `DELETE` statement.
 
 ```lua
 local result, err = executor:exec()
@@ -1481,9 +1513,9 @@ Returns table with fields:
 - `last_insert_id` - Last inserted ID
 - `rows_affected` - Number of rows affected
 
-### executor:to_sql
+### `executor:to_sql`
 
-Returns generated SQL and arguments without executing.
+Return the generated SQL and arguments without executing the query.
 
 ```lua
 local sql_str, args = executor:to_sql()
@@ -1508,30 +1540,35 @@ Database access is subject to security policy evaluation.
 | Resource not found | `errors.NOT_FOUND` | no |
 | Resource not database | `errors.INVALID` | no |
 | Invalid parameters | `errors.INVALID` | no |
-| SQL syntax error | `errors.INVALID` | no |
 | Statement closed | `errors.INVALID` | no |
 | Transaction not active | `errors.INVALID` | no |
 | Invalid savepoint name | `errors.INVALID` | no |
-| Query execution error | varies | varies |
+| Driver or query execution error | preserved from the driver when available; otherwise unspecified | varies |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 
-## Example
+## Combined Partial Recipe
+
+This recipe assumes `app.db:main` is a configured SQLite or MySQL database and already contains `users`, `orders`, and `logs` tables with the referenced columns. It uses `?` placeholders; use `$1`, `$2`, and so on for a PostgreSQL resource. Returned rows depend on the application's data. The surrounding application supplies `report_cleanup_error(err)` so rollback or close failures are observable without replacing the initiating operation error.
 
 ```lua
 local sql = require("sql")
 
--- Get database connection
 local db, err = sql.get("app.db:main")
-if err then error(err) end
+if err then return nil, err end
 
--- Check database type
-local dbtype, _ = db:type()
-print("Database type:", dbtype)
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
 -- Direct query
 local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 for _, user in ipairs(users) do
     print(user.id, user.name)
@@ -1550,56 +1587,52 @@ local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :order_by("order_count DESC")
     :limit(10)
 
-local executor = query:run_with(db)
+local executor, build_err = query:run_with(db)
+if build_err then
+    return finish(nil, build_err)
+end
 local results, err = executor:query()
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
--- Transaction with savepoints
+-- Transaction
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 if err then
-    tx:rollback()
-    error(err)
+    local _, rollback_err = tx:rollback()
+    if rollback_err then report_cleanup_error(rollback_err) end
+    return finish(nil, err)
 end
 
-tx:savepoint("sp1")
-
-local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
-if err then
-    tx:rollback_to("sp1")
-else
-    tx:release("sp1")
+local _, commit_err = tx:commit()
+if commit_err then
+    return finish(nil, commit_err)
 end
-
-local ok, err = tx:commit()
-if err then error(err) end
 
 -- Prepared statements
 local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
-for i = 1, 100 do
+for i = 1, 3 do
     local _, err = stmt:execute({"log message " .. i, "info"})
     if err then
-        stmt:close()
-        error(err)
+        local _, close_err = stmt:close()
+        if close_err then report_cleanup_error(close_err) end
+        return finish(nil, err)
     end
 end
 
-stmt:close()
+local _, close_err = stmt:close()
+if close_err then
+    return finish(nil, close_err)
+end
 
--- NULL and typed values
-local insert = sql.builder.insert("products")
-    :columns("name", "price", "description")
-    :values("Widget", sql.as.float(19.99), sql.NULL)
-
-local executor = insert:run_with(db)
-local result, err = executor:exec()
-if err then error(err) end
-
-print("Inserted ID:", result.last_insert_id)
-
-db:release()
+return finish({users = users, ranked_users = results})
 ```

@@ -1,16 +1,18 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Trate eventos de entrada do terminal e renderize layouts estilizados no terminal."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Módulo de UI de terminal para eventos de entrada raw, saída estilizada e utilitários de layout.
+O módulo `tty` trata eventos de entrada raw do terminal e fornece utilitários de saída estilizada e layout.
+
+Esta é uma referência de API. O loop de entrada é uma receita parcial de processo de terminal; os exemplos de estilo e layout são independentes.
 
 <note>
-Este módulo só funciona dentro de um contexto de terminal. Você não pode usá-lo a partir de funções regulares — apenas a partir de processos executando em um <a href="system/terminal.md">Terminal Host</a>.
+Este módulo está disponível apenas para processos executados em um <a href="../../system/terminal.md">Host de Terminal</a>, não para funções regulares.
 </note>
 
 ## Carregamento
@@ -28,31 +30,42 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
 ## Controle de Entrada
 
-### tty.start()
+### `tty.start()`
 
 Habilita o modo de entrada raw do terminal. O terminal alterna para o modo raw e começa a emitir eventos.
 
@@ -62,7 +75,7 @@ local ok, err = tty.start()
 
 **Retorna:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Desabilita a entrada raw e restaura o terminal ao modo normal.
 
@@ -72,7 +85,7 @@ local ok, err = tty.stop()
 
 **Retorna:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 Inscreve-se nos eventos do terminal e retorna um channel. Eventos são entregues como tabelas com um campo `type`.
 
@@ -82,7 +95,7 @@ local events = tty.events()
 
 **Retorna:** `EventChannel, error`
 
-### tty.screen_size()
+### `tty.screen_size()`
 
 Consulta as dimensões atuais do terminal.
 
@@ -92,7 +105,7 @@ local width, height, err = tty.screen_size()
 
 **Retorna:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Habilita ou desabilita o rastreamento de eventos de mouse.
 
@@ -115,9 +128,9 @@ Eventos são tabelas com um campo `type` que determina quais outros campos estã
 ```lua
 {
     type = "key",
-    key = "a",           -- caractere imprimível ou nome da tecla
-    key_type = "runes",  -- "runes" para imprimível, ou nome de tecla especial
-    action = "press",    -- "press" ou "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -132,7 +145,7 @@ Requer `tty.mouse(true)`.
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- nome do botão
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -177,20 +190,22 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- No loop de eventos
+-- In event loop
 if quit:matches(ev) then
     break
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
-| `keys` | string[] | Padrões de tecla a corresponder (ex: `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Obrigatório. Padrões de tecla a corresponder (por exemplo, `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Opcional. `{key = "...", desc = "..."}` para texto de ajuda |
 
 **Retorna:** `KeyBinding`
+
+O schema de tipo exige `keys`. Em runtime, a ausência de `keys` ou uma tabela vazia cria uma vinculação que nunca corresponde.
 
 ### Métodos de KeyBinding
 
@@ -203,7 +218,7 @@ end
 
 ## Estilos
 
-Crie saída de texto estilizada usando estilização baseada em lipgloss. Todos os métodos de estilo retornam um novo estilo (imutável).
+Crie saída estilizada para o terminal. Os valores de estilo são imutáveis, portanto cada método de estilo retorna um novo valor.
 
 ```lua
 local tty = require("tty")
@@ -220,10 +235,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 Cria um novo estilo vazio.
 
@@ -301,26 +317,26 @@ Funções de layout e medição para texto estilizado. Disponíveis sob `tty.tex
 ### Medição
 
 ```lua
-local w = tty.text.width("hello")         -- largura imprimível (ciente de ANSI)
-local h = tty.text.height("a\nb\nc")      -- contagem de linhas
-local w, h = tty.text.size("hello\nworld") -- ambos
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### Junção
 
 ```lua
--- Junta lado a lado, alinhado no topo
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Empilha verticalmente, centralizado
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### Dimensões Máximas
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- mais largo
-local h = tty.text.max_height({"one\ntwo", "single"})         -- mais alto
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### Posicionamento
@@ -328,13 +344,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- mais alto
 Posiciona uma string dentro de uma caixa de dimensões dadas:
 
 ```lua
--- Centraliza em uma caixa 80x24
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Apenas horizontal
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Apenas vertical
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -348,7 +364,17 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Erros
+
+As funções de controle de entrada retornam erros estruturados:
+
+| Condição | Tipo | Retentável |
+|----------|------|------------|
+| Sem contexto de terminal ou controlador de entrada | `errors.UNAVAILABLE` | não |
+| A inscrição em eventos não tem contexto de runtime ou processo | `errors.INTERNAL` | não |
+| A resposta de yield do terminal é inválida | `errors.INTERNAL` | não |
+
 ## Veja Também
 
 - [I/O do Terminal](lua/system/io.md) — operações de stdin/stdout/stderr
-- [Terminal Host](system/terminal.md) — Configuração do host de terminal
+- [Host de Terminal](system/terminal.md) — configuração do host de terminal

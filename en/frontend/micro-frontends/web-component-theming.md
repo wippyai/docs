@@ -1,11 +1,15 @@
 ---
 title: "Theming: Web Components"
-description: "Theming reference covers the full CSS variable catalog. This doc covers how a web component receives the theme through shadow DOM."
+description: "How Wippy web components inherit theme variables and load rule-based CSS inside shadow roots."
 ---
 
 # Theming: Web Components
 
-[Theming reference](./theming.md) covers the full CSS variable catalog. This doc covers how a web component receives the theme through shadow DOM.
+**Classification: configuration reference with partial component recipes.**
+The snippets assume an existing Wippy web component, its shadow root, and the
+public proxy and web-component packages from the pinned release family.
+
+Web components inherit theme variables across the shadow boundary and load rule-based theme assets inside their shadow roots. See [Theme Authoring](./theming.md) for the shared authoring contract.
 
 ---
 
@@ -14,7 +18,7 @@ description: "Theming reference covers the full CSS variable catalog. This doc c
 Shadow DOM blocks CSS cascade — stylesheets written outside your component do not apply inside it. However, CSS custom properties (variables) **do** cross the shadow boundary. This means:
 
 - Custom properties inherit across the shadow boundary. WippyElement also bridges every configured variable name through its forced-theme inner root, so locally loaded `theme-config.css` defaults cannot reset configured values.
-- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in — you must load them explicitly via `hostCssKeys`.
+- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in. The runtime loads all four supported Host CSS assets when `hostCssKeys` is omitted; declare the list explicitly to limit that set.
 
 ---
 
@@ -22,7 +26,7 @@ Shadow DOM blocks CSS cascade — stylesheets written outside your component do 
 
 **L1 — Global:** CSS custom properties cross the shadow boundary. WippyElement enumerates the effective global/children/page variable maps, including `@light` / `@dark`, and installs a generic inheritance bridge before the injected custom CSS layer.
 
-**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to load these explicitly into the shadow root.
+**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to control which Host assets load into the shadow root.
 
 **L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` reach the WC host and inner theme root through the same generic bridge.
 
@@ -40,7 +44,7 @@ JavaScript externalization follows the complete pinned Web Host `import-map.json
 
 ### `hostCssKeys` — runtime CSS loading
 
-Declare which host-served CSS assets the WC runtime should inject into your shadow root. Add to `wippyConfig.hostCssKeys`:
+Declare which host-served CSS assets the WC runtime should inject into your shadow root. When `hostCssKeys` is omitted, the runtime loads `themeConfigUrl`, `primeVueCssUrl`, `markdownCssUrl`, and `iframeCssUrl`; an empty list opts out. An explicit list is recommended so the component loads only what it uses:
 
 ```typescript
 static get wippyConfig(): WippyElementConfig<ComponentProps> {
@@ -52,25 +56,29 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 }
 ```
 
-| Key | What it loads | Size | When to include |
+| Key | What it loads | Relative cost | When to include |
 |---|---|---|---|
-| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | ~8 KB | When the WC consumes host semantic tokens, dark mode, or themed chrome. A presentation-neutral canvas/SVG/chart can omit it. |
-| `primeVueCssUrl` | All PrimeVue component CSS (unstyled mode) | ~455 KB | Only if the WC renders PrimeVue components (`<Button>`, `<Dialog>`, etc.) inside its shadow root. |
-| `markdownCssUrl` | `.data-body` markdown styles | ~5 KB | Only if the WC renders markdown content. |
-| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | ~1 KB | Required for any WC that can scroll, for scrollbar consistency. |
+| `themeConfigUrl` | `theme-config.css` — the full `--p-*` CSS variable system | Small | When the WC consumes host semantic tokens, dark mode, or themed chrome. A presentation-neutral canvas/SVG/chart can omit it. |
+| `primeVueCssUrl` | All PrimeVue component CSS (unstyled mode) plus Tailwind utilities | Large | Only if the WC renders PrimeVue components (`<Button>`, `<Dialog>`, etc.) or authors Tailwind utility classes inside its shadow root. |
+| `markdownCssUrl` | `.data-body` markdown styles | Small | Only if the WC renders markdown content. |
+| `iframeCssUrl` | Default themed scrollbar styling; the name is historical | Small | Required for any WC that can scroll, for scrollbar consistency. |
 
-`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need Tailwind v3 preflight inside the shadow root, call `hostCss.preflightCssUrl` + `loadCss()` imperatively. In practice this is rarely needed.
+`preflightCssUrl` is not in the `HostCssKey` union. If you genuinely need
+Tailwind v3 preflight inside the shadow root, fetch and insert it explicitly:
 
-#### Bundle-size guidance
+```typescript
+import { hostCss, loadCss } from '@wippy-fe/proxy'
+import { injectInlineCss } from '@wippy-fe/webcomponent-core'
 
-| `hostCssKeys` | Total CSS pulled |
-|---|---|
-| `['themeConfigUrl']` | ~8 KB |
-| `['themeConfigUrl', 'iframeCssUrl']` | ~9 KB |
-| `['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl']` | ~14 KB |
-| `['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl']` | ~464 KB |
+const css = await loadCss(hostCss.preflightCssUrl)
+injectInlineCss(shadow, css)
+```
 
-Choose independently:
+Here `shadow` is the component's existing `ShadowRoot`. Handle a rejected CSS
+fetch as a component initialization failure. In practice preflight is rarely
+needed.
+
+Choose the assets independently:
 
 - A presentation-neutral canvas/SVG/chart with no standard product controls, host semantic tokens, or utility classes may omit PrimeVue, the theme asset, and Tailwind.
 - Any button, input, form, table, dialog, menu, tag, tooltip, or feedback control requires its PrimeVue equivalent, `PrimeVuePlugin`, and `primeVueCssUrl`.
@@ -107,7 +115,7 @@ For local development without a host, import `theme-config.css` directly in your
 }
 ```
 
-This provides the default `--p-*` values so your component renders correctly in host-less mode. At runtime the real theme is delivered via `hostCssKeys: ['themeConfigUrl']` and takes precedence.
+This provides default `--p-*` values in host-less mode. At runtime, the host theme is delivered through `hostCssKeys: ['themeConfigUrl']` and takes precedence.
 
 ---
 
@@ -176,8 +184,8 @@ hostCssKeys: ['themeConfigUrl'] as const
 ## Anti-patterns specific to WCs
 
 - Hardcoding hex inside `:host { … }` — use `var(--p-*)` instead.
-- `<style>` blocks with `@media (prefers-color-scheme: dark)` that hardcode dark-mode colors — the vars in `theme-config.css` retune themselves for dark; if you reference `var(--p-*)` correctly, dark mode is free.
-- Requesting `primeVueCssUrl` when the WC doesn't render PrimeVue — adds a large stylesheet for zero benefit.
+- `<style>` blocks with `@media (prefers-color-scheme: dark)` that hardcode dark-mode colors — the variables in `theme-config.css` retune for dark mode, so references to `var(--p-*)` do not need a separate hardcoded palette.
+- Requesting `primeVueCssUrl` when the WC does not render PrimeVue — adds a large unused stylesheet.
 - Setting PrimeVue overlays to `appendTo: 'self'` as a routine fix. Install `PrimeVuePlugin` and keep the default target; it redirects to a pinned overlay layer in the owning shadow root. Explicit `self` is inline placement and can clip in scrolling overlays.
 - Forgetting `bubbles: true, composed: true` on `CustomEvent` dispatch — events won't escape shadow DOM.
 - Choosing `@wippy-fe/theme` externalization from CSS assumptions instead of the complete pinned Web Host import map.

@@ -1,6 +1,6 @@
 ---
 title: "関数呼び出し"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "登録済み関数を同期または非同期に呼び出し、リクエスト、セキュリティ、呼び出しオプションを伝播します。"
 ---
 
 # 関数呼び出し
@@ -42,20 +42,27 @@ target文字列は`namespace:name`パターンに従い、namespaceはモジュ�
 非同期関数呼び出しを開始し、即座にFutureを返す。ブロックしたくない長時間実行操作、または複数の操作を並行で実行したい場合に使用。
 
 ```lua
--- ブロックせずに重い計算を開始
+-- Start heavy computation without blocking
 local future, err = funcs.async("app.process:analyze_data", large_dataset)
 if err then
     return nil, err
 end
 
--- 計算実行中に他の処理を実行...
+-- Do other work while computation runs...
 
--- 準備ができたら結果を待機
+-- Wait for result when ready
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -84,13 +91,20 @@ local exec = funcs.new()
 呼び出される関数で利用可能になるコンテキスト値を追加。トレースID、ユーザーセッション、機能フラグなどのリクエストスコープデータを伝播するために使用。
 
 ```lua
--- 下流サービスにリクエストコンテキストを伝播
-local exec = funcs.new():with_context({
-    request_id = ctx.get("request_id"),
+local ctx = require("ctx")
+
+-- Propagate request context to downstream services
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local exec, err = funcs.new():with_context({
+    request_id = request_id,
     feature_flags = {dark_mode = true}
 })
+if err then return nil, err end
 
 local user, err = exec:call("app.api:get_user", user_id)
+if err then return nil, err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -105,13 +119,17 @@ local user, err = exec:call("app.api:get_user", user_id)
 
 ```lua
 local security = require("security")
-local actor = security.actor()  -- 現在のユーザーのアクターを取得
+local actor = security.actor()  -- Get current user's actor
 
--- ユーザーの資格情報でadmin関数を呼び出し
-local exec = funcs.new():with_actor(actor)
+-- Call admin function with user's credentials
+local exec, err = funcs.new():with_actor(actor)
+if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+if err and err:kind() == errors.PERMISSION_DENIED then
+    return nil, errors.new({
+        message = "User cannot delete records",
+        kind = errors.PERMISSION_DENIED
+    })
 end
 ```
 
@@ -129,7 +147,8 @@ end
 local security = require("security")
 local scope = security.new_scope()
 
-local exec = funcs.new():with_scope(scope)
+local exec, err = funcs.new():with_scope(scope)
+if err then return nil, err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -140,14 +159,15 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-タイムアウトや優先度などの呼び出しオプションを設定。時間制限が必要な操作に使用。
+呼び出しオプションを設定します。実装は独自のオプションを定義でき、ランタイムも送信ネットワークを選択する `network` を認識します。
 
 ```lua
--- 外部API呼び出しに5秒のタイムアウトを設定
-local exec = funcs.new():with_options({timeout = 5000})
+-- Set a 5 second timeout for external API call
+local exec, err = funcs.new():with_options({timeout = 5000})
+if err then return nil, err end
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- タイムアウトまたは他のエラーを処理
+    -- Handle timeout or other error
 end
 ```
 
@@ -155,21 +175,32 @@ end
 |-----------|------|-------------|
 | `options` | table | 実装固有のオプション |
 
+ランタイム定義のオプションは次のとおりです。
+
+| 認識されるオプション | 型 | 説明 |
+|-------------------|------|-------------|
+| `network` | string | 送信に使用する `network.*` エントリのレジストリ ID |
+
 **戻り値:** `Executor, error`
+
+ネットワークを選択するには、そのネットワーク ID に対する `network.select` 権限が必要です。
 
 ### call / async
 
 設定されたコンテキストを使用するExecutor版のcallとasync。
 
 ```lua
--- コンテキスト付きの再利用可能なexecutorを構築
-local exec = funcs.new()
-    :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+-- Build reusable executor with context
+local exec, err = funcs.new():with_context({trace_id = "abc-123"})
+if err then return nil, err end
+exec, err = exec:with_options({timeout = 10000})
+if err then return nil, err end
 
--- 同じコンテキストで複数の呼び出しを実行
-local users, _ = exec:call("app.api:list_users")
-local posts, _ = exec:call("app.api:list_posts")
+-- Make multiple calls with same context
+local users, users_err = exec:call("app.api:list_users")
+if users_err then return nil, users_err end
+local posts, posts_err = exec:call("app.api:list_posts")
+if posts_err then return nil, posts_err end
 ```
 
 ## Future
@@ -181,8 +212,18 @@ local posts, _ = exec:call("app.api:list_posts")
 結果を受信するための基礎となるチャネルを返す。
 
 ```lua
-local future, _ = funcs.async("app.api:slow_operation", data)
-local ch = future:response()  -- またはfuture:channel()
+local time = require("time")
+
+local future, err = funcs.async("app.api:slow_operation", data)
+if err then
+    return nil, err
+end
+local ch = future:response()  -- or future:channel()
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local result = channel.select {
     ch:case_receive(),
@@ -198,8 +239,9 @@ Futureが完了したかどうかのノンブロッキングチェック。
 
 ```lua
 while not future:is_complete() do
-    -- 他の処理を実行
-    time.sleep("100ms")
+    -- do other work
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 local result, err = future:result()
 ```
@@ -227,7 +269,9 @@ local value, err = future:result()
 if err then
     print("Failed:", err:message())
 elseif value then
-    print("Got:", value:data())
+    local data, data_err = value:data()
+    if data_err then return nil, data_err end
+    print("Got:", data)
 end
 ```
 
@@ -251,40 +295,59 @@ end
 非同期操作をキャンセル。
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
+if err then return nil, err end
 ```
 
 **戻り値:** `boolean, error`
+
+<warning>
+ランタイムv0.3.32aでは、関数Futureとcontract Futureがプロセス全体で1つのキャンセルコールバックを共有します。両方のproviderが読み込まれている場合、<code>cancel()</code>と<code>is_canceled()</code>はproviderをまたぐ安定した契約ではありません。アプリケーションの正しさをキャンセルに依存させず、ローカルでタイムアウトし、ランタイムがproviderごとのキャンセルを分離するまでは遅れて届いた結果を無視してください。
+</warning>
 
 ## 並行操作
 
 asyncとchannel.selectを使用して複数の操作を並行に実行。
 
 ```lua
--- 複数の操作を並行で開始
-local f1, _ = funcs.async("app.api:get_user", user_id)
-local f2, _ = funcs.async("app.api:get_orders", user_id)
-local f3, _ = funcs.async("app.api:get_preferences", user_id)
+-- Start multiple operations in parallel
+local f1, err = funcs.async("app.api:get_user", user_id)
+if err then return nil, err end
+local f2, err = funcs.async("app.api:get_orders", user_id)
+if err then return nil, err end
+local f3, err = funcs.async("app.api:get_preferences", user_id)
+if err then return nil, err end
 
--- チャネルを使用してすべての完了を待機
+-- Wait for all to complete using channels
 local user_ch = f1:channel()
 local orders_ch = f2:channel()
 local prefs_ch = f3:channel()
 
+local pending = {
+    [user_ch] = {name = "user", future = f1},
+    [orders_ch] = {name = "orders", future = f2},
+    [prefs_ch] = {name = "preferences", future = f3}
+}
 local results = {}
-for i = 1, 3 do
-    local r = channel.select {
-        user_ch:case_receive(),
-        orders_ch:case_receive(),
-        prefs_ch:case_receive()
-    }
-    if r.channel == user_ch then
-        results.user = r.value:data()
-    elseif r.channel == orders_ch then
-        results.orders = r.value:data()
-    else
-        results.prefs = r.value:data()
+while next(pending) do
+    local cases = {}
+    for ch in pairs(pending) do
+        cases[#cases + 1] = ch:case_receive()
     end
+
+    local r = channel.select(cases)
+    local completed = pending[r.channel]
+    pending[r.channel] = nil
+
+    local payload, result_err = completed.future:result()
+    if result_err then
+        return nil, result_err
+    end
+    local data, data_err = payload:data()
+    if data_err then
+        return nil, data_err
+    end
+    results[completed.name] = data
 end
 ```
 
@@ -297,17 +360,18 @@ end
 | `funcs.call` | Function ID | 特定の関数を呼び出し |
 | `funcs.context` | `context` | `with_context()`を使用してカスタムコンテキストを設定 |
 | `funcs.security` | `security` | `with_actor()`または`with_scope()`を使用 |
+| `network.select` | Network ID | `with_options()` で outbound network を選択 |
 
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| Targetが空 | `errors.INVALID` | no |
-| Namespaceがない | `errors.INVALID` | no |
-| Nameがない | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| サブスクライブ失敗 | `errors.INTERNAL` | no |
+| Targetが空 | `errors.INVALID` | いいえ |
+| Namespaceがない | `errors.INVALID` | いいえ |
+| Nameがない | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| サブスクライブ失敗 | `errors.INTERNAL` | いいえ |
+| async start の dispatch 失敗 | `errors.INTERNAL` | いいえ |
 | 関数エラー | 様々 | 様々 |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

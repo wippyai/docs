@@ -1,6 +1,6 @@
 ---
 title: "표준 Lua 라이브러리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Wippy 엔트리에서 사용할 수 있는 기본 제공 Lua 전역, table, string, math, coroutine 및 구조화된 오류 API입니다."
 ---
 
 # 표준 Lua 라이브러리
@@ -8,40 +8,42 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-모든 Wippy 프로세스에서 자동으로 사용 가능한 핵심 Lua 라이브러리. `require()` 불필요.
+이 핵심 Lua 라이브러리는 모든 실행 가능한 Lua 엔트리에서 `require()` 없이 사용할 수 있습니다.
 
-## 전역 함수
+이 페이지는 API 참조입니다. 시그니처 블록은 사용 가능한 함수를 나열하고, 긴 블록은 완전한 엔트리가 아닌 독립적인 예제나 부분 패턴입니다. `check_health`와 `process_request` 같은 이름은 애플리케이션 콜백을 나타냅니다.
+
+## 기본 제공 전역 함수
 
 ### 타입과 변환
 
 ```lua
-type(value)         -- 반환: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
-tonumber(s [,base]) -- 숫자로 변환, 선택적 진법 (2-36)
-tostring(value)     -- 문자열로 변환, __tostring 메타메서드 호출
+type(value)         -- Returns: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
+tonumber(s [,base]) -- Convert to number, optional base (2-36)
+tostring(value)     -- Convert to string, calls __tostring metamethod
 ```
 
 ### 어설션과 에러
 
 ```lua
-assert(v [,msg])    -- v가 false/nil이면 에러 발생, 그렇지 않으면 v 반환
-error(msg [,level]) -- 지정된 스택 레벨에서 에러 발생 (기본값 1)
-pcall(fn, ...)      -- 보호된 호출, ok, result_or_error 반환
-xpcall(fn, errh)    -- 에러 핸들러 함수가 있는 보호된 호출
+assert(v [,msg])    -- Raises error if v is false/nil, returns v otherwise
+error(msg [,level]) -- Raises error at specified stack level (default 1)
+pcall(fn, ...)      -- Protected call, returns ok, result_or_error
+xpcall(fn, errh)    -- Protected call with error handler function
 ```
 
 ### 테이블 순회
 
 ```lua
-pairs(t)            -- 모든 키-값 쌍 순회
-ipairs(t)           -- 배열 부분 순회 (1, 2, 3, ...)
-next(t [,index])    -- index 다음의 키-값 쌍 가져오기
+pairs(t)            -- Iterate all key-value pairs
+ipairs(t)           -- Iterate array portion (1, 2, 3, ...)
+next(t [,index])    -- Get next key-value pair after index
 ```
 
 ### 메타테이블
 
 ```lua
-getmetatable(obj)       -- 메타테이블 가져오기 (보호되면 __metatable 필드)
-setmetatable(t, mt)     -- 메타테이블 설정, t 반환
+getmetatable(obj)       -- Get metatable (or __metatable field if protected)
+setmetatable(t, mt)     -- Set metatable, returns t
 ```
 
 ### Raw 테이블 접근
@@ -49,38 +51,37 @@ setmetatable(t, mt)     -- 메타테이블 설정, t 반환
 메타메서드를 우회하여 직접 테이블 접근:
 
 ```lua
-rawget(t, k)        -- __index 없이 t[k] 가져오기
-rawset(t, k, v)     -- __newindex 없이 t[k]=v 설정
-rawequal(a, b)      -- __eq 없이 비교
+rawget(t, k)        -- Get t[k] without __index
+rawset(t, k, v)     -- Set t[k]=v without __newindex
+rawequal(a, b)      -- Compare without __eq
 ```
 
 ### 유틸리티
 
 ```lua
-select(index, ...)  -- index부터 인자 반환
-select("#", ...)    -- 인자 개수 반환
-unpack(t [,i [,j]]) -- t[i]부터 t[j]까지를 다중 값으로 반환
-print(...)          -- 값 출력 (Wippy에서 구조화된 로깅 사용)
+select(index, ...)  -- Return args from index onwards
+select("#", ...)    -- Return number of args
+unpack(t [,i [,j]]) -- Return t[i] through t[j] as multiple values
+print(...)          -- Print values (uses structured logging in Wippy)
 ```
 
 ### 전역 변수
 
 ```lua
-_G        -- 전역 환경 테이블
-_VERSION  -- Lua 버전 문자열
+_G        -- The global environment table
+_VERSION  -- Lua version string
 ```
 
 ## 테이블 조작
 
-테이블 수정 함수:
+`table` 라이브러리는 제자리 배열 작업, 정렬, 연결 및 unpack을 제공합니다.
 
 ```lua
-table.insert(t, [pos,] value)  -- pos에 값 삽입 (기본값: 끝)
-table.remove(t [,pos])         -- pos의 요소 제거 및 반환 (기본값: 마지막)
-table.concat(t [,sep [,i [,j]]]) -- 배열 요소를 구분자로 연결
-table.sort(t [,comp])          -- 제자리 정렬, comp(a,b)는 a < b이면 true 반환
-table.pack(...)                -- varargs를 'n' 필드가 있는 테이블로 팩
-table.unpack(t [,i [,j]])      -- 테이블 요소를 다중 값으로 언팩
+table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
+table.remove(t [,pos])         -- Remove and return element at pos (default: last)
+table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
+table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
+table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
 ```
 
 ```lua
@@ -88,12 +89,12 @@ local items = {"a", "b", "c"}
 
 table.insert(items, "d")           -- {"a", "b", "c", "d"}
 table.insert(items, 2, "x")        -- {"a", "x", "b", "c", "d"}
-table.remove(items, 2)             -- {"a", "b", "c", "d"}, "x" 반환
+table.remove(items, 2)             -- {"a", "b", "c", "d"}, returns "x"
 
 local csv = table.concat(items, ",")  -- "a,b,c,d"
 
 table.sort(items, function(a, b)
-    return a > b  -- 내림차순
+    return a > b  -- Descending order
 end)
 ```
 
@@ -104,34 +105,34 @@ end)
 ### 패턴 매칭
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- 패턴 찾기, start, end, captures 반환
-string.match(s, pattern [,init])           -- 매칭되는 부분 문자열 추출
-string.gmatch(s, pattern)                  -- 모든 매치에 대한 이터레이터
-string.gsub(s, pattern, repl [,n])         -- 매치 대체, 문자열, count 반환
+string.find(s, pattern [,init [,plain]])   -- Find pattern, returns start, end, captures
+string.match(s, pattern [,init])           -- Extract matching substring
+string.gmatch(s, pattern)                  -- Iterator over all matches
+string.gsub(s, pattern, repl [,n])         -- Replace matches, returns string, count
 ```
 
 ### 대소문자 변환
 
 ```lua
-string.upper(s)   -- 대문자로 변환
-string.lower(s)   -- 소문자로 변환
+string.upper(s)   -- Convert to uppercase
+string.lower(s)   -- Convert to lowercase
 ```
 
 ### 부분 문자열과 문자
 
 ```lua
-string.sub(s, i [,j])      -- i부터 j까지 부분 문자열 (음수 인덱스는 끝에서부터)
-string.len(s)              -- 문자열 길이 (또는 #s 사용)
-string.byte(s [,i [,j]])   -- 문자의 숫자 코드
-string.char(...)           -- 문자 코드에서 문자열 생성
-string.rep(s, n [,sep])    -- 문자열을 구분자와 함께 n번 반복
-string.reverse(s)          -- 문자열 뒤집기
+string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
+string.len(s)              -- String length (or use #s)
+string.byte(s [,i [,j]])   -- Numeric codes of characters
+string.char(...)           -- Create string from character codes
+string.rep(s, n)           -- Repeat string n times
+string.reverse(s)          -- Reverse string
 ```
 
 ### 포맷팅
 
 ```lua
-string.format(fmt, ...)    -- Printf 스타일 포맷팅
+string.format(fmt, ...)    -- Printf-style formatting
 ```
 
 포맷 지정자: `%d` (정수), `%f` (부동소수), `%s` (문자열), `%q` (인용), `%x` (16진수), `%o` (8진수), `%e` (과학적), `%%` (리터럴 %)
@@ -139,14 +140,14 @@ string.format(fmt, ...)    -- Printf 스타일 포맷팅
 ```lua
 local s = "Hello, World!"
 
--- 패턴 매칭
+-- Pattern matching
 local start, stop = string.find(s, "World")  -- 8, 12
 local word = string.match(s, "%w+")          -- "Hello"
 
--- 대체
+-- Substitution
 local new = string.gsub(s, "World", "Wippy") -- "Hello, Wippy!"
 
--- 메서드 구문
+-- Method syntax
 local upper = s:upper()                       -- "HELLO, WORLD!"
 local part = s:sub(1, 5)                      -- "Hello"
 ```
@@ -179,88 +180,94 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ## Math 함수
 
-수학 함수와 상수:
+`math` 라이브러리는 숫자 상수와 일반적인 수학 연산을 제공합니다.
 
 ### 상수 {id="math-constants"}
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- 무한대
-math.mininteger  -- 최소 정수
-math.maxinteger  -- 최대 정수
+math.huge     -- Infinity
+math.mininteger  -- Minimum integer
+math.maxinteger  -- Maximum integer
 ```
 
 ### 기본 연산
 
 ```lua
-math.abs(x)           -- 절대값
-math.min(...)         -- 인자 중 최소값
-math.max(...)         -- 인자 중 최대값
-math.floor(x)         -- 내림
-math.ceil(x)          -- 올림
-math.modf(x)          -- 정수와 소수 부분
-math.fmod(x, y)       -- 부동소수 나머지
+math.abs(x)           -- Absolute value
+math.min(...)         -- Minimum of arguments
+math.max(...)         -- Maximum of arguments
+math.floor(x)         -- Round down
+math.ceil(x)          -- Round up
+math.modf(x)          -- Integer and fractional parts
+math.fmod(x, y)       -- Floating-point remainder
 ```
 
 ### 거듭제곱과 루트
 
 ```lua
-math.sqrt(x)          -- 제곱근
-math.pow(x, y)        -- x^y (또는 x^y 연산자 사용)
+math.sqrt(x)          -- Square root
+math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- 자연 로그 (또는 base n 로그)
+math.log(x)           -- Natural log
+math.log10(x)         -- Base-10 log
 ```
 
 ### 삼각함수
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- 라디안
-math.asin(x)  math.acos(x)  math.atan(y [,x])
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 쌍곡선
-math.deg(r)   -- 라디안을 도로
-math.rad(d)   -- 도를 라디안으로
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arc tangent of y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
+math.deg(r)   -- Radians to degrees
+math.rad(d)   -- Degrees to radians
 ```
 
 ### 난수
 
 ```lua
-math.random()         -- [0,1) 랜덤 부동소수
-math.random(n)        -- [1,n] 랜덤 정수
-math.random(m, n)     -- [m,n] 랜덤 정수
-math.randomseed(x)    -- 랜덤 시드 설정
+math.random()         -- Random float [0,1)
+math.random(n)        -- Random integer [1,n]
+math.random(m, n)     -- Random integer [m,n]
+math.randomseed(x)    -- Compatibility no-op; does not seed math.random
 ```
+
+`math.random`은 비결정적입니다. 워크플로우에서 동일하게 재생해야 하는 결정에는 사용하지 마세요. `math.randomseed`로도 결정론적으로 만들 수 없습니다.
 
 ### 타입 변환
 
 ```lua
-math.tointeger(x)     -- 정수로 변환 또는 nil
-math.type(x)          -- "integer", "float", 또는 nil
-math.ult(m, n)        -- 부호 없는 미만 비교
+math.tointeger(x)     -- Convert to integer or nil
+math.type(x)          -- "integer", "float", or nil
+math.ult(m, n)        -- Unsigned less-than comparison
 ```
 
 ## 코루틴
 
-코루틴 생성과 제어. 채널과 동시 패턴은 [채널과 코루틴](lua/core/channel.md) 참조:
+`coroutine` 라이브러리는 코루틴 생성과 제어를 제공합니다. 채널 기반 동시성 패턴은 [채널과 코루틴](lua/core/channel.md)을 참조하세요.
 
 ```lua
-coroutine.create(fn)        -- 함수에서 코루틴 생성
-coroutine.resume(co, ...)   -- 코루틴 시작/계속
-coroutine.yield(...)        -- 코루틴 중단, resume에 값 반환
+coroutine.create(fn)        -- Create coroutine from function
+coroutine.resume(co, ...)   -- Start/continue coroutine
+coroutine.yield(...)        -- Suspend coroutine, return values to resume
 coroutine.status(co)        -- "running", "suspended", "normal", "dead"
-coroutine.running()         -- 현재 코루틴 (메인 스레드면 nil)
-coroutine.wrap(fn)          -- 호출 가능한 함수로 코루틴 생성
+coroutine.running()         -- Current coroutine (nil if main thread)
+coroutine.wrap(fn)          -- Create coroutine as callable function
 ```
 
 ### 동시 코루틴 스폰
 
-독립적으로 실행되는 동시 코루틴 스폰 (Wippy 전용):
+Wippy는 스케줄러가 관리하는 동시 작업을 위한 `coroutine.spawn`을 추가합니다.
 
 ```lua
-coroutine.spawn(fn)         -- 함수를 동시 코루틴으로 스폰
+coroutine.spawn(fn)         -- Spawn function as concurrent coroutine
 ```
 
 ```lua
--- 백그라운드 작업 스폰
+local time = require("time")
+
+-- Spawn background task
 coroutine.spawn(function()
     while true do
         check_health()
@@ -268,37 +275,39 @@ coroutine.spawn(function()
     end
 end)
 
--- 메인 실행 즉시 계속
+-- Continue main execution immediately
 process_request()
 ```
 
+이 부분 패턴은 엔트리의 `modules:`에 `time`이 있고 `check_health`와 `process_request` 함수를 제공한다고 가정합니다. 스폰된 코루틴은 같은 Lua 프로세스에서 동시에 실행됩니다. `process_request()`에는 즉시 도달하고 각 상태 확인 뒤 30초 동안 sleep합니다.
+
 ## 에러 처리
 
-구조화된 에러 생성과 분류. 전체 문서는 [에러 처리](lua/core/errors.md) 참조:
+전역 `errors` 테이블은 구조화된 오류를 만들고 분류합니다. 전체 API는 [에러 처리](lua/core/errors.md)를 참조하세요.
 
 ### 상수 {id="error-constants"}
 
 ```lua
-errors.UNKNOWN           -- 분류되지 않은 에러
-errors.INVALID           -- 잘못된 인자 또는 입력
-errors.NOT_FOUND         -- 리소스를 찾을 수 없음
-errors.ALREADY_EXISTS    -- 리소스가 이미 존재
-errors.PERMISSION_DENIED -- 권한 거부됨
-errors.TIMEOUT           -- 작업 시간 초과
-errors.CANCELED          -- 작업 취소됨
-errors.UNAVAILABLE       -- 서비스 사용 불가
-errors.INTERNAL          -- 내부 에러
-errors.CONFLICT          -- 충돌 (예: 동시 수정)
-errors.RATE_LIMITED      -- 속도 제한 초과
+errors.UNKNOWN           -- Unclassified error
+errors.INVALID           -- Invalid argument or input
+errors.NOT_FOUND         -- Resource not found
+errors.ALREADY_EXISTS    -- Resource already exists
+errors.PERMISSION_DENIED -- Permission denied
+errors.TIMEOUT           -- Operation timed out
+errors.CANCELED          -- Operation cancelled
+errors.UNAVAILABLE       -- Service unavailable
+errors.INTERNAL          -- Internal error
+errors.CONFLICT          -- Conflict (e.g., concurrent modification)
+errors.RATE_LIMITED      -- Rate limit exceeded
 ```
 
 ### 함수 {id="error-functions"}
 
 ```lua
--- 문자열에서 에러 생성
+-- Create error from string
 local err = errors.new("something went wrong")
 
--- 메타데이터가 있는 에러 생성
+-- Create error with metadata
 local err = errors.new({
     message = "User not found",
     kind = errors.NOT_FOUND,
@@ -306,64 +315,26 @@ local err = errors.new({
     details = {user_id = 123}
 })
 
--- 컨텍스트와 함께 기존 에러 래핑
+-- Wrap existing error with context
 local wrapped = errors.wrap(err, "failed to load profile")
 
--- 에러 종류 확인
+-- Check error kind
 if errors.is(err, errors.NOT_FOUND) then
-    -- not found 처리
+    -- handle not found
 end
 
--- 에러에서 호출 스택 가져오기
+-- Get call stack from error
 local stack = errors.call_stack(err)
 ```
 
 ### 에러 메서드
 
 ```lua
-err:message()    -- 에러 메시지 문자열 가져오기
-err:kind()       -- 에러 종류 가져오기 (예: "NOT_FOUND")
-err:retryable()  -- true, false, 또는 nil (알 수 없음)
-err:details()    -- 상세 테이블 또는 nil 가져오기
-err:stack()      -- 스택 트레이스를 문자열로 가져오기
-```
-
-## UTF-8 유니코드
-
-유니코드 UTF-8 문자열 처리:
-
-### 상수 {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- 단일 UTF-8 문자에 매칭하는 패턴
-```
-
-### 함수 {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- 유니코드 코드포인트에서 문자열 생성
-utf8.codes(s)            -- 코드포인트에 대한 이터레이터: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- 위치 i부터 j까지의 코드포인트 가져오기
-utf8.len(s [,i [,j]])    -- UTF-8 문자 수 (바이트 아님)
-utf8.offset(s, n [,i])   -- 위치 i에서 n번째 문자의 바이트 위치
-```
-
-```lua
-local s = "Hello, 세계"
-
--- 문자 수 (바이트 아님)
-print(utf8.len(s))  -- 9
-
--- 코드포인트 순회
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- 위치의 코드포인트 가져오기
-local code = utf8.codepoint(s, 8)  -- 첫 번째 한글 문자
-
--- 코드포인트에서 문자열 생성
-local emoji = utf8.char(0x1F600)  -- 웃는 얼굴
+err:message()    -- Get error message string
+err:kind()       -- Get error kind (e.g., "NOT_FOUND")
+err:retryable()  -- true, false, or nil (unknown)
+err:details()    -- Get details table or nil
+err:stack()      -- Get stack trace as string
 ```
 
 ## 제한된 기능
@@ -375,9 +346,13 @@ local emoji = utf8.char(0x1F600)  -- 웃는 얼굴
 | `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua/dynamic/eval.md) 모듈 사용 |
 | `collectgarbage` | 자동 GC |
 | `rawlen` | `#` 연산자 사용 |
-| `io.*` | [파일 시스템](lua/storage/filesystem.md) 모듈 사용 |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
-| `debug.*` (traceback 제외) | 사용 불가 |
+| `string.dump` | 지원되지 않음 |
+| `io.*` | 파일에는 [파일 시스템](lua/storage/filesystem.md), 터미널 스트림에는 [터미널 I/O](../system/io.md) 사용 |
+| `os.execute` | [명령 실행](lua/dynamic/exec.md) 사용 |
+| `os.remove`, `os.rename` | [파일 시스템](../storage/filesystem.md) 사용 |
+| `os.exit`, `os.tmpname` | 직접 대응하는 표준 라이브러리 없음 |
+| `debug.*` | 사용할 수 없음 |
+| `utf8.*` | 사용할 수 없음 |
 | `package.loadlib` | 네이티브 라이브러리 미지원 |
 
 ## 참고

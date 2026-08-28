@@ -5,11 +5,13 @@ description: "Middleware verarbeitet HTTP-Anfragen vor und nach der Routen-Behan
 
 # HTTP-Middleware
 
-Middleware verarbeitet HTTP-Anfragen vor und nach der Routen-Behandlung.
+HTTP-Middleware läuft in einer von zwei Router-Ketten: bevor Endpunktmetadaten angefügt werden oder nachdem die Route ihre Parameter und Endpunkt-ID bereitgestellt hat.
+
+**Klassifikation: Middleware-Referenz.** Jeder YAML-Block ist ein Router-Fragment. Er setzt voraus, dass die genannte Middleware registriert ist und alle referenzierten Token-Store-, Dateisystem-, Endpunkt-, Actor- und Richtlinieneinträge vorhanden sind.
 
 ## Wie Middleware funktioniert
 
-Middleware umhüllt HTTP-Handler um Verarbeitungslogik hinzuzufügen. Jede Middleware erhält eine Options-Map und gibt einen Handler-Wrapper zurück:
+Jede Middleware erhält eine Options-Map und gibt einen Handler-Wrapper zurück:
 
 ```yaml
 middleware:
@@ -22,21 +24,22 @@ options:
 
 Optionen verwenden Punkt-Notation: `middleware_name.option.name`. Legacy-Unterstrich-Format wird für Abwärtskompatibilität unterstützt.
 
-## Pre-Match vs Post-Match
+## Pre-Handler und Post-Match
 
 <tip>
-<b>Pre-Match</b> läuft vor dem Routen-Matching - für Querschnittsbelange wie CORS und Komprimierung.
-<b>Post-Match</b> läuft nachdem die Route gematcht ist - für Autorisierung die Routen-Info benötigt.
+<b>Pre-Handler</b>-Middleware läuft, nachdem der Server eine Route ausgewählt hat, aber bevor Routenmetadaten angefügt werden — für Belange wie CORS und Komprimierung.
+<b>Post-Match</b>-Middleware läuft, nachdem Routenmetadaten angefügt wurden — für Autorisierung, die die Endpunkt-ID benötigt.
+Keine der beiden Ketten läuft für eine nicht abgeglichene Anfrage.
 </tip>
 
 ```yaml
-middleware:        # Pre-Match
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # Post-Match
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -48,7 +51,7 @@ post_options:
 
 ### CORS {#cors}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
 Cross-Origin Resource Sharing für Browser-Anfragen.
 
@@ -76,7 +79,7 @@ OPTIONS-Preflight-Anfragen werden automatisch behandelt.
 
 ### Rate-Limiting {#ratelimit}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
 Token-Bucket-Rate-Limiting mit Per-Key-Tracking.
 
@@ -101,13 +104,13 @@ options:
 
 **Schlüssel-Strategien:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Gibt `429 Too Many Requests` mit Headern zurück: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Gibt `429 Too Many Requests` mit den Headern `X-RateLimit-Limit` und `X-RateLimit-Window` zurück.
 
 ---
 
 ### Komprimierung {#compress}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
 Gzip-Komprimierung für Responses.
 
@@ -130,7 +133,7 @@ Komprimiert nur wenn Client `Accept-Encoding: gzip` sendet.
 
 ### Real IP {#real_ip}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
 Client-IP aus Proxy-Headern extrahieren.
 
@@ -143,7 +146,7 @@ options:
 
 | Option | Standard | Beschreibung |
 |--------|----------|--------------|
-| `real_ip.trusted.subnets` | Private Netzwerke | Vertrauenswürdige Proxy-CIDRs |
+| `real_ip.trusted.subnets` | Loopback-, private RFC-1918-, IPv4-Link-Local-, CGNAT-, IPv6-ULA- und IPv6-Link-Local-Bereiche | Vertrauenswürdige Proxy-CIDRs |
 | `real_ip.trust_all` | `false` | Allen Quellen vertrauen (unsicher) |
 
 **Header-Priorität:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -152,9 +155,9 @@ options:
 
 ### Token-Auth {#token_auth}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
-Token-basierte Authentifizierung. Siehe [Sicherheit](system/security.md) für Token-Store-Konfiguration.
+Token-basierte Authentifizierung. Informationen zur Token-Store-Konfiguration finden Sie unter [Sicherheit](system/security.md).
 
 ```yaml
 middleware:
@@ -177,9 +180,9 @@ Setzt Actor und Sicherheits-Scope im Kontext für nachgelagerte Middleware. Bloc
 
 ### Metriken {#metrics}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
-Prometheus-Style HTTP-Metriken. Keine Konfigurationsoptionen.
+HTTP-Metriken im Prometheus-Stil. Diese Middleware wird nur registriert, wenn ein Metrik-Collector verfügbar ist, und besitzt keine Konfigurationsoptionen.
 
 ```yaml
 middleware:
@@ -198,7 +201,7 @@ middleware:
 
 <warning>Post-Match</warning>
 
-Autorisierung basierend auf gematchtem Endpunkt. Erfordert Actor von `token_auth`.
+Autorisierung anhand des abgeglichenen Endpunkts. Sie erfordert einen Actor und Sicherheits-Scope im Request-Kontext; `token_auth` ist eine Möglichkeit, beide bereitzustellen.
 
 ```yaml
 post_middleware:
@@ -238,7 +241,7 @@ post_options:
 
 ### Sendfile {#sendfile}
 
-<note>Pre-Match</note>
+<note>Pre-Handler</note>
 
 Dateien über `X-Sendfile`-Header von Handlern bereitstellen.
 
@@ -292,40 +295,40 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>Pre-Handler</note>
 
-Zeichnet OpenTelemetry-Spans und -Metriken fuer eingehende Anfragen auf. Wird automatisch registriert, wenn OTel aktiviert ist; wirkt andernfalls als No-Op.
+Zeichnet OpenTelemetry-Spans und -Metriken für eingehende Anfragen auf. Wird automatisch registriert, wenn OTel aktiviert ist; andernfalls ist sie wirkungslos.
 
 ```yaml
 middleware:
   - otel
 ```
 
-Nimmt keine Optionen entgegen. Funktioniert zusammen mit der `metrics`-Middleware; aktivieren Sie beide, wenn Sie Prometheus-Counter und OTel-Traces benoetigen.
+Nimmt keine Optionen entgegen. Funktioniert zusammen mit der `metrics`-Middleware; aktivieren Sie beide, wenn Sie Prometheus-Counter und OTel-Traces benötigen.
 
 ---
 
 ## Middleware-Reihenfolge
 
-Middleware wird in aufgelisteter Reihenfolge ausgeführt. Empfohlene Sequenz:
+Bei Anfragen läuft Middleware in der aufgeführten Reihenfolge; die Response-Verarbeitung wird in umgekehrter Reihenfolge abgewickelt. Empfohlene Sequenz:
 
 ```yaml
 middleware:
-  - real_ip       # 1. Real IP zuerst extrahieren
-  - cors          # 2. CORS-Preflight behandeln
-  - compress      # 3. Response-Komprimierung einrichten
-  - ratelimit     # 4. Rate-Limits prüfen
-  - metrics       # 5. Metriken aufzeichnen
-  - token_auth    # 6. Anfragen authentifizieren
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # Nach Routen-Match autorisieren
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## Siehe auch
 
-- [Routing](http/router.md) - Router-Konfiguration
-- [Sicherheit](system/security.md) - Token-Stores und Richtlinien
-- [WebSocket-Relay](http/websocket-relay.md) - WebSocket-Behandlung
-- [Server-Sent Events](http/sse.md) - SSE-Streaming
-- [Terminal](system/terminal.md) - Terminal-Dienst
+- [Routing](http/router.md) – Router-Konfiguration
+- [Sicherheit](system/security.md) – Token-Stores und Richtlinien
+- [WebSocket-Relay](http/websocket-relay.md) – WebSocket-Verarbeitung
+- [Server-Sent Events](http/sse.md) – SSE-Streaming
+- [Terminal](system/terminal.md) – Terminaldienst

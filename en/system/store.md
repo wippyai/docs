@@ -5,7 +5,9 @@ description: "Key-value stores with TTL support: in-memory, SQL-backed, and clus
 
 # Store (Key-Value)
 
-Key-value stores with TTL support: in-memory, SQL-backed, and cluster-replicated (Raft and CRDT).
+Wippy provides TTL-aware key-value stores backed by memory, SQL, Raft, or a CRDT.
+
+This page is an entry-configuration reference. The YAML fences are fragments for an existing entry list, and the SQL fence is schema setup that must run before a `store.sql` entry starts.
 
 ## Entry Kinds
 
@@ -55,13 +57,13 @@ When `max_size` is reached, new entries are rejected. Data is lost on restart.
 | `expire_column_name` | string | expires_at | Column for expiration |
 | `cleanup_interval` | duration | 0 | Expired entry cleanup interval |
 
-Column names are validated against SQL injection. Create the table before use:
+Column names are validated against SQL injection. The following prerequisite is PostgreSQL DDL; use the equivalent binary/blob and timestamp types for MySQL or SQLite:
 
 ```sql
 CREATE TABLE kv_store (
     key VARCHAR(255) PRIMARY KEY,
     value BYTEA NOT NULL,
-    expires_at BIGINT
+    expires_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_expires_at ON kv_store(expires_at) WHERE expires_at IS NOT NULL;
@@ -107,7 +109,12 @@ Writes mutate local state and disseminate over gossip; conflicting concurrent wr
 
 ## TTL Behavior
 
-Both stores support time-to-live. Expired entries persist briefly until cleanup runs at `cleanup_interval`. Set to `0` to disable automatic cleanup.
+All four store kinds accept time-to-live values, but expiry visibility differs by backend.
+
+- `store.memory` treats an expired key as missing on read and removes expired entries on its `cleanup_interval`, which defaults to `5m`. A configured zero value is replaced by that default.
+- `store.sql` filters expired rows on read and removes them on `cleanup_interval`; its default of `0` disables background cleanup without making expired rows readable.
+- `store.kv.raft` attaches expiring keys to leader-driven leases. The roughly one-second lease sweep proposes the deletion through Raft, so a key may remain readable until that consensus-applied removal lands.
+- `store.kv.crdt` also removes expired keys during its roughly one-second lease sweep, then gossips the resulting tombstone. The lease deadline itself is local to the node that accepted the write; if that origin fails before expiry, another node does not independently reproduce the deadline and the key can remain until later state or administrative cleanup removes it.
 
 ## Lua API
 

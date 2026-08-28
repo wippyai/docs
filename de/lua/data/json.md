@@ -1,6 +1,6 @@
 ---
 title: "JSON-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Lua-Werte als JSON kodieren, JSON-Strings dekodieren und Werte oder Strings mit JSON Schema validieren."
 ---
 
 # JSON-Kodierung
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthält JSON-Schema-Validierung für Datenverifizierung und API-Vertragserzwingung.
+Das Modul `json` kodiert Lua-Werte als JSON, dekodiert JSON-Strings und validiert Daten mit JSON Schema.
+
+Diese Seite ist eine API-Referenz. Kurze Ausdrucksbeispiele zeigen erfolgreiche Rückgabewerte; Beispiele, die das Ergebnis weiterverwenden, erfassen den optionalen zweiten Rückgabewert `error`.
 
 ## Laden
 
@@ -17,28 +19,30 @@ Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten.
 local json = require("json")
 ```
 
+Fügen Sie `json` zur `modules:`-Liste des ausführbaren Eintrags hinzu, bevor Sie das Modul laden.
+
 ## Kodierung
 
-### Wert kodieren
+### `encode`
 
 Kodiert einen Lua-Wert in einen JSON-String.
 
 ```lua
--- Einfache Werte
+-- Simple values
 json.encode("hello")        -- '"hello"'
 json.encode(42)             -- '42'
 json.encode(true)           -- 'true'
 json.encode(nil)            -- 'null'
 
--- Arrays (sequentielle numerische Schlüssel)
+-- Arrays (sequential numeric keys)
 json.encode({1, 2, 3})      -- '[1,2,3]'
 json.encode({"a", "b"})     -- '["a","b"]'
 
--- Objekte (String-Schlüssel)
+-- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- '{"name":"Alice","age":30}'
+json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
 
--- Verschachtelte Strukturen
+-- Nested structures
 local order = {
     id = "ord-123",
     items = {
@@ -48,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
+-- Structurally equivalent JSON; object-member order is unspecified
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -70,12 +74,12 @@ Kodierungsregeln:
 
 ## Dekodierung
 
-### String dekodieren
+### `decode`
 
 Dekodiert einen JSON-String in einen Lua-Wert.
 
 ```lua
--- Objekt parsen
+-- Parse object
 local user, err = json.decode('{"name":"Bob","active":true}')
 if err then
     return nil, err
@@ -83,13 +87,14 @@ end
 print(user.name)    -- "Bob"
 print(user.active)  -- true
 
--- Array parsen
-local items = json.decode('[10, 20, 30]')
+-- Parse array
+local items, items_err = json.decode('[10, 20, 30]')
+if items_err then return nil, items_err end
 print(items[1])     -- 10
 print(#items)       -- 3
 
--- Verschachtelte Daten parsen
-local response = json.decode([[
+-- Parse nested data
+local response, response_err = json.decode([[
 {
     "status": "ok",
     "data": {
@@ -100,13 +105,14 @@ local response = json.decode([[
     }
 }
 ]])
+if response_err then return nil, response_err end
 print(response.data.users[1].name)  -- "Alice"
 
--- Fehler behandeln
+-- Handle errors
 local data, err = json.decode("not valid json")
 if err then
     print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- Parse-Fehlerdetails
+    print(err:message())  -- parse error details
 end
 ```
 
@@ -118,12 +124,12 @@ end
 
 ## Schema-Validierung
 
-### Wert validieren
+### `validate`
 
-Validiert einen Lua-Wert gegen ein JSON-Schema. Verwenden Sie dies, um API-Verträge durchzusetzen oder Benutzereingaben zu validieren.
+Validiert einen Lua-Wert gegen ein JSON Schema.
 
 ```lua
--- Schema definieren
+-- Define a schema
 local user_schema = {
     type = "object",
     properties = {
@@ -134,26 +140,28 @@ local user_schema = {
     required = {"name", "email"}
 }
 
--- Gültige Daten bestehen
+-- Valid data passes
 local valid, err = json.validate(user_schema, {
     name = "Alice",
     email = "alice@example.com",
     age = 30
 })
+if err then return nil, err end
 print(valid)  -- true
 
--- Ungültige Daten scheitern mit Details
+-- Invalid data fails with details
 local valid, err = json.validate(user_schema, {
     name = "",
     email = "not-an-email"
 })
 if not valid then
-    print(err:message())  -- Validierungsfehlerdetails
+    print(err:message())  -- validation error details
 end
 
--- Schema kann auch ein JSON-String sein
+-- Schema can also be a JSON string
 local schema_json = '{"type":"number","minimum":0}'
-local valid = json.validate(schema_json, 42)
+local valid, schema_err = json.validate(schema_json, 42)
+if schema_err then return nil, schema_err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -165,9 +173,9 @@ local valid = json.validate(schema_json, 42)
 
 Schemas werden nach Inhalts-Hash für bessere Performance gecacht.
 
-### JSON-String validieren
+### `validate_string`
 
-Validiert einen JSON-String gegen ein Schema ohne vorher zu dekodieren. Nützlich, wenn Sie vor dem Parsen validieren müssen.
+Validiert einen JSON-String gegen ein Schema, ohne zuerst einen dekodierten Wert zurückzugeben.
 
 ```lua
 local schema = {
@@ -178,15 +186,19 @@ local schema = {
     required = {"action"}
 }
 
--- Rohen JSON aus Request-Body validieren
+-- Validate raw JSON from request body
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new({
+        message = "Invalid request: " .. err:message(),
+        kind = errors.INVALID
+    })
 end
 
--- Jetzt sicher zu dekodieren
-local request = json.decode(body)
+-- Now safe to decode
+local request, decode_err = json.decode(body)
+if decode_err then return nil, decode_err end
 ```
 
 | Parameter | Typ | Beschreibung |

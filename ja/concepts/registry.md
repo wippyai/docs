@@ -1,37 +1,41 @@
 ---
 title: "レジストリ"
-description: "レジストリはWippyの中央設定ストアです。すべての定義（エントリポイント、サービス、リソース）がここに存在し、変更はシステム全体にリアクティブに伝播されます。"
+description: "Wippy が型付き entry を保存し、runtime resource を初期化し、configuration change を伝播する仕組み。"
 ---
 
 # レジストリ
 
-レジストリはWippyの中央設定ストアです。すべての定義（エントリポイント、サービス、リソース）がここに存在し、変更はシステム全体にリアクティブに伝播されます。
+registry は、entry point、service、resource、その他の runtime definition を保持する Wippy の versioned store です。多くの runtime entry kind は event-bus transaction を介して reconcile されます。`registry.entry` や namespace metadata などの internal kind は、既定では event dispatch を迂回します。
 
 ## エントリ
 
-レジストリは**エントリ**（一意のIDを持つ型付き定義）を保持します：
+registry は、一意の ID を持つ型付き definition である **entry** を保持します。
 
 ```
-app.api:get_user          → HTTPハンドラ
-app.workers:email_sender  → バックグラウンドプロセス
-app:database              → データベース接続
-app:templates             → テンプレートセット
+app.api:get_user          → HTTP handler
+app.workers:email_sender  → Background process
+app:database              → Database connection
+app:templates             → Template set
 ```
 
-各エントリには`ID`（namespace:name形式）、そのハンドラを決定する`kind`、任意の`meta`フィールド、およびkind固有の`data`があります。
+各 entry には `ID`（namespace:name 形式）、handler を決定する `kind`、任意の `meta` field、kind 固有の `data` があります。
 
-## 種別ハンドラ
+registry ID は、多くの authorization check でも resource として使われます。registry は definition を保存し、security scope が保護対象 operation から access できるかを決定します。[セキュリティモデル](./security-model.md)を参照してください。
 
-エントリが送信されると、その`kind`がどのハンドラが処理するかを決定します。ハンドラは設定を検証し、ランタイムリソースを作成します。`http.service`エントリはHTTPサーバーを起動し、`function.lua`エントリは関数プールを作成し、`sql.database`エントリは接続プールを確立します。利用可能な種別については[エントリ種別ガイド](guides/entry-kinds.md)を、ハンドラの実装については[カスタムエントリ種別](internals/kinds.md)を参照してください。
+## Kind handler :id=kind-handlers
+
+dispatch された entry が submit されると、その `kind` に登録された handler が選択されます。handler は対応する runtime resource を検証して reconcile します。`http.service` entry は HTTP server、`function.lua` entry は function pool、`db.sql.postgres` entry は connection pool を管理します。利用可能な kind は[エントリ種別ガイド](guides/entry-kinds.md)、handler の実装は[カスタムエントリ種別](internals/kinds.md)を参照してください。
 
 ## ライブ更新
 
-レジストリはランタイムでの変更をサポートします。システムの実行中にエントリを追加、更新、または削除できます。変更はイベントバスを通じて流れ、リスナーはそれらを検証または拒否できます。トランザクションはアトミック性を保証します。バージョン履歴によりロールバックが可能です。
+system の実行中に entry を追加、更新、削除できます。dispatch 対象 kind では、registry transaction が commit 前に参加 handler へ各 operation の accept または reject を求めます。reject されると transaction を破棄し、逆向きの transition を適用します。関連する topology change からは、1 つの新しい registry version が生成されます。
 
-YAML定義ファイルは起動時にロードされるレジストリスナップショットのシリアライズです。プログラムによるアクセスについては[レジストリモジュール](lua/core/registry.md)を参照してください。
+history が有効な場合、version history により backward transition と forward transition ができます。既定の memory history は process lifetime の間だけ存続します。SQLite backend と PostgreSQL backend では restart 後も history が永続化されます。
 
-## 関連項目
+YAML および JSON definition file は、boot loader が entry に変換する source manifest です。serialized registry snapshot ではありません。programmatic access については[Registry module](lua/core/registry.md)を参照してください。
 
-- [YAML & プロジェクト構造](start/structure.md) - 定義ファイル
-- [カスタムエントリ種別](internals/kinds.md) - 種別ハンドラの実装
-- [プロセスモデル](concepts/process-model.md) - プロセスの動作
+## 関連項目 :id=see-also
+
+- [YAML とプロジェクト構造](start/structure.md) — definition file
+- [カスタムエントリ種別](internals/kinds.md) — kind handler の実装
+- [プロセスモデル](concepts/process-model.md) — process execution の理解

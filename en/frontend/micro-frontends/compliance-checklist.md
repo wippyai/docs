@@ -1,13 +1,24 @@
 ---
-title: "Frontend Compliance Rule Index"
-description: "Concise index of canonical frontend rules and deterministic checker ownership."
+title: "Frontend Compliance and Publication Gates"
+description: "Normative frontend compliance rules, checker ownership, publication gates, and deterministic visual evidence requirements."
 ---
 
-# Frontend Compliance Rule Index
+# Frontend Compliance and Publication Gates
 
-This page is an index, not a second copy of the contract. The
-[Portable UI Contract](../portable-ui-contract.md) owns the normative rule
-statements; the links below provide detailed implementation guidance.
+**Classification: normative compliance and evidence reference.** The JSON
+blocks define placeholder-bearing shapes for checker inputs; they are not
+passing evidence or a standalone application fixture.
+
+This page owns the deterministic checker and publication requirements below.
+The [Portable UI Contract](../portable-ui-contract.md) owns the underlying
+portability and UI rule statements, while the linked guides provide detailed
+implementation guidance. The index maps each rule to its source and required
+checker result.
+
+The public `@wippy-fe/*` 0.0.56 package family does not ship a module-compliance
+CLI. The repository documentation checker validates the documentation examples
+and generated catalogue freshness; a module's selected compliance workflow
+must implement the application-facing checks below.
 
 | Rule | Detailed guidance | Deterministic result |
 |---|---|---|
@@ -55,10 +66,24 @@ Publication keeps runtime evidence outside the repository. Set:
 - `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` to the lowercase SHA-256 of the exact
   `runtime-acceptance-evidence.json` bytes.
 
-`FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs` invokes the
-selected theme's canonical acceptance checker with that evidence path and hash,
-then validates and recomputes the visual evidence. Normal documentation
-freshness checks do not require local release evidence.
+From the Wippy Docs repository root, run the publication check with Node.js
+22 or newer after setting all four variables above. In PowerShell:
+
+```powershell
+$env:FRONTEND_DOCS_PUBLICATION = '1'
+node scripts/check-frontend-docs.mjs
+Remove-Item Env:FRONTEND_DOCS_PUBLICATION
+```
+
+In a POSIX shell:
+
+```sh
+FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs
+```
+
+The check invokes the selected theme's canonical acceptance checker with the
+evidence path and hash, then validates and recomputes the visual evidence.
+Normal documentation freshness checks do not require local release evidence.
 
 ## Deterministic visual verification
 

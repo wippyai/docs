@@ -1,6 +1,6 @@
 ---
 title: "ペイロードエンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "型付きペイロードを作成し、その形式を確認して値を取り出し、対応する表現間でトランスコードします。"
 ---
 
 # ペイロードエンコーディング
@@ -8,19 +8,21 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-JSON、MessagePack、バイナリなどのフォーマット間でデータを変換。サービス間通信とワークフローデータ受け渡し用の型付きペイロードを処理。
+ペイロードは、関数、プロセス、サービス、ワークフローの間で型付きの値を運びます。ペイロードは確認や抽出ができ、対応する形式間でトランスコードできます。
+
+これは、一部に転送レシピを含むAPIリファレンスです。`p`、`input_data`、非同期処理の対象エントリなどの値は、周囲のアプリケーションから与えられます。
 
 ## ロード
 
-グローバル名前空間。requireは不要。
+`payload`はグローバル名前空間であり、`require()`は不要です。
 
 ```lua
-payload.new(...)  -- 直接アクセス
+payload.new(...)  -- direct access
 ```
 
 ## フォーマット定数
 
-ペイロードタイプのフォーマット識別子:
+次の定数でペイロード形式を識別します。
 
 ```lua
 payload.format.JSON     -- "json/plain"
@@ -35,29 +37,29 @@ payload.format.ERROR    -- "golang/error"
 
 ## ペイロードの作成
 
-Lua値から新しいペイロードを作成:
+Luaの値からペイロードを作成します。
 
 ```lua
--- テーブルから
+-- From table
 local p = payload.new({
     user_id = 123,
     name = "Alice",
     roles = {"admin", "user"}
 })
 
--- 文字列から
+-- From string
 local str_p = payload.new("Hello, World!")
 
--- 数値から
+-- From number
 local num_p = payload.new(42.5)
 
--- booleanから
+-- From boolean
 local bool_p = payload.new(true)
 
--- nilから
+-- From nil
 local nil_p = payload.new(nil)
 
--- エラーから
+-- From error
 local err_p = payload.new(errors.new("something failed"))
 ```
 
@@ -69,7 +71,7 @@ local err_p = payload.new(errors.new("something failed"))
 
 ## フォーマットの取得
 
-ペイロードフォーマットを取得:
+ペイロードの形式識別子を読み取ります。
 
 ```lua
 local p = payload.new({name = "test"})
@@ -86,7 +88,7 @@ local format3 = err_p:get_format()  -- "golang/error"
 
 ## データの抽出
 
-ペイロードからLua値を抽出（必要に応じて変換）:
+必要に応じてトランスコードしながら、ペイロードのLua値を取り出します。
 
 ```lua
 local p = payload.new({
@@ -107,7 +109,7 @@ print(data.items[1])     -- 1
 
 ## ペイロードの変換
 
-ペイロードを別のフォーマットに変換:
+ペイロードを対応する別の形式にトランスコードします。
 
 ```lua
 local p = payload.new({
@@ -115,21 +117,24 @@ local p = payload.new({
     value = 123
 })
 
--- JSONに変換
+-- Convert to JSON
 local json_p, err = p:transcode(payload.format.JSON)
 if err then
     return nil, err
 end
 print(json_p:get_format())  -- "json/plain"
 
--- MessagePackに変換（コンパクトなバイナリ）
+-- Convert to MessagePack (compact binary)
 local msgpack_p, err = p:transcode(payload.format.MSGPACK)
 if err then
     return nil, err
 end
 
--- YAMLに変換
-local yaml_p, err = p:transcode(payload.format.YAML)
+-- Convert to YAML
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -138,21 +143,26 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 **戻り値:** `Payload, error`
 
-## Unmarshalling
+## アンマーシャリング
 
-ソースフォーマットに関係なく、ペイロードを Lua 値に強制的にデコードする:
+元の形式にかかわらず、ペイロードをLuaの値にデコードします。
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
-`unmarshal()` は常に Lua フォーマットに変換して、結果として得られる Lua 値を返す。生の基となる値 (Lua 以外のフォーマットでは Go オブジェクトの可能性がある) を返す `data()` とは異なり、`unmarshal()` は完全にデコードされた Lua 値を保証する。
+`data()`と`unmarshal()`は、既存のLua値を返すか、Lua以外のペイロードをLua形式にトランスコードします。トランスコーダーが無効な結果を生成した場合、`unmarshal()`はより厳密に`errors.INTERNAL`エラーを返しますが、`data()`は`nil`を返します。
 
 **戻り値:** `any, error`
 
 ## 非同期の結果
 
-ペイロードは一般的に非同期関数呼び出しから受信される:
+非同期関数呼び出しは、戻り値をペイロードとして返します。
+
+この例では、`app.process:compute`が値を1つだけ返すことを前提としています。結果がない場合、`future:result()`は`nil`を返します。結果が複数ある場合は1つの`Payload`ではなくLuaテーブルを返すため、呼び出し側でそれぞれの形を処理する必要があります。
 
 ```lua
 local funcs = require("funcs")
@@ -162,14 +172,22 @@ if err then
     return nil, err
 end
 
--- 結果を待機
+-- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
 end
 
--- ペイロードからデータを抽出
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
+end
+
+-- Extract data from payload
 local result, err = result_payload:data()
 if err then
     return nil, err
@@ -182,9 +200,8 @@ print(result.computed_value)
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 変換失敗 | `errors.INTERNAL` | no |
-| 結果が有効なLua値ではない | `errors.INTERNAL` | no |
+| 変換失敗 | `errors.INTERNAL` | いいえ |
+| 結果が有効なLua値ではない | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
 

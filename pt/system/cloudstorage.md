@@ -1,46 +1,56 @@
 ---
-title: "Armazenamento em Nuvem"
-description: "Armazenamento de objetos compatível com S3 com URLs pré-assinadas."
+title: "Armazenamento em nuvem"
+description: "Configure credenciais AWS e armazenamento de objetos compatível com S3."
 ---
 
-# Armazenamento em Nuvem
+# Armazenamento em nuvem
+<secondary-label ref="external"/>
 
-Armazenamento de objetos compatível com S3 com URLs pré-assinadas.
+Entradas de armazenamento em nuvem configuram credenciais AWS e buckets compatíveis com S3 usados pela API de armazenamento Lua. Esta página é uma referência de configuração; os exemplos pressupõem que o bucket e as credenciais indicados, ou a cadeia de credenciais do SDK, já existam.
 
-## Tipos de Entradas
+## Tipos de entrada
 
 | Tipo | Descrição |
-|------|-----------|
+|------|-------------|
 | `config.aws` | Configuração de credenciais e região AWS |
 | `cloudstorage.s3` | Conexão com bucket S3 |
 
 ## Configuração AWS
 
+Credenciais estáticas registradas pelo sistema de ambiente:
+
 ```yaml
 - name: aws_config
   kind: config.aws
-  region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  region: ${env:AWS_REGION}
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
+```
+
+Cadeia padrão de credenciais do SDK AWS (por exemplo, funções IAM ou perfis de instância):
+
+```yaml
+- name: aws_config
+  kind: config.aws
+  region: ${env:AWS_REGION}
 ```
 
 | Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `region` | string | Condicional | Região AWS. Obrigatório a menos que `region_env` seja definido |
-| `region_env` | string | Condicional | Nome da variável de ambiente que contém a região |
-| `access_key_id_env` | string | Não | Nome da variável de ambiente para chave de acesso |
-| `secret_access_key_env` | string | Não | Nome da variável de ambiente para chave secreta |
+|-------|------|----------|-------------|
+| `region` | string | Sim | Região AWS. Forneça via `${env:NAME}` quando variar por implantação |
+| `access_key_id` | string | Não | ID da chave de acesso AWS (inline ou `${env:NAME}`) |
+| `secret_access_key` | string | Não | Chave secreta de acesso AWS (inline ou `${env:NAME}`) |
 
-Credenciais carregam das variáveis de ambiente especificadas. Tanto `access_key_id_env` quanto `secret_access_key_env` devem resolver para valores não vazios para que credenciais estáticas se apliquem; caso contrário, a cadeia de credenciais padrão do SDK AWS é usada (roles IAM, perfis de instância, etc.).
+Os campos de credenciais são resolvidos pelo [registro de ambiente](./env.md) durante a decodificação. Um placeholder moderno `${env:NAME}` sem valor padrão faz a decodificação falhar quando a variável não existe; para usar a cadeia padrão de credenciais do SDK AWS, omita `access_key_id` e `secret_access_key`. Credenciais estáticas só são aplicadas quando ambos os campos resolvem para valores não vazios.
 
-Requisições são assinadas com AWS Signature Version 4 pelo SDK AWS usando as credenciais resolvidas. Nenhuma configuração de assinatura é necessária.
+As solicitações são assinadas pelo SDK AWS com AWS Signature Version 4 usando as credenciais resolvidas. Nenhuma configuração de assinatura é necessária.
 
 <note>
-Use as variantes <code>_env</code> (<code>region_env</code>, e <code>bucket_env</code>/<code>endpoint_env</code> abaixo) quando um valor difere por deployment. O nome da variável é resolvido do registro de ambiente na inicialização.
+Configurações antigas usam uma diretiva irmã <code>&lt;field&gt;_env</code> (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>), que também consulta o registro de ambiente. Ao contrário de um placeholder moderno sem valor padrão, uma consulta legada não registrada ou vazia preserva o valor inline ou zero. A forma legada está <b>obsoleta</b> — migre-a deliberadamente e adicione valores padrão aos placeholders quando precisar manter o comportamento de fallback equivalente.
 </note>
 
 <note>
-A configuração AWS está planejada para ser compartilhada com outros serviços AWS (SQS, etc.) em releases futuros.
+Uma única entrada <code>config.aws</code> pode ser reutilizada por serviços baseados na AWS. <code>queue.driver.sqs</code> referencia a mesma entrada pelo campo <code>config:</code>.
 </note>
 
 ## Armazenamento S3
@@ -53,16 +63,14 @@ A configuração AWS está planejada para ser compartilhada com outros serviços
 ```
 
 | Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `bucket` | string | Condicional | Nome do bucket S3. Obrigatório a menos que `bucket_env` seja definido |
-| `bucket_env` | string | Condicional | Nome da variável de ambiente que contém o nome do bucket |
-| `config` | referência | Sim | Referência da entrada de configuração AWS |
-| `endpoint` | string | Não | Endpoint personalizado para serviços compatíveis com S3 |
-| `endpoint_env` | string | Não | Nome da variável de ambiente que contém o endpoint personalizado |
+|-------|------|----------|-------------|
+| `bucket` | string | Sim | Nome do bucket S3. Forneça via `${env:NAME}` quando variar por implantação |
+| `config` | reference | Sim | Referência da entrada de configuração AWS |
+| `endpoint` | string | Não | Endpoint personalizado para serviços compatíveis com S3 (inline ou `${env:NAME}`) |
 
-### Serviços Compatíveis com S3
+### Serviços compatíveis com S3
 
-Para MinIO ou outros serviços compatíveis com S3, defina um endpoint personalizado:
+Defina um endpoint personalizado para o MinIO ou outro serviço compatível com S3:
 
 ```yaml
 - name: local_storage
@@ -72,14 +80,14 @@ Para MinIO ou outros serviços compatíveis com S3, defina um endpoint personali
   endpoint: "http://localhost:9000"
 ```
 
-Quando um endpoint é fornecido, o acesso por estilo de caminho é habilitado automaticamente.
+Quando um endpoint é fornecido, o acesso em estilo de caminho é ativado automaticamente.
 
 ## API Lua
 
-Veja [Módulo Cloud Storage](lua/storage/cloud.md) para operações (list, upload, download, delete, URLs pré-assinadas).
+Consulte o [módulo Cloud Storage](lua/storage/cloud.md) para operações de listagem, upload, download, exclusão e URLs pré-assinadas.
 
-## Veja Também
+## Veja também
 
 - [Módulo Cloud Storage](lua/storage/cloud.md) - Referência da API Lua
-- [Filesystem](system/filesystem.md) - Entradas de filesystem local
-- [Queue](system/queue.md) - O handler SQS compartilha as mesmas entradas `config.aws`
+- [Sistema de arquivos](system/filesystem.md) - Entradas de sistema de arquivos local
+- [Fila](system/queue.md) - O handler SQS compartilha as mesmas entradas `config.aws`

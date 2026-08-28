@@ -1,22 +1,26 @@
 ---
 title: "보안 모델"
-description: "Wippy는 속성 기반 접근 제어를 구현합니다. 모든 요청은 액터(누가)와 스코프(어떤 정책이 적용되는지)를 전달합니다. 정책은 액션, 리소스, 액터와 리소스의 메타데이터를 기반으로 접근을 평가합니다."
+description: "액터, 정책 스코프, 조건, 토큰 스토어 및 strict mode를 사용하여 속성 기반 접근 제어를 설정합니다."
 ---
 
 # 보안 모델
 
-Wippy는 속성 기반 접근 제어를 구현합니다. 모든 요청은 액터(누가)와 스코프(어떤 정책이 적용되는지)를 전달합니다. 정책은 액션, 리소스, 액터와 리소스의 메타데이터를 기반으로 접근을 평가합니다.
+Wippy는 액터와 정책 스코프를 사용하여 속성 기반 접근 제어를 구현합니다. 정책은
+액터 및 리소스 메타데이터를 사용하여 액션과 리소스를 평가합니다.
+
+이 페이지는 설정 및 API 레퍼런스입니다. 완전한 예제는 필요한 레지스트리 엔트리를
+명시하며, 짧은 Lua 및 YAML 펜스는 기존 보안 컨텍스트의 작업이나 설정 조각을 보여 줍니다.
 
 ```mermaid
 flowchart LR
-    A[Actor + Scope] --> PE[정책 평가] --> AD[허용/거부]
-    A -.->|아이덴티티<br/>메타데이터| PE
-    PE -.->|조건<br/>actor, resource, action| AD
+    A[Actor + Scope] --> PE[Policy Evaluation] --> AD[Allow/Deny]
+    A -.->|Identity<br/>Metadata| PE
+    PE -.->|Conditions<br/>actor, resource, action| AD
 ```
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `security.policy` | 조건이 있는 선언적 정책 |
 | `security.policy.expr` | 표현식 기반 정책 |
@@ -29,7 +33,7 @@ flowchart LR
 ```lua
 local security = require("security")
 
--- 메타데이터가 있는 액터 생성
+-- Create actor with metadata
 local actor = security.new_actor("user:123", {
     role = "admin",
     team = "backend",
@@ -37,7 +41,7 @@ local actor = security.new_actor("user:123", {
     clearance = 3
 })
 
--- 액터 속성 접근
+-- Access actor properties
 local id = actor:id()        -- "user:123"
 local meta = actor:meta()    -- {role="admin", ...}
 ```
@@ -45,10 +49,15 @@ local meta = actor:meta()    -- {role="admin", ...}
 ### 컨텍스트의 액터
 
 ```lua
--- 컨텍스트에서 현재 액터 가져오기
+-- Get current actor from context
+local errors = require("errors")
+
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "No actor in context")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "No actor in context"
+    })
 end
 ```
 
@@ -64,7 +73,7 @@ version: "1.0"
 namespace: app.security
 
 entries:
-  # 관리자 전체 접근
+  # Admin full access
   - name: admin_policy
     kind: security.policy
     policy:
@@ -78,7 +87,7 @@ entries:
     groups:
       - admin
 
-  # 읽기 전용 접근
+  # Read-only access
   - name: readonly_policy
     kind: security.policy
     policy:
@@ -91,7 +100,7 @@ entries:
     groups:
       - default
 
-  # 리소스 소유자 접근
+  # Resource owner access
   - name: owner_policy
     kind: security.policy
     policy:
@@ -108,7 +117,7 @@ entries:
     groups:
       - default
 
-  # 클리어런스 없이 기밀 거부
+  # Deny confidential without clearance
   - name: deny_confidential
     kind: security.policy
     policy:
@@ -128,16 +137,16 @@ entries:
 
 ### 정책 구조
 
-```yaml
+```text
 policy:
   actions: "*" | "action" | ["action1", "action2"]
   resources: "*" | "resource" | ["res1", "res2"]
   effect: allow | deny
-  conditions:  # 선택적
+  conditions:  # Optional
     - field: "field.path"
       operator: "eq"
       value: "static_value"
-      # 또는
+      # OR
       value_from: "other.field.path"
 ```
 
@@ -198,25 +207,25 @@ policy:
 ### 조건 예제
 
 ```yaml
-# 액터 역할 일치
+# Match actor role
 conditions:
   - field: actor.meta.role
     operator: eq
     value: admin
 
-# 필드 비교
+# Compare fields
 conditions:
   - field: meta.owner
     operator: eq
     value_from: actor.id
 
-# 숫자 비교
+# Numeric comparison
 conditions:
   - field: actor.meta.clearance
     operator: gte
     value: 3
 
-# 배열 멤버십
+# Array membership
 conditions:
   - field: actor.meta.role
     operator: in
@@ -224,13 +233,13 @@ conditions:
       - admin
       - moderator
 
-# 패턴 매칭
+# Pattern matching
 conditions:
   - field: resource
     operator: matches
     value: "^api:/v[0-9]+/admin/.*"
 
-# 다중 조건 (AND)
+# Multiple conditions (AND)
 conditions:
   - field: actor.meta.department
     operator: eq
@@ -247,16 +256,18 @@ conditions:
 ```lua
 local security = require("security")
 
--- 정책 가져오기
-local admin_policy = security.policy("app.security:admin_policy")
-local readonly_policy = security.policy("app.security:readonly_policy")
+-- Get policies
+local admin_policy, admin_err = security.policy("app.security:admin_policy")
+if admin_err then return nil, admin_err end
+local readonly_policy, readonly_err = security.policy("app.security:readonly_policy")
+if readonly_err then return nil, readonly_err end
 
--- 정책으로 스코프 생성
+-- Create scope with policies
 local scope = security.new_scope()
 scope = scope:with(admin_policy)
 scope = scope:with(readonly_policy)
 
--- 스코프는 불변 - :with()는 새 스코프 반환
+-- Scopes are immutable - :with() returns new scope
 ```
 
 ### 명명된 스코프 (정책 그룹)
@@ -264,8 +275,9 @@ scope = scope:with(readonly_policy)
 그룹의 모든 정책 로드:
 
 ```lua
--- 그룹의 모든 정책으로 스코프 로드
+-- Load scope with all policies in group
 local scope, err = security.named_scope("app.security:admin")
+if err then return nil, err end
 ```
 
 정책은 `groups` 필드를 통해 그룹에 할당됩니다:
@@ -276,35 +288,49 @@ local scope, err = security.named_scope("app.security:admin")
   policy:
     # ...
   groups:
-    - admin      # 이 정책은 "admin" 그룹에 있음
-    - default    # 여러 그룹에 있을 수 있음
+    - admin      # This policy is in "admin" group
+    - default    # Can be in multiple groups
 ```
 
 ### 스코프 작업
 
 ```lua
--- 정책 추가
+-- Add policy
 local new_scope = scope:with(policy)
 
--- 정책 제거
+-- Remove policy
 local new_scope = scope:without("app.security:temp_policy")
 
--- 정책이 스코프에 있는지 확인
+-- Check if policy is in scope
 local has = scope:contains("app.security:admin_policy")
 
--- 모든 정책 가져오기
+-- Get all policies
 local policies = scope:policies()
 ```
+
+### 모듈 권한
+
+Strict mode는 토큰 작업뿐 아니라 액터, 정책 및 스코프 생성에도 권한 검사를 적용합니다:
+
+| 액션 | 리소스 | 사용 위치 | 거부 동작 |
+|--------|----------|---------|-----------------|
+| `security.actor.create` | 액터 ID | `security.new_actor` | Lua 오류 발생 |
+| `security.policy.get` | 정책 레지스트리 ID | `security.policy` | `nil, error` 반환 |
+| `security.policy_group.get` | 정책 그룹 ID | `security.named_scope` | `nil, error` 반환 |
+| `security.scope.create` | `custom`, `with` 또는 `without` | 각각 `security.new_scope`, `scope:with`, `scope:without` | Lua 오류 발생 |
+
+호출자에게 필요한 작업과 ID만 부여하세요. 이 페이지의 액터, 스코프 및 토큰 예제는
+작업별 토큰 권한 외에도 이러한 권한이 있다고 가정합니다.
 
 ## 정책 평가
 
 ### 평가 흐름
 
 ```
-1. 스코프의 각 정책 확인
-2. 어떤 정책이라도 Deny 반환 → 결과는 Deny
-3. 최소 하나의 Allow이고 Deny 없음 → 결과는 Allow
-4. 해당 정책 없음 → 결과는 Undefined
+1. Evaluate policies until a deny is found or the scope is exhausted
+2. If ANY policy returns Deny → Result is Deny
+3. If at least one Allow and no Deny → Result is Allow
+4. No applicable policies → Result is Undefined
 ```
 
 ### 평가 결과
@@ -316,35 +342,51 @@ local policies = scope:policies()
 | `undefined` | 일치하는 정책 없음 |
 
 ```lua
--- 직접 평가
+local errors = require("errors")
+
+-- Evaluate directly
 local result = scope:evaluate(actor, "read", "document:123", {
     owner = "user:456",
     classification = "internal"
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 elseif result == "undefined" then
-    -- 일치하는 정책 없음 - 엄격 모드에 따라 다름
+    -- No policy matched; treat this as denied unless the caller handles it explicitly.
 end
 ```
 
 ### 빠른 권한 확인
 
 ```lua
--- 현재 컨텍스트의 액터와 스코프에 대해 확인
+local errors = require("errors")
+
+-- Check against current context's actor and scope
 local allowed = security.can("read", "document:123", {
     owner = "user:456"
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Access denied"
+    })
 end
 ```
 
 ## 토큰 스토어
 
-토큰 스토어는 안전한 토큰 생성, 검증, 취소를 제공합니다.
+토큰 스토어는 인증 토큰을 생성, 검증 및 취소합니다.
+
+Lua 작업은 권한으로 보호됩니다. 활성 스코프는 획득에 `security.token_store.get`,
+해당 작업에 `security.token.create`, `security.token.validate` 또는
+`security.token.revoke`를 허용해야 합니다. 이는 기본 strict mode와 명시적으로
+설정된 보안 컨텍스트 모두에 적용됩니다. 액터를 생성하거나 명명된 스코프를 로드하는
+예제에는 `security.actor.create`와 `security.policy_group.get`도 필요합니다.
 
 ### 설정
 
@@ -354,7 +396,7 @@ version: "1.0"
 namespace: app.auth
 
 entries:
-  # 환경 변수 등록
+  # Register environment variable
   - name: os_env
     kind: env.storage.os
 
@@ -363,19 +405,19 @@ entries:
     variable: AUTH_SECRET_KEY
     storage: app.auth:os_env
 
-  # 토큰용 백킹 스토어
+  # Backing store for tokens
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # 토큰 스토어
+  # Token store
   - name: tokens
     kind: security.token_store
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### 토큰 스토어 옵션
@@ -385,95 +427,115 @@ entries:
 | `store` | 필수 | 백킹 키-값 스토어 참조 |
 | `token_length` | 32 | 토큰 크기 (바이트, 256비트) |
 | `default_expiration` | 24h | 기본 토큰 TTL |
-| `token_key` | 없음 | HMAC-SHA256 서명 키 (직접 값) |
-| `token_key_env` | 없음 | 서명 키용 환경 변수 이름 |
+| `token_key` | 없음 | HMAC-SHA256 서명 키(직접 값 또는 [환경 레지스트리](system/env.md)의 `${env:NAME}`) |
 
-프로덕션에서는 `token_key_env`를 사용하여 엔트리에 시크릿을 포함시키지 마세요. 환경 변수 등록은 [환경 시스템](system/env.md)을 참조하세요.
+프로덕션에서는 `token_key: ${env:NAME}`을 사용하여 엔트리에 시크릿을 포함시키지
+마세요. 레거시 `token_key_env` 지시자도 환경 레지스트리를 읽지만 조회 값이 없거나
+비어 있으면 인라인 값 또는 제로 값을 보존합니다. 기본값 없는 최신 플레이스홀더는
+변수가 누락되면 실패합니다. 레거시 지시자는 더 이상 사용되지 않습니다.
 
 ### 토큰 생성
 
 ```lua
 local security = require("security")
 
--- 토큰 스토어 가져오기
+-- Get token store
 local store, err = security.token_store("app.auth:tokens")
 if err then
     return nil, err
 end
 
--- 액터와 스코프 생성
+-- Create actor and scope
 local actor = security.new_actor("user:123", {
     role = "user",
     email = "user@example.com"
 })
 
-local scope, _ = security.named_scope("app.security:default")
+local scope, scope_err = security.named_scope("app.security:default")
+if scope_err then
+    store:close()
+    return nil, scope_err
+end
 
--- 토큰 생성
-local token, err = store:create(actor, scope, {
-    expiration = "7d",  -- 기본 만료 오버라이드
+-- Create token
+local token, create_err = store:create(actor, scope, {
+    expiration = "7d",  -- Override default expiration
     meta = {
         device = "mobile",
         ip = "192.168.1.1"
     }
 })
+store:close()
+if create_err then return nil, create_err end
+return token
 
-if err then
-    return nil, err
-end
-
--- 토큰 형식: base64_token.hmac_signature (token_key가 설정된 경우)
--- 예: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
+-- Token format: base64_token.hmac_signature (if token_key set)
+-- Example: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
 ```
 
 ### 토큰 검증
 
 ```lua
--- 토큰 검증
+local errors = require("errors")
+
+-- Validate token
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Invalid token")
+    return nil, errors.new({
+        kind = errors.PERMISSION_DENIED,
+        message = "Invalid token"
+    })
 end
 
--- 액터와 스코프가 저장된 데이터에서 재구성됨
+-- Actor and scope are reconstructed from stored data
 print(actor:id())  -- "user:123"
 ```
 
 ### 토큰 취소
 
 ```lua
--- 단일 토큰 취소
+-- Revoke single token
 local ok, err = store:revoke(token)
+if err then
+    store:close()
+    return nil, err
+end
 
--- 완료 시 스토어 닫기
+-- Close store when done
 store:close()
+return ok
 ```
 
 ## 컨텍스트 흐름
 
-보안 컨텍스트는 함수 호출을 통해 전파됩니다.
+액터와 스코프는 상속 가능한 프레임 컨텍스트입니다. 호출자가 대체 컨텍스트를
+제공하지 않으면 함수 호출과 생성된 프로세스가 둘 다 상속합니다. 생성된 프로세스의
+액터나 스코프를 명시적으로 변경하려면 `process.security` 권한이 필요합니다.
+`funcs.new():with_actor(...)` 또는 `:with_scope(...)`로 함수 호출의 보안 컨텍스트를
+변경하려면 대신 `security`에 대한 `funcs.security`가 필요합니다.
 
 ### 컨텍스트 설정
 
 ```lua
 local funcs = require("funcs")
 
--- 보안 컨텍스트로 함수 호출
-local result, err = funcs.new()
-    :with_actor(actor)
-    :with_scope(scope)
-    :call("app.api:protected_endpoint", data)
+-- Call function with security context
+local caller, err = funcs.new():with_actor(actor)
+if err then return nil, err end
+caller, err = caller:with_scope(scope)
+if err then return nil, err end
+local result, call_err = caller:call("app.api:protected_endpoint", data)
+if call_err then return nil, call_err end
 ```
 
 ### 컨텍스트 상속
 
 | 컴포넌트 | 상속 |
 |-----------|----------|
-| 액터 | 예 - 자식 호출로 전달 |
-| 스코프 | 예 - 자식 호출로 전달 |
+| 액터 | 예 - 자식 호출과 생성된 프로세스로 전달 |
+| 스코프 | 예 - 자식 호출과 생성된 프로세스로 전달 |
 | 엄격 모드 | 아니오 - 애플리케이션 전체 |
-
-함수는 호출자의 보안 컨텍스트를 상속합니다. 스폰된 프로세스는 새로 시작합니다.
 
 ## 서비스 레벨 보안
 
@@ -499,18 +561,23 @@ local result, err = funcs.new()
 
 ## 엄격 모드
 
-보안 컨텍스트가 없을 때 접근을 거부하려면 엄격 모드를 활성화하세요:
+Strict mode는 기본적으로 활성화되며 액터나 스코프가 없으면 접근을 거부합니다.
+배포가 의도적으로 레거시 허용 동작을 필요로 할 때만 `false`로 설정하세요:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
   strict_mode: true
 ```
 
-| 모드 | 컨텍스트 없음 | 동작 |
+| `strict_mode` | 컨텍스트 없음 | 동작 |
 |------|-----------------|----------|
-| 일반 | 액터/스코프 없음 | 허용 (관대) |
-| 엄격 | 액터/스코프 없음 | 거부 (보안 기본값) |
+| `false` | 액터 또는 스코프 없음 | 허용 (관대) |
+| `true` (기본값) | 액터 또는 스코프 없음 | 거부 |
+
+액터와 스코프가 모두 있으면 정책은 항상 평가됩니다. Strict mode를 비활성화해도
+`undefined` 결과가 allow로 변환되지는 않습니다. `security.can(...)`은 평가가
+`allow`를 반환할 때만 `true`를 반환합니다.
 
 ## 인증 흐름
 
@@ -521,28 +588,49 @@ local http = require("http")
 local security = require("security")
 
 local function protected_handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- 토큰 추출 및 검증
-    local auth = req:header("Authorization")
+    local function respond(status, body)
+        local content_type_err = res:set_header("Content-Type", "application/json")
+        if content_type_err then return nil, content_type_err end
+        local status_err = res:set_status(status)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json(body)
+        if write_err then return nil, write_err end
+        return true
+    end
+
+    -- Extract and validate token
+    local auth, header_err = req:header("Authorization")
+    if header_err then return nil, header_err end
     if not auth then
-        return res:set_status(401):write_json({error = "Missing authorization"})
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Missing authorization"})
     end
 
-    local token = auth:gsub("^Bearer%s+", "")
-    local store, _ = security.token_store("app.auth:tokens")
-    local actor, scope, err = store:validate(token)
-    if err then
-        return res:set_status(401):write_json({error = "Invalid token"})
+    local token = auth:match("^Bearer%s+(.+)$")
+    if not token then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Expected a bearer token"})
+    end
+    local store, store_err = security.token_store("app.auth:tokens")
+    if store_err then
+        return respond(http.STATUS.INTERNAL_ERROR, {error = "Token store unavailable"})
     end
 
-    -- 권한 확인
-    if not security.can("api.users.read", "users") then
-        return res:set_status(403):write_json({error = "Forbidden"})
+    local actor, scope, validate_err = store:validate(token)
+    store:close()
+    if validate_err then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Invalid token"})
     end
 
-    res:write_json({user = actor:id()})
+    -- Evaluate the actor and scope reconstructed from this token.
+    if scope:evaluate(actor, "api.users.read", "users") ~= "allow" then
+        return respond(http.STATUS.FORBIDDEN, {error = "Forbidden"})
+    end
+
+    return respond(http.STATUS.OK, {user = actor:id()})
 end
 
 return { handler = protected_handler }
@@ -552,10 +640,15 @@ return { handler = protected_handler }
 
 ```lua
 local actor = security.new_actor("user:" .. user.id, {role = user.role})
-local scope, _ = security.named_scope("app.security:" .. user.role)
+local scope, scope_err = security.named_scope("app.security:" .. user.role)
+if scope_err then return nil, scope_err end
 
-local store, _ = security.token_store("app.auth:tokens")
-local token, err = store:create(actor, scope, {expiration = "24h"})
+local store, store_err = security.token_store("app.auth:tokens")
+if store_err then return nil, store_err end
+local token, token_err = store:create(actor, scope, {expiration = "24h"})
+store:close()
+if token_err then return nil, token_err end
+return token
 ```
 
 ## 모범 사례
@@ -563,7 +656,7 @@ local token, err = store:create(actor, scope, {expiration = "24h"})
 1. **최소 권한** - 필요한 최소 권한만 부여
 2. **기본 거부** - 명시적 허용 정책 사용, 엄격 모드 활성화
 3. **정책 그룹 사용** - 역할/기능별로 정책 구성
-4. **토큰 서명** - 프로덕션에서 항상 `token_key_env` 설정
+4. **토큰 서명** - 프로덕션에서는 항상 `${env:NAME}` 참조로 `token_key` 설정
 5. **짧은 만료** - 민감한 작업에 더 짧은 토큰 수명 사용
 6. **컨텍스트 조건** - 정적 정책보다 동적 조건 사용
 7. **민감한 액션 감사** - 보안 관련 작업 로깅

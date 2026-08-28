@@ -7,6 +7,9 @@ description: "データベース永続化によるバックグラウンド処理
 
 データベース永続化によるバックグラウンド処理でタスクをキューイングするREST APIを構築します。
 
+**分類:** 実行可能なチュートリアルです。ローカルの単一ノードデモに必要なレジストリ、
+Luaソース、起動コマンド、HTTP確認手順をすべて掲載しています。
+
 ## 概要
 
 このチュートリアルでは以下を実演するタスク管理APIを作成します：
@@ -19,21 +22,21 @@ description: "データベース永続化によるバックグラウンド処理
 
 ```mermaid
 flowchart LR
-    subgraph api["HTTPサーバー"]
+    subgraph api["HTTP Server"]
         POST["/tasks POST"]
         GET["/tasks GET"]
     end
 
-    subgraph queue["キュー"]
-        Q[("tasksキュー")]
+    subgraph queue["Queue"]
+        Q[("tasks queue")]
     end
 
-    subgraph workers["ワーカー"]
-        W1["コンシューマー1"]
-        W2["コンシューマー2"]
+    subgraph workers["Workers"]
+        W1["Consumer 1"]
+        W2["Consumer 2"]
     end
 
-    subgraph storage["ストレージ"]
+    subgraph storage["Storage"]
         DB[(SQLite)]
     end
 
@@ -45,11 +48,24 @@ flowchart LR
     GET -->|SELECT| DB
 ```
 
+## 前提条件
+
+- Wippyランタイム`v0.3.32a`。
+- `curl`または別のHTTPクライアント。
+- 空の作業ディレクトリ。以下のファイルを追加する前に、プロジェクトとソースディレクトリを作成します：
+
+  ```bash
+  mkdir task-queue
+  cd task-queue
+  mkdir src
+  ```
+
 ## プロジェクト構造
 
 ```
 task-queue/
 ├── wippy.lock
+├── data/                    # created before startup
 └── src/
     ├── _index.yaml
     ├── migrate.lua
@@ -67,38 +83,49 @@ version: "1.0"
 namespace: app
 
 entries:
-  # SQLiteデータベース
+  # Capabilities used by the tutorial's Lua entries in strict mode
+  - name: runtime_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
+  # SQLite database
   - name: db
     kind: db.sql.sqlite
     file: "./data/tasks.db"
     lifecycle:
       auto_start: true
 
-  # メモリキュードライバ
+  # Memory queue driver
   - name: queue_driver
     kind: queue.driver.memory
     lifecycle:
       auto_start: true
 
-  # タスクキュー
+  # Tasks queue
   - name: tasks_queue
     kind: queue.queue
     driver: app:queue_driver
 
-  # HTTPサーバー
+  # HTTP server
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # ルーター
+  # Router
   - name: router
     kind: http.router
     meta:
       server: app:gateway
 
-  # マイグレーションプロセス（一度実行して終了）
+  # Migration process (runs once, exits)
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -106,8 +133,13 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:runtime_policy
 
-  # マイグレーションサービス（自動起動、成功時に終了）
+  # Migration service (auto-starts, exits on success)
   - name: migrate-service
     kind: process.service
     process: app:migrate
@@ -115,13 +147,13 @@ entries:
     lifecycle:
       auto_start: true
 
-  # プロセスホスト
+  # Process host
   - name: processes
     kind: process.host
     lifecycle:
       auto_start: true
 
-  # APIハンドラ
+  # API handlers
   - name: create_task
     kind: function.lua
     source: file://create_task.lua
@@ -130,6 +162,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: app:create_task
+      policies:
+        - app:runtime_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,8 +175,13 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: app:list_tasks
+      policies:
+        - app:runtime_policy
 
-  # キューワーカー
+  # Queue worker
   - name: process_task
     kind: function.lua
     source: file://process_task.lua
@@ -148,8 +190,13 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: app:process_task
+      policies:
+        - app:runtime_policy
 
-  # エンドポイント
+  # Endpoints
   - name: create_task.endpoint
     kind: http.endpoint
     meta:
@@ -166,7 +213,7 @@ entries:
     path: /tasks
     func: app:list_tasks
 
-  # キューコンシューマー
+  # Queue consumer
   - name: task_consumer
     kind: queue.consumer
     queue: app:tasks_queue
@@ -189,7 +236,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -207,7 +254,7 @@ local function main()
 
     if exec_err then
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
     logger:info("migration complete")
@@ -218,7 +265,9 @@ return { main = main }
 ```
 
 <tip>
-0を返すと成功を示します。スーパーバイザーはコード0で正常終了したプロセスを再起動しません。
+通常のreturnは<code>process.service</code>の子プロセスを再起動せず終了させます。スーパーバイザーが
+再試行するのはプロセスがエラーを発生させた場合だけです。同じプロセスをCLIコマンドとして起動した場合、
+<code>0</code>を返すと成功の終了ステータスにも対応します。
 </tip>
 
 ## タスク作成エンドポイント
@@ -380,29 +429,48 @@ return { main = main }
 初期化と実行：
 
 ```bash
-mkdir -p data
+mkdir data
 wippy init
 wippy run
 ```
 
+HTTP確認には2つ目のターミナルを使い、その間ランタイムを実行したままにします。ログにHTTPサービスの
+リッスン開始とマイグレーション完了が表示されるまで待ってください。起動時には、1回限りのマイグレーションと
+HTTPサービスが独立して開始されます。
+
 APIをテスト：
 
 ```bash
-# タスクを作成
+# Create a task
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"action": "uppercase", "data": {"text": "hello world"}}'
 
-# レスポンス: {"id": "550e8400-...", "status": "queued"}
+# Response: {"id":"<generated-uuid>","status":"queued"}
 
-# 処理を待ってからタスクを一覧表示
+# Wait a moment for processing, then list tasks
 curl http://localhost:8080/tasks
 
-# レスポンス: {"tasks": [...], "count": 1}
+# Response includes one completed task and "count":1
 
-# ステータスでフィルタ
+# Filter by status
 curl "http://localhost:8080/tasks?status=completed"
 ```
+
+返された行の`status`は`"completed"`になり、`result`フィールドには
+`{"output":"HELLO WORLD"}`を含むJSON文字列が入ります。インメモリキューは意図的に
+非永続ですが、完了した行は`data/tasks.db`に保存され、再起動後も残ります。
+
+## トラブルシューティングとクリーンアップ
+
+- `no such table: tasks`は、マイグレーション完了前にリクエストがSQLiteへ到達したことを示します。
+  `migration complete`を待って再試行してください。マイグレーションエラーはサービスを停止し、ランタイムログに表示されます。
+- `failed to queue task`は通常、`app:queue_driver`または`app:task_consumer`が起動しなかったことを示します。
+  リクエストを再試行する前に、起動ログの最初のリソースエラーを確認してください。
+- `address already in use`は別のプロセスがポート8080を使用していることを示します。そのプロセスを停止するか、
+  `app:gateway.addr`と`curl`コマンドの両方を同じ別のポートに変更してください。
+- Ctrl+Cでランタイムを停止します。チュートリアルのデータをリセットするには`data/tasks.db`を削除します。
+  次回の起動時にスキーマが再作成されます。
 
 ## メッセージフロー
 
@@ -413,8 +481,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## 次のステップ
 
-- [HTTPモジュール](lua/http/http.md) - リクエスト/レスポンス処理
-- [Queueモジュール](lua/storage/queue.md) - メッセージキュー操作
-- [SQLモジュール](lua/storage/sql.md) - データベースアクセス
-- [キューコンシューマー](guides/queue-consumers.md) - キュー設定
-
+- [HTTPモジュール](lua/http/http.md) — リクエストとレスポンスの処理
+- [Queueモジュール](lua/storage/queue.md) — メッセージキュー操作
+- [SQLモジュール](lua/storage/sql.md) — データベースアクセス
+- [キューコンシューマー](guides/queue-consumers.md) — キュー設定

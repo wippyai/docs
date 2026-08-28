@@ -46,9 +46,9 @@ HTTP 서버(`http.service`)는 포트에서 리스닝하고 라우터, 엔드포
 
 ```yaml
 timeouts:
-  read: "10s"    # 요청 헤더 읽기 최대 시간
-  write: "60s"   # 응답 쓰기 최대 시간
-  idle: "120s"   # Keep-alive 타임아웃
+  read: "10s"    # Max time to read the entire request (headers + body)
+  write: "60s"   # Max time to write response
+  idle: "120s"   # Keep-alive timeout
 ```
 
 - `read` - API는 짧게 (5-10초), 업로드는 길게
@@ -103,7 +103,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +112,7 @@ lifecycle:
 | `auto_start` | 애플리케이션 시작 시 시작 |
 | `start_timeout` | 서버 시작 대기 최대 시간 |
 | `stop_timeout` | 그레이스풀 셧다운 최대 시간 |
-| `depends_on` | 이 엔트리들이 준비된 후 시작 |
+| `requires` | 이 엔트리들이 준비된 후 시작 (`depends_on`은 레거시 표기) |
 
 ## 컴포넌트 연결
 
@@ -144,14 +144,14 @@ entries:
 
 ```yaml
 entries:
-  # 퍼블릭 API
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # 관리자 (localhost 전용)
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"
@@ -163,11 +163,11 @@ entries:
 
 서버는 직접 TLS를 종료할 수 있습니다. `tls.mode`를 `manual` (자체 인증서 제공) 또는 `auto` (오버레이 네트워크 드라이버가 인증서 제공, 예: `network.tailscale`)로 설정하세요. 일반 clearnet 리스너는 `auto`를 지원하지 않습니다. `tls`를 생략하거나 mode를 비워두면 일반 HTTP로 실행됩니다.
 
-`auto` 모드에서 서버는 `cert`/`key`/`cert_env`/`key_env`를 지정해서는 안 됩니다 — 네트워크 드라이버가 제공합니다.
+`auto` 모드에서 서버는 `cert`/`key`를 지정해서는 안 됩니다. 네트워크 드라이버가 제공합니다.
 
 ### 수동 인증서
 
-cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합니다 (둘 다는 불가):
+`mode: manual`에서 `cert`와 `key`는 PEM 콘텐츠를 담습니다. 각 필드에는 인라인 PEM, manifest 기준 `file://` 참조, 또는 디코딩 시 등록된 [환경 변수](system/env.md)에서 읽는 `${env:NAME}` 참조 중 하나를 사용하세요.
 
 ```yaml
 - name: api
@@ -185,15 +185,20 @@ cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합�
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+`${env:NAME}`은 `NAME`을 [환경 레지스트리](../system/env.md)의 공개 이름 또는 엔트리 ID(예: `app.env:tls_cert`)로 해석합니다. 원시 OS 환경 변수가 아니며 OS 값은 해당 이름으로 등록된 `env.storage.os` 기반 변수를 통해서만 접근할 수 있습니다. `${env:NAME|default}`로 기본값을 지정할 수 있습니다.
+
+<note>
+레거시 <code>cert_env</code> / <code>key_env</code> 필드도 같은 방식으로 환경 레지스트리를 사용하지만 deprecated입니다. 위의 <code>${env:NAME}</code> placeholder를 사용하세요.
+</note>
 
 | 필드 | 설명 |
 |------|------|
 | `mode` | `""` (끔), `auto`, 또는 `manual` |
-| `cert` / `key` | PEM 콘텐츠 (일반적으로 `file://`로 로드) |
-| `cert_env` / `key_env` | [env 레지스트리](system/env.md)를 통해 해석되는 환경 변수 이름 |
+| `cert` / `key` | 인라인, `file://` 또는 `${env:NAME}` 참조로 제공하는 PEM 콘텐츠 |
 
 ### Mutual TLS (mTLS)
 
@@ -202,8 +207,8 @@ cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합�
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
@@ -211,8 +216,9 @@ tls:
 | 필드 | 설명 |
 |------|------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | 신뢰할 수 있는 클라이언트 CA의 PEM 번들 |
-| `client_ca_env` | CA 번들을 보유하는 환경 변수 (`client_ca`와 상호 배타적) |
+| `client_ca` | 인라인, `file://` 또는 `${env:NAME}`으로 제공하는 신뢰할 수 있는 클라이언트 CA PEM 번들 |
+
+`client_ca`도 `cert`/`key`와 같은 세 가지 형식을 받습니다. 레거시 `client_ca_env`는 deprecated이며 `client_ca: ${env:NAME}`을 사용해야 합니다.
 
 `verify_if_given`과 `require_and_verify`는 CA가 필요합니다. `request`와 `require_any`는 CA 검증 없이 모든 클라이언트 인증서를 수락합니다.
 

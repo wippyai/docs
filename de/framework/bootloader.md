@@ -1,22 +1,31 @@
 ---
 title: "Bootloader"
-description: "Das Modul wippy/bootloader orchestriert die Anwendungsinitialisierung, indem es Bootloader-Funktionen entdeckt und in einer definierten Reihenfolge…"
+description: "Geordnete Initialisierungsfunktionen beim Anwendungsstart mit wippy/bootloader entdecken und ausführen."
 ---
 
 # Bootloader
 
-Das Modul `wippy/bootloader` orchestriert die Anwendungsinitialisierung, indem es Bootloader-Funktionen entdeckt und in einer definierten Reihenfolge beim Start ausfuehrt. Andere Framework-Module (Migrationen, Verschluesselung, Index-Refresh) registrieren Bootloader, um ihre eigenen Initialisierungsschritte auszufuehren.
+Das Modul `wippy/bootloader` entdeckt Initialisierungsfunktionen der Anwendung und
+führt sie beim Start in einer festgelegten Reihenfolge aus. Framework-Module verwenden
+Bootloader beispielsweise zum Einrichten von Verschlüsselungsschlüsseln und für
+Datenbankmigrationen.
+
+Diese Seite ist ein Teilrezept zur Integration und eine API-Referenz, keine
+eigenständige Anwendung. Die Definition unten ist strukturell vollständig;
+`apply_seed()` steht jedoch für Anwendungscode, der den eigentlichen Seed-Vorgang und
+dessen Idempotenzprüfung implementieren muss. Persistente Bereinigung oder Umkehrung
+hängt von diesem anwendungsspezifischen Vorgang ab.
 
 ## Einrichtung
 
-Fuege das Modul deinem Projekt hinzu:
+Fügen Sie das Modul zum Projekt hinzu:
 
 ```bash
 wippy add wippy/bootloader
 wippy install
 ```
 
-Deklariere die Abhaengigkeit und den erforderlichen Anwendungs-Host:
+Deklarieren Sie die Abhängigkeit und den erforderlichen Anwendungshost:
 
 ```yaml
 version: "1.0"
@@ -42,23 +51,26 @@ entries:
         value: app:os_env
 ```
 
-Der Bootloader selbst laeuft als `wippy.bootloader:bootloader.service` (ein `process.service` mit `auto_start: true`). Nichts weiter ist erforderlich, um ihn zu aktivieren.
+Die Abhängigkeit aktiviert `wippy.bootloader:bootloader.service`, einen
+`process.service` mit `auto_start: true`.
 
 ## Funktionsweise
 
-Beim Start fuehrt der Bootloader folgende Schritte aus:
+Beim Start führt der Bootloader folgende Schritte aus:
 
-1. Entdeckt jeden Eintrag mit `meta.type: bootloader` aus der Registry.
+1. Er entdeckt alle Einträge mit `meta.type: bootloader` in der Registry.
 2. Sortiert sie aufsteigend nach `meta.order` (niedrigste zuerst).
-3. Fuehrt jeden einzelnen sequenziell als Lua-Funktion aus.
-4. Stoppt beim ersten Fehler, der `status = "error"` zurueckgibt.
-5. Meldet nach Abschluss die Gesamt-/Erfolgs-/Fehl-/Uebersprungen-Zaehler.
+3. Führt sie nacheinander als Lua-Funktionen aus.
+4. Stoppt die verbleibende Sequenz beim ersten Ergebnis mit `status = "error"`.
+5. Meldet nach Abschluss die Anzahl aller, erfolgreichen, fehlgeschlagenen und übersprungenen Bootloader.
 
-Bootloader sind autonom -- jeder prueft seine eigenen Bedingungen, erledigt seine Arbeit und meldet ein strukturiertes Ergebnis.
+Jeder Bootloader prüft seine eigenen Bedingungen, führt seine Arbeit aus und meldet
+ein strukturiertes Ergebnis.
 
 ## Einen Bootloader definieren
 
-Ein Bootloader ist ein beliebiger `function.lua`-Eintrag mit `meta.type: bootloader`:
+Jeder `function.*`-Eintrag mit `meta.type: bootloader` ist ein Bootloader. Die meisten
+Bootloader einer Anwendung verwenden `function.lua`:
 
 ```yaml
 - name: seed_defaults
@@ -78,13 +90,20 @@ Ein Bootloader ist ein beliebiger `function.lua`-Eintrag mit `meta.type: bootloa
 | Feld | Erforderlich | Beschreibung |
 |-------|----------|-------------|
 | `meta.type` | Ja | Muss `bootloader` sein |
-| `meta.order` | Nein | Ausfuehrungsreihenfolge (Standard `100`); niedrigere laufen zuerst |
+| `meta.order` | Nein | Ausführungsreihenfolge (Standard `999`); niedrigere Werte laufen zuerst |
 | `meta.description` | Nein | Menschenlesbare Zusammenfassung |
-| `meta.requires` | Nein | Abhaengigkeitshinweise, die in Logs angezeigt werden |
+| `meta.requires` | Nein | Eine ID oder ein Array von Bootloader-/Service-IDs. Frühere Bootloader müssen `success` oder `skipped` zurückgegeben haben; Service-Anforderungen müssen in der Registry vorhanden sein. Eine unerfüllte Anforderung stoppt die verbleibende Sequenz. |
 
-### Rueckgabevertrag
+Der Abhängigkeitstyp wird aus dem referenzierten Registry-Eintrag bestimmt:
+`meta.type: bootloader` kennzeichnet einen Bootloader, andere aufgelöste Einträge
+gelten als Services. Kann eine ID nicht aufgelöst werden, behandelt der Fallback einen
+Namespace mit Punkt als Bootloader-ID und eine andere ID mit Doppelpunkt als Service-ID.
+Eine Service-Prüfung wartet bis zu 20 Versuche im Abstand von 500 ms, prüft jedoch nur
+die Registry-Präsenz und nicht den Laufzeitzustand.
 
-Die `method` gibt eine Tabelle zurueck, die das Ergebnis beschreibt:
+### Rückgabevertrag
+
+Die `method` gibt eine Tabelle zurück, die das Ergebnis beschreibt:
 
 ```lua
 local function run()
@@ -115,44 +134,63 @@ return { run = run }
 | Status | Bedeutung |
 |--------|---------|
 | `success` | Arbeit abgeschlossen |
-| `skipped` | Keine Aktion (bereits erledigt, Vorbedingung nicht erfuellt) |
-| `error` | Fehler -- stoppt die Boot-Sequenz |
+| `skipped` | Keine Aktion (bereits erledigt oder Vorbedingung nicht erfüllt) |
+| `error` | Fehler — stoppt die verbleibende Bootloader-Sequenz |
 
-Ein Bootloader, der einen Lua-Fehler ausloest, wird als `error` behandelt.
+Ein Bootloader, der einen Lua-Fehler auslöst, einen Ausführungsfehler zurückgibt oder
+einen Wert zurückgibt, der keine Tabelle ist, wird in ein `error`-Ergebnis umgewandelt.
+Der Orchestrator misst und überschreibt `duration`; ein zurückgegebener Wert `details`
+bleibt für das Logging erhalten.
 
-## Ausfuehrungsreihenfolge
+Verwenden Sie die drei Statuswerte exakt. Ein anderer Wert wird als `UNKNOWN`
+protokolliert, keinem Statuszähler zugerechnet und stoppt derzeit nachfolgende
+Bootloader nicht.
 
-Niedrigere `order`-Werte werden zuerst ausgefuehrt. Reserviere niedrige Reihenfolgen fuer Infrastruktur:
+## Ausführungsreihenfolge
 
-| Order | Typische Verwendung |
+Niedrigere `order`-Werte werden zuerst ausgeführt. Reservieren Sie niedrige Werte für Infrastruktur:
+
+| Reihenfolge | Typische Verwendung |
 |-------|-------------|
-| `10` | Geheimnisse und Verschluesselungsschluessel (vom Modul bereitgestellt) |
+| `10` | Secrets und Verschlüsselungsschlüssel (vom Modul bereitgestellt) |
 | `20` | Schema-Migrationen (von `wippy/migration` bereitgestellt) |
-| `50` | Daten-Seeding, Suchindex-Aufwaermung |
-| `100` | Standard -- Aufgaben auf Anwendungsebene |
+| `50` | Daten-Seeding und Aufwärmen von Suchindizes |
+| `100` | Aufgaben auf Anwendungsebene (Konvention) |
 
-Wenn zwei Bootloader dieselbe Reihenfolge teilen, ist die Ausfuehrungsreihenfolge zwischen ihnen nicht garantiert.
+Haben zwei Bootloader denselben Wert, werden sie alphabetisch nach ihrer
+vollqualifizierten Eintrags-ID ausgeführt.
 
 ## Eingebaute Bootloader
 
-### Verschluesselungsschluessel (Order `10`)
+### Verschlüsselungsschlüssel (Reihenfolge `10`)
 
-Generiert einen 256-Bit `ENCRYPTION_KEY` und speichert ihn ueber den konfigurierten `env_storage`, falls noch kein Wert vorhanden ist. Andere Module (Sicherheit, Nutzungsverfolgung) lesen diese Variable fuer Envelope-Verschluesselung. Wird uebersprungen, wenn die Variable bereits existiert.
+Erzeugt 32 zufällige Bytes, codiert sie als 64 Zeichen langen hexadezimalen
+`ENCRYPTION_KEY` und speichert den Wert über den konfigurierten `env_storage`, falls
+noch keiner vorhanden ist. Ist die Variable bereits gesetzt, wird der Schritt übersprungen.
 
-### Migrations-Bootloader (Order `20`)
+### Migrations-Bootloader (Reihenfolge `20`)
 
-Bereitgestellt von `wippy/migration`. Entdeckt jeden Eintrag mit `meta.type: migration`, gruppiert sie nach `meta.target_db` und wendet die ausstehenden an. Siehe [Migrationen](framework/migration.md).
+Bereitgestellt von `wippy/migration`. Entdeckt alle Einträge mit
+`meta.type: migration`, gruppiert sie nach `meta.target_db` und wendet ausstehende
+Migrationen an. Siehe [Migrationen](framework/migration.md).
 
 ## Boot-Status beobachten
 
-Der Service protokolliert eine Zeile pro Bootloader (`SUCCESS`, `FAILED`, `SKIPPED`) mit der Eintrags-ID, Reihenfolge und Dauer. Die abschliessende Zusammenfassungszeile meldet aggregierte Zaehler. Ein fehlgeschlagener Bootloader bricht den Start ab -- die Restart-Policy des Supervisors gilt dann fuer `bootloader.service`.
+Der Service protokolliert zunächst die Anzahl gefundener Bootloader und anschließend
+für jeden ausgeführten Bootloader eine Ergebniszeile (`SUCCESS`, `FAILED`, `SKIPPED`)
+mit Eintrags-ID, Reihenfolge und Dauer. Die abschließende Zusammenfassung enthält die
+Anzahl ausgeführter Bootloader und die Werte je Status. Ein Fehler stoppt spätere
+Bootloader und lässt den Orchestrator `false` zusammen mit seiner Statistik
+zurückgeben; er löst nicht selbst einen Lua-Prozessfehler aus.
 
 <tip>
-Halte Bootloader idempotent. Sie koennen nach einem Crash-Restart erneut laufen, daher pruefe Vorbedingungen (Zeile existiert, Datei vorhanden, Env-Variable gesetzt), bevor du Arbeit verrichtest.
+Halten Sie Bootloader idempotent. Sie laufen erneut, wenn `bootloader.service` neu
+gestartet wird. Prüfen Sie daher Vorbedingungen — etwa ob eine Zeile, Datei oder
+Umgebungsvariable bereits vorhanden ist — bevor Sie Änderungen vornehmen.
 </tip>
 
-## Siehe Auch
+## Siehe auch
 
-- [Migrationen](framework/migration.md) - Migrations-Bootloader und DSL
-- [Supervision](guides/supervision.md) - Service-Lebenszyklus und Restart-Policy
-- [Framework-Uebersicht](framework/overview.md) - Verwendung von Framework-Modulen
+- [Migrationen](framework/migration.md) — Migrations-Bootloader und DSL
+- [Supervision](guides/supervision.md) — Service-Lebenszyklus und Neustartrichtlinie
+- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen

@@ -1,13 +1,19 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
-description: "Baue eine Wissensbasis auf, die Fragen aus deinen eigenen Dokumenten beantwortet. Dieses Tutorial verwendet das Modul wippy/embeddings für die…"
+description: "Dokumente einlesen, relevante Chunks per Vektorsuche abrufen und in diesem Kontext verankerte Antworten generieren."
 ---
 
 # Retrieval-Augmented Generation (RAG)
 
-Baue eine Wissensbasis auf, die Fragen aus deinen eigenen Dokumenten beantwortet. Dieses Tutorial verwendet das Modul `wippy/embeddings` für die Vektorsuche und das LLM-Framework für die Generierung.
+Bauen Sie eine RAG-Pipeline über Ihren eigenen Dokumenten. Das Beispiel verwendet
+`wippy/embeddings` für die Vektorsuche und das LLM-Framework für die Antwortgenerierung.
 
-## Was du bauen wirst
+**Klassifizierung: Teilrezept für eine Anwendung.** Der Abrufcode ist vollständig,
+aber die Integration richtet sich an das Wippy-Anwendungstemplate und nicht an eine
+eigenständige App. Das Template stellt Authentifizierung, Sicherheits-Policy,
+Provider-/Modellkonfiguration, Bootloader und Migrationsverdrahtung bereit.
+
+## Was Sie bauen
 
 Eine minimale RAG-Pipeline:
 
@@ -17,25 +23,21 @@ Eine minimale RAG-Pipeline:
 
 ## Voraussetzungen
 
-- Eine Datenbank: `db.sql.sqlite` (enthält `vec0`-Unterstützung) oder `db.sql.postgres` mit der Erweiterung `pgvector`.
-- Ein LLM-Provider, der mit einem Embedding-Modell konfiguriert ist (z. B. `text-embedding-3-small`) — siehe [LLM-Framework](framework/llm.md).
-- Wippy-Projekt initialisiert (`wippy init`, `wippy add wippy/embeddings`).
+- Eine App auf Basis des [Wippy-Anwendungstemplates](https://github.com/wippyai/app),
+  in der `app:db`, `app:processes`, `app.env:store` sowie die Bootloader- und
+  Migrationsabhängigkeiten bereits vorhanden sind.
+- SQLite aus der Runtime einschließlich `vec0` oder PostgreSQL, bei dem die Erweiterung
+  `pgvector` vor dem Start aktiviert wurde.
+- `OPENAI_API_KEY`, verfügbar über den konfigurierten LLM-Environment-Store der App.
+- Registry-Modell-Einträge namens `text-embedding-3-small` (Fähigkeit `embed`, Provider
+  OpenAI) und `gpt-4o-mini` (Fähigkeit `generate`, Provider OpenAI). Das Embeddings-Paket
+  ruft den ersten Namen direkt auf und fordert 512 Dimensionen an.
 
 ## Abhängigkeiten
 
-Deklariere die Abhängigkeit `wippy/embeddings` und zeige auf deine Datenbank. Der Parameter `target_db` ist die Registry-ID des Datenbankeintrags, in dem die Embeddings-Tabelle gespeichert wird:
+Fügen Sie die Abhängigkeit `wippy/embeddings` in `src/app/deps/_index.yaml` hinzu und binden Sie ihre Zieldatenbank:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
@@ -43,19 +45,34 @@ entries:
     parameters:
       - name: target_db
         value: app:db
+
 ```
 
-`wippy/embeddings` zieht `wippy/llm` und die Migration nach, die die Tabelle `embeddings_512` erstellt (PostgreSQL `pgvector` oder virtuelle SQLite-`vec0`-Tabelle).
+Deklarieren Sie keine Abhängigkeiten erneut, die das Anwendungstemplate bereits liefert.
+Prüfen Sie, dass dessen vorhandene Abhängigkeit `wippy/migration` den Parameter `app_db`
+an `app:db` bindet und die vorhandene Abhängigkeit `wippy/bootloader` die Parameter
+`application_host` an `app:processes` sowie `env_storage` an `app.env:store` bindet.
+
+`wippy/embeddings` liefert die Migration, die `embeddings_512` erstellt (PostgreSQL
+`pgvector` oder SQLite `vec0`). `wippy/migration` entdeckt sie, und der automatisch
+gestartete Bootloader wendet sie während `wippy run -c` an; dieses Rezept benötigt
+keinen separaten Schema-Befehl.
+
+Lösen Sie nach dem Bearbeiten der Dependency-Einträge den Graphen auf und installieren Sie ihn:
+
+```bash
+wippy update
+wippy install
+```
 
 ## Dokumente einlesen
 
 Die Aufteilung wird vom Modul `text` übernommen; Embedding und Persistenz von der Bibliothek `embeddings`.
 
 ```lua
--- app/ingest.lua
+-- src/app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
-local uuid = require("uuid")
 
 local function ingest(doc_id, title, markdown)
     local splitter, err = text.splitter.markdown({
@@ -86,23 +103,24 @@ end
 return { ingest = ingest }
 ```
 
-Registriere die Funktion und ihre Imports:
+Registrieren Sie die Funktion und ihre Imports in `src/app/_index.yaml`:
 
 ```yaml
 - name: ingest
   kind: function.lua
-  source: file://app/ingest.lua
+  source: file://ingest.lua
   method: ingest
   modules:
     - text
-    - uuid
   imports:
     embeddings: wippy.embeddings:embeddings
 ```
 
 Wichtige Punkte:
 
-- `origin_id` gruppiert Chunks, die zum selben Quelldokument gehören.
+- `origin_id` gruppiert Chunks aus demselben Quelldokument. PostgreSQL speichert
+  dieses Feld als `UUID`; verwenden Sie UUID-Werte, wenn das Tutorial mit PostgreSQL
+  und SQLite funktionieren soll.
 - `context_id` ist ein optionaler Unterschlüssel (Abschnitt, Seite, Chunk-Index).
 - `add_batch` teilt automatisch auf, wenn die Gesamtzahl der Tokens das Request-Limit von 8000 Tokens überschreitet.
 
@@ -121,18 +139,23 @@ local results, err = embeddings.search("how do I configure TLS?", {
 -- results[i].content, .similarity, .meta, .origin_id, .context_id
 ```
 
-Filtere nach Origin, wenn du die Antwort in einem bestimmten Dokument verankern möchtest:
+Filtern Sie nach Origin, wenn Sie die Antwort in einem bestimmten Dokument verankern möchten:
 
 ```lua
-local hits = embeddings.find_by_origin("refund policy", "doc-42", { limit = 3 })
+local hits = embeddings.find_by_origin(
+    "refund policy",
+    "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+    { limit = 3 }
+)
 ```
 
 ## Eine Antwort generieren
 
-Stelle die abgerufenen Chunks zu einem Prompt zusammen und rufe das LLM auf. Hier wird der abgerufene Text an den System-Prompt angehängt; die Frage des Benutzers wird zur Benutzerrunde:
+Stellen Sie die abgerufenen Chunks zu einem Prompt zusammen und rufen Sie das LLM auf.
+Hier wird der abgerufene Text an den System-Prompt angehängt; die Frage wird zum User-Turn:
 
 ```lua
--- app/answer.lua
+-- src/app/answer.lua
 local embeddings = require("embeddings")
 local llm = require("llm")
 local prompt = require("prompt")
@@ -173,10 +196,12 @@ end
 return { answer = answer }
 ```
 
+Registrieren Sie die Answer-Funktion in derselben Datei `src/app/_index.yaml`:
+
 ```yaml
 - name: answer
   kind: function.lua
-  source: file://app/answer.lua
+  source: file://answer.lua
   method: answer
   imports:
     embeddings: wippy.embeddings:embeddings
@@ -184,60 +209,13 @@ return { answer = answer }
     prompt: wippy.llm:prompt
 ```
 
-## End-to-End-Beispiel
+## Beispiel für einen HTTP-Endpunkt
 
-Alles zusammen hinter einem HTTP-Endpunkt:
+Fügen Sie die folgenden Einträge an `src/app/_index.yaml` an. Die Einträge `ingest`
+und `answer` wurden bereits oben ergänzt; duplizieren Sie weder diese noch Datenbank,
+Gateway und Router des Templates:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
-  - name: embeddings
-    kind: ns.dependency
-    component: wippy/embeddings
-    version: "*"
-    parameters:
-      - name: target_db
-        value: app:db
-
-  - name: ingest
-    kind: function.lua
-    source: file://app/ingest.lua
-    method: ingest
-    modules:
-      - text
-      - uuid
-    imports:
-      embeddings: wippy.embeddings:embeddings
-
-  - name: answer
-    kind: function.lua
-    source: file://app/answer.lua
-    method: answer
-    imports:
-      embeddings: wippy.embeddings:embeddings
-      llm: wippy.llm:llm
-      prompt: wippy.llm:prompt
-
-  - name: gateway
-    kind: http.service
-    addr: ":8080"
-    lifecycle:
-      auto_start: true
-
-  - name: api
-    kind: http.router
-    meta:
-      server: app:gateway
-    prefix: /api
-
   - name: ask
     kind: http.endpoint
     meta:
@@ -248,7 +226,7 @@ entries:
 
   - name: answer_http
     kind: function.lua
-    source: file://app/answer_http.lua
+    source: file://answer_http.lua
     method: handler
     modules:
       - http
@@ -257,7 +235,7 @@ entries:
 ```
 
 ```lua
--- app/answer_http.lua
+-- src/app/answer_http.lua
 local http = require("http")
 local answer = require("answer")
 
@@ -285,25 +263,65 @@ end
 return { handler = handler }
 ```
 
-Seed den Index, indem du `ingest` aus einem Setup-Prozess oder einem CLI-Befehl aufrufst (`process.lua` mit `meta.command`), und frage dann ab:
+Starten Sie die App, damit der Migrations-Bootloader die Vektortabelle erstellt:
 
 ```bash
-curl -X POST http://localhost:8080/api/ask \
+wippy run -c
+```
+
+Befüllen Sie den Index, indem Sie `app:ingest` aus einer authentifizierten Setup-Funktion
+oder einem benannten Prozess Ihrer Anwendung aufrufen. Die konkrete Seed-Oberfläche
+gehört der Anwendung; dieses Teilrezept stellt daher keinen unauthentifizierten
+Schreibendpunkt bereit. Fragen Sie nach dem Einlesen mindestens eines Dokuments die
+Token-geschützte API des Templates mit einem Session-Bearer der Anwendung ab:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ask \
+    -H 'Authorization: Bearer <app-session-token>' \
     -H 'Content-Type: application/json' \
     -d '{"question":"how do I configure TLS?"}'
 ```
 
+Eine erfolgreiche Antwort hat die folgende Form. Antworttext, Similarity-Werte und
+Reihenfolge der Treffer hängen vom Provider und den indizierten Inhalten ab:
+
+```json
+{
+  "answer": "...",
+  "sources": [
+    {
+      "content": "...",
+      "content_type": "doc_chunk",
+      "origin_id": "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+      "context_id": "1",
+      "similarity": 0.82,
+      "meta": { "title": "TLS guide", "chunk": 1 }
+    }
+  ]
+}
+```
+
 ## Betriebshinweise
 
-- **Chunk-Größe**: 500–1000 Tokens sind ein guter Ausgangspunkt. Zu klein verliert den lokalen Kontext; zu groß verwässert die Ähnlichkeitswerte. Verwende `chunk_overlap` (~10–20 % der Chunk-Größe), um Sätze über Grenzen hinweg zu erhalten.
-- **Content-Typen**: Verwende unterschiedliche `content_type`-Werte (`doc_chunk`, `faq`, `code_snippet`), damit die Suche nach Typ filtern kann.
-- **Re-Indexing**: Lösche und lese pro Dokument via `embedding_repo.delete_by_origin(doc_id)` neu ein, bevor du neue Chunks hinzufügst.
-- **Hybride Suche**: Für genaue Begriffs-Treffer (Namen, IDs) kombiniere die Vektorsuche mit Volltextsuche über deiner Quelltabelle und re-ranke.
-- **Modellwahl**: Das Standardmodell `text-embedding-3-small` mit 512 Dimensionen ist kostengünstig. Erweitere nur auf 1024 oder 3072 Dimensionen, wenn der Recall unzureichend ist — größere Vektoren bedeuten größeren Speicher und langsamere Suche.
+- **Chunk-Größe** — `chunk_size` und `chunk_overlap` zählen Zeichen statt Tokens
+  (der Splitter misst mit `utf8.RuneCountInString`). Etwa 2000–4000 Zeichen sind ein
+  guter Ausgangspunkt. Zu kleine Chunks verlieren lokalen Kontext; zu große verdünnen
+  Similarity-Werte. Verwenden Sie für `chunk_overlap` etwa 10–20 % der Chunk-Größe,
+  um Sätze über Grenzen hinweg zu erhalten.
+- **Content-Typen** — Verwenden Sie unterschiedliche Werte für `content_type`
+  (`doc_chunk`, `faq`, `code_snippet`), damit die Suche nach Typ filtern kann.
+- **Re-Indexing** — Löschen und lesen Sie jedes Dokument mit
+  `embedding_repo.delete_by_origin(doc_id)` neu ein, bevor Sie neue Chunks hinzufügen.
+- **Hybride Suche** — Kombinieren Sie für exakte Begriffe wie Namen oder IDs die
+  Vektorsuche mit Volltextsuche über der Quelltabelle und sortieren Sie die Treffer neu.
+- **Modellwahl** — `wippy/embeddings` ist auf `text-embedding-3-small` mit 512
+  Dimensionen festgelegt, und die Tabelle `embeddings_512` speichert
+  `vector(512)`/`float[512]`. Ein anderes Modell oder eine andere Vektorgröße erfordert
+  Änderungen an Bibliothekskonstanten und Migrationstabelle.
 
 ## Nächste Schritte
 
-- [LLM-Framework](framework/llm.md) — `llm.generate`, `llm.embed`, Prompt-Konstruktion
-- [Agenten](framework/agents.md) — den Retriever als Agenten-Tool wrappen
-- [SQL-Modul](lua/storage/sql.md) — zugrunde liegender Datenbankzugriff
-- [Text-Modul](lua/text/text.md) — Splitter und Tokenisierung
+- [LLM-Framework](framework/llm.md) — `llm.generate`, `llm.embed` und Prompt-Konstruktion
+- [Agenten](framework/agents.md) — Den Retriever als Agenten-Tool einbinden
+- [SQL-Modul](lua/storage/sql.md) — Zugrunde liegender Datenbankzugriff
+- [Text-Modul](lua/text/text.md) — Zeichenbasierte Text-Splitter

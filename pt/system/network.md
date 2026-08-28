@@ -1,15 +1,17 @@
 ---
 title: "Sobreposições de rede"
-description: "Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposição (proxies SOCKS5, Tor, malha Tailscale, I2P). A seleção de sobreposição é…"
+description: "Roteie conexões de saída e vincule listeners por overlays SOCKS5, Tor, Tailscale ou I2P."
 ---
 
 # Sobreposições de rede
 
-Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposição (proxies SOCKS5, Tor, malha Tailscale, I2P). A seleção de sobreposição é opcional por chamada e é herdada através dos limites de função, processo e HTTP.
+Entradas de overlay de rede roteiam conexões de saída ou vinculam listeners por SOCKS5, Tor, Tailscale ou I2P. A seleção se propaga por limites de função, processo e HTTP.
+
+Esta página é uma referência de configuração. Os blocos YAML são fragmentos de entrada ou de configuração da aplicação e pressupõem que o proxy, tailnet ou serviço I2P SAM externo já exista.
 
 ## Tipos de entrada
 
-| Kind | Descrição |
+| Tipo | Descrição |
 |------|-------------|
 | `network.socks5` | Proxy SOCKS5 genérico (também cobre o ouvinte SOCKS5 do Tor) |
 | `network.tailscale` | Nó de sobreposição Tailscale tsnet |
@@ -35,13 +37,15 @@ Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposiç�
 | `password` | string | Autenticação SOCKS5 opcional |
 | `isolate_streams` | bool | Credenciais aleatórias por conexão (isolamento de fluxos do Tor) |
 
+`host` e `port` são obrigatórios. `isolate_streams` usa `false` por padrão. Quando o isolamento está ativo, o runtime gera novos usuário e senha para cada conexão em vez de usar as credenciais configuradas.
+
 ## Tailscale
 
 ```yaml
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +53,14 @@ Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposiç�
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
 | `hostname` | string | Nome do nó tsnet (usado no diretório de estado por nó) |
-| `auth_key` | string | Chave de autenticação tailnet inline |
-| `auth_key_env` | string | Nome da variável de ambiente contendo a chave de autenticação (resolvida via registro env) |
+| `auth_key` | string | Chave do tailnet inline ou `${env:NAME}`, resolvida pelo [registro de ambiente](./env.md) |
 | `state_dir` | string | Sobrescrita do diretório de estado tsnet |
 | `control_url` | string | Servidor de coordenação alternativo |
 | `ephemeral` | bool | Registrar como nó tailnet efêmero |
 
-É necessário `auth_key` ou `auth_key_env`.
+`auth_key` é obrigatório, fornecido diretamente ou por `${env:NAME}`. A diretiva legada `auth_key_env` resolve da mesma forma, mas está obsoleta; prefira `auth_key: ${env:NAME}`.
+
+O hostname do tsnet usa `wippy` por padrão. Sem `state_dir`, o runtime usa `<network_service.state_dir>/tailscale/<node>`, onde `<node>` é o hostname configurado ou, na ausência dele, o nome da entrada no registro.
 
 ## I2P
 
@@ -73,9 +78,11 @@ Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposiç�
 | `port` | int | Porta da ponte SAM v3 |
 | `session_name` | string | Identificador de sessão opcional |
 
+`host` e `port` são obrigatórios. `session_name` usa `wippy` por padrão e serve de prefixo para IDs de sessão SAM por conexão e listener.
+
 ## Selecionando uma sobreposição
 
-### Em http.service
+### Em `http.service`
 
 Vincula o ouvinte do servidor através de uma sobreposição (Tailscale, I2P):
 
@@ -95,21 +102,29 @@ Roteie uma função chamada ou um processo gerado através de uma sobreposição
 ```lua
 local funcs = require("funcs")
 
-local result, err = funcs.new()
-    :with_options({ network = "app.net:proxy" })
-    :call("app.api:fetch_data")
+local caller, err = funcs.new():with_options({ network = "app.net:proxy" })
+if err then return nil, err end
+local result, call_err = caller:call("app.api:fetch_data")
+if call_err then return nil, call_err end
 ```
 
 ```lua
+local process = require("process")
+
 local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
+if err then return nil, err end
 ```
+
+Criar o spawner com opções personalizadas também exige `process.context` sobre o recurso `context`. Uma negação gera erro Lua antes que o spawner seja retornado; `network.select` é verificado separadamente para o ID de rede selecionado.
 
 O modulo `http_client` aceita a mesma selecao de overlay nas opcoes por chamada sob a chave `overlay_network`.
 
 ## Herança
 
-A seleção de sobreposição flui pela pilha de chamadas. Uma função chamada via `funcs.new():with_options({network=...})` vê a sobreposição em cada conexão interna, cada `funcs.call` aninhada e cada `process.spawn` que executa — até que um descendente selecione explicitamente uma sobreposição diferente ou a limpe.
+A seleção se propaga pela pilha. Uma função chamada por `funcs.new():with_options({network=...})` usa o overlay em conexões internas, chamadas aninhadas e processos gerados, salvo quando uma nova fronteira escolhe outro overlay. Uma opção `network` vazia significa “sem sobrescrita”; ela não limpa o overlay herdado nem o padrão da aplicação.
+
+Em uma chamada de função, as opções de runtime prevalecem sobre `meta.options` antes da seleção. Em uma nova fronteira de função ou processo, um `options.network` não vazio é escolhido primeiro. Se estiver ausente, usa-se `network_service.default_network` quando configurado; sem ambos, permanece a seleção herdada. O ID selecionado já deve estar registrado. Um ID desconhecido falha a chamada ou o spawn, sem fallback para a rede do host.
 
 A herança ambiente ignora as próprias regras de negação `network.select` do descendente. Apenas a seleção explícita em uma borda Lua é controlada.
 
@@ -119,8 +134,8 @@ Drivers de overlay leem configuracoes a nivel de app a partir de um bloco `netwo
 
 ```yaml
 network_service:
-  state_dir: .wippy/net          # Diretorio base para o estado do driver (chaves do Tailscale, etc.)
-  default_network: app.net:tailnet  # Overlay usado quando nenhuma chamada define um
+  state_dir: .wippy/net          # base dir for driver state (Tailscale keys, etc.)
+  default_network: app.net:tailnet  # overlay applied when no call sets one
 ```
 
 | Campo | Padrao | Descricao |
@@ -130,7 +145,7 @@ network_service:
 
 ## Atualizando Overlays
 
-Entradas de overlay são trocadas a quente em atualização do registro. Quando a configuração de um overlay muda, o driver constrói o serviço substituto primeiro e só o troca depois que ele é criado com sucesso; se a nova configuração falhar, o overlay existente continua rodando. Chamadores concorrentes veem o serviço antigo ou o novo, nunca uma lacuna.
+Entradas de overlay são substituídas em atualizações do registro. O driver constrói o novo serviço antes da troca; se a criação falhar, o anterior continua ativo. A troca bem-sucedida é atômica para novas buscas e então o serviço anterior é fechado; trabalhos que ainda o usam podem observar esse fechamento.
 
 ## Permissões
 
@@ -138,6 +153,7 @@ Entradas de overlay são trocadas a quente em atualização do registro. Quando 
 |--------|----------|-------------|
 | `network.select` | Registry ID de rede | Seleção explícita de sobreposição em `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Registry ID de rede | Vinculação de um listener `http.service` através de um overlay (o campo `network:`) |
+| `process.context` | `context` | Construção de um spawner com `process.with_options(...)` |
 
 Negue `network.select` em um escopo para impedir que o código dentro dele escolha explicitamente uma sobreposição. As sobreposições herdadas não são afetadas — elas foram autorizadas no chamador. `network.bind` é verificado quando um servidor com um overlay `network:` inicia seu listener.
 
@@ -145,4 +161,4 @@ Negue `network.select` em um escopo para impedir que o código dentro dele escol
 
 - [Segurança](system/security.md) - Políticas e atores
 - [Serviço HTTP](http/server.md) - Vinculação do servidor
-- [Cliente HTTP](lua/http/client.md) - Seleção de sobreposição por chamada
+- [Cliente HTTP](lua/http/client.md) - Seleção de overlay por chamada

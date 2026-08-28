@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Read runtime time, format dates, and calculate time differences with Lua's global os table."
 ---
 
 # OS Time
@@ -8,11 +8,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Standard Lua `os` time functions. Provides real wall-clock time for timestamps, date formatting, and time calculations.
+The global `os` table provides timestamps, date formatting, elapsed-time measurement, and time-difference calculations. In a workflow, current-time reads use the workflow's time reference; outside a workflow they use the system clock.
+
+This is an API reference. Timestamp literals and formatted outputs are illustrative; current values depend on the runtime or workflow clock and timezone.
 
 ## Loading
 
-Global `os` table. No require needed.
+The `os` table is global and does not require loading with `require`.
 
 ```lua
 os.time()
@@ -23,7 +25,7 @@ os.difftime()
 
 ## Getting Timestamps
 
-Get Unix timestamp (seconds since Jan 1, 1970 UTC):
+Read a Unix timestamp in seconds since January 1, 1970 UTC:
 
 ```lua
 -- Current timestamp
@@ -53,9 +55,9 @@ local t = os.time({
 | `min` | number | 0 | Minute 0-59 |
 | `sec` | number | 0 | Second 0-59 |
 
-When called with no arguments, returns current Unix timestamp.
+With no arguments, `os.time()` returns the current Unix timestamp.
 
-When called with a table, any missing field uses defaults shown above. The `year`, `month`, and `day` fields default to current date if not specified.
+When called with a table, missing fields use the defaults shown above. The `year`, `month`, and `day` fields use the current date when omitted.
 
 ```lua
 -- Just date (time defaults to midnight)
@@ -67,7 +69,7 @@ os.time({day = 1})  -- first of current month
 
 ## Formatting Dates
 
-Format a timestamp as string or return a date table:
+Format a timestamp as a string or return its date fields in a table:
 
 <code-block lang="lua">
 local now = os.time()
@@ -114,6 +116,7 @@ local t = os.date("*t", now)
 | `%w` | Weekday (0-6, Sunday=0) | 6 |
 | `%j` | Day of year (001-366) | 167 |
 | `%U` | ISO 8601 week number (01-53, week starts Monday) | 24 |
+| `%W` | ISO 8601 week number (01-53, week starts Monday) | 24 |
 | `%z` | Timezone offset | -0700 |
 | `%Z` | Timezone name | PDT |
 | `%c` | Full date/time | Sat Jun 15 14:30:45 2024 |
@@ -123,7 +126,7 @@ local t = os.date("*t", now)
 
 ### Date Table
 
-When format is `"*t"`, returns a table:
+When the format is `"*t"`, `os.date()` returns a table:
 
 ```lua
 local t = os.date("*t")
@@ -139,13 +142,13 @@ local t = os.date("*t")
 | `sec` | number | Second (0-59) | 45 |
 | `wday` | number | Weekday (1-7, Sunday=1) | 7 |
 | `yday` | number | Day of year (1-366) | 167 |
-| `isdst` | boolean | Daylight saving time | false |
+| `isdst` | boolean | `true` when the zone's UTC offset is nonzero in this release; not a reliable DST indicator | false |
 
 Use `"!*t"` for UTC date table.
 
 ## Measuring Elapsed Time
 
-Get seconds elapsed since Lua runtime started:
+Read the seconds between the current runtime time reference and the OS-time module's initialization time:
 
 ```lua
 local start = os.clock()
@@ -159,9 +162,11 @@ print(string.format("Took %.3f seconds", elapsed))
 
 **Signature:** `os.clock() -> number`
 
+Unlike standard Lua's CPU-time definition, this implementation is based on elapsed time. In workflows, it uses the workflow time reference.
+
 ## Time Difference
 
-Get difference between two timestamps in seconds:
+Calculate the difference between two timestamps in seconds:
 
 ```lua
 local t1 = os.time({year = 2024, month = 1, day = 1})
@@ -179,11 +184,11 @@ print(days)  -- 365
 | `t2` | number | Later timestamp |
 | `t1` | number | Earlier timestamp |
 
-Returns `t2 - t1` in seconds. Can be negative if `t1 > t2`.
+The result is `t2 - t1` in seconds and is negative when `t1 > t2`.
 
 ## Platform Constant
 
-Constant identifying the runtime:
+The `os.platform` constant identifies the runtime:
 
 ```lua
 os.platform  -- "wippy"

@@ -1,6 +1,6 @@
 ---
 title: "Template-Engine"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Jet-Templates aus konfigurierten Template-Sets rendern."
 ---
 
 # Template-Engine
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-Rendern Sie dynamische Inhalte mit der [Jet Template Engine](https://github.com/CloudyKit/jet). Erstellen Sie HTML-Seiten, E-Mails und Dokumente mit Template-Vererbung und Includes.
+Das Modul `templates` rendert [Jet](https://github.com/CloudyKit/jet)-Templates aus konfigurierten Sets. Templates können Vererbung und Includes verwenden. Diese Seite ist eine API-Referenz mit einzelnen Rendering-Beispielen und keine eigenständige Template-Bereitstellung. Die Registry-IDs und Template-Quellen müssen bereits konfiguriert sein; der ausführbare Eintrag muss `templates` aktivieren und für das angeforderte Set die Berechtigung `template.get` besitzen.
 
-Für Template-Set-Konfiguration siehe [Template-Engine](system/template.md).
+Informationen zur Konfiguration von Template-Sets finden Sie unter [Template-Engine](system/template.md).
 
 ## Laden
 
@@ -18,9 +18,9 @@ Für Template-Set-Konfiguration siehe [Template-Engine](system/template.md).
 local templates = require("templates")
 ```
 
-## Template-Sets abrufen
+## `templates.get`
 
-Holen Sie ein Template-Set anhand der Registry-ID, um mit dem Rendern zu beginnen:
+Rufen Sie ein Template-Set anhand seiner Registry-ID ab:
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -28,9 +28,9 @@ if err then
     return nil, err
 end
 
--- Set verwenden...
+-- Use the set...
 
-set:release()
+return set:release()
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -39,26 +39,30 @@ set:release()
 
 **Gibt zurück:** `Set, error`
 
-## Templates rendern
+## `set:render`
 
-Rendern Sie ein Template nach Namen mit Daten:
+Rendern Sie ein Template anhand seines Namens mit Daten:
 
 ```lua
-local set = templates.get("app.views:emails")
+local set, get_err = templates.get("app.views:emails")
+if get_err then
+    return nil, get_err
+end
 
 local html, err = set:render("welcome", {
     user = {name = "Alice", email = "alice@example.com"},
-    activation_url = "https://example.com/activate?token=abc"
+    activation_url = "https://example.invalid/activate"
 })
 
+set:release()
 if err then
-    set:release()
     return nil, err
 end
 
-set:release()
 return html
 ```
+
+Der Aufrufer ist für jedes abgerufene Set verantwortlich, bis `release()` aufgerufen wurde. Geben Sie es nach dem letzten Rendern auch auf geprüften Fehlerpfaden frei; wiederholte Freigaben sind sicher. Das Rendering macht von der Anwendung bereitgestellte Werte nicht für jeden Ausgabekontext sicher. Halten Sie Geheimnisse und einmalig verwendbare URLs aus Logs heraus und wenden Sie die Escaping- oder Bereinigungsregeln des Kontexts an, in dem die gerenderte Zeichenkette verwendet wird.
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
@@ -67,7 +71,7 @@ return html
 
 **Gibt zurück:** `string, error`
 
-## Set-Methoden
+## Übersicht der Set-Methoden
 
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
@@ -140,8 +144,9 @@ Jet verwendet `{{ }}` für Ausdrücke und Kontrollstrukturen, `{* *}` für Komme
 | Leere ID | `errors.INVALID` | nein |
 | Leerer Template-Name | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
+| Template-Set fehlt, ist nicht verfügbar oder hat den falschen Ressourcentyp | `errors.INTERNAL` | nein |
 | Template nicht gefunden | `errors.NOT_FOUND` | nein |
 | Render-Fehler | `errors.INTERNAL` | nein |
-| Set bereits freigegeben | `errors.INTERNAL` | nein |
+| Rendering nach der Freigabe des Sets versucht | `errors.INTERNAL` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

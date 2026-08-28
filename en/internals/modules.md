@@ -1,13 +1,13 @@
 ---
 title: "Lua Modules"
-description: "Runtime modules extend the Lua environment with new functionality. Modules can provide deterministic utilities, I/O operations, or async commands that…"
+description: "Define typed Lua runtime modules with synchronous functions, userdata, yields, errors, security checks, and tests."
 ---
 
 # Lua Modules
 
-Runtime modules extend the Lua environment with new functionality. Modules can provide deterministic utilities, I/O operations, or async commands that yield to external systems.
+Runtime modules add deterministic utilities, I/O operations, or asynchronous commands to the Lua environment.
 
-> The Lua runtime implementation may change in future versions.
+This page is a Go extension reference. Its snippets are partial package-level examples and assume the imports, command API, dispatcher, security resources, and test fixtures named in each section.
 
 ## Module Definition
 
@@ -45,10 +45,14 @@ The `Class` field determines where the module can be used:
 | `ClassNondeterministic` | Output varies (time, random) |
 | `ClassIO` | External I/O operations |
 | `ClassNetwork` | Network operations |
+| `ClassEncoding` | Encoding and decoding operations |
+| `ClassTime` | Time-related operations |
+| `ClassProcess` | Process-related operations |
+| `ClassSecurity` | Security-related operations |
 | `ClassStorage` | Data persistence |
 | `ClassWorkflow` | Workflow-safe operations |
 
-Modules tagged only with `ClassDeterministic` are workflow-safe. Adding I/O or network classes restricts the module to functions and processes.
+Workflow compilation allows modules carrying at least one of `ClassDeterministic` or `ClassWorkflow`. Class filtering is inclusive: a module passes when any of its classes is allowed.
 
 ## Exposing Functions
 
@@ -161,7 +165,7 @@ typ.NewRecord().
     Build()
 ```
 
-See the `typ` package in go-lua for the complete type system.
+See the `typ` package in go-lua for additional builders and type definitions.
 
 ### UserData Bindings (Runtime)
 
@@ -322,6 +326,7 @@ To test Lua code that uses yielding functions, create a minimal scheduler with t
 type testScheduler struct {
     *actor.Scheduler
     clock   *clock.Dispatcher
+    node    *sysrelay.Node
     mu      sync.Mutex
     pending map[string]chan *runtime.Result
 }
@@ -338,12 +343,19 @@ func newTestScheduler() *testScheduler {
     ts.clock = clockSvc
 
     ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
+
+    // Clock events return through the relay to the process host named by PID.Host.
+    ts.node = sysrelay.NewNode("module-test-node")
+    if err := ts.node.RegisterHost("module.test", ts.Scheduler); err != nil {
+        panic(err)
+    }
     return ts
 }
 
 // Stop wraps Scheduler.Stop, which requires a context.
 func (ts *testScheduler) Stop() {
     ts.Scheduler.Stop(context.Background())
+    _ = ts.clock.Stop(context.Background())
 }
 
 // OnStart satisfies process.Lifecycle alongside OnComplete.
@@ -366,8 +378,18 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     ts.pending[p.UniqID] = resultCh
     ts.mu.Unlock()
 
+    // relay.WithNode requires an application context. Preserve the caller's
+    // frame context while attaching the relay used by the clock dispatcher.
+    if ctxapi.AppFromContext(ctx) == nil {
+        ctx = ctxapi.WithAppContext(ctx, ctxapi.NewAppContext())
+    }
+    ctx = relayapi.WithNode(ctx, ts.node)
+
     _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
     if err != nil {
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, err
     }
 
@@ -375,51 +397,90 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     case result := <-resultCh:
         return result, nil
     case <-ctx.Done():
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, ctx.Err()
     }
 }
+
+func testPID() pid.PID {
+    return pid.PID{Host: "module.test", UniqID: "test"}.Precomputed()
+}
 ```
 
-Create processes from Lua scripts with the modules you're testing:
+Create a process with the module used by the script. This example uses the time module so the clock dispatcher registered above handles a real yield:
 
 ```go
-func bindMyModule(l *lua.LState) error {
-    tbl, _ := mymodule.Module.Build()
-    l.SetGlobal(mymodule.Module.Name, tbl)
+func bindTimeModule(l *lua.LState) error {
+    tbl, _ := timemod.Module.Build()
+    l.SetGlobal(timemod.Module.Name, tbl)
     return nil
 }
 
-func newLuaProcess(script string) *engine.Process {
-    proto, _ := lua.CompileString(script, "test.lua")
-    proc, _ := engine.NewProcess(
+func newLuaProcessWithChannels(script string) (*engine.Process, error) {
+    proto, err := lua.CompileString(script, "test.lua")
+    if err != nil {
+        return nil, err
+    }
+    proc, err := engine.NewProcess(
         engine.WithProto(proto),
-        engine.WithModuleBinder(bindMyModule),
+        engine.WithModuleBinder(func(l *lua.LState) error {
+            engine.LoadModuleDef(l, engine.ChannelModule)
+            return nil
+        }),
+        engine.WithModuleBinder(bindTimeModule),
     )
-    return proc
+    if err != nil {
+        return nil, err
+    }
+    return proc, nil
 }
 
-func TestMyModuleYields(t *testing.T) {
+func TestYieldDispatcher(t *testing.T) {
     sched := newTestScheduler()
     sched.Start()
     defer sched.Stop()
 
     script := `
-        local result = mymodule.fetch("http://example.com")
-        return result.status
+        local ticker, ticker_err = time.ticker(10 * time.MILLISECOND)
+        if ticker_err then error(ticker_err) end
+
+        local _, open = ticker:response():receive()
+        local stopped = ticker:stop()
+        if not stopped then error("ticker did not stop") end
+        if not open then error("ticker channel closed before the first tick") end
+        return "tick"
     `
 
     ctx, _ := ctxapi.OpenFrameContext(context.Background())
-    proc := newLuaProcess(script)
+    if err := runtime.SetFramePID(ctx, testPID()); err != nil {
+        t.Fatal(err)
+    }
 
-    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
+    proc, err := newLuaProcessWithChannels(script)
     if err != nil {
         t.Fatal(err)
     }
-    // Assert on result
+
+    started := time.Now()
+    result, err := sched.Execute(ctx, testPID(), proc, "", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    if result == nil {
+        t.Fatal("nil result")
+    }
+    if result.Error != nil {
+        t.Fatalf("script failed: %v", result.Error)
+    }
+    if elapsed := time.Since(started); elapsed < 5*time.Millisecond {
+        t.Fatalf("yield completed before the clock fired: %v", elapsed)
+    }
 }
 ```
 
-See `runtime/lua/modules/time/integration_test.go` for a complete example.
+See `runtime/lua/modules/time/integration_test.go` for an integration-test example.
 
 ## See Also
 

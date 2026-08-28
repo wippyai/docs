@@ -1,22 +1,20 @@
 ---
 title: "Arquitectura"
-description: "<note Esta página está en progreso. El contenido puede estar incompleto o cambiar. </note"
+description: "Cómo Wippy inicia la infraestructura, carga componentes y entradas, programa trabajo, enruta mensajes y se apaga."
 ---
 
 # Arquitectura
 
-<note>
-Esta página está en progreso. El contenido puede estar incompleto o cambiar.
-</note>
-
 Wippy es un sistema de capas construido en Go. Los componentes se inicializan en orden de dependencias, se comunican a través de un event bus, y ejecutan procesos Lua vía un scheduler de work-stealing.
+
+Esta es una referencia de implementación. Los diagramas y tipos Go describen componentes internos del entorno de ejecución, no entradas del registro de aplicaciones ni API de extensión.
 
 ## Capas
 
 | Capa | Componentes |
 |------|-------------|
 | Application | Procesos Lua, funciones, workflows |
-| Runtime | Motor Lua (gopher-lua), 50+ módulos |
+| Runtime | Motor Lua (wippyai/go-lua) y módulos del entorno de ejecución |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -24,9 +22,9 @@ Wippy es un sistema de capas construido en Go. Los componentes se inicializan en
 
 Cada capa depende solo de capas debajo de ella. La capa Core proporciona primitivos fundamentales, mientras Services construye abstracciones de nivel más alto encima.
 
-## Secuencia de Boot
+## Secuencia de arranque :id=secuencia-de-boot
 
-El startup de la aplicación procede a través de cuatro fases.
+El arranque de la aplicación transcurre en cuatro fases.
 
 ### Fase 1: Infraestructura
 
@@ -42,9 +40,9 @@ Crea infraestructura core antes de que cualquier componente cargue:
 
 ### Fase 2: Carga de Componentes
 
-El Loader resuelve dependencias vía ordenamiento topológico y carga componentes nivel por nivel. Componentes en el mismo nivel cargan en paralelo.
+El Loader resuelve las dependencias mediante ordenamiento topológico y carga los componentes secuencialmente, nivel por nivel. Los componentes de un mismo nivel también se cargan de uno en uno.
 
-Los componentes core (PIDGen, Dispatcher, Registry, Finder, Supervisor) se inicializan primero, seguidos por los componentes de sistema (Topology, Lifecycle, Factory, Functions, Contracts). Los niveles concretos se calculan en tiempo de ejecución a partir del grafo de dependencias, por lo que el orden se adapta a medida que se añaden o eliminan componentes.
+Las aristas de dependencia determinan los niveles; grupos de paquetes como Core y System no imponen un orden global independiente. Por ello, los componentes sin una arista de dependencia pueden cargarse en el mismo nivel con independencia del grupo del paquete.
 
 Cada componente se adjunta al contexto durante Load, haciendo servicios disponibles a componentes dependientes.
 
@@ -52,13 +50,14 @@ Cada componente se adjunta al contexto durante Load, haciendo servicios disponib
 
 Después de que todos los componentes cargan:
 
-1. **Freeze Dispatcher** - Bloquea registry de handlers de comandos para lookups sin lock
-2. **Seal AppContext** - No más escrituras permitidas, habilita lecturas sin lock
-3. **Start Components** - Llama `Start()` en cada componente con interfaz `Starter`
+1. **Iniciar los servicios de runtime** - Llama a `StartRuntimeServices(ctx)`
+2. **Congelar el Dispatcher** - Bloquea el registro de handlers de comandos para permitir búsquedas sin bloqueo
+3. **Sellar AppContext** - Impide nuevas escrituras y habilita lecturas sin bloqueo
+4. **Iniciar componentes** - Llama a `Start()` en cada componente con interfaz `Starter`
 
 ### Fase 4: Carga de Entradas
 
-Las entradas de registry (de archivos YAML) son cargadas y validadas:
+Las entradas del registro procedentes de los manifiestos de proyecto `_index.json`, `_index.yaml` y `_index.yml` se cargan y validan:
 
 1. Entradas parseadas de archivos de proyecto
 2. Etapas de pipeline transforman entradas (override, link, bytecode)
@@ -75,33 +74,33 @@ Los componentes son servicios Go que participan en el ciclo de vida de la aplica
 |------|--------|-----------|
 | Load | `Load(ctx) (ctx, error)` | Inicializar y adjuntar al contexto |
 | Start | `Start(ctx) error` | Comenzar operación activa |
-| Stop | `Stop(ctx) error` | Apagado graceful |
+| Stop | `Stop(ctx) error` | Apagado ordenado |
 
-Los componentes declaran dependencias. El loader construye un grafo acíclico dirigido y ejecuta en orden topológico. El shutdown ocurre en orden reverso.
+Los componentes declaran dependencias. El loader construye un grafo acíclico dirigido y ejecuta en orden topológico. El apagado ocurre en orden inverso.
 
 ### Componentes Estándar
 
 | Componente | Dependencias | Propósito |
 |------------|--------------|-----------|
 | PIDGen | ninguna | Generación de ID de proceso |
-| Dispatcher | PIDGen | Despacho de handlers de comandos |
-| Registry | Dispatcher | Almacenamiento y versionado de entradas |
+| Dispatcher | ninguna | Despacho de handlers de comandos |
+| Registry | Artifact | Almacenamiento y versionado de entradas |
 | Finder | Registry | Lookup y búsqueda de entradas |
 | Supervisor | Registry | Políticas de reinicio de servicios |
-| Topology | Supervisor | Árbol padre/hijo de procesos |
+| Topology | ninguna | Árbol padre/hijo de procesos |
 | Lifecycle | Topology | Gestión de ciclo de vida de servicios |
-| Factory | Lifecycle | Generación de procesos |
-| Functions | Factory | Llamadas a funciones stateless |
+| Factory | ninguna | Generación de procesos |
+| Functions | Registry | Ejecución de funciones mediante pool |
 
-## Event Bus
+## Bus de eventos :id=event-bus
 
 Pub/sub asíncrono para comunicación entre componentes.
 
 ### Diseño
 
 - Una sola goroutine dispatcher procesa todos los eventos
-- Entrega de acciones basada en cola previene bloqueo de publishers
-- Pattern matching soporta tópicos exactos y wildcards (`*`)
+- Los publishers encolan acciones sin esperar a que se entreguen a los suscriptores
+- Pattern matching soporta valores exactos, `*`, `**` y alternancia de segmentos
 - Ciclo de vida basado en contexto vincula suscripciones a cancelación
 
 ### Flujo de Eventos
@@ -112,17 +111,17 @@ sequenceDiagram
     participant B as EventBus
     participant S as Subscribers
 
-    P->>B: Publish(topic, data)
+    P->>B: Send(ctx, Event)
     B->>B: Match patterns
-    B->>S: Queue action
+    B->>S: Deliver on subscriber channel
     S->>S: Execute callback
 ```
 
 ### Tópicos Comunes
 
-Los tópicos tienen el formato `<system>:<kind>`. Los sistemas integrados publican:
+Los eventos transportan campos `System` y `Kind` separados. Los sistemas integrados publican:
 
-| Sistema | Kind | Propósito |
+| Sistema | Tipo | Propósito |
 |---------|------|-----------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Mutaciones de entradas |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Límites de transacción |
@@ -156,7 +155,7 @@ Etapas de pipeline transforman entradas:
 | Etapa | Propósito |
 |-------|-----------|
 | Override | Aplicar overrides de config |
-| Disable | Remover entradas por patrón |
+| Deshabilitar | Eliminar entradas por patrón |
 | Link | Resolver requirements y dependencias |
 | Bytecode | Compilar Lua a bytecode |
 | EmbedFS | Recolectar entradas de filesystem |
@@ -170,18 +169,18 @@ Routing de mensajes entre procesos a través de nodos.
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[Local Node] --> Peer[Peer Nodes]
+        Local[Local Node] --> Peer[Registered Peers]
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Mismo proceso]
-    Peer -.- P[Mismo cluster]
-    Inter -.- I[Remoto]
+    Local -.- L[Same-node hosts and processes]
+    Peer -.- P[External receivers, such as Temporal]
+    Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - Entrega directa dentro del mismo nodo
-2. **Peer** - Forward a nodos peer en cluster
-3. **Internode** - Enrutar a nodos remotos vía red
+1. **Local** - Entrega directa entre hosts y procesos del mismo nodo
+2. **Peer** - Reenvío a un receptor externo registrado, como Temporal
+3. **Internode** - Recurso final de enrutamiento por red hacia otro nodo del clúster
 
 ### Mailbox
 
@@ -198,18 +197,18 @@ Diccionario sellado para referencias de componentes.
 
 | Propiedad | Comportamiento |
 |-----------|----------------|
-| Before seal | Escrituras de un solo hilo durante el arranque |
-| After seal | Lecturas sin lock, panic en escritura |
+| Antes del sellado | Escrituras de un solo hilo durante el arranque |
+| Después del sellado | Lecturas sin bloqueo, pánico en escritura |
 | Duplicate keys | Panic |
-| Type safety | Funciones getter tipadas |
+| Seguridad de tipos | Funciones de obtención tipadas |
 
-Los componentes adjuntan servicios durante fase Load. Después de que boot completa, AppContext es sellado para rendimiento óptimo de lectura.
+Los componentes adjuntan servicios durante la fase Load. Cuando termina el arranque, AppContext se sella, lo que permite lecturas sin bloqueos e impide nuevas escrituras.
 
-## Shutdown
+## Apagado :id=shutdown
 
-El apagado graceful procede en orden reverso de dependencias:
+El apagado ordenado procede en orden inverso de dependencias:
 
-1. SIGINT/SIGTERM dispara shutdown
+1. SIGINT/SIGTERM inicia el apagado
 2. Supervisor detiene servicios gestionados
 3. Componentes con interfaz `Stopper` reciben `Stop()`
 4. Limpieza de infraestructura
@@ -219,6 +218,6 @@ Segunda señal fuerza salida inmediata.
 ## Ver También
 
 - [Scheduler](internals/scheduler.md) - Ejecución de procesos
-- [Event Bus](internals/events.md) - Sistema pub/sub
+- [Bus de eventos](internals/events.md) - Sistema pub/sub
 - [Registry](internals/registry.md) - Gestión de estado
 - [Command Dispatch](internals/dispatch.md) - Manejo de yields

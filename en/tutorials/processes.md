@@ -1,24 +1,42 @@
 ---
-title: "Processes and Messaging"
-description: "Spawn isolated processes and communicate via message passing."
+title: "Processes and Messaging Primer"
+description: "Review process spawning, messaging, monitoring, linking, and name registration APIs."
 ---
 
-# Processes and Messaging
+# Processes and Messaging Primer
 
-Spawn isolated processes and communicate via message passing.
+Learn the process APIs for spawning isolated work, exchanging messages, monitoring lifecycles, linking failures, and registering process names.
 
 ## Overview
 
 Processes provide isolated execution units that communicate through message passing. Each process has its own inbox and can subscribe to specific message topics.
 
-This page is a primer: each snippet shows one API in isolation. For a complete runnable application that wires spawning, monitoring, and messaging together, see the [Echo Service](tutorials/echo-service.md) tutorial.
+**Classification:** Reference/API primer. Each snippet illustrates one operation in
+isolation; the page is not a standalone project. For a complete application that
+combines spawning, monitoring, and messaging, see the [Echo Service](tutorials/echo-service.md)
+tutorial.
+
+## Context and Dependencies
+
+The examples assume they run inside an executable Lua entry and that a running
+`process.host` is registered as `app:processes`. Entry IDs such as
+`app.test.process:echo_worker` are placeholders for process entries that your
+project must define. The `process` and `channel` APIs are ambient globals; direct
+`process.*` access is idiomatic, and `require("process")` also resolves without a
+module declaration. Snippets that call `time.after()` require
+`local time = require("time")` and `time` in the entry's `modules` list.
+
+Spawning, sending, monitoring, linking, cancellation, termination, and registry
+mutation are guarded operations. Give the executing entry an actor and policies
+for only the operations and resources it needs; otherwise strict mode denies them.
 
 Key concepts:
-- Spawn processes with `process.spawn()` and variants
-- Send messages to PIDs or registered names via topics
-- Receive messages using `process.listen()` or `process.inbox()`
-- Monitor process lifecycle with events
-- Link processes for coordinated failure handling
+
+- Spawn processes with `process.spawn()` and its variants.
+- Send topic-based messages to PIDs or registered names.
+- Receive messages with `process.listen()` or `process.inbox()`.
+- Monitor process lifecycles with events.
+- Link processes for coordinated failure handling.
 
 ## Spawning Processes
 
@@ -27,7 +45,7 @@ Spawn a new process from an entry reference.
 ```lua
 local pid, err = process.spawn("app.test.process:echo_worker", "app:processes", "hello")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
 -- pid is a string identifier for the spawned process
@@ -56,7 +74,7 @@ Messages use a topic-based routing system. Send messages to PIDs with a topic, t
 -- Send to process by PID
 local sent, err = process.send(worker_pid, "messages", "hello from parent")
 if err then
-    return false, "send failed: " .. err
+    return false, "send failed: " .. tostring(err)
 end
 
 -- send returns (bool, error)
@@ -71,8 +89,8 @@ Subscribe to specific topics using `process.listen()`:
 local function main()
     local ch = process.listen("messages")
 
-    local msg = ch:receive()
-    if msg then
+    local msg, ok = ch:receive()
+    if ok then
         -- msg is the payload directly
         print("Received:", msg)
         return true
@@ -126,7 +144,10 @@ local function main()
         local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", data)
+            local _, send_err = process.send(sender, "reply", data)
+            if send_err then
+                return false, "reply failed: " .. tostring(send_err)
+            end
         end
         return true
     end
@@ -151,7 +172,7 @@ local worker_pid, err = process.spawn_monitored(
     "app:processes"
 )
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
 -- Wait for EXIT event
@@ -186,13 +207,13 @@ local events_ch = process.events()
 -- Spawn without monitoring
 local worker_pid, err = process.spawn("app.test.process:long_worker", "app:processes")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
 -- Add monitoring explicitly
 local ok, monitor_err = process.monitor(worker_pid)
 if monitor_err then
-    return false, "monitor failed: " .. monitor_err
+    return false, "monitor failed: " .. tostring(monitor_err)
 end
 
 -- Now will receive EXIT events for this worker
@@ -202,11 +223,14 @@ Stop monitoring:
 
 ```lua
 local ok, err = process.unmonitor(worker_pid)
+if err then
+    return false, "unmonitor failed: " .. tostring(err)
+end
 ```
 
 ## Process Linking
 
-Link processes for coordinated lifecycle management. Linked processes receive LINK_DOWN events when linked processes fail.
+Link processes for coordinated lifecycle management. An abnormal exit terminates linked peers by default. A peer with `trap_links=true` remains running and receives a `LINK_DOWN` event instead.
 
 ### Spawn Linked Process
 
@@ -214,7 +238,7 @@ Link processes for coordinated lifecycle management. Linked processes receive LI
 -- Child terminates if parent crashes (unless trap_links is set)
 local pid, err = process.spawn_linked("app.test.process:child_worker", "app:processes")
 if err then
-    return false, "spawn_linked failed: " .. err
+    return false, "spawn_linked failed: " .. tostring(err)
 end
 ```
 
@@ -224,23 +248,28 @@ end
 -- Link to existing process
 local ok, err = process.link(target_pid)
 if err then
-    return false, "link failed: " .. err
+    return false, "link failed: " .. tostring(err)
 end
 
 -- Unlink
 local ok, err = process.unlink(target_pid)
+if err then
+    return false, "unlink failed: " .. tostring(err)
+end
 ```
 
 ### Handling LINK_DOWN Events
 
-By default, LINK_DOWN causes the process to fail. Enable `trap_links` to receive it as an event:
+By default, an abnormal exit of a linked peer terminates the current process; no
+Lua `LINK_DOWN` event is delivered. Enable `trap_links` to remain running and
+receive that event instead:
 
 ```lua
 local function main()
     -- Enable trap_links to receive LINK_DOWN events instead of crashing
     local ok, err = process.set_options({ trap_links = true })
     if not ok then
-        return false, "set_options failed: " .. err
+        return false, "set_options failed: " .. tostring(err)
     end
 
     -- Verify trap_links is enabled
@@ -257,7 +286,7 @@ local function main()
         "app:processes"
     )
     if err2 then
-        return false, "spawn error worker failed: " .. err2
+        return false, "spawn error worker failed: " .. tostring(err2)
     end
 
     -- Wait for LINK_DOWN event
@@ -297,13 +326,13 @@ local function main()
     -- Register current process with a name
     local ok, err = process.registry.register(test_name)
     if err then
-        return false, "register failed: " .. err
+        return false, "register failed: " .. tostring(err)
     end
 
     -- Lookup the registered name
     local pid, lookup_err = process.registry.lookup(test_name)
     if lookup_err then
-        return false, "lookup failed: " .. lookup_err
+        return false, "lookup failed: " .. tostring(lookup_err)
     end
 
     -- Verify it resolves to our PID
@@ -333,9 +362,12 @@ local pid, err = process.registry.lookup(test_name)
 
 Names are automatically released when the process exits.
 
-## Complete Example: Monitored Worker Pool
+## Example: Monitored Worker Pool
 
-This example shows a parent process spawning multiple monitored workers and tracking their completion.
+This partial example illustrates a parent process spawning multiple monitored
+workers and tracking their completion. To use it, define the parent and
+`app.test.process:task_worker` entries, the `app:processes` host, the required
+process policies, and `time` in both entries' module lists.
 
 ```lua
 -- Parent process
@@ -357,7 +389,7 @@ local function main()
         )
 
         if err then
-            return false, "spawn worker " .. i .. " failed: " .. err
+            return false, "spawn worker " .. i .. " failed: " .. tostring(err)
         end
 
         workers[worker_pid] = { task_id = i, started = os.time() }
@@ -418,5 +450,5 @@ return { main = main }
 
 ## Next Steps
 
-- [Process Module Reference](lua/core/process.md) - Full API documentation
-- [Channels](tutorials/channels.md) - Channel operations for message handling
+- [Process Module Reference](lua/core/process.md) — Process API documentation
+- [Channels](tutorials/channels.md) — Channel operations for message handling

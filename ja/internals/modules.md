@@ -1,13 +1,13 @@
 ---
-title: "Luaモジュール"
-description: "ランタイムモジュールはLua環境を新しい機能で拡張します。モジュールは決定論的ユーティリティ、I/O操作、または外部システムにyieldする非同期コマンドを提供できます。"
+title: "Lua モジュール"
+description: "同期関数、userdata、yield、エラー、セキュリティチェック、テストを備えた型付き Lua ランタイムモジュールを定義します。"
 ---
 
-# Luaモジュール
+# Lua モジュール
 
-ランタイムモジュールはLua環境を新しい機能で拡張します。モジュールは決定論的ユーティリティ、I/O操作、または外部システムにyieldする非同期コマンドを提供できます。
+ランタイムモジュールは、決定論的ユーティリティ、I/O 操作、または非同期コマンドを Lua 環境へ追加します。
 
-> Luaランタイムの実装は将来のバージョンで変更される可能性があります。
+これは Go 拡張リファレンスです。スニペットはパッケージレベルの部分的な例であり、各セクションで示す import、コマンド API、dispatcher、セキュリティリソース、テスト fixture を前提としています。
 
 ## モジュール定義
 
@@ -18,7 +18,7 @@ var Module = &luaapi.ModuleDef{
     Name:        "mymodule",
     Description: "My custom module",
     Class:       []string{luaapi.ClassDeterministic},
-    Types:       ModuleTypes,  // ツーリング用型定義
+    Types:       ModuleTypes,  // Type definitions for tooling
     Build: func() (*lua.LTable, []luaapi.YieldType) {
         mod := lua.CreateTable(0, 2)
         mod.RawSetString("hello", lua.LGoFunc(helloFunc))
@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | 出力が変動（時間、乱数） |
 | `ClassIO` | 外部I/O操作 |
 | `ClassNetwork` | ネットワーク操作 |
+| `ClassEncoding` | エンコードおよびデコード操作 |
+| `ClassTime` | 時間関連の操作 |
+| `ClassProcess` | プロセス関連の操作 |
+| `ClassSecurity` | セキュリティ関連の操作 |
 | `ClassStorage` | データ永続化 |
 | `ClassWorkflow` | ワークフロー安全な操作 |
 
-`ClassDeterministic`のみでタグ付けされたモジュールはワークフロー安全。I/Oやネットワーククラスを追加すると、モジュールは関数とプロセスに制限。
+ワークフローのコンパイルでは、`ClassDeterministic` または `ClassWorkflow` の少なくとも一方を持つモジュールが許可されます。クラスフィルタリングは包含方式であり、いずれかのクラスが許可されていればモジュールは通過します。
 
 ## 関数の公開
 
@@ -56,8 +60,8 @@ var Module = &luaapi.ModuleDef{
 
 ```go
 func greetFunc(l *lua.LState) int {
-    name := l.CheckString(1)           // 必須引数
-    greeting := l.OptString(2, "Hello") // デフォルト付きオプション
+    name := l.CheckString(1)           // Required argument
+    greeting := l.OptString(2, "Hello") // Optional with default
 
     l.Push(lua.LString(greeting + ", " + name + "!"))
     return 1
@@ -80,7 +84,7 @@ GoとLua間で渡されるテーブルはデフォルトで可変。モジュー
 ```go
 mod := lua.CreateTable(0, 5)
 mod.RawSetString("func1", lua.LGoFunc(func1))
-mod.Immutable = true  // Luaがエクスポートを変更するのを防止
+mod.Immutable = true  // Prevent Lua from modifying exports
 ```
 
 データテーブルは通常使用のため可変のまま：
@@ -101,19 +105,23 @@ l.Push(result)
 `Types`フィールドはIDEサポートとドキュメント用の型シグネチャを提供：
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +130,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | 型 | 説明 |
 |----|------|
-| `types.String` | 文字列プリミティブ |
-| `types.Number` | 数値 |
-| `types.Boolean` | ブール値 |
-| `types.Any` | 任意のLua値 |
-| `types.LuaError` | エラー型 |
-| `types.Optional(t)` | 型tのオプション値 |
-| `types.InterfaceType` | メソッドを持つオブジェクト |
-| `types.FunctionType` | パラメータ/戻り値を持つ関数シグネチャ |
-| `types.RecordType` | 構造体的な型（フィールド付き） |
-| `types.TableType` | キー/値型を持つテーブル |
+| `typ.String` | 文字列プリミティブ |
+| `typ.Number` | 数値 |
+| `typ.Integer` | 整数値 |
+| `typ.Boolean` | ブール値 |
+| `typ.Any` | 任意の Lua 値 |
+| `typ.Self` | メソッドの receiver 型 |
+| `typ.LuaError` | エラー型 |
+| `typ.NewOptional(t)` | 型 t のオプション値 |
+| `typ.NewInterface(name, methods)` | メソッドを持つオブジェクト |
+| `typ.Func()` | パラメータ/戻り値を持つ関数シグネチャ builder |
+| `typ.NewRecord()` | 構造体的な型の builder（`.Field`/`.OptField` でフィールドを指定） |
+| `typ.NewArray(t)` | 要素型 t の配列 |
+| `typ.NewMap(k, v)` | キー/値型を持つマップ |
 
 関数シグネチャは可変長パラメータをサポート：
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-完全な型システムについてはgo-luaの`types`パッケージを参照。
+レコードは必須フィールドとオプションフィールドを組み合わせられます。
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+追加の builder と型定義については、go-lua の `typ` パッケージを参照してください。
 
 ### UserDataバインディング（ランタイム）
 
@@ -154,10 +175,10 @@ types.FunctionType{
 func init() {
     value.RegisterTypeMethods(nil, "mymodule.Object",
         map[string]lua.LGoFunc{
-            "__tostring": objectToString,  // メタメソッド
+            "__tostring": objectToString,  // Metamethods
         },
         map[string]lua.LGoFunc{
-            "get_value": objectGetValue,   // 通常メソッド
+            "get_value": objectGetValue,   // Regular methods
             "set_value": objectSetValue,
         },
     )
@@ -205,7 +226,7 @@ func fetchFunc(l *lua.LState) int {
     yield.URL = url
 
     l.Push(yield)
-    return -1  // yieldをシグナル、スタックカウントではない
+    return -1  // Signal yield, not stack count
 }
 ```
 
@@ -233,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-ディスパッチャはコマンドをハンドラにルーティング。ハンドラの実装については[コマンドディスパッチ](internals/dispatch.md)を参照。
+ディスパッチャーはコマンドをハンドラへルーティングします。ハンドラの実装については[コマンドディスパッチ](internals/dispatch.md)を参照してください。
 
 ## エラー処理
 
@@ -271,7 +292,7 @@ func myFunc(l *lua.LState) int {
         return 2
     }
 
-    // 操作を続行
+    // Proceed with operation
 }
 ```
 
@@ -305,6 +326,7 @@ yielding関数を使用するLuaコードをテストするには、必要なデ
 type testScheduler struct {
     *actor.Scheduler
     clock   *clock.Dispatcher
+    node    *sysrelay.Node
     mu      sync.Mutex
     pending map[string]chan *runtime.Result
 }
@@ -313,7 +335,7 @@ func newTestScheduler() *testScheduler {
     ts := &testScheduler{pending: make(map[string]chan *runtime.Result)}
     reg := scheduler.NewRegistry()
 
-    // モジュールが使用するyield用のディスパッチャを登録
+    // Register dispatchers for yields your module uses
     clockSvc := clock.NewDispatcher()
     clockSvc.RegisterAll(func(id dispatcher.CommandID, h dispatcher.Handler) {
         reg.Register(id, h)
@@ -321,8 +343,23 @@ func newTestScheduler() *testScheduler {
     ts.clock = clockSvc
 
     ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
+
+    // Clock events return through the relay to the process host named by PID.Host.
+    ts.node = sysrelay.NewNode("module-test-node")
+    if err := ts.node.RegisterHost("module.test", ts.Scheduler); err != nil {
+        panic(err)
+    }
     return ts
 }
+
+// Stop wraps Scheduler.Stop, which requires a context.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+    _ = ts.clock.Stop(context.Background())
+}
+
+// OnStart satisfies process.Lifecycle alongside OnComplete.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
 
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
@@ -341,8 +378,18 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     ts.pending[p.UniqID] = resultCh
     ts.mu.Unlock()
 
+    // relay.WithNode requires an application context. Preserve the caller's
+    // frame context while attaching the relay used by the clock dispatcher.
+    if ctxapi.AppFromContext(ctx) == nil {
+        ctx = ctxapi.WithAppContext(ctx, ctxapi.NewAppContext())
+    }
+    ctx = relayapi.WithNode(ctx, ts.node)
+
     _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
     if err != nil {
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, err
     }
 
@@ -350,51 +397,92 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     case result := <-resultCh:
         return result, nil
     case <-ctx.Done():
+        ts.mu.Lock()
+        delete(ts.pending, p.UniqID)
+        ts.mu.Unlock()
         return nil, ctx.Err()
     }
 }
+
+func testPID() pid.PID {
+    return pid.PID{Host: "module.test", UniqID: "test"}.Precomputed()
+}
 ```
 
-テスト対象のモジュールを使ってLuaスクリプトからプロセスを作成：
+スクリプトで使用するモジュールを組み込んでプロセスを作成します。この例では time モジュールを使用し、上で登録した clock dispatcher が実際の yield を処理します。
 
 ```go
-func bindMyModule(l *lua.LState) {
-    tbl, _ := mymodule.Module.Build()
-    l.SetGlobal(mymodule.Module.Name, tbl)
+func bindTimeModule(l *lua.LState) error {
+    tbl, _ := timemod.Module.Build()
+    l.SetGlobal(timemod.Module.Name, tbl)
+    return nil
 }
 
-func newLuaProcess(script string) *engine.Process {
-    proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+func newLuaProcessWithChannels(script string) (*engine.Process, error) {
+    proto, err := lua.CompileString(script, "test.lua")
+    if err != nil {
+        return nil, err
+    }
+    proc, err := engine.NewProcess(
         engine.WithProto(proto),
-        engine.WithModuleBinder(bindMyModule),
+        engine.WithModuleBinder(func(l *lua.LState) error {
+            engine.LoadModuleDef(l, engine.ChannelModule)
+            return nil
+        }),
+        engine.WithModuleBinder(bindTimeModule),
     )
+    if err != nil {
+        return nil, err
+    }
+    return proc, nil
 }
 
-func TestMyModuleYields(t *testing.T) {
+func TestYieldDispatcher(t *testing.T) {
     sched := newTestScheduler()
     sched.Start()
     defer sched.Stop()
 
     script := `
-        local result = mymodule.fetch("http://example.com")
-        return result.status
+        local ticker, ticker_err = time.ticker(10 * time.MILLISECOND)
+        if ticker_err then error(ticker_err) end
+
+        local _, open = ticker:response():receive()
+        local stopped = ticker:stop()
+        if not stopped then error("ticker did not stop") end
+        if not open then error("ticker channel closed before the first tick") end
+        return "tick"
     `
 
     ctx, _ := ctxapi.OpenFrameContext(context.Background())
-    proc := newLuaProcess(script)
+    if err := runtime.SetFramePID(ctx, testPID()); err != nil {
+        t.Fatal(err)
+    }
 
-    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
+    proc, err := newLuaProcessWithChannels(script)
     if err != nil {
         t.Fatal(err)
     }
-    // 結果に対してアサート
+
+    started := time.Now()
+    result, err := sched.Execute(ctx, testPID(), proc, "", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    if result == nil {
+        t.Fatal("nil result")
+    }
+    if result.Error != nil {
+        t.Fatalf("script failed: %v", result.Error)
+    }
+    if elapsed := time.Since(started); elapsed < 5*time.Millisecond {
+        t.Fatalf("yield completed before the clock fired: %v", elapsed)
+    }
 }
 ```
 
-完全な例については`runtime/lua/modules/time/integration_test.go`を参照。
+統合テストの例については `runtime/lua/modules/time/integration_test.go` を参照してください。
 
 ## 関連項目
 
-- [コマンドディスパッチ](internals/dispatch.md) - yieldコマンドの処理
-- [スケジューラ](internals/scheduler.md) - プロセス実行
+- [コマンドディスパッチ](internals/dispatch.md) - yield コマンドの処理
+- [スケジューラ](internals/scheduler.md) - プロセスの実行

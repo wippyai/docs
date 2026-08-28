@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Renderize templates Jet a partir de conjuntos de templates configurados."
 ---
 
 # Template Engine
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-Renderize conteudo dinamico usando o [Jet template engine](https://github.com/CloudyKit/jet). Construa paginas HTML, emails e documentos com heranca de templates e includes.
+O módulo `templates` renderiza templates [Jet](https://github.com/CloudyKit/jet) a partir de conjuntos configurados. Os templates podem usar herança e includes. Esta página é uma referência de API com exemplos isolados de renderização, não um deployment de templates independente. Os IDs do registry e as fontes dos templates já devem estar configurados, e a entrada executável deve habilitar `templates` e ter a permissão `template.get` para o conjunto solicitado.
 
-Para configuração de template sets, veja [Template Engine](system/template.md).
+Para configurar conjuntos de templates, veja [Template Engine](system/template.md).
 
 ## Carregamento
 
@@ -18,9 +18,9 @@ Para configuração de template sets, veja [Template Engine](system/template.md)
 local templates = require("templates")
 ```
 
-## Obtendo Template Sets
+## `templates.get`
 
-Obter um template set pelo ID do registry para comecar a renderizar:
+Adquire um conjunto de templates pelo ID do registry:
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -28,57 +28,63 @@ if err then
     return nil, err
 end
 
--- Usar o set...
+-- Use the set...
 
-set:release()
+return set:release()
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `id` | string | ID do template set no registry |
+| `id` | string | ID do conjunto de templates no registry |
 
 **Retorna:** `Set, error`
 
-## Renderizando Templates
+## `set:render`
 
-Renderizar um template pelo nome com dados:
+Renderiza um template por nome com os dados fornecidos:
 
 ```lua
-local set = templates.get("app.views:emails")
+local set, get_err = templates.get("app.views:emails")
+if get_err then
+    return nil, get_err
+end
 
 local html, err = set:render("welcome", {
     user = {name = "Alice", email = "alice@example.com"},
-    activation_url = "https://example.com/activate?token=abc"
+    activation_url = "https://example.invalid/activate"
 })
 
+set:release()
 if err then
-    set:release()
     return nil, err
 end
 
-set:release()
 return html
 ```
+
+O chamador é responsável por cada conjunto adquirido até chamar `release()`. Libere-o depois da última renderização, inclusive em caminhos de erro verificados; chamadas repetidas de `release()` são seguras. A renderização não torna os valores fornecidos pela aplicação seguros para todos os contextos de saída. Não registre segredos nem URLs de uso único e aplique o escaping ou a sanitização exigidos no local em que a string renderizada será consumida.
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `name` | string | Nome do template dentro do set |
-| `data` | table | Variaveis para passar ao template (opcional) |
+| `data` | table | Variáveis passadas ao template (opcional) |
 
 **Retorna:** `string, error`
 
 ## Métodos do Set
 
+O handle do conjunto oferece estes métodos:
+
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `render(name, data?)` | `string, error` | Renderizar template com dados |
-| `release()` | `boolean` | Liberar set de volta ao pool |
+| `release()` | `boolean` | Liberar o conjunto de volta ao pool |
 
 ## Referência da Sintaxe Jet
 
-Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentarios.
+Jet usa `{{ }}` para expressões e estruturas de controle e `{* *}` para comentários.
 
-### Variaveis
+### Variáveis
 
 ```html
 {{ user.name }}
@@ -90,11 +96,11 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 
 ```html
 {{ if order.shipped }}
-    <p>Enviado!</p>
+    <p>Shipped!</p>
 {{ else if order.processing }}
-    <p>Processando...</p>
+    <p>Processing...</p>
 {{ else }}
-    <p>Recebido.</p>
+    <p>Received.</p>
 {{ end }}
 ```
 
@@ -102,7 +108,7 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 
 ```html
 {{ range items }}
-    <li>{{ .name }} - R${{ .price }}</li>
+    <li>{{ .name }} - ${{ .price }}</li>
 {{ end }}
 
 {{ range i, item := items }}
@@ -110,7 +116,7 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 {{ end }}
 ```
 
-### Heranca
+### Herança
 
 ```html
 {* Parent: layout.jet *}
@@ -121,15 +127,15 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 
 {* Child: page.jet *}
 {{ extends "layout" }}
-{{ block title() }}Minha Pagina{{ end }}
-{{ block body() }}<p>Conteudo</p>{{ end }}
+{{ block title() }}My Page{{ end }}
+{{ block body() }}<p>Content</p>{{ end }}
 ```
 
 ### Includes
 
 ```html
 {{ include "partials/header" }}
-<main>Conteudo</main>
+<main>Content</main>
 {{ include "partials/footer" }}
 ```
 
@@ -140,8 +146,9 @@ Jet usa `{{ }}` para expressoes e estruturas de controle, `{* *}` para comentari
 | ID vazio | `errors.INVALID` | não |
 | Nome de template vazio | `errors.INVALID` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Conjunto de templates ausente, indisponível ou com tipo de recurso incorreto | `errors.INTERNAL` | não |
 | Template não encontrado | `errors.NOT_FOUND` | não |
 | Erro de renderização | `errors.INTERNAL` | não |
-| Set ja liberado | `errors.INTERNAL` | não |
+| Tentativa de renderização após liberar o conjunto | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

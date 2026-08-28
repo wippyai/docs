@@ -5,13 +5,13 @@ description: "How to carve a Wippy application into namespaces, slices, and laye
 
 # Application Architecture
 
-A Wippy application is not a tree of source files — it is a **graph of registry entries**. Code lives in `function.lua` and `process.lua` entries; everything that links them — which function answers an HTTP route, which process a service supervises, which library imports which — is declared in `_index.yaml`. Structuring an app means deciding how to **carve that graph into namespaces** so it stays composable, testable, and bootable as it grows.
+A Wippy application is a **graph of registry entries** represented by source files. Code lives in entries such as `function.lua` and `process.lua`; `_index.yaml` files declare how functions, routes, services, and libraries connect. Application structure determines how that graph is divided into namespaces so it remains composable, testable, and bootable as it grows.
 
-This page is the reasoning behind the layout. For the mechanical rules (file format, naming, where `_index.yaml` goes) see [YAML & Project Structure](start/structure.md). For the entry kinds themselves see the [Entry Kinds Guide](guides/entry-kinds.md).
+This page explains one way to organize that graph. For file format, naming, and `_index.yaml` placement, see [YAML & Project Structure](start/structure.md). For entry definitions, see the [Entry Kinds Guide](guides/entry-kinds.md).
 
-## The unit is a slice
+## Feature Slices
 
-Organize by **feature**, not by file type. A slice owns one capability end to end — its database access, its long-running processes, its HTTP surface, and the vocabulary they share — and lives under one namespace prefix:
+A useful default is to organize by **feature** rather than file type. A slice owns one capability end to end—its database access, long-running processes, HTTP surface, and shared vocabulary—and lives under one namespace prefix:
 
 ```
 src/app/jobs/          namespace: app.jobs
@@ -19,11 +19,11 @@ src/app/auth/          namespace: app.auth
 src/app/billing/       namespace: app.billing
 ```
 
-The alternative — a top-level `handlers/`, `models/`, `services/` split — scatters every feature across the tree and couples them through proximity. Slices keep a feature's blast radius inside one folder: you can read it, test it, or delete it without chasing references across the project.
+Feature slices keep related behavior within one folder, making a capability easier to read, test, change, or remove without tracing it across top-level `handlers/`, `models/`, and `services/` directories.
 
 ## Layers within a slice
 
-Inside a slice, split along the axis of **what touches the outside world**. This is ports-and-adapters (hexagonal) architecture, expressed as **sub-namespaces**:
+For larger slices, separate code by **what touches the outside world**. This applies ports-and-adapters (hexagonal) architecture through **sub-namespaces**:
 
 ```
 src/app/jobs/                  namespace: app.jobs          ← shared vocabulary
@@ -33,75 +33,73 @@ src/app/jobs/                  namespace: app.jobs          ← shared vocabular
   api/                         namespace: app.jobs.api      ← http.endpoints
 ```
 
-Imports flow **one way only**, outermost to innermost:
+Keep imports flowing from outer layers toward inner layers:
 
 ```
 api  →  service  →  persist  →  { consts, config, types }
 ```
 
-The slice root (the shared vocabulary) imports nothing from its own children. Children import the root. No layer reaches back up, and **no slice imports another slice directly** — cross-slice sharing goes through a common parent namespace (e.g. `app.core:types`), never sideways.
+The slice root contains shared vocabulary and does not import its own children. Children may import the root. Avoid direct imports between slices; place shared definitions in a common parent namespace such as `app.core:types`.
 
 <note>
-The namespace boundary is not cosmetic. It is the seam the runtime injects dependencies into and resolves boot order across. The direction of imports is what guarantees a valid boot order exists — see <a href="#why-this-shape">Why this shape</a>.
+Namespaces organize entry IDs but do not create dependencies or injection seams by themselves. Explicit <code>imports</code>, kind-specific references, and <code>ns.requirement</code> targets create those relationships. A consistent direction keeps the resulting graph explicit. See <a href="#why-this-shape">Why this shape</a>.
 </note>
 
-A smaller slice collapses the ceremony — a single `_index.yaml` with the libraries and one endpoint is fine. The rule that survives at every size is the **import direction**, not the folder count.
+A small slice can use one `_index.yaml` for its libraries and endpoint. The important property is the **import direction**, not the number of folders.
 
-## The shared vocabulary
+## Shared Vocabulary
 
-Three files recur at the root of a well-structured slice. They hold what every layer reads but none of them *is*:
+Three files commonly appear at the root of a slice. They contain definitions shared by the slice's layers:
 
 | File | Holds | Capabilities |
 |------|-------|--------------|
 | `consts.lua` | State machines, enums, queue tiers, registry IDs of processes. The values that mirror your database `CHECK` constraints. | none |
-| `config.lua` | Env-tunable knobs with code-default fallbacks (`env.get(KEY) or DEFAULT`), so no `env.variable` entry is required for a value to be optional. | `env` |
+| `config.lua` | Env-tunable knobs with a helper that applies a code default only when `env.get(KEY)` returns `errors.NOT_FOUND` and propagates permission or backend errors. No `env.variable` entry is required for a value to be optional. | `env` |
 | `types.lua` | Entity shapes (`type Job = { ... }`) — the rows the persistence layer returns. | none |
 
-`consts` and `types` declare **no host capabilities** — they are pure `library.lua` returning a table. That is deliberate: your domain vocabulary cannot perform I/O, so it cannot drift into business logic, and it is unit-testable with no database and no process host.
+`consts` and `types` declare **no host capabilities**; they are pure `library.lua` entries that return a table. Keeping domain vocabulary free of I/O also makes it testable without a database or process host.
 
-Keep this vocabulary **slice-private**. Constants and types shared across slices live in the common parent and are referenced through an import there — never copied into each slice.
+Keep this vocabulary **slice-private**. Place constants and types shared across slices in a common parent namespace and import them rather than copying them.
 
-## Capabilities sort by layer
+## Capabilities by Layer
 
-Each entry declares the host capabilities it needs in `modules:`. In a layered slice these sort cleanly:
+Lua entries declare non-ambient modules in `modules:` and registry-backed dependencies in `imports:`. A layered slice can keep those dependencies aligned with responsibility:
 
-- `persist/*` declares `sql` — and nothing else gets database access.
-- `service/*` declares `channel`, process host capabilities — and nothing else spawns or supervises.
-- `api/*` declares whatever an endpoint needs to marshal a request.
-- The root vocabulary declares nothing.
+- `persist/*` declares `sql`, keeping database access in the persistence layer.
+- `service/*` keeps process orchestration and service dependencies in the service layer. The `process` and `channel` globals are ambient and do not need `modules:` declarations.
+- `api/*` declares modules such as `http` and imports the functions or libraries it calls.
+- The root vocabulary needs no non-ambient modules or infrastructure imports.
 
-The payoff is that any capability's blast radius is exactly one layer. If you want to know everything that can write to the database, you read `persist/`. Dependency inversion stops being an abstract principle and becomes a property you can grep for.
+This limits module visibility to a known layer. It is not an authorization grant: ABAC policies independently decide whether guarded operations such as `db.get` are allowed at runtime. To review code that can request a database handle, inspect `persist/`, its declared modules, and the policies attached to its execution context.
 
-## Applications and components
+## Applications and Components
 
-The same shape scales from a single app to a published library by changing only **who fills the holes**.
+The same shape can support a single application or a published library; the difference is **who supplies its dependencies**.
 
 An **application** is the top-level, deployable graph. It owns the concrete infrastructure — the `http.service`, the `process.host`, the database connection — under a root namespace (conventionally `app`), and wires everything together itself.
 
-A **component** is a publishable module mounted *into* a host. It cannot name the host's database or router, because it does not know them. Instead it declares an **interface of holes** — `ns.requirement` entries — that the host fills when it depends on the component. Internally a component is structured exactly like an application slice: same layers, same vocabulary, same import direction. The only addition is the requirement interface at its edge.
+A **component** is a publishable module mounted into a host. Because it does not know the host's database or router IDs, it declares an interface of `ns.requirement` entries that the host supplies. Internally, a component can use the same layers, vocabulary, and import direction as an application slice.
 
-This is a spectrum, not two categories:
+These are two points on a spectrum:
 
-- **Single app, internal slices** — slices live under `src/app/`, share the app's infrastructure directly by referencing `app:db`, `app:processes`. No requirement interface needed; nothing external mounts them. (This is how a focused service is built.)
-- **Multi-component composition** — each component is its own publishable module with an `ns.definition` and an `ns.requirement` interface, composed by a host through `ns.dependency`. The host fills each requirement (database, process host, router) once. (This is how a platform of reusable parts is built.)
+- **Single app, internal slices** — slices live under `src/app/`, share the app's infrastructure directly by referencing `app:db`, `app:processes`. No requirement interface is needed because nothing external mounts them.
+- **Multi-component composition** — each component is its own publishable module with an `ns.definition` and an `ns.requirement` interface, composed by a host through `ns.dependency`. The host fills each requirement (database, process host, router) once.
 
-Choose by whether the slice is meant to be **consumed by something you don't control**. If yes, give it a requirement interface and publish it. If no, let it reference the app's infrastructure directly and skip the ceremony. The layering is the invariant at both ends; the packaging is what scales with reuse.
+Choose based on whether the slice will be **consumed by a host you do not control**. Reusable components need a requirement interface; internal slices can reference application infrastructure directly. The packaging changes with reuse, while the internal layering can remain the same.
 
 See [Building Components](guides/components.md) for the requirement/dependency mechanism, and [Dependency Management](guides/dependency-management.md) for the lock-file side.
 
-## Why this shape {#why-this-shape}
+## Why Use This Shape :id=why-this-shape
 
-The discipline above is not style. Each rule is load-bearing for how the runtime composes and boots a graph:
+This structure supports composition, capability review, and boot-order analysis:
 
-**The namespace boundary is the injection seam.** Because layers link only through explicit `imports:` and live in distinct namespaces, the `ns.requirement` mechanism has a concrete target to inject into — the host points its database at the `persist` layer's entries, its process host at the `service` layer's entries. If `persist` grabbed `app:db` directly, the component could never be mounted into a different host: there would be no hole to fill. Layering is what makes a component **relocatable**.
+**Requirement targets are the injection seam.** Distinct namespaces make target IDs legible, but `ns.requirement.targets` performs the injection. A host can supply a database ID to persistence entries and a process-host ID to service entries. Directly referencing `app:db` instead couples the component to that host convention.
 
-**One-way imports guarantee a boot order exists.** The runtime resolves the entry graph at boot and must find a topological order. `api → service → persist → root`, never sideways and never up, means the graph is acyclic by construction. Cross-slice coupling routed through a shared parent keeps slices independently mountable instead of knotting them into a cycle the loader cannot order.
+**One-way references keep registry transitions resolvable.** The registry extracts declared dependency paths and topologically orders changes so dependencies are created before their dependents and deleted after them. The direction `api → service → persist → root` helps keep that graph acyclic. A parent namespace is only an organizational convention; the shared entries still need explicit references.
 
-**Capabilities scoped by layer bound the blast radius.** Host capabilities are granted per entry. When only `persist` declares `sql`, the set of code that can reach the database is one directory, auditable at a glance — not an emergent property of the whole app.
+**Modules scoped by layer have a clear boundary.** Each Lua chunk can resolve its declared imports and non-ambient modules; undeclared registry modules fail closed at module resolution. Runtime policy checks remain a separate boundary. When persistence entries alone declare `sql`, the code that can request a database handle is easier to identify and audit.
 
-**The layering produces a testability gradient.** Pure vocabulary tests with no world. `persist` tests hit a database but not a worker. A whole-module **mount test** then audits the seams the unit tests deliberately cannot see — that every supervised service points at a real process, every spawned ID resolves, every requirement is filled. You only get that gradient if the layers are actually separable.
-
-The short version: hexagonal layering here is the one shape where requirement injection, per-layer capability scoping, and acyclic boot resolution all hold at once. The runtime's composition model *requires* the ports-and-adapters split to function — the discipline is what buys you a graph that boots and a component someone else can mount.
+**The layering supports different test scopes.** Vocabulary can be tested without infrastructure. Persistence tests can use a database without starting workers. A whole-module **mount test** then checks the integration seams: every supervised service points to a process, every spawned ID resolves, and every requirement is filled.
 
 ## See Also
 

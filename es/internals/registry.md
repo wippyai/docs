@@ -1,11 +1,13 @@
 ---
 title: "Internos del Registry"
-description: "El registry es un almacén de estado versionado y orientado a eventos. Mantiene historial de versiones completo, soporta transacciones, y propaga…"
+description: "Almacenamiento versionado del registro, changesets, transacciones, resolución de dependencias, historial y búsqueda de entradas."
 ---
 
 # Internos del Registry
 
-El registry es un almacén de estado versionado y orientado a eventos. Mantiene historial de versiones completo, soporta transacciones, y propaga cambios a través del event bus.
+El registry almacena el estado versionado de las entradas, admite transacciones e historial y propaga los cambios a través del event bus.
+
+Los fragmentos Go y de consulta de esta página documentan estructuras de datos internas y la sintaxis del finder; no son ejemplos de aplicación independientes.
 
 ## Almacenamiento de Entradas
 
@@ -14,9 +16,9 @@ Las entradas se almacenan como un slice ordenado con un índice de hash map para
 ```go
 type Entry struct {
     ID   ID              // namespace:name
-    Kind Kind            // Tipo de entrada
-    Meta attrs.Bag       // Metadatos
-    Data payload.Payload // Contenido
+    Kind Kind            // Entry type
+    Meta attrs.Bag       // Metadata
+    Data payload.Payload // Content
 }
 ```
 
@@ -56,8 +58,8 @@ Un changeset es una lista ordenada de operaciones que transforman un estado a ot
 Múltiples changesets se fusionan rastreando estado final por entrada:
 
 ```
-Create + Update = Create (con valor actualizado)
-Create + Delete = ∅ (se cancelan)
+Create + Update = Create (with updated value)
+Create + Delete = ∅ (cancel out)
 Update + Delete = Delete
 Delete + Create = Update
 ```
@@ -71,29 +73,31 @@ sequenceDiagram
     participant H as Handlers
 
     R->>B: registry.begin
-    loop Cada Operación
+    loop Each Operation
         R->>B: entry.create/update/delete
-        B->>H: dispatch a listeners
-        H-->>B: aceptar o rechazar
-        B-->>R: confirmación
+        B->>H: dispatch to listeners
+        H-->>B: accept or reject
+        B-->>R: confirmation
     end
-    alt Todo aceptado
+    alt All accepted
         R->>B: registry.commit
-    else Alguno rechazado
+    else Any rejected
         R->>B: registry.discard
         R->>R: rollback
     end
 ```
 
-Los handlers tienen 30 segundos para aceptar o rechazar cada operación. En rechazo, el registry hace rollback calculando y aplicando el delta inverso.
+De forma predeterminada, el registry espera 30 segundos a que los listeners acepten o rechacen cada operación. `registry.event_wait_timeout` modifica este timeout por operación. En caso de rechazo, el registry hace rollback calculando y aplicando el delta inverso.
 
 ### Entradas No Propagantes
 
-Algunos kinds omiten el event bus completamente:
+Los siguientes kinds omiten el event bus de forma predeterminada:
 - `registry.entry` - Configs de aplicación
 - `ns.requirement` - Requisitos de namespace
 - `ns.dependency` - Dependencias de módulos
 - `ns.definition` - Metadatos del módulo (readme, wiki, licencia, autores)
+
+`registry.dispatch_internal_kinds` reemplaza esta lista predeterminada.
 
 ## Resolución de Dependencias
 
@@ -101,7 +105,7 @@ Las entradas pueden declarar dependencias en otras entradas. El resolver extrae 
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
@@ -128,8 +132,8 @@ El historial también persiste la resolución exacta de dependencias de cada ver
 El cálculo de ruta encuentra la ruta más corta entre versiones:
 
 ```go
-Path(v0, v3) = [v1, v2, v3]  // Aplicar changesets hacia adelante
-Path(v3, v1) = [v2, v1]      // Aplicar changesets revertidos
+Path(v0, v3) = [v1, v2, v3]  // Apply changesets forward
+Path(v3, v1) = [v2, v1]      // Apply reversed changesets
 ```
 
 `LoadState()` reproduce historial desde una línea base sin crear nuevas versiones—usado durante boot.
@@ -140,13 +144,15 @@ Motor de consultas con cache LRU para buscar entradas:
 
 | Operador | Prefijo | Ejemplo |
 |----------|---------|---------|
-| Glob | (ninguno) | `.kind=function.*` |
+| Glob de campo raíz | `.` campo raíz | `.kind=function.*` |
 | Regex | `~` | `~meta.path=/api/.*` |
 | Contains | `*` | `*meta.tags=backend` |
 | Prefix | `^` | `^meta.name=user` |
 | Suffix | `$` | `$meta.path=Handler` |
 
 Cache se invalida en cambio de versión.
+
+La coincidencia glob se aplica a los campos raíz `.kind`, `.name`, `.ns` y `.id`. Los criterios `meta.*` sin prefijo usan coincidencia por igualdad.
 
 ## Ver También
 

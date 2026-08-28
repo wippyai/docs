@@ -1,18 +1,22 @@
 ---
 title: "Entry Kinds Reference"
-description: "Complete reference of all entry kinds available in Wippy."
+description: "Reference for Wippy entry kinds across runtime, storage, networking, security, execution, and lifecycle systems."
 ---
 
 # Entry Kinds Reference
 
-Complete reference of all entry kinds available in Wippy.
+This page summarizes the available entry kinds and links to their detailed module and system references.
 
-> Entries reference each other using `namespace:name` format. The registry automatically wires dependencies together based on these references, ensuring resources are initialized in the correct order.
+The YAML and Lua blocks are reference fragments, not one application. Registry IDs,
+credentials, data objects, and helpers such as `get_users` or `delete_user` are
+illustrative; use the linked module pages for complete return and error contracts.
+
+> Entries reference one another using `namespace:name`. The registry uses these references to resolve dependencies and initialization order.
 
 ## See Also
 
-- [Registry](concepts/registry.md) - How entries are stored and resolved
-- [Configuration](guides/configuration.md) - YAML configuration format
+- [Registry](concepts/registry.md) — How entries are stored and resolved
+- [Configuration](guides/configuration.md) — YAML configuration format
 
 ## Lua Runtime
 
@@ -160,8 +164,8 @@ See [Database](system/database.md) for `${env:NAME}` secret references, TLS opti
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -185,7 +189,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -526,7 +530,10 @@ local actor = security.actor()
 ```
 
 <warning>
-Policies are evaluated in order. The first matching policy determines access. Place more specific policies before general ones.
+Policy order does not determine access. The scope combines policy decisions;
+any matching <code>deny</code> overrides matching <code>allow</code> policies and
+can stop evaluation immediately. If no policy matches, the result is undefined
+rather than allowed.
 </warning>
 
 ## Contracts (Dependency Injection)
@@ -658,31 +665,29 @@ Referenced by `http.service` via `network:`, by `funcs`/`process` via the `netwo
 | `ns.requirement` | Namespace requirement declaration |
 | `ns.dependency` | Namespace dependency |
 
-These are produced by the registry loader from `_index.yaml` frontmatter and dependency declarations. Authors generally don't define them directly — they appear as a result of `version:`, `namespace:`, and dependency blocks being resolved.
+`registry.entry` is an internal descriptor. Authors define `ns.definition`, `ns.requirement`, and `ns.dependency` entries directly in `_index.yaml`; the file's `version` and `namespace` fields do not generate them.
 
 ## Lifecycle Configuration
 
-Most entries support lifecycle configuration:
+Supervisor-managed service entries expose lifecycle configuration. The block below belongs inside a service entry that supports it:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # Start automatically
-    start_timeout: 10s        # Max startup time
-    stop_timeout: 10s         # Max shutdown time
-    stable_threshold: 5s      # Time to consider stable
-    depends_on:
-      - app:database
-    restart:                  # Retry policy
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = infinite
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
-Use <code>depends_on</code> to ensure entries start in the correct order. The supervisor waits for dependencies to become stable before starting dependent entries.
+Use <code>requires</code> to declare service dependencies. The supervisor starts required services before their dependents and considers a dependency ready when it is running. <code>depends_on</code> remains accepted as a legacy spelling, but new manifests should use <code>requires</code>.
 </note>
 
 ## Entry Reference Format

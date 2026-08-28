@@ -1,22 +1,26 @@
 ---
 title: "Facade"
-description: "The wippy/facade module provides a portable iframe facade that loads and configures the Wippy frontend from a CDN. It serves an HTML shell that creates…"
+description: "Sirva e configure o Wippy Web Host por CDN com autenticação, navegação, temas e opções de implantação."
 ---
 
 # Facade
 
-The `wippy/facade` module provides a portable iframe facade that loads and configures the Wippy frontend from a CDN. It serves an HTML shell that creates an iframe pointing to the frontend bundle, handles authentication, and bridges configuration between the backend and frontend.
+O módulo `wippy/facade` serve uma página que carrega e configura o Wippy Web Host a partir de uma CDN. A página carrega `module.js` para o shell de compatibilidade padrão ou `managed-layout.js` para o modo gerenciado, trata a autenticação e envia a configuração do backend ao frontend. O módulo carregado controla a página e seu histórico do navegador.
 
-## Setup
+Em integrações isoladas ou de página parcial, o host também pode ser incorporado manualmente por `iframe.html` e um handshake `SetConfig` via postMessage. A própria facade não usa esse modo de entrega.
 
-Add the module to your project:
+Esta página é uma receita parcial de implantação e uma referência de configuração. O bloco de configuração pode ser adaptado a um projeto Wippy existente; os blocos de tema, resposta de configuração, navegação e publicação são exemplos independentes. Forneça páginas de login, entradas de filesystem, recursos estáticos e entradas de view citados pelo trecho adaptado. Para um projeto completo, siga [Servindo o Web Host com Facade](../tutorials/facade.md).
+
+## Configuração
+
+Adicione o módulo ao projeto:
 
 ```bash
 wippy add wippy/facade
 wippy install
 ```
 
-Declare the dependency:
+Declare a dependência:
 
 ```yaml
 version: "1.0"
@@ -46,82 +50,163 @@ entries:
         value: app:api
 ```
 
-### Configuration Parameters
+### Parâmetros de Configuração
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `server` | yes | — | HTTP server for static and iframe serving |
-| `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.21` | Base URL for iframe frontend bundle |
-| `fe_entry_path` | no | `/iframe.html` | Iframe HTML entry point path |
+| Parâmetro | Obrigatório | Padrão | Descrição |
+|-----------|-------------|--------|-----------|
+| `server` | sim | — | Servidor HTTP para arquivos estáticos e páginas |
+| `router` | sim | — | Roteador da API pública para o endpoint de configuração |
+| `fe_facade_url` | não | `https://web-host.wippy.ai/webcomponents-1.0.56` | URL base da CDN do bundle frontend |
+| `fe_entry_path` | não | `/iframe.html` | Caminho da entrada de **iframe** no bundle, usado no modo de incorporação por iframe. A página atual da facade carrega a entrada de módulo JS (`module.js`/`managed-layout.js`); o caminho permanece disponível para incorporações manuais sem facade. |
+| `fe_mode` | não | `compat` | Shell carregado: `compat` usa `module.js`; `managed` usa `managed-layout.js`. Exposto por `/facade/config` como `mode`/`module_file`. |
+| `host_config_layout` | não | `{}` | Configuração JSON de layout emitida como `hostConfig.layout`, usada apenas pelo shell **managed**. |
+| `render_engine` | não | `iframe` | Mecanismo de renderização emitido como `hostConfig.renderEngine`. Consulte [Mecanismo de Renderização](#mecanismo-de-renderização). |
+| `login_path` | não | `/login.html` | Caminho na origem para redirecionar usuários não autenticados; funciona com `login_redirect_param`. |
+| `login_redirect_param` | não | `""` (desativado) | Nome do parâmetro de query que recebe a URL de retorno após o login. Vazio desativa o acréscimo. |
+| `extra_scripts` | não | `[]` | Array JSON de URLs de scripts extras carregados pela facade; emitido como `extraScripts`. |
 
-### App Identity
+### Mecanismo de Renderização
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `app_title` | `Wippy` | Title shown in sidebar |
-| `app_name` | `Wippy AI` | Full application name |
-| `app_icon` | `wippy:logo` | Iconify icon reference |
+`render_engine` seleciona o [mecanismo de renderização](../frontend/web-host/render-engines.md) da implantação inteira. Ele é emitido como `hostConfig.renderEngine` e lido pelo Web Host em seu único ponto de decisão de renderização.
 
-### Feature Flags
+| Valor | Efeito |
+|-------|--------|
+| `iframe` _(padrão)_ | Páginas são renderizadas como iframes srcdoc, o mecanismo principal. |
+| `fragment` | Páginas são renderizadas como [Web Fragments](../frontend/web-host/render-engines.md), um realm `reframed` refletido em shadow root. |
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `hide_nav_bar` | `false` | Hide the left navigation sidebar |
-| `disable_right_panel` | `false` | Disable the right sidebar panel |
-| `start_nav_open` | `false` | Navigation drawer open by default |
-| `show_admin` | `true` | Show admin panel toggle |
-| `allow_select_model` | `false` | Allow user to select LLM model |
-| `session_type` | `non-persistent` | Chat session persistence: `non-persistent` or `persistent` |
-| `history_mode` | `hash` | Browser history mode: `hash` or `history` |
-| `hide_session_selector` | `false` | Oculta a UI de selecao de sessao |
+Somente a string exata `fragment` habilita o modo; **qualquer outro valor, inclusive um erro como `fragmnet`, é limitado a `iframe`** de forma silenciosa e segura. O modo fragment também exige o [gateway `/@fragment`](./views.md#gateway-de-web-fragments), fornecido automaticamente por `wippy/views` ≥ 0.5.9. Uma página pode sobrescrever o padrão com [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#engine-de-renderização).
 
-### Tematizacao
+### Identidade da Aplicação
 
-Tres escopos se aplicam: **global** (em todos os lugares), **host** (o chrome ao redor do iframe) e **children** (conteudo dentro do iframe).
-
-| Parametro | Escopo | Padrao | Descricao |
-|-----------|--------|--------|-----------|
-| `custom_css` | global | Import do Google Fonts | CSS injetado em todos os niveis |
-| `css_variables` | global | `{}` | Mapa JSON de CSS custom properties |
-| `icon_sets` | global | `[]` | URLs de conjuntos de icones Iconify |
-| `host_custom_css` | host | `""` | CSS apenas para o chrome do host |
-| `host_css_variables` | host | `{}` | CSS custom properties apenas para o host |
-| `host_icon_sets` | host | `[]` | Conjuntos de icones apenas para o host |
-| `children_custom_css` | children | `""` | CSS apenas para o conteudo do iframe |
-| `children_css_variables` | children | `{}` | CSS custom properties apenas para o conteudo do iframe |
-| `login_path` | — | `/login.html` | Caminho de redirecionamento para usuarios nao autenticados |
-
-### JSON opcional `hostConfig`
-
-Cada um dos parametros abaixo e uma string codificada em JSON; os padroes sao vazios (`{}` ou `[]`). Eles sao repassados inalterados ao frontend sob `hostConfig`.
-
-| Parametro | Padrao | Descricao |
+| Parâmetro | Padrão | Descrição |
 |-----------|--------|-----------|
-| `api_routes` | `{}` | Sobrescritas de rotas para o frontend |
-| `additional_nav_items` | `[]` | Entradas extras na sidebar |
-| `state_cache` | `{}` | Configuracao do cache de estado do frontend |
-| `allow_additional_tags` | `[]` | Tags HTML adicionais permitidas no chat |
-| `chat` | `{}` | Sobrescritas de UI do chat |
-| `axios_defaults` | `{}` | Padroes do cliente HTTP axios do frontend |
+| `app_title` | `Wippy` | Título exibido na barra lateral |
+| `app_name` | `Wippy AI` | Nome completo da aplicação |
+| `app_icon` | `wippy:logo` | Referência de ícone Iconify |
 
-## Config Endpoint
+### Flags de Funcionalidade
 
-The facade registers `GET /facade/config` on the configured router. The frontend fetches this on load:
+| Parâmetro | Padrão | Descrição |
+|-----------|--------|-----------|
+| `hide_nav_bar` | `false` | Oculta a barra lateral de navegação |
+| `disable_right_panel` | `false` | Desabilita o painel lateral direito |
+| `start_nav_open` | `false` | Abre a gaveta de navegação por padrão |
+| `show_admin` | `true` | Exibe o controle do painel administrativo |
+| `allow_select_model` | `false` | Permite selecionar o modelo LLM |
+| `session_type` | `non-persistent` | Política de sessão: `cookie` armazena um cookie de token secundário; outros valores viram `non-persistent` e não usam esse cookie. |
+| `history_mode` | `hash` | Modo do histórico: `hash` ou `browser`. Qualquer valor diferente de `browser` é tratado como `hash`. |
+| `hide_session_selector` | `false` | Oculta o seletor de sessão |
+
+O token de bootstrap do shell é separado de `session_type`. O shell sempre lê `localStorage["@wippy_token_info"]`, interpreta o campo JSON `token` e redireciona para `login_path` quando o valor está ausente ou inválido. Em modo `cookie`, o Web Host também grava o token no cookie `@wippy-gen2/token`; em `non-persistent`, não usa esse cookie secundário.
+
+### Temas
+
+Há três escopos: **global**, **host** (chrome do Web Host) e **children** (contextos `view.page` e componentes `view.component`). Consulte a [Matriz de Entrega de CSS](../frontend/web-host/css-injection.md#matriz-de-entrega-de-css).
+
+| Parâmetro | Escopo | Padrão | Descrição |
+|-----------|--------|--------|-----------|
+| `custom_css` | global | import do Google Fonts | CSS global, aplicado ao host, páginas e shadow roots de componentes (1.0.43+). |
+| `css_variables` | global | `{}` | Mapa JSON de propriedades CSS, compilado para modos Auto e forçados e levado aos shadow roots. |
+| `icon_sets` | global | `{}` | Conjuntos Iconify por prefixo, somente JSON inline, sem `fs://` |
+| `host_custom_css` | host | `""` | CSS somente do chrome do host. Limite regras por classe a `.wippy-host-app`. |
+| `host_css_variables` | host | `{}` | Propriedades CSS somente do host |
+| `host_icon_sets` | host | `{}` | Conjuntos de ícones somente do host, em JSON inline |
+| `children_custom_css` | children | `""` | CSS somente dos filhos, injetado em páginas e shadow roots (1.0.43+), não no host |
+| `children_css_variables` | children | `{}` | Propriedades CSS somente dos filhos |
+
+Coloque a identidade visual compartilhada em `custom_css` e `css_variables`. Use `host_custom_css` e `host_css_variables` para elementos exclusivos do host. Um `view.component` pode rejeitar `*_custom_css` no shadow root com `customCss: false`.
+
+#### Modo e Persistência do Tema
+
+| Parâmetro | Padrão | Descrição |
+|-----------|--------|-----------|
+| `theme_mode` | `auto` | Tema forçado para host e filhos: `auto`, `light` ou `dark`. Emitido como `themeMode`. |
+| `theme_persist` | `none` | Persistência da escolha: `none`, `cookie` ou `localStorage`. Em `cookie`, o shell Jet aplica a classe `w-theme-*` antes da primeira pintura. Emitido como `themePersist`. |
+| `theme_storage_key` | `@wippy-theme-mode` | Chave de cookie/localStorage. Emitida como `themeStorageKey` e incorporada a `/facade/theme-persist.js`. |
+
+A persistência é opt-in: `theme_persist` usa `none` por padrão. Quando habilitada, a facade serve **`GET /facade/theme-persist.js`** com chave e modo incorporados. Consulte [Persistência do Tema](../frontend/web-host/theme-persistence.md) para o evento `themeChanged` e integrações externas.
+
+#### Reutilizando o Tema da Facade Fora do Web Host
+
+Uma página externa ao Web Host, como `login.html`, pode reutilizar o tema. Mantenha `custom_css` e `css_variables` em arquivos próprios e aponte os parâmetros com `fs://` e um filesystem `content_fs`:
+
+```yaml
+custom_css:    fs://custom-css.facade.css
+css_variables: fs://css-variables.facade.json
+content_fs:    app:app_fs
+```
+
+Use `fs://`, resolvido por `content_fs` em runtime, e não `file://`, que é incorporado pelo loader em relação ao YAML. Mantenha os arquivos em `static/`, servidos pela aplicação em `/app` por uma entrada `app`.
+
+A resolução `fs://` se aplica exatamente aos seis parâmetros `custom_css`, `css_variables`, `host_custom_css`, `host_css_variables`, `children_custom_css` e `children_css_variables`; arquivos `*_css_variables` são interpretados como mapas JSON. `icon_sets`, `host_icon_sets` e os demais parâmetros JSON são somente inline.
+
+Uma página independente vincula ambos:
+
+- **`custom_css`** — arquivo `.css`, vinculado diretamente.
+- **`css_variables`** — JSON renderizado pela facade em **`GET /facade/variables.css`** com tipo `text/css`, como blocos base, Auto-light, Auto-dark, Light e Dark. Valores `@light` e `@dark` substituem nomes selecionados. A folha tem cache de 1h e usa o mesmo prefixo do roteador público.
+
+```html
+<!-- in login.html, served outside the Web Host -->
+<link rel="stylesheet" href="/api/public/facade/variables.css">  <!-- css_variables, generated CSS -->
+<link rel="stylesheet" href="/app/custom-css.facade.css">        <!-- custom_css file -->
+```
+
+Para compartilhar também o modo do tema, adicione o script gerado e chame `write()` no seletor:
+
+```html
+<script src="/api/public/facade/theme-persist.js"></script>
+<!-- early-applies the stored theme and exposes window.wippyThemePersist -->
+```
+
+Consulte [Persistência do Tema → Páginas fora do Wippy](../frontend/web-host/theme-persistence.md) para um exemplo completo.
+
+### Parâmetros JSON Opcionais
+
+Cada parâmetro abaixo é uma string JSON; os padrões são vazios (`{}` ou `[]`).
+
+Os quatro seguintes são expostos sem alterações em `hostConfig`:
+
+| Parâmetro | Padrão | Descrição |
+|-----------|--------|-----------|
+| `additional_nav_items` | `[]` | Entradas extras na barra lateral |
+| `state_cache` | `{}` | Configuração do cache de estado do frontend |
+| `allow_additional_tags` | `{}` | Lista permitida do sanitizador HTML (`Record<string, string[]>`) |
+| `chat` | `{}` | Sobrescritas da UI de chat |
+
+Os três seguintes são emitidos como campos de nível superior de `AppConfig`, não dentro de `hostConfig`:
+
+| Parâmetro | Emitido como | Padrão | Descrição |
+|-----------|--------------|--------|-----------|
+| `api_routes` | `apiRoutes` | `{}` | Sobrescritas de rotas do frontend |
+| `axios_defaults` | `axiosDefaults` | `{}` | Padrões do cliente HTTP axios |
+| `tanstack` | `tanstack` | `{}` | Padrões do TanStack Query: `{ default?, content?, lists? }`; `default` vale para tudo, `content` para recursos únicos e `lists` para navegação e índices. O padrão do host é `refetchOnWindowFocus:false`. |
+
+## Endpoint de Configuração
+
+A facade registra `GET /facade/config` no roteador público configurado. Com o prefixo `/api/public` da [Configuração](#configuração), a página busca `/api/public/facade/config`. O mesmo roteador expõe `GET /facade/variables.css`, que renderiza `css_variables` como uma folha de estilo `text/css` para páginas fora do Web Host. Consulte [Reutilizando o Tema da Facade Fora do Web Host](#reutilizando-o-tema-da-facade-fora-do-web-host). O frontend busca a configuração ao carregar:
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-...",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-.../iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
+    "login_redirect_param": null,
+    "mode": "compat",
+    "module_file": "/module.js",
+    "extraScripts": null,
     "env": {
         "APP_API_URL": "https://api.example.com",
         "APP_AUTH_API_URL": "https://api.example.com",
         "APP_WEBSOCKET_URL": "wss://api.example.com"
     },
     "routePrefix": "https://api.example.com",
+    "themeMode": "auto",
+    "themePersist": "none",
+    "themeStorageKey": "@wippy-theme-mode",
+    "apiRoutes":     { "...": "..." },
     "axiosDefaults": { "...": "..." },
+    "tanstack":      { "lists": { "refetchOnWindowFocus": true } },
     "theming": {
         "global":  { "customCSS": "...", "cssVariables": {}, "iconSets": {} },
         "host":    { "customCSS": "...", "cssVariables": {}, "iconSets": {}, "i18n": { "app": { "title": "Wippy", "icon": "wippy:logo", "appName": "Wippy AI" } } },
@@ -130,26 +215,28 @@ The facade registers `GET /facade/config` on the configured router. The frontend
     "hostConfig": {
         "session": { "type": "non-persistent" },
         "history": "hash",
+        "renderEngine": "iframe",
         "showAdmin": true,
         "allowSelectModel": false,
         "startNavOpen": false,
         "hideNavBar": false,
         "disableRightPanel": false,
         "hideSessionSelector": false,
-        "apiRoutes":         { "...": "..." },
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }
 ```
 
-A URL da API e lida da variavel de ambiente `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` e derivada substituindo `http://` por `ws://` ou `https://` por `wss://`. A tematizacao tem tres escopos (`global`, `host`, `children`) — `host.i18n` carrega a marca da aplicacao. As chaves de `hostConfig` estao em camelCase e sao montadas a partir dos parametros do facade: `session_type`, `history_mode`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mais opcionalmente `api_routes`, `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat` e `axios_defaults`.
+A URL da API vem de `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` é derivada pela troca de `http://` por `ws://` ou de `https://` por `wss://`. Os temas usam três escopos (`global`, `host` e `children`), e `host.i18n` contém a identidade da aplicação. As chaves de `hostConfig` usam camelCase e são montadas a partir dos parâmetros da facade: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, além dos opcionais `additional_nav_items`, `state_cache`, `allow_additional_tags` e `chat`. `render_engine` se torna `renderEngine` (consulte [Mecanismo de Renderização](#mecanismo-de-renderização)). `api_routes`, `axios_defaults` e `tanstack` são emitidos como campos de nível superior de `AppConfig` (`apiRoutes`, `axiosDefaults` e `tanstack`), no mesmo nível de `hostConfig`, não dentro dele.
 
-## Navigation Sidebar
+Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` pertencem ao nível do shell usado pela página de incorporação; não fazem parte do `AppConfig` filho com que o host é inicializado. `iframe_origin` e `iframe_url` são usados apenas por incorporações manuais de iframe sem facade (consulte [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md)). `mode` é o `fe_mode` normalizado (`compat` ou `managed`), e `module_file` é a entrada de módulo JavaScript carregada pela página da facade: `/module.js` no modo compat e `/managed-layout.js` no modo managed.
 
-Pages registered via `wippy/views` appear in the sidebar automatically based on their metadata:
+## Barra Lateral de Navegação
+
+Páginas registradas por `wippy/views` aparecem automaticamente conforme seus metadados:
 
 ```yaml
 entries:
@@ -169,40 +256,43 @@ entries:
       url: https://cdn.example.com/dashboard/
 ```
 
-### Sidebar Groups
+### Grupos da Barra Lateral
 
-Pages with the same `group` value are collected into collapsible sections. Groups are sorted by `group_order` (lower first), pages within groups by `order`.
+Páginas com o mesmo `group` formam seções recolhíveis. Os grupos são ordenados por `group_order`, e as páginas por `order`.
 
-| Field | Description |
-|-------|-------------|
-| `group` | Category name displayed in sidebar |
-| `group_icon` | Icon for the category header |
-| `group_order` | Sort position of the group (lower = higher) |
-| `group_placement` | `"sidebar"` (in sidebar) or `"default"` (main area only) |
+| Campo | Descrição |
+|-------|-----------|
+| `group` | Nome da categoria exibida |
+| `group_icon` | Ícone do cabeçalho da categoria |
+| `group_order` | Posição do grupo, menor primeiro |
+| `group_placement` | `"sidebar"` ou `"default"` |
 
-Pages without a `group` appear as top-level items.
+Páginas sem `group` aparecem no nível superior.
 
-### Controlling Visibility
+### Controlando a Visibilidade
 
-| Field | Effect |
+| Campo | Efeito |
 |-------|--------|
-| `announced: true` | Page appears in sidebar navigation |
-| `announced: false` | Page hidden from navigation but still accessible via URL |
-| `inline: true` | Internal page, hidden from all UI listings |
-| `hide_nav_bar: true` | Facade parameter — hides the entire left sidebar |
+| `announced: true` | A página aparece na navegação |
+| `announced: false` | Fica oculta, mas ainda acessível pela URL |
+| `inline: true` | Página interna, oculta de todas as listagens |
+| `hide_nav_bar: true` | Parâmetro da facade que oculta toda a barra lateral |
 
-## Publishing with Embedded Assets
+## Publicando com Recursos Incorporados
 
-When publishing a component that includes static files (like the facade's `public/` directory), use `--embed` to include `fs.directory` entries in the package:
+Ao publicar um componente com arquivos estáticos, como o diretório `public/` da facade, use `--embed` para incluir entradas `fs.directory`:
 
 ```bash
 wippy publish --embed facade:public_files
 ```
 
-Without `--embed`, `fs.directory` entries are excluded from the published package. The `--embed` flag accepts entry IDs or names matching `fs.directory` entries.
+Sem `--embed`, entradas `fs.directory` são excluídas do pacote. A flag aceita IDs ou nomes dessas entradas.
 
-## See Also
+## Veja Também
 
-- [Views](framework/views.md) - Page and component system
-- [HTTP Server](http/server.md) - HTTP service configuration
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Views](framework/views.md) — Sistema de páginas e componentes
+- [Servidor HTTP](http/server.md) — Configuração do serviço HTTP
+- [Visão Geral do Framework](framework/overview.md) — Uso dos módulos do framework
+- [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md) — Como a facade inicia o Web Host
+- [Injeção de CSS](../frontend/web-host/css-injection.md) — Como o tema chega aos iframes filhos
+- [Mecanismos de Renderização](../frontend/web-host/render-engines.md) — Renderização por iframe e Web Fragment

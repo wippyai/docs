@@ -1,11 +1,15 @@
 ---
 title: "CLI Reference"
-description: "Command-line interface for the Wippy runtime."
+description: "Commands, flags, configuration overrides, and common workflows for the Wippy CLI."
 ---
 
 # CLI Reference
 
-Command-line interface for the Wippy runtime.
+Use the Wippy CLI to initialize projects, run the runtime, manage dependencies, inspect registry entries, and publish modules.
+
+This is a command reference. The examples assume an existing project or module
+when the command operates on source, a lock file, registry entries, or publish
+metadata; they are not a single end-to-end project.
 
 ## Global Flags
 
@@ -13,7 +17,7 @@ Available on all commands:
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--config` | | Config file, repeatable; later files override earlier ones (default: .wippy.yaml) |
+| `--config` | | Config file, repeatable; later files override earlier ones (default: .wippy.yaml). `wippy publish` defines a different command-local option. |
 | `--verbose` | `-v` | Enable debug logging |
 | `--very-verbose` | | Debug with stack traces |
 | `--console` | `-c` | Colorful console logging |
@@ -22,13 +26,15 @@ Available on all commands:
 | `--profiler` | `-p` | Enable pprof on localhost:6060 |
 | `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
 
-Memory limit priority: `--memory-limit` flag > `GOMEMLIMIT` env > 1GB default.
+Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
 
-`--config` may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
+The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
+
+`wippy publish` shadows the global option with a command-local `--config <dir>` option. For that command, the value is the directory containing `wippy.yaml`, not a repeatable runtime configuration file.
 
 ## wippy init
 
-Create a new lock file.
+Create `wippy.lock`, or update its source and module directory settings if it already exists. This command does not scaffold application source files or registry entries.
 
 ```bash
 wippy init
@@ -66,7 +72,7 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 
 Running a hub module (`wippy run org/module`) resolves it once, records it in `wippy.lock`, and vendors the verified packs locally. Subsequent runs of the same reference start from the lock — no network needed. A version selector that no longer matches the lock is rejected with a hint to run `wippy update`.
 
-`--set` writes any runtime configuration value from the command line, merged over `.wippy.yaml` per leaf:
+`--set` overrides runtime configuration values from the command line and merges them over `.wippy.yaml` per leaf:
 
 ```bash
 wippy run --set cluster.enabled=true \
@@ -74,7 +80,7 @@ wippy run --set cluster.enabled=true \
           --set cluster.raft.bootstrap_expect=3
 ```
 
-Values coerce by shape: `true`/`false` to bool, integers and floats to numbers, everything else stays a string (durations like `5s` are parsed where the option expects one).
+Values are coerced by shape: `true` and `false` become booleans, integers and floats become numbers, and other values remain strings. Fields that expect durations parse values such as `5s`.
 
 ## wippy test
 
@@ -105,7 +111,9 @@ wippy lint --json
 wippy lint --rules
 ```
 
-Validates all Lua entries: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (including their `.bc` variants).
+Validates source-bearing `function.lua`, `library.lua`, `process.lua`, and
+`workflow.lua` entries. Precompiled `.bc` entries do not contain parseable source
+and are skipped.
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -150,7 +158,7 @@ wippy install --refresh acme/http        # Re-fetch a specific module
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | Lock file path |
-| `--refresh` | | false | Re-fetch every module, bypassing cache |
+| `--refresh` | | false | Re-fetch the named modules, or every locked module when no names are supplied, bypassing cache |
 | `--force` | | false | Alias for `--refresh` |
 | `--repair` | | false | Alias for `--refresh` |
 | `--registry` | | | Registry URL |
@@ -183,7 +191,7 @@ Create a snapshot pack (.wapp file).
 ```bash
 wippy pack snapshot.wapp
 wippy pack release.wapp --description "Release 1.0"
-wippy pack app.wapp --embed app:assets --bytecode **
+wippy pack app.wapp --embed app:assets --bytecode "**"
 ```
 
 | Flag | Short | Description |
@@ -212,7 +220,7 @@ wippy publish --version 1.0.0
 wippy publish --dry-run
 ```
 
-Reads from `wippy.yaml` in current directory.
+This command reads `wippy.yaml` from the current directory.
 
 | Flag | Description |
 |------|-------------|
@@ -229,7 +237,7 @@ Reads from `wippy.yaml` in current directory.
 | `--module-type` | Module type: `library`, `application`, `agent`, or `plugin` (overrides `type:` in wippy.yaml) |
 | `--module-display-name` | Display name for newly created modules (`--create` only) |
 
-The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing](guides/publishing.md#wippy-yaml)); `--module-type` overrides it for a single publish. When neither is set, newly created modules default to `application` with a deprecation warning.
+The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing](./publishing.md#wippyyaml)); `--module-type` overrides it for a single publish. When neither is set, newly created modules default to `application` with a deprecation warning.
 
 ## wippy search
 
@@ -303,7 +311,7 @@ wippy readme --json wippy/terminal@latest
 
 ## wippy registry
 
-Query and inspect registry entries. Both subcommands accept `--profile` and `--set` to shape the merged runtime config the entries are loaded under.
+Query and inspect registry entries. Both subcommands accept `--profile` and `--set` to control the merged runtime configuration used to load entries.
 
 ### wippy registry list
 
@@ -370,6 +378,13 @@ entries:
       command:
         name: migrate
         short: Run database migrations
+        security:
+          actor:
+            id: app:migrations
+          policies:
+            - app.security:migrations
+          groups:
+            - app.security:operators
     source: file://runner.lua
     method: main
     modules:
@@ -398,6 +413,13 @@ wippy run list
 | `short` | No | Short description shown in `wippy run list` |
 | `main` | No | Mark this entry as the default command (picked automatically by packs and hub modules that ship a single command) |
 | `use_case` | No | Entrypoint category, default `run`. The entry declaring `use_case: test` is what `wippy test` executes |
+| `security` | No | CLI-only security context with `actor`, `policies`, and `groups` |
+
+The `security` block belongs inside `meta.command`. The IDs above are
+illustrative and must resolve in the loaded registry. The block is applied only
+when the terminal host launches the entry as a CLI command; ordinary process
+spawns do not inherit it. Malformed or unresolved security metadata prevents
+the command from starting.
 
 Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process as string payloads.
 
@@ -406,9 +428,10 @@ Any process entry kind works (`process.lua`, `process.wasm`). The command name m
 ### Development Workflow
 
 ```bash
-# Initialize project
+# Initialize dependency lock metadata
 wippy init
-wippy add wippy/test wippy/llm
+wippy add wippy/test
+wippy add wippy/llm
 wippy install
 
 # Check for errors
@@ -425,7 +448,7 @@ wippy run -o app:db:host=localhost -o app:db:port=5432
 
 ```bash
 # Create release pack with bytecode
-wippy pack release.wapp --bytecode ** --exclude-ns test.**
+wippy pack release.wapp --bytecode "**" --exclude-ns "test.**"
 
 # Run from pack with memory limit
 wippy run release.wapp -m 2G
@@ -501,5 +524,5 @@ override:
 
 ## See Also
 
-- [Configuration](guides/configuration.md) - Config file reference
-- [Observability](guides/observability.md) - Monitoring and logging
+- [Configuration](guides/configuration.md) — Configuration file reference
+- [Observability](guides/observability.md) — Monitoring and logging

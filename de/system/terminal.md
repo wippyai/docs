@@ -5,7 +5,7 @@ description: "Terminal-Hosts führen Lua-Skripte mit stdin/stdout/stderr-Zugriff
 
 # Terminal
 
-Terminal-Hosts führen Lua-Skripte mit stdin/stdout/stderr-Zugriff aus.
+Ein `terminal.host` führt Lua-Skripte mit Standard-Eingabe-, Standard-Ausgabe- und Standard-Fehlerströmen aus. Diese Seite ist eine Konfigurationsreferenz; das Lua-Beispiel ist ein Handler-Fragment, das die Ausführung über diesen Host voraussetzt.
 
 <note>
 Ein Terminal-Host führt genau einen Prozess gleichzeitig aus. Der Prozess selbst ist ein regulärer Lua-Prozess mit Zugriff auf Terminal-I/O-Kontext.
@@ -13,7 +13,7 @@ Ein Terminal-Host führt genau einen Prozess gleichzeitig aus. Der Prozess selbs
 
 ## Entry-Typ
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `terminal.host` | Terminal-Sitzungs-Host |
 
@@ -29,7 +29,7 @@ Ein Terminal-Host führt genau einen Prozess gleichzeitig aus. Der Prozess selbs
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `hide_logs` | bool | false | Log-Ausgabe zum Event-Bus unterdrücken |
+| `hide_logs` | bool | false | Logs an den Event-Bus streamen und dabei die nachgelagerte Log-Weiterleitung unterdrücken |
 
 ## Terminal-Kontext
 
@@ -47,14 +47,19 @@ Das [IO-Modul](lua/system/io.md) bietet Terminal-Operationen:
 ```lua
 local io = require("io")
 
-io.write("Name eingeben: ")
-local name = io.readline()
-io.print("Hallo, " .. name)
+local _, write_err = io.write("Enter name: ")
+if write_err then return nil, write_err end
+
+local name, read_err = io.readline()
+if read_err then return nil, read_err end
+
+local _, print_err = io.print("Hello, " .. name)
+if print_err then return nil, print_err end
 
 local args = io.args()
 ```
 
-Funktionen geben Fehler zurück wenn sie außerhalb eines Terminal-Kontexts aufgerufen werden.
+`io.write`, `io.print` und `io.readline` geben außerhalb eines Terminal-Kontexts Fehler zurück. `io.args()` gibt eine leere Tabelle zurück, wenn kein Terminal-Kontext verfügbar ist.
 
 ## Siehe auch
 

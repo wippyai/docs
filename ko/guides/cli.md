@@ -1,11 +1,13 @@
 ---
 title: "CLI 레퍼런스"
-description: "Wippy 런타임의 커맨드라인 인터페이스입니다."
+description: "Wippy CLI의 명령어, 플래그, 설정 오버라이드, 일반 워크플로우를 설명합니다."
 ---
 
 # CLI 레퍼런스
 
-Wippy 런타임의 커맨드라인 인터페이스입니다.
+Wippy CLI를 사용해 프로젝트를 초기화하고, 런타임을 실행하고, 의존성을 관리하고, 레지스트리 엔트리를 검사하고, 모듈을 게시할 수 있습니다.
+
+이 문서는 명령어 레퍼런스입니다. 소스, 잠금 파일, 레지스트리 엔트리 또는 게시 메타데이터를 다루는 예시는 기존 프로젝트나 모듈이 있다고 가정하며, 하나의 완결된 프로젝트를 순서대로 구성하는 예시가 아닙니다.
 
 ## 전역 플래그
 
@@ -13,7 +15,7 @@ Wippy 런타임의 커맨드라인 인터페이스입니다.
 
 | 플래그 | 약어 | 설명 |
 |------|-------|-------------|
-| `--config` | | 설정 파일, 반복 가능; 뒤의 파일이 앞의 파일을 재정의 (기본값: .wippy.yaml) |
+| `--config` | | 설정 파일, 반복 가능; 뒤의 파일이 앞의 파일을 재정의 (기본값: .wippy.yaml). `wippy publish`는 별도의 명령어 로컬 옵션을 정의합니다. |
 | `--verbose` | `-v` | 디버그 로깅 활성화 |
 | `--very-verbose` | | 스택 트레이스를 포함한 디버그 |
 | `--console` | `-c` | 컬러 콘솔 로깅 |
@@ -24,11 +26,13 @@ Wippy 런타임의 커맨드라인 인터페이스입니다.
 
 메모리 제한 우선순위: `--memory-limit` 플래그 > `GOMEMLIMIT` 환경 변수 > 1GB 기본값.
 
-`--config`는 설정 파일을 합성하기 위해 여러 번 전달할 수 있습니다. 파일은 왼쪽에서 오른쪽으로 병합됩니다: 뒤의 파일이 일치하는 값을 재정의하고 나머지는 모두 유지합니다. 명시적으로 지정된 파일은 모두 존재해야 합니다; `--config`가 없으면 기본 `.wippy.yaml`은 선택 사항입니다. 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다. 설정은 파일 합성, `--profile` 선택, `--set` 오버라이드 순서로 적용됩니다. [설정](guides/configuration.md#config-composition)을 참조하세요.
+전역 `--config` 옵션은 설정 파일을 합성하기 위해 여러 번 전달할 수 있습니다. 파일은 왼쪽에서 오른쪽으로 병합됩니다. 뒤의 파일이 일치하는 값을 재정의하고 나머지는 모두 유지합니다. 명시적으로 지정된 파일은 모두 존재해야 하며, `--config`가 없으면 기본 `.wippy.yaml`은 선택 사항입니다. 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다. 설정은 파일 합성, `--profile` 선택, `--set` 오버라이드 순서로 적용됩니다. [설정](guides/configuration.md#config-composition)을 참조하세요.
+
+`wippy publish`는 전역 옵션 대신 명령어 로컬 `--config <dir>` 옵션을 사용합니다. 이 명령에서 값은 반복 가능한 런타임 설정 파일이 아니라 `wippy.yaml`이 있는 디렉토리입니다.
 
 ## wippy init
 
-새 lock 파일을 생성합니다.
+`wippy.lock`을 생성하거나, 이미 있으면 소스 및 모듈 디렉토리 설정을 업데이트합니다. 이 명령은 애플리케이션 소스 파일이나 레지스트리 엔트리를 스캐폴딩하지 않습니다.
 
 ```bash
 wippy init
@@ -46,13 +50,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 런타임을 시작하거나 명령어를 실행합니다.
 
 ```bash
-wippy run                                   # 런타임 시작
-wippy run list                              # 사용 가능한 명령어 목록
-wippy run migrate                           # 이름 있는 커스텀 명령어 실행
-wippy run snapshot.wapp                     # 팩 파일에서 실행
-wippy run acme/http                         # 허브에서 모듈 실행
-wippy run acme/http@1.2.3                   # 특정 버전 실행
-wippy run --exec app:worker                 # 런타임을 시작하고 단일 프로세스 실행
+wippy run                                   # Start runtime
+wippy run list                              # List available commands
+wippy run migrate                           # Run a named custom command
+wippy run snapshot.wapp                     # Run from pack file
+wippy run acme/http                         # Run module from hub
+wippy run acme/http@1.2.3                   # Run specific version
+wippy run --exec app:worker                 # Start runtime and execute a single process
 ```
 
 | 플래그 | 약어 | 설명 |
@@ -74,16 +78,16 @@ wippy run --set cluster.enabled=true \
           --set cluster.raft.bootstrap_expect=3
 ```
 
-값은 형태에 따라 변환됩니다: `true`/`false`는 불리언, 정수와 부동소수점은 숫자, 그 외에는 문자열로 유지됩니다(옵션이 기대하는 경우 `5s` 같은 기간은 파싱됩니다).
+값은 형태에 따라 변환됩니다. `true`와 `false`는 불리언, 정수와 부동소수점은 숫자, 그 외에는 문자열로 유지됩니다. 기간을 기대하는 필드는 `5s` 같은 값을 파싱합니다.
 
 ## wippy test
 
 테스트 엔트리포인트를 실행합니다: `test` 사용 사례를 선언한 프로세스 엔트리입니다. 런타임이 부팅되어 해당 엔트리를 실행하고 종료합니다. `wippy run`은 테스트 엔트리포인트를 자동 실행하지 않습니다; 테스트는 항상 `wippy test`를 통해 실행합니다.
 
 ```bash
-wippy test                     # 로컬 프로젝트의 테스트 실행
-wippy test snapshot.wapp       # 팩 파일에서 테스트 실행
-wippy test acme/module@1.2.3   # 허브 모듈에서 테스트 실행
+wippy test                     # Run tests from the local project
+wippy test snapshot.wapp       # Run tests from a pack file
+wippy test acme/module@1.2.3   # Run tests from a hub module
 ```
 
 | 플래그 | 약어 | 설명 |
@@ -105,7 +109,7 @@ wippy lint --json
 wippy lint --rules
 ```
 
-모든 Lua 엔트리를 검증합니다: `function.lua`, `library.lua`, `process.lua`, `workflow.lua` (해당 `.bc` 변형 포함).
+소스를 포함하는 `function.lua`, `library.lua`, `process.lua`, `workflow.lua` 엔트리를 검증합니다. 미리 컴파일된 `.bc` 엔트리에는 파싱 가능한 소스가 없으므로 건너뜁니다.
 
 | 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
@@ -142,15 +146,15 @@ wippy add acme/http@latest
 Lock 파일에서 의존성을 설치합니다.
 
 ```bash
-wippy install                            # 모두 설치
-wippy install acme/http                  # 특정 모듈 설치
-wippy install --refresh acme/http        # 특정 모듈 재로드
+wippy install                            # Install all
+wippy install acme/http                  # Install specific module
+wippy install --refresh acme/http        # Re-fetch a specific module
 ```
 
 | 플래그 | 약어 | 기본값 | 설명 |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | Lock 파일 경로 |
-| `--refresh` | | false | 모든 모듈을 캐시 무시하고 다시 가져오기 |
+| `--refresh` | | false | 이름을 지정하면 해당 모듈을, 이름이 없으면 잠긴 모든 모듈을 캐시를 우회하여 다시 가져오기 |
 | `--force` | | false | `--refresh`의 별칭 |
 | `--repair` | | false | `--refresh`의 별칭 |
 | `--registry` | | | 레지스트리 URL |
@@ -162,9 +166,9 @@ wippy install --refresh acme/http        # 특정 모듈 재로드
 의존성을 업데이트하고 lock 파일을 재생성합니다.
 
 ```bash
-wippy update                      # 전체 업데이트
-wippy update acme/http            # 특정 모듈 업데이트
-wippy update acme/http demo/sql   # 여러 모듈 업데이트
+wippy update                      # Update all
+wippy update acme/http            # Update specific module
+wippy update acme/http demo/sql   # Update multiple
 ```
 
 | 플래그 | 약어 | 기본값 | 설명 |
@@ -183,7 +187,7 @@ wippy update acme/http demo/sql   # 여러 모듈 업데이트
 ```bash
 wippy pack snapshot.wapp
 wippy pack release.wapp --description "Release 1.0"
-wippy pack app.wapp --embed app:assets --bytecode **
+wippy pack app.wapp --embed app:assets --bytecode "**"
 ```
 
 | 플래그 | 약어 | 설명 |
@@ -229,7 +233,7 @@ wippy publish --dry-run
 | `--module-type` | 모듈 타입: `library`, `application`, `agent`, 또는 `plugin` (wippy.yaml의 `type:`을 재정의) |
 | `--module-display-name` | 새로 생성되는 모듈의 표시 이름 (`--create` 전용) |
 
-모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](guides/publishing.md#wippy-yaml) 참조); `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
+모듈 타입은 일반적으로 `wippy.yaml`에 `type:`으로 선언합니다 ([게시](guides/publishing.md#wippy-yaml) 참조). `--module-type`은 단일 게시에 한해 이를 재정의합니다. 둘 다 설정되지 않으면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
 ## wippy search
 
@@ -370,6 +374,13 @@ entries:
       command:
         name: migrate
         short: Run database migrations
+        security:
+          actor:
+            id: app:migrations
+          policies:
+            - app.security:migrations
+          groups:
+            - app.security:operators
     source: file://runner.lua
     method: main
     modules:
@@ -398,6 +409,9 @@ wippy run list
 | `short` | 아니오 | `wippy run list`에 표시되는 간단한 설명 |
 | `main` | 아니오 | 이 엔트리를 기본 명령어로 표시 (단일 명령어를 제공하는 팩과 허브 모듈에서 자동으로 선택됨) |
 | `use_case` | 아니오 | 엔트리포인트 카테고리, 기본값 `run`. `use_case: test`를 선언한 엔트리가 `wippy test`가 실행하는 대상 |
+| `security` | 아니오 | `actor`, `policies`, `groups`를 포함하는 CLI 전용 보안 컨텍스트 |
+
+`security` 블록은 `meta.command` 안에 있어야 합니다. 위 ID는 예시이며 로드된 레지스트리에서 해석되어야 합니다. 이 블록은 터미널 호스트가 해당 엔트리를 CLI 명령어로 실행할 때만 적용되며, 일반 프로세스 스폰에는 상속되지 않습니다. 잘못되었거나 해석할 수 없는 보안 메타데이터가 있으면 명령어가 시작되지 않습니다.
 
 모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 문자열 페이로드로 프로세스에 전달됩니다.
 
@@ -406,65 +420,66 @@ wippy run list
 ### 개발 워크플로우
 
 ```bash
-# 프로젝트 초기화
+# Initialize dependency lock metadata
 wippy init
-wippy add wippy/test wippy/llm
+wippy add wippy/test
+wippy add wippy/llm
 wippy install
 
-# 오류 검사
+# Check for errors
 wippy lint
 
-# 디버그 출력과 함께 실행
+# Run with debug output
 wippy run -c -v
 
-# 로컬 개발을 위한 설정 오버라이드
+# Override config for local dev
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
 ### 프로덕션 배포
 
 ```bash
-# 바이트코드로 릴리스 팩 생성
-wippy pack release.wapp --bytecode ** --exclude-ns test.**
+# Create release pack with bytecode
+wippy pack release.wapp --bytecode "**" --exclude-ns "test.**"
 
-# 메모리 제한과 함께 팩에서 실행
+# Run from pack with memory limit
 wippy run release.wapp -m 2G
 ```
 
 ### 디버깅
 
 ```bash
-# 단일 프로세스 실행
+# Execute single process
 wippy run --exec app:worker
 
-# 프로파일러 활성화와 함께
+# With profiler enabled
 wippy run -p -v
-# 이후: go tool pprof http://localhost:6060/debug/pprof/heap
+# Then: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
 ### 의존성 관리
 
 ```bash
-# 새 의존성 추가
+# Add new dependency
 wippy add acme/http@latest
 
-# 강제 재다운로드
+# Force re-download
 wippy install --force
 
-# 특정 모듈 업데이트
+# Update specific module
 wippy update acme/http
 ```
 
 ### 퍼블리싱
 
 ```bash
-# 허브에 로그인
+# Login to hub
 wippy auth login
 
-# 모듈 검증
+# Validate module
 wippy publish --dry-run
 
-# 퍼블리시
+# Publish
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 

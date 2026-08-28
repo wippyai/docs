@@ -1,6 +1,6 @@
 ---
 title: "메트릭 및 텔레메트리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "application counter, gauge 및 histogram observation을 기록합니다."
 ---
 
 # 메트릭 및 텔레메트리
@@ -8,7 +8,15 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-카운터, 게이지, 히스토그램을 사용하여 애플리케이션 메트릭을 기록합니다.
+`metrics` 모듈은 application counter, gauge, histogram observation을 기록합니다.
+
+이 페이지는 API reference입니다. snippet은 한 번에 하나의 observation을 보여 주고 collector error를 propagate합니다.
+
+각 function은 observation을 active collector에 전달한 뒤 `true, nil`을 반환합니다. execution context에 collector가 없으면 `nil`과 retry 불가능한 `errors.INTERNAL` error를 반환합니다.
+
+label은 optional입니다. string key와 string value를 모두 가진 entry만 기록되며 다른 entry는 조용히 무시됩니다. table이 아닌 labels argument는 label이 없는 것으로 처리됩니다.
+
+metric name은 local validation 없이 전달됩니다.
 
 ## 로딩
 
@@ -18,10 +26,14 @@ local metrics = require("metrics")
 
 ## 카운터
 
-### 카운터 증가
+### `metrics.counter_inc`
+
+counter를 1 증가시킵니다.
 
 ```lua
-metrics.counter_inc("requests_total", {method = "POST"})
+local recorded, err = metrics.counter_inc("requests_total", {method = "POST"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -31,10 +43,14 @@ metrics.counter_inc("requests_total", {method = "POST"})
 
 **반환:** `boolean, error`
 
-### 카운터에 더하기
+### `metrics.counter_add`
+
+counter에 값을 더합니다.
 
 ```lua
-metrics.counter_add("bytes_total", 1024, {direction = "out"})
+local recorded, err = metrics.counter_add("bytes_total", 1024, {direction = "out"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -45,12 +61,18 @@ metrics.counter_add("bytes_total", 1024, {direction = "out"})
 
 **반환:** `boolean, error`
 
+runtime은 값을 변경하지 않고 전달하며 positive value를 요구하지 않습니다.
+
 ## 게이지
 
-### 게이지 설정
+### `metrics.gauge_set`
+
+gauge를 현재 값으로 설정합니다.
 
 ```lua
-metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+local recorded, err = metrics.gauge_set("queue_depth", 42, {queue = "emails"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -61,10 +83,14 @@ metrics.gauge_set("queue_depth", 42, {queue = "emails"})
 
 **반환:** `boolean, error`
 
-### 게이지 증가
+### `metrics.gauge_inc`
+
+gauge를 1 증가시킵니다.
 
 ```lua
-metrics.gauge_inc("connections", {pool = "db"})
+local recorded, err = metrics.gauge_inc("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -74,10 +100,14 @@ metrics.gauge_inc("connections", {pool = "db"})
 
 **반환:** `boolean, error`
 
-### 게이지 감소
+### `metrics.gauge_dec`
+
+gauge를 1 감소시킵니다.
 
 ```lua
-metrics.gauge_dec("connections", {pool = "db"})
+local recorded, err = metrics.gauge_dec("connections", {pool = "db"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -89,10 +119,14 @@ metrics.gauge_dec("connections", {pool = "db"})
 
 ## 히스토그램
 
-### 관측 기록
+### `metrics.histogram`
+
+histogram observation을 기록합니다.
 
 ```lua
-metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+local recorded, err = metrics.histogram("duration_seconds", 0.123, {method = "GET"})
+if err then return nil, err end
+return recorded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -109,4 +143,6 @@ metrics.histogram("duration_seconds", 0.123, {method = "GET"})
 |------|------|-------------|
 | 컬렉터 사용 불가 | `errors.INTERNAL` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+잘못된 name 또는 value type은 structured error를 반환하지 않고 Lua argument error를 raise합니다.
+
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.

@@ -1,21 +1,51 @@
 ---
 title: "Netzwerk-Overlays"
-description: "Leite ausgehende HTTP-Anfragen und gestartete Prozesse durch SOCKS5-, Tailscale- oder I2P-Overlays."
+description: "Ausgehende HTTP-Aufrufe und gestartete Prozesse über SOCKS5 routen, mit einem Tailscale-Teilrezept."
 ---
 
 # Netzwerk-Overlays
 
-Leite ausgehende HTTP-Anfragen und gestartete Prozesse durch SOCKS5-, Tailscale- oder I2P-Overlays.
+Konfigurieren Sie ein SOCKS5-Overlay für ausgehende HTTP-Aufrufe und lernen Sie anschließend Vererbung, eingehende Listener, Anwendungsstandards und Berechtigungen kennen.
+
+**Klassifizierung:** Ausführbares SOCKS5-Tutorial mit einem Tailscale-Teilrezept.
+Die direkte/Tor-Prüfung ist vollständig, sobald ein externer Tor-Listener verfügbar
+ist. Der Tailscale-Abschnitt erklärt die Wippy-Verdrahtung, überlässt die Einrichtung
+des Kontos aber bewusst Tailscale. Verwenden Sie für I2P die unten verlinkte Referenz des Netzwerksystems.
 
 ## Überblick
 
-Wippy unterstützt Overlay-Netzwerke, die den Datenverkehr von Funktionen, Prozessen und HTTP-Clients transparent transportieren. Jedes Overlay ist ein Registry-Eintrag; Code wählt es pro Aufruf, und die Auswahl wird an innere Aufrufe vererbt, bis ein Nachkomme sie explizit überschreibt.
+Wippy stellt Overlay-Netzwerke als Registry-Einträge dar. Code kann ein Overlay für
+einen Aufruf auswählen; diese Auswahl wird an verschachtelte Aufrufe weitergegeben,
+bis ein Nachkomme sie überschreibt.
 
-Unterstützte Overlays:
+Wippy unterstützt drei Arten von Overlay-Einträgen:
 
 - `network.socks5` — generischer SOCKS5-Proxy (auch Tors SOCKS5-Listener)
 - `network.tailscale` — tsnet-Overlay-Knoten
 - `network.i2p` — I2P SAM v3-Bridge
+
+## Voraussetzungen
+
+- Wippy-Runtime `v0.3.32a`.
+- `curl` und ausgehender HTTPS-Zugriff auf `api.ipify.org`.
+- Ein Tor-Daemon, der SOCKS5 unter `127.0.0.1:9050` bereitstellt. Installieren Sie
+  ein unterstütztes Paket von der [Download-Seite des Tor Project](https://www.torproject.org/download/tor/),
+  starten Sie es und prüfen Sie den Listener, bevor Sie Wippy ausführen:
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ```
+
+  Eine erfolgreiche Prüfung gibt JSON mit einer IP-Adresse zurück. Tor Browser
+  verwendet häufig Port 9150. Wenn Sie bewusst diesen Listener verwenden, ändern
+  Sie den Registry-Eintrag und den Prüfbefehl gemeinsam.
+- Ein leeres Arbeitsverzeichnis:
+
+  ```bash
+  mkdir netdemo
+  cd netdemo
+  mkdir src
+  ```
 
 ## Projektstruktur
 
@@ -36,6 +66,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: probe_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -46,7 +85,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5-Proxy-Eintrag (Tor stellt standardmäßig einen auf 127.0.0.1:9050 bereit)
+  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
   - name: tor
     kind: network.socks5
     host: 127.0.0.1
@@ -59,6 +98,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: app:probe
+          policies:
+            - app:probe_policy
     source: file://probe.lua
     method: main
     modules:
@@ -117,7 +161,9 @@ end
 return { main = main }
 ```
 
-Die Option `overlay_network` bei `http_client` wählt das Overlay nur für diesen Aufruf. Ohne sie läuft der Verbindungsaufbau über den Prozessstandard (entweder `network_service.default_network` in `.wippy.yaml` oder direkt).
+Die Option `overlay_network` wählt das Overlay für diesen HTTP-Aufruf. Ohne sie
+verwendet der Verbindungsaufbau den Prozessstandard: `network_service.default_network`
+aus `.wippy.yaml` oder eine direkte Verbindung, wenn kein Standard gesetzt ist.
 
 ## Schritt 3: Ausführen
 
@@ -129,15 +175,15 @@ wippy run probe
 Mit lokal laufendem Tor:
 
 ```
-direct IP: 203.0.113.42
-tor IP:    185.220.101.61
+direct IP: <your public IP>
+tor IP:    <Tor exit IP>
 ```
 
 Wenn Tor nicht läuft, meldet die Zeile `tor IP` einen Verbindungsfehler — das SOCKS5-Overlay fällt nicht stillschweigend auf eine direkte Verbindung zurück.
 
 ## Vererbung
 
-Die Overlay-Auswahl fließt durch verschachtelte Aufrufe. Das Overlay einmal an einem `funcs.call`- oder `process.spawn`-Übergang setzen, und jeder innere HTTP-Aufruf, verschachtelte `funcs.call` und `process.spawn` darunter verwendet es, bis eine explizite Überschreibung erfolgt:
+Die Overlay-Auswahl fließt durch verschachtelte Aufrufe. Wenn Sie das Overlay an einer `funcs.call`- oder `process.spawn`-Grenze setzen, verwenden innere HTTP-, Funktions- und Prozessaufrufe es, bis eine explizite Überschreibung erfolgt:
 
 ```lua
 local funcs = require("funcs")
@@ -156,7 +202,7 @@ Die verschachtelte Funktion oder der gestartete Prozess verwendet das Overlay be
 
 ## Einen Listener binden
 
-Overlays, die eingehenden Datenverkehr unterstützen (Tailscale, I2P), können auch HTTP-Listener akzeptieren. Das Overlay an den `http.service` statt an den Client anhängen:
+Tailscale kann auch HTTP-Listener annehmen. Hängen Sie das Overlay an den `http.service` statt an den Client:
 
 ```yaml
   - name: tailnet
@@ -185,8 +231,6 @@ network_service:
   default_network: app:tor
 ```
 
-Explizite Auswahl mit `network = nil` hebt den Standard für diesen Aufruf auf.
-
 ## Berechtigungen
 
 Die Aktion `network.select` steuert die explizite Overlay-Auswahl. Sie in einem Scope verweigern, um zu verhindern, dass Code ein Overlay wählt:
@@ -204,9 +248,27 @@ Die Aktion `network.select` steuert die explizite Overlay-Auswahl. Sie in einem 
 
 Vererbte Overlays umgehen diese Prüfung — sie wurden am Aufruf-Übergang des Callers autorisiert. Nur explizite Neuauswahl an einer Lua-Grenze wird geprüft.
 
+## Fehlerbehebung und Bereinigung
+
+- `connection refused` für `127.0.0.1:9050` bedeutet, dass Tor nicht am konfigurierten
+  Port lauscht. Prüfen Sie Tor mit dem `curl`-Befehl aus den Voraussetzungen, bevor
+  Sie Wippy untersuchen.
+- Wenn die direkte Anfrage fehlschlägt, die geroutete aber erfolgreich ist, beeinflussen
+  meist lokale DNS-, Proxy- oder Firewall-Regeln den direkten Pfad. Beide Aufrufe sind unabhängig.
+- `access denied` beim gerouteten Aufruf bedeutet, dass dem Sicherheitskontext des
+  Befehls `network.select` für `app:tor` fehlt. Lassen Sie `app:probe_policy` unter
+  `meta.command.security` eingebunden.
+- Der SOCKS5-Treiber fällt nie auf eine direkte Verbindung zurück. Entfernen Sie den
+  Fehler nicht, nur damit die Demo weiterläuft.
+- Der Wippy-Befehl endet selbstständig. Beenden Sie den Tor-Daemon nur, wenn Sie ihn
+  ausschließlich für dieses Tutorial gestartet haben. Das SOCKS5-Beispiel erzeugt
+  keinen dauerhaften Netzwerkzustand. Ein Tailscale-Eintrag kann Node-Zustand unter
+  `.wippy/net/tailscale/` speichern; entfernen Sie `.wippy/net` nur nach dem Beenden
+  von Wippy und nur, wenn Sie diese lokale Tailnet-Identität verwerfen möchten.
+
 ## Nächste Schritte
 
-- [Netzwerk-System](system/network.md) - Entry-Kind-Referenz
-- [HTTP-Client](lua/http/client.md) - Pro-Aufruf-Overlay-Optionen
-- [Sicherheitsmodell](system/security.md) - Policies und Scopes
-- [Authentifizierung](tutorials/auth.md) - Token-basierte Sicherheit
+- [Netzwerksystem](system/network.md) — Referenz der Eintragsarten
+- [HTTP-Client](lua/http/client.md) — Overlay-Optionen pro Aufruf
+- [Sicherheitsmodell](system/security.md) — Policies und Scopes
+- [Authentifizierung](tutorials/auth.md) — Token-basierte Sicherheit

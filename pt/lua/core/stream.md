@@ -1,23 +1,28 @@
 ---
 title: "Streams"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Leia, escreva, reposicione, inspecione, escaneie e feche objetos stream retornados por módulos de I/O."
 ---
 
 # Streams
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Operações de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.).
+Streams fornecem I/O incremental para HTTP, filesystem e outros módulos. Os módulos proprietários dos dados subjacentes criam os objetos stream. Esta página é uma referência de API; o loop do scanner usa um callback `process(token)` definido pela aplicação.
 
-## Carregamento
+## Obtendo um Stream
 
 ```lua
--- De corpo de requisição HTTP
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- De filesystem
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Leitura
@@ -28,14 +33,9 @@ local chunk, err = stream:read(size)
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `size` | integer | Bytes para ler (0 = ler tudo disponível) |
+| `size` | integer | Bytes para ler (0 = chunk padrão de 32 KB) |
 
-**Retorna:** `string, error` - nil em EOF
-
-```lua
--- Ler todos os dados restantes
-local data, err = stream:read_all()
-```
+**Retorna:** `string, error` — `nil, nil` em EOF
 
 ## Escrita
 
@@ -68,9 +68,9 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Flush de dados em buffer para armazenamento subjacente.
+`flush` grava os dados em buffer no destino subjacente.
 
-## Informacoes do Stream
+## Informações do Stream
 
 ```lua
 local info, err = stream:stat()
@@ -90,11 +90,11 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Fechar stream e liberar recursos. Seguro chamar multiplas vezes.
+`close` libera os recursos do stream e pode ser chamado mais de uma vez.
 
 ## Scanner
 
-Criar um tokenizador para conteudo do stream:
+Crie um scanner que tokeniza o conteúdo do stream:
 
 ```lua
 local scanner, err = stream:scanner(split)
@@ -107,26 +107,36 @@ local scanner, err = stream:scanner(split)
 ### Métodos do Scanner
 
 ```lua
-local has_more = scanner:scan()  -- Avancar para proximo token
-local token = scanner:text()      -- Obter token atual
-local err_msg = scanner:err()     -- Obter erro se houver
+local has_more, err = scanner:scan()  -- advance to next token
+local token = scanner:text()           -- current token
+local err_msg = scanner:err()          -- scanner error if any
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then
+        local scan_err = scanner:err()
+        if scan_err then return nil, scan_err end  -- raw scanner error string
+        break  -- clean EOF
+    end
+    process(scanner:text())
 end
 ```
+
+Quando `scan()` retorna `false`, verifique `scanner:err()` antes de tratar o resultado como EOF. Falhas de tokenização e de leitura subjacente ficam armazenadas no scanner e não aparecem no segundo valor retornado por `scan()`.
 
 ## Erros
 
 | Condição | Tipo |
 |----------|------|
-| Tipo whence/split inválido | `INVALID` |
-| Stream fechado | `INTERNAL` |
-| Não legivel/gravavel | `INTERNAL` |
-| Falha de leitura/escrita | `INTERNAL` |
+| Stream fechado | `errors.INTERNAL` |
+| Não legível/gravável | `errors.INTERNAL` |
+| Falha de leitura/escrita/seek | `errors.INTERNAL` |
+| Seek em stream não reposicionável | `errors.INTERNAL` |
+| Falha ao fechar, fazer flush ou obter stat | `errors.INTERNAL` |
+| Falha ao criar scanner ou despachar scan | `errors.INTERNAL` |
+| Falha de tokenização ou leitura subjacente do scanner | String não estruturada de `scanner:err()` |
+
+Um valor de `whence` ou split do scanner não suportado lança um erro de argumento Lua em vez de retornar um erro estruturado.

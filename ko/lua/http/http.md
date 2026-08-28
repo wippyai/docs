@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "서버 측 HTTP 요청을 읽고 상태, 헤더, JSON, 스트리밍 및 이벤트 스트림 응답을 구성합니다."
 ---
 
 # HTTP
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-HTTP 요청을 처리하고 응답을 빌드합니다. 요청 데이터, 라우트 파라미터, 헤더, 본문 내용에 접근합니다. 상태 코드, 헤더, 스트리밍 지원으로 응답을 빌드합니다.
+`http` 모듈은 현재 서버 측 요청을 읽고 헤더, 라우트 데이터, 본문, 스트리밍 출력 및 Server-Sent Events를 포함한 응답을 구성합니다.
+
+이 페이지는 부분적인 handler 예제를 제공하는 API 레퍼런스입니다. `id`, `data`, `token`과 애플리케이션 callback은 주변 handler가 제공합니다. 요청 accessor는 일반적으로 `value, error`를 반환하고 응답 변경은 `error`를 반환하므로 결과를 사용하는 예제는 에러를 확인합니다.
 
 서버 설정은 [HTTP 서버](http/server.md)를 참조하세요.
 
@@ -18,18 +20,18 @@ HTTP 요청을 처리하고 응답을 빌드합니다. 요청 데이터, 라우�
 local http = require("http")
 ```
 
+불러오기 전에 실행 엔트리의 `modules:` 목록에 `http`를 추가하세요. `uuid`, `fs`, `time`을 사용하는 예제는 해당 모듈도 별도로 요구합니다.
+
 ## 요청 접근
 
 현재 HTTP 요청 컨텍스트 가져오기:
 
 ```lua
-local req = http.request()
-
--- 옵션과 함께
-local req = http.request({
-    timeout = 5000,        -- 5초 본문 읽기 타임아웃
-    max_body = 10485760    -- 10MB 최대 본문
+local req, err = http.request({
+    timeout = 5000,        -- 5 second body read timeout
+    max_body = 10485760    -- 10MB max body
 })
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -44,64 +46,71 @@ local req = http.request({
 현재 HTTP 응답 컨텍스트 가져오기:
 
 ```lua
-local res = http.response()
+local res, err = http.response()
+if err then return nil, err end
 ```
 
 **반환:** `Response, error`
 
 ## 요청 메서드
 
-### method
+### `method`
 
 ```lua
-local method = req:method()
+local method, method_err = req:method()
+if method_err then return nil, method_err end
 
 if method == http.METHOD.GET then
     return get_resource(id)
 elseif method == http.METHOD.POST then
-    return create_resource(req:body_json())
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
+    return create_resource(data)
 elseif method == http.METHOD.PUT then
-    return update_resource(id, req:body_json())
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
+    return update_resource(id, data)
 elseif method == http.METHOD.DELETE then
     return delete_resource(id)
 end
 ```
 
-### path
+### `path`
 
 ```lua
-local path = req:path()
+local path, err = req:path()
+if err then return nil, err end
 print(path)  -- "/api/users/123"
 
--- 경로 기반 라우팅
+-- Route based on path
 if path:match("^/api/") then
     return handle_api(req)
 end
 ```
 
-### query
+### `query`
 
 단일 쿼리 파라미터를 가져옵니다.
 
 ```lua
 -- GET /search?q=hello&page=2&limit=10
-local query = req:query("q")        -- "hello"
-local page = req:query("page")      -- "2"
-local missing = req:query("foo")    -- nil
+local query, query_err = req:query("q")
+if query_err then return nil, query_err end
 
--- 기본값과 함께
-local page = tonumber(req:query("page")) or 1
-local limit = tonumber(req:query("limit")) or 20
-local sort = req:query("sort") or "created_at"
+-- With defaults
+local page_text, page_err = req:query("page")
+if page_err then return nil, page_err end
+local page = tonumber(page_text) or 1
 ```
 
-### query_params
+### `query_params`
 
 모든 쿼리 파라미터를 가져옵니다. 같은 키의 여러 값은 쉼표로 연결됩니다.
 
 ```lua
 -- GET /search?tags=lua&tags=go&active=true
-local params = req:query_params()
+local params, err = req:query_params()
+if err then return nil, err end
 -- {tags = "lua,go", active = "true"}
 
 for key, value in pairs(params) do
@@ -109,190 +118,276 @@ for key, value in pairs(params) do
 end
 ```
 
-### header
+### `header`
 
 ```lua
-local auth = req:header("Authorization")
+local uuid = require("uuid")
+
+local auth, auth_err = req:header("Authorization")
+if auth_err then return nil, auth_err end
 if not auth then
-    res:set_status(401)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.UNAUTHORIZED)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Missing authorization"})
 end
 
-local user_agent = req:header("User-Agent")
-local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
+local correlation_id, correlation_err = req:header("X-Correlation-ID")
+if correlation_err then return nil, correlation_err end
+if not correlation_id then
+    correlation_id, correlation_err = uuid.v4()
+    if correlation_err then return nil, correlation_err end
+end
 ```
 
-### content_type
+### `content_type`
 
 Content-Type 헤더를 가져옵니다.
 
 ```lua
-local ct = req:content_type()  -- "application/json; charset=utf-8" 또는 nil
+local ct, type_err = req:content_type()  -- "application/json; charset=utf-8" or nil
+if type_err then return nil, type_err end
 ```
 
-### content_length
+### `content_length`
 
 Content-Length 헤더 값을 가져옵니다.
 
 ```lua
-local length = req:content_length()  -- 바이트 수
+local length, length_err = req:content_length()  -- number of bytes
+if length_err then return nil, length_err end
 ```
 
-### host
+### `host`
+
+요청의 `Host` 헤더를 반환합니다.
 
 Host 헤더를 가져옵니다.
 
 ```lua
-local host = req:host()  -- "example.com:8080"
+local host, host_err = req:host()  -- "example.com:8080"
+if host_err then return nil, host_err end
 ```
 
-### param
+### `param`
 
 URL 라우트 파라미터를 가져옵니다 (`/users/:id` 같은 경로 패턴에서).
 
 ```lua
--- 라우트: /users/:id/posts/:post_id
-local user_id = req:param("id")
-local post_id = req:param("post_id")
-
--- 파라미터 검증
-local id = req:param("id")
-if not id or not uuid.validate(id) then
-    res:set_status(400)
+-- Route: /users/:id/posts/:post_id
+local id, param_err = req:param("id")
+if param_err then return nil, param_err end
+local valid = false
+if id then
+    local validate_err
+    valid, validate_err = uuid.validate(id)
+    if validate_err then return nil, validate_err end
+end
+if not valid then
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid ID format"})
 end
 ```
 
-### params
+### `params`
 
 모든 라우트 파라미터를 가져옵니다.
 
 ```lua
--- 라우트: /orgs/:org/repos/:repo/issues/:issue
-local p = req:params()
+-- Route: /orgs/:org/repos/:repo/issues/:issue
+local p, err = req:params()
+if err then return nil, err end
 -- {org = "acme", repo = "widget", issue = "123"}
 
 local issue = get_issue(p.org, p.repo, p.issue)
 ```
 
-### body
+### `body`
 
 전체 요청 본문을 문자열로 읽습니다.
 
 ```lua
-local body = req:body()
+local body, err = req:body()
+if err then return nil, err end
 
--- 수동으로 XML 파싱
-if req:is_content_type("application/xml") then
+-- Parse XML manually
+local is_xml, type_err = req:is_content_type("application/xml")
+if type_err then return nil, type_err end
+if is_xml then
     local data = parse_xml(body)
 end
 
--- 디버깅을 위해 raw 본문 로깅
-logger.debug("Request body", {body = body, length = #body})
+-- Avoid logging raw request bodies; record only non-sensitive metadata.
+logger.debug("Request body read", {length = #body})
 ```
 
-### body_json
+`body()`, `body_json()`, `stream()`, `parse_multipart()`는 같은 요청 본문을 소비합니다. handler마다 하나의 읽기 경로만 선택하세요. `body()`와 `body_json()`은 요청 객체의 타임아웃과 크기 제한을 적용하지만 `stream()`은 증분 방식이며 두 옵션을 적용하지 않습니다.
+
+### `body_json`
 
 본문을 JSON으로 읽고 파싱합니다.
 
 ```lua
 local data, err = req:body_json()
 if err then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid JSON: " .. err:message()})
 end
 
--- 필수 필드 검증
+-- Validate required fields
 if not data.name or not data.email then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Missing required fields"})
 end
 
 local user = create_user(data)
 ```
 
-### has_body
+### `has_body`
+
+요청에 본문이 있는지 확인합니다.
 
 ```lua
-if req:has_body() then
-    local data = req:body_json()
+local has_body, body_state_err = req:has_body()
+if body_state_err then return nil, body_state_err end
+if has_body then
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
     process(data)
 else
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Request body required"})
 end
 ```
 
-### is_content_type
+`has_body()`는 본문 객체와 양의 `Content-Length`가 모두 있을 때만 `true`입니다. chunked 요청처럼 길이를 알 수 없는 본문은 `false`일 수 있으므로 허용하는 handler는 선택한 본문 reader를 직접 시도하고 에러를 처리해야 합니다.
+
+### `is_content_type`
 
 ```lua
-if not req:is_content_type("application/json") then
-    res:set_status(415)
+local is_json, type_check_err = req:is_content_type("application/json")
+if type_check_err then return nil, type_check_err end
+if not is_json then
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(415)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Content-Type must be application/json"})
 end
 ```
 
-### accepts
+### `accepts`
+
+요청이 지정한 콘텐츠 타입을 허용하는지 확인합니다.
 
 ```lua
-if req:accepts("application/json") then
-    res:write_json(data)
-elseif req:accepts("text/html") then
-    res:set_content_type("text/html")
-    res:write(render_html(data))
+local accepts_json, json_accept_err = req:accepts("application/json")
+if json_accept_err then return nil, json_accept_err end
+local accepts_html, html_accept_err = req:accepts("text/html")
+if html_accept_err then return nil, html_accept_err end
+
+if accepts_json then
+    return res:write_json(data)
+elseif accepts_html then
+    local type_err = res:set_content_type("text/html; charset=utf-8")
+    if type_err then return nil, type_err end
+    return res:write(render_html(data))
 else
-    res:set_status(406)
-    res:write_json({error = "Cannot produce acceptable response"})
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.NOT_ACCEPTABLE)
+    if status_err then return nil, status_err end
+    return res:write_json({error = "Cannot produce acceptable response"})
 end
 ```
 
-### remote_addr
+고정된 `accepts()` helper는 쉼표로 구분된 정확한 값과 `*/*`만 처리합니다. media-type 파라미터, subtype wildcard, quality weight는 처리하지 않으며 `Accept` 헤더가 없으면 `false`입니다.
+
+### `remote_addr`
 
 ```lua
-local addr = req:remote_addr()  -- "192.168.1.100:54321"
+local addr, addr_err = req:remote_addr()  -- "192.168.1.100:54321"
+if addr_err then return nil, addr_err end
 
--- IP만 추출
-local ip = addr:match("^([^:]+)")
+-- Extract the host from IPv4 and bracketed IPv6 addresses
+local ip = addr:match("^%[([^%]]+)%]:%d+$")
+    or addr:match("^([^:]+):%d+$")
+    or addr
 
--- IP별 속도 제한
+-- Rate limiting by IP
 if rate_limiter:is_limited(ip) then
-    res:set_status(429)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.TOO_MANY_REQUESTS)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Too many requests"})
 end
 ```
 
-### parse_multipart
+### `parse_multipart`
 
 multipart 폼 데이터(파일 업로드)를 파싱합니다. 선택적 `max_memory` 정수(임시 파일로 넘기기 전 메모리에 보관하는 바이트 수, 기본값 32MB)를 받습니다.
 
 ```lua
+local uuid = require("uuid")
+
 local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
 if err then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid form data"})
 end
 
--- 폼 값 접근
+-- Access form values
 local title = form.values.title
 local description = form.values.description
 
--- 업로드된 파일 접근
+-- Access uploaded files
 if form.files.avatar then
     local file = form.files.avatar[1]
-    local filename = file:name()        -- "photo.jpg"
-    local size = file:size()            -- 102400
-    local content_type = file:header("Content-Type")  -- "image/jpeg"
+    local filename, name_err = file:name()        -- untrusted client metadata
+    if name_err then return nil, name_err end
+    local size, size_err = file:size()
+    if size_err then return nil, size_err end
+    local content_type, header_err = file:header("Content-Type")  -- "image/jpeg"
+    if header_err then return nil, header_err end
 
-    -- 파일 내용 읽기
-    local stream = file:stream()
-    local content = stream:read(0)
-    stream:close()
+    -- Stream the upload to a configured filesystem volume
+    local fs = require("fs")
+    local uploads, fs_err = fs.get("app:avatars")
+    if fs_err then
+        return nil, fs_err
+    end
 
-    -- 스토리지에 저장
-    storage.write("avatars/" .. filename, content)
+    local stream, stream_err = file:stream()
+    if stream_err then return nil, stream_err end
+    local stored_name, id_err = uuid.v7()
+    if id_err then
+        stream:close()
+        return nil, id_err
+    end
+    local _, write_err = uploads:writefile(stored_name, stream, "wx")
+    local _, close_err = stream:close()
+    if write_err then return nil, write_err end
+    if close_err then return nil, close_err end
 end
 
--- 여러 파일 처리
+-- Handle multiple files
 if form.files.documents then
     for _, file in ipairs(form.files.documents) do
         process_document(file)
@@ -300,151 +395,184 @@ if form.files.documents then
 end
 ```
 
-### stream
+multipart 필드는 한 번 나타나면 문자열, 반복되면 배열입니다. 업로드 파일 이름과 `Content-Type`은 신뢰할 수 없는 메타데이터로 취급하세요. 배타적 `wx` 쓰기는 기존 객체 덮어쓰기를 막지만, 실패한 대상이 이 요청 소유임을 증명하지 않으므로 임의로 삭제하면 안 됩니다.
+
+### `stream`
 
 대용량 파일용 요청 본문을 스트림으로 가져옵니다.
 
 ```lua
-local stream = req:stream()
+local stream, stream_err = req:stream()
+if stream_err then return nil, stream_err end
 
--- 청크로 처리
+-- Process in chunks
+local read_err
 while true do
-    local chunk, err = stream:read(65536)  -- 64KB 청크
-    if err or not chunk then break end
+    local chunk
+    chunk, read_err = stream:read(65536)  -- 64KB chunks
+    if read_err or not chunk then break end
     process_chunk(chunk)
 end
-stream:close()
+local _, close_err = stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 ## 응답 메서드
 
-### set_status
+### `set_status`
+
+`set_status()`는 상태를 쓰고 응답 헤더를 즉시 확정합니다. 먼저 `set_header()`, `set_content_type()`, `set_transfer()`를 호출하세요. 이후 헤더 변경은 `errors.INVALID`를 반환합니다.
 
 ```lua
-res:set_status(200)
-res:set_status(http.STATUS.CREATED)
+local status_err = res:set_status(http.STATUS.CREATED)
+if status_err then return nil, status_err end
 
--- 일반 패턴
-res:set_status(201)  -- Created
-res:set_status(204)  -- No Content (DELETE용)
-res:set_status(400)  -- Bad Request
-res:set_status(401)  -- Unauthorized
-res:set_status(403)  -- Forbidden
-res:set_status(404)  -- Not Found
-res:set_status(500)  -- Internal Server Error
+-- Other common choices: 204 No Content, 400 Bad Request,
+-- 401 Unauthorized, 403 Forbidden, 404 Not Found, and 500 Internal Error.
 ```
 
-### set_header
+### `set_header`
 
 ```lua
-res:set_header("X-Request-ID", correlation_id)
-res:set_header("Cache-Control", "max-age=3600")
-res:set_header("X-RateLimit-Remaining", tostring(remaining))
+local request_id_err = res:set_header("X-Request-ID", correlation_id)
+if request_id_err then return nil, request_id_err end
+local cache_err = res:set_header("Cache-Control", "max-age=3600")
+if cache_err then return nil, cache_err end
+local rate_err = res:set_header("X-RateLimit-Remaining", tostring(remaining))
+if rate_err then return nil, rate_err end
 
--- CORS 헤더
-res:set_header("Access-Control-Allow-Origin", "*")
-res:set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+-- CORS headers
+local origin_err = res:set_header("Access-Control-Allow-Origin", "*")
+if origin_err then return nil, origin_err end
+local methods_err = res:set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+if methods_err then return nil, methods_err end
+local headers_err = res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+if headers_err then return nil, headers_err end
 ```
 
-### set_content_type
+### `set_content_type`
 
 ```lua
-res:set_content_type("application/json")
-res:set_content_type(http.CONTENT.JSON)
-res:set_content_type("text/html; charset=utf-8")
-res:set_content_type("application/pdf")
+local type_err = res:set_content_type(http.CONTENT.JSON)
+if type_err then return nil, type_err end
+
+-- Other examples: "text/html; charset=utf-8" or "application/pdf".
 ```
 
-### write
+### `write`
 
 응답 본문에 씁니다.
 
 ```lua
-res:write("Hello, World!")
+local write_err = res:write("Hello, World!")
+if write_err then return nil, write_err end
 
--- 점진적으로 응답 빌드
-res:write("<html><body>")
-res:write("<h1>Title</h1>")
-res:write("<p>Content</p>")
-res:write("</body></html>")
+-- Build response incrementally
+for _, fragment in ipairs({
+    "<html><body>",
+    "<h1>Title</h1>",
+    "<p>Content</p>",
+    "</body></html>"
+}) do
+    local fragment_err = res:write(fragment)
+    if fragment_err then return nil, fragment_err end
+end
 ```
 
-### write_json
+### `write_json`
 
 값을 JSON으로 인코딩하고 씁니다.
 
 ```lua
--- 성공 응답
-res:set_status(200)
-res:write_json({
+-- Success response
+local write_err = res:write_json({
     data = users,
     total = count,
     page = page
 })
+if write_err then return nil, write_err end
 
--- 에러 응답
-res:set_status(400)
-res:write_json({
+-- Error response
+local type_err = res:set_content_type(http.CONTENT.JSON)
+if type_err then return nil, type_err end
+local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+if status_err then return nil, status_err end
+local error_write_err = res:write_json({
     error = "Validation failed",
     details = {
         {field = "email", message = "Invalid format"},
         {field = "age", message = "Must be positive"}
     }
 })
+if error_write_err then return nil, error_write_err end
 ```
 
-### flush
+`write()`, `write_json()`, `flush()`, `write_event()`도 헤더를 확정합니다. `write_json()`은 아직 헤더가 확정되지 않은 경우에만 `Content-Type: application/json`을 설정합니다.
+
+### `flush`
 
 버퍼된 데이터를 클라이언트로 플러시합니다.
 
 <code-block lang="lua">
--- 진행 상황 업데이트 스트리밍
+-- Stream progress updates
 for i = 1, 100 do
-    res:write(string.format("Progress: %d%%\n", i))
-    res:flush()
-    time.sleep("100ms")
+    local write_err = res:write(string.format("Progress: %d%%\n", i))
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 </code-block>
 
-### set_transfer
+### `set_transfer`
 
 스트리밍용 전송 인코딩을 설정합니다.
 
 ```lua
--- 청크 전송
-res:set_transfer(http.TRANSFER.CHUNKED)
+-- Chunked transfer
+local transfer_err = res:set_transfer(http.TRANSFER.CHUNKED)
+if transfer_err then return nil, transfer_err end
 for chunk in get_chunks() do
-    res:write(chunk)
-    res:flush()
+    local write_err = res:write(chunk)
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
 end
 
 -- Server-Sent Events
-res:set_transfer(http.TRANSFER.SSE)
+local sse_err = res:set_transfer(http.TRANSFER.SSE)
+if sse_err then return nil, sse_err end
 ```
 
-### write_event
+### `write_event`
 
 Server-Sent Event를 씁니다.
 
 ```lua
--- 실시간 업데이트
-res:set_transfer(http.TRANSFER.SSE)
+-- Real-time updates
+local transfer_err = res:set_transfer(http.TRANSFER.SSE)
+if transfer_err then return nil, transfer_err end
 
-res:write_event({name = "connected", data = {client_id = client_id}})
+local connected_err = res:write_event({name = "connected", data = {client_id = client_id}})
+if connected_err then return nil, connected_err end
 
 for progress in task:progress() do
-    res:write_event({name = "progress", data = {percent = progress}})
+    local event_err = res:write_event({name = "progress", data = {percent = progress}})
+    if event_err then return nil, event_err end
 end
 
-res:write_event({name = "complete", data = {result = result}})
+local complete_err = res:write_event({name = "complete", data = {result = result}})
+if complete_err then return nil, complete_err end
 
--- 채팅 메시지
-res:write_event({name = "message", data = {
+-- Chat messages
+local message_err = res:write_event({name = "message", data = {
     from = "alice",
     text = "Hello!",
     timestamp = time.now():unix()
 }})
+if message_err then return nil, message_err end
 ```
 
 ## 상수
@@ -464,14 +592,14 @@ http.METHOD.OPTIONS
 ### 상태 코드
 
 ```lua
--- 성공 (2xx)
+-- Success (2xx)
 http.STATUS.OK                   -- 200
 http.STATUS.CREATED              -- 201
 http.STATUS.ACCEPTED             -- 202
 http.STATUS.NO_CONTENT           -- 204
 http.STATUS.PARTIAL_CONTENT      -- 206
 
--- 리다이렉트 (3xx)
+-- Redirect (3xx)
 http.STATUS.MOVED_PERMANENTLY    -- 301
 http.STATUS.FOUND                -- 302
 http.STATUS.SEE_OTHER            -- 303
@@ -479,7 +607,7 @@ http.STATUS.NOT_MODIFIED         -- 304
 http.STATUS.TEMPORARY_REDIRECT   -- 307
 http.STATUS.PERMANENT_REDIRECT   -- 308
 
--- 클라이언트 에러 (4xx)
+-- Client Error (4xx)
 http.STATUS.BAD_REQUEST          -- 400
 http.STATUS.UNAUTHORIZED         -- 401
 http.STATUS.PAYMENT_REQUIRED     -- 402
@@ -492,7 +620,7 @@ http.STATUS.GONE                 -- 410
 http.STATUS.UNPROCESSABLE        -- 422
 http.STATUS.TOO_MANY_REQUESTS    -- 429
 
--- 서버 에러 (5xx)
+-- Server Error (5xx)
 http.STATUS.INTERNAL_ERROR       -- 500 (alias: INTERNAL_SERVER_ERROR)
 http.STATUS.NOT_IMPLEMENTED      -- 501
 http.STATUS.BAD_GATEWAY          -- 502
@@ -518,15 +646,15 @@ http.TRANSFER.CHUNKED   -- "chunked"
 http.TRANSFER.SSE       -- "sse"
 ```
 
-### 에러 타입
+### 레거시 에러 타입 상수
 
-정밀한 에러 처리를 위한 모듈별 에러 타입 상수.
+모듈은 호환성을 위해 이 문자열을 내보내지만 현재 요청 및 응답 메서드는 이를 반환하지 않습니다. 런타임 실패는 아래의 구조화된 `errors.*` 종류를 사용합니다.
 
 ```lua
-http.ERROR.PARSE_FAILED   -- 폼/multipart 파싱 에러
-http.ERROR.INVALID_STATE  -- 잘못된 응답 상태
-http.ERROR.WRITE_FAILED   -- 응답 쓰기 에러
-http.ERROR.STREAM_ERROR   -- 본문 스트림 에러
+http.ERROR.PARSE_FAILED   -- Form/multipart parse error
+http.ERROR.INVALID_STATE  -- Invalid response state
+http.ERROR.WRITE_FAILED   -- Response write error
+http.ERROR.STREAM_ERROR   -- Body stream error
 ```
 
 ## 에러

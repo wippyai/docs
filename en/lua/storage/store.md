@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Store and retrieve values with optional expiration and conditional writes."
 ---
 
 # Key-Value Store
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Fast key-value storage with TTL support. Ideal for caching, sessions, and temporary state.
+The `store` module provides key-value storage with optional TTLs. It can hold cached data, sessions, and other temporary state.
+
+This page is an API reference. Its snippets assume a configured store, the permissions listed below, and application-provided values such as `owner` or `new_value`. Snippets after acquisition use an existing live `cache` handle and are not standalone functions.
 
 For store configuration, see [Store](system/store.md).
 
@@ -21,7 +23,7 @@ local store = require("store")
 
 ## Acquiring a Store
 
-Get a store resource by registry ID:
+Acquire a store resource by registry ID:
 
 ```lua
 local cache, err = store.get("app:cache")
@@ -29,10 +31,17 @@ if err then
     return nil, err
 end
 
-cache:set("user:123", {name = "Alice"}, 3600)
-local user = cache:get("user:123")
+local _, set_err = cache:set("user:123", {name = "Alice"}, 3600)
+if set_err then
+    cache:release()
+    return nil, set_err
+end
+
+local user, get_err = cache:get("user:123")
 
 cache:release()
+if get_err then return nil, get_err end
+return user
 ```
 
 | Parameter | Type | Description |
@@ -43,16 +52,17 @@ cache:release()
 
 ## Storing Values
 
-Store a value with optional TTL:
+Store a value with an optional TTL:
 
 ```lua
-local cache = store.get("app:cache")
-
 -- Simple set
-cache:set("user:123:name", "Alice")
+local _, err = cache:set("user:123:name", "Alice")
+if err then return nil, err end
 
 -- Set with TTL (expires in 300 seconds)
-cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+local ok, ttl_err = cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+if ttl_err then return nil, ttl_err end
+return ok
 ```
 
 | Parameter | Type | Description |
@@ -65,13 +75,19 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 
 ## Retrieving Values
 
-Get a value by key:
+Retrieve a value by key:
 
 ```lua
-local user = cache:get("user:123")
-if not user then
-    -- Key not found or expired
+local errors = require("errors")
+
+local user, err = cache:get("user:123")
+if err then
+    if err:kind() == errors.NOT_FOUND then
+        return nil -- key missing or expired
+    end
+    return nil, err
 end
+return user
 ```
 
 | Parameter | Type | Description |
@@ -80,15 +96,22 @@ end
 
 **Returns:** `any, error`
 
-Returns `nil` and an `errors.NOT_FOUND` error if the key doesn't exist or has expired.
+The method returns `nil` and an `errors.NOT_FOUND` error when the key does not exist or has expired.
 
 ## Checking Existence
 
-Check if a key exists without retrieving:
+Check whether a key exists without retrieving its value:
 
 ```lua
-if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+local errors = require("errors")
+
+local exists, err = cache:has("lock:" .. resource_id)
+if err then return nil, err end
+if exists then
+    return nil, errors.new({
+        message = "Resource is locked",
+        kind = errors.CONFLICT
+    })
 end
 ```
 
@@ -103,7 +126,9 @@ end
 Remove a key from the store:
 
 ```lua
-cache:delete("session:" .. session_id)
+local deleted, err = cache:delete("session:" .. session_id)
+if err then return nil, err end
+return deleted
 ```
 
 | Parameter | Type | Description |
@@ -112,7 +137,7 @@ cache:delete("session:" .. session_id)
 
 **Returns:** `boolean, error`
 
-Returns `true` if deleted, `false` if key didn't exist.
+The method returns `true` when it deletes the key and `false` when the key does not exist.
 
 ## Reading Entry Metadata
 
@@ -120,6 +145,7 @@ Returns `true` if deleted, `false` if key didn't exist.
 
 ```lua
 local e, err = cache:entry("user:123")
+if err then return nil, err end
 if e then
     print(e.key, e.value, e.version)
 end
@@ -133,17 +159,20 @@ end
 
 ## Listing Keys
 
-List entries in deterministic key order, with paging:
+List entries in deterministic key order with pagination:
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
+if err then return nil, err end
 for _, e in ipairs(page.items) do
     print(e.key, e.value)
 end
 
 -- next page
 if page.has_more then
-    page = cache:list({ prefix = "session:", after = page.cursor })
+    local next_page, next_err = cache:list({ prefix = "session:", after = page.cursor })
+    if next_err then return nil, next_err end
+    page = next_page
 end
 ```
 
@@ -160,17 +189,24 @@ end
 `put` writes a value and returns its new `Entry`. Options enable optimistic concurrency:
 
 ```lua
+local errors = require("errors")
+
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
     -- someone else holds it
+elseif err then
+    return nil, err
 end
 
 -- compare-and-set: write only if the version still matches
-local cur = cache:entry("config")
+local cur, read_err = cache:entry("config")
+if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
     -- a concurrent writer changed it; re-read and retry
+elseif err2 then
+    return nil, err2
 end
 ```
 
@@ -193,7 +229,8 @@ Conditional writes require a store whose <code>info().conditional_put</code> is 
 `info` reports the backend and what it supports, so code can adapt to whichever store is bound:
 
 ```lua
-local info = cache:info()
+local info, err = cache:info()
+if err then return nil, err end
 -- info.backend      -> one of store.backend.* (e.g. "kv.raft")
 -- info.consistency  -> one of store.consistency.* (e.g. "linearizable")
 -- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleans)
@@ -209,7 +246,9 @@ local info = cache:info()
 | `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
 
 ```lua
-if cache:info().consistency == store.consistency.LINEARIZABLE then
+local info, err = cache:info()
+if err then return nil, err end
+if info.consistency == store.consistency.LINEARIZABLE then
     -- safe to use compare-and-set
 end
 ```
@@ -230,7 +269,7 @@ end
 
 ## Permissions
 
-Store operations are subject to security policy evaluation.
+Security policy evaluation applies to store operations.
 
 | Action | Resource | Attributes | Description |
 |--------|----------|------------|-------------|
@@ -242,16 +281,20 @@ Store operations are subject to security policy evaluation.
 | `store.key.has` | Store ID | `key` | Check key existence |
 | `store.key.list` | Store ID | `prefix` | List entries |
 
+Permission denials from `store.get`, `get`, `set`, `delete`, and `has` raise a Lua error. The `info`, `entry`, `list`, and `put` methods instead return an `errors.PERMISSION_DENIED` error. Grant the required actions before calling code that cannot tolerate a raised denial.
+
 ## Errors
 
-`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`).
+Input, lookup, backend, and capability failures are returned as structured errors (use `err:kind()`). Permission denials follow the split behavior documented above.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty resource ID | `errors.INVALID` | no |
-| Resource not found | `errors.NOT_FOUND` | no |
+| Resource registry unavailable | `errors.NOT_FOUND` | no |
+| Resource acquisition failed, including a missing resource | `errors.INTERNAL` | no |
 | Store released | `errors.INVALID` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
+| Permission denied by `info`, `entry`, `list`, or `put` | `errors.PERMISSION_DENIED` | no |
+| Permission denied by `store.get`, `get`, `set`, `delete`, or `has` | raised Lua error | not applicable |
 | `only_if_absent` and key exists | `errors.ALREADY_EXISTS` | no |
 | `if_version` mismatch | `errors.CONFLICT` | yes |
 | Conditional write on a store without support | `errors.INVALID` | no |

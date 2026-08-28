@@ -1,11 +1,13 @@
 ---
 title: "에이전트"
-description: "wippy/agent 모듈은 도구 사용, 스트리밍, 위임, 트레이트, 메모리를 갖춘 AI 에이전트를 구축하기 위한 프레임워크를 제공합니다. 에이전트는 선언적으로 정의되며 컨텍스트/러너 패턴을 통해 실행됩니다."
+description: "도구, 스트리밍, 위임, 트레이트, 메모리, 커스텀 해석 기능을 갖춘 Wippy 에이전트를 정의하고 실행합니다."
 ---
 
 # 에이전트
 
-`wippy/agent` 모듈은 도구 사용, 스트리밍, 위임, 트레이트, 메모리를 갖춘 AI 에이전트를 구축하기 위한 프레임워크를 제공합니다. 에이전트는 선언적으로 정의되며 컨텍스트/러너 패턴을 통해 실행됩니다.
+`wippy/agent` 모듈은 에이전트를 선언적으로 정의하고 컨텍스트와 러너를 통해 실행합니다. 에이전트는 도구를 사용하고, 응답을 스트리밍하고, 작업을 위임하고, 트레이트를 적용하고, 메모리를 회상할 수 있습니다.
+
+이 페이지는 조합 가능한 레퍼런스 코드 조각을 담은 API 입문서이며 독립 실행형 튜토리얼이 아닙니다. 기존 Wippy 프로젝트, 등록된 LLM 모델과 공급자, 설정된 공급자 자격 증명, 각 예제가 참조하는 에이전트·도구·resolver 엔트리가 있다고 가정합니다. 뒤쪽 예제는 앞선 섹션에서 만든 `ctx`, `runner`, `conversation` 같은 변수를 이어서 사용합니다. 완전한 실행 프로젝트는 [LLM 에이전트 구축](tutorials/llm-agent.md)을 참고하세요.
 
 ## 설정
 
@@ -16,38 +18,17 @@ wippy add wippy/agent
 wippy install
 ```
 
-에이전트 모듈은 `wippy/llm`과 프로세스 호스트가 필요합니다. 두 의존성을 모두 선언합니다:
+에이전트 모듈은 자체적으로 `wippy/llm` 의존성을 선언합니다. 아직 없다면 소스에 에이전트 의존성을 추가하세요.
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: dep.llm
-    kind: ns.dependency
-    component: wippy/llm
-    version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
-
   - name: dep.agent
     kind: ns.dependency
     component: wippy/agent
     version: "*"
-    parameters:
-      - name: process_host
-        value: app:processes
 ```
 
 ## 에이전트 정의
@@ -80,7 +61,7 @@ entries:
 | `prompt` | string | 시스템 프롬프트 |
 | `model` | string | 모델 이름 또는 클래스 |
 | `max_tokens` | number | 최대 출력 토큰 수 (기본값 `512`) |
-| `temperature` | number | 샘플링 온도 (기본값 `0`; 범위는 공급자별로 다름) |
+| `temperature` | number | 선택적 샘플링 온도. 기본적으로 생략되며 범위와 지원 여부는 공급자가 결정 |
 | `thinking_effort` | number | `> 0`일 때만 모델로 전달됨 (공급자 정의 스케일) |
 | `tools` | array | 도구 레지스트리 ID |
 | `traits` | array | 트레이트 참조 |
@@ -95,6 +76,7 @@ entries:
 ```yaml
 imports:
   agent_context: wippy.agent:context
+  prompt: wippy.llm:prompt
 ```
 
 ```lua
@@ -138,7 +120,7 @@ local ctx = agent_context.new({
 |--------|-------------|
 | `context` | 도구 및 위임자에게 전달되는 기본 런타임 컨텍스트 |
 | `delegate_tools` | 기본 위임-도구 구성 (`configure_delegate_tools`로 재정의 가능) |
-| `enable_cache` | 프롬프트 캐시 마커 활성화 (Claude 모델). 기본값은 `true`. |
+| `enable_cache` | Claude 모델의 프롬프트 캐시 마커 설정. 현재 구현은 이 옵션이 `false`여도 항상 마커를 활성화 |
 
 ### 인라인 스펙으로 로드
 
@@ -176,11 +158,19 @@ print(response.result)
 ### 스텝 옵션
 
 ```lua
+local self_pid, pid_err = process.pid()
+if pid_err then
+    error("Failed to get process PID: " .. tostring(pid_err))
+end
+
 local response, err = runner:step(conversation, {
     context = { session_id = "abc" },
-    stream_target = { reply_to = process.pid(), topic = "stream" },
+    stream_target = { reply_to = self_pid, topic = "stream" },
     tool_call = "auto",
 })
+if err then
+    error("Agent step failed: " .. tostring(err))
+end
 ```
 
 | 옵션 | 타입 | 설명 |
@@ -319,7 +309,7 @@ local function execute_and_continue(runner, conversation)
                 result_str = json.encode(result)
             end
 
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -339,6 +329,8 @@ end
 <code>funcs.call(tc.registry_id, tc.arguments)</code>을 사용하여 도구를 실행합니다. <code>registry_id</code> 필드는 레지스트리의 도구 엔트리에 직접 매핑됩니다.
 </note>
 
+에이전트 도구 접근과 관찰 가능성의 보안 방식은 [보안 모델](../concepts/security-model.md)을 참조하세요.
+
 ## 스트리밍
 
 `stream_target`을 사용하여 에이전트 응답을 실시간으로 스트리밍합니다:
@@ -347,13 +339,36 @@ end
 local TOPIC = "agent_stream"
 
 local function stream_step(runner, conversation)
-    local stream_ch = process.listen(TOPIC)
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, nil, listen_err
+    end
+
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove agent stream listener"
+            if err then
+                return text, nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return text, nil, cleanup_err
+        end
+        if err then
+            return text, nil, err
+        end
+        return text, response, nil
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish("", nil, pid_err)
+    end
 
     local done_ch = channel.new(1)
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
-                reply_to = process.pid(),
+                reply_to = self_pid,
                 topic = TOPIC,
             },
         })
@@ -361,36 +376,50 @@ local function stream_step(runner, conversation)
     end)
 
     local full_text = ""
+    local step_result = nil
+    local stream_done = false
+    local stream_err = nil
+
     while true do
-        local result = channel.select({
-            stream_ch:case_receive(),
-            done_ch:case_receive(),
-        })
-        if not result.ok then break end
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not step_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(full_text, nil, "Agent stream closed before completion")
+        end
 
         if result.channel == done_ch then
-            process.unlisten(stream_ch)
-            local r = result.value
-            return full_text, r.response, r.err
-        end
-
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            -- wait for the step to complete
-            local r, ok = done_ch:receive()
-            process.unlisten(stream_ch)
-            if ok and r then
-                return full_text, r.response, r.err
+            step_result = result.value
+            if step_result.err then
+                return finish(full_text, nil, step_result.err)
             end
-            return full_text, nil, nil
+            if stream_done then
+                return finish(full_text, step_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "Agent stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and step_result then
+                return finish(full_text, step_result.response, stream_err)
+            end
         end
     end
-
-    process.unlisten(stream_ch)
-    return full_text, nil, nil
 end
 ```
 
@@ -425,7 +454,10 @@ end
 위임 호출은 `response.delegate_calls`에 나타납니다:
 
 ```lua
-local response = runner:step(conversation)
+local response, err = runner:step(conversation)
+if err then
+    error("Delegate step failed: " .. tostring(err))
+end
 
 if response.delegate_calls then
     for _, dc in ipairs(response.delegate_calls) do
@@ -446,7 +478,7 @@ ctx:add_delegates({
 
 ## 트레이트
 
-트레이트는 에이전트에 프롬프트, 도구, 동작을 제공하는 재사용 가능한 기능입니다:
+트레이트는 에이전트에 프롬프트, 도구, 동작을 제공하는 재사용 가능한 정의입니다:
 
 ```yaml
   - name: assistant
@@ -610,10 +642,10 @@ return {
 3. 이름으로 레지스트리 조회 시도
 4. 찾지 못하면 오류 반환
 
-이 패턴은 에이전트가 사용자별 또는 워크스페이스별로 설정되어 프레임워크 레지스트리 외부에 저장되는 멀티 테넌트 애플리케이션을 가능하게 합니다.
+커스텀 해석은 사용자 또는 워크스페이스 범위의 정의를 비롯해 프레임워크 레지스트리 밖에 있는 에이전트 정의를 불러올 수 있습니다.
 
 ## 참고 항목
 
-- [LLM](framework/llm.md) - 기반 LLM 모듈
-- [LLM 에이전트 만들기](tutorials/llm-agent.md) - 단계별 튜토리얼
-- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법
+- [LLM](framework/llm.md) — 기반 모델 인터페이스
+- [LLM 에이전트 만들기](../tutorials/llm-agent.md) — 단계별 에이전트 구축
+- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 설치 및 import

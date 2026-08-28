@@ -1,20 +1,23 @@
 ---
-title: "Event Bus"
-description: "El event bus es un sistema pub/sub usando una sola goroutine dispatcher. Los publishers encolan acciones, el dispatcher las procesa secuencialmente, y…"
+title: "Bus de eventos"
+description: "Acciones del bus de eventos, suscripciones con comodines, entrega, puente a procesos Lua, funciones auxiliares de solicitud-respuesta y apagado."
 ---
 
-# Event Bus
+# Bus de eventos :id=event-bus
 
-El event bus es un sistema pub/sub usando una sola goroutine dispatcher. Los publishers encolan acciones, el dispatcher las procesa secuencialmente, y los subscribers reciben eventos matcheados en canales.
+El bus de eventos procesa acciones pub/sub encoladas en una goroutine despachadora y entrega los eventos coincidentes a los canales de los suscriptores.
+
+Los fragmentos Go son partes de implementación y extensión. Suponen un contexto de componentes, logger, handlers y tipos de eventos de la aplicación ya existentes.
 
 ## Estructura de Evento
 
 ```go
 type Event struct {
-    System string  // Componente/módulo (ej. "registry", "process")
-    Kind   string  // Tipo de evento (ej. "create", "update", "exit")
-    Path   string  // Identificador de entidad
+    System string  // Component/module (e.g., "registry", "process")
+    Kind   string  // Event type (e.g., "create", "update", "exit")
+    Path   string  // Entity identifier
     Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -23,8 +26,8 @@ type Event struct {
 ```mermaid
 flowchart LR
     subgraph Publishers
-        P1[Componente]
-        P2[Componente]
+        P1[Component]
+        P2[Component]
     end
 
     subgraph Bus
@@ -38,10 +41,10 @@ flowchart LR
         S2[chan Event]
     end
 
-    P1 & P2 -->|encolar| Q
+    P1 & P2 -->|enqueue| Q
     Q -->|signal| D
-    D -->|match & entregar| S1 & S2
-    D <-->|gestionar| S
+    D -->|match & deliver| S1 & S2
+    D <-->|manage| S
 ```
 
 El bus almacena estado en una estructura simple:
@@ -60,7 +63,7 @@ type Bus struct {
 }
 ```
 
-Todas las mutaciones pasan por la goroutine dispatcher, eliminando condiciones de carrera sin locking complejo.
+Todas las mutaciones pasan por la goroutine despachadora, lo que elimina las condiciones de carrera sin bloqueos complejos.
 
 ## Acciones
 
@@ -70,14 +73,14 @@ Cuatro tipos de acciones fluyen a través de la cola:
 |--------|----------------|
 | Subscribe | Agrega subscriber al mapa, responde en canal done |
 | Unsubscribe | Remueve subscriber, responde en canal done |
-| Send | Entrega evento a subscribers matcheados |
-| Stop | Limpia subscribers, drena cola, sale del loop |
+| `Send` | Entrega el evento a los suscriptores coincidentes |
+| `Stop` | Limpia los suscriptores, drena la cola y sale del bucle |
 
-Subscribe y Unsubscribe bloquean hasta que el dispatcher confirma. Send es fire-and-forget.
+`Subscribe` y `Unsubscribe` bloquean hasta que el despachador confirma. `Send` envía sin esperar respuesta. El bus acepta como máximo `DefaultMaxSubscribers` suscripciones (4096 de forma predeterminada); las que superan el límite fallan con `ErrSubscribersCapReached`.
 
 ## Intercambio de Cola
 
-El dispatcher usa intercambio de slices para evitar asignaciones en estado estable:
+El despachador intercambia segmentos para evitar asignaciones en estado estable:
 
 ```go
 func (b *Bus) processActions() bool {
@@ -88,7 +91,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // procesar acción
+        // process action
     }
 
     clear(actions)
@@ -99,9 +102,9 @@ func (b *Bus) processActions() bool {
 }
 ```
 
-Dos slices alternan: uno para procesamiento, uno para nuevas llegadas. El canal `actionReady` tiene buffer de 1, así que la señalización nunca bloquea y múltiples encolas colapsan en un solo wakeup.
+Se alternan dos segmentos: uno para el procesamiento y otro para las nuevas llegadas. El canal `actionReady` tiene un búfer de 1, por lo que la señalización nunca bloquea y múltiples operaciones de encolado se agrupan en una sola activación.
 
-## Pattern Matching
+## Coincidencia de patrones :id=pattern-matching
 
 Las suscripciones compilan patrones una vez en tiempo de subscribe:
 
@@ -115,7 +118,7 @@ type sub struct {
 }
 ```
 
-El paquete wildcard soporta tres tipos de patrón:
+El paquete de comodines admite cuatro tipos de patrón:
 
 | Patrón | Matchea |
 |--------|---------|
@@ -128,7 +131,7 @@ Los patrones se dividen en `.` así que `registry.*` matchea `registry.create` p
 
 ## Entrega de Eventos
 
-Durante procesamiento de Send, el dispatcher itera subscribers:
+Durante el procesamiento de `Send`, el despachador recorre los suscriptores:
 
 ```go
 for id, s := range b.subscribers {
@@ -151,9 +154,9 @@ for id, s := range b.subscribers {
 
 Si el contexto de un subscriber es cancelado, se marca para remoción durante ese pase de entrega. El contexto del evento también puede cancelar entrega a mitad de iteración.
 
-## Bridge de Proceso Lua
+## Puente de procesos Lua :id=bridge-de-proceso-lua
 
-El dispatcher de eventos conecta eventos Go a procesos Lua. Se suscribe una vez a todos los eventos (`"**"`) y enruta internamente basado en suscripciones de procesos:
+El despachador de eventos conecta eventos de Go con procesos de Lua. Se suscribe una vez a todos los eventos (`"**"`) y enruta internamente según las suscripciones de los procesos:
 
 ```go
 type Dispatcher struct {
@@ -167,7 +170,7 @@ type Dispatcher struct {
 }
 ```
 
-Cuando un proceso Lua se suscribe vía `events.subscribe()`, el dispatcher almacena el patrón y PID destino. Eventos matcheados son empaquetados y enviados vía relay:
+Cuando un proceso Lua se suscribe mediante `events.subscribe()`, el despachador almacena el patrón y el PID de destino. Los eventos coincidentes se empaquetan y envían mediante el relé:
 
 ```go
 func (d *Dispatcher) routeEvent(evt event.Event) {
@@ -178,7 +181,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -197,17 +200,20 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 }
 ```
 
-## Tipos Helper
+## Tipos auxiliares :id=tipos-helper
 
 ### Subscriber
 
 Envuelve suscripción de canal con callback:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
-        // manejar
+        // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 
@@ -221,35 +227,46 @@ Gestiona múltiples handlers con ciclo de vida centralizado:
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
 Cada handler implementa `Pattern()` y `Handle()`. El router crea un Subscriber para cada uno y cierra todos en Stop.
 
-### Awaiter
+### AwaitService
 
-Espera sincrónica por un evento específico:
+Proporciona solicitud-respuesta sobre pub/sub. Mantiene una sola suscripción por `(system, kind)` y enruta los eventos a procesos en espera mediante `Path`:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+if err := svc.Start(ctx); err != nil {
+    return err
+}
+defer svc.Stop()
+
+waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+if err != nil {
+    return err
+}
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // bloquea hasta match o timeout
+result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 ```
 
-El patrón Prepare-then-Wait evita condiciones de carrera: suscribirse antes de disparar el evento que produce la respuesta.
+`Prepare` registra el proceso en espera antes de enviar el evento que lo desencadena, lo que evita la carrera en la que la respuesta llega antes de registrar la espera. `Wait` bloquea hasta que llega un evento con un `Path` coincidente o vence el tiempo de espera (de forma predeterminada `DefaultAwaitTimeout`, 30 s, cuando no es positivo). `Accepted` es `true` cuando el `kind` del evento es `accept`, `*.accept` o `*.accepted`; de lo contrario, el `kind` se trata como rechazo y cualquier `error` de `Data` aparece como `Error`. El método auxiliar `Await(ctx, system, kind, path, timeout)` combina `Prepare` y `Wait`. La infraestructura de arranque registra un `AwaitService` en el contexto (`event.GetAwaitService`).
 
-## Shutdown
+## Apagado :id=shutdown
 
 1. `Stop()` atómicamente establece flag closed y encola acción Stop
-2. Dispatcher limpia mapa de subscribers
+2. El despachador limpia el mapa de suscriptores
 3. Acciones restantes en cola son drenadas:
    - Solicitudes Subscribe obtienen error "bus is closed"
    - Solicitudes Unsubscribe completan inmediatamente
-   - Eventos Send son descartados
+   - Los eventos `Send` se descartan
 4. WaitGroup completa
 
 ## Ver También

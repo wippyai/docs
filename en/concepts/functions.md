@@ -1,11 +1,16 @@
 ---
 title: "Functions"
-description: "Functions are synchronous, stateless entry points. You call them, they execute, they return a result. When a function runs, it inherits the caller's…"
+description: "How to define and call functions, propagate context, configure pools, and apply interceptors."
 ---
 
 # Functions
 
-Functions are synchronous, stateless entry points. You call them, they execute, they return a result. When a function runs, it inherits the caller's context—if the caller cancels, the function cancels too. This makes functions ideal for HTTP handlers, API endpoints, and any operation that should complete within a request lifecycle.
+Functions are call-and-return entry points. A function inherits its caller's
+context and is canceled when the caller is canceled. Pools can reuse Lua states,
+so module globals and closure upvalues may survive on one worker but are not
+shared consistently across calls. Store durable or shared state outside the
+function. Use functions for HTTP handlers, API endpoints, and other operations
+that complete within a request lifecycle.
 
 ## Calling Functions
 
@@ -14,18 +19,31 @@ Call functions synchronously with `funcs.call()`:
 ```lua
 local funcs = require("funcs")
 local result, err = funcs.call("app.api:get_user", user_id)
+if err then return nil, err end
+return result
 ```
 
 For non-blocking execution, use `funcs.async()`:
 
 ```lua
-local future = funcs.async("app.process:analyze", data)
+local future, err = funcs.async("app.process:analyze", data)
+if err then
+    return nil, err
+end
 
 local ch = future:response()
-local result, ok = ch:receive()
+local payload, open = ch:receive()
+if not open then
+    return nil, "future response channel closed"
+end
+
+local result, err = payload:data()
+if err then
+    return nil, err
+end
 ```
 
-See the [funcs module](lua/core/funcs.md) for the complete API.
+See the [funcs module](lua/core/funcs.md) for function invocation and executor options.
 
 ## Context Propagation
 
@@ -41,9 +59,14 @@ local user_id = ctx.get("user_id")
 Add context when calling:
 
 ```lua
-local exec = funcs.new()
-    :with_context({trace_id = "abc-123"})
-    :call("app.api:process", data)
+local funcs = require("funcs")
+
+local exec, err = funcs.new():with_context({trace_id = "abc-123"})
+if err then return nil, err end
+
+local result, err = exec:call("app.api:process", data)
+if err then return nil, err end
+return result
 ```
 
 Security context propagates the same way. Called functions see the caller's actor and can check permissions. See the [security module](lua/security/security.md) for access control APIs.
@@ -68,18 +91,18 @@ Functions can be invoked by other runtime components—HTTP handlers, queue cons
 
 Functions run on pools that manage execution. The pool type determines scaling behavior.
 
-**Inline** runs in the caller's goroutine. No concurrency, zero allocation overhead. Used for embedded contexts.
+**Inline** runs in the caller's goroutine without a worker pool. It is used for embedded contexts.
 
-**Static** maintains a fixed number of workers. Requests queue when all workers are busy. Predictable resource usage.
+**Static** maintains a fixed number of workers. Requests queue when all workers are busy, which keeps worker concurrency fixed.
 
 ```yaml
 pool:
   type: static
-  workers: 8
+  size: 8
   buffer: 512
 ```
 
-**Lazy** starts empty and creates workers on demand. Idle workers get destroyed after a timeout. Efficient for variable traffic.
+**Lazy** starts without workers and creates them on demand. Idle workers are removed after a timeout.
 
 ```yaml
 pool:
@@ -87,7 +110,7 @@ pool:
   max_size: 32
 ```
 
-**Adaptive** scales automatically based on throughput. The controller measures performance and adjusts worker count to optimize for the current load.
+**Adaptive** adjusts the worker count based on measured throughput and current load.
 
 ```yaml
 pool:
@@ -96,12 +119,16 @@ pool:
 ```
 
 <tip>
-If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for static, `max_size` for lazy, or explicitly set `type` for full control.
+Prefer an explicit pool `type`. For `type: static`, set `size`; if `workers` is
+also present, it supplies the worker count and still requires a positive
+`size`. In the legacy implicit mode, `workers > 0` plus `size > 0` selects a
+static pool, `max_size > 0` with no workers selects a lazy pool, and `size`
+alone falls through to inline execution.
 </tip>
 
 ## Interceptors
 
-Function calls pass through an interceptor chain. Interceptors handle cross-cutting concerns without touching business logic.
+Function calls pass through an interceptor chain. Interceptors can handle cross-cutting concerns separately from the function implementation.
 
 ```yaml
 - name: my_function
@@ -116,7 +143,11 @@ Function calls pass through an interceptor chain. Interceptors handle cross-cutt
         backoff_factor: 2.0
 ```
 
-Built-in interceptors include retry with exponential backoff. You can add custom interceptors for logging, metrics, tracing, authorization, circuit breaking, or request transformation.
+Built-in interceptors include retry with exponential backoff. Runtime
+integrations written in Go can register additional interceptors for logging,
+metrics, tracing, authorization, circuit breaking, or request transformation;
+Lua application entries can configure only interceptors installed by the
+runtime.
 
 The chain runs before and after each call. Each interceptor can modify the request, short-circuit execution, or wrap the response.
 
@@ -126,15 +157,21 @@ Functions can expose their input/output schemas as contracts. Contracts define m
 
 ```lua
 local contract = require("contract")
-local sender = contract.get("app.email:sender")
-local email = sender:open("app.email:sender_impl")
-email:send({to = "user@example.com", subject = "Hello"})
+local sender, err = contract.get("app.email:sender")
+if err then return nil, err end
+
+local email, err = sender:open("app.email:sender_impl")
+if err then return nil, err end
+
+local result, err = email:send({to = "user@example.com", subject = "Hello"})
+if err then return nil, err end
+return result
 ```
 
-This abstraction lets you swap implementations without changing calling code—useful for testing, multi-tenant deployments, or gradual migrations.
+Contracts allow callers to use an interface while selecting an implementation separately. This supports testing, multi-tenant deployments, and gradual migrations.
 
 ## Functions vs Processes
 
-Functions inherit caller context and tie to caller lifecycle. When the caller cancels, functions cancel. This enables edge execution—running directly in HTTP handlers and queue consumers.
+Functions inherit the caller's context and lifecycle. When the caller is canceled, its function calls are canceled as well. This suits execution within HTTP handlers and queue consumers.
 
 Processes run independently with host context. They outlive their creator and communicate through messages. Use processes for background work; use functions for request-scoped operations.

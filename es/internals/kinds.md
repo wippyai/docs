@@ -1,18 +1,20 @@
 ---
-title: "Entry Handlers"
-description: "Los entry handlers procesan entradas de registry por kind. Cuando las entradas son agregadas, actualizadas, o eliminadas, el registry despacha eventos…"
+title: "Listeners y observers de entradas"
+description: "Cómo listeners y observers gestionan mutaciones del registro para patrones de kind de entrada coincidentes."
 ---
 
-# Entry Handlers
+# Listeners y observers de entradas
 
-Los entry handlers procesan entradas de registry por kind. Cuando las entradas son agregadas, actualizadas, o eliminadas, el registry despacha eventos a handlers matcheados.
+Los listeners y observers de entradas procesan mutaciones del registro para patrones coincidentes de kind de entrada.
+
+Esta es una referencia de extensión Go. Los fragmentos de registro y configuración suponen un componente de boot, manager, transcoder y tipo de configuración de aplicación ya existentes.
 
 ## Cómo Funciona
 
-El registry mantiene un mapa de patrones de kind a handlers. Cuando una entrada cambia:
+El boot reúne listeners y observers con sus patrones de kind. Cuando cambia una entrada:
 
 1. Registry emite evento (`entry.create`, `entry.update`, `entry.delete`)
-2. Registry de handlers matchea kind de entrada contra patrones registrados
+2. Cada envoltorio de listener compara el kind de entrada con su patrón registrado
 3. Handlers matcheados reciben la entrada
 4. Handlers procesan o rechazan la entrada
 
@@ -24,7 +26,7 @@ Los handlers se suscriben usando patrones:
 |--------|---------|
 | `http.service` | Solo match exacto |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Interfaz Entry Listener
 
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-Retornar un error desde `Add` rechaza la entrada.
+Retornar un error desde `Add`, `Update` o `Delete` rechaza esa operación.
 
 ## Listener vs Observer
 
@@ -51,6 +53,8 @@ Retornar un error desde `Add` rechaza la entrada.
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+Los errores de observers en `Add`, `Update` y `Delete` se ignoran y no emiten un evento de aceptación ni rechazo. Un listener u observer que también implementa `TransactionListener` participa en las barreras de transacción, donde un error de `Begin`, `Commit` o `Discard` rechaza esa fase de la transacción.
 
 ## Registrar Handlers
 
@@ -72,7 +76,7 @@ func MyService() boot.Component {
 
 ## Decodificar Datos de Entrada
 
-Use `entry.DecodeEntryConfig` de `internal/entry` para deserializar datos de entrada. Este helper vive bajo `internal/`, por lo que solo se puede importar desde dentro del módulo runtime; las extensiones fuera del árbol deben copiar el patrón o usar el transcoder directamente:
+Use `entry.DecodeEntryConfig` de `github.com/wippyai/runtime/system/entry` para deserializar datos de entrada. Las extensiones externas al árbol pueden importar este paquete:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -80,16 +84,18 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // Procesar cfg...
+    // Process cfg...
     return nil
 }
 ```
 
 El decoder:
-1. Deserializa `entry.Data` en su struct de config
-2. Completa `ID` y `Meta` desde la entrada
-3. Llama `InitDefaults()` si está implementado
-4. Llama `Validate()` si está implementado
+1. Resuelve los placeholders modernos `${env:...}` en los datos de entrada
+2. Deserializa los datos resueltos en su struct de config
+3. Completa `ID` y `Meta` desde la entrada cuando los campos decodificados son cero o nil
+4. Llama `InitDefaults()` si está implementado
+5. Resuelve los campos heredados `*_env` mediante el registro de entorno
+6. Llama `Validate()` si está implementado
 
 ## Estructura de Config
 
@@ -123,9 +129,9 @@ Para operaciones atómicas a través de múltiples entradas, implemente `Transac
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 

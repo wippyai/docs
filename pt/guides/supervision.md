@@ -1,6 +1,6 @@
 ---
 title: "Supervisão"
-description: "O supervisor gerencia ciclos de vida de serviços, tratando ordenação de inicialização, reinicializações automáticas e encerramento gracioso. Serviços…"
+description: "Configure ordem de inicialização, políticas de reinicialização, contexto de segurança, transições de estado e encerramento gracioso dos serviços."
 ---
 
 # Supervisão
@@ -12,23 +12,24 @@ O supervisor gerencia ciclos de vida de serviços, tratando ordenação de inici
 Serviços se registram com o supervisor usando um bloco `lifecycle`. Para processos, use `process.service` para encapsular uma definição de processo:
 
 ```yaml
-# Definição de processo (o código)
+# Process definition (the code)
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Serviço supervisionado (encapsula o processo com gerenciamento de ciclo de vida)
+# Supervised service (wraps the process with lifecycle management)
 - name: worker
   kind: process.service
   process: app:worker_process
   host: app:processes
   lifecycle:
     auto_start: true
+    startup: required
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -36,19 +37,22 @@ Serviços se registram com o supervisor usando um bloco `lifecycle`. Para proces
       max_attempts: 10
 ```
 
+`host` precisa referenciar um host de processos configurado. A entrada em `requires` precisa resolver para outro serviço supervisionado ou, por meio da extração de dependências do registro, para um serviço supervisionado que seja proprietário do recurso referenciado.
+
 | Campo | Padrão | Descrição |
 |-------|--------|-----------|
 | `auto_start` | `false` | Inicia automaticamente quando supervisor inicia |
+| `startup` | `required` | Política de inicialização de uma raiz automática: `required` bloqueia o boot em caso de falha; `optional` pode falhar e continuar tentando sem bloquear ramos independentes |
 | `start_timeout` | `10s` | Tempo máximo permitido para inicialização |
 | `stop_timeout` | `10s` | Tempo máximo para encerramento gracioso |
 | `stable_threshold` | `5s` | Tempo de execução antes do serviço ser considerado estável |
-| `depends_on` | `[]` | Serviços que devem estar executando primeiro |
+| `requires` | `[]` | Serviços que devem estar executando primeiro (alias legado: `depends_on`) |
 
 ## Resolução de Dependências
 
 O supervisor resolve dependências de duas fontes:
 
-1. **Dependências explícitas** declaradas em `depends_on`
+1. **Dependências explícitas** declaradas em `requires` (ou no alias legado `depends_on`)
 2. **Dependências extraídas do registro** de referências de entradas (ex: `database: app:db` na sua configuração)
 
 ```mermaid
@@ -62,31 +66,26 @@ graph LR
 Dependências iniciam antes dos dependentes. Se o Serviço C depende de A e B, ambos A e B devem alcançar o estado `Running` antes de C iniciar.
 
 <tip>
-Você não precisa declarar entradas de infraestrutura como bancos de dados em <code>depends_on</code>. O supervisor extrai automaticamente dependências de referências do registro na configuração da sua entrada.
+Você não precisa repetir uma referência de infraestrutura em <code>requires</code> quando a extração de dependências do registro consegue rastrear essa referência até um serviço supervisionado. Use <code>requires</code> para dependências de ciclo de vida que ainda não estejam expressas por referências de entradas.
 </tip>
 
 ## Política de Reinicialização
 
-Quando um serviço falha, o supervisor tenta novamente com backoff exponencial:
+Quando um serviço falha, o supervisor tenta novamente de acordo com seu bloco `restart`:
 
 ```yaml
 lifecycle:
   restart:
-    initial_delay: 1s      # Espera da primeira tentativa
-    max_delay: 90s         # Limite máximo de delay
-    backoff_factor: 2.0    # Multiplicador de delay por tentativa
-    jitter: 0.1            # +/-10% de randomização
-    max_attempts: 0        # 0 = tentativas infinitas
+    initial_delay: 1s      # First retry wait
+    max_delay: 90s         # Accepted backoff cap; see current behavior below
+    backoff_factor: 2.0    # Accepted multiplier; see current behavior below
+    jitter: 0.1            # ±10% randomization
+    max_attempts: 0        # 0 = infinite retries
 ```
 
-| Tentativa | Delay Base | Com Jitter (+/-10%) |
-|-----------|------------|-------------------|
-| 1 | 1s | 0.9s - 1.1s |
-| 2 | 2s | 1.8s - 2.2s |
-| 3 | 4s | 3.6s - 4.4s |
-| 4 | 8s | 7.2s - 8.8s |
-| ... | ... | ... |
-| N | 90s | 81s - 99s (limitado) |
+No runtime v0.3.32a, o supervisor cria uma nova calculadora de backoff para cada tentativa e usa somente seu primeiro intervalo. Portanto, cada nova tentativa aguarda `initial_delay` com o jitter configurado — 0,9s a 1,1s para os valores acima. `backoff_factor` e `max_delay` são campos de configuração aceitos, mas não alteram esse cronograma no runtime fixado.
+
+`max_attempts` conta a primeira inicialização que falhou. O valor `1` não permite nova tentativa, `10` permite no máximo nove inicializações posteriores e `0` permite tentativas ilimitadas.
 
 Quando um serviço executa por mais tempo que `stable_threshold`, o contador de tentativas reseta. Isso previne que falhas transitórias escalem delays permanentemente.
 
@@ -103,13 +102,13 @@ Estes erros param tentativas de retry:
 Serviços podem executar com uma identidade de segurança específica:
 
 ```yaml
-# Definição de processo
+# Process definition
 - name: admin_worker_process
   kind: process.lua
   source: file://admin_worker.lua
   method: main
 
-# Serviço supervisionado com contexto de segurança
+# Supervised service with security context
 - name: admin_worker
   kind: process.service
   process: app:admin_worker_process
@@ -142,7 +141,7 @@ Código executando no serviço herda este contexto de segurança. O módulo `sec
 local security = require("security")
 
 if security.can("delete", "users") then
-    -- permitido
+    -- allowed
 end
 ```
 
@@ -154,27 +153,32 @@ Quando nenhum contexto de segurança está configurado, o serviço executa sem u
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
+    Stopping --> Failed : timeout/cancel
     Stopped --> [*]
 
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 O supervisor transiciona serviços através destes estados:
 
 | Estado | Descrição |
 |--------|-----------|
-| `Inactive` | Registrado mas não iniciado |
+| `Unknown` | Registrado mas não iniciado |
 | `Starting` | Inicialização em progresso |
 | `Running` | Operando normalmente |
 | `Stopping` | Encerramento gracioso em progresso |
-| `Stopped` | Terminado de forma limpa |
+| `Stopped` | Operação de parada concluída; os detalhes informados pelo serviço ainda podem conter um erro |
+| `Exited` | Terminado por solicitação explícita ou por um erro terminal/não retentável |
 | `Failed` | Erro ocorreu, pode tentar novamente |
 
 ## Ordem de Inicialização e Encerramento
@@ -184,8 +188,8 @@ O supervisor transiciona serviços através destes estados:
 **Encerramento**: Dependentes primeiro, depois dependências. Isso garante que serviços dependentes terminem antes de suas dependências pararem.
 
 ```
-Inicialização:  database -> cache -> handler -> http_server
-Encerramento:   http_server -> handler -> cache -> database
+Startup:  database → cache → handler → http_server
+Shutdown: http_server → handler → cache → database
 ```
 
 ## Veja Também

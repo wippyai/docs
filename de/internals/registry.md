@@ -1,11 +1,13 @@
 ---
 title: "Registry-Interna"
-description: "Die Registry ist ein versionierter, ereignisgesteuerter Zustandsspeicher. Sie pflegt eine vollständige Versionshistorie, unterstützt Transaktionen und…"
+description: "Versionierte Registry-Speicherung, ChangeSets, Transaktionen, Abhängigkeitsauflösung, Historie und Entry-Suche."
 ---
 
 # Registry-Interna
 
-Die Registry ist ein versionierter, ereignisgesteuerter Zustandsspeicher. Sie pflegt eine vollständige Versionshistorie, unterstützt Transaktionen und verbreitet Änderungen über den Event-Bus.
+Die Registry speichert versionierte Entry-Zustände, unterstützt Transaktionen und Historie und verbreitet Änderungen über den Event-Bus.
+
+Die Go- und Query-Ausschnitte dieser Seite dokumentieren interne Datenstrukturen und die Finder-Syntax; sie sind keine eigenständigen Anwendungsbeispiele.
 
 ## Entry-Speicherung
 
@@ -14,9 +16,9 @@ Einträge werden als geordnetes Slice mit einer Hash-Map-Index für O(1)-Lookups
 ```go
 type Entry struct {
     ID   ID              // namespace:name
-    Kind Kind            // Entry-Typ
-    Meta attrs.Bag       // Metadaten
-    Data payload.Payload // Inhalt
+    Kind Kind            // Entry type
+    Meta attrs.Bag       // Metadata
+    Data payload.Payload // Content
 }
 ```
 
@@ -56,8 +58,8 @@ Ein ChangeSet ist eine geordnete Liste von Operationen, die einen Zustand in ein
 Mehrere ChangeSets verschmelzen durch Verfolgung des Endzustands pro Eintrag:
 
 ```
-Create + Update = Create (mit aktualisiertem Wert)
-Create + Delete = ∅ (heben sich auf)
+Create + Update = Create (with updated value)
+Create + Delete = ∅ (cancel out)
 Update + Delete = Delete
 Delete + Create = Update
 ```
@@ -71,21 +73,21 @@ sequenceDiagram
     participant H as Handlers
 
     R->>B: registry.begin
-    loop Jede Operation
+    loop Each Operation
         R->>B: entry.create/update/delete
-        B->>H: an Listener dispatchen
-        H-->>B: akzeptieren oder ablehnen
-        B-->>R: Bestätigung
+        B->>H: dispatch to listeners
+        H-->>B: accept or reject
+        B-->>R: confirmation
     end
-    alt Alle akzeptiert
+    alt All accepted
         R->>B: registry.commit
-    else Einer abgelehnt
+    else Any rejected
         R->>B: registry.discard
-        R->>R: Rollback
+        R->>R: rollback
     end
 ```
 
-Handler haben 30 Sekunden um jede Operation zu akzeptieren oder abzulehnen. Bei Ablehnung führt die Registry ein Rollback durch, indem sie das inverse Delta berechnet und anwendet.
+Standardmäßig wartet die Registry bei jeder Operation 30 Sekunden darauf, dass Listener sie akzeptieren oder ablehnen. `registry.event_wait_timeout` ändert diesen Timeout pro Operation. Bei Ablehnung führt die Registry ein Rollback durch, indem sie das inverse Delta berechnet und anwendet.
 
 ### Nicht-propagierende Einträge
 
@@ -95,13 +97,15 @@ Einige Arten überspringen den Event-Bus komplett:
 - `ns.dependency` - Modul-Abhängigkeiten
 - `ns.definition` - Modul-Metadaten (Readme, Wiki, Lizenz, Autoren)
 
+`registry.dispatch_internal_kinds` ersetzt diese Standardliste.
+
 ## Abhängigkeitsauflösung
 
 Einträge können Abhängigkeiten von anderen Einträgen deklarieren. Der Resolver extrahiert Abhängigkeiten über registrierte Muster:
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
@@ -128,8 +132,8 @@ Die Historie persistiert auch die exakte Abhängigkeitsauflösung jeder Version:
 Pfadberechnung findet die kürzeste Route zwischen Versionen:
 
 ```go
-Path(v0, v3) = [v1, v2, v3]  // ChangeSets vorwärts anwenden
-Path(v3, v1) = [v2, v1]      // Umgekehrte ChangeSets anwenden
+Path(v0, v3) = [v1, v2, v3]  // Apply changesets forward
+Path(v3, v1) = [v2, v1]      // Apply reversed changesets
 ```
 
 `LoadState()` spielt Historie von einer Baseline ab ohne neue Versionen zu erstellen - wird beim Boot verwendet.
@@ -140,7 +144,7 @@ Query-Engine mit LRU-Caching für Entry-Suche:
 
 | Operator | Präfix | Beispiel |
 |----------|--------|----------|
-| Glob | (keiner) | `.kind=function.*` |
+| Glob auf Root-Feld | `.` vor dem Root-Feld | `.kind=function.*` |
 | Regex | `~` | `~meta.path=/api/.*` |
 | Contains | `*` | `*meta.tags=backend` |
 | Prefix | `^` | `^meta.name=user` |
@@ -148,7 +152,9 @@ Query-Engine mit LRU-Caching für Entry-Suche:
 
 Cache invalidiert bei Versionsänderung.
 
+Der Glob-Abgleich gilt für die Root-Felder `.kind`, `.name`, `.ns` und `.id`. Kriterien für `meta.*` ohne Präfix verwenden einen Gleichheitsvergleich.
+
 ## Siehe auch
 
-- [Registry](concepts/registry.md) - High-Level-Konzepte
-- [Events](internals/events.md) - Event-Bus-Details
+- [Registry](concepts/registry.md) – übergeordnete Konzepte
+- [Events](internals/events.md) – Details zum Event-Bus

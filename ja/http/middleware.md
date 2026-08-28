@@ -1,15 +1,17 @@
 ---
 title: "HTTPミドルウェア"
-description: "ミドルウェアはルート処理の前後にHTTPリクエストを処理します。"
+description: "ミドルウェアは、ルート処理の前後にHTTPリクエストを処理します。"
 ---
 
 # HTTPミドルウェア
 
-ミドルウェアはルート処理の前後にHTTPリクエストを処理します。
+HTTPミドルウェアは、エンドポイントのメタデータが付与される前、またはルートによってパラメータとエンドポイントIDが提供された後の、2つのルーターチェーンのいずれかで実行されます。
+
+**分類：ミドルウェアリファレンス。** 各YAMLブロックはルーターの断片です。指定したミドルウェアが登録済みであり、参照するトークンストア、ファイルシステム、エンドポイント、アクター、ポリシーの各エントリが存在することを前提としています。
 
 ## ミドルウェアの仕組み
 
-ミドルウェアはHTTPハンドラをラップして処理ロジックを追加します。各ミドルウェアはオプションマップを受け取り、ハンドララッパーを返します：
+各ミドルウェアはオプションマップを受け取り、ハンドラのラッパーを返します：
 
 ```yaml
 middleware:
@@ -20,23 +22,24 @@ options:
   ratelimit.requests: "100"
 ```
 
-オプションはドット記法を使用：`middleware_name.option.name`。後方互換性のためにレガシーアンダースコア形式もサポートされています。
+オプションには`middleware_name.option.name`形式のドット記法を使用します。後方互換性のため、従来のアンダースコア形式もサポートされています。
 
-## マッチ前 vs マッチ後
+## プリハンドラとマッチ後
 
 <tip>
-<b>マッチ前</b>はルートマッチング前に実行—CORSや圧縮などの横断的な関心事に。
-<b>マッチ後</b>はルートがマッチした後に実行—ルート情報が必要な認可に。
+<b>プリハンドラ</b>ミドルウェアは、サーバーがルートを選択した後、ルートメタデータが付与される前に実行されます。CORSや圧縮などに使用します。
+<b>マッチ後</b>ミドルウェアは、ルートメタデータが付与された後に実行されます。エンドポイントIDを必要とする認可などに使用します。
+一致しないリクエストでは、どちらのチェーンも実行されません。
 </tip>
 
 ```yaml
-middleware:        # マッチ前
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # マッチ後
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -48,9 +51,9 @@ post_options:
 
 ### CORS {#cors}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-ブラウザリクエスト用のCross-Origin Resource Sharing。
+ブラウザリクエスト向けのCross-Origin Resource Sharingです。
 
 ```yaml
 middleware:
@@ -61,13 +64,13 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
+|--------|---------|-------------|
 | `cors.allow.origins` | `*` | 許可するオリジン（カンマ区切り、`*.example.com`をサポート） |
 | `cors.allow.methods` | `GET,POST,PUT,DELETE,OPTIONS,PATCH` | 許可するメソッド |
 | `cors.allow.headers` | `Origin,Content-Type,Accept,Authorization,X-Requested-With` | 許可するリクエストヘッダー |
 | `cors.expose.headers` | - | クライアントに公開するヘッダー |
-| `cors.allow.credentials` | `false` | Cookie/認証を許可 |
-| `cors.max.age` | `86400` | プリフライトキャッシュ（秒） |
+| `cors.allow.credentials` | `false` | Cookie／認証を許可 |
+| `cors.max.age` | `86400` | プリフライトのキャッシュ時間（秒） |
 | `cors.allow.private.network` | `false` | プライベートネットワークアクセス |
 
 OPTIONSプリフライトリクエストは自動的に処理されます。
@@ -76,9 +79,9 @@ OPTIONSプリフライトリクエストは自動的に処理されます。
 
 ### レート制限 {#ratelimit}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-キーごとの追跡を持つトークンバケットレート制限。
+キー単位で追跡するトークンバケット方式のレート制限です。
 
 ```yaml
 middleware:
@@ -90,26 +93,26 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `ratelimit.requests` | `100` | ウィンドウごとのリクエスト数 |
-| `ratelimit.window` | `1m` | 時間ウィンドウ |
+|--------|---------|-------------|
+| `ratelimit.requests` | `100` | 時間枠あたりのリクエスト数 |
+| `ratelimit.window` | `1m` | 時間枠 |
 | `ratelimit.burst` | `20` | バースト容量 |
 | `ratelimit.key` | `ip` | キー戦略 |
-| `ratelimit.cleanup_interval` | `5m` | クリーンアップ頻度 |
-| `ratelimit.entry_ttl` | `10m` | エントリ有効期限 |
-| `ratelimit.max_entries` | `100000` | 追跡する最大キー数 |
+| `ratelimit.cleanup_interval` | `5m` | クリーンアップ間隔 |
+| `ratelimit.entry_ttl` | `10m` | エントリの有効期限 |
+| `ratelimit.max_entries` | `100000` | 追跡するキーの最大数 |
 
-**キー戦略:** `ip`、`header:X-API-Key`、`query:api_key`
+**キー戦略：** `ip`、`header:X-API-Key`、`query:api_key`
 
-`429 Too Many Requests`をヘッダー付きで返します：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`。
+`429 Too Many Requests`を、`X-RateLimit-Limit`、`X-RateLimit-Window`ヘッダーとともに返します。
 
 ---
 
 ### 圧縮 {#compress}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-レスポンスのGzip圧縮。
+レスポンスをGzip圧縮します。
 
 ```yaml
 middleware:
@@ -120,19 +123,19 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `compress.level` | `default` | `fastest`、`default`、または`best` |
-| `compress.min.length` | `1024` | 最小レスポンスサイズ（バイト） |
+|--------|---------|-------------|
+| `compress.level` | `default` | `fastest`、`default`、`best`のいずれか |
+| `compress.min.length` | `1024` | レスポンスの最小サイズ（バイト） |
 
-クライアントが`Accept-Encoding: gzip`を送信した場合のみ圧縮します。
+クライアントが`Accept-Encoding: gzip`を送信した場合にのみ圧縮します。
 
 ---
 
-### Real IP {#real_ip}
+### 実クライアントIP {#real_ip}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-プロキシヘッダーからクライアントIPを抽出。
+プロキシヘッダーからクライアントIPを抽出します。
 
 ```yaml
 middleware:
@@ -142,19 +145,19 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `real_ip.trusted.subnets` | プライベートネットワーク | 信頼するプロキシCIDR |
-| `real_ip.trust_all` | `false` | すべてのソースを信頼（安全でない） |
+|--------|---------|-------------|
+| `real_ip.trusted.subnets` | ループバック、RFC 1918プライベート、IPv4リンクローカル、CGNAT、IPv6 ULA、IPv6リンクローカルの各範囲 | 信頼するプロキシのCIDR |
+| `real_ip.trust_all` | `false` | すべての送信元を信頼（安全ではありません） |
 
-**ヘッダー優先順位:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
+**ヘッダーの優先順位：** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
 
 ---
 
 ### トークン認証 {#token_auth}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-トークンベースの認証。トークンストア設定については[セキュリティ](system/security.md)を参照。
+トークンベースの認証です。トークンストアの設定については[セキュリティ](system/security.md)を参照してください。
 
 ```yaml
 middleware:
@@ -164,33 +167,33 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `token_auth.store` | 必須 | トークンストアレジストリID |
+|--------|---------|-------------|
+| `token_auth.store` | 必須 | トークンストアのレジストリID |
 | `token_auth.header.name` | `Authorization` | ヘッダー名 |
-| `token_auth.header.prefix` | `Bearer ` | ヘッダープレフィックス |
-| `token_auth.query.param` | `x-auth-token` | クエリパラメータフォールバック |
-| `token_auth.cookie.name` | `x-auth-token` | Cookieフォールバック |
+| `token_auth.header.prefix` | `Bearer ` | ヘッダーのプレフィックス |
+| `token_auth.query.param` | `x-auth-token` | クエリパラメータのフォールバック |
+| `token_auth.cookie.name` | `x-auth-token` | Cookieのフォールバック |
 
-ダウンストリームミドルウェア用にコンテキストにアクターとセキュリティスコープを設定します。リクエストをブロックしません—認可はファイアウォールミドルウェアで行われます。
+後続ミドルウェア向けに、コンテキストへアクターとセキュリティスコープを設定します。リクエスト自体は拒否しません。認可はファイアウォールミドルウェアで行われます。
 
 ---
 
 ### メトリクス {#metrics}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-PrometheusスタイルのHTTPメトリクス。設定オプションはありません。
+Prometheus形式のHTTPメトリクスです。このミドルウェアは、メトリクスコレクターが利用できる場合にのみ登録され、設定オプションはありません。
 
 ```yaml
 middleware:
   - metrics
 ```
 
-| メトリクス | タイプ | 説明 |
-|-----------|--------|------|
-| `wippy_http_requests_total` | Counter | 総リクエスト数 |
-| `wippy_http_request_duration_seconds` | Histogram | リクエストレイテンシー |
-| `wippy_http_requests_in_flight` | Gauge | 同時リクエスト数 |
+| メトリクス | 型 | 説明 |
+|--------|------|-------------|
+| `wippy_http_requests_total` | Counter | リクエスト総数 |
+| `wippy_http_request_duration_seconds` | Histogram | リクエストのレイテンシ |
+| `wippy_http_requests_in_flight` | Gauge | 同時処理中のリクエスト数 |
 
 ---
 
@@ -198,7 +201,7 @@ middleware:
 
 <warning>マッチ後</warning>
 
-マッチしたエンドポイントに基づく認可。`token_auth`からのアクターが必要。
+一致したエンドポイントに基づく認可です。リクエストコンテキストにアクターとセキュリティスコープが必要です。`token_auth`は、それらを提供する方法の1つです。
 
 ```yaml
 post_middleware:
@@ -208,10 +211,10 @@ post_options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
-| `endpoint_firewall.action` | `access` | チェックする権限アクション |
+|--------|---------|-------------|
+| `endpoint_firewall.action` | `access` | 検査する権限アクション |
 
-`401 Unauthorized`（アクターなし）または`403 Forbidden`（権限拒否）を返します。
+アクターがない場合は`401 Unauthorized`、権限がない場合は`403 Forbidden`を返します。
 
 ---
 
@@ -219,7 +222,7 @@ post_options:
 
 <warning>マッチ後</warning>
 
-IDで特定のリソースを保護。ルーターレベルで便利。
+特定のリソースをIDで保護します。ルーターレベルでの使用に適しています。
 
 ```yaml
 post_middleware:
@@ -230,17 +233,17 @@ post_options:
 ```
 
 | オプション | デフォルト | 説明 |
-|-----------|-----------|------|
+|--------|---------|-------------|
 | `resource_firewall.action` | `access` | 権限アクション |
-| `resource_firewall.target` | 必須 | リソースレジストリID |
+| `resource_firewall.target` | 必須 | リソースのレジストリID |
 
 ---
 
 ### Sendfile {#sendfile}
 
-<note>マッチ前</note>
+<note>プリハンドラ</note>
 
-ハンドラからの`X-Sendfile`ヘッダー経由でファイルを配信。
+ハンドラから`X-Sendfile`ヘッダーを使用してファイルを配信します。
 
 ```yaml
 middleware:
@@ -249,14 +252,14 @@ options:
   sendfile.fs: "app:downloads"
 ```
 
-ハンドラはファイル配信をトリガーするためにヘッダーを設定：
+ハンドラは、ファイル配信を開始するために次のヘッダーを設定します：
 
 | ヘッダー | 説明 |
-|---------|------|
+|--------|-------------|
 | `X-Sendfile` | ファイルシステム内のファイルパス |
-| `X-File-Name` | ダウンロードファイル名 |
+| `X-File-Name` | ダウンロード時のファイル名 |
 
-再開可能なダウンロードのためのRangeリクエストをサポート。
+再開可能なダウンロードのため、範囲リクエストをサポートしています。
 
 ---
 
@@ -264,7 +267,7 @@ options:
 
 <warning>マッチ後</warning>
 
-WebSocket接続をプロセスにリレー。[WebSocketリレー](http/websocket-relay.md)を参照。
+WebSocket接続をプロセスへ中継します。[WebSocketリレー](http/websocket-relay.md)を参照してください。
 
 ```yaml
 post_middleware:
@@ -277,7 +280,7 @@ post_options:
 
 ### SSEリレー {#sse_relay}
 
-<warning>Post-match</warning>
+<warning>マッチ後</warning>
 
 プロセスからServer-Sent Eventsをストリーミングします。[Server-Sent Events](http/sse.md)を参照してください。
 
@@ -292,34 +295,34 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>プリハンドラ</note>
 
-受信リクエストのOpenTelemetryスパンとメトリクスを記録します。OTelが有効な場合に自動登録され、それ以外の場合はno-opとして動作します。
+受信リクエストのOpenTelemetryスパンとメトリクスを記録します。OTelが有効な場合は自動的に登録され、それ以外では何もしません。
 
 ```yaml
 middleware:
   - otel
 ```
 
-オプションは受け取りません。`metrics`ミドルウェアと連携して動作します。PrometheusカウンターとOTelトレースの両方が必要な場合は、両方を有効にしてください。
+オプションはありません。`metrics`ミドルウェアと併用できます。PrometheusカウンターとOTelトレースの両方が必要な場合は、両方を有効にしてください。
 
 ---
 
 ## ミドルウェアの順序
 
-ミドルウェアはリストされた順序で実行されます。推奨される順序：
+リクエストでは、ミドルウェアは記載順に実行されます。レスポンス処理は逆順に戻ります。推奨される順序：
 
 ```yaml
 middleware:
-  - real_ip       # 1. 最初にReal IPを抽出
-  - cors          # 2. CORSプリフライトを処理
-  - compress      # 3. レスポンス圧縮をセットアップ
-  - ratelimit     # 4. レート制限をチェック
-  - metrics       # 5. メトリクスを記録
-  - token_auth    # 6. リクエストを認証
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # ルートマッチ後に認可
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## 関連項目

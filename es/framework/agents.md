@@ -1,11 +1,13 @@
 ---
 title: "Agentes"
-description: "El modulo wippy/agent proporciona un framework para construir agentes de IA con uso de herramientas, streaming, delegacion, traits y memoria. Los…"
+description: "Define y ejecuta agentes Wippy con herramientas, streaming, delegates, traits, memoria y resolución personalizada."
 ---
 
 # Agentes
 
-El modulo `wippy/agent` proporciona un framework para construir agentes de IA con uso de herramientas, streaming, delegacion, traits y memoria. Los agentes se definen declarativamente y se ejecutan a traves de un patron de contexto/runner.
+El módulo `wippy/agent` define agentes declarativamente y los ejecuta mediante un contexto y un runner. Los agentes pueden usar herramientas, hacer streaming, delegar trabajo, aplicar traits y recordar memoria.
+
+Esta página es una introducción a la API con fragmentos de referencia componibles, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, modelo y provider LLM registrados, credenciales configuradas y las entradas de agente, herramienta o resolver que referencia cada ejemplo. Los fragmentos posteriores usan variables como `ctx`, `runner` y `conversation` creadas antes. Para un proyecto ejecutable completo, siga [Construir un agente LLM](tutorials/llm-agent.md).
 
 ## Configuracion
 
@@ -16,38 +18,17 @@ wippy add wippy/agent
 wippy install
 ```
 
-El modulo de agentes requiere `wippy/llm` y un host de procesos. Declara ambas dependencias:
+El módulo de agentes declara por sí mismo su dependencia `wippy/llm`. Añada la dependencia de agent si todavía no está presente:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: dep.llm
-    kind: ns.dependency
-    component: wippy/llm
-    version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
-
   - name: dep.agent
     kind: ns.dependency
     component: wippy/agent
     version: "*"
-    parameters:
-      - name: process_host
-        value: app:processes
 ```
 
 ## Definiciones de Agentes
@@ -80,7 +61,7 @@ entries:
 | `prompt` | string | Prompt del sistema |
 | `model` | string | Nombre o clase del modelo |
 | `max_tokens` | number | Maximo de tokens de salida (por defecto `512`) |
-| `temperature` | number | Temperatura de muestreo (por defecto `0`; rango dependiente del proveedor) |
+| `temperature` | number | Temperatura opcional; se omite de forma predeterminada y su rango depende del provider |
 | `thinking_effort` | number | Solo se reenvia al modelo cuando `> 0` (escala definida por el proveedor) |
 | `tools` | array | IDs de registro de herramientas |
 | `traits` | array | Referencias a traits |
@@ -95,6 +76,7 @@ El contexto del agente es el punto de entrada principal. Crea un contexto, confi
 ```yaml
 imports:
   agent_context: wippy.agent:context
+  prompt: wippy.llm:prompt
 ```
 
 ```lua
@@ -138,7 +120,7 @@ local ctx = agent_context.new({
 |--------|-------------|
 | `context` | Contexto base en tiempo de ejecucion reenviado a herramientas y delegados |
 | `delegate_tools` | Configuracion predeterminada de delegate-tool (sobrescrita por `configure_delegate_tools`) |
-| `enable_cache` | Habilitar marcadores de cache de prompt (modelos Claude). Por defecto es `true`. |
+| `enable_cache` | Ajuste de marcadores de prompt cache para Claude. La implementación actual siempre los activa, incluso con `false`. |
 
 ### Carga por Especificacion Inline
 
@@ -176,11 +158,19 @@ print(response.result)
 ### Opciones de Step
 
 ```lua
+local self_pid, pid_err = process.pid()
+if pid_err then
+    error("Failed to get process PID: " .. tostring(pid_err))
+end
+
 local response, err = runner:step(conversation, {
     context = { session_id = "abc" },
-    stream_target = { reply_to = process.pid(), topic = "stream" },
+    stream_target = { reply_to = self_pid, topic = "stream" },
     tool_call = "auto",
 })
+if err then
+    error("Agent step failed: " .. tostring(err))
+end
 ```
 
 | Opcion | Tipo | Descripcion |
@@ -199,7 +189,7 @@ local response, err = runner:step(conversation, {
 | `tool_calls` | table? | Llamadas a herramientas para ejecutar |
 | `delegate_calls` | table? | Invocaciones de delegados |
 
-### Estadisticas del Runner
+### Estadísticas del ejecutor :id=estadisticas-del-runner
 
 ```lua
 local stats = runner:get_stats()
@@ -319,7 +309,7 @@ local function execute_and_continue(runner, conversation)
                 result_str = json.encode(result)
             end
 
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -336,7 +326,7 @@ end
 | `registry_id` | string | ID de registro completo para `funcs.call()` |
 
 <note>
-Usa <code>funcs.call(tc.registry_id, tc.arguments)</code> para ejecutar herramientas. El campo <code>registry_id</code> mapea directamente a la entrada de la herramienta en el registro.
+Usa <code>funcs.call(tc.registry_id, tc.arguments)</code> para ejecutar herramientas. El campo <code>registry_id</code> mapea directamente a la entrada de la herramienta en el registro. Consulte el [modelo de seguridad](../concepts/security-model.md) para el control y observabilidad del acceso a herramientas.
 </note>
 
 ## Streaming
@@ -347,13 +337,36 @@ Transmite respuestas del agente en tiempo real usando `stream_target`:
 local TOPIC = "agent_stream"
 
 local function stream_step(runner, conversation)
-    local stream_ch = process.listen(TOPIC)
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, nil, listen_err
+    end
+
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove agent stream listener"
+            if err then
+                return text, nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return text, nil, cleanup_err
+        end
+        if err then
+            return text, nil, err
+        end
+        return text, response, nil
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish("", nil, pid_err)
+    end
 
     local done_ch = channel.new(1)
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
-                reply_to = process.pid(),
+                reply_to = self_pid,
                 topic = TOPIC,
             },
         })
@@ -361,36 +374,50 @@ local function stream_step(runner, conversation)
     end)
 
     local full_text = ""
+    local step_result = nil
+    local stream_done = false
+    local stream_err = nil
+
     while true do
-        local result = channel.select({
-            stream_ch:case_receive(),
-            done_ch:case_receive(),
-        })
-        if not result.ok then break end
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not step_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(full_text, nil, "Agent stream closed before completion")
+        end
 
         if result.channel == done_ch then
-            process.unlisten(stream_ch)
-            local r = result.value
-            return full_text, r.response, r.err
-        end
-
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            -- wait for the step to complete
-            local r, ok = done_ch:receive()
-            process.unlisten(stream_ch)
-            if ok and r then
-                return full_text, r.response, r.err
+            step_result = result.value
+            if step_result.err then
+                return finish(full_text, nil, step_result.err)
             end
-            return full_text, nil, nil
+            if stream_done then
+                return finish(full_text, step_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "Agent stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and step_result then
+                return finish(full_text, step_result.response, stream_err)
+            end
         end
     end
-
-    process.unlisten(stream_ch)
-    return full_text, nil, nil
 end
 ```
 
@@ -425,7 +452,10 @@ Los agentes pueden delegar a otros agentes. Los delegados aparecen como herramie
 Las llamadas a delegados aparecen en `response.delegate_calls`:
 
 ```lua
-local response = runner:step(conversation)
+local response, err = runner:step(conversation)
+if err then
+    error("Delegate step failed: " .. tostring(err))
+end
 
 if response.delegate_calls then
     for _, dc in ipairs(response.delegate_calls) do
@@ -610,10 +640,10 @@ return {
 3. Intenta busqueda en el registro por nombre
 4. Retorna error si no se encuentra
 
-Este patron habilita aplicaciones multi-tenant donde los agentes se configuran por usuario o por workspace y se almacenan fuera del registro del framework.
+La resolución personalizada puede cargar definiciones fuera del registro del framework, incluidas las definidas por usuario o workspace.
 
 ## Ver Tambien
 
-- [LLM](framework/llm.md) - Modulo LLM subyacente
-- [Construir un Agente LLM](tutorials/llm-agent.md) - Tutorial paso a paso
-- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework
+- [LLM](framework/llm.md) — Interfaz de modelos subyacente
+- [Construir un agente LLM](../tutorials/llm-agent.md) — Crear un agente paso a paso
+- [Visión general del framework](framework/overview.md) — Instalar e importar módulos del framework

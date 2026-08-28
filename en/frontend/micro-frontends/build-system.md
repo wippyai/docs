@@ -5,11 +5,16 @@ description: "Canonical output commands, Windows wrappers, Web Host import-map s
 
 # Build and Dependency Contract
 
-## Canonical Wippy project build contract
+This is a reference contract for existing repositories. The Makefile,
+PowerShell, batch, and Vite blocks below are focused fragments; they are not a
+standalone project scaffold.
 
-In a Wippy application or module repository launched by `wippy.exe`, invoke the
-repository Make target. Do not run package-manager or Vite build commands
-directly.
+## Canonical Wippy production build contract
+
+For a production artifact in a Wippy application or module repository launched
+by `wippy.exe`, invoke the repository Make target. Local watch-mode commands
+such as `npm run dev` remain valid when the repository documents them, but they
+do not replace the deployment build.
 
 The Makefile recipe for every production frontend target uses:
 
@@ -94,6 +99,20 @@ The target Web Host release defines host-provided modules.
 
 Do not maintain a hand-written package list. Do not mirror the full external set into peer dependencies.
 
+For web-component entry builds, preserve the entry module's registration side effect:
+
+```ts
+export default {
+  build: {
+    rollupOptions: {
+      preserveEntrySignatures: 'strict',
+    },
+  },
+}
+```
+
+Using `false` can move `define(import.meta.url, Component)` out of the entry chunk, leaving the Host's `?declare-tag=` import unable to register the element.
+
 ```ts
 import hostImportMap from './wippy-import-map.json'
 
@@ -108,8 +127,13 @@ export default {
 
 The snapshot must include its provenance and hash. A dependency absent from the snapshot is bundled unless another documented build rule applies.
 
-For example, if the selected release tag is `v1.2.3`, the only canonical
-snapshot URL is
-`https://web-host.wippy.ai/v1.2.3/import-map.json`. Do not substitute the local
+For the Web Host 1.0.56 baseline, the canonical snapshot URL is
+`https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`. Do not substitute the local
 application URL, an unpinned `latest` URL, or a manually reconstructed package
 list.
+
+This Host release coordinates with public `@wippy-fe/*` 0.0.56 packages.
+`@wippy-fe/vite-plugin` 0.0.56 supports Vite 5, 6, and 7. The examples in this
+documentation use Vite 7 with Node 22.12 or newer; consumers that deliberately
+remain on Vite 5 or 6 must follow that Vite release's Node requirements. The
+Web Host source repository separately declares Node 22+ and uses Vite 7.

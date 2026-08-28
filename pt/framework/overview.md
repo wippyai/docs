@@ -1,24 +1,26 @@
 ---
 title: "Framework"
-description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
+description: "Instale, declare e importe módulos oficiais do framework Wippy publicados pelo Hub."
 ---
 
 # Framework
 
-Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
+Os módulos oficiais do framework são publicados no Wippy Hub pela organização `wippy`.
 
-## Adding Framework Modules
+Esta página é uma referência de gerenciamento de módulos para um projeto Wippy existente. Os comandos podem ser executados na raiz do projeto; os blocos YAML e de importação são exemplos de referência independentes, e não uma aplicação completa.
+
+## Adicionando módulos do framework
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-This adds the module to your lock file and downloads it to `.wippy/vendor/`.
+Isso adiciona o módulo ao arquivo de lock e o baixa para `.wippy/vendor/`.
 
-## Declaring Dependencies in Source
+## Declarando dependências no código-fonte
 
-Framework modules can also be declared as dependencies in your `_index.yaml`:
+Os módulos do framework também podem ser declarados como dependências no `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -28,18 +30,18 @@ entries:
   - name: dependency.test
     kind: ns.dependency
     component: wippy/test
-    version: "^0.3.0"
+    version: "*"
 ```
 
-Then resolve and install:
+Depois, resolva e instale as dependências:
 
 ```bash
 wippy update
 ```
 
-## Importing Framework Libraries
+## Importando bibliotecas do framework
 
-Once installed, import framework libraries into your entries:
+Depois da instalação, importe as bibliotecas do framework nas suas entradas:
 
 ```yaml
 entries:
@@ -54,31 +56,33 @@ entries:
       test: wippy.test:test
 ```
 
-The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
+Essa importação mapeia `wippy.test:test` (a entrada `test` do namespace `wippy.test`) para o nome local `test`, que pode então ser carregado com `require("test")` no Lua.
 
-## Available Modules
+## Módulos disponíveis
 
-| Module | Description |
+| Módulo | Descrição |
 |--------|-------------|
-| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
-| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
-| `wippy/test` | BDD-style testing framework with assertions and mocking |
-| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
-| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
-| `wippy/views` | Virtual page/component system with template rendering |
-| `wippy/facade` | Configuracao de host de frontend, tematizacao e endpoint de config |
-| `wippy/terminal` | Terminal UI components |
-| `wippy/security` | Escopos de ator, bundles de policy e helpers de seguranca |
-| `wippy/usage` | Contabilizacao de tokens e custos para chamadas de LLM |
+| `wippy/llm` | Interface unificada para LLMs com geração, streaming, chamadas de ferramentas e saída estruturada |
+| `wippy/agent` | Framework de agentes com ferramentas, delegados, traits e memória |
+| `wippy/embeddings` | Armazenamento de embeddings vetoriais e busca por similaridade |
+| `wippy/test` | Framework de testes em estilo BDD com asserções e mocks |
+| `wippy/dataflow` | Orquestração de workflows com execução de nós baseada em DAG |
+| `wippy/relay` | Relay WebSocket com hubs por usuário e roteamento de plugins |
+| `wippy/views` | Sistema virtual de páginas e componentes com renderização de templates |
+| `wippy/facade` | Configuração do host de frontend, temas e endpoint de configuração |
+| `wippy/terminal` | Componentes de interface para terminal |
+| `wippy/migration` | Migrações de esquema de banco de dados |
+| `wippy/security` | Escopos de atores, pacotes de políticas e utilitários de segurança |
+| `wippy/usage` | Contabilização de tokens e custos de chamadas a LLMs |
 
-More modules are available and being published regularly. Search the hub:
+Pesquise no Hub para consultar o catálogo atual de módulos:
 
 ```bash
 wippy search wippy
 ```
 
-## See Also
+## Consulte também
 
-- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
-- [Publishing](guides/publishing.md) - Publishing your own modules
-- [CLI Reference](guides/cli.md) - CLI commands
+- [Gerenciamento de dependências](guides/dependency-management.md) — Arquivos de lock e restrições de versão
+- [Publicação](guides/publishing.md) — Como publicar um módulo
+- [Referência da CLI](guides/cli.md) — Comandos de gerenciamento de módulos

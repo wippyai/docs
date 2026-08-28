@@ -5,8 +5,6 @@ description: "Project layout, YAML definition files, and naming conventions."
 
 # YAML & Project Structure
 
-Project layout, YAML definition files, and naming conventions.
-
 ## Directory Layout
 
 ```
@@ -27,12 +25,12 @@ myapp/
 ## YAML Definition Files
 
 <note>
-YAML definitions are loaded into the registry at startup. The registry is the source of truth - YAML files are one way to populate it. Entries can also come from other sources or be created programmatically.
+YAML definitions are loaded into the registry at startup. The registry is the source of truth; YAML files are one way to populate it. Entries can also come from other sources or be created programmatically.
 </note>
 
-### File Structure
+### Definition File Format
 
-Any YAML file with a `namespace` plus either an `entries` array or a top-level `name`+`kind` is a valid definition file. `version` is optional:
+A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The optional `version` marker is conventionally `"1.0"`; the v0.3.32a loader does not require it.
 
 ```yaml
 version: "1.0"
@@ -60,9 +58,9 @@ entries:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `version` | no | Schema version (currently `"1.0"`) |
-| `namespace` | yes | Entry namespace for this file |
-| `entries` | yes | Array of entry definitions |
+| `version` | No | Manifest version marker (conventionally `"1.0"`) |
+| `namespace` | Yes | Entry namespace for this file |
+| `entries` | Conditional | Array of entry definitions; omit only when using top-level `name` and `kind` |
 
 ### Naming Convention
 
@@ -84,7 +82,7 @@ Use dots (`.`) for semantic separation and underscores (`_`) for words:
 ```
 
 <tip>
-Pattern: <code>base_name.variant</code> - dots separate semantic parts, underscores separate words within a part.
+Pattern: <code>base_name.variant</code> — dots separate semantic parts, while underscores separate words within a part.
 </tip>
 
 ### Namespaces
@@ -102,7 +100,7 @@ Entry full ID combines namespace and name: `app.api:get_user`
 
 ### Source Directories
 
-The `wippy.lock` file defines where Wippy loads definitions from:
+The `wippy.lock` file names the application source root and the base directory used to resolve locked modules:
 
 ```yaml
 directories:
@@ -110,11 +108,11 @@ directories:
   src: ./src
 ```
 
-Wippy recursively scans these directories for YAML files.
+Wippy adds `directories.src` as the application load path. `directories.modules` is not scanned as one raw source tree: each locked module resolves to its versioned `.wapp` archive or unpacked module path, and each replacement resolves to its configured entry root. The loader recursively scans the application source and selected directory-based module or replacement roots for `.yaml`, `.yml`, and `.json` manifests; `.wapp` modules are read as archives. Only object-shaped files with a `namespace` are treated as registry manifests, and `node_modules` directories are skipped. `_index.yaml` is a project convention, not the only accepted filename.
 
 ## Entry Definitions
 
-Each entry in the `entries` array. Properties are at root level (no `data:` wrapper):
+Each item in the `entries` array defines one entry. Kind-specific fields can appear beside `name`, `kind`, and `meta`, as in this example:
 
 ```yaml
 entries:
@@ -137,6 +135,18 @@ entries:
     func: hello
 ```
 
+An explicit `data:` field is also supported. When present, its value is the complete kind-specific payload, so do not mix it with sibling kind-specific fields:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
+```
+
 ### Metadata
 
 Use `meta` for UI-friendly information:
@@ -150,7 +160,7 @@ Use `meta` for UI-friendly information:
   source: file://payment.lua
 ```
 
-Convention: `meta.title` and `meta.comment` render nicely in management UIs.
+Use `meta.title` and `meta.comment` for descriptive information that registry consumers and management interfaces can display.
 
 ### Application Entries
 
@@ -172,15 +182,15 @@ Use `registry.entry` kind for application-level configuration:
 
 | Kind | Purpose |
 |------|---------|
-| `registry.entry` | General-purpose data |
+| `registry.entry` | General-purpose data stored without normal event dispatch |
 | `function.lua` | Callable Lua function |
 | `process.lua` | Long-running process |
 | `http.service` | HTTP server |
 | `http.router` | Route group |
 | `http.endpoint` | HTTP handler |
-| `process.host` | Process supervisor |
+| `process.host` | Process execution host |
 
-See [Entry Kinds Guide](guides/entry-kinds.md) for complete reference.
+See the [Entry Kinds Guide](guides/entry-kinds.md) for the entry-kind reference.
 
 ## Configuration Files
 
@@ -202,7 +212,7 @@ supervisor:
     worker_count: 16
 ```
 
-See [Configuration Guide](guides/configuration.md) for all options.
+See the [Configuration Guide](guides/configuration.md) for runtime configuration fields.
 
 ### wippy.lock
 
@@ -216,7 +226,7 @@ directories:
 
 ## Referencing Entries
 
-Reference entries by full ID or relative name. Children attach to their parent through `meta`, not via parent-side lists:
+Reference entries by full ID or relative name where the entry kind supports it. HTTP routers and endpoints attach through `meta.server` and `meta.router`, rather than through parent-side child lists:
 
 ```yaml
 # Router declares itself against a server
@@ -258,7 +268,7 @@ myapp/
 
 ## See Also
 
-- [Application Architecture](concepts/architecture.md) - How to carve an app into slices and layers
-- [Entry Kinds Guide](guides/entry-kinds.md) - Available entry kinds
-- [Configuration Guide](guides/configuration.md) - Runtime options
-- [Custom Entry Kinds](internals/kinds.md) - Implementing handlers (advanced)
+- [Application Architecture](concepts/architecture.md) — Organize an application into slices and layers
+- [Entry Kinds Guide](guides/entry-kinds.md) — Review available entry kinds
+- [Configuration Guide](guides/configuration.md) — Configure runtime options
+- [Custom Entry Kinds](internals/kinds.md) — Implement handlers (advanced)

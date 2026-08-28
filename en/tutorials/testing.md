@@ -1,13 +1,14 @@
 ---
 title: "Testing"
-description: "Write and run tests for your Lua code with the wippy/test framework — a BDD-style runner with assertions, lifecycle hooks, and mocking, executed by the…"
+description: "Write and run Lua tests with wippy/test assertions, lifecycle hooks, mocking, filtering, and exit codes."
 ---
 
 # Testing
 
-Write and run tests for your Lua code with the `wippy/test` framework — a BDD-style
-runner with assertions, lifecycle hooks, and mocking, executed by the `wippy test`
-command.
+Use the `wippy/test` framework to define Lua test cases with assertions, lifecycle hooks, and mocks, then execute them with `wippy test`.
+
+**Classification:** Runnable tutorial. It contains a complete library, test entry,
+dependency setup, expected runner output, and failure checks.
 
 ## What You'll Build
 
@@ -15,22 +16,36 @@ A small library and a test suite that covers it:
 
 1. A `calc` library with `add` and `div` functions.
 2. A test entry that describes cases, asserts behavior, and skips a pending case.
-3. A green test run via `wippy test`.
+3. A successful test run with `wippy test`.
 
 ## Prerequisites
 
-- A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
-  `wippy init` in an empty directory).
-- The test framework and a terminal host installed:
+- Wippy runtime `v0.3.32a`.
+- An empty working directory. Create and initialize the project, then install the
+  test framework:
 
   ```bash
+  mkdir testing-demo
+  cd testing-demo
+  mkdir src
+  wippy init
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  The runner renders a live terminal UI, so `wippy/terminal` is required alongside
-  `wippy/test`.
+  The test framework declares `wippy/terminal` as a dependency, so installation
+  brings in the terminal host used by the runner's live UI.
+
+The finished project contains:
+
+```text
+testing-demo/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── calc.lua
+    └── calc_test.lua
+```
 
 ## The Code Under Test
 
@@ -95,6 +110,7 @@ Register both entries. Discovery keys off `meta.type: test`; `meta.suite` groups
 results in the output:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -128,23 +144,32 @@ wippy test
 Filter by entry id substring (namespace:name) while iterating:
 
 ```bash
-wippy test calc_test
+wippy test test calc_test
 ```
 
-Output for the suite above:
+The first `test` selects the framework's test-runner entrypoint. Remaining
+arguments are substring filters applied to test entry IDs.
+
+Expected output for the suite:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
+    o setup ran <duration>
+    o adds numbers <duration>
+    o returns error on divide by zero <duration>
     - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped <duration>
 
-  PASSED   3 tests   1 skipped   1ms
+  PASSED
+  3 tests  1 skipped  <duration>
 ```
 
-`wippy test` exits `0` when every case passes and `1` on any failure, so it drops
-straight into CI.
+The live renderer prints each case before the suite summary; timings vary by run.
+
+`wippy test` exits with `0` when every case passes and `1` when any case fails, allowing CI to use the command's exit status.
+
+To verify the failure path, temporarily change the expected sum from `5` to `6`.
+The runner should print `FAILED` and exit with status 1. Restore `5` before
+continuing.
 
 ## Assertions
 
@@ -177,8 +202,23 @@ Call these inside a `describe` block:
 Nested `describe` blocks inherit parent hooks (outer `before_*` first, inner
 `after_*` first).
 
+## Troubleshooting
+
+- `No test runner found` means `wippy/test` is not present in `wippy.lock`; run
+  `wippy add wippy/test` followed by `wippy install`.
+- A missing `calc` or `test` module means the `imports` keys do not match the
+  corresponding `require(...)` calls.
+- A test file is not discovered unless its entry has `meta.type: test`.
+- Timings and terminal glyphs vary by terminal. Use the final status and process
+  exit code for automation.
+
+## Cleanup
+
+After leaving the `testing-demo` directory, remove it when you no longer need the
+disposable project.
+
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) — the minimal project layout
-- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and friends
-- [Test Framework](framework/testing.md) — full reference for the runner and event protocol
+- [Hello World](tutorials/hello-world.md) — Minimal project layout
+- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua`, and related entries
+- [Test Framework](framework/testing.md) — Runner and event-protocol reference

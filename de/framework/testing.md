@@ -1,26 +1,36 @@
 ---
 title: "Test-Framework"
-description: "Das Modul wippy/test bietet ein BDD-Testframework mit Assertions, Lifecycle-Hooks und Mocking."
+description: "Wippy-Tests mit BDD-Suites, Assertions, Lifecycle-Hooks, Mocks und einfachen Testfunktionen definieren und ausführen."
 ---
 
 # Test-Framework
 
-Das Modul `wippy/test` bietet ein BDD-Testframework mit Assertions, Lifecycle-Hooks und Mocking.
+Das Modul `wippy/test` stellt BDD-Suites, Assertions, Lifecycle-Hooks, Mocks und
+einen Runner für Testeinträge bereit.
+
+Diese Seite ist eine API-Einführung. Die Lua-, YAML-, Ausgabe- und Projektstrukturblöcke
+sind Referenz-Snippets für ein bestehendes Wippy-Projekt und ergeben zusammen kein
+direkt kopierbares Projekt. Namen wie `validate`, `format_name`, `db`, `connect` und
+`notify_user` stehen für Funktionen oder Module der getesteten Anwendung. Ein
+vollständiges ausführbares Beispiel finden Sie unter
+[Eine Wippy-Anwendung testen](../tutorials/testing.md).
 
 ## Einrichtung
 
-Abhaengigkeit hinzufuegen:
+Fügen Sie die Abhängigkeit hinzu:
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-Das Modul registriert den Test-Entrypoint automatisch (einen Befehl mit `use_case: test`). Nach der Installation erkennt `wippy test` alle Test-Eintraege in Ihrem Projekt und fuehrt sie aus.
+Das Modul registriert den Test-Einstiegspunkt automatisch als Befehl mit
+`use_case: test`. Nach der Installation entdeckt und führt `wippy test` alle
+Testeinträge im Projekt aus.
 
 ## Tests definieren
 
-Tests sind `function.lua`-Eintraege mit `meta.type: test`:
+Tests sind `function.lua`-Einträge mit `meta.type: test`:
 
 ```yaml
 version: "1.0"
@@ -32,27 +42,27 @@ entries:
     meta:
       type: test
       suite: math
-      name: Mathematik-Operationen
+      name: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
 ### Test-Metadaten
 
-| Field | Required | Beschreibung |
+| Feld | Erforderlich | Beschreibung |
 |-------|----------|-------------|
-| `type` | Yes | Muss `"test"` sein, damit der Runner den Test erkennt |
-| `suite` | No | Gruppiert Tests in der Runner-Ausgabe |
-| `name` | No | Anzeigename in der Runner-Ausgabe |
-| `order` | No | Sortierreihenfolge innerhalb einer Suite (niedrigere Werte zuerst) |
+| `type` | Ja | Muss `"test"` sein, damit der Runner den Test entdeckt |
+| `suite` | Nein | Gruppiert Tests in der Runner-Ausgabe |
+| `name` | Nein | Anzeigename in der Runner-Ausgabe |
+| `order` | Nein | Sortierreihenfolge innerhalb einer Suite (niedrigere Werte zuerst) |
 
 ## Tests schreiben
 
 ### BDD-Stil
 
-Verwenden Sie `describe`- und `it`-Bloecke zur Strukturierung von Tests:
+Strukturieren Sie Tests mit `describe`- und `it`-Blöcken:
 
 ```lua
 local test = require("test")
@@ -84,7 +94,7 @@ return { run = run }
 
 ### Verschachtelte Suites
 
-Suites koennen zur Organisation verschachtelt werden:
+Suites können verschachtelt werden, um zusammengehöriges Verhalten zu gruppieren:
 
 ```lua
 test.describe("user", function()
@@ -106,7 +116,7 @@ test.describe("user", function()
 end)
 ```
 
-### Tests ueberspringen
+### Tests überspringen
 
 ```lua
 test.it_skip("not implemented yet", function()
@@ -114,11 +124,11 @@ test.it_skip("not implemented yet", function()
 end)
 ```
 
-Uebersprungene Tests erscheinen in der Ausgabe, zaehlen aber nicht als Fehler.
+Übersprungene Tests erscheinen in der Ausgabe, zählen aber nicht als Fehler.
 
 ### Suite-Aliase
 
-`test.spec` und `test.context` sind Aliase fuer `test.describe`:
+`test.spec` und `test.context` sind Aliase für `test.describe`:
 
 ```lua
 test.spec("feature", function()
@@ -146,14 +156,14 @@ test.ok(val, msg?)                    -- val is truthy
 test.fail(msg?)                       -- unconditional failure
 ```
 
-### Nil-Pruefungen
+### Nil-Prüfungen
 
 ```lua
 test.is_nil(val, msg?)                -- val == nil
 test.not_nil(val, msg?)               -- val ~= nil
 ```
 
-### Typpruefungen
+### Typprüfungen
 
 ```lua
 test.is_true(val, msg?)               -- val == true
@@ -225,7 +235,9 @@ test.describe("database", function()
 end)
 ```
 
-Hooks in verschachtelten Suites werden in Reihenfolge ausgefuehrt: `before_each` des Eltern-Blocks laeuft vor `before_each` des Kind-Blocks, und `after_each` des Kind-Blocks laeuft vor `after_each` des Eltern-Blocks.
+Hooks verschachtelter Suites werden geordnet ausgeführt: Das `before_each` der
+übergeordneten Suite läuft vor dem `before_each` der untergeordneten Suite; deren
+`after_each` läuft vor dem `after_each` der übergeordneten Suite.
 
 ## Mocking
 
@@ -259,13 +271,15 @@ test.restore_all_mocks()                  -- restore all mocks
 
 Mock-Pfade verwenden Punkt-Notation: `"process.send"` ersetzt `_G.process.send`.
 
-Mocks fuer `process.send` leiten Test-Framework-Nachrichten automatisch ueber die Originalfunktion weiter, sodass die Test-Event-Berichterstattung weiterhin funktioniert, wenn process.send gemockt ist.
+Mocks für `process.send` leiten Nachrichten des Testframeworks automatisch über die
+Originalfunktion weiter. Die Berichterstattung über Testereignisse funktioniert daher
+weiterhin, wenn `process.send` gemockt ist.
 
-Alle Mocks werden nach jedem Test automatisch ueber den `after_each`-Hook wiederhergestellt.
+Alle Mocks werden nach jedem Test automatisch über den Hook `after_each` wiederhergestellt.
 
-## Tests ausfuehren
+## Tests ausführen
 
-### Alle Tests ausfuehren
+### Alle Tests ausführen
 
 ```bash
 wippy test
@@ -278,7 +292,8 @@ wippy test math
 wippy test user validation
 ```
 
-Filter gleichen gegen Entry-IDs ab. Mehrere Muster werden kombiniert.
+Filter suchen nach wörtlichen Teilstrings in den Eintrags-IDs. Bei mehreren Mustern
+wird ein Eintrag ausgeführt, wenn seine ID mindestens eines davon enthält.
 
 ### Beispielausgabe
 
@@ -296,7 +311,8 @@ Filter gleichen gegen Entry-IDs ab. Mehrere Muster werden kombiniert.
 
 ## Einfache Tests
 
-Fuer Tests, die das BDD-Framework nicht benoetigen, definieren Sie eine einfache Funktion, die `true` zurueckgibt oder einen Fehler ausloest:
+Für Tests ohne BDD-Suites definieren Sie eine Funktion, die `true` zurückgibt oder
+einen Fehler auslöst:
 
 ```lua
 local funcs = require("funcs")
@@ -327,7 +343,8 @@ return { main = main }
       - funcs
 ```
 
-Der Runner erkennt, ob ein Test BDD-Case-Events verwendet oder einen einfachen Wert zurueckgibt. Beide Muster funktionieren mit `wippy test`.
+Der Runner erkennt, ob ein Test BDD-Fallereignisse verwendet oder einen einfachen Wert
+zurückgibt. Beide Muster funktionieren mit `wippy test`.
 
 ## Projektstruktur
 
@@ -344,7 +361,7 @@ src/
     integration_test.lua
 ```
 
-Die Test-`_index.yaml` definiert den Test-Namespace und die Eintraege:
+Die Testdatei `_index.yaml` definiert Namespace und Einträge:
 
 ```yaml
 version: "1.0"
@@ -357,7 +374,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,30 +384,20 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
-## Infrastrukturanforderungen
+## Terminal-Host
 
-Der Test-Runner benoetigt einen `process.host` und `terminal.host` in Ihrer Anwendung. Diese sind typischerweise bereits vorhanden. Falls nicht, fuegen Sie sie hinzu:
-
-```yaml
-entries:
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
-    lifecycle:
-      auto_start: true
-```
+`wippy/test` hängt von `wippy/terminal` ab. Dieses Modul stellt den automatisch
+startenden Host `wippy.terminal:host` bereit, den der CLI-Runner verwendet. Anwendungen
+müssen nicht eigens einen Prozess- oder Terminal-Host deklarieren, nur um `wippy test`
+auszuführen.
 
 ## Siehe auch
 
-- [Framework-Uebersicht](framework/overview.md) - Verwendung von Framework-Modulen
-- [CLI-Referenz](guides/cli.md) - CLI-Befehle
-- [Funktionen](concepts/functions.md) - Funktions-Registry
+- [Framework-Übersicht](framework/overview.md) — Framework-Module installieren und importieren
+- [CLI-Referenz](guides/cli.md) — Testbefehl und Optionen
+- [Funktionen](concepts/functions.md) — Funktionseinträge und Aufrufe

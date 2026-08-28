@@ -5,7 +5,7 @@ description: "Stream row-level changes from Postgres logical replication with db
 
 # Change Data Capture
 
-Stream row-level changes from a Postgres database using logical replication (`pgoutput` plugin). A CDC source creates a replication slot, optionally snapshots existing rows, then emits insert/update/delete changes as they happen. Sources are addressable by their entry ID and consumed from Lua via the [`cdc` module](lua/storage/cdc.md).
+A `db.cdc.postgres` source streams row-level changes from Postgres logical replication through the `pgoutput` plugin. It creates a replication slot, can snapshot existing rows, and then emits insert, update, and delete changes. This page is a configuration reference; the example assumes an existing database, publication or table set, replication credentials, and environment values. Sources are addressed by entry ID and consumed from Lua through the [`cdc` module](lua/storage/cdc.md).
 
 ## Configuration
 
@@ -44,9 +44,9 @@ Stream row-level changes from a Postgres database using logical replication (`pg
 | `streaming` | bool | false | Stream ongoing changes after the snapshot |
 | `temporary` | bool | false | Use a temporary replication slot (removed on disconnect) |
 | `failover` | bool | false | Enable failover slot mode (mutually exclusive with `temporary`) |
-| `standby_interval` | duration | - | Standby status message interval (e.g. `10s`) |
-| `status_interval` | duration | - | Status update interval to the server |
-| `snapshot_fetch_size` | int | - | Rows fetched per snapshot batch (must be >= 0) |
+| `standby_interval` | duration | `10s` | Standby status message interval |
+| `status_interval` | duration | `30s` | Retained-WAL and replication-lag metric sampling interval |
+| `snapshot_fetch_size` | int | `1000` | Rows fetched per snapshot batch; `0` uses the default |
 | `options` | map | - | Extra connection options |
 | `lifecycle` | object | - | Lifecycle configuration |
 

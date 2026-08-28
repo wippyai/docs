@@ -1,47 +1,56 @@
 ---
 title: "Workflows"
-description: "Workflows são operações duráveis e de longa duração que sobrevivem a crashes e reinicializações. Eles fornecem garantias de confiabilidade para…"
+description: "Como o Wippy persiste workflows de longa duração, reproduz a execução, recebe sinais e se recupera de falhas."
 ---
 
 # Workflows
 
-Workflows são operações duráveis e de longa duração que sobrevivem a crashes e reinicializações. Eles fornecem garantias de confiabilidade para processos de negócio críticos como pagamentos, cumprimento de pedidos e aprovações de múltiplas etapas.
+Workflows persistem o estado de operações de longa duração para que a execução possa se recuperar após crashes e reinicializações. São adequados a processos como pagamentos, atendimento de pedidos e aprovações com várias etapas.
 
-## Por que Workflows?
+## Por que usar workflows
 
-Funções são efêmeras — se o host falha, o trabalho em andamento é perdido. Workflows persistem seu estado:
+Funções mantêm na memória o estado das chamadas em andamento, enquanto workflows persistem o estado da execução:
 
 | Aspecto | Funções | Workflows |
-|---------|---------|-----------|
-| Estado | Em memória | Persistido |
-| Crash | Trabalho perdido | Retoma |
+|--------|-----------|-----------|
+| Estado | Local à chamada | Reconstruído a partir do histórico persistido |
+| Crash do worker | A chamada em andamento falha | Reproduz o histórico registrado |
 | Duração | Segundos a minutos | Horas a meses |
-| Conclusão | Melhor esforço | Garantida |
+| Falha da aplicação | Retornada ao chamador | Encerra ou tenta novamente conforme a política do provedor |
 
-## Como Workflows Funcionam
+## Como workflows funcionam
 
-O código de workflow se parece com código Lua regular:
+O código de workflow se parece com código Lua comum:
 
 ```lua
 local funcs = require("funcs")
 local time = require("time")
 
-local result = funcs.call("app.api:charge_card", payment)
+local result, err = funcs.call("app.api:charge_card", payment)
+if err then return nil, err end
+
 time.sleep("24h")
-local status = funcs.call("app.api:check_status", result.id)
+
+local status, err = funcs.call("app.api:check_status", result.id)
+if err then return nil, err end
 
 if status == "failed" then
-    funcs.call("app.api:refund", result.id)
+    local _, refund_err = funcs.call("app.api:refund", result.id)
+    if refund_err then return nil, refund_err end
 end
+
+return status
 ```
 
-O motor de workflow intercepta chamadas e registra resultados. Se o processo falha, a execução é reproduzida do histórico — mesmo código, mesmos resultados.
+O mecanismo de workflow intercepta chamadas e registra seus resultados. Após um crash, ele reproduz a execução a partir do histórico registrado.
+
+Dentro de um workflow, cada destino de `funcs.call()` executa como uma activity do Temporal. Uma entrada `function.*` de destino precisa ser registrada em um worker por meio de `meta.temporal.activity.worker`; entradas não registradas não ficam disponíveis para o workflow. Um destino de activity `process.*` também precisa de `meta.options.default_host` (ou do legado `meta.default_host`) para ser registrado no registro de funções usado pelo worker do Temporal. Consulte [Activities](../temporal/activities.md) para um exemplo de activity de função e suas opções.
 
 <note>
-O Wippy trata o determinismo automaticamente. Operações como <code>funcs.call()</code>, <code>time.sleep()</code>, <code>uuid.v4()</code>, e <code>time.now()</code> são interceptadas e seus resultados registrados. No replay, valores registrados são retornados ao invés de re-executar.
+Autores de workflows ainda precisam escrever código determinístico. O Wippy limita os módulos de workflow àqueles classificados como Deterministic ou Workflow e oferece implementações seguras para replay das operações compatíveis. <code>funcs.call()</code> executa uma activity registrada, <code>time.sleep()</code> usa um timer de workflow, <code>uuid.v4()</code> registra um efeito colateral e <code>time.now()</code> lê a referência de tempo determinística do workflow.
 </note>
 
-## Padrões de Workflow
+## Padrões de workflow
 
 ### Padrão Saga
 
@@ -50,89 +59,95 @@ Compense em caso de falha:
 ```lua
 local funcs = require("funcs")
 
-local inventory = funcs.call("app.inventory:reserve", items)
-if inventory.error then
-    return nil, inventory.error
+local inventory, err = funcs.call("app.inventory:reserve", items)
+if err then return nil, err end
+
+local payment, err = funcs.call("app.payments:charge", amount)
+if err then
+    local _, compensation_err = funcs.call("app.inventory:release", inventory.id)
+    return nil, compensation_err or err
 end
 
-local payment = funcs.call("app.payments:charge", amount)
-if payment.error then
-    funcs.call("app.inventory:release", inventory.id)
-    return nil, payment.error
-end
-
-local shipping = funcs.call("app.shipping:create", order)
-if shipping.error then
-    funcs.call("app.payments:refund", payment.id)
-    funcs.call("app.inventory:release", inventory.id)
-    return nil, shipping.error
+local shipping, err = funcs.call("app.shipping:create", order)
+if err then
+    local _, refund_err = funcs.call("app.payments:refund", payment.id)
+    local _, release_err = funcs.call("app.inventory:release", inventory.id)
+    return nil, refund_err or release_err or err
 end
 
 return {inventory = inventory, payment = payment, shipping = shipping}
 ```
 
-### Aguardando Sinais
+### Aguardando sinais
 
-Aguarde eventos externos (decisões de aprovação, webhooks, ações do usuário):
+Aguarde eventos externos, como decisões de aprovação, webhooks e ações do usuário:
 
 ```lua
 local funcs = require("funcs")
 
-funcs.call("app.approvals:submit", request)
+local _, err = funcs.call("app.approvals:submit", request)
+if err then return nil, err end
 
 local inbox = process.inbox()
-local msg = inbox:receive()  -- bloqueia até o sinal chegar
+local msg, open = inbox:receive()  -- blocks until signal arrives
+if not open then return nil, errors.new("workflow inbox closed") end
 
-if msg.approved then
-    funcs.call("app.orders:fulfill", request.order_id)
+local decision, payload_err = msg:payload():data()
+if payload_err then return nil, payload_err end
+
+if decision.approved then
+    return funcs.call("app.orders:fulfill", request.order_id)
 else
-    funcs.call("app.notifications:send_rejection", request)
+    return funcs.call("app.notifications:send_rejection", request)
 end
 ```
 
-## Quando Usar o Quê
+## Escolhendo um modelo de computação
 
-| Caso de Uso | Escolha |
-|-------------|---------|
-| Tratamento de requisição HTTP | Funções |
+| Caso de uso | Escolha |
+|----------|--------|
+| Tratamento de requisições HTTP | Funções |
 | Transformação de dados | Funções |
 | Jobs em segundo plano | Processos |
-| Estado de sessão de usuário | Processos |
+| Estado de sessão do usuário | Processos |
 | Mensagens em tempo real | Processos |
-| Processamento de pagamento | Workflows |
-| Cumprimento de pedidos | Workflows |
-| Aprovações de múltiplos dias | Workflows |
+| Processamento de pagamentos | Workflows |
+| Atendimento de pedidos | Workflows |
+| Aprovações de vários dias | Workflows |
 
-## Iniciando Workflows
+## Iniciando workflows
 
-Workflows são criados da mesma forma que processos — usando `process.spawn()` com um host diferente:
+Workflows usam `process.spawn()` com um host de workflow:
 
 ```lua
--- Criar workflow no worker temporal
-local pid = process.spawn("app.workflows:order_processor", "app:temporal_worker", order_data)
+-- Spawn workflow on temporal worker
+local pid, err = process.spawn("app.workflows:order_processor", "app:temporal_worker", order_data)
+if err then return nil, err end
 
--- Enviar sinais para o workflow
-process.send(pid, "update", {status = "approved"})
+-- Send signals to workflow
+local ok, err = process.send(pid, "update", {status = "approved"})
+if err then return nil, err end
+return ok
 ```
 
-Da perspectiva do chamador, a API é idêntica. A diferença é o host: workflows executam em um `temporal.worker` ao invés de um `process.host`.
+O chamador usa a mesma API de spawn. O host determina se a entrada executa em um `temporal.worker` ou em um `process.host`. O histórico persistido e o replay se aplicam apenas ao caminho hospedado pelo Temporal. Uma entrada de workflow executada por um host de processos comum tem semântica de processo em memória e não adquire a durabilidade do Temporal.
 
 <tip>
-Quando um workflow cria filhos via <code>process.spawn()</code>, eles se tornam workflows filhos no mesmo provedor, mantendo as garantias de durabilidade.
+Quando um workflow cria filhos por meio de <code>process.spawn()</code>, eles se tornam workflows filhos no mesmo provedor, preservando as garantias de durabilidade.
 </tip>
 
-## Falha e Supervisão
+## Falhas e supervisão
 
 Processos podem executar como serviços supervisionados usando `process.service`:
 
 ```yaml
-# Definição do processo
+# Process definition
 - name: session_handler
   kind: process.lua
   source: file://session_handler.lua
   method: main
 
-# Serviço supervisionado encapsulando o processo
+# Supervised service wrapping the process
 - name: session_manager
   kind: process.service
   process: app:session_handler
@@ -143,20 +158,37 @@ Processos podem executar como serviços supervisionados usando `process.service`
       max_attempts: 10
 ```
 
-Workflows não usam árvores de supervisão — eles são automaticamente gerenciados pelo provedor de workflow (Temporal). O provedor trata persistência, retries e recuperação.
+Workflows não usam árvores de supervisão de processos. O provedor de workflow gerencia a persistência e a recuperação; os retries no nível da aplicação seguem as políticas configuradas para o workflow e as activities.
 
 ## Configuração
 
-Definição de processo (criado dinamicamente):
+Definição do workflow, iniciado dinamicamente:
 
 ```yaml
 - name: order_processor
   kind: workflow.lua
   source: file://order_processor.lua
   method: main
+  meta:
+    temporal:
+      workflow:
+        worker: app:temporal_worker
   modules:
     - funcs
     - time
+```
+
+Cada função ou processo invocado por `funcs.call()` também declara o worker de activities. Por exemplo:
+
+```yaml
+- name: charge_card
+  kind: function.lua
+  source: file://charge_card.lua
+  method: main
+  meta:
+    temporal:
+      activity:
+        worker: app:temporal_worker
 ```
 
 Provedor de workflow:
@@ -170,10 +202,10 @@ Provedor de workflow:
     auto_start: true
 ```
 
-Veja [Temporal](https://temporal.io) para infraestrutura de workflow em produção.
+Consulte o [Temporal](https://temporal.io) para a infraestrutura de workflows em produção.
 
-## Veja Também
+## Consulte também
 
-- [Funções](concepts/functions.md) - Tratamento de requisição sem estado
-- [Modelo de Processos](concepts/process-model.md) - Trabalho em segundo plano com estado
-- [Supervisão](guides/supervision.md) - Políticas de reinicialização de processos
+- [Funções](concepts/functions.md) — Chamadas no escopo da requisição
+- [Modelo de Processos](concepts/process-model.md) — Trabalho em segundo plano com estado
+- [Supervisão](guides/supervision.md) — Políticas de reinicialização de processos

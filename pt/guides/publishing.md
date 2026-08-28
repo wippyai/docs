@@ -1,32 +1,34 @@
 ---
 title: "Publicando Módulos"
-description: "Compartilhe código reutilizável no Wippy Hub."
+description: "Prepare, valide, publique, configure e consuma módulos por meio do Wippy Hub."
 ---
 
 # Publicando Módulos
 
-Compartilhe código reutilizável no Wippy Hub.
+A publicação empacota um módulo e disponibiliza uma versão ou um rótulo mutável por meio do Wippy Hub.
+
+Este é um fluxo de publicação e uma referência. Os módulos `acme/*`, URLs, tokens, credenciais e códigos-fonte de exemplo são ilustrativos; substitua-os por recursos pertencentes à sua organização.
 
 ## Pré-requisitos
 
-1. Crie uma conta em [hub.wippy.ai](https://hub.wippy.ai)
-2. Crie uma organização ou junte-se a uma
-3. Registre o nome do seu módulo sob sua organização
+1. Crie uma conta em [hub.wippy.ai](https://hub.wippy.ai).
+2. Crie uma organização ou entre em uma existente.
+3. Escolha um nome de módulo. A primeira publicação pode registrar um nome inexistente se sua conta tiver permissão; use `--create` para registrá-lo antes do upload e definir explicitamente suas propriedades.
 
 ## Estrutura do Módulo
 
 ```
 mymodule/
-├── wippy.yaml      # Manifesto do módulo
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # Definições de entradas
-│   └── *.lua       # Arquivos de código-fonte
-└── README.md       # Documentação (opcional)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-Manifesto do módulo:
+Defina os metadados do módulo em `wippy.yaml`:
 
 ```yaml
 organization: acme
@@ -43,7 +45,7 @@ keywords:
 
 | Campo | Obrigatório | Descrição |
 |-------|----------|-------------|
-| `organization` | Sim | Nome da sua organização no hub |
+| `organization` | Sim | Nome da organização no Hub |
 | `module` | Sim | Nome do módulo |
 | `type` | Não | Tipo do módulo: `library`, `application`, `agent` ou `plugin` |
 | `description` | Não | Descrição curta |
@@ -52,11 +54,11 @@ keywords:
 | `homepage` | Não | Página inicial do projeto |
 | `keywords` | Não | Palavras-chave de busca |
 
-`type` é a fonte de verdade de como o hub classifica o módulo e pode ser alterado em uma publicação posterior; `--module-type` o sobrescreve para uma única publicação. Quando omitido, módulos recém-criados assumem `application` com um aviso de obsolescência.
+`type` controla como o Hub classifica o módulo e pode ser alterado em uma publicação posterior. A flag `--module-type` o sobrescreve em uma única publicação. Quando omitido, um módulo recém-criado usa `application` por padrão e apresenta um aviso de obsolescência.
 
 ## Definições de Entradas
 
-Entradas são definidas em `_index.yaml`:
+Defina as entradas do módulo em `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -81,7 +83,7 @@ entries:
       - json
 ```
 
-O mapa `wiki:` em `ns.definition` publica páginas de documentação adicionais junto ao readme: as chaves são caminhos de página, os valores são referências `file://`. O conteúdo é embutido no momento do pack e servido pelo hub como uma wiki navegável por módulo.
+O mapa `wiki:` em `ns.definition` publica páginas de documentação junto ao README. As chaves são caminhos de página, e os valores são referências `file://`. O conteúdo é incorporado durante o empacotamento e servido pelo Hub como uma wiki do módulo.
 
 ## Dependências
 
@@ -123,12 +125,13 @@ entries:
 ```
 
 Os alvos especificam onde o valor é injetado:
-- `entry` - ID de entrada completo a configurar
-- `path` - JSONPath para a injeção do valor
+
+- `entry` — ID completo da entrada a configurar
+- `path` — Caminho com notação de pontos dentro da entrada de destino
 
 `default` aceita qualquer tipo escalar — `default: 20` flui para um alvo numérico como número, não string. O mesmo vale para `parameters[].value` em entradas `ns.dependency`, e ambos aceitam referências `${env:NAME}`, carregadas literalmente e resolvidas quando a entrada alvo é decodificada.
 
-Consumidores configuram via override. A flag `-o` aceita um trio `namespace:entry:field=value`:
+Os consumidores podem configurar o destino por meio de um override. A flag `-o` aceita um valor `namespace:entry:field=value`:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
@@ -145,8 +148,8 @@ Referencie outras entradas:
   modules:
     - json
   imports:
-    client: acme.http:client           # Mesmo namespace
-    utils: acme.utils:helpers          # Namespace diferente
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
     base_registry: :registry           # Built-in
 ```
 
@@ -181,7 +184,7 @@ Defina interfaces públicas:
         post: acme.http:post_handler
 ```
 
-## Fluxo de Publicação
+## Fluxo para Publicar
 
 ### 1. Autenticar
 
@@ -215,7 +218,7 @@ Com notas de release:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### Flags Adicionais
+### Flags de Publicação
 
 | Flag | Descrição |
 |------|-------------|
@@ -228,20 +231,27 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 | `--module-type <t>` | Tipo do módulo: `library`, `application`, `agent` ou `plugin` (sobrescreve `type:` no wippy.yaml) |
 | `--module-display-name <n>` | Nome de exibição para `--create` |
 
-### Embutindo Arquivos Estáticos
+### Incorporar Arquivos Estáticos
 
-Módulos com entradas `fs.directory` (assets estáticos, templates, arquivos públicos) devem usar `--embed` para incluí-los no pacote publicado. Sem isso, entradas `fs.directory` são excluídas.
+Selecione uma entrada `fs.directory` para incorporação com `--embed` ou com a lista persistente `embed:` do manifesto do projeto. As entradas selecionadas são transformadas em recursos `fs.embed`. Uma entrada `fs.directory` não selecionada permanece no pack, mas o conteúdo do diretório referenciado não é incluído.
+
+```yaml
+# wippy.yaml
+embed:
+  - app:public_files
+  - app:assets
+```
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-A flag `--embed` aceita IDs de entrada ou nomes que correspondam a entradas `fs.directory`. A mesma flag está disponível em `wippy pack`.
+A lista do manifesto e a flag `--embed` aceitam IDs ou nomes de entradas que correspondam a entradas `fs.directory`. A mesma flag do CLI está disponível em `wippy pack`; uma seleção pelo CLI sobrescreve a lista do manifesto nessa execução.
 
 ### Primeira Publicação
 
-Na primeira vez que você publica um módulo ele é registrado no hub automaticamente (privado por padrão) e a publicação é repetida uma vez. Passe `--create` para registrá-lo antecipadamente e definir suas propriedades:
+Na primeira publicação, o módulo é registrado no Hub como privado por padrão, e a publicação é repetida uma vez. Use `--create` para registrá-lo antes da publicação e definir suas propriedades:
 
 ```bash
 wippy publish --create --version 0.1.0 \
@@ -254,7 +264,7 @@ wippy publish --create --version 0.1.0 \
 
 ### Publicando em um Hub Local
 
-Aponte `--registry` para um hub rodando localmente para publicar e instalar sem o registro público. HTTP puro é permitido apenas para hosts locais — `localhost`, `127.0.0.1` e os aliases de container `host.docker.internal` (Docker Desktop / OrbStack) e `host.containers.internal` (Podman); qualquer outro host deve usar HTTPS.
+Aponte `--registry` para um Hub em execução local para publicar e instalar sem usar o registro público. HTTP sem criptografia é permitido somente para hosts locais: `localhost`, `127.0.0.1` e os aliases de container `host.docker.internal` (Docker Desktop ou OrbStack) e `host.containers.internal` (Podman). Outros hosts devem usar HTTPS.
 
 ```bash
 wippy auth login --registry http://localhost:8080 --token wpy_xxx
@@ -265,11 +275,11 @@ O registro e o token também podem vir das variáveis de ambiente `WIPPY_REGISTR
 
 ### Cotas
 
-Se a cota de módulos privados da organização estiver esgotada, a publicação falha com uma mensagem como `cannot publish: Private-module quota exhausted (5 of 5)...`. Torne o módulo público ou peça a um admin da organização para aumentar a cota. Uploads e downloads são repetidos automaticamente em erros transitórios de rede.
+Se a cota de módulos privados da organização estiver esgotada, a publicação falha com uma mensagem como `cannot publish: Private-module quota exhausted (5 of 5)...`. Torne o módulo público ou peça a um administrador da organização para aumentar a cota. Uploads e downloads são repetidos automaticamente após erros transitórios de rede.
 
 ## Publicando Defaults de Runtime {#publishing-runtime-defaults}
 
-Aplicações (apenas `type: application`) podem embarcar defaults de configuração de runtime dentro de seus packs via `publish.runtime` no `wippy.yaml`:
+Aplicações com `type: application` podem incluir padrões de configuração do runtime nos packs por meio de `publish.runtime` no `wippy.yaml`:
 
 ```yaml
 type: application
@@ -293,7 +303,7 @@ Regras:
 - As seções locais da máquina `boot`, `extensions` e `workspace` não podem ser exportadas.
 - Apenas o pack da aplicação principal fornece defaults de runtime do host; metadados de runtime em packs de dependências são ignorados.
 
-No destino, a configuração aplica-se da mais baixa para a mais alta: defaults do pack da aplicação, defaults embutidos do runtime, arquivos de configuração locais, profiles selecionados, overrides do CLI.
+No destino, a precedência da configuração parte dos padrões do pack da aplicação, passa pelos padrões do runtime, pelos arquivos de configuração locais e pelos profiles selecionados e termina nas sobrescritas do CLI.
 
 ## Publicando Profiles {#publishing-profiles}
 
@@ -307,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []` não publica nenhum; um nome desconhecido falha a publicação. Sub-seções `workspace` nunca são exportadas, mesmo dentro de um profile publicado. Veja [Configuração](guides/configuration.md#profiles) para declarar profiles.
+`include: []` não publica nenhum; um nome desconhecido faz a publicação falhar. Subseções `workspace` nunca são exportadas, mesmo dentro de um profile publicado. Consulte [Configuração](guides/configuration.md#profiles) para declarar profiles.
 
 ## Usando Módulos Publicados
 
@@ -337,7 +347,7 @@ override:
 ### Importar no Seu Código
 
 ```yaml
-# seu src/_index.yaml
+# your src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -351,12 +361,13 @@ entries:
       http: acme.http:client
 ```
 
-## Exemplo Completo
+## Módulo de Exemplo
 
 **wippy.yaml:**
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -375,19 +386,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -399,12 +399,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -427,12 +423,14 @@ return cache
 Publicar:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 
-## Veja Também
+## Consulte Também
 
-- [Referência da CLI](guides/cli.md)
-- [Tipos de Entradas](guides/entry-kinds.md)
-- [Configuração](guides/configuration.md)
+- [Referência do CLI](guides/cli.md) — Comandos e flags de publicação
+- [Kinds de Entrada](guides/entry-kinds.md) — Entradas de módulo e dependência
+- [Configuração](guides/configuration.md) — Configuração de runtime e profiles

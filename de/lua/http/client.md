@@ -1,6 +1,6 @@
 ---
 title: "HTTP-Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "HTTP-Anfragen mit Headern, Authentifizierung, Formularen, Uploads, TLS-Optionen, Streaming und Batches senden."
 ---
 
 # HTTP-Client
@@ -8,7 +8,9 @@ description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <second
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Führen Sie HTTP-Anfragen an externe Services durch. Unterstützt alle HTTP-Methoden, Header, Query-Parameter, Formulardaten, Datei-Uploads, Streaming-Responses und gleichzeitige Batch-Anfragen.
+Das Modul `http_client` sendet HTTP-Anfragen mit Headern, Query-Parametern, Formularen, Datei-Uploads, Authentifizierung, TLS-Optionen, Streaming-Responses und parallelen Batches.
+
+Diese Seite ist eine API-Referenz mit Teilrezepten. URLs, Tokens, Zugangsdaten, Request-Daten und Zertifikatsmaterial stammen aus der umgebenden Anwendung. Die Beispiele prüfen `Response, error`, bevor sie eine Response verwenden, und schließen gestreamte Bodies ausdrücklich.
 
 ## Laden
 
@@ -29,33 +31,45 @@ if err then
 end
 
 print(resp.status_code)  -- 200
-print(resp.body)         -- Response-Body
+print(resp.body)         -- response body
 ```
 
 ### POST-Anfrage
 
 ```lua
+local json = require("json")
+
+local body, body_err = json.encode({name = "Alice", email = "alice@example.com"})
+if body_err then return nil, body_err end
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice", email = "alice@example.com"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PUT-Anfrage
 
 ```lua
+local body, body_err = json.encode({name = "Alice Smith"})
+if body_err then return nil, body_err end
 local resp, err = http_client.put("https://api.example.com/users/123", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice Smith"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PATCH-Anfrage
 
 ```lua
+local body, body_err = json.encode({status = "active"})
+if body_err then return nil, body_err end
 local resp, err = http_client.patch("https://api.example.com/users/123", {
-    body = json.encode({status = "active"})
+    headers = {["Content-Type"] = "application/json"},
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### DELETE-Anfrage
@@ -64,6 +78,7 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 local resp, err = http_client.delete("https://api.example.com/users/123", {
     headers = {["Authorization"] = "Bearer " .. token}
 })
+if err then return nil, err end
 ```
 
 ### HEAD-Anfrage
@@ -72,6 +87,7 @@ Gibt nur Header zurück, keinen Body.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
+if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
@@ -81,6 +97,7 @@ local size = resp.headers["Content-Length"]
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
     headers = {["Depth"] = "1"}
 })
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -105,6 +122,9 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | Max. Response-Größe in Bytes (0 = Standard) |
 | `unix_socket` | string | Über Unix-Socket-Pfad verbinden |
 | `tls` | table | TLS-Konfiguration pro Anfrage (siehe [TLS-Optionen](#tls-optionen)) |
+| `overlay_network` | string | Über ein [Netzwerk-Overlay](../../system/network.md) leiten; Registry-ID eines Eintrags `network.socks5`, `network.tailscale` oder `network.i2p` |
+
+Die Auswahl von `overlay_network` erfordert die Berechtigung `network.select` für diese Netzwerk-ID.
 
 ### Query-Parameter
 
@@ -116,6 +136,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
         limit = "20"
     }
 })
+if err then return nil, err end
 ```
 
 ### Header und Authentifizierung
@@ -127,11 +148,13 @@ local resp, err = http_client.get("https://api.example.com/data", {
         ["Accept"] = "application/json"
     }
 })
+if err then return nil, err end
 
--- Oder Basic Auth verwenden
+-- Or use basic auth
 local resp, err = http_client.get("https://api.example.com/data", {
-    auth = {user = "admin", pass = "secret"}
+    auth = {user = service_user, pass = service_password}
 })
+if err then return nil, err end
 ```
 
 ### Formulardaten
@@ -139,10 +162,11 @@ local resp, err = http_client.get("https://api.example.com/data", {
 ```lua
 local resp, err = http_client.post("https://api.example.com/login", {
     form = {
-        username = "alice",
-        password = "secret123"
+        username = username,
+        password = password
     }
 })
+if err then return nil, err end
 ```
 
 ### Datei-Upload
@@ -152,13 +176,14 @@ local resp, err = http_client.post("https://api.example.com/upload", {
     form = {title = "My Document"},
     files = {
         {
-            name = "attachment",      -- Formularfeldname
-            filename = "report.pdf",  -- Originaler Dateiname
-            content = pdf_data,       -- Dateiinhalt
+            name = "attachment",      -- form field name
+            filename = "report.pdf",  -- original filename
+            content = pdf_data,       -- file content
             content_type = "application/pdf"
         }
     }
 })
+if err then return nil, err end
 ```
 
 | Dateifeld | Typ | Erforderlich | Beschreibung |
@@ -167,20 +192,22 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | nein | Originaler Dateiname |
 | `content` | string | ja* | Dateiinhalt |
 | `reader` | userdata | ja* | Alternative: io.Reader für Inhalt |
-| `content_type` | string | nein | MIME-Typ (Standard: `application/octet-stream`) |
+| `content_type` | string | nein | Derzeit ignoriert: Jeder Upload-Part wird unabhängig von diesem Feld mit `Content-Type: application/octet-stream` gesendet |
 
 *Entweder `content` oder `reader` ist erforderlich.
+
+Die festgelegte Runtime liest einen `reader` vor dem Dispatch vollständig in den Speicher, schließt ihn nicht und meldet einen Leseabbruch ungleich EOF nicht separat; sie kann die bis zum Fehler gesammelten Bytes senden. Verwenden Sie für bereits begrenzte Daten vorzugsweise `content` und schließen Sie vom Aufrufer besessene Reader nach der Anfrage. `content_type` wird in Runtime `v0.3.32a` zwar geparst, aber nicht an den Transport weitergereicht; Upload-Parts verwenden daher dessen Standardwert.
+
+Reader-basierte Dateien werden in dieser Version nur bei Einzelanfragen unterstützt. `request_batch` reicht das Feld `content` weiter, verwirft jedoch einen geparsten `reader`; Batch-Datei-Uploads müssen `content` bereitstellen.
 
 ### Timeout
 
 ```lua
--- Zahl: Sekunden
+-- Number: seconds
 local resp, err = http_client.get(url, {timeout = 30})
+if err then return nil, err end
 
--- String: Go-Dauerformat
-local resp, err = http_client.get(url, {timeout = "30s"})
-local resp, err = http_client.get(url, {timeout = "1m30s"})
-local resp, err = http_client.get(url, {timeout = "1h"})
+-- String alternatives use Go duration format: "30s", "1m30s", or "1h".
 ```
 
 ### TLS-Optionen
@@ -200,8 +227,13 @@ Konfigurieren Sie TLS-Einstellungen pro Anfrage für mTLS (Mutual TLS) und benut
 #### mTLS-Authentifizierung
 
 ```lua
-local cert_pem = fs.read("/certs/client.crt")
-local key_pem = fs.read("/certs/client.key")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local cert_pem, cert_err = certs:readfile("client.crt")
+if cert_err then return nil, cert_err end
+local key_pem, key_err = certs:readfile("client.key")
+if key_err then return nil, key_err end
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -209,12 +241,17 @@ local resp, err = http_client.get("https://secure.example.com/api", {
         key = key_pem,
     }
 })
+if err then return nil, err end
 ```
 
 #### Benutzerdefinierte CA
 
 ```lua
-local ca_pem = fs.read("/certs/internal-ca.crt")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local ca_pem, ca_err = certs:readfile("internal-ca.crt")
+if ca_err then return nil, ca_err end
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -222,6 +259,7 @@ local resp, err = http_client.get("https://internal.example.com/api", {
         server_name = "internal.example.com",
     }
 })
+if err then return nil, err end
 ```
 
 #### Unsichere Verifizierung überspringen
@@ -234,6 +272,7 @@ local resp, err = http_client.get("https://localhost:8443/api", {
         insecure_skip_verify = true,
     }
 })
+if err then return nil, err end
 ```
 
 ## Response-Objekt
@@ -255,14 +294,15 @@ if err then
 end
 
 if resp.status_code == 200 then
-    local data = json.decode(resp.body)
+    local data, decode_err = json.decode(resp.body)
+    if decode_err then return nil, decode_err end
     print("Content-Type:", resp.headers["Content-Type"])
 end
 ```
 
 ## Streaming-Responses
 
-Für große Responses verwenden Sie Streaming, um zu vermeiden, dass der gesamte Body in den Speicher geladen wird.
+Setzen Sie `stream = true`, um eine Response inkrementell zu verarbeiten, statt den vollständigen Body zu puffern.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -272,13 +312,17 @@ if err then
     return nil, err
 end
 
--- In Chunks verarbeiten
+-- Process in chunks
+local read_err
 while true do
-    local chunk, err = resp.stream:read(65536)
-    if err or not chunk then break end
-    -- chunk verarbeiten
+    local chunk
+    chunk, read_err = resp.stream:read(65536)
+    if read_err or not chunk then break end
+    -- process chunk
 end
-resp.stream:close()
+local _, close_err = resp.stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 | Stream-Methode | Gibt zurück | Beschreibung |
@@ -286,27 +330,33 @@ resp.stream:close()
 | `read(n?)` | string, error | Bis zu `n` Bytes lesen (Standard: Implementierungspuffer) |
 | `close()` | boolean, error | Stream schließen |
 
-`resp.stream` ist ein vollständiges [Stream](lua/core/stream.md)-Objekt — `seek`, `stat` und `scanner` sind ebenfalls verfügbar.
+`resp.stream` ist ein vollständiges [Stream](lua/core/stream.md)-Objekt; `seek`, `stat` und `scanner` stehen ebenfalls bereit. Der Aufrufer besitzt einen gestreamten Response-Body und sollte ihn auf jedem Rückkehrpfad schließen. Task-Cleanup ist nur ein Fallback, kein Ersatz für eine zeitnahe Freigabe.
 
 ## Batch-Anfragen
 
-Führen Sie mehrere Anfragen gleichzeitig aus.
+`request_batch` führt mehrere Anfragen parallel aus.
 
 ```lua
-local responses, errors = http_client.request_batch({
+local requests = {
     {"GET", "https://api.example.com/users"},
     {"GET", "https://api.example.com/products"},
     {"POST", "https://api.example.com/log", {body = "event"}}
-})
+}
+local responses, batch_errors = http_client.request_batch(requests)
 
-if errors then
-    for i, err in ipairs(errors) do
+if not responses then
+    return nil, batch_errors  -- whole-batch dispatch or validation failure
+end
+
+if batch_errors then
+    for i = 1, #requests do
+        local err = batch_errors[i]
         if err then
             print("Request " .. i .. " failed:", err)
         end
     end
 else
-    -- Alle erfolgreich
+    -- All succeeded
     for i, resp in ipairs(responses) do
         print("Response " .. i .. ":", resp.status_code)
     end
@@ -322,6 +372,7 @@ end
 **Hinweise:**
 - Anfragen werden gleichzeitig ausgeführt
 - Streaming (`stream = true`) wird in Batch nicht unterstützt
+- Reader-basierte Datei-Uploads werden im Batch nicht unterstützt; verwenden Sie `files[].content`
 - Ergebnis-Arrays entsprechen der Anfragereihenfolge (1-indiziert)
 
 ## URL-Kodierung
@@ -339,6 +390,7 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
+if err then return nil, err end
 -- "hello world"
 ```
 
@@ -354,6 +406,7 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 | `http_client.unix_socket` | Socket-Pfad | Unix-Socket-Verbindungen erlauben/verweigern |
 | `http_client.private_ip` | IP-Adresse | Zugriff auf private IP-Bereiche erlauben/verweigern |
 | `http_client.insecure_tls` | URL | Unsichere TLS-Verbindungen erlauben/verweigern (Verifizierung überspringen) |
+| `network.select` | Netzwerk-ID | Explizite Auswahl von `overlay_network` erlauben oder verweigern |
 
 ### Zugriff prüfen
 
@@ -361,7 +414,8 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 local security = require("security")
 
 if security.can("http_client.request", "https://api.example.com/users") then
-    local resp = http_client.get("https://api.example.com/users")
+    local resp, request_err = http_client.get("https://api.example.com/users")
+    if request_err then return nil, request_err end
 end
 ```
 
@@ -374,7 +428,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -384,9 +438,9 @@ Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 | Private IP blockiert | `errors.PERMISSION_DENIED` | nein |
 | Unix-Socket verweigert | `errors.PERMISSION_DENIED` | nein |
 | Unsichere TLS verweigert | `errors.PERMISSION_DENIED` | nein |
-| Ungültige URL oder Optionen | `errors.INVALID` | nein |
+| Ungültiges Batch-Element, Batch-Streaming oder ungültiges URI-Escape | `errors.INVALID` | nein |
 | Kein Kontext | `errors.INTERNAL` | nein |
-| Netzwerkfehler | `errors.INTERNAL` | ja |
+| Fehlerhafte Transport-URL oder Netzwerkfehler | `errors.INTERNAL` | ja |
 | Timeout | `errors.INTERNAL` | ja |
 
 ```lua
@@ -401,4 +455,11 @@ if err then
 end
 ```
 
+Viele nicht unterstützte Optionswerte werden ignoriert, statt als strukturierte Fehler zurückgegeben zu werden. Ungültige Lua-Argumenttypen und ein leerer Batch lösen Lua-Argumentfehler aus. Validieren Sie von der Anwendung bereitgestellte Optionstabellen vor dem Aufruf des Clients.
+
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Fügen Sie `http_client` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es per `require` laden. JSON- und Dateisystemrezepte erfordern außerdem `json` und `fs`.
+
+Laden Sie Authentifizierungswerte aus einem anwendungseigenen Secret-Speicher und senden Sie sie nur über TLS.
+
+Verwenden Sie `insecure_skip_verify` nur für kontrollierte Diagnose-Endpunkte. Es deaktiviert sowohl die Zertifikatsketten- als auch die Hostnamenprüfung.

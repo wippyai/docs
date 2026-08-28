@@ -1,6 +1,6 @@
 ---
 title: "暗号化 & 署名"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "ランダム値の生成、データ認証、コンテンツ暗号化、JWT検証、鍵導出を行います。"
 ---
 
 # 暗号化 & 署名
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-暗号化、HMAC、JWT、鍵導出を含む暗号操作を提供します。ワークフロー向けに適応されています。
+`crypto`モジュールは、ランダム値の生成、HMACの計算、データの暗号化と復号、JWTのエンコードと検証、鍵の導出を行います。決定論的ワークフローでは、ランダム生成と暗号化（ランダムなnonceを生成します）は記録される副作用として実行され、リプレイでは記録済みのバイト列が返されます。HMAC、復号、JWT処理、PBKDF2、比較を含むその他の操作は直接実行されます。
+
+このページはAPIリファレンスです。各コードブロックは独立した呼び出しであり、完全な鍵管理システムや認証システムではありません。`data`、`key`、`aad`、`payload`、`token`などの名前は、アプリケーションから渡される値です。鍵とパスワードはアプリケーションのシークレット管理境界を通じて読み込み、ハードコード、ログ出力、診断結果への返却をしないでください。ここに示す`value, error`形式の結果は、値を使用する前にエラーを伝播または処理してください。
 
 ## ロード
 
@@ -44,6 +46,8 @@ local str, err = crypto.random.string(32, "0123456789abcdef")
 | `charset` | string? | 使用する文字（デフォルト: 英数字） |
 
 **戻り値:** `string, error`
+
+実装は、指定されたアルファベットからバイト単位で選択します。非ASCIIのアルファベットは不正なUTF-8に分割される可能性があり、剰余による選択が完全に一様になるのはアルファベットのバイト長が256を割り切る場合だけです。一様なランダム性を持つ秘密データには`crypto.random.bytes`を使用し、必要な転送形式に合わせて結果をエンコードしてください。
 
 ### ランダムUUID
 
@@ -98,6 +102,8 @@ local encrypted, err = crypto.encrypt.aes(data, key, aad)
 
 **戻り値:** `string, error`（nonceが前置）
 
+どちらの暗号化関数もnonceを生成して暗号文の先頭に付加します。nonceを削除または再利用せず、復号時には同じAADを使用してください。暗号文は、秘密情報を含まないログ値ではありません。長さや相関に関する情報を漏らす可能性があります。
+
 ### ChaCha20-Poly1305 {id="encrypt-chacha20"}
 
 ```lua
@@ -111,7 +117,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 | `key` | string | 32バイトである必要あり |
 | `aad` | string? | 追加の認証データ |
 
-**戻り値:** `string, error`
+**戻り値:** `string, error`（nonceが前置）
 
 ## 復号
 
@@ -163,6 +169,8 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 
 **戻り値:** `string, error`
 
+文書化されているアルゴリズム名のいずれか一つだけを渡してください。このランタイムの固定バージョンでは、未対応の値を`encode`に渡すとエラーではなくHS256へフォールバックします。設定可能なアルゴリズムは呼び出し前に検証し、信頼できないフィールドを`_header`へコピーしないでください。特に、入力から`alg`などの予約済みJWTヘッダーを上書きさせないでください。
+
 ### 検証
 
 ```lua
@@ -176,9 +184,13 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | 検証するJWTトークン |
 | `key` | string | シークレット（HMAC）またはPEM公開鍵（RSA） |
 | `alg` | string? | 期待するアルゴリズム（デフォルト: HS256） |
-| `require_exp` | boolean? | 有効期限を検証（デフォルト: true） |
+| `require_exp` | boolean? | `exp`クレームを必須にする（デフォルト: true） |
 
 **戻り値:** `table, error`
+
+`exp`と`nbf`が存在する場合は常に、ワークフローの時刻基準ではなくJWTライブラリの現在の実時間に対して検証されます。`require_exp = false`を設定すると`exp`クレームの欠落を許容しますが、存在するクレームの検証は無効になりません。時間に依存する結果をリプレイに影響するワークフロー制御に使わないでください。アクティビティ内で確認するか、明示的にリプレイ安全な値と比較して時刻を検証してください。
+
+発行者が想定するアルゴリズムを必ず渡してください。検証ではトークンをその方式だけに制限します。返されたクレームは認証済みデータとして扱いますが、自動的に認可されたアプリケーション入力とは見なさず、発行者、オーディエンス、サブジェクト、アプリケーション固有の制約も検証してください。
 
 ## 鍵導出
 
@@ -199,6 +211,8 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 
 **戻り値:** `string, error`
 
+導出される鍵は生のバイト列です。保存するパスワード検証子ごとに新しいランダムソルトを使用し、ソルトとワークファクターのパラメータを検証子と一緒に保存してください。ソルトを秘密にする必要はありません。本番環境のパスワード保存に固定のサンプルソルトを使用しないでください。
+
 ## ユーティリティ
 
 ### 定数時間比較
@@ -214,15 +228,16 @@ local equal = crypto.constant_time_compare(a, b)
 
 **戻り値:** `boolean`
 
+長さが異なる場合、結果は`false`です。基盤となる定数時間比較の保証は同じ長さの入力に対して適用されるため、固定長のダイジェストまたは同じ長さのシークレットを比較してください。
+
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な長さ | `errors.INVALID` | no |
-| 空のキー | `errors.INVALID` | no |
-| 無効なキーサイズ | `errors.INVALID` | no |
-| 復号失敗 | `errors.INTERNAL` | no |
-| トークン期限切れ | `errors.INTERNAL` | no |
+| 無効な長さ | `errors.INVALID` | いいえ |
+| 空のキー | `errors.INVALID` | いいえ |
+| 無効なキーサイズ | `errors.INVALID` | いいえ |
+| 復号失敗 | `errors.INTERNAL` | いいえ |
+| トークン期限切れ | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

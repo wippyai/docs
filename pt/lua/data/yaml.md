@@ -1,6 +1,6 @@
 ---
 title: "Codificação YAML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Codifique tabelas Lua como YAML e decodifique documentos YAML em valores Lua."
 ---
 
 # Codificação YAML
@@ -11,38 +11,41 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Parse de documentos YAML para tabelas Lua e serialização de valores Lua para strings YAML.
 
+Esta é uma referência de API. Expressões usadas apenas como saída ilustram codificações bem-sucedidas; exemplos que consomem um valor capturam o segundo retorno opcional `error`.
+
 ## Carregamento
 
 ```lua
 local yaml = require("yaml")
 ```
 
+Adicione `yaml` à lista `modules:` da entrada executável antes de carregá-lo.
+
 ## Codificação
 
-### Codificar Valor
+### `encode`
 
 Codifica uma tabela Lua para formato YAML.
 
 ```lua
--- Chave-valor simples
+-- Simple key-value
 local config = {
     name = "myapp",
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
--- Arrays se tornam listas YAML
+-- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
 yaml.encode(items)
 -- - apple
 -- - banana
 -- - cherry
 
--- Estruturas aninhadas
+-- Nested structures
 local server = {
     http = {
         address = ":8080",
@@ -69,7 +72,7 @@ yaml.encode(server)
 | `sort_unordered` | boolean | Ordenar campos não em `field_order` alfabeticamente |
 
 ```lua
--- Controlar ordem dos campos na saida
+-- Control field order in output
 local entry = {
     zebra = 1,
     alpha = 2,
@@ -77,17 +80,18 @@ local entry = {
     kind = "demo"
 }
 
--- Campos aparecem na ordem específicada, restantes ordenados alfabeticamente
-local result = yaml.encode(entry, {
+-- Fields appear in specified order, remaining sorted alphabetically
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
 -- zebra: 1
 
--- Apenas ordenar todos os campos alfabeticamente
+-- Just sort all fields alphabetically
 yaml.encode(entry, {sort_unordered = true})
 -- alpha: 2
 -- kind: demo
@@ -99,12 +103,12 @@ yaml.encode(entry, {sort_unordered = true})
 
 ## Decodificação
 
-### Decodificar String
+### `decode`
 
 Parse de uma string YAML para uma tabela Lua.
 
 ```lua
--- Parse de configuração
+-- Parse configuration
 local config, err = yaml.decode([[
 server:
   host: localhost
@@ -122,15 +126,17 @@ print(config.server.host)     -- "localhost"
 print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
--- Parse de conteudo de arquivo
-local content = fs.read("config.yaml")
+-- Parse from file content
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")
 end
 
--- Tratar tipos mistos
-local data = yaml.decode([[
+-- Handle mixed types
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -139,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -159,4 +166,4 @@ print(type(data.tags))     -- "table"
 | String vazia (decode) | `errors.INVALID` | não |
 | Sintaxe YAML invalida | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

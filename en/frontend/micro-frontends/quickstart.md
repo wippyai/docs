@@ -1,25 +1,50 @@
 ---
 title: "Quickstart"
-description: "Two end-to-end examples — a Micro Frontend App (Vue) and a Web Component (Vue) — taken from the public wippyai/app repository. Each shows the minimal…"
+description: "Wippy-specific integration recipes for registering a Vue micro frontend app or web component."
 ---
 
 # Quickstart
 
-Two end-to-end examples — a **Micro Frontend App** (Vue) and a **Web Component** (Vue) — taken from the public [`wippyai/app`](https://github.com/wippyai/app) repository. Each shows the minimal files, how to register the artifact with the backend, and how to build it. Follow the links to the repo for the complete, runnable source, and to the deep-dive docs for every option.
+This page presents two condensed Vue integration recipes adapted from the public
+[`wippyai/app`](https://github.com/wippyai/app) repository: a **micro frontend
+app** and a **web component**. The snippets target Web Host 1.0.56 and the
+public `@wippy-fe/*` 0.0.56 package family. They focus on the Wippy-specific
+metadata, entry code, and registry declarations; they omit ordinary Vite
+scaffolding, dependency installation, and backend setup. Use the linked
+repository for complete applications rather than treating these excerpts as
+standalone projects.
 
-**Prerequisites:** a Wippy backend with the [`wippy/views`](../../framework/views.md) and [`wippy/facade`](../../framework/facade.md) modules wired up, Node.js 22 or newer, Vite 7, and the current coherent `@wippy-fe/*` package family selected for the target Web Host. These toolchain requirements come from the selected Web Host package; verify them again when that package changes. Fetch the target Web Host `import-map.json`, externalize every listed key including unused ones, and bundle an imported exact specifier only when it is absent. See [Build System](./build-system.md) for the toolchain.
+## Prerequisites
+
+- A Wippy backend with the [`wippy/views`](../../framework/views.md) and
+  [`wippy/facade`](../../framework/facade.md) modules wired up.
+- Node.js 22.12 or newer and Vite 7 for these examples. Vite 7 requires Node
+  20.19+ or 22.12+; this documentation uses the Node 22 release line.
+- `@wippy-fe/vite-plugin` 0.0.56 also accepts Vite 5 and 6. If you select one of
+  those versions, follow that Vite release's Node requirements.
+- A coherent `@wippy-fe/*` package family selected for the target Web Host. For
+  this baseline, use public packages at exactly `0.0.56` with Web Host `1.0.56`.
+- The target Web Host's `import-map.json`. Externalize every listed key,
+  including unused ones, and bundle an imported exact specifier only when it is
+  absent.
+
+The consumer toolchain is constrained by its selected Vite version; the Web
+Host source repository has its own Node/Vite development toolchain. Verify both
+when changing the target release. See [Build System](./build-system.md) for the
+complete toolchain contract.
 
 ---
 
-## Example 1 — Micro Frontend App (Vue)
+## Recipe 1: Micro frontend app (Vue)
 
-A full Vue 3 SPA the Web Host renders through its selected page engine (an iframe by default, or a Web Fragment). Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main).
+A full Vue 3 SPA the Web Host renders through its selected page engine (an iframe by default, or a Web Fragment). Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/master/frontend/applications/main).
 
 **`package.json`** — the `wippy` block declares it a page and which CSS the host injects:
 
 ```json
 {
   "name": "@example/admin",
+  "version": "1.0.0",
   "specification": "wippy-component-1.0",
   "wippy": {
     "type": "page",
@@ -71,8 +96,8 @@ export function createMainApp() {
     mountRoute: /admin/:part(.*)*
 ```
 
-Invoke the module's Make target to build into the served directory, then serve
-the output where `url + base_path` points; the host renders it at `/admin`.
+Invoke the module's Make target to build into the served directory. Serve the
+output where `url + base_path` points; the host then renders it at `/admin`.
 The Makefile recipe uses
 `npm run build -- --outDir <abs-or-relative> --emptyOutDir`; `make.ps1`
 implements the same target for Windows, and `make.bat` only invokes
@@ -80,16 +105,18 @@ implements the same target for Windows, and `make.bat` only invokes
 
 ---
 
-## Example 2 — Web Component (Vue)
+## Recipe 2: Web component (Vue)
 
-A custom element the host mounts in the page DOM (Shadow DOM), embeddable from any page or chat artifact. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/main/frontend/web-components/reaction-bar).
+A custom element the host mounts in the page DOM (Shadow DOM), embeddable from any page or chat artifact. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/master/frontend/web-components/reaction-bar).
 
 **`package.json`** — `wippy` block declares the tag, props (HTML attributes), and events:
 
 ```json
 {
   "name": "@example/reaction-bar",
+  "version": "1.0.0",
   "specification": "wippy-component-1.0",
+  "browser": "dist/index.js",
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
@@ -187,7 +214,7 @@ function toggle(emoji: string) {
     entry_point: index.js
 ```
 
-Build it, and any page (or chat artifact) can use the tag:
+After the build, any page or chat artifact can use the tag:
 
 ```html
 <example-reaction-bar reactions='["👍","🎉"]'></example-reaction-bar>
@@ -199,7 +226,7 @@ Full walkthrough: [Web Component](./web-component.md).
 
 ## Explore more
 
-The [`app`](https://github.com/wippyai/app) repo ships several runnable web components under [`frontend/web-components/`](https://github.com/wippyai/app/tree/main/frontend/web-components):
+The [`app`](https://github.com/wippyai/app) repo ships several runnable web components under [`frontend/web-components/`](https://github.com/wippyai/app/tree/master/frontend/web-components):
 
 | Component | Demonstrates |
 |---|---|

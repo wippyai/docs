@@ -1,58 +1,39 @@
 ---
-title: "Agents"
-description: "Das Modul wippy/agent bietet ein Framework zum Erstellen von KI-Agenten mit Tool-Nutzung, Streaming, Delegation, Traits und Memory. Agenten werden…"
+title: "Agenten"
+description: "Wippy-Agenten mit Tools, Streaming, Delegation, Traits, Memory und eigener Auflösung definieren und ausführen."
 ---
 
-# Agents
+# Agenten
 
-Das Modul `wippy/agent` bietet ein Framework zum Erstellen von KI-Agenten mit Tool-Nutzung, Streaming, Delegation, Traits und Memory. Agenten werden deklarativ definiert und ueber ein Context/Runner-Muster ausgefuehrt.
+Das Modul `wippy/agent` definiert Agenten deklarativ und führt sie über einen Kontext und einen `runner` aus. Agenten können Tools verwenden, Antworten streamen, Aufgaben delegieren, Traits anwenden und Memory abrufen.
+
+Diese Seite ist eine API-Einführung mit kombinierbaren Referenzausschnitten, kein eigenständiges Tutorial. Die Beispiele setzen ein vorhandenes Wippy-Projekt, ein registriertes LLM-Modell samt Provider, konfigurierte Provider-Zugangsdaten sowie die jeweils referenzierten Agenten-, Tool- oder Resolver-Einträge voraus. Spätere Ausschnitte bauen auf zuvor erzeugten Variablen wie `ctx`, `runner` und `conversation` auf. Ein vollständiges ausführbares Projekt finden Sie unter [Einen LLM-Agenten erstellen](tutorials/llm-agent.md).
 
 ## Einrichtung
 
-Fuege das Modul deinem Projekt hinzu:
+Fügen Sie das Modul dem Projekt hinzu:
 
 ```bash
 wippy add wippy/agent
 wippy install
 ```
 
-Das Agent-Modul erfordert `wippy/llm` und einen Process-Host. Deklariere beide Abhaengigkeiten:
+Das Agentenmodul deklariert seine Abhängigkeit von `wippy/llm` selbst. Fügen Sie die Agentenabhängigkeit zum Quellbestand hinzu, falls sie noch nicht vorhanden ist:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: dep.llm
-    kind: ns.dependency
-    component: wippy/llm
-    version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
-
   - name: dep.agent
     kind: ns.dependency
     component: wippy/agent
     version: "*"
-    parameters:
-      - name: process_host
-        value: app:processes
 ```
 
-## Agent-Definitionen
+## Agentendefinitionen
 
-Agenten sind Registry-Eintraege mit `meta.type: agent.gen1`:
+Agenten sind Registry-Einträge mit `meta.type: agent.gen1`:
 
 ```yaml
 entries:
@@ -80,21 +61,22 @@ entries:
 | `prompt` | string | System-Prompt |
 | `model` | string | Modellname oder -klasse |
 | `max_tokens` | number | Maximale Ausgabe-Tokens (Standard `512`) |
-| `temperature` | number | Sampling-Temperatur (Standard `0`; Bereich anbieterabhaengig) |
+| `temperature` | number | Optionale Sampling-Temperatur; standardmäßig ausgelassen, Wertebereich und Unterstützung sind providerabhängig |
 | `thinking_effort` | number | Wird nur an das Modell weitergeleitet, wenn `> 0` (anbieterdefinierte Skala) |
 | `tools` | array | Tool-Registry-IDs |
 | `traits` | array | Trait-Referenzen |
 | `delegates` | array | Delegate-Agent-Referenzen |
-| `memory` | array | Statische Memory-Eintraege (Strings) |
-| `memory_contract` | table | Konfiguration fuer dynamisches Memory |
+| `memory` | array | Statische Memory-Einträge (Zeichenketten) |
+| `memory_contract` | table | Konfiguration für dynamisches Memory |
 
-## Agent-Context
+## Agentenkontext
 
-Der Agent-Context ist der zentrale Einstiegspunkt. Erstelle einen Context, konfiguriere ihn optional und lade dann einen Agenten:
+Erstellen Sie einen Agentenkontext, konfigurieren Sie ihn nach Bedarf und laden Sie anschließend einen Agenten:
 
 ```yaml
 imports:
   agent_context: wippy.agent:context
+  prompt: wippy.llm:prompt
 ```
 
 ```lua
@@ -107,24 +89,24 @@ if err then
 end
 ```
 
-### Context-Methoden
+### Kontextmethoden
 
 | Methode | Beschreibung |
 |---------|--------------|
-| `agent_context.new(options?)` | Neuen Context erstellen |
-| `:add_tools(specs)` | Tools zur Laufzeit hinzufuegen |
-| `:add_delegates(specs)` | Delegate-Agenten hinzufuegen |
-| `:configure_delegate_tools(config)` | Konfigurieren, wie Delegates sich als Tools exponieren |
+| `agent_context.new(options?)` | Neuen Kontext erstellen |
+| `:add_tools(specs)` | Tools zur Laufzeit hinzufügen |
+| `:add_delegates(specs)` | Delegate-Agenten hinzufügen |
+| `:configure_delegate_tools(config)` | Konfigurieren, wie Delegates als Tools bereitgestellt werden |
 | `:set_memory_contract(config)` | Dynamisches Memory konfigurieren |
-| `:set_context_merger(fn)` | Funktion zum Zusammenfuehren von Laufzeit-Context-Aktualisierungen bereitstellen |
-| `:update_context(updates)` | Laufzeit-Context aktualisieren |
-| `:load_agent(spec_or_id, options?)` | Agent laden und kompilieren, gibt Runner zurueck |
-| `:switch_to_agent(id, options?)` | Zu anderem Agent wechseln, gibt `(boolean, string?)` zurueck |
-| `:switch_to_model(name)` | Modell des aktuellen Agenten aendern, gibt `(boolean, string?)` zurueck |
+| `:set_context_merger(fn)` | Funktion zum Zusammenführen von Laufzeitkontext-Aktualisierungen bereitstellen |
+| `:update_context(updates)` | Laufzeitkontext aktualisieren |
+| `:load_agent(spec_or_id, options?)` | Agent laden und kompilieren; gibt den Runner zurück |
+| `:switch_to_agent(id, options?)` | Zu einem anderen Agenten wechseln; gibt `(boolean, string?)` zurück |
+| `:switch_to_model(name)` | Modell des aktuellen Agenten ändern; gibt `(boolean, string?)` zurück |
 | `:get_current_agent()` | Aktuellen Runner abrufen |
-| `:get_config()` | Zusammenfassung der Context-Konfiguration zurueckgeben |
+| `:get_config()` | Zusammenfassung der Kontextkonfiguration zurückgeben |
 
-### Context-Optionen
+### Kontextoptionen
 
 ```lua
 local ctx = agent_context.new({
@@ -136,13 +118,13 @@ local ctx = agent_context.new({
 
 | Option | Beschreibung |
 |--------|--------------|
-| `context` | Basis-Laufzeit-Context, der an Tools und Delegates weitergereicht wird |
-| `delegate_tools` | Standard-Delegate-Tool-Konfiguration (wird von `configure_delegate_tools` ueberschrieben) |
-| `enable_cache` | Prompt-Cache-Marker aktivieren (Claude-Modelle). Standardwert `true`. |
+| `context` | Basis-Laufzeitkontext, der an Tools und Delegates weitergereicht wird |
+| `delegate_tools` | Standardkonfiguration für Delegate-Tools; wird von `configure_delegate_tools` überschrieben |
+| `enable_cache` | Einstellung der Prompt-Cache-Marker für Claude-Modelle. Die aktuelle Implementierung aktiviert die Marker immer, auch wenn diese Option `false` ist. |
 
-### Laden per Inline-Spezifikation
+### Laden über eine Inline-Spezifikation
 
-Lade einen Agenten ohne Registry-Eintrag:
+Laden Sie einen Agenten ohne Registry-Eintrag:
 
 ```lua
 local runner, err = ctx:load_agent({
@@ -155,9 +137,9 @@ local runner, err = ctx:load_agent({
 })
 ```
 
-## Schritte ausfuehren
+## Schritte ausführen
 
-Der Runner fuehrt einen einzelnen Reasoning-Schritt aus. Uebergib einen Prompt-Builder mit der Konversation:
+Der Runner führt einen einzelnen Agentenschritt aus einer Prompt-Builder-Konversation aus:
 
 ```lua
 local prompt = require("prompt")
@@ -176,16 +158,24 @@ print(response.result)
 ### Schritt-Optionen
 
 ```lua
+local self_pid, pid_err = process.pid()
+if pid_err then
+    error("Failed to get process PID: " .. tostring(pid_err))
+end
+
 local response, err = runner:step(conversation, {
     context = { session_id = "abc" },
-    stream_target = { reply_to = process.pid(), topic = "stream" },
+    stream_target = { reply_to = self_pid, topic = "stream" },
     tool_call = "auto",
 })
+if err then
+    error("Agent step failed: " .. tostring(err))
+end
 ```
 
 | Option | Typ | Beschreibung |
 |--------|-----|--------------|
-| `context` | table | Laufzeit-Context, der mit dem Agent-Context zusammengefuehrt wird |
+| `context` | table | Laufzeitkontext, der mit dem Agentenkontext zusammengeführt wird |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
 | `tool_call` | string | `"auto"`, `"any"`, `"none"` oder ein Tool-Name |
 
@@ -196,7 +186,7 @@ local response, err = runner:step(conversation, {
 | `result` | string | Generierter Text |
 | `tokens` | table | Token-Nutzung |
 | `finish_reason` | string | Abschlussgrund |
-| `tool_calls` | table? | Auszufuehrende Tool-Aufrufe |
+| `tool_calls` | table? | Auszuführende Tool-Aufrufe |
 | `delegate_calls` | table? | Delegate-Aufrufe |
 
 ### Runner-Statistiken
@@ -208,7 +198,7 @@ local stats = runner:get_stats()
 
 ## Tool-Definitionen
 
-Tools sind `function.lua`-Eintraege mit `meta.type: tool`. Definiere sie in einer separaten `_index.yaml`:
+Tools sind Einträge vom Typ `function.lua` mit `meta.type: tool`. Definieren Sie sie in einer separaten `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -258,14 +248,14 @@ return { handler = handler }
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `meta.type` | string | Muss `tool` sein |
-| `meta.input_schema` | string/table | JSON-Schema fuer Tool-Argumente |
+| `meta.input_schema` | string/table | JSON-Schema für Tool-Argumente |
 | `meta.llm_alias` | string | Name, der dem LLM angezeigt wird |
 | `meta.llm_description` | string | Beschreibung, die dem LLM angezeigt wird |
-| `meta.exclusive` | boolean | Wenn true, werden gleichzeitige Tool-Aufrufe abgebrochen |
+| `meta.exclusive` | boolean | Wenn `true`, werden gleichzeitige Tool-Aufrufe abgebrochen |
 
 ### Tools in Agenten referenzieren
 
-Liste Tool-Registry-IDs in der Agent-Definition auf:
+Führen Sie die Registry-IDs der Tools in der Agentendefinition auf:
 
 ```yaml
   - name: assistant
@@ -282,7 +272,7 @@ Liste Tool-Registry-IDs in der Agent-Definition auf:
       - app.tools:*          # wildcard: all tools in namespace
 ```
 
-Tools koennen auch mit eigenen Aliasen und Context referenziert werden:
+Tools können auch mit eigenen Aliasen und Kontext referenziert werden:
 
 ```yaml
     tools:
@@ -292,9 +282,9 @@ Tools koennen auch mit eigenen Aliasen und Context referenziert werden:
           api_key: "${SEARCH_API_KEY}"
 ```
 
-## Tool-Ausfuehrung
+## Tool-Ausführung
 
-Wenn ein Agent-Schritt `tool_calls` zurueckgibt, fuehre sie aus und gib die Ergebnisse zurueck:
+Wenn ein Agentenschritt `tool_calls` zurückgibt, führen Sie die Aufrufe aus und geben Sie die Ergebnisse zurück:
 
 ```lua
 local json = require("json")
@@ -319,7 +309,7 @@ local function execute_and_continue(runner, conversation)
                 result_str = json.encode(result)
             end
 
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -333,27 +323,50 @@ end
 | `id` | string | Eindeutiger Aufruf-Identifikator |
 | `name` | string | Tool-Name (Alias oder llm_alias) |
 | `arguments` | table | Geparste Argumente |
-| `registry_id` | string | Vollstaendige Registry-ID fuer `funcs.call()` |
+| `registry_id` | string | Vollständige Registry-ID für `funcs.call()` |
 
 <note>
-Verwende <code>funcs.call(tc.registry_id, tc.arguments)</code> zur Ausfuehrung von Tools. Das Feld <code>registry_id</code> verweist direkt auf den Eintrag des Tools in der Registry.
+Verwenden Sie <code>funcs.call(tc.registry_id, tc.arguments)</code> zur Ausführung von Tools. Das Feld <code>registry_id</code> verweist direkt auf den Registry-Eintrag des Tools.
 </note>
 
 ## Streaming
 
-Streame Agent-Antworten in Echtzeit mit `stream_target`:
+Streamen Sie Agentenantworten mit `stream_target` in Echtzeit:
 
 ```lua
 local TOPIC = "agent_stream"
 
 local function stream_step(runner, conversation)
-    local stream_ch = process.listen(TOPIC)
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, nil, listen_err
+    end
+
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove agent stream listener"
+            if err then
+                return text, nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return text, nil, cleanup_err
+        end
+        if err then
+            return text, nil, err
+        end
+        return text, response, nil
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish("", nil, pid_err)
+    end
 
     local done_ch = channel.new(1)
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
-                reply_to = process.pid(),
+                reply_to = self_pid,
                 topic = TOPIC,
             },
         })
@@ -361,48 +374,62 @@ local function stream_step(runner, conversation)
     end)
 
     local full_text = ""
+    local step_result = nil
+    local stream_done = false
+    local stream_err = nil
+
     while true do
-        local result = channel.select({
-            stream_ch:case_receive(),
-            done_ch:case_receive(),
-        })
-        if not result.ok then break end
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not step_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(full_text, nil, "Agent stream closed before completion")
+        end
 
         if result.channel == done_ch then
-            process.unlisten(stream_ch)
-            local r = result.value
-            return full_text, r.response, r.err
-        end
-
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            -- wait for the step to complete
-            local r, ok = done_ch:receive()
-            process.unlisten(stream_ch)
-            if ok and r then
-                return full_text, r.response, r.err
+            step_result = result.value
+            if step_result.err then
+                return finish(full_text, nil, step_result.err)
             end
-            return full_text, nil, nil
+            if stream_done then
+                return finish(full_text, step_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "Agent stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and step_result then
+                return finish(full_text, step_result.response, stream_err)
+            end
         end
     end
-
-    process.unlisten(stream_ch)
-    return full_text, nil, nil
 end
 ```
 
 Der Stream verwendet die gleichen Chunk-Typen wie direktes LLM-Streaming: `"chunk"`, `"thinking"`, `"tool_call"`, `"error"`, `"done"`.
 
 <tip>
-Verwende <code>coroutine.spawn</code>, um <code>runner:step()</code> in einer separaten Coroutine auszufuehren, damit Stream-Chunks gleichzeitig empfangen werden koennen. Verwende <code>channel.select</code> zum Multiplexen des Stream- und Abschluss-Channels.
+Verwenden Sie <code>coroutine.spawn</code>, um <code>runner:step()</code> in einer separaten Coroutine auszuführen, damit Stream-Chunks gleichzeitig empfangen werden können. Mit <code>channel.select</code> multiplexen Sie den Stream- und den Abschluss-Channel.
 </tip>
 
 ## Delegates
 
-Agenten koennen an andere Agenten delegieren. Delegates erscheinen als Tools fuer den uebergeordneten Agenten:
+Agenten können an andere Agenten delegieren. Delegates erscheinen als Tools für den übergeordneten Agenten:
 
 ```yaml
   - name: coordinator
@@ -425,7 +452,10 @@ Agenten koennen an andere Agenten delegieren. Delegates erscheinen als Tools fue
 Delegate-Aufrufe erscheinen in `response.delegate_calls`:
 
 ```lua
-local response = runner:step(conversation)
+local response, err = runner:step(conversation)
+if err then
+    error("Delegate step failed: " .. tostring(err))
+end
 
 if response.delegate_calls then
     for _, dc in ipairs(response.delegate_calls) do
@@ -436,7 +466,7 @@ if response.delegate_calls then
 end
 ```
 
-Delegates koennen auch zur Laufzeit hinzugefuegt werden:
+Delegates können auch zur Laufzeit hinzugefügt werden:
 
 ```lua
 ctx:add_delegates({
@@ -446,7 +476,7 @@ ctx:add_delegates({
 
 ## Traits
 
-Traits sind wiederverwendbare Faehigkeiten, die Prompts, Tools und Verhalten zu Agenten beitragen:
+Traits sind wiederverwendbare Fähigkeiten, die Agenten um Prompts, Tools und Verhalten ergänzen:
 
 ```yaml
   - name: assistant
@@ -467,9 +497,9 @@ Traits sind wiederverwendbare Faehigkeiten, die Prompts, Tools und Verhalten zu 
 
 | Trait | Beschreibung |
 |-------|--------------|
-| `time_aware` | Fuegt aktuelles Datum und Uhrzeit in den Prompt ein |
+| `time_aware` | Fügt dem Prompt das aktuelle Datum und die aktuelle Uhrzeit hinzu |
 
-Der `time_aware`-Trait akzeptiert Context-Optionen:
+Der Trait `time_aware` akzeptiert Kontextoptionen:
 
 ```yaml
     traits:
@@ -481,17 +511,18 @@ Der `time_aware`-Trait akzeptiert Context-Optionen:
 
 ### Eigene Traits
 
-Traits sind Registry-Eintraege mit `meta.type: agent.trait`. Sie koennen folgendes beitragen:
-- **prompt** - statischer Text, der an den System-Prompt angehaengt wird
-- **build_func_id** - Funktion, die zur Kompilierungszeit aufgerufen wird, um Tools, Prompts und Delegates beizutragen
-- **prompt_func_id** - Funktion, die bei jedem Schritt aufgerufen wird, um dynamische Inhalte einzufuegen
-- **step_func_id** - Funktion, die bei jedem Schritt fuer Seiteneffekte aufgerufen wird
+Traits sind Registry-Einträge mit `meta.type: agent.trait`. Sie können Folgendes beitragen:
+
+- **prompt** – statischer Text, der an den System-Prompt angehängt wird
+- **build_func_id** – Funktion, die beim Kompilieren Tools, Prompts und Delegates beisteuert
+- **prompt_func_id** – bei jedem Schritt aufgerufene Funktion für dynamische Inhalte
+- **step_func_id** – bei jedem Schritt für Seiteneffekte aufgerufene Funktion
 
 ## Memory
 
 ### Statisches Memory
 
-Einfache Memory-Eintraege, die an den System-Prompt angehaengt werden:
+Einfache Memory-Einträge, die an den System-Prompt angehängt werden:
 
 ```yaml
   - name: assistant
@@ -508,7 +539,7 @@ Einfache Memory-Eintraege, die an den System-Prompt angehaengt werden:
 
 ### Dynamischer Memory-Contract
 
-Konfiguriere dynamischen Memory-Abruf aus einer externen Quelle:
+Konfigurieren Sie den dynamischen Memory-Abruf aus einer externen Quelle:
 
 ```yaml
     memory_contract:
@@ -522,24 +553,24 @@ Konfiguriere dynamischen Memory-Abruf aus einer externen Quelle:
         min_conversation_length: 2
 ```
 
-Der Memory-Contract wird waehrend `runner:step()` aufgerufen, um relevante Eintraege basierend auf dem Konversationskontext abzurufen. Ergebnisse werden als Developer-Nachrichten eingefuegt.
+Der Memory-Contract wird während `runner:step()` aufgerufen, um anhand des Konversationskontexts relevante Einträge abzurufen. Ergebnisse werden als Developer-Nachrichten eingefügt.
 
 | Option | Standard | Beschreibung |
 |--------|----------|--------------|
-| `max_items` | `3` | Maximale Memory-Eintraege pro Abruf |
-| `max_length` | `1000` | Maximale Gesamtzeichenlaenge |
+| `max_items` | `3` | Höchstzahl der Memory-Einträge pro Abruf |
+| `max_length` | `1000` | Maximale Gesamtlänge in Zeichen |
 | `recall_cooldown` | `1` | Mindestanzahl Schritte zwischen Abrufen |
-| `min_conversation_length` | `2` | Mindestanzahl Konversationsdurchgaenge vor dem ersten Abruf |
+| `min_conversation_length` | `2` | Mindestzahl der Konversationsdurchgänge vor dem ersten Abruf |
 
 ## Resolver-Contract
 
-Wenn `load_agent()` einen String-Identifikator erhaelt, versucht es zuerst, ihn ueber den `wippy.agent:resolver`-Contract aufzuloesen. Falls kein Resolver gebunden ist oder der Resolver nil zurueckgibt, wird auf die Registry-Suche zurueckgegriffen.
+Wenn `load_agent()` einen Zeichenkettenbezeichner erhält, versucht es zunächst, diesen über den Contract `wippy.agent:resolver` aufzulösen. Ist kein Resolver gebunden oder gibt er `nil` zurück, folgt die Registry-Suche.
 
-Dies ermoeglicht es Anwendungen, eigene Agent-Aufloesung zu implementieren, z.B. das Laden von Agent-Definitionen aus einer Datenbank.
+So können Anwendungen eine eigene Agentenauflösung implementieren und Agentendefinitionen beispielsweise aus einer Datenbank laden.
 
 ### Einen Resolver binden
 
-Definiere eine Resolver-Funktion und binde sie an den Contract:
+Definieren Sie eine Resolver-Funktion und binden Sie sie an den Contract:
 
 ```yaml
 entries:
@@ -563,7 +594,7 @@ entries:
 
 ### Resolver-Implementierung
 
-Der Resolver erhaelt `{ agent_id = "..." }` und gibt eine Agent-Spezifikationstabelle oder nil zurueck:
+Der Resolver erhält `{ agent_id = "..." }` und gibt eine Agentenspezifikationstabelle oder `nil` zurück:
 
 ```lua
 local agent_registry = require("agent_registry")
@@ -603,17 +634,19 @@ return {
 }
 ```
 
-### Aufloesungsreihenfolge
+### Auflösungsreihenfolge
 
 1. `wippy.agent:resolver`-Contract versuchen (falls gebunden)
 2. Registry-Suche per ID
 3. Registry-Suche per Name
-4. Fehler zurueckgeben, falls nicht gefunden
+4. Fehler zurückgeben, falls der Agent nicht gefunden wurde
 
-Dieses Muster ermoeglicht mandantenfaehige Anwendungen, bei denen Agenten pro Benutzer oder pro Workspace konfiguriert und ausserhalb der Framework-Registry gespeichert werden.
+Dieses Muster ermöglicht mandantenfähige Anwendungen, in denen Agenten pro Benutzer oder Workspace konfiguriert und außerhalb der Framework-Registry gespeichert werden.
+
+Wie Toolzugriff und Observability von Agenten abgesichert werden, beschreibt das [Sicherheitsmodell](../concepts/security-model.md).
 
 ## Siehe auch
 
-- [LLM](framework/llm.md) - Zugrundeliegendes LLM-Modul
-- [Einen LLM-Agenten erstellen](tutorials/llm-agent.md) - Schritt-fuer-Schritt-Tutorial
-- [Framework-Uebersicht](framework/overview.md) - Nutzung der Framework-Module
+- [LLM](framework/llm.md) – zugrunde liegendes LLM-Modul
+- [Einen LLM-Agenten erstellen](../tutorials/llm-agent.md) – vollständiges Tutorial
+- [Framework-Überblick](framework/overview.md) – Framework-Module verwenden

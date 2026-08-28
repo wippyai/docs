@@ -1,53 +1,58 @@
 ---
-title: "WebAssemblyランタイム"
-description: "WippyはWebAssemblyモジュールをLuaコードと並ぶファーストクラスのレジストリエントリとして実行します。WASM関数とプロセスは同一のスケジューラ内で実行され、同一のセキュリティモデルを共有し、関数レジストリを通じてLuaと相互運用されます。"
+title: "WebAssembly ランタイム"
+description: "レジストリエントリを通じて、WAT および WASM 関数や WASM プロセスを Lua と並行して実行します。"
 ---
 
-# WebAssemblyランタイム
+# WebAssembly ランタイム
 
-> WASMランタイムは実験的な拡張機能です。設定は安定していますが、ランタイム内部はリリース間で変更される可能性があります。
+> WASM ランタイムは実験的な拡張機能です。設定は安定していますが、ランタイム内部はリリース間で変更される可能性があります。
 
-WippyはWebAssemblyモジュールをLuaコードと並ぶファーストクラスのレジストリエントリとして実行します。WASM関数とプロセスは同一のスケジューラ内で実行され、同一のセキュリティモデルを共有し、関数レジストリを通じてLuaと相互運用されます。
+Wippy は WebAssembly モジュールを Lua コードとともに登録します。関数エントリは関数レジストリに加わり、関数プールを通じて実行されます。プロセスエントリはプロセスファクトリを登録し、プロセスホスト配下で実行されます。どちらもランタイムのスケジューラとセキュリティモデルを使用します。
+
+**分類: 概念概要。** Lua ブロックには独立した呼び出しパターンが含まれ、指定された WASM エントリとその WIT コントラクトがすでに登録されていることを前提とします。コンパイル済みコンポーネントを含むプロジェクトについては Rust/WASM チュートリアルを参照してください。
 
 ## エントリ種別
 
-| Kind | 説明 |
-|------|------|
-| `function.wat` | YAMLで定義されたインラインWebAssembly Textフォーマット関数 |
-| `function.wasm` | ファイルシステムエントリからロードされるプリコンパイル済みWASMバイナリ |
-| `process.wasm` | プロセスとして実行されるWASMバイナリ（CLIコマンドまたは長時間実行） |
+| 種別 | 説明 |
+|------|-------------|
+| `function.wat` | YAML 内で定義されたインライン WebAssembly Text 形式の関数 |
+| `function.wasm` | ファイルシステムエントリから読み込むコンパイル済み WASM バイナリ |
+| `process.wasm` | プロセスとして実行する WASM バイナリ（CLI コマンドまたは長時間実行） |
 
 ## 動作の仕組み
 
-1. WASMモジュールは`_index.yaml`でレジストリエントリとして宣言されます
-2. 起動時にモジュールがコンパイルされ、ワーカープールに配置されます
-3. Lua（または他のWASM）コードが`funcs.call()`経由でそれらを呼び出します
-4. 引数と戻り値はLuaテーブルとWIT型の間で自動的にマッピングされます
-5. 非同期操作（I/O、スリープ、HTTP）はLuaと同様にディスパッチャを通じてyieldされます
+1. WASM モジュールを `_index.yaml` のレジストリエントリとして宣言します
+2. 起動時に `function.wat` と `function.wasm` エントリがコンパイルされ、関数として登録され、設定された関数プールへ配置されます
+3. Lua は `funcs.call()` を通じてそれらの関数エントリを呼び出します
+4. 一方、`process.wasm` エントリはプロセスファクトリを登録し、プロセスホスト配下で生成されます
+5. 関数の引数と戻り値は Lua テーブルと WIT 型の間でマッピングされます
+6. クロックのポーリングや送信 HTTP など、対応するディスパッチャーブリッジ操作は yield し、スケジューラが他の処理を実行できるようにします
 
-## コンポーネントモデル
+## コンポーネントモデル :id=component-model
 
-WippyはWIT（WebAssembly Interface Types）を持つWebAssemblyコンポーネントモデルをサポートしています。コンポーネントモジュールはホストとゲスト間の完全な型マッピングを得られます:
+Wippy は WIT（WebAssembly Interface Types）を使用する WebAssembly Component Model に対応しています。コンポーネントモジュールは、ホストとゲストの間で次の型をマッピングします。
 
-- レコードは名前付きフィールドを持つLuaテーブルにマッピングされます
-- リストはLua配列にマッピングされます
-- ResultはLuaの`(value, error)`の戻り値タプルにマッピングされます
-- プリミティブ（`s32`、`f64`、`string`など）は直接マッピングされます
+- レコードは名前付きフィールドを持つ Lua テーブルにマッピングされます
+- リストは Lua 配列にマッピングされます
+- Result は `(value, error)` 戻り値タプルにマッピングされます
+- プリミティブ（`s32`、`f64`、`string` など）は直接マッピングされます
 
-明示的なWITシグネチャを持つRaw/コアWASMモジュールもサポートされています。
+明示的な WIT シグネチャを指定した raw/core WASM モジュールにも対応しています。
 
-## LuaからのWASM呼び出し
+## Lua から WASM を呼び出す
 
-WASM関数はレジストリ内の他の関数と同じ方法で呼び出されます:
+`funcs.call()` を通じてレジストリ ID で WASM 関数を呼び出します。
 
 ```lua
 local funcs = require("funcs")
 
 -- No arguments
 local result, err = funcs.call("myns:answer_wat")
+if err then return nil, err end
 
 -- With arguments
-local result, err = funcs.call("myns:compute", 6, 7)
+local computed, compute_err = funcs.call("myns:compute", 6, 7)
+if compute_err then return nil, compute_err end
 
 -- With complex data
 local users = {
@@ -55,20 +60,22 @@ local users = {
     {id = 2, name = "Bob", tags = {"user"}, active = false},
 }
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 ```
 
 ## セキュリティ
 
-WASM実行はデフォルトで呼び出し元のセキュリティコンテキストを継承します:
+WASM 実行はデフォルトで呼び出し元のセキュリティコンテキストを継承します。
 
-- アクターIDが継承されます
-- スコープが継承されます
-- リクエストコンテキストが継承されます
+- アクター ID を継承
+- スコープを継承
+- リクエストコンテキストを継承
 
-ホスト機能は明示的なインポートによるオプトイン方式です。各エントリは必要なWASIインターフェース（`wasi:cli`、`wasi:filesystem`など）を正確に宣言し、モジュールのアクセス範囲を制限します。
+ホスト機能は明示的なインポートによって選択して有効にします。各エントリは `funcs`、`wasi1`、`wasi:cli`、`wasi:filesystem` など必要なホストプロファイルを宣言し、モジュールのアクセス範囲を制限します。プロファイルを有効にしても、関数呼び出し、ソケット、送信 HTTP などの操作に対するランタイムのセキュリティチェックは迂回されません。
 
 ## 関連項目
 
-- [関数](wasm/functions.md) - WASM関数エントリの設定
-- [ホスト関数](wasm/hosts.md) - 利用可能なWASIおよびWippyホストインターフェース
-- [プロセス](wasm/processes.md) - WASMを長期間実行プロセスとして実行する
+- [関数](wasm/functions.md) - WASM 関数エントリの設定
+- [ホスト関数](wasm/hosts.md) - 利用可能な WASI および Wippy ホストインターフェース
+- [プロセス](wasm/processes.md) - WASM を長時間実行プロセスとして実行
+- [Rust/WASM チュートリアル](../tutorials/rust-wasm.md) - コンポーネントをビルドして登録

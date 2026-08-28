@@ -1,20 +1,23 @@
 ---
-title: "Event Bus"
-description: "O event bus é um sistema pub/sub usando uma única goroutine de dispatcher. Publishers enfileiram ações, o dispatcher as processa sequencialmente, e…"
+title: "Barramento de eventos"
+description: "Ações do barramento de eventos, inscrições com curingas, entrega, ponte para processos Lua, funções auxiliares de solicitação-resposta e encerramento."
 ---
 
-# Event Bus
+# Barramento de eventos :id=event-bus
 
-O event bus é um sistema pub/sub usando uma única goroutine de dispatcher. Publishers enfileiram ações, o dispatcher as processa sequencialmente, e subscribers recebem eventos correspondentes em channels.
+O event bus processa ações pub/sub enfileiradas em uma única goroutine de dispatcher e entrega eventos correspondentes aos channels dos subscribers.
+
+Os exemplos em Go são fragmentos de implementação e extensão. Eles pressupõem um contexto de componentes, logger, handlers e tipos de eventos da aplicação já existentes.
 
 ## Estrutura de Evento
 
 ```go
 type Event struct {
-    System string  // Componente/módulo (ex: "registry", "process")
-    Kind   string  // Tipo de evento (ex: "create", "update", "exit")
-    Path   string  // Identificador da entidade
+    System string  // Component/module (e.g., "registry", "process")
+    Kind   string  // Event type (e.g., "create", "update", "exit")
+    Path   string  // Entity identifier
     Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -73,7 +76,7 @@ Quatro tipos de ação fluem pela fila:
 | Send | Entrega evento para subscribers correspondentes |
 | Stop | Limpa subscribers, drena fila, sai do loop |
 
-Subscribe e Unsubscribe bloqueiam até o dispatcher confirmar. Send é fire-and-forget.
+Subscribe e Unsubscribe bloqueiam até que o dispatcher confirme. Send é fire-and-forget. O bus aceita no máximo `DefaultMaxSubscribers` inscrições (4096 por padrão); inscrições além desse limite falham com `ErrSubscribersCapReached`.
 
 ## Troca de Fila
 
@@ -88,7 +91,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // processar ação
+        // process action
     }
 
     clear(actions)
@@ -101,7 +104,7 @@ func (b *Bus) processActions() bool {
 
 Dois slices alternam: um para processamento, um para novas chegadas. O channel `actionReady` tem buffer de 1, então sinalizar nunca bloqueia e múltiplos enqueues coalescem em um wakeup.
 
-## Pattern Matching
+## Correspondência de padrões
 
 Inscrições compilam padrões uma vez no momento da inscrição:
 
@@ -115,7 +118,7 @@ type sub struct {
 }
 ```
 
-O pacote wildcard suporta três tipos de padrão:
+O pacote wildcard oferece quatro tipos de padrão:
 
 | Padrão | Corresponde |
 |--------|-------------|
@@ -163,7 +166,7 @@ type Dispatcher struct {
     eventC chan event.Event
 
     mu   sync.RWMutex
-    subs map[string]*subscription  // tópico -> inscrição
+    subs map[string]*subscription  // topic -> subscription
 }
 ```
 
@@ -178,7 +181,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -204,10 +207,13 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 Encapsula inscrição de channel com callback:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
-        // tratar
+        // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 
@@ -221,28 +227,39 @@ Gerencia múltiplos handlers com ciclo de vida centralizado:
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
 Cada handler implementa `Pattern()` e `Handle()`. O router cria um Subscriber para cada e fecha todos em Stop.
 
-### Awaiter
+### AwaitService
 
-Espera síncrona por um evento específico:
+Implementa request-response sobre pub/sub. Mantém uma única inscrição para cada par `(system, kind)` e roteia eventos aos waiters por `Path`:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+if err := svc.Start(ctx); err != nil {
+    return err
+}
+defer svc.Stop()
+
+waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+if err != nil {
+    return err
+}
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // bloqueia até match ou timeout
+result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
 ```
 
-O padrão Prepare-then-Wait evita race conditions: inscrição antes de acionar o evento que produz a resposta.
+`Prepare` registra o waiter antes do envio do evento que dispara a resposta, evitando a race na qual a resposta chega antes de o waiter ser registrado. `Wait` bloqueia até chegar um evento com `Path` correspondente ou até expirar o timeout — quando o valor não é positivo, o padrão é `DefaultAwaitTimeout`, de 30 segundos. `Accepted` é verdadeiro quando o kind do evento é `accept`, `*.accept` ou `*.accepted`; qualquer outro kind é tratado como rejeição, e um campo `error` em `Data` é exposto como `Error`. O helper `Await(ctx, system, kind, path, timeout)` combina Prepare e Wait. A infraestrutura de boot registra um AwaitService no contexto (`event.GetAwaitService`).
 
-## Shutdown
+## Encerramento
 
 1. `Stop()` atomicamente define flag closed e enfileira ação Stop
 2. Dispatcher limpa mapa de subscribers
@@ -252,7 +269,7 @@ O padrão Prepare-then-Wait evita race conditions: inscrição antes de acionar 
    - Eventos Send são descartados
 4. WaitGroup completa
 
-## Veja Também
+## Consulte também
 
-- [Registry](internals/registry.md) - Principal produtor de eventos
-- [Command Dispatch](internals/dispatch.md) - Roteamento processo-para-handler
+- [Registro](internals/registry.md) — Principal produtor de eventos
+- [Despacho de comandos](internals/dispatch.md) — Roteamento de processos para handlers

@@ -1,11 +1,13 @@
 ---
 title: "Command Dispatch"
-description: "El sistema de dispatch enruta comandos desde procesos a handlers. Los procesos hacen yield de comandos con tags de correlación, los handlers ejecutan…"
+description: "Cómo los yields de procesos se enrutan a handlers de comandos y regresan mediante eventos de finalización correlacionados."
 ---
 
 # Command Dispatch
 
-El sistema de dispatch enruta comandos desde procesos a handlers. Los procesos hacen yield de comandos con tags de correlación, los handlers ejecutan trabajo asíncrono, y los resultados fluyen de vuelta vía colas de eventos.
+El command dispatch enruta los yields de los procesos a handlers y devuelve resultados correlacionados mediante las colas de eventos de los procesos.
+
+Esta es una referencia de extensión e implementación. Los fragmentos de comando y dispatcher personalizados suponen un paquete Go existente, un grafo de arranque, la API de comandos y un tratamiento de errores específico del servicio.
 
 ## Flujo
 
@@ -20,10 +22,10 @@ sequenceDiagram
     W->>R: getHandler(cmdID)
     R-->>W: handler
     W->>H: Handle(cmd, tag, receiver)
-    H-->>H: trabajo asíncrono
+    H-->>H: async work
     H->>W: CompleteYield(tag, result)
-    W->>P: encolar evento, despertar
-    P->>P: resume con resultado
+    W->>P: queue event, wake
+    P->>P: resume with result
 ```
 
 ## Registry de Comandos
@@ -32,9 +34,9 @@ El registry almacena handlers en una estructura híbrida:
 
 ```go
 type Registry struct {
-    handlers [256]Handler         // Comandos de sistema: índice O(1)
-    extended map[CommandID]Handler // Comandos extendidos: lookup en mapa
-    frozen   atomic.Bool          // Sin lock después de boot
+    handlers [256]Handler         // System commands: O(1) index
+    extended map[CommandID]Handler // Extended commands: map lookup
+    frozen   atomic.Bool          // Lock-free after boot
 }
 ```
 
@@ -45,50 +47,45 @@ Comandos de sistema (0-255) usan indexación de array. Comandos extendidos usan 
 | Rango | Módulo | Ejemplos |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
-| 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
-| 50-59 | stream | Read, Write, Close, Seek |
-| 60-69 | http | Request, RequestBatch |
-| 70-79 | tty | E/S de terminal |
-| 80-89 | websocket | Connect, Send, Receive |
-| 90-99 | event | Subscribe, Send |
-| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
-| 120-129 | store | Get, Set, Delete, Has |
-| 130-139 | security | ValidateToken, CreateToken |
-| 140-149 | function | Call, AsyncStart, AsyncCancel |
-| 150-159 | exec | ProcessWait |
-| 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
-| 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 10, 14, 16, 18-23 | clock | Operaciones de sleep, ticker y timer |
+| 30-34 | socket | Connect, Listen, Accept, Bind, Resolve |
+| 50-57 | stream | Operaciones Read, Write, Close, Seek, Flush, Stat y Scanner |
+| 60-61 | http | Request, RequestBatch |
+| 70-78 | tty | E/S de terminal |
+| 80-85 | websocket | Connect, Send, Receive, Close, Ping, Subscribe |
+| 90-91 | event | Subscribe, Send |
+| 100-111 | sql | Query, Execute, Prepare y operaciones de statements y transacciones |
+| 120-126 | store | Get, Set, Delete, Has, Entry, List, Put |
+| 130-132 | security | ValidateToken, CreateToken, RevokeToken |
+| 140-142 | function | Call, AsyncStart, AsyncCancel |
+| 150 | exec | ProcessWait |
+| 160-169 | cloudstorage | Operaciones de objetos y multipart |
+| 170-171 | eval | Compile, Run |
+| 172 | cdc | Subscribe |
+| 173-174 | cloudstorage | AbortMultipartUpload, OpenReader |
+| 180-183 | workflow | SideEffect, Exec, Version, UpsertAttrs |
+| 190-193 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (process group) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Servicios definidos por usuario |
 
-El registro ocurre durante boot vía `MustRegisterCommands()`. Las colisiones causan panic en startup.
+Los paquetes reservan la propiedad de los ID de comando desde `init()` con `MustRegisterCommands()`; las colisiones de propiedad provocan panic durante la inicialización de los paquetes. Durante la carga de componentes, cada servicio vincula sus handlers mediante `Registrar.Register`. El dispatcher solo se congela después de instalar esos handlers.
 
 ## Definir Comandos
 
 Los comandos son estructuras de datos con un `CommandID` único:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-La reutilización de pool elimina asignaciones en rutas críticas. Registre en package init:
+Reserve el ID del comando durante la inicialización del paquete:
 
 ```go
 func init() {
@@ -112,7 +109,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // estado del servicio
+    // service state
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -155,7 +152,7 @@ Cuando un proceso necesita trabajo asíncrono, hace yield de un comando con un t
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // Contador local al proceso para correlación
+    Tag uint64    // Process-local counter for correlation
 }
 ```
 

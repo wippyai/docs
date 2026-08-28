@@ -1,6 +1,6 @@
 ---
 title: "Komprimierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Strings mit gzip, Brotli, Zstandard, rohem DEFLATE und zlib komprimieren und dekomprimieren."
 ---
 
 # Komprimierung
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Komprimieren und dekomprimieren Sie Daten mit gzip, deflate, zlib, brotli und zstd-Algorithmen.
+Das Modul `compress` kodiert und dekodiert Strings mit gzip, Brotli, Zstandard, rohem DEFLATE und zlib.
+
+Diese Seite ist eine API-Referenz mit partiellen HTTP- und Storage-Rezepten. Jede Operation materialisiert ihre vollständige Ein- und Ausgabe als Lua-Strings; verwenden Sie Archive- oder Stream-APIs, wenn Daten im Streaming verbleiben müssen. Die Beispiele setzen voraus, dass der Eintrag `compress` und alle separat benötigten Module wie `json` oder `http` aktiviert.
 
 ## Laden
 
@@ -17,29 +19,36 @@ Komprimieren und dekomprimieren Sie Daten mit gzip, deflate, zlib, brotli und zs
 local compress = require("compress")
 ```
 
+Fügen Sie `compress` zur `modules:`-Liste des ausführbaren Eintrags hinzu, bevor Sie das Modul laden.
+
 ## GZIP
 
-Am weitesten verbreitetes Format (RFC 1952).
+Gzip ist in RFC 1952 definiert.
 
 ### Komprimieren {id="gzip-compress"}
 
 ```lua
--- Für HTTP-Response komprimieren
-local body = json.encode(large_response)
+-- Compress for HTTP response
+local body, json_err = json.encode(large_response)
+if json_err then return nil, json_err end
 local compressed, err = compress.gzip.encode(body)
 if err then
     return nil, err
 end
 
--- Content-Encoding-Header setzen
-res:set_header("Content-Encoding", "gzip")
-res:write(compressed)
+-- Set Content-Encoding header
+local header_err = res:set_header("Content-Encoding", "gzip")
+if header_err then return nil, header_err end
+local write_err = res:write(compressed)
+if write_err then return nil, write_err end
 
--- Maximale Komprimierung für Speicherung
-local archived = compress.gzip.encode(data, {level = 9})
+-- Maximum compression for storage
+local archived, archive_err = compress.gzip.encode(data, {level = 9})
+if archive_err then return nil, archive_err end
 
--- Schnelle Komprimierung für Echtzeit
-local fast = compress.gzip.encode(data, {level = 1})
+-- Fast compression for real-time
+local fast, fast_err = compress.gzip.encode(data, {level = 1})
+if fast_err then return nil, fast_err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -58,21 +67,23 @@ local fast = compress.gzip.encode(data, {level = 1})
 ### Dekomprimieren {id="gzip-decompress"}
 
 ```lua
--- HTTP-Request dekomprimieren
-local content_encoding = req:header("Content-Encoding")
+-- Decompress HTTP request
+local content_encoding, header_err = req:header("Content-Encoding")
+if header_err then return nil, header_err end
 if content_encoding == "gzip" then
-    local body = req:body()
+    local body, body_err = req:body()
+    if body_err then return nil, body_err end
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.wrap(err, "gzip request body could not be decoded")
     end
     body = decompressed
 end
 
--- Dekomprimieren mit Größenbegrenzung (Zip-Bomben verhindern)
+-- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.wrap(err, "gzip decode failed")
 end
 ```
 
@@ -91,19 +102,20 @@ end
 
 ## Brotli
 
-Beste Komprimierungsrate für Text (RFC 7932).
+Brotli ist in RFC 7932 definiert und wird häufig für komprimierte Textinhalte verwendet.
 
 ### Komprimieren {id="brotli-compress"}
 
 ```lua
--- Am besten für statische Assets und Textinhalte
-local compressed = compress.brotli.encode(html_content, {level = 11})
+-- Best for static assets and text content
+local compressed, err = compress.brotli.encode(html_content, {level = 11})
+if err then return nil, err end
 
--- Komprimierte Assets cachen
-cache:set("static:" .. hash, compressed)
+-- Store `compressed` through the application's cache contract if needed.
 
--- Moderate Komprimierung für API-Responses
-local compressed = compress.brotli.encode(json_data, {level = 4})
+-- Moderate compression for API responses
+local compressed, err = compress.brotli.encode(json_data, {level = 4})
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -127,8 +139,9 @@ if err then
     return nil, err
 end
 
--- Mit Größenbegrenzung
-local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
+-- With size limit
+local decompressed, err = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -146,19 +159,22 @@ local decompressed = compress.brotli.decode(data, {max_size = 50 * 1024 * 1024})
 
 ## Zstandard
 
-Schnelle Komprimierung mit guten Raten (RFC 8878).
+Zstandard ist ein universelles Komprimierungsformat nach RFC 8878.
 
 ### Komprimieren {id="zstd-compress"}
 
 ```lua
--- Gute Balance zwischen Geschwindigkeit und Rate
-local compressed = compress.zstd.encode(binary_data)
+-- Good balance of speed and ratio
+local compressed, err = compress.zstd.encode(binary_data)
+if err then return nil, err end
 
--- Höhere Komprimierung für Archivierung
-local archived = compress.zstd.encode(data, {level = 19})
+-- Higher compression for archival
+local archived, archive_err = compress.zstd.encode(data, {level = 19})
+if archive_err then return nil, archive_err end
 
--- Schnellmodus für Echtzeit-Streaming
-local fast = compress.zstd.encode(data, {level = 1})
+-- Fast mode for latency-sensitive payloads
+local fast, fast_err = compress.zstd.encode(data, {level = 1})
+if fast_err then return nil, fast_err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -200,12 +216,15 @@ end
 
 ### Dictionaries {id="zstd-dictionaries"}
 
-Trainieren Sie ein Dictionary aus Beispieldaten, um die Komprimierung vieler kleiner, ähnlicher Payloads zu verbessern. Geben Sie das trainierte Dictionary als Option `dict` an `encode`/`decode` weiter — für beide muss dasselbe Dictionary verwendet werden.
+Trainieren Sie ein Dictionary aus ähnlichen Beispiel-Payloads und übergeben Sie es anschließend über die Option `dict` an `encode` und `decode`. Zum Dekodieren ist dasselbe Dictionary erforderlich, das beim Kodieren verwendet wurde.
 
 ```lua
 local dict, err = compress.zstd.train_dict(samples, { size = 112640 })
-local packed   = compress.zstd.encode(data, { dict = dict })
-local original = compress.zstd.decode(packed, { dict = dict })
+if err then return nil, err end
+local packed, pack_err = compress.zstd.encode(data, { dict = dict })
+if pack_err then return nil, pack_err end
+local original, decode_err = compress.zstd.decode(packed, { dict = dict })
+if decode_err then return nil, decode_err end
 ```
 
 #### train_dict(samples, options?)
@@ -227,12 +246,13 @@ local original = compress.zstd.decode(packed, { dict = dict })
 
 ## Deflate
 
-Rohe DEFLATE-Komprimierung (RFC 1951). Wird intern von anderen Formaten verwendet.
+Rohes DEFLATE ist in RFC 1951 definiert und wird auch innerhalb anderer Formate verwendet.
 
 ### Komprimieren {id="deflate-compress"}
 
 ```lua
-local compressed = compress.deflate.encode(data, {level = 6})
+local compressed, err = compress.deflate.encode(data, {level = 6})
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -251,7 +271,8 @@ local compressed = compress.deflate.encode(data, {level = 6})
 ### Dekomprimieren {id="deflate-decompress"}
 
 ```lua
-local decompressed = compress.deflate.decode(compressed)
+local decompressed, err = compress.deflate.decode(compressed)
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -269,12 +290,13 @@ local decompressed = compress.deflate.decode(compressed)
 
 ## Zlib
 
-DEFLATE mit Header und Prüfsumme (RFC 1950).
+Zlib umschließt DEFLATE-Daten gemäß RFC 1950 mit Header und Prüfsumme.
 
 ### Komprimieren {id="zlib-compress"}
 
 ```lua
-local compressed = compress.zlib.encode(data, {level = 6})
+local compressed, err = compress.zlib.encode(data, {level = 6})
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -293,7 +315,8 @@ local compressed = compress.zlib.encode(data, {level = 6})
 ### Dekomprimieren {id="zlib-decompress"}
 
 ```lua
-local decompressed = compress.zlib.decode(compressed)
+local decompressed, err = compress.zlib.decode(compressed)
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -315,24 +338,83 @@ local decompressed = compress.zlib.decode(compressed)
 |-----------|----------|-------|-------|-------------|
 | gzip | HTTP, breite Kompatibilität | Mittel | Gut | 1-9 |
 | brotli | Statische Assets, Text | Langsam | Beste | 0-11 |
-| zstd | Größe Dateien, Streaming | Schnell | Gut | 1-22 |
+| zstd | Binäre Payloads, schnelle Komprimierung | Schnell | Gut | 1-22 |
 | deflate/zlib | Low-Level, spezifische Protokolle | Mittel | Gut | 1-9 |
 
 ```lua
--- HTTP-Response basierend auf Accept-Encoding
-local accept = req:header("Accept-Encoding") or ""
-local body = json.encode(response_data)
+-- HTTP response based on Accept-Encoding
+local accept, header_err = req:header("Accept-Encoding")
+if header_err then return nil, header_err end
+accept = accept or ""
+local body, json_err = json.encode(response_data)
+if json_err then return nil, json_err end
 
-if accept:find("br") then
-    res:set_header("Content-Encoding", "br")
-    res:write(compress.brotli.encode(body))
-elseif accept:find("gzip") then
-    res:set_header("Content-Encoding", "gzip")
-    res:write(compress.gzip.encode(body))
+local qualities = {}
+for item in accept:gmatch("[^,]+") do
+    local coding = item:match("^%s*([^;%s]+)")
+    local has_q = item:match(";%s*[qQ]%s*=") ~= nil
+    local q_text = item:match(";%s*[qQ]%s*=%s*([^;%s,]+)")
+    local q
+    if not has_q then
+        q = 1
+    elseif q_text == "0" or q_text == "1" or
+           (q_text and q_text:match("^0%.%d?%d?%d?$")) or
+           (q_text and q_text:match("^1%.0?0?0?$")) then
+        q = tonumber(q_text)
+    end
+    if coding and q and q >= 0 and q <= 1 then
+        coding = coding:lower()
+        qualities[coding] = math.max(qualities[coding] or 0, q)
+    end
+end
+
+local function quality(coding)
+    if qualities[coding] ~= nil then return qualities[coding] end
+    if coding == "identity" then
+        return qualities["*"] == 0 and 0 or 1
+    end
+    return qualities["*"] or 0
+end
+
+local selected, selected_q = nil, -1
+for _, coding in ipairs({"br", "gzip", "identity"}) do
+    local q = quality(coding)
+    if q > selected_q then
+        selected, selected_q = coding, q
+    end
+end
+
+-- Include every field used by this handler or its surrounding middleware.
+local vary_fields = {"Accept-Encoding"}
+local vary_err = res:set_header("Vary", table.concat(vary_fields, ", "))
+if vary_err then return nil, vary_err end
+
+if selected_q <= 0 then
+    local status_err = res:set_status(http.STATUS.NOT_ACCEPTABLE)
+    if status_err then return nil, status_err end
+    local write_err = res:write("No acceptable content encoding")
+    if write_err then return nil, write_err end
+elseif selected == "br" then
+    local compressed, compress_err = compress.brotli.encode(body)
+    if compress_err then return nil, compress_err end
+    local set_err = res:set_header("Content-Encoding", "br")
+    if set_err then return nil, set_err end
+    local write_err = res:write(compressed)
+    if write_err then return nil, write_err end
+elseif selected == "gzip" then
+    local compressed, compress_err = compress.gzip.encode(body)
+    if compress_err then return nil, compress_err end
+    local set_err = res:set_header("Content-Encoding", "gzip")
+    if set_err then return nil, set_err end
+    local write_err = res:write(compressed)
+    if write_err then return nil, write_err end
 else
-    res:write(body)
+    local write_err = res:write(body)
+    if write_err then return nil, write_err end
 end
 ```
+
+Dieser partielle Handler parst exakte Coding-Tokens und RFC-q-Werte, berücksichtigt explizite Ablehnungen wie `br;q=0` und setzt `Vary: Accept-Encoding`. `set_header` ersetzt einen vorhandenen `Vary`-Wert; fügen Sie daher jedes weitere Feld, das umgebende Middleware verwendet, zu `vary_fields` hinzu, bevor Sie den Header setzen. Ein vollständiger HTTP-Stack kann stattdessen einen gemeinsamen Negotiation-Helper bereitstellen.
 
 ## Fehler
 

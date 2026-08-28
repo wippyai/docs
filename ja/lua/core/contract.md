@@ -1,6 +1,6 @@
 ---
 title: "コントラクト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "型付きサービスバインディングを開き、コントラクトを調査し、実装を呼び出して、呼び出しコンテキストやセキュリティコンテキストを伝播します。"
 ---
 
 # コントラクト
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-型付きコントラクトを通じてサービスを呼び出し。スキーマ検証と非同期実行サポート付きでリモートAPI、ワークフロー、関数を呼び出し。
+`contract` モジュールは、リモート API、ワークフロー、関数の型付きサービスバインディングを開きます。コントラクトはスキーマ検証、非同期呼び出し、呼び出しコンテキストの伝播をサポートします。このページは API リファレンスです。`current_user` などの ID や値は、アプリケーション所有のエントリと周囲のハンドラー状態を表します。
 
 ## ロード
 
@@ -28,21 +28,24 @@ if err then
 end
 
 local result, err = greeter:say_hello("Alice")
+if err then
+    return nil, err
+end
 ```
 
 スコープコンテキストまたはクエリパラメータ付き：
 
 ```lua
--- スコープテーブル付き
+-- With scope table
 local svc, err = contract.open("app.services:user", {
     tenant_id = "acme",
     region = "us-east"
 })
 
--- クエリパラメータ付き（自動変換: "true"→bool, numbers→int/float）
+-- With query parameters (auto-converted: "true"→bool, numbers→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
--- 呼び出しオプション付き（第3引数）
+-- With call options (third argument)
 local inst, err = contract.open("app.services:flaky", nil, {
     retry = { max_attempts = 5, initial_delay = 100 }
 })
@@ -62,6 +65,9 @@ local inst, err = contract.open("app.services:flaky", nil, {
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 
 print(c:id())  -- "app.services:greeter"
 
@@ -71,6 +77,9 @@ for _, m in ipairs(methods) do
 end
 
 local method, err = c:method("say_hello")
+if err then
+    return nil, err
+end
 ```
 
 ### メソッド定義
@@ -79,8 +88,10 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | メソッド名 |
 | `description` | string | メソッドの説明 |
-| `input_schemas` | table[] | 入力スキーマ定義 |
-| `output_schemas` | table[] | 出力スキーマ定義 |
+| `input_schemas` | table[] または nil | 入力スキーマ定義。空の場合は省略 |
+| `output_schemas` | table[] または nil | 出力スキーマ定義。空の場合は省略 |
+
+各スキーマ要素には文字列 `format` が含まれ、必要に応じて `definition` 値も含まれます。
 
 ## 実装を検索
 
@@ -88,6 +99,9 @@ local method, err = c:method("say_hello")
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
+if err then
+    return nil, err
+end
 
 for _, binding_id in ipairs(bindings) do
     print(binding_id)
@@ -98,7 +112,13 @@ end
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 local bindings, err = c:implementations()
+if err then
+    return nil, err
+end
 ```
 
 ## 実装をチェック
@@ -117,9 +137,18 @@ end
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
+if err then
+    return nil, err
+end
 
 local sum, err = calc:add(10, 20)
+if err then
+    return nil, err
+end
 local product, err = calc:multiply(5, 6)
+if err then
+    return nil, err
+end
 ```
 
 ## 非同期呼び出し
@@ -128,35 +157,49 @@ local product, err = calc:multiply(5, 6)
 
 ```lua
 local processor, err = contract.open("app.services:processor")
+if err then
+    return nil, err
+end
 
 local future, err = processor:process_async(large_dataset)
-
--- 他の処理を実行...
-
--- 結果を待機
-local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+if err then
+    return nil, err
 end
+
+-- Do other work...
+
+-- Wait for result
+local ch = future:response()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 Futureメソッドについては[Future](lua/core/future.md)を参照。
 
 ## コントラクト経由で開く
 
-コントラクトオブジェクトを通じてバインディングを開く：
+コントラクトオブジェクトを通じてバインディングを開きます。以下の呼び出しは代替手段です。インスタンスを使用する前に、`contract.get()` と選択した `open()` 呼び出しの両方が返すエラーを確認してください。
 
 ```lua
 local c, err = contract.get("app.services:user")
+if err then
+    return nil, err
+end
 
--- デフォルトバインディング
+-- Default binding
 local instance, err = c:open()
 
--- 特定のバインディング
+-- Specific binding
 local instance, err = c:open("app.services:user_impl")
 
--- スコープ付き
+-- With scope
 local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
@@ -166,12 +209,18 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 事前設定されたコンテキスト付きラッパーを作成：
 
 ```lua
+local ctx = require("ctx")
 local c, err = contract.get("app.services:user")
+if err then return nil, err end
 
-local wrapped = c:with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local wrapped, err = c:with_context({
+    request_id = request_id,
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
@@ -182,10 +231,13 @@ local instance, err = wrapped:open()
 
 ```lua
 local c, err = contract.get("app.services:flaky")
+if err then return nil, err end
 
-local inst, err = c
-    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
-    :open("app.services:flaky_impl")
+local configured = c:with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
+local inst, err = configured:open("app.services:flaky_impl")
+if err then return nil, err end
 
 local result, err = inst:call()
 ```
@@ -204,10 +256,16 @@ local result, err = inst:call()
 ```lua
 local security = require("security")
 local c, err = contract.get("app.services:admin")
+if err then return nil, err end
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
+if err then return nil, err end
 ```
 
 明示的な`with_actor`/`with_scope`がない場合、開かれたコントラクトは呼び出し元のアンビエントなアクターとスコープを継承します。設定した場合、それらはバインドされた実装関数に伝播します — インスタンスに対するすべてのメソッド呼び出しがそのアイデンティティのもとで実行されます。
@@ -233,4 +291,5 @@ local admin, err = secured:open()
 | メソッドが見つからない | `errors.NOT_FOUND` |
 | デフォルトバインディングがない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
-| 呼び出し失敗 | `errors.INTERNAL` |
+| コントラクトディスパッチまたはレスポンス変換に失敗 | `errors.INTERNAL` |
+| 実装がエラーを返した | 実装のエラー種別を保持 |

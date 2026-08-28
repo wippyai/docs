@@ -1,6 +1,6 @@
 ---
 title: "JSON Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode Lua values as JSON, decode JSON strings, and validate values or strings with JSON Schema."
 ---
 
 # JSON Encoding
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Encode Lua tables to JSON and decode JSON strings to Lua values. Includes JSON Schema validation for data verification and API contract enforcement.
+The `json` module encodes Lua values as JSON, decodes JSON strings, and validates data with JSON Schema.
+
+This is an API reference. Short expression examples show successful return values; examples that consume the result capture the optional second `error` return.
 
 ## Loading
 
@@ -17,11 +19,13 @@ Encode Lua tables to JSON and decode JSON strings to Lua values. Includes JSON S
 local json = require("json")
 ```
 
+Add `json` to the executable entry's `modules:` list before requiring it.
+
 ## Encoding
 
-### Encode Value
+### `encode`
 
-Encodes a Lua value into a JSON string.
+Encode a Lua value as a JSON string:
 
 ```lua
 -- Simple values
@@ -36,7 +40,7 @@ json.encode({"a", "b"})     -- '["a","b"]'
 
 -- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- '{"name":"Alice","age":30}'
+json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
 
 -- Nested structures
 local order = {
@@ -48,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- '{"id":"ord-123","items":[{"sku":"ABC","qty":2},{"sku":"XYZ","qty":1}],"total":99.5}'
+-- Structurally equivalent JSON; object-member order is unspecified
 ```
 
 | Parameter | Type | Description |
@@ -57,7 +61,8 @@ json.encode(order)
 
 **Returns:** `string, error`
 
-Encoding rules:
+Encoding follows these rules:
+
 - `nil` becomes `null`
 - Empty tables become `[]` (or `{}` if created with string keys)
 - Tables with sequential 1-based keys become arrays
@@ -70,9 +75,9 @@ Encoding rules:
 
 ## Decoding
 
-### Decode String
+### `decode`
 
-Decodes a JSON string into a Lua value.
+Decode a JSON string into a Lua value:
 
 ```lua
 -- Parse object
@@ -84,12 +89,13 @@ print(user.name)    -- "Bob"
 print(user.active)  -- true
 
 -- Parse array
-local items = json.decode('[10, 20, 30]')
+local items, items_err = json.decode('[10, 20, 30]')
+if items_err then return nil, items_err end
 print(items[1])     -- 10
 print(#items)       -- 3
 
 -- Parse nested data
-local response = json.decode([[
+local response, response_err = json.decode([[
 {
     "status": "ok",
     "data": {
@@ -100,6 +106,7 @@ local response = json.decode([[
     }
 }
 ]])
+if response_err then return nil, response_err end
 print(response.data.users[1].name)  -- "Alice"
 
 -- Handle errors
@@ -118,9 +125,9 @@ end
 
 ## Schema Validation
 
-### Validate Value
+### `validate`
 
-Validates a Lua value against a JSON Schema. Use this to enforce API contracts or validate user input.
+Validate a Lua value against a JSON Schema:
 
 ```lua
 -- Define a schema
@@ -140,6 +147,7 @@ local valid, err = json.validate(user_schema, {
     email = "alice@example.com",
     age = 30
 })
+if err then return nil, err end
 print(valid)  -- true
 
 -- Invalid data fails with details
@@ -153,7 +161,8 @@ end
 
 -- Schema can also be a JSON string
 local schema_json = '{"type":"number","minimum":0}'
-local valid = json.validate(schema_json, 42)
+local valid, schema_err = json.validate(schema_json, 42)
+if schema_err then return nil, schema_err end
 ```
 
 | Parameter | Type | Description |
@@ -165,9 +174,9 @@ local valid = json.validate(schema_json, 42)
 
 Schemas are cached by content hash for performance.
 
-### Validate JSON String
+### `validate_string`
 
-Validates a JSON string against a schema without decoding first. Useful when you need to validate before parsing.
+Validate a JSON string against a schema without first returning a decoded value:
 
 ```lua
 local schema = {
@@ -182,11 +191,15 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new({
+        message = "Invalid request: " .. err:message(),
+        kind = errors.INVALID
+    })
 end
 
 -- Now safe to decode
-local request = json.decode(body)
+local request, decode_err = json.decode(body)
+if decode_err then return nil, decode_err end
 ```
 
 | Parameter | Type | Description |

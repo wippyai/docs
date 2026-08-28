@@ -1,15 +1,20 @@
 ---
 title: "WASM Functions"
-description: "WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: function.wat for inline WAT source and function.wasm…"
+description: "Configure inline WAT functions and precompiled WASM functions as registry entries."
 ---
 
 # WASM Functions
 
-WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: `function.wat` for inline WAT source and `function.wasm` for precompiled binaries.
+Use `function.wat` for inline WebAssembly Text source and `function.wasm` for precompiled binaries.
+
+**Classification: function configuration reference.** WAT blocks are small
+registry examples. Precompiled examples assume an external component build, a
+filesystem entry, exported methods matching the guest WIT, and a SHA-256 digest
+calculated from the exact binary. Real-looking sample hashes are illustrative.
 
 ## Inline WAT Functions
 
-Define small WASM functions directly in your `_index.yaml` using WebAssembly Text format:
+Define a WAT function directly in `_index.yaml`:
 
 ```yaml
 entries:
@@ -96,7 +101,7 @@ Each WASM function uses a pool of pre-compiled instances. The pool type controls
 
 | Type | Description |
 |------|-------------|
-| `inline` | Synchronous, single-threaded. New instance per call. |
+| `inline` | Mutex-serialized. Sequential synchronous calls reuse one warm instance; asyncified calls close it after each call, and retained-memory policy can also trigger replacement. |
 | `lazy` | Zero idle workers. Scales on demand up to `max_size`. |
 | `static` | Fixed number of workers with request queue. |
 | `adaptive` | Auto-scaling elastic pool. |
@@ -173,6 +178,7 @@ The default transport passes arguments directly. Lua values are transcoded to Go
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
@@ -200,14 +206,22 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-Set a maximum execution time for a function:
+Limit execution time and recycle warm instances that retain too much linear memory:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 67108864
+  retained_memory_check_interval: 16
 ```
 
-When the limit is exceeded, the execution is cancelled and an error is returned.
+| Field | Default | Description |
+|-------|---------|-------------|
+| `max_execution_ms` | `0` | Maximum call duration in milliseconds; `0` disables the timeout |
+| `max_retained_memory_bytes` | 64 MiB | Recycle a warm worker instance after a call when retained memory exceeds this value; an explicit `0` disables recycling |
+| `retained_memory_check_interval` | See below | Number of completed calls between retained-memory checks |
+
+When the execution-time limit is exceeded, the call is cancelled and returns an error. The default 64 MiB retained-memory limit is checked every 16 calls. When `max_retained_memory_bytes` is set explicitly to a positive value and the interval is omitted, the runtime checks after every call. Set a positive interval to amortize those checks.
 
 ## WASI Configuration
 
@@ -284,14 +298,16 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### Async Sleep with WASI Clocks
 
-WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
+WASM components that import `wasi:clocks`, `wasi:io`, and the separate `wasi:poll` profile can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
 
 ```yaml
   - name: sleep_ms
@@ -302,6 +318,7 @@ WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polli
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

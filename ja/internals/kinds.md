@@ -1,34 +1,36 @@
 ---
-title: "エントリハンドラ"
-description: "エントリハンドラはkindごとにレジストリエントリを処理します。エントリが追加、更新、削除されると、レジストリがマッチするハンドラにイベントをディスパッチします。"
+title: "エントリリスナーとオブザーバー"
+description: "リスナーとオブザーバーが、一致するエントリ種別パターンのレジストリ変更を処理する仕組み。"
 ---
 
-# エントリハンドラ
+# エントリリスナーとオブザーバー
 
-エントリハンドラはkindごとにレジストリエントリを処理します。エントリが追加、更新、削除されると、レジストリがマッチするハンドラにイベントをディスパッチします。
+エントリリスナーとオブザーバーは、一致するエントリ種別パターンのレジストリ変更を処理します。
 
-## 動作原理
+これは Go 拡張リファレンスです。登録と設定の断片は、既存のブートコンポーネント、manager、transcoder、アプリケーション設定型を前提としています。
 
-レジストリはkindパターンからハンドラへのマップを維持。エントリが変更されると：
+## 動作の仕組み
 
-1. レジストリがイベントを発行（`entry.create`、`entry.update`、`entry.delete`）
-2. ハンドラレジストリがエントリkindを登録されたパターンとマッチング
-3. マッチするハンドラがエントリを受信
-4. ハンドラがエントリを処理または拒否
+ブートはリスナーとオブザーバーを、その種別パターンとともに収集します。エントリが変更されると、次の処理が行われます。
 
-## Kindパターン
+1. レジストリがイベント（`entry.create`、`entry.update`、`entry.delete`）を発行
+2. 各リスナーラッパーがエントリ種別を登録済みパターンと照合
+3. 一致するハンドラがエントリを受信
+4. ハンドラがエントリを処理または reject
 
-ハンドラはパターンを使用してサブスクライブ：
+## 種別パターン
 
-| パターン | マッチ |
-|---------|------|
+ハンドラはパターンを使用して subscribe します。
+
+| パターン | 一致対象 |
+|---------|---------|
 | `http.service` | 完全一致のみ |
 | `http.*` | `http.service`、`http.router`、`http.endpoint` |
-| `function.*` | `function.lua`、`function.lua.bc` |
+| `function.**` | `function.lua`、`function.lua.bc` |
 
-## EntryListenerインターフェース
+## エントリリスナーインターフェース
 
-ハンドラは`registry.EntryListener`を実装：
+ハンドラは `registry.EntryListener` を実装します。
 
 ```go
 type EntryListener interface {
@@ -38,23 +40,25 @@ type EntryListener interface {
 }
 ```
 
-`Add`からエラーを返すとエントリを拒否。
+`Add`、`Update`、`Delete` からエラーを返すと、その操作を reject します。
 
-## ListenerとObserver
+## リスナーとオブザーバー
 
-| タイプ | 目的 | 拒否可能 |
-|-------|------|---------|
-| Listener | 主要ハンドラ | はい |
-| Observer | 二次ハンドラ（ログ、メトリクス） | いいえ |
+| 種類 | 目的 | 拒否可能 |
+|------|---------|------------|
+| Listener | プライマリハンドラ | はい |
+| Observer | セカンダリハンドラ（logging、metrics） | いいえ |
 
 ```go
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
 
+オブザーバーの `Add`、`Update`、`Delete` から返されたエラーは無視され、accept または reject イベントを発行しません。`TransactionListener` も実装するリスナーまたはオブザーバーはトランザクション barrier に参加し、`Begin`、`Commit`、`Discard` からのエラーはそのトランザクションフェーズを reject します。
+
 ## ハンドラの登録
 
-ブート時にハンドラを登録：
+ブート中にハンドラを登録します。
 
 ```go
 func MyService() boot.Component {
@@ -72,7 +76,7 @@ func MyService() boot.Component {
 
 ## エントリデータのデコード
 
-`internal/entry`の`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャルします。このヘルパーは`internal/`配下に存在するため、ランタイムモジュール内からのみインポート可能です。ツリー外の拡張機能は、このパターンをコピーするか、トランスコーダを直接使用する必要があります：
+エントリデータを unmarshal するには、`github.com/wippyai/runtime/system/entry` の `entry.DecodeEntryConfig` を使用します。このパッケージはリポジトリ外の拡張からも import できます。
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -80,20 +84,23 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // cfgを処理...
+    // Process cfg...
     return nil
 }
 ```
 
-デコーダーは：
-1. `entry.Data`を設定構造体にアンマーシャル
-2. エントリから`ID`と`Meta`を設定
-3. 実装されていれば`InitDefaults()`を呼び出し
-4. 実装されていれば`Validate()`を呼び出し
+decoder は次の処理を行います。
 
-## Config構造体
+1. エントリデータ内の新しい形式の `${env:...}` プレースホルダーを解決
+2. 解決済みデータを設定構造体へ unmarshal
+3. デコードしたフィールドが zero または nil の場合、エントリから `ID` と `Meta` を設定
+4. 実装されていれば `InitDefaults()` を呼び出す
+5. 環境レジストリを通じて従来の `*_env` フィールドを解決
+6. 実装されていれば `Validate()` を呼び出す
 
-エントリ設定は通常以下を含む：
+## 設定構造体
+
+エントリ設定には通常、次の要素が含まれます。
 
 ```go
 type ComponentConfig struct {
@@ -117,22 +124,21 @@ func (c *ComponentConfig) Validate() error {
 }
 ```
 
-## トランザクションサポート
+## トランザクション対応
 
-複数エントリにまたがるアトミック操作には`TransactionListener`を実装：
+複数エントリをまたぐ atomic な操作には `TransactionListener` を実装します。
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 
-レジストリはバッチ処理前に`Begin`を呼び出し、成功時に`Commit`、失敗時に`Discard`を呼び出します。
+レジストリはバッチ処理前に `Begin` を呼び出し、成功時には `Commit`、失敗時には `Discard` を呼び出します。
 
 ## 関連項目
 
 - [レジストリ](internals/registry.md) - エントリストレージ
 - [アーキテクチャ](internals/architecture.md) - ブートシーケンス
-

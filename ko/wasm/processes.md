@@ -1,11 +1,13 @@
 ---
 title: "WASM 프로세스"
-description: "WASM 모듈은 process.wasm 엔트리 종류를 통해 프로세스로 실행될 수 있습니다. 프로세스는 Wippy 프로세스 호스트 내에서 실행되며 전체 프로세스 생명주기를 지원합니다: 스폰, 모니터링, 감독된 종료."
+description: "process.wasm을 사용하여 Wippy 프로세스 호스트 아래에서 WASM 모듈을 실행합니다."
 ---
 
 # WASM 프로세스
 
-WASM 모듈은 `process.wasm` 엔트리 종류를 통해 프로세스로 실행될 수 있습니다. 프로세스는 Wippy 프로세스 호스트 내에서 실행되며 전체 프로세스 생명주기를 지원합니다: 스폰, 모니터링, 감독된 종료.
+`process.wasm` 엔트리는 spawn, monitoring 및 supervised shutdown을 제공하는 Wippy 프로세스 호스트 아래에서 WASM 모듈을 실행합니다.
+
+**분류: 프로세스 설정 및 생명주기 레퍼런스.** binary-backed 블록은 외부 component build와 애플리케이션 소유의 파일 시스템, 프로세스 호스트, 환경 및 정책 엔트리를 전제로 합니다. placeholder hash는 정확한 binary digest로 교체해야 합니다.
 
 ## 엔트리 설정
 
@@ -25,17 +27,17 @@ entries:
 
 ### 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
-| `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
-| `hash` | Yes | 무결성 검증을 위한 SHA-256 해시 |
-| `method` | Yes | 실행할 내보내기된 함수 이름 |
-| `transport` | No | 호출 전송: `payload` (기본값) 또는 `wasi-http` |
-| `wit` | No | raw/core 모듈용 WIT 시그니처 |
-| `imports` | No | 활성화할 호스트 임포트 |
-| `wasi` | No | WASI 설정 (args, env, mounts) |
-| `limits` | No | 실행 제한 |
+| `fs` | 예 | 바이너리가 포함된 파일시스템 엔트리 ID |
+| `path` | 예 | 파일시스템 내 `.wasm` 파일 경로 |
+| `hash` | 예 | 무결성 검증을 위한 SHA-256 해시 |
+| `method` | 예 | 실행할 내보내기된 함수 이름 |
+| `transport` | 아니요 | 호출 전송: `payload` (기본값) 또는 `wasi-http` |
+| `wit` | 아니요 | raw/core 모듈용 WIT 시그니처 |
+| `imports` | 아니요 | 활성화할 호스트 임포트 |
+| `wasi` | 아니요 | WASI 설정 (`args`, `cwd`, `env`, `mounts`) |
+| `limits` | 아니요 | 실행 제한 |
 
 <note>
 `process.wasm`은 `function.wasm`과 설정 구조체를 공유하므로 `pool` 블록은 스키마에서 수용되지만 무시됩니다 — 프로세스는 함수 풀이 아닌 프로세스 호스트 아래에서 실행됩니다.
@@ -70,19 +72,22 @@ wippy run greet
 wippy run list
 ```
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `name` | Yes | `wippy run <name>`에서 사용하는 명령 이름 |
-| `short` | No | `wippy run list`에 표시되는 간단한 설명 |
+| `name` | 예 | `wippy run <name>`에서 사용하는 명령 이름 |
+| `short` | 아니요 | `wippy run list`에 표시되는 간단한 설명 |
+| `main` | 아니요 | pack 또는 hub 모듈의 기본 명령으로 엔트리 지정 |
+| `use_case` | 아니요 | entrypoint category; 기본값 `run` |
+| `security` | 아니요 | 신뢰된 terminal launcher가 이 명령을 시작할 때만 적용되는 보안 컨텍스트 |
 
-CLI 명령이 동작하려면 `terminal.host`와 `process.host`가 있어야 합니다.
+CLI 명령에는 `terminal.host`가 있어야 합니다. terminal host가 명령 프로세스에 사용되는 scheduler를 소유하므로 별도 `process.host`는 필요하지 않습니다. terminal host가 여러 개이면 `--host`로 하나를 선택하십시오.
 
 ## 프로세스 생명주기
 
 WASM 프로세스는 Init/Step/Close 생명주기 모델을 따릅니다:
 
-1. **Init** - 모듈이 인스턴스화되고 입력 인자가 캡처됩니다
-2. **Step** - 실행이 진행됩니다. 비동기 모듈의 경우 스케줄러가 양보/재개 사이클을 구동합니다. 동기 모듈의 경우 단일 스텝에서 실행이 완료됩니다.
+1. **Init** - 호출 컨텍스트, 메서드 및 입력 인자를 캡처합니다
+2. **Step** - 첫 step에서 모듈을 instantiate하고 시작합니다. 이후 step은 dispatcher-bridge 작업을 진행하며, 동기 실행은 첫 step에서 완료될 수 있습니다
 3. **Close** - 인스턴스 리소스가 해제됩니다
 
 ## Lua에서 스폰하기
@@ -90,31 +95,32 @@ WASM 프로세스는 Init/Step/Close 생명주기 모델을 따릅니다:
 WASM 프로세스를 스폰하고 완료를 모니터링합니다:
 
 ```lua
-local process = require("process")
-local time = require("time")
-
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
+while true do
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 end
 ```
 
 ## 비동기 실행
 
-WASI 인터페이스를 임포트하는 WASM 프로세스는 비동기 연산을 수행할 수 있습니다. 스케줄러는 I/O 중에 프로세스를 일시 중단하고 연산이 완료되면 재개합니다:
+WASM 프로세스는 지원되는 clock polling 및 outgoing HTTP를 포함해 런타임이 dispatcher를 통해 bridge하는 호스트 작업을 위해 yield할 수 있습니다. scheduler는 pending 작업이 완료될 때까지 프로세스를 suspend한 뒤 resume합니다.
 
 ```yaml
   - name: http_worker
@@ -134,7 +140,7 @@ WASI 인터페이스를 임포트하는 WASM 프로세스는 비동기 연산을
           required: true
 ```
 
-양보/재개 메커니즘은 WASM 코드에 투명합니다. 게스트의 표준 블로킹 호출 (sleep, read, write, HTTP 요청)은 디스패처에 자동으로 양보합니다.
+해당 asyncified 작업에서 yield/resume 메커니즘은 guest에 투명합니다. 모든 blocking WASI 호출이 yield한다고 가정하지 마십시오. 고정된 런타임에서 stream read와 write는 동기식입니다.
 
 ## WASI 설정
 

@@ -1,24 +1,40 @@
 ---
-title: "プロセスとメッセージング"
-description: "分離されたプロセスを生成し、メッセージパッシングで通信します。"
+title: "プロセスとメッセージング入門"
+description: "プロセスの生成、メッセージング、監視、リンク、名前登録APIを確認します。"
 ---
 
-# プロセスとメッセージング
+# プロセスとメッセージング入門
 
-分離されたプロセスを生成し、メッセージパッシングで通信します。
+分離された処理の生成、メッセージ交換、ライフサイクル監視、障害のリンク、プロセス名の登録に使うAPIを学びます。
 
 ## 概要
 
 プロセスはメッセージパッシングを通じて通信する分離された実行ユニットを提供します。各プロセスは独自のinboxを持ち、特定のメッセージトピックを購読できます。
 
-このページは入門編です。各スニペットは1つのAPIを単独で示しています。スポーン、モニタリング、メッセージングをまとめた完全な実行可能アプリケーションについては、[Echoサービス](tutorials/echo-service.md)チュートリアルを参照してください。
+**分類:** リファレンス/API入門です。各スニペットは1つの操作を独立して示すもので、
+単体のプロジェクトではありません。生成、監視、メッセージングを組み合わせた完全なアプリケーションは、
+[Echoサービス](tutorials/echo-service.md)チュートリアルを参照してください。
+
+## コンテキストと依存関係
+
+各例は実行可能なLuaエントリ内で動作し、`app:processes`として登録された`process.host`が
+稼働中であることを前提とします。`app.test.process:echo_worker`などのエントリIDは、
+プロジェクトで定義する必要があるプロセスエントリのプレースホルダーです。`process`と`channel` APIは
+実行コンテキストに組み込まれています。`process.*`への直接アクセスが一般的ですが、
+`require("process")`もモジュール宣言なしで解決されます。`time.after()`を呼び出すスニペットでは、
+`local time = require("time")`と、エントリの`modules`リストへの`time`追加が必要です。
+
+生成、送信、監視、リンク、キャンセル、終了、レジストリ変更は保護された操作です。
+実行するエントリにはアクターを設定し、必要な操作とリソースだけを許可するポリシーを付与してください。
+設定がなければstrictモードで拒否されます。
 
 主要なコンセプト：
-- `process.spawn()`およびそのバリアントでプロセスを生成
-- トピック経由でPIDまたは登録名にメッセージを送信
-- `process.listen()`または`process.inbox()`でメッセージを受信
-- イベントでプロセスライフサイクルをモニタリング
-- 協調的な障害処理のためにプロセスをリンク
+
+- `process.spawn()`とそのバリアントでプロセスを生成します。
+- トピックを指定してPIDまたは登録名へメッセージを送信します。
+- `process.listen()`または`process.inbox()`でメッセージを受信します。
+- イベントでプロセスのライフサイクルを監視します。
+- 障害を連携させるためにプロセスをリンクします。
 
 ## プロセスの生成
 
@@ -27,10 +43,10 @@ description: "分離されたプロセスを生成し、メッセージパッシ
 ```lua
 local pid, err = process.spawn("app.test.process:echo_worker", "app:processes", "hello")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- pidは生成されたプロセスの文字列識別子
+-- pid is a string identifier for the spawned process
 print("Started worker:", pid)
 ```
 
@@ -43,7 +59,7 @@ print("Started worker:", pid)
 
 ```lua
 local my_pid = process.pid()
--- 現在のプロセスの文字列PIDを返す
+-- Returns string PID of current process
 ```
 
 ## メッセージパッシング
@@ -53,13 +69,13 @@ local my_pid = process.pid()
 ### メッセージの送信
 
 ```lua
--- PIDでプロセスに送信
+-- Send to process by PID
 local sent, err = process.send(worker_pid, "messages", "hello from parent")
 if err then
-    return false, "send failed: " .. err
+    return false, "send failed: " .. tostring(err)
 end
 
--- sendは(bool, error)を返す
+-- send returns (bool, error)
 ```
 
 ### トピック購読経由の受信
@@ -67,13 +83,13 @@ end
 `process.listen()`を使用して特定のトピックを購読：
 
 ```lua
--- "messages"トピックのメッセージをリッスンするワーカー
+-- Worker that listens for messages on "messages" topic
 local function main()
     local ch = process.listen("messages")
 
-    local msg = ch:receive()
-    if msg then
-        -- msgはペイロードそのもの
+    local msg, ok = ch:receive()
+    if ok then
+        -- msg is the payload directly
         print("Received:", msg)
         return true
     end
@@ -100,12 +116,12 @@ local function main()
         })
 
         if result.channel == specific_ch then
-            -- "specific_topic"へのメッセージはここに到着
+            -- Messages to "specific_topic" arrive here
             local payload = result.value
         elseif result.channel == inbox_ch then
-            -- 他のすべてのトピックへのメッセージはここに到着
+            -- Messages to any OTHER topic arrive here
             local msg = result.value
-            print("Inbox got:", msg.topic, msg.payload)
+            print("Inbox got:", msg:topic(), msg:payload():data())
         end
     end
 end
@@ -116,17 +132,20 @@ end
 送信者PIDとトピックにアクセスするために`{ message = true }`を使用：
 
 ```lua
--- メッセージを送信者に返すワーカー
+-- Worker that echoes messages back to sender
 local function main()
     local ch = process.listen("echo", { message = true })
 
     local msg = ch:receive()
     if msg then
         local sender = msg:from()
-        local payload = msg:payload()
+        local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", payload)
+            local _, send_err = process.send(sender, "reply", data)
+            if send_err then
+                return false, "reply failed: " .. tostring(send_err)
+            end
         end
         return true
     end
@@ -151,10 +170,10 @@ local worker_pid, err = process.spawn_monitored(
     "app:processes"
 )
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- EXITイベントを待機
+-- Wait for EXIT event
 local timeout = time.after("3s")
 local result = channel.select {
     events_ch:case_receive(),
@@ -183,67 +202,75 @@ end
 ```lua
 local events_ch = process.events()
 
--- モニタリングなしで生成
+-- Spawn without monitoring
 local worker_pid, err = process.spawn("app.test.process:long_worker", "app:processes")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- 明示的にモニタリングを追加
+-- Add monitoring explicitly
 local ok, monitor_err = process.monitor(worker_pid)
 if monitor_err then
-    return false, "monitor failed: " .. monitor_err
+    return false, "monitor failed: " .. tostring(monitor_err)
 end
 
--- これでこのワーカーのEXITイベントを受信する
+-- Now will receive EXIT events for this worker
 ```
 
 モニタリングの停止：
 
 ```lua
 local ok, err = process.unmonitor(worker_pid)
+if err then
+    return false, "unmonitor failed: " .. tostring(err)
+end
 ```
 
 ## プロセスリンク
 
-協調的なライフサイクル管理のためにプロセスをリンクします。リンクされたプロセスは、リンクされたプロセスが失敗するとLINK_DOWNイベントを受信します。
+ライフサイクルを連携して管理するためにプロセスをリンクします。異常終了すると、デフォルトではリンクされた相手も終了します。
+`trap_links=true`を設定した相手は動作を継続し、代わりに`LINK_DOWN`イベントを受信します。
 
 ### リンク付きプロセスの生成
 
 ```lua
--- 親がクラッシュすると子は終了（trap_linksが設定されていない限り）
+-- Child terminates if parent crashes (unless trap_links is set)
 local pid, err = process.spawn_linked("app.test.process:child_worker", "app:processes")
 if err then
-    return false, "spawn_linked failed: " .. err
+    return false, "spawn_linked failed: " .. tostring(err)
 end
 ```
 
 ### 明示的なリンク
 
 ```lua
--- 既存のプロセスにリンク
+-- Link to existing process
 local ok, err = process.link(target_pid)
 if err then
-    return false, "link failed: " .. err
+    return false, "link failed: " .. tostring(err)
 end
 
--- リンク解除
+-- Unlink
 local ok, err = process.unlink(target_pid)
+if err then
+    return false, "unlink failed: " .. tostring(err)
+end
 ```
 
 ### LINK_DOWNイベントの処理
 
-デフォルトでは、LINK_DOWNはプロセスを失敗させます。イベントとして受信するには`trap_links`を有効化：
+デフォルトでは、リンク先の異常終了によって現在のプロセスも終了し、Luaの`LINK_DOWN`イベントは届きません。
+動作を継続してイベントを受信するには`trap_links`を有効化します：
 
 ```lua
 local function main()
-    -- クラッシュの代わりにLINK_DOWNイベントを受信するためにtrap_linksを有効化
+    -- Enable trap_links to receive LINK_DOWN events instead of crashing
     local ok, err = process.set_options({ trap_links = true })
     if not ok then
-        return false, "set_options failed: " .. err
+        return false, "set_options failed: " .. tostring(err)
     end
 
-    -- trap_linksが有効か確認
+    -- Verify trap_links is enabled
     local opts = process.get_options()
     if not opts.trap_links then
         return false, "trap_links should be true"
@@ -251,16 +278,16 @@ local function main()
 
     local events_ch = process.events()
 
-    -- 失敗するリンクされたプロセスを生成
+    -- Spawn a linked process that will fail
     local error_pid, err2 = process.spawn_linked(
         "app.test.process:error_exit_worker",
         "app:processes"
     )
     if err2 then
-        return false, "spawn error worker failed: " .. err2
+        return false, "spawn error worker failed: " .. tostring(err2)
     end
 
-    -- LINK_DOWNイベントを待機
+    -- Wait for LINK_DOWN event
     local timeout = time.after("2s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -274,7 +301,7 @@ local function main()
     local event = result.value
     if event.kind == process.event.LINK_DOWN then
         print("Linked process died:", event.from)
-        -- クラッシュの代わりに適切に処理
+        -- Handle gracefully instead of crashing
         return true
     end
 
@@ -294,19 +321,19 @@ return { main = main }
 local function main()
     local test_name = "my_service_" .. tostring(os.time())
 
-    -- 現在のプロセスに名前を登録
+    -- Register current process with a name
     local ok, err = process.registry.register(test_name)
     if err then
-        return false, "register failed: " .. err
+        return false, "register failed: " .. tostring(err)
     end
 
-    -- 登録された名前をルックアップ
+    -- Lookup the registered name
     local pid, lookup_err = process.registry.lookup(test_name)
     if lookup_err then
-        return false, "lookup failed: " .. lookup_err
+        return false, "lookup failed: " .. tostring(lookup_err)
     end
 
-    -- 自分のPIDに解決されることを確認
+    -- Verify it resolves to our PID
     if pid ~= process.pid() then
         return false, "lookup returned wrong pid"
     end
@@ -320,35 +347,37 @@ return { main = main }
 ### 名前の登録解除
 
 ```lua
--- 明示的に登録解除
+-- Unregister explicitly
 local unregistered = process.registry.unregister(test_name)
 if not unregistered then
     print("Name was not registered")
 end
 
--- 登録解除後のルックアップはnil + errorを返す
+-- Lookup after unregister returns nil + error
 local pid, err = process.registry.lookup(test_name)
--- pidはnil、errはnon-nil
+-- pid will be nil, err will be non-nil
 ```
 
 プロセスが終了すると名前は自動的に解放されます。
 
-## 完全な例: モニタリング付きワーカープール
+## 例: モニタリング付きワーカープール
 
-この例では、親プロセスが複数のモニタリング付きワーカーを生成し、その完了を追跡します。
+この部分的な例では、親プロセスが複数の監視対象ワーカーを生成して完了を追跡します。使用するには、
+親エントリと`app.test.process:task_worker`エントリ、`app:processes`ホスト、必要なプロセスポリシー、
+両エントリのモジュールリストに`time`を定義してください。
 
 ```lua
--- 親プロセス
+-- Parent process
 local time = require("time")
 
 local function main()
     local events_ch = process.events()
 
-    -- 生成されたワーカーを追跡
+    -- Track spawned workers
     local workers = {}
     local worker_count = 5
 
-    -- 複数のモニタリング付きワーカーを生成
+    -- Spawn multiple monitored workers
     for i = 1, worker_count do
         local worker_pid, err = process.spawn_monitored(
             "app.test.process:task_worker",
@@ -357,13 +386,13 @@ local function main()
         )
 
         if err then
-            return false, "spawn worker " .. i .. " failed: " .. err
+            return false, "spawn worker " .. i .. " failed: " .. tostring(err)
         end
 
         workers[worker_pid] = { task_id = i, started = os.time() }
     end
 
-    -- すべてのワーカーの完了を待機
+    -- Wait for all workers to complete
     local completed = 0
     local timeout = time.after("10s")
 
@@ -404,10 +433,10 @@ return { main = main }
 local time = require("time")
 
 local function main(task)
-    -- 作業をシミュレート
+    -- Simulate work
     time.sleep("100ms")
 
-    -- タスクを処理
+    -- Process task
     local result = task.value * 2
 
     return result
@@ -418,6 +447,5 @@ return { main = main }
 
 ## 次のステップ
 
-- [プロセスモジュールリファレンス](lua/core/process.md) - 完全なAPIドキュメント
-- [チャネル](tutorials/channels.md) - メッセージ処理のためのチャネル操作
-
+- [プロセスモジュールリファレンス](lua/core/process.md) — プロセスAPIドキュメント
+- [チャネル](tutorials/channels.md) — メッセージ処理のためのチャネル操作

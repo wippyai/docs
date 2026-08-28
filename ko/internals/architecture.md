@@ -1,22 +1,20 @@
 ---
 title: "아키텍처"
-description: "<note 이 페이지는 작업 중입니다. 내용이 불완전하거나 변경될 수 있습니다. </note"
+description: "Wippy가 인프라를 부팅하고, 컴포넌트와 엔트리를 로드하고, 작업을 스케줄링하고, 메시지를 라우팅하고, 종료하는 방식입니다."
 ---
 
 # 아키텍처
 
-<note>
-이 페이지는 작업 중입니다. 내용이 불완전하거나 변경될 수 있습니다.
-</note>
-
 Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성 순서로 초기화되고, 이벤트 버스를 통해 통신하며, 작업 스틸링 스케줄러를 통해 Lua 프로세스를 실행합니다.
+
+이 페이지는 구현 레퍼런스입니다. 다이어그램과 Go 타입은 애플리케이션 레지스트리 엔트리나 extension API가 아니라 런타임 내부 구조를 설명합니다.
 
 ## 계층
 
 | 계층 | 컴포넌트 |
 |-------|------------|
 | 애플리케이션 | Lua 프로세스, 함수, 워크플로우 |
-| 런타임 | Lua 엔진 (gopher-lua), 50+ 모듈 |
+| 런타임 | Lua 엔진(wippyai/go-lua)과 런타임 모듈 |
 | 서비스 | HTTP, Queue, Storage, Temporal |
 | 시스템 | Topology, Factory, Functions, Contracts |
 | 코어 | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,9 +40,9 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 
 ### 2단계: 컴포넌트 로딩
 
-Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 컴포넌트를 로드합니다. 같은 레벨의 컴포넌트는 병렬로 로드됩니다.
+Loader는 토폴로지 정렬로 의존성을 해결하고 컴포넌트를 레벨별로 순차 로드합니다. 같은 레벨 안에서도 한 번에 하나씩 로드됩니다.
 
-코어 컴포넌트(PIDGen, Dispatcher, Registry, Finder, Supervisor)가 먼저 초기화되고, 이어서 시스템 컴포넌트(Topology, Lifecycle, Factory, Functions, Contracts)가 초기화됩니다. 구체적인 레벨은 런타임에 의존성 그래프로부터 계산되므로, 컴포넌트가 추가되거나 제거될 때 순서가 적응됩니다.
+의존성 edge가 레벨을 결정합니다. Core나 System 같은 package group은 별도의 전역 순서를 강제하지 않습니다. 따라서 의존성 edge가 없는 컴포넌트는 package group과 관계없이 같은 레벨에 놓일 수 있습니다.
 
 각 컴포넌트는 Load 단계에서 컨텍스트에 자신을 연결하여 의존 컴포넌트가 서비스를 사용할 수 있게 합니다.
 
@@ -52,13 +50,14 @@ Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 �
 
 모든 컴포넌트 로드 후:
 
-1. **Dispatcher 동결** - 락 프리 조회를 위해 명령 핸들러 레지스트리 잠금
-2. **AppContext 봉인** - 더 이상 쓰기 불가, 락 프리 읽기 활성화
-3. **컴포넌트 시작** - `Starter` 인터페이스가 있는 각 컴포넌트에 `Start()` 호출
+1. **런타임 서비스 시작** - `StartRuntimeServices(ctx)` 호출
+2. **Dispatcher 동결** - 락 프리 조회를 위해 명령 핸들러 레지스트리 잠금
+3. **AppContext 봉인** - 더 이상 쓰기 불가, 락 프리 읽기 활성화
+4. **컴포넌트 시작** - `Starter` 인터페이스가 있는 각 컴포넌트에 `Start()` 호출
 
 ### 4단계: 엔트리 로딩
 
-레지스트리 엔트리(YAML 파일에서)가 로드되고 검증됩니다:
+프로젝트 manifest인 `_index.json`, `_index.yaml`, `_index.yml`의 레지스트리 엔트리가 로드되고 검증됩니다.
 
 1. 프로젝트 파일에서 엔트리 파싱
 2. 파이프라인 단계가 엔트리 변환 (override, link, bytecode)
@@ -84,14 +83,14 @@ Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 �
 | 컴포넌트 | 의존성 | 목적 |
 |-----------|--------------|---------|
 | PIDGen | 없음 | 프로세스 ID 생성 |
-| Dispatcher | PIDGen | 명령 핸들러 디스패치 |
-| Registry | Dispatcher | 엔트리 스토리지 및 버전닝 |
+| Dispatcher | 없음 | 명령 핸들러 디스패치 |
+| Registry | Artifact | 엔트리 스토리지 및 버전닝 |
 | Finder | Registry | 엔트리 조회 및 검색 |
 | Supervisor | Registry | 서비스 재시작 정책 |
-| Topology | Supervisor | 프로세스 부모/자식 트리 |
+| Topology | 없음 | 프로세스 부모/자식 트리 |
 | Lifecycle | Topology | 서비스 라이프사이클 관리 |
-| Factory | Lifecycle | 프로세스 생성 |
-| Functions | Factory | 상태 비저장 함수 호출 |
+| Factory | 없음 | 프로세스 생성 |
+| Functions | Registry | pooled 함수 실행 |
 
 ## 이벤트 버스
 
@@ -100,29 +99,29 @@ Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 �
 ### 설계
 
 - 단일 디스패처 고루틴이 모든 이벤트 처리
-- 큐 기반 액션 전달로 퍼블리셔 블로킹 방지
-- 패턴 매칭으로 정확한 토픽과 와일드카드(`*`) 지원
+- publisher는 subscriber 전달을 기다리지 않고 action을 enqueue
+- pattern matching은 정확한 값, `*`, `**`, segment alternation을 지원
 - 컨텍스트 기반 라이프사이클이 구독을 취소와 연결
 
 ### 이벤트 흐름
 
 ```mermaid
 sequenceDiagram
-    participant P as 퍼블리셔
+    participant P as Publisher
     participant B as EventBus
-    participant S as 구독자
+    participant S as Subscribers
 
-    P->>B: Publish(topic, data)
-    B->>B: 패턴 매치
-    B->>S: 액션 큐잉
-    S->>S: 콜백 실행
+    P->>B: Send(ctx, Event)
+    B->>B: Match patterns
+    B->>S: Deliver on subscriber channel
+    S->>S: Execute callback
 ```
 
 ### 일반적인 토픽
 
-토픽은 `<system>:<kind>` 형식입니다. 내장 시스템이 발행합니다:
+이벤트에는 별도의 `System`과 `Kind` 필드가 있습니다. 내장 시스템은 다음을 발행합니다.
 
-| System | Kind | 목적 |
+| 시스템 | 종류 | 목적 |
 |--------|------|------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | 엔트리 변경 |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | 트랜잭션 경계 |
@@ -144,8 +143,8 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    YAML[YAML 파일] --> Parser
-    Parser --> Stages[파이프라인 단계]
+    YAML[YAML Files] --> Parser
+    Parser --> Stages[Pipeline Stages]
     Stages --> Registry
     Registry --> Validation
     Validation --> Active
@@ -156,7 +155,7 @@ flowchart LR
 | 단계 | 목적 |
 |-------|---------|
 | Override | 설정 오버라이드 적용 |
-| Disable | 패턴으로 엔트리 제거 |
+| 비활성화 | 패턴으로 엔트리 제거 |
 | Link | 요구사항과 의존성 해결 |
 | Bytecode | Lua를 바이트코드로 컴파일 |
 | EmbedFS | 파일시스템 엔트리 수집 |
@@ -170,18 +169,18 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[로컬 노드] --> Peer[피어 노드]
-        Peer --> Inter[노드간]
+        Local[Local Node] --> Peer[Registered Peers]
+        Peer --> Inter[Internode]
     end
 
-    Local -.- L[같은 프로세스]
-    Peer -.- P[같은 클러스터]
-    Inter -.- I[원격]
+    Local -.- L[Same-node hosts and processes]
+    Peer -.- P[External receivers, such as Temporal]
+    Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - 같은 노드 내 직접 전달
-2. **Peer** - 클러스터 내 피어 노드로 전달
-3. **Internode** - 네트워크를 통해 원격 노드로 라우팅
+1. **Local** - 같은 노드의 host와 process 사이에 직접 전달
+2. **Peer** - Temporal 같은 등록된 외부 receiver로 전달
+3. **Internode** - 다른 cluster node를 위한 network routing으로 fallback
 
 ### 메일박스
 
@@ -203,7 +202,7 @@ flowchart LR
 | 중복 키 | 패닉 |
 | 타입 안전성 | 타입화된 getter 함수 |
 
-컴포넌트는 Load 단계에서 서비스를 연결합니다. 부트 완료 후 AppContext가 최적의 읽기 성능을 위해 봉인됩니다.
+컴포넌트는 Load 단계에서 서비스를 연결합니다. 부트 완료 후 AppContext가 봉인되어 lock-free 읽기를 허용하고 추가 쓰기를 방지합니다.
 
 ## 셧다운
 

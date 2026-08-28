@@ -1,6 +1,6 @@
 ---
 title: "Channels and Coroutines"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Create buffered and unbuffered channels, exchange values, select across operations, and coordinate concurrent work."
 ---
 
 # Channels and Coroutines
@@ -8,14 +8,15 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
+Channels exchange values between concurrent tasks. They can be buffered or unbuffered and can be combined with `channel.select` to coordinate multiple operations.
 
-Go-style channels for inter-coroutine communication. Create buffered or unbuffered channels, send and receive values, and coordinate between concurrent processes using select statements.
+This is an API reference. The basic blocks are isolated snippets; the timeout, fan-in, and non-blocking sections are partial patterns whose named channels and callbacks come from the surrounding application. The worker-pool block is a complete in-process example.
 
-The `channel` global is always available.
+The `channel` and `coroutine` globals are always available. Channels coordinate coroutines within one Lua process; use process messaging, functions, or queues across process boundaries.
 
 ## Creating Channels
 
-Unbuffered channels (size 0) require both sender and receiver to be ready before transfer completes. Buffered channels allow sends to complete immediately while space is available:
+An unbuffered channel (size 0) requires a sender and receiver to be ready before a transfer completes. A buffered channel allows sends to complete while buffer space is available.
 
 ```lua
 -- Unbuffered: synchronizes sender and receiver
@@ -33,10 +34,11 @@ local work_queue = channel.new(10)
 
 ## Sending Values
 
-Send a value to the channel. Blocks until a receiver is ready (unbuffered) or buffer space is available (buffered):
+Sending blocks until a receiver is ready on an unbuffered channel or until buffer space is available on a buffered channel.
 
 ```lua
 -- Send work to a worker pool
+local tasks = {"task-a", "task-b"}
 local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
     jobs:send(task)  -- Blocks if buffer full
@@ -50,16 +52,16 @@ jobs:close()  -- Signal no more work
 
 **Returns:** `boolean`
 
-Raises error if channel is closed.
+Sending to a closed channel raises an error.
 
 ## Receiving Values
 
-Receive a value from the channel. Blocks until a value is available or the channel is closed:
+Receiving blocks until a value is available or the channel is closed.
 
 ```lua
 -- Worker consuming from job queue
 while true do
-    local job, ok = work:receive()
+    local job, ok = jobs:receive()
     if not ok then
         break  -- Channel closed, no more work
     end
@@ -67,14 +69,16 @@ while true do
 end
 ```
 
+Here, `jobs` is the application-provided queue and `process` is its task-processing callback.
+
 **Returns:** `any, boolean`
 
-- `value, true` - Received a value
-- `nil, false` - Channel closed and empty
+- `value, true` — a value was received
+- `nil, false` — the channel is closed and empty
 
 ## Closing Channels
 
-Close the channel. Pending senders get an error, pending receivers get `nil, false`. Closing an already-closed channel is a no-op:
+Closing a channel causes pending senders to receive an error and pending receivers to receive `nil, false`. Closing an already closed channel is a no-op.
 
 ```lua
 local results = channel.new(10)
@@ -86,9 +90,11 @@ end
 results:close()  -- Signal completion
 ```
 
+This isolated producer snippet assumes `data` and the `process` callback are provided by the application.
+
 ## Selecting from Multiple Channels
 
-Wait on multiple channel operations simultaneously. Essential for handling multiple event sources, implementing timeouts, and building responsive systems:
+`channel.select` waits on multiple channel operations at the same time. It can coordinate event sources, timeouts, and non-blocking checks.
 
 ```lua
 local result = channel.select(cases)
@@ -106,13 +112,16 @@ local result = channel.select(cases)
 
 ### Timeout Pattern
 
-Wait for result with timeout using `time.after()`.
+Use `time.after()` to add a timeout to a channel wait.
 
 ```lua
 local time = require("time")
 
-local result_ch = worker:response()
-local timeout = time.after("5s")
+local result_ch = application_response_channel
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     result_ch:case_receive(),
@@ -120,14 +129,24 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
+end
+if not r.ok then
+    return nil, errors.new("Response channel closed")
 end
 return r.value
 ```
 
+This partial pattern assumes the entry lists `time` in `modules:` and the application supplies `application_response_channel`. `time.after` returns one channel on success; invalid or non-positive durations return `nil, error`.
+
 ### Fan-in Pattern
 
-Merge multiple sources into one handler.
+Handle values from multiple sources in one loop.
+
+This process-entry pattern uses ambient `process`, while the application supplies the shutdown signal and the two handler functions.
 
 ```lua
 local events = process.events()
@@ -151,9 +170,11 @@ while true do
 end
 ```
 
-### Non-blocking Check
+### Non-Blocking Check
 
-Check if data is available without blocking.
+Use a default case to check for available data without blocking.
+
+In this isolated pattern, `ch` and the `process` callback come from the application.
 
 ```lua
 local r = channel.select {
@@ -163,6 +184,8 @@ local r = channel.select {
 
 if r.default then
     -- Nothing available, do something else
+elseif not r.ok then
+    -- The channel is closed
 else
     process(r.value)
 end
@@ -170,7 +193,7 @@ end
 
 ## Creating Select Cases
 
-Create cases for use with `channel.select`:
+Create send and receive cases for `channel.select`:
 
 ```lua
 -- Send case - completes when channel can accept value
@@ -180,15 +203,32 @@ ch:case_send(value)
 ch:case_receive()
 ```
 
+Values in the cases table that are not send or receive cases are ignored. Make sure the table contains at least one valid case unless it also has a default branch.
+
 ## Worker Pool Pattern
 
 ```lua
-local work = channel.new(100)
-local results = channel.new(100)
+local items = {1, 2, 3, 4}
+local num_workers = 2
+
+local function process_item(item)
+    return item * 2
+end
+
+local work = channel.new(#items)
+local results = channel.new(#items)
 
 -- Spawn workers
-for i = 1, num_workers do
-    process.spawn("app.workers:processor", "app:processes", work, results)
+for _ = 1, num_workers do
+    coroutine.spawn(function()
+        while true do
+            local item, ok = work:receive()
+            if not ok then
+                return
+            end
+            results:send(process_item(item))
+        end
+    end)
 end
 
 -- Feed work
@@ -206,12 +246,13 @@ while #processed < #items do
 end
 ```
 
+After the loop, `processed` contains `2`, `4`, `6`, and `8`; result order depends on coroutine scheduling. The workers share channels because they are coroutines in the same Lua process.
+
 ## Errors
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Send on closed channel | runtime error | no |
-| Invalid case in select | runtime error | no |
+| Send on closed channel | runtime error | n/a |
 
 ## See Also
 

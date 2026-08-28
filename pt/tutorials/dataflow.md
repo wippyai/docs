@@ -1,46 +1,51 @@
 ---
-title: "Dataflow: Base de Conhecimento Local"
-description: "Construa uma base de conhecimento na sua própria máquina — crie o store vetorial, depois divida em chunks e ingira documentos nele. Este é o…"
+title: "Dataflow: Execute um DAG Durável"
+description: "Crie e execute um pequeno workflow wippy/dataflow com estado persistido, migrações automáticas e dois nós de função."
 ---
 
-# Dataflow: Base de Conhecimento Local
+# Dataflow: Execute um DAG Durável
 
-Construa uma base de conhecimento na sua própria máquina — crie o store vetorial, depois
-divida em chunks e ingira documentos nele. Este é o companheiro de criação de dados do
-[tutorial RAG](tutorials/rag.md): aqui você levanta e preenche uma base de conhecimento
-local; lá você recupera dela e gera respostas. Ambos usam o módulo `wippy/embeddings`
-apoiado por um store vetorial SQLite local.
+**Classificação: tutorial executável.** Esta página cria um projeto `wippy/dataflow` completo e independente de provedor. Ele não usa embeddings nem LLM; para esse caso, consulte [Geração Aumentada por Recuperação](tutorials/rag.md).
 
-## O que você construirá
+O workflow envia uma entrada por dois nós de função:
 
-1. Uma aplicação local cujo banco de dados contém um store vetorial de 512 dimensões.
-2. A migração que cria a tabela `embeddings_512` na inicialização.
-3. Uma função de ingestão que divide markdown em chunks e escreve embeddings no store.
+O Dataflow persiste workflow, nós, comandos, wakes e ativações em SQL. O comando aguarda o bootloader de migrações criar essas tabelas antes de iniciar o fluxo.
 
 ## Pré-requisitos
 
-- Um projeto Wippy (clone o [app-template](https://github.com/wippyai/app-template), ou
-  `wippy init`).
-- Um provedor LLM com um modelo de embedding configurado (por exemplo,
-  `text-embedding-3-small`) — consulte [Framework LLM](framework/llm.md). O store vetorial
-  é criado localmente sem ele, mas a ingestão (que chama `llm.embed`) precisa de um
-  provedor configurado.
+- Um projeto Wippy com diretório fonte `./src`.
+- Runtime Wippy `v0.3.32a` ou mais recente.
+- Acesso ao registro de módulos para a instalação inicial das dependências.
 
-Instale as dependências:
+Nenhum provedor de modelo nem chave de API é necessário.
 
-```bash
-wippy add wippy/embeddings
-wippy add wippy/migration
-wippy add wippy/bootloader
-wippy add wippy/llm
-wippy install
+## Estrutura do Projeto
+
+```text
+{ values = { 2, 4, 6 } } -> double -> summarize -> { count = 3, total = 24 }
 ```
 
-## Crie o store
+## Configure o Runtime
 
-A base de conhecimento reside em um banco de dados SQLite local. `wippy/embeddings`
-fornece uma migração que cria a tabela vetorial; o bootloader a executa na inicialização.
-Conecte as peças:
+Crie `src/_index.yaml`:
+
+```text
+dataflow-demo/
+├── wippy.lock                 # generated
+└── src/
+    ├── _index.yaml
+    ├── double.lua
+    ├── summarize.lua
+    └── run.lua
+```
+
+O `wippy/dataflow` possui as entradas de migração. A dependência `wippy/migration` é transitiva, enquanto `wippy/bootloader` executa seu bootloader de migrações na inicialização. Os parâmetros explícitos acima vinculam ambos a `app:db`.
+
+A política ampla mantém este tutorial isolado focado no comportamento do workflow. Comandos de produção devem substituí-la pelas ações exatas de função, banco e processo necessárias.
+
+## Implemente os Nós
+
+Crie `src/double.lua`:
 
 ```yaml
 version: "1.0"
@@ -49,182 +54,247 @@ namespace: app
 entries:
   - name: db
     kind: db.sql.sqlite
-    file: ./data/app.db
+    file: ./.wippy/dataflow.db
     lifecycle:
       auto_start: true
+
+  - name: env_storage
+    kind: env.storage.file
+    file_path: ./.wippy/dataflow.env
+    auto_create: true
 
   - name: processes
     kind: process.host
-    host:
-      max_processes: 1000
-      workers: 8
+    lifecycle:
+      auto_start: true
 
-  - name: embeddings
+  # Dataflow includes session views, so its standalone configuration supplies
+  # the router those transitive entries target. The HTTP service need not start.
+  - name: gateway
+    kind: http.service
+    addr: ":18080"
+    lifecycle:
+      auto_start: false
+
+  - name: api.public
+    kind: http.router
+    meta:
+      server: app:gateway
+    prefix: /api/public
+
+  - name: api
+    kind: http.router
+    meta:
+      server: app:gateway
+    prefix: /api
+
+  - name: dep.dataflow
     kind: ns.dependency
-    component: wippy/embeddings
+    component: wippy/dataflow
+    version: "0.7.6"
     parameters:
-      - name: target_db
+      - name: userspace.dataflow:target_db
+        value: app:db
+      - name: userspace.dataflow:process_host
+        value: app:processes
+      - name: wippy.migration:app_db
         value: app:db
 
-  - name: migration
+  - name: dep.security
     kind: ns.dependency
-    component: wippy/migration
-    parameters:
-      - name: app_db
-        value: app:db
+    component: wippy/security
+    version: "*"
 
-  - name: bootloader
+  - name: dep.bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
-      - name: application_host
+      - name: wippy.bootloader:application_host
         value: app:processes
-      - name: app_db
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.llm
+    kind: ns.dependency
+    component: wippy/llm
+    version: "*"
+    parameters:
+      - name: wippy.llm:process_host
+        value: app:processes
+      - name: wippy.llm:env_storage
+        value: app:env_storage
+
+  - name: dep.session
+    kind: ns.dependency
+    component: wippy/session
+    version: "*"
+    parameters:
+      - name: wippy.session:database_resource
         value: app:db
-      - name: env_storage
-        value: app.env:store
+      - name: wippy.session:api_router
+        value: app:api.public
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: wippy.views:api_router
+        value: app:api.public
+      - name: wippy.views:env_storage
+        value: app:env_storage
+
+  - name: demo_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
+  - name: double
+    kind: function.lua
+    source: file://double.lua
+    method: handler
+
+  - name: summarize
+    kind: function.lua
+    source: file://summarize.lua
+    method: handler
+
+  - name: run
+    kind: process.lua
+    meta:
+      command:
+        name: dataflow-demo
+        short: Run the Dataflow tutorial DAG
+        security:
+          actor:
+            id: app:dataflow-demo
+          policies:
+            - app:demo_policy
+    source: file://run.lua
+    method: main
+    modules:
+      - io
+      - sql
+      - time
+    imports:
+      flow: userspace.dataflow.flow:flow
 ```
 
-O bootloader precisa de um store de ambiente; adicione o padrão em seu próprio namespace:
-
-```yaml
-# src/env/_index.yaml
-version: "1.0"
-namespace: app.env
-
-entries:
-  - name: file
-    kind: env.storage.file
-    auto_create: true
-    file_path: .env
-    lifecycle:
-      auto_start: true
-
-  - name: os
-    kind: env.storage.os
-    lifecycle:
-      auto_start: true
-
-  - name: store
-    kind: env.storage.router
-    lifecycle:
-      auto_start: true
-    storages:
-      - app.env:file
-      - app.env:os
-```
-
-Crie o diretório de dados e inicie a aplicação:
-
-```bash
-mkdir -p data
-wippy run
-```
-
-Na inicialização, a migração é executada e o store aparece em `data/app.db`:
-
-```
-$ sqlite3 data/app.db ".tables"
-_migrations            embeddings_512         embeddings_512_chunks
-embeddings_512_info    embeddings_512_rowids  embeddings_512_vector_chunks00
-...
-```
-
-`embeddings_512` é uma tabela virtual `vec0` do SQLite; as tabelas-sombra
-`embeddings_512_*` contêm seus chunks, row ids e metadados. (No PostgreSQL a mesma
-migração usa `pgvector`.)
-
-## Ingerir documentos
-
-A ingestão tem dois passos: dividir o texto em chunks com o módulo `text`, depois
-escrevê-los com `embeddings.add_batch`, que embebe e persiste cada chunk.
+Crie `src/summarize.lua`:
 
 ```lua
--- src/ingest.lua
-local text = require("text")
-local embeddings = require("embeddings")
-
-local function ingest(doc_id, title, markdown)
-    local splitter, err = text.splitter.markdown({
-        chunk_size = 800,
-        chunk_overlap = 100,
-        heading_hierarchy = true,
-        code_blocks = true,
-    })
-    if err then return nil, err end
-
-    local chunks, split_err = splitter:split_text(markdown)
-    if split_err then return nil, split_err end
-
-    local batch = {}
-    for i, chunk in ipairs(chunks) do
-        table.insert(batch, {
-            content = chunk,
-            content_type = "doc_chunk",
-            origin_id = doc_id,
-            context_id = tostring(i),
-            meta = { title = title, chunk = i },
-        })
+local function handler(input)
+    local result = { values = {} }
+    for _, value in ipairs(input.values or {}) do
+        table.insert(result.values, value * 2)
     end
-
-    return embeddings.add_batch(batch)
+    return result
 end
 
-return { ingest = ingest }
+return { handler = handler }
 ```
 
-Registre a função:
+## Crie e Execute o Fluxo
 
-```yaml
-- name: ingest
-  kind: function.lua
-  source: file://ingest.lua
-  method: ingest
-  modules:
-    - text
-  imports:
-    embeddings: wippy.embeddings:embeddings
-```
-
-Pontos principais:
-
-- `origin_id` agrupa todos os chunks de um documento de origem — exclua e reingira por
-  documento com `embedding_repo.delete_by_origin(doc_id)`.
-- `content_type` permite manter corpora distintos (`doc_chunk`, `faq`, `code_snippet`) em
-  um único store e filtrar no momento da consulta.
-- `add_batch` divide automaticamente quando o lote excede o limite de 8000 tokens por requisição.
-
-## Verifique o conteúdo
-
-Uma vez que os documentos são ingeridos, confirme que as linhas chegaram e execute uma
-busca por similaridade:
+Crie `src/run.lua`:
 
 ```lua
-local embeddings = require("embeddings")
+local function handler(input)
+    local total = 0
+    for _, value in ipairs(input.values or {}) do
+        total = total + value
+    end
+    return { count = #(input.values or {}), total = total }
+end
 
-local results, err = embeddings.search("how do I configure TLS?", {
-    content_type = "doc_chunk",
-    limit = 5,
-})
--- results[i].content, .similarity, .meta, .origin_id, .context_id
+return { handler = handler }
 ```
 
-A partir daí, o [tutorial RAG](tutorials/rag.md) mostra como alimentar esses resultados a
-um LLM para respostas fundamentadas.
+```lua
+local io = require("io")
+local sql = require("sql")
+local time = require("time")
+local flow = require("flow")
 
-## Notas operacionais
+local function wait_for_schema()
+    for _ = 1, 100 do
+        local db, err = sql.get("app:db")
+        if not err then
+            local rows, query_err = db:query(
+                "SELECT name FROM sqlite_master " ..
+                "WHERE type='table' AND name='dataflows'"
+            )
+            db:release()
+            if not query_err and rows and #rows > 0 then
+                return true
+            end
+        end
+        time.sleep("100ms")
+    end
+    return nil, "Dataflow migrations did not finish within 10 seconds"
+end
 
-- **Tamanho do chunk**: 500–1000 tokens é um bom padrão. Use `chunk_overlap` (~10–20% do
-  tamanho do chunk) para que as frases não sejam cortadas através das fronteiras.
-- **Dimensões**: `text-embedding-3-small` em 512 dimensões é econômico e corresponde à
-  tabela `embeddings_512`. Vetores maiores significam maior armazenamento e busca mais lenta.
-- **Local vs. compartilhado**: O SQLite (`vec0`) mantém toda a base de conhecimento em um
-  único arquivo local — ideal para desenvolvimento e aplicações de nó único. Aponte
-  `target_db` para um `db.sql.postgres` com `pgvector` para um store compartilhado de
-  produção; o código de ingestão permanece inalterado.
+local function main()
+    local ready, ready_err = wait_for_schema()
+    if not ready then
+        io.print("dataflow failed: " .. ready_err)
+        return 1
+    end
+
+    local result, err = flow.create()
+        :with_title("Double and summarize")
+        :with_input({ values = { 2, 4, 6 } })
+        :func("app:double")
+        :as("double")
+        :to("summarize", "default")
+        :func("app:summarize")
+        :as("summarize")
+        :run()
+
+    if err then
+        io.print("dataflow failed: " .. tostring(err))
+        return 1
+    end
+
+    io.print(string.format("count=%d total=%d", result.count, result.total))
+    return 0
+end
+
+return { main = main }
+```
+
+Inicialize o lock, resolva e instale o grafo de dependências e execute o comando nomeado com logs do console:
+
+```bash
+wippy init
+wippy update
+wippy install
+wippy run -c dataflow-demo
+```
+
+Na primeira execução, o bootloader aplica as migrações do Dataflow. O comando imprime:
+
+```text
+count=3 total=24
+```
+
+Execuções posteriores informam que as migrações já foram aplicadas e executam um novo workflow persistido.
+
+## Verifique a Persistência
+
+O arquivo SQLite é `./.wippy/dataflow.db`. Após uma execução bem-sucedida, ele contém as tabelas do módulo para workflows, nós, dados, commits, wakes e ativações. Aplicações devem inspecioná-las pelo cliente Dataflow ou Keeper, sem gravá-las diretamente.
+
+Use `:start()` em vez de `:run()` quando o chamador precisar receber imediatamente o ID do workflow. Use o cliente Dataflow para ler status e saída ou cancelar, terminar, reviver e sinalizar um workflow assíncrono.
 
 ## Próximos Passos
 
-- [RAG](tutorials/rag.md) — recupere deste store e gere respostas fundamentadas
-- [Framework LLM](framework/llm.md) — `llm.embed`, modelos de embedding, provedores
-- [Módulo Text](lua/text/text.md) — splitters e tokenização
+- [Framework Dataflow](../framework/dataflow.md) — Roteamento, nós paralelos, ciclos, agentes, sinais e API do cliente
+- [Geração Aumentada por Recuperação](tutorials/rag.md) — Recuperação apoiada por embeddings
+- [Keeper por MCP](./keeper-mcp.md) — Inspecione workflows em execução por um cliente MCP

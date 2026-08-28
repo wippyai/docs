@@ -1,11 +1,13 @@
 ---
 title: "Activities"
-description: "Activities are functions that execute non-deterministic operations. Any function.lua or process.lua entry can be registered as a Temporal activity by…"
+description: "Register function.lua or process.lua entries as Temporal activities for non-deterministic operations."
 ---
 
 # Activities
 
-Activities are functions that execute non-deterministic operations. Any `function.lua` or `process.lua` entry can be registered as a Temporal activity by adding metadata.
+Temporal activities execute non-deterministic operations. Register a `function.lua` or `process.lua` entry as an activity through its metadata.
+
+The snippets are API recipes. The payment example is illustrative and requires an application-owned environment entry, `env.get` permission for the credential, `http_client.request` permission for the provider URL, and a payment-provider contract.
 
 ## Registering Activities
 
@@ -17,6 +19,8 @@ Add `meta.temporal.activity` to register a function as an activity:
   source: file://payment.lua
   method: charge
   modules:
+    - env
+    - errors
     - http_client
     - json
   meta:
@@ -34,31 +38,56 @@ Add `meta.temporal.activity` to register a function as an activity:
 
 ## Implementation
 
-Activities are regular Lua functions:
+Activities are regular Lua functions. Keep credentials out of workflow inputs because Temporal persists those inputs in workflow history. This example reads the payment key from the environment registry inside the activity. Its placeholder provider accepts a JSON charge request and returns a JSON response. The status mapping is an application-owned policy: replace the URL, request fields, response fields, and failure mapping with your provider's contract.
 
 ```lua
 -- payment.lua
 local http = require("http_client")
 local json = require("json")
+local env = require("env")
+local errors = require("errors")
+
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
 
 local function charge(input)
-    local response, err = http.post("https://api.stripe.com/v1/charges", {
+    local api_key, env_err = env.get("PAYMENTS_API_KEY")
+    if env_err then return nil, env_err end
+
+    local body, encode_err = json.encode({
+        amount = input.amount,
+        currency = input.currency,
+        payment_token = input.payment_token
+    })
+    if encode_err then
+        return nil, encode_err
+    end
+
+    local response, err = http.post("https://payments.example.com/v1/charges", {
         headers = {
-            ["Authorization"] = "Bearer " .. input.api_key,
+            ["Authorization"] = "Bearer " .. api_key,
             ["Content-Type"] = "application/json"
         },
-        body = json.encode({
-            amount = input.amount,
-            currency = input.currency,
-            source = input.token
-        })
+        body = body
     })
 
     if err then
         return nil, err
     end
 
-    return json.decode(response:body())
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
+    end
+
+    return json.decode(response.body)
 end
 
 return { charge = charge }
@@ -74,8 +103,7 @@ local funcs = require("funcs")
 local result, err = funcs.call("app:charge_payment", {
     amount = 5000,
     currency = "usd",
-    token = "tok_visa",
-    api_key = ctx.stripe_key
+    payment_token = "payment-token-123"
 })
 
 if err then
@@ -119,7 +147,13 @@ local reliable = funcs.new():with_options({
 })
 
 local a, err = reliable:call("app:step_one", input)
+if err then
+    return nil, err
+end
 local b, err = reliable:call("app:step_two", a)
+if err then
+    return nil, err
+end
 ```
 
 ### Options Reference
@@ -135,8 +169,27 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Wait for activity cancellation |
 | `activity.disable_eager_execution` | boolean | false | Disable eager execution |
 | `activity.retry_policy` | table | - | Retry configuration (see below) |
+| `activity.versioning_intent` | string or number | - | Worker versioning intent for the activity |
+| `activity.summary` | string | - | Summary shown in Temporal activity metadata |
+| `activity.priority` | table | - | Priority key and optional fairness settings |
+| `activity.name` | string | - | Activity type override |
 
 Duration values accept strings (`"5s"`, `"10m"`, `"1h"`) or milliseconds as numbers.
+
+Use the canonical `activity.*` names for new code. Legacy `temporal.activity.*` aliases remain accepted for compatibility.
+
+```lua
+local executor = funcs.new():with_options({
+    ["activity.summary"] = "Charge the order payment",
+    ["activity.priority"] = {
+        priority_key = 10,
+        fairness_key = "customer-123",
+        fairness_weight = 1.0,
+    },
+    ["activity.name"] = "charge-payment",
+    ["activity.versioning_intent"] = "use_assignment_rules",
+})
+```
 
 ### Retry Policy
 
@@ -220,7 +273,10 @@ local spawner = process.with_context({
     user_id = "user-1",
     tenant = "tenant-1",
 })
-local pid = spawner:spawn("app:order_workflow", "app:worker", order)
+local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
+if err then
+    return nil, err
+end
 ```
 
 ```lua
@@ -228,8 +284,10 @@ local pid = spawner:spawn("app:order_workflow", "app:worker", order)
 local ctx = require("ctx")
 
 local function process_order(input)
-    local user_id = ctx.get("user_id")   -- "user-1"
-    local tenant = ctx.get("tenant")     -- "tenant-1"
+    local user_id, user_err = ctx.get("user_id")   -- "user-1"
+    if user_err then return nil, user_err end
+    local tenant, tenant_err = ctx.get("tenant")   -- "tenant-1"
+    if tenant_err then return nil, tenant_err end
     -- use context for authorization, logging, etc.
 end
 ```
@@ -249,6 +307,18 @@ Return errors via the standard Lua pattern:
 ```lua
 local errors = require("errors")
 
+-- Replace this mapping with the payment provider's documented error contract.
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
+
 local function charge(input)
     if not input.amount or input.amount <= 0 then
         return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
@@ -259,11 +329,11 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response:status() >= 400 then
-        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
     end
 
-    return json.decode(response:body())
+    return json.decode(response.body)
 end
 ```
 

@@ -1,13 +1,15 @@
 ---
 title: "Sistema de Ambiente"
-description: "Gerencia variáveis de ambiente através de backends de armazenamento configuráveis."
+description: "Defina variáveis de ambiente apoiadas por memória, arquivos, sistema operacional, valores estáticos ou roteadores de armazenamento."
 ---
 
 # Sistema de Ambiente
 
-Gerencia variáveis de ambiente através de backends de armazenamento configuráveis.
+Entradas de ambiente permitem que o código em runtime referencie configurações pelo nome público da variável ou pelo ID da entrada no registro.
 
-## Visão Geral
+Esta página é uma referência de configuração. Seus blocos YAML são fragmentos de entradas, salvo quando mostrarem um documento externo.
+
+## Armazenamento e Acesso
 
 O sistema de ambiente separa armazenamento de acesso:
 
@@ -15,10 +17,10 @@ O sistema de ambiente separa armazenamento de acesso:
 - **Variáveis** - Referências nomeadas a valores em armazenamentos
 
 Variáveis podem ser referenciadas por:
-- **Nome público** - O valor do campo `variable` (deve ser único no sistema)
+- **Nome público** - O valor do campo `variable`
 - **ID de entrada** - Referência completa `namespace:name`
 
-Se você não quer que uma variável seja publicamente acessível pelo nome, omita o campo `variable`.
+Omita o campo `variable` quando a variável só deva ser acessível pelo ID da entrada. A primeira variável a reivindicar um nome público mantém esse atalho. Outra variável com o mesmo nome ainda é registrada e acessível por ID, mas não substitui o atalho existente.
 
 ## Tipos de Entradas
 
@@ -44,7 +46,7 @@ Armazenamento volátil em memória.
 
 ### Armazenamento em Arquivo
 
-Armazenamento persistente usando formato de arquivo `.env` (`KEY=VALUE` com comentários `#`).
+Armazenamento persistente em formato simples `KEY=VALUE`. Linhas vazias e linhas iniciadas por `#` são ignoradas; texto após `#` em uma linha de valor é tratado como comentário. Valores entre aspas e sequências de escape não recebem tratamento especial.
 
 ```yaml
 - name: app_config
@@ -94,24 +96,24 @@ Sempre somente leitura. Operações de escrita retornam `PERMISSION_DENIED`.
 
 ### Armazenamento Router
 
-Encadeia múltiplos armazenamentos. Leituras buscam em ordem até encontrar. Escritas vão para o primeiro armazenamento apenas.
+Um router encadeia vários armazenamentos. Em um cache miss, as leituras os consultam em ordem até encontrar um valor; valores encontrados são armazenados no cache do router, portanto alterações diretas no backend deixam de ser visíveis por ele. Um erro diferente de `NOT_FOUND` interrompe a busca. Escritas vão apenas para o primeiro armazenamento.
 
 ```yaml
 - name: config
   kind: env.storage.router
   storages:
-    - app.config:memory    # Principal (escreve aqui)
+    - app.config:memory    # Primary (writes here)
     - app.config:file      # Fallback
     - app.config:os        # Fallback
 ```
 
 | Propriedade | Tipo | Descrição |
 |-------------|------|-----------|
-| `storages` | array | Lista ordenada de referências de armazenamento |
+| `storages` | array | Lista ordenada obrigatória e não vazia de referências de armazenamento |
 
 ## Variáveis
 
-Variáveis fornecem acesso nomeado a valores de armazenamento.
+Variáveis mapeiam nomes públicos ou IDs de entrada a valores de um backend de armazenamento.
 
 ```yaml
 - name: DATABASE_URL
@@ -119,15 +121,15 @@ Variáveis fornecem acesso nomeado a valores de armazenamento.
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | Propriedade | Tipo | Descrição |
 |-------------|------|-----------|
-| `variable` | string | Nome público da variável (opcional, deve ser único) |
-| `storage` | string | Referência de armazenamento (`namespace:name`) |
+| `variable` | string | Nome público opcional da variável |
+| `storage` | string | Referência obrigatória de armazenamento (`namespace:name`) |
 | `default` | string | Valor padrão se não encontrado |
-| `read_only` | boolean | Previne modificações |
+| `readonly` | boolean | Previne modificações |
 
 ### Nomenclatura de Variáveis
 
@@ -136,14 +138,14 @@ Nomes de variáveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
 ### Padrões de Acesso
 
 ```yaml
-# Variável pública - acessível pelo nome "PORT"
+# Public variable - accessible by name "PORT"
 - name: port_var
   kind: env.variable
   variable: PORT
   storage: app.config:os
   default: "8080"
 
-# Variável privada - acessível apenas pelo ID "app.config:internal_key"
+# Private variable - accessible only by ID "app.config:internal_key"
 - name: internal_key
   kind: env.variable
   storage: app.config:secrets
@@ -151,7 +153,7 @@ Nomes de variáveis devem conter apenas: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Interpolação de Placeholders
 
-Variáveis registradas são trazidas para a configuração de entradas com placeholders `${env:NAME}`, resolvidos centralmente no momento do decode contra este registro. Qualquer campo string nos dados de uma entrada pode referenciar uma variável dessa forma.
+Variáveis registradas são trazidas para a configuração com placeholders `${env:NAME}`, resolvidos centralmente durante o decode. Strings de configuração são resolvidas, exceto quando o tipo da entrada marca o campo como opaco. Campos de código como `template.jet.source` são opacos, impedindo a reescrita de templates ou programas.
 
 | Sintaxe | Significado |
 |---------|-------------|
@@ -172,7 +174,7 @@ Variáveis registradas são trazidas para a configuração de entradas com place
     key:  ${env:app.env:tls_key}
 ```
 
-Um campo cujo valor inteiro é um único placeholder recebe o valor tipado da variável (coagido para bool/int/float quando um default tipado é dado); um placeholder misturado com texto ao redor interpola para uma string. O `default` próprio da variável é honrado antes do `|default` inline do placeholder. Uma referência que resolve para nada e não tem default falha o decode.
+Um campo cujo valor inteiro é um único placeholder recebe o tipo de seu default inline. Por exemplo, `${env:PORT|8080}` produz um inteiro e converte o valor armazenado para inteiro, enquanto `${env:PORT|"8080"}` permanece string. Um placeholder misturado a outro texto sempre produz string. O `default` da própria variável prevalece sobre o `|default` inline. Uma referência sem valor nem default falha no decode.
 
 A resolução acontece apenas no momento do decode: a entrada armazenada no registro mantém os placeholders crus, então segredos resolvidos nunca aparecem em resultados de `registry.get` nem em estado persistido. Entradas que referenciam `${env:...}` são ordenadas automaticamente depois dos armazenamentos e variáveis de env dos quais dependem no boot.
 
@@ -192,9 +194,9 @@ Configurações mais antigas usam uma diretiva irmã <code>&lt;campo&gt;_env</co
 
 ## Acesso em Tempo de Execução
 
-- [módulo env](lua/system/env.md) - Acesso em tempo de execução Lua
+- [módulo env](lua/system/env.md) - Acesso em runtime pelo Lua
 
 ## Veja Também
 
 - [Modelo de Segurança](system/security.md) - Controle de acesso para variáveis de ambiente
-- [Guia de Configuração](guides/configuration.md) - Padrões de configuração de aplicação
+- [Guia de Configuração](guides/configuration.md) - Padrões de configuração da aplicação

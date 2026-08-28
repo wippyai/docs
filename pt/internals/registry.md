@@ -1,30 +1,32 @@
 ---
-title: "Registry Internals"
-description: "O registry é um armazenamento de estado versionado e orientado a eventos. Ele mantém histórico completo de versões, suporta transações e propaga…"
+title: "Internals do Registro"
+description: "Armazenamento versionado do registro, changesets, transações, resolução de dependências, histórico e busca de entradas."
 ---
 
-# Registry Internals
+# Internals do Registro
 
-O registry é um armazenamento de estado versionado e orientado a eventos. Ele mantém histórico completo de versões, suporta transações e propaga mudanças através do event bus.
+O registro armazena o estado versionado das entradas, oferece transações e histórico e propaga mudanças pelo event bus.
+
+Os fragmentos de Go e de consultas desta página documentam estruturas de dados internas e a sintaxe do finder; não são exemplos de aplicação independentes.
 
 ## Armazenamento de Entradas
 
-Entradas são armazenadas como um slice ordenado com um índice de hash map para lookups O(1):
+As entradas são armazenadas como um slice ordenado, com um índice em hash map para consultas O(1):
 
 ```go
 type Entry struct {
     ID   ID              // namespace:name
-    Kind Kind            // Tipo da entrada
-    Meta attrs.Bag       // Metadados
-    Data payload.Payload // Conteúdo
+    Kind Kind            // Entry type
+    Meta attrs.Bag       // Metadata
+    Data payload.Payload // Content
 }
 ```
 
-IDs de entrada usam o pacote `unique` do Go para interning - IDs idênticos compartilham memória.
+Os IDs das entradas usam o pacote `unique` do Go para interning — IDs idênticos compartilham memória.
 
 ## Cadeia de Versões
 
-Cada versão aponta para seu pai. Computação de caminho usa um algoritmo de grafo para encontrar a rota mais curta entre quaisquer duas versões:
+Cada versão aponta para sua versão pai. O cálculo do caminho usa um algoritmo de grafos para encontrar a rota mais curta entre duas versões:
 
 ```mermaid
 flowchart LR
@@ -41,7 +43,7 @@ Um changeset é uma lista ordenada de operações transformando um estado em out
 | Update | valor antigo | Modificar existente |
 | Delete | valor deletado | Remover entrada |
 
-`OriginalEntry` permite reversão - updates armazenam o valor anterior, deletes armazenam o que foi removido.
+`OriginalEntry` permite reverter as operações — updates armazenam o valor anterior, e deletes armazenam o que foi removido.
 
 ### Construindo Deltas
 
@@ -56,8 +58,8 @@ Um changeset é uma lista ordenada de operações transformando um estado em out
 Múltiplos changesets mesclam rastreando estado final por entrada:
 
 ```
-Create + Update = Create (com valor atualizado)
-Create + Delete = vazio (cancelam)
+Create + Update = Create (with updated value)
+Create + Delete = ∅ (cancel out)
 Update + Delete = Delete
 Delete + Create = Update
 ```
@@ -71,29 +73,31 @@ sequenceDiagram
     participant H as Handlers
 
     R->>B: registry.begin
-    loop Cada Operação
+    loop Each Operation
         R->>B: entry.create/update/delete
-        B->>H: despachar para listeners
-        H-->>B: aceitar ou rejeitar
-        B-->>R: confirmação
+        B->>H: dispatch to listeners
+        H-->>B: accept or reject
+        B-->>R: confirmation
     end
-    alt Todos aceitos
+    alt All accepted
         R->>B: registry.commit
-    else Algum rejeitado
+    else Any rejected
         R->>B: registry.discard
         R->>R: rollback
     end
 ```
 
-Handlers tem 30 segundos para aceitar ou rejeitar cada operação. Em rejeição, o registry faz rollback computando e aplicando o delta inverso.
+Por padrão, o registro espera 30 segundos para que os listeners aceitem ou rejeitem cada operação. `registry.event_wait_timeout` altera esse timeout por operação. Em caso de rejeição, o registro faz rollback calculando e aplicando o delta inverso.
 
 ### Entradas que Não Propagam
 
-Alguns tipos pulam o event bus completamente:
+Os tipos a seguir ignoram o event bus por padrão:
 - `registry.entry` - Configs de aplicação
 - `ns.requirement` - Requirements de namespace
 - `ns.dependency` - Dependências de módulo
 - `ns.definition` - Metadados do módulo (readme, wiki, licença, autores)
+
+`registry.dispatch_internal_kinds` substitui essa lista padrão.
 
 ## Resolução de Dependências
 
@@ -101,12 +105,12 @@ Entradas podem declarar dependências de outras entradas. O resolver extrai depe
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
 
-Dependências são extraídas dos campos Meta e Data da entrada, depois usadas para ordenação topológica durante transições de estado.
+As dependências são extraídas dos campos Meta e Data da entrada e usadas na ordenação topológica durante as transições de estado.
 
 ## Histórico de Versões
 
@@ -116,39 +120,41 @@ Backends de histórico:
 |---------------|-------------|
 | SQLite | Persistência de produção |
 | PostgreSQL | Persistência de produção, compartilhada entre nós |
-| Memory | Default quando `history_type` não está definido; testes |
+| Memory | Padrão quando `history_type` não está definido; testes |
 | Nil | Sem histórico |
 
-SQLite usa modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados. PostgreSQL é selecionado com `registry.history_type: postgres` mais `history_dsn`/`history_schema` (veja [Configuração](guides/configuration.md#registry)).
+SQLite usa o modo WAL com tabelas para versões, changesets (codificados em MessagePack) e metadados. PostgreSQL é selecionado com `registry.history_type: postgres` e `history_dsn`/`history_schema` (consulte [Configuração](../guides/configuration.md#registro)).
 
-O histórico também persiste a resolução exata de dependências de cada versão: quando uma mudança de `ns.dependency` é aplicada, o grafo de módulos resolvido é armazenado endereçado por conteúdo junto ao changeset. Boot e rollback reproduzem o grafo armazenado em vez de resolver de novo, então uma versão sempre se reconcilia com as versões com que foi resolvida. O schema do histórico migra automaticamente no primeiro boot após um upgrade; uma versão pré-existente é resolvida uma vez na primeira visita e registrada como checkpoint.
+O histórico também persiste a resolução exata de dependências de cada versão: quando uma mudança de `ns.dependency` é aplicada, o grafo de módulos resolvido é armazenado por conteúdo junto ao changeset. Boot e rollback reproduzem o grafo armazenado em vez de resolvê-lo novamente; assim, uma versão sempre é reconciliada com as versões usadas em sua resolução. O esquema do histórico migra automaticamente no primeiro boot após uma atualização; uma versão preexistente é resolvida uma única vez na primeira visita e registrada como checkpoint.
 
 ### Navegação
 
 Computação de caminho encontra a rota mais curta entre versões:
 
 ```go
-Path(v0, v3) = [v1, v2, v3]  // Aplicar changesets para frente
-Path(v3, v1) = [v2, v1]      // Aplicar changesets reversos
+Path(v0, v3) = [v1, v2, v3]  // Apply changesets forward
+Path(v3, v1) = [v2, v1]      // Apply reversed changesets
 ```
 
-`LoadState()` reproduz histórico de um baseline sem criar novas versões - usado durante boot.
+`LoadState()` reproduz o histórico a partir de uma baseline sem criar novas versões — ele é usado durante o boot.
 
 ## Finder
 
-Motor de busca com caching LRU para pesquisar entradas:
+Motor de consultas com cache LRU para pesquisar entradas:
 
 | Operador | Prefixo | Exemplo |
 |----------|---------|---------|
-| Glob | (nenhum) | `.kind=function.*` |
+| Glob de campo raiz | `.` no campo raiz | `.kind=function.*` |
 | Regex | `~` | `~meta.path=/api/.*` |
 | Contains | `*` | `*meta.tags=backend` |
 | Prefix | `^` | `^meta.name=user` |
 | Suffix | `$` | `$meta.path=Handler` |
 
-Cache invalida em mudança de versão.
+O cache é invalidado quando a versão muda.
 
-## Veja Também
+A correspondência glob se aplica aos campos raiz `.kind`, `.name`, `.ns` e `.id`. Critérios `meta.*` sem prefixo usam correspondência por igualdade.
 
-- [Registry](concepts/registry.md) - Conceitos de alto nível
-- [Events](internals/events.md) - Detalhes do event bus
+## Consulte também
+
+- [Registro](concepts/registry.md) — Conceitos de alto nível
+- [Eventos](internals/events.md) — Detalhes do event bus

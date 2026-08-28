@@ -1,6 +1,6 @@
 ---
 title: "Payload Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Create typed payloads, inspect their format, extract values, and transcode between supported representations."
 ---
 
 # Payload Encoding
@@ -8,11 +8,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Convert data between formats including JSON, MessagePack, and binary. Handle typed payloads for inter-service communication and workflow data passing.
+Payloads carry typed values between functions, processes, services, and workflows. They can be inspected, extracted, or transcoded between supported formats.
+
+This is an API reference with partial transport recipes. Values such as `p`, `input_data`, and the asynchronous target entry come from the surrounding application.
 
 ## Loading
 
-Global namespace. No require needed.
+`payload` is a global namespace and does not require `require()`.
 
 ```lua
 payload.new(...)  -- direct access
@@ -20,7 +22,7 @@ payload.new(...)  -- direct access
 
 ## Format Constants
 
-Format identifiers for payload types:
+The following constants identify payload formats:
 
 ```lua
 payload.format.JSON     -- "json/plain"
@@ -35,7 +37,7 @@ payload.format.ERROR    -- "golang/error"
 
 ## Creating Payloads
 
-Create a new payload from a Lua value:
+Create a payload from a Lua value:
 
 ```lua
 -- From table
@@ -69,7 +71,7 @@ local err_p = payload.new(errors.new("something failed"))
 
 ## Getting Format
 
-Get the payload format:
+Read the payload's format identifier:
 
 ```lua
 local p = payload.new({name = "test"})
@@ -86,7 +88,7 @@ local format3 = err_p:get_format()  -- "golang/error"
 
 ## Extracting Data
 
-Extract the Lua value from the payload (transcodes if needed):
+Extract the payload's Lua value, transcoding when needed:
 
 ```lua
 local p = payload.new({
@@ -107,7 +109,7 @@ print(data.items[1])     -- 1
 
 ## Transcoding Payloads
 
-Transcode payload to a different format:
+Transcode a payload to another supported format:
 
 ```lua
 local p = payload.new({
@@ -129,7 +131,10 @@ if err then
 end
 
 -- Convert to YAML
-local yaml_p, err = p:transcode(payload.format.YAML)
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | Parameter | Type | Description |
@@ -140,19 +145,24 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Unmarshalling
 
-Force-decode a payload to a Lua value, regardless of source format:
+Decode a payload to a Lua value regardless of its source format:
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
-`unmarshal()` always transcodes to the Lua format and returns the resulting Lua value. Unlike `data()`, which returns the raw underlying value (potentially a Go object for non-Lua formats), `unmarshal()` guarantees a fully decoded Lua value.
+Both `data()` and `unmarshal()` return the existing Lua value or transcode a non-Lua payload to the Lua format. `unmarshal()` is stricter when a transcoder produces an invalid result: it returns an `errors.INTERNAL` error, while `data()` returns `nil`.
 
 **Returns:** `any, error`
 
 ## Async Results
 
-Payloads are commonly received from async function calls:
+Asynchronous function calls return their values in payloads:
+
+This example assumes `app.process:compute` returns exactly one value. With no result, `future:result()` returns `nil`; with multiple results, it returns a Lua table rather than one `Payload`, so callers must handle those shapes separately.
 
 ```lua
 local funcs = require("funcs")
@@ -164,9 +174,17 @@ end
 
 -- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
+end
+
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
 end
 
 -- Extract data from payload
@@ -186,4 +204,3 @@ print(result.computed_value)
 | Result not valid Lua value | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
-

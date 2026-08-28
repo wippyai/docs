@@ -1,6 +1,6 @@
 ---
 title: "Server-Sent Events"
-description: "The SSE middleware streams events from the server to HTTP clients using the Server-Sent Events protocol."
+description: "Stream short-lived handler events or long-lived process-backed events over Server-Sent Events."
 ---
 
 # Server-Sent Events
@@ -8,6 +8,11 @@ description: "The SSE middleware streams events from the server to HTTP clients 
 The SSE middleware streams events from the server to HTTP clients using the [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) protocol.
 
 Two mechanisms are available: **direct streaming** from an HTTP handler, and **process-backed relay** via the `sse_relay` middleware.
+
+**Classification: protocol reference with partial integration recipes.** The
+relay blocks assume an HTTP server, router, process host, target process, and
+security context already exist. Application callbacks and client behavior are
+outside these snippets.
 
 ## Direct Streaming
 
@@ -17,11 +22,16 @@ Use `res:write_event()` to send SSE events directly from an HTTP handler. The re
 local http = require("http")
 
 local function handler()
-    local res = http.response()
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    res:write_event({name = "status", data = {state = "started"}})
-    res:write_event({name = "progress", data = {percent = 50}})
-    res:write_event({name = "status", data = {state = "complete"}})
+    local err = res:write_event({name = "status", data = {state = "started"}})
+    if err then return nil, err end
+    err = res:write_event({name = "progress", data = {percent = 50}})
+    if err then return nil, err end
+    err = res:write_event({name = "status", data = {state = "complete"}})
+    if err then return nil, err end
+    return true
 end
 ```
 
@@ -53,10 +63,12 @@ SSE streams are full processes with their own PID. They integrate with the proce
 
 ```lua
 -- Send event to SSE client from any process
-process.send(stream_pid, "sse.message", {event = "update", value = 42})
+local _, send_err = process.send(stream_pid, "sse.message", {event = "update", value = 42})
+if send_err then return nil, send_err end
 
 -- Monitor an SSE stream
-process.monitor(stream_pid)
+local _, monitor_err = process.monitor(stream_pid)
+if monitor_err then return nil, monitor_err end
 ```
 
 <tip>
@@ -96,20 +108,37 @@ local http = require("http")
 local json = require("json")
 
 local function handler()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
+
+    local user_id, query_err = req:query("user_id")
+    if query_err then return nil, query_err end
 
     -- Spawn handler process
-    local pid = process.spawn("app.sse:handler", "app:processes")
+    local pid, spawn_err = process.spawn("app.sse:handler", "app:processes")
+    if spawn_err then return nil, spawn_err end
 
     -- Configure relay
-    res:set_header("X-SSE-Relay", json.encode({
+    local relay_config, encode_err = json.encode({
         target_pid = tostring(pid),
         message_topic = "sse.message",
         heartbeat_interval = "30s",
         metadata = {
-            user_id = http.request():query("user_id")
+            user_id = user_id
         }
-    }))
+    })
+    if encode_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or encode_err
+    end
+
+    local header_err = res:set_header("X-SSE-Relay", relay_config)
+    if header_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or header_err
+    end
 end
 ```
 
@@ -142,11 +171,18 @@ When `target_pid` is omitted, the relay starts in detached mode:
 - No process is monitored initially
 - A process can attach later by sending an `sse.control` message
 
+Inside a handler that has imported `json` and obtained the response object as
+`res`, set up detached mode and check both operations:
+
 ```lua
 -- Detached setup: no target_pid
-res:set_header("X-SSE-Relay", json.encode({
+local relay_config, encode_err = json.encode({
     heartbeat_interval = "30s"
-}))
+})
+if encode_err then return nil, encode_err end
+
+local header_err = res:set_header("X-SSE-Relay", relay_config)
+if header_err then return nil, header_err end
 ```
 
 The client receives a `ready` event:
@@ -163,7 +199,7 @@ The relay uses these topics for communication between the stream and target proc
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | Client connects | `client_pid`, `metadata` |
 | `sse.message` | target → stream | Default event topic | Forwarded as SSE event |
-| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count` |
+| `sse.heartbeat` | stream → target | Periodic (if configured) | `client_pid`, `uptime`, `message_count`, `metadata` |
 | `sse.leave` | stream → target | Client disconnects | `client_pid`, `metadata` |
 | `sse.control` | any → stream | Control command | Relay config fields |
 | `sse.close` | any → stream | Force close | Optional reason string |
@@ -171,8 +207,6 @@ The relay uses these topics for communication between the stream and target proc
 ## Receiving in Target Process
 
 ```lua
-local json = require("json")
-
 local function handler()
     local inbox = process.inbox()
 
@@ -181,7 +215,8 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local data, payload_err = msg:payload():data()
+        if payload_err then return nil, payload_err end
 
         if topic == "sse.join" then
             local client_pid = data.client_pid
@@ -190,7 +225,7 @@ local function handler()
             -- Periodic health check
 
         elseif topic == "sse.leave" then
-            cleanup(data.client_pid)
+            -- Release application state associated with data.client_pid.
         end
     end
 end
@@ -202,13 +237,15 @@ Send events to the client by messaging the stream PID:
 
 ```lua
 -- Send on the default message topic
-process.send(stream_pid, "sse.message", {
+local _, send_err = process.send(stream_pid, "sse.message", {
     event = "update",
     value = 42
 })
+if send_err then return nil, send_err end
 
 -- Force close the stream
-process.send(stream_pid, "sse.close", "session expired")
+local _, close_err = process.send(stream_pid, "sse.close", "session expired")
+if close_err then return nil, close_err end
 ```
 
 Events sent on the configured `message_topic` are forwarded to the client as SSE events. The topic name becomes the SSE event name.
@@ -218,14 +255,15 @@ Events sent on the configured `message_topic` are forwarded to the client as SSE
 Send a control message to change the target process, topic filter, or timeouts dynamically:
 
 ```lua
-process.send(stream_pid, "sse.control", {
+local _, transfer_err = process.send(stream_pid, "sse.control", {
     target_pid = tostring(new_pid),
     message_topic = "custom.topic",
     idle_timeout = "5m"
 })
+if transfer_err then return nil, transfer_err end
 ```
 
-When the target changes, the relay sends `sse.leave` to the old target and `sse.join` to the new one. Set `target_pid` to an empty string to detach without reattaching.
+When the target changes, the relay first monitors and sends `sse.join` to the new target, then stops monitoring and sends `sse.leave` to the old one. Set `target_pid` to an empty string to detach without reattaching.
 
 ## See Also
 

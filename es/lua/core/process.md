@@ -1,6 +1,6 @@
 ---
 title: "Gestión de Procesos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Crea, monitoriza, enlaza, envía mensajes, asigna nombres y actualiza procesos de Wippy."
 ---
 
 # Gestión de Procesos
@@ -9,22 +9,27 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Crear, monitorear y comunicarse con procesos hijos. Implementa patrones de modelo de actores con paso de mensajes, supervisión y gestión de ciclo de vida.
+El global `process` permite crear procesos, enviar mensajes, monitorizar, enlazar, asignar nombres y controlar el ciclo de vida.
 
-La variable global `process` siempre está disponible — no requiere `require()` ni necesita aparecer en `modules:`.
+Está disponible sin `require()` y no necesita incluirse en `modules:`.
 
-## Información del Proceso
+Esta es una referencia de API. Sus bloques de formas de llamada usan marcadores como `id`, `host`, `destination`, `topic` y `name` para valores proporcionados por el código de la aplicación; no son programas independientes. Las llamadas mostradas con un resultado `err` devuelven su valor documentado en caso de éxito o un centinela de fallo más `error`; el centinela suele ser `nil`, mientras que `process.set_options` devuelve `false`. El flujo de control de la aplicación debe manejar el error.
 
-Obtener el ID del frame actual o el ID del proceso:
+## Información del proceso
+
+Lee el ID del frame actual o el ID del proceso:
 
 ```lua
-local frame_id = process.id()  -- Identificador de cadena de llamadas
-local pid = process.pid()       -- ID del proceso
+local frame_id, err = process.id()  -- Registry ID of the current function, process, or workflow definition
+if err then return nil, err end
+
+local pid, err = process.pid()      -- Process ID
+if err then return nil, err end
 ```
 
-## Enviar Mensajes
+## Envío de mensajes
 
-Enviar mensaje(s) a un proceso por PID o nombre registrado:
+Envía uno o varios valores de payload a un proceso por PID o nombre registrado:
 
 ```lua
 local ok, err = process.send(destination, topic, ...)
@@ -34,23 +39,23 @@ local ok, err = process.send(destination, topic, ...)
 |-----------|------|-------------|
 | `destination` | string | PID o nombre registrado |
 | `topic` | string | Nombre del tema (no puede comenzar con `@`) |
-| `...` | any | Valores del payload |
+| `...` | any | Valores de payload |
 
 **Permiso:** `process.send` sobre el PID destino
 
-## Lanzar Procesos
+## Creación de procesos
 
 ```lua
--- Lanzamiento básico
+-- Basic spawn
 local pid, err = process.spawn(id, host, ...)
 
--- Con monitoreo (recibir eventos EXIT)
+-- With monitoring (receive EXIT events)
 local pid, err = process.spawn_monitored(id, host, ...)
 
--- Con enlace (recibir LINK_DOWN en salida anormal)
+-- With linking (receive LINK_DOWN on abnormal exit)
 local pid, err = process.spawn_linked(id, host, ...)
 
--- Enlazado y monitorizado
+-- Both linked and monitored
 local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
@@ -60,19 +65,15 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `host` | string | ID del host (ej., `"app:processes"`) |
 | `...` | any | Argumentos pasados al proceso lanzado |
 
-**Permisos:**
-- `process.spawn` sobre el id del proceso
-- `process.host` sobre el id del host
-- `process.spawn.monitored` sobre el id del proceso (para variantes monitorizadas)
-- `process.spawn.linked` sobre el id del proceso (para variantes enlazadas)
+Todas las variantes requieren `process.spawn` sobre el ID del proceso. Las variantes monitorizadas también requieren `process.spawn.monitored`, y las variantes enlazadas requieren `process.spawn.linked`. En runtime v0.3.32a, solo `spawn()` a nivel de módulo comprueba `process.host` sobre el ID del host; las variantes especializadas a nivel de módulo no realizan esa comprobación de permiso del host.
 
-## Control de Procesos
+## Control de procesos
 
 ```lua
--- Terminar forzosamente un proceso
+-- Forcefully terminate a process
 local ok, err = process.terminate(destination)
 
--- Solicitar cancelación controlada con un motivo opcional
+-- Request graceful cancellation with an optional reason
 local ok, err = process.cancel(destination, "shutting down")
 ```
 
@@ -83,23 +84,23 @@ local ok, err = process.cancel(destination, "shutting down")
 
 **Permisos:** `process.terminate`, `process.cancel` sobre el PID destino
 
-## Monitoreo y Enlace
+## Monitorización y enlaces
 
-Monitorear o enlazar a un proceso existente:
+Añade o elimina la monitorización y los enlaces de un proceso existente:
 
 ```lua
--- Monitoreo: recibir eventos EXIT cuando el destino sale
+-- Monitoring: receive EXIT events when target exits
 local ok, err = process.monitor(destination)
 local ok, err = process.unmonitor(destination)
 
--- Enlace: bidireccional, recibir LINK_DOWN en salida anormal
+-- Linking: bidirectional, receive LINK_DOWN on abnormal exit
 local ok, err = process.link(destination)
 local ok, err = process.unlink(destination)
 ```
 
 **Permisos:** `process.monitor`, `process.unmonitor`, `process.link`, `process.unlink` sobre el PID destino
 
-## Opciones del Proceso
+## Opciones del proceso
 
 ```lua
 local options = process.get_options()
@@ -109,18 +110,18 @@ local ok, err = process.set_options({trap_links = true})
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `trap_links` | boolean | Si los eventos LINK_DOWN se entregan al canal de eventos |
-| `upgradable` | boolean | Optar por recibir eventos OUTDATED cuando el código del proceso se invalida |
+| `upgradable` | boolean | Optar por eventos OUTDATED cuando se invalida el código del proceso |
 
-## Buzón y Eventos
+## Buzón y eventos
 
-Obtener canales para recibir mensajes y eventos de ciclo de vida:
+Usa los canales de buzón y eventos para recibir mensajes y eventos de ciclo de vida:
 
 ```lua
-local inbox = process.inbox()    -- Objetos Message del tema @inbox
-local events = process.events()  -- Eventos de ciclo de vida del tema @events
+local inbox = process.inbox()    -- Message objects from @inbox topic
+local events = process.events()  -- Lifecycle events from @events topic
 ```
 
-### Tipos de Evento
+### Tipos de evento
 
 | Constante | Descripción |
 |----------|-------------|
@@ -135,43 +136,45 @@ local events = process.events()  -- Eventos de ciclo de vida del tema @events
 |-------|------|-------------|
 | `kind` | string | Constante del tipo de evento |
 | `from` | string | PID de origen |
-| `result` | any | Para EXIT: el valor devuelto (presente en salida normal) |
-| `error` | any | Para EXIT: el error (presente en salida anormal) |
+| `result` | table | Para EXIT/LINK_DOWN: un registro {value, error}; el valor devuelto por el proceso está en `result.value` y cualquier error en `result.error` |
 | `reason` | string | Para CANCEL: por qué se está cancelando el proceso |
 | `sources` | string[] | Para OUTDATED: IDs del registro que cambiaron o fueron afectados transitivamente |
 
-OUTDATED se entrega solo a los procesos que optaron por él con `process.set_options({upgradable = true})`; los demás procesos nunca lo ven. Múltiples invalidaciones se fusionan en un único evento pendiente con la unión de `sources`. La reacción prevista es un intercambio en caliente vía [`process.upgrade`](#process-upgrade).
+`OUTDATED` se entrega solo a los procesos que optan por él con `process.set_options({upgradable = true})`. Varias invalidaciones se combinan en un único evento pendiente que contiene la unión de sus `sources`. Maneja el evento llamando a [`process.upgrade`](#process-upgrade).
 
-## Suscripción a Temas
+## Suscripción a temas
 
-Suscribirse a temas personalizados:
+Suscríbete a un tema de mensajes personalizado:
 
 ```lua
-local ch = process.listen(topic, options)
-process.unlisten(ch)
+local ch, err = process.listen(topic, options)
+if err then return nil, err end
+
+local ok, err = process.unlisten(ch)
+if err then return nil, err end
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `topic` | string | Nombre del tema (no puede comenzar con `@`) |
-| `options.message` | boolean | Si es true, recibir objetos Message; si es false, payloads raw |
+| `options.message` | boolean | Si es true, recibe objetos Message; si es false, payloads sin procesar |
 
-## Objetos Message
+## Objetos de mensaje
 
-Al recibir del buzón o con `{message = true}`:
+El buzón y los listeners configurados con `{message = true}` devuelven objetos de mensaje:
 
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: nombre del tema
-msg:from()             -- string|nil: PID del remitente
-msg:payload()          -- Payload: wrapper (llamar :data() para extraer)
-msg:payload():data()   -- any: valor actual del payload
+msg:topic()            -- string: topic name
+msg:from()             -- string|nil: sender PID
+msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:payload():data()   -- any: actual payload value
 ```
 
-## Llamada Síncrona
+## Llamada síncrona
 
-Lanzar un proceso, esperar su resultado y devolver:
+`process.exec` crea un proceso y espera su resultado:
 
 ```lua
 local result, err = process.exec(id, host, ...)
@@ -179,21 +182,27 @@ local result, err = process.exec(id, host, ...)
 
 **Permisos:** `process.exec` sobre el id del proceso, `process.host` sobre el id del host
 
-## Actualización de Proceso {#process-upgrade}
+## Actualización de procesos :id=process-upgrade
 
-Actualizar el proceso actual a una nueva definición preservando el PID:
+Actualiza el proceso actual conservando su PID:
+
+Los dos fragmentos siguientes son formas de llamada alternativas, no operaciones secuenciales.
 
 ```lua
--- Actualizar a nueva versión, pasando estado
+-- Upgrade to new version, passing state
 process.upgrade(id, ...)
+```
 
--- Mantener la misma definición, re-ejecutar con nuevo estado
+```lua
+-- Keep same definition, re-run with new state
 process.upgrade(nil, preserved_state)
 ```
 
-## Spawner con Contexto
+`process.upgrade` es una transferencia de control terminal: borra la ejecución actual e inicia la definición solicitada con el mismo PID. El código posterior a la llamada no se ejecuta en la ejecución anterior.
 
-Crear un spawner con contexto personalizado para procesos hijos:
+## Spawner con contexto
+
+Crea un spawner que proporciona contexto personalizado a los procesos hijos:
 
 ```lua
 local spawner = process.with_context({request_id = "123"})
@@ -201,9 +210,9 @@ local spawner = process.with_context({request_id = "123"})
 
 **Permiso:** `process.context` sobre "context"
 
-### Spawner con Opciones
+### Spawner con opciones
 
-`process.with_options(options)` crea un spawner que lleva opciones de spawn (ej., un selector de red) en lugar de valores de contexto:
+`process.with_options(options)` crea un spawner con opciones de creación, como un selector de red, en lugar de valores de contexto:
 
 ```lua
 local spawner = process.with_options({network = "app:tor_proxy"})
@@ -211,21 +220,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
-| `network` | string | ID de registro de una entrada `network.*` a usar para las conexiones salientes del hijo |
+| `network` | string | ID de registro de una entrada `network.*` que se usará para las conexiones salientes del hijo |
 
 **Permiso:** `process.context` sobre "context"; seleccionar una red adicionalmente requiere `network.select` sobre ese ID de red.
 
 ### Métodos de SpawnBuilder
 
-SpawnBuilder es inmutable — cada método devuelve una nueva instancia:
+`SpawnBuilder` es inmutable; cada método de configuración devuelve una instancia nueva:
 
 ```lua
-spawner:with_context(values)      -- Añadir valores de contexto
-spawner:with_actor(actor)         -- Establecer actor de seguridad
-spawner:with_scope(scope)         -- Establecer ámbito de seguridad
-spawner:with_name(name)           -- Establecer nombre del proceso
-spawner:with_message(topic, ...)  -- Encolar mensaje a enviar tras el spawn
-spawner:with_options(options)     -- Fusionar opciones de spawn (ej., network)
+spawner:with_context(values)      -- Add context values
+spawner:with_actor(actor)         -- Set security actor
+spawner:with_scope(scope)         -- Set security scope
+spawner:with_name(name)           -- Set process name
+spawner:with_message(topic, ...)  -- Queue message to send after spawn
+spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
 
 **Permiso:** `process.security` sobre "security" para `:with_actor()` y `:with_scope()`
@@ -239,7 +248,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-Mismos permisos que las funciones de spawn a nivel de módulo.
+Todos los métodos de creación de `SpawnBuilder` requieren `process.host` sobre el ID del host, además de los permisos aplicables `process.spawn`, `process.spawn.monitored` y `process.spawn.linked`.
 
 ### Exec del Spawner
 
@@ -247,32 +256,32 @@ Mismos permisos que las funciones de spawn a nivel de módulo.
 local result, err = spawner:exec(id, host, ...)
 ```
 
-Ejecuta el proceso destino de forma síncrona bajo el contexto, actor y scope del builder, y devuelve su valor de resultado — la contraparte acotada del `process.exec` a nivel de módulo. Un worker diferido puede reconstruir una identidad de propietario con `with_actor`/`with_scope` y ejecutar en su nombre.
+Este método ejecuta el proceso de destino de forma síncrona con el contexto, el actor y el ámbito del builder, y devuelve su resultado. Un worker diferido puede usar `with_actor` y `with_scope` para ejecutarse con la identidad de un propietario.
 
 **Permisos:** `process.exec` sobre el id del proceso, `process.host` sobre el id del host
 
-## Registro de Nombres
+## Registro de nombres
 
-Registrar un proceso bajo un nombre y alcanzarlo por ese nombre en lugar de su PID. Cualquier función que acepte un `destination` (`send`, `terminate`, `cancel`, `monitor`, `link`, ...) acepta un nombre registrado en lugar de un PID.
+Registra un proceso con un nombre para que los llamadores puedan usarlo en lugar de su PID. Las funciones que aceptan un `destination`, incluidas `send`, `terminate`, `cancel`, `monitor` y `link`, también aceptan nombres registrados.
 
 ```lua
-local ok, err = process.registry.register(name)               -- self, ámbito local
+local ok, err = process.registry.register(name)               -- self, local scope
 local pid, err = process.registry.lookup(name)
 local ok, err = process.registry.unregister(name)
 ```
 
 ### Ámbito
 
-El argumento opcional `scope` selecciona la garantía de consistencia del nombre. Por defecto es `LOCAL`. Los cuatro ámbitos y sus garantías se describen en la [Guía de Cluster](guides/cluster.md#naming-and-name-scopes); en resumen:
+El argumento opcional `scope` selecciona la garantía de consistencia del nombre y su valor predeterminado es `LOCAL`. Consulta la [Guía del clúster](guides/cluster.md#naming-and-name-scopes) para ver el modelo completo.
 
 | Constante | Visibilidad | Garantía |
 |----------|-------------|----------|
 | `process.registry.LOCAL` | solo este nodo | Instantáneo, local al nodo |
-| `process.registry.EVENTUAL` | en todo el cluster | Eventualmente consistente (gossip) |
-| `process.registry.CONSISTENT` | en todo el cluster | Singleton linealizable (Raft) |
-| `process.registry.STRONG` | en todo el cluster | Consistente + cada nodo activo reconoce |
+| `process.registry.EVENTUAL` | en todo el clúster | Eventualmente consistente (gossip) |
+| `process.registry.CONSISTENT` | en todo el clúster | Singleton linealizable (Raft) |
+| `process.registry.STRONG` | en todo el clúster | Consistente + reconocimiento de cada nodo activo |
 
-En un nodo independiente solo `LOCAL` es significativo; los ámbitos de cluster requieren [clustering](guides/cluster.md).
+En un nodo independiente, solo está disponible `LOCAL`; los ámbitos del clúster requieren [clustering](guides/cluster.md).
 
 ### register
 
@@ -286,7 +295,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | no | self | PID a registrar; por defecto el proceso que llama |
 | `scope` | number | no | `LOCAL` | Una de las constantes de ámbito anteriores |
 
-Devuelve `true` en éxito, o `nil, error` en fallo. Los conflictos (nombre ya registrado a un PID diferente bajo un ámbito de cluster) devuelven `errors.ALREADY_EXISTS`. Registrar el mismo nombre al mismo PID es idempotente. Un registro `STRONG` bloquea hasta que cada nodo activo reconoce o el plazo de reserva expira; en tiempo de espera devuelve un error.
+Devuelve `true` en caso de éxito o `nil, error` en caso de fallo. Un conflicto de ámbito de clúster, cuando el nombre pertenece a otro PID, devuelve `errors.ALREADY_EXISTS`. Registrar el mismo nombre para el mismo PID es idempotente. Un registro `STRONG` espera hasta que todos los nodos activos lo reconozcan o expire el plazo de reserva.
 
 Registrar en nombre de un PID diferente requiere adicionalmente el permiso `process.registry.foreign` sobre el PID destino.
 
@@ -296,7 +305,7 @@ Registrar en nombre de un PID diferente requiere adicionalmente el permiso `proc
 local pid, err = process.registry.lookup(name)
 ```
 
-Devuelve el string de PID registrado, o `nil, error` con tipo `errors.NOT_FOUND` cuando el nombre no está registrado.
+Devuelve la cadena del PID registrado, o `nil, error` con la clase `errors.NOT_FOUND` cuando el nombre no está registrado.
 
 ### unregister
 
@@ -304,28 +313,28 @@ Devuelve el string de PID registrado, o `nil, error` con tipo `errors.NOT_FOUND`
 local ok, err = process.registry.unregister(name, scope)
 ```
 
-`scope` por defecto es `LOCAL` y debe coincidir con el ámbito bajo el que se registró el nombre. Para `CONSISTENT` y `STRONG`, el proceso propietario es el único autorizado a desregistrar; desregistrar un nombre propiedad de otro PID devuelve `false`. Los nombres también se liberan automáticamente cuando el proceso propietario sale (y, para ámbitos de cluster, cuando su nodo se va), por lo que el desregistro explícito es para liberación anticipada.
+`scope` tiene como valor predeterminado `LOCAL` y debe coincidir con el ámbito bajo el que se registró el nombre. Para `CONSISTENT` y `STRONG`, el proceso propietario es el único autorizado a cancelar el registro; cancelar un nombre que pertenece a otro PID devuelve `false`. Los nombres también se liberan automáticamente cuando el proceso propietario termina (y, para los ámbitos de clúster, cuando su nodo abandona el clúster), por lo que la cancelación explícita del registro sirve para liberarlos antes.
 
 ## Permisos
 
-Los permisos controlan lo que puede hacer un proceso que llama. Todas las comprobaciones usan el contexto de seguridad (actor) del que llama contra el recurso destino.
+Las comprobaciones de permisos evalúan el actor de seguridad del llamador frente al recurso de destino.
 
-### Evaluación de Política
+### Evaluación de políticas
 
-Las políticas pueden permitir/denegar basándose en:
+Las políticas pueden permitir o denegar una operación según:
 - **Actor**: El principal de seguridad que hace la solicitud
 - **Acción**: La operación que se realiza (ej., `process.send`)
 - **Recurso**: El destino (PID, id de proceso, id de host, o nombre)
 - **Atributos**: Contexto adicional incluyendo `pid` (ID del proceso que llama)
 
-### Referencia de Permisos
+### Referencia de permisos
 
 | Permiso | Funciones | Recurso |
 |---------|-----------|---------|
 | `process.spawn` | `spawn*()` | id del proceso |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | id del proceso |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | id del proceso |
-| `process.host` | `spawn*()`, `exec()` | id del host |
+| `process.host` | `spawn()` a nivel de módulo, todos los métodos de creación de `SpawnBuilder`, `exec()` | id del host |
 | `process.send` | `send()` | PID destino |
 | `process.exec` | `exec()` | id del proceso |
 | `process.terminate` | `terminate()` | PID destino |
@@ -340,18 +349,22 @@ Las políticas pueden permitir/denegar basándose en:
 | `process.registry.unregister` | `registry.unregister()` | nombre |
 | `process.registry.foreign` | `registry.register()` | PID destino |
 
-Los ámbitos de nombre de cluster están autorizados por variantes con sufijo de ámbito de estas acciones (`process.registry.register.eventual`, `.consistent`, `.strong`, y las acciones de `unregister` correspondientes), por lo que una política puede otorgar naming local separado del naming a nivel de cluster.
+Los ámbitos de nombres del clúster se autorizan mediante variantes de estas acciones con el ámbito como sufijo (`process.registry.register.eventual`, `.consistent`, `.strong` y las acciones `unregister` correspondientes), de modo que una política puede conceder por separado los nombres locales y los nombres en todo el clúster.
 
-### Permisos Múltiples
+### Varios permisos
 
 Algunas operaciones requieren múltiples permisos:
 
 | Operación | Permisos requeridos |
 |-----------|---------------------|
 | `spawn()` | `process.spawn` + `process.host` |
-| `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
-| `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
-| `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
+| `spawn_monitored()` a nivel de módulo | `process.spawn` + `process.spawn.monitored` |
+| `spawn_linked()` a nivel de módulo | `process.spawn` + `process.spawn.linked` |
+| `spawn_linked_monitored()` a nivel de módulo | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` |
+| `SpawnBuilder:spawn()` | `process.spawn` + `process.host` |
+| `SpawnBuilder:spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
+| `SpawnBuilder:spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
+| `SpawnBuilder:spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
 | `exec()` | `process.exec` + `process.host` |
 | spawn con actor/ámbito personalizado | permisos de spawn + `process.security` |
 
@@ -359,21 +372,20 @@ Algunas operaciones requieren múltiples permisos:
 
 | Condición | Tipo |
 |-----------|------|
-| No se encontró contexto | `errors.INVALID` |
-| Contexto de frame no encontrado | `errors.INVALID` |
+| No se encontró contexto | `errors.INTERNAL` |
+| No se encontró el contexto del frame | `errors.INTERNAL` |
 | Argumentos requeridos faltantes | `errors.INVALID` |
 | Prefijo de tema reservado (`@`) | `errors.INVALID` |
-| Formato de duración inválido | `errors.INVALID` |
 | Nombre no registrado | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Nombre ya registrado | `errors.ALREADY_EXISTS` |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
-## Ver También
+## Véase también
 
-- [Canales](lua/core/channel.md) - Comunicación entre procesos
-- [Cola de Mensajes](lua/storage/queue.md) - Mensajería basada en colas
+- [Canales](lua/core/channel.md) - Coordinación de corrutinas dentro del proceso
+- [Cola de mensajes](lua/storage/queue.md) - Mensajería basada en colas
 - [Funciones](lua/core/funcs.md) - Invocación de funciones
 - [Supervisión](guides/supervision.md) - Gestión del ciclo de vida de procesos
-- [Cluster](guides/cluster.md) - Ámbitos de nombre y naming a nivel de cluster
+- [Clúster](guides/cluster.md) - Ámbitos de nombres y nombres en todo el clúster

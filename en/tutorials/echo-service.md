@@ -1,22 +1,40 @@
 ---
 title: "Echo Service"
-description: "Build a distributed echo service demonstrating processes, channels, coroutines, message passing, and supervision."
+description: "Build a multi-process echo service with channels, coroutines, message passing, and process monitoring."
 ---
 
 # Echo Service
 
-Build a distributed echo service demonstrating processes, channels, coroutines, message passing, and supervision.
+Build a CLI echo service that uses multiple Wippy processes, channels, coroutines, message passing, and process monitoring.
+
+**Classification:** Runnable tutorial. It provides the complete registry and Lua
+sources for a local, single-node CLI application, plus startup and verification
+steps.
 
 ## Overview
 
 This tutorial creates a CLI client that sends messages to a relay service, which spawns workers to process each message. It demonstrates:
 
-- **Process spawning** - Creating child processes dynamically
-- **Message passing** - Communication between processes via send/receive
-- **Channels and select** - Multiplexing multiple event sources
-- **Coroutines** - Concurrent execution within a process
-- **Process registration** - Finding processes by name
-- **Monitoring** - Tracking child process lifecycle
+- **Process spawning** — Create child processes dynamically
+- **Message passing** — Communicate between processes with send and receive operations
+- **Channels and select** — Wait on multiple event sources
+- **Coroutines** — Run concurrent work within a process
+- **Process registration** — Find processes by name
+- **Monitoring** — Track child-process lifecycles
+
+## Prerequisites
+
+- Wippy runtime `v0.3.32a` available as `wippy`. Confirm it with
+  `wippy version --short`.
+- An interactive terminal.
+- An empty working directory. Create the project and source directory before adding
+  the files below:
+
+  ```bash
+  mkdir echo-service
+  cd echo-service
+  mkdir src
+  ```
 
 ## Architecture
 
@@ -63,6 +81,19 @@ version: "1.0"
 namespace: app
 
 entries:
+  # Capabilities used by the CLI, relay, and workers in strict mode
+  - name: process-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.registry.register
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -79,17 +110,25 @@ entries:
     method: main
     modules:
       - io
-      - process
       - time
+    security:
+      actor:
+        id: app:cli
+      policies:
+        - app:process-policy
 
   - name: relay
     kind: process.lua
     source: file://relay.lua
     method: main
     modules:
-      - process
       - logger
       - time
+    security:
+      actor:
+        id: app:relay
+      policies:
+        - app:process-policy
 
   - name: relay-service
     kind: process.service
@@ -103,8 +142,12 @@ entries:
     source: file://worker.lua
     method: main
     modules:
-      - process
       - time
+    security:
+      actor:
+        id: app:worker
+      policies:
+        - app:process-policy
 ```
 
 ## The Relay Process
@@ -136,7 +179,10 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    process.registry.register("relay")
+    local _, register_err = process.registry.register("relay")
+    if register_err then
+        error("cannot register relay: " .. tostring(register_err))
+    end
     logger:info("relay started", {pid = process.pid()})
 
     coroutine.spawn(stats_reporter)
@@ -169,7 +215,7 @@ local function main()
                 )
 
                 if err then
-                    logger:error("spawn failed", {error = err})
+                    logger:error("spawn failed", {error = tostring(err)})
                 else
                     stats.workers_spawned = stats.workers_spawned + 1
                 end
@@ -189,7 +235,7 @@ return { main = main }
 coroutine.spawn(stats_reporter)
 ```
 
-Creates a concurrent coroutine sharing memory with the main function. Coroutines yield at I/O operations like `time.sleep`.
+This starts a coroutine that shares memory with the main function. Coroutines yield at I/O operations such as `time.sleep`.
 
 **Channel Select**
 
@@ -200,7 +246,7 @@ local r = channel.select {
 }
 ```
 
-Waits on multiple channels. `r.channel` identifies which fired, `r.value` contains the data.
+This waits on multiple channels. `r.channel` identifies the selected channel, and `r.value` contains its data.
 
 **Payload Extraction**
 
@@ -216,7 +262,7 @@ Messages have `msg:topic()` for the topic string and `msg:payload():data()` for 
 local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", ...)
 ```
 
-Combines spawn and monitor. When the worker exits, we receive an EXIT event.
+This spawns the worker and starts monitoring it. When the worker exits, the relay receives an `EXIT` event.
 
 ## The Worker Process
 
@@ -231,7 +277,10 @@ local function main(sender_pid, data)
         worker = process.pid()
     }
 
-    process.send(sender_pid, "echo_response", response)
+    local _, send_err = process.send(sender_pid, "echo_response", response)
+    if send_err then
+        error("cannot send echo response: " .. tostring(send_err))
+    end
 
     return 0
 end
@@ -241,7 +290,7 @@ return { main = main }
 
 ## The CLI Process
 
-The CLI sends messages by registered name and waits for responses with timeout.
+The CLI sends messages to the relay's registered name and waits for each response with a timeout.
 
 Create `src/cli.lua`:
 
@@ -273,8 +322,23 @@ local function main()
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
 
     while true do
-        io.write(yellow("> "))
-        local input = io.readline()
+        local _, write_err = io.write(yellow("> "))
+        if write_err then
+            io.eprint("cannot write prompt:", write_err)
+            return 1
+        end
+
+        local _, flush_err = io.flush()
+        if flush_err then
+            io.eprint("cannot flush prompt:", flush_err)
+            return 1
+        end
+
+        local input, read_err = io.readline()
+        if read_err then
+            io.eprint("cannot read input:", read_err)
+            return 1
+        end
 
         if not input or #input == 0 then
             break
@@ -284,9 +348,9 @@ local function main()
             sender = process.pid(),
             data = input
         }
-        local ok, err = process.send("relay", "echo", msg)
+        local _, err = process.send("relay", "echo", msg)
         if err then
-            io.print(dim("  error: relay not available"))
+            io.print(dim("  error: " .. tostring(err)))
         else
             local timeout = time.after("2s")
             local r = channel.select {
@@ -322,7 +386,7 @@ return { main = main }
 process.send("relay", "echo", msg)
 ```
 
-`process.send` accepts registered names directly. Returns error if not found.
+`process.send` accepts a registered name as its target and returns an error when that name cannot be resolved.
 
 **Timeout Pattern**
 
@@ -355,8 +419,26 @@ Type messages to echo. Ctrl+C to exit.
   from worker: {app:processes|0x00004}
 ```
 
+The worker PID is generated at runtime and will differ. Enter several lines to
+confirm that each response is uppercase. Submit an empty line to exit cleanly.
+
+## Troubleshooting and Cleanup
+
+- `relay not ready` means the auto-started relay did not register within five
+  seconds. Check the runtime log for a relay startup, policy, or registry error.
+- `not allowed to spawn` or `not allowed to send` means the process entries do not
+  have the `app:process-policy` security context shown above.
+- `no terminal host found` means the `terminal.host` entry is missing. If your
+  project has multiple terminal hosts, add `--host app:terminal` to the run command.
+- A timeout after sending means the worker did not return a response. Check the
+  relay log for a spawn failure and confirm `app:worker` and `app:processes` match
+  the entry names.
+- Submit an empty line to exit the CLI. Press Ctrl+C if the runtime remains active;
+  after leaving the directory, delete `echo-service/` if it was only a disposable
+  exercise.
+
 ## Next Steps
 
-- [Process Management](lua/core/process.md)
-- [Channels](lua/core/channel.md)
-- [Time and Duration](lua/core/time.md)
+- [Process Management](lua/core/process.md) — Process API reference
+- [Channels](lua/core/channel.md) — Channel API reference
+- [Time and Duration](lua/core/time.md) — Time API reference

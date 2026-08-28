@@ -1,22 +1,20 @@
 ---
 title: "Architecture"
-description: "<note This page is a work in progress. Content may be incomplete or change. </note"
+description: "How Wippy boots infrastructure, loads components and entries, schedules work, routes messages, and shuts down."
 ---
 
 # Architecture
 
-<note>
-This page is a work in progress. Content may be incomplete or change.
-</note>
-
 Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a work-stealing scheduler.
+
+This is an implementation reference. The diagrams and Go types describe runtime internals rather than application registry entries or extension APIs.
 
 ## Layers
 
 | Layer | Components |
 |-------|------------|
 | Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (wippyai/go-lua), 50+ modules |
+| Runtime | Lua engine (wippyai/go-lua) and runtime modules |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,9 +40,13 @@ Creates core infrastructure before any components load:
 
 ### Phase 2: Component Loading
 
-The Loader resolves dependencies via topological sort and loads components level by level. Components at the same level load in parallel.
+The Loader resolves dependencies via topological sort and loads components
+sequentially, level by level. Components within a level are also loaded one at
+a time.
 
-Core components (PIDGen, Dispatcher, Registry, Finder, Supervisor) initialize first, followed by system components (Topology, Lifecycle, Factory, Functions, Contracts). Concrete levels are computed at runtime from the dependency graph, so the ordering adapts as components are added or removed.
+Dependency edges determine the levels; package groups such as Core and System
+do not impose a separate global order. Components with no dependency edge may
+therefore load in the same level regardless of package group.
 
 Each component attaches itself to context during Load, making services available to dependent components.
 
@@ -52,13 +54,15 @@ Each component attaches itself to context during Load, making services available
 
 After all components load:
 
-1. **Freeze Dispatcher** - Locks command handler registry for lock-free lookups
-2. **Seal AppContext** - No more writes allowed, enables lock-free reads
-3. **Start Components** - Calls `Start()` on each component with `Starter` interface
+1. **Start runtime services** - Calls `StartRuntimeServices(ctx)`
+2. **Freeze Dispatcher** - Locks command handler registry for lock-free lookups
+3. **Seal AppContext** - No more writes allowed, enables lock-free reads
+4. **Start Components** - Calls `Start()` on each component with `Starter` interface
 
 ### Phase 4: Entry Loading
 
-Registry entries (from YAML files) are loaded and validated:
+Registry entries from `_index.json`, `_index.yaml`, and `_index.yml` project
+manifests are loaded and validated:
 
 1. Entries parsed from project files
 2. Pipeline stages transform entries (override, link, bytecode)
@@ -85,13 +89,13 @@ Components declare dependencies. The loader builds a directed acyclic graph and 
 |-----------|--------------|---------|
 | PIDGen | none | Process ID generation |
 | Dispatcher | none | Command handler dispatch |
-| Registry | none | Entry storage and versioning |
+| Registry | Artifact | Entry storage and versioning |
 | Finder | Registry | Entry lookup and search |
 | Supervisor | Registry | Service restart policies |
 | Topology | none | Process parent/child tree |
 | Lifecycle | Topology | Service lifecycle management |
 | Factory | none | Process spawning |
-| Functions | Registry | Stateless function calls |
+| Functions | Registry | Pooled function execution |
 
 ## Event Bus
 
@@ -100,8 +104,8 @@ Asynchronous pub/sub for inter-component communication.
 ### Design
 
 - Single dispatcher goroutine processes all events
-- Queue-based action delivery prevents blocking publishers
-- Pattern matching supports exact topics and wildcards (`*`)
+- Publishers enqueue actions without waiting for subscriber delivery
+- Pattern matching supports exact values, `*`, `**`, and segment alternation
 - Context-based lifecycle ties subscriptions to cancellation
 
 ### Event Flow
@@ -112,15 +116,15 @@ sequenceDiagram
     participant B as EventBus
     participant S as Subscribers
 
-    P->>B: Publish(topic, data)
+    P->>B: Send(ctx, Event)
     B->>B: Match patterns
-    B->>S: Queue action
+    B->>S: Deliver on subscriber channel
     S->>S: Execute callback
 ```
 
 ### Common Topics
 
-Topics are `<system>:<kind>`. The built-in systems publish:
+Events carry separate `System` and `Kind` fields. Built-in systems publish:
 
 | System | Kind | Purpose |
 |--------|------|---------|
@@ -170,18 +174,18 @@ Message routing between processes across nodes.
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[Local Node] --> Peer[Peer Nodes]
+        Local[Local Node] --> Peer[Registered Peers]
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same process]
-    Peer -.- P[Same cluster]
-    Inter -.- I[Remote]
+    Local -.- L[Same-node hosts and processes]
+    Peer -.- P[External receivers, such as Temporal]
+    Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - Direct delivery within same node
-2. **Peer** - Forward to peer nodes in cluster
-3. **Internode** - Route to remote nodes via network
+1. **Local** - Deliver directly between hosts and processes on the same node
+2. **Peer** - Forward to a registered external receiver, such as Temporal
+3. **Internode** - Fall back to network routing for another cluster node
 
 ### Mailbox
 
@@ -203,7 +207,7 @@ Sealed dictionary for component references.
 | Duplicate keys | Panic |
 | Type safety | Typed getter functions |
 
-Components attach services during Load phase. After boot completes, AppContext is sealed for optimal read performance.
+Components attach services during the Load phase. After boot completes, AppContext is sealed, allowing lock-free reads and preventing further writes.
 
 ## Shutdown
 

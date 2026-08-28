@@ -1,11 +1,13 @@
 ---
 title: "Ejecutor"
-description: "Los ejecutores de comandos ejecutan procesos externos con entornos controlados. Dos tipos de ejecutores están disponibles: procesos nativos del SO y…"
+description: "Configura ejecutores de comandos nativos o Docker, directorios de trabajo, entornos, listas de permitidos y controles de recursos."
 ---
 
 # Ejecutor
 
-Los ejecutores de comandos ejecutan procesos externos con entornos controlados. Dos tipos de ejecutores están disponibles: procesos nativos del SO y contenedores Docker.
+Las entradas de ejecutor ejecutan comandos externos como procesos nativos del sistema operativo o dentro de contenedores Docker.
+
+Esta página es una referencia de configuración y API. Los bloques de entrada son fragmentos para una lista de entradas existente; el ejemplo de Lua presupone un ejecutor llamado `app:shell` y que el comando `git status` está permitido.
 
 ## Tipos de Entrada
 
@@ -41,9 +43,13 @@ Ejecuta comandos directamente en el sistema operativo host.
 Los ejecutores nativos usan un entorno limpio por defecto. Solo las variables de entorno configuradas explícitamente se pasan a los procesos hijos.
 </note>
 
+Los comandos se analizan como un ejecutable y una lista de argumentos; no se ejecutan mediante un shell. Las tuberías, redirecciones, expansiones de variables y demás sintaxis de shell no tienen un significado especial. Para ejecutar una expresión de shell, permite e invoca el shell de forma explícita, incluidos su indicador de comando y la expresión como argumentos.
+
 ## Ejecutor Docker
 
-Ejecuta comandos dentro de contenedores Docker aislados.
+El ejecutor Docker ejecuta comandos dentro de contenedores Docker.
+
+Los comandos Docker también se analizan directamente como un ejecutable y sus argumentos, y se asignan como comando del contenedor. No reciben expansión de shell salvo que el comando invoque uno de forma explícita.
 
 ```yaml
 - name: sandbox
@@ -67,12 +73,12 @@ Ejecuta comandos dentro de contenedores Docker aislados.
 | Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
 | `image` | string | **requerido** | Imagen Docker a usar |
-| `host` | string | socket unix | URL del demonio Docker |
+| `host` | string | Predeterminado del cliente Docker | URL del demonio Docker; si se omite, el cliente usa su entorno y el valor predeterminado de la plataforma |
 | `default_work_dir` | string | - | Directorio de trabajo dentro del contenedor |
 | `default_env` | map | - | Variables de entorno |
 | `command_whitelist` | string[] | - | Comandos permitidos (coincidencia exacta) |
-| `network_mode` | string | bridge | Modo de red: `host`, `bridge`, `none` |
-| `volumes` | string[] | - | Montajes de volumen: `host:contenedor[:ro]` |
+| `network_mode` | string | Predeterminado de Docker | Modo de red de Docker, como `host`, `bridge` o `none` |
+| `volumes` | string[] | - | Montajes de volumen: `host:container[:ro]` |
 | `user` | string | - | Usuario para ejecutar dentro del contenedor |
 | `memory_limit` | int | 0 | Límite de memoria en bytes (0 = ilimitado) |
 | `cpu_quota` | int | 0 | Cuota de CPU (100000 = 1 CPU, 0 = ilimitado) |
@@ -86,7 +92,7 @@ Ejecuta comandos dentro de contenedores Docker aislados.
 
 ## Lista Blanca de Comandos
 
-Ambos tipos de ejecutores soportan lista blanca de comandos. Cuando se configura, solo coincidencias exactas de comando están permitidas:
+Ambos tipos de ejecutor admiten listas de comandos permitidos. Cuando la lista no está vacía, solo se permiten coincidencias exactas con la cadena de comando original:
 
 ```yaml
 command_whitelist:
@@ -96,9 +102,11 @@ command_whitelist:
 
 Los comandos que no están en la lista blanca se rechazan con un error.
 
+Si la lista se omite o está vacía, se permite cualquier comando que supere la política de seguridad. La API Lua comprueba por separado `exec.get` para el ID del ejecutor y `exec.run` para la cadena de comando exacta.
+
 ## API Lua
 
-El [Módulo Exec](lua/dynamic/exec.md) proporciona ejecución de comandos:
+El [módulo Exec](lua/dynamic/exec.md) permite ejecutar comandos:
 
 ```lua
 local exec = require("exec")
@@ -106,21 +114,54 @@ local exec = require("exec")
 local executor, err = exec.get("app:shell")
 if err then return nil, err end
 
-local proc = executor:exec("git status", {
+local proc, proc_err = executor:exec("git status", {
     work_dir = "/app/repo"
 })
+if proc_err then
+    executor:release()
+    return nil, proc_err
+end
 
-local stdout = proc:stdout_stream()
-proc:start()
-local output = stdout:read()
-proc:wait()
+local stdout, stream_err = proc:stdout_stream()
+if stream_err then
+    proc:close()
+    executor:release()
+    return nil, stream_err
+end
 
-stdout:close()
-executor:release()
+local ok, start_err = proc:start()
+if start_err then
+    stdout:close()
+    proc:close()
+    executor:release()
+    return nil, start_err
+end
+
+local chunks = {}
+while true do
+    local chunk, read_err = stdout:read(4096)
+    if read_err then
+        stdout:close()
+        proc:close(true)
+        executor:release()
+        return nil, read_err
+    end
+    if chunk == nil then break end
+    chunks[#chunks + 1] = chunk
+end
+
+local exit_code, wait_err = proc:wait()
+local _, stream_close_err = stdout:close()
+local _, release_err = executor:release()
+
+if wait_err then return nil, wait_err end
+if stream_close_err then return nil, stream_close_err end
+if release_err then return nil, release_err end
+return table.concat(chunks), exit_code
 ```
 
 ## Ver También
 
 - [Módulo Exec](lua/dynamic/exec.md) - Referencia de la API Lua
-- [Process Host](system/process-host.md) - Host que ejecuta procesos Wippy
-- [Filesystem](system/filesystem.md) - Entradas de filesystem usadas como directorios de trabajo
+- [Host de procesos](system/process-host.md) - Host que ejecuta procesos Wippy
+- [Sistema de archivos](system/filesystem.md) - Entradas de sistema de archivos utilizadas como directorios de trabajo

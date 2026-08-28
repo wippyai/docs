@@ -1,11 +1,14 @@
 ---
 title: "Micro Frontend Apps (view.page)"
-description: "A view.page entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host…"
+description: "Reference for declaring, routing, serving, and configuring a view.page micro frontend application."
 ---
 
 # Micro Frontend Apps (view.page)
 
-A `view.page` entry describes a full single-page application that the Web Host loads inside an iframe. Each page entry claims a URL path in the host router, gets its own isolated browsing context, and receives injected CSS and configuration from the host through the proxy layer.
+A `view.page` entry describes a full single-page application that the Web Host
+loads through the selected iframe or Web Fragment engine. Each entry can claim
+a path in the host router and receives CSS, configuration, and host APIs through
+the engine's proxy adapter.
 
 ## Frontend Fields (package.json wippy block)
 
@@ -24,7 +27,7 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 
 ### Render engine
 
-`renderEngine` selects the [page render engine](../web-host/render-engines.md) for this page (`view.page` only). The engine is transparent to app code — the same page renders identically either way — so set it only to opt a page out of, or into, the fragment engine.
+`renderEngine` selects the [page render engine](../web-host/render-engines.md) for this page (`view.page` only). The proxy API is portable across engines, but browser layout and DOM behavior can differ; review the fragment limitations before opting a page into that engine.
 
 | Value | Effect |
 |-------|--------|
@@ -80,13 +83,27 @@ frontend defaults without converting keys.
 }
 ```
 
-`proxy.enabled: true` means the Web Host wraps the page in its proxy iframe harness, which writes `window.__WIPPY_APP_CONFIG__` and related globals before the page bundle evaluates.
+In the iframe engine, `proxy.injections` configures the assets added by the
+srcdoc proxy. If it is omitted, that adapter uses permissive defaults and
+enables most injections. Web Host 1.0.56 carries `proxy.enabled` as metadata but
+does not use it as a runtime toggle.
 
-If `proxy.injections` is omitted, the iframe proxy uses permissive runtime defaults and enables most injections. The list below shows the **recommended explicit values for a typical Vite micro frontend app** — not the runtime defaults — so package reviewers can see the page's intent.
+Web Host 1.0.56 does not translate these flags to the Fragment engine. The
+Fragment gateway always supplies `loading.js`, `proxy-fragment.js`, and the four
+Host stylesheets (theme config, iframe scrollbar styles, PrimeVue/Tailwind, and
+Markdown); its proxy also installs error capture unconditionally. A page that
+can fall back to iframe should still declare its iframe injection intent
+explicitly.
+
+The list below shows the **recommended explicit iframe values for a typical
+Vite micro frontend app** — not the runtime defaults — so package reviewers can
+see the page's fallback behavior.
 
 #### Recommended explicit injection values
 
-These are the flags a micro frontend app typically declares and the value to set for a typical Vite SPA. They are not the runtime defaults.
+These are the flags a micro frontend app typically declares for its iframe
+delivery path. They are not the runtime defaults, and Web Host 1.0.56's Fragment
+gateway does not use them.
 
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme
 - `css.iframe` (`true`) — required default themed scrollbar styling; `iframe` is a historical name and the current sheet does not provide layout resets
@@ -96,9 +113,9 @@ These are the flags a micro frontend app typically declares and the value to set
 - `css.customVariables` (`true`) — child-projected CSS variable overrides
 - `tailwindConfig` (`false`) — host Tailwind config object (CDN Tailwind only)
 - `resizeObserver` (`false` for full SPAs) — child body-size updates to the host
-- `preventLinkClicks` (`false` for pages) — route `<a>` clicks through `classifyLink`
+- `preventLinkClicks` (`false` for pages) — install the iframe engine's raw-`<a>` classifier hook; use `@wippy-fe/router` for portable link classification across engines
 - `iconifyIcons` (`false`) — pre-load host Iconify collections
-- `errorCapture` (`true`) — forward uncaught iframe errors to the host
+- `errorCapture` (`true`) — forward uncaught page errors to the host
 
 Most full SPA pages set `resizeObserver: false` and `preventLinkClicks: false` because they manage their own layout and routing. The `main` app in the template sets `errorCapture: true` to surface uncaught errors during development.
 
@@ -120,8 +137,6 @@ These fields are set by the operator in the `meta` block of the `_index.yaml` re
     name: main
 ```
 
-> **The deployment-policy fields (`announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline`) cannot be set in `package.json` — they are set by the operator for each environment. `entry_point` is different: it is authored as `wippy.path` in `package.json` and the YAML value only overrides that default.**
-
 ### URL and File Serving
 
 | Field | Type | Default | Description |
@@ -142,7 +157,7 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 | `secure` | boolean | `false` | `true` → requires authentication; unauthenticated requests get a 401 |
 | `inline` | boolean | `false` | `true` → page is hidden from all listings (sidebar, API); use for embedded artifact viewers or auxiliary routes |
 
-`announced: false` hides the page from navigation but does not prevent loading. An iframe or a direct URL still works. `inline: true` is stricter — it suppresses the page from all public-facing listings.
+`announced: false` hides the page from navigation but does not prevent loading. The page can still be embedded or reached through its route. `inline: true` is stricter — it suppresses the page from all public-facing listings.
 
 ### Mount Route
 
@@ -150,12 +165,11 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 |---|---|---|---|
 | `mountRoute` | string | — | Claims a URL path in the host router; the host renders this page when the browser navigates to a matching path |
 
-> **Temporary compatibility spelling:** `meta.mountRoute` is a current backend
-> casing bug. The intended backend field is `meta.mount_route`, and a future
-> backend release is expected to change it. Use `meta.mountRoute` until that
-> backend change ships; recheck the target Wippy version when upgrading.
+> **Casing exception:** the current registry schema reads `meta.mountRoute` and
+> stores it in the registry's internal `mount_route` field; API output uses
+> `mountRoute` again. Use the authored lower-camel-case spelling shown here.
 
-`mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the host raises a `syntax` mount-route conflict and `GET /api/public/pages/routes` returns HTTP 500, rendered as a fatal fullscreen error. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
+`mountRoute` accepts only the v1 catch-all form — `/:part(.*)*` (root) or `/<literal-prefix>/:part(.*)*`, where the prefix is one or more lowercase-alphanumeric-plus-hyphen segments ending in the required `:part(.*)*` wildcard. Arbitrary Vue Router patterns — named params, custom regex, or a different param name (e.g. `/home/:id`, `/users/:userId(\d+)`) — are rejected: the backend records a `syntax` mount-route conflict, `GET /api/public/pages/routes` returns HTTP 500, and Host startup stops with the error relayed through the Host error handler. The `:part(.*)*` wildcard lets the child application manage its own sub-routes while the host keeps ownership of the top-level path.
 
 ```yaml
 mountRoute: /home/:part(.*)*
@@ -167,7 +181,7 @@ When the Web Host starts, it fetches `GET /api/public/pages/routes` and calls `r
 
 | Field | Type | Description |
 |---|---|---|
-| `config_overrides` | object | Deep-merged over the AppConfig values the Web Host injects into the iframe |
+| `config_overrides` | object | Deep-merged over the AppConfig values the Web Host injects into the page context |
 
 `config_overrides` is the registry wrapper name. Its nested object already uses
 the frontend schema's lower-camel-case keys, such as
@@ -212,14 +226,14 @@ Note that `announced: false` is valid for `view.page` entries — the page is re
 The proxy injection defaults baked into `wippy-meta.json` (from the
 `package.json` `wippy` block) can be overridden per deployment with a `proxy:`
 block placed **under `meta:`** in the registry entry. Facade requirement names
-use their documented snake_case names. Registry fields currently include one
-temporary backend casing bug: the wrapper is `config_overrides`, while the route
-field is still read as `mountRoute` until it is corrected to `mount_route`.
+use their documented snake_case names. The wrapper is `config_overrides`, while
+the registry schema defines the route field as `mountRoute`, stores it in the
+registry's internal `mount_route` field, and emits `mountRoute` in API output.
 Nested proxy/config objects are passed through and retain their defined
 lower-camel-case keys. The host deep-merges `meta.proxy` over bundled
 `wippy.proxy`.
 
-Short answer: use `meta.proxy`, not `data.proxy`; keep top-level backend fields
+Use `meta.proxy`, not `data.proxy`. Keep top-level backend fields
 such as `config_overrides` in snake_case, but preserve nested proxy/config keys
 such as `themeConfig` and `customCss`; keep the `injections` wrapper.
 Do not invent `meta.config` or `meta.configOverrides`; the exact per-page

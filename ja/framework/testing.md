@@ -1,11 +1,13 @@
 ---
 title: "テストフレームワーク"
-description: "wippy/testモジュールはアサーション、ライフサイクルフック、モッキングを備えたBDDスタイルのテストフレームワークを提供します。"
+description: "BDD suite、assertion、lifecycle hook、mock、simple test function を使用して Wippy test を定義し、実行します。"
 ---
 
 # テストフレームワーク
 
-`wippy/test`モジュールはアサーション、ライフサイクルフック、モッキングを備えたBDDスタイルのテストフレームワークを提供します。
+`wippy/test` モジュールは BDD suite、assertion、lifecycle hook、mock、test entry 用 runner を提供します。
+
+このページは API 入門です。Lua、YAML、output、project layout の block は既存の Wippy プロジェクトで組み合わせて使用するリファレンススニペットであり、まとめてコピーして実行できる 1 つのプロジェクトではありません。`validate`、`format_name`、`db`、`connect`、`notify_user` などの名前は、テスト対象が提供するアプリケーション関数またはモジュールを表します。実行可能な完全な例については、[Wippy アプリケーションのテスト](../tutorials/testing.md)に従ってください。
 
 ## セットアップ
 
@@ -32,9 +34,9 @@ entries:
     meta:
       type: test
       suite: math
-      name: 算術演算
+      name: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -43,10 +45,10 @@ entries:
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `type` | Yes | ランナーが検出するために`"test"`である必要がある |
-| `suite` | No | ランナー出力でテストをグループ化する |
-| `name` | No | ランナー出力に表示される表示名 |
-| `order` | No | スイート内のソート順（小さい値が先に実行される） |
+| `type` | はい | ランナーが検出するために`"test"`である必要がある |
+| `suite` | いいえ | ランナー出力でテストをグループ化する |
+| `name` | いいえ | ランナー出力に表示される表示名 |
+| `order` | いいえ | スイート内のソート順（小さい値が先に実行される） |
 
 ## テストの記述
 
@@ -84,7 +86,7 @@ return { run = run }
 
 ### ネストされたスイート
 
-スイートは整理のためにネストできます:
+関連する動作を group 化するため、suite を nest できます。
 
 ```lua
 test.describe("user", function()
@@ -114,7 +116,7 @@ test.it_skip("not implemented yet", function()
 end)
 ```
 
-スキップされたテストは出力に表示されますが、失敗としてカウントされません。
+skip された test は output に表示されますが、failure には数えられません。
 
 ### スイートエイリアス
 
@@ -229,7 +231,7 @@ end)
 
 ## モッキング
 
-モックシステムはグローバルオブジェクトのフィールドを置き換え、各テスト後に自動的に復元します。
+mock system は global object field を置き換え、各 test の後に復元します。
 
 ### 基本的なモッキング
 
@@ -278,7 +280,7 @@ wippy test math
 wippy test user validation
 ```
 
-フィルタはエントリIDに対してマッチします。複数のパターンは組み合わされます。
+filter は entry ID の literal substring に一致します。複数の pattern を指定した場合、ID がそのいずれかに一致する entry が実行されます。
 
 ### 出力例
 
@@ -296,7 +298,7 @@ wippy test user validation
 
 ## シンプルテスト
 
-BDDフレームワークを必要としないテストの場合、`true`を返すかエラーを発生させるシンプルな関数を定義します:
+BDD suite を必要としない test には、`true` を返すかエラーを発生させる関数を定義します。
 
 ```lua
 local funcs = require("funcs")
@@ -357,7 +359,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,30 +369,17 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
-## インフラストラクチャ要件
+## ターミナルホスト :id=terminal-host
 
-テストランナーはアプリケーションに`process.host`と`terminal.host`が必要です。これらは通常既に存在しています。存在しない場合は追加してください:
-
-```yaml
-entries:
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
-    lifecycle:
-      auto_start: true
-```
+`wippy/test` は `wippy/terminal` に依存し、CLI runner が使用する auto-start の `wippy.terminal:host` はこのモジュールから提供されます。`wippy test` の実行だけを目的に、アプリケーションで別の process host や terminal host を宣言する必要はありません。
 
 ## 関連項目
 
-- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの使い方
-- [CLIリファレンス](guides/cli.md) - CLIコマンド
-- [関数](concepts/functions.md) - 関数レジストリ
+- [Framework 概要](framework/overview.md) — Framework モジュールのインストールと import
+- [CLI リファレンス](guides/cli.md) — test command と flag
+- [関数](concepts/functions.md) — function entry と呼び出し

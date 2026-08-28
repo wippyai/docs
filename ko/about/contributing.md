@@ -1,36 +1,26 @@
 ---
 title: "기여하기"
-description: "Wippy는 Spiral Scout에서 개발되었습니다. 내부 시스템과 클라이언트 프로젝트에서 프로덕션으로 사용하고 있습니다. 공개 릴리스는 알파 단계입니다."
+description: "기여 범위, 안정성 기대치, 보안 보고 및 지원 연락처입니다."
 ---
 
 # 기여하기
 
-Wippy는 [Spiral Scout](https://spiralscout.com)에서 개발되었습니다. 내부 시스템과 클라이언트 프로젝트에서 프로덕션으로 사용하고 있습니다. 공개 릴리스는 알파 단계입니다.
+Wippy는 공개 [wippyai GitHub 조직](https://github.com/wippyai)에서 개발됩니다. 현재 런타임 릴리스 계열은 알파 단계입니다.
 
 ## 안정성
 
-- **Lua API**: 안정적
-- **외부 동작**: 안정적
-- **레지스트리 엔트리 정의**: 안정적, 일부 예외 있음. 변경이 필요한 경우 마이그레이션 경로 제공.
-- **내부 런타임 API**: 변경될 수 있음
-- **하위 수준 메커니즘**: 변경될 수 있음
+런타임 릴리스 계열은 알파 단계이며, 공개 저장소는 별도의 호환성 또는 마이그레이션 정책을 게시하지 않습니다. 애플리케이션에서 사용하는 런타임과 모듈 버전을 고정하고, 업그레이드하기 전에 릴리스 노트와 문서를 검토하십시오.
 
-## 풀 리퀘스트
+## 이슈와 풀 리퀘스트
 
-Lua 모듈 개선, API 안정화, 문서화에 대한 풀 리퀘스트를 수락합니다.
+문서 이슈와 풀 리퀘스트는 [문서 저장소](https://github.com/wippyai/docs)에 제출하십시오. 공개 런타임 저장소는 현재 [풀 리퀘스트](https://github.com/wippyai/runtime/pulls)는 받지만 이슈는 받지 않습니다. 패치가 없는 런타임 결함 보고나 제안은 공개된 조직 연락처인 [support@wippy.ai](mailto:support@wippy.ai)를 이용하십시오.
 
-고수준 아키텍처 변경이나 핵심 설계 결정에 대한 풀 리퀘스트는 받지 않습니다. 이 단계에서는 주요 방향에 대한 제어를 유지해야 합니다.
-
-이슈와 피드백은 언제나 환영합니다.
-
-## 기타 프로젝트
-
-Spiral Scout는 [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework), [Cycle ORM](https://github.com/cycle/orm) 등 여러 오픈소스 프로젝트를 관리합니다.
+기여는 조직의 [행동 강령](https://github.com/wippyai/.github/blob/main/.github/CODE_OF_CONDUCT.md)을 따라야 합니다.
 
 ## 보안
 
-보안 취약점은 security@wippy.dev로 직접 이메일을 보내주세요.
+문서 및 런타임 저장소는 현재 별도의 보안 정책을 게시하지 않습니다. 보안에 민감한 문제는 공개 이슈를 열지 말고 [support@wippy.ai](mailto:support@wippy.ai)로 비공개 보고하십시오.
 
-## 상용 지원
+## 지원
 
-상용 지원이나 얼리 액세스는 wippy@spiralscout.com으로 연락해 주세요.
+[support@wippy.ai](mailto:support@wippy.ai)로 문의하십시오.

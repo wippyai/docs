@@ -1,6 +1,6 @@
 ---
 title: "Tiempo de OS"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Lee el tiempo del entorno de ejecución, formatea fechas y calcula diferencias temporales con la tabla global os de Lua."
 ---
 
 # Tiempo de OS
@@ -8,11 +8,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Funciones de tiempo `os` estandar de Lua. Proporciona tiempo de reloj de pared real para marcas de tiempo, formato de fechas y calculos de tiempo.
+La tabla global `os` proporciona timestamps, formato de fechas, medición del tiempo transcurrido y cálculo de diferencias temporales. En un workflow, las lecturas del tiempo actual usan la referencia temporal del workflow; fuera de él usan el reloj del sistema.
+
+Esta es una referencia de API. Los timestamps literales y las salidas formateadas son ilustrativos; los valores actuales dependen del reloj y la zona horaria del entorno de ejecución o del workflow.
 
 ## Carga
 
-Tabla global `os`. No se necesita require.
+La tabla `os` es global y no necesita cargarse con `require`.
 
 ```lua
 os.time()
@@ -23,13 +25,13 @@ os.difftime()
 
 ## Obtener Marcas de Tiempo
 
-Obtener marca de tiempo Unix (segundos desde 1 de Enero, 1970 UTC):
+Lee un timestamp Unix en segundos desde el 1 de enero de 1970 UTC:
 
 ```lua
--- Marca de tiempo actual
+-- Current timestamp
 local now = os.time()  -- 1718462445
 
--- Fecha/hora especifica
+-- Specific date/time
 local t = os.time({
     year = 2024,
     month = 12,
@@ -53,37 +55,37 @@ local t = os.time({
 | `min` | number | 0 | Minuto 0-59 |
 | `sec` | number | 0 | Segundo 0-59 |
 
-Cuando se llama sin argumentos, devuelve la marca de tiempo Unix actual.
+Sin argumentos, `os.time()` devuelve el timestamp Unix actual.
 
 Cuando se llama con una tabla, cualquier campo faltante usa los valores predeterminados mostrados arriba. Los campos `year`, `month` y `day` usan la fecha actual si no se especifican.
 
 ```lua
--- Solo fecha (hora predeterminada a medianoche)
+-- Just date (time defaults to midnight)
 os.time({year = 2024, month = 6, day = 15})
 
--- Parcial (rellena ano/mes actual)
-os.time({day = 1})  -- primero del mes actual
+-- Partial (fills in current year/month)
+os.time({day = 1})  -- first of current month
 ```
 
 ## Formatear Fechas
 
-Formatear una marca de tiempo como string o devolver una tabla de fecha:
+Formatea un timestamp como string o devuelve sus campos de fecha en una tabla:
 
 <code-block lang="lua">
 local now = os.time()
 
--- Formato predeterminado
+-- Default format
 os.date()  -- "Sat Jun 15 14:30:45 2024"
 
--- Formato personalizado
+-- Custom format
 os.date("%Y-%m-%d", now)           -- "2024-06-15"
 os.date("%H:%M:%S", now)           -- "14:30:45"
 os.date("%Y-%m-%dT%H:%M:%S", now)  -- "2024-06-15T14:30:45"
 
--- Hora UTC (prefijo de formato con !)
-os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC en lugar de local
+-- UTC time (prefix format with !)
+os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC instead of local
 
--- Tabla de fecha
+-- Date table
 local t = os.date("*t", now)
 </code-block>
 
@@ -114,6 +116,7 @@ local t = os.date("*t", now)
 | `%w` | Dia de semana (0-6, Domingo=0) | 6 |
 | `%j` | Dia del ano (001-366) | 167 |
 | `%U` | Número de semana (00-53) | 24 |
+| `%W` | Número de semana ISO 8601 (01-53, la semana empieza el lunes) | 24 |
 | `%z` | Offset de zona horaria | -0700 |
 | `%Z` | Nombre de zona horaria | PDT |
 | `%c` | Fecha/hora completa | Sat Jun 15 14:30:45 2024 |
@@ -123,7 +126,7 @@ local t = os.date("*t", now)
 
 ### Tabla de Fecha
 
-Cuando el formato es `"*t"`, devuelve una tabla:
+Cuando el formato es `"*t"`, `os.date()` devuelve una tabla:
 
 ```lua
 local t = os.date("*t")
@@ -139,29 +142,31 @@ local t = os.date("*t")
 | `sec` | number | Segundo (0-59) | 45 |
 | `wday` | number | Dia de semana (1-7, Domingo=1) | 7 |
 | `yday` | number | Dia del ano (1-366) | 167 |
-| `isdst` | boolean | Horario de verano | false |
+| `isdst` | boolean | `true` cuando el offset UTC de la zona no es cero en esta versión; no es un indicador fiable de DST | false |
 
 Use `"!*t"` para tabla de fecha UTC.
 
 ## Medir Tiempo Transcurrido
 
-Obtener segundos transcurridos desde que inicio el runtime de Lua:
+Lee los segundos entre la referencia temporal actual del entorno de ejecución y el momento en que se inicializó el módulo de tiempo del sistema operativo:
 
 ```lua
 local start = os.clock()
 
--- hacer trabajo
+-- do work
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
-print(string.format("Tomo %.3f segundos", elapsed))
+print(string.format("Took %.3f seconds", elapsed))
 ```
 
 **Firma:** `os.clock() -> number`
 
+A diferencia de la definición de tiempo de CPU del Lua estándar, esta implementación se basa en tiempo transcurrido. En workflows usa la referencia temporal del workflow.
+
 ## Diferencia de Tiempo
 
-Obtener diferencia entre dos marcas de tiempo en segundos:
+Calcula la diferencia entre dos timestamps en segundos:
 
 ```lua
 local t1 = os.time({year = 2024, month = 1, day = 1})
@@ -179,11 +184,11 @@ print(days)  -- 365
 | `t2` | number | Marca de tiempo posterior |
 | `t1` | number | Marca de tiempo anterior |
 
-Devuelve `t2 - t1` en segundos. Puede ser negativo si `t1 > t2`.
+El resultado es `t2 - t1` en segundos y es negativo cuando `t1 > t2`.
 
 ## Constante de Plataforma
 
-Constante que identifica el runtime:
+La constante `os.platform` identifica el entorno de ejecución:
 
 ```lua
 os.platform  -- "wippy"

@@ -1,6 +1,6 @@
 ---
 title: "Entry Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Read registry entries and metadata, inspect versions and snapshots, and apply changesets."
 ---
 
 # Entry Registry
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Query and modify registered entries. Access metadata, snapshots, and version history.
+The `registry` module reads and modifies entries and provides access to snapshots and version history. This page is an API reference; mutation examples use illustrative IDs and require policies that authorize those exact resources and entry kinds.
 
 ## Loading
 
@@ -27,7 +27,7 @@ local registry = require("registry")
 }
 ```
 
-## Get Entry
+## Get an Entry
 
 ```lua
 local entry, err = registry.get("app.lib:assert")
@@ -42,7 +42,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Filter fields match against entry metadata.
+The root selectors are `.kind`, `.name`, `.ns`, and `.id`; their values support glob matching. Metadata filters use a `meta.` prefix, for example `{["meta.type"] = "test"}`.
 
 ## Parse ID
 
@@ -53,7 +53,7 @@ local id = registry.parse_id("app.lib:assert")
 
 ## Snapshots
 
-Point-in-time view of the registry:
+A snapshot is a point-in-time view of the registry:
 
 ```lua
 local snap, err = registry.snapshot()           -- current state
@@ -70,6 +70,32 @@ local snap, err = registry.snapshot_at(5)       -- at version 5
 | `snap:namespace(ns)` | `Entry[]` | Entries in namespace |
 | `snap:version()` | `Version` | Snapshot version |
 | `snap:changes()` | `Changes` | Create changeset |
+
+## Process-Local Overlays
+
+`registry.overlay(owner_id)` opens a process-local overlay for a logical owner. It returns a normal snapshot of the effective registry; create a changeset from that snapshot and apply it in the same way as a durable change:
+
+```lua
+local snap, err = registry.overlay("controllers:customer-db")
+if err then
+    return nil, err
+end
+
+local changes = snap:changes()
+changes:create({
+    id = "runtime.data_sources:customer-db",
+    kind = "db.sql.postgres",
+    data = {host = "db.example.com", database = "customer"}
+})
+
+local current_version, err = changes:apply()
+```
+
+Overlay changes affect the registry topology and resources in this process but do not create durable history versions. `changes:apply()` therefore returns the unchanged current durable version. An overlay survives normal history commits and version selection; it is cleared by a cold boot or explicit registry state load and then reconciled by its owner.
+
+Overlay snapshots use generation-based optimistic concurrency. Applying changes from a stale snapshot fails atomically with retryable `errors.CONFLICT`; reopen the overlay and rebuild the changeset. A changeset can contain at most one operation for each entry ID. Owner IDs are trimmed to their canonical identity. The owner is registry state rather than entry metadata, and expansion-directive-owned entry kinds cannot be changed through an overlay.
+
+Regular `registry.get`, `find`, and `snapshot` calls see the composed effective registry and continue to require `registry.get` for each entry; the owner-level overlay permission does not replace read authorization.
 
 ## Versions
 
@@ -94,7 +120,7 @@ local snap, err = hist:snapshot_at(version)
 
 ## Changesets
 
-Build and apply modifications:
+Build a changeset from create, update, and delete operations, then apply it:
 
 ```lua
 local snap, err = registry.snapshot()
@@ -133,7 +159,7 @@ local new_version, err = changes:apply()
 
 ## Apply Version
 
-Roll back or forward to a specific version:
+Apply a specific version to move the registry backward or forward:
 
 ```lua
 local prev = current_version:previous()
@@ -144,7 +170,7 @@ local ok, err = registry.apply_version(prev)
 
 ## Build Delta
 
-Compute operations to transition between states:
+Compute the operations required to transition between two entry sets:
 
 ```lua
 local from = {{id = "test:a", kind = "test", meta = {}, data = {}}}
@@ -163,6 +189,11 @@ end
 | `registry.get` | entry ID | Read entry (also filters find/entries results) |
 | `registry.apply` | - | Apply changeset |
 | `registry.apply_version` | - | Apply/rollback version |
+| `registry.overlay.get` | owner ID | Open an owner's overlay |
+| `registry.overlay.apply` | owner ID | Apply an overlay changeset |
+| `registry.overlay.create.<kind>` | entry ID | Create an entry of the specified kind in an overlay |
+| `registry.overlay.update.<kind>` | entry ID | Update an entry of the specified kind in an overlay |
+| `registry.overlay.delete.<kind>` | entry ID | Delete an entry of the specified kind from an overlay |
 
 ## Errors
 
@@ -173,6 +204,8 @@ end
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Invalid parameter | `errors.INVALID` |
 | No changes to apply | `errors.INVALID` |
+| Empty overlay owner or directive-owned kind | `errors.INVALID` |
+| Stale overlay snapshot | `errors.CONFLICT` (retryable) |
 | Registry not available | `errors.INTERNAL` |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

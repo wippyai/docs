@@ -5,6 +5,9 @@ description: "Normative rules for PrimeVue, Tailwind, tokens, custom controls, a
 
 # Portable UI Contract
 
+This page is a normative contract reference. Its rule IDs define review and
+acceptance requirements rather than an implementation tutorial.
+
 The following IDs are the canonical owners of their rules.
 
 ## Portability

@@ -1,6 +1,6 @@
 ---
 title: "OS 시간"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Lua global os table로 runtime time을 읽고 date를 format하며 time difference를 계산합니다."
 ---
 
 # OS 시간
@@ -8,11 +8,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-표준 Lua `os` 시간 함수입니다. 타임스탬프, 날짜 포맷팅, 시간 계산을 위한 실제 벽시계 시간을 제공합니다.
+global `os` table은 timestamp, date formatting, elapsed-time measurement, time-difference calculation을 제공합니다. workflow에서 current-time read는 workflow time reference를 사용하고, workflow 밖에서는 system clock을 사용합니다.
+
+이 페이지는 API reference입니다. timestamp literal과 formatted output은 예시이며 current value는 runtime 또는 workflow clock과 timezone에 따라 달라집니다.
 
 ## 로딩
 
-전역 `os` 테이블. require가 필요 없습니다.
+`os` table은 global이며 `require`로 load할 필요가 없습니다.
 
 ```lua
 os.time()
@@ -26,10 +28,10 @@ os.difftime()
 Unix 타임스탬프 (1970년 1월 1일 UTC 이후 초) 가져오기:
 
 ```lua
--- 현재 타임스탬프
+-- Current timestamp
 local now = os.time()  -- 1718462445
 
--- 특정 날짜/시간
+-- Specific date/time
 local t = os.time({
     year = 2024,
     month = 12,
@@ -58,11 +60,11 @@ local t = os.time({
 테이블과 함께 호출하면 누락된 필드는 위에 표시된 기본값을 사용합니다. `year`, `month`, `day` 필드는 지정되지 않으면 현재 날짜가 기본값입니다.
 
 ```lua
--- 날짜만 (시간은 자정이 기본값)
+-- Just date (time defaults to midnight)
 os.time({year = 2024, month = 6, day = 15})
 
--- 부분 지정 (현재 연도/월 사용)
-os.time({day = 1})  -- 현재 월의 1일
+-- Partial (fills in current year/month)
+os.time({day = 1})  -- first of current month
 ```
 
 ## 날짜 포맷팅
@@ -72,18 +74,18 @@ os.time({day = 1})  -- 현재 월의 1일
 <code-block lang="lua">
 local now = os.time()
 
--- 기본 포맷
+-- Default format
 os.date()  -- "Sat Jun 15 14:30:45 2024"
 
--- 커스텀 포맷
+-- Custom format
 os.date("%Y-%m-%d", now)           -- "2024-06-15"
 os.date("%H:%M:%S", now)           -- "14:30:45"
 os.date("%Y-%m-%dT%H:%M:%S", now)  -- "2024-06-15T14:30:45"
 
--- UTC 시간 (포맷 앞에 ! 접두사)
-os.date("!%Y-%m-%d %H:%M:%S", now)  -- 로컬 대신 UTC
+-- UTC time (prefix format with !)
+os.date("!%Y-%m-%d %H:%M:%S", now)  -- UTC instead of local
 
--- 날짜 테이블
+-- Date table
 local t = os.date("*t", now)
 </code-block>
 
@@ -113,7 +115,8 @@ local t = os.date("*t", now)
 | `%b` | 월 약어 | Jun |
 | `%w` | 요일 (0-6, 일요일=0) | 6 |
 | `%j` | 연중 일 (001-366) | 167 |
-| `%U` | 주 번호 (00-53) | 24 |
+| `%U` | ISO 8601 week number (01-53, week starts Monday) | 24 |
+| `%W` | ISO 8601 week number (01-53, week starts Monday) | 24 |
 | `%z` | 시간대 오프셋 | -0700 |
 | `%Z` | 시간대 이름 | PDT |
 | `%c` | 전체 날짜/시간 | Sat Jun 15 14:30:45 2024 |
@@ -139,18 +142,18 @@ local t = os.date("*t")
 | `sec` | number | 초 (0-59) | 45 |
 | `wday` | number | 요일 (1-7, 일요일=1) | 7 |
 | `yday` | number | 연중 일 (1-366) | 167 |
-| `isdst` | boolean | 일광 절약 시간 | false |
+| `isdst` | boolean | 이 release에서는 zone UTC offset이 nonzero이면 `true`. reliable DST indicator가 아님 | false |
 
 UTC 날짜 테이블은 `"!*t"`를 사용하세요.
 
 ## 경과 시간 측정
 
-Lua 런타임 시작 이후 경과된 초를 가져옵니다:
+현재 런타임 시간 기준과 OS-time 모듈 초기화 시간 사이의 초를 읽습니다. `os.time()` 및 `os.date()`와는 다른 기준입니다.
 
 ```lua
 local start = os.clock()
 
--- 작업 수행
+-- do work
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
@@ -158,6 +161,8 @@ print(string.format("Took %.3f seconds", elapsed))
 ```
 
 **시그니처:** `os.clock() -> number`
+
+standard Lua의 CPU-time definition과 달리 이 implementation은 elapsed time 기반입니다. workflow에서는 workflow time reference를 사용합니다.
 
 ## 시간 차이
 
@@ -183,7 +188,7 @@ print(days)  -- 365
 
 ## 플랫폼 상수
 
-런타임을 식별하는 상수:
+`os.platform` 상수는 런타임을 식별합니다:
 
 ```lua
 os.platform  -- "wippy"

@@ -1,11 +1,13 @@
 ---
 title: "Event Bus"
-description: "The event bus is a pub/sub system using a single dispatcher goroutine. Publishers enqueue actions, the dispatcher processes them sequentially, and…"
+description: "Event bus actions, wildcard subscriptions, delivery, Lua process bridging, request-response helpers, and shutdown."
 ---
 
 # Event Bus
 
-The event bus is a pub/sub system using a single dispatcher goroutine. Publishers enqueue actions, the dispatcher processes them sequentially, and subscribers receive matching events on channels.
+The event bus processes queued pub/sub actions on one dispatcher goroutine and delivers matching events to subscriber channels.
+
+The Go snippets are implementation and extension fragments. They assume an existing component context, logger, handlers, and application event types.
 
 ## Event Structure
 
@@ -15,6 +17,7 @@ type Event struct {
     Kind   string  // Event type (e.g., "create", "update", "exit")
     Path   string  // Entity identifier
     Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -73,7 +76,7 @@ Four action types flow through the queue:
 | Send | Delivers event to matching subscribers |
 | Stop | Clears subscribers, drains queue, exits loop |
 
-Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget.
+Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget. The bus accepts at most `DefaultMaxSubscribers` subscriptions (4096 by default); subscriptions beyond the cap fail with `ErrSubscribersCapReached`.
 
 ## Queue Swapping
 
@@ -115,7 +118,7 @@ type sub struct {
 }
 ```
 
-The wildcard package supports three pattern types:
+The wildcard package supports four pattern types:
 
 | Pattern | Matches |
 |---------|---------|
@@ -204,10 +207,13 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 Wraps channel subscription with a callback:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
         // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 
@@ -221,6 +227,9 @@ Manages multiple handlers with centralized lifecycle:
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
@@ -232,10 +241,15 @@ Request-response over pub/sub. It keeps a single subscription per `(system, kind
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-svc.Start(ctx)
+if err := svc.Start(ctx); err != nil {
+    return err
+}
 defer svc.Stop()
 
-waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
+if err != nil {
+    return err
+}
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)

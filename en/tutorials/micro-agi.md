@@ -1,25 +1,31 @@
 ---
 title: "Micro AGI"
-description: "Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them…"
+description: "Study a self-modifying agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session."
 ---
 
 # Micro AGI
 
-Build a self-modifying agent that creates its own tools at runtime — reading docs, writing Lua, registering entries in the registry, and loading them into the active session.
+Study an agent that reads documentation, generates Lua tools, registers them at runtime, and loads them into its active session.
 
-## What We're Building
+**Classification: reference implementation walkthrough.** The snippets explain the
+published `wippy/micro-agi` module but are intentionally not a complete source tree.
+Run the Hub module to exercise the implementation; use the LLM Agent tutorial when
+you need a self-contained build.
+
+## What the Package Demonstrates
 
 A terminal agent that:
-- Answers questions using an LLM with streaming
-- Searches Wippy documentation to learn APIs
-- Inspects the registry to discover existing capabilities
-- Builds new tools on the fly when it lacks a capability
-- Manages its own context window via compression
+
+- Streams answers from an LLM.
+- Searches Wippy documentation for APIs.
+- Inspects the registry for existing capabilities.
+- Creates and loads tools when a capability is missing.
+- Compresses conversation history when it approaches the context limit.
 
 ```mermaid
 flowchart LR
     User -->|prompt| Agent
-    Agent -->|step| LLM[GPT-5.1]
+    Agent -->|step| LLM[Configured model]
     LLM -->|tool_calls| Agent
     Agent -->|funcs.call| Tools
     Tools -->|result| Agent
@@ -51,7 +57,7 @@ sequenceDiagram
     A->>A: execute doc_search
     A->>L: step(conversation + tool result)
     L->>A: tool_call: create_tool(name, source, schema)
-    A->>R: evaluate deny policies + changeset create
+    A->>R: apply namespace denylist + changeset create
     R->>A: ok
     A->>L: step(conversation + tool result)
     L->>A: tool_call: load_tool("app.generated:current_time")
@@ -64,9 +70,16 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-The key insight: tools are registry entries. Creating a tool is just writing a `function.lua` entry with inline Lua source in `data.source`. The agent runtime compiles and loads it like any other entry.
+Tools are registry entries. To create one, the agent writes a `function.lua` entry with inline Lua source in `data.source`; the runtime then compiles and loads that entry.
 
-## Project Structure
+## Published Package Structure
+
+The package owns all of these files. This page reproduces `doc_search.lua` and the
+contracts that matter to the architecture, but abbreviates the registry helpers,
+changeset plumbing, dynamic-loader helpers, and the agent loop. In particular, the
+`create_tool`, `load_tool`, and `agent.lua` sections are excerpts, not files that can
+be copied verbatim. The complete registry definitions for `registry_list` and
+`registry_read` also remain in the published module.
 
 ```
 micro-agi/
@@ -87,7 +100,7 @@ micro-agi/
 
 ## Infrastructure
 
-Create `.wippy.yaml`:
+The package uses this `.wippy.yaml` configuration:
 
 ```yaml
 version: "1.0"
@@ -98,7 +111,8 @@ logger:
 
 ## Entry Definitions
 
-Create `src/_index.yaml` with infrastructure, security policies, models, agent, and process:
+The following selected `src/_index.yaml` entries show the infrastructure, security
+policies, models, agent, and process:
 
 ```yaml
 version: "1.0"
@@ -142,7 +156,7 @@ entries:
 
 ### Security Policies
 
-Two `security.policy` entries restrict which namespaces the agent can write to:
+Two `security.policy` entries form an application-level namespace denylist:
 
 ```yaml
   - name: deny_core_ns
@@ -164,7 +178,13 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
       - agent_security
 ```
 
-These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+These policies are loaded as a named scope (`app:agent_security`) by
+`create_tool`. The helper rejects an explicit `deny` for `app:*` (core entries,
+models, and the agent definition) or `app.tools:*` (built-in tools), but treats
+the unmatched `undefined` result for `app.generated:*` as passing its bespoke
+filter. This is not Wippy runtime authorization: guarded operations require an
+explicit `allow` from the execution context, including the security-module
+operations shown below and `registry.apply` inside `changes:apply()`.
 
 See [Security Model](system/security.md) for details on policy evaluation.
 
@@ -183,17 +203,16 @@ Two models serve different purposes:
       capabilities: [generate, tool_use, structured_output, vision, thinking]
       class: [reasoning]
       priority: 210
-    max_tokens: 128000
-    output_tokens: 32768
+    max_tokens: 400000
+    output_tokens: 128000
     pricing:
-      input: 2.5
+      input: 1.25
       output: 10
     providers:
       - id: wippy.llm.openai:provider
         options:
           reasoning_model_request: true
         provider_model: gpt-5.1
-    thinking_effort: 10
 
   - name: gpt-4.1-nano
     kind: registry.entry
@@ -215,7 +234,7 @@ Two models serve different purposes:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression at 25x lower cost.
+GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression.
 
 ### Agent Definition
 
@@ -241,15 +260,17 @@ GPT-5.1 handles reasoning and tool use. GPT-4.1 Nano handles context compression
       To gain new capabilities: doc_search the API, create_tool with Lua source,
       load_tool, call it. All in one turn.
     model: gpt-5.1
+    thinking_effort: 10
     max_tokens: 2048
     tools:
       - "app.tools:*"
 ```
 
-The prompt is deliberately terse. Key rules:
-- **No hallucination** — the agent must use tools for real data
-- **Self-modification** — build tools instead of refusing
-- **Action over explanation** — do first, explain if asked
+The prompt gives the agent three operating rules:
+
+- **Use retrieved data** — use tools for external facts.
+- **Create missing capabilities** — build a tool when an allowed capability is absent.
+- **Prioritize actions** — perform the requested operation before explaining it.
 
 ### Process
 
@@ -262,18 +283,21 @@ The prompt is deliberately terse. Key rules:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, funcs, registry, time, security]
+    modules: [io, json, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+The process runs as a terminal command. `create_tool` applies the package's
+denylist before writing, but that filter does not supply the command's runtime
+security context.
 
 Imports:
-- `prompt` — conversation builder
-- `agent_context` — agent loading and dynamic tool management
+
+- `prompt` — Conversation builder
+- `agent_context` — Agent loading and dynamic tool management
 - `compress` — LLM-based text compression for context management
 
 ## Tools
@@ -311,7 +335,7 @@ local function fetch_page(path)
 end
 
 local function search_docs(query)
-    local url = BASE_URL .. "/search?q=" .. query
+    local url = BASE_URL .. "/search?q=" .. http_client.encode_uri(query)
     local resp, err = http_client.get(url, {
         headers = { ["User-Agent"] = "wippy-agent/1.0" },
     })
@@ -351,9 +375,13 @@ return { handler = handler }
 
 ### create_tool
 
-The core of self-modification. Evaluates namespace deny policies and creates a `function.lua` entry in the registry with inline Lua source.
+This tool evaluates the package's namespace denylist and creates a
+`function.lua` registry entry with inline Lua source.
 
-The `modules` field on the generated entry controls what the tool can access. Modules not listed simply do not exist for that entry — there is nothing to block or scan for.
+The `modules` field on the generated entry controls which non-ambient runtime modules the
+tool can require. The `process` module is ambient for every executable Lua entry, so
+omitting it is not a security boundary; process operations still rely on runtime security
+policies.
 
 ```lua
 local registry = require("registry")
@@ -371,7 +399,10 @@ local ALLOWED_MODULES = {
 }
 ```
 
-**Policy evaluation** — `create_tool` loads the `agent_security` named scope and evaluates the deny policies against the target entry ID. Writes to `app:*` or `app.tools:*` are denied; writes to `app.generated:*` pass (no matching deny policy):
+**Denylist evaluation** — `create_tool` loads the `agent_security` named scope.
+Writes to `app:*` or `app.tools:*` are rejected when the scope returns `deny`;
+an unmatched `app.generated:*` target returns `undefined` and passes this
+application filter:
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -385,6 +416,10 @@ if result == "deny" then
     return { error = "policy denied: " .. action .. " on " .. id }
 end
 ```
+
+This check does not authorize the registry mutation. The current command also
+needs a runtime actor and scope that explicitly allow the security-module calls
+and `registry.apply`.
 
 **Registry write** — the entry is written with source in `data.source` and only the allowed modules:
 
@@ -414,10 +449,13 @@ if existing then
 else
     changes:create(entry)
 end
-changes:apply()
+local _, apply_err = changes:apply()
+if apply_err then
+    return { error = "failed to apply registry change: " .. tostring(apply_err) }
+end
 ```
 
-No files on disk. The tool lives entirely in the registry.
+The generated tool is stored in the registry rather than written to a source file.
 
 ### load_tool
 
@@ -469,10 +507,18 @@ end)
 
 ### Tool Execution
 
-Tools are called via `funcs.call()` with `pcall` for safety:
+Tools are called via `funcs.call()`. `pcall` catches raised Lua errors, while the normal
+second return from `funcs.call()` carries invocation errors:
 
 ```lua
-local ok, result = pcall(funcs.call, tc.registry_id, args)
+local ok, result, call_err = pcall(funcs.call, tc.registry_id, args)
+if not ok then
+    results[tc.id] = { error = tostring(result) }
+elseif call_err then
+    results[tc.id] = { error = tostring(call_err) }
+else
+    results[tc.id] = result
+end
 ```
 
 ### Dynamic Tool Loading
@@ -510,7 +556,7 @@ The conversation is preserved across reloads because it lives in the prompt buil
 
 ### Context Compression
 
-When prompt tokens exceed 96K (75% of the 128K context window), the conversation is compressed using GPT-4.1 Nano:
+When prompt tokens exceed 300K (75% of the 400K context window), the conversation is compressed using GPT-4.1 Nano:
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -522,35 +568,44 @@ end
 Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
 
 ```lua
-local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+local summary, compress_err = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+if compress_err then
+    return nil, compress_err
+end
 session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
 ## Security Model
 
-The agent is secured through namespace deny policies and module-level access control.
+An application denylist and module-level access controls constrain generated
+tools, but they do not replace runtime authorization.
 
 ```mermaid
 flowchart TD
-    LLM[LLM generates tool] --> P{Namespace Deny Policies}
+    LLM[LLM generates tool] --> P{Application Namespace Denylist}
     P -->|scope:evaluate| Check{Target namespace?}
     Check -->|app.generated:*| OK[No deny match]
     Check -->|app:* or app.tools:*| Deny[Policy Denied]
 
-    OK --> M{Module Allowlist}
-    M -->|only granted modules| R[Registry write]
+    OK --> M{Non-ambient Module Allowlist}
+    M -->|only listed non-ambient modules| R[Registry write]
     M -->|unknown module requested| Err[Rejected]
+    R --> A[Ambient process API remains available]
 ```
 
-### Namespace Deny Policies
+### Namespace Denylist
 
 | Policy | Resources | Effect |
 |--------|-----------|--------|
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` loads the `agent_security` policy group and evaluates against the target entry ID. Since deny policies only match `app:*` and `app.tools:*`, writes to `app.generated:*` pass through (result is `undefined`, meaning "not denied").
+`create_tool` loads the `agent_security` policy group and evaluates the target
+entry ID. It deliberately treats `undefined` as "not denied" for this
+application-level filter. Wippy's guarded authorization does not: it permits an
+operation only on explicit `allow`. The context that runs this code must still
+carry the required runtime permissions.
 
 This prevents the agent from:
 - Modifying its own prompt or agent definition (`app:dev_assistant`)
@@ -559,47 +614,50 @@ This prevents the agent from:
 
 ### Module Access Control
 
-Generated tools declare their `modules` in `data.modules`. Only modules from the `ALLOWED_MODULES` set are permitted. The Wippy runtime enforces this at the module level — if a module is not listed on the entry, `require()` returns an error. There is no source code scanning because there is nothing to scan for: modules that are not granted do not exist in the execution context.
+Generated tools declare non-ambient capabilities in `data.modules`, and `create_tool`
+accepts only names from `ALLOWED_MODULES`. An undeclared non-ambient module cannot be
+required. The runtime still injects `process` into every executable Lua entry, including a
+generated tool, so process operations must be constrained with security policies rather
+than by omitting `process` from `data.modules`.
 
-## Run
+This tutorial does not define policies for `process.spawn` or `process.exec`. Its generated
+tools are therefore not a complete sandbox: add runtime policies for ambient process
+operations before allowing untrusted tool source.
 
-Run directly from hub:
+## Run and Current Package Limitation
+
+The published artifact is the Hub module. Start in a fresh empty directory that
+does not contain `wippy.lock`; Hub bootstrap rejects an unrelated or multi-root
+lock. The first run creates the deployment lock, and later runs from the same
+directory reuse that matching lock.
 
 ```bash
+mkdir micro-agi-deploy
+cd micro-agi-deploy
 wippy run wippy/micro-agi agent
 ```
 
-Or clone and run locally:
+The command downloads the selected module version, resolves its declared
+dependencies, and invokes its `agent` command.
 
-```bash
-cd micro-agi
-wippy init && wippy update
-wippy run agent
-```
+It still requires the provider credentials and model configuration expected by
+that module, plus registry/network access for Hub download and documentation
+search. This page does not provide a local clone or lockfile, so it does not
+claim a reproducible source build.
 
-```
-dev assistant (quit to exit)
-
-> what time is it?
-  [doc_search] ok
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:current_time_utc
-  [current_time_utc] ok
-The current UTC time is 2026-02-13T03:13:41Z.
-
-> fetch https://httpbin.org/get and show my ip
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:http_get
-  [http_get] ok
-Your IP is 203.0.113.42.
-```
+At the reviewed release, `wippy/micro-agi` v0.3.1 declares no
+`meta.command.security` context for `agent`. With default strict mode, the
+guarded tool paths—including `funcs.call`, registry reads and writes, and the
+documentation search HTTP request—do not receive the explicit allows they
+require. The tool and self-modification flows above are therefore reference
+designs, not successful default-strict-mode runs. Do not disable strict mode to
+make an untrusted code generator work; the package should first add a least-
+privilege command scope for its required actions.
 
 ## Next Steps
 
 - [LLM Agent](tutorials/llm-agent.md) — Build a basic agent from scratch
 - [Agent Module](framework/agents.md) — Agent framework reference
-- [Registry](concepts/registry.md) — How the registry works
+- [Registry](concepts/registry.md) — Registry concepts
 - [Security Model](system/security.md) — Declarative security policies
 - [Entry Kinds](guides/entry-kinds.md) — Available entry types

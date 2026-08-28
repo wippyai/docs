@@ -1,6 +1,6 @@
 ---
 title: "UUID Generation"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Generate, validate, inspect, parse, and format UUIDs."
 ---
 
 # UUID Generation
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generate universally unique identifiers. Adapted for workflows - random UUIDs return consistent values on replay.
+The `uuid` module generates, validates, inspects, parses, and formats UUIDs. In deterministic workflows, v1, v4, and v7 generation runs as a recorded side effect and returns the recorded value during replay. Namespace-based v3 and v5 generation is deterministic and runs directly.
+
+This page is an API reference of isolated calls. Values such as `namespace`, `name`, `input`, and `id` come from the surrounding application. Capture and handle the second `error` return before consuming generated, parsed, inspected, or formatted results. UUIDs are identifiers, not bearer credentials; do not use any UUID version as an authentication token or secret.
 
 ## Loading
 
@@ -16,11 +18,13 @@ Generate universally unique identifiers. Adapted for workflows - random UUIDs re
 local uuid = require("uuid")
 ```
 
-## Random UUIDs
+## Nondeterministic UUIDs
 
 ### Version 1
 
 Time-based UUID with timestamp and node ID.
+
+Version 1 exposes its creation time and node identifier. Avoid it where those details are sensitive; prefer v4 when only an opaque identifier is needed.
 
 ```lua
 local id, err = uuid.v1()
@@ -40,7 +44,7 @@ local id, err = uuid.v4()
 
 ### Version 7
 
-Time-ordered UUID. Sortable by creation time.
+A time-ordered UUID that encodes its creation time for chronological indexing. Do not rely on it as a strictly monotonic sequence, especially for values generated within the same timestamp interval.
 
 ```lua
 local id, err = uuid.v7()
@@ -72,6 +76,9 @@ Deterministic UUID from namespace and name using SHA-1.
 ```lua
 local NS_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
 local id, err = uuid.v5(NS_URL, "https://example.com/resource")
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Type | Description |
@@ -83,7 +90,7 @@ local id, err = uuid.v5(NS_URL, "https://example.com/resource")
 
 ## Inspection
 
-### Validate
+### `validate`
 
 ```lua
 local valid = uuid.validate(input)
@@ -93,9 +100,9 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Value to check |
 
-**Returns:** `boolean, error`
+**Returns:** `boolean, nil`. Non-string and malformed inputs return `false`; validation does not raise a structured error.
 
-### Get Version
+### `version`
 
 ```lua
 local ver, err = uuid.version(id)
@@ -107,7 +114,7 @@ local ver, err = uuid.version(id)
 
 **Returns:** `integer, error`
 
-### Get Variant
+### `variant`
 
 ```lua
 local var, err = uuid.variant(id)
@@ -119,7 +126,7 @@ local var, err = uuid.variant(id)
 
 **Returns:** `string, error` (RFC4122, Reserved, Microsoft, Future, NCS, or Invalid)
 
-### Parse
+### `parse`
 
 ```lua
 local info, err = uuid.parse(id)
@@ -135,9 +142,9 @@ Returned table fields:
 - `version` (integer): UUID version (1, 3, 4, 5, or 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, or Invalid
 - `timestamp` (integer): Unix timestamp (v1 and v7 only)
-- `node` (string): Node ID (v1 only)
+- `node` (string): raw six-byte node identifier (v1 only); encode it before display or text storage
 
-### Format
+### `format`
 
 ```lua
 local formatted, err = uuid.format(id, "standard")

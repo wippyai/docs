@@ -1,11 +1,11 @@
 ---
 title: "함수"
-description: "함수는 동기적이고 상태를 저장하지 않는 진입점입니다. 호출하면 실행되고 결과를 반환합니다. 함수는 실행 시 호출자의 컨텍스트를 상속받으며, 호출자가 취소되면 함수도 함께 취소됩니다. 이러한 특성 덕분에 함수는 HTTP 핸들러, API 엔드포인트, 요청 수명 내에…"
+description: "function 정의와 호출, context propagation, pool configuration 및 interceptor 적용 방식을 설명합니다."
 ---
 
 # 함수
 
-함수는 동기적이고 상태를 저장하지 않는 진입점입니다. 호출하면 실행되고 결과를 반환합니다. 함수는 실행 시 호출자의 컨텍스트를 상속받으며, 호출자가 취소되면 함수도 함께 취소됩니다. 이러한 특성 덕분에 함수는 HTTP 핸들러, API 엔드포인트, 요청 수명 내에 완료되어야 하는 모든 작업에 적합합니다.
+function은 call-and-return entry point입니다. caller context를 inherit하며 caller가 cancel되면 함께 cancel됩니다. pool은 Lua state를 reuse할 수 있으므로 module global과 closure upvalue가 한 worker에서 유지될 수 있지만 call 사이에 일관되게 공유되지는 않습니다. durable 또는 shared state는 function 밖에 저장하십시오. HTTP handler, API endpoint 및 request lifecycle 안에 끝나는 operation에 function을 사용합니다.
 
 ## 함수 호출
 
@@ -14,18 +14,31 @@ description: "함수는 동기적이고 상태를 저장하지 않는 진입점�
 ```lua
 local funcs = require("funcs")
 local result, err = funcs.call("app.api:get_user", user_id)
+if err then return nil, err end
+return result
 ```
 
 논블로킹 실행에는 `funcs.async()`를 사용합니다:
 
 ```lua
-local future = funcs.async("app.process:analyze", data)
+local future, err = funcs.async("app.process:analyze", data)
+if err then
+    return nil, err
+end
 
 local ch = future:response()
-local result, ok = ch:receive()
+local payload, open = ch:receive()
+if not open then
+    return nil, "future response channel closed"
+end
+
+local result, err = payload:data()
+if err then
+    return nil, err
+end
 ```
 
-전체 API는 [funcs 모듈](lua/core/funcs.md)을 참조하세요.
+function invocation과 executor option은 [funcs 모듈](lua/core/funcs.md)을 참조하십시오.
 
 ## 컨텍스트 전파
 
@@ -41,12 +54,17 @@ local user_id = ctx.get("user_id")
 호출 시 컨텍스트 추가:
 
 ```lua
-local exec = funcs.new()
-    :with_context({trace_id = "abc-123"})
-    :call("app.api:process", data)
+local funcs = require("funcs")
+
+local exec, err = funcs.new():with_context({trace_id = "abc-123"})
+if err then return nil, err end
+
+local result, err = exec:call("app.api:process", data)
+if err then return nil, err end
+return result
 ```
 
-보안 컨텍스트도 같은 방식으로 전파됩니다. 호출된 함수는 호출자의 액터를 보고 권한을 확인할 수 있습니다. 접근 제어 API는 [보안 모듈](lua/security/security.md)을 참조하세요.
+security context도 같은 방식으로 propagate됩니다. called function은 caller actor를 보고 permission을 확인할 수 있습니다. access-control API는 [보안 모듈](lua/security/security.md)을 참조하십시오.
 
 ## 레지스트리 정의
 
@@ -68,14 +86,14 @@ local exec = funcs.new()
 
 함수는 실행을 관리하는 풀에서 실행됩니다. 풀 타입에 따라 스케일링 방식이 달라집니다.
 
-**Inline**은 호출자의 고루틴에서 실행됩니다. 동시성이 없고 할당 오버헤드가 없어 임베디드 환경에 적합합니다.
+**Inline**은 worker pool 없이 caller goroutine에서 실행됩니다. embedded context에 사용됩니다.
 
 **Static**은 고정된 수의 워커를 유지합니다. 모든 워커가 사용 중이면 요청이 큐에 대기합니다. 리소스 사용량이 예측 가능합니다.
 
 ```yaml
 pool:
   type: static
-  workers: 8
+  size: 8
   buffer: 512
 ```
 
@@ -96,7 +114,7 @@ pool:
 ```
 
 <tip>
-풀 타입을 지정하지 않으면 런타임이 설정에 따라 자동 선택합니다. `workers`가 있으면 static, `max_size`가 있으면 lazy를 사용하며, `type`을 명시하여 직접 지정할 수도 있습니다.
+명시적인 pool `type`을 권장합니다. `type: static`에서는 `size`를 설정하십시오. `workers`도 있으면 worker count를 제공하지만 여전히 positive `size`가 필요합니다. legacy implicit mode에서는 `workers > 0`과 `size > 0`이 static pool을 선택하고, worker 없이 `max_size > 0`이면 lazy pool을 선택하며, `size`만 있으면 inline execution으로 fall through합니다.
 </tip>
 
 ## 인터셉터
@@ -116,7 +134,7 @@ pool:
         backoff_factor: 2.0
 ```
 
-내장 인터셉터에는 지수 백오프를 적용한 재시도가 포함됩니다. 로깅, 메트릭, 트레이싱, 인증, 서킷 브레이킹, 요청 변환 등을 위한 커스텀 인터셉터를 추가할 수 있습니다.
+built-in interceptor에는 exponential backoff를 사용하는 retry가 포함됩니다. Go로 작성된 runtime integration은 logging, metric, tracing, authorization, circuit breaking, request transformation용 interceptor를 추가로 등록할 수 있습니다. Lua application entry는 runtime에 설치된 interceptor만 구성할 수 있습니다.
 
 체인은 각 호출 전후에 실행됩니다. 각 인터셉터는 요청을 수정하거나, 실행을 조기 종료하거나, 응답을 래핑할 수 있습니다.
 
@@ -126,8 +144,15 @@ pool:
 
 ```lua
 local contract = require("contract")
-local email = contract.get("app.email:sender")
-email:send({to = "user@example.com", subject = "Hello"})
+local sender, err = contract.get("app.email:sender")
+if err then return nil, err end
+
+local email, err = sender:open("app.email:sender_impl")
+if err then return nil, err end
+
+local result, err = email:send({to = "user@example.com", subject = "Hello"})
+if err then return nil, err end
+return result
 ```
 
 이 추상화를 통해 호출 코드를 변경하지 않고 구현을 교체할 수 있습니다. 테스트, 멀티 테넌트 배포, 점진적 마이그레이션에 유용합니다.

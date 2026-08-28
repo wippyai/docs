@@ -1,23 +1,42 @@
 ---
-title: "Process Supervision"
-description: "Monitor and link processes to build fault-tolerant systems."
+title: "Process Supervision Recipes"
+description: "Apply monitoring, linking, cancellation, and restart patterns to Wippy processes."
 ---
 
-# Process Supervision
+# Process Supervision Recipes
 
-Monitor and link processes to build fault-tolerant systems.
+Use monitoring and linking to observe process exits, propagate failures, handle cancellation, and restart workers.
+
+**Classification:** Partial recipe. The lifecycle snippets are independent, and the
+worker-pool section supplies its core entries but not the separate control process
+needed to trigger and verify a restart.
+
+## Context and Dependencies
+
+The snippets target Wippy runtime `v0.3.32a` and assume an executable Lua entry, a
+running `process.host` named `app:processes`, and project-defined worker entries such
+as `app.workers:task_worker`. The `process` and `channel` APIs are ambient globals.
+Any snippet that calls `time.*` requires the `time` module in its entry and
+`local time = require("time")` in its source.
+
+Process spawn, host selection, monitoring, linking, sending, cancellation, and
+termination are guarded operations. Attach an actor and narrowly scoped allow
+policies to each executable entry that uses them. The worker-pool configuration
+below includes the policies needed by that recipe; the isolated snippets do not.
 
 ## Monitoring vs Linking
 
 **Monitoring** provides one-way observation:
-- Parent monitors child
-- Child exits, parent receives EXIT event
-- Parent continues running
+
+- A parent monitors a child.
+- When the child exits, the parent receives an `EXIT` event.
+- The parent continues running.
 
 **Linking** creates bidirectional fate-sharing:
-- Parent and child are linked
-- Either process fails, both terminate
-- Unless `trap_links=true` is set
+
+- A parent and child are linked.
+- If either process exits abnormally, the other also terminates.
+- Setting `trap_links=true` changes failures into events that the process can handle.
 
 ```mermaid
 flowchart TB
@@ -28,7 +47,7 @@ flowchart TB
 
     subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
+        P2[Parent linked] <-->|abnormal exit<br/>fate sharing| C2[Child fails]
     end
 ```
 
@@ -92,7 +111,10 @@ local function main()
 
     -- Cancel the worker
     time.sleep("5ms")
-    process.cancel(worker_pid)
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
     -- Receive EXIT event
     local event = events_ch:receive()
@@ -116,6 +138,9 @@ local function main()
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
@@ -126,7 +151,10 @@ local function main()
     end
 
     -- Cancel worker
-    process.cancel(worker_pid)
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
     -- No EXIT event will be received (we unmonitored)
     local timeout = time.after("200ms")
@@ -155,7 +183,10 @@ local function worker_main()
     local inbox_ch = process.inbox()
 
     -- Enable trap_links to receive LINK_DOWN events
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     -- Receive target PID from sender
     local msg = inbox_ch:receive()
@@ -169,9 +200,12 @@ local function worker_main()
     end
 
     -- Notify sender we're linked
-    process.send(sender, "linked", process.pid())
+    local _, send_err = process.send(sender, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- Wait for LINK_DOWN when target exits
+    -- Wait for LINK_DOWN when target exits with an error
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -196,7 +230,10 @@ Use `process.spawn_linked()` to spawn and link in one call:
 ```lua
 local function parent_main()
     -- Enable trap_links to handle child death
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
@@ -209,13 +246,17 @@ local function parent_main()
         return nil, "spawn_linked failed: " .. tostring(err)
     end
 
-    -- If child dies, we receive LINK_DOWN
+    -- If the child exits with an error, we receive LINK_DOWN
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         print("Child died:", event.from)
     end
 end
 ```
+
+The target or child must exit abnormally for these examples to receive
+`LINK_DOWN`; the explicit-link example also requires that failure to occur within
+its three-second wait window. Normal completion does not emit this event.
 
 ## Trap Links
 
@@ -238,6 +279,9 @@ local function worker_main()
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
     -- When child errors, THIS process terminates
     -- We never reach this point
@@ -252,7 +296,10 @@ Enable `trap_links` to receive LINK_DOWN events and survive:
 ```lua
 local function worker_main()
     -- Enable trap_links
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
@@ -261,6 +308,9 @@ local function worker_main()
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
     -- Wait for LINK_DOWN event
     local event = events_ch:receive()
@@ -276,7 +326,7 @@ end
 
 ### Send Cancel Signal
 
-Use `process.cancel()` to gracefully terminate a process:
+Use `process.cancel()` to request graceful cancellation from a process:
 
 ```lua
 local function main()
@@ -288,6 +338,9 @@ local function main()
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
@@ -307,7 +360,10 @@ end
 
 ### Handle Cancellation
 
-Worker receives CANCEL event through `process.events()`:
+The worker receives the `CANCEL` event through `process.events()`:
+
+`cleanup()` and `handle_message()` below are application callbacks that the recipe
+does not define.
 
 ```lua
 local function worker_main()
@@ -339,7 +395,7 @@ end
 
 ### Star Topology
 
-Parent with multiple children linking back to it:
+A parent can coordinate multiple children that link back to it:
 
 ```lua
 -- Parent worker spawns children that link TO parent
@@ -349,7 +405,10 @@ local function star_parent_main()
     local child_count = 10
 
     -- Enable trap_links to see children die
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local children = {}
 
@@ -364,7 +423,10 @@ local function star_parent_main()
         end
 
         -- Send parent PID to child
-        process.send(child_pid, "inbox", process.pid())
+        local _, send_err = process.send(child_pid, "inbox", process.pid())
+        if send_err then
+            error("send parent PID failed: " .. tostring(send_err))
+        end
         children[child_pid] = true
     end
 
@@ -386,7 +448,10 @@ Child worker that links to parent:
 ```lua
 local function linker_child_main()
     -- Enable trap_links to receive LINK_DOWN events
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
     local inbox_ch = process.inbox()
@@ -396,10 +461,16 @@ local function linker_child_main()
     local parent_pid = msg:payload():data()
 
     -- Link to parent
-    process.link(parent_pid)
+    local _, link_err = process.link(parent_pid)
+    if link_err then
+        return nil, "link failed: " .. tostring(link_err)
+    end
 
     -- Confirm link
-    process.send(parent_pid, "linked", process.pid())
+    local _, send_err = process.send(parent_pid, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
     -- Wait for LINK_DOWN when parent dies
     local event = events_ch:receive()
@@ -411,7 +482,7 @@ end
 
 ### Chain Topology
 
-Linear chain where each node links to its parent:
+In a linear chain, each node links to its parent:
 
 ```lua
 -- Chain root: A -> B -> C -> D -> E
@@ -440,8 +511,6 @@ Chain node spawns next node and links:
 
 ```lua
 local function chain_node_main(depth)
-    local time = require("time")
-
     if depth > 0 then
         -- Spawn next in chain
         local child_pid, err = process.spawn_linked(
@@ -469,6 +538,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: supervision-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.send
+        - process.spawn
+        - process.spawn.linked
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     host:
@@ -489,6 +569,18 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.supervisor:pool
+      policies:
+        - app:supervision-policy
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
+    input:
+      - 4
     lifecycle:
       auto_start: true
 ```
@@ -502,7 +594,10 @@ local function main(worker_count)
     worker_count = worker_count or 4
 
     -- Enable trap_links to handle worker deaths
-    process.set_options({ trap_links = true })
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local events_ch = process.events()
     local workers = {}
@@ -582,6 +677,11 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.workers:task_worker
+      policies:
+        - app:supervision-policy
 ```
 
 ### Worker Implementation
@@ -621,7 +721,10 @@ local function main(worker_id)
             if topic == "work" then
                 print("Worker " .. worker_id .. " processing: " .. payload)
                 time.sleep("100ms")
-                process.send(msg:from(), "result", "completed: " .. payload)
+                local _, send_err = process.send(msg:from(), "result", "completed: " .. payload)
+                if send_err then
+                    return nil, "send result failed: " .. tostring(send_err)
+                end
             end
 
         elseif result.channel == timeout then
@@ -634,28 +737,22 @@ end
 return { main = main }
 ```
 
-## Process Host Configuration
+## Process Host Settings
 
-The process host controls how many worker goroutines execute processes:
+The `app:processes` entry defined in [Configuration](#configuration) uses the
+following host setting:
 
 ```yaml
-# src/_index.yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: processes
-    kind: process.host
-    host:
-      workers: 16  # Worker goroutines (default: NumCPU)
-    lifecycle:
-      auto_start: true
+# Within the app:processes entry in src/_index.yaml
+host:
+  workers: 16  # Worker goroutines (default: NumCPU)
 ```
 
-Workers setting:
-- Controls parallelism for CPU-bound work
-- Typically set to number of CPU cores
-- All processes share this scheduler worker pool
+The `workers` setting:
+
+- Controls parallelism for CPU-bound work.
+- Is typically set to the number of CPU cores.
+- Applies to the scheduler pool shared by all processes on the host.
 
 ## Event Types
 
@@ -663,28 +760,31 @@ Workers setting:
 |-------|--------------|----------------|
 | `EXIT` | Monitored process exits | `spawn_monitored()` or `monitor()` |
 | `LINK_DOWN` | Linked process fails | `spawn_linked()` or `link()` with `trap_links=true` |
-| `CANCEL` | `process.cancel()` called | None (always delivered) |
+| `CANCEL` | `process.cancel()` called | The target consumes `process.events()` |
 
-## Running the Supervisor Pool
+## Using the Supervisor Pool Recipe
 
-Drop the pool files into the structure shown in [Configuration](#configuration), then:
+The displayed pool starts and supervises workers, but it is not a complete runnable
+tutorial: it intentionally omits a control process, that process's termination
+policy, and a deterministic assertion of the restart. After incorporating the recipe
+into an application, initialize and run that application normally:
 
 ```bash
 wippy init
 wippy run
 ```
 
-The supervisor autostarts, spawns four workers, and logs restarts when any of them dies. `LINK_DOWN` is only delivered when a linked process exits with an error, so trigger a restart by forcefully terminating a worker from another process:
+The supervisor autostarts and spawns four workers. To verify restart behavior, add a
+trusted control entry that discovers a worker PID, has `process.terminate` permission
+for that PID, terminates it, and checks that the supervisor starts a replacement.
 
-```lua
--- in an ad-hoc process or chat command
-process.terminate("<pid-from-supervisor-log>")
-```
-
-The pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the same id. A graceful `process.cancel()` lets the worker exit cleanly, which does not raise `LINK_DOWN` and therefore does not trigger a restart.
+An abnormal worker exit makes the pool receive `LINK_DOWN`; it waits 100 ms and
+respawns the worker under the same id. A graceful `process.cancel()` lets the worker
+exit cleanly, which does not raise `LINK_DOWN` and therefore does not trigger a
+restart. Stop the application with Ctrl+C when verification is complete.
 
 ## Next Steps
 
-- [Processes](tutorials/processes.md) - Process fundamentals
-- [Channels](tutorials/channels.md) - Message passing patterns
-- [Process Module](lua/core/process.md) - API reference
+- [Processes](tutorials/processes.md) — Process fundamentals
+- [Channels](tutorials/channels.md) — Message-passing patterns
+- [Process Module](lua/core/process.md) — Process API reference

@@ -1,6 +1,6 @@
 ---
 title: "Zeit & Dauer"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Zeitwerte erstellen, vergleichen, parsen und formatieren; Dauern und Zeitzonen verwenden sowie Sleeps und Timer planen."
 ---
 
 # Zeit & Dauer
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie für bestimmte Zeiträume, parsen und formatieren Sie Zeitstempel.
+Das Modul `time` stellt Zeitwerte, Dauern, Zeitzonenbehandlung, Parsing, Formatierung, Sleeps und Timer bereit. Unterstützte Workflow-Zeitaufrufe werden aufgezeichnet, damit sie deterministisch wiedergegeben werden können.
 
-In Workflows gibt `time.now()` eine aufgezeichnete Zeitreferenz für deterministisches Replay zurück.
+Diese Seite ist eine API-Referenz. Codeblöcke sind isolierte Beispiele oder partielle Scheduling-Muster und kein vollständiger Eintrag. Namen wie `do_work`, `try_operation`, `make_request`, `send_reminder`, `user_activity`, `check_health` und `process` stehen für Callbacks, Channels oder Daten der Anwendung. Wenn ein Snippet einen Fehlerrückgabewert `_` zuweist, setzt es voraus, dass das gezeigte Literal gültig ist; behandeln Sie Fehler, wenn Werte aus Eingaben oder Konfiguration stammen können.
 
 ## Laden
 
@@ -18,39 +18,46 @@ In Workflows gibt `time.now()` eine aufgezeichnete Zeitreferenz für determinist
 local time = require("time")
 ```
 
+Fügen Sie `time` zur `modules:`-Liste des ausführbaren Eintrags hinzu, bevor Sie das Modul laden. Die in den Scheduling-Beispielen verwendeten ambienten globalen Werte `channel` und `errors` benötigen keine Moduldeklaration.
+
 ## Aktuelle Zeit
 
-### now
+### `now`
 
-Gibt die aktuelle Zeit zurück. In Workflows wird die aufgezeichnete Zeit aus der Zeitreferenz des Workflows für deterministisches Replay zurückgegeben.
+Gibt die aktuelle Zeit zurück. In Workflows liefert die Funktion die aufgezeichnete Workflow-Zeitreferenz, damit die Ausführung deterministisch wiedergegeben werden kann.
 
 ```lua
 local t = time.now()
 print(t:format_rfc3339())  -- "2024-12-29T15:04:05Z"
 
--- Verstrichene Zeit messen
+-- Measure elapsed time
 local start = time.now()
 do_work()
 local elapsed = time.now():sub(start)
 print("Took " .. elapsed:milliseconds() .. "ms")
 ```
 
-**Gibt zurück:** `Time`
+Zeitstempel und Ausgabe der verstrichenen Zeit sind illustrativ; `time.now()` liefert die aktuelle oder aufgezeichnete Workflow-Zeit.
+
+**Rückgabewert:** `Time`
 
 ## Zeitwerte erstellen
 
 ### Aus Komponenten
 
 ```lua
--- Bestimmtes Datum/Zeit in UTC erstellen
+-- Create specific date/time in UTC
 local t = time.date(2024, time.DECEMBER, 25, 10, 30, 0, 0, time.utc)
 print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 
--- In bestimmter Zeitzone erstellen
-local ny, _ = time.load_location("America/New_York")
+-- Create in specific timezone
+local ny, err = time.load_location("America/New_York")
+if err then
+    return nil, err
+end
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
--- Standardmäßig lokale Zeitzone wenn nicht angegeben
+-- Defaults to local timezone if not specified
 local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ```
 
@@ -70,14 +77,14 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 ### Aus Unix-Zeitstempel
 
 ```lua
--- Aus Sekunden seit Epoch
+-- From seconds since epoch
 local t = time.unix(1703862245, 0)
 print(t:utc():format_rfc3339())  -- "2023-12-29T15:04:05Z"
 
--- Mit Nanosekunden
+-- With nanoseconds
 local t = time.unix(1703862245, 500000000)  -- +500ms
 
--- JavaScript-Zeitstempel konvertieren (Millisekunden)
+-- Convert JavaScript timestamp (milliseconds)
 local js_timestamp = 1703862245000
 local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 ```
@@ -94,18 +101,18 @@ local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 Zeitstrings mit Gos Referenzzeitformat parsen: `Mon Jan 2 15:04:05 MST 2006`.
 
 ```lua
--- RFC3339 parsen
+-- Parse RFC3339
 local t, err = time.parse(time.RFC3339, "2024-12-29T15:04:05Z")
 if err then
     return nil, err
 end
 
--- Benutzerdefiniertes Format parsen
+-- Parse custom format
 local t, err = time.parse("2006-01-02", "2024-12-29")
 local t, err = time.parse("15:04:05", "14:30:00")
 local t, err = time.parse("2006-01-02 15:04:05 MST", "2024-12-29 14:30:00 EST")
 
--- In bestimmter Zeitzone parsen
+-- Parse in specific timezone
 local ny, _ = time.load_location("America/New_York")
 local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 ```
@@ -125,20 +132,20 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 ```lua
 local t = time.now()
 
--- Dauer addieren (akzeptiert Zahl, String oder Duration)
+-- Add duration (accepts number, string, or Duration)
 local tomorrow = t:add("24h")
 local later = t:add(5 * time.MINUTE)
 local d, _ = time.parse_duration("1h30m")
 local future = t:add(d)
 
--- Zeit subtrahieren um Dauer zu erhalten
-local diff = tomorrow:sub(t)  -- gibt Duration zurück
+-- Subtract time to get duration
+local diff = tomorrow:sub(t)  -- returns Duration
 print(diff:hours())           -- 24
 
--- Kalendereinheiten addieren (behandelt Monatsgrenzen korrekt)
-local next_month = t:add_date(0, 1, 0)   -- 1 Monat addieren
-local next_year = t:add_date(1, 0, 0)    -- 1 Jahr addieren
-local last_week = t:add_date(0, 0, -7)   -- 7 Tage subtrahieren
+-- Add calendar units (handles month boundaries correctly)
+local next_month = t:add_date(0, 1, 0)   -- add 1 month
+local next_year = t:add_date(1, 0, 0)    -- add 1 year
+local last_week = t:add_date(0, 0, -7)   -- subtract 7 days
 ```
 
 | Methode | Parameter | Gibt zurück | Beschreibung |
@@ -185,8 +192,8 @@ t:format("Mon Jan 2, 2006")     -- "Sun Dec 29, 2024"
 ```lua
 local t = time.now()
 
-t:unix()       -- Sekunden seit Epoch
-t:unix_nano()  -- Nanosekunden seit Epoch
+t:unix()       -- seconds since epoch
+t:unix_nano()  -- nanoseconds since epoch
 ```
 
 ### Komponenten
@@ -194,23 +201,23 @@ t:unix_nano()  -- Nanosekunden seit Epoch
 ```lua
 local t = time.now()
 
--- Datumsteile holen
+-- Get date parts
 local year, month, day = t:date()
 
--- Zeitteile holen
+-- Get time parts
 local hour, min, sec = t:clock()
 
--- Einzelne Zugriffsmethoden
-t:year()        -- z.B. 2024
+-- Individual accessors
+t:year()        -- e.g., 2024
 t:month()       -- 1-12
 t:day()         -- 1-31
 t:hour()        -- 0-23
 t:minute()      -- 0-59
 t:second()      -- 0-59
 t:nanosecond()  -- 0-999999999
-t:weekday()     -- 0=Sonntag .. 6=Samstag
+t:weekday()     -- 0=Sunday .. 6=Saturday
 t:year_day()    -- 1-366
-t:is_zero()     -- true wenn Nullwert
+t:is_zero()     -- true if zero value
 ```
 
 ### Zeitzonen-Konvertierung
@@ -218,11 +225,11 @@ t:is_zero()     -- true wenn Nullwert
 ```lua
 local t = time.now()
 
-t:utc()                    -- zu UTC konvertieren
-t:in_local()               -- zur lokalen Zeitzone konvertieren
-t:in_location(ny)          -- zu bestimmter Zeitzone konvertieren
-t:location()               -- aktuelle Location holen
-t:location():string()      -- Zeitzonennamen holen
+t:utc()                    -- convert to UTC
+t:in_local()               -- convert to local timezone
+t:in_location(ny)          -- convert to specific timezone
+t:location()               -- get current Location
+t:location():string()      -- get timezone name
 ```
 
 | Methode | Parameter | Gibt zurück | Beschreibung |
@@ -241,8 +248,8 @@ local t = time.now()
 local hour_duration, _ = time.parse_duration("1h")
 local minute_duration, _ = time.parse_duration("15m")
 
-t:round(hour_duration)       -- auf nächste Stunde runden
-t:truncate(minute_duration)  -- auf 15-Minuten-Grenze abschneiden
+t:round(hour_duration)       -- round to nearest hour
+t:truncate(minute_duration)  -- truncate to 15-minute boundary
 ```
 
 | Methode | Parameter | Gibt zurück | Beschreibung |
@@ -255,16 +262,16 @@ t:truncate(minute_duration)  -- auf 15-Minuten-Grenze abschneiden
 ### Dauern erstellen
 
 ```lua
--- Aus String parsen
+-- Parse from string
 local d, err = time.parse_duration("1h30m45s")
 local d, err = time.parse_duration("500ms")
 local d, err = time.parse_duration("2h30m45s500ms")
 
--- Aus Zahl (Nanosekunden)
+-- From number (nanoseconds)
 local d, err = time.parse_duration(time.SECOND)
 local d, err = time.parse_duration(5 * time.MINUTE)
 
--- Gültige Einheiten: ns, us, ms, s, m, h
+-- Valid units: ns, us, ms, s, m, h
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -301,7 +308,7 @@ end
 local tokyo, _ = time.load_location("Asia/Tokyo")
 local london, _ = time.load_location("Europe/London")
 
--- Zwischen Zeitzonen konvertieren
+-- Convert between timezones
 local t = time.now():utc()
 print("UTC:", t:format(time.TIME_ONLY))
 print("New York:", t:in_location(ny):format(time.TIME_ONLY))
@@ -338,21 +345,21 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0, ist)
 ### Eingebaute Locations
 
 ```lua
-time.utc      -- UTC-Zeitzone
-time.localtz  -- Lokale System-Zeitzone
+time.utc      -- UTC timezone
+time.localtz  -- Local system timezone
 ```
 
 ## Scheduling
 
-### sleep
+### `sleep`
 
-Ausführung für angegebene Dauer pausieren. In Workflows korrekt aufgezeichnet und wiedergegeben.
+Pausiert die Ausführung für die angegebene Dauer. Bei Workflows wird der Sleep für deterministisches Replay aufgezeichnet.
 
 ```lua
 time.sleep("5s")
 time.sleep(500 * time.MILLISECOND)
 
--- Backoff-Muster
+-- Backoff pattern
 for attempt = 1, 3 do
     local ok = try_operation()
     if ok then break end
@@ -364,18 +371,20 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Schlafzeit |
 
-### after
+### `after`
 
 Gibt einen Channel zurück, der einmal nach der Dauer empfängt. Funktioniert mit `channel.select`.
 
 ```lua
--- Einfaches Timeout
-local timeout = time.after("5s")
-timeout:receive()  -- blockiert für 5 Sekunden
+-- Simple timeout
+local timeout, err = time.after("5s")
+if err then return nil, err end
+timeout:receive()  -- blocks for 5 seconds
 
--- Timeout mit select
+-- Timeout with select
 local response_ch = make_request()
-local timeout_ch = time.after("30s")
+local timeout_ch, err = time.after("30s")
+if err then return nil, err end
 
 local result = channel.select{
     response_ch:case_receive(),
@@ -391,40 +400,47 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Wartezeit |
 
-**Gibt zurück:** `Channel`
+**Rückgabewerte:** `Channel, error`
 
-### timer
+### `timer`
 
 Einmaliger Timer, der nach der Dauer auslöst. Kann gestoppt oder zurückgesetzt werden.
 
 ```lua
-local timer = time.timer("5s")
+local timer, err = time.timer("5s")
+if err then
+    return nil, err
+end
 
--- Auf Timer warten
+-- Wait for timer
 timer:response():receive()
 send_reminder()
 
--- Bei Aktivität zurücksetzen
-local idle_timer = time.timer("5m")
+-- Reset on activity
+local idle_timer, err = time.timer("5m")
+if err then
+    return nil, err
+end
+local idle_ch = idle_timer:response()
 while true do
     local r = channel.select{
         user_activity:case_receive(),
-        idle_timer:response():case_receive()
+        idle_ch:case_receive()
     }
-    if r.channel == idle_timer:response() then
+    if r.channel == idle_ch then
         logout_user()
         break
     end
     idle_timer:reset("5m")
 end
 
--- Timer stoppen
+-- Stop timer
 timer:stop()
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `duration` | number/string/Duration | Zeit bis zum Auslosen |
+| `duration` | number/string/Duration | Zeit bis zum Auslösen |
 
 **Gibt zurück:** `Timer, error`
 
@@ -435,22 +451,32 @@ timer:stop()
 | `stop()` | - | boolean | Timer abbrechen |
 | `reset(duration)` | number/string/Duration | boolean | Mit neuer Dauer zurücksetzen |
 
-### ticker
+### `ticker`
 
 Wiederholender Timer, der in regelmäßigen Intervallen auslöst.
 
 ```lua
--- Periodische Aufgabe
-local ticker = time.ticker("30s")
+-- Periodic task
+local ticker, err = time.ticker("30s")
+if err then
+    return nil, err
+end
 local ch = ticker:response()
 
 while true do
     local tick_time = ch:receive()
     check_health()
 end
+```
 
--- Rate-Limiting
-local ticker = time.ticker("100ms")
+Die obige Schleife ist für einen lang laufenden Prozess gedacht. Ein separates, endliches Muster zur Ratenbegrenzung lautet:
+
+```lua
+-- Rate limiting
+local ticker, err = time.ticker("100ms")
+if err then
+    return nil, err
+end
 for _, item in ipairs(items) do
     ticker:response():receive()
     process(item)
@@ -478,15 +504,16 @@ Dauer-Konstanten sind in Nanosekunden. Mit Arithmetik verwenden.
 
 ```lua
 time.NANOSECOND    -- 1
-time.MICROSECOND   -- 1.000
-time.MILLISECOND   -- 1.000.000
-time.SECOND        -- 1.000.000.000
+time.MICROSECOND   -- 1,000
+time.MILLISECOND   -- 1,000,000
+time.SECOND        -- 1,000,000,000
 time.MINUTE        -- 60 * SECOND
 time.HOUR          -- 60 * MINUTE
 
--- Beispielverwendung
+-- Example usage
 time.sleep(5 * time.SECOND)
-local timeout = time.after(30 * time.SECOND)
+local timeout, err = time.after(30 * time.SECOND)
+if err then return nil, err end
 ```
 
 ### Format-Layouts
@@ -543,9 +570,9 @@ time.SATURDAY   -- 6
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Ungültiges Dauerformat | `errors.INVALID` | nein |
-| Parsen fehlgeschlagen | `errors.INTERNAL` | nein |
+| Parsen fehlgeschlagen | `errors.INVALID` | nein |
 | Leerer Location-Name | `errors.INVALID` | nein |
-| Location nicht gefunden | `errors.INTERNAL` | nein |
+| Location nicht gefunden | `errors.NOT_FOUND` | nein |
 | Dauer <= 0 (timer/ticker) | `errors.INVALID` | nein |
 
 ```lua
@@ -559,7 +586,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location not found:", err:message())
     end
     return nil, err

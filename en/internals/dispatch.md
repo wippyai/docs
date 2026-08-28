@@ -1,11 +1,13 @@
 ---
 title: "Command Dispatch"
-description: "The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and…"
+description: "How process yields are routed to command handlers and returned through correlated completion events."
 ---
 
 # Command Dispatch
 
-The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and results flow back via event queues.
+Command dispatch routes process yields to handlers and returns correlated results through process event queues.
+
+This is an extension and implementation reference. The custom command and dispatcher fragments assume an existing Go package, boot graph, command API, and service-specific error handling.
 
 ## Flow
 
@@ -45,26 +47,32 @@ System commands (0-255) use array indexing. Extended commands use map lookup. Af
 | Range | Module | Examples |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
-| 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
-| 50-59 | stream | Read, Write, Close, Seek |
-| 60-69 | http | Request, RequestBatch |
-| 70-79 | tty | terminal I/O |
-| 80-89 | websocket | Connect, Send, Receive |
-| 90-99 | event | Subscribe, Send |
-| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
-| 120-129 | store | Get, Set, Delete, Has |
-| 130-139 | security | ValidateToken, CreateToken |
-| 140-149 | function | Call, AsyncStart, AsyncCancel |
-| 150-159 | exec | ProcessWait |
-| 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
-| 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 10, 14, 16, 18-23 | clock | Sleep, ticker, and timer operations |
+| 30-34 | socket | Connect, Listen, Accept, Bind, Resolve |
+| 50-57 | stream | Read, Write, Close, Seek, Flush, Stat, Scanner operations |
+| 60-61 | http | Request, RequestBatch |
+| 70-78 | tty | Terminal I/O |
+| 80-85 | websocket | Connect, Send, Receive, Close, Ping, Subscribe |
+| 90-91 | event | Subscribe, Send |
+| 100-111 | sql | Query, Execute, Prepare, statement and transaction operations |
+| 120-126 | store | Get, Set, Delete, Has, Entry, List, Put |
+| 130-132 | security | ValidateToken, CreateToken, RevokeToken |
+| 140-142 | function | Call, AsyncStart, AsyncCancel |
+| 150 | exec | ProcessWait |
+| 160-169 | cloudstorage | Object and multipart operations |
+| 170-171 | eval | Compile, Run |
+| 172 | cdc | Subscribe |
+| 173-174 | cloudstorage | AbortMultipartUpload, OpenReader |
+| 180-183 | workflow | SideEffect, Exec, Version, UpsertAttrs |
+| 190-193 | contract | Open, Call, AsyncCall, AsyncCancel |
 | 200-211 | pg (process group) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | User-defined services |
 
-Registration happens during boot via `MustRegisterCommands()`. Collisions panic at startup.
+Packages reserve command-ID ownership from `init()` with
+`MustRegisterCommands()`; ownership collisions panic while packages initialize.
+During component loading, each service binds its handlers through
+`Registrar.Register`. The dispatcher is frozen only after those handlers have
+been installed.
 
 ## Defining Commands
 
@@ -78,18 +86,10 @@ type MyCmd struct {
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-Pool reuse eliminates allocation in hot paths. Register at package init:
+Reserve the command ID at package initialization:
 
 ```go
 func init() {

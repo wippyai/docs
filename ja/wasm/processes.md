@@ -1,11 +1,13 @@
 ---
-title: "WASMプロセス"
-description: "WASMモジュールはprocess.wasmエントリ種別を通じてプロセスとして実行できます。プロセスはWippyプロセスホスト内で実行され、起動、監視、監督下シャットダウンの完全なプロセスライフサイクルをサポートします。"
+title: "WASM プロセス"
+description: "process.wasm を使用して、Wippy プロセスホスト配下で WASM モジュールを実行します。"
 ---
 
-# WASMプロセス
+# WASM プロセス
 
-WASMモジュールは`process.wasm`エントリ種別を通じてプロセスとして実行できます。プロセスはWippyプロセスホスト内で実行され、起動、監視、監督下シャットダウンの完全なプロセスライフサイクルをサポートします。
+`process.wasm` エントリは Wippy プロセスホスト配下で WASM モジュールを実行し、生成、監視、監督付きシャットダウンを提供します。
+
+**分類: プロセス設定およびライフサイクルリファレンス。** バイナリを使用するブロックでは、外部でのコンポーネントビルドと、アプリケーション所有のファイルシステム、プロセスホスト、環境、ポリシーの各エントリを前提としています。プレースホルダーハッシュは、対象バイナリの正確なダイジェストに置き換える必要があります。
 
 ## エントリ設定
 
@@ -26,24 +28,24 @@ entries:
 ### 設定フィールド
 
 | フィールド | 必須 | 説明 |
-|-----------|------|------|
-| `fs` | Yes | バイナリを含むファイルシステムエントリID |
-| `path` | Yes | ファイルシステム内の`.wasm`ファイルへのパス |
-| `hash` | Yes | 整合性検証用のSHA-256ハッシュ |
-| `method` | Yes | 実行するエクスポート関数名 |
-| `transport` | No | 呼び出しトランスポート: `payload`（デフォルト）または`wasi-http` |
-| `wit` | No | raw/coreモジュール用のWIT署名 |
-| `imports` | No | 有効にするホストインポート |
-| `wasi` | No | WASI設定（args、env、mounts） |
-| `limits` | No | 実行制限 |
+|-------|----------|-------------|
+| `fs` | はい | バイナリを格納するファイルシステムエントリ ID |
+| `path` | はい | ファイルシステム内の `.wasm` ファイルへのパス |
+| `hash` | はい | 整合性検証用の SHA-256 ハッシュ |
+| `method` | はい | 実行するエクスポート関数名 |
+| `transport` | いいえ | 呼び出しトランスポート: `payload`（デフォルト）または `wasi-http` |
+| `wit` | いいえ | raw/core モジュール向けの WIT シグネチャ |
+| `imports` | いいえ | 有効にするホストインポート |
+| `wasi` | いいえ | WASI 設定（`args`、`cwd`、`env`、`mounts`） |
+| `limits` | いいえ | 実行制限 |
 
 <note>
-`process.wasm`は`function.wasm`と設定構造体を共有するため、`pool`ブロックはスキーマで受け入れられますが無視されます — プロセスは関数プールではなくプロセスホスト下で動作します。
+`process.wasm` は `function.wasm` と設定構造体を共有するため、スキーマは `pool` ブロックを受け付けますが無視されます。プロセスは関数プールではなくプロセスホスト配下で実行されます。
 </note>
 
-## CLIコマンド
+## CLI コマンド
 
-`meta.command`でWASMプロセスを名前付きコマンドとして登録します:
+`meta.command` を使用して、WASM プロセスを名前付きコマンドとして登録します。
 
 ```yaml
   - name: greet
@@ -58,63 +60,67 @@ entries:
     method: greet
 ```
 
-以下で実行します:
+次のコマンドで実行します。
 
 ```bash
 wippy run greet
 ```
 
-利用可能なコマンドを一覧表示します:
+利用可能なコマンドを一覧表示します。
 
 ```bash
 wippy run list
 ```
 
 | フィールド | 必須 | 説明 |
-|-----------|------|------|
-| `name` | Yes | `wippy run <name>`で使用するコマンド名 |
-| `short` | No | `wippy run list`に表示される短い説明 |
+|-------|----------|-------------|
+| `name` | はい | `wippy run <name>` で使用するコマンド名 |
+| `short` | いいえ | `wippy run list` に表示される短い説明 |
+| `main` | いいえ | エントリを pack または hub モジュールのデフォルトコマンドとして指定 |
+| `use_case` | いいえ | エントリーポイントのカテゴリ。デフォルトは `run` |
+| `security` | いいえ | 信頼されたターミナルランチャーがこのコマンドを開始する場合にのみ適用されるセキュリティコンテキスト |
 
-CLIコマンドが動作するには`terminal.host`と`process.host`が必要です。
+CLI コマンドには `terminal.host` が必要です。コマンドプロセスで使用するスケジューラはこのホストが所有するため、別途 `process.host` は必要ありません。複数のターミナルホストが存在する場合は `--host` で 1 つを選択します。
 
 ## プロセスライフサイクル
 
-WASMプロセスはInit/Step/Closeライフサイクルモデルに従います:
+WASM プロセスは Init/Step/Close ライフサイクルモデルに従います。
 
-1. **Init** - モジュールがインスタンス化され、入力引数がキャプチャされます
-2. **Step** - 実行が進みます。非同期モジュールの場合、スケジューラがyield/resumeサイクルを駆動します。同期モジュールの場合、実行は単一ステップで完了します。
-3. **Close** - インスタンスリソースが解放されます
+1. **Init** - 呼び出しコンテキスト、メソッド、入力引数を取得します
+2. **Step** - 最初のステップでモジュールをインスタンス化して開始します。後続ステップではディスパッチャーブリッジ操作を進めます。同期実行は最初のステップで完了する場合があります
+3. **Close** - インスタンスのリソースを解放します
 
-## Luaからのスポーン
+## Lua からの生成
 
-WASMプロセスをスポーンし、完了を監視します:
+WASM プロセスを生成し、完了まで監視します。
 
 ```lua
-local process = require("process")
-local time = require("time")
-
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
+while true do
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 end
 ```
 
 ## 非同期実行
 
-WASIインターフェースをインポートするWASMプロセスは非同期操作を実行できます。スケジューラはI/O中にプロセスをサスペンドし、操作完了時に再開します:
+WASM プロセスは、対応するクロックのポーリングや送信 HTTP など、ランタイムがディスパッチャーを通じてブリッジするホスト操作で yield できます。スケジューラは保留中の操作が完了するまでプロセスを一時停止し、その後再開します。
 
 ```yaml
   - name: http_worker
@@ -134,11 +140,11 @@ WASIインターフェースをインポートするWASMプロセスは非同期
           required: true
 ```
 
-yield/resumeメカニズムはWASMコードに対して透過的です。ゲスト内の標準的なブロッキング呼び出し（スリープ、読み取り、書き込み、HTTPリクエスト）は自動的にディスパッチャにyieldします。
+これら asyncify された操作では、yield/resume メカニズムはゲストから透過的です。すべてのブロッキング WASI 呼び出しが yield するとは限りません。固定されたランタイムでは、ストリームの読み書きは同期処理です。
 
-## WASI設定
+## WASI 設定
 
-プロセスは関数と同じWASI設定をサポートします:
+プロセスは関数と同じ WASI 設定に対応しています。
 
 ```yaml
   - name: file_processor
@@ -168,8 +174,8 @@ yield/resumeメカニズムはWASMコードに対して透過的です。ゲス�
 
 ## 関連項目
 
-- [概要](wasm/overview.md) - WebAssemblyランタイムの概要
-- [関数](wasm/functions.md) - WASM関数の設定
+- [概要](wasm/overview.md) - WebAssembly ランタイムの概要
+- [関数](wasm/functions.md) - WASM 関数の設定
 - [ホスト関数](wasm/hosts.md) - 利用可能なホストインターフェース
 - [プロセスモデル](concepts/process-model.md) - プロセスライフサイクル
-- [スーパービジョン](guides/supervision.md) - プロセススーパービジョンツリー
+- [監督](guides/supervision.md) - プロセス監督ツリー

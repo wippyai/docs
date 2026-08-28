@@ -1,34 +1,35 @@
 ---
 title: "Supervisión"
-description: "El supervisor gestiona los ciclos de vida de los servicios, manejando el orden de inicio, reinicios automáticos, y apagado graceful. Los servicios con…"
+description: "Configura el orden de inicio de servicios, las políticas de reinicio, el contexto de seguridad, las transiciones de estado y el apagado ordenado."
 ---
 
 # Supervisión
 
-El supervisor gestiona los ciclos de vida de los servicios, manejando el orden de inicio, reinicios automáticos, y apagado graceful. Los servicios con `auto_start: true` se inician cuando la aplicación arranca.
+El supervisor gestiona el inicio de servicios, el orden de dependencias, los reinicios y el apagado ordenado. Los servicios con `auto_start: true` se inician al arrancar la aplicación.
 
-## Configuración de Ciclo de Vida
+## Configuración del ciclo de vida
 
-Los servicios se registran con el supervisor usando un bloque `lifecycle`. Para procesos, use `process.service` para envolver una definición de proceso:
+Los servicios se registran en el supervisor mediante un bloque `lifecycle`. Para procesos, usa `process.service` para envolver una definición de proceso:
 
 ```yaml
-# Definición del proceso (el código)
+# Process definition (the code)
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Servicio supervisado (envuelve el proceso con gestión de ciclo de vida)
+# Supervised service (wraps the process with lifecycle management)
 - name: worker
   kind: process.service
   process: app:worker_process
   host: app:processes
   lifecycle:
     auto_start: true
+    startup: required
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -36,80 +37,78 @@ Los servicios se registran con el supervisor usando un bloque `lifecycle`. Para 
       max_attempts: 10
 ```
 
-| Campo | Por Defecto | Descripción |
+`host` debe referenciar un process host configurado. La entrada de `requires` debe resolver a otro servicio supervisado o, mediante la extracción de dependencias del registro, a un servicio supervisado propietario del recurso referenciado.
+
+| Campo | Predeterminado | Descripción |
 |-------|---------|-------------|
-| `auto_start` | `false` | Iniciar automáticamente cuando el supervisor inicia |
-| `start_timeout` | `10s` | Tiempo máximo permitido para inicio |
-| `stop_timeout` | `10s` | Tiempo máximo para apagado graceful |
-| `stable_threshold` | `5s` | Tiempo de ejecución antes de considerarse estable |
-| `depends_on` | `[]` | Servicios que deben estar ejecutándose primero |
+| `auto_start` | `false` | Inicia automáticamente al arrancar el supervisor |
+| `startup` | `required` | Política de inicio de una raíz con arranque automático: `required` bloquea el arranque si falla; `optional` puede fallar y seguir reintentando sin bloquear ramas independientes |
+| `start_timeout` | `10s` | Tiempo máximo permitido para el inicio |
+| `stop_timeout` | `10s` | Tiempo máximo para el apagado ordenado |
+| `stable_threshold` | `5s` | Tiempo de ejecución tras el cual un fallo posterior reinicia el contador de reintentos |
+| `requires` | `[]` | Servicios que deben estar running primero (alias legacy: `depends_on`) |
 
-## Resolución de Dependencias
+## Resolución de dependencias
 
-El supervisor resuelve dependencias de dos fuentes:
+El supervisor resuelve dependencias desde dos fuentes:
 
-1. **Dependencias explícitas** declaradas en `depends_on`
-2. **Dependencias extraídas del registro** desde referencias de entrada (ej., `database: app:db` en su config)
+1. **Dependencias explícitas** declaradas en `requires` (o el legacy `depends_on`).
+2. **Dependencias extraídas del registro** a partir de referencias de entradas, como `database: app:db`.
 
 ```mermaid
 graph LR
-    A[Servidor HTTP] --> B[Router]
-    B --> C[Función Handler]
-    C --> D[Base de Datos]
+    A[HTTP Server] --> B[Router]
+    B --> C[Handler Function]
+    C --> D[Database]
     C --> E[Cache]
 ```
 
-Las dependencias inician antes que los dependientes. Si el Servicio C depende de A y B, tanto A como B deben alcanzar el estado `Running` antes de que C inicie.
+Las dependencias se inician antes que sus dependents. Si el servicio C depende de A y B, ambas deben alcanzar el estado `Running` antes de iniciar C.
 
 <tip>
-No necesita declarar entradas de infraestructura como bases de datos en <code>depends_on</code>. El supervisor extrae automáticamente dependencias de las referencias del registro en la configuración de su entrada.
+No hace falta repetir una referencia de infraestructura en <code>requires</code> cuando la extracción de dependencias del registro puede seguirla hasta un servicio supervisado. Usa <code>requires</code> para dependencias de ciclo de vida que no estén ya expresadas por referencias de entradas.
 </tip>
 
-## Política de Reinicio
+## Policy de restart
 
-Cuando un servicio falla, el supervisor reintenta con backoff exponencial:
+Cuando un servicio falla, el supervisor reintenta según su bloque `restart`:
 
 ```yaml
 lifecycle:
   restart:
-    initial_delay: 1s      # Espera del primer reintento
-    max_delay: 90s         # Tope máximo de delay
-    backoff_factor: 2.0    # Multiplicador de delay por intento
-    jitter: 0.1            # +-10% de aleatorización
-    max_attempts: 0        # 0 = reintentos infinitos
+    initial_delay: 1s      # First retry wait
+    max_delay: 90s         # Accepted backoff cap; see current behavior below
+    backoff_factor: 2.0    # Accepted multiplier; see current behavior below
+    jitter: 0.1            # ±10% randomization
+    max_attempts: 0        # 0 = infinite retries
 ```
 
-| Intento | Delay Base | Con Jitter (+-10%) |
-|---------|------------|-------------------|
-| 1 | 1s | 0.9s - 1.1s |
-| 2 | 2s | 1.8s - 2.2s |
-| 3 | 4s | 3.6s - 4.4s |
-| 4 | 8s | 7.2s - 8.8s |
-| ... | ... | ... |
-| N | 90s | 81s - 99s (tope) |
+En el runtime v0.3.32a, el supervisor crea una calculadora de backoff nueva para cada reintento y solo toma su primer intervalo. Por ello, cada reintento espera `initial_delay` con el jitter configurado (0,9s–1,1s para los valores anteriores). `backoff_factor` y `max_delay` son campos de configuración aceptados, pero no cambian este schedule en el runtime fijado.
 
-Cuando un servicio se ejecuta por más tiempo que `stable_threshold`, el contador de reintentos se resetea. Esto previene que fallos transitorios escalen permanentemente los delays.
+`max_attempts` cuenta el inicio fallido inicial. Un valor de `1` no permite reintentos y `10` permite como máximo nueve inicios posteriores. `0` permite intentos ilimitados.
 
-### Errores Terminales
+Cuando un servicio se ejecuta más que `stable_threshold`, su contador de reintentos se reinicia y los fallos posteriores vuelven al delay inicial.
 
-Estos errores detienen los intentos de reintento:
+### Errores terminales
 
-- Cancelación de contexto
-- Solicitud de terminación explícita
-- Errores marcados como no reintentables
+Estos errores detienen los reintentos:
 
-## Contexto de Seguridad
+- Cancelación del contexto
+- Solicitud explícita de terminación
+- Errores marcados como no retryable
+
+## Contexto de seguridad
 
 Los servicios pueden ejecutarse con una identidad de seguridad específica:
 
 ```yaml
-# Definición del proceso
+# Process definition
 - name: admin_worker_process
   kind: process.lua
   source: file://admin_worker.lua
   method: main
 
-# Servicio supervisado con contexto de seguridad
+# Supervised service with security context
 - name: admin_worker
   kind: process.service
   process: app:admin_worker_process
@@ -127,69 +126,74 @@ Los servicios pueden ejecutarse con una identidad de seguridad específica:
         - app:data_access
 ```
 
-El contexto de seguridad establece:
+El contexto de seguridad define:
 
 | Campo | Descripción |
 |-------|-------------|
-| `actor.id` | Cadena de identidad para este servicio |
-| `actor.meta` | Metadatos clave-valor (rol, permisos, etc.) |
-| `groups` | Grupos de políticas a aplicar |
-| `policies` | Políticas individuales a aplicar |
+| `actor.id` | Cadena de identidad del servicio |
+| `actor.meta` | Metadatos key-value (rol, permisos, etc.) |
+| `groups` | Grupos de policies que se aplican |
+| `policies` | Policies individuales que se aplican |
 
-El código ejecutándose en el servicio hereda este contexto de seguridad. El módulo `security` puede entonces verificar permisos:
+El código del servicio hereda este contexto de seguridad. El módulo `security` puede usarlo para comprobar permisos:
 
 ```lua
 local security = require("security")
 
 if security.can("delete", "users") then
-    -- permitido
+    -- allowed
 end
 ```
 
 <note>
-Cuando no se configura contexto de seguridad, el servicio se ejecuta sin un actor. En modo estricto (por defecto), las verificaciones de seguridad fallan. Configure un contexto de seguridad para servicios que necesiten autorización.
+Cuando no se configura un bloque security, el supervisor no añade actor ni scope de policy específicos del servicio; se siguen heredando los valores de seguridad presentes en el contexto parent. En modo strict (predeterminado), se deniega una comprobación cuyo contexto de seguridad resultante esté incompleto. Configura un contexto de seguridad completo para los servicios que necesiten autorización.
 </note>
 
-## Estados del Servicio
+## Estados de servicio
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
+    Stopping --> Failed : timeout/cancel
     Stopped --> [*]
 
     Running --> Failed
     Starting --> Failed
-    Failed --> Starting : reintentar
+    Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
-El supervisor transiciona servicios a través de estos estados:
+El supervisor hace pasar los servicios por estos estados:
 
 | Estado | Descripción |
 |-------|-------------|
-| `Inactive` | Registrado pero no iniciado |
-| `Starting` | Inicio en progreso |
-| `Running` | Operando normalmente |
-| `Stopping` | Apagado graceful en progreso |
-| `Stopped` | Terminado limpiamente |
-| `Failed` | Ocurrió un error, puede reintentar |
+| `Unknown` | Registrado pero no iniciado |
+| `Starting` | Inicio en curso |
+| `Running` | Funcionamiento normal |
+| `Stopping` | Apagado ordenado en curso |
+| `Stopped` | Operación de stop completada; los detalles informados por el servicio aún pueden incluir un error |
+| `Exited` | Terminado por solicitud explícita o error no retryable/terminal |
+| `Failed` | Se produjo un error; puede reintentarse |
 
-## Orden de Inicio y Apagado
+## Orden de inicio y apagado :id=orden-de-startup-y-shutdown
 
-**Inicio**: Dependencias primero, luego dependientes. Servicios al mismo nivel de dependencia pueden iniciar en paralelo.
+**Inicio:** las dependencias se inician antes que los dependientes. Los servicios del mismo nivel de dependencias pueden iniciarse en paralelo.
 
-**Apagado**: Dependientes primero, luego dependencias. Esto asegura que los servicios dependientes terminen antes de que sus dependencias se detengan.
+**Apagado:** los dependientes se detienen antes que las dependencias, lo que les permite terminar primero.
 
 ```
-Inicio:  database -> cache -> handler -> http_server
-Apagado: http_server -> handler -> cache -> database
+Startup:  database → cache → handler → http_server
+Shutdown: http_server → handler → cache → database
 ```
 
-## Ver También
+## Véase también
 
-- [Modelo de Procesos](concepts/process-model.md) - Ciclo de vida de procesos
-- [Configuración](guides/configuration.md) - Formato de configuración YAML
-- [Módulo Security](lua/security/security.md) - Verificaciones de permisos en Lua
+- [Modelo de procesos](concepts/process-model.md) — Ciclo de vida de procesos
+- [Configuración](guides/configuration.md) — Formato de configuración YAML
+- [Módulo Security](lua/security/security.md) — Comprobaciones de permisos en Lua

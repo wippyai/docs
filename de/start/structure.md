@@ -5,17 +5,15 @@ description: "Projektlayout, YAML-Definitionsdateien und Namenskonventionen."
 
 # YAML & Projektstruktur
 
-Projektlayout, YAML-Definitionsdateien und Namenskonventionen.
-
 ## Verzeichnisstruktur
 
 ```
 myapp/
-├── .wippy.yaml          # Runtime-Konfiguration
-├── wippy.lock           # Quellverzeichnis-Konfiguration
-├── .wippy/              # Installierte Module
-└── src/                 # Anwendungsquellcode
-    ├── _index.yaml      # Entry-Definitionen
+├── .wippy.yaml          # Runtime configuration
+├── wippy.lock           # Source directories config
+├── .wippy/              # Installed modules
+└── src/                 # Application source
+    ├── _index.yaml      # Entry definitions
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -27,12 +25,12 @@ myapp/
 ## YAML-Definitionsdateien
 
 <note>
-YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die maßgebliche Datenquelle — YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
+YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die maßgebliche Datenquelle; YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
 </note>
 
-### Dateistruktur
+### Format einer Definitionsdatei
 
-Jede YAML-Datei mit `version` und `namespace` ist gültig:
+Eine Definitionsdatei enthält einen `namespace` und entweder ein `entries`-Array oder die Felder `name` und `kind` auf oberster Ebene. Der optionale Marker `version` ist üblicherweise `"1.0"`; der Loader von v0.3.32a verlangt ihn nicht.
 
 ```yaml
 version: "1.0"
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Ruft Benutzer nach ID ab
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Benutzer-API-Endpunkt
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -60,27 +58,27 @@ entries:
 
 | Feld | Erforderlich | Beschreibung |
 |------|--------------|--------------|
-| `version` | ja | Schemaversion (aktuell `"1.0"`) |
-| `namespace` | ja | Entry-Namespace für diese Datei |
-| `entries` | ja | Array von Entry-Definitionen |
+| `version` | Nein | Manifest-Versionsmarker, üblicherweise `"1.0"` |
+| `namespace` | Ja | Entry-Namespace für diese Datei |
+| `entries` | Bedingt | Array von Entry-Definitionen; nur bei Verwendung von `name` und `kind` auf oberster Ebene weglassen |
 
 ### Namenskonvention
 
 Verwenden Sie Punkte (`.`) zur semantischen Trennung und Unterstriche (`_`) für Wörter:
 
 ```yaml
-# Funktion und ihr Endpunkt
-- name: get_user              # Die Funktion
-- name: get_user.endpoint     # Ihr HTTP-Endpunkt
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# Mehrere Endpunkte für dieselbe Funktion
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# Router
-- name: api.public            # Öffentlicher API-Router
-- name: api.admin             # Admin-API-Router
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
@@ -102,7 +100,7 @@ Die vollständige Entry-ID kombiniert Namespace und Name: `app.api:get_user`
 
 ### Quellverzeichnisse
 
-Die `wippy.lock`-Datei definiert, woher Wippy Definitionen lädt:
+Die Datei `wippy.lock` benennt den Quellstamm der Anwendung und das Basisverzeichnis zur Auflösung gesperrter Module:
 
 ```yaml
 directories:
@@ -110,18 +108,18 @@ directories:
   src: ./src
 ```
 
-Wippy scannt diese Verzeichnisse rekursiv nach YAML-Dateien.
+Wippy fügt `directories.src` als Ladepfad der Anwendung hinzu. `directories.modules` wird nicht als ein einziger Quellbaum gescannt: Jedes gesperrte Modul wird in sein versioniertes `.wapp`-Archiv oder seinen entpackten Modulpfad aufgelöst, jeder Ersatz in seinen konfigurierten Entry-Stamm. Der Loader scannt die Anwendungsquelle und ausgewählte verzeichnisbasierte Modul- oder Ersatzwurzeln rekursiv nach `.yaml`-, `.yml`- und `.json`-Manifesten; `.wapp`-Module werden als Archive gelesen. Nur objektförmige Dateien mit `namespace` gelten als Registry-Manifeste, `node_modules`-Verzeichnisse werden übersprungen. `_index.yaml` ist eine Projektkonvention, nicht der einzige zulässige Dateiname.
 
 ## Entry-Definitionen
 
-Jeder Eintrag steht im `entries`-Array. Eigenschaften befinden sich auf oberster Ebene (kein `data:`-Wrapper):
+Jedes Element des `entries`-Arrays definiert einen Eintrag. Kind-spezifische Felder können wie in diesem Beispiel neben `name`, `kind` und `meta` stehen:
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Gibt Hello World zurück
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -131,10 +129,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Hello-Endpunkt
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+Ein explizites `data:`-Feld wird ebenfalls unterstützt. Ist es vorhanden, bildet sein Wert den vollständigen Kind-spezifischen Payload; mischen Sie ihn daher nicht mit Kind-spezifischen Geschwisterfeldern:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### Metadaten
@@ -145,12 +155,12 @@ Verwenden Sie `meta` für benutzerfreundliche Informationen:
 - name: payment_handler
   kind: function.lua
   meta:
-    title: Zahlungsprozessor
-    comment: Verarbeitet Stripe-Zahlungen
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-Konvention: `meta.title` und `meta.comment` werden in Verwaltungsoberflächen ansprechend dargestellt.
+Verwenden Sie `meta.title` und `meta.comment` für beschreibende Informationen, die Registry-Verbraucher und Verwaltungsoberflächen anzeigen können.
 
 ### Anwendungseinträge
 
@@ -160,7 +170,7 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 - name: config
   kind: registry.entry
   meta:
-    title: Anwendungseinstellungen
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -170,17 +180,17 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 
 ## Häufige Entry-Typen
 
-| Kind | Zweck |
+| Art | Zweck |
 |------|-------|
-| `registry.entry` | Allgemeine Daten |
+| `registry.entry` | Allgemeine Daten, die ohne normalen Event-Versand gespeichert werden |
 | `function.lua` | Aufrufbare Lua-Funktion |
 | `process.lua` | Langlebiger Prozess |
 | `http.service` | HTTP-Server |
 | `http.router` | Routengruppe |
 | `http.endpoint` | HTTP-Handler |
-| `process.host` | Prozess-Supervisor |
+| `process.host` | Host für die Prozessausführung |
 
-Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für vollständige Referenz.
+Die Entry-Kinds beschreibt der [Leitfaden zu Entry-Kinds](guides/entry-kinds.md).
 
 ## Konfigurationsdateien
 
@@ -189,17 +199,20 @@ Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für vollständige Referenz
 Runtime-Konfiguration im Projektstamm:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
-Siehe [Konfigurationsanleitung](guides/configuration.md) für alle Optionen.
+Die Runtime-Konfigurationsfelder beschreibt der [Konfigurationsleitfaden](guides/configuration.md).
 
 ### wippy.lock
 
@@ -213,20 +226,24 @@ directories:
 
 ## Einträge referenzieren
 
-Referenzieren Sie Einträge nach vollständiger ID oder relativem Namen:
+Referenzieren Sie Einträge nach vollständiger ID oder — sofern der Entry-Kind dies unterstützt — relativem Namen. HTTP-Router und -Endpoints hängen sich über `meta.server` und `meta.router` an, nicht über kindseitige Listen ihrer Kinder:
 
 ```yaml
-# Vollständige ID (namespace-übergreifend)
-- name: main.router
+# Router declares itself against a server
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Gleicher Namespace - nur Name verwenden
+# Endpoint references router by registry ID (cross-namespace works the same way)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Beispielprojekt
@@ -251,7 +268,7 @@ myapp/
 
 ## Siehe auch
 
-- [Anwendungsarchitektur](concepts/architecture.md) - Wie eine App in Slices und Schichten zerlegt wird
-- [Entry-Typen-Anleitung](guides/entry-kinds.md) - Verfügbare Entry-Typen
-- [Konfigurationsanleitung](guides/configuration.md) - Runtime-Optionen
-- [Benutzerdefinierte Entry-Typen](internals/kinds.md) - Handler implementieren (fortgeschritten)
+- [Anwendungsarchitektur](concepts/architecture.md) — Anwendung in Slices und Schichten organisieren
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — Verfügbare Entry-Kinds
+- [Konfigurationsleitfaden](guides/configuration.md) — Runtime-Optionen konfigurieren
+- [Benutzerdefinierte Entry-Kinds](internals/kinds.md) — Handler implementieren (fortgeschritten)

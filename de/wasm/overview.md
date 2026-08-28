@@ -1,53 +1,60 @@
 ---
 title: "WebAssembly-Runtime"
-description: "Wippy fuehrt WebAssembly-Module als vollwertige Registry-Eintraege neben Lua-Code aus. WASM-Funktionen und -Prozesse werden innerhalb desselben…"
+description: "WAT- und WASM-Funktionen oder WASM-Prozesse neben Lua über Registry-Einträge ausführen."
 ---
 
 # WebAssembly-Runtime
 
-> Die WASM-Runtime ist eine experimentelle Erweiterung. Die Konfiguration ist stabil, aber die Runtime-Interna koennen sich zwischen Releases aendern.
+> Die WASM-Runtime ist eine experimentelle Erweiterung. Die Konfiguration ist stabil, aber die Interna der Runtime können sich zwischen Releases ändern.
 
-Wippy fuehrt WebAssembly-Module als vollwertige Registry-Eintraege neben Lua-Code aus. WASM-Funktionen und -Prozesse werden innerhalb desselben Schedulers ausgefuehrt, teilen dasselbe Sicherheitsmodell und interagieren mit Lua ueber die Funktions-Registry.
+Wippy registriert WebAssembly-Module neben Lua-Code. Funktionseinträge werden in die Funktions-Registry aufgenommen und über Funktions-Pools ausgeführt; Prozesseinträge registrieren Prozess-Factories und laufen unter Process Hosts. Beide verwenden den Scheduler und das Sicherheitsmodell der Runtime.
 
-## Entry Kinds
+**Klassifizierung: konzeptionelle Übersicht.** Der Lua-Block enthält unabhängige
+Aufrufmuster und setzt voraus, dass die genannten WASM-Einträge und ihre WIT-Verträge
+bereits registriert sind. Das Rust/WASM-Tutorial zeigt ein Projekt mit einer kompilierten Komponente.
 
-| Kind | Beschreibung |
-|------|-------------|
-| `function.wat` | Inline-WebAssembly-Text-Format-Funktion, definiert in YAML |
-| `function.wasm` | Vorkompiliertes WASM-Binary, geladen aus einem Dateisystem-Eintrag |
-| `process.wasm` | WASM-Binary, ausgefuehrt als Prozess (CLI-Befehle oder langlebig) |
+## Eintragsarten
+
+| Art | Beschreibung |
+|-----|--------------|
+| `function.wat` | In YAML definierte Inline-Funktion im WebAssembly-Textformat |
+| `function.wasm` | Vorkompiliertes WASM-Binary, das aus einem Dateisystemeintrag geladen wird |
+| `process.wasm` | Als Prozess ausgeführtes WASM-Binary (CLI-Befehl oder langlebiger Prozess) |
 
 ## Funktionsweise
 
-1. WASM-Module werden als Registry-Eintraege in `_index.yaml` deklariert
-2. Beim Start werden Module kompiliert und in Worker-Pools platziert
-3. Lua (oder anderer WASM) Code ruft sie ueber `funcs.call()` auf
-4. Argumente und Rueckgabewerte werden automatisch zwischen Lua-Tabellen und WIT-Typen abgebildet
-5. Asynchrone Operationen (I/O, Sleep, HTTP) yielden ueber den Dispatcher, genau wie Lua
+1. WASM-Module werden in `_index.yaml` als Registry-Einträge deklariert
+2. Beim Start werden `function.wat`- und `function.wasm`-Einträge kompiliert, als Funktionen registriert und in ihre konfigurierten Funktions-Pools aufgenommen
+3. Lua ruft diese Funktionseinträge über `funcs.call()` auf
+4. `process.wasm`-Einträge registrieren stattdessen Prozess-Factories und werden unter einem Process Host gestartet
+5. Funktionsargumente und Rückgabewerte werden zwischen Lua-Tabellen und WIT-Typen abgebildet
+6. Unterstützte, über den Dispatcher vermittelte Operationen wie Clock-Polling und ausgehende HTTP-Anfragen yielden, damit der Scheduler andere Arbeit ausführen kann
 
 ## Component Model
 
-Wippy unterstuetzt das WebAssembly Component Model mit WIT (WebAssembly Interface Types). Component-Module erhalten vollstaendiges Type-Mapping zwischen Host und Guest:
+Wippy unterstützt das WebAssembly Component Model mit WIT (WebAssembly Interface Types). Komponentenmodule bilden diese Typen zwischen Host und Gast ab:
 
-- Records werden auf Lua-Tabellen mit benannten Feldern abgebildet
-- Lists werden auf Lua-Arrays abgebildet
-- Results werden auf `(value, error)` Rueckgabe-Tupel abgebildet
-- Primitive (`s32`, `f64`, `string`, etc.) werden direkt abgebildet
+- Records werden zu Lua-Tabellen mit benannten Feldern
+- Lists werden zu Lua-Arrays
+- Results werden zu `(value, error)`-Rückgabetupeln
+- Primitive (`s32`, `f64`, `string` usw.) werden direkt abgebildet
 
-Raw/Core-WASM-Module werden ebenfalls mit expliziten WIT-Signaturen unterstuetzt.
+Raw/Core-WASM-Module werden ebenfalls mit expliziten WIT-Signaturen unterstützt.
 
 ## WASM aus Lua aufrufen
 
-WASM-Funktionen werden auf dieselbe Weise wie jede andere Funktion in der Registry aufgerufen:
+Rufen Sie eine WASM-Funktion über ihre Registry-ID mit `funcs.call()` auf:
 
 ```lua
 local funcs = require("funcs")
 
 -- No arguments
 local result, err = funcs.call("myns:answer_wat")
+if err then return nil, err end
 
 -- With arguments
-local result, err = funcs.call("myns:compute", 6, 7)
+local computed, compute_err = funcs.call("myns:compute", 6, 7)
+if compute_err then return nil, compute_err end
 
 -- With complex data
 local users = {
@@ -55,20 +62,22 @@ local users = {
     {id = 2, name = "Bob", tags = {"user"}, active = false},
 }
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 ```
 
 ## Sicherheit
 
-WASM-Ausfuehrungen erben standardmaessig den Sicherheitskontext des Aufrufers:
+WASM-Ausführungen erben standardmäßig den Sicherheitskontext des Aufrufers:
 
-- Actor-Identitaet wird vererbt
-- Scope wird vererbt
-- Request-Kontext wird vererbt
+- Die Actor-Identität wird übernommen
+- Der Scope wird übernommen
+- Der Request-Kontext wird übernommen
 
-Host-Faehigkeiten sind Opt-in ueber explizite Imports. Jeder Eintrag deklariert genau, welche WASI-Schnittstellen er benoetigt (`wasi:cli`, `wasi:filesystem`, etc.), wodurch die Zugriffsoberflaeche des Moduls begrenzt wird.
+Host-Fähigkeiten werden durch explizite Imports einzeln aktiviert. Jeder Eintrag deklariert die benötigten Host-Profile, etwa `funcs`, `wasi1`, `wasi:cli` oder `wasi:filesystem`, und begrenzt damit die Zugriffsfläche des Moduls. Das Aktivieren eines Profils umgeht keine Sicherheitsprüfungen der Runtime für Operationen wie Funktionsaufrufe, Sockets oder ausgehende HTTP-Anfragen.
 
 ## Siehe auch
 
-- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionseintraegen
-- [Host-Funktionen](wasm/hosts.md) - Verfuegbare WASI- und Wippy-Host-Schnittstellen
-- [Prozesse](wasm/processes.md) - WASM als langlebige Prozesse ausfuehren
+- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionseinträgen
+- [Host-Funktionen](wasm/hosts.md) - Verfügbare WASI- und Wippy-Host-Schnittstellen
+- [Prozesse](wasm/processes.md) - WASM als langlebige Prozesse ausführen
+- [Rust/WASM-Tutorial](../tutorials/rust-wasm.md) - Eine Komponente bauen und registrieren

@@ -30,13 +30,13 @@ options:
 </tip>
 
 ```yaml
-middleware:        # 매칭 전
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # 매칭 후
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -101,7 +101,7 @@ options:
 
 **키 전략:** `ip`, `header:X-API-Key`, `query:api_key`
 
-헤더와 함께 `429 Too Many Requests` 반환: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+다음 헤더와 함께 `429 Too Many Requests`를 반환합니다: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
@@ -292,7 +292,7 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>핸들러 전</note>
 
 수신 요청에 대한 OpenTelemetry 스팬과 메트릭을 기록합니다. OTel이 활성화되면 자동으로 등록되며, 그렇지 않으면 no-op로 작동합니다.
 
@@ -311,15 +311,15 @@ middleware:
 
 ```yaml
 middleware:
-  - real_ip       # 1. 먼저 실제 IP 추출
-  - cors          # 2. CORS 프리플라이트 처리
-  - compress      # 3. 응답 압축 설정
-  - ratelimit     # 4. 레이트 제한 확인
-  - metrics       # 5. 메트릭 기록
-  - token_auth    # 6. 요청 인증
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # 라우트 매칭 후 인가
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## 참고

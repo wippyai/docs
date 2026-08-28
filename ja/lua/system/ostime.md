@@ -1,6 +1,6 @@
 ---
 title: "OS時間"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Lua のグローバル os テーブルでランタイム時刻を読み取り、日付を整形し、時刻差を計算します。"
 ---
 
 # OS時間
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-標準Lua `os`時間関数。タイムスタンプ、日付フォーマット、時間計算のための実際のウォールクロック時間を提供。
+グローバル `os` テーブルは、タイムスタンプ、日付書式、経過時間の測定、時刻差の計算を提供します。ワークフロー内の現在時刻の読み取りにはワークフローの時刻基準を使用し、ワークフロー外ではシステムクロックを使用します。
+
+このページは API リファレンスです。タイムスタンプのリテラルと書式済み出力は例示であり、実際の値はランタイムまたはワークフローのクロックとタイムゾーンによって変わります。
 
 ## ロード
 
@@ -26,10 +28,10 @@ os.difftime()
 Unixタイムスタンプ（1970年1月1日UTC以降の秒数）を取得:
 
 ```lua
--- 現在のタイムスタンプ
+-- Current timestamp
 local now = os.time()  -- 1718462445
 
--- 特定の日時
+-- Specific date/time
 local t = os.time({
     year = 2024,
     month = 12,
@@ -58,11 +60,11 @@ local t = os.time({
 テーブルで呼び出すと、不足しているフィールドは上記のデフォルト値を使用。`year`、`month`、`day`フィールドは指定されない場合、現在の日付がデフォルト。
 
 ```lua
--- 日付のみ（時間はデフォルトで深夜0時）
+-- Just date (time defaults to midnight)
 os.time({year = 2024, month = 6, day = 15})
 
--- 部分的（現在の年/月を補完）
-os.time({day = 1})  -- 現在の月の1日
+-- Partial (fills in current year/month)
+os.time({day = 1})  -- first of current month
 ```
 
 ## 日付のフォーマット
@@ -113,7 +115,8 @@ local t = os.date("*t", now)
 | `%b` | 月略称 | Jun |
 | `%w` | 曜日 (0-6, 日曜=0) | 6 |
 | `%j` | 年間日 (001-366) | 167 |
-| `%U` | 週番号 (00-53) | 24 |
+| `%U` | ISO 8601 週番号 (01-53、月曜始まり) | 24 |
+| `%W` | ISO 8601 週番号 (01-53、月曜始まり) | 24 |
 | `%z` | タイムゾーンオフセット | -0700 |
 | `%Z` | タイムゾーン名 | PDT |
 | `%c` | 完全な日時 | Sat Jun 15 14:30:45 2024 |
@@ -139,18 +142,18 @@ local t = os.date("*t")
 | `sec` | number | 秒 (0-59) | 45 |
 | `wday` | number | 曜日 (1-7, 日曜=1) | 7 |
 | `yday` | number | 年間日 (1-366) | 167 |
-| `isdst` | boolean | 夏時間 | false |
+| `isdst` | boolean | このリリースではゾーンの UTC オフセットが 0 以外なら `true`。信頼できる DST 指標ではない | false |
 
 UTC日付テーブルには`"!*t"`を使用。
 
 ## 経過時間の測定
 
-Luaランタイム開始からの経過秒数を取得:
+現在のランタイム時刻基準と OS-time モジュールの初期化時刻との間の秒数を取得します。
 
 ```lua
 local start = os.clock()
 
--- 作業を実行
+-- do work
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
@@ -158,6 +161,8 @@ print(string.format("Took %.3f seconds", elapsed))
 ```
 
 **シグネチャ:** `os.clock() -> number`
+
+標準 Lua の CPU 時間という定義とは異なり、この実装は経過時間に基づきます。ワークフロー内ではワークフローの時刻基準を使用します。
 
 ## 時間差
 
@@ -188,4 +193,3 @@ print(days)  -- 365
 ```lua
 os.platform  -- "wippy"
 ```
-

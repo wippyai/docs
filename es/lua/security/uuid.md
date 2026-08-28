@@ -1,14 +1,16 @@
 ---
-title: "Generacion de UUID"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Generación de UUID"
+description: "Genera, valida, inspecciona, analiza y formatea UUID."
 ---
 
-# Generacion de UUID
+# Generación de UUID
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Generar identificadores unicos universales. Adaptado para workflows - los UUIDs aleatorios devuelven valores consistentes en replay.
+El módulo `uuid` genera, valida, inspecciona, analiza y formatea UUID. En workflows deterministas, la generación v1, v4 y v7 se ejecuta como un efecto secundario registrado y devuelve el valor registrado durante la repetición. La generación v3 y v5 basada en namespace es determinista y se ejecuta directamente.
+
+Esta página es una referencia de API de llamadas aisladas. Los valores como `namespace`, `name`, `input` e `id` proceden de la aplicación contenedora. Captura y maneja el segundo retorno `error` antes de consumir resultados generados, analizados, inspeccionados o formateados. Los UUID son identificadores, no credenciales de portador; no uses ninguna versión de UUID como token de autenticación ni secreto.
 
 ## Carga
 
@@ -16,11 +18,13 @@ Generar identificadores unicos universales. Adaptado para workflows - los UUIDs 
 local uuid = require("uuid")
 ```
 
-## UUIDs Aleatorios
+## UUID no deterministas
 
 ### Versión 1
 
 UUID basado en tiempo con marca de tiempo e ID de nodo.
+
+La versión 1 expone su hora de creación y el identificador del nodo. Evítala cuando esos datos sean sensibles; prefiere v4 si solo necesitas un identificador opaco.
 
 ```lua
 local id, err = uuid.v1()
@@ -40,7 +44,7 @@ local id, err = uuid.v4()
 
 ### Versión 7
 
-UUID ordenado por tiempo. Ordenable por tiempo de creacion.
+UUID ordenado por tiempo que codifica su hora de creación para indexación cronológica. No confíes en él como secuencia estrictamente monótona, en especial para valores generados dentro del mismo intervalo temporal.
 
 ```lua
 local id, err = uuid.v7()
@@ -48,11 +52,11 @@ local id, err = uuid.v7()
 
 **Devuelve:** `string, error`
 
-## UUIDs Deterministicos
+## UUID deterministas
 
 ### Versión 3
 
-UUID deterministico desde namespace y nombre usando MD5.
+UUID determinista a partir de un namespace y un nombre mediante MD5.
 
 ```lua
 local id, err = uuid.v3(namespace, name)
@@ -60,30 +64,33 @@ local id, err = uuid.v3(namespace, name)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `namespace` | string | String UUID valido |
-| `name` | string | Valor a hashear |
+| `namespace` | string | Cadena UUID válida |
+| `name` | string | Valor que se resumirá |
 
 **Devuelve:** `string, error`
 
 ### Versión 5
 
-UUID deterministico desde namespace y nombre usando SHA-1.
+UUID determinista a partir de un namespace y un nombre mediante SHA-1.
 
 ```lua
 local NS_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
 local id, err = uuid.v5(NS_URL, "https://example.com/resource")
+if err then
+    return nil, err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `namespace` | string | String UUID valido |
-| `name` | string | Valor a hashear |
+| `namespace` | string | Cadena UUID válida |
+| `name` | string | Valor que se resumirá |
 
 **Devuelve:** `string, error`
 
-## Inspeccion
+## Inspección
 
-### Validar
+### `validate`
 
 ```lua
 local valid = uuid.validate(input)
@@ -93,21 +100,21 @@ local valid = uuid.validate(input)
 |-----------|------|-------------|
 | `input` | any | Valor a verificar |
 
-**Devuelve:** `boolean, error`
+**Devuelve:** `boolean, nil`. Las entradas que no sean cadenas o tengan formato incorrecto devuelven `false`; la validación no genera un error estructurado.
 
-### Obtener Versión
+### `version`
 
 ```lua
-local ver, err = uuid.versión(id)
+local ver, err = uuid.version(id)
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `uuid` | string | String UUID valido |
+| `uuid` | string | Cadena UUID válida |
 
 **Devuelve:** `integer, error`
 
-### Obtener Variante
+### `variant`
 
 ```lua
 local var, err = uuid.variant(id)
@@ -115,11 +122,11 @@ local var, err = uuid.variant(id)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `uuid` | string | String UUID valido |
+| `uuid` | string | Cadena UUID válida |
 
 **Devuelve:** `string, error` (RFC4122, Reserved, Microsoft, Future, NCS, o Invalid)
 
-### Parsear
+### `parse`
 
 ```lua
 local info, err = uuid.parse(id)
@@ -127,17 +134,17 @@ local info, err = uuid.parse(id)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `uuid` | string | String UUID valido |
+| `uuid` | string | Cadena UUID válida |
 
 **Devuelve:** `table, error`
 
 Campos de tabla devuelta:
-- `versión` (integer): Versión UUID (1, 3, 4, 5, o 7)
+- `version` (integer): versión del UUID (1, 3, 4, 5 o 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, o Invalid
-- `timestamp` (integer): Marca de tiempo Unix (solo v1 y v7)
-- `node` (string): ID de nodo (solo v1)
+- `timestamp` (integer): marca de tiempo Unix (solo v1 y v7)
+- `node` (string): identificador de nodo sin procesar de seis bytes (solo v1); codifícalo antes de mostrarlo o almacenarlo como texto
 
-### Formatear
+### `format`
 
 ```lua
 local formatted, err = uuid.format(id, "standard")
@@ -147,8 +154,8 @@ local formatted, err = uuid.format(id, "urn")
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `uuid` | string | String UUID valido |
-| `format` | string? | standard (predeterminado), simple, o urn |
+| `uuid` | string | Cadena UUID válida |
+| `format` | string? | standard (predeterminado), simple o urn |
 
 **Devuelve:** `string, error`
 
@@ -156,9 +163,9 @@ local formatted, err = uuid.format(id, "urn")
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Tipo de entrada invalido | `errors.INVALID` | no |
-| Formato UUID invalido | `errors.INVALID` | no |
-| Tipo de formato no soportado | `errors.INVALID` | no |
-| Generacion fallida | `errors.INTERNAL` | no |
+| Tipo de entrada no válido | `errors.INVALID` | no |
+| Formato UUID no válido | `errors.INVALID` | no |
+| Tipo de formato no compatible | `errors.INVALID` | no |
+| Error de generación | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

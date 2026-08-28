@@ -1,6 +1,6 @@
 ---
 title: "システム"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "ランタイム、プロセス、ホスト、スーパーバイザー、クラスターの状態を検査し、選択されたランタイム制御を実行します。"
 ---
 
 # システム
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-メモリ使用量、ガベージコレクション統計、CPU詳細、プロセスメタデータを含むランタイムシステム情報のクエリ。
+`system` モジュールは、ランタイム、メモリ、プロセス、ホスト、スーパーバイザー、およびクラスターの状態を報告します。また、選択されたランタイム制御も公開します。
+
+このページは API リファレンスです。ほとんどのスニペットは独立した操作を示します。シャットダウン、ランタイム調整、分散ロックなどの制御には、明示的なポリシー認可とアプリケーション固有の失敗処理が必要です。
 
 ## ロード
 
@@ -47,6 +49,34 @@ local mods, err = system.modules()
 | `name` | string | モジュール名 |
 | `description` | string | モジュール説明 |
 | `class` | string[] | モジュール分類タグ |
+
+## デプロイメントソースの読み込み
+
+`system.source.load()` は、現在のデプロイメントソース世代から正規化されたレジストリベースラインを再構築します。動的なインストール、更新、アンインストール、置換、ロールバックの間も、オーナーとエントリは同じ世代から取得されます。
+
+```lua
+local sources, err = system.source.load()
+if err then
+    return nil, err
+end
+
+for _, owner in ipairs(sources.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(sources.entries) do
+    print(entry.id)
+end
+```
+
+**戻り値:** `table, error`
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `owners` | string[] | 安定したソースオーナー識別子。アプリケーションのオーナーは `application` |
+| `entries` | table[] | 正規化されたソースベースラインからデコードされたレジストリエントリ |
+
+パック済みモジュールの正規化入力は所有権を主張せず、ファイルシステムパスも公開されません。読み込みには `sources` に対する `system.read` が必要です。ソースレジストリ、読み込み、変換の失敗は再試行不可の `errors.INTERNAL` を返し、権限拒否は `errors.PERMISSION_DENIED` を返します。
 
 ## メモリ統計
 
@@ -167,10 +197,10 @@ local count, err = system.runtime.goroutines()
 GOMAXPROCS値を取得または設定:
 
 ```lua
--- 現在の値を取得
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- 新しい値を設定
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -307,7 +337,7 @@ local states, err = system.supervisor.states()
 
 ## クラスタプリミティブ
 
-`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効](guides/cluster.md)な場合に最も役立ちます。スタンドアロンノードでは予測可能な形で機能が制限されます — `system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告し、`system.lock` はクラスタリングが提供するグローバルレジストリを必要とします。
+`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効でない](guides/cluster.md)場合、`system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告します。`system.lock` はグローバルレジストリを必要とするため利用できません。
 
 すべての読み取り呼び出しはローカルかつ安価です: このノードのコミット済み状態のビューを報告し、ネットワークをブロックしません。
 
@@ -316,8 +346,8 @@ local states, err = system.supervisor.states()
 `system.node` はクラスタ内のこのノード自身のアイデンティティを報告します。
 
 ```lua
-local id, err = system.node.id()      -- このノードのID
-local addr, err = system.node.addr()  -- 通知されたネットワークアドレス
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -334,9 +364,9 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 `system.cluster` はクラスタ全体のビューを報告します: メンバーと誰がリーダーかを報告します。
 
 ```lua
-local members, err = system.cluster.members()  -- ノードテーブルの配列
-local leader, err = system.cluster.leader()    -- リーダーノードID、不明な場合は ""
-local n, err = system.cluster.size()           -- 見えているメンバー数
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()` はノードテーブルの配列を返します。ローカルノードは一度含まれ先頭にソートされます。
@@ -362,11 +392,11 @@ local n, err = system.cluster.size()           -- 見えているメンバー数
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: 投票ノードまたはスタンバイ
-local role, err = system.raft.role()             -- system.node.role() と同じ値
-local term, err = system.raft.term()             -- 現在の Raft ターム
-local idx, err = system.raft.commit_index()      -- 最高コミット済みログインデックス
-local stats, err = system.raft.stats()           -- 生の統計マップ（文字列 -> 文字列）
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | 関数 | 戻り値 | 備考 |
@@ -386,10 +416,18 @@ local stats, err = system.raft.stats()           -- 生の統計マップ（文�
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- クリティカルセクション: クラスタ全体で保持者は1つだけ
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 取得はフェイルファスト: ロックが既に保持されている場合はブロックせず即座に `false` を返します。呼び出し側は独自のリトライとバックオフを実装します。現在の保持者のみが解放できます。保持していないロックを解放しても安全なno-opです。
@@ -426,6 +464,7 @@ end
 | `system.read` | `cwd` | 作業ディレクトリを読み取り |
 | `system.read` | `hosts` | ホスト / ホストプロセスを一覧 |
 | `system.read` | `modules` | ロード済みモジュールを一覧 |
+| `system.read` | `sources` | 正規化されたデプロイメントソースを読み込み |
 | `system.read` | `supervisor` | スーパーバイザー状態を読み取り |
 | `system.read` | `node` | このノードのアイデンティティを読み取り |
 | `system.read` | `cluster` | クラスタメンバーシップとリーダーを読み取り |
@@ -438,14 +477,16 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 権限拒否 | `errors.INVALID` | no |
-| 無効な引数 | `errors.INVALID` | no |
-| 必須引数がない | `errors.INVALID` | no |
-| コードマネージャが利用不可 | `errors.INTERNAL` | no |
-| サービス情報が利用不可 | `errors.INTERNAL` | no |
-| OSエラー (hostname, cwd) | `errors.INTERNAL` | no |
-| このノードで Raft が実行されていない | `errors.INTERNAL` | no |
-| メンバーシップが利用不可 | `errors.INTERNAL` | no |
-| ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
+| 権限拒否（デプロイメントソースの読み込み） | `errors.PERMISSION_DENIED` | いいえ |
+| 権限拒否（ソース以外の操作、分散ロックを除く） | `errors.INVALID` | いいえ |
+| 権限拒否（分散ロックの取得/解放） | `errors.PERMISSION_DENIED` | いいえ |
+| 無効な引数 | `errors.INVALID` | いいえ |
+| 必須引数がない | `errors.INVALID` | いいえ |
+| コードマネージャが利用不可 | `errors.INTERNAL` | いいえ |
+| サービス情報が利用不可 | `errors.INTERNAL` | いいえ |
+| OSエラー (hostname, cwd) | `errors.INTERNAL` | いいえ |
+| このノードで Raft が実行されていない | `errors.INTERNAL` | いいえ |
+| メンバーシップが利用不可 | `errors.INTERNAL` | いいえ |
+| ロックが既に保持中 | `errors.ALREADY_EXISTS` | いいえ |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

@@ -1,6 +1,6 @@
 ---
 title: "Logging"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Write structured log messages and create child loggers with persistent context."
 ---
 
 # Logging
@@ -9,7 +9,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Structured logging with debug, info, warn, and error levels.
+The `logger` module writes structured messages at debug, info, warn, and error levels.
+
+This is an API reference. Each snippet is an isolated logging operation and assumes an execution context with the desired logger configuration.
+
+Log calls return no values. When the execution context provides them, each call also adds the process `pid` and the source `location` derived from the current frame.
 
 ## Loading
 
@@ -19,59 +23,61 @@ local logger = require("logger")
 
 ## Log Levels
 
-### Debug
+### `logger:debug`
+
+Write a debug-level log message.
 
 ```lua
 logger:debug("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:info`
 
-### Info
+Write an info-level log message.
 
 ```lua
 logger:info("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:warn`
 
-### Warn
+Write a warning-level log message.
 
 ```lua
 logger:warn("message", {key = "value"})
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `message` | string | Log message |
-| `fields` | table? | Contextual key-value pairs |
+### `logger:error`
 
-### Error
+Write an error-level log message.
 
 ```lua
 logger:error("message", {key = "value"})
 ```
 
+All four log-level methods accept the same parameters:
+
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `message` | string | Log message |
 | `fields` | table? | Contextual key-value pairs |
 
+Only string keys become field names. Strings, numbers, integers, booleans, errors, and structured Lua values are converted to log fields; non-string keys are ignored.
+
+For `logger:error`, a field named `error` is emitted as an error field and removed from the supplied table before the remaining fields are processed. Do not reuse that table if the `error` entry must remain intact.
+
 ## Logger Customization
 
-### With Fields
+### `logger:with`
 
-Create a child logger with persistent fields.
+Create a child logger that adds the same fields to every message.
 
 ```lua
-local child = logger:with({request_id = id})
-child:info("message")
+local function request_logger(request_id)
+    return logger:with({request_id = request_id})
+end
+
+request_logger("req-123"):info("message")
 ```
 
 | Parameter | Type | Description |
@@ -80,9 +86,11 @@ child:info("message")
 
 **Returns:** `Logger`
 
-### Named Logger
+The original logger is unchanged. Child loggers can be chained with additional `with` and `named` calls.
 
-Create a named child logger.
+### `logger:named`
+
+Create a child logger with a name.
 
 ```lua
 local named = logger:named("auth")
@@ -95,10 +103,6 @@ named:info("message")
 
 **Returns:** `Logger`
 
-## Errors
+An empty name raises a Lua argument error. It is not returned as a structured `errors.INVALID` value.
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Empty name string | `errors.INVALID` | no |
-
-See [Error Handling](lua/core/errors.md) for working with errors.
+The logging methods do not return structured errors. Invalid argument types raise Lua argument errors. If no logger is attached to the execution context, the module uses a no-op logger and discards the message.

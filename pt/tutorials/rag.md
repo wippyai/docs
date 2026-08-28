@@ -1,41 +1,43 @@
 ---
 title: "Geração Aumentada por Recuperação (RAG)"
-description: "Construa uma base de conhecimento que responda perguntas a partir dos seus próprios documentos. Este tutorial usa o módulo wippy/embeddings para busca…"
+description: "Ingira documentos, recupere trechos relevantes com busca vetorial e gere respostas fundamentadas nesse contexto."
 ---
 
 # Geração Aumentada por Recuperação (RAG)
 
-Construa uma base de conhecimento que responda perguntas a partir dos seus próprios documentos. Este tutorial usa o módulo `wippy/embeddings` para busca vetorial e o framework LLM para geração.
+Crie um pipeline de geração aumentada por recuperação sobre seus próprios documentos. O exemplo usa `wippy/embeddings` para busca vetorial e o framework LLM para gerar respostas.
 
-## O que você construirá
+**Classificação: receita parcial de aplicação.** O código de recuperação está completo,
+mas é uma integração para o template de aplicação Wippy, não uma aplicação autônoma.
+O template fornece autenticação, política de segurança, configuração de provedor e
+modelo, bootloader e migrações.
+
+## O que Você Criará
 
 Um pipeline RAG mínimo:
 
-1. Ingerir documentos markdown — dividir em chunks, embeber, persistir.
-2. Recuperar — a busca vetorial retorna os chunks mais relevantes para uma consulta.
-3. Gerar — uma chamada LLM usa os chunks recuperados como contexto de grounding.
+1. Ingira documentos Markdown dividindo-os em trechos, gerando embeddings e persistindo-os.
+2. Recupere os trechos mais relevantes para uma consulta com busca vetorial.
+3. Gere uma resposta usando os trechos recuperados como contexto.
 
 ## Pré-requisitos
 
-- Um banco de dados: `db.sql.sqlite` (inclui suporte `vec0`) ou `db.sql.postgres` com a extensão `pgvector`.
-- Um provedor LLM configurado com um modelo de embedding (por exemplo, `text-embedding-3-small`) — consulte [Framework LLM](framework/llm.md).
-- Projeto Wippy inicializado (`wippy init`, `wippy add wippy/embeddings`).
+- Uma aplicação baseada no [template de aplicação Wippy](https://github.com/wippyai/app),
+  com `app:db`, `app:processes`, `app.env:store` e as dependências de bootloader e
+  migração já presentes.
+- SQLite do runtime (incluindo `vec0`) ou PostgreSQL com a extensão `pgvector`
+  habilitada antes da inicialização.
+- `OPENAI_API_KEY` disponível pelo armazenamento de ambiente LLM configurado na aplicação.
+- Entradas de modelo no registro chamadas `text-embedding-3-small` (capacidade `embed`,
+  provedor OpenAI) e `gpt-4o-mini` (capacidade `generate`, provedor OpenAI). O pacote
+  de embeddings chama o primeiro nome diretamente e solicita 512 dimensões.
 
 ## Dependências
 
-Declare a dependência `wippy/embeddings` e aponte-a para seu banco de dados. O parâmetro `target_db` é o Registry ID da entrada de banco de dados na qual a tabela de embeddings residirá:
+Adicione a dependência `wippy/embeddings` a `src/app/deps/_index.yaml` e vincule seu
+banco de dados de destino:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
@@ -43,19 +45,33 @@ entries:
     parameters:
       - name: target_db
         value: app:db
+
 ```
 
-`wippy/embeddings` traz `wippy/llm` e a migração que cria a tabela `embeddings_512` (PostgreSQL `pgvector` ou tabela virtual SQLite `vec0`).
+Não declare novamente dependências já fornecidas pelo template da aplicação. Confirme
+que a dependência `wippy/migration` existente vincula `app_db` a `app:db` e que a
+dependência `wippy/bootloader` existente vincula `application_host` a `app:processes`
+e `env_storage` a `app.env:store`.
 
-## Ingerir documentos
+`wippy/embeddings` fornece a migração que cria `embeddings_512` (PostgreSQL `pgvector`
+ou SQLite `vec0`). `wippy/migration` a descobre, e o bootloader iniciado automaticamente
+a aplica durante `wippy run -c`; esta receita não possui um comando de esquema separado.
 
-A divisão é manipulada pelo módulo `text`; embedding e persistência pela biblioteca `embeddings`.
+Depois de editar as entradas de dependência, resolva e instale o grafo:
+
+```bash
+wippy update
+wippy install
+```
+
+## Ingerir Documentos
+
+O módulo `text` divide os documentos, enquanto a biblioteca `embeddings` gera e persiste seus vetores.
 
 ```lua
--- app/ingest.lua
+-- src/app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
-local uuid = require("uuid")
 
 local function ingest(doc_id, title, markdown)
     local splitter, err = text.splitter.markdown({
@@ -86,29 +102,30 @@ end
 return { ingest = ingest }
 ```
 
-Registre a função e suas importações:
+Registre a função e suas importações em `src/app/_index.yaml`:
 
 ```yaml
 - name: ingest
   kind: function.lua
-  source: file://app/ingest.lua
+  source: file://ingest.lua
   method: ingest
   modules:
     - text
-    - uuid
   imports:
     embeddings: wippy.embeddings:embeddings
 ```
 
-Pontos principais:
+Os campos de ingestão controlam o agrupamento e a recuperação:
 
-- `origin_id` agrupa chunks que pertencem ao mesmo documento de origem.
-- `context_id` é uma subchave opcional (seção, página, índice do chunk).
-- `add_batch` divide automaticamente se o total de tokens exceder o limite de 8000 tokens por requisição.
+- `origin_id` agrupa trechos do mesmo documento de origem. O PostgreSQL armazena esse
+  campo como `UUID`, portanto use valores UUID para que o tutorial funcione tanto no
+  PostgreSQL quanto no SQLite.
+- `context_id` é uma subchave opcional (seção, página ou índice do trecho).
+- `add_batch` divide automaticamente quando o total de tokens excede o limite de 8000 tokens por solicitação.
 
 ## Recuperar
 
-A busca vetorial retorna os chunks mais similares à consulta, juntamente com pontuações de similaridade:
+A busca vetorial retorna os trechos mais semelhantes à consulta, com pontuações de similaridade:
 
 ```lua
 local embeddings = require("embeddings")
@@ -124,15 +141,19 @@ local results, err = embeddings.search("how do I configure TLS?", {
 Filtre por origem quando quiser fundamentar a resposta em um documento específico:
 
 ```lua
-local hits = embeddings.find_by_origin("refund policy", "doc-42", { limit = 3 })
+local hits = embeddings.find_by_origin(
+    "refund policy",
+    "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+    { limit = 3 }
+)
 ```
 
-## Gerar uma resposta
+## Gerar uma Resposta
 
-Componha os chunks recuperados em um prompt e chame o LLM. Aqui o texto recuperado é anexado ao prompt do sistema; a pergunta do usuário se torna o turno do usuário:
+Componha os trechos recuperados em um prompt e chame o LLM. Aqui o texto recuperado é acrescentado ao prompt do sistema, e a pergunta se torna o turno do usuário:
 
 ```lua
--- app/answer.lua
+-- src/app/answer.lua
 local embeddings = require("embeddings")
 local llm = require("llm")
 local prompt = require("prompt")
@@ -173,10 +194,12 @@ end
 return { answer = answer }
 ```
 
+Registre a função de resposta no mesmo `src/app/_index.yaml`:
+
 ```yaml
 - name: answer
   kind: function.lua
-  source: file://app/answer.lua
+  source: file://answer.lua
   method: answer
   imports:
     embeddings: wippy.embeddings:embeddings
@@ -184,60 +207,13 @@ return { answer = answer }
     prompt: wippy.llm:prompt
 ```
 
-## Exemplo de ponta a ponta
+## Exemplo de Endpoint HTTP
 
-Juntando tudo por trás de um endpoint HTTP:
+Acrescente as entradas a seguir a `src/app/_index.yaml`. As entradas `ingest` e
+`answer` já foram adicionadas acima; não duplique essas entradas nem o banco, o
+gateway e o roteador do template:
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
-  - name: embeddings
-    kind: ns.dependency
-    component: wippy/embeddings
-    version: "*"
-    parameters:
-      - name: target_db
-        value: app:db
-
-  - name: ingest
-    kind: function.lua
-    source: file://app/ingest.lua
-    method: ingest
-    modules:
-      - text
-      - uuid
-    imports:
-      embeddings: wippy.embeddings:embeddings
-
-  - name: answer
-    kind: function.lua
-    source: file://app/answer.lua
-    method: answer
-    imports:
-      embeddings: wippy.embeddings:embeddings
-      llm: wippy.llm:llm
-      prompt: wippy.llm:prompt
-
-  - name: gateway
-    kind: http.service
-    addr: ":8080"
-    lifecycle:
-      auto_start: true
-
-  - name: api
-    kind: http.router
-    meta:
-      server: app:gateway
-    prefix: /api
-
   - name: ask
     kind: http.endpoint
     meta:
@@ -248,7 +224,7 @@ entries:
 
   - name: answer_http
     kind: function.lua
-    source: file://app/answer_http.lua
+    source: file://answer_http.lua
     method: handler
     modules:
       - http
@@ -257,7 +233,7 @@ entries:
 ```
 
 ```lua
--- app/answer_http.lua
+-- src/app/answer_http.lua
 local http = require("http")
 local answer = require("answer")
 
@@ -285,25 +261,55 @@ end
 return { handler = handler }
 ```
 
-Inicialize o índice chamando `ingest` a partir de um processo de configuração ou um comando CLI (`process.lua` com `meta.command`), depois consulte:
+Inicie a aplicação para que o bootloader de migração crie a tabela vetorial:
 
 ```bash
-curl -X POST http://localhost:8080/api/ask \
+wippy run -c
+```
+
+Preencha o índice chamando `app:ingest` a partir de uma função de configuração
+autenticada ou de um processo nomeado da aplicação. A superfície exata pertence à
+aplicação, portanto esta receita parcial não expõe um endpoint de escrita não
+autenticado. Depois de ingerir pelo menos um documento, consulte a API protegida por
+token do template com um bearer de sessão da aplicação:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ask \
+    -H 'Authorization: Bearer <app-session-token>' \
     -H 'Content-Type: application/json' \
     -d '{"question":"how do I configure TLS?"}'
 ```
 
-## Notas operacionais
+Uma resposta bem-sucedida tem o formato abaixo; o texto da resposta, os valores de
+similaridade e a ordem dos resultados dependem do provedor e do conteúdo indexado:
 
-- **Tamanho do chunk**: 500–1000 tokens é um bom ponto de partida. Muito pequeno perde o contexto local; muito grande dilui as pontuações de similaridade. Use `chunk_overlap` (~10–20% do tamanho do chunk) para preservar frases através das fronteiras.
-- **Tipos de conteúdo**: Use valores `content_type` distintos (`doc_chunk`, `faq`, `code_snippet`) para que a busca possa filtrar por tipo.
-- **Reindexação**: Exclua e reingira por documento via `embedding_repo.delete_by_origin(doc_id)` antes de adicionar novos chunks.
-- **Busca híbrida**: Para recall exato de termos (nomes, IDs), combine busca vetorial com busca de texto completo sobre sua tabela fonte e reclassifique.
-- **Escolha do modelo**: O modelo padrão de 512 dimensões `text-embedding-3-small` é econômico. Atualize para 1024 ou 3072 dimensões somente se o recall for insuficiente — vetores maiores significam maior armazenamento e busca mais lenta.
+```json
+{
+  "answer": "...",
+  "sources": [
+    {
+      "content": "...",
+      "content_type": "doc_chunk",
+      "origin_id": "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+      "context_id": "1",
+      "similarity": 0.82,
+      "meta": { "title": "TLS guide", "chunk": 1 }
+    }
+  ]
+}
+```
+
+## Notas Operacionais
+
+- **Tamanho dos trechos** — `chunk_size` e `chunk_overlap` contam caracteres, não tokens (o divisor mede o comprimento com `utf8.RuneCountInString`). Cerca de 2000–4000 caracteres é um bom ponto de partida. Um tamanho pequeno demais perde o contexto local; um tamanho grande demais dilui as pontuações de similaridade. Use `chunk_overlap` (~10–20% do tamanho do trecho) para preservar frases entre limites.
+- **Tipos de conteúdo** — Use valores distintos de `content_type` (`doc_chunk`, `faq`, `code_snippet`) para permitir filtros por tipo.
+- **Reindexação** — Exclua e ingira novamente cada documento com `embedding_repo.delete_by_origin(doc_id)` antes de adicionar novos trechos.
+- **Busca híbrida** — Para recuperar termos exatos (nomes e IDs), combine busca vetorial com busca de texto completo na tabela de origem e reordene os resultados.
+- **Escolha do modelo** — `wippy/embeddings` usa `text-embedding-3-small` com 512 dimensões, e a tabela `embeddings_512` armazena `vector(512)`/`float[512]`. Outro modelo ou tamanho de vetor exige alterar as constantes da biblioteca e a tabela da migração.
 
 ## Próximos Passos
 
-- [Framework LLM](framework/llm.md) — `llm.generate`, `llm.embed`, construção de prompt
-- [Agentes](framework/agents.md) — envolva o retriever como ferramenta de agente
-- [Módulo SQL](lua/storage/sql.md) — acesso subjacente ao banco de dados
-- [Módulo Text](lua/text/text.md) — splitters e tokenização
+- [Framework LLM](framework/llm.md) — `llm.generate`, `llm.embed` e construção de prompts
+- [Agentes](framework/agents.md) — Envolva o recuperador como uma ferramenta de agente
+- [Módulo SQL](lua/storage/sql.md) — Acesso subjacente ao banco de dados
+- [Módulo Text](lua/text/text.md) — Divisores de texto baseados em caracteres

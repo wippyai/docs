@@ -1,11 +1,13 @@
 ---
 title: "Bootloader"
-description: "El modulo wippy/bootloader orquesta la inicializacion de la aplicacion descubriendo y ejecutando funciones de bootloader en un orden definido al…"
+description: "Descubre y ejecuta funciones ordenadas de inicialización de la aplicación durante el arranque con wippy/bootloader."
 ---
 
 # Bootloader
 
-El modulo `wippy/bootloader` orquesta la inicializacion de la aplicacion descubriendo y ejecutando funciones de bootloader en un orden definido al inicio. Otros modulos del framework (migraciones, encriptacion, refresco de indices) registran bootloaders para ejecutar sus propios pasos de inicializacion.
+El módulo `wippy/bootloader` descubre y ejecuta funciones de inicialización de la aplicación en un orden definido durante el arranque. Los módulos del framework usan bootloaders para tareas como configurar claves de cifrado y ejecutar migraciones de base de datos.
+
+Esta página es una receta de integración parcial y una referencia de API, no una aplicación autónoma. La definición siguiente está completa estructuralmente, pero `apply_seed()` representa código de aplicación que debe implementar la operación real de seed y su comprobación de idempotencia. Cualquier limpieza o reversión persistente depende de esa operación específica de la aplicación.
 
 ## Configuracion
 
@@ -58,7 +60,7 @@ Los bootloaders son autonomos -- cada uno verifica sus propias condiciones, hace
 
 ## Definir un Bootloader
 
-Un bootloader es cualquier entrada `function.lua` con `meta.type: bootloader`:
+Un bootloader es cualquier entrada `function.*` con `meta.type: bootloader`. La mayoría de bootloaders de aplicación usan `function.lua`:
 
 ```yaml
 - name: seed_defaults
@@ -78,9 +80,11 @@ Un bootloader es cualquier entrada `function.lua` con `meta.type: bootloader`:
 | Campo | Requerido | Descripcion |
 |-------|----------|-------------|
 | `meta.type` | Si | Debe ser `bootloader` |
-| `meta.order` | No | Orden de ejecucion (predeterminado `100`); el menor se ejecuta primero |
+| `meta.order` | No | Orden de ejecución (predeterminado `999`); el menor se ejecuta primero |
 | `meta.description` | No | Resumen legible para humanos |
-| `meta.requires` | No | Pistas de dependencia mostradas en los logs |
+| `meta.requires` | No | Un ID o array de IDs de bootloader/servicio. Los bootloaders anteriores deben haber devuelto `success` o `skipped`; los servicios deben existir en el registro. Un requisito incumplido detiene la secuencia restante. |
+
+El tipo de dependencia se determina a partir de la entrada referenciada del registro: `meta.type: bootloader` identifica un bootloader y las demás entradas resueltas se tratan como servicios. Si un ID no se puede resolver, el fallback trata un namespace con punto como ID de bootloader y otro ID calificado con dos puntos como servicio. La comprobación de servicio espera hasta 20 intentos de 500 ms, pero comprueba la presencia en el registro, no la salud en runtime.
 
 ### Contrato de Retorno
 
@@ -118,20 +122,22 @@ return { run = run }
 | `skipped` | Sin operacion (ya hecho, precondicion no cumplida) |
 | `error` | Falla -- detiene la secuencia de arranque |
 
-Un bootloader que lanza un error de Lua se trata como `error`.
+Un bootloader que lanza un error Lua, devuelve un error de ejecución o retorna un valor que no es una tabla se convierte en un resultado `error`. El orquestador mide y sobrescribe `duration`; conserva un valor `details` devuelto para el logging.
+
+Usa exactamente las tres cadenas de estado. Otro valor se registra como `UNKNOWN`, no se incluye en ningún contador y actualmente no detiene los bootloaders posteriores.
 
 ## Orden de Ejecucion
 
 Los valores de `order` mas bajos se ejecutan primero. Reserva ordenes bajos para infraestructura:
 
-| Order | Uso Tipico |
+| Orden | Uso típico |
 |-------|-------------|
 | `10` | Secretos y claves de encriptacion (proporcionado por el modulo) |
 | `20` | Migraciones de esquema (proporcionado por `wippy/migration`) |
 | `50` | Sembrado de datos, calentamiento de indices de busqueda |
-| `100` | Predeterminado -- tareas a nivel de aplicacion |
+| `100` | Tareas a nivel de aplicación (convención) |
 
-Cuando dos bootloaders comparten un orden, el orden de ejecucion entre ellos no esta garantizado.
+Cuando dos bootloaders comparten un orden, se ejecutan alfabéticamente por su ID de entrada totalmente calificado.
 
 ## Bootloaders Integrados
 
@@ -145,10 +151,10 @@ Proporcionado por `wippy/migration`. Descubre cada entrada con `meta.type: migra
 
 ## Observar el Estado de Arranque
 
-El servicio registra una linea por bootloader (`SUCCESS`, `FAILED`, `SKIPPED`) con el ID de entrada, orden y duracion. La linea de resumen final reporta los conteos agregados. Un bootloader fallido aborta el inicio -- la politica de reinicio del supervisor entonces se aplica a `bootloader.service`.
+El servicio registra el recuento descubierto y después una línea por bootloader ejecutado (`SUCCESS`, `FAILED`, `SKIPPED`) con el ID de entrada, el orden y la duración. El resumen final informa los recuentos ejecutados y por estado. Un fallo detiene los bootloaders posteriores y hace que el orquestador devuelva `false` con sus estadísticas; por sí mismo no lanza un error del proceso Lua.
 
 <tip>
-Manten los bootloaders idempotentes. Pueden ejecutarse de nuevo despues de un reinicio por crash, asi que verifica las precondiciones (fila existe, archivo presente, variable env establecida) antes de hacer el trabajo.
+Mantén los bootloaders idempotentes. Se ejecutan de nuevo cada vez que se inicia otra vez `bootloader.service`, así que comprueba las precondiciones (fila existente, archivo presente, variable de entorno definida) antes de realizar el trabajo.
 </tip>
 
 ## Ver Tambien

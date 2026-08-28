@@ -1,6 +1,6 @@
 ---
 title: "OS-Zeit"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Runtime-Zeit lesen, Datumswerte formatieren und Zeitdifferenzen über die globale Lua-Tabelle os berechnen."
 ---
 
 # OS-Zeit
@@ -8,11 +8,13 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Standard-Lua-`os`-Zeitfunktionen. Liefert echte Wanduhrzeit für Zeitstempel, Datumsformatierung und Zeitberechnungen.
+Die globale Tabelle `os` stellt Zeitstempel, Datumsformatierung, Messung verstrichener Zeit und Berechnung von Zeitdifferenzen bereit. In einem Workflow verwenden Abfragen der aktuellen Zeit dessen Zeitreferenz; außerhalb eines Workflows verwenden sie die Systemuhr.
+
+Diese Seite ist eine API-Referenz. Zeitstempelliterale und formatierte Ausgaben dienen nur der Veranschaulichung; aktuelle Werte hängen von Runtime- oder Workflow-Uhr und Zeitzone ab.
 
 ## Laden
 
-Globale `os`-Tabelle. Kein require erforderlich.
+Die Tabelle `os` ist global und muss nicht mit `require` geladen werden.
 
 ```lua
 os.time()
@@ -26,10 +28,10 @@ os.difftime()
 Unix-Zeitstempel abrufen (Sekunden seit 1. Jan 1970 UTC):
 
 ```lua
--- Aktueller Zeitstempel
+-- Current timestamp
 local now = os.time()  -- 1718462445
 
--- Spezifisches Datum/Uhrzeit
+-- Specific date/time
 local t = os.time({
     year = 2024,
     month = 12,
@@ -58,11 +60,11 @@ Ohne Argumente aufgerufen, gibt den aktuellen Unix-Zeitstempel zurück.
 Mit einer Tabelle aufgerufen, verwendet jedes fehlende Feld die oben gezeigten Standards. Die Felder `year`, `month` und `day` verwenden standardmäßig das aktuelle Datum, wenn nicht angegeben.
 
 ```lua
--- Nur Datum (Uhrzeit standardmäßig Mitternacht)
+-- Just date (time defaults to midnight)
 os.time({year = 2024, month = 6, day = 15})
 
--- Teilweise (füllt aktuelles Jahr/Monat aus)
-os.time({day = 1})  -- erster des aktuellen Monats
+-- Partial (fills in current year/month)
+os.time({day = 1})  -- first of current month
 ```
 
 ## Datum formatieren
@@ -113,7 +115,8 @@ local t = os.date("*t", now)
 | `%b` | Monat kurz | Jun |
 | `%w` | Wochentag (0-6, Sonntag=0) | 6 |
 | `%j` | Tag des Jahres (001-366) | 167 |
-| `%U` | Wochennummer (00-53) | 24 |
+| `%U` | ISO-8601-Wochennummer (01-53, Woche beginnt Montag) | 24 |
+| `%W` | ISO-8601-Wochennummer (01-53, Woche beginnt Montag) | 24 |
 | `%z` | Zeitzonenoffset | -0700 |
 | `%Z` | Zeitzonenname | PDT |
 | `%c` | Volles Datum/Uhrzeit | Sat Jun 15 14:30:45 2024 |
@@ -139,18 +142,18 @@ local t = os.date("*t")
 | `sec` | number | Sekunde (0-59) | 45 |
 | `wday` | number | Wochentag (1-7, Sonntag=1) | 7 |
 | `yday` | number | Tag des Jahres (1-366) | 167 |
-| `isdst` | boolean | Sommerzeit | false |
+| `isdst` | boolean | In dieser Version `true`, wenn der UTC-Offset der Zone ungleich null ist; kein verlässlicher DST-Indikator | false |
 
 Verwenden Sie `"!*t"` für UTC-Datums-Tabelle.
 
 ## Verstrichene Zeit messen
 
-Sekunden seit Lua-Runtime-Start abrufen:
+Liest die Sekunden zwischen der aktuellen Runtime-Zeitreferenz und dem Initialisierungszeitpunkt des OS-Zeitmoduls:
 
 ```lua
 local start = os.clock()
 
--- Arbeit ausführen
+-- do work
 for i = 1, 1000000 do end
 
 local elapsed = os.clock() - start
@@ -158,6 +161,8 @@ print(string.format("Took %.3f seconds", elapsed))
 ```
 
 **Signatur:** `os.clock() -> number`
+
+Anders als die CPU-Zeitdefinition von Standard-Lua basiert diese Implementierung auf verstrichener Zeit. In Workflows verwendet sie die Workflow-Zeitreferenz.
 
 ## Zeitdifferenz
 
@@ -183,7 +188,7 @@ Gibt `t2 - t1` in Sekunden zurück. Kann negativ sein wenn `t1 > t2`.
 
 ## Plattform-Konstante
 
-Konstante zur Identifizierung der Laufzeit:
+Die Konstante `os.platform` identifiziert die Runtime:
 
 ```lua
 os.platform  -- "wippy"

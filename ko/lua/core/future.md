@@ -1,13 +1,13 @@
 ---
 title: "Future"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "asynchronous function 및 contract call의 result를 receive, inspect 및 cancel합니다."
 ---
 
 # Future
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-비동기 작업 결과. Future는 `funcs.async()` 및 계약 비동기 호출에서 반환됩니다.
+Future는 asynchronous operation result를 나타냅니다. `funcs.async()`와 asynchronous contract call이 반환합니다. 이 페이지는 API reference이며 pattern의 target ID와 argument는 application-defined입니다.
 
 ## 로딩
 
@@ -16,21 +16,33 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
 ```lua
 local funcs = require("funcs")
 local future, err = funcs.async("app.compute:task", data)
+if err then
+    return nil, err
+end
 ```
 
 ## 응답 채널
 
-결과를 받기 위한 채널 가져오기:
+response channel로 completion을 기다린 다음 future에서 cached result를 읽습니다.
 
 ```lua
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, err = future:result()
+if err then
+    return nil, err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 `channel()`은 `response()`의 별칭입니다.
+
+channel value는 operation payload, payload table 또는 error입니다. channel이 ready된 뒤 `result()`를 호출하면 consistent success/error interface를 제공하며 channel이 drain된 뒤에도 cached value를 반환합니다.
 
 ## 완료 확인
 
@@ -44,7 +56,7 @@ end
 
 ## 취소 확인
 
-`cancel()`이 호출되었는지 확인:
+future가 provider에 의해 canceled로 표시되었는지 확인합니다.
 
 ```lua
 if future:is_canceled() then
@@ -79,21 +91,38 @@ end
 
 **반환:** `error, boolean`
 
+operation이 실패하면 `error()`는 non-retryable `INTERNAL` wrapper를 반환합니다. called function의 original error kind와 retryability를 보존해야 하면 `result()`를 사용하십시오.
+
 ## 취소
 
-비동기 작업 취소 (최선의 노력):
+asynchronous operation의 cancellation을 best-effort로 요청합니다.
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
 ```
 
 이미 진행 중이면 작업이 여전히 완료될 수 있습니다.
 
+**반환:** `boolean, error`
+
+<warning>
+runtime v0.3.32a에서 function과 contract future는 process-global cancellation callback 하나를 공유합니다. 두 provider가 모두 load되면 <code>cancel()</code>과 <code>is_canceled()</code>는 stable cross-provider contract가 아닙니다. application correctness에 cancellation을 사용하지 마십시오. runtime이 provider cancellation을 분리할 때까지 local timeout을 사용하고 late result를 무시하십시오.
+</warning>
+
 ## 타임아웃 패턴
 
 ```lua
-local future = funcs.async("app.compute:slow", data)
-local timeout = time.after("5s")
+local time = require("time")
+
+local future, err = funcs.async("app.compute:slow", data)
+if err then
+    return nil, err
+end
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     future:channel():case_receive(),
@@ -101,37 +130,64 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    -- The operation may still complete; this caller ignores the late result.
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
 end
 
-return r.value:data()
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## 먼저 완료되는 것
 
 ```lua
-local f1 = funcs.async("app.cache:get", key)
-local f2 = funcs.async("app.db:get", key)
-
-local r = channel.select {
-    f1:channel():case_receive(),
-    f2:channel():case_receive()
-}
-
--- 느린 것 취소
-if r.channel == f1:channel() then
-    f2:cancel()
-else
-    f1:cancel()
+local f1, err = funcs.async("app.cache:get", key)
+if err then
+    return nil, err
+end
+local f2, err = funcs.async("app.db:get", key)
+if err then
+    return nil, err
 end
 
-return r.value:data()
+local ch1 = f1:channel()
+local ch2 = f2:channel()
+
+local r = channel.select {
+    ch1:case_receive(),
+    ch2:case_receive()
+}
+
+-- The slower operation may still complete; this caller ignores its result.
+local winner
+if r.channel == ch1 then
+    winner = f1
+else
+    winner = f2
+end
+
+local payload, result_err = winner:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## 에러
 
-| 조건 | 종류 |
-|------|------|
-| 작업 취소됨 | `CANCELED` |
-| 비동기 작업 실패 | 다양함 |
+| 조건 | 종류 | 재시도 가능 |
+|------|------|-------------|
+| `result()`를 통한 operation cancel | `errors.CANCELED` | 아니오 |
+| `result()`가 반환한 operation failure | varies | function error에서 보존 |
+| `error()`가 반환한 operation failure | `errors.INTERNAL` | 아니오 |
+| cancellation dispatch failure | `errors.INTERNAL` | 아니오 |

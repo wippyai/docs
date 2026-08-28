@@ -1,11 +1,13 @@
 ---
 title: "Queue"
-description: "Wippy provides a queue system for asynchronous message processing with configurable drivers and consumers."
+description: "Configure memory, AMQP, or SQS queue drivers, logical queues, consumers, acknowledgments, and publishing."
 ---
 
 # Queue
 
-Wippy provides a queue system for asynchronous message processing with configurable drivers and consumers.
+The queue system connects asynchronous message publishers, drivers, queues, consumers, and handler functions.
+
+This page is a configuration and behavior reference. YAML fences are fragments for an existing entry list unless they show a complete document; external-driver examples assume the broker or AWS-compatible service already exists.
 
 ## Architecture
 
@@ -18,10 +20,10 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **Driver** - Backend implementation (memory, AMQP, SQS)
-- **Queue** - Logical queue bound to a driver
-- **Consumer** - Connects queue to handler with concurrency settings
-- **Worker Pool** - Concurrent message processors
+- **Driver** — Backend implementation (memory, AMQP, or SQS)
+- **Queue** — Logical queue bound to a driver
+- **Consumer** — Connects a queue to a handler with concurrency settings
+- **Worker pool** — Concurrent message processors
 
 Multiple queues can share a driver. Multiple consumers can process from the same queue.
 
@@ -39,7 +41,7 @@ Multiple queues can share a driver. Multiple consumers can process from the same
 
 ### Memory Driver
 
-In-process driver for development and single-node deployments. No external dependencies.
+The in-process driver is intended for development and single-node deployments and has no external dependencies.
 
 ```yaml
 - name: memory_driver
@@ -79,15 +81,15 @@ For RabbitMQ and AMQP 0-9-1 compatible brokers.
 | `connection_timeout` | duration | - | Dial timeout |
 | `reconnect_delay` | duration | `1s` | Initial reconnect backoff |
 | `reconnect_max_delay` | duration | `30s` | Max reconnect backoff |
-| `default_message_ttl` | duration | - | Default message TTL applied to declared queues |
-| `default_queue_ttl` | duration | - | Default TTL applied to declared queues |
-| `default_queue_expiry` | duration | - | Default queue-expiry for declared queues |
+| `default_message_ttl` | duration | - | Per-message expiration used when a publisher does not set one |
+| `default_queue_ttl` | duration | - | Default queue-level message TTL (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Default unused-queue expiration (`x-expires`) |
 | `prefetch_count` | int | - | Channel-level prefetch ceiling |
 | `frame_size` | int | - | AMQP frame size limit |
 | `channel_max` | int | - | Max channels per connection |
 | `tls` | object | - | TLS settings (see below) |
 
-TLS block:
+Configure TLS under `tls`:
 
 ```yaml
   tls:
@@ -99,7 +101,7 @@ TLS block:
     insecure_skip_verify: false
 ```
 
-`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](system/env.md). `insecure_skip_verify` disables certificate verification (development only). The legacy `cert_env`/`key_env`/`ca_env` directives resolve the same way but are deprecated; prefer `${env:NAME}`.
+`cert`/`key`/`ca` carry PEM content — inline, via `file://`, or via a `${env:NAME}` placeholder resolved through the [env registry](system/env.md). `insecure_skip_verify` disables certificate verification (development only). Legacy `cert_env`/`key_env`/`ca_env` directives also read the environment registry, but preserve an inline or zero value when the lookup is missing or empty; modern placeholders without defaults fail on missing variables. The legacy directives are deprecated.
 
 ### SQS Driver
 
@@ -206,7 +208,7 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,8 +217,8 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `queue` | required | Queue registry ID |
 | `func` | required | Handler function registry ID |
 | `concurrency` | 1 | Parallel worker count |
-| `prefetch` | 10 | Total delivery buffer / max in-flight messages shared across workers |
-| `auto_ack` | false | When true, the runtime does not call broker ack; handler success/failure is the only settle signal |
+| `prefetch` | 10 | Shared delivery-buffer size; AMQP also applies it as the channel QoS prefetch count |
+| `auto_ack` | false | Backend-specific auto-ack option; for AMQP, `true` asks the broker to acknowledge on delivery |
 | `driver_options` | - | Per-driver sub-bag (same structure as queue) |
 
 **amqp consumer options:**
@@ -229,18 +231,18 @@ The AMQP driver sets a matching `content-type` (`application/json` or `applicati
 | `consumer_tag` | Identifier for this subscription |
 
 <tip>
-Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="system/security.md">Security</a>.
+Consumers respect call context and can be subject to security policies. Configure actor and policies at the lifecycle level. See <a href="./security.md">Security</a>.
 </tip>
 
 ### Worker Pool
 
-Workers run as concurrent goroutines:
+Workers run concurrently:
 
 ```
 concurrency: 3, prefetch: 10
 
-1. Driver delivers up to 10 messages to buffer
-2. 3 workers pull from buffer concurrently
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
 3. As workers finish, buffer refills
 4. Backpressure when all workers busy and buffer full
 ```
@@ -254,17 +256,21 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
-    local ok, err = process_task(body)
-    if err then
-        return false  -- nack: redelivery per driver
-    end
-    return true       -- ack: remove from queue
+    local _, task_err = process_task(body)
+    if task_err then return nil, task_err end
+    return true
 end
 
 return { main = main }
@@ -282,15 +288,14 @@ return { main = main }
 
 ### Acknowledgment
 
-The runtime auto-settles based on the handler return:
+Unless the handler settles explicitly, the consumer settles from the function invocation result:
 
-| Handler Result | Action |
-|----------------|--------|
-| `true` or non-false return | Ack |
-| `false` | Nack (redeliver per driver) |
-| Raised error | Nack |
+| Handler Outcome | Action |
+|-----------------|--------|
+| Completes without an invocation error | Ack |
+| Returns or raises an invocation error | Nack (redeliver per driver) |
 
-Call `msg:ack()` or `msg:nack()` explicitly only to settle early. Settlement is single-shot: whichever call lands first wins.
+Ordinary return values, including `false`, do not select acknowledgment behavior. Call `msg:ack()` or `msg:nack()` to settle explicitly. Settlement is single-shot: whichever call lands first wins.
 
 ### Dead-Letter Routing
 
@@ -303,14 +308,16 @@ From Lua code:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-See [Queue Module](lua/storage/queue.md) for full API.
+See [Queue Module](lua/storage/queue.md) for the Lua publishing and message API.
 
 ## Graceful Shutdown
 

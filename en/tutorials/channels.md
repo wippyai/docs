@@ -1,15 +1,25 @@
 ---
-title: "Channels and Concurrency"
-description: "Go-style channels for concurrent programming within processes."
+title: "Channels and Concurrency Primer"
+description: "Review channel operations and coroutine coordination patterns."
 ---
 
-# Channels and Concurrency
+# Channels and Concurrency Primer
 
-Go-style channels for concurrent programming within processes.
+This page introduces channels for coordinating coroutines within a process. The examples cover buffering, selection, producer-consumer flows, fan-out, fan-in, and channel closure.
+
+**Classification:** Reference/API primer. The snippets are independent examples,
+not a standalone application.
+
+## Context and Dependencies
+
+Run these snippets inside an exported function of an executable Lua entry such as
+`process.lua`. The `channel` and `coroutine` APIs are ambient globals in that
+execution context; they do not need `require()` calls or `modules` declarations.
+Each snippet creates its own channels and should be evaluated separately.
 
 ## Creating Channels
 
-Channels are communication pipes for coroutines. Create with `channel.new(capacity)`:
+Channels pass values between coroutines. Create one with `channel.new(capacity)`:
 
 ```lua
 local ch = channel.new(1)  -- buffered channel, capacity 1
@@ -17,7 +27,7 @@ local ch = channel.new(1)  -- buffered channel, capacity 1
 
 ### Buffered Channels
 
-Buffered channels allow sends without blocking until buffer is full:
+A send to a buffered channel blocks only when its buffer is full:
 
 ```lua
 local ch = channel.new(3)  -- buffer holds 3 items
@@ -52,7 +62,7 @@ local completed = done:receive()
 
 ## Channel Select
 
-`channel.select` waits on multiple channels, returns the first ready operation:
+`channel.select` waits on multiple channel operations and returns the first one that is ready:
 
 ```lua
 local ch1 = channel.new(1)
@@ -73,16 +83,19 @@ result.ok              -- true
 
 ### Select with Send
 
-Use `case_send` to attempt non-blocking sends:
+Use `case_send` to include a send operation in a select. Without a default case, `channel.select` waits until one of its cases is ready. Add `default = true` to make the attempt non-blocking:
 
 ```lua
 local ch = channel.new(1)
 
 local result = channel.select{
-    ch:case_send("sent")
+    ch:case_send("sent"),
+    default = true
 }
 
-result.ok  -- true (send succeeded)
+if not result.default then
+    result.ok  -- true (send succeeded)
+end
 
 local v = ch:receive()  -- "sent"
 ```
@@ -185,9 +198,10 @@ local items_per_producer = 5
 
 -- Spawn producers
 for p = 1, producer_count do
+    local producer_id = p
     coroutine.spawn(function()
         for i = 1, items_per_producer do
-            output:send({producer = p, item = i})
+            output:send({producer = producer_id, item = i})
         end
     end)
 end
@@ -234,17 +248,18 @@ local total = done:receive()
 
 ## Channel Methods
 
-Available operations:
+Channel operations:
 
-- `channel.new(capacity)` - Create channel with buffer size
-- `ch:send(value)` - Send value (blocks if buffer full)
-- `ch:receive()` - Receive value, returns `value, ok`
-- `ch:close()` - Close channel
-- `ch:case_send(value)` - Create send case for select
-- `ch:case_receive()` - Create receive case for select
-- `channel.select{cases...}` - Wait on multiple operations
+- `channel.new(capacity)` — Create a channel with the specified buffer size
+- `ch:send(value)` — Send a value, blocking if the buffer is full; sending to a closed channel raises an error
+- `ch:receive()` — Receive a value and return `value, ok`
+- `ch:close()` — Close the channel; closing it again raises an error
+- `ch:case_send(value)` — Create a send case for `select`
+- `ch:case_receive()` — Create a receive case for `select`
+- `channel.select{cases...}` — Wait on multiple operations and return `channel`, `value`, and `ok`
+- `channel.select{cases..., default = true}` — Return `{default = true, ok = true}` immediately when no case is ready
 
 ## Next Steps
 
-- [Channel Module Reference](lua/core/channel.md) - Complete API documentation
-- [Processes](tutorials/processes.md) - Inter-process communication
+- [Channel Module Reference](lua/core/channel.md) — Channel API documentation
+- [Processes](tutorials/processes.md) — Inter-process communication

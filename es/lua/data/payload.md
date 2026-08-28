@@ -1,26 +1,28 @@
 ---
-title: "Codificacion de Payload"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Codificación de payloads"
+description: "Crea payloads tipados, inspecciona su formato, extrae valores y transcodifica entre representaciones compatibles."
 ---
 
-# Codificacion de Payload
+# Codificación de payloads
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Convertir datos entre formatos incluyendo JSON, MessagePack y binario. Manejar payloads tipados para comunicación entre servicios y paso de datos en flujos de trabajo.
+Los payloads transportan valores tipados entre funciones, procesos, servicios y workflows. Pueden inspeccionarse, extraerse o transcodificarse entre formatos compatibles.
+
+Esta es una referencia de API con recetas parciales de transporte. Valores como `p`, `input_data` y la entrada asíncrona de destino proceden de la aplicación circundante.
 
 ## Carga
 
-Namespace global. No se necesita require.
+`payload` es un namespace global y no requiere `require()`.
 
 ```lua
-payload.new(...)  -- acceso directo
+payload.new(...)  -- direct access
 ```
 
-## Constantes de Formato
+## Constantes de formato
 
-Identificadores de formato para tipos de payload:
+Las constantes siguientes identifican los formatos de payload:
 
 ```lua
 payload.format.JSON     -- "json/plain"
@@ -33,31 +35,31 @@ payload.format.GOLANG   -- "golang/any"
 payload.format.ERROR    -- "golang/error"
 ```
 
-## Crear Payloads
+## Creación de payloads
 
-Crear un nuevo payload desde un valor Lua:
+Crea un payload a partir de un valor Lua:
 
 ```lua
--- Desde tabla
+-- From table
 local p = payload.new({
     user_id = 123,
     name = "Alice",
     roles = {"admin", "user"}
 })
 
--- Desde string
+-- From string
 local str_p = payload.new("Hello, World!")
 
--- Desde número
+-- From number
 local num_p = payload.new(42.5)
 
--- Desde boolean
+-- From boolean
 local bool_p = payload.new(true)
 
--- Desde nil
+-- From nil
 local nil_p = payload.new(nil)
 
--- Desde error
+-- From error
 local err_p = payload.new(errors.new("something failed"))
 ```
 
@@ -67,9 +69,9 @@ local err_p = payload.new(errors.new("something failed"))
 
 **Devuelve:** `Payload`
 
-## Obtener Formato
+## Obtención del formato
 
-Obtener el formato del payload:
+Lee el identificador de formato del payload:
 
 ```lua
 local p = payload.new({name = "test"})
@@ -82,11 +84,11 @@ local err_p = payload.new(errors.new("failed"))
 local format3 = err_p:get_format()  -- "golang/error"
 ```
 
-**Devuelve:** `string` - una de las constantes `payload.format.*`
+**Devuelve:** `string` — una de las constantes `payload.format.*`
 
-## Extraer Datos
+## Extracción de datos
 
-Extraer el valor Lua del payload (transcodifica si es necesario):
+Extrae el valor Lua del payload y lo transcodifica cuando sea necesario:
 
 ```lua
 local p = payload.new({
@@ -105,9 +107,9 @@ print(data.items[1])     -- 1
 
 **Devuelve:** `any, error`
 
-## Transcodificar Payloads
+## Transcodificación de payloads
 
-Transcodificar payload a un formato diferente:
+Transcodifica un payload a otro formato compatible:
 
 ```lua
 local p = payload.new({
@@ -115,21 +117,24 @@ local p = payload.new({
     value = 123
 })
 
--- Convertir a JSON
+-- Convert to JSON
 local json_p, err = p:transcode(payload.format.JSON)
 if err then
     return nil, err
 end
 print(json_p:get_format())  -- "json/plain"
 
--- Convertir a MessagePack (binario compacto)
+-- Convert to MessagePack (compact binary)
 local msgpack_p, err = p:transcode(payload.format.MSGPACK)
 if err then
     return nil, err
 end
 
--- Convertir a YAML
-local yaml_p, err = p:transcode(payload.format.YAML)
+-- Convert to YAML
+local yaml_p, yaml_err = p:transcode(payload.format.YAML)
+if yaml_err then
+    return nil, yaml_err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -140,19 +145,24 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 
 ## Unmarshalling
 
-Forzar la decodificación de un payload a un valor Lua, independientemente del formato de origen:
+Decodifica un payload como un valor Lua, independientemente de su formato de origen:
 
 ```lua
 local data, err = p:unmarshal()
+if err then
+    return nil, err
+end
 ```
 
-`unmarshal()` siempre transcodifica al formato Lua y devuelve el valor Lua resultante. A diferencia de `data()`, que devuelve el valor subyacente sin procesar (potencialmente un objeto Go para formatos no-Lua), `unmarshal()` garantiza un valor Lua completamente decodificado.
+Tanto `data()` como `unmarshal()` devuelven el valor Lua existente o transcodifican un payload que no sea Lua al formato Lua. `unmarshal()` es más estricto cuando un transcodificador produce un resultado no válido: devuelve un error `errors.INTERNAL`, mientras que `data()` devuelve `nil`.
 
 **Devuelve:** `any, error`
 
-## Resultados Async
+## Resultados asíncronos
 
-Los payloads se reciben comunmente de llamadas de función async:
+Las llamadas asíncronas a funciones devuelven sus valores en payloads:
+
+Este ejemplo presupone que `app.process:compute` devuelve exactamente un valor. Si no hay resultado, `future:result()` devuelve `nil`; si hay varios resultados, devuelve una tabla Lua en lugar de un único `Payload`, por lo que los llamadores deben manejar esas formas por separado.
 
 ```lua
 local funcs = require("funcs")
@@ -162,14 +172,22 @@ if err then
     return nil, err
 end
 
--- Esperar resultado
+-- Wait for result
 local ch = future:response()
-local result_payload, ok = ch:receive()
+local _, ok = ch:receive()
 if not ok then
     return nil, errors.new("channel closed")
 end
 
--- Extraer datos del payload
+local result_payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+if result_payload == nil then
+    return nil, errors.new("compute returned no result")
+end
+
+-- Extract data from payload
 local result, err = result_payload:data()
 if err then
     return nil, err
@@ -180,9 +198,9 @@ print(result.computed_value)
 
 ## Errores
 
-| Condición | Tipo | Reintentable |
+| Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| Fallo de transcodificacion | `errors.INTERNAL` | no |
-| Resultado no es valor Lua valido | `errors.INTERNAL` | no |
+| Fallo de transcodificación | `errors.INTERNAL` | no |
+| El resultado no es un valor Lua válido | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

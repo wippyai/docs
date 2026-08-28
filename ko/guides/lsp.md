@@ -1,6 +1,6 @@
 ---
 title: "언어 서버"
-description: "Wippy에는 Lua 코드를 위한 IDE 기능을 제공하는 내장 LSP(Language Server Protocol) 서버가 포함되어 있습니다. 서버는 Wippy 런타임의 일부로 실행되며 TCP 또는 HTTP를 통해 에디터에 연결됩니다."
+description: "TCP 또는 HTTP를 통해 Lua 편집기 기능을 제공하는 Wippy 내장 Language Server Protocol 서버를 구성합니다."
 ---
 
 # 언어 서버
@@ -15,7 +15,7 @@ Wippy에는 Lua 코드를 위한 IDE 기능을 제공하는 내장 LSP(Language 
 - 참조 찾기
 - 문서 및 워크스페이스 심볼
 - 호출 계층 (수신 및 발신 호출)
-- 실시간 진단 (파싱 오류, 타입 오류)
+- 파싱 성공 후 현재 편집기 오버레이의 타입 오류를 가져오는 pull 진단
 - 함수 매개변수에 대한 시그니처 도움말
 
 ## 구성
@@ -23,12 +23,6 @@ Wippy에는 Lua 코드를 위한 IDE 기능을 제공하는 내장 LSP(Language 
 `.wippy.yaml`에서 LSP 서버를 활성화합니다:
 
 ```yaml
-version: "1.0"
-
-lua:
-  type_system:
-    enabled: true
-
 lsp:
   enabled: true
   address: ":7777"
@@ -38,7 +32,7 @@ lsp:
 
 | 필드 | 기본값 | 설명 |
 |------|--------|------|
-| `enabled` | false | TCP 서버 활성화 |
+| `enabled` | false | LSP 서비스와 TCP 서버 활성화 |
 | `address` | :7777 | TCP 수신 주소 |
 | `http_enabled` | false | HTTP 전송 활성화 |
 | `http_address` | :7778 | HTTP 수신 주소 |
@@ -52,7 +46,7 @@ TCP 서버는 표준 LSP 메시지 프레이밍(Content-Length 헤더)과 함께
 
 ### HTTP 전송
 
-HTTP 전송은 JSON-RPC 페이로드가 포함된 POST 요청을 수락합니다. 브라우저 기반 에디터 및 웹 도구에 유용합니다. 크로스 오리진 접근을 위한 CORS 헤더가 포함됩니다.
+HTTP 전송은 JSON-RPC 페이로드가 포함된 POST 요청을 수락합니다. 브라우저 기반 에디터와 웹 도구를 지원하고, CORS preflight `OPTIONS` 요청에 응답하며, cross-origin 접근용 CORS 헤더를 포함합니다.
 
 ```yaml
 lsp:
@@ -89,6 +83,9 @@ LSP 서버는 빠른 조회를 위해 모든 코드 엔트리의 인덱스를 �
 | 메서드 | 설명 |
 |--------|------|
 | `initialize` | 기능 협상 |
+| `initialized` | 초기화 완료 알림 |
+| `shutdown` | 프로토콜 세션 종료 |
+| `exit` | 종료 알림 |
 | `textDocument/didOpen` | 열린 문서 추적 |
 | `textDocument/didChange` | 전체 문서 동기화 |
 | `textDocument/didClose` | 문서 해제 |
@@ -115,13 +112,9 @@ LSP 서버는 빠른 조회를 위해 모든 코드 엔트리의 인덱스를 �
 
 ## 진단
 
-진단은 인덱싱 중에 계산되며 다음을 포함합니다:
+문서가 성공적으로 파싱되면 인덱싱은 타입 불일치와 정의되지 않은 심볼 같은 type-checking 진단을 저장합니다. 진단에는 표준 error, warning, information, hint 심각도를 사용합니다.
 
-- 파싱 오류 (구문 문제)
-- 타입 검사 오류 (불일치, 정의되지 않은 심볼)
-- 심각도 수준: error, warning, information, hint
-
-진단은 문서 오버레이 시스템을 통해 입력하는 동안 업데이트됩니다.
+전체 문서 변경 알림은 진단에 사용하는 overlay를 업데이트합니다. client는 `textDocument/diagnostic`으로 현재 저장 결과를 가져옵니다. 이 서버는 `textDocument/publishDiagnostics` 알림을 push하지 않습니다. 파싱 실패는 새 진단이 저장되기 전에 re-indexing을 중단하므로 pull 결과에 해당 syntax error가 나타나지 않으며 이전의 성공 결과가 남을 수 있습니다.
 
 ## 같이 보기
 

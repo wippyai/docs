@@ -1,11 +1,13 @@
 ---
-title: "Archivos Estáticos"
-description: "Sirva archivos estáticos desde cualquier filesystem usando http.static. Los manejadores estáticos se montan directamente en el servidor y pueden servir…"
+title: "Archivos estáticos"
+description: "Sirve SPA, recursos y cargas de usuarios desde entradas de sistema de archivos con http.static."
 ---
 
-# Archivos Estáticos
+# Archivos estáticos
 
-Sirva archivos estáticos desde cualquier filesystem usando `http.static`. Los manejadores estáticos se montan directamente en el servidor y pueden servir SPAs, assets, o uploads de usuarios desde cualquier ruta.
+Un handler `http.static` se monta directamente en un servidor y sirve SPA, recursos o cargas de usuarios desde una entrada de sistema de archivos.
+
+**Clasificación: referencia de handler estático.** Los bloques YAML suponen que existe el servidor HTTP indicado. En estos ejemplos creados por el host, las rutas relativas de `fs.directory` se resuelven desde el directorio de trabajo del proyecto. Las entradas propiedad de un módulo resuelven en cambio las rutas relativas desde la raíz de origen del módulo propietario, salvo que se configuren con `base: project`. Los archivos referenciados deben crearse por separado.
 
 ## Configuración
 
@@ -16,7 +18,6 @@ Sirva archivos estáticos desde cualquier filesystem usando `http.static`. Los m
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,9 +29,8 @@ Sirva archivos estáticos desde cualquier filesystem usando `http.static`. Los m
 | `meta.server` | ID de Registro | Servidor HTTP padre |
 | `path` | string | Ruta de montaje URL (debe comenzar con `/`) |
 | `fs` | ID de Registro | Entrada de filesystem desde donde servir |
-| `directory` | string | Subdirectorio dentro del filesystem |
 | `static_options.spa` | bool | Modo SPA - servir index para rutas no matcheadas |
-| `static_options.index` | string | Archivo index (requerido cuando spa=true) |
+| `static_options.index` | string | Archivo índice (obligatorio cuando `spa=true`) |
 | `static_options.cache` | string | Valor del header Cache-Control |
 | `middleware` | []string | Cadena de middleware |
 | `options` | map | Opciones de middleware (notación de punto) |
@@ -45,12 +45,12 @@ Los archivos estáticos se sirven desde entradas de filesystem. Cualquier tipo d
 
 ```yaml
 entries:
-  # Directorio local
+  # Local directory
   - name: public
     kind: fs.directory
     directory: ./public
 
-  # Manejador estático
+  # Static handler
   - name: static
     kind: http.static
     meta:
@@ -61,16 +61,20 @@ entries:
 
 La solicitud `/static/css/style.css` sirve `./public/css/style.css`.
 
-El campo `directory` selecciona un subdirectorio dentro del filesystem:
+Para servir un subdirectorio, apunta la referencia `fs` a una entrada de sistema de archivos arraigada allí; por ejemplo, una `fs.directory` cuyo campo `directory:` señale al subdirectorio:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## Modo SPA
@@ -109,18 +113,17 @@ entries:
     kind: fs.directory
     directory: ./dist
 
-  # Assets versionados - cachear indefinidamente
+  # Versioned assets - cache forever
   - name: assets
     kind: http.static
     meta:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 
-  # HTML - caché corto, debe revalidar
+  # HTML - short cache, must revalidate
   - name: app
     kind: http.static
     meta:
@@ -134,6 +137,7 @@ entries:
 ```
 
 Patrones comunes de caché:
+
 - **Assets versionados**: `public, max-age=31536000, immutable`
 - **HTML/index**: `public, max-age=0, must-revalidate`
 - **Uploads de usuario**: `private, max-age=3600`
@@ -163,9 +167,9 @@ El middleware envuelve el manejador estático en orden—las solicitudes pasan a
 El matching de rutas es basado en prefijo. Un manejador en <code>/</code> captura todas las solicitudes no matcheadas. Use routers para endpoints de API para evitar conflictos.
 </warning>
 
-## Ver También
+## Véase también
 
 - [Servidor](http/server.md) - Configuración del servidor HTTP
-- [Routing](http/router.md) - Routers y endpoints
-- [Filesystem](lua/storage/filesystem.md) - Módulo Filesystem
+- [Enrutamiento](http/router.md) - Routers y endpoints
+- [Sistema de archivos](lua/storage/filesystem.md) - Módulo de sistema de archivos
 - [Middleware](http/middleware.md) - Middleware disponible

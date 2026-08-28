@@ -1,13 +1,15 @@
 ---
 title: "Sistema de Entorno"
-description: "Gestiona variables de entorno a través de backends de almacenamiento configurables."
+description: "Defina variables de entorno respaldadas por memoria, archivos, el sistema operativo, valores estáticos o routers de almacenamiento."
 ---
 
 # Sistema de Entorno
 
-Gestiona variables de entorno a través de backends de almacenamiento configurables.
+Las entradas de entorno permiten que el código en tiempo de ejecución consulte configuración por el nombre público de una variable o por el ID de su entrada de registro.
 
-## Visión General
+Esta página es una referencia de configuración. Sus fences YAML son fragmentos de entradas salvo cuando muestran un documento contenedor.
+
+## Almacenamiento y acceso
 
 El sistema de entorno separa el almacenamiento del acceso:
 
@@ -15,10 +17,10 @@ El sistema de entorno separa el almacenamiento del acceso:
 - **Variables** - Referencias nombradas a valores en almacenes
 
 Las variables pueden referenciarse por:
-- **Nombre público** - El valor del campo `variable` (debe ser único en el sistema)
-- **ID de Entrada** - Referencia completa `namespace:nombre`
+- **Nombre público** - El valor del campo `variable`
+- **ID de Entrada** - Referencia completa `namespace:name`
 
-Si no desea que una variable sea accesible públicamente por nombre, omita el campo `variable`.
+Omita el campo `variable` cuando solo se deba acceder a una variable mediante su ID de entrada. La primera variable que reclama un nombre público conserva ese acceso abreviado. Una variable posterior con el mismo nombre público también se registra y sigue siendo accesible por su ID de entrada, pero no reemplaza el acceso abreviado existente.
 
 ## Tipos de Entrada
 
@@ -44,7 +46,7 @@ Almacenamiento volátil en memoria.
 
 ### Almacén de Archivo
 
-Almacenamiento persistente usando formato de archivo `.env` (`KEY=VALUE` con comentarios `#`).
+Almacenamiento persistente con un formato sencillo `KEY=VALUE`. Se ignoran las líneas vacías y las que comienzan por `#`; el texto posterior a `#` en una línea de valor se trata como comentario. Los valores entre comillas y las secuencias de escape no reciben un análisis especial.
 
 ```yaml
 - name: app_config
@@ -94,24 +96,24 @@ Siempre de solo lectura. Las operaciones de escritura retornan `PERMISSION_DENIE
 
 ### Almacén Router
 
-Encadena múltiples almacenes. Las lecturas buscan en orden hasta encontrar. Las escrituras van solo al primer almacén.
+Un router encadena varios almacenes. Cuando no encuentra un valor, las lecturas los recorren en orden hasta hallarlo; el router almacena en caché el valor encontrado, por lo que los cambios directos posteriores en un almacén de respaldo dejan de ser visibles a través de ese router. Un error distinto de `NOT_FOUND` detiene la búsqueda alternativa. Las escrituras se dirigen únicamente al primer almacén.
 
 ```yaml
 - name: config
   kind: env.storage.router
   storages:
-    - app.config:memory    # Primario (escribe aquí)
-    - app.config:file      # Respaldo
-    - app.config:os        # Respaldo
+    - app.config:memory    # Primary (writes here)
+    - app.config:file      # Fallback
+    - app.config:os        # Fallback
 ```
 
 | Propiedad | Tipo | Descripción |
 |----------|------|-------------|
-| `storages` | array | Lista ordenada de referencias de almacenes |
+| `storages` | array | Lista ordenada, obligatoria y no vacía, de referencias de almacenes |
 
 ## Variables
 
-Las variables proporcionan acceso nombrado a valores de almacenes.
+Las variables asignan nombres públicos o ID de entradas a valores de un backend de almacenamiento.
 
 ```yaml
 - name: DATABASE_URL
@@ -119,15 +121,15 @@ Las variables proporcionan acceso nombrado a valores de almacenes.
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | Propiedad | Tipo | Descripción |
 |----------|------|-------------|
-| `variable` | string | Nombre de variable pública (opcional, debe ser único) |
-| `storage` | string | Referencia de almacén (`namespace:nombre`) |
+| `variable` | string | Nombre público opcional de la variable |
+| `storage` | string | Referencia obligatoria al almacén (`namespace:name`) |
 | `default` | string | Valor por defecto si no se encuentra |
-| `read_only` | boolean | Prevenir modificaciones |
+| `readonly` | boolean | Impedir modificaciones |
 
 ### Nomenclatura de Variables
 
@@ -136,14 +138,14 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
 ### Patrones de Acceso
 
 ```yaml
-# Variable pública - accesible por nombre "PORT"
+# Public variable - accessible by name "PORT"
 - name: port_var
   kind: env.variable
   variable: PORT
   storage: app.config:os
   default: "8080"
 
-# Variable privada - accesible solo por ID "app.config:internal_key"
+# Private variable - accessible only by ID "app.config:internal_key"
 - name: internal_key
   kind: env.variable
   storage: app.config:secrets
@@ -151,7 +153,7 @@ Los nombres de variables deben contener solo: `a-z`, `A-Z`, `0-9`, `_`
 
 ## Interpolación de Placeholders
 
-Las variables registradas se incorporan a la configuración de las entradas con placeholders `${env:NAME}`, resueltos centralmente en el momento de la decodificación contra este registro. Cualquier campo string en los datos de una entrada puede referenciar una variable de esta forma.
+Las variables registradas se incorporan a la configuración de las entradas con marcadores `${env:NAME}`, resueltos de forma central al decodificar contra este registro. Las cadenas de configuración se resuelven salvo cuando el tipo de entrada marca un campo como opaco. Los campos de fuente, como `template.jet.source`, son opacos para que el texto de plantillas o programas no se reescriba.
 
 | Sintaxis | Significado |
 |----------|-------------|
@@ -172,12 +174,12 @@ Las variables registradas se incorporan a la configuración de las entradas con 
     key:  ${env:app.env:tls_key}
 ```
 
-Un campo cuyo valor completo es un único placeholder toma el valor tipado de la variable (convertido a bool/int/float cuando se da un valor por defecto tipado); un placeholder mezclado con texto circundante se interpola en un string. El `default` propio de la variable se respeta antes que el `|default` en línea del placeholder. Una referencia que no resuelve a nada y no tiene valor por defecto hace fallar la decodificación.
+Un campo cuyo valor completo sea un único marcador adopta el tipo de su valor predeterminado en línea. Por ejemplo, `${env:PORT|8080}` produce un entero y convierte un valor almacenado a entero, mientras que `${env:PORT|"8080"}` sigue siendo una cadena. Un marcador mezclado con texto circundante siempre produce una cadena. El `default` propio de la variable se respeta antes que el `|default` en línea del marcador. Una referencia que no resuelve ningún valor y carece de valor predeterminado hace fallar la decodificación.
 
 La resolución ocurre solo en el momento de la decodificación: la entrada almacenada en el registro conserva los placeholders sin resolver, de modo que los secretos resueltos nunca aparecen en los resultados de `registry.get` ni en el estado persistido. Las entradas que referencian `${env:...}` se ordenan automáticamente en el arranque después de los almacenes env y las variables de las que dependen.
 
 <note>
-Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (por ejemplo <code>cert_env: app.env:tls_cert</code>) que se resuelve de la misma forma. Esta forma está <b>deprecada</b> — migrala al placeholder <code>${env:NAME}</code>. Una clave <code>&lt;field&gt;_env</code> que nombra una variable no registrada no se trata como directiva y se deja tal cual; una que nombra una variable registrada pero vacía conserva el valor en línea de <code>&lt;field&gt;</code>. Solo un <code>${env:NAME}</code> explícito sin valor por defecto falla de forma estricta ante una variable ausente.
+Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (por ejemplo <code>cert_env: app.env:tls_cert</code>) que se resuelve de la misma forma. Esta forma está <b>obsoleta</b>: mígrela al marcador <code>${env:NAME}</code>. Una clave <code>&lt;field&gt;_env</code> que nombra una variable no registrada no se trata como directiva y se deja tal cual; una que nombra una variable registrada pero vacía conserva el valor en línea de <code>&lt;field&gt;</code>. Solo un <code>${env:NAME}</code> explícito sin valor predeterminado falla de forma estricta ante una variable ausente.
 </note>
 
 ## Errores
@@ -192,9 +194,9 @@ Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env<
 
 ## Acceso en Tiempo de Ejecución
 
-- [módulo env](lua/system/env.md) - Acceso en tiempo de ejecución Lua
+- [Módulo env](lua/system/env.md) - Acceso en tiempo de ejecución Lua
 
 ## Ver También
 
-- [Modelo de Seguridad](system/security.md) - Control de acceso para variables de entorno
-- [Guía de Configuración](guides/configuration.md) - Patrones de configuración de aplicación
+- [Modelo de seguridad](system/security.md) - Control de acceso para variables de entorno
+- [Guía de configuración](guides/configuration.md) - Patrones de configuración de aplicaciones

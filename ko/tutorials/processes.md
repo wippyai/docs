@@ -1,79 +1,87 @@
 ---
-title: "프로세스와 메시징"
-description: "격리된 프로세스를 스폰하고 메시지 전달을 통해 통신합니다."
+title: "프로세스와 메시징 입문"
+description: "프로세스 생성, 메시징, 모니터링, 연결, 이름 등록 API를 살펴봅니다."
 ---
 
-# 프로세스와 메시징
+# 프로세스와 메시징 입문
 
-격리된 프로세스를 스폰하고 메시지 전달을 통해 통신합니다.
+격리된 작업을 생성하고, 메시지를 교환하고, 수명 주기를 모니터링하고, 실패를 연결하고, 프로세스 이름을 등록하는 API를 알아봅니다.
 
 ## 개요
 
-프로세스는 메시지 전달을 통해 통신하는 격리된 실행 단위를 제공합니다. 각 프로세스는 자체 인박스를 가지며 특정 메시지 토픽을 구독할 수 있습니다.
+프로세스는 메시지 전달로 통신하는 격리된 실행 단위입니다. 각 프로세스는 자체 수신함을 가지며 특정 메시지 주제를 구독할 수 있습니다.
 
-이 페이지는 입문서입니다: 각 코드 조각은 하나의 API를 독립적으로 보여줍니다. 스폰, 모니터링, 메시징을 함께 연결하는 완전히 실행 가능한 애플리케이션은 [에코 서비스](tutorials/echo-service.md) 튜토리얼을 참조하세요.
+**분류:** 참조/API 입문서. 각 코드 조각은 하나의 연산을 독립적으로 보여 주며, 이 페이지 자체는 독립 실행형 프로젝트가 아닙니다. 생성, 모니터링, 메시징을 결합한 완전한 애플리케이션은 [에코 서비스](tutorials/echo-service.md) 튜토리얼을 참조하세요.
 
-주요 개념:
-- `process.spawn()` 및 변형으로 프로세스 스폰
-- 토픽을 통해 PID 또는 등록된 이름으로 메시지 전송
-- `process.listen()` 또는 `process.inbox()`를 사용하여 메시지 수신
-- 이벤트로 프로세스 라이프사이클 모니터링
-- 조율된 실패 처리를 위한 프로세스 연결
+## 실행 환경과 의존성
 
-## 프로세스 스폰
+예제는 실행 가능한 Lua 엔트리 안에서 실행되며 `app:processes`라는 실행 중인 `process.host`가 등록되어 있다고 가정합니다. `app.test.process:echo_worker` 같은 엔트리 ID는 프로젝트에서 정의해야 하는 프로세스 엔트리 자리표시자입니다. `process`와 `channel` API는 전역으로 제공됩니다. 직접 `process.*`에 접근하는 것이 일반적이며, `require("process")`도 모듈 선언 없이 해석됩니다. `time.after()`를 호출하는 코드 조각에는 `local time = require("time")`와 엔트리 `modules` 목록의 `time`이 필요합니다.
 
-엔트리 참조에서 새 프로세스를 스폰합니다.
+생성, 보내기, 모니터링, 연결, 취소, 종료, 레지스트리 변경은 보호되는 연산입니다. 실행 엔트리에 액터를 지정하고 필요한 연산 및 리소스만 허용하는 정책을 부여하세요. 그렇지 않으면 엄격 모드가 해당 연산을 거부합니다.
+
+핵심 개념:
+
+- `process.spawn()`과 그 변형으로 프로세스를 생성합니다.
+- PID나 등록된 이름으로 주제 기반 메시지를 보냅니다.
+- `process.listen()` 또는 `process.inbox()`로 메시지를 받습니다.
+- 이벤트로 프로세스 수명 주기를 모니터링합니다.
+- 프로세스를 연결하여 실패를 함께 처리합니다.
+
+## 프로세스 생성
+
+엔트리 참조에서 새 프로세스를 생성합니다.
 
 ```lua
 local pid, err = process.spawn("app.test.process:echo_worker", "app:processes", "hello")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- pid는 스폰된 프로세스의 문자열 식별자
+-- pid is a string identifier for the spawned process
 print("Started worker:", pid)
 ```
 
-파라미터:
-- 엔트리 참조 (예: `"app.test.process:echo_worker"`)
-- 호스트 참조 (예: `"app:processes"`)
-- 워커의 main 함수에 전달되는 선택적 인자
+매개변수:
+
+- 엔트리 참조(예: `"app.test.process:echo_worker"`)
+- 호스트 참조(예: `"app:processes"`)
+- 워커의 main 함수로 전달하는 선택적 인수
 
 ### 자신의 PID 가져오기
 
 ```lua
 local my_pid = process.pid()
--- 현재 프로세스의 문자열 PID 반환
+-- Returns string PID of current process
 ```
 
 ## 메시지 전달
 
-메시지는 토픽 기반 라우팅 시스템을 사용합니다. 토픽과 함께 PID로 메시지를 보내고, 토픽 구독 또는 인박스를 통해 수신합니다.
+메시지는 주제 기반 라우팅 시스템을 사용합니다. 주제와 함께 PID로 메시지를 보낸 다음 주제 구독 또는 수신함을 통해 받습니다.
 
 ### 메시지 보내기
 
 ```lua
--- PID로 프로세스에 전송
+-- Send to process by PID
 local sent, err = process.send(worker_pid, "messages", "hello from parent")
 if err then
-    return false, "send failed: " .. err
+    return false, "send failed: " .. tostring(err)
 end
 
--- send는 (bool, error) 반환
+-- send returns (bool, error)
 ```
 
-### 토픽 구독을 통한 수신
+### 주제 구독으로 받기
 
-`process.listen()`을 사용하여 특정 토픽을 구독합니다:
+`process.listen()`으로 특정 주제를 구독합니다.
 
 ```lua
--- "messages" 토픽의 메시지를 리슨하는 워커
+-- Worker that listens for messages on "messages" topic
 local function main()
     local ch = process.listen("messages")
 
-    local msg = ch:receive()
-    if msg then
-        -- msg는 직접 페이로드
+    local msg, ok = ch:receive()
+    if ok then
+        -- msg is the payload directly
         print("Received:", msg)
         return true
     end
@@ -84,9 +92,9 @@ end
 return { main = main }
 ```
 
-### 인박스를 통한 수신
+### 수신함으로 받기
 
-인박스는 토픽 리스너와 매칭되지 않는 메시지를 수신합니다:
+수신함은 어떤 주제 리스너와도 일치하지 않는 메시지를 받습니다.
 
 ```lua
 local function main()
@@ -100,33 +108,36 @@ local function main()
         })
 
         if result.channel == specific_ch then
-            -- "specific_topic"으로의 메시지가 여기로 도착
+            -- Messages to "specific_topic" arrive here
             local payload = result.value
         elseif result.channel == inbox_ch then
-            -- 다른 모든 토픽의 메시지가 여기로 도착
+            -- Messages to any OTHER topic arrive here
             local msg = result.value
-            print("Inbox got:", msg.topic, msg.payload)
+            print("Inbox got:", msg:topic(), msg:payload():data())
         end
     end
 end
 ```
 
-### 발신자 정보를 위한 메시지 모드
+### 송신자 정보를 위한 메시지 모드
 
-`{ message = true }`를 사용하여 발신자 PID와 토픽에 접근합니다:
+송신자 PID와 주제에 접근하려면 `{ message = true }`를 사용합니다.
 
 ```lua
--- 메시지를 발신자에게 에코하는 워커
+-- Worker that echoes messages back to sender
 local function main()
     local ch = process.listen("echo", { message = true })
 
     local msg = ch:receive()
     if msg then
         local sender = msg:from()
-        local payload = msg:payload()
+        local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", payload)
+            local _, send_err = process.send(sender, "reply", data)
+            if send_err then
+                return false, "reply failed: " .. tostring(send_err)
+            end
         end
         return true
     end
@@ -139,9 +150,9 @@ return { main = main }
 
 ## 프로세스 모니터링
 
-프로세스가 종료될 때 EXIT 이벤트를 받기 위해 모니터링합니다.
+프로세스를 모니터링하면 종료될 때 `EXIT` 이벤트를 받습니다.
 
-### 모니터링과 함께 스폰
+### 모니터링과 함께 생성
 
 ```lua
 local events_ch = process.events()
@@ -151,10 +162,10 @@ local worker_pid, err = process.spawn_monitored(
     "app:processes"
 )
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- EXIT 이벤트 대기
+-- Wait for EXIT event
 local timeout = time.after("3s")
 local result = channel.select {
     events_ch:case_receive(),
@@ -178,72 +189,78 @@ end
 
 ### 명시적 모니터링
 
-이미 실행 중인 프로세스를 모니터링합니다:
+이미 실행 중인 프로세스를 모니터링합니다.
 
 ```lua
 local events_ch = process.events()
 
--- 모니터링 없이 스폰
+-- Spawn without monitoring
 local worker_pid, err = process.spawn("app.test.process:long_worker", "app:processes")
 if err then
-    return false, "spawn failed: " .. err
+    return false, "spawn failed: " .. tostring(err)
 end
 
--- 명시적으로 모니터링 추가
+-- Add monitoring explicitly
 local ok, monitor_err = process.monitor(worker_pid)
 if monitor_err then
-    return false, "monitor failed: " .. monitor_err
+    return false, "monitor failed: " .. tostring(monitor_err)
 end
 
--- 이제 이 워커의 EXIT 이벤트를 수신함
+-- Now will receive EXIT events for this worker
 ```
 
-모니터링 중지:
+모니터링을 중지합니다.
 
 ```lua
 local ok, err = process.unmonitor(worker_pid)
+if err then
+    return false, "unmonitor failed: " .. tostring(err)
+end
 ```
 
 ## 프로세스 연결
 
-조율된 라이프사이클 관리를 위해 프로세스를 연결합니다. 연결된 프로세스는 연결된 프로세스가 실패할 때 LINK_DOWN 이벤트를 받습니다.
+수명 주기를 함께 관리하려면 프로세스를 연결합니다. 기본적으로 비정상 종료는 연결된 동료 프로세스를 종료합니다. `trap_links=true`인 동료는 계속 실행되며 대신 `LINK_DOWN` 이벤트를 받습니다.
 
-### 연결된 프로세스 스폰
+### 연결된 프로세스 생성
 
 ```lua
--- 부모가 크래시하면 자식도 종료 (trap_links가 설정되지 않은 경우)
+-- Child terminates if parent crashes (unless trap_links is set)
 local pid, err = process.spawn_linked("app.test.process:child_worker", "app:processes")
 if err then
-    return false, "spawn_linked failed: " .. err
+    return false, "spawn_linked failed: " .. tostring(err)
 end
 ```
 
 ### 명시적 연결
 
 ```lua
--- 기존 프로세스에 연결
+-- Link to existing process
 local ok, err = process.link(target_pid)
 if err then
-    return false, "link failed: " .. err
+    return false, "link failed: " .. tostring(err)
 end
 
--- 연결 해제
+-- Unlink
 local ok, err = process.unlink(target_pid)
+if err then
+    return false, "unlink failed: " .. tostring(err)
+end
 ```
 
 ### LINK_DOWN 이벤트 처리
 
-기본적으로 LINK_DOWN은 프로세스를 실패시킵니다. `trap_links`를 활성화하여 이벤트로 받습니다:
+기본적으로 연결된 동료가 비정상 종료되면 현재 프로세스가 종료되며 Lua `LINK_DOWN` 이벤트는 전달되지 않습니다. 계속 실행하면서 해당 이벤트를 받으려면 `trap_links`를 활성화합니다.
 
 ```lua
 local function main()
-    -- 크래시 대신 LINK_DOWN 이벤트를 받기 위해 trap_links 활성화
+    -- Enable trap_links to receive LINK_DOWN events instead of crashing
     local ok, err = process.set_options({ trap_links = true })
     if not ok then
-        return false, "set_options failed: " .. err
+        return false, "set_options failed: " .. tostring(err)
     end
 
-    -- trap_links가 활성화되었는지 확인
+    -- Verify trap_links is enabled
     local opts = process.get_options()
     if not opts.trap_links then
         return false, "trap_links should be true"
@@ -251,16 +268,16 @@ local function main()
 
     local events_ch = process.events()
 
-    -- 실패할 연결된 프로세스 스폰
+    -- Spawn a linked process that will fail
     local error_pid, err2 = process.spawn_linked(
         "app.test.process:error_exit_worker",
         "app:processes"
     )
     if err2 then
-        return false, "spawn error worker failed: " .. err2
+        return false, "spawn error worker failed: " .. tostring(err2)
     end
 
-    -- LINK_DOWN 이벤트 대기
+    -- Wait for LINK_DOWN event
     local timeout = time.after("2s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -274,7 +291,7 @@ local function main()
     local event = result.value
     if event.kind == process.event.LINK_DOWN then
         print("Linked process died:", event.from)
-        -- 크래시 대신 우아하게 처리
+        -- Handle gracefully instead of crashing
         return true
     end
 
@@ -286,7 +303,7 @@ return { main = main }
 
 ## 프로세스 레지스트리
 
-이름 기반 조회 및 메시징을 위해 프로세스 이름을 등록합니다.
+이름 기반 조회와 메시징을 사용하려면 프로세스 이름을 등록합니다.
 
 ### 이름 등록
 
@@ -294,19 +311,19 @@ return { main = main }
 local function main()
     local test_name = "my_service_" .. tostring(os.time())
 
-    -- 현재 프로세스를 이름으로 등록
+    -- Register current process with a name
     local ok, err = process.registry.register(test_name)
     if err then
-        return false, "register failed: " .. err
+        return false, "register failed: " .. tostring(err)
     end
 
-    -- 등록된 이름 조회
+    -- Lookup the registered name
     local pid, lookup_err = process.registry.lookup(test_name)
     if lookup_err then
-        return false, "lookup failed: " .. lookup_err
+        return false, "lookup failed: " .. tostring(lookup_err)
     end
 
-    -- 우리 PID로 해석되는지 확인
+    -- Verify it resolves to our PID
     if pid ~= process.pid() then
         return false, "lookup returned wrong pid"
     end
@@ -320,35 +337,35 @@ return { main = main }
 ### 이름 등록 해제
 
 ```lua
--- 명시적 등록 해제
+-- Unregister explicitly
 local unregistered = process.registry.unregister(test_name)
 if not unregistered then
     print("Name was not registered")
 end
 
--- 등록 해제 후 조회는 nil + error 반환
+-- Lookup after unregister returns nil + error
 local pid, err = process.registry.lookup(test_name)
--- pid는 nil, err는 non-nil
+-- pid will be nil, err will be non-nil
 ```
 
-이름은 프로세스가 종료될 때 자동으로 해제됩니다.
+프로세스가 종료되면 이름은 자동으로 해제됩니다.
 
-## 완전한 예제: 모니터링되는 워커 풀
+## 예제: 모니터링되는 워커 풀
 
-이 예제는 부모 프로세스가 여러 모니터링되는 워커를 스폰하고 완료를 추적하는 것을 보여줍니다.
+이 부분 예제는 부모 프로세스가 모니터링되는 워커 여러 개를 생성하고 완료 상태를 추적하는 방법을 보여 줍니다. 사용하려면 부모와 `app.test.process:task_worker` 엔트리, `app:processes` 호스트, 필요한 프로세스 정책을 정의하고 두 엔트리의 모듈 목록에 `time`을 포함하세요.
 
 ```lua
--- 부모 프로세스
+-- Parent process
 local time = require("time")
 
 local function main()
     local events_ch = process.events()
 
-    -- 스폰된 워커 추적
+    -- Track spawned workers
     local workers = {}
     local worker_count = 5
 
-    -- 여러 모니터링되는 워커 스폰
+    -- Spawn multiple monitored workers
     for i = 1, worker_count do
         local worker_pid, err = process.spawn_monitored(
             "app.test.process:task_worker",
@@ -357,13 +374,13 @@ local function main()
         )
 
         if err then
-            return false, "spawn worker " .. i .. " failed: " .. err
+            return false, "spawn worker " .. i .. " failed: " .. tostring(err)
         end
 
         workers[worker_pid] = { task_id = i, started = os.time() }
     end
 
-    -- 모든 워커가 완료될 때까지 대기
+    -- Wait for all workers to complete
     local completed = 0
     local timeout = time.after("10s")
 
@@ -404,10 +421,10 @@ return { main = main }
 local time = require("time")
 
 local function main(task)
-    -- 작업 시뮬레이션
+    -- Simulate work
     time.sleep("100ms")
 
-    -- 작업 처리
+    -- Process task
     local result = task.value * 2
 
     return result
@@ -418,5 +435,5 @@ return { main = main }
 
 ## 다음 단계
 
-- [프로세스 모듈 참조](lua/core/process.md) - 전체 API 문서
-- [채널](tutorials/channels.md) - 메시지 처리를 위한 채널 작업
+- [프로세스 모듈 참조](lua/core/process.md) — 프로세스 API 문서
+- [채널](tutorials/channels.md) — 메시지 처리를 위한 채널 연산

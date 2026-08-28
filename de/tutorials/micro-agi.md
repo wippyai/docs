@@ -1,25 +1,31 @@
 ---
 title: "Micro AGI"
-description: "Erstelle einen sich selbst modifizierenden Agenten, der seine eigenen Tools zur Laufzeit erstellt — Dokumentation lesen, Lua schreiben, Einträge in der…"
+description: "Eine selbstmodifizierende Agentenimplementierung untersuchen, die Dokumentation liest, Lua-Tools erzeugt, sie zur Laufzeit registriert und in die aktive Sitzung lädt."
 ---
 
 # Micro AGI
 
-Erstelle einen sich selbst modifizierenden Agenten, der seine eigenen Tools zur Laufzeit erstellt — Dokumentation lesen, Lua schreiben, Einträge in der Registry registrieren und sie in die aktive Sitzung laden.
+Untersuchen Sie einen Agenten, der Dokumentation liest, Lua-Tools erzeugt, sie zur Laufzeit registriert und in seine aktive Sitzung lädt.
 
-## Was wir bauen
+**Klassifizierung: Rundgang durch eine Referenzimplementierung.** Die Snippets erklären
+das veröffentlichte Modul `wippy/micro-agi`, bilden jedoch bewusst keinen vollständigen
+Quellbaum. Führen Sie das Hub-Modul aus, um die Implementierung zu erproben; verwenden
+Sie das LLM-Agent-Tutorial, wenn Sie einen eigenständigen Build benötigen.
+
+## Was das Paket demonstriert
 
 Ein Terminal-Agent, der:
-- Fragen mit einem LLM und Streaming beantwortet
-- Wippy-Dokumentation durchsucht, um APIs zu lernen
-- Die Registry inspiziert, um vorhandene Funktionen zu entdecken
-- Bei fehlenden Funktionen neue Tools spontan erstellt
-- Sein eigenes Kontextfenster über Komprimierung verwaltet
+
+- Antworten von einem LLM streamt.
+- Wippy-Dokumentation nach APIs durchsucht.
+- Die Registry auf vorhandene Fähigkeiten prüft.
+- Tools erstellt und lädt, wenn eine Fähigkeit fehlt.
+- Den Gesprächsverlauf komprimiert, wenn er sich dem Kontextlimit nähert.
 
 ```mermaid
 flowchart LR
     User -->|prompt| Agent
-    Agent -->|step| LLM[GPT-5.1]
+    Agent -->|step| LLM[Configured model]
     LLM -->|tool_calls| Agent
     Agent -->|funcs.call| Tools
     Tools -->|result| Agent
@@ -51,7 +57,7 @@ sequenceDiagram
     A->>A: execute doc_search
     A->>L: step(conversation + tool result)
     L->>A: tool_call: create_tool(name, source, schema)
-    A->>R: evaluate deny policies + changeset create
+    A->>R: apply namespace denylist + changeset create
     R->>A: ok
     A->>L: step(conversation + tool result)
     L->>A: tool_call: load_tool("app.generated:current_time")
@@ -64,9 +70,18 @@ sequenceDiagram
     A->>U: stream response
 ```
 
-Die zentrale Erkenntnis: Tools sind Registry-Einträge. Ein Tool zu erstellen bedeutet einfach, einen `function.lua`-Eintrag mit Inline-Lua-Quellcode in `data.source` zu schreiben. Die Agent-Laufzeit kompiliert und lädt ihn wie jeden anderen Eintrag.
+Tools sind Registry-Einträge. Um eines zu erstellen, schreibt der Agent einen
+`function.lua`-Eintrag mit Inline-Lua-Quelle in `data.source`; anschließend kompiliert
+und lädt die Runtime diesen Eintrag.
 
-## Projektstruktur
+## Struktur des veröffentlichten Pakets
+
+Das Paket besitzt alle folgenden Dateien. Diese Seite gibt `doc_search.lua` und die
+für die Architektur wichtigen Verträge wieder, kürzt jedoch Registry-Helfer,
+Changeset-Verarbeitung, Dynamic-Loader-Helfer und Agentenschleife. Insbesondere sind
+die Abschnitte `create_tool`, `load_tool` und `agent.lua` Auszüge und keine Dateien,
+die wortwörtlich kopiert werden können. Die vollständigen Registry-Definitionen für
+`registry_list` und `registry_read` verbleiben ebenfalls im veröffentlichten Modul.
 
 ```
 micro-agi/
@@ -87,7 +102,7 @@ micro-agi/
 
 ## Infrastruktur
 
-Erstelle `.wippy.yaml`:
+Das Paket verwendet diese `.wippy.yaml`-Konfiguration:
 
 ```yaml
 version: "1.0"
@@ -98,7 +113,7 @@ logger:
 
 ## Eintragsdefinitionen
 
-Erstelle `src/_index.yaml` mit Infrastruktur, Sicherheitsrichtlinien, Modellen, Agent und Prozess:
+Erstellen Sie `src/_index.yaml` mit Infrastruktur, Sicherheitsrichtlinien, Modellen, Agent und Prozess:
 
 ```yaml
 version: "1.0"
@@ -164,9 +179,15 @@ Zwei `security.policy`-Einträge schränken ein, in welche Namespaces der Agent 
       - agent_security
 ```
 
-Diese Richtlinien werden als benannter Scope (`app:agent_security`) durch `create_tool` geladen und vor jedem Registry-Schreibvorgang ausgewertet. Der Agent kann in `app.generated:*` schreiben (keine Deny-Richtlinie passt), aber nicht in `app:*` (Kerneinträge, Modelle, Agentendefinition) oder `app.tools:*` (eingebaute Tools).
+Diese Policies werden von `create_tool` als benannter Scope (`app:agent_security`)
+geladen. Der Helfer weist ein explizites `deny` für `app:*` (Kerneinträge, Modelle
+und Agentendefinition) oder `app.tools:*` (eingebaute Tools) zurück, behandelt das
+nicht gematchte Ergebnis `undefined` für `app.generated:*` in seinem eigenen Filter
+jedoch als zulässig. Dies ist keine Wippy-Runtime-Autorisierung: Geschützte Operationen
+benötigen ein explizites `allow` aus dem Ausführungskontext. Dazu gehören die unten
+gezeigten Operationen des Sicherheitsmoduls und `registry.apply` innerhalb von `changes:apply()`.
 
-Siehe [Sicherheitsmodell](system/security.md) für Details zur Richtlinien-Auswertung.
+Siehe [Sicherheitsmodell](system/security.md) für Einzelheiten zur Policy-Auswertung.
 
 ### Modelle
 
@@ -183,17 +204,16 @@ Zwei Modelle dienen unterschiedlichen Zwecken:
       capabilities: [generate, tool_use, structured_output, vision, thinking]
       class: [reasoning]
       priority: 210
-    max_tokens: 128000
-    output_tokens: 32768
+    max_tokens: 400000
+    output_tokens: 128000
     pricing:
-      input: 2.5
+      input: 1.25
       output: 10
     providers:
       - id: wippy.llm.openai:provider
         options:
           reasoning_model_request: true
         provider_model: gpt-5.1
-    thinking_effort: 10
 
   - name: gpt-4.1-nano
     kind: registry.entry
@@ -215,7 +235,7 @@ Zwei Modelle dienen unterschiedlichen Zwecken:
         provider_model: gpt-4.1-nano
 ```
 
-GPT-5.1 übernimmt Reasoning und Tool-Nutzung. GPT-4.1 Nano übernimmt die Kontextkomprimierung zu 25-fach niedrigeren Kosten.
+GPT-5.1 übernimmt Reasoning und Tool-Nutzung. GPT-4.1 Nano übernimmt die Kontextkomprimierung.
 
 ### Agentendefinition
 
@@ -241,6 +261,7 @@ GPT-5.1 übernimmt Reasoning und Tool-Nutzung. GPT-4.1 Nano übernimmt die Konte
       To gain new capabilities: doc_search the API, create_tool with Lua source,
       load_tool, call it. All in one turn.
     model: gpt-5.1
+    thinking_effort: 10
     max_tokens: 2048
     tools:
       - "app.tools:*"
@@ -262,14 +283,16 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
         short: Start dev assistant
     source: file://agent.lua
     method: main
-    modules: [io, json, process, funcs, registry, time, security]
+    modules: [io, json, funcs, registry, time, security]
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
       compress: wippy.llm.util:compress
 ```
 
-Der Prozess läuft als Terminalbefehl. Die Sicherheitsdurchsetzung erfolgt innerhalb von `create_tool`, das die Richtliniengruppe `agent_security` lädt und vor dem Schreiben auswertet.
+Der Prozess läuft als Terminalbefehl. `create_tool` wendet vor dem Schreiben die
+Denylist des Pakets an; dieser Filter stellt jedoch nicht den Runtime-Sicherheitskontext
+des Befehls bereit.
 
 Imports:
 - `prompt` — Konversations-Builder
@@ -278,7 +301,7 @@ Imports:
 
 ## Tools
 
-Erstelle `src/tools/_index.yaml` mit fünf Tools:
+Erstellen Sie `src/tools/_index.yaml` mit fünf Tools:
 
 ### doc_search
 
@@ -311,7 +334,7 @@ local function fetch_page(path)
 end
 
 local function search_docs(query)
-    local url = BASE_URL .. "/search?q=" .. query
+    local url = BASE_URL .. "/search?q=" .. http_client.encode_uri(query)
     local resp, err = http_client.get(url, {
         headers = { ["User-Agent"] = "wippy-agent/1.0" },
     })
@@ -353,7 +376,10 @@ return { handler = handler }
 
 Der Kern der Selbstmodifikation. Wertet Namespace-Deny-Richtlinien aus und erstellt einen `function.lua`-Eintrag in der Registry mit Inline-Lua-Quellcode.
 
-Das Feld `modules` am erzeugten Eintrag steuert, worauf das Tool zugreifen kann. Nicht aufgeführte Module existieren für diesen Eintrag schlicht nicht — es gibt nichts zu blockieren oder zu scannen.
+Das Feld `modules` des erzeugten Eintrags steuert, welche nicht-ambienten Runtime-Module
+das Tool laden kann. Das Modul `process` ist für jeden ausführbaren Lua-Eintrag ambient;
+sein Weglassen ist daher keine Sicherheitsgrenze. Prozessoperationen hängen weiterhin
+von Runtime-Sicherheits-Policies ab.
 
 ```lua
 local registry = require("registry")
@@ -367,11 +393,14 @@ local MAX_NAME_LEN = 64
 local ALLOWED_MODULES = {
     time = true, json = true, http_client = true, expr = true,
     text = true, base64 = true, yaml = true, crypto = true,
-    hash = true, uuid = true, url = true,
+    hash = true, uuid = true,
 }
 ```
 
-**Richtlinien-Auswertung** — `create_tool` lädt den benannten Scope `agent_security` und wertet die Deny-Richtlinien gegen die Ziel-Eintrags-ID aus. Schreibvorgänge auf `app:*` oder `app.tools:*` werden verweigert; Schreibvorgänge auf `app.generated:*` passieren (keine passende Deny-Richtlinie):
+**Denylist-Auswertung** — `create_tool` lädt den benannten Scope `agent_security`.
+Schreibzugriffe auf `app:*` oder `app.tools:*` werden abgewiesen, wenn der Scope
+`deny` zurückgibt; ein nicht gematchtes Ziel `app.generated:*` ergibt `undefined`
+und besteht diesen Anwendungsfilter:
 
 ```lua
 local actor = security.new_actor("service:agent", { role = "agent" })
@@ -385,6 +414,10 @@ if result == "deny" then
     return { error = "policy denied: " .. action .. " on " .. id }
 end
 ```
+
+Diese Prüfung autorisiert die Registry-Änderung nicht. Der aktuelle Befehl benötigt
+weiterhin einen Runtime-Actor und Scope, die die Aufrufe des Sicherheitsmoduls und
+`registry.apply` explizit erlauben.
 
 **Registry-Schreibvorgang** — der Eintrag wird mit Quellcode in `data.source` und nur den erlaubten Modulen geschrieben:
 
@@ -414,10 +447,13 @@ if existing then
 else
     changes:create(entry)
 end
-changes:apply()
+local _, apply_err = changes:apply()
+if apply_err then
+    return { error = "failed to apply registry change: " .. tostring(apply_err) }
+end
 ```
 
-Keine Dateien auf der Festplatte. Das Tool lebt vollständig in der Registry.
+Das erzeugte Tool wird in der Registry gespeichert und nicht in eine Quelldatei geschrieben.
 
 ### load_tool
 
@@ -453,7 +489,7 @@ Die Agentenschleife in `src/agent.lua` behandelt Streaming, Tool-Ausführung, dy
 
 ### Streaming
 
-Verwendet dasselbe Coroutine + Channel-Muster aus dem [LLM-Agent-Tutorial](tutorials/llm-agent.md):
+Verwendet dasselbe Coroutine- und Channel-Muster wie das [LLM-Agent-Tutorial](tutorials/llm-agent.md):
 
 ```lua
 coroutine.spawn(function()
@@ -469,10 +505,18 @@ end)
 
 ### Tool-Ausführung
 
-Tools werden zur Sicherheit über `funcs.call()` mit `pcall` aufgerufen:
+Tools werden über `funcs.call()` aufgerufen. `pcall` fängt ausgelöste Lua-Fehler ab,
+während der normale zweite Rückgabewert von `funcs.call()` Aufruffehler enthält:
 
 ```lua
-local ok, result = pcall(funcs.call, tc.registry_id, args)
+local ok, result, call_err = pcall(funcs.call, tc.registry_id, args)
+if not ok then
+    results[tc.id] = { error = tostring(result) }
+elseif call_err then
+    results[tc.id] = { error = tostring(call_err) }
+else
+    results[tc.id] = result
+end
 ```
 
 ### Dynamisches Tool-Laden
@@ -510,7 +554,7 @@ Die Konversation bleibt über Reloads hinweg erhalten, weil sie im Prompt-Builde
 
 ### Kontextkomprimierung
 
-Wenn die Prompt-Tokens 96K überschreiten (75% des 128K-Kontextfensters), wird die Konversation mit GPT-4.1 Nano komprimiert:
+Wenn die Prompt-Tokens 300K überschreiten (75 % des 400K-Kontextfensters), wird die Konversation mit GPT-4.1 Nano komprimiert:
 
 ```lua
 if response.tokens and response.tokens.prompt_tokens
@@ -522,25 +566,30 @@ end
 Die Komprimierung extrahiert Nachrichteninhalte, ruft `compress.to_size()` mit Ziel von 4000 Zeichen auf und ersetzt die Konversation durch eine Zusammenfassung:
 
 ```lua
-local summary = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+local summary, compress_err = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
+if compress_err then
+    return nil, compress_err
+end
 session.conversation = prompt.new()
 session.conversation:add_system("Conversation summary:\n\n" .. summary)
 ```
 
 ## Sicherheitsmodell
 
-Der Agent wird durch Namespace-Deny-Richtlinien und Zugriffskontrolle auf Modulebene abgesichert.
+Eine Anwendungs-Denylist und Zugriffskontrollen auf Modulebene begrenzen erzeugte
+Tools, ersetzen jedoch keine Runtime-Autorisierung.
 
 ```mermaid
 flowchart TD
-    LLM[LLM generates tool] --> P{Namespace Deny Policies}
+    LLM[LLM generates tool] --> P{Application Namespace Denylist}
     P -->|scope:evaluate| Check{Target namespace?}
     Check -->|app.generated:*| OK[No deny match]
     Check -->|app:* or app.tools:*| Deny[Policy Denied]
 
-    OK --> M{Module Allowlist}
-    M -->|only granted modules| R[Registry write]
+    OK --> M{Non-ambient Module Allowlist}
+    M -->|only listed non-ambient modules| R[Registry write]
     M -->|unknown module requested| Err[Rejected]
+    R --> A[Ambient process API remains available]
 ```
 
 ### Namespace-Deny-Richtlinien
@@ -550,56 +599,66 @@ flowchart TD
 | `deny_core_ns` | `app:*` | deny |
 | `deny_tools_ns` | `app.tools:*` | deny |
 
-`create_tool` lädt die Richtliniengruppe `agent_security` und wertet sie gegen die Ziel-Eintrags-ID aus. Da Deny-Richtlinien nur auf `app:*` und `app.tools:*` zutreffen, gehen Schreibvorgänge auf `app.generated:*` durch (das Ergebnis ist `undefined`, was „nicht verweigert" bedeutet).
+`create_tool` lädt die Policy-Gruppe `agent_security` und wertet die Ziel-Eintrags-ID
+aus. Das Ergebnis `undefined` wird in diesem Anwendungsfilter bewusst als „nicht
+verweigert“ behandelt. Wippys geschützte Autorisierung verhält sich anders: Eine
+Operation ist nur bei einem expliziten `allow` zulässig. Der Kontext, der diesen Code
+ausführt, muss weiterhin die erforderlichen Runtime-Berechtigungen besitzen.
 
 Dies verhindert, dass der Agent:
+
 - Den eigenen Prompt oder die Agentendefinition ändert (`app:dev_assistant`)
 - Seine eingebauten Tools überschreibt (`app.tools:*`)
-- Infrastruktureinträge ändert (`app:processes` etc.)
+- Infrastruktureinträge ändert (`app:processes` usw.)
 
 ### Zugriffskontrolle für Module
 
-Generierte Tools deklarieren ihre `modules` in `data.modules`. Nur Module aus der Menge `ALLOWED_MODULES` sind erlaubt. Die Wippy-Laufzeit setzt dies auf Modulebene durch — wenn ein Modul nicht am Eintrag gelistet ist, gibt `require()` einen Fehler zurück. Es gibt kein Source-Code-Scanning, weil es nichts zu scannen gibt: nicht gewährte Module existieren im Ausführungskontext nicht.
+Generierte Tools deklarieren nicht-ambient bereitgestellte Fähigkeiten in `data.modules`,
+und `create_tool` akzeptiert nur Namen aus `ALLOWED_MODULES`. Ein nicht deklariertes,
+nicht-ambientes Modul kann nicht geladen werden. Die Runtime injiziert jedoch `process`
+in jeden ausführbaren Lua-Eintrag, auch in ein generiertes Tool. Prozessoperationen
+müssen deshalb durch Sicherheits-Policies beschränkt werden und nicht dadurch, dass
+`process` aus `data.modules` weggelassen wird.
 
-## Ausführen
+Dieses Tutorial definiert keine Policies für `process.spawn` oder `process.exec`.
+Seine generierten Tools bilden daher keine vollständige Sandbox. Fügen Sie Runtime-Policies
+für ambiente Prozessoperationen hinzu, bevor Sie nicht vertrauenswürdige Tool-Quellen zulassen.
 
-Direkt aus dem Hub ausführen:
+## Ausführen und aktuelle Einschränkung des Pakets
+
+Das veröffentlichte Artefakt ist das Hub-Modul. Beginnen Sie in einem neuen, leeren
+Verzeichnis ohne `wippy.lock`; der Hub-Bootstrap weist eine fremde oder aus mehreren
+Roots bestehende Lock-Datei zurück. Der erste Lauf erzeugt die Deployment-Lock-Datei,
+spätere Läufe aus demselben Verzeichnis verwenden die passende Lock-Datei erneut.
 
 ```bash
+mkdir micro-agi-deploy
+cd micro-agi-deploy
 wippy run wippy/micro-agi agent
 ```
 
-Oder klonen und lokal ausführen:
+Der Befehl lädt die gewählte Modulversion herunter, löst ihre deklarierten
+Abhängigkeiten auf und ruft ihren Befehl `agent` auf.
 
-```bash
-cd micro-agi
-wippy init && wippy update
-wippy run agent
-```
+Er benötigt weiterhin die vom Modul erwarteten Provider-Zugangsdaten und die
+Modellkonfiguration sowie Registry- und Netzwerkzugriff für Hub-Download und
+Dokumentationssuche. Diese Seite enthält weder einen lokalen Clone noch eine Lock-Datei
+und erhebt deshalb keinen Anspruch auf einen reproduzierbaren Source-Build.
 
-```
-dev assistant (quit to exit)
-
-> what time is it?
-  [doc_search] ok
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:current_time_utc
-  [current_time_utc] ok
-The current UTC time is 2026-02-13T03:13:41Z.
-
-> fetch https://httpbin.org/get and show my ip
-  [create_tool] ok
-  [load_tool] ok
-  [+] app.generated:http_get
-  [http_get] ok
-Your IP is 203.0.113.42.
-```
+In der geprüften Version deklariert `wippy/micro-agi` v0.3.1 keinen
+`meta.command.security`-Kontext für `agent`. Im standardmäßigen Strict Mode erhalten
+die geschützten Tool-Pfade — darunter `funcs.call`, Registry-Lese- und -Schreibzugriffe
+sowie die HTTP-Anfrage für die Dokumentationssuche — nicht die expliziten Zulassungen,
+die sie benötigen. Die oben beschriebenen Tool- und Selbstmodifikationsabläufe sind
+daher Referenzdesigns und funktionieren nicht standardmäßig im Strict Mode. Deaktivieren
+Sie Strict Mode nicht, um einen nicht vertrauenswürdigen Codegenerator zum Laufen zu
+bringen; das Paket sollte zuerst einen Least-Privilege-Command-Scope für seine
+erforderlichen Aktionen erhalten.
 
 ## Nächste Schritte
 
-- [LLM-Agent](tutorials/llm-agent.md) — Einen einfachen Agenten von Grund auf bauen
-- [Agent-Modul](framework/agents.md) — Referenz für das Agent-Framework
-- [Registry](concepts/registry.md) — So funktioniert die Registry
-- [Sicherheitsmodell](system/security.md) — Deklarative Sicherheitsrichtlinien
-- [Entry-Typen](guides/entry-kinds.md) — Verfügbare Entry-Typen
+- [LLM-Agent](tutorials/llm-agent.md) — Einen grundlegenden Agenten von Grund auf bauen
+- [Agent-Modul](framework/agents.md) — Referenz des Agent-Frameworks
+- [Registry](concepts/registry.md) — Registry-Konzepte
+- [Sicherheitsmodell](system/security.md) — Deklarative Sicherheits-Policies
+- [Eintragsarten](guides/entry-kinds.md) — Verfügbare Eintragsarten

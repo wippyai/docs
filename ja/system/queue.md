@@ -1,11 +1,13 @@
 ---
 title: "キュー"
-description: "Wippyは設定可能なドライバとコンシューマを持つ非同期メッセージ処理用のキューシステムを提供します。"
+description: "メモリ、AMQP、SQS のキュードライバー、論理キュー、コンシューマー、確認応答、メッセージ発行を設定します。"
 ---
 
 # キュー
 
-Wippyは設定可能なドライバとコンシューマを持つ非同期メッセージ処理用のキューシステムを提供します。
+キューシステムは、非同期メッセージのパブリッシャー、ドライバー、キュー、コンシューマー、ハンドラー関数を接続します。
+
+このページは設定および動作のリファレンスです。YAML のコードブロックは、完全なドキュメントを示す場合を除き、既存のエントリリストに配置する断片です。外部ドライバーの例では、ブローカーまたは AWS 互換サービスがすでに存在することを前提としています。
 
 ## アーキテクチャ
 
@@ -18,28 +20,28 @@ flowchart LR
     W --> F[Function]
 ```
 
-- **ドライバ** - バックエンド実装（memory、AMQP、SQS）
-- **キュー** - ドライバにバインドされた論理キュー
-- **コンシューマ** - 並行性設定でキューとハンドラを接続
-- **ワーカープール** - 同時メッセージプロセッサ
+- **ドライバー** — バックエンド実装（memory、AMQP、SQS）
+- **キュー** — ドライバーに関連付けられた論理キュー
+- **コンシューマー** — 並行処理設定を使ってキューとハンドラーを接続
+- **ワーカープール** — メッセージを並行処理
 
-複数のキューが1つのドライバを共有できます。複数のコンシューマが同じキューから処理できます。
+複数のキューで 1 つのドライバーを共有できます。複数のコンシューマーで同じキューを処理できます。
 
 ## エントリ種別
 
 | 種別 | 説明 |
 |------|------|
-| `queue.driver.memory` | インメモリキュードライバ |
-| `queue.driver.amqp` | AMQP（RabbitMQ）ドライバ |
-| `queue.driver.sqs` | AWS SQS ドライバ（LocalStack、ElasticMQ も対応）|
-| `queue.queue` | ドライバ参照付きキュー宣言 |
-| `queue.consumer` | メッセージを処理するコンシューマ |
+| `queue.driver.memory` | インメモリキュードライバー |
+| `queue.driver.amqp` | AMQP（RabbitMQ）ドライバー |
+| `queue.driver.sqs` | AWS SQS ドライバー（LocalStack、ElasticMQ にも対応） |
+| `queue.queue` | ドライバー参照を持つキュー宣言 |
+| `queue.consumer` | メッセージを処理するコンシューマー |
 
-## ドライバ設定
+## ドライバー設定
 
-### メモリドライバ
+### メモリドライバー
 
-開発およびシングルノードデプロイ向けのインプロセスドライバ。外部依存なし。
+インプロセスドライバーは開発環境および単一ノードのデプロイ向けで、外部依存関係はありません。
 
 ```yaml
 - name: memory_driver
@@ -48,9 +50,9 @@ flowchart LR
     auto_start: true
 ```
 
-### AMQP ドライバ
+### AMQP ドライバー
 
-RabbitMQ および AMQP 0-9-1 互換ブローカー向け。
+RabbitMQ および AMQP 0-9-1 互換ブローカー用です。
 
 ```yaml
 - name: amqp_driver
@@ -76,41 +78,41 @@ RabbitMQ および AMQP 0-9-1 互換ブローカー向け。
 | `connection_name` | string | - | ブローカー UI に表示される識別子 |
 | `auth_mechanism` | string | `PLAIN` | `PLAIN`、`EXTERNAL`（mTLS）、または `AMQPLAIN` |
 | `heartbeat` | duration | - | Keep-alive 間隔 |
-| `connection_timeout` | duration | - | ダイヤルタイムアウト |
-| `reconnect_delay` | duration | `1s` | 初期再接続バックオフ |
-| `reconnect_max_delay` | duration | `30s` | 最大再接続バックオフ |
-| `default_message_ttl` | duration | - | 宣言されたキューに適用されるデフォルトメッセージ TTL |
-| `default_queue_ttl` | duration | - | 宣言されたキューに適用されるデフォルト TTL |
-| `default_queue_expiry` | duration | - | 宣言されたキューのデフォルトキュー期限 |
-| `prefetch_count` | int | - | チャネルレベル prefetch 上限 |
-| `frame_size` | int | - | AMQP フレームサイズ制限 |
-| `channel_max` | int | - | 接続あたり最大チャネル数 |
-| `tls` | object | - | TLS 設定（下記参照）|
+| `connection_timeout` | duration | - | 接続タイムアウト |
+| `reconnect_delay` | duration | `1s` | 初回再接続のバックオフ |
+| `reconnect_max_delay` | duration | `30s` | 再接続バックオフの最大値 |
+| `default_message_ttl` | duration | - | パブリッシャーが有効期限を設定しない場合に使用するメッセージ単位の有効期限 |
+| `default_queue_ttl` | duration | - | キューレベルのメッセージ TTL（`x-message-ttl`）のデフォルト値 |
+| `default_queue_expiry` | duration | - | 未使用キューの有効期限（`x-expires`）のデフォルト値 |
+| `prefetch_count` | int | - | チャネルレベルのプリフェッチ上限 |
+| `frame_size` | int | - | AMQP フレームサイズの上限 |
+| `channel_max` | int | - | 接続あたりの最大チャネル数 |
+| `tls` | object | - | TLS 設定（下記参照） |
 
-TLS ブロック：
+`tls` の下に TLS を設定します。
 
 ```yaml
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-インライン `cert`/`key`/`ca` フィールドは PEM コンテンツを保持します。`*_env` バリアントは env レジストリ経由で解決されます。2つのソースはフィールドごとに排他的です。`insecure_skip_verify` は証明書検証を無効化します（開発用のみ）。
+`cert`／`key`／`ca` には PEM コンテンツを指定します。インライン、`file://`、または[環境変数レジストリ](./env.md)を通じて解決される `${env:NAME}` プレースホルダーを使用できます。`insecure_skip_verify` は証明書検証を無効にします（開発時のみ）。従来の `cert_env`／`key_env`／`ca_env` ディレクティブも環境変数レジストリを読み取りますが、検索結果が見つからないか空の場合は、インライン値またはゼロ値を保持します。デフォルトのない最新のプレースホルダーは、変数が見つからない場合に失敗します。従来のディレクティブは非推奨です。
 
-### SQS ドライバ
+### SQS ドライバー
 
-AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向け。認証情報、リージョン、その他の AWS SDK 設定は共有 `config.aws` リソースから取得されます。
+AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）用です。認証情報、リージョン、その他の AWS SDK 設定は、共有の `config.aws` リソースから取得されます。
 
 ```yaml
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -125,16 +127,16 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 | フィールド | 型 | デフォルト | 説明 |
 |-----------|-----|-----------|------|
 | `config` | Registry ID | 必須 | リージョンと認証情報を提供する `config.aws` リソース |
-| `endpoint` | string | - | カスタムエンドポイント URL（LocalStack、ElasticMQ）；実 AWS では省略 |
-| `message_retention_period` | int | `345600`（4日）| キューレベル保持期間（秒）（60–1209600）|
-| `default_delay_seconds` | int | `0` | CreateQueue で適用されるデフォルト配信遅延（0–900）|
+| `endpoint` | string | - | カスタムエンドポイント URL（LocalStack、ElasticMQ）。実際の AWS では省略 |
+| `message_retention_period` | int | `345600`（4 日） | キューレベルの保持期間（秒、60–1209600） |
+| `default_delay_seconds` | int | `0` | CreateQueue で適用されるデフォルトの配信遅延（0–900） |
 | `disable_message_checksum_validation` | bool | `false` | 送受信時の SQS メッセージチェックサム検証を無効化 |
-| `use_fips` | bool | `false` | FIPS 準拠エンドポイントを使用 |
+| `use_fips` | bool | `false` | FIPS 準拠のエンドポイントを使用 |
 | `use_dual_stack` | bool | `false` | デュアルスタック（IPv4 + IPv6）エンドポイントを使用 |
 
-キューは初回使用時にドライバによって自動作成されます。発行時に SQS 固有属性を指定するには SQS プレフィックス付きヘッダ（`sqs.*`）を使用してください。`correlation_id` や `content_type` のような中立的なキーは可能な限り SQS システム属性に変換されます。
+キューは初回使用時にドライバーによって自動作成されます。発行時に SQS 固有のフィールドを指定するには、SQS プレフィックス付きヘッダーを使用します。`sqs.delay_seconds`、`sqs.message_group_id`、`sqs.message_deduplication_id` は、型付きの SQS メッセージフィールドにマッピングされます。他のすべてのヘッダー（`correlation_id` や `content_type` のような中立的なキー、および `sqs.message_attributes.*` キー）は、そのまま SQS メッセージ属性として引き渡されます。
 
-## キュー設定
+## キュー設定 {id="queue-configuration"}
 
 ```yaml
 - name: tasks
@@ -152,45 +154,45 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
-| `driver` | Registry ID | はい | キュードライバ |
-| `codec` | string | いいえ | メッセージ本体のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照）|
-| `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名）|
-| `driver_options` | object | いいえ | ドライバ kind でキー付けされたドライバごとのサブバッグ |
-| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージのキュー ID |
-| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数 |
+| `driver` | Registry ID | はい | キュードライバー |
+| `codec` | string | いいえ | メッセージ本文のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照） |
+| `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名） |
+| `driver_options` | object | いいえ | ドライバー種別をキーとする、ドライバーごとのサブバッグ |
+| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージ用のキュー ID（受け付けられるが、組み込みドライバーではまだ適用されない） |
+| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数（受け付けられるが、組み込みドライバーではまだ適用されない） |
 
-### ドライバオプション
+### ドライバーオプション
 
-`driver_options` 下のキーはドライバ名でスコープされます。ドライバは自身のサブバッグのみを読み取ります。他のキューはドーマント状態となり、必要に応じて単一のキューエントリで複数のドライバの設定を宣言できます。
+`driver_options` のキーはドライバー名でスコープされます。ドライバーは自身のサブバッグだけを読み取ります。他のキーは休眠状態となるため、必要に応じて単一のキューエントリで複数のドライバーの設定を宣言できます。
 
-**memory：**
-
-| キー | 説明 |
-|------|------|
-| `max_length` | 境界バッファサイズ（0 = 無制限）|
-
-**amqp：**
+**memory:**
 
 | キー | 説明 |
 |------|------|
-| `durable` | ブローカー再起動を生き延びる |
-| `auto_delete` | 最後のコンシューマが切断したときに削除 |
-| `message_ttl` | キューごとのメッセージ TTL 上書き |
-| `queue_expiry` | 未使用キューの期限 |
-| `max_length` | 保持される最大メッセージ数 |
+| `max_length` | 境界付きバッファーのサイズ（0 または未設定 = デフォルトの 1000） |
+
+**amqp:**
+
+| キー | 説明 |
+|------|------|
+| `durable` | ブローカーの再起動後も維持 |
+| `auto_delete` | 最後のコンシューマーが切断したときに削除 |
+| `message_ttl` | キューごとのメッセージ TTL の上書き |
+| `queue_expiry` | 未使用キューの有効期限 |
+| `max_length` | 保持する最大メッセージ数 |
 
 ### コーデック {id="codecs"}
 
-`codec` は、メッセージ本体がブローカーに渡される前にどのようにシリアライズされるかを選択します。これはペイロードフォーマット文字列であり、デフォルトは `json/plain` です:
+`codec` は、メッセージ本文をブローカーに渡す前のシリアライズ方法を選択します。ペイロード形式を表す文字列で、デフォルトは `json/plain` です。
 
-| コーデック | フォーマット |
-|-------|------|
+| コーデック | 形式 |
+|-----------|------|
 | `json/plain` | JSON（デフォルト） |
 | `application/msgpack` | MessagePack |
 
-AMQP ドライバは、発行されるメッセージに対応する `content-type`（`application/json` または `application/msgpack`）を設定します。不明なコーデックは、発行時ではなくキューが宣言される時に失敗します。
+AMQP ドライバーは、発行するメッセージに対応する `content-type`（`application/json` または `application/msgpack`）を設定します。不明なコーデックは発行時ではなく、キューの宣言時に失敗します。
 
-## コンシューマ設定
+## コンシューマー設定
 
 ```yaml
 - name: task_consumer
@@ -206,65 +208,69 @@ AMQP ドライバは、発行されるメッセージに対応する `content-ty
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
 | フィールド | デフォルト | 説明 |
 |-----------|-----------|------|
-| `queue` | 必須 | キューレジストリ ID |
-| `func` | 必須 | ハンドラ関数レジストリ ID |
+| `queue` | 必須 | キューのレジストリ ID |
+| `func` | 必須 | ハンドラー関数のレジストリ ID |
 | `concurrency` | 1 | 並列ワーカー数 |
-| `prefetch` | 10 | ワーカーごとのバッファサイズ |
-| `auto_ack` | false | true の場合、ランタイムはブローカー ack を呼び出さない；ハンドラの成功/失敗が唯一の settle シグナル |
-| `driver_options` | - | ドライバごとのサブバッグ（キューと同じ構造）|
+| `prefetch` | 10 | 共有配信バッファーのサイズ。AMQP ではチャネルの QoS プリフェッチ数にも適用 |
+| `auto_ack` | false | バックエンド固有の自動確認応答オプション。AMQP では `true` にすると、配信時の確認応答をブローカーに要求 |
+| `driver_options` | - | ドライバーごとのサブバッグ（キューと同じ構造） |
 
-**amqp コンシューマオプション：**
+**amqp コンシューマーオプション:**
 
 | キー | 説明 |
 |------|------|
-| `exclusive` | 単一コンシューマのキューアクセス |
-| `no_local` | 同一接続で発行されたメッセージを拒否 |
-| `no_wait` | サブスクライブ時にブローカー確認を待たない |
+| `exclusive` | 単一コンシューマーによるキューアクセス |
+| `no_local` | 同じ接続で発行されたメッセージを拒否 |
+| `no_wait` | サブスクライブ時にブローカーの確認を待たない |
 | `consumer_tag` | このサブスクリプションの識別子 |
 
 <tip>
-コンシューマは呼び出しコンテキストを尊重し、セキュリティポリシーの対象となります。ライフサイクルレベルでアクターとポリシーを設定してください。<a href="system/security.md">セキュリティ</a>を参照。
+コンシューマーは呼び出しコンテキストを尊重し、セキュリティポリシーの対象になる場合があります。ライフサイクルレベルでアクターとポリシーを設定してください。<a href="./security.md">セキュリティ</a>を参照してください。
 </tip>
 
 ### ワーカープール
 
-ワーカーは同時goroutineとして実行：
+ワーカーは並行して実行されます。
 
 ```
 concurrency: 3, prefetch: 10
 
-1. ドライバが最大10メッセージをバッファに配信
-2. 3ワーカーがバッファから同時にプル
-3. ワーカーが終了するとバッファが補充
-4. すべてのワーカーがビジーでバッファがフルのときバックプレッシャー
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
+3. As workers finish, buffer refills
+4. Backpressure when all workers busy and buffer full
 ```
 
-## ハンドラ関数
+## ハンドラー関数
 
-コンシューマハンドラはデコードされたメッセージボディを最初の引数として受け取ります。`queue.message()` を使用してデリバリーメタデータ（id、headers）にアクセスします。
+コンシューマーハンドラーは、デコード済みのメッセージ本文を最初の引数として受け取ります。配信メタデータ（id、headers）には `queue.message()` でアクセスします。
 
 ```lua
 local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
-    local ok, err = process_task(body)
-    if err then
-        return false  -- nack: redelivery or DLQ
-    end
-    return true       -- ack: remove from queue
+    local _, task_err = process_task(body)
+    if task_err then return nil, task_err end
+    return true
 end
 
 return { main = main }
@@ -282,47 +288,48 @@ return { main = main }
 
 ### 確認応答
 
-ランタイムはハンドラの戻り値に基づいて自動的に settle します：
+ハンドラーが明示的に確定しない限り、コンシューマーは関数の呼び出し結果に基づいて確定します。
 
-| ハンドラ結果 | アクション |
-|-------------|----------|
-| `true` または非 `false` の戻り値 | Ack |
-| `false` | Nack（ドライバに応じて再配信または dead-letter）|
-| 投げられたエラー | Nack |
+| ハンドラーの結果 | アクション |
+|-----------------|------------|
+| 呼び出しエラーなしで完了 | Ack |
+| 呼び出しエラーを返す、または発生させる | Nack（ドライバーに従って再配信） |
 
-早期 settle のためにのみ `msg:ack()` または `msg:nack()` を明示的に呼び出してください。Settlement はシングルショット：最初に到着した呼び出しが優先されます。
+`false` を含む通常の戻り値では、確認応答の動作は選択されません。明示的に確定するには `msg:ack()` または `msg:nack()` を呼び出します。確定は一度だけ行われ、最初に到達した呼び出しが優先されます。
 
 ### Dead-Letter ルーティング
 
-キューに `dead_letter` が設定されている場合、`max_attempts` を超えて nack されたメッセージは、ドライバによって設定された `x_dead_letter_reason` と `x_original_queue` ヘッダ付きで DLQ にルーティングされます。発行者は `x_*` ヘッダを設定してはいけません。これらは DLQ の記録用に予約されています。
+Dead-letter ルーティングはまだ実装されていません。`dead_letter` ブロック（[キュー設定](#queue-configuration)を参照）は設定として受け付けられますが、現在、試行回数をカウントしたり、nack されたメッセージを設定済みの DLQ にルーティングしたり、`x_dead_letter_*` ヘッダーを設定したりする組み込みドライバーはありません。nack されたメッセージは、ドライバー自身のポリシーに従って再配信されます。`x_*` ヘッダー名前空間は将来の DLQ 管理用に予約されているため、パブリッシャーは `x_*` ヘッダーを設定しないでください。
 
 ## メッセージの発行
 
-Luaコードから：
+Lua コードから発行します。
 
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-完全なAPIについては[キューモジュール](lua/storage/queue.md)を参照してください。
+Lua の発行 API とメッセージ API については、[キューモジュール](lua/storage/queue.md)を参照してください。
 
 ## グレースフルシャットダウン
 
-コンシューマ停止時：
+コンシューマーの停止時には次の処理を行います。
 
-1. 新しいデリバリーの受け入れを停止
+1. 新しい配信の受け付けを停止
 2. ワーカーコンテキストをキャンセル
-3. 処理中のメッセージを待機（タイムアウト付き）
+3. 処理中のメッセージを待機（タイムアウトあり）
 4. ワーカーが時間内に終了しない場合はエラーを返す
 
 ## 関連項目
 
-- [キューモジュール](lua/storage/queue.md) - Lua APIリファレンス
-- [キューコンシューマガイド](guides/queue-consumers.md) - コンシューマパターンとワーカープール
-- [スーパービジョン](guides/supervision.md) - コンシューマライフサイクル管理
+- [キューモジュール](lua/storage/queue.md) - Lua API リファレンス
+- [キューコンシューマーガイド](guides/queue-consumers.md) - コンシューマーのパターンとワーカープール
+- [スーパービジョン](guides/supervision.md) - コンシューマーのライフサイクル管理

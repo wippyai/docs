@@ -1,13 +1,13 @@
 ---
 title: "Prozessgruppen"
-description: "Prozessgruppen ermöglichen es Prozessen, benannten Gruppen beizutreten und Broadcasts zu empfangen, die an eine Gruppe gerichtet sind, wobei die…"
+description: "Konfigurieren Sie clusterfähige benannte Prozessgruppen mit dezentraler Mitgliedschaft, Broadcasts, Monitoring und Abgleich."
 ---
 
 # Prozessgruppen
 
-Prozessgruppen ermöglichen es Prozessen, benannten Gruppen beizutreten und Broadcasts zu empfangen, die an eine Gruppe gerichtet sind, wobei die Mitgliedschaft über jeden Knoten im Cluster verfolgt wird. Das Modell folgt Erlang/OTP `pg`: Gruppen werden beim ersten Beitritt erstellt, ein Prozess kann vielen Gruppen angehören (und einer Gruppe mehrmals beitreten), und die Mitgliedschaft ist dezentral — jeder Knoten pflegt seinen eigenen Zustand und gleicht ihn mit Peers über das Internode-Mesh ab.
+Ein `pg.scope` ermöglicht Prozessen, benannten Gruppen beizutreten und an eine Gruppe adressierte Broadcasts zu empfangen. Das Modell folgt Erlang/OTP `pg`: Gruppen entstehen beim ersten Beitritt, ein Prozess kann mehreren Gruppen angehören und derselben Gruppe mehrfach beitreten, und jeder Cluster-Knoten verwaltet seinen eigenen Mitgliedschaftszustand und gleicht ihn über das Internode-Mesh mit Peers ab. Diese Seite ist eine Konfigurations- und Verhaltensreferenz; die YAML-Blöcke sind Entry-Fragmente.
 
-Die Lua-API ist in [Prozessgruppen](lua/core/pg.md) dokumentiert; diese Seite behandelt den Scope-Eintragstyp und seine Konfiguration. Siehe den [Cluster-Leitfaden](guides/cluster.md) für das umgebende Mitgliedschaftsmodell.
+Die Lua-API ist unter [Prozessgruppen](lua/core/pg.md) dokumentiert; diese Seite behandelt den Scope-Entry-Typ und seine Konfiguration. Siehe den [Cluster-Leitfaden](guides/cluster.md) für das umgebende Mitgliedschaftsmodell.
 
 ## Eintragstyp
 
@@ -26,16 +26,16 @@ Jeder Scope ist isoliert: Gruppen und Mitglieder in einem Scope sind für einen 
 
 ## Konfiguration
 
-Alle Felder sind optional und haben auf einen typischen Cluster abgestimmte Standardwerte.
+Alle Felder sind optional. Die Tabelle führt ihre Standardwerte auf.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `protocol_timeout` | duration | 5s | Timeout für Inter-Knoten-Sync-/Discover-Operationen |
 | `broadcast_timeout` | duration | 5s | Timeout für die Zustellung eines Broadcasts an ein einzelnes Mitglied |
-| `anti_entropy_interval` | duration | 30s | Takt der Reconcile-Schleife; ein Peer wird pro Tick synchronisiert (0 deaktiviert) |
+| `anti_entropy_interval` | duration | 30s | Takt der Reconcile-Schleife; pro Tick wird ein Peer synchronisiert |
 | `circuit_breaker_failures` | int | 3 | Aufeinanderfolgende Sendefehler zu einem Knoten, bevor sein Circuit öffnet |
 | `circuit_breaker_reset_time` | duration | 10s | Wartezeit, bevor ein offener Circuit in den Half-Open-Zustand für einen Test-Send wechselt |
-| `max_retries` | int | 3 | Wiederholungsversuche für einen fehlgeschlagenen Broadcast (0 deaktiviert Wiederholungen) |
+| `max_retries` | int | 3 | Wiederholungsversuche für einen fehlgeschlagenen Broadcast |
 | `retry_base_delay` | duration | 100ms | Initiale Backoff-Verzögerung zwischen Wiederholungen |
 | `retry_max_delay` | duration | 1s | Maximale Backoff-Verzögerung |
 | `action_queue_size` | int | 256 | Tiefe, bei der eine "nähert sich der Kapazität"-Warnung protokolliert wird |
@@ -70,7 +70,7 @@ Alle Felder sind optional und haben auf einen typischen Cluster abgestimmte Stan
 
 ## Observability
 
-Ein Liveness-Health-Check (`pg.broadcast_recent.<scope>`) meldet Ungesundheit, wenn ein Scope für einen längeren Zeitraum keinen Broadcast-Verkehr sieht, was eine blockierte Event-Loop oder eine anhaltende Partition anzeigt. Siehe den [Observability-Leitfaden](guides/observability.md).
+Ein Liveness-Health-Check (`pg.broadcast_recent.<scope>`) meldet einen ungesunden Zustand, wenn ein Scope über längere Zeit keinen Broadcast-Verkehr erkennt, und macht dadurch eine blockierte Event-Loop oder anhaltende Partition sichtbar. Siehe den [Observability-Leitfaden](guides/observability.md).
 
 ## Siehe auch
 

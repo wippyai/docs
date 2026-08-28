@@ -1,17 +1,19 @@
 ---
 title: "Installation"
-description: "Install the Wippy runtime"
+description: "Install the Wippy runtime and verify that the command is available."
 ---
 
 # Installation
 
-## Quick Install
+## Install
 
 ```bash
 curl -fsSL https://hub.wippy.ai/install.sh | bash
 ```
 
-Or download directly from [hub.wippy.ai/releases](https://hub.wippy.ai/releases).
+The install script requires a POSIX shell. On Windows, download the runtime from
+[hub.wippy.ai/releases](https://hub.wippy.ai/releases) and place `wippy.exe` on
+`PATH`.
 
 ## Verify
 
@@ -19,18 +21,20 @@ Or download directly from [hub.wippy.ai/releases](https://hub.wippy.ai/releases)
 wippy version
 ```
 
-## Quick Start
+## Initialize Dependency Metadata
 
 ```bash
-# Create a new project
-mkdir myapp && cd myapp
-wippy init
+# Create a project directory
+mkdir myapp
+cd myapp
 
-# Run
-wippy run
+# Create or update wippy.lock
+wippy init
 ```
 
-HTTP, SQL, storage, and process hosting are built into the runtime — a fresh project runs without any dependencies. Framework modules are added from the hub as needed:
+`wippy init` writes the dependency lock and its source and module directory settings. It does not scaffold application source files or registry entries. Follow [Hello World](tutorials/hello-world.md) to create a runnable application, then start it with `wippy run`.
+
+The runtime includes HTTP, SQL, storage, and process-hosting capabilities. Add framework modules from the Hub when the application needs them:
 
 ```bash
 wippy add wippy/test
@@ -41,7 +45,7 @@ wippy install
 
 | Command | Description |
 | --------- | ------------- |
-| `wippy init` | Initialize a new project |
+| `wippy init` | Create or update `wippy.lock` |
 | `wippy run` | Start the runtime |
 | `wippy test` | Run the test entrypoint |
 | `wippy lint` | Check code for errors |
@@ -60,10 +64,10 @@ See [CLI Reference](guides/cli.md) for full documentation.
 
 ## Troubleshooting
 
-If `wippy version` is not found after install, reopen your shell or verify that the install directory is on your `PATH`.
+If the shell cannot find `wippy` after installation, reopen the shell and verify that the installation directory is on `PATH`.
 
 ## Next Steps
 
-- [Hello World](tutorials/hello-world.md) - Create your first project
-- [Project Structure](start/structure.md) - Understand the layout
-- [CLI Reference](guides/cli.md) - All commands and options
+- [Hello World](../tutorials/hello-world.md) — Create your first application
+- [Project Structure](start/structure.md) — Understand the project layout
+- [CLI Reference](guides/cli.md) — Review all commands and options

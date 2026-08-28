@@ -1,6 +1,6 @@
 ---
 title: "컴퓨트 유닛"
-description: "Wippy는 함수, 프로세스, 워크플로우의 세 가지 코드 실행 방식을 제공합니다. 동일한 기본 메커니즘을 공유하지만 수명, 상태 저장 위치, 실패 시 동작이 다릅니다."
+description: "lifetime, state, communication 및 failure handling 기준으로 Wippy function, process, workflow를 비교합니다."
 ---
 
 # 컴퓨트 유닛
@@ -9,13 +9,18 @@ Wippy는 함수, 프로세스, 워크플로우의 세 가지 코드 실행 방�
 
 ## 함수
 
-함수는 가장 단순한 모델입니다. 호출하면 실행되고 결과를 반환합니다. 호출 간에 상태가 유지되지 않습니다.
+함수는 호출될 때 실행되고 결과를 반환합니다. 각 호출을 stateless로 취급하십시오. durable 또는 shared state는 database나 store에 있어야 합니다. function pool은 Lua state를 재사용할 수 있으므로 module global 및 closure upvalue는 worker-local이며 신뢰할 수 있는 cross-call store가 아닙니다.
 
 ```lua
-local result = funcs.call("app.math:add", 2, 3)
+local funcs = require("funcs")
+
+local result, err = funcs.call("app.math:add", 2, 3)
+if err then
+    return nil, err
+end
 ```
 
-함수는 호출자의 컨텍스트에서 실행됩니다. 호출자가 취소하거나 종료하면 실행 중인 함수도 함께 취소됩니다. 별도의 정리 작업이 필요 없어 간단합니다.
+함수는 호출자의 context에서 실행됩니다. 호출자가 cancel되거나 exit하면 실행 중인 function call도 함께 cancel됩니다.
 
 <tip>
 HTTP 핸들러, 데이터 변환 등 빠르게 완료되고 결과를 반환해야 하는 작업에 함수를 사용하세요.
@@ -26,8 +31,12 @@ HTTP 핸들러, 데이터 변환 등 빠르게 완료되고 결과를 반환해�
 프로세스는 액터입니다. 여러 메시지에 걸쳐 상태를 유지하고, 시작한 사람과 독립적으로 실행되며, 메시지 전달을 통해 통신합니다.
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "job", {task = "process_data"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then return nil, err end
+
+local ok, send_err = process.send(pid, "job", {task = "process_data"})
+if send_err then return nil, send_err end
+return ok
 ```
 
 프로세스를 생성하면 생성자의 코드가 완료된 후에도 계속 실행됩니다. 프로세스는 서로 모니터링하고 링크하여 실패한 자식을 자동으로 재시작하는 슈퍼비전 트리를 형성할 수 있습니다.
@@ -40,29 +49,31 @@ process.send(pid, "job", {task = "process_data"})
 
 ## 워크플로우
 
-워크플로우는 반드시 완료되어야 하는 작업을 위한 것입니다. 상태를 워크플로우 프로바이더(Temporal 등)에 영속화하여 크래시, 재시작, 인프라 변경 후에도 중단된 지점에서 정확히 재개할 수 있습니다.
+workflow는 중단에서 복구해야 하는 durable operation을 위한 것입니다. Temporal 같은 workflow provider가 execution history를 기록하고 replay하여 crash, restart 또는 infrastructure change 후 state를 rebuild합니다.
 
 ```lua
--- 며칠 동안 실행될 수 있고, 재시작을 견디며, 진행 상황을 잃지 않음
-process.spawn("app.orders:process", "app:temporal_worker", order_id)
+-- The provider records this workflow so a worker restart can replay it.
+local pid, err = process.spawn("app.orders:process", "app:temporal_worker", order_id)
+if err then return nil, err end
+return pid
 ```
 
-단점은 지연 시간입니다. 모든 단계가 기록되므로 워크플로우는 함수나 프로세스보다 느립니다. 하지만 다단계 비즈니스 프로세스나 장기 실행 오케스트레이션에서는 그 내구성이 충분한 가치가 있습니다.
+workflow operation이 기록되므로 durability는 latency를 추가합니다. multi-step business process 및 long-running orchestration처럼 recovery가 function 또는 process의 낮은 latency보다 중요한 경우 workflow를 사용하십시오.
 
 <note>
-Wippy는 워크플로우의 결정론을 자동으로 처리합니다. 특별한 기법을 배울 필요 없이 일반 코드를 작성하면 런타임이 리플레이 시 올바르게 동작하도록 보장합니다.
+Wippy는 지원되는 workflow operation이 replay 중 같은 결과를 생성하도록 기록합니다. workflow code는 다른 compute unit과 같은 Lua syntax를 사용합니다.
 </note>
 
 ## 비교
 
 | | 함수 | 프로세스 | 워크플로우 |
 |---|---|---|---|
-| **상태** | 없음 | 메모리 내 | 영속화됨 |
-| **수명** | 단일 호출 | 종료 또는 크래시까지 | 모든 것을 견딤 |
+| **상태** | call-local; worker reuse에 의존하지 않음 | memory 내 | persisted history에서 rebuild |
+| **수명** | 단일 호출 | exit 또는 crash까지 | restart 이후에도 지속 |
 | **통신** | 반환값 + 메시지 | 메시지 전달 | 액티비티 호출 + 메시지 |
-| **실패 처리** | 호출자가 처리 | 슈퍼비전 트리 | 자동 재시도 |
+| **실패 처리** | 호출자가 처리 | supervision tree | provider recovery; retry는 policy를 따름 |
 | **지연 시간** | 최저 | 낮음 | 높음 |
 
 ## 같은 코드, 다른 동작
 
-많은 모듈이 컨텍스트에 따라 자동으로 적응합니다. 예를 들어 함수에서 `time.sleep()`은 워커를 블록하고, 프로세스에서는 다른 프로세스가 실행될 수 있도록 양보하며, 워크플로우에서는 복구 시 올바르게 리플레이되는 타이머로 기록됩니다.
+많은 모듈이 context에 따라 자동으로 적응합니다. 예를 들어 `time.sleep()`은 function과 process 모두에서 다른 작업이 실행될 수 있도록 yield합니다. workflow에서는 provider가 timer도 기록하여 replay가 두 번째 timer를 시작하지 않게 합니다.

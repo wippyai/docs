@@ -276,7 +276,7 @@
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
       {"title": "Keeper over MCP", "path": "tutorials/keeper-mcp"},
-      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
+      {"title": "Dataflow: Run a Durable DAG", "path": "tutorials/dataflow"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },

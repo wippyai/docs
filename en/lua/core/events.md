@@ -1,6 +1,6 @@
 ---
 title: "Event Bus"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Publish and observe best-effort runtime and application events."
 ---
 
 # Event Bus
@@ -8,10 +8,10 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Publish and subscribe to events for observability — monitoring runtime and application activity and reacting to it.
+The event bus publishes runtime and application activity for monitoring, logging, metrics, and reactive side effects. This page is an API reference; the snippets assume an executable Lua entry with the listed module and permissions.
 
 <note>
-Use the event bus for observation only: monitoring, logging, metrics, and reactive side effects. It is a best-effort publish/subscribe channel, not a reliable transport — do not build business logic on it or depend on it for guaranteed delivery. For business-critical messaging use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md).
+The event bus is a best-effort publish/subscribe channel, not a reliable transport. Do not depend on it for business-critical delivery. Use process messaging (`process.send`), channels, or the [message queue](lua/storage/queue.md) when delivery is part of application correctness.
 </note>
 
 ## Loading
@@ -22,7 +22,7 @@ local events = require("events")
 
 ## Subscribing to Events
 
-Subscribe to events from the event bus:
+Subscribe to one system or a system pattern, with an optional event-kind filter:
 
 ```lua
 -- Subscribe to all order events
@@ -31,26 +31,20 @@ if err then
     return nil, err
 end
 
--- Subscribe to specific event kind
-local sub = events.subscribe("users", "user.created")
-
--- Subscribe to all events from a system
-local sub = events.subscribe("payments")
-
 -- Process events
 local ch = sub:channel()
 while true do
     local evt, ok = ch:receive()
     if not ok then break end
 
-    logger:info("Received event", {
-        system = evt.system,
-        kind = evt.kind,
-        path = evt.path
-    })
-    handle_event(evt)
+    print(evt.system, evt.kind, evt.path)
+    -- Process evt.data when the publisher supplied a payload.
 end
 ```
+
+Pass a second argument to restrict delivery to one kind, for example
+`events.subscribe("users", "user.created")`. An omitted kind accepts every
+kind from the matching system.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -59,9 +53,9 @@ end
 
 **Returns:** `Subscription, error`
 
-## Sending Events
+## Publishing Events
 
-Send an event to the event bus:
+Publish an event to the event bus:
 
 ```lua
 -- Send order created event
@@ -74,23 +68,11 @@ if err then
     return nil, err
 end
 
--- Send user event
-events.send("users", "user.registered", "/users/" .. user.id, {
-    user_id = user.id,
-    email = user.email,
-    created_at = time.now():format("2006-01-02T15:04:05Z07:00")
-})
-
--- Send payment event
-events.send("payments", "payment.completed", "/payments/" .. payment.id, {
-    payment_id = payment.id,
-    order_id = payment.order_id,
-    amount = payment.amount,
-    method = payment.method
-})
-
 -- Send without data
-events.send("system", "heartbeat", "/health")
+local heartbeat_sent, heartbeat_err = events.send("system", "heartbeat", "/health")
+if heartbeat_err then
+    return nil, heartbeat_err
+end
 ```
 
 | Parameter | Type | Description |
@@ -102,13 +84,17 @@ events.send("system", "heartbeat", "/health")
 
 **Returns:** `boolean, error`
 
+A successful return confirms that the runtime accepted the send. It does not
+confirm that any subscriber received or processed the event.
+
 ## Subscription Methods
 
-### Getting the Channel
+### Receive Channel
 
-Get the channel for receiving events:
+Use the subscription channel to receive events:
 
 ```lua
+local json = require("json")
 local ch = sub:channel()
 
 local evt, ok = ch:receive()
@@ -116,19 +102,25 @@ if ok then
     print("System:", evt.system)
     print("Kind:", evt.kind)
     print("Path:", evt.path)
-    print("Data:", json.encode(evt.data))
+    local encoded, encode_err = json.encode(evt.data)
+    if encode_err then return nil, encode_err end
+    print("Data:", encoded)
 end
 ```
 
-Event fields: `system`, `kind`, `path`, `data`
+Each event contains `system`, `kind`, and `path`. The `data` field is present
+only when the publisher supplied a non-nil payload.
 
-### Closing Subscription
+### Close a Subscription
 
-Unsubscribe and close the channel:
+Close the subscription to unsubscribe and close its channel:
 
 ```lua
-sub:close()
+local closed = sub:close() -- true
 ```
+
+Closing is idempotent. After the channel is closed, `receive()` returns
+`nil, false` once buffered events are drained.
 
 ## Permissions
 
@@ -142,9 +134,9 @@ sub:close()
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty system | `errors.INVALID` | no |
-| Empty kind | `errors.INVALID` | no |
+| Empty send kind | `errors.INVALID` | no |
 | Empty path | `errors.INVALID` | no |
 | Policy denied | `errors.INVALID` | no |
+| Missing execution or process context | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
-

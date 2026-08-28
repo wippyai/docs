@@ -1,60 +1,60 @@
 ---
 title: "クラスター"
-description: "単一のWippyノードは完結したランタイムです。クラスターは複数のノードを1つの協調システムに結合します。プロセスは任意のノードから名前で識別・到達でき、ロックやグループを通じて協調し、共有コンセンサスコアに依存できます。コードの側では、生成・送信・監督の方法を変える必要はありません。"
+description: "Wippy node が peer を発見し、process message を routing し、gossip と Raft で協調する仕組み。"
 ---
 
 # クラスター
 
-単一のWippyノードは完結したランタイムです。**クラスター**は複数のノードを1つの協調システムに結合します。プロセスは任意のノードから名前で識別・到達でき、ロックやグループを通じて協調し、共有コンセンサスコアに依存できます。コードの側では、生成・送信・監督の方法を変える必要はありません。
+単一の Wippy node だけでも完全な runtime です。**クラスター**は複数の node を接続し、process が cluster-wide name を使い、node 間で message を routing し、lock、group、shared consensus core を介して協調できるようにします。
 
-クラスタリングはオプトイン（`cluster.enabled`）です。このページではコードから見えるモデルを説明します。トポロジー、設定、運用については[クラスターガイド](guides/cluster.md)を参照してください。
+clustering は opt-in（`cluster.enabled`）です。このページではコードから見える model を説明します。topology、configuration、operation については[クラスターガイド](guides/cluster.md)を参照してください。
 
-## モデル
+## クラスターモデル :id=cluster-model
 
-ノードは**gossip**（SWIM）を通じて互いを発見します。ノードはシードを指定して参加し、メンバーシップと障害検知はコーディネーターなしに収束します。gossipの上に小さく境界が定まった**Raft**コアが置かれます。固定された投票者セットが線形化可能なコンセンサスを提供し、残りのフリートはgossipで動作します。ほとんどのノードはコンセンサス負荷を担わないため、クラスターはスケールアウトしつつ、必要なものに対する唯一の真実の源を維持します。
+node は **gossip**（SWIM）を介して互いを発見します。node は seed を通じて参加し、その後は中央 coordinator なしに membership と failure 情報が収束します。境界が定められた **Raft** core は動的に調整される voter set を通じて linearizable consensus を提供し、他の node は gossip を介して参加します。
 
-クラスターがコードに提供するものは3つの概念に集約されます：**名前**、**ルーティング**、**協調プリミティブ**。
+application から見える model は、**名前**、**routing**、**協調 primitive** の 3 つで構成されます。
 
 ## 命名
 
-プロセスは通常PIDでアドレス指定されます。クラスター内では**名前**で登録し、どこからでもその名前で到達できます。重要な決定は**スコープ**です。コストとのトレードオフとして、どの整合性保証を求めるかを選択します。
+process は通常 PID で address 指定します。クラスター内では **name** を付けて登録し、他の node からその name で到達することもできます。選択する **scope** によって consistency guarantee と coordination cost が決まります。
 
 | スコープ | 可視範囲 | 保証 | 用途 |
 |----------|----------|------|------|
-| **Local** | このノード | 即時、調整なし | ノードローカルなヘルパー |
-| **Eventual** | クラスター全体 | gossip後に収束。競合は解決され、敗者に通知される | サービス名・グループ名・限定的なプレゼンス名 |
-| **Consistent** | クラスター全体 | Raftによる線形化可能なシングルトン | 標準的なクラスター全体の名前付きサービス |
-| **Strong** | クラスター全体 | Consistentに加え、名前がアクティブになる前にすべてのライブノードが確認応答 | コントロールプレーンのシングルトンとロック |
+| **ローカル** | このノード | 即時、協調なし | ノードローカルヘルパー |
+| **Eventual** | クラスター全体 | gossip 後に収束。競合を解決し、敗者へ通知 | service、group、限定的な presence name |
+| **Consistent** | クラスター全体 | Raft による linearizable singleton | 標準的な cluster-wide named service |
+| **Strong** | クラスター全体 | Consistent に加え、name が active になる前にすべての live node が acknowledge | control-plane singleton と lock |
 
-スコープは整合性対コストの軸で厳密な順序を形成します。`Local < Eventual < Consistent < Strong`。必要な保証を満たす最も弱いスコープを選択してください。名前は[`process.registry`](lua/core/process.md)を通じて登録され、所有プロセスが終了する（またはそのノードが離脱する）と自動的に解放されます。
+scope は consistency と coordination cost の順に `Local < Eventual < Consistent < Strong` と並びます。必要な保証を満たすうち、cost が最も低い scope を選んでください。name は [`process.registry`](lua/core/process.md) で登録します。Local name は process の終了時に削除されます。Consistent name と Strong name も process の終了または node の離脱時に回収されます。Eventual name は明示的に削除するか、その origin node が離脱したときに削除され、所有する process だけが終了しても自動削除されません。
 
 ## ルーティング
 
-命名は名前が確実に正しいプロセスに到達できて初めて有用です。ルーティングはその2つをつなぐものであり、いくつかの一貫したルールに従います。
+routing は、登録済み name とそれを所有する process を接続します。
 
-- **読み取りはローカルです。** 各ノードは自身のレプリカまたはgossipで配布されたキャッシュから名前を解決します。名前の解決にネットワークのラウンドトリップは不要です。これにより解決を高速に保ち、パーティション中も動作し続けます。
-- **解決には固定の順序があります。** 名前はプレーン順に解決されます。Consistent（Raft）、次にEventual（gossip）、次にLocal。クラスター全体の名前は同じ文字列のローカル名よりも優先されます。
-- **書き込みは権威者にルーティングされます。** ConsistentまたはStrongの登録はRaftリーダーを経由します。リーダーでないノードは書き込みを転送し結果を待ちます。コミットされると、アクティブなバインディングはgossipで伝播し、Raftコアに属さないノードを含むすべてのノードがその後ローカルで名前を解決できます。
-- **メッセージングはPIDでルーティングされます。** 名前に`process.send`すると、PIDに解決されリレーが所有ノードにメッセージを配信します。プロセスが同じノードにあっても別のノードにあっても、コードからは同じ方法でアドレス指定できます。ロケーションは透過的です。
+- **read は local です。** 各 node は自身の replica または gossip で配布された cache から name を resolve します。name lookup に network round-trip は不要です。そのため高速で、partition 中も動作します。
+- **resolve には固定の順序があります。** 最も authoritative な plane から、Consistent と Strong（Raft）、Eventual（gossip）、Local の順に resolve します。同じ文字列の cluster-wide name は local name より優先されます。
+- **write は authority に routing されます。** Consistent または Strong の登録は Raft leader を経由します。leader でない node は write を転送して結果を待ちます。commit されると active binding が gossip で配布され、Raft core に属さない node も含め、すべての node がその後 local で name を resolve できます。
+- **message は PID で routing されます。** name に `process.send` すると PID に resolve され、relay が所有 node に message を配信します。process が同じ node にあっても別の node にあっても、コードからの address 指定は同じで、location は透過的です。
 
-結果として、どのノードが権威者かを意識せずに名前の登録と検索が行え、メッセージはローカルと同じ方法でクラスター全体のターゲットに到達します。
+application は authority node を直接 address 指定せずに name を登録・resolve できます。resolve 後、message は対象 PID を所有する node に routing されます。
 
 ## プリミティブ
 
-クラスタリングは小さなビルディングブロックのセットを公開します。各プリミティブはそれぞれのページで詳しく説明されています。ここではそれらで何を構築できるかという概念を示します。
+clustering は少数の coordination building block を公開します。
 
-- **メンバーシップとアイデンティティ** — ライブノードのセット、このノードのアイデンティティとロール。ピアの発見や作業のシャーディングに使用します。[`system.cluster`](lua/system/system.md)と[`system.node`](lua/system/system.md)を参照してください。
-- **コンセンサス状態** — Raftリーダー、ターム、このノードのロール。診断やリーダーを意識したロジックに使用します。[`system.raft`](lua/system/system.md)を参照してください。
-- **クラスター全体の名前** — スコープを指定してプロセスを名前で登録・解決します。他のすべての基盤となります。[`process.registry`](lua/core/process.md)を参照してください。
-- **分散ロック** — クラスター全体の相互排他。保持者は最大1つで、保持プロセスが死ぬと自動的に解放されます。[`system.lock`](lua/system/system.md)を参照してください。
-- **プロセスグループ** — Erlangスタイルで名前付きグループに参加し、全ノードのすべてのメンバーにブロードキャストします。[プロセスグループ](lua/core/pg.md)を参照してください。
+- **membership と identity** — live node の集合と、この node の identity および role。peer の発見や work の shard に使います。[`system.cluster`](lua/system/system.md)と[`system.node`](lua/system/system.md)を参照してください。
+- **consensus state** — Raft leader、term、この node の role。diagnostics や leader-aware logic に使います。[`system.raft`](lua/system/system.md)を参照してください。
+- **cluster-wide name** — name と scope で process を登録・resolve します。他のすべての基盤です。[`process.registry`](lua/core/process.md)を参照してください。
+- **distributed lock** — クラスター全体の mutual exclusion で、holder は最大 1 つです。holder が終了すると自動解放されます。[`system.lock`](lua/system/system.md)を参照してください。
+- **process group** — named group に参加し、すべての node の全 member に Erlang style で broadcast します。[プロセスグループ](lua/core/pg.md)を参照してください。
 
-これらは意図的にプリミティブです。ロックと名前付きシングルトンはStrongスコープの上に構築され、プロセスグループはgossipの上に構築され、すべてが上述の同じメンバーシップとルーティングの上にあります。そのため、それぞれが独自の分散方式を発明するのではなく、予測可能な方法で組み合わせることができます。
+これらの primitive は membership と routing infrastructure を共有します。Consistent name、Strong name、distributed lock は Raft core を使います。process group は gossip membership で peer を発見し、relay 経由で変更を送信し、完全な state を定期交換して収束します。
 
-## 関連情報
+## 関連情報 :id=see-also
 
-- [クラスターガイド](guides/cluster.md) - トポロジー、設定、運用
-- [プロセス管理](lua/core/process.md) - 生成、メッセージング、名前レジストリ
-- [プロセスグループ](lua/core/pg.md) - 名前付きグループとブロードキャスト
-- [システム](lua/system/system.md) - `system.cluster`、`system.node`、`system.raft`、`system.lock`
-- [プロセスモデル](concepts/process-model.md) - プロセス、PID、メッセージング
+- [クラスターガイド](guides/cluster.md) — topology、configuration、operation
+- [プロセス管理](lua/core/process.md) — spawn、messaging、name registry
+- [プロセスグループ](lua/core/pg.md) — named group と broadcast
+- [システム](lua/system/system.md) — `system.cluster`、`system.node`、`system.raft`、`system.lock`
+- [プロセスモデル](concepts/process-model.md) — process、PID、messaging

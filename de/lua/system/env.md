@@ -1,6 +1,6 @@
 ---
 title: "Umgebungsvariablen"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Vom konfigurierten Umgebungssystem bereitgestellte Umgebungsvariablen lesen und aktualisieren."
 ---
 
 # Umgebungsvariablen
@@ -8,9 +8,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen.
+Das Modul `env` liest und aktualisiert von der Runtime bereitgestellte Umgebungsvariablen.
 
-Variablen müssen im [Umgebungssystem](system/env.md) definiert werden, bevor auf sie zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschützt sind.
+Diese Seite ist eine API-Referenz. Ihre Ausschnitte zeigen einzelne Operationen und setzen voraus, dass die genannten Variablen und Sicherheitsrichtlinien bereits vorhanden sind.
+
+Variablen müssen im [Umgebungssystem](system/env.md) definiert sein, bevor darauf zugegriffen werden kann. Das System steuert, welche Speicher-Backends (OS, Datei, Speicher) Werte liefern und ob Variablen schreibgeschützt sind.
 
 ## Laden
 
@@ -18,28 +20,26 @@ Variablen müssen im [Umgebungssystem](system/env.md) definiert werden, bevor au
 local env = require("env")
 ```
 
-## get
+## `get`
 
 Holt einen Umgebungsvariablenwert.
 
 ```lua
--- Datenbankverbindungsstring holen
-local db_url = env.get("DATABASE_URL")
-if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+-- Get database connection string
+local db_url, db_err = env.get("DATABASE_URL")
+if db_err then return nil, db_err end
+
+-- Apply a fallback only to a missing variable. Permission and backend errors
+-- still propagate to the caller.
+local function get_or(key, fallback)
+    local value, err = env.get(key)
+    if not err then return value end
+    if errors.is(err, errors.NOT_FOUND) then return fallback end
+    return nil, err
 end
 
--- Mit Fallback holen
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- Secrets holen
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- Konfiguration
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -50,21 +50,15 @@ local debug_mode = env.get("DEBUG") == "true"
 
 Gibt `nil, error` zurück, wenn Variable nicht existiert.
 
-## set
+## `set`
 
 Setzt eine Umgebungsvariable.
 
 ```lua
--- Laufzeitkonfiguration setzen
-env.set("APP_MODE", "production")
-
--- Für Tests überschreiben
-env.set("API_URL", "http://localhost:8080")
-
--- Basierend auf Bedingungen setzen
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -74,25 +68,30 @@ end
 
 **Gibt zurück:** `boolean, error`
 
-## get_all
+## `get_all`
 
 Holt alle zugänglichen Umgebungsvariablen.
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- Konfiguration protokollieren (achten Sie darauf, keine Secrets zu protokollieren)
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- Erforderliche Variablen prüfen
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({
+            message = "Missing required env var: " .. key,
+            kind = errors.INVALID
+        })
     end
 end
 ```
@@ -109,7 +108,7 @@ Umgebungszugriff unterliegt der Sicherheitsrichtlinienauswertung.
 |--------|----------|-------------|
 | `env.get` | Variablenname | Umgebungsvariable lesen |
 | `env.set` | Variablenname | Umgebungsvariable schreiben |
-| `env.get_all` | `*` | Alle Variablen auflisten |
+`get_all` besitzt keine eigene Sicherheitsaktion. Es liefert nur Variablen, für die `env.get` erlaubt ist, und filtert jeden Variablennamen über `env.get`.
 
 ### Zugriff prüfen
 
@@ -121,7 +120,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
+Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
 
 ## Fehler
 
@@ -135,4 +134,4 @@ Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Umgebungssystem](system/env.md) - Speicher-Backends und Variablendefinitionen konfigurieren
+- [Umgebungssystem](system/env.md) – Speicher-Backends und Variablendefinitionen konfigurieren

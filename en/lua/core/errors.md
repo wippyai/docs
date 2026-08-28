@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Create, wrap, inspect, and classify structured errors in Lua entries."
 ---
 
 # Errors
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Structured error handling with categorization and retry metadata. Global `errors` table available without require.
+The global `errors` table creates and inspects structured errors with categories, details, and retry metadata. It is available without `require`.
+
+This is an API reference. Each code block is an isolated snippet, not a complete entry. Variables such as `err` refer to an error returned or created by surrounding application code; the wrapping example assumes `db` is an application-provided database client.
 
 ## Creating Errors
 
@@ -29,10 +31,10 @@ local err = errors.new({
 
 ## Wrapping Errors
 
-Add context while preserving kind, retryable, and details:
+Wrap an error to add context while preserving its kind, retry metadata, and details:
 
 ```lua
-local data, err = db.query("SELECT * FROM users")
+local data, err = db:query("SELECT * FROM users")
 if err then
     return nil, errors.wrap(err, "failed to load users")
 end
@@ -80,7 +82,7 @@ end
 
 ## Call Stack
 
-Get structured call stack:
+Use `errors.call_stack` to inspect a structured call stack:
 
 ```lua
 local stack = errors.call_stack(err)
@@ -94,12 +96,7 @@ end
 
 ## Retryable Errors
 
-| Typically Retryable | Not Retryable |
-|---------------------|---------------|
-| `TIMEOUT` | `INVALID` |
-| `UNAVAILABLE` | `NOT_FOUND` |
-| `RATE_LIMITED` | `PERMISSION_DENIED` |
-| | `ALREADY_EXISTS` |
+Retryability is error metadata, not a property guaranteed by an error kind. Check the value returned by `err:retryable()` rather than inferring it from `err:kind()`. A result of `nil` means the error does not specify whether retrying is appropriate.
 
 ```lua
 if err:retryable() then

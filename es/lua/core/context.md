@@ -1,14 +1,17 @@
 ---
-title: "Contexto de Solicitud"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Contexto de solicitud"
+description: "Lee valores vinculados a la solicitud y propagados mediante llamadas a funciones y procesos."
 ---
 
-# Contexto de Solicitud
+# Contexto de solicitud
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Acceder a valores de contexto con alcance de solicitud. El contexto se establece via [Funcs](lua/core/funcs.md) o [Process](lua/core/process.md).
+El módulo `ctx` lee valores vinculados a la solicitud y propagados mediante
+[llamadas a funciones](lua/core/funcs.md) u [operaciones de procesos](lua/core/process.md). Esta
+página es una referencia de API; los fragmentos muestran llamadas individuales dentro
+de una entrada Lua ejecutable.
 
 ## Carga
 
@@ -38,12 +41,16 @@ local values, err = ctx.all()
 
 **Devuelve:** `table, error`
 
+`ctx.all()` devuelve una tabla vacía cuando existe un contexto de ejecución pero no
+tiene valores de solicitud. Si no existe un contexto de ejecución, devuelve
+`nil, errors.INTERNAL`.
+
 ## Errores
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Clave vacia | `errors.INVALID` | no |
 | Clave no encontrada | `errors.NOT_FOUND` | no |
-| Contexto no disponible | `errors.INTERNAL` | no |
+| Contexto de ejecución no disponible | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

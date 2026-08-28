@@ -1,17 +1,19 @@
 ---
 title: "Prozessmodell"
-description: "Wippy führt Code in isolierten Prozessen aus — leichtgewichtigen Zustandsautomaten, die über Nachrichtenübermittlung kommunizieren. Dieser…"
+description: "Wie Wippy-Prozesse ausgeführt werden, kommunizieren, Capabilities isolieren und sich durch Supervision erholen."
 ---
 
 # Prozessmodell
 
-Wippy führt Code in isolierten Prozessen aus — leichtgewichtigen Zustandsautomaten, die über Nachrichtenübermittlung kommunizieren. Dieser aktorenbasierte Ansatz eliminiert Probleme mit gemeinsamem Zustand und macht nebenläufige Programmierung vorhersagbar.
+Wippy führt Code in isolierten Prozessen aus: leichtgewichtigen Zustandsautomaten, die durch Nachrichten statt gemeinsamen Speicher kommunizieren. Dieses Aktormodell gibt jedem Prozess eigenen Zustand und einen eigenen Lebenszyklus.
 
-## Zustandsmaschinen-Ausführung
+Diese Seite beschreibt Lebenszyklus und Isolationsmodell. Die [Referenz zur Prozessverwaltung](../lua/core/process.md) behandelt Start, Nachrichten, Monitoring, Registry und Upgrade-APIs. Runtime-verwaltete Service-Felder finden Sie unter [Process Host und Services](../system/process-host.md).
 
-Jeder Prozess folgt demselben Muster: Initialisieren, schrittweise Ausführung mit Unterbrechung bei blockierenden Operationen, und Beenden bei Abschluss. Der Scheduler verteilt Tausende von Prozessen auf einen Worker-Pool und führt andere Prozesse aus, während einer auf E/A wartet.
+## Ausführung als Zustandsautomat
 
-Prozesse unterstützen mehrere gleichzeitige Unterbrechungen — Sie können mehrere asynchrone Operationen starten und auf eine beliebige oder alle warten. Dies ermöglicht effiziente parallele E/A, ohne zusätzliche Prozesse zu starten.
+Jeder Prozess initialisiert sich, schreitet durch seine Ausführung fort, gibt bei blockierenden Operationen die Ausführung frei und schließt nach Abschluss. Der Scheduler multiplext Prozesse über einen Worker-Pool und führt andere Arbeit aus, während ein Prozess auf E/A wartet.
+
+Prozesse unterstützen mehrere gleichzeitige Wartezustände. Dadurch kann Code mehrere asynchrone Operationen starten und auf eine oder alle warten, ohne zusätzliche Prozesse zu erzeugen.
 
 ```mermaid
 flowchart LR
@@ -23,70 +25,84 @@ flowchart LR
     Running --> Complete
 ```
 
-Prozesse sind nicht auf Lua beschränkt. Die Laufzeitumgebung unterstützt bereits WebAssembly-Module über die `process.wasm`-Art, und die Architektur lässt jede Zustandsautomaten-Implementierung zu.
+Prozesse sind nicht auf Lua beschränkt. Die Runtime unterstützt über den Kind `process.wasm` auch WebAssembly-Module; ihre Prozessarchitektur kann weitere Implementierungen von Zustandsautomaten unterstützen.
 
 <warning>
-Prozesse sind leichtgewichtig, aber nicht kostenlos. Jeder Prozess trägt einen kleinen Basiskostenaufwand für seinen Zustand, seine Inbox und die Scheduler-Buchführung, und dynamische Speicherreservierungen vergrößern diesen Footprint während der Ausführung.
+Prozesse sind leichtgewichtig, aber nicht kostenlos. Jeder Prozess verursacht geringe Grundkosten für Zustand, Inbox und Scheduler-Buchführung; dynamische Allokationen vergrößern diesen Speicherbedarf während der Ausführung.
 </warning>
 
 ## Process Hosts
 
-Wippy führt mehrere Process Hosts innerhalb einer einzigen Laufzeitumgebung aus, jeder mit unterschiedlichen Fähigkeiten und Sicherheitsgrenzen. Systemprozesse, die privilegierte Funktionen ausführen, können in einem Host leben, isoliert von Hosts, die Benutzersitzungen ausführen. Hosts können einschränken, was Prozesse tun dürfen — in Erlang bräuchten Sie separate Knoten für dieses Isolationsniveau.
+Wippy kann mehrere Process Hosts mit jeweils eigenen Capabilities und Sicherheitsgrenzen in einer Runtime betreiben. Privilegierte Systemprozesse können in einem anderen Host laufen als Hosts, die Benutzersitzungen ausführen.
 
-Einige Hosts sind spezialisiert. Der Terminal-Host führt beispielsweise einen einzelnen Prozess aus, gewährt ihm aber Zugriff auf E/A-Operationen, die andere Hosts verweigern. Dies ermöglicht es Ihnen, Vertrauensstufen in einer Bereitstellung zu mischen — Systemdienste mit vollem Zugriff neben isoliertem Benutzercode.
+Einige Hosts sind spezialisiert. Der Terminal-Host verwendet beispielsweise einen Scheduler-Worker
+und stellt zugelassenen Prozessen Terminal-E/A-Kontext bereit; er
+erzwingt keine Lebensdauerbegrenzung auf einen einzelnen Prozess. Getrennte Hosts erlauben einer Bereitstellung,
+Prozesse mit unterschiedlichen Vertrauensstufen auszuführen.
 
 ## Sicherheitsmodell
 
-Jeder Prozess wird unter einer Aktoridentität und Sicherheitsrichtlinie ausgeführt. Typischerweise ist dies der Benutzer, der den Aufruf initiiert hat, aber Systemprozesse laufen unter einem Systemaktor mit anderen Berechtigungen.
+Jeder Prozess wird unter einer Akteuridentität und Sicherheitsrichtlinie ausgeführt. Üblicherweise ist dies der Benutzer, der den Aufruf initiiert hat; Systemprozesse verwenden einen Systemakteur mit anderen Berechtigungen.
 
-Zugriffskontrolle funktioniert auf mehreren Ebenen. Einzelne Prozesse haben ihre eigenen Zugriffsebenen. Das Senden von Nachrichten zwischen Hosts kann aufgrund der Sicherheitsrichtlinie verboten werden — ein isolierter Benutzerprozess darf möglicherweise überhaupt keine Nachrichten an System-Hosts senden. Die dem aktuellen Aktor zugeordnete Richtlinie bestimmt, welche Operationen erlaubt sind.
+Zugriffskontrolle greift auf mehreren Ebenen. Sicherheitsrichtlinien können einzelne Prozessoperationen und die Nachrichtenübermittlung zwischen Hosts einschränken. Die Richtlinie des aktuellen Akteurs bestimmt, welche Operationen erlaubt sind.
+
+Die Auswirkungen der Prozessisolation auf die Sicherheit erläutert das [Sicherheitsmodell](./security-model.md).
 
 ## Prozesse starten
 
 Erstellen Sie Hintergrundprozesse mit `process.spawn()`:
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+local pid, err = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+if err then return nil, err end
+return pid
 ```
 
-Das erste Argument ist der Registry-Eintrag, das zweite ist der Process Host, und die verbleibenden Argumente werden an den Prozess übergeben.
+Das erste Argument ist der Registry-Eintrag, das zweite der Process Host; die übrigen Argumente werden an den Prozess übergeben.
 
-Spawn-Varianten steuern Lebenszyklus-Beziehungen:
+Spawn-Varianten steuern Lebenszyklusbeziehungen:
 
 | Funktion | Verhalten |
-|----------|-----------|
-| `spawn` | Fire and Forget |
-| `spawn_monitored` | EXIT-Ereignisse empfangen, wenn Kindprozess beendet wird |
-| `spawn_linked` | Bidirektional — jeder Absturz benachrichtigt den anderen |
+|----------|----------|
+| `spawn` | Unabhängigen Prozess starten |
+| `spawn_monitored` | EXIT-Ereignisse empfangen, wenn das Kind endet |
+| `spawn_linked` | Abnormales Beenden wird in beide Richtungen weitergegeben; mit `trap_links: true` erhält der Peer `LINK_DOWN`, statt selbst zu scheitern |
 
-## Message-Passing
+## Nachrichtenübermittlung
 
-Prozesse kommunizieren über Nachrichten, niemals über gemeinsamen Speicher:
+Prozesse kommunizieren durch Nachrichten statt gemeinsamem Speicher:
 
 ```lua
-process.send(target_pid, "topic", payload)
+local ok, err = process.send(target_pid, "topic", payload)
+if err then return nil, err end
+return ok
 ```
 
-Nachrichten vom selben Absender kommen in Reihenfolge an. Nachrichten von verschiedenen Absendern können sich überlappen. Die Zustellung erfolgt ohne Bestätigung — verwenden Sie Anfrage-Antwort-Muster, wenn Sie eine Bestätigung benötigen.
+Nachrichten desselben Absenders kommen in Reihenfolge an. Nachrichten verschiedener Absender können sich überlagern. Die Zustellung erfolgt ohne Bestätigung; verwenden Sie Anfrage-Antwort-Muster, wenn Sie eine Bestätigung benötigen.
 
 <note>
-Prozesse können sich in einem lokalen Namensverzeichnis registrieren und anstelle der PID über den Namen adressiert werden (z. B. <code>session_manager</code>). Ein globales Verzeichnis für knotenübergreifende Adressierung ist geplant.
+Prozesse können sich in einer lokalen Namensregistry registrieren und statt über eine PID über einen Namen wie <code>session_manager</code> angesprochen werden. Über <code>process.registry</code> lassen sich Namen außerdem clusterweit für die knotenübergreifende Adressierung in den Scopes EVENTUAL auf Gossip-Basis sowie CONSISTENT und STRONG auf Raft-Basis registrieren.
 </note>
 
 ## Supervision
 
-Jeder Prozess kann andere überwachen. Ein Prozess startet Kindprozesse mit Überwachung, beobachtet EXIT-Ereignisse und startet sie bei Fehlern neu. Dies folgt Erlangs Philosophie „Lass es abstürzen": Prozesse stürzen bei unerwarteten Bedingungen ab, und der überwachende Prozess behandelt die Wiederherstellung.
+Jeder Prozess kann andere Prozesse durch Monitoring überwachen. Ein Supervisor startet überwachte Kinder, beobachtet EXIT-Ereignisse und entscheidet, ob sie nach einem Fehler neu gestartet werden.
 
 ```lua
-local worker = process.spawn_monitored("app.workers:handler", "app:processes")
-local event = process.events():receive()
+local worker, spawn_err = process.spawn_monitored("app.workers:handler", "app:processes")
+if spawn_err then return nil, spawn_err end
+
+local event, open = process.events():receive()
+if not open then return nil, errors.new("process event channel closed") end
 
 if event.kind == process.event.EXIT and event.result.error then
-    worker = process.spawn_monitored("app.workers:handler", "app:processes")
+    local replacement, restart_err = process.spawn_monitored("app.workers:handler", "app:processes")
+    if restart_err then return nil, restart_err end
+    worker = replacement
 end
 ```
 
-Auf oberster Ebene bietet die Laufzeitumgebung Dienste, die langlebige Prozesse starten und überwachen — ähnlich wie systemd unter Linux. Definieren Sie einen `process.service`-Eintrag, damit die Laufzeitumgebung einen Prozess verwaltet:
+Auf Runtime-Ebene können Services lang laufende Prozesse starten und überwachen. Definieren Sie einen `process.service`-Eintrag, damit die Runtime einen Prozess verwaltet:
 
 ```yaml
 - name: worker.service
@@ -97,23 +113,23 @@ Auf oberster Ebene bietet die Laufzeitumgebung Dienste, die langlebige Prozesse 
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
 ```
 
-Der Dienst startet automatisch, startet bei Abstürzen mit Verzögerung neu und integriert sich in die Lebenszyklus-Verwaltung der Laufzeitumgebung.
+Der Service startet automatisch und ist in die Lebenszyklusverwaltung der Runtime eingebunden. In der festgelegten Runtime zählt der erste fehlgeschlagene Start zu `max_attempts`; der Wert `5` erlaubt also höchstens vier weitere Starts. Jeder Retry wartet mit Jitter um `initial_delay`; die Verzögerung wächst zwischen den Versuchen nicht an.
 
-## Prozess-Upgrade
+## Prozess-Upgrades
 
-Laufende Prozesse können ihren Code aktualisieren, ohne ihre Identität zu verlieren. Rufen Sie `process.upgrade()` auf, um zu einer neuen Definition zu wechseln und dabei PID, Postfach und Überwachungsbeziehungen zu erhalten:
+Laufende Prozesse können ihren Code aktualisieren, ohne ihre Identität zu verlieren. Rufen Sie `process.upgrade()` auf, um zu einer neuen Definition zu wechseln und PID, Mailbox sowie Supervision-Beziehungen zu behalten:
 
 ```lua
 process.upgrade("app.workers:v2", current_state)
 ```
 
-Das erste Argument ist der neue Registry-Eintrag (oder nil, um die aktuelle Definition neu zu laden). Zusätzliche Argumente werden an die neue Version übergeben, sodass Sie den Zustand über die Aktualisierung hinweg transportieren können. Der Prozess setzt die Ausführung sofort mit dem neuen Code fort.
+Das erste Argument ist der neue Registry-Eintrag oder `nil`, um die aktuelle Definition neu zu laden. Zusätzliche Argumente werden an die neue Version übergeben, damit Zustand über das Upgrade hinweg transportiert werden kann. Der Prozess setzt die Ausführung sofort mit dem neuen Code fort.
 
-Dies ermöglicht das Neuladen von Code während der Entwicklung und unterbrechungsfreie Aktualisierungen in der Produktion. Die Laufzeitumgebung speichert kompilierte Prototypen, sodass Aktualisierungen keine wiederholten Kompilierungskosten verursachen. Wenn eine Aktualisierung aus irgendeinem Grund fehlschlägt, stürzt der Prozess ab und normale Überwachungsmechanismen greifen — ein überwachender Elternprozess kann ihn mit der vorherigen Version neu starten oder den Fehler eskalieren.
+Die Runtime speichert kompilierte Prototypen zwischen, um wiederholte Kompilierung zu vermeiden. Schlägt ein Upgrade fehl, stürzt der Prozess ab und normales Supervision-Verhalten greift; ein überwachender Elternprozess kann ihn neu starten oder den Fehler eskalieren.
 
 ## Scheduling
 
-Der Aktor-Scheduler verwendet Arbeitsverteilung über CPU-Kerne. Jeder Worker hat eine lokale Warteschlange für Cache-Lokalität, mit einer globalen Warteschlange für die Verteilung. Prozesse unterbrechen bei blockierenden Operationen, wodurch Tausende nebenläufig auf einer Handvoll Threads ausgeführt werden können.
+Der Actor-Scheduler verwendet Work-Stealing über CPU-Kerne hinweg. Jeder Worker hat eine lokale Queue für Cache-Lokalität sowie eine globale Queue zur Arbeitsverteilung. Prozesse geben die Ausführung bei blockierenden Operationen frei, damit andere Prozesse im Worker-Pool laufen können.

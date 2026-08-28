@@ -1,11 +1,13 @@
 ---
 title: "Usage Tracking"
-description: "The wippy/usage module records LLM token consumption and provides aggregate queries grouped by time interval, model, or user. It binds to the…"
+description: "Record LLM token consumption and query usage totals by time interval, model, or user."
 ---
 
 # Usage Tracking
 
-The `wippy/usage` module records LLM token consumption and provides aggregate queries grouped by time interval, model, or user. It binds to the `wippy.llm:usage_tracker` contract, so any code that calls through the LLM module automatically produces usage records.
+The `wippy/usage` module records LLM token consumption and provides aggregate queries by time interval, model, or user. It is the default implementation of the `wippy.llm:usage_tracker` contract, so calls made through the LLM module produce usage records automatically.
+
+This page is an API primer with reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a configured SQL database, and `wippy/llm` when automatic tracking is required. Usage rows persist in the selected database; remove sample rows through your normal database-maintenance workflow when testing is complete.
 
 ## Setup
 
@@ -16,7 +18,7 @@ wippy add wippy/usage
 wippy install
 ```
 
-Declare the dependency and point the `target_db` requirement at the database where usage records should live:
+Declare the dependency and set `target_db` to the database that will store usage records:
 
 ```yaml
 version: "1.0"
@@ -25,20 +27,20 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.usage
     kind: ns.dependency
     component: wippy/usage
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.usage.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
 When the application starts, `wippy/migration` runs the module's `01_create_token_usage_table` migration, which creates the `token_usage` table along with indexes on `user_id`, `context_id`, `model_id`, and `timestamp`.
+
+If you use the relative SQLite path shown above, create the `data` directory before starting the application.
 
 ## Schema
 
@@ -73,7 +75,7 @@ Every successful LLM call invokes `track_usage` with the model id, token counts,
 
 ## Tracker API
 
-Import the tracker directly when you need to record usage outside of the LLM flow:
+Import the tracker directly to record usage outside the LLM flow:
 
 ```yaml
 imports:
@@ -82,6 +84,11 @@ imports:
 
 ```lua
 local tracker = require("usage_tracker")
+
+-- Numeric counts supplied by the caller or model provider.
+local prompt_tokens, completion_tokens = 120, 40
+local thinking_tokens = 0
+local cache_read_tokens, cache_write_tokens = 0, 0
 
 local usage_id, err = tracker.track_usage(
     "openai:gpt-4o",
@@ -92,6 +99,9 @@ local usage_id, err = tracker.track_usage(
     cache_write_tokens,
     { context_id = "chat-42", metadata = { feature = "summary" } }
 )
+if err then
+    error("Failed to record usage: " .. tostring(err))
+end
 ```
 
 | Parameter | Type | Description |
@@ -113,17 +123,31 @@ Returns `usage_id` or `nil, err`.
 `wippy.usage:token_usage_repo` offers aggregate queries:
 
 ```yaml
+modules:
+  - time
 imports:
   usage: wippy.usage:token_usage_repo
 ```
 
 ```lua
 local usage = require("usage")
+local time = require("time")
 
-local summary  = usage.get_summary(start_unix, end_unix)
-local by_time  = usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY)
-local by_model = usage.get_usage_by_model(start_unix, end_unix)
-local by_user  = usage.get_usage_by_user(start_unix, end_unix)
+-- Inclusive query bounds expressed as UNIX timestamps.
+local end_unix = time.now():unix()
+local start_unix = end_unix - (24 * 60 * 60)
+
+local function require_result(value, err)
+    if err then
+        error("Usage query failed: " .. tostring(err))
+    end
+    return value
+end
+
+local summary  = require_result(usage.get_summary(start_unix, end_unix))
+local by_time  = require_result(usage.get_usage_by_time(start_unix, end_unix, usage.INTERVAL.DAY))
+local by_model = require_result(usage.get_usage_by_model(start_unix, end_unix))
+local by_user  = require_result(usage.get_usage_by_user(start_unix, end_unix))
 ```
 
 ### Functions
@@ -153,10 +177,10 @@ Both the tracker and the repository accept UNIX timestamps at the public API bou
 
 ## Metadata and Context
 
-The `meta` column stores a free-form JSON blob. Use it to correlate records with application events:
+The `meta` column stores free-form JSON for correlating records with application events:
 
 ```lua
-tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
+local usage_id, err = tracker.track_usage("openai:gpt-4o", 120, 40, 0, 0, 0, {
     context_id = "chat-42",
     metadata   = {
         session_id = "s-7",
@@ -164,12 +188,15 @@ tracker.track_usage(model_id, prompt, completion, 0, 0, 0, {
         agent_id   = "writer",
     },
 })
+if err then
+    error("Failed to record usage metadata: " .. tostring(err))
+end
 ```
 
 `context_id` is a top-level column and can be indexed; `metadata` is stored as text and is intended for display, not filtering.
 
 ## See Also
 
-- [LLM](framework/llm.md) - LLM generation and the `usage_tracker` contract
-- [Migrations](framework/migration.md) - Migration runner that creates the schema
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [LLM](framework/llm.md) — LLM generation and the `usage_tracker` contract
+- [Migrations](framework/migration.md) — Migration runner that creates the schema
+- [Framework Overview](framework/overview.md) — Framework module usage

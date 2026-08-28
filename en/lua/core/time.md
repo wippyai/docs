@@ -1,6 +1,6 @@
 ---
 title: "Time & Duration"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Create, compare, parse, and format time values; work with durations and time zones; and schedule sleeps and timers."
 ---
 
 # Time & Duration
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Work with time values, durations, timezones, and scheduling. Create timers, sleep for specified periods, parse and format timestamps.
+The `time` module provides time values, durations, time-zone handling, parsing, formatting, sleeps, and timers. Supported workflow time calls are recorded so they can replay deterministically.
 
-In workflows, `time.now()` returns a recorded time reference for deterministic replay.
+This is an API reference. Code blocks are isolated examples or partial scheduling patterns, not a complete entry. Names such as `do_work`, `try_operation`, `make_request`, `send_reminder`, `user_activity`, `check_health`, and `process` represent application callbacks, channels, or data. Where a snippet assigns an error return to `_`, it assumes the shown literal is valid; handle errors when values can come from input or configuration.
 
 ## Loading
 
@@ -18,11 +18,13 @@ In workflows, `time.now()` returns a recorded time reference for deterministic r
 local time = require("time")
 ```
 
+Add `time` to the executable entry's `modules:` list before requiring it. The ambient `channel` and `errors` globals used by scheduling examples need no module declaration.
+
 ## Current Time
 
-### now
+### `now`
 
-Returns the current time. In workflows, returns the recorded time from the workflow's time reference for deterministic replay.
+Returns the current time. In workflows, it returns the recorded workflow time reference so execution can replay deterministically.
 
 ```lua
 local t = time.now()
@@ -35,11 +37,13 @@ local elapsed = time.now():sub(start)
 print("Took " .. elapsed:milliseconds() .. "ms")
 ```
 
+The timestamp and elapsed-time output are illustrative; `time.now()` supplies the current or recorded workflow time.
+
 **Returns:** `Time`
 
 ## Creating Time Values
 
-### From Components
+### Create from Components
 
 ```lua
 -- Create specific date/time in UTC
@@ -47,7 +51,10 @@ local t = time.date(2024, time.DECEMBER, 25, 10, 30, 0, 0, time.utc)
 print(t:format_rfc3339())  -- "2024-12-25T10:30:00Z"
 
 -- Create in specific timezone
-local ny, _ = time.load_location("America/New_York")
+local ny, err = time.load_location("America/New_York")
+if err then
+    return nil, err
+end
 local meeting = time.date(2024, time.JANUARY, 15, 14, 0, 0, 0, ny)
 
 -- Defaults to local timezone if not specified
@@ -67,7 +74,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0)
 
 **Returns:** `Time`
 
-### From Unix Timestamp
+### Create from a Unix Timestamp
 
 ```lua
 -- From seconds since epoch
@@ -89,7 +96,7 @@ local t = time.unix(js_timestamp // 1000, (js_timestamp % 1000) * 1000000)
 
 **Returns:** `Time`
 
-### From String
+### Parse from a String
 
 Parse time strings using Go's reference time format: `Mon Jan 2 15:04:05 MST 2006`.
 
@@ -114,7 +121,7 @@ local t, err = time.parse("2006-01-02 15:04", "2024-12-29 14:30", ny)
 |-----------|------|-------------|
 | `layout` | string | Go time format layout |
 | `value` | string | String to parse |
-| `location` | Location | Default timezone (optional) |
+| `location` | Location | Default time zone (optional) |
 
 **Returns:** `Time, error`
 
@@ -160,9 +167,9 @@ t1:equal(t1)    -- true
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `before(time)` | Time | boolean | Is this time before other? |
-| `after(time)` | Time | boolean | Is this time after other? |
-| `equal(time)` | Time | boolean | Are times equal? |
+| `before(time)` | Time | boolean | Whether this time is before the other value |
+| `after(time)` | Time | boolean | Whether this time is after the other value |
+| `equal(time)` | Time | boolean | Whether the two values represent the same time |
 
 ### Formatting
 
@@ -213,7 +220,7 @@ t:year_day()    -- 1-366
 t:is_zero()     -- true if zero value
 ```
 
-### Timezone Conversion
+### Time-Zone Conversion
 
 ```lua
 local t = time.now()
@@ -228,9 +235,9 @@ t:location():string()      -- get timezone name
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
 | `utc()` | - | Time | Convert to UTC |
-| `in_local()` | - | Time | Convert to local timezone |
-| `in_location(loc)` | Location | Time | Convert to timezone |
-| `location()` | - | Location | Get current timezone |
+| `in_local()` | - | Time | Convert to the local time zone |
+| `in_location(loc)` | Location | Time | Convert to a specified time zone |
+| `location()` | - | Location | Return the current time zone |
 
 ### Rounding
 
@@ -252,7 +259,7 @@ t:truncate(minute_duration)  -- truncate to 15-minute boundary
 
 ## Duration
 
-### Creating Durations
+### Create a Duration
 
 ```lua
 -- Parse from string
@@ -286,11 +293,11 @@ d:microseconds()  -- 5445500000
 d:nanoseconds()   -- 5445500000000
 ```
 
-## Timezones
+## Time Zones
 
-### Load by Name
+### Named Locations
 
-Load timezone by IANA name (e.g., "America/New_York", "Europe/London", "Asia/Tokyo").
+Load a time zone by its IANA name, such as `America/New_York`, `Europe/London`, or `Asia/Tokyo`.
 
 ```lua
 local ny, err = time.load_location("America/New_York")
@@ -310,13 +317,13 @@ print("Tokyo:", t:in_location(tokyo):format(time.TIME_ONLY))
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `name` | string | IANA timezone name |
+| `name` | string | IANA time-zone name |
 
 **Returns:** `Location, error`
 
-### Fixed Offset
+### Fixed-Offset Locations
 
-Create timezone with fixed UTC offset.
+Create a time zone with a fixed UTC offset.
 
 ```lua
 -- UTC+5:30 (India Standard Time)
@@ -335,7 +342,7 @@ local t = time.date(2024, 1, 15, 12, 0, 0, 0, ist)
 
 **Returns:** `Location`
 
-### Built-in Locations
+### Built-In Locations
 
 ```lua
 time.utc      -- UTC timezone
@@ -344,9 +351,9 @@ time.localtz  -- Local system timezone
 
 ## Scheduling
 
-### sleep
+### `sleep`
 
-Pause execution for specified duration. In workflows, recorded and replayed correctly.
+Suspend execution for the specified duration. Workflow execution records the sleep for deterministic replay.
 
 ```lua
 time.sleep("5s")
@@ -364,18 +371,20 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Sleep time |
 
-### after
+### `after`
 
-Returns a channel that receives once after the duration. Works with `channel.select`.
+Returns a channel that receives one value after the duration. The channel can be used with `channel.select`.
 
 ```lua
 -- Simple timeout
-local timeout = time.after("5s")
+local timeout, err = time.after("5s")
+if err then return nil, err end
 timeout:receive()  -- blocks for 5 seconds
 
 -- Timeout with select
 local response_ch = make_request()
-local timeout_ch = time.after("30s")
+local timeout_ch, err = time.after("30s")
+if err then return nil, err end
 
 local result = channel.select{
     response_ch:case_receive(),
@@ -391,27 +400,34 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Time to wait |
 
-**Returns:** `Channel`
+**Returns:** `Channel, error`
 
-### timer
+### `timer`
 
-One-shot timer that fires after duration. Can be stopped or reset.
+Creates a one-shot timer that fires after the specified duration and can be stopped or reset.
 
 ```lua
-local timer = time.timer("5s")
+local timer, err = time.timer("5s")
+if err then
+    return nil, err
+end
 
 -- Wait for timer
 timer:response():receive()
 send_reminder()
 
 -- Reset on activity
-local idle_timer = time.timer("5m")
+local idle_timer, err = time.timer("5m")
+if err then
+    return nil, err
+end
+local idle_ch = idle_timer:response()
 while true do
     local r = channel.select{
         user_activity:case_receive(),
-        idle_timer:response():case_receive()
+        idle_ch:case_receive()
     }
-    if r.channel == idle_timer:response() then
+    if r.channel == idle_ch then
         logout_user()
         break
     end
@@ -435,22 +451,32 @@ timer:stop()
 | `stop()` | - | boolean | Cancel timer |
 | `reset(duration)` | number/string/Duration | boolean | Reset with new duration |
 
-### ticker
+### `ticker`
 
-Repeating timer that fires at regular intervals.
+Creates a repeating timer that fires at regular intervals.
 
 ```lua
 -- Periodic task
-local ticker = time.ticker("30s")
+local ticker, err = time.ticker("30s")
+if err then
+    return nil, err
+end
 local ch = ticker:response()
 
 while true do
     local tick_time = ch:receive()
     check_health()
 end
+```
 
+The loop above is intended for a long-running process. A separate finite rate-limiting pattern is:
+
+```lua
 -- Rate limiting
-local ticker = time.ticker("100ms")
+local ticker, err = time.ticker("100ms")
+if err then
+    return nil, err
+end
 for _, item in ipairs(items) do
     ticker:response():receive()
     process(item)
@@ -474,7 +500,7 @@ ticker:stop()
 
 ### Duration Units
 
-Duration constants are in nanoseconds. Use with arithmetic.
+Duration constants are expressed in nanoseconds and can be combined with arithmetic.
 
 ```lua
 time.NANOSECOND    -- 1
@@ -486,7 +512,8 @@ time.HOUR          -- 60 * MINUTE
 
 -- Example usage
 time.sleep(5 * time.SECOND)
-local timeout = time.after(30 * time.SECOND)
+local timeout, err = time.after(30 * time.SECOND)
+if err then return nil, err end
 ```
 
 ### Format Layouts

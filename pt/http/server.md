@@ -5,7 +5,9 @@ description: "O servidor HTTP (http.service) escuta em uma porta e hospeda rotea
 
 # Servidor HTTP
 
-O servidor HTTP (`http.service`) escuta em uma porta e hospeda roteadores, endpoints e handlers de arquivos estáticos.
+Um `http.service` possui um listener e hospeda roteadores, endpoints e handlers de arquivos estáticos.
+
+**Classificação: referência de configuração do servidor.** Os blocos são fragmentos parciais do registro, a menos que definam todas as entradas de rede, ambiente, sistema de arquivos, roteador, certificado, ator e política referenciadas.
 
 ## Configuração
 
@@ -37,7 +39,7 @@ O servidor HTTP (`http.service`) escuta em uma porta e hospeda roteadores, endpo
 | `timeouts.idle` | duration | - | Timeout de conexão keep-alive |
 | `host.buffer_size` | int | 1024 | Tamanho do buffer do relay de mensagens |
 | `host.worker_count` | int | NumCPU | Workers do relay de mensagens |
-| `network` | ID do Registro | - | Vincula o listener através de uma [rede overlay](system/network.md) (ex. Tailscale, I2P) |
+| `network` | ID do Registro | - | Vincula o listener por uma [rede overlay](system/network.md), como Tailscale ou I2P |
 | `tls` | object | - | Terminação TLS (ver [TLS](#tls)) |
 
 ## Timeouts
@@ -46,9 +48,9 @@ Configure timeouts para evitar esgotamento de recursos:
 
 ```yaml
 timeouts:
-  read: "10s"    # Tempo máximo para ler headers de requisição
-  write: "60s"   # Tempo máximo para escrever resposta
-  idle: "120s"   # Timeout keep-alive
+  read: "10s"    # Max time to read the entire request (headers + body)
+  write: "60s"   # Max time to write response
+  idle: "120s"   # Keep-alive timeout
 ```
 
 - `read` - Curto (5-10s) para APIs, maior para uploads
@@ -92,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Isso define um ator e políticas base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http/middleware.md) sobrescreve o ator baseado no token validado, permitindo políticas de segurança por usuário.
+Isso define um ator e políticas de base para todas as requisições. Para requisições autenticadas, o [middleware token_auth](http/middleware.md) substitui o ator com base no token validado, permitindo políticas de segurança por usuário.
 
 ## Lifecycle
 
@@ -103,7 +105,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +114,7 @@ lifecycle:
 | `auto_start` | Iniciar quando a aplicação iniciar |
 | `start_timeout` | Tempo máximo de espera pelo início do servidor |
 | `stop_timeout` | Tempo máximo para shutdown graceful |
-| `depends_on` | Iniciar após essas entradas estarem prontas |
+| `requires` | Iniciar depois que essas entradas estiverem prontas (`depends_on` é a grafia legada) |
 
 ## Conectando Componentes
 
@@ -144,14 +146,14 @@ Execute servidores separados para propósitos diferentes:
 
 ```yaml
 entries:
-  # API pública
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # Admin (apenas localhost)
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"
@@ -163,11 +165,15 @@ entries:
 
 O servidor pode terminar TLS diretamente. Defina `tls.mode` como `manual` (forneça seu próprio certificado) ou `auto` (certificado fornecido por um driver de rede overlay, ex. `network.tailscale`). Listeners clearnet simples não suportam `auto`. Omita `tls` ou deixe o mode vazio para executar HTTP simples.
 
-No modo `auto` o servidor não deve especificar `cert`/`key`/`cert_env`/`key_env` — o driver de rede os fornece.
+No modo `auto`, o servidor não deve especificar `cert` nem `key`: o driver de rede os fornece.
 
 ### Certificado manual
 
-Forneça cert e key inline/carregados de arquivo ou via variáveis de ambiente (nunca ambos):
+Sob `mode: manual`, `cert` e `key` contêm o conteúdo PEM. Forneça esse conteúdo de uma destas três formas para cada campo, sem misturá-las:
+
+1. **PEM inline** — a string PEM literal.
+2. **Referência `file://`** — caminho relativo ao manifesto, resolvido e incorporado no carregamento com proteção contra travessia de diretório.
+3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](system/env.md) registrada durante a decodificação, com um placeholder `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -185,15 +191,20 @@ Forneça cert e key inline/carregados de arquivo ou via variáveis de ambiente (
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+O placeholder `${env:NAME}` resolve `NAME` pelo [registro de ambiente](../system/env.md): o nome público de uma variável registrada ou seu ID de entrada, como `app.env:tls_cert`. Não é uma variável bruta do sistema operacional; um valor do SO só fica acessível quando uma variável apoiada por `env.storage.os` é registrada com esse nome. Um padrão pode ser fornecido como `${env:NAME|default}`.
+
+<note>
+Os campos legados <code>cert_env</code> e <code>key_env</code> ainda resolvem valores pelo registro de ambiente da mesma forma, mas estão <b>obsoletos</b>. Prefira o placeholder <code>${env:NAME}</code> mostrado acima.
+</note>
 
 | Campo | Descrição |
 |-------|-----------|
-| `mode` | `""` (off), `auto` ou `manual` |
-| `cert` / `key` | Conteúdo PEM (tipicamente carregado via `file://`) |
-| `cert_env` / `key_env` | Nomes de variáveis de ambiente resolvidas via o [registro env](system/env.md) |
+| `mode` | `""` (desativado), `auto` ou `manual` |
+| `cert` / `key` | Conteúdo PEM inline, referência `file://` ou placeholder `${env:NAME}` |
 
 ### Mutual TLS (mTLS)
 
@@ -202,24 +213,25 @@ Sob `mode: manual` o servidor pode adicionalmente verificar certificados de clie
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` aceita as mesmas três formas de `cert` e `key`: PEM inline, `file://` ou `${env:NAME}`. O campo legado `client_ca_env` também está obsoleto; prefira `client_ca: ${env:NAME}`.
+
 | Campo | Descrição |
 |-------|-----------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | Bundle PEM de CAs de cliente confiáveis |
-| `client_ca_env` | Variável de ambiente contendo o bundle da CA (mutuamente exclusiva com `client_ca`) |
+| `client_ca` | Bundle PEM de CAs de cliente confiáveis, inline, por `file://` ou por `${env:NAME}` |
 
 `verify_if_given` e `require_and_verify` exigem uma CA. `request` e `require_any` aceitam qualquer certificado de cliente sem verificação de CA.
 
 ## Veja Também
 
 - [Roteamento](http/router.md) - Roteadores e endpoints
-- [Arquivos Estáticos](http/static.md) - Servindo arquivos estáticos
+- [Arquivos Estáticos](http/static.md) - Serviço de arquivos estáticos
 - [Middleware](http/middleware.md) - Middleware disponível
 - [Segurança](system/security.md) - Políticas de segurança
 - [WebSocket Relay](http/websocket-relay.md) - Mensageria WebSocket

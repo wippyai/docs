@@ -1,11 +1,14 @@
 ---
-title: "Testing"
-description: "wippy/test フレームワークで Lua コードのテストを記述して実行します。これはアサーション、ライフサイクルフック、モックを備えた BDD スタイルのランナーで、wippy test コマンドによって実行されます。"
+title: "テスト"
+description: "wippy/testのアサーション、ライフサイクルフック、モックを使ってLuaテストを記述し、実行します。"
 ---
 
-# Testing
+# テスト
 
-`wippy/test` フレームワークで Lua コードのテストを記述して実行します。これはアサーション、ライフサイクルフック、モックを備えた BDD スタイルのランナーで、`wippy test` コマンドによって実行されます。
+`wippy/test`フレームワークでアサーション、ライフサイクルフック、モックを備えたLuaテストケースを定義し、`wippy test`で実行します。
+
+**分類:** 実行可能なチュートリアルです。完全なライブラリ、テストエントリ、依存関係の設定、
+期待されるランナー出力、失敗時の確認方法を掲載しています。
 
 ## 構築するもの
 
@@ -17,16 +20,31 @@ description: "wippy/test フレームワークで Lua コードのテストを�
 
 ## 前提条件
 
-- Wippy プロジェクト ([app-template](https://github.com/wippyai/app-template) をクローンするか、空のディレクトリで `wippy init` を実行)。
-- テストフレームワークとターミナルホストがインストールされていること：
+- Wippyランタイム`v0.3.32a`。
+- 空の作業ディレクトリ。プロジェクトを作成して初期化し、テストフレームワークをインストールします：
 
   ```bash
+  mkdir testing-demo
+  cd testing-demo
+  mkdir src
+  wippy init
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  ランナーはライブのターミナル UI をレンダリングするため、`wippy/test` とともに `wippy/terminal` が必要です。
+  テストフレームワークは`wippy/terminal`を依存関係として宣言するため、インストールすると
+  ランナーのライブUIで使用するターミナルホストも導入されます。
+
+完成したプロジェクトは次の構成になります：
+
+```text
+testing-demo/
+├── wippy.lock
+└── src/
+    ├── _index.yaml
+    ├── calc.lua
+    └── calc_test.lua
+```
 
 ## テスト対象のコード
 
@@ -89,6 +107,7 @@ return { run = test.run_cases(define_tests) }
 両方のエントリを登録します。検出は `meta.type: test` をキーにします。`meta.suite` は出力で結果をグループ化します：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -121,22 +140,31 @@ wippy test
 反復作業中に単一のスイートに絞り込みます (エントリ ID またはスイート名に一致)：
 
 ```bash
-wippy test calculator
+wippy test test calc_test
 ```
 
-上記スイートの出力：
+最初の`test`はフレームワークのテストランナーエントリポイントを選択します。残りの引数は
+テストエントリIDに適用される部分文字列フィルターです。
+
+スイートの期待される出力：
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
+    o setup ran <duration>
+    o adds numbers <duration>
+    o returns error on divide by zero <duration>
     - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped <duration>
 
-  PASSED   3 tests   1 skipped   1ms
+  PASSED
+  3 tests  1 skipped  <duration>
 ```
 
-`wippy test` はすべてのケースが合格すると `0` で、失敗があれば `1` で終了するため、そのまま CI に組み込めます。
+ライブレンダラーは各ケースを表示してからスイートの概要を出力します。実行時間は毎回異なります。
+
+`wippy test`はすべてのケースが合格すると`0`で、失敗があれば`1`で終了するため、そのままCIに組み込めます。
+
+失敗経路を確認するには、期待する合計を一時的に`5`から`6`へ変更します。ランナーが`FAILED`を表示して
+ステータス1で終了することを確認し、続行する前に`5`へ戻してください。
 
 ## アサーション
 
@@ -166,8 +194,20 @@ wippy test calculator
 
 ネストされた `describe` ブロックは親のフックを継承します (外側の `before_*` が先、内側の `after_*` が先)。
 
+## トラブルシューティング
+
+- `No test runner found`は`wippy.lock`に`wippy/test`がないことを示します。
+  `wippy add wippy/test`に続けて`wippy install`を実行してください。
+- `calc`または`test`モジュールが見つからない場合は、`imports`のキーが対応する`require(...)`呼び出しと一致するか確認してください。
+- テストファイルのエントリに`meta.type: test`がなければ検出されません。
+- 実行時間とターミナルのグリフは環境によって異なります。自動化では最終ステータスとプロセスの終了コードを使用してください。
+
+## クリーンアップ
+
+使い捨てのプロジェクトが不要になったら、`testing-demo`ディレクトリを離れてから削除してください。
+
 ## 次のステップ
 
 - [Hello World](tutorials/hello-world.md) — 最小限のプロジェクトレイアウト
-- [エントリの種類](guides/entry-kinds.md) — `function.lua`、`library.lua` など
-- [テストフレームワーク](framework/testing.md) — ランナーとイベントプロトコルの完全なリファレンス
+- [エントリの種類](guides/entry-kinds.md) — `function.lua`、`library.lua`など
+- [テストフレームワーク](framework/testing.md) — ランナーとイベントプロトコルのリファレンス

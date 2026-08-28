@@ -1,11 +1,13 @@
 ---
 title: "Entry-Typen-Referenz"
-description: "Vollständige Referenz aller in Wippy verfügbaren Entry-Typen."
+description: "Referenz der Wippy-Entry-Kinds für Runtime-, Storage-, Netzwerk-, Sicherheits-, Ausführungs- und Lebenszyklussysteme."
 ---
 
 # Entry-Typen-Referenz
 
-Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
+Diese Seite fasst die verfügbaren Entry-Kinds zusammen und verweist auf ihre ausführlichen Modul- und Systemreferenzen.
+
+Die YAML- und Lua-Blöcke sind Referenzfragmente, keine einzelne Anwendung. Registry-IDs, Zugangsdaten, Datenobjekte und Helper wie `get_users` oder `delete_user` sind Beispiele; vollständige Rückgabe- und Fehlerverträge finden Sie auf den verlinkten Modulseiten.
 
 > Einträge referenzieren sich gegenseitig im `namespace:name`-Format. Die Registry verbindet Abhängigkeiten automatisch basierend auf diesen Referenzen und stellt sicher, dass Ressourcen in der richtigen Reihenfolge initialisiert werden.
 
@@ -16,7 +18,7 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
 
 ## Lua-Runtime
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `function.lua` | Lua-Funktions-Entry-Point |
 | `process.lua` | Langlebiger Lua-Prozess |
@@ -37,7 +39,7 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
     - http
     - json
   imports:
-    utils: app.lib:helpers  # Anderen Eintrag als Modul importieren
+    utils: app.lib:helpers  # Import another entry as module
 ```
 
 <tip>
@@ -46,7 +48,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
 
 ## HTTP-Dienste
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `http.service` | HTTP-Server (bindet Port) |
 | `http.router` | Routen-Präfix und Middleware |
@@ -54,14 +56,14 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
 | `http.static` | Statische Datei-Bereitstellung |
 
 ```yaml
-# HTTP-Server
+# HTTP server
 - name: gateway
   kind: http.service
   addr: ":8080"
   lifecycle:
     auto_start: true
 
-# Router mit Middleware
+# Router with middleware
 - name: api
   kind: http.router
   meta:
@@ -69,9 +71,9 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
-# Endpunkt
+# Endpoint
 - name: users_list
   kind: http.endpoint
   meta:
@@ -88,16 +90,18 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Datenbanken
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `db.sql.sqlite` | SQLite-Datenbank |
 | `db.sql.postgres` | PostgreSQL-Datenbank |
 | `db.sql.mysql` | MySQL-Datenbank |
+| `db.cdc.postgres` | PostgreSQL-Quelle für Change Data Capture (siehe [CDC](../system/cdc.md)) |
 
 ### SQLite
 
@@ -108,7 +112,7 @@ resp:status(200):json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# In-Memory für Tests
+# In-memory for testing
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -150,7 +154,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Siehe [Datenbank](system/database.md) fuer `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
+Siehe [Datenbank](system/database.md) für `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
 
 **Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
@@ -158,14 +162,14 @@ Siehe [Datenbank](system/database.md) fuer `${env:NAME}`-Secret-Referenzen, TLS-
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
 ## Key-Value-Stores
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `store.memory` | In-Memory-Key-Value-Store |
 | `store.sql` | SQL-basierter Key-Value-Store |
@@ -173,21 +177,21 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 | `store.kv.crdt` | Cluster-replizierter, letztlich konsistenter KV (Gossip/CRDT) |
 
 ```yaml
-# Memory-Store
+# Memory store
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# SQL-basierter Store
+# SQL-backed store
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
-# Cluster-replizierter Store (erfordert Clustering)
+# Cluster-replicated store (requires clustering)
 - name: deployments
   kind: store.kv.raft
   namespace: deploy
@@ -201,13 +205,13 @@ Die `store.kv.*`-Typen benötigen aktiviertes [Clustering](guides/cluster.md). S
 local store = require("store")
 local s, err = store.get("app:cache")
 
-s:set("user:123", user_data, 3600)  -- TTL in Sekunden
+s:set("user:123", user_data, 3600)  -- TTL in seconds
 local data = s:get("user:123")
 ```
 
 ## Queues
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `queue.driver.memory` | In-Memory-Queue-Treiber |
 | `queue.driver.amqp` | AMQP-Treiber (RabbitMQ) |
@@ -216,7 +220,7 @@ local data = s:get("user:123")
 | `queue.consumer` | Queue-Konsument |
 
 ```yaml
-# Treiber
+# Driver
 - name: queue_driver
   kind: queue.driver.memory
   lifecycle:
@@ -227,7 +231,7 @@ local data = s:get("user:123")
   kind: queue.queue
   driver: queue_driver
 
-# Konsument
+# Consumer
 - name: job_consumer
   kind: queue.consumer
   queue: app:jobs
@@ -243,12 +247,17 @@ local data = s:get("user:123")
 ```lua
 local queue = require("queue")
 
--- Nachricht veröffentlichen
+-- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- Im Consumer-Handler auf aktuelle Nachricht zugreifen
-local msg = queue.message()
-local data = msg:body_json()
+-- In a consumer handler: the message body is the handler's argument
+local function main(data)
+    -- access delivery metadata via the current message
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
@@ -257,30 +266,31 @@ Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwend
 
 ## Prozessverwaltung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `process.host` | Prozessausführungs-Host |
 | `process.service` | Überwachter Prozess (umhüllt process.lua) |
 | `terminal.host` | Terminal/CLI-Host |
+| `pg.scope` | Prozessgruppen-Scope (siehe [Prozessgruppen](../system/process-groups.md)) |
 
 ```yaml
-# Process Host (wo Prozesse laufen)
+# Process host (where processes run)
 - name: processes
   kind: process.host
   host:
-    workers: 32             # Worker-Goroutinen (Standard: NumCPU)
-    queue_size: 1024        # Globale Queue-Kapazität
-    local_queue_size: 256   # Pro-Worker-Queue
+    workers: 32             # Worker goroutines (default: NumCPU)
+    queue_size: 1024        # Global queue capacity
+    local_queue_size: 256   # Per-worker queue
   lifecycle:
     auto_start: true
 
-# Prozessdefinition
+# Process definition
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Überwachter Prozessdienst
+# Supervised process service
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -305,7 +315,7 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 
 ## Temporal (Workflows)
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `temporal.client` | Temporal-Client-Verbindung |
 | `temporal.worker` | Temporal-Worker |
@@ -330,7 +340,7 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 
 ## Cloud-Speicher
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `config.aws` | AWS-Konfiguration |
 | `cloudstorage.s3` | S3-Bucket-Zugriff |
@@ -339,14 +349,14 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # Optional, für S3-kompatible Dienste
+  endpoint: ""  # Optional, for S3-compatible services
 ```
 
 **Lua-API:** Siehe [Cloud-Storage-Modul](lua/storage/cloud.md)
@@ -356,7 +366,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
 ```
 
 <tip>
@@ -365,7 +375,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 
 ## Dateisysteme
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichniszugriff |
 | `fs.embed` | Schreibgeschuetztes eingebettetes Dateisystem |
@@ -374,8 +384,8 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # Erstellen wenn nicht vorhanden
-  mode: "0755"      # Berechtigungen
+  auto_init: true   # Create if not exists
+  mode: "0755"      # Permissions
 ```
 
 **Lua-API:** Siehe [Dateisystem-Modul](lua/storage/filesystem.md)
@@ -391,7 +401,7 @@ file:close()
 
 ## Umgebung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `env.storage.memory` | In-Memory-Umgebungsspeicher |
 | `env.storage.file` | Dateibasierter Umgebungsspeicher |
@@ -438,13 +448,13 @@ Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lese
 
 ## Vorlagen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `template.jet` | Einzelne Jet-Vorlage |
 | `template.set` | Vorlagen-Set-Konfiguration |
 
 ```yaml
-# Vorlagen-Set mit Engine-Konfiguration
+# Template set with engine configuration
 - name: templates
   kind: template.set
   engine:
@@ -453,7 +463,7 @@ Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lese
       - ".jet"
       - ".html.jet"
 
-# Einzelne Vorlage
+# Individual template
 - name: email_template
   kind: template.jet
   source: file://templates/email.jet
@@ -468,20 +478,20 @@ local set, err = templates.get("app:templates")
 
 local html = set:render("email", {
     user = "Alice",
-    message = "Willkommen!"
+    message = "Welcome!"
 })
 ```
 
 ## Sicherheit
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `security.policy` | Sicherheitsrichtlinie mit Bedingungen |
 | `security.policy.expr` | Expression-basierte Richtlinie |
 | `security.token_store` | Token-Speicher |
 
 ```yaml
-# Bedingungsbasierte Richtlinie
+# Condition-based policy
 - name: admin_policy
   kind: security.policy
   policy:
@@ -493,7 +503,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# Expression-basierte Richtlinie
+# Expression-based policy
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -508,35 +518,35 @@ local html = set:render("email", {
 ```lua
 local security = require("security")
 
--- Berechtigung vor Aktion prüfen
+-- Check permission before action
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- Aktuellen Actor abrufen
+-- Get current actor
 local actor = security.actor()
 ```
 
 <warning>
-Richtlinien werden der Reihe nach ausgewertet. Die erste passende Richtlinie bestimmt den Zugriff. Platzieren Sie spezifischere Richtlinien vor allgemeineren.
+Die Reihenfolge der Richtlinien bestimmt den Zugriff nicht. Der Scope kombiniert Entscheidungen; jedes passende <code>deny</code> überschreibt passende <code>allow</code>-Richtlinien und kann die Auswertung sofort beenden. Passt keine Richtlinie, ist das Ergebnis undefiniert und nicht erlaubt.
 </warning>
 
 ## Contracts (Dependency Injection)
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `contract.definition` | Schnittstelle mit Methodenspezifikationen |
 | `contract.binding` | Ordnet Contract-Methoden Funktionsimplementierungen zu |
 
 ```yaml
-# Contract-Schnittstelle definieren
+# Define the contract interface
 - name: greeter
   kind: contract.definition
   methods:
     - name: greet
-      description: Gibt eine Begrüßungsnachricht zurück
+      description: Returns a greeting message
     - name: greet_with_name
-      description: Gibt eine personalisierte Begrüßung zurück
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -544,7 +554,7 @@ Richtlinien werden der Reihe nach ausgewertet. Die erste passende Richtlinie bes
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# Implementierungsfunktionen
+# Implementation functions
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -555,7 +565,7 @@ Richtlinien werden der Reihe nach ausgewertet. Die erste passende Richtlinie bes
   source: file://greeter_greet_name.lua
   method: main
 
-# Contract-Methoden an Implementierungen binden
+# Bind contract methods to implementations
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -571,14 +581,14 @@ Verwendung aus Lua:
 ```lua
 local contract = require("contract")
 
--- Binding nach ID öffnen
+-- Open binding by ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- Methoden aufrufen
+-- Call methods
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- Prüfen ob Instanz Contract implementiert
+-- Check if instance implements contract
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
@@ -590,7 +600,7 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 
 ## Ausführung
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `exec.native` | Native Befehlsausführung |
 | `exec.docker` | Docker-Container-Ausführung |
@@ -615,7 +625,7 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 
 ## WASM-Laufzeit
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `function.wat` | WebAssembly-Funktion (WAT-Textformat) |
 | `function.wasm` | WebAssembly-Funktion (binär) |
@@ -625,56 +635,54 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 - name: sum
   kind: function.wasm
   source: file://sum.wasm
-  transport: payload   # oder wasi-http
+  transport: payload   # or wasi-http
 ```
 
 Siehe [WASM-Übersicht](wasm/overview.md).
 
 ## Netzwerke
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `network` | Basis-Netzwerk-Overlay |
 | `network.socks5` | SOCKS5-Proxy-Overlay |
 | `network.i2p` | I2P-Netzwerk-Overlay |
 | `network.tailscale` | Tailscale-Overlay |
 
-Wird von `http.service` ueber `network:`, von `funcs`/`process` ueber die Option `network` und von `http_client` ueber die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
+Wird von `http.service` über `network:`, von `funcs`/`process` über die Option `network` und von `http_client` über die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
 
 ## Registry-Primitive
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `registry.entry` | Eintragsdeskriptor (intern) |
 | `ns.definition` | Namespace-Definition |
 | `ns.requirement` | Namespace-Anforderungsdeklaration |
 | `ns.dependency` | Namespace-Abhängigkeit |
 
-Diese werden vom Registry-Loader aus dem `_index.yaml`-Frontmatter und Abhängigkeitsdeklarationen erzeugt. Autoren definieren sie in der Regel nicht direkt — sie entstehen als Ergebnis der Auflösung von `version:`-, `namespace:`- und Abhängigkeitsblöcken.
+`registry.entry` ist ein interner Descriptor. Autoren definieren `ns.definition`-, `ns.requirement`- und `ns.dependency`-Einträge direkt in `_index.yaml`; die Felder `version` und `namespace` der Datei erzeugen sie nicht.
 
 ## Lebenszyklus-Konfiguration
 
-Die meisten Einträge unterstützen Lebenszyklus-Konfiguration:
+Vom Supervisor verwaltete Service-Einträge stellen Lebenszykluskonfiguration bereit. Der folgende Block gehört in einen Service-Eintrag, der sie unterstützt:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # Automatisch starten
-    start_timeout: 10s        # Maximale Startzeit
-    stop_timeout: 10s         # Maximale Shutdown-Zeit
-    stable_threshold: 5s      # Zeit bis als stabil betrachtet
-    depends_on:
-      - app:database
-    restart:                  # Retry-Richtlinie
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = unendlich
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
-Verwenden Sie <code>depends_on</code> um sicherzustellen, dass Einträge in der richtigen Reihenfolge starten. Der Supervisor wartet auf Abhängigkeiten bis sie stabil sind, bevor abhängige Einträge gestartet werden.
+Verwenden Sie <code>requires</code>, um Service-Abhängigkeiten zu deklarieren. Der Supervisor startet benötigte Services vor ihren Verwendern und betrachtet eine Abhängigkeit als bereit, sobald sie läuft. <code>depends_on</code> bleibt als ältere Schreibweise zulässig; neue Manifeste sollten <code>requires</code> verwenden.
 </note>
 
 ## Eintragsreferenz-Format
@@ -688,20 +696,20 @@ entries:
   - name: handler
     kind: function.lua
 
-# Referenz aus anderem Eintrag
+# Reference from another entry
 func: app.users:handler
 ```
 
-## Einträge überschreiben
+## Einträge überschreiben {id=overriding-entries}
 
 Jedes Feld eines Eintrags — einschließlich seines `kind` — kann beim Start überschrieben werden, ohne die Quell-YAML zu bearbeiten, über den Konfigurationsabschnitt `override:` oder das CLI-Flag `-o`. Schlüssel verwenden das Format `namespace:entry:path`:
 
 ```yaml
 override:
-  app:gateway:addr: ":9090"        # Datenfeld (ein nackter Pfad zielt auf data.*)
-  app:worker:meta.priority: high    # Meta-Feld
-  app:db:kind: db.sql.postgres      # das typisierte kind des Eintrags
-  app:db:data.kind: custom          # ein Payload-Feld, das wörtlich "kind" heißt
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
 ```
 
 | Pfad | Ziel |

@@ -1,15 +1,17 @@
 ---
-title: "엔트리 핸들러"
-description: "엔트리 핸들러는 종류별로 레지스트리 엔트리를 처리합니다. 엔트리가 추가, 업데이트 또는 삭제되면 레지스트리는 매칭하는 핸들러에 이벤트를 디스패치합니다."
+title: "엔트리 리스너와 옵저버"
+description: "listener와 observer가 matching entry-kind pattern의 registry mutation을 처리하는 방식을 설명합니다."
 ---
 
-# 엔트리 핸들러
+# 엔트리 리스너와 옵저버
 
-엔트리 핸들러는 종류별로 레지스트리 엔트리를 처리합니다. 엔트리가 추가, 업데이트 또는 삭제되면 레지스트리는 매칭하는 핸들러에 이벤트를 디스패치합니다.
+entry listener와 observer는 matching entry-kind pattern의 registry mutation을 처리합니다.
+
+이 페이지는 Go extension reference입니다. registration 및 configuration snippet은 기존 boot component, manager, transcoder, application config type을 가정합니다.
 
 ## 작동 방식
 
-레지스트리는 종류 패턴에서 핸들러로의 맵을 유지합니다. 엔트리가 변경되면:
+boot는 kind pattern과 함께 listener와 observer를 수집합니다. entry가 변경되면:
 
 1. 레지스트리가 이벤트 발생 (`entry.create`, `entry.update`, `entry.delete`)
 2. 핸들러 레지스트리가 등록된 패턴에 대해 엔트리 종류 매칭
@@ -24,7 +26,7 @@ description: "엔트리 핸들러는 종류별로 레지스트리 엔트리를 �
 |---------|---------|
 | `http.service` | 정확한 매칭만 |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## 엔트리 리스너 인터페이스
 
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-`Add`에서 에러를 반환하면 엔트리가 거부됩니다.
+`Add`, `Update`, `Delete`에서 error를 반환하면 해당 operation이 거부됩니다.
 
 ## 리스너 vs 옵저버
 
@@ -51,6 +53,8 @@ type EntryListener interface {
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+observer의 `Add`, `Update`, `Delete` error는 무시되며 accept 또는 reject event를 emit하지 않습니다. `TransactionListener`도 구현하는 listener 또는 observer는 transaction barrier에 참여하며 `Begin`, `Commit`, `Discard`의 error가 해당 transaction phase를 reject합니다.
 
 ## 핸들러 등록
 
@@ -72,7 +76,7 @@ func MyService() boot.Component {
 
 ## 엔트리 데이터 디코딩
 
-엔트리 데이터를 언마샬하려면 `internal/entry`의 `entry.DecodeEntryConfig`를 사용합니다. 이 헬퍼는 `internal/` 아래에 있으므로 런타임 모듈 내부에서만 임포트할 수 있습니다. 트리 외부 확장은 패턴을 복사하거나 트랜스코더를 직접 사용해야 합니다:
+entry data를 unmarshal하려면 `github.com/wippyai/runtime/system/entry`의 `entry.DecodeEntryConfig`를 사용합니다. 이 package는 out-of-tree extension에서도 import할 수 있습니다.
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -80,16 +84,18 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // cfg 처리...
+    // Process cfg...
     return nil
 }
 ```
 
 디코더는:
-1. `entry.Data`를 설정 구조체로 언마샬
-2. 엔트리에서 `ID`와 `Meta` 채움
-3. 구현되어 있으면 `InitDefaults()` 호출
-4. 구현되어 있으면 `Validate()` 호출
+1. entry data의 modern `${env:...}` placeholder를 resolve합니다.
+2. resolve된 data를 config struct로 unmarshal합니다.
+3. decode된 field가 zero 또는 nil일 때 entry의 `ID`와 `Meta`를 채웁니다.
+4. 구현되어 있으면 `InitDefaults()`를 호출합니다.
+5. environment registry를 통해 legacy `*_env` field를 resolve합니다.
+6. 구현되어 있으면 `Validate()`를 호출합니다.
 
 ## 설정 구조
 
@@ -123,9 +129,9 @@ func (c *ComponentConfig) Validate() error {
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 
@@ -133,5 +139,5 @@ type TransactionListener interface {
 
 ## 참고
 
-- [레지스트리](internals/registry.md) - 엔트리 저장
-- [아키텍처](internals/architecture.md) - 부트 시퀀스
+- [레지스트리](internals/registry.md) - entry storage
+- [아키텍처](internals/architecture.md) - boot sequence

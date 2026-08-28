@@ -1,15 +1,17 @@
 ---
-title: "WASM関数"
-description: "WASM関数はWebAssemblyコードを実行するレジストリエントリです。インラインWATソース用のfunction.watとプリコンパイル済みバイナリ用のfunction.wasmの2つのエントリ種別が利用できます。"
+title: "WASM 関数"
+description: "インライン WAT 関数とコンパイル済み WASM 関数をレジストリエントリとして設定します。"
 ---
 
-# WASM関数
+# WASM 関数
 
-WASM関数はWebAssemblyコードを実行するレジストリエントリです。インラインWATソース用の`function.wat`とプリコンパイル済みバイナリ用の`function.wasm`の2つのエントリ種別が利用できます。
+インラインの WebAssembly Text ソースには `function.wat`、コンパイル済みバイナリには `function.wasm` を使用します。
 
-## インラインWAT関数
+**分類: 関数設定リファレンス。** WAT ブロックは小規模なレジストリ例です。コンパイル済みの例では、外部でのコンポーネントビルド、ファイルシステムエントリ、ゲスト WIT に一致するエクスポートメソッド、および対象バイナリそのものから算出した SHA-256 ダイジェストを前提としています。実在するように見えるサンプルハッシュは例示用です。
 
-WebAssembly Textフォーマットを使用して、`_index.yaml`内に小さなWASM関数を直接定義できます:
+## インライン WAT 関数
+
+WAT 関数を `_index.yaml` 内で直接定義します。
 
 ```yaml
 entries:
@@ -28,7 +30,7 @@ entries:
       type: inline
 ```
 
-より大きなWATソースにはファイル参照を使用してください:
+大きな WAT ソースにはファイル参照を使用します。
 
 ```yaml
   - name: answer
@@ -41,22 +43,22 @@ entries:
       type: inline
 ```
 
-### WAT設定フィールド
+### WAT 設定フィールド
 
 | フィールド | 必須 | 説明 |
-|-----------|------|------|
-| `source` | Yes | インラインWATソースまたは`file://`参照 |
-| `method` | Yes | 呼び出すエクスポート関数名 |
-| `wit` | No | Raw/コアモジュール用のWITシグネチャ |
-| `pool` | No | ワーカープール設定 |
-| `transport` | No | 入出力マッピング（デフォルト: `payload`） |
-| `imports` | No | 有効にするホストインポート（例: `wasi:cli`、`wasi:io`） |
-| `wasi` | No | WASI設定（args、env、mounts） |
-| `limits` | No | 実行制限 |
+|-------|----------|-------------|
+| `source` | はい | インライン WAT ソースまたは `file://` 参照 |
+| `method` | はい | 呼び出すエクスポート関数名 |
+| `wit` | いいえ | raw/core モジュール向けの WIT シグネチャ |
+| `pool` | いいえ | ワーカープール設定 |
+| `transport` | いいえ | 入出力マッピング（デフォルト: `payload`） |
+| `imports` | いいえ | 有効にするホストインポート（例: `wasi:cli`、`wasi:io`） |
+| `wasi` | いいえ | WASI 設定（引数、環境変数、マウント） |
+| `limits` | いいえ | 実行制限 |
 
-## プリコンパイル済みWASM関数
+## コンパイル済み WASM 関数
 
-ファイルシステムエントリからコンパイル済みの`.wasm`バイナリをロードします:
+ファイルシステムエントリからコンパイル済みの `.wasm` バイナリを読み込みます。
 
 ```yaml
 entries:
@@ -75,31 +77,31 @@ entries:
       max_size: 4
 ```
 
-### WASM設定フィールド
+### WASM 設定フィールド
 
 | フィールド | 必須 | 説明 |
-|-----------|------|------|
-| `fs` | Yes | バイナリを含むファイルシステムエントリID |
-| `path` | Yes | ファイルシステム内の`.wasm`ファイルへのパス |
-| `hash` | Yes | 整合性検証用のSHA-256ハッシュ（`sha256:...`） |
-| `method` | Yes | 呼び出すエクスポート関数名 |
-| `wit` | No | Raw/コアモジュール用のWITシグネチャ |
-| `pool` | No | ワーカープール設定 |
-| `transport` | No | 入出力マッピング（デフォルト: `payload`） |
-| `imports` | No | 有効にするホストインポート |
-| `wasi` | No | WASI設定 |
-| `limits` | No | 実行制限 |
+|-------|----------|-------------|
+| `fs` | はい | バイナリを格納するファイルシステムエントリ ID |
+| `path` | はい | ファイルシステム内の `.wasm` ファイルへのパス |
+| `hash` | はい | 整合性検証用の SHA-256 ハッシュ（`sha256:...`） |
+| `method` | はい | 呼び出すエクスポート関数名 |
+| `wit` | いいえ | raw/core モジュール向けの WIT シグネチャ |
+| `pool` | いいえ | ワーカープール設定 |
+| `transport` | いいえ | 入出力マッピング（デフォルト: `payload`） |
+| `imports` | いいえ | 有効にするホストインポート |
+| `wasi` | いいえ | WASI 設定 |
+| `limits` | いいえ | 実行制限 |
 
 ## ワーカープール
 
-各WASM関数はプリコンパイル済みインスタンスのプールを使用します。プールタイプにより並行性とリソース使用量が制御されます。
+各 WASM 関数は、事前コンパイル済みインスタンスのプールを使用します。プールの種類により、並行性とリソース使用量が決まります。
 
-| タイプ | 説明 |
-|--------|------|
-| `inline` | 同期、シングルスレッド。呼び出しごとに新しいインスタンスを作成。 |
-| `lazy` | アイドルワーカーゼロ。`max_size`までオンデマンドでスケール。 |
-| `static` | リクエストキュー付きの固定数ワーカー。 |
-| `adaptive` | 自動スケーリングの弾力的プール。 |
+| 種類 | 説明 |
+|------|-------------|
+| `inline` | ミューテックスで直列化されます。同期呼び出しは 1 つのウォームインスタンスを順次再利用します。asyncify された呼び出しでは毎回インスタンスを閉じ、保持メモリポリシーによっても置換される場合があります。 |
+| `lazy` | アイドルワーカーはゼロです。必要に応じて `max_size` までスケールします。 |
+| `static` | リクエストキューを備えた固定数のワーカーです。 |
+| `adaptive` | 自動スケーリングするエラスティックプールです。 |
 
 ### プール設定
 
@@ -121,14 +123,13 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-`max_size`が指定されていない場合、デフォルトの弾力的プール最大値は100ワーカーです。
+100 ワーカーというデフォルト値は、`type` を設定せず暗黙に選択されるプールだけに適用されます。`type: lazy` または `type: adaptive` を明示し、`max_size` を省略した場合、デフォルトの最大数は 16 ワーカーです。
 
 ### ワーカークラスとコアアフィニティ
 
-`pool.worker_class`を設定すると、上記の共有プールタイプの代わりに、OSスレッドに固定された専用ワーカープールへ関数がルーティングされます（設定時は`type`は無視されます。慣例的な名前は`wasm`）：
+`pool.worker_class` を設定すると、関数は上記の共有プール種別ではなく、OS スレッドに固定された専用ワーカーのプールへルーティングされます（設定時は `type` が無視されます。慣例的な名前は `wasm` です）。
 
 ```yaml
 pool:
@@ -136,7 +137,7 @@ pool:
   workers: 8         # optional; defaults to reserved cores, else min(NumCPU, 4)
 ```
 
-コア分離はランタイムごとに`.wippy.yaml`でオプトインします：
+コア分離は `.wippy.yaml` でランタイムごとに有効にします。
 
 ```yaml
 scheduler:
@@ -145,20 +146,20 @@ scheduler:
     reserved_cores: 2  # cores reserved for WASM pools (default: 1)
 ```
 
-分離を有効にすると、アクタースケジューラと固定されたWASMプールは互いに素なCPUセット上で動作します（`sched_setaffinity`、Linuxのみ — 他のプラットフォームではプールのサイズ設定のみ行われ、スレッドはバインドされません）。これにより、長時間実行されるWASM呼び出しがアクターのスケジューリングを飢餓させることはなくなります。
+分離を有効にすると、アクタースケジューラと固定 WASM プールは互いに重ならない CPU セット上で実行されます（`sched_setaffinity`、Linux のみ。他のプラットフォームではプールのサイズは調整されますが、スレッドは固定されません）。これにより、長時間実行される WASM 呼び出しがアクタースケジューリングを枯渇させることはありません。
 
 ## トランスポート
 
-トランスポートはランタイムとWASMモジュール間の入出力マッピング方法を制御します。
+トランスポートは、ランタイムと WASM モジュールの間で入出力をどのようにマッピングするかを制御します。
 
 | トランスポート | 説明 |
-|---------------|------|
-| `payload` | ランタイムペイロードをWASM呼び出し引数に直接マッピング（デフォルト） |
-| `wasi-http` | HTTPリクエスト/レスポンスコンテキストをWASMの引数と結果にマッピング |
+|-----------|-------------|
+| `payload` | ランタイムペイロードを WASM 呼び出し引数へ直接マッピングします（デフォルト） |
+| `wasi-http` | HTTP リクエスト/レスポンスコンテキストを WASM の引数と結果へマッピングします |
 
-### Payloadトランスポート
+### ペイロードトランスポート
 
-デフォルトのトランスポートは引数を直接渡します。Lua値はGo型にトランスコードされ、次にWIT型にローワリングされます:
+デフォルトトランスポートは引数を直接渡します。Lua 値は Go 型へトランスコードされ、その後 WIT 型へ変換されます。
 
 ```yaml
   - name: compute
@@ -174,12 +175,13 @@ scheduler:
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
-### WASI HTTPトランスポート
+### WASI HTTP トランスポート
 
-`wasi-http`トランスポートはHTTPリクエストをWASMにマッピングし、結果をHTTPレスポンスに書き戻します。WASM関数をHTTPエンドポイントとして公開する場合に使用してください:
+`wasi-http` トランスポートは HTTP リクエストを WASM へマッピングし、結果を HTTP レスポンスへ書き戻します。WASM 関数を HTTP エンドポイントとして公開する場合に使用します。
 
 ```yaml
   - name: greet_wasm
@@ -201,18 +203,26 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 実行制限
 
-関数の最大実行時間を設定します:
+実行時間を制限し、リニアメモリを過剰に保持するウォームインスタンスをリサイクルします。
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 67108864
+  retained_memory_check_interval: 16
 ```
 
-制限を超過すると、実行がキャンセルされエラーが返されます。
+| フィールド | デフォルト | 説明 |
+|-------|---------|-------------|
+| `max_execution_ms` | `0` | 最大呼び出し時間（ミリ秒）。`0` でタイムアウトを無効化 |
+| `max_retained_memory_bytes` | 64 MiB | 呼び出し後、保持メモリがこの値を超えた場合にウォームワーカーインスタンスをリサイクル。明示的な `0` でリサイクルを無効化 |
+| `retained_memory_check_interval` | 以下を参照 | 保持メモリを確認する、完了済み呼び出しの間隔 |
 
-## WASI設定
+実行時間の上限を超えると、呼び出しはキャンセルされ、エラーを返します。デフォルトの 64 MiB の保持メモリ上限は 16 回の呼び出しごとに確認されます。`max_retained_memory_bytes` を正の値に明示設定し、間隔を省略した場合、ランタイムは呼び出しごとに確認します。確認のコストを分散するには、正の間隔を設定してください。
 
-ゲストモジュールのWASI機能を設定します:
+## WASI 設定
+
+ゲストモジュールの WASI 機能を設定します。
 
 ```yaml
 wasi:
@@ -233,17 +243,17 @@ wasi:
 ```
 
 | フィールド | 説明 |
-|-----------|------|
-| `args` | ゲストに渡されるコマンドライン引数 |
+|-------|-------------|
+| `args` | ゲストに渡すコマンドライン引数 |
 | `cwd` | ゲスト内の作業ディレクトリ（絶対パスであること） |
-| `env` | レジストリ環境エントリからマッピングされる環境変数 |
-| `mounts` | レジストリファイルシステムエントリからのファイルシステムマウント |
+| `env` | レジストリの環境変数エントリからマッピングする環境変数 |
+| `mounts` | レジストリのファイルシステムエントリからのファイルシステムマウント |
 
-環境変数は呼び出し時に環境レジストリから解決されます。必須変数が見つからない場合はエラーになります。
+環境変数は、呼び出し時に環境レジストリから解決されます。必須変数が見つからない場合はエラーになります。
 
-マウントパスは絶対パスかつ一意でなければなりません。各マウントはランタイムファイルシステムエントリをゲストディレクトリパスにマッピングします。
+マウントパスは絶対パスかつ一意でなければなりません。各マウントは、ランタイムのファイルシステムエントリをゲストのディレクトリパスへマッピングします。
 
-## 使用例
+## 例
 
 ### データ変換パイプライン
 
@@ -285,14 +295,16 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
-### WASI Clocksによる非同期スリープ
+### WASI クロックによる非同期スリープ
 
-`wasi:clocks`と`wasi:io`をインポートするWASMコンポーネントはクロックとポーリングを使用できます。非同期yieldメカニズムはWippyディスパッチャと統合されています:
+`wasi:clocks`、`wasi:io`、および独立した `wasi:poll` プロファイルをインポートする WASM コンポーネントは、クロックとポーリングを使用できます。非同期 yield メカニズムは Wippy ディスパッチャーと統合されます。
 
 ```yaml
   - name: sleep_ms
@@ -303,16 +315,17 @@ local active, err = funcs.call("myns:filter_active", users)
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline
 ```
 
-methodフィールドの`#`セパレータはインターフェースメソッドを参照します: `test-sleep#sleep-ms`は`test-sleep`インターフェースの`sleep-ms`関数を呼び出します。
+`method` フィールド内の `#` 区切りはインターフェースメソッドを参照します。`test-sleep#sleep-ms` は `test-sleep` インターフェースの `sleep-ms` 関数を呼び出します。
 
 ## 関連項目
 
-- [概要](wasm/overview.md) - WebAssemblyランタイムの概要
+- [概要](wasm/overview.md) - WebAssembly ランタイムの概要
 - [ホスト関数](wasm/hosts.md) - 利用可能なホストインターフェース
-- [プロセス](wasm/processes.md) - WASMをプロセスとして実行する
-- [エントリ種別](guides/entry-kinds.md) - 全レジストリエントリ種別
+- [プロセス](wasm/processes.md) - WASM をプロセスとして実行
+- [エントリ種別](guides/entry-kinds.md) - すべてのレジストリエントリ種別

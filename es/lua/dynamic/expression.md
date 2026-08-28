@@ -1,25 +1,19 @@
 ---
-title: "Lenguaje de Expresiones"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Lenguaje de expresiones"
+description: "Compila y evalúa expresiones expr-lang desde Lua."
 ---
 
-# Lenguaje de Expresiones
+# Lenguaje de expresiones
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Evaluar expresiones dinamicas usando sintaxis [expr-lang](https://expr-lang.org/). Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin ejecución completa de Lua.
-
-## Configuración
-
-El cache de expresiones se configura al inicio:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Habilitar cache de expresiones
-    capacity: 5000        # Capacidad del cache
-```
+El módulo `expr` compila y evalúa expresiones [expr-lang](https://expr-lang.org/) para
+filtrado, validación, cálculos y reglas sin ejecutar código fuente Lua. Esta página es
+la referencia canónica de la API Lua; los ejemplos se ejecutan dentro de un proceso
+Lua Wippy existente cuya entrada declara `expr`, pero no son aplicaciones Wippy
+independientes. Consulta [Evaluación dinámica](./eval.md) al elegir entre expresiones
+y Lua con capacidades restringidas.
 
 ## Carga
 
@@ -27,68 +21,78 @@ lua:
 local expr = require("expr")
 ```
 
+## Caché
+
+`expr.eval` conserva una caché LRU interna de expresiones compiladas (capacidad
+predeterminada 1000). Está integrada en el módulo y no requiere configuración.
+
 ## Evaluar Expresiones
 
 Evaluar un string de expresion y devolver el resultado. Usa cache LRU interno para expresiones compiladas:
 
 ```lua
--- Matematica simple
-local result = expr.eval("1 + 2 * 3")  -- 7
+-- Simple math
+local result, err = expr.eval("1 + 2 * 3")
+if err then
+    return nil, err
+end
+-- result == 7
 
--- Con variables
-local total = expr.eval("price * quantity", {
+-- With variables
+local total, total_err = expr.eval("price * quantity", {
     price = 29.99,
     quantity = 3
-})  -- 89.97
+})
+if total_err then
+    return nil, total_err
+end
+-- total == 89.97
 
--- Expresiones booleanas
-local is_adult = expr.eval("age >= 18", {age = 21})  -- true
-
--- Operaciones de string
-local greeting = expr.eval('name + " is " + status', {
-    name = "Alice",
-    status = "online"
-})  -- "Alice is online"
-
--- Operador ternario
-local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
+-- Ternary operator
+local label, label_err = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
-})  -- "B"
-
--- Operaciones de array
-local has_admin = expr.eval('"admin" in roles', {
-    roles = {"user", "admin", "viewer"}
-})  -- true
+})
+if label_err then
+    return nil, label_err
+end
+-- label == "B"
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `expression` | string | Expresion en sintaxis expr-lang |
-| `env` | table | Entorno de variables para expresion (opcional) |
+| `env` | `any` | Entorno de variables (opcional; normalmente una tabla) |
 
 **Devuelve:** `any, error`
 
 ## Compilar Expresiones
 
-Compilar una expresion en un objeto Program reutilizable para evaluacion repetida:
+Compila una expresión en un objeto `Program` reutilizable para evaluaciones repetidas:
 
 ```lua
--- Compilar una vez para uso repetido
+-- Compile once for repeated use
 local discount_calc, err = expr.compile("price * (1 - discount_rate)")
 if err then
     return nil, err
 end
 
--- Reutilizar con diferentes entradas
-local price1 = discount_calc:run({price = 100, discount_rate = 0.1})  -- 90
-local price2 = discount_calc:run({price = 50, discount_rate = 0.2})   -- 40
-local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
+-- Reuse with different inputs
+local price1, run_err = discount_calc:run({price = 100, discount_rate = 0.1})
+if run_err then
+    return nil, run_err
+end
+
+local price2, second_run_err = discount_calc:run({price = 50, discount_rate = 0.2})
+if second_run_err then
+    return nil, second_run_err
+end
+-- price1 == 90 and price2 == 40
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `expression` | string | Expresion en sintaxis expr-lang |
-| `env` | table | Entorno de pista de tipo para compilacion (opcional) |
+| `env` | `any` | Entorno de pistas de tipo (opcional; normalmente una tabla) |
 
 **Devuelve:** `Program, error`
 
@@ -97,54 +101,69 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 Ejecutar una expresion compilada con entorno proporcionado:
 
 ```lua
--- Regla de validacion
-local validator, _ = expr.compile("len(password) >= 8 and len(password) <= 128")
+-- Validation rule
+local validator, compile_err = expr.compile("len(password) >= 8 and len(password) <= 128")
+if compile_err then
+    return nil, compile_err
+end
 
-local valid1 = validator:run({password = "short"})       -- false
-local valid2 = validator:run({password = "securepass123"}) -- true
+local valid, run_err = validator:run({password = "securepass123"})
+if run_err then
+    return nil, run_err
+end
+-- valid == true
 
--- Regla de precios
-local pricer, _ = expr.compile([[
+-- Pricing rule
+local pricer, pricing_compile_err = expr.compile([[
     base_price * quantity * (1 - bulk_discount) + shipping
 ]])
+if pricing_compile_err then
+    return nil, pricing_compile_err
+end
 
-local order_total = pricer:run({
+local order_total, pricing_run_err = pricer:run({
     base_price = 25.00,
     quantity = 10,
     bulk_discount = 0.15,
     shipping = 12.50
-})  -- 225.00
+})
+if pricing_run_err then
+    return nil, pricing_run_err
+end
+-- order_total == 225.00
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `env` | table | Entorno de variables para expresion (opcional) |
+| `env` | `any` | Entorno de variables (opcional; normalmente una tabla) |
 
 **Devuelve:** `any, error`
 
 ## Funciones Integradas
 
-Expr-lang proporciona muchas funciones integradas:
+Expr-lang incluye funciones integradas para operaciones comunes:
 
 ```lua
--- Funciones matematicas
-expr.eval("max(1, 5, 3)")        -- 5
-expr.eval("min(10, 2, 8)")       -- 2
-expr.eval("abs(-42)")            -- 42
-expr.eval("ceil(3.2)")           -- 4
-expr.eval("floor(3.8)")          -- 3
+local maximum, max_err = expr.eval("max(1, 5, 3)")
+if max_err then
+    return nil, max_err
+end
 
--- Funciones de string
-expr.eval('len("hello")')        -- 5
-expr.eval('upper("hello")')      -- "HELLO"
-expr.eval('lower("HELLO")')      -- "hello"
-expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+local uppercase, upper_err = expr.eval('upper("hello")')
+if upper_err then
+    return nil, upper_err
+end
 
--- Funciones de array
-expr.eval("len(items)", {items = {1,2,3}})  -- 3
-expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
+local total, sum_err = expr.eval("sum(values)", {values = {1, 2, 3, 4}})
+if sum_err then
+    return nil, sum_err
+end
+-- maximum == 5, uppercase == "HELLO", and total == 10
 ```
+
+Otras funciones integradas son `min`, `abs`, `ceil`, `floor`, `len`, `lower` y
+`trim`. Expr-lang también proporciona operadores como `contains` para strings e
+`in` para comprobar pertenencia.
 
 ## Errores
 
@@ -155,4 +174,4 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Evaluacion de expresion falla | `errors.INTERNAL` | no |
 | Conversion de resultado falla | `errors.INTERNAL` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

@@ -1,17 +1,31 @@
 ---
 title: "Multi-Panel Layout"
-description: "The managed-layout mode replaces the standard Wippy chrome with a fully declarative panel tree. Instead of the fixed chat-and-sidebar shell, you…"
+description: "Early-access reference for declaring and controlling the Web Host's managed multi-panel layout."
 ---
 
 # Multi-Panel Layout
 
-> **Status: Draft 1 (preview) — early access, not for production.** The managed-layout API is shipped but not yet battle-tested on a production consumer. Field names, defaults, and validation rules may still change between minor releases. Pin to an exact CDN version until this label is removed. **For nearly all applications the standard `compat` mode is the recommended production mode** — reach for managed layout only when you genuinely need to compose the chrome itself.
+This page is an early-access configuration and API reference. The YAML and
+TypeScript blocks are partial declarations and integration patterns, not a
+production-ready shell by themselves.
 
-The managed-layout mode replaces the standard Wippy chrome with a fully declarative panel tree. Instead of the fixed chat-and-sidebar shell, you describe a tree of named panels in your backend YAML. The Web Host assembles the layout at boot, validates it, and maintains it reactively at runtime. Panels can be resized, collapsed, swapped, added, and removed without a page reload.
+> **Status: Draft 1 preview — early access, not for production.** The
+> managed-layout API is available but has not been validated with a production
+> consumer. Field names, defaults, and validation rules may change between
+> minor releases. Pin an exact CDN version until this label is removed. Use the
+> standard `compat` mode for production unless the application must compose the
+> host chrome itself.
+
+Managed-layout mode replaces the standard Wippy chrome with a declarative panel
+tree. Define the named panels in backend YAML; the Web Host assembles and
+validates the layout at boot, then maintains it reactively at runtime. Panels
+can be resized, collapsed, swapped, added, and removed without a page reload.
 
 ## When to Use Managed Layout
 
-The standard `compat` mode (the default) gives you the fixed Wippy product: nav sidebar, chat panel, page area, and a right artifact panel. It is the current, most-used production mode and is sufficient for nearly all applications.
+The standard `compat` mode is the default production mode. It provides the
+fixed Wippy shell: navigation sidebar, chat panel, page area, and right artifact
+panel.
 
 Opt in to `fe_mode = managed` (early access) only when you need to compose the chrome itself:
 
@@ -37,11 +51,13 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.50`, Wippy FE `0.0.50` | Typed compat intents, `@HOST/compat-coordinator`, browser URL and Back/Forward synchronization, built-in panel tabs, anchored floating panels, and `useSwapBuffer()`. |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Reactive and race-safe `<wippy-chat>` session/token control, opt-in themed splitter handles, split-axis-only size constraints, drawer geometry/stacking fixes, and the packaged proxy source map. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Typed retained-WC visibility and `useHostVisibilityRefresh()`, immediate page readiness instead of waiting for the 14-second fallback, stale renderer-key rejection, in-place component prop updates, and the isolated splitter layer with `--wippy-layout-splitter-z-index`. |
+| Web Host `1.0.53`, Wippy FE `0.0.53` | Configured theme tokens propagate correctly when light or dark mode is forced. |
+| Web Host `1.0.54`, Wippy FE `0.0.54` | Surface portability contract v1 for iframe and Web Fragment pages, including managed-layout registration and reactive sizing changes. |
+| Web Host `1.0.55`, Wippy FE `0.0.55` | Managed artifact and standalone chat contracts, cold deep-link preservation, stable managed artifact rendering, and themed splitter handles. |
+| Web Host `1.0.56`, Wippy FE `0.0.56` | Managed artifact/modal rendering fixes, published artifact-open reasons, and chat selector and slot-lifecycle fixes. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
-feature or an application loading delay. Split-axis sizing and reactive chat
-landed in 1.0.51; retained visibility, keyed readiness, and splitter layering
-landed in 1.0.52.
+feature or an application loading delay.
 
 Retained direct-web-component visibility requires Web Host `1.0.52` and
 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`, and
@@ -62,7 +78,10 @@ The latter runs after mount and then only on exact `false -> true`. Do not use
 the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
-Pin to an exact CDN tag — at least `https://web-host.wippy.ai/webcomponents-1.0.52` — until the Draft 1 label is removed.
+Pin to an exact CDN tag until the Draft 1 label is removed. This reference is
+validated against `https://web-host.wippy.ai/webcomponents-1.0.56` and the
+matching `@wippy-fe/*` `0.0.56` family. Retained direct-web-component visibility
+still requires at least 1.0.52/0.0.52.
 
 ## Enabling Managed Layout
 
@@ -108,12 +127,12 @@ Each entry in `panels`, `floating`, `modals`, and `coordinators` is a tagged uni
 
 | Kind | Description | Required fields |
 |------|-------------|-----------------|
-| `page` | A Wippy page module mounted in a srcdoc iframe | `id` (page registry id) |
-| `artifact` | A Wippy artifact mounted in a srcdoc iframe | `id` (artifact UUID) |
+| `page` | A Wippy page module mounted through its selected iframe or Web Fragment engine | `id` (page registry id) |
+| `artifact` | A Wippy artifact rendered through the host artifact/page resolver | `id` (artifact UUID) |
 | `component` | A web component mounted directly in host DOM | `tagName` |
 | `builtin` | A framework-owned host component (see below) | `id` |
 
-Exactly one panel in the layout tree must carry `main: true`. Browser URL ownership still requires route synchronization through `@HOST/compat-coordinator` or equivalent consumer coordination. All other panels route independently inside their iframes.
+Exactly one panel in the layout tree must carry `main: true`. Browser URL ownership still requires route synchronization through `@HOST/compat-coordinator` or equivalent consumer coordination. All other page panels route independently inside their selected page realms.
 
 ### Built-in Panel IDs
 
@@ -219,13 +238,18 @@ A coordinator component receives the panel-scoped host wrapper and can subscribe
 import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class MyCoordinator extends WippyElement {
+  private offOpenChat: (() => void) | null = null
+
   protected onMount() {
-    this.host?.layout.on('open-chat', ({ payload }) => {
+    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
       this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
       this.host?.layout.expandPanel('right')
-    })
+    }) ?? null
   }
-  protected onUnmount() {}
+  protected onUnmount() {
+    this.offOpenChat?.()
+    this.offOpenChat = null
+  }
   static get wippyConfig() { return { propsSchema: { properties: {} } } }
 }
 customElements.define('my-coordinator', MyCoordinator)
@@ -311,7 +335,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def?)` | Open a declared modal by id, optionally overriding its definition. Runtime-only modals require `def`. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.56 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
@@ -379,7 +403,7 @@ from its sibling; after handling the error, call `clearError(index)` to retry.
 ### Web Host page readiness
 
 Web Host uses the same keyed readiness discipline for managed page surfaces,
-with a 14-second final reveal ceiling. Iframe and direct Web Component renderers
+with a 14-second final reveal ceiling. Page and direct Web Component renderers
 emit `load` / `error` through Vue event listeners and include the immutable
 content key owned by that renderer. Painted content is therefore revealed
 immediately; the ceiling is only a fallback for content that never reports.
@@ -426,7 +450,10 @@ rotates 90 degrees for vertical splitters and remains hidden for locked splits.
 
 ## What works in which mode
 
-The proxy API *surface* is identical in compat and managed mode — the same `@wippy-fe/proxy` imports resolve in both — but two parts of it are **mode-specific in effect**. This mismatch is the main thing to watch when moving an app onto managed layout (and a reason managed is still early access).
+The proxy API *surface* is identical in compat and managed mode: the same
+`@wippy-fe/proxy` imports resolve in both. Two parts of the API are
+**mode-specific in effect**, so account for the active mode when moving an
+application to managed layout.
 
 ### `host.layout` takes effect only in managed mode
 
@@ -490,8 +517,8 @@ As of Draft 1, the following are not yet implemented:
 
 - **`addPanel` / `setLayout` over the proxy** — not shipped. These exist only on the internal `@wippy-fe/layout` `LayoutManager` and are not exposed across the iframe proxy boundary. (`openModal`, `closeModal`, and `movePanel` are shipped — see the Layout API Reference.)
 - **Panel drag-to-rearrange UI** — the data model and `movePanel()` API work; user-facing drag is not yet implemented.
-- **Tab primitive** — not yet implemented.
-- **Grid-tile container** — tracked for a follow-up.
+- **Tabbed-container primitive** — not yet implemented. The shipped `@HOST/panel-tab` is an edge control for revealing a collapsed panel, not a general tabbed layout container.
+- **Grid-tile container** — not yet implemented.
 - **Runtime mutation persistence** — mutations are not persisted across reloads. Persist manually if needed:
   ```typescript
   on('@layout-change', () =>

@@ -1,11 +1,13 @@
 ---
 title: "HTTPエンドポイント"
-description: "エンドポイント（http.endpoint）はLua関数を実行するHTTPルートハンドラを定義します。"
+description: "エンドポイント（http.endpoint）は、Lua関数を実行するHTTPルートハンドラを定義します。"
 ---
 
 # HTTPエンドポイント
 
-エンドポイント（`http.endpoint`）はLua関数を実行するHTTPルートハンドラを定義します。
+`http.endpoint`は、HTTPメソッドとパスをLuaハンドラ関数に対応付けます。
+
+**分類：設定およびAPIリファレンス。** YAMLブロックはレジストリの断片であり、参照されるサーバー、ルーター、ミドルウェア、関数エントリ、セキュリティポリシーがすでに存在することを前提としています。Luaブロックはハンドラの契約に焦点を当て、アプリケーション呼び出しを明示しています。
 
 ## 定義
 
@@ -22,8 +24,8 @@ description: "エンドポイント（http.endpoint）はLua関数を実行す�
 ## 設定
 
 | フィールド | 型 | 必須 | 説明 |
-|------------|-----|------|------|
-| `meta.router` | registry.ID | いいえ | 親ルーター（ルーターが1つだけ登録されている場合はそれがデフォルト） |
+|-------|------|----------|-------------|
+| `meta.router` | registry.ID | はい | 親ルーター（レジストリIDで参照） |
 | `method` | string | はい | HTTPメソッド |
 | `path` | string | はい | URLパスパターン |
 | `func` | registry.ID | はい | 実行する関数 |
@@ -32,8 +34,8 @@ description: "エンドポイント（http.endpoint）はLua関数を実行す�
 
 サポートされるメソッド：
 
-| メソッド | ユースケース |
-|---------|-------------|
+| メソッド | 用途 |
+|--------|----------|
 | `GET` | リソースの取得 |
 | `POST` | リソースの作成 |
 | `PUT` | リソースの置換 |
@@ -42,40 +44,49 @@ description: "エンドポイント（http.endpoint）はLua関数を実行す�
 | `HEAD` | ヘッダーのみ |
 | `OPTIONS` | CORSプリフライト（自動処理） |
 | `TRACE` | 診断ループバック |
+| `*` | すべてのHTTPメソッドに一致 |
 
 ## パスパラメータ
 
-URLパラメータには`{param}`構文を使用：
+URLパラメータには`{param}`構文を使用します：
 
 ```yaml
 - name: get_user
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{id}
   func: get_user
 
 - name: get_user_post
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{user_id}/posts/{post_id}
   func: get_user_post
 ```
 
-ハンドラでのアクセス：
+ハンドラからアクセスする例：
 
 ```lua
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
 ## ワイルドカードパス
 
-`{path...}`で残りのパスをキャプチャ：
+残りのすべてのパスセグメントに一致させるには`{path...}`を使用します：
 
 ```yaml
 - name: file_handler
@@ -85,39 +96,35 @@ end
   func: serve_file
 ```
 
-```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
-```
+このキャッチオールセグメントにより、ルートは`/files/docs/readme.md`のようなリクエストに一致します。このリクエストでは、`req:param("path")`は`docs/readme.md`を返します。
 
 ## ハンドラ関数
 
-エンドポイント関数は`http`モジュールからリクエストとレスポンスオブジェクトを取得します：
+エンドポイント関数は`http`モジュールからリクエストオブジェクトとレスポンスオブジェクトを取得します：
 
 ```lua
 local http = require("http")
-local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- リクエストを読み取り
-    local body = req:body()
-    local user_id = req:param("id")
-    local page = req:query("page")
-    local auth = req:header("Authorization")
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
 
-    -- 処理
-    local user = get_user(user_id)
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    -- レスポンスを書き込み
-    res:set_content_type(http.CONTENT.JSON)
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -126,61 +133,70 @@ return { handler = handler }
 ### リクエストオブジェクト
 
 | メソッド | 戻り値 | 説明 |
-|---------|--------|------|
-| `req:method()` | string | HTTPメソッド |
-| `req:path()` | string | リクエストパス |
-| `req:param(name)` | string | URLパラメータ |
-| `req:params()` | table | すべてのパスパラメータ |
-| `req:query(name)` | string | クエリパラメータ |
-| `req:query_params()` | table | すべてのクエリパラメータ |
-| `req:header(name)` | string | リクエストヘッダー |
-| `req:body()` | string | リクエストボディ |
-| `req:body_json()` | table, error | JSONボディをパース |
-| `req:has_body()` | boolean | ボディの有無を確認 |
-| `req:content_type()` | string | コンテンツタイプ |
-| `req:content_length()` | number | ボディサイズ（バイト） |
-| `req:host()` | string | ホスト名 |
-| `req:remote_addr()` | string | クライアントIPアドレス |
-| `req:accepts(type)` | boolean | コンテンツネゴシエーション |
-| `req:is_content_type(type)` | boolean | コンテンツタイプを確認 |
-| `req:stream()` | Stream | 大きなファイル用のストリームとしてボディを取得 |
+|--------|---------|-------------|
+| `req:method()` | string, error | HTTPメソッド |
+| `req:path()` | string, error | リクエストパス |
+| `req:param(name)` | string or nil, error | URLパラメータ |
+| `req:params()` | table, error | すべてのパスパラメータ |
+| `req:query(name)` | string or nil, error | クエリパラメータ |
+| `req:query_params()` | table, error | すべてのクエリパラメータ |
+| `req:header(name)` | string or nil, error | リクエストヘッダー |
+| `req:body()` | string, error | リクエストボディ |
+| `req:body_json()` | value, error | JSONボディをパース |
+| `req:has_body()` | boolean, error | ボディが存在するか確認 |
+| `req:content_type()` | string or nil, error | コンテンツタイプ |
+| `req:content_length()` | number, error | ボディサイズ（バイト） |
+| `req:host()` | string, error | Hostヘッダー |
+| `req:remote_addr()` | string, error | ミドルウェアによって書き換えられない限り、`IP:port`形式のクライアントアドレス |
+| `req:accepts(type)` | boolean, error | コンテンツネゴシエーション |
+| `req:is_content_type(type)` | boolean, error | コンテンツタイプを確認 |
+| `req:stream()` | Stream, error | 大きなファイル向けにボディをストリームとして取得 |
 | `req:parse_multipart(max?)` | table, error | マルチパートフォームをパース |
 
 ### レスポンスオブジェクト
 
 | メソッド | 説明 |
-|---------|------|
-| `res:set_status(code)` | HTTPステータスコードを設定 |
-| `res:set_header(name, value)` | レスポンスヘッダーを設定 |
-| `res:set_content_type(type)` | コンテンツタイプを設定 |
-| `res:write(data)` | 生のボディを書き込み |
-| `res:write_json(data)` | JSONレスポンスを書き込み |
-| `res:write_event(data)` | SSEイベントを送信 |
-| `res:set_transfer(encoding)` | 転送モードを設定（SSE、chunked） |
-| `res:flush()` | レスポンスをクライアントにフラッシュ |
+|--------|-------------|
+| `res:set_status(code)` | HTTPステータスコードを設定。ヘッダー送信済みの場合はエラーを返す |
+| `res:set_header(name, value)` | レスポンスヘッダーを設定。ヘッダー送信済みの場合はエラーを返す |
+| `res:set_content_type(type)` | コンテンツタイプを設定。ヘッダー送信済みの場合はエラーを返す |
+| `res:write(data)` | 生のボディを書き込む。失敗時はエラーを返す |
+| `res:write_json(data)` | JSONレスポンスを書き込む。失敗時はエラーを返す |
+| `res:write_event(data)` | SSEイベントを送信してフラッシュする。失敗時はエラーを返す |
+| `res:set_transfer(encoding)` | `chunked`または`sse`転送モードを設定。ヘッダー送信済みの場合はエラーを返す |
+| `res:flush()` | レスポンスをフラッシュし、エラー値を返す |
 
 ## JSON APIパターン
 
-JSON APIの一般的なパターン：
+JSON APIハンドラでは、リクエストボディをパースし、不正な入力を拒否して、JSON結果を書き込めます：
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
     local data, err = req:body_json()
     if err then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "Invalid JSON"})
-        return
+        local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json({error = "Invalid JSON"})
+        if write_err then return nil, write_err end
+        return true
     end
 
-    local result = process(data)
+    local result, process_err = funcs.call("app.api:process_request", data)
+    if process_err then return nil, process_err end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(result)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(result)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -190,23 +206,30 @@ return { handler = handler }
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function api_error(res, status, code, message)
-    res:set_status(status)
-    res:write_json({
+    local status_err = res:set_status(status)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json({
         error = {
             code = code,
             message = message
         }
     })
+    if write_err then return nil, write_err end
+    return true
 end
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user, err = db.get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, err = funcs.call("app.users:get_user", user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
@@ -215,8 +238,11 @@ local function handler()
         return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -230,6 +256,8 @@ return { handler = handler }
 entries:
   - name: users_router
     kind: http.router
+    meta:
+      server: gateway
     prefix: /api/users
     middleware:
       - cors
@@ -278,7 +306,22 @@ entries:
 
 ### 保護されたエンドポイント
 
+認可ミドルウェアはエンドポイントではなく、親ルーターに設定します。マッチ後ミドルウェア（`endpoint_firewall`など）はルートの照合後に実行され、ルーター配下のすべてのエンドポイントに適用されます：
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -286,14 +329,10 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## 関連項目
 
-- [ルーター](http/router.md) - ルートグループ化
-- [HTTPモジュール](lua/http/http.md) - リクエスト/レスポンスAPI
+- [ルーター](http/router.md) - ルートのグループ化
+- [HTTPモジュール](lua/http/http.md) - リクエスト／レスポンスAPI
 - [ミドルウェア](http/middleware.md) - リクエスト処理

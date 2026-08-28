@@ -1,21 +1,54 @@
 ---
 title: "Redes Superpuestas"
-description: "Enruta llamadas HTTP salientes y procesos generados a través de superposiciones SOCKS5, Tailscale o I2P."
+description: "Enruta llamadas HTTP salientes y procesos generados por SOCKS5, con una receta parcial de integración con Tailscale."
 ---
 
 # Redes Superpuestas
 
-Enruta llamadas HTTP salientes y procesos generados a través de superposiciones SOCKS5, Tailscale o I2P.
+Configura una red superpuesta SOCKS5 para llamadas HTTP salientes y revisa después
+la herencia, los listeners entrantes, los valores predeterminados de la aplicación y
+los permisos.
+
+**Clasificación:** Tutorial SOCKS5 ejecutable con una receta parcial de Tailscale.
+La sonda directa/Tor está completa cuando existe un listener Tor externo. La sección
+de Tailscale explica el cableado de Wippy, pero delega deliberadamente a Tailscale el
+aprovisionamiento de la cuenta. Para configurar I2P, consulta la referencia del
+sistema de red enlazada abajo.
 
 ## Descripción General
 
-Wippy soporta redes superpuestas que transportan de forma transparente el tráfico originado en funciones, procesos y clientes HTTP. Cada superposición es una entrada de registro; el código la selecciona por llamada, y la selección se hereda en las llamadas internas hasta que un descendiente la sobreescribe explícitamente.
+Wippy representa las redes superpuestas como entradas del registro. El código puede
+seleccionar una para una llamada, y esa selección se propaga a las llamadas anidadas
+hasta que un descendiente la sobrescribe.
 
 Superposiciones soportadas:
 
 - `network.socks5` — proxy SOCKS5 genérico (también el listener SOCKS5 de Tor)
 - `network.tailscale` — nodo overlay tsnet
 - `network.i2p` — puente SAM v3 de I2P
+
+## Requisitos previos
+
+- El runtime Wippy `v0.3.32a`.
+- `curl` y acceso HTTPS saliente a `api.ipify.org`.
+- Un daemon Tor que exponga SOCKS5 en `127.0.0.1:9050`. Instala un paquete compatible
+  desde la [página de descargas de Tor Project](https://www.torproject.org/download/tor/),
+  inícialo y verifica el listener antes de ejecutar Wippy:
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ```
+
+  Una comprobación correcta devuelve JSON con una dirección IP. Tor Browser suele
+  usar el puerto 9150; si ese es el listener que quieres utilizar, cambia juntos la
+  entrada del registro y el comando de verificación.
+- Un directorio de trabajo vacío:
+
+  ```bash
+  mkdir netdemo
+  cd netdemo
+  mkdir src
+  ```
 
 ## Estructura del Proyecto
 
@@ -36,6 +69,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: probe_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -46,7 +88,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Entrada de proxy SOCKS5 (Tor lo expone en 127.0.0.1:9050 por defecto)
+  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
   - name: tor
     kind: network.socks5
     host: 127.0.0.1
@@ -59,6 +101,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: app:probe
+          policies:
+            - app:probe_policy
     source: file://probe.lua
     method: main
     modules:
@@ -117,7 +164,9 @@ end
 return { main = main }
 ```
 
-La opción `overlay_network` en `http_client` selecciona la superposición solo para esa llamada. Sin ella, el dial va a través del valor predeterminado del proceso (ya sea `network_service.default_network` en `.wippy.yaml` o una conexión directa).
+La opción `overlay_network` selecciona la superposición para esa llamada HTTP. Sin
+ella, la conexión usa el valor predeterminado del proceso: `network_service.default_network`
+de `.wippy.yaml`, o una conexión directa si no se define ninguno.
 
 ## Paso 3: Ejecutarlo
 
@@ -129,15 +178,22 @@ wippy run probe
 Con Tor ejecutándose localmente:
 
 ```
-direct IP: 203.0.113.42
-tor IP:    185.220.101.61
+direct IP: <your public IP>
+tor IP:    <Tor exit IP>
 ```
+
+Ambas líneas deben contener direcciones IP válidas. Normalmente serán diferentes;
+la prueba importante es que la solicitud enrutada solo funciona mediante el listener
+SOCKS configurado.
 
 Si Tor no está en ejecución, la línea `tor IP` reportará un error de dial — la superposición SOCKS5 no cae silenciosamente a una conexión directa.
 
 ## Herencia
 
-La selección de superposición fluye a través de llamadas anidadas. Selecciona la superposición una vez en el borde de un `funcs.call` o `process.spawn` y cada llamada HTTP interna, `funcs.call` anidado y `process.spawn` subyacente la utiliza hasta que haya una sobreescritura explícita:
+La selección de superposición se propaga por las llamadas anidadas. Selecciona la
+superposición en el límite de una llamada a `funcs.call` o `process.spawn` y se aplicará
+a las llamadas HTTP, llamadas de función y procesos anidados hasta que uno la
+sobrescriba explícitamente:
 
 ```lua
 local funcs = require("funcs")
@@ -156,7 +212,8 @@ La función anidada o el proceso generado utiliza la superposición en cada dial
 
 ## Vincular un Listener
 
-Las superposiciones que soportan tráfico entrante (Tailscale, I2P) también pueden aceptar listeners HTTP. Adjunta la superposición al `http.service` en lugar del cliente:
+Tailscale también puede aceptar listeners HTTP. Adjunta la superposición al
+`http.service` en lugar del cliente:
 
 ```yaml
   - name: tailnet
@@ -185,8 +242,6 @@ network_service:
   default_network: app:tor
 ```
 
-La selección explícita con `network = nil` elimina el predeterminado para esa llamada.
-
 ## Permisos
 
 La acción `network.select` controla la selección explícita de superposición. Deniégala en un scope para evitar que el código elija una superposición:
@@ -202,11 +257,31 @@ La acción `network.select` controla la selección explícita de superposición.
       - untrusted
 ```
 
-Las superposiciones heredadas omiten esta comprobación — fueron autorizadas en el borde del caller. Solo la re-selección explícita en un límite Lua está controlada.
+Las superposiciones heredadas omiten esta comprobación: ya fueron autorizadas en el
+límite del caller. Solo se controla la nueva selección explícita en un límite Lua.
+
+## Solución de problemas y limpieza
+
+- `connection refused` en `127.0.0.1:9050` significa que Tor no escucha en el
+  puerto configurado. Verifícalo con el comando `curl` de los requisitos previos
+  antes de depurar Wippy.
+- Si falla la solicitud directa y funciona la enrutada, normalmente hay reglas
+  locales de DNS, proxy o firewall que afectan a la ruta directa. Las dos llamadas
+  son independientes.
+- `access denied` en la llamada enrutada significa que el contexto de seguridad del
+  comando carece de `network.select` para `app:tor`; mantén `app:probe_policy`
+  adjunta bajo `meta.command.security`.
+- El driver SOCKS5 nunca recurre a una conexión directa. No elimines el error solo
+  para que continúe la demostración.
+- Detén el comando Wippy cuando termine y detén el daemon Tor solo si lo iniciaste
+  exclusivamente para este tutorial. El ejemplo SOCKS5 no crea estado de red
+  persistente. Una entrada Tailscale puede conservar el estado del nodo bajo
+  `.wippy/net/tailscale/`; elimina `.wippy/net` solo después de detener Wippy y
+  únicamente si quieres descartar esa identidad local de tailnet.
 
 ## Siguientes Pasos
 
-- [Sistema de Red](system/network.md) - Referencia de tipos de entrada
-- [Cliente HTTP](lua/http/client.md) - Opciones de superposición por llamada
-- [Modelo de Seguridad](system/security.md) - Políticas y scopes
-- [Autenticación](tutorials/auth.md) - Seguridad basada en tokens
+- [Sistema de red](system/network.md) — Referencia de tipos de entrada
+- [Cliente HTTP](lua/http/client.md) — Opciones de superposición por llamada
+- [Modelo de seguridad](system/security.md) — Políticas y scopes
+- [Autenticación](tutorials/auth.md) — Seguridad basada en tokens

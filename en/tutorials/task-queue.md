@@ -5,17 +5,20 @@ description: "Build a REST API that queues tasks for background processing with 
 
 # Task Queue
 
-Build a REST API that queues tasks for background processing with database persistence.
+Build a REST API that publishes tasks to an in-memory queue, processes them in background workers, and stores completed results in SQLite.
+
+**Classification:** Runnable tutorial. The page provides the complete registry, Lua
+sources, startup commands, and HTTP checks for a local single-node demo.
 
 ## Overview
 
 This tutorial creates a task management API demonstrating:
 
-- **REST endpoints** - POST tasks, GET results
-- **Queue publishing** - Async job dispatch
-- **Queue consumers** - Background workers
-- **Database persistence** - SQLite storage
-- **Migrations** - One-shot process that exits
+- **REST endpoints** — Submit tasks and list results
+- **Queue publishing** — Dispatch jobs asynchronously
+- **Queue consumers** — Process jobs in background workers
+- **Database persistence** — Store completed results in SQLite
+- **Schema setup** — Create the database table in a one-shot process
 
 ```mermaid
 flowchart LR
@@ -45,11 +48,25 @@ flowchart LR
     GET -->|SELECT| DB
 ```
 
+## Prerequisites
+
+- Wippy runtime `v0.3.32a`.
+- `curl` or another HTTP client.
+- An empty working directory. Create the project and source directory before adding
+  the files below:
+
+  ```bash
+  mkdir task-queue
+  cd task-queue
+  mkdir src
+  ```
+
 ## Project Structure
 
 ```
 task-queue/
 ├── wippy.lock
+├── data/                    # created before startup
 └── src/
     ├── _index.yaml
     ├── migrate.lua
@@ -67,6 +84,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  # Capabilities used by the tutorial's Lua entries in strict mode
+  - name: runtime_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # SQLite database
   - name: db
     kind: db.sql.sqlite
@@ -106,6 +134,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:runtime_policy
 
   # Migration service (auto-starts, exits on success)
   - name: migrate-service
@@ -130,6 +163,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: app:create_task
+      policies:
+        - app:runtime_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +176,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: app:list_tasks
+      policies:
+        - app:runtime_policy
 
   # Queue worker
   - name: process_task
@@ -148,6 +191,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: app:process_task
+      policies:
+        - app:runtime_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -189,7 +237,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -207,7 +255,7 @@ local function main()
 
     if exec_err then
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
     logger:info("migration complete")
@@ -218,7 +266,9 @@ return { main = main }
 ```
 
 <tip>
-Returning 0 signals success. The supervisor won't restart a process that exits normally with code 0.
+A normal return ends a `process.service` child without a restart; the supervisor
+retries only when the process raises an error. Returning `0` also maps to a successful
+exit status when the same process is launched as a CLI command.
 </tip>
 
 ## Create Task Endpoint
@@ -377,15 +427,19 @@ The consumer auto-acks when the handler returns normally and auto-nacks when it 
 
 ## Running the Service
 
-Initialize and run:
+Create the data directory, initialize the project, and start the runtime:
 
 ```bash
-mkdir -p data
+mkdir data
 wippy init
 wippy run
 ```
 
-Test the API:
+Leave the runtime running while you use a second terminal for the HTTP checks. Wait
+until the logs report that the HTTP service is listening and the migration completed;
+the one-shot migration and the HTTP service start independently during boot.
+
+Submit a task and query its result:
 
 ```bash
 # Create a task
@@ -393,27 +447,44 @@ curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"action": "uppercase", "data": {"text": "hello world"}}'
 
-# Response: {"id": "550e8400-...", "status": "queued"}
+# Response: {"id":"<generated-uuid>","status":"queued"}
 
 # Wait a moment for processing, then list tasks
 curl http://localhost:8080/tasks
 
-# Response: {"tasks": [...], "count": 1}
+# Response includes one completed task and "count":1
 
 # Filter by status
 curl "http://localhost:8080/tasks?status=completed"
 ```
 
+The returned row should have `status: "completed"`; its `result` field is a JSON
+string containing `{"output":"HELLO WORLD"}`. The in-memory queue is intentionally
+non-durable, but completed rows survive restarts in `data/tasks.db`.
+
+## Troubleshooting and Cleanup
+
+- `no such table: tasks` means the request reached SQLite before the migration
+  finished. Wait for `migration complete` and retry. A migration error stops the
+  migration service and is shown in the runtime logs.
+- `failed to queue task` usually means `app:queue_driver` or
+  `app:task_consumer` did not start. Check the startup logs for the first resource
+  error rather than retrying the request.
+- `address already in use` means another process owns port 8080. Stop it or change
+  `app:gateway.addr` and use the same port in the `curl` commands.
+- Stop the runtime with Ctrl+C. Remove `data/tasks.db` to reset the tutorial data;
+  the next start recreates the schema.
+
 ## Message Flow
 
-1. **POST /tasks** receives request, generates UUID, publishes to queue
-2. **Queue consumer** picks up message (2 concurrent workers)
-3. **Worker** processes task, writes result to SQLite
-4. **GET /tasks** reads completed tasks from database
+1. **POST /tasks** receives the request, generates a UUID, and publishes the task.
+2. A **queue consumer** receives the message; up to two handlers run concurrently.
+3. The **worker** processes the task and writes its result to SQLite.
+4. **GET /tasks** reads completed tasks from the database.
 
 ## Next Steps
 
-- [HTTP Module](lua/http/http.md) - Request/response handling
-- [Queue Module](lua/storage/queue.md) - Message queue operations
-- [SQL Module](lua/storage/sql.md) - Database access
-- [Queue Consumers](guides/queue-consumers.md) - Queue configuration
+- [HTTP Module](lua/http/http.md) — Request and response handling
+- [Queue Module](lua/storage/queue.md) — Message queue operations
+- [SQL Module](lua/storage/sql.md) — Database access
+- [Queue Consumers](guides/queue-consumers.md) — Queue configuration

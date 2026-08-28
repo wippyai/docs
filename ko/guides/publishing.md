@@ -1,32 +1,34 @@
 ---
 title: "모듈 게시"
-description: "Wippy Hub에서 재사용 가능한 코드를 공유합니다."
+description: "Wippy Hub를 통해 모듈을 준비, 검증, 게시, 설정, 사용하는 방법을 설명합니다."
 ---
 
 # 모듈 게시
 
-Wippy Hub에서 재사용 가능한 코드를 공유합니다.
+게시는 모듈을 패키징하고 버전 또는 변경 가능한 레이블을 Wippy Hub에서 사용할 수 있게 합니다.
+
+이 문서는 게시 워크플로우와 레퍼런스입니다. `acme/*` 모듈, URL, 토큰, 자격 증명, 예시 소스는 설명용이므로 조직에서 소유한 리소스로 바꾸세요.
 
 ## 사전 요구사항
 
-1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정 생성
-2. 조직 생성 또는 가입
-3. 조직 아래에 모듈 이름 등록
+1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정을 만듭니다.
+2. 조직을 만들거나 가입합니다.
+3. 모듈 이름을 선택합니다. 계정에 권한이 있으면 첫 게시 때 없는 이름을 등록할 수 있습니다. 업로드 전에 등록하고 속성을 명시적으로 설정하려면 `--create`를 사용하세요.
 
 ## 모듈 구조
 
 ```
 mymodule/
-├── wippy.yaml      # 모듈 매니페스트
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # 엔트리 정의
-│   └── *.lua       # 소스 파일
-└── README.md       # 문서 (선택)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml {#wippy-yaml}
 
-모듈 매니페스트:
+`wippy.yaml`에 모듈 메타데이터를 정의합니다:
 
 ```yaml
 organization: acme
@@ -52,11 +54,11 @@ keywords:
 | `homepage` | 아니오 | 프로젝트 홈페이지 |
 | `keywords` | 아니오 | 검색 키워드 |
 
-`type`은 허브가 모듈을 분류하는 방식의 원천이며 이후 게시에서 변경할 수 있습니다; `--module-type`은 단일 게시에 한해 이를 재정의합니다. 생략하면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
+`type`은 Hub가 모듈을 분류하는 방식을 제어하며 이후 게시에서 변경할 수 있습니다. `--module-type` 플래그는 단일 게시에 한해 이를 재정의합니다. 생략하면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
 ## 엔트리 정의
 
-엔트리는 `_index.yaml`에 정의됩니다:
+모듈의 엔트리는 `_index.yaml`에 정의합니다:
 
 ```yaml
 version: "1.0"
@@ -81,7 +83,7 @@ entries:
       - json
 ```
 
-`ns.definition`의 `wiki:` 맵은 readme 옆에 추가 문서 페이지를 게시합니다: 키는 페이지 경로, 값은 `file://` 참조입니다. 내용은 팩 시점에 인라인되며 허브가 모듈별로 탐색 가능한 위키로 제공합니다.
+`ns.definition`의 `wiki:` 맵은 README와 함께 문서 페이지를 게시합니다. 키는 페이지 경로이고 값은 `file://` 참조입니다. 내용은 패킹 과정에서 인라인되며 Hub는 이를 모듈 위키로 제공합니다.
 
 ## 의존성
 
@@ -123,12 +125,13 @@ entries:
 ```
 
 타겟은 값이 주입될 위치를 지정합니다:
+
 - `entry` - 설정할 전체 엔트리 ID
-- `path` - 값 주입을 위한 JSONPath
+- `path` - 대상 엔트리에서 값을 주입할 점 경로
 
 `default`는 모든 스칼라 타입을 받습니다 — `default: 20`은 숫자 타겟에 문자열이 아닌 숫자로 흘러갑니다. `ns.dependency` 엔트리의 `parameters[].value`에도 동일하게 적용되며, 둘 다 `${env:NAME}` 참조를 받습니다 — 참조는 그대로 전달되고 타겟 엔트리가 디코드될 때 해석됩니다.
 
-소비자는 오버라이드를 통해 설정합니다. `-o` 플래그는 `namespace:entry:field=value` 트리플을 받습니다:
+소비자는 오버라이드를 통해 대상을 설정할 수 있습니다. `-o` 플래그는 `namespace:entry:field=value` 값을 받습니다:
 
 ```bash
 wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
@@ -145,9 +148,9 @@ wippy run -o acme.http:client:meta.endpoint=https://custom.api.com
   modules:
     - json
   imports:
-    client: acme.http:client           # 동일한 네임스페이스
-    utils: acme.utils:helpers          # 다른 네임스페이스
-    base_registry: :registry           # 내장
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
 Lua에서:
@@ -215,7 +218,7 @@ wippy publish --version 1.0.0
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
-### 추가 플래그
+### 게시 플래그
 
 | 플래그 | 설명 |
 |------|-------------|
@@ -230,14 +233,21 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 정적 파일 임베딩
 
-`fs.directory` 엔트리(정적 자산, 템플릿, 공개 파일)가 있는 모듈은 게시된 패키지에 포함하려면 `--embed`를 사용해야 합니다. 그렇지 않으면 `fs.directory` 엔트리는 제외됩니다.
+`fs.directory` 엔트리를 임베드하려면 `--embed` 또는 프로젝트 매니페스트의 영구 `embed:` 목록으로 선택합니다. 선택한 엔트리는 `fs.embed` 리소스로 변환됩니다. 선택하지 않은 `fs.directory` 엔트리도 팩에는 남지만 참조하는 디렉토리 내용은 포함되지 않습니다.
+
+```yaml
+# wippy.yaml
+embed:
+  - app:public_files
+  - app:assets
+```
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-`--embed` 플래그는 `fs.directory` 엔트리와 일치하는 엔트리 ID 또는 이름을 받습니다. `wippy pack`에서도 동일한 플래그를 사용할 수 있습니다.
+매니페스트 목록과 `--embed` 플래그는 `fs.directory` 엔트리와 일치하는 엔트리 ID 또는 이름을 받습니다. `wippy pack`에서도 동일한 CLI 플래그를 사용할 수 있으며, CLI 선택은 해당 호출에서 매니페스트 목록을 재정의합니다.
 
 ### 최초 게시
 
@@ -307,7 +317,7 @@ publish:
     include: [production]          # omit to publish all non-workspace profiles
 ```
 
-`include: []`는 아무것도 게시하지 않습니다; 알 수 없는 이름은 게시를 실패시킵니다. `workspace` 하위 섹션은 게시된 프로파일 안에서도 절대 내보내지지 않습니다. 프로파일 선언은 [설정](guides/configuration.md#profiles)을 참조하세요.
+`include: []`는 아무것도 게시하지 않습니다. 알 수 없는 이름은 게시를 실패시킵니다. `workspace` 하위 섹션은 게시된 프로파일 안에서도 절대 내보내지지 않습니다. 프로파일 선언은 [설정](guides/configuration.md#profiles)을 참고하세요.
 
 ## 게시된 모듈 사용
 
@@ -351,12 +361,13 @@ entries:
       http: acme.http:client
 ```
 
-## 전체 예제
+## 예시 모듈
 
 **wippy.yaml:**
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -375,19 +386,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -399,12 +399,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -427,12 +423,14 @@ return cache
 게시:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 
 ## 참고
 
-- [CLI 참조](guides/cli.md)
-- [엔트리 종류](guides/entry-kinds.md)
-- [설정](guides/configuration.md)
+- [CLI 참조](guides/cli.md) - 게시 명령과 플래그
+- [엔트리 종류](guides/entry-kinds.md) - 모듈과 의존성 엔트리
+- [설정](guides/configuration.md) - 런타임 설정과 프로파일

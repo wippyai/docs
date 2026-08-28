@@ -1,19 +1,21 @@
 ---
 title: "データベースシステム"
-description: "SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。"
+description: "SQL データベースの接続プールと設定。PostgreSQL、MySQL、SQLite をサポートします。"
 ---
 
 # データベースシステム
 
-SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。
+Wippy は、PostgreSQL と MySQL 用の接続プール付き SQL データベースエントリ、および単一接続の SQLite エントリを提供します。
+
+このページは設定リファレンスです。コードブロックに `version`、`namespace`、`entries` が含まれていない場合は、既存のエントリリスト内に配置する断片として扱ってください。
 
 ## エントリ種別
 
 | 種別 | 説明 |
 |------|------|
-| `db.sql.postgres` | PostgreSQLデータベース |
-| `db.sql.mysql` | MySQLデータベース |
-| `db.sql.sqlite` | SQLiteデータベース |
+| `db.sql.postgres` | PostgreSQL データベース |
+| `db.sql.mysql` | MySQL データベース |
+| `db.sql.sqlite` | SQLite データベース |
 
 ## 設定
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,16 +49,16 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # インメモリには:memory:を使用
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
-      max_open: 1
-      max_idle: 1
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+SQLite は常に単一接続で動作し（<code>max_open</code> と <code>max_idle</code> は <code>1</code> に固定）、ジャーナルモードは <code>WAL</code> です。<code>max_lifetime</code> だけが <code>pool</code> から適用されます。
+</note>
 
 ## 接続フィールド
 
@@ -64,104 +66,100 @@ entries:
 
 | フィールド | 型 | 説明 |
 |------------|-----|------|
-| `host` | string | データベースホストアドレス |
-| `port` | int | データベースポート番号 |
+| `host` | string | データベースホストのアドレス |
+| `port` | int | データベースのポート番号 |
 | `database` | string | データベース名 |
 | `username` | string | データベースユーザー |
 | `password` | string | データベースパスワード |
-| `pool` | object | 接続プール設定 |
+| `pool` | object | 接続プールの設定 |
 | `options` | map | データベース固有のオプション |
 | `lifecycle` | object | ライフサイクル設定 |
 
-### SQLiteフィールド
+### SQLite フィールド
 
 | フィールド | 型 | 説明 |
 |------------|-----|------|
-| `file` | string | データベースファイルパスまたは`:memory:` |
-| `pool` | object | 接続プール設定 |
-| `options` | map | SQLite固有のオプション |
+| `file` | string | データベースファイルのパスまたは `:memory:` |
+| `pool` | object | `max_lifetime` のみ適用（接続数は 1 に固定） |
+| `options` | map | 受け付けるが無視される |
 | `lifecycle` | object | ライフサイクル設定 |
 
-### 環境変数フィールド
+### シークレットと環境変数の値
 
-環境変数または[env.variable](system/env.md)エントリから値をロードするには`_env`サフィックスを使用：
-
-| フィールド | 説明 |
-|------------|------|
-| `host_env` | 環境変数からのホスト |
-| `port_env` | 環境変数からのポート |
-| `database_env` | 環境変数からのデータベース名 |
-| `username_env` | 環境変数からのユーザー名 |
-| `password_env` | 環境変数からのパスワード |
+接続値は、デコード時に解決される `${env:NAME}` プレースホルダーを使用して[環境変数レジストリ](system/env.md)から取得します。`NAME` は登録済み変数の公開名またはエントリ ID（例: `app.secrets:db_password`）であり、生の OS 環境変数ではありません。
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # env.variableエントリを参照
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT|5432}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+古い設定では、同じ方法で解決される兄弟キーの <code>&lt;field&gt;_env</code> ディレクティブ（<code>host_env</code>、<code>port_env</code>、<code>database_env</code>、<code>username_env</code>、<code>password_env</code>）を使用します。この形式は<b>非推奨</b>です。上記の <code>${env:NAME}</code> プレースホルダーに移行してください。
+</note>
+
 <warning>
-設定にパスワードをハードコードしないでください。認証情報には環境変数または<code>env.variable</code>エントリを使用してください。セキュアなシークレット管理については<a href="system/env.md">環境変数</a>を参照してください。
+設定にパスワードをハードコードしないでください。認証情報には <code>env.variable</code> エントリを使用します。シークレットの設定については、<a href="./env.md">環境変数</a>を参照してください。
 </warning>
 
 ## 接続プール
 
-接続プーリング動作を設定。プール設定はGoの[database/sql接続プール](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns)にマップされます。
+接続プールの動作を設定します。プール設定は Go の [database/sql 接続プール](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns)に対応します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `max_open` | int | 0 | 最大オープン接続数（0 = 無制限） |
-| `max_idle` | int | 0 | 最大アイドル接続数（0 = 無制限） |
-| `max_lifetime` | duration | 1h | 最大接続寿命 |
+| `max_idle` | int | 0 | 最大アイドル接続数（0 = アイドル接続を保持しない） |
+| `max_lifetime` | duration | 1h | 接続の最大存続時間 |
 
 ```yaml
 pool:
-  max_open: 25      # 同時接続を制限
-  max_idle: 5       # 5接続を準備状態に維持
-  max_lifetime: "30m"  # 30分ごとに接続をリサイクル
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
-<code>max_idle</code>は<code>max_open</code>以下に設定してください。<code>max_lifetime</code>を超えた接続は閉じられて置き換えられ、古い接続からの回復に役立ちます。
+<code>max_idle</code> は <code>max_open</code> 以下に設定してください。<code>max_lifetime</code> を超えた接続は閉じられて置き換えられるため、古くなった接続からの回復に役立ちます。
 </tip>
 
-## DSN形式
+## DSN 形式
 
-各データベースタイプは設定からDSNを構築します：
+各データベース種別は設定から DSN を構築します。`options` はキーでソートされて追加されます。デフォルトではオプションは含まれません。
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host=host port=port user=username password=password dbname=database [option=value ...]
 ```
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## データベースオプション
 
-一般的なデータベース固有のオプション：
+一般的なデータベース固有のオプション:
 
 ### PostgreSQL {id="options-postgresql"}
 
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # 接続タイムアウト（秒）
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -170,22 +168,17 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # 時間値をtime.Timeにパース
-  loc: "Local"            # タイムゾーン
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite は `options` マップを DSN に適用しません。ファイルデータベースは常に `mode=rwc` で開かれ、ジャーナルモードは常に `WAL` に設定されます。`options` フィールドは受け付けられますが、無視されます。
 
 ## 例
 
-### SSL付きPostgreSQL
+### SSL を使用する PostgreSQL
 
 ```yaml
 - name: secure_postgres
@@ -194,7 +187,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -208,7 +201,7 @@ options:
     auto_start: true
 ```
 
-### MySQLリードレプリカ
+### MySQL 読み取りレプリカ
 
 ```yaml
 - name: mysql_replica
@@ -217,7 +210,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -228,47 +221,41 @@ options:
     readTimeout: "30s"
 ```
 
-### SQLiteインメモリ
+### SQLite インメモリ
 
 ```yaml
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
-### 複数データベースセットアップ
+### 複数データベースの設定
 
 ```yaml
 entries:
-  # プライマリデータベース
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
-  # 分析データベース
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
-  # ローカルキャッシュ
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -278,14 +265,14 @@ entries:
 
 ## ランタイム登録
 
-データベースは[レジストリモジュール](lua/core/registry.md)を使用してランタイムで登録でき、アプリケーション状態や外部設定に基づいた動的なデータベース設定が可能です。
+データベースは、[レジストリモジュール](lua/core/registry.md)を使用して実行時に登録できます。
 
 ## Lua API
 
-データベース操作APIについては[SQLモジュール](lua/storage/sql.md)を参照してください。
+クエリ、トランザクション、接続の操作については、[SQL モジュール](lua/storage/sql.md)を参照してください。
 
 ## 関連項目
 
-- [SQLモジュール](lua/storage/sql.md) - Lua APIリファレンス
-- [ストア](system/store.md) - `database.sql`に基づくキーバリューストア
-- [キュー](system/queue.md) - SQLバックエンドのキューハンドラ
+- [SQL モジュール](lua/storage/sql.md) - Lua API リファレンス
+- [ストア](system/store.md) - `db.sql.*` データベースをバックエンドとするキーバリューストア
+- [キュー](system/queue.md) - SQL をバックエンドとするキューハンドラー

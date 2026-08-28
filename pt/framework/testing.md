@@ -1,11 +1,13 @@
 ---
 title: "Framework de Testes"
-description: "O modulo wippy/test fornece um framework de testes estilo BDD com assercoes, hooks de ciclo de vida e mocking."
+description: "Defina e execute testes Wippy com suites BDD, asserções, hooks de ciclo de vida, mocks e funções de teste simples."
 ---
 
 # Framework de Testes
 
-O modulo `wippy/test` fornece um framework de testes estilo BDD com assercoes, hooks de ciclo de vida e mocking.
+O módulo `wippy/test` fornece suites BDD, asserções, hooks de ciclo de vida, mocks e um runner para entradas de teste.
+
+Esta página é uma introdução à API. Seus blocos de Lua, YAML, saída e estrutura de projeto são trechos de referência que podem ser combinados em um projeto Wippy existente; eles não formam um projeto completo pronto para copiar e executar. Nomes como `validate`, `format_name`, `db`, `connect` e `notify_user` representam funções ou módulos da aplicação fornecidos pelo código testado. Para um exemplo completo e executável, siga [Testando uma Aplicação Wippy](../tutorials/testing.md).
 
 ## Configuracao
 
@@ -32,9 +34,9 @@ entries:
     meta:
       type: test
       suite: math
-      name: Operacoes matematicas
+      name: Math operations
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -84,7 +86,7 @@ return { run = run }
 
 ### Suites Aninhadas
 
-Suites podem ser aninhadas para organizacao:
+Suites podem ser aninhadas para agrupar comportamentos relacionados:
 
 ```lua
 test.describe("user", function()
@@ -114,7 +116,7 @@ test.it_skip("not implemented yet", function()
 end)
 ```
 
-Testes pulados aparecem na saida mas nao contam como falhas.
+Testes ignorados aparecem na saída, mas não contam como falhas.
 
 ### Aliases de Suite
 
@@ -229,7 +231,7 @@ Hooks em suites aninhadas executam em ordem: `before_each` do pai executa antes 
 
 ## Mocking
 
-O sistema de mock substitui campos de objetos globais e os restaura automaticamente apos cada teste.
+O sistema de mock substitui campos de objetos globais e os restaura após cada teste.
 
 ### Mock Basico
 
@@ -278,7 +280,7 @@ wippy test math
 wippy test user validation
 ```
 
-Filtros correspondem a IDs de entradas. Multiplos padroes sao combinados.
+Os filtros correspondem a substrings literais dos IDs das entradas. Quando vários padrões são informados, uma entrada é executada se seu ID corresponder a qualquer um deles.
 
 ### Exemplo de Saida
 
@@ -296,7 +298,7 @@ Filtros correspondem a IDs de entradas. Multiplos padroes sao combinados.
 
 ## Testes Simples
 
-Para testes que nao precisam do framework BDD, defina uma funcao simples que retorna `true` ou lanca um erro:
+Para testes que não precisam de suites BDD, defina uma função que retorne `true` ou lance um erro:
 
 ```lua
 local funcs = require("funcs")
@@ -357,7 +359,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,30 +369,17 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
 
-## Requisitos de Infraestrutura
+## Host de Terminal
 
-O runner de testes precisa de um `process.host` e `terminal.host` na sua aplicacao. Estes normalmente ja estao presentes. Se nao, adicione-os:
-
-```yaml
-entries:
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
-    lifecycle:
-      auto_start: true
-```
+O `wippy/test` depende de `wippy/terminal`, que fornece o `wippy.terminal:host` iniciado automaticamente e usado pelo runner da CLI. As aplicações não precisam declarar um host de processos ou de terminal separado apenas para executar `wippy test`.
 
 ## Veja Tambem
 
-- [Visao Geral do Framework](framework/overview.md) - Uso de modulos do framework
-- [Referencia CLI](guides/cli.md) - Comandos CLI
-- [Funcoes](concepts/functions.md) - Registro de funcoes
+- [Visão Geral do Framework](framework/overview.md) — Instalação e importação de módulos do framework
+- [Referência da CLI](guides/cli.md) — Comando de teste e opções
+- [Funções](concepts/functions.md) — Entradas de função e invocação

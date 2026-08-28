@@ -1,11 +1,14 @@
 ---
 title: "Dependency Management"
-description: "Wippy uses a lock file-based dependency system. Modules are published to the hub, declared as dependencies in your source, and resolved into a…"
+description: "Declare, resolve, install, update, replace, and verify Wippy module dependencies with a lock file."
 ---
 
 # Dependency Management
 
-Wippy uses a lock file-based dependency system. Modules are published to the hub, declared as dependencies in your source, and resolved into a `wippy.lock` file that tracks exact versions.
+Wippy resolves module dependencies from source declarations and records exact versions in `wippy.lock`. Published modules are downloaded from the Hub into the project's module directory.
+
+The `acme/*` module names, versions, hashes, and local paths below are illustrative.
+Substitute modules and verified digests from your own project or the Hub.
 
 ## Project Files
 
@@ -101,7 +104,7 @@ entries:
 
 The runtime persists each resolved graph in its registry history and replays it at boot instead of re-solving, so a deployed application boots with exactly the versions that were resolved when the dependency change was applied. `wippy.lock` remains the portable snapshot for source projects.
 
-## Workflow
+## Dependency Workflow
 
 ### Starting a New Project
 
@@ -191,7 +194,7 @@ With unpacking enabled:
 
 ## Local Development with Replacements
 
-Override hub modules with local directories for development. Replacements are declared in the `workspace` section of a runtime config file — typically a private, git-ignored one composed on top of `.wippy.yaml`:
+For local development, map Hub modules to local directories in the `workspace` section of a runtime configuration file. This is typically a private, ignored file composed over `.wippy.yaml`:
 
 ```yaml
 # .wippy.workspace.yaml
@@ -210,7 +213,7 @@ Keys are `org/module`, values are directories (relative paths resolve against th
 
 Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
 
-A `replacements:` section in `wippy.lock` is deprecated: it still loads but prints a warning. Move those entries to `workspace.replacements` in a config file.
+The `replacements:` section in `wippy.lock` is deprecated. It still loads with a warning; move those entries to `workspace.replacements` in a configuration file.
 
 ## Load Order
 
@@ -224,11 +227,15 @@ Modules with active replacements skip their vendor path.
 
 ## Integrity Verification
 
-Each module in the lock file has a content hash. During installation, downloaded modules are verified against their expected hashes. Mismatched modules are rejected and re-downloaded from the registry.
+A lock entry's content hash is optional until installation populates it. When
+an expected digest is present, installation verifies cached and downloaded
+modules against it. A mismatched cached module stops the install; run
+`wippy install --refresh` to download and verify a fresh copy. A newly
+downloaded module that fails verification is removed and the install fails.
 
 ## See Also
 
-- [Building Components](guides/components.md) - The author side: `ns.requirement` and supplying values via `parameters`
-- [CLI](guides/cli.md) - Command reference
-- [Publishing](guides/publishing.md) - Publishing modules to the hub
-- [Project Structure](start/structure.md) - Project layout
+- [Building Components](guides/components.md) — Author requirements and supply values through `parameters`
+- [CLI](guides/cli.md) — Command reference
+- [Publishing](guides/publishing.md) — Publish modules to the Hub
+- [Project Structure](start/structure.md) — Project layout

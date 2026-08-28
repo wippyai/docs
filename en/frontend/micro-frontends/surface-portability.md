@@ -1,6 +1,15 @@
+---
+title: "Surface Portability"
+description: "Use container queries, surface variables, and host.surface to size view.page applications independently of the browser viewport."
+---
+
 # Surface Portability
 
-A micro frontend app is given a **surface** — the rectangular area the Web Host allocates to it. That area is usually **not** the browser window: the app may be one panel among several in a [multi-panel layout](../web-host/multi-panel-layout.md), and the same app may be rendered by either [render engine](../web-host/render-engines.md) at different sizes on the same screen.
+**Classification: rendering contract reference with focused examples.** The
+CSS, JavaScript, and package metadata blocks illustrate individual contract
+rules; they are not a complete application fixture.
+
+A micro frontend app receives a **surface**: the rectangular area the Web Host allocates to it. That area is usually **not** the browser window. The app may be one panel among several in a [multi-panel layout](../web-host/multi-panel-layout.md), and the same app may be rendered by either [render engine](../web-host/render-engines.md) at different sizes on the same screen.
 
 Sizing a layout to the window is therefore wrong in both engines. The surface contract gives you a portable alternative in CSS and in JavaScript.
 
@@ -146,7 +155,7 @@ Sizing an overlay is a different question from anchoring it. For a backdrop or d
 .backdrop { position: absolute; inset: 0; }
 ```
 
-The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop quietly stops short — failing in exactly the mode where the `fixed` version would have looked correct. The two also differ in behavior: `absolute` scrolls with the content, `fixed` stays pinned.
+The containing block is the **app's root**, not the surface, so the overlay covers the surface only if that root does. In content sizing it does automatically (the content *is* the height). In container sizing the host imposes a height on the query box that the app's root does not inherit, so without `min-block-size: 100%` the backdrop stops short even though the `fixed` version would cover the surface. The two also differ in behavior: `absolute` scrolls with the content, while `fixed` stays pinned.
 
 Put `min-block-size: 100%` on the **outermost** element inside the surface. A percentage height needs an unbroken chain of definite heights above it, so applying it to a component root nested inside an auto-height `#app` resolves to zero and reintroduces the same gap. Verified across Chromium, Firefox and WebKit, with the no-`min` case as a control.
 
@@ -157,7 +166,7 @@ Put `min-block-size: 100%` on the **outermost** element inside the surface. A pe
 .backdrop { position: fixed; inset: 0; }
 ```
 
-Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on exactly the pages where it is hardest to notice.
+Avoid `var(--wippy-surface-height)` for this: it is unavailable in content sizing, so a backdrop written that way collapses on content-sized pages.
 
 ## The app root element (`#app`)
 
@@ -173,7 +182,7 @@ the way you can inside an iframe.
 `#root` (or anything else) renders at **zero height** — blank panel, no error in
 your own code. The host logs an error naming the requirement. The iframe engine
 is unaffected, because it takes height from `CmdBodySize`, so the same package
-can look fine there and be blank as a fragment.
+may appear correct there and be blank as a fragment.
 
 ```html
 <!-- correct -->
@@ -186,8 +195,8 @@ createApp(App).mount('#app')
 
 **Do not try to fix a zero-height fragment by giving `#root` a height.** Adding
 `height: 100%`, `min-height: 100dvh` or `100vh` to a differently-named root does
-not make the engine measure it, and viewport units are wrong here for the reason
-this whole page exists — they describe the browser window, not your surface.
+not make the engine measure it. Viewport units describe the browser window, not
+the allocated surface.
 Rename the element to `app` instead.
 
 ## Limitations
@@ -196,7 +205,7 @@ Rename the element to `app` instead.
 - **`body > *` selectors, and rules targeting `html`/`body`.** In the **iframe** engine the host wraps body content in the surface box, so direct-child selectors rooted at `body` no longer match app elements, and `body`/`html` become *ancestors* of the query box — a `@container` rule targeting them never applies. The **fragment** engine has the opposite topology (the query box sits above the reflected tree), but a literal `body` selector still fails there because the reflected document is renamed `wf-html`/`wf-body`. Put such rules on your own root element inside the surface; that is correct in both engines.
 - **Anything rendered through `<w-iframe>` / `<w-artifact>` gets no surface — including a top-level managed panel.** These elements always build their child document with the surface bootstrap disabled and nothing measures them, so `host.surface` reports `width: 0` and `sizing: 'content'` — but with `engine: 'iframe'`, not `engine: 'host'`. Check `snapshot.width` rather than `engine` if your component can be embedded that way. That is expected for a *nested* embed; it is easy to miss for a managed layout panel declared as `{ kind: 'component', tagName: 'w-artifact' }`, which is a full-size top-level slot yet still gets no contract. Use `kind: 'page'` for content that needs one.
 - **No block axis in content sizing.**
-- **The fragment engine requires the app's root element to be `#app`.** It binds the page height chain to that selector and measures content height through it, because the reflected document exposes `wf-html`/`wf-body` rather than `html`/`body`, so an app cannot build its own chain from the root the way it can inside an iframe. A content-sized fragment app with a different root (`#root`, `<main>`) cannot be measured: the host logs an error naming the requirement and the panel renders at zero height. The iframe engine is unaffected — it takes height from `CmdBodySize`.
+- **Fragment root selector.** Fragment apps must mount at `#app`; see [The app root element (`#app`)](#the-app-root-element-app) for the height-chain requirement and zero-height symptom.
 - **The deprecated `/page/:id` route gets no surface.** It renders into a bare iframe that never measures anything, so it opts out completely — no query box, no wrapper, no change to the app's DOM. An app behaves there exactly as it did before this contract existed. Use `/c/:id` to get a surface. Like nested embeds, it still reports `engine: 'iframe'`, so test `snapshot.width` rather than the engine name.
 - **The two engines can differ by a scrollbar.** The iframe engine measures the inline axis from the query box *inside* the app's document, so a document scrollbar narrows it. The fragment engine measures a host-document wrapper, which the reflected content's scrolling does not narrow. Same allocated panel and scrolling content: the fragment engine reports the slightly wider number.
 - **Not an isolation boundary.** The contract governs layout. It does not give a fragment an independent document, viewport, selection, top layer, or origin.

@@ -17,11 +17,16 @@ SSE 미들웨어는 [Server-Sent Events](https://html.spec.whatwg.org/multipage/
 local http = require("http")
 
 local function handler()
-    local res = http.response()
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    res:write_event({name = "status", data = {state = "started"}})
-    res:write_event({name = "progress", data = {percent = 50}})
-    res:write_event({name = "status", data = {state = "complete"}})
+    local err = res:write_event({name = "status", data = {state = "started"}})
+    if err then return nil, err end
+    err = res:write_event({name = "progress", data = {percent = 50}})
+    if err then return nil, err end
+    err = res:write_event({name = "status", data = {state = "complete"}})
+    if err then return nil, err end
+    return true
 end
 ```
 
@@ -52,15 +57,17 @@ SSE 스트림은 자체 PID를 가진 완전한 프로세스입니다. 프로세
 - **EXIT 이벤트** — 스트림이 닫힐 때 모니터가 종료 알림을 받음
 
 ```lua
--- 모든 프로세스에서 SSE 클라이언트로 이벤트 전송
-process.send(stream_pid, "sse.message", {event = "update", value = 42})
+-- Send event to SSE client from any process
+local _, send_err = process.send(stream_pid, "sse.message", {event = "update", value = 42})
+if send_err then return nil, send_err end
 
--- SSE 스트림 모니터링
-process.monitor(stream_pid)
+-- Monitor an SSE stream
+local _, monitor_err = process.monitor(stream_pid)
+if monitor_err then return nil, monitor_err end
 ```
 
 <tip>
-릴레이는 대상 프로세스를 모니터링합니다. 대상이 종료되면 SSE 스트림이 자동으로 닫히고 클라이언트는 <code>done</code> 이벤트를 받습니다.
+릴레이는 대상 프로세스를 모니터링합니다. 대상이 종료되면 SSE 스트림이 자동으로 닫히고 클라이언트는 `done` 이벤트를 받습니다.
 </tip>
 
 ## 설정
@@ -96,20 +103,37 @@ local http = require("http")
 local json = require("json")
 
 local function handler()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- 핸들러 프로세스 생성
-    local pid = process.spawn("app.sse:handler", "app:processes")
+    local user_id, query_err = req:query("user_id")
+    if query_err then return nil, query_err end
 
-    -- 릴레이 설정
-    res:set_header("X-SSE-Relay", json.encode({
+    -- Spawn handler process
+    local pid, spawn_err = process.spawn("app.sse:handler", "app:processes")
+    if spawn_err then return nil, spawn_err end
+
+    -- Configure relay
+    local relay_config, encode_err = json.encode({
         target_pid = tostring(pid),
         message_topic = "sse.message",
         heartbeat_interval = "30s",
         metadata = {
-            user_id = http.request():query("user_id")
+            user_id = user_id
         }
-    }))
+    })
+    if encode_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or encode_err
+    end
+
+    local header_err = res:set_header("X-SSE-Relay", relay_config)
+    if header_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or header_err
+    end
 end
 ```
 
@@ -138,21 +162,27 @@ end
 
 `target_pid`가 생략되면 릴레이는 분리 모드로 시작합니다:
 
+`json`을 가져오고 응답 객체를 `res`로 얻은 handler 안에서 분리 모드를 구성하고 두 작업의 결과를 모두 확인하세요.
+
 - 클라이언트에 `stream_pid`와 `message_topic`이 포함된 `ready` 이벤트를 발행
 - 초기에는 모니터링되는 프로세스가 없음
 - 프로세스가 나중에 `sse.control` 메시지로 연결할 수 있음
 
 ```lua
--- 분리 설정: target_pid 없음
-res:set_header("X-SSE-Relay", json.encode({
+-- Detached setup: no target_pid
+local relay_config, encode_err = json.encode({
     heartbeat_interval = "30s"
-}))
+})
+if encode_err then return nil, encode_err end
+
+local header_err = res:set_header("X-SSE-Relay", relay_config)
+if header_err then return nil, header_err end
 ```
 
 클라이언트는 `ready` 이벤트를 수신합니다:
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:processes|sse-1}", "message_topic": "sse.message"}
 ```
 
 ## 메시지 토픽
@@ -171,8 +201,6 @@ res:set_header("X-SSE-Relay", json.encode({
 ## 대상 프로세스에서 수신
 
 ```lua
-local json = require("json")
-
 local function handler()
     local inbox = process.inbox()
 
@@ -181,16 +209,17 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local data = msg:payload():data()
+        local data, payload_err = msg:payload():data()
+        if payload_err then return nil, payload_err end
 
         if topic == "sse.join" then
             local client_pid = data.client_pid
 
         elseif topic == "sse.heartbeat" then
-            -- 주기적 헬스 체크
+            -- Periodic health check
 
         elseif topic == "sse.leave" then
-            cleanup(data.client_pid)
+            -- Release application state associated with data.client_pid.
         end
     end
 end
@@ -201,14 +230,16 @@ end
 스트림 PID에 메시지를 보내 클라이언트에 이벤트를 전송합니다:
 
 ```lua
--- 기본 메시지 토픽으로 전송
-process.send(stream_pid, "sse.message", {
+-- Send on the default message topic
+local _, send_err = process.send(stream_pid, "sse.message", {
     event = "update",
     value = 42
 })
+if send_err then return nil, send_err end
 
--- 스트림 강제 종료
-process.send(stream_pid, "sse.close", "session expired")
+-- Force close the stream
+local _, close_err = process.send(stream_pid, "sse.close", "session expired")
+if close_err then return nil, close_err end
 ```
 
 설정된 `message_topic`으로 전송된 이벤트는 SSE 이벤트로 클라이언트에 전달됩니다. 토픽 이름이 SSE 이벤트 이름이 됩니다.
@@ -218,11 +249,12 @@ process.send(stream_pid, "sse.close", "session expired")
 제어 메시지를 보내 대상 프로세스, 토픽 필터, 타임아웃을 동적으로 변경합니다:
 
 ```lua
-process.send(stream_pid, "sse.control", {
+local _, transfer_err = process.send(stream_pid, "sse.control", {
     target_pid = tostring(new_pid),
     message_topic = "custom.topic",
     idle_timeout = "5m"
 })
+if transfer_err then return nil, transfer_err end
 ```
 
 대상이 변경되면 릴레이는 이전 대상에 `sse.leave`를, 새 대상에 `sse.join`을 보냅니다. 재연결 없이 분리하려면 `target_pid`를 빈 문자열로 설정하세요.

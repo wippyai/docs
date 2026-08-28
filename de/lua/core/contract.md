@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Typisierte Service-Bindings öffnen, Contracts prüfen, Implementierungen aufrufen und Aufruf- oder Sicherheitskontext weitergeben."
 ---
 
 # Contracts
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Rufen Sie Services über typisierte Contracts auf. Rufen Sie Remote-APIs, Workflows und Funktionen mit Schema-Validierung und Unterstützung für asynchrone Ausführung auf.
+Das Modul `contract` öffnet typisierte Service-Bindings für Remote-APIs, Workflows und Funktionen. Contracts unterstützen Schemavalidierung, asynchrone Aufrufe und die Weitergabe von Aufrufkontext. Diese Seite ist eine API-Referenz; IDs und Werte wie `current_user` stehen für anwendungseigene Entrys und den umgebenden Handler-Zustand.
 
 ## Laden
 
@@ -28,21 +28,24 @@ if err then
 end
 
 local result, err = greeter:say_hello("Alice")
+if err then
+    return nil, err
+end
 ```
 
 Mit Scope-Kontext oder Query-Parametern:
 
 ```lua
--- Mit Scope-Tabelle
+-- With scope table
 local svc, err = contract.open("app.services:user", {
     tenant_id = "acme",
     region = "us-east"
 })
 
--- Mit Query-Parametern (automatisch konvertiert: "true"→bool, Zahlen→int/float)
+-- With query parameters (auto-converted: "true"→bool, numbers→int/float)
 local api, err = contract.open("app.services:api?debug=true&timeout=5000")
 
--- Mit Aufrufoptionen (drittes Argument)
+-- With call options (third argument)
 local inst, err = contract.open("app.services:flaky", nil, {
     retry = { max_attempts = 5, initial_delay = 100 }
 })
@@ -62,6 +65,9 @@ Rufen Sie die Contract-Definition zur Introspektion ab:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 
 print(c:id())  -- "app.services:greeter"
 
@@ -71,6 +77,9 @@ for _, m in ipairs(methods) do
 end
 
 local method, err = c:method("say_hello")
+if err then
+    return nil, err
+end
 ```
 
 ### Methodendefinition
@@ -79,8 +88,10 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | Methodenname |
 | `description` | string | Methodenbeschreibung |
-| `input_schemas` | table[] | Eingabe-Schema-Definitionen |
-| `output_schemas` | table[] | Ausgabe-Schema-Definitionen |
+| `input_schemas` | table[] oder nil | Eingabe-Schemadefinitionen; bei leerer Liste nicht vorhanden |
+| `output_schemas` | table[] oder nil | Ausgabe-Schemadefinitionen; bei leerer Liste nicht vorhanden |
+
+Jedes Schemaelement enthält einen String `format` und kann einen Wert `definition` enthalten.
 
 ## Implementierungen finden
 
@@ -88,6 +99,9 @@ Listen Sie alle Bindings auf, die einen Contract implementieren:
 
 ```lua
 local bindings, err = contract.find_implementations("app.services:greeter")
+if err then
+    return nil, err
+end
 
 for _, binding_id in ipairs(bindings) do
     print(binding_id)
@@ -98,7 +112,13 @@ Oder über das Contract-Objekt:
 
 ```lua
 local c, err = contract.get("app.services:greeter")
+if err then
+    return nil, err
+end
 local bindings, err = c:implementations()
+if err then
+    return nil, err
+end
 ```
 
 ## Implementierung prüfen
@@ -117,9 +137,18 @@ Synchroner Aufruf - blockiert bis zum Abschluss:
 
 ```lua
 local calc, err = contract.open("app.services:calculator")
+if err then
+    return nil, err
+end
 
 local sum, err = calc:add(10, 20)
+if err then
+    return nil, err
+end
 local product, err = calc:multiply(5, 6)
+if err then
+    return nil, err
+end
 ```
 
 ## Asynchrone Aufrufe
@@ -128,35 +157,49 @@ Fügen Sie das Suffix `_async` für asynchrone Ausführung hinzu:
 
 ```lua
 local processor, err = contract.open("app.services:processor")
+if err then
+    return nil, err
+end
 
 local future, err = processor:process_async(large_dataset)
-
--- Andere Arbeit erledigen...
-
--- Auf Ergebnis warten
-local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+if err then
+    return nil, err
 end
+
+-- Do other work...
+
+-- Wait for result
+local ch = future:response()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
+end
+
+local payload, result_err = future:result()
+if result_err then return nil, result_err end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 Siehe [Futures](lua/core/future.md) für Future-Methoden.
 
 ## Via Contract öffnen
 
-Öffnen Sie ein Binding über das Contract-Objekt:
+Öffnen Sie ein Binding über ein Contract-Objekt. Die folgenden Aufrufe sind Alternativen; prüfen Sie den Fehler von `contract.get()` und vom gewählten `open()`-Aufruf, bevor Sie die Instanz verwenden.
 
 ```lua
 local c, err = contract.get("app.services:user")
+if err then
+    return nil, err
+end
 
--- Standard-Binding
+-- Default binding
 local instance, err = c:open()
 
--- Spezifisches Binding
+-- Specific binding
 local instance, err = c:open("app.services:user_impl")
 
--- Mit Scope
+-- With scope
 local instance, err = c:open(nil, {user_id = 123})
 local instance, err = c:open("app.services:user_impl", {user_id = 123})
 ```
@@ -166,36 +209,45 @@ local instance, err = c:open("app.services:user_impl", {user_id = 123})
 Erstellen Sie einen Wrapper mit vorkonfiguriertem Kontext:
 
 ```lua
+local ctx = require("ctx")
 local c, err = contract.get("app.services:user")
+if err then return nil, err end
 
-local wrapped = c:with_context({
-    request_id = ctx.get("request_id"),
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local wrapped, err = c:with_context({
+    request_id = request_id,
     user_id = current_user.id
 })
+if err then return nil, err end
 
 local instance, err = wrapped:open()
 ```
 
 ## Aufrufoptionen
 
-Konfigurieren Sie Retry und anderes Aufrufverhalten ueber `with_options`:
+Konfigurieren Sie Wiederholungen und anderes Aufrufverhalten mit `with_options`:
 
 ```lua
 local c, err = contract.get("app.services:flaky")
+if err then return nil, err end
 
-local inst, err = c
-    :with_options({ retry = { max_attempts = 5, initial_delay = 100 } })
-    :open("app.services:flaky_impl")
+local configured = c:with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
+local inst, err = configured:open("app.services:flaky_impl")
+if err then return nil, err end
 
 local result, err = inst:call()
 ```
 
-Optionen gelten fuer jeden Methodenaufruf der zurueckgegebenen Instanz. Nur retry-faehige Fehler loesen Wiederholungen aus; nicht retry-faehige Fehler erscheinen sofort. Verkettbar mit `with_context`, `with_actor`, `with_scope`.
+Optionen gelten für jeden Methodenaufruf auf der zurückgegebenen Instanz. Nur wiederholbare Fehler lösen Wiederholungen aus; nicht wiederholbare Fehler werden sofort zurückgegeben. `with_options` kann mit `with_context`, `with_actor` und `with_scope` verkettet werden.
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
 | `retry.max_attempts` | int | Maximale Versuche inkl. dem ersten (1 deaktiviert Retry) |
-| `retry.initial_delay` | int/duration | Verzoegerung vor erstem Retry (ms oder Duration-String) |
+| `retry.initial_delay` | int/duration | Verzögerung vor dem ersten Wiederholungsversuch (ms oder Dauer-String) |
 
 ## Sicherheitskontext
 
@@ -204,10 +256,16 @@ Setzen Sie Actor und Scope für die Autorisierung:
 ```lua
 local security = require("security")
 local c, err = contract.get("app.services:admin")
+if err then return nil, err end
 
-local secured = c:with_actor(security.actor()):with_scope(security.scope())
+local secured, err = c:with_actor(security.actor())
+if err then return nil, err end
+
+secured, err = secured:with_scope(security.scope())
+if err then return nil, err end
 
 local admin, err = secured:open()
+if err then return nil, err end
 ```
 
 Ohne explizites `with_actor`/`with_scope` erbt ein geöffneter Contract den ambienten Actor und Scope des Aufrufers. Sind sie gesetzt, propagieren sie zu den gebundenen Implementierungsfunktionen — jeder Methodenaufruf auf der Instanz läuft unter dieser Identität.
@@ -233,4 +291,5 @@ Ohne explizites `with_actor`/`with_scope` erbt ein geöffneter Contract den ambi
 | Methode nicht gefunden | `errors.NOT_FOUND` |
 | Kein Standard-Binding | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
-| Aufruf fehlgeschlagen | `errors.INTERNAL` |
+| Contract-Dispatcher oder Konvertierung der Antwort fehlgeschlagen | `errors.INTERNAL` |
+| Implementierung gab einen Fehler zurück | Fehlerart der Implementierung bleibt erhalten |

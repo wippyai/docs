@@ -1,16 +1,18 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "ターミナル入力イベントを処理し、スタイル付きのターミナルレイアウトを描画します。"
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-生の入力イベント、スタイル付き出力、レイアウトユーティリティ用のターミナル UI モジュール。
+`tty` モジュールは、生のターミナル入力イベントを処理し、スタイル付き出力とレイアウトのユーティリティを提供します。
+
+このページは API リファレンスです。入力ループはターミナルプロセスの部分的なレシピであり、スタイルとレイアウトのスニペットはそれぞれ独立した例です。
 
 <note>
-このモジュールはターミナルコンテキスト内でのみ動作します。通常の関数からは使用できません — <a href="system/terminal.md">ターミナルホスト</a>上で実行されているプロセスからのみ使用してください。
+このモジュールは通常の関数では利用できず、<a href="../../system/terminal.md">ターミナルホスト</a>上で実行されるプロセスでのみ利用できます。
 </note>
 
 ## ロード
@@ -28,25 +30,36 @@ local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    tty.start()
-    local events = tty.events()
+    local events, events_err = tty.events()
+    if events_err then return nil, events_err end
+
+    -- Subscribe before starting so the initial start event cannot be missed.
+    local started, start_err = tty.start()
+    if start_err then return nil, start_err end
+
+    local loop_err
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -115,9 +128,9 @@ local ok, err = tty.mouse(true)
 ```lua
 {
     type = "key",
-    key = "a",           -- 印刷可能文字またはキー名
-    key_type = "runes",  -- 印刷可能の場合は "runes"、または特殊キー名
-    action = "press",    -- "press" または "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -131,8 +144,8 @@ local ok, err = tty.mouse(true)
 ```lua
 {
     type = "mouse",
-    action = "press",    -- "press"、"release"、"motion"、"wheel"
-    button = "left",     -- ボタン名
+    action = "press",    -- "press", "release", "motion", "wheel"
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -177,7 +190,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- イベントループ内
+-- In event loop
 if quit:matches(ev) then
     break
 end
@@ -187,10 +200,12 @@ end
 
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `keys` | string[] | 一致させるキーパターン（例：`"a"`、`"ctrl+c"`、`"enter"`） |
+| `keys` | string[] | 必須。一致させるキーパターン（例：`"a"`、`"ctrl+c"`、`"enter"`） |
 | `help` | table | 任意。ヘルプテキスト用の `{key = "...", desc = "..."}` |
 
 **戻り値:** `KeyBinding`
+
+型スキーマでは `keys` が必須です。実行時に `keys` を省略するか空のテーブルを指定すると、どの入力にも一致しないバインディングが作成されます。
 
 ### KeyBinding メソッド
 
@@ -220,7 +235,8 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
 ### tty.style()
@@ -301,26 +317,26 @@ tty.align.RIGHT   -- 1
 ### 計測
 
 ```lua
-local w = tty.text.width("hello")         -- 印刷可能幅（ANSI 対応）
-local h = tty.text.height("a\nb\nc")      -- 行数
-local w, h = tty.text.size("hello\nworld") -- 両方
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### 結合
 
 ```lua
--- 横並びに結合、上揃え
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- 縦に積む、中央揃え
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### 最大寸法
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- 最も広いもの
-local h = tty.text.max_height({"one\ntwo", "single"})         -- 最も高いもの
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### 配置
@@ -328,13 +344,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- 最も高いも
 指定された寸法のボックス内に文字列を配置します：
 
 ```lua
--- 80x24 のボックスの中央に配置
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- 水平方向のみ
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- 垂直方向のみ
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -347,6 +363,16 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
+
+## エラー
+
+入力制御関数は構造化エラーを返します。
+
+| 条件 | 種別 | 再試行可能 |
+|-----------|------|-----------|
+| ターミナルコンテキストまたは入力コントローラーがない | `errors.UNAVAILABLE` | いいえ |
+| イベント購読にランタイムまたはプロセスコンテキストがない | `errors.INTERNAL` | いいえ |
+| ターミナルの yield 応答が無効 | `errors.INTERNAL` | いいえ |
 
 ## 関連項目
 

@@ -5,7 +5,7 @@ description: "WebSocket 릴레이 미들웨어는 HTTP 연결을 WebSocket으로
 
 # WebSocket 릴레이
 
-WebSocket 릴레이 미들웨어는 HTTP 연결을 WebSocket으로 업그레이드하고 대상 프로세스로 메시지를 릴레이합니다.
+`websocket_relay` 미들웨어는 HTTP 연결을 WebSocket으로 업그레이드하고 대상 프로세스로 메시지를 릴레이합니다.
 
 ## 작동 방식
 
@@ -13,10 +13,6 @@ WebSocket 릴레이 미들웨어는 HTTP 연결을 WebSocket으로 업그레이�
 2. 미들웨어가 연결을 WebSocket으로 업그레이드
 3. 릴레이가 대상 프로세스에 연결하고 모니터링
 4. 메시지가 클라이언트와 프로세스 간에 양방향으로 흐름
-
-<warning>
-WebSocket 연결은 대상 프로세스에 바인딩됩니다. 프로세스가 종료되면 연결이 자동으로 닫힙니다.
-</warning>
 
 ## 프로세스 시맨틱스
 
@@ -28,12 +24,14 @@ WebSocket 연결은 자체 PID를 가진 완전한 프로세스입니다. 프로
 - **EXIT 이벤트** → 연결이 닫히면 모니터가 종료 알림 수신
 
 ```lua
--- 다른 프로세스에서 WebSocket 연결 모니터링
-process.monitor(websocket_pid)
+-- Monitor a WebSocket connection from another process
+local _, monitor_err = process.monitor(websocket_pid)
+if monitor_err then return nil, monitor_err end
 
--- 모든 프로세스에서 WebSocket 클라이언트로 메시지 전송.
--- 릴레이는 이를 {topic, data} JSON으로 래핑합니다; 토픽 이름은 임의입니다.
-process.send(websocket_pid, "update", "hello")
+-- Send a message to the WebSocket client from any process.
+-- The relay wraps it as {topic, data} JSON; the topic name is arbitrary.
+local _, send_err = process.send(websocket_pid, "update", "hello")
+if send_err then return nil, send_err end
 ```
 
 <tip>
@@ -45,10 +43,11 @@ process.send(websocket_pid, "update", "hello")
 제어 메시지를 보내 연결을 다른 프로세스로 전송할 수 있습니다:
 
 ```lua
-process.send(websocket_pid, "ws.control", {
+local _, transfer_err = process.send(websocket_pid, "ws.control", {
     target_pid = new_process_pid,
     message_topic = "ws.message"
 })
+if transfer_err then return nil, transfer_err end
 ```
 
 ## 설정
@@ -84,21 +83,37 @@ local http = require("http")
 local json = require("json")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- 핸들러 프로세스 스폰
-    local pid = process.spawn("app.ws:handler", "app:processes")
+    local user_id, query_err = req:query("user_id")
+    if query_err then return nil, query_err end
 
-    -- 릴레이 설정
-    res:header("X-WS-Relay", json.encode({
+    -- Spawn handler process
+    local pid, spawn_err = process.spawn("app.ws:handler", "app:processes")
+    if spawn_err then return nil, spawn_err end
+
+    -- Configure relay
+    local relay_config, encode_err = json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",
         metadata = {
-            user_id = req:query("user_id")
+            user_id = user_id
         }
-    }))
+    })
+    if encode_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or encode_err
+    end
+
+    local header_err = res:set_header("X-WS-Relay", relay_config)
+    if header_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or header_err
+    end
 end
 ```
 
@@ -118,15 +133,13 @@ end
 | 토픽 | 시점 | 페이로드 |
 |-------|------|---------|
 | `ws.join` | 클라이언트 연결 시 | JSON `{client_pid, metadata}` |
-| `ws.message` (또는 사용자의 `message_topic`) | 클라이언트 메시지 전송 시 | 원시 클라이언트 페이로드 (텍스트 프레임 -> string, 바이너리 프레임 -> bytes); 릴레이 패키지의 소스 PID가 클라이언트 PID |
+| `ws.message` (또는 사용자의 `message_topic`) | 클라이언트 메시지 전송 시 | 원시 클라이언트 payload; `payload:data()`는 텍스트와 바이너리 모두 Lua 문자열을 반환하며 source PID는 클라이언트 PID |
 | `ws.heartbeat` | 주기적 (설정된 경우) | JSON `{client_pid, uptime, message_count, metadata}` |
 | `ws.leave` | 클라이언트 연결 해제 시 | JSON `{client_pid, metadata}` |
 
 ## 메시지 수신
 
 ```lua
-local json = require("json")
-
 local function handler()
     local inbox = process.inbox()
 
@@ -135,21 +148,26 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local from = msg:from()                -- 클라이언트 연결 PID
+        local from = msg:from()                -- client connection PID
 
         if topic == "ws.join" then
-            -- 클라이언트 연결됨 -- 페이로드는 {client_pid, metadata}
-            local data = msg:payload():data()
+            -- Client connected — payload is {client_pid, metadata}
+            local data, payload_err = msg:payload():data()
+            if payload_err then return nil, payload_err end
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- 원시 클라이언트 메시지; from() 은 클라이언트 PID
-            local body = msg:payload():data()  -- string 또는 bytes
-            handle_message(from, json.decode(body))
+            -- Raw client message; from() is the client PID
+            local incoming = msg:payload()
+            local frame_format = incoming:get_format()     -- "text/plain" or "application/octet-stream"
+            local body, payload_err = incoming:data()      -- Lua string in either case
+            if payload_err then return nil, payload_err end
+            -- Decode or dispatch `body` according to `frame_format` and the
+            -- application's protocol.
 
         elseif topic == "ws.leave" then
-            -- 클라이언트 연결 해제됨 -- 페이로드는 {client_pid, metadata}
-            cleanup(from)
+            -- Client disconnected — payload is {client_pid, metadata}
+            -- Release application state associated with `from`.
         end
     end
 end
@@ -157,17 +175,16 @@ end
 
 ## 클라이언트로 전송
 
-클라이언트 PID를 사용하여 메시지 반환. 선택한 어떤 토픽이든 `{topic, data}` JSON으로 래핑되어 WebSocket으로 전달됩니다. 프레임 타입은 페이로드 형식에 따라 결정됩니다: 문자열은 텍스트 프레임이 되고, 바이트는 바이너리 프레임이 됩니다 (JSON 래퍼 내부에서 base64 인코딩).
+클라이언트 PID로 응답을 보냅니다. 선택한 토픽은 `{topic, data}` JSON으로 래핑되어 하나의 WebSocket 텍스트 프레임으로 전달됩니다. 테이블과 문자열은 `data`에서 형태를 유지하고 Bytes payload는 base64로 인코딩됩니다. Lua `process.send`는 인자를 Lua-format payload로 내보내므로 Lua 문자열은 Bytes 분기를 사용하지 않습니다.
 
 ```lua
--- 구조화된 메시지 전송 (임의의 토픽 이름)
-process.send(client_pid, "update", json.encode({event = "update", value = 42}))
+-- Send a structured message (any topic name)
+local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
+if send_err then return nil, send_err end
 
--- 바이너리 전송
-process.send(client_pid, "data", binary_content)
-
--- 연결 종료 (페이로드는 종료 사유 문자열)
-process.send(client_pid, "ws.close", "Session ended")
+-- Close connection (payload is the close reason string)
+local _, close_err = process.send(client_pid, "ws.close", "Session ended")
+if close_err then return nil, close_err end
 ```
 
 서버 -> 클라이언트의 예약된 토픽은 `ws.control` (릴레이 재구성) 및 `ws.close` (연결 종료) 입니다.
@@ -179,18 +196,19 @@ process.send(client_pid, "ws.close", "Session ended")
 ```lua
 local clients = {}
 
--- join 시
+-- On join
 clients[client_pid] = true
 
--- leave 시
+-- On leave
 clients[client_pid] = nil
 
--- 브로드캐스트
+-- Broadcast
 local function broadcast(message)
-    local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "broadcast", data)
+        local _, send_err = process.send(pid, "broadcast", message)
+        if send_err then return nil, send_err end
     end
+    return true
 end
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitterパース"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "ソースコードのパース、具象構文木の検査、Tree-sitterクエリの実行を行います。"
 ---
 
 # Tree-sitterパース
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)を使用してソースコードを具象構文木にパースします。[go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter)バインディングベースです。
+`treesitter`モジュールは、[go-tree-sitter](https://github.com/tree-sitter/go-tree-sitter)バインディングを介して[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)を使用し、ソースコードを具象構文木へパースします。
+
+このページは部分的なパースレシピを含むAPIリファレンスです。ソース文字列とクエリパターンはアプリケーション入力であり、ノード単位のスニペットは、先に確認済みのパースから得た有効なツリーを前提とします。パーサー、ツリー、クエリ、カーソルは所有リソースです。正常に作成した各ハンドルは、最後の依存操作が完了した時点で閉じてください。
 
 Tree-sitterは以下の特性を持つ構文木を生成します:
 - ソースコードの完全な構造を表現
@@ -23,7 +25,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-treesitter モジュールはオプションであり、`treesitter` ビルドタグを含むビルドにのみ存在します。Wippy の公式バイナリには含まれています。ソースからビルドする場合は `make build-wippy` または `go build -tags treesitter` を使用してください。タグがない場合、`require("treesitter")` は利用できません。
+`treesitter`モジュールはオプションであり、`treesitter`ビルドタグを含むビルドにのみ存在します。Wippyの公式バイナリには含まれています。ソースからビルドする場合は`make build-wippy`または`go build -tags treesitter`を使用してください。タグがない場合、`require("treesitter")`は利用できません。
 </note>
 
 ## サポート言語
@@ -49,7 +51,7 @@ local langs = treesitter.supported_languages()
 
 ## クイックスタート
 
-### コードのパース
+### コードをパース
 
 ```lua
 local code = [[
@@ -63,12 +65,17 @@ if err then
     return nil, err
 end
 
-local root = tree:root_node()
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 print(root:kind())        -- "source_file"
-print(root:child_count()) -- トップレベル宣言の数
+print(root:child_count()) -- number of top-level declarations
+tree:close()
 ```
 
-### 構文木のクエリ
+### 構文木をクエリ
 
 ```lua
 local code = [[
@@ -76,30 +83,52 @@ func hello() {}
 func world() {}
 ]]
 
-local tree = treesitter.parse("go", code)
-local root = tree:root_node()
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
--- すべての関数名を検索
-local query = treesitter.query("go", [[
+-- Find all function names
+local query, query_err = treesitter.query("go", [[
     (function_declaration name: (identifier) @func_name)
 ]])
+if query_err then
+    tree:close()
+    return nil, query_err
+end
 
-local captures = query:captures(root, code)
+local captures, captures_err = query:captures(root, code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
     print(capture.name, capture.text)
 end
 -- "func_name"  "hello"
 -- "func_name"  "world"
+query:close()
+tree:close()
 ```
 
 ## パース
 
 ### シンプルパース
 
-ソースコードを構文木にパースします。内部的に一時パーサーを作成します。
+一時的な内部パーサーでソースコードをパースします。
 
 ```lua
 local tree, err = treesitter.parse("go", code)
+if err then
+    return nil, err
+end
+-- Use the tree, then call tree:close().
 ```
 
 | パラメータ | 型 | 説明 |
@@ -114,18 +143,37 @@ local tree, err = treesitter.parse("go", code)
 繰り返しのパースまたはインクリメンタル更新用にパーサーを作成します。
 
 ```lua
-local parser = treesitter.parser()
-parser:set_language("go")
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    return nil, language_err
+end
 
-local tree1 = parser:parse("package main")
+local tree1, first_err = parser:parse("package main")
+if first_err then
+    parser:close()
+    return nil, first_err
+end
 
--- 古いツリーを使用したインクリメンタルパース
-local tree2 = parser:parse("package main\nfunc foo() {}", tree1)
+-- Parse another source with the reusable parser. For an incremental update,
+-- edit the old tree first as shown in the complete recipe below.
+local tree2, second_err = parser:parse("package main\nfunc foo() {}")
+if second_err then
+    tree1:close()
+    parser:close()
+    return nil, second_err
+end
 
+tree2:close()
+tree1:close()
 parser:close()
 ```
 
-**戻り値:** `Parser`
+**戻り値:** `Parser, error`
 
 ### パーサーメソッド
 
@@ -139,16 +187,31 @@ parser:close()
 | `reset()` | パーサー状態をリセット |
 | `close()` | パーサーリソースを解放 |
 
+再利用可能なパーサーから作成したツリーとパーサー自体は、それぞれ独立して所有されるため、正常に作成した各ハンドルを閉じてください。ノードはツリーのストレージを借用するので、そのツリーを閉じた後は使用できません。カーソルもツリーを借用するため、ツリーより先に閉じてください。クエリは別のネイティブリソースを所有し、同じく`close()`が必要です。キャプチャまたはマッチが不要になったらクエリを閉じてください。明示的なクリーンアップは決定論的ですが、プロセスリソースストアはプロセス終了時まで開いたままのハンドルに対するフォールバックにすぎません。
+
 ## 構文木
 
 ### ルートノードの取得
 
 ```lua
-local tree = treesitter.parse("go", "package main")
-local root = tree:root_node()
+local tree, err = treesitter.parse("go", "package main")
+if err then
+    return nil, err
+end
+local root, root_err = tree:root_node()
+if root_err then
+    tree:close()
+    return nil, root_err
+end
 
 print(root:kind())  -- "source_file"
-print(root:text())  -- "package main"
+local source_text, text_err = root:text()
+if text_err then
+    tree:close()
+    return nil, text_err
+end
+print(source_text)  -- "package main"
+tree:close()
 ```
 
 ### ツリーメソッド
@@ -168,14 +231,17 @@ print(root:text())  -- "package main"
 
 ### インクリメンタル編集
 
-ソースコードが変更されたときにツリーを更新します:
+変更されたソースコードを再パースする前に編集を適用します。
 
 ```lua
 local code = "func main() { x := 1 }"
-local tree = treesitter.parse("go", code)
+local tree, parse_err = treesitter.parse("go", code)
+if parse_err then
+    return nil, parse_err
+end
 
--- 編集をマーク: バイト19で"1"を"100"に変更
-tree:edit({
+-- Mark edit: changed "1" to "100" at byte 19
+local _, edit_err = tree:edit({
     start_byte = 19,
     old_end_byte = 20,
     new_end_byte = 22,
@@ -186,48 +252,70 @@ tree:edit({
     new_end_row = 0,
     new_end_column = 22
 })
+if edit_err then
+    tree:close()
+    return nil, edit_err
+end
 
--- 編集されたツリーで再パース（フルパースより高速）
-local parser = treesitter.parser()
-parser:set_language("go")
-local new_tree = parser:parse("func main() { x := 100 }", tree)
+-- Re-parse with edited tree (faster than full parse)
+local parser, parser_err = treesitter.parser()
+if parser_err then
+    tree:close()
+    return nil, parser_err
+end
+local _, language_err = parser:set_language("go")
+if language_err then
+    parser:close()
+    tree:close()
+    return nil, language_err
+end
+local new_tree, new_tree_err = parser:parse("func main() { x := 100 }", tree)
+if new_tree_err then
+    parser:close()
+    tree:close()
+    return nil, new_tree_err
+end
+
+new_tree:close()
+parser:close()
+tree:close()
 ```
 
 ## ノード
 
-ノードは構文木の要素を表現します。
+ノードは構文木の要素を表します。以下の独立したスニペットでは、`root`、`node`、`func_decl`は、まだ開いているツリーからアプリケーションが選択したノードです。
 
 ### ノード型
 
 ```lua
 local node = root:child(0)
 
--- 型情報
+-- Type information
 print(node:kind())        -- "package_clause"
-print(node:type())        -- kind()と同じ
-print(node:is_named())    -- 重要なノードはtrue
-print(node:grammar_name()) -- 文法ルール名
+print(node:type())        -- same as kind()
+print(node:is_named())    -- true for significant nodes
+print(node:grammar_name()) -- grammar rule name
 ```
 
 ### ナビゲーション
 
 ```lua
--- 子
-local child = node:child(0)           -- インデックス指定（0ベース）
-local named = node:named_child(0)     -- 名前付き子のみ
+-- Children
+local child = node:child(0)           -- by index (0-based)
+local named = node:named_child(0)     -- named children only
 local count = node:child_count()
 local named_count = node:named_child_count()
 
--- 兄弟
+-- Siblings
 local next = node:next_sibling()
 local prev = node:prev_sibling()
 local next_named = node:next_named_sibling()
 local prev_named = node:prev_named_sibling()
 
--- 親
+-- Parent
 local parent = node:parent()
 
--- フィールド名で取得
+-- By field name
 local name_node = func_decl:child_by_field_name("name")
 local field = node:field_name_for_child(0)
 ```
@@ -235,31 +323,34 @@ local field = node:field_name_for_child(0)
 ### 位置情報
 
 ```lua
--- バイトオフセット
+-- Byte offsets
 local start = node:start_byte()
 local end_ = node:end_byte()
 
--- 行/列位置（0ベース）
+-- Row/column positions (0-based)
 local start_pt = node:start_point()  -- {row = 0, column = 0}
 local end_pt = node:end_point()      -- {row = 0, column = 12}
 
--- ソーステキスト
-local text = node:text()
+-- Source text
+local source_text, err = node:text()
+if err then
+    return nil, err
+end
 ```
 
 ### エラー検出
 
 ```lua
 if root:has_error() then
-    -- ツリーに構文エラーが含まれる
+    -- Tree contains syntax errors
 end
 
 if node:is_error() then
-    -- この特定のノードがエラー
+    -- This specific node is an error
 end
 
 if node:is_missing() then
-    -- パーサーがエラーから回復するために挿入
+    -- Parser inserted this to recover from error
 end
 ```
 
@@ -272,7 +363,7 @@ local sexp = node:to_sexp()
 
 ## クエリ
 
-Tree-sitterのクエリ言語（S式）を使用したパターンマッチングです。
+Tree-sitterクエリは、S式で記述した構文木パターンに一致します。
 
 ### クエリの作成
 
@@ -283,6 +374,10 @@ local query, err = treesitter.query("go", [[
         parameters: (parameter_list) @params
     )
 ]])
+if err then
+    return nil, err
+end
+-- The owner calls query:close() after the final query operation.
 ```
 
 | パラメータ | 型 | 説明 |
@@ -295,43 +390,64 @@ local query, err = treesitter.query("go", [[
 ### クエリの実行
 
 ```lua
--- すべてのキャプチャを取得（フラット化）
-local captures = query:captures(root, source_code)
+-- Get all captures (flattened)
+local captures, captures_err = query:captures(root, source_code)
+if captures_err then
+    query:close()
+    tree:close()
+    return nil, captures_err
+end
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
-    print(capture.text)   -- 実際のテキスト
-    print(capture.index)  -- キャプチャインデックス
-    -- capture.nodeはNodeオブジェクト
+    print(capture.name)   -- "func_name"
+    print(capture.text)   -- actual text
+    print(capture.index)  -- capture index
+    -- capture.node is the Node object
 end
 
--- マッチを取得（パターンでグループ化）
-local matches = query:matches(root, source_code)
+-- Get matches (grouped by pattern)
+local matches, matches_err = query:matches(root, source_code)
+if matches_err then
+    query:close()
+    tree:close()
+    return nil, matches_err
+end
 for _, match in ipairs(matches) do
     print(match.id, match.pattern)
     for _, capture in ipairs(match.captures) do
-        print(capture.name, capture.node:text())
+        local captured_text, text_err = capture.node:text()
+        if text_err then
+            query:close()
+            tree:close()
+            return nil, text_err
+        end
+        print(capture.name, captured_text)
     end
 end
+
+query:close()
+tree:close()
 ```
+
+Tree-sitterの`Node`ではない誤った型のuserdataを渡すと`nil, error`を返します。プリミティブ値またはテーブルを渡すと、その確認前にLua引数エラーが発生します。ここでの`root`、`source_code`、`query`は、まだ開いているツリーと正常に作成したクエリから取得する必要があります。スニペットでは、所有する`tree`ハンドルを使用して、戻る前に両方のリソースを閉じています。
 
 ### クエリ制御
 
 ```lua
--- クエリ範囲を制限
+-- Limit query scope
 query:set_byte_range(0, 1000)
 query:set_point_range({row = 0, column = 0}, {row = 10, column = 0})
 
--- マッチ数を制限
+-- Limit matches
 query:set_match_limit(100)
 if query:did_exceed_match_limit() then
-    -- より多くのマッチが存在
+    -- More matches exist
 end
 
--- タイムアウト（文字列のdurationまたはナノ秒）
+-- Timeout (string duration or nanoseconds)
 query:set_timeout("500ms")
-query:set_timeout(1000000000)  -- 1秒（ナノ秒）
+query:set_timeout(1000000000)  -- 1 second in nanoseconds
 
--- パターン/キャプチャを無効化
+-- Disable patterns/captures
 query:disable_pattern(0)
 query:disable_capture("func_name")
 ```
@@ -347,28 +463,31 @@ local id = query:capture_index_for_name("func_name")
 
 ## ツリーカーソル
 
-各ステップでノードオブジェクトを作成せずに効率的にトラバースできます。
+ツリーカーソルは、各ステップでノードオブジェクトを作成せずにツリーを走査します。
 
 ### 基本的なトラバーサル
 
 ```lua
-local cursor = tree:walk()
+local cursor, err = tree:walk()
+if err then
+    return nil, err
+end
 
--- ルートから開始
+-- Start at root
 print(cursor:current_node():kind())  -- "source_file"
 print(cursor:current_depth())        -- 0
 
--- ナビゲート
+-- Navigate
 if cursor:goto_first_child() then
     print(cursor:current_node():kind())
     print(cursor:current_depth())  -- 1
 end
 
 if cursor:goto_next_sibling() then
-    -- 次の兄弟に移動
+    -- moved to next sibling
 end
 
-cursor:goto_parent()  -- 親に戻る
+cursor:goto_parent()  -- back to parent
 
 cursor:close()
 ```
@@ -398,19 +517,22 @@ cursor:close()
 ## 言語メタデータ
 
 ```lua
-local lang = treesitter.language("go")
+local lang, err = treesitter.language("go")
+if err then
+    return nil, err
+end
 
-print(lang:version())           -- ABIバージョン
-print(lang:node_kind_count())   -- ノード型の数
-print(lang:field_count())       -- フィールドの数
-print(lang:parse_state_count()) -- パース状態の数
+print(lang:version())           -- ABI version
+print(lang:node_kind_count())   -- number of node types
+print(lang:field_count())       -- number of fields
+print(lang:parse_state_count()) -- number of parse states
 
--- ノード種別のルックアップ
+-- Node kind lookup
 local kind = lang:node_kind_for_id(1)
 local id = lang:id_for_node_kind("identifier", true)
 local is_named = lang:node_kind_is_named(1)
 
--- フィールドのルックアップ
+-- Field lookup
 local field_name = lang:field_name_for_id(1)
 local field_id = lang:field_id_for_name("name")
 ```
@@ -419,44 +541,46 @@ local field_id = lang:field_id_for_name("name")
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 言語がサポートされていない | `errors.INVALID` | no |
-| 言語にバインディングがない | `errors.INVALID` | no |
-| 無効なクエリパターン | `errors.INVALID` | no |
-| 無効な位置 | `errors.INVALID` | no |
-| パース失敗 | `errors.INTERNAL` | no |
+| 言語がサポートされていない | `errors.INVALID` | いいえ |
+| 言語にバインディングがない | `errors.INVALID` | いいえ |
+| 無効なクエリパターン | `errors.INVALID` | いいえ |
+| 無効な位置 | `errors.INVALID` | いいえ |
+| パース失敗 | `errors.INTERNAL` | いいえ |
+| 実行コンテキストなし | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+既に閉じたパーサー、ツリー、クエリ、カーソルを再度閉じても安全です。閉じたハンドルでその他のメソッドを呼び出すと、Lua引数エラーが発生します。
+
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。
 
 ## クエリ構文リファレンス
 
 Tree-sitterクエリはS式パターンを使用します:
 
 ```
-; ノード型にマッチ
+; Match a node type
 (identifier)
 
-; フィールド名でマッチ
+; Match with field names
 (function_declaration name: (identifier))
 
-; @nameでキャプチャ
+; Capture with @name
 (function_declaration name: (identifier) @func_name)
 
-; 複数のパターン
+; Multiple patterns
 [
   (function_declaration)
   (method_declaration)
 ] @declaration
 
-; ワイルドカード
-(_)           ; 任意のノード
-(identifier)+ ; 1つ以上
-(identifier)* ; 0個以上
-(identifier)? ; オプション
+; Wildcards
+(_)           ; any node
+(identifier)+ ; one or more
+(identifier)* ; zero or more
+(identifier)? ; optional
 
-; 述語
+; Predicates
 ((identifier) @var
-  (#match? @var "^_"))  ; 正規表現マッチ
+  (#match? @var "^_"))  ; regex match
 ```
 
-完全なドキュメントは[Tree-sitterクエリ構文](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax)を参照。
-
+完全なドキュメントについては、[Tree-sitterクエリ構文](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax)を参照してください。

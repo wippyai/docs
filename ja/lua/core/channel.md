@@ -1,6 +1,6 @@
 ---
 title: "チャネルとコルーチン"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "バッファ付き／なしのチャネルを作成し、値を交換し、複数操作をselectして並行処理を調整する方法。"
 ---
 
 # チャネルとコルーチン
@@ -9,19 +9,21 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 
 
-コルーチン間通信のためのGo形式チャネルを提供します。バッファ付きまたはアンバッファードチャネルを作成し、値を送受信し、select文を使用して並行プロセス間で調整できます。
+チャネルは並行タスク間で値を交換します。バッファ付きまたはバッファなしで作成でき、`channel.select` と組み合わせて複数の操作を調整できます。
 
-`channel`グローバルは常に利用可能です。
+このページはAPIリファレンスです。基本的なブロックは独立したスニペットです。タイムアウト、ファンイン、ノンブロッキングの節は、名前付きチャネルとコールバックを周囲のアプリケーションから受け取る部分的なパターンです。ワーカープールのブロックは、プロセス内で完結する例です。
+
+`channel` と `coroutine` のグローバルは常に利用できます。チャネルは1つのLuaプロセス内のコルーチンを調整します。プロセス境界をまたぐ場合は、プロセスメッセージ、関数、またはキューを使用してください。
 
 ## チャネルの作成
 
-アンバッファードチャネル（サイズ0）は送信者と受信者の両方が準備できてから転送が完了する必要があります。バッファ付きチャネルは空きがある限り即座に送信が完了します:
+バッファなしチャネル（サイズ0）では、転送を完了するために送信側と受信側の両方が準備できている必要があります。バッファ付きチャネルでは、バッファに空きがある間は送信を完了できます。
 
 ```lua
--- アンバッファード：送信者と受信者を同期
+-- Unbuffered: synchronizes sender and receiver
 local sync_ch = channel.new()
 
--- バッファ付き：最大10メッセージをキュー
+-- Buffered: queue up to 10 messages
 local work_queue = channel.new(10)
 ```
 
@@ -33,15 +35,16 @@ local work_queue = channel.new(10)
 
 ## 値の送信
 
-チャネルに値を送信します。受信者が準備できるまで（アンバッファード）またはバッファスペースが利用可能になるまで（バッファ付き）ブロックします:
+送信は、バッファなしチャネルでは受信側の準備ができるまで、バッファ付きチャネルではバッファに空きができるまでブロックします。
 
 ```lua
--- ワーカープールに作業を送信
+-- Send work to a worker pool
+local tasks = {"task-a", "task-b"}
 local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
-    jobs:send(task)  -- バッファがいっぱいの場合ブロック
+    jobs:send(task)  -- Blocks if buffer full
 end
-jobs:close()  -- これ以上作業がないことをシグナル
+jobs:close()  -- Signal no more work
 ```
 
 | パラメータ | 型 | 説明 |
@@ -50,45 +53,49 @@ jobs:close()  -- これ以上作業がないことをシグナル
 
 **戻り値:** `boolean`
 
-チャネルがクローズされている場合はエラーが発生します。
+クローズ済みのチャネルへの送信はエラーになります。
 
 ## 値の受信
 
-チャネルから値を受信します。値が利用可能になるかチャネルがクローズされるまでブロックします:
+受信は、値が利用可能になるか、チャネルがクローズされるまでブロックします。
 
 ```lua
--- ジョブキューからコンシュームするワーカー
+-- Worker consuming from job queue
 while true do
-    local job, ok = work:receive()
+    local job, ok = jobs:receive()
     if not ok then
-        break  -- チャネルがクローズ、これ以上作業なし
+        break  -- Channel closed, no more work
     end
     process(job)
 end
 ```
 
+ここでは、`jobs` はアプリケーションから提供されるキューであり、`process` はタスクを処理するコールバックです。
+
 **戻り値:** `any, boolean`
 
-- `value, true` - 値を受信
-- `nil, false` - チャネルがクローズされ空
+- `value, true` — 値を受信した
+- `nil, false` — チャネルがクローズされ、空である
 
 ## チャネルのクローズ
 
-チャネルをクローズします。保留中の送信者はエラーを取得し、保留中の受信者は`nil, false`を取得します。既にクローズされている場合はエラーが発生します:
+チャネルをクローズすると、待機中の送信側はエラーを受け取り、待機中の受信側は `nil, false` を受け取ります。すでにクローズ済みのチャネルを閉じても何も起こりません。
 
 ```lua
 local results = channel.new(10)
 
--- プロデューサーが結果を埋める
+-- Producer fills results
 for _, item in ipairs(data) do
     results:send(process(item))
 end
-results:close()  -- 完了をシグナル
+results:close()  -- Signal completion
 ```
+
+この独立したproducerスニペットでは、`data` と `process` コールバックがアプリケーションから提供されるものとします。
 
 ## 複数チャネルからのSelect
 
-複数のチャネル操作を同時に待機します。複数のイベントソースの処理、タイムアウトの実装、レスポンシブなシステムの構築に不可欠です:
+`channel.select` は複数のチャネル操作を同時に待機します。イベントソース、タイムアウト、ノンブロッキングチェックを調整できます。
 
 ```lua
 local result = channel.select(cases)
@@ -99,17 +106,23 @@ local result = channel.select(cases)
 | `cases` | table | selectケースの配列 |
 | `default` | boolean | trueなら、ケースが準備できていない場合即座に戻る |
 
-**戻り値:** フィールド付き`table`：`channel`、`value`、`ok`、`default`
+**戻り値:** `table`
+
+- チャネルケースの場合：`{channel, value, ok}` — `channel` はケースのチャネル、`value` は送信または受信した値です。クローズ済みチャネルからの受信では `ok` がfalseになります。
+- どのケースも準備できておらず `default = true` の場合：`{default = true, ok = true}`
 
 ### タイムアウトパターン
 
-`time.after()`を使用してタイムアウト付きで結果を待機します。
+`time.after()` を使用してチャネル待機にタイムアウトを追加します。
 
 ```lua
 local time = require("time")
 
-local result_ch = worker:response()
-local timeout = time.after("5s")
+local result_ch = application_response_channel
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     result_ch:case_receive(),
@@ -117,14 +130,24 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
+end
+if not r.ok then
+    return nil, errors.new("Response channel closed")
 end
 return r.value
 ```
 
+この部分的なパターンでは、エントリの `modules:` に `time` が含まれ、`application_response_channel` がアプリケーションから提供されるものとします。`time.after` は成功時にチャネルを1つ返します。無効または正でない期間の場合は `nil, error` を返します。
+
 ### ファンインパターン
 
-複数のソースを1つのハンドラにマージします。
+複数のソースからの値を1つのループで処理します。
+
+このprocessエントリのパターンはグローバルな `process` を使用し、シャットダウン信号と2つのハンドラ関数はアプリケーションから提供されます。
 
 ```lua
 local events = process.events()
@@ -150,7 +173,9 @@ end
 
 ### ノンブロッキングチェック
 
-ブロックせずにデータが利用可能かチェックします。
+デフォルトケースを使用して、利用可能なデータをブロックせずに確認します。
+
+この独立したパターンでは、`ch` と `process` コールバックがアプリケーションから提供されます。
 
 ```lua
 local r = channel.select {
@@ -159,7 +184,9 @@ local r = channel.select {
 }
 
 if r.default then
-    -- 利用可能なものがない、他のことを実行
+    -- Nothing available, do something else
+elseif not r.ok then
+    -- The channel is closed
 else
     process(r.value)
 end
@@ -167,34 +194,51 @@ end
 
 ## Selectケースの作成
 
-`channel.select`で使用するためのケースを作成します:
+`channel.select` の送信ケースと受信ケースを作成します。
 
 ```lua
--- 送信ケース - チャネルが値を受け付けられるときに完了
+-- Send case - completes when channel can accept value
 ch:case_send(value)
 
--- 受信ケース - 値が利用可能なときに完了
+-- Receive case - completes when value available
 ch:case_receive()
 ```
+
+casesテーブル内の、送信ケースでも受信ケースでもない値は無視されます。デフォルト分岐もない場合は、テーブルに少なくとも1つの有効なケースが含まれるようにしてください。
 
 ## ワーカープールパターン
 
 ```lua
-local work = channel.new(100)
-local results = channel.new(100)
+local items = {1, 2, 3, 4}
+local num_workers = 2
 
--- ワーカーをスポーン
-for i = 1, num_workers do
-    process.spawn("app.workers:processor", "app:processes", work, results)
+local function process_item(item)
+    return item * 2
 end
 
--- 作業を送る
+local work = channel.new(#items)
+local results = channel.new(#items)
+
+-- Spawn workers
+for _ = 1, num_workers do
+    coroutine.spawn(function()
+        while true do
+            local item, ok = work:receive()
+            if not ok then
+                return
+            end
+            results:send(process_item(item))
+        end
+    end)
+end
+
+-- Feed work
 for _, item in ipairs(items) do
     work:send(item)
 end
 work:close()
 
--- 結果を収集
+-- Collect results
 local processed = {}
 while #processed < #items do
     local result, ok = results:receive()
@@ -203,17 +247,16 @@ while #processed < #items do
 end
 ```
 
+ループ終了後、`processed` には `2`、`4`、`6`、`8` が含まれます。結果の順序はコルーチンのスケジューリングによって異なります。ワーカーは同じLuaプロセス内のコルーチンなので、チャネルを共有します。
+
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| クローズされたチャネルへの送信 | runtime error | no |
-| クローズされたチャネルのクローズ | runtime error | no |
-| selectで無効なケース | runtime error | no |
+| クローズされたチャネルへの送信 | runtime error | n/a |
 
 ## 関連項目
 
 - [プロセス管理](lua/core/process.md) - プロセスのスポーンと通信
 - [メッセージキュー](lua/storage/queue.md) - キューベースのメッセージング
 - [関数](lua/core/funcs.md) - 関数呼び出し
-

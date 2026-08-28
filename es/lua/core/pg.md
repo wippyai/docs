@@ -1,16 +1,18 @@
 ---
-title: "Grupos de Proceso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+title: "Grupos de procesos"
+description: "Administra grupos de procesos en todo el clúster, sus miembros, las difusiones y las suscripciones a cambios de membresía."
 ---
 
-# Grupos de Proceso
+# Grupos de procesos
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Unir procesos en grupos con nombre y difundir a todos los miembros en el cluster. Modelado sobre `pg` de Erlang/OTP: los grupos son dinámicos, un proceso puede pertenecer a muchos grupos, y la membresía se rastrea en todo el cluster y es eventualmente consistente.
+Los grupos de procesos organizan procesos bajo nombres dinámicos y difunden mensajes a sus miembros en todo el clúster. Un proceso puede unirse a varios grupos y la membresía en todo el clúster es eventualmente consistente.
 
-Para el tipo de entrada de ámbito y su configuración, ver [Grupos de Proceso](system/process-groups.md). Para el modelo de clustering más amplio, ver la [Guía de Cluster](guides/cluster.md).
+Esta es una referencia de API. Sus fragmentos presuponen un `pg.scope` existente, una entrada ejecutable que se ejecuta con contexto de proceso y políticas que autorizan las operaciones documentadas. Los bloques muestran llamadas individuales o flujos parciales de suscripción, no una aplicación independiente.
+
+Para el tipo de entrada de ámbito y su configuración, consulta [Grupos de procesos](system/process-groups.md). Para el modelo de clustering general, consulta la [Guía del clúster](guides/cluster.md).
 
 ## Carga
 
@@ -18,9 +20,11 @@ Para el tipo de entrada de ámbito y su configuración, ver [Grupos de Proceso](
 local pg = require("pg")
 ```
 
-## Abrir un Ámbito
+Añade `pg` a la lista `modules:` de la entrada ejecutable antes de requerirlo.
 
-Un grupo de proceso reside dentro de un **ámbito** — una entrada de registro `pg.scope`. Abrirlo para obtener una instancia sobre la que operar:
+## Apertura de un ámbito
+
+Un grupo de procesos pertenece a un **ámbito**, representado por una entrada de registro `pg.scope`. Abre el ámbito para obtener una instancia sobre la que realizar operaciones de grupo:
 
 ```lua
 local group, err = pg.open("app:pg")
@@ -37,14 +41,25 @@ end
 
 **Permiso:** `pg.open` sobre el `id` del ámbito
 
-La instancia se libera automáticamente cuando el proceso sale; llamar `release()` para liberarla antes. Todas las demás operaciones son métodos de la instancia, llamados con `:`.
+La instancia se libera automáticamente durante la limpieza del frame de ejecución. Llama a `release()` para liberarla antes. Las demás operaciones son métodos de la instancia y usan la sintaxis `:`.
 
-## Unirse y Salir
+## Unión y salida
+
+Las llamadas siguientes son formas independientes; elige la unión individual o por lotes que necesite la aplicación y acompáñala de las operaciones de salida correspondientes.
 
 ```lua
-local ok, err = group:join("workers")           -- un solo grupo
-local ok, err = group:join({"workers", "all"})  -- lote
+local ok, err = group:join("workers")           -- single group
+if err then return nil, err end
+```
+
+```lua
+local ok, err = group:join({"workers", "all"})  -- batch
+if err then return nil, err end
+```
+
+```lua
 local ok, err = group:leave("workers")
+if err then return nil, err end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -53,15 +68,18 @@ local ok, err = group:leave("workers")
 
 **Devuelve:** `boolean, error`
 
-Un proceso puede unirse al mismo grupo más de una vez; debe salir el mismo número de veces para abandonarlo completamente (semántica multi-join). `leave` es de mejor esfuerzo en un lote y devuelve error solo cuando el proceso no era miembro de ninguno de los grupos nombrados.
+Un proceso puede unirse al mismo grupo varias veces y debe salir el mismo número de veces para abandonarlo por completo. En un lote, `leave` es de mejor esfuerzo y solo devuelve un error cuando el proceso no era miembro de ninguno de los grupos indicados.
 
 **Permisos:** `pg.join` / `pg.leave` sobre cada nombre de grupo
 
-## Listar Miembros
+## Listado de miembros
 
 ```lua
-local members, err = group:get_members("workers")        -- todos los nodos
-local local_members, err = group:get_local_members("workers")  -- solo este nodo
+local members, err = group:get_members("workers")        -- all nodes
+if err then return nil, err end
+
+local local_members, err = group:get_local_members("workers")  -- this node only
+if err then return nil, err end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -72,11 +90,14 @@ local local_members, err = group:get_local_members("workers")  -- solo este nodo
 
 **Permisos:** `pg.get_members` / `pg.get_local_members` sobre el nombre de grupo
 
-## Listar Grupos
+## Listado de grupos
 
 ```lua
-local groups, err = group:which_groups()         -- todos los grupos en el cluster
-local local_groups, err = group:which_local_groups()  -- grupos con un miembro local
+local groups, err = group:which_groups()         -- all groups in the cluster
+if err then return nil, err end
+
+local local_groups, err = group:which_local_groups()  -- groups with a local member
+if err then return nil, err end
 ```
 
 **Devuelve:** `string[], error` — nombres de grupos que actualmente tienen al menos un miembro
@@ -85,11 +106,14 @@ local local_groups, err = group:which_local_groups()  -- grupos con un miembro l
 
 ## Difusión
 
-Enviar un mensaje a todos los miembros de un grupo. Cada miembro lo recibe bajo `topic` del proceso que llama — manejarlo con `process.listen(topic)`.
+La difusión envía un mensaje desde el proceso llamador a todos los miembros del grupo bajo `topic`. Los miembros lo reciben con `process.listen(topic)`.
 
 ```lua
-local ok, err = group:broadcast("workers", "task", {id = 42})   -- todos los nodos
-local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- solo este nodo
+local ok, err = group:broadcast("workers", "task", {id = 42})   -- all nodes
+if err then return nil, err end
+
+ok, err = group:broadcast_local("workers", "task", {id = 42})  -- this node only
+if err then return nil, err end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -102,9 +126,9 @@ local ok, err = group:broadcast_local("workers", "task", {id = 42})  -- solo est
 
 **Permisos:** `pg.broadcast` / `pg.broadcast_local` sobre el nombre de grupo
 
-## Monitorear un Grupo
+## Monitorización de un grupo
 
-`monitor` se suscribe a eventos de unión/salida para un grupo y devuelve los miembros actuales atómicamente — ningún cambio de membresía puede deslizarse entre la instantánea y la suscripción.
+`monitor` se suscribe a eventos de unión y salida de un grupo y devuelve una instantánea atómica de sus miembros actuales. No puede producirse un cambio de membresía entre la instantánea y la configuración de la suscripción sin que se observe.
 
 ```lua
 local sub, members, err = group:monitor("workers")
@@ -113,13 +137,16 @@ if err then
 end
 
 for _, pid in ipairs(members) do
-    -- miembros actuales en el momento de la suscripción
+    -- current members at subscription time
 end
 
 local ch = sub:channel()
-local event = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+local event, open = ch:receive()  -- {kind = "member.joined" | "member.left", path = "workers", data = {...}}
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 
-sub:close()  -- desuscribirse; sub:close({flush = true}) vacía los eventos encolados primero
+sub:close()  -- unsubscribe; sub:close({flush = true}) drains queued events first
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -130,15 +157,21 @@ sub:close()  -- desuscribirse; sub:close({flush = true}) vacía los eventos enco
 
 **Permiso:** `pg.monitor` sobre el nombre de grupo
 
-## Observar Todos los Grupos
+## Observación de todos los grupos
 
-`events` se suscribe a cambios de membresía en todos los grupos del ámbito y devuelve una instantánea de todos los grupos con sus miembros.
+`events` se suscribe a cambios de membresía en todos los grupos del ámbito y devuelve una instantánea que asigna cada grupo a sus miembros.
 
 ```lua
 local sub, snapshot, err = group:events()
+if err then
+    return nil, err
+end
 -- snapshot: { ["workers"] = {pid, ...}, ["all"] = {pid, ...} }
 
-local event = sub:channel():receive()
+local event, open = sub:channel():receive()
+if not open then
+    return nil, errors.new("Process-group subscription closed")
+end
 sub:close()
 ```
 
@@ -146,7 +179,7 @@ sub:close()
 
 **Permiso:** `pg.events`
 
-### Campos del Evento
+### Campos de los eventos
 
 Los eventos entregados en un canal de suscripción contienen:
 
@@ -157,7 +190,7 @@ Los eventos entregados en un canal de suscripción contienen:
 | `path` | string | El nombre del grupo |
 | `data` | table | `{Group = string, PIDs = string[]}` — los miembros afectados |
 
-Los canales de suscripción tienen buffer (capacidad 64); si un consumidor lento llena el buffer, los eventos posteriores para esa suscripción se descartan.
+Los canales de suscripción tienen búfer (capacidad 64). Si un consumidor lento llena el búfer, los eventos posteriores se conservan en orden en el buzón del proceso y se entregan cuando el consumidor vacía el canal; la suscripción se detiene en lugar de descartar eventos.
 
 ## Liberar
 
@@ -165,7 +198,7 @@ Los canales de suscripción tienen buffer (capacidad 64); si un consumidor lento
 group:release()
 ```
 
-Libera la instancia inmediatamente. Idempotente; tras la liberación, cada método devuelve un error. La limpieza también se ejecuta automáticamente cuando el proceso sale.
+`release` libera inmediatamente la instancia y es idempotente. Después de liberarla, cualquier otra operación de grupo devuelve un error. La limpieza también se ejecuta automáticamente al finalizar el frame de ejecución.
 
 **Devuelve:** `boolean`
 
@@ -178,27 +211,30 @@ Libera la instancia inmediatamente. Idempotente; tras la liberación, cada méto
 | `pg.leave` | `leave()` | nombre de grupo |
 | `pg.get_members` | `get_members()` | nombre de grupo |
 | `pg.get_local_members` | `get_local_members()` | nombre de grupo |
-| `pg.which_groups` | `which_groups()` | (ámbito) |
-| `pg.which_local_groups` | `which_local_groups()` | (ámbito) |
+| `pg.which_groups` | `which_groups()` | - |
+| `pg.which_local_groups` | `which_local_groups()` | - |
 | `pg.broadcast` | `broadcast()` | nombre de grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nombre de grupo |
 | `pg.monitor` | `monitor()` | nombre de grupo |
-| `pg.events` | `events()` | (ámbito) |
+| `pg.events` | `events()` | - |
 
 ## Errores
 
-| Condición | Tipo |
+| Condición | Clase |
 |-----------|------|
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Argumento faltante o vacío | `errors.INVALID` |
-| Ámbito no encontrado | `errors.NOT_FOUND` |
-| Salir de un grupo sin membresía | `errors.INVALID` |
+| Ámbito no encontrado | `errors.INTERNAL` |
+| Salida de un grupo sin membresía | `errors.NOT_FOUND` |
 | Instancia liberada | `errors.INVALID` |
+| Se alcanzó el límite de grupos/miembros o de la cola de acciones | `errors.RATE_LIMITED` (reintentable) |
+| Servicio detenido, contrapresión o circuito abierto | `errors.UNAVAILABLE` |
+| La difusión agotó el tiempo de espera | `errors.TIMEOUT` (reintentable) |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 
-## Ver También
+## Véase también
 
-- [Grupos de Proceso](system/process-groups.md) - Tipo de entrada de ámbito y configuración
-- [Cluster](guides/cluster.md) - Membresía y el modelo de clustering
-- [Gestión de Procesos](lua/core/process.md) - Lanzamiento y mensajería de procesos individuales
+- [Grupos de procesos](system/process-groups.md) - Tipo de entrada de ámbito y configuración
+- [Clúster](guides/cluster.md) - Membresía, nombres y modelo de clustering
+- [Gestión de procesos](lua/core/process.md) - Creación y mensajería de procesos individuales

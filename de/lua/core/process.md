@@ -1,6 +1,6 @@
 ---
 title: "Prozessverwaltung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Wippy-Prozesse starten, überwachen, verknüpfen, benachrichtigen, benennen und aktualisieren."
 ---
 
 # Prozessverwaltung
@@ -9,17 +9,22 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-Kindprozesse spawnen, überwachen und mit ihnen kommunizieren. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und Lebenszyklusverwaltung.
+Der globale Wert `process` stellt Funktionen zum Starten, Benachrichtigen, Überwachen, Verknüpfen und Benennen von Prozessen sowie zur Lebenszyklussteuerung bereit.
 
-Die globale Variable `process` ist immer verfügbar — sie erfordert kein `require()` und muss nicht in `modules:` aufgeführt werden.
+Er ist ohne `require()` verfügbar und muss nicht unter `modules:` aufgeführt werden.
+
+Diese Seite ist eine API-Referenz. Die Blöcke mit Aufrufformen verwenden Platzhalter wie `id`, `host`, `destination`, `topic` und `name` für Werte aus dem Anwendungscode; sie sind keine eigenständigen Programme. Aufrufe mit einem `err`-Ergebnis geben bei Erfolg den dokumentierten Wert und bei Fehler einen Fehlersentinel plus `error` zurück. Der Sentinel ist normalerweise `nil`; `process.set_options` gibt dagegen `false` zurück. Der Kontrollfluss der Anwendung muss den Fehler behandeln.
 
 ## Prozessinformationen
 
 Die aktuelle Frame-ID oder Prozess-ID abrufen:
 
 ```lua
-local frame_id = process.id()  -- Aufrufkettenidentifikator
-local pid = process.pid()       -- Prozess-ID
+local frame_id, err = process.id()  -- Registry ID of the current function, process, or workflow definition
+if err then return nil, err end
+
+local pid, err = process.pid()      -- Process ID
+if err then return nil, err end
 ```
 
 ## Nachrichten senden
@@ -41,16 +46,16 @@ local ok, err = process.send(destination, topic, ...)
 ## Prozesse spawnen
 
 ```lua
--- Einfaches Spawnen
+-- Basic spawn
 local pid, err = process.spawn(id, host, ...)
 
--- Mit Überwachung (EXIT-Events empfangen)
+-- With monitoring (receive EXIT events)
 local pid, err = process.spawn_monitored(id, host, ...)
 
--- Mit Linking (LINK_DOWN bei abnormalem Exit empfangen)
+-- With linking (receive LINK_DOWN on abnormal exit)
 local pid, err = process.spawn_linked(id, host, ...)
 
--- Sowohl gelinkt als auch überwacht
+-- Both linked and monitored
 local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
@@ -60,19 +65,15 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `host` | string | Host-ID (z.B. `"app:processes"`) |
 | `...` | any | Argumente, die an den gespawnten Prozess übergeben werden |
 
-**Berechtigungen:**
-- `process.spawn` auf Prozess-ID
-- `process.host` auf Host-ID
-- `process.spawn.monitored` auf Prozess-ID (für überwachte Varianten)
-- `process.spawn.linked` auf Prozess-ID (für gelinkte Varianten)
+Alle Varianten erfordern `process.spawn` auf der Prozess-ID. Überwachte Varianten erfordern zusätzlich `process.spawn.monitored`, verknüpfte Varianten `process.spawn.linked`. In Runtime v0.3.32a prüft nur die Funktion `spawn()` auf Modulebene `process.host` auf der Host-ID; die spezialisierten Varianten auf Modulebene führen diese Host-Berechtigungsprüfung nicht aus.
 
 ## Prozesssteuerung
 
 ```lua
--- Prozess zwangsweise beenden
+-- Forcefully terminate a process
 local ok, err = process.terminate(destination)
 
--- Ordnungsgemäße Kanzellierung mit optionalem Grund anfordern
+-- Request graceful cancellation with an optional reason
 local ok, err = process.cancel(destination, "shutting down")
 ```
 
@@ -88,11 +89,11 @@ local ok, err = process.cancel(destination, "shutting down")
 Einen existierenden Prozess überwachen oder linken:
 
 ```lua
--- Überwachung: EXIT-Events empfangen, wenn Ziel beendet wird
+-- Monitoring: receive EXIT events when target exits
 local ok, err = process.monitor(destination)
 local ok, err = process.unmonitor(destination)
 
--- Linking: bidirektional, LINK_DOWN bei abnormalem Exit empfangen
+-- Linking: bidirectional, receive LINK_DOWN on abnormal exit
 local ok, err = process.link(destination)
 local ok, err = process.unlink(destination)
 ```
@@ -116,15 +117,15 @@ local ok, err = process.set_options({trap_links = true})
 Channels zum Empfangen von Nachrichten und Lebenszyklusereignissen holen:
 
 ```lua
-local inbox = process.inbox()    -- Message-Objekte vom @inbox-Topic
-local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
+local inbox = process.inbox()    -- Message objects from @inbox topic
+local events = process.events()  -- Lifecycle events from @events topic
 ```
 
 ### Event-Typen
 
 | Konstante | Beschreibung |
 |-----------|--------------|
-| `process.event.CANCEL` | Kanzellierung angefordert |
+| `process.event.CANCEL` | Abbruch angefordert |
 | `process.event.EXIT` | Überwachter Prozess beendet |
 | `process.event.LINK_DOWN` | Gelinkter Prozess abnormal beendet |
 | `process.event.OUTDATED` | Der Code des Prozesses oder eine importierte Abhängigkeit hat sich in der Registry geändert |
@@ -135,20 +136,22 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 |------|-----|--------------|
 | `kind` | string | Event-Typ-Konstante |
 | `from` | string | Quell-PID |
-| `result` | any | Für EXIT: der zurückgegebene Wert (bei normalem Exit vorhanden) |
-| `error` | any | Für EXIT: der Fehler (bei abnormalem Exit vorhanden) |
-| `reason` | string | Für CANCEL: Grund der Kanzellierung |
+| `result` | table | Für EXIT/LINK_DOWN: ein Record `{value, error}`; der Rückgabewert des Prozesses steht unter `result.value`, ein Fehler unter `result.error` |
+| `reason` | string | Für CANCEL: Grund des Abbruchs |
 | `sources` | string[] | Für OUTDATED: Registry-IDs, die sich geändert haben oder transitiv betroffen sind |
 
-OUTDATED wird nur an Prozesse geliefert, die sich mit `process.set_options({upgradable = true})` dafür angemeldet haben; andere Prozesse sehen es nie. Mehrere Invalidierungen verschmelzen zu einem einzigen ausstehenden Event mit der Vereinigung der `sources`. Die vorgesehene Reaktion ist ein Hot Swap via [`process.upgrade`](#prozess-upgrade).
+`OUTDATED` wird nur an Prozesse geliefert, die sich mit `process.set_options({upgradable = true})` dafür angemeldet haben. Mehrere Invalidierungen verschmelzen zu einem ausstehenden Event mit der Vereinigung ihrer `sources`. Behandeln Sie das Event mit [`process.upgrade`](#prozess-upgrade).
 
 ## Topic-Subscription
 
 Benutzerdefinierte Topics abonnieren:
 
 ```lua
-local ch = process.listen(topic, options)
-process.unlisten(ch)
+local ch, err = process.listen(topic, options)
+if err then return nil, err end
+
+local ok, err = process.unlisten(ch)
+if err then return nil, err end
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -163,10 +166,10 @@ Beim Empfangen von inbox oder mit `{message = true}`:
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: Topic-Name
-msg:from()             -- string|nil: Absender-PID
-msg:payload()          -- Payload: Wrapper (`:data()` aufrufen zum Extrahieren)
-msg:payload():data()   -- any: tatsächlicher Payload-Wert
+msg:topic()            -- string: topic name
+msg:from()             -- string|nil: sender PID
+msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:payload():data()   -- any: actual payload value
 ```
 
 ## Synchroner Aufruf
@@ -181,15 +184,21 @@ local result, err = process.exec(id, host, ...)
 
 ## Prozess-Upgrade
 
-Den aktuellen Prozess auf eine neue Definition upgraden und dabei die PID beibehalten:
+Aktualisieren Sie den aktuellen Prozess und behalten Sie seine PID bei.
+
+Die beiden folgenden Snippets sind alternative Aufrufformen und keine aufeinanderfolgenden Operationen.
 
 ```lua
--- Auf neue Version upgraden, Zustand übergeben
+-- Upgrade to new version, passing state
 process.upgrade(id, ...)
+```
 
--- Gleiche Definition behalten, mit neuem Zustand erneut ausführen
+```lua
+-- Keep same definition, re-run with new state
 process.upgrade(nil, preserved_state)
 ```
+
+`process.upgrade` ist ein terminaler Kontrolltransfer: Die Funktion verwirft die aktuelle Ausführung und startet die angeforderte Definition mit derselben PID. Code nach dem Aufruf läuft in der alten Ausführung nicht mehr.
 
 ## Kontext-Spawner
 
@@ -220,12 +229,12 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 SpawnBuilder ist unveränderlich - jede Methode gibt eine neue Instanz zurück:
 
 ```lua
-spawner:with_context(values)      -- Kontextwerte hinzufügen
-spawner:with_actor(actor)         -- Sicherheits-Actor setzen
-spawner:with_scope(scope)         -- Sicherheits-Scope setzen
-spawner:with_name(name)           -- Prozessname setzen
-spawner:with_message(topic, ...)  -- Nachricht zum Senden nach Spawn einreihen
-spawner:with_options(options)     -- Spawn-Optionen zusammenführen (z. B. network)
+spawner:with_context(values)      -- Add context values
+spawner:with_actor(actor)         -- Set security actor
+spawner:with_scope(scope)         -- Set security scope
+spawner:with_name(name)           -- Set process name
+spawner:with_message(topic, ...)  -- Queue message to send after spawn
+spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
 
 **Berechtigung:** `process.security` auf "security" für `:with_actor()` und `:with_scope()`
@@ -239,7 +248,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-Gleiche Berechtigungen wie Modul-Level-Spawn-Funktionen.
+Alle Spawn-Methoden des `SpawnBuilder` erfordern `process.host` auf der Host-ID sowie die jeweils anwendbaren Berechtigungen `process.spawn`, `process.spawn.monitored` und `process.spawn.linked`.
 
 ### Spawner-Exec
 
@@ -256,14 +265,14 @@ Führt den Zielprozess synchron unter Kontext, Actor und Scope des Builders aus 
 Einen Prozess unter einem Namen registrieren und über diesen Namen statt seiner PID erreichen. Jede Funktion, die ein `destination` akzeptiert (`send`, `terminate`, `cancel`, `monitor`, `link`, ...), nimmt statt einer PID auch einen registrierten Namen.
 
 ```lua
-local ok, err = process.registry.register(name)               -- self, lokaler Scope
+local ok, err = process.registry.register(name)               -- self, local scope
 local pid, err = process.registry.lookup(name)
 local ok, err = process.registry.unregister(name)
 ```
 
 ### Scope
 
-Das optionale `scope`-Argument wählt die Konsistenzgarantie des Namens. Standard ist `LOCAL`. Die vier Scopes und ihre Garantien sind im [Cluster-Leitfaden](guides/cluster.md#benennung-und-namens-scopes) beschrieben; kurz gefasst:
+Das optionale Argument `scope` wählt die Konsistenzgarantie des Namens und verwendet standardmäßig `LOCAL`. Das vollständige Modell beschreibt der [Cluster-Leitfaden](guides/cluster.md#benennung-und-namens-scopes).
 
 | Konstante | Sichtbarkeit | Garantie |
 |-----------|--------------|----------|
@@ -272,7 +281,7 @@ Das optionale `scope`-Argument wählt die Konsistenzgarantie des Namens. Standar
 | `process.registry.CONSISTENT` | clusterweit | Linearisierbarer Singleton (Raft) |
 | `process.registry.STRONG` | clusterweit | Konsistent + jeder lebende Knoten bestätigt |
 
-Auf einem Einzelknoten ist nur `LOCAL` bedeutsam; die Cluster-Scopes erfordern [Clustering](guides/cluster.md).
+Auf einem Einzelknoten ist nur `LOCAL` verfügbar; Cluster-Scopes erfordern [Clustering](guides/cluster.md).
 
 ### register
 
@@ -325,7 +334,7 @@ Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 | `process.spawn` | `spawn*()` | Prozess-ID |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | Prozess-ID |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | Prozess-ID |
-| `process.host` | `spawn*()`, `exec()` | Host-ID |
+| `process.host` | `spawn()` auf Modulebene, alle Spawn-Methoden des `SpawnBuilder`, `exec()` | Host-ID |
 | `process.send` | `send()` | Ziel-PID |
 | `process.exec` | `exec()` | Prozess-ID |
 | `process.terminate` | `terminate()` | Ziel-PID |
@@ -349,9 +358,13 @@ Einige Operationen erfordern mehrere Berechtigungen:
 | Operation | Erforderliche Berechtigungen |
 |-----------|------------------------------|
 | `spawn()` | `process.spawn` + `process.host` |
-| `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
-| `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
-| `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
+| `spawn_monitored()` auf Modulebene | `process.spawn` + `process.spawn.monitored` |
+| `spawn_linked()` auf Modulebene | `process.spawn` + `process.spawn.linked` |
+| `spawn_linked_monitored()` auf Modulebene | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` |
+| `SpawnBuilder:spawn()` | `process.spawn` + `process.host` |
+| `SpawnBuilder:spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
+| `SpawnBuilder:spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
+| `SpawnBuilder:spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
 | `exec()` | `process.exec` + `process.host` |
 | Spawn mit benutzerdefiniertem Actor/Scope | Spawn-Berechtigungen + `process.security` |
 
@@ -359,11 +372,10 @@ Einige Operationen erfordern mehrere Berechtigungen:
 
 | Bedingung | Art |
 |-----------|-----|
-| Kein Kontext gefunden | `errors.INVALID` |
-| Frame-Kontext nicht gefunden | `errors.INVALID` |
+| Kein Kontext gefunden | `errors.INTERNAL` |
+| Frame-Kontext nicht gefunden | `errors.INTERNAL` |
 | Fehlende erforderliche Argumente | `errors.INVALID` |
 | Reserviertes Topic-Präfix (`@`) | `errors.INVALID` |
-| Ungültiges Dauerformat | `errors.INVALID` |
 | Name nicht registriert | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Name bereits registriert | `errors.ALREADY_EXISTS` |
@@ -372,8 +384,8 @@ Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 
 ## Siehe auch
 
-- [Channels](lua/core/channel.md) - Inter-Prozess-Kommunikation
-- [Nachrichten-Queue](lua/storage/queue.md) - Queue-basiertes Messaging
-- [Funktionen](lua/core/funcs.md) - Funktionsaufruf
-- [Supervision](guides/supervision.md) - Prozess-Lebenszyklusverwaltung
+- [Channels](lua/core/channel.md) - Koordination von Coroutinen innerhalb eines Prozesses
+- [Nachrichten-Queue](lua/storage/queue.md) - Queue-basierte Nachrichtenübermittlung
+- [Funktionen](lua/core/funcs.md) - Funktionen aufrufen
+- [Supervision](guides/supervision.md) - Prozesslebenszyklen verwalten
 - [Cluster](guides/cluster.md) - Namens-Scopes und clusterweite Benennung

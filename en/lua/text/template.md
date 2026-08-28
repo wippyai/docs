@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Render Jet templates from configured template sets."
 ---
 
 # Template Engine
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-Render dynamic content using the [Jet template engine](https://github.com/CloudyKit/jet). Build HTML pages, emails, and documents with template inheritance and includes.
+The `templates` module renders [Jet](https://github.com/CloudyKit/jet) templates from configured sets. Templates can use inheritance and includes. This page is an API reference with isolated rendering examples, not a standalone template deployment. The registry IDs and template sources must already be configured, and the executable entry must enable `templates` and have `template.get` permission for the requested set.
 
 For template set configuration, see [Template Engine](system/template.md).
 
@@ -18,9 +18,9 @@ For template set configuration, see [Template Engine](system/template.md).
 local templates = require("templates")
 ```
 
-## Acquiring Template Sets
+## `templates.get`
 
-Get a template set by registry ID to start rendering:
+Acquire a template set by registry ID:
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -30,7 +30,7 @@ end
 
 -- Use the set...
 
-set:release()
+return set:release()
 ```
 
 | Parameter | Type | Description |
@@ -39,26 +39,30 @@ set:release()
 
 **Returns:** `Set, error`
 
-## Rendering Templates
+## `set:render`
 
 Render a template by name with data:
 
 ```lua
-local set = templates.get("app.views:emails")
+local set, get_err = templates.get("app.views:emails")
+if get_err then
+    return nil, get_err
+end
 
 local html, err = set:render("welcome", {
     user = {name = "Alice", email = "alice@example.com"},
-    activation_url = "https://example.com/activate?token=abc"
+    activation_url = "https://example.invalid/activate"
 })
 
+set:release()
 if err then
-    set:release()
     return nil, err
 end
 
-set:release()
 return html
 ```
+
+The caller owns every acquired set until `release()` is called. Release it after the final render, including checked error paths; repeated releases are safe. Rendering does not make application-provided values safe for every output context. Keep secrets and one-time URLs out of logs, and apply the escaping or sanitization required where the rendered string is consumed.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -67,7 +71,9 @@ return html
 
 **Returns:** `string, error`
 
-## Set Methods
+## Set Method Summary
+
+The set handle provides these methods:
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -76,7 +82,7 @@ return html
 
 ## Jet Syntax Reference
 
-Jet uses `{{ }}` for expressions and control structures, `{* *}` for comments.
+Jet uses `{{ }}` for expressions and control structures and `{* *}` for comments.
 
 ### Variables
 
@@ -140,8 +146,9 @@ Jet uses `{{ }}` for expressions and control structures, `{* *}` for comments.
 | Empty ID | `errors.INVALID` | no |
 | Empty template name | `errors.INVALID` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
+| Template set missing, unavailable, or wrong resource type | `errors.INTERNAL` | no |
 | Template not found | `errors.NOT_FOUND` | no |
 | Render error | `errors.INTERNAL` | no |
-| Set already released | `errors.INTERNAL` | no |
+| Render attempted after the set was released | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

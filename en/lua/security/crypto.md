@@ -1,6 +1,6 @@
 ---
 title: "Encryption & Signing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Generate random values, authenticate data, encrypt content, verify JWTs, and derive keys."
 ---
 
 # Encryption & Signing
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Cryptographic operations including encryption, HMAC, JWT, and key derivation. Adapted for workflows.
+The `crypto` module generates random values, computes HMACs, encrypts and decrypts data, encodes and verifies JWTs, and derives keys. In deterministic workflows, random generation and encryption (which creates a random nonce) run as recorded side effects; replay returns the recorded bytes. Other operations, including HMAC, decryption, JWT processing, PBKDF2, and comparison, run directly.
+
+This page is an API reference. Each code block is an isolated call, not a complete key-management or authentication system. Names such as `data`, `key`, `aad`, `payload`, and `token` are application-provided values. Load keys and passwords through the application's secret-management boundary; do not hard-code, log, or return them in diagnostics. Before consuming any `value, error` result shown here, propagate or handle the error.
 
 ## Loading
 
@@ -40,10 +42,12 @@ local str, err = crypto.random.string(32, "0123456789abcdef")
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `length` | integer | String length (1 to 1,048,576) |
-| `charset` | string? | Characters to use (default: alphanumeric) |
+| `length` | integer | Output length in bytes (1 to 1,048,576) |
+| `charset` | string? | ASCII byte alphabet to use (default: alphanumeric) |
 
 **Returns:** `string, error`
+
+The implementation selects bytes from the supplied alphabet. A non-ASCII alphabet can be split into invalid UTF-8, and modulo selection is exactly uniform only when the alphabet's byte length divides 256. For uniformly random secret material, use `crypto.random.bytes` and encode the result for the required transport format.
 
 ### Random UUID
 
@@ -98,6 +102,8 @@ local encrypted, err = crypto.encrypt.aes(data, key, aad)
 
 **Returns:** `string, error` (nonce prepended)
 
+Both encryption functions generate a nonce and prepend it to the ciphertext. Do not remove or reuse it, and use the same AAD during decryption. Ciphertext is not a secret-free log value: it can expose length and correlation information.
+
 ### ChaCha20-Poly1305 {id="encrypt-chacha20"}
 
 ```lua
@@ -111,7 +117,7 @@ local encrypted, err = crypto.encrypt.chacha20(data, key, aad)
 | `key` | string | Must be 32 bytes |
 | `aad` | string? | Additional authenticated data |
 
-**Returns:** `string, error`
+**Returns:** `string, error` (nonce prepended)
 
 ## Decryption
 
@@ -163,6 +169,8 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 
 **Returns:** `string, error`
 
+Pass only one of the documented algorithm names. At this runtime pin, an unsupported value passed to `encode` falls back to HS256 instead of returning an error. Validate any configurable algorithm before this call, and do not copy untrusted fields into `_header`; in particular, do not let input override reserved JWT headers such as `alg`.
+
 ### Verify
 
 ```lua
@@ -176,9 +184,13 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | JWT token to verify |
 | `key` | string | Secret (HMAC) or PEM public key (RSA) |
 | `alg` | string? | Expected algorithm (default: HS256) |
-| `require_exp` | boolean? | Validate expiration (default: true) |
+| `require_exp` | boolean? | Require an `exp` claim (default: true) |
 
 **Returns:** `table, error`
+
+Whenever present, `exp` and `nbf` are validated against the JWT library's current wall clock, not the workflow time reference. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present. Do not use either time-dependent result for replay-sensitive workflow control; perform the check in an activity or validate time against an explicitly replay-safe value.
+
+Always pass the algorithm expected by the issuer; verification restricts the token to that exact method. Treat returned claims as authenticated data, not automatically authorized application input, and still validate issuer, audience, subject, and application-specific constraints.
 
 ## Key Derivation
 
@@ -199,6 +211,8 @@ local key, err = crypto.pbkdf2(password, salt, iterations, key_length, "sha512")
 
 **Returns:** `string, error`
 
+The derived key is raw bytes. Use a fresh random salt for each stored password verifier and store the salt and work-factor parameters alongside the verifier; the salt need not be secret. Do not use a fixed example salt for production password storage.
+
 ## Utility
 
 ### Constant-Time Compare
@@ -213,6 +227,8 @@ local equal = crypto.constant_time_compare(a, b)
 | `b` | string | Second string |
 
 **Returns:** `boolean`
+
+The result is `false` when lengths differ. The underlying constant-time comparison guarantee applies to equal-length inputs, so compare fixed-length digests or other same-length secrets.
 
 ## Errors
 

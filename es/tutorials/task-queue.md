@@ -1,11 +1,13 @@
 ---
 title: "Cola de Tareas"
-description: "Construya una API REST que encola tareas para procesamiento en background con persistencia en base de datos."
+description: "Crea una API REST que pone tareas en cola para procesarlas en segundo plano con persistencia en base de datos."
 ---
 
 # Cola de Tareas
 
-Construya una API REST que encola tareas para procesamiento en background con persistencia en base de datos.
+Crea una API REST que publica tareas en una cola en memoria, las procesa en workers en segundo plano y almacena los resultados completados en SQLite.
+
+**Clasificación:** tutorial ejecutable. La página proporciona el registro completo, las fuentes Lua, los comandos de inicio y las comprobaciones HTTP para una demostración local de un solo nodo.
 
 ## Resumen
 
@@ -19,21 +21,21 @@ Este tutorial crea una API de gestión de tareas demostrando:
 
 ```mermaid
 flowchart LR
-    subgraph api["Servidor HTTP"]
+    subgraph api["HTTP Server"]
         POST["/tasks POST"]
         GET["/tasks GET"]
     end
 
-    subgraph queue["Cola"]
-        Q[("cola de tareas")]
+    subgraph queue["Queue"]
+        Q[("tasks queue")]
     end
 
     subgraph workers["Workers"]
-        W1["Consumidor 1"]
-        W2["Consumidor 2"]
+        W1["Consumer 1"]
+        W2["Consumer 2"]
     end
 
-    subgraph storage["Almacenamiento"]
+    subgraph storage["Storage"]
         DB[(SQLite)]
     end
 
@@ -45,11 +47,24 @@ flowchart LR
     GET -->|SELECT| DB
 ```
 
+## Requisitos previos
+
+- Entorno de ejecución Wippy `v0.3.32a`.
+- `curl` u otro cliente HTTP.
+- Un directorio de trabajo vacío. Crea el proyecto y el directorio de fuentes antes de añadir los archivos siguientes:
+
+  ```bash
+  mkdir task-queue
+  cd task-queue
+  mkdir src
+  ```
+
 ## Estructura del Proyecto
 
 ```
 task-queue/
 ├── wippy.lock
+├── data/                    # created before startup
 └── src/
     ├── _index.yaml
     ├── migrate.lua
@@ -67,25 +82,36 @@ version: "1.0"
 namespace: app
 
 entries:
-  # Base de datos SQLite
+  # Capabilities used by the tutorial's Lua entries in strict mode
+  - name: runtime_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
+  # SQLite database
   - name: db
     kind: db.sql.sqlite
     file: "./data/tasks.db"
     lifecycle:
       auto_start: true
 
-  # Driver de cola en memoria
+  # Memory queue driver
   - name: queue_driver
     kind: queue.driver.memory
     lifecycle:
       auto_start: true
 
-  # Cola de tareas
+  # Tasks queue
   - name: tasks_queue
     kind: queue.queue
     driver: app:queue_driver
 
-  # Servidor HTTP
+  # HTTP server
   - name: gateway
     kind: http.service
     addr: ":8080"
@@ -98,7 +124,7 @@ entries:
     meta:
       server: app:gateway
 
-  # Proceso de migración (ejecuta una vez, termina)
+  # Migration process (runs once, exits)
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -106,8 +132,13 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: app:migrate
+      policies:
+        - app:runtime_policy
 
-  # Servicio de migración (auto-inicia, termina al éxito)
+  # Migration service (auto-starts, exits on success)
   - name: migrate-service
     kind: process.service
     process: app:migrate
@@ -121,7 +152,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Manejadores de API
+  # API handlers
   - name: create_task
     kind: function.lua
     source: file://create_task.lua
@@ -130,6 +161,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: app:create_task
+      policies:
+        - app:runtime_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,8 +174,13 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: app:list_tasks
+      policies:
+        - app:runtime_policy
 
-  # Worker de cola
+  # Queue worker
   - name: process_task
     kind: function.lua
     source: file://process_task.lua
@@ -148,6 +189,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: app:process_task
+      policies:
+        - app:runtime_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -166,7 +212,7 @@ entries:
     path: /tasks
     func: app:list_tasks
 
-  # Consumidor de cola
+  # Queue consumer
   - name: task_consumer
     kind: queue.consumer
     queue: app:tasks_queue
@@ -189,7 +235,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -207,7 +253,7 @@ local function main()
 
     if exec_err then
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
     logger:info("migration complete")
@@ -218,7 +264,7 @@ return { main = main }
 ```
 
 <tip>
-Retornar 0 señala éxito. El supervisor no reiniciará un proceso que termina normalmente con código 0.
+Un retorno normal termina el hijo de un `process.service` sin reiniciarlo; el supervisor solo reintenta cuando el proceso genera un error. Devolver `0` también se traduce en un estado de salida correcto si el mismo proceso se inicia como comando CLI.
 </tip>
 
 ## Endpoint Crear Tarea
@@ -237,13 +283,13 @@ local function handler()
     local body, parse_err = req:body_json()
     if parse_err then
         res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "JSON inválido"})
+        res:write_json({error = "invalid JSON"})
         return
     end
 
     if not body.action then
         res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "action requerido"})
+        res:write_json({error = "action required"})
         return
     end
 
@@ -258,7 +304,7 @@ local function handler()
     local ok, err = queue.publish("app:tasks_queue", task)
     if err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "falló al encolar tarea"})
+        res:write_json({error = "failed to queue task"})
         return
     end
 
@@ -287,7 +333,7 @@ local function handler()
     local db, db_err = sql.get("app:db")
     if db_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "base de datos no disponible"})
+        res:write_json({error = "database unavailable"})
         return
     end
 
@@ -307,7 +353,7 @@ local function handler()
 
     if query_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({error = "query falló"})
+        res:write_json({error = "query failed"})
         return
     end
 
@@ -377,32 +423,43 @@ El consumidor hace auto-ack cuando el handler retorna normalmente y auto-nack cu
 
 ## Ejecutando el Servicio
 
-Inicializar y ejecutar:
+Crea el directorio de datos, inicializa el proyecto e inicia el entorno de ejecución:
 
 ```bash
-mkdir -p data
+mkdir data
 wippy init
 wippy run
 ```
 
-Probar la API:
+Mantén el entorno de ejecución activo mientras utilizas un segundo terminal para las comprobaciones HTTP. Espera hasta que los logs indiquen que el servicio HTTP escucha y que terminó la migración; la migración de una sola ejecución y el servicio HTTP se inician de forma independiente durante el arranque.
+
+Envía una tarea y consulta su resultado:
 
 ```bash
-# Crear una tarea
+# Create a task
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"action": "uppercase", "data": {"text": "hello world"}}'
 
-# Respuesta: {"id": "550e8400-...", "status": "queued"}
+# Response: {"id":"<generated-uuid>","status":"queued"}
 
-# Esperar un momento para procesamiento, luego listar tareas
+# Wait a moment for processing, then list tasks
 curl http://localhost:8080/tasks
 
-# Respuesta: {"tasks": [...], "count": 1}
+# Response includes one completed task and "count":1
 
-# Filtrar por status
+# Filter by status
 curl "http://localhost:8080/tasks?status=completed"
 ```
+
+La fila devuelta debe tener `status: "completed"`; su campo `result` es una cadena JSON que contiene `{"output":"HELLO WORLD"}`. La cola en memoria no es duradera de forma intencionada, pero las filas completadas sobreviven a los reinicios en `data/tasks.db`.
+
+## Solución de problemas y limpieza
+
+- `no such table: tasks` significa que la solicitud llegó a SQLite antes de que terminara la migración. Espera a `migration complete` y vuelve a intentarlo. Un error de migración detiene el servicio de migración y aparece en los logs del entorno de ejecución.
+- `failed to queue task` suele significar que `app:queue_driver` o `app:task_consumer` no se inició. Busca el primer error de recurso en los logs de inicio en lugar de volver a intentar la solicitud.
+- `address already in use` significa que otro proceso utiliza el puerto 8080. Deténlo o cambia `app:gateway.addr` y utiliza el mismo puerto en los comandos `curl`.
+- Detén el entorno de ejecución con Ctrl+C. Elimina `data/tasks.db` para restablecer los datos del tutorial; el siguiente inicio vuelve a crear el esquema.
 
 ## Flujo de Mensajes
 
@@ -413,7 +470,7 @@ curl "http://localhost:8080/tasks?status=completed"
 
 ## Siguientes Pasos
 
-- [Módulo HTTP](lua/http/http.md) - Manejo de request/response
-- [Módulo Queue](lua/storage/queue.md) - Operaciones de cola de mensajes
-- [Módulo SQL](lua/storage/sql.md) - Acceso a base de datos
-- [Consumidores de Cola](guides/queue-consumers.md) - Configuración de colas
+- [Módulo HTTP](lua/http/http.md) — Gestión de solicitudes y respuestas
+- [Módulo Queue](lua/storage/queue.md) — Operaciones de cola de mensajes
+- [Módulo SQL](lua/storage/sql.md) — Acceso a bases de datos
+- [Consumidores de cola](guides/queue-consumers.md) — Configuración de colas

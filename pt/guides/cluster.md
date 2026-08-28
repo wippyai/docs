@@ -1,13 +1,13 @@
 ---
 title: "Cluster"
-description: "O Wippy executa como um único nó por padrão. Habilitar o cluster transforma um conjunto de nós em um sistema coordenado que compartilha associação,…"
+description: "Configure nós Wippy para associação por gossip, consenso Raft limitado, nomes de processos, locks distribuídos e grupos de processos."
 ---
 
 # Cluster
 
 O Wippy executa como um único nó por padrão. Habilitar o cluster transforma um conjunto de nós em um sistema coordenado que compartilha associação, nomes de processo em todo o cluster, locks distribuídos e mensagens de grupos de processos sobre um núcleo de consenso Raft limitado.
 
-O clustering está desativado até que você defina `cluster.enabled: true`. Tudo abaixo é inativo em um único nó.
+O clustering permanece desabilitado até que `cluster.enabled` seja definido como `true`.
 
 ## O que o clustering oferece
 
@@ -28,7 +28,7 @@ Tornar cada nó um peer Raft escala mal: o leader replica cada entrada de log pa
 | **Standby** | até 4 (`max_standbys`) | sim | sim | não |
 | **Client** | ilimitado | não | não | não |
 
-- **Voters** formam o quórum. Escritas são confirmadas quando a maioria dos voters as reconhece. O número de voters é sempre ímpar para que a maioria seja bem definida.
+- **Voters** formam o quórum. Escritas são confirmadas quando a maioria dos voters as reconhece. `max_voters` é normalizado para um limite ímpar (padrão 5). Com pelo menos três nós elegíveis, o reconciliador também escolhe uma quantidade ímpar de voters. Com dois nós elegíveis e um limite maior que um, ambos são voters; `max_voters: 1` mantém um único voter.
 - **Standbys** são membros não-votantes mantidos totalmente replicados e prontos. Quando um voter parte, o leader promove o standby de maior rank para o slot de voter vago, de modo que o quórum se recupera sem esperar que um nó novo se atualize.
 - **Clients** são todos os nós além de `voters + standbys`. Eles não estão na configuração Raft, portanto o leader nunca lhes envia entradas de log. Participam do gossip e roteiam escritas para um membro Raft. Isso mantém o CPU do leader ocioso constante (O(1)) independentemente do tamanho do cluster.
 
@@ -56,6 +56,11 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+  internode:
+    identity_key_file: /etc/wippy/node-2.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
 ```
 
 O primeiro nó não precisa de `join_addrs` — ele inicia como seed. Joins são tentados com backoff, e um nó que se encontra isolado periodicamente tenta rejoinar, de modo que um nó reiniciado com um novo IP (comum no Kubernetes) converge rapidamente.
@@ -67,6 +72,8 @@ cluster:
   membership:
     secret_file: /etc/wippy/cluster.key
 ```
+
+A chave do gossip protege o tráfego de associação. As conexões TCP internó usam uma identidade Ed25519 separada. Cada nó do cluster precisa fornecer `internode.identity_key` ou `internode.identity_key_file`, e `trusted_peer_keys` deve conter a chave pública correspondente do nó local e de cada peer ao qual ele pode se conectar. `identity_key` contém uma seed de 32 bytes ou uma chave privada de 64 bytes codificada em base64; os valores dos peers confiáveis são chaves públicas codificadas em base64. Dê a cada nó sua própria chave privada e distribua o mesmo mapa de chaves públicas confiáveis a todos os nós.
 
 Mudanças de associação (`NodeJoined`, `NodeLeft`, `NodeUpdated`) são os eventos que impulsionam o bootstrap do Raft, reconciliação de voters, sincronização de grupos de processos e limpeza automática de nomes pertencentes a um nó que partiu.
 
@@ -90,7 +97,7 @@ O estado do Raft é **durável em disco por padrão**: logs e snapshots são per
 
 O Raft não abre sua própria porta de escuta. Ele usa a **malha internós** — as mesmas conexões TCP usadas para tráfego de relay entre nós — multiplexada com yamux. A porta internós é selecionada automaticamente no boot (faixa 7950-7959, depois efêmera), fixada e anunciada via gossip para que os peers possam alcançá-la. A única porta que você normalmente expõe é a porta gossip.
 
-A máquina de estados Raft mantém o registro global de nomes: vínculos ativos `nome -> PID` mais reservas strong em andamento. É isso que os primitivos de nomeação abaixo leem e escrevem.
+A máquina de estados Raft mantém o registro global de nomes: vínculos ativos `name -> PID` e reservas strong em andamento. É isso que os primitivos de nomeação abaixo leem e escrevem.
 
 ## Nomeação e escopos de nome
 
@@ -108,7 +115,7 @@ Como escolher:
 - **Local** — nomes significativos apenas em um nó (um helper por nó). Liberado no momento em que o processo sai. Custo zero.
 - **Eventual** — nomes de serviço, grupo e presença em todo o cluster onde uma janela breve de stale é aceitável. O conjunto de vínculos é totalmente replicado em cada nó, então serve a um espaço de nomes limitado — não a um nome por entidade de alta cardinalidade como um processo por sessão (endereça esses diretamente por PID). Quando duas origens registram o mesmo nome, a resolução de conflitos escolhe um vencedor e o processo perdedor recebe um evento de cancelamento (`process.event.CANCEL`) com o motivo `name revoked: <name>`; ele continua executando e pode se re-registrar. Nomes são liberados quando o nó proprietário parte.
 - **Consistent** — a escolha padrão para singletons nomeados em todo o cluster. First-write-wins: um segundo registro do mesmo nome para um PID diferente falha com "already exists" e retorna o proprietário atual. Escritas precisam de quórum, então ficam paradas em uma partição minoritária. Leituras vêm da réplica Raft local e podem atrasar uma escrita por alguns milissegundos.
-- **Strong** — o pequeno conjunto de singletons de plano de controle onde até uma leitura stale momentânea é perigosa. Além da garantia Consistent, o registro abre uma reserva que todos os nós ativos devem reconhecer antes que o nome se torne autoritativo; qualquer nó que já detenha um vínculo conflitante o rejeita imediatamente. Se o prazo passar antes de todos os nós confirmarem, o registro expira e reporta quais nós estavam faltando. Esta é a base para [locks distribuídos](#locks-distribuídos).
+- **Strong** — o pequeno conjunto de singletons de plano de controle onde até uma leitura stale momentânea é perigosa. Além da garantia Consistent, o registro abre uma reserva que todos os nós ativos devem reconhecer antes que o nome se torne autoritativo; qualquer nó que já detenha um vínculo conflitante o rejeita imediatamente. Se o prazo passar antes de todos os nós confirmarem, o registro expira e reporta quais nós estavam faltando.
 
 Nomes são liberados automaticamente: Local na saída do processo; Consistent e Strong na saída do processo (via monitoramento de topologia) e na partida do nó; Eventual na partida do nó. A resolução para mensagens (`process.send`, `process.terminate` e similares) consulta os planos em ordem — Consistent, depois Eventual, depois Local — de modo que um nome Consistent ofusca um Eventual com a mesma string.
 
@@ -124,21 +131,31 @@ Veja [Grupos de Processos](lua/core/pg.md) para a API Lua e o [tipo de entrada `
 
 ## Locks distribuídos
 
-`system.lock` é exclusão mútua em todo o cluster construída diretamente sobre o escopo Strong de nomes. Adquirir um lock registra seu nome sob escopo Strong, de propriedade do processo chamador; liberar cancela o registro. Como Strong requer que todos os nós ativos reconheçam, no máximo um detentor pode existir em todo o cluster.
+`system.lock` implementa exclusão mútua em todo o cluster por meio de uma escrita condicional linearizável pelo Raft no armazenamento chave-valor compartilhado. Adquirir um lock executa um set-if-absent do PID do detentor em `_sys:lock:<name>`; liberar exclui essa entrada se ela ainda pertencer ao chamador. Como a escrita condicional passa pelo Raft — encaminhando ao leader as escritas feitas fora dele —, ela é linearizável e permite no máximo um detentor em todo o cluster.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- seção crítica: apenas um detentor em todo o cluster
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
-A aquisição é fail-fast (não bloqueante): se o lock está mantido, retorna imediatamente, então os chamadores adicionam seu próprio retry/backoff. O lock é liberado automaticamente se o processo detentor sair ou seu nó partir, portanto a limpeza é automática. Veja a referência do [System](lua/system/system.md) para as assinaturas exatas.
+A aquisição é fail-fast (não bloqueante): se o lock estiver mantido, retorna imediatamente; portanto, os chamadores implementam retry e backoff. O lock é liberado se o processo detentor sair ou se seu nó deixar o cluster. Consulte a referência de [System](lua/system/system.md) para ver as assinaturas exatas.
 
 ## Configuração
 
-A referência completa chave a chave está em [Configuração](guides/configuration.md#cluster). As formas mínimas:
+Consulte [Configuração](guides/configuration.md#cluster) para conhecer as configurações relacionadas ao cluster. Estas formas mínimas incluem as configurações obrigatórias de identidade internó.
+
+Estes são fragmentos de configuração, não um manifesto completo de implantação. Substitua nomes de nós, endereços, domínios de falha, caminhos e cada placeholder de identidade `${env:...}` por valores gerados e distribuídos para seu próprio cluster.
 
 Nó único (desenvolvimento):
 
@@ -146,6 +163,10 @@ Nó único (desenvolvimento):
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -160,6 +181,12 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
 ```
@@ -172,6 +199,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```

@@ -1,6 +1,6 @@
 ---
 title: "Protokollierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Strukturierte Log-Nachrichten schreiben und Child-Logger mit persistentem Kontext erstellen."
 ---
 
 # Protokollierung
@@ -9,7 +9,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
-Strukturierte Protokollierung mit debug, info, warn und error Levels.
+Das Modul `logger` schreibt strukturierte Nachrichten auf den Stufen Debug, Info, Warn und Error.
+
+Diese Seite ist eine API-Referenz. Jeder Ausschnitt ist eine einzelne Logging-Operation und setzt einen Ausführungskontext mit der gewünschten Logger-Konfiguration voraus.
+
+Log-Aufrufe geben keine Werte zurück. Sofern der Ausführungskontext sie bereitstellt, ergänzt jeder Aufruf außerdem die Prozess-`pid` und die aus dem aktuellen Frame abgeleitete `location`.
 
 ## Laden
 
@@ -19,40 +23,33 @@ local logger = require("logger")
 
 ## Log-Levels
 
-### Debug
+### `logger:debug`
+
+Schreibt eine Nachricht der Stufe Debug.
 
 ```lua
 logger:debug("message", {key = "value"})
 ```
 
-| Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
-| `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
+### `logger:info`
 
-### Info
+Schreibt eine Nachricht der Stufe Info.
 
 ```lua
 logger:info("message", {key = "value"})
 ```
 
-| Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
-| `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
+### `logger:warn`
 
-### Warn
+Schreibt eine Nachricht der Stufe Warn.
 
 ```lua
 logger:warn("message", {key = "value"})
 ```
 
-| Parameter | Typ | Beschreibung |
-|-----------|------|-------------|
-| `message` | string | Log-Nachricht |
-| `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
+### `logger:error`
 
-### Error
+Schreibt eine Nachricht der Stufe Error.
 
 ```lua
 logger:error("message", {key = "value"})
@@ -63,15 +60,22 @@ logger:error("message", {key = "value"})
 | `message` | string | Log-Nachricht |
 | `fields` | table? | Kontextuelle Schlüssel-Wert-Paare |
 
+Alle vier Log-Methoden akzeptieren dieselben Parameter. Nur Zeichenkettenschlüssel werden zu Feldnamen. Zeichenketten, Zahlen, Ganzzahlen, boolesche Werte, Fehler und strukturierte Lua-Werte werden in Log-Felder konvertiert; andere Schlüssel werden ignoriert.
+
+Bei `logger:error` wird ein Feld namens `error` als Fehlerfeld ausgegeben und aus der übergebenen Tabelle entfernt, bevor die übrigen Felder verarbeitet werden. Verwenden Sie diese Tabelle nicht erneut, wenn der Eintrag `error` erhalten bleiben muss.
+
 ## Logger-Anpassung
 
-### Mit Feldern
+### `logger:with`
 
 Erstellt einen Child-Logger mit persistenten Feldern.
 
 ```lua
-local child = logger:with({request_id = id})
-child:info("message")
+local function request_logger(request_id)
+    return logger:with({request_id = request_id})
+end
+
+request_logger("req-123"):info("message")
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -80,7 +84,9 @@ child:info("message")
 
 **Gibt zurück:** `Logger`
 
-### Benannter Logger
+Der ursprüngliche Logger bleibt unverändert. Child-Logger können mit weiteren Aufrufen von `with` und `named` verkettet werden.
+
+### `logger:named`
 
 Erstellt einen benannten Child-Logger.
 
@@ -95,10 +101,6 @@ named:info("message")
 
 **Gibt zurück:** `Logger`
 
-## Fehler
+Ein leerer Name löst einen Lua-Argumentfehler aus; er wird nicht als strukturierter Wert `errors.INVALID` zurückgegeben.
 
-| Bedingung | Art | Wiederholbar |
-|-----------|------|-----------|
-| Leerer Name-String | `errors.INVALID` | nein |
-
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Die Logging-Methoden geben keine strukturierten Fehler zurück. Ungültige Argumenttypen lösen Lua-Argumentfehler aus. Ist dem Ausführungskontext kein Logger zugeordnet, verwirft ein No-op-Logger die Nachricht.

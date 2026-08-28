@@ -1,11 +1,13 @@
 ---
 title: "CLI リファレンス"
-description: "Wippy ランタイムのコマンドラインインターフェース。"
+description: "Wippy CLI のコマンド、フラグ、設定の上書き、および一般的なワークフロー。"
 ---
 
 # CLI リファレンス
 
-Wippy ランタイムのコマンドラインインターフェース。
+Wippy CLI を使用して、プロジェクトの初期化、ランタイムの実行、依存関係の管理、レジストリエントリの確認、モジュールの公開を行います。
+
+これはコマンドリファレンスです。ソース、ロックファイル、レジストリエントリ、または公開メタデータを扱うコマンドの例は、既存のプロジェクトまたはモジュールを前提としています。単一のエンドツーエンドプロジェクトを示すものではありません。
 
 ## グローバルフラグ
 
@@ -13,7 +15,7 @@ Wippy ランタイムのコマンドラインインターフェース。
 
 | フラグ | 短縮形 | 説明 |
 |------|-------|-------------|
-| `--config` | | 設定ファイル、繰り返し可能。後のファイルが前のファイルを上書き (デフォルト: .wippy.yaml) |
+| `--config` | | 設定ファイル。繰り返し可能で、後のファイルが前のファイルを上書きします (デフォルト: .wippy.yaml)。`wippy publish` では別のコマンドローカルオプションが定義されます。 |
 | `--verbose` | `-v` | デバッグログを有効化 |
 | `--very-verbose` | | スタックトレース付きデバッグ |
 | `--console` | `-c` | カラフルなコンソールログ |
@@ -24,11 +26,13 @@ Wippy ランタイムのコマンドラインインターフェース。
 
 メモリ制限の優先順位: `--memory-limit` フラグ > `GOMEMLIMIT` 環境変数 > デフォルト 1GB。
 
-`--config` は複数回指定して設定ファイルを合成できます。ファイルは左から右にマージされます: 後のファイルは一致する値を上書きし、それ以外はすべて保持します。明示的に指定したファイルはすべて存在しなければなりません。`--config` なしの場合、デフォルトの `.wippy.yaml` は任意です。最初のファイルが、相対パスの解決に使われるディレクトリを決めます。設定は次の順序で適用されます: ファイル合成、次に `--profile` の選択、最後に `--set` の上書き。[設定](guides/configuration.md#config-composition)を参照してください。
+グローバルの `--config` は複数回指定して設定ファイルを合成できます。ファイルは左から右にマージされ、後のファイルが一致する値を上書きし、それ以外はすべて保持します。明示的に指定したファイルはすべて存在しなければなりません。`--config` なしの場合、デフォルトの `.wippy.yaml` は任意です。最初のファイルが、相対パスの解決に使われるディレクトリを決めます。設定は、ファイルの合成、`--profile` の選択、`--set` の上書きの順に適用されます。[設定](guides/configuration.md#config-composition)を参照してください。
+
+`wippy publish` はグローバルオプションを、コマンドローカルの `--config <dir>` オプションで置き換えます。このコマンドでは、値は繰り返し可能なランタイム設定ファイルではなく、`wippy.yaml` を含むディレクトリです。
 
 ## wippy init
 
-新しいロックファイルを作成する。
+`wippy.lock` を作成します。すでに存在する場合は、そのソースディレクトリとモジュールディレクトリの設定を更新します。このコマンドは、アプリケーションのソースファイルやレジストリエントリを生成しません。
 
 ```bash
 wippy init
@@ -46,13 +50,13 @@ wippy init --src-dir ./src --modules-dir .wippy
 ランタイムを起動するか、コマンドを実行する。
 
 ```bash
-wippy run                                   # ランタイムを起動
-wippy run list                              # 利用可能なコマンドを一覧表示
-wippy run migrate                           # 名前付きカスタムコマンドを実行
-wippy run snapshot.wapp                     # パックファイルから実行
-wippy run acme/http                         # ハブからモジュールを実行
-wippy run acme/http@1.2.3                   # 特定バージョンを実行
-wippy run --exec app:worker                 # ランタイムを起動し単一プロセスを実行
+wippy run                                   # Start runtime
+wippy run list                              # List available commands
+wippy run migrate                           # Run a named custom command
+wippy run snapshot.wapp                     # Run from pack file
+wippy run acme/http                         # Run module from hub
+wippy run acme/http@1.2.3                   # Run specific version
+wippy run --exec app:worker                 # Start runtime and execute a single process
 ```
 
 | フラグ | 短縮形 | 説明 |
@@ -74,7 +78,7 @@ wippy run --set cluster.enabled=true \
           --set cluster.raft.bootstrap_expect=3
 ```
 
-値は形に応じて変換されます: `true`/`false` はブール、整数と浮動小数点は数値、それ以外は文字列のまま（オプションが期待する場合、`5s` のような期間は解析されます）。
+値は形に応じて変換されます。`true` と `false` はブール値、整数と浮動小数点数は数値となり、それ以外は文字列のままです。期間を期待するフィールドでは、`5s` のような値が解析されます。
 
 ## wippy test
 
@@ -105,7 +109,7 @@ wippy lint --json
 wippy lint --rules
 ```
 
-全ての Lua エントリを検証: `function.lua`、`library.lua`、`process.lua`、`workflow.lua` (それらの `.bc` バリアントを含む)。
+ソースを含む `function.lua`、`library.lua`、`process.lua`、`workflow.lua` エントリを検証します。プリコンパイル済みの `.bc` エントリには解析可能なソースが含まれないため、スキップされます。
 
 | フラグ | 短縮形 | デフォルト | 説明 |
 |------|-------|---------|-------------|
@@ -142,15 +146,15 @@ wippy add acme/http@latest
 ロックファイルから依存関係をインストールする。
 
 ```bash
-wippy install                            # すべてをインストール
-wippy install acme/http                  # 特定のモジュールをインストール
-wippy install --refresh acme/http        # 特定のモジュールを再取得
+wippy install                            # Install all
+wippy install acme/http                  # Install specific module
+wippy install --refresh acme/http        # Re-fetch a specific module
 ```
 
 | フラグ | 短縮形 | デフォルト | 説明 |
 |------|-------|---------|-------------|
 | `--lock-file` | `-l` | wippy.lock | ロックファイルのパス |
-| `--refresh` | | false | 全モジュールを再取得し、キャッシュをバイパス |
+| `--refresh` | | false | 名前を指定した場合はそのモジュールを、名前を指定しない場合はロック済みの全モジュールをキャッシュを使わず再取得 |
 | `--force` | | false | `--refresh` のエイリアス |
 | `--repair` | | false | `--refresh` のエイリアス |
 | `--registry` | | | レジストリ URL |
@@ -162,9 +166,9 @@ wippy install --refresh acme/http        # 特定のモジュールを再取得
 依存関係を更新し、ロックファイルを再生成する。
 
 ```bash
-wippy update                      # 全て更新
-wippy update acme/http            # 特定のモジュールを更新
-wippy update acme/http demo/sql   # 複数を更新
+wippy update                      # Update all
+wippy update acme/http            # Update specific module
+wippy update acme/http demo/sql   # Update multiple
 ```
 
 | フラグ | 短縮形 | デフォルト | 説明 |
@@ -183,7 +187,7 @@ wippy update acme/http demo/sql   # 複数を更新
 ```bash
 wippy pack snapshot.wapp
 wippy pack release.wapp --description "Release 1.0"
-wippy pack app.wapp --embed app:assets --bytecode **
+wippy pack app.wapp --embed app:assets --bytecode "**"
 ```
 
 | フラグ | 短縮形 | 説明 |
@@ -229,7 +233,7 @@ wippy publish --dry-run
 | `--module-type` | モジュールタイプ: `library`、`application`、`agent`、または `plugin` (wippy.yaml の `type:` を上書き) |
 | `--module-display-name` | 新規作成モジュールの表示名 (`--create` のみ) |
 
-モジュールタイプは通常、`wippy.yaml` の `type:` として宣言します ([公開](guides/publishing.md#wippy-yaml)を参照)。`--module-type` は単一の公開に対してそれを上書きします。どちらも設定されていない場合、新規作成されるモジュールは非推奨警告とともにデフォルトで `application` になります。
+モジュールタイプは通常、`wippy.yaml` の `type:` として宣言します ([公開](./publishing.md#wippyyaml)を参照)。`--module-type` は単一の公開に対してそれを上書きします。どちらも設定されていない場合、新規作成されるモジュールは非推奨警告とともにデフォルトで `application` になります。
 
 ## wippy search
 
@@ -370,6 +374,13 @@ entries:
       command:
         name: migrate
         short: Run database migrations
+        security:
+          actor:
+            id: app:migrations
+          policies:
+            - app.security:migrations
+          groups:
+            - app.security:operators
     source: file://runner.lua
     method: main
     modules:
@@ -398,6 +409,9 @@ wippy run list
 | `short` | いいえ | `wippy run list` に表示される短い説明 |
 | `main` | いいえ | このエントリをデフォルトコマンドとしてマーク (単一コマンドを提供するパックやハブモジュールで自動選択される) |
 | `use_case` | いいえ | エントリポイントのカテゴリ、デフォルト `run`。`use_case: test` を宣言したエントリが `wippy test` の実行対象 |
+| `security` | いいえ | `actor`、`policies`、`groups` を含む CLI 専用のセキュリティコンテキスト |
+
+`security` ブロックは `meta.command` 内に置きます。上記の ID は例であり、ロード済みのレジストリで解決できなければなりません。このブロックが適用されるのは、ターミナルホストがそのエントリを CLI コマンドとして起動する場合だけです。通常のプロセス生成には継承されません。セキュリティメタデータが不正または解決不能な場合、コマンドは起動しません。
 
 任意のプロセスエントリ種類 (`process.lua`、`process.wasm`) が使用可能。コマンド名はロードされた全エントリ間で一意でなければならない。コマンド名の後の引数は文字列ペイロードとしてプロセスに渡される。
 
@@ -406,65 +420,66 @@ wippy run list
 ### 開発ワークフロー
 
 ```bash
-# プロジェクトを初期化
+# Initialize dependency lock metadata
 wippy init
-wippy add wippy/test wippy/llm
+wippy add wippy/test
+wippy add wippy/llm
 wippy install
 
-# エラーをチェック
+# Check for errors
 wippy lint
 
-# デバッグ出力付きで実行
+# Run with debug output
 wippy run -c -v
 
-# ローカル開発用に設定を上書き
+# Override config for local dev
 wippy run -o app:db:host=localhost -o app:db:port=5432
 ```
 
 ### 本番デプロイ
 
 ```bash
-# バイトコード付きリリースパックを作成
-wippy pack release.wapp --bytecode ** --exclude-ns test.**
+# Create release pack with bytecode
+wippy pack release.wapp --bytecode "**" --exclude-ns "test.**"
 
-# メモリ制限付きでパックから実行
+# Run from pack with memory limit
 wippy run release.wapp -m 2G
 ```
 
 ### デバッグ
 
 ```bash
-# 単一プロセスを実行
+# Execute single process
 wippy run --exec app:worker
 
-# プロファイラを有効にして実行
+# With profiler enabled
 wippy run -p -v
-# 確認: go tool pprof http://localhost:6060/debug/pprof/heap
+# Then: go tool pprof http://localhost:6060/debug/pprof/heap
 ```
 
 ### 依存関係管理
 
 ```bash
-# 新しい依存関係を追加
+# Add new dependency
 wippy add acme/http@latest
 
-# 強制的に再ダウンロード
+# Force re-download
 wippy install --force
 
-# 特定のモジュールを更新
+# Update specific module
 wippy update acme/http
 ```
 
 ### 公開
 
 ```bash
-# ハブにログイン
+# Login to hub
 wippy auth login
 
-# モジュールを検証
+# Validate module
 wippy publish --dry-run
 
-# 公開
+# Publish
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
@@ -501,5 +516,5 @@ override:
 
 ## 関連項目
 
-- [設定](guides/configuration.md) - 設定ファイルリファレンス
-- [オブザーバビリティ](guides/observability.md) - 監視とログ
+- [設定](guides/configuration.md) — 設定ファイルリファレンス
+- [オブザーバビリティ](guides/observability.md) — 監視とログ

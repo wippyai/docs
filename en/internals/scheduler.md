@@ -1,11 +1,13 @@
 ---
 title: "Scheduler"
-description: "The scheduler executes processes using a work-stealing design. Workers maintain local deques and steal from each other when idle."
+description: "How Wippy schedules process work, routes events, manages worker queues, and shuts processes down."
 ---
 
 # Scheduler
 
-The scheduler executes processes using a work-stealing design. Workers maintain local deques and steal from each other when idle.
+The scheduler executes processes on workers with local deques, inject queues, a global queue, and work stealing.
+
+This is an implementation reference. Its Go structures and diagrams describe the pinned runtime scheduler, not APIs implemented by application code.
 
 ## Process Interface
 
@@ -25,7 +27,7 @@ type Process interface {
 | `Step` | Advance state machine with incoming events, write yields to output |
 | `Close` | Release resources |
 
-The `method` parameter in `Init` specifies which entry point to invoke. A process instance can expose multiple entry points, and the caller selects which one to execute. This also serves as verification that the scheduler is initiating the process correctly.
+The `method` parameter in `Init` specifies which entry point to invoke. A process instance can expose multiple entry points, and the caller selects which one to execute.
 
 The scheduler calls `Step()` repeatedly, passing events (yield completions, messages) and collecting yields (commands to dispatch). The process writes its status and any yields to the `StepOutput` buffer.
 
@@ -40,7 +42,7 @@ type Event struct {
 
 ## Structure
 
-The scheduler spawns `GOMAXPROCS` workers by default. Each worker has a local deque for cache-friendly LIFO access and a per-worker MPSC inject queue for async completions that have affinity to that worker. A global FIFO queue handles new submissions and affinity-less re-queues. Processes are tracked by PID for message routing.
+The scheduler spawns `GOMAXPROCS` workers by default. Each worker has a local deque for cache-friendly LIFO access and a per-worker MPSC inject queue for requeued work that has affinity to that worker, including yield completions and message wakes. A global FIFO queue handles new submissions and affinity-less re-queues. Processes are tracked by PID for message routing.
 
 ## Work Finding
 
@@ -52,8 +54,8 @@ flowchart TD
     I -->|has items| IP[Pop + drain up to 16 to local]
     I -->|empty| G{Global queue?}
     G -->|has items| GP[Pop + batch transfer up to 16]
-    G -->|empty| S[Steal from random victim]
-    S --> SH[StealHalfInto victim's deque]
+    G -->|empty| S[Scan other workers from rotating start]
+    S --> SH[Steal up to half, capped at 32]
 ```
 
 Workers check sources in priority order:
@@ -61,9 +63,9 @@ Workers check sources in priority order:
 | Priority | Source | Pattern |
 |----------|--------|---------|
 | 1 | Local deque | LIFO pop, lock-free, cache-friendly |
-| 2 | Inject queue | MPSC pop of affine async completions, drain up to 16 to local |
+| 2 | Inject queue | MPSC pop of affine requeues/events, drain up to 16 to local |
 | 3 | Global queue | FIFO pop with batch transfer |
-| 4 | Other workers | Steal half from victim's deque |
+| 4 | Other workers | Scan from a rotating start index and steal up to half, capped at 32 items per attempt |
 
 When popping from the inject or global queue, workers take one item and move up to 16 more to their local deque.
 
@@ -79,9 +81,13 @@ type Deque struct {
 }
 ```
 
-The owner pushes and pops from the bottom (LIFO) without synchronization. Thieves steal from the top (FIFO) using CAS. This gives the owner cache-friendly access to recently-pushed items while distributing older work to stealers.
+The owner pushes and pops from the bottom (LIFO) without a mutex; popping the
+last item uses CAS to coordinate with thieves. Thieves steal from the top (FIFO)
+using CAS. This gives the owner cache-friendly access to recently-pushed items
+while distributing older work to stealers.
 
-`StealHalfInto` takes half the items in one CAS operation, reducing contention.
+`StealHalfInto` takes up to half the available items in one CAS operation,
+limited by the destination buffer. Worker steal attempts use a 32-item buffer.
 
 ## Adaptive Spinning
 
@@ -129,7 +135,7 @@ The scheduler implements `relay.Receiver` to route messages to processes. When `
 
 ## Shutdown
 
-On shutdown, the scheduler sends cancel events to all running processes and waits for them to complete or timeout. Workers exit once no work remains.
+On shutdown, the scheduler sends cancel events to all tracked processes and waits for them to complete or timeout. Workers exit once no work remains.
 
 ## See Also
 

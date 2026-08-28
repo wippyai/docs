@@ -1,11 +1,11 @@
 ---
 title: "Linter"
-description: "Wippy includes a built-in linter that performs type checking and static analysis on Lua code. Run it with wippy lint."
+description: "Use the built-in Lua linter for type checking, static analysis, filtering, caching, and CI output."
 ---
 
 # Linter
 
-Wippy includes a built-in linter that performs type checking and static analysis on Lua code. Run it with `wippy lint`.
+Run `wippy lint` to type-check and statically analyze Lua entries.
 
 ## Usage
 
@@ -21,10 +21,10 @@ wippy lint --summary              # Group results by error code
 
 The linter validates all Lua entry kinds:
 
-- `function.lua` - Functions
-- `library.lua` - Libraries
-- `process.lua` - Processes
-- `workflow.lua` - Workflows
+- `function.lua` — Functions
+- `library.lua` — Libraries
+- `process.lua` — Processes
+- `workflow.lua` — Workflows
 
 Bytecode entries hold compiled bytecode (fs/path/hash), not source, so they cannot be parsed or type-checked; the linter only checks source-bearing Lua entries (their `.bc` variants are skipped, though they may still appear in the total entry count).
 
@@ -87,7 +87,7 @@ modules:
   - funcs                    # bare module name
 ```
 
-Dynamic requires (`require(variable)`) are not inspected. The ambient set — modules available without declaration, such as `process` in executable kinds — is shared between the linter and the runtime, so lint-time and run-time resolution cannot drift.
+Dynamic requires (`require(variable)`) are not inspected. The linter and runtime share the ambient module set, which includes modules available without declaration, such as `process` in executable kinds.
 
 ### Lint Rule Warnings (W-series)
 
@@ -176,7 +176,7 @@ Checked 42 entries: 5 errors, 12 warnings
 
 ### JSON Format
 
-Machine-readable output for CI/CD integration:
+Machine-readable output for CI/CD processing:
 
 ```bash
 wippy lint --json
@@ -203,7 +203,7 @@ wippy lint --json
 
 ## Caching
 
-The linter caches results to speed up repeated runs. Cache keys are based on source code hash, method name, dependencies, and type system configuration.
+The linter caches results between runs. Cache keys include the source hash, method name, dependencies, and type-system configuration.
 
 Clear the cache if results seem stale:
 
@@ -211,15 +211,21 @@ Clear the cache if results seem stale:
 wippy lint --cache-reset
 ```
 
-## CI/CD Integration
+## CI Integration
 
-Use JSON output and exit codes for automated checks:
+In table and summary modes, the command exits non-zero when the filtered result contains errors. Warnings and hints do not affect the exit code, even when `--level warning` or `--level hint` displays them.
+
+JSON mode is different: after successfully encoding the result, `wippy lint --json` exits with code 0 even when `error_count` is non-zero. A CI job using JSON output must parse `error_count` itself. To use the command's exit status as the gate, run a non-JSON invocation:
+
+```bash
+wippy lint --level error
+```
+
+You can produce a report separately without treating its exit status as the lint result:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
-
-The linter exits with code 0 when no errors are found, and non-zero when there are errors.
 
 Example GitHub Actions step:
 
@@ -241,10 +247,12 @@ Example GitHub Actions step:
 | `--no-color` | | false | Disable colored output |
 | `--rules` | | false | Enable lint rules (W-series style/quality checks) |
 | `--cache-reset` | | false | Clear cache before linting |
+| `--profile` | | | Apply a workspace profile from merged runtime configuration; repeat to apply profiles in order |
+| `--set` | | | Override a merged configuration value as `section.path=value`; repeat for multiple overrides |
 | `--lock-file` | `-l` | wippy.lock | Path to lock file |
 
 ## See Also
 
-- [CLI](guides/cli.md) - Full CLI reference
-- [Types](lua/types.md) - Type system documentation
-- [LSP](guides/lsp.md) - Editor integration with live diagnostics
+- [CLI](guides/cli.md) — Full CLI reference
+- [Types](lua/types.md) — Type-system documentation
+- [LSP](guides/lsp.md) — Editor integration with live diagnostics

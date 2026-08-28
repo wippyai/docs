@@ -1,6 +1,6 @@
 ---
 title: "YAML Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode Lua tables as YAML and decode YAML documents into Lua values."
 ---
 
 # YAML Encoding
@@ -9,7 +9,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Parse YAML documents into Lua tables and serialize Lua values to YAML strings.
+The `yaml` module serializes Lua tables as YAML and parses YAML documents into Lua values.
+
+This is an API reference. Output-only expressions illustrate successful encoding; examples that consume a value capture the optional second `error` return.
 
 ## Loading
 
@@ -17,11 +19,13 @@ Parse YAML documents into Lua tables and serialize Lua values to YAML strings.
 local yaml = require("yaml")
 ```
 
+Add `yaml` to the executable entry's `modules:` list before requiring it.
+
 ## Encoding
 
-### Encode Value
+### `encode`
 
-Encodes a Lua table to YAML format.
+Encode a Lua table as YAML:
 
 ```lua
 -- Simple key-value
@@ -30,10 +34,9 @@ local config = {
     port = 8080,
     debug = true
 }
-local out = yaml.encode(config)
--- name: myapp
--- port: 8080
--- debug: true
+local out, err = yaml.encode(config)
+if err then return nil, err end
+-- YAML mapping containing name, port, and debug.
 
 -- Arrays become YAML lists
 local items = {"apple", "banana", "cherry"}
@@ -65,7 +68,7 @@ yaml.encode(server)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `field_order` | string[] | Custom field ordering - fields appear in this order |
+| `field_order` | string[] | Custom field order; listed fields appear in this order |
 | `sort_unordered` | boolean | Sort fields not in `field_order` alphabetically |
 
 ```lua
@@ -78,10 +81,11 @@ local entry = {
 }
 
 -- Fields appear in specified order, remaining sorted alphabetically
-local result = yaml.encode(entry, {
+local result, encode_err = yaml.encode(entry, {
     field_order = {"name", "kind"},
     sort_unordered = true
 })
+if encode_err then return nil, encode_err end
 -- name: test
 -- kind: demo
 -- alpha: 2
@@ -99,9 +103,9 @@ yaml.encode(entry, {sort_unordered = true})
 
 ## Decoding
 
-### Decode String
+### `decode`
 
-Parses a YAML string into a Lua table.
+Parse a YAML string into a Lua value:
 
 ```lua
 -- Parse configuration
@@ -123,14 +127,16 @@ print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
 -- Parse from file content
-local content = fs.read("config.yaml")
+local fs = require("fs")
+local config_fs = assert(fs.get("app:config"))
+local content = assert(config_fs:readfile("config.yaml"))
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")
 end
 
 -- Handle mixed types
-local data = yaml.decode([[
+local data, data_err = yaml.decode([[
 name: test
 count: 42
 ratio: 3.14
@@ -139,6 +145,7 @@ tags:
   - lua
   - wippy
 ]])
+if data_err then return nil, data_err end
 print(type(data.count))    -- "number"
 print(type(data.enabled))  -- "boolean"
 print(type(data.tags))     -- "table"
@@ -148,7 +155,7 @@ print(type(data.tags))     -- "table"
 |-----------|------|-------------|
 | `data` | string | YAML string to parse |
 
-**Returns:** `any, error` - Returns table, array, string, number, or boolean depending on YAML content
+**Returns:** `any, error` — the value type depends on the YAML content
 
 ## Errors
 

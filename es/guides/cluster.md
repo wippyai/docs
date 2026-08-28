@@ -1,13 +1,13 @@
 ---
 title: "Cluster"
-description: "Wippy se ejecuta como un nodo único por defecto. Habilitar el cluster convierte un conjunto de nodos en un sistema coordinado que comparte membresía,…"
+description: "Configura nodos Wippy para membresía por gossip, consenso Raft acotado, nombres de proceso, bloqueos distribuidos y grupos de procesos."
 ---
 
 # Cluster
 
-Wippy se ejecuta como un nodo único por defecto. Habilitar el cluster convierte un conjunto de nodos en un sistema coordinado que comparte membresía, nombres de proceso a nivel de cluster, bloqueos distribuidos y mensajería de grupos de proceso sobre un núcleo de consenso Raft acotado.
+Wippy se ejecuta como un único nodo de forma predeterminada. Al habilitar el clustering, los nodos se conectan mediante membresía por gossip y un núcleo de consenso Raft acotado, con soporte para nombres de proceso en todo el cluster, bloqueos distribuidos y mensajería de grupos de procesos.
 
-El clustering está desactivado hasta que se establece `cluster.enabled: true`. Todo lo que se describe a continuación es inerte en un nodo único.
+El clustering permanece deshabilitado hasta que `cluster.enabled` se establece en `true`.
 
 ## Qué ofrece el clustering
 
@@ -28,7 +28,7 @@ Hacer que cada nodo sea un peer de Raft escala mal: el líder replica cada entra
 | **Standby** | hasta 4 (`max_standbys`) | sí | sí | no |
 | **Client** | ilimitado | no | no | no |
 
-- Los **voters** forman el quórum. Las escrituras se confirman una vez que la mayoría de los voters las reconoce. El número de voters es siempre impar para que la mayoría esté bien definida.
+- Los **voters** forman el quórum. Las escrituras se confirman una vez que la mayoría de los voters las reconoce. `max_voters` se normaliza a un límite impar (5 de forma predeterminada). Con al menos tres nodos elegibles, el reconciliador también elige una cantidad impar de voters. Con dos nodos elegibles y un límite mayor que uno, ambos son voters; `max_voters: 1` mantiene uno solo.
 - Los **standbys** son miembros no votantes mantenidos completamente replicados y en espera. Cuando un voter se va, el líder promueve el standby de mayor rango al slot abierto, de modo que el quórum se recupera sin esperar a que un nodo nuevo se ponga al día.
 - Los **clients** son todos los nodos más allá de `voters + standbys`. No están en la configuración Raft en absoluto, por lo que el líder nunca les envía entradas de log. Participan en gossip y enrutan escrituras a un miembro Raft. Esto mantiene la CPU del líder inactivo plana (O(1)) sin importar cuánto crezca el cluster.
 
@@ -38,7 +38,7 @@ Dado que los standbys y los clients pueden absorber el resto de la flota, un clu
 
 El líder ejecuta un reconciliador que, en cada cambio de membresía (con debounce de `raft.reconcile_debounce`, por defecto 2s), recalcula qué nodos deben ser voters y aplica el conjunto mínimo de operaciones de promoción/degradación. La selección es determinista — cada nodo deriva el mismo orden a partir de la misma vista de gossip — y se guía por tres sugerencias anunciadas en gossip:
 
-- `raft.eligible` — un nodo con `eligible: false` nunca es elegido como voter (usar para nodos que se desea que permanezcan como clients o standbys).
+- `raft.eligible` — un nodo con `eligible: false` queda excluido tanto de voters como de standbys y permanece fuera de Raft como client. Mantén un nodo elegible pero por debajo del corte de voters si debe servir como standby.
 - `raft.priority` — un valor menor es preferido al llenar slots de voter; los empates se rompen por ID de nodo.
 - `failure_domain` — los voters se distribuyen primero entre dominios distintos (zonas/racks), de modo que perder un dominio no pueda eliminar la mayoría de voters.
 
@@ -56,6 +56,11 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+  internode:
+    identity_key_file: /etc/wippy/node-2.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
 ```
 
 El primer nodo no necesita `join_addrs` — arranca como semilla. Las uniones se reintentan con backoff, y un nodo que se encuentra aislado intenta periódicamente reintegrarse, por lo que un nodo reiniciado con una nueva IP (común en Kubernetes) reconverge rápidamente.
@@ -68,6 +73,8 @@ cluster:
     secret_file: /etc/wippy/cluster.key
 ```
 
+La clave de gossip protege el tráfico de membresía. Las conexiones TCP internodo usan una identidad Ed25519 independiente. Cada nodo del cluster debe proporcionar `internode.identity_key` o `internode.identity_key_file`, y `trusted_peer_keys` debe contener la clave pública correspondiente al nodo local y a cada peer al que pueda conectarse. `identity_key` contiene una semilla de 32 bytes o una clave privada de 64 bytes codificada en base64; los valores de peers de confianza son claves públicas codificadas en base64. Asigna a cada nodo su propia clave privada y despliega el mismo mapa de claves públicas de confianza en todos los nodos.
+
 Los cambios de membresía (`NodeJoined`, `NodeLeft`, `NodeUpdated`) son los eventos que impulsan el bootstrap de Raft, la reconciliación de voters, la sincronización de grupos de proceso y la limpieza automática de nombres pertenecientes a un nodo que se fue.
 
 ## Bootstrap
@@ -78,7 +85,7 @@ El cluster inicial se forma por gossip, no por una lista de peers estática. Est
 |--------------------|----------------|
 | `0` | Nunca se auto-bootstrapea; solo se une a un cluster que ya existe |
 | `1` | Nodo único; se bootstrapea inmediatamente con sí mismo como único voter |
-| `N` | Espera hasta que `N` peers elegibles estén establemente visibles en gossip, luego todos derivan la misma lista de voters y forman quórum |
+| `N` | Espera hasta que `N` nodos elegibles, incluido el nodo local, sean visibles de forma estable en gossip; luego todos derivan la misma lista de voters y forman quórum |
 
 Para un bootstrap de `N` nodos, establecer el mismo `bootstrap_expect: N` en cada nodo inicial. Cada uno anuncia un estado "pre-bootstrap" en gossip; una vez que exactamente `N` peers de este tipo son visibles durante una breve ventana de estabilidad, cada nodo computa independientemente el conjunto de voters ordenado idéntico y forma el cluster. La ventana de estabilidad previene que una vista parcial y breve active el bootstrap prematuramente.
 
@@ -90,9 +97,9 @@ El estado de Raft es **persistente en disco por defecto**: los logs y snapshots 
 
 Raft no abre su propio puerto de escucha. Viaja por la **malla internodo** — las mismas conexiones TCP usadas para el tráfico de relay entre nodos — multiplexado con yamux. El puerto internodo se selecciona automáticamente al arrancar (rango 7950-7959, luego efímero), se fija y se anuncia en gossip para que los peers puedan alcanzarlo. El único puerto que normalmente se expone es el puerto de gossip.
 
-El FSM de Raft contiene el registro de nombres global: bindings activos `nombre -> PID` más reservas strong en vuelo. Eso es lo que las primitivas de naming que se describen a continuación leen y escriben.
+El FSM de Raft contiene el registro de nombres global: bindings activos `name -> PID` más reservas strong en vuelo. Eso es lo que las primitivas de naming que se describen a continuación leen y escriben.
 
-## Naming y ámbitos de nombre
+## Nomenclatura y ámbitos de nombre :id=naming-and-name-scopes
 
 Un proceso puede registrarse bajo un nombre y ser alcanzado por ese nombre en lugar de su PID raw. La decisión clave es el **ámbito**, que selecciona la garantía de consistencia. Hay cuatro ámbitos disponibles, de más barato/débil a más fuerte:
 
@@ -114,7 +121,7 @@ Los nombres se liberan automáticamente: Local al salir el proceso; Consistent y
 
 La superficie Lua para naming reside en `process.registry` (register/lookup/unregister con un ámbito) — ver la referencia de [Process](lua/core/process.md).
 
-## Grupos de proceso
+## Grupos de proceso :id=process-groups
 
 Los grupos de proceso son una facilidad de publish/subscribe y membresía consciente del cluster modelada en `pg` de Erlang. Un proceso se une a un grupo con nombre; una difusión se reparte por la malla internode a los miembros del grupo en todos los nodos, entregada en modo best-effort. Los grupos son eventualmente consistentes e independientes de Raft — usan la vista de membresía de gossip para elegir los destinatarios — por lo que siguen funcionando incluso mientras el núcleo de consenso está convergiendo.
 
@@ -122,23 +129,33 @@ Operaciones típicas: unirse/abandonar un grupo, difundir a todos los miembros (
 
 Ver [Grupos de Proceso](lua/core/pg.md) para la API Lua y el [tipo de entrada `pg.scope`](system/process-groups.md) para la configuración.
 
-## Bloqueos distribuidos
+## Bloqueos distribuidos :id=distributed-locks
 
-`system.lock` es exclusión mutua a nivel de cluster construida directamente sobre el ámbito de nombre Strong. Adquirir un bloqueo registra su nombre bajo el ámbito Strong propiedad del proceso que llama; liberarlo lo desregistra. Dado que Strong requiere que cada nodo activo reconozca, puede existir como máximo un titular en todo el cluster.
+`system.lock` es exclusión mutua a nivel de cluster construida sobre una escritura condicional linealizable por Raft en el almacén clave-valor compartido. Adquirir un bloqueo ejecuta un set-if-absent del PID titular en `_sys:lock:<name>`; liberarlo elimina la entrada si el llamador sigue siendo el titular. Como la escritura condicional pasa por Raft (las escrituras fuera del líder se reenvían al líder), es linealizable y solo puede existir un titular en todo el cluster.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- sección crítica: solo un titular en todo el cluster
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
-Acquire es fail-fast (no bloqueante): si el bloqueo está tomado, devuelve inmediatamente, por lo que los callers añaden su propio retry/backoff. El bloqueo se libera automáticamente si el proceso titular sale o su nodo se va, por lo que la limpieza es automática. Ver la referencia de [System](lua/system/system.md) para las firmas exactas.
+Acquire es fail-fast (no bloqueante): si el bloqueo está tomado, devuelve inmediatamente, por lo que los callers aportan su propia política de retry y backoff. El bloqueo se libera si el proceso titular sale o su nodo se va. Ver la referencia de [System](lua/system/system.md) para las firmas exactas.
 
 ## Configuración
 
-La referencia completa clave por clave está en [Configuración](guides/configuration.md#cluster). Las formas mínimas:
+Consulta [Configuración](guides/configuration.md#cluster) para los ajustes relacionados con el cluster. Estas formas mínimas incluyen los ajustes obligatorios de identidad internodo.
+
+Son fragmentos de configuración, no un manifiesto de despliegue completo. Sustituye nombres de nodo, direcciones, dominios de fallo, rutas y todos los placeholders de identidad `${env:...}` por valores generados y distribuidos para tu propio cluster.
 
 Nodo único (desarrollo):
 
@@ -146,6 +163,10 @@ Nodo único (desarrollo):
 cluster:
   enabled: true
   name: dev
+  internode:
+    identity_key: "${env:DEV_PRIVATE_KEY}"
+    trusted_peer_keys:
+      dev: "${env:DEV_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 1
 ```
@@ -160,6 +181,12 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-3: "${env:NODE_3_PUBLIC_KEY}"
   raft:
     bootstrap_expect: 3
 ```
@@ -172,6 +199,12 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+  internode:
+    identity_key_file: /etc/wippy/edge-7.identity
+    trusted_peer_keys:
+      node-1: "${env:NODE_1_PUBLIC_KEY}"
+      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
   raft:
     role: client
 ```
@@ -183,7 +216,7 @@ cluster:
 | Gossip (membresía) | 7946 | TCP + UDP | `cluster.membership.bind_port` |
 | Malla internodo (relay + Raft) | automático | TCP | `cluster.internode.bind_port` |
 
-No hay un puerto Raft separado — Raft se multiplexa sobre la malla internodo. El puerto internodo se asigna automáticamente y se anuncia a través de gossip, por lo que solo el puerto de gossip necesita exposición predecible.
+Raft se multiplexa sobre la malla internodo en lugar de usar un puerto separado. El puerto internodo se asigna automáticamente y se anuncia por gossip. El puerto de gossip es predecible de forma predeterminada, pero los peers también deben poder alcanzar el puerto TCP internodo anunciado por cada nodo.
 
 ## Observabilidad
 
@@ -207,7 +240,7 @@ Verificaciones de liveness incorporadas (conectadas al endpoint de liveness):
 - **raft last-contact** — un follower votante falla si no ha escuchado de un líder recientemente; un standby tolera un intervalo mucho mayor; los líderes siempre pasan.
 - **process-group broadcast** — falla si un grupo no ve tráfico de difusión durante un período prolongado, detectando un bucle de eventos bloqueado o una partición persistente.
 
-## Recuperación y modos de fallo
+## Recuperación y modos de fallo :id=recovery-and-failure-modes
 
 El estado de Raft es persistente en disco, pero la durabilidad principal del cluster sigue proviniendo de un quórum activo. Las reglas prácticas:
 
@@ -217,7 +250,7 @@ El estado de Raft es persistente en disco, pero la durabilidad principal del clu
 
 ## Ver también
 
-- [Configuración](guides/configuration.md#cluster) — cada clave de configuración del cluster
+- [Configuración](guides/configuration.md#cluster) — ajustes relacionados con el cluster
 - [Process](lua/core/process.md) — registrar y resolver procesos por nombre
 - [System](lua/system/system.md) — `system.cluster`, `system.raft`, `system.node`, `system.lock`
 - [Observabilidad](guides/observability.md) — métricas y endpoints de salud

@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Read server-side HTTP requests and build status, header, JSON, streamed, and event-stream responses."
 ---
 
 # HTTP
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-Handle HTTP requests and build responses. Access request data, route parameters, headers, and body content. Build responses with status codes, headers, and streaming support.
+The `http` module reads the current server-side request and builds its response, including headers, route data, body content, streaming output, and Server-Sent Events.
+
+This is an API reference with partial handler recipes. Names such as `id`, `data`, `token`, and application callbacks come from the surrounding handler. Request accessors generally return `value, error`, and response mutations return `error`; examples that consume a result check those errors.
 
 For server configuration, see [HTTP Server](http/server.md).
 
@@ -18,18 +20,18 @@ For server configuration, see [HTTP Server](http/server.md).
 local http = require("http")
 ```
 
+Add `http` to the executable entry's `modules:` list before requiring it. Examples using `uuid`, `fs`, or `time` require those modules separately.
+
 ## Accessing the Request
 
-Get the current HTTP request context:
+Read the current HTTP request context:
 
 ```lua
-local req = http.request()
-
--- With options
-local req = http.request({
+local req, err = http.request({
     timeout = 5000,        -- 5 second body read timeout
     max_body = 10485760    -- 10MB max body
 })
+if err then return nil, err end
 ```
 
 | Parameter | Type | Description |
@@ -41,36 +43,47 @@ local req = http.request({
 
 ## Accessing the Response
 
-Get the current HTTP response context:
+Read the current HTTP response context:
 
 ```lua
-local res = http.response()
+local res, err = http.response()
+if err then return nil, err end
 ```
 
 **Returns:** `Response, error`
 
 ## Request Methods
 
-### method
+### `method`
+
+Return the request's HTTP method.
 
 ```lua
-local method = req:method()
+local method, method_err = req:method()
+if method_err then return nil, method_err end
 
 if method == http.METHOD.GET then
     return get_resource(id)
 elseif method == http.METHOD.POST then
-    return create_resource(req:body_json())
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
+    return create_resource(data)
 elseif method == http.METHOD.PUT then
-    return update_resource(id, req:body_json())
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
+    return update_resource(id, data)
 elseif method == http.METHOD.DELETE then
     return delete_resource(id)
 end
 ```
 
-### path
+### `path`
+
+Return the request path.
 
 ```lua
-local path = req:path()
+local path, err = req:path()
+if err then return nil, err end
 print(path)  -- "/api/users/123"
 
 -- Route based on path
@@ -79,29 +92,29 @@ if path:match("^/api/") then
 end
 ```
 
-### query
+### `query`
 
-Gets a single query parameter.
+Return one query parameter:
 
 ```lua
 -- GET /search?q=hello&page=2&limit=10
-local query = req:query("q")        -- "hello"
-local page = req:query("page")      -- "2"
-local missing = req:query("foo")    -- nil
+local query, query_err = req:query("q")
+if query_err then return nil, query_err end
 
 -- With defaults
-local page = tonumber(req:query("page")) or 1
-local limit = tonumber(req:query("limit")) or 20
-local sort = req:query("sort") or "created_at"
+local page_text, page_err = req:query("page")
+if page_err then return nil, page_err end
+local page = tonumber(page_text) or 1
 ```
 
-### query_params
+### `query_params`
 
-Gets all query parameters. Multiple values for the same key are joined with commas.
+Return all query parameters. Multiple values for one key are joined with commas.
 
 ```lua
 -- GET /search?tags=lua&tags=go&active=true
-local params = req:query_params()
+local params, err = req:query_params()
+if err then return nil, err end
 -- {tags = "lua,go", active = "true"}
 
 for key, value in pairs(params) do
@@ -109,166 +122,242 @@ for key, value in pairs(params) do
 end
 ```
 
-### header
+### `header`
+
+Return one request header by name.
 
 ```lua
-local auth = req:header("Authorization")
+local uuid = require("uuid")
+
+local auth, auth_err = req:header("Authorization")
+if auth_err then return nil, auth_err end
 if not auth then
-    res:set_status(401)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.UNAUTHORIZED)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Missing authorization"})
 end
 
-local user_agent = req:header("User-Agent")
-local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
+local correlation_id, correlation_err = req:header("X-Correlation-ID")
+if correlation_err then return nil, correlation_err end
+if not correlation_id then
+    correlation_id, correlation_err = uuid.v4()
+    if correlation_err then return nil, correlation_err end
+end
 ```
 
-### content_type
+### `content_type`
 
-Gets the Content-Type header.
+Return the `Content-Type` header:
 
 ```lua
-local ct = req:content_type()  -- "application/json; charset=utf-8" or nil
+local ct, type_err = req:content_type()  -- "application/json; charset=utf-8" or nil
+if type_err then return nil, type_err end
 ```
 
-### content_length
+### `content_length`
 
-Gets the Content-Length header value.
+Return the `Content-Length` header value:
 
 ```lua
-local length = req:content_length()  -- number of bytes
+local length, length_err = req:content_length()  -- number of bytes
+if length_err then return nil, length_err end
 ```
 
-### host
+### `host`
 
-Gets the Host header.
+Return the `Host` header:
 
 ```lua
-local host = req:host()  -- "example.com:8080"
+local host, host_err = req:host()  -- "example.com:8080"
+if host_err then return nil, host_err end
 ```
 
-### param
+### `param`
 
-Gets URL route parameters (from path patterns like `/users/:id`).
+Return one route parameter from a path pattern such as `/users/:id`:
 
 ```lua
 -- Route: /users/:id/posts/:post_id
-local user_id = req:param("id")
-local post_id = req:param("post_id")
-
--- Validate parameter
-local id = req:param("id")
-if not id or not uuid.validate(id) then
-    res:set_status(400)
+local id, param_err = req:param("id")
+if param_err then return nil, param_err end
+local valid = false
+if id then
+    local validate_err
+    valid, validate_err = uuid.validate(id)
+    if validate_err then return nil, validate_err end
+end
+if not valid then
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid ID format"})
 end
 ```
 
-### params
+### `params`
 
-Gets all route parameters.
+Return all route parameters:
 
 ```lua
 -- Route: /orgs/:org/repos/:repo/issues/:issue
-local p = req:params()
+local p, err = req:params()
+if err then return nil, err end
 -- {org = "acme", repo = "widget", issue = "123"}
 
 local issue = get_issue(p.org, p.repo, p.issue)
 ```
 
-### body
+### `body`
 
-Reads the full request body as string.
+Read the full request body as a string:
 
 ```lua
-local body = req:body()
+local body, err = req:body()
+if err then return nil, err end
 
 -- Parse XML manually
-if req:is_content_type("application/xml") then
+local is_xml, type_err = req:is_content_type("application/xml")
+if type_err then return nil, type_err end
+if is_xml then
     local data = parse_xml(body)
 end
 
--- Log raw body for debugging
-logger.debug("Request body", {body = body, length = #body})
+-- Avoid logging raw request bodies; record only non-sensitive metadata.
+logger.debug("Request body read", {length = #body})
 ```
 
-### body_json
+`body()`, `body_json()`, `stream()`, and `parse_multipart()` consume the same request body. Choose one body-reading path per handler. `body()` and `body_json()` enforce the request object's timeout and size limit; `stream()` is incremental and does not apply those two options.
 
-Reads and parses body as JSON.
+### `body_json`
+
+Read and parse the request body as JSON:
 
 ```lua
 local data, err = req:body_json()
 if err then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid JSON: " .. err:message()})
 end
 
 -- Validate required fields
 if not data.name or not data.email then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Missing required fields"})
 end
 
 local user = create_user(data)
 ```
 
-### has_body
+### `has_body`
+
+Check whether the request has a body.
 
 ```lua
-if req:has_body() then
-    local data = req:body_json()
+local has_body, body_state_err = req:has_body()
+if body_state_err then return nil, body_state_err end
+if has_body then
+    local data, body_err = req:body_json()
+    if body_err then return nil, body_err end
     process(data)
 else
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Request body required"})
 end
 ```
 
-### is_content_type
+`has_body()` returns `true` only when the request has a body object and a positive `Content-Length`. A chunked request or another request with unknown length can return `false`; handlers that permit such bodies should attempt their chosen body reader and handle its error instead.
+
+### `is_content_type`
+
+Check whether the request has the specified content type.
 
 ```lua
-if not req:is_content_type("application/json") then
-    res:set_status(415)
+local is_json, type_check_err = req:is_content_type("application/json")
+if type_check_err then return nil, type_check_err end
+if not is_json then
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(415)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Content-Type must be application/json"})
 end
 ```
 
-### accepts
+### `accepts`
+
+Check whether the request accepts the specified content type.
 
 ```lua
-if req:accepts("application/json") then
-    res:write_json(data)
-elseif req:accepts("text/html") then
-    res:set_content_type("text/html")
-    res:write(render_html(data))
+local accepts_json, json_accept_err = req:accepts("application/json")
+if json_accept_err then return nil, json_accept_err end
+local accepts_html, html_accept_err = req:accepts("text/html")
+if html_accept_err then return nil, html_accept_err end
+
+if accepts_json then
+    return res:write_json(data)
+elseif accepts_html then
+    local type_err = res:set_content_type("text/html; charset=utf-8")
+    if type_err then return nil, type_err end
+    return res:write(render_html(data))
 else
-    res:set_status(406)
-    res:write_json({error = "Cannot produce acceptable response"})
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.NOT_ACCEPTABLE)
+    if status_err then return nil, status_err end
+    return res:write_json({error = "Cannot produce acceptable response"})
 end
 ```
 
-### remote_addr
+The pinned `accepts()` helper performs exact comma-separated matches plus `*/*`; it does not process media-type parameters, subtype wildcards, or quality weights, and a missing `Accept` header returns `false`. Use application-owned negotiation when those HTTP semantics matter.
+
+### `remote_addr`
+
+Return the client's remote network address.
 
 ```lua
-local addr = req:remote_addr()  -- "192.168.1.100:54321"
+local addr, addr_err = req:remote_addr()  -- "192.168.1.100:54321"
+if addr_err then return nil, addr_err end
 
--- Extract IP only
-local ip = addr:match("^([^:]+)")
+-- Extract the host from IPv4 and bracketed IPv6 addresses
+local ip = addr:match("^%[([^%]]+)%]:%d+$")
+    or addr:match("^([^:]+):%d+$")
+    or addr
 
 -- Rate limiting by IP
 if rate_limiter:is_limited(ip) then
-    res:set_status(429)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.TOO_MANY_REQUESTS)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Too many requests"})
 end
 ```
 
-### parse_multipart
+### `parse_multipart`
 
-Parses multipart form data (file uploads). Takes an optional `max_memory` integer (bytes held in memory before spilling to temp files; default 32MB).
+Parse multipart form data, including file uploads. The optional `max_memory` argument sets the number of bytes held in memory before data spills to temporary files; the default is 32 MB.
 
 ```lua
+local uuid = require("uuid")
+
 local form, err = req:parse_multipart()  -- or req:parse_multipart(8 * 1024 * 1024)
 if err then
-    res:set_status(400)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+    if status_err then return nil, status_err end
     return res:write_json({error = "Invalid form data"})
 end
 
@@ -279,17 +368,31 @@ local description = form.values.description
 -- Access uploaded files
 if form.files.avatar then
     local file = form.files.avatar[1]
-    local filename = file:name()        -- "photo.jpg"
-    local size = file:size()            -- 102400
-    local content_type = file:header("Content-Type")  -- "image/jpeg"
+    local filename, name_err = file:name()        -- untrusted client metadata
+    if name_err then return nil, name_err end
+    local size, size_err = file:size()
+    if size_err then return nil, size_err end
+    local content_type, header_err = file:header("Content-Type")  -- "image/jpeg"
+    if header_err then return nil, header_err end
 
-    -- Read file content
-    local stream = file:stream()
-    local content = stream:read(0)
-    stream:close()
+    -- Stream the upload to a configured filesystem volume
+    local fs = require("fs")
+    local uploads, fs_err = fs.get("app:avatars")
+    if fs_err then
+        return nil, fs_err
+    end
 
-    -- Save to storage
-    storage.write("avatars/" .. filename, content)
+    local stream, stream_err = file:stream()
+    if stream_err then return nil, stream_err end
+    local stored_name, id_err = uuid.v7()
+    if id_err then
+        stream:close()
+        return nil, id_err
+    end
+    local _, write_err = uploads:writefile(stored_name, stream, "wx")
+    local _, close_err = stream:close()
+    if write_err then return nil, write_err end
+    if close_err then return nil, close_err end
 end
 
 -- Handle multiple files
@@ -300,151 +403,192 @@ if form.files.documents then
 end
 ```
 
-### stream
+Multipart field values are strings when a field occurs once and arrays when it occurs repeatedly. Treat uploaded filenames and `Content-Type` values as untrusted metadata; generate the storage name and inspect the content independently when its type matters.
 
-Gets request body as a stream for large files.
+The exclusive `wx` write prevents overwriting an existing object. A failed write does not prove that the target belongs to this request, so the failure path must not remove it blindly. Applications that need cleanup after partial writes should stage uploads under an ownership-tracked temporary name and promote them only after the write succeeds.
+
+### `stream`
+
+Read the request body as a stream:
 
 ```lua
-local stream = req:stream()
+local stream, stream_err = req:stream()
+if stream_err then return nil, stream_err end
 
 -- Process in chunks
+local read_err
 while true do
-    local chunk, err = stream:read(65536)  -- 64KB chunks
-    if err or not chunk then break end
+    local chunk
+    chunk, read_err = stream:read(65536)  -- 64KB chunks
+    if read_err or not chunk then break end
     process_chunk(chunk)
 end
-stream:close()
+local _, close_err = stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 ## Response Methods
 
-### set_status
+### `set_status`
+
+Set the response status code.
+
+`set_status()` writes the status and commits the response headers immediately. Call `set_header()`, `set_content_type()`, or `set_transfer()` first; later header changes return `errors.INVALID`.
 
 ```lua
-res:set_status(200)
-res:set_status(http.STATUS.CREATED)
+local status_err = res:set_status(http.STATUS.CREATED)
+if status_err then return nil, status_err end
 
--- Common patterns
-res:set_status(201)  -- Created
-res:set_status(204)  -- No Content (for DELETE)
-res:set_status(400)  -- Bad Request
-res:set_status(401)  -- Unauthorized
-res:set_status(403)  -- Forbidden
-res:set_status(404)  -- Not Found
-res:set_status(500)  -- Internal Server Error
+-- Other common choices: 204 No Content, 400 Bad Request,
+-- 401 Unauthorized, 403 Forbidden, 404 Not Found, and 500 Internal Error.
 ```
 
-### set_header
+### `set_header`
+
+Set one response header.
 
 ```lua
-res:set_header("X-Request-ID", correlation_id)
-res:set_header("Cache-Control", "max-age=3600")
-res:set_header("X-RateLimit-Remaining", tostring(remaining))
+local request_id_err = res:set_header("X-Request-ID", correlation_id)
+if request_id_err then return nil, request_id_err end
+local cache_err = res:set_header("Cache-Control", "max-age=3600")
+if cache_err then return nil, cache_err end
+local rate_err = res:set_header("X-RateLimit-Remaining", tostring(remaining))
+if rate_err then return nil, rate_err end
 
 -- CORS headers
-res:set_header("Access-Control-Allow-Origin", "*")
-res:set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+local origin_err = res:set_header("Access-Control-Allow-Origin", "*")
+if origin_err then return nil, origin_err end
+local methods_err = res:set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+if methods_err then return nil, methods_err end
+local headers_err = res:set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+if headers_err then return nil, headers_err end
 ```
 
-### set_content_type
+### `set_content_type`
+
+Set the response content type.
 
 ```lua
-res:set_content_type("application/json")
-res:set_content_type(http.CONTENT.JSON)
-res:set_content_type("text/html; charset=utf-8")
-res:set_content_type("application/pdf")
+local type_err = res:set_content_type(http.CONTENT.JSON)
+if type_err then return nil, type_err end
+
+-- Other examples: "text/html; charset=utf-8" or "application/pdf".
 ```
 
-### write
+### `write`
 
-Writes to response body.
+Write to the response body:
 
 ```lua
-res:write("Hello, World!")
+local write_err = res:write("Hello, World!")
+if write_err then return nil, write_err end
 
 -- Build response incrementally
-res:write("<html><body>")
-res:write("<h1>Title</h1>")
-res:write("<p>Content</p>")
-res:write("</body></html>")
+for _, fragment in ipairs({
+    "<html><body>",
+    "<h1>Title</h1>",
+    "<p>Content</p>",
+    "</body></html>"
+}) do
+    local fragment_err = res:write(fragment)
+    if fragment_err then return nil, fragment_err end
+end
 ```
 
-### write_json
+### `write_json`
 
-Encodes value as JSON and writes it.
+Encode a value as JSON and write it to the response:
 
 ```lua
 -- Success response
-res:set_status(200)
-res:write_json({
+local write_err = res:write_json({
     data = users,
     total = count,
     page = page
 })
+if write_err then return nil, write_err end
 
 -- Error response
-res:set_status(400)
-res:write_json({
+local type_err = res:set_content_type(http.CONTENT.JSON)
+if type_err then return nil, type_err end
+local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+if status_err then return nil, status_err end
+local error_write_err = res:write_json({
     error = "Validation failed",
     details = {
         {field = "email", message = "Invalid format"},
         {field = "age", message = "Must be positive"}
     }
 })
+if error_write_err then return nil, error_write_err end
 ```
 
-### flush
+`write()`, `write_json()`, `flush()`, and `write_event()` also commit headers. `write_json()` sets `Content-Type: application/json` only when headers have not already been committed.
 
-Flushes buffered data to client.
+### `flush`
+
+Flush buffered response data to the client:
 
 <code-block lang="lua">
 -- Stream progress updates
 for i = 1, 100 do
-    res:write(string.format("Progress: %d%%\n", i))
-    res:flush()
-    time.sleep("100ms")
+    local write_err = res:write(string.format("Progress: %d%%\n", i))
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 </code-block>
 
-### set_transfer
+### `set_transfer`
 
-Sets transfer encoding for streaming.
+Set the transfer mode for a streaming response:
 
 ```lua
 -- Chunked transfer
-res:set_transfer(http.TRANSFER.CHUNKED)
+local transfer_err = res:set_transfer(http.TRANSFER.CHUNKED)
+if transfer_err then return nil, transfer_err end
 for chunk in get_chunks() do
-    res:write(chunk)
-    res:flush()
+    local write_err = res:write(chunk)
+    if write_err then return nil, write_err end
+    local flush_err = res:flush()
+    if flush_err then return nil, flush_err end
 end
 
 -- Server-Sent Events
-res:set_transfer(http.TRANSFER.SSE)
+local sse_err = res:set_transfer(http.TRANSFER.SSE)
+if sse_err then return nil, sse_err end
 ```
 
-### write_event
+### `write_event`
 
-Writes a Server-Sent Event.
+Write a Server-Sent Event:
 
 ```lua
 -- Real-time updates
-res:set_transfer(http.TRANSFER.SSE)
+local transfer_err = res:set_transfer(http.TRANSFER.SSE)
+if transfer_err then return nil, transfer_err end
 
-res:write_event({name = "connected", data = {client_id = client_id}})
+local connected_err = res:write_event({name = "connected", data = {client_id = client_id}})
+if connected_err then return nil, connected_err end
 
 for progress in task:progress() do
-    res:write_event({name = "progress", data = {percent = progress}})
+    local event_err = res:write_event({name = "progress", data = {percent = progress}})
+    if event_err then return nil, event_err end
 end
 
-res:write_event({name = "complete", data = {result = result}})
+local complete_err = res:write_event({name = "complete", data = {result = result}})
+if complete_err then return nil, complete_err end
 
 -- Chat messages
-res:write_event({name = "message", data = {
+local message_err = res:write_event({name = "message", data = {
     from = "alice",
     text = "Hello!",
     timestamp = time.now():unix()
 }})
+if message_err then return nil, message_err end
 ```
 
 ## Constants
@@ -518,9 +662,9 @@ http.TRANSFER.CHUNKED   -- "chunked"
 http.TRANSFER.SSE       -- "sse"
 ```
 
-### Error Types
+### Legacy Error-Type Constants
 
-Module-specific error type constants for precise error handling.
+The module exports these compatibility strings, but current request and response methods do not return them. Runtime failures use the structured `errors.*` kinds described below.
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Form/multipart parse error

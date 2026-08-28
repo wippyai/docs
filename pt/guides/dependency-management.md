@@ -1,11 +1,13 @@
 ---
-title: "Gerenciamento de Dependencias"
-description: "O Wippy utiliza um sistema de dependencias baseado em arquivo de lock. Modulos sao publicados no hub, declarados como dependencias no seu codigo-fonte…"
+title: "Gerenciamento de Dependências"
+description: "Declare, resolva, instale, atualize, substitua e verifique dependências de módulos Wippy com um arquivo de lock."
 ---
 
-# Gerenciamento de Dependencias
+# Gerenciamento de Dependências
 
-O Wippy utiliza um sistema de dependencias baseado em arquivo de lock. Modulos sao publicados no hub, declarados como dependencias no seu codigo-fonte e resolvidos em um arquivo `wippy.lock` que rastreia versoes exatas.
+O Wippy resolve dependências de módulos a partir das declarações no código-fonte e registra versões exatas em `wippy.lock`. Os módulos publicados são baixados do Hub para o diretório de módulos do projeto.
+
+Os nomes de módulos `acme/*`, versões, hashes e caminhos locais abaixo são ilustrativos. Substitua-os por módulos e digests verificados do seu projeto ou do Hub.
 
 ## Arquivos do Projeto
 
@@ -114,9 +116,9 @@ Cria um `wippy.lock` com diretorios padrao.
 ### Adicionando Dependencias
 
 ```bash
-wippy add acme/http               # Versao mais recente
-wippy add acme/http@1.2.3         # Versao exata
-wippy add acme/http@latest         # Label latest
+wippy add acme/http               # Latest version
+wippy add acme/http@1.2.3         # Exact version
+wippy add acme/http@latest         # Latest label
 ```
 
 Isso atualiza o arquivo de lock. Em seguida, instale:
@@ -138,9 +140,9 @@ Isso escaneia seu diretorio de codigo-fonte, resolve todas as restricoes de depe
 ### Atualizando Dependencias
 
 ```bash
-wippy update                       # Resolve novamente todas as dependencias
-wippy update acme/http             # Atualiza apenas acme/http
-wippy update acme/http acme/sql    # Atualiza modulos especificos
+wippy update                       # Re-resolve all dependencies
+wippy update acme/http             # Update only acme/http
+wippy update acme/http acme/sql    # Update specific modules
 ```
 
 Ao atualizar modulos especificos, os demais modulos permanecem fixados em suas versoes atuais. Se a atualizacao exigir alteracao de modulos que nao sao alvo, uma confirmacao e solicitada.
@@ -148,8 +150,8 @@ Ao atualizar modulos especificos, os demais modulos permanecem fixados em suas v
 ### Instalando a Partir do Arquivo de Lock
 
 ```bash
-wippy install                      # Instala tudo a partir do lock
-wippy install --refresh            # Rebaixar cada módulo (--force e --repair são aliases)
+wippy install                      # Install all from lock
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## Armazenamento de Modulos
@@ -224,11 +226,11 @@ Modulos com substituicoes ativas ignoram seu caminho de vendor.
 
 ## Verificacao de Integridade
 
-Cada modulo no arquivo de lock possui um hash de conteudo. Durante a instalacao, os modulos baixados sao verificados em relacao aos hashes esperados. Modulos incompativeis sao rejeitados e baixados novamente do registro.
+O hash de conteúdo de uma entrada do lock é opcional até que a instalação o preencha. Quando existe um digest esperado, a instalação verifica os módulos em cache e baixados em relação a ele. Um módulo em cache com hash divergente interrompe a instalação; execute `wippy install --refresh` para baixar e verificar uma cópia nova. Um módulo recém-baixado que falhar na verificação é removido, e a instalação falha.
 
 ## Veja Tambem
 
-- [Construindo Componentes](guides/components.md) - O lado do autor: `ns.requirement` e fornecimento de valores via `parameters`
-- [CLI](guides/cli.md) - Referencia de comandos
-- [Publicacao](guides/publishing.md) - Publicando modulos no hub
-- [Estrutura do Projeto](start/structure.md) - Layout do projeto
+- [Construindo Componentes](guides/components.md) — Declare requirements e forneça valores por meio de `parameters`
+- [CLI](guides/cli.md) — Referência de comandos
+- [Publicação](guides/publishing.md) — Publique módulos no Hub
+- [Estrutura do Projeto](start/structure.md) — Layout do projeto

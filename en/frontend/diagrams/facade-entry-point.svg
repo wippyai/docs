@@ -46,13 +46,13 @@
   <line x1="72.91" y1="210" x2="494.239" y2="210" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
   <text x="283.5745" y="200" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">GET /facade/config</text>
 </g>
-<g class="message" data-from="FacadeAPI" data-to="Browser" data-label="AppConfig JSON (auth, env, theming, hostConfig, context)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<g class="message" data-from="FacadeAPI" data-to="Browser" data-label="facade settings (no auth or context)" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="494.239" y1="250" x2="72.91" y2="250" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
-  <text x="283.5745" y="240" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">AppConfig JSON (auth, env, theming, hostConfig, context)</text>
+  <text x="283.5745" y="240" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">facade settings (no auth or context)</text>
 </g>
-<g class="message" data-from="Browser" data-to="Host" data-label="window.initWippyApp(config, '#app')" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<g class="message" data-from="Browser" data-to="Host" data-label="assemble AppConfig + initWippyApp(appConfig, '#app')" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="72.91" y1="290" x2="786.4134999999999" y2="290" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
-  <text x="429.6617499999999" y="280" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">window.initWippyApp(config, &#39;#app&#39;)</text>
+  <text x="429.6617499999999" y="280" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">assemble AppConfig + initWippyApp(appConfig, &#39;#app&#39;)</text>
 </g>
 <g class="message" data-from="Host" data-to="Host" data-label="take over page + browser history, render shell" data-line-style="solid" data-arrow-head="filled" data-self="true">
   <polyline points="786.4134999999999,330 816.4134999999999,330 816.4134999999999,350 786.4134999999999,350" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />

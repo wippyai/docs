@@ -1,48 +1,58 @@
 ---
-title: "프로세스 슈퍼비전"
-description: "프로세스를 모니터링하고 링크하여 장애 내성 시스템을 구축합니다."
+title: "프로세스 감독 레시피"
+description: "Wippy 프로세스에 모니터링, 연결, 취소, 재시작 패턴을 적용합니다."
 ---
 
-# 프로세스 슈퍼비전
+# 프로세스 감독 레시피
 
-프로세스를 모니터링하고 링크하여 장애 내성 시스템을 구축합니다.
+모니터링과 연결을 사용하여 프로세스 종료를 관찰하고, 실패를 전파하고, 취소를 처리하고, 워커를 다시 시작합니다.
 
-## 모니터링 vs 링킹
+**분류:** 부분 레시피. 수명 주기 코드 조각은 서로 독립적입니다. 워커 풀 섹션은 핵심 엔트리를 제공하지만 재시작을 유발하고 검증하는 별도의 제어 프로세스는 제공하지 않습니다.
 
-**모니터링**은 단방향 관찰을 제공합니다:
-- 부모가 자식을 모니터링
-- 자식이 종료되면 부모가 EXIT 이벤트를 받음
-- 부모는 계속 실행됨
+## 실행 환경과 의존성
 
-**링킹**은 양방향 운명 공유를 만듭니다:
-- 부모와 자식이 링크됨
-- 어느 프로세스든 실패하면 둘 다 종료됨
-- `trap_links=true`가 설정된 경우 제외
+코드 조각은 Wippy 런타임 `v0.3.32a`를 대상으로 하며, 실행 가능한 Lua 엔트리, `app:processes`라는 실행 중인 `process.host`, `app.workers:task_worker` 같은 프로젝트 정의 워커 엔트리가 있다고 가정합니다. `process`와 `channel` API는 전역으로 제공됩니다. `time.*`을 호출하는 코드 조각은 엔트리에 `time` 모듈이 있어야 하며 소스에서 `local time = require("time")`를 사용해야 합니다.
+
+프로세스 생성, 호스트 선택, 모니터링, 연결, 보내기, 취소, 종료는 보호되는 연산입니다. 각 실행 엔트리에 액터와 필요한 작업만 허용하는 범위가 좁은 정책을 연결하세요. 아래 워커 풀 구성은 해당 레시피에 필요한 정책을 포함하지만 독립 코드 조각은 포함하지 않습니다.
+
+## 모니터링과 연결 비교
+
+**모니터링**은 단방향 관찰을 제공합니다.
+
+- 부모가 자식을 모니터링합니다.
+- 자식이 종료되면 부모가 `EXIT` 이벤트를 받습니다.
+- 부모는 계속 실행됩니다.
+
+**연결**은 양방향 운명 공유를 만듭니다.
+
+- 부모와 자식이 연결됩니다.
+- 어느 한 프로세스가 비정상 종료되면 다른 프로세스도 종료됩니다.
+- `trap_links=true`를 설정하면 실패가 프로세스에서 처리할 수 있는 이벤트로 바뀝니다.
 
 ```mermaid
 flowchart TB
-    subgraph Monitoring["모니터링 (단방향)"]
+    subgraph Monitoring["MONITORING (one-way)"]
         direction TB
-        P1[부모 모니터링] -->|EXIT 이벤트<br/>부모 계속 실행| C1[자식 종료]
+        P1[Parent monitors] -->|EXIT event<br/>parent continues| C1[Child exits]
     end
 
-    subgraph Linking["링킹 (양방향)"]
+    subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[부모 링크됨] <-->|LINK_DOWN<br/>둘 다 종료| C2[자식 종료]
+        P2[Parent linked] <-->|abnormal exit<br/>fate sharing| C2[Child fails]
     end
 ```
 
 ## 프로세스 모니터링
 
-### 모니터링과 함께 스폰
+### 모니터링과 함께 생성
 
-`process.spawn_monitored()`를 사용하여 한 번의 호출로 스폰하고 모니터링:
+한 번의 호출로 생성과 모니터링을 수행하려면 `process.spawn_monitored()`를 사용합니다.
 
 ```lua
 local function main()
     local events_ch = process.events()
 
-    -- 워커 스폰하고 모니터링 시작
+    -- Spawn worker and start monitoring
     local worker_pid, err = process.spawn_monitored(
         "app.workers:task_worker",
         "app:processes"
@@ -51,7 +61,7 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- 워커 완료 대기
+    -- Wait for worker to complete
     local event = events_ch:receive()
 
     if event.kind == process.event.EXIT then
@@ -68,14 +78,14 @@ end
 
 ### 기존 프로세스 모니터링
 
-`process.monitor()`를 호출하여 이미 실행 중인 프로세스 모니터링 시작:
+이미 실행 중인 프로세스를 모니터링하려면 `process.monitor()`를 호출합니다.
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 모니터링 없이 스폰
+    -- Spawn without monitoring
     local worker_pid, err = process.spawn(
         "app.workers:long_worker",
         "app:processes"
@@ -84,17 +94,20 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- 나중에 모니터링 시작
+    -- Start monitoring later
     local ok, monitor_err = process.monitor(worker_pid)
     if monitor_err then
         return nil, "monitor failed: " .. tostring(monitor_err)
     end
 
-    -- 워커 취소
+    -- Cancel the worker
     time.sleep("5ms")
-    process.cancel(worker_pid)
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- EXIT 이벤트 수신
+    -- Receive EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker terminated:", event.from)
@@ -104,31 +117,37 @@ end
 
 ### 모니터링 중지
 
-`process.unmonitor()`를 사용하여 EXIT 이벤트 수신 중지:
+`EXIT` 이벤트 수신을 중지하려면 `process.unmonitor()`를 사용합니다.
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 스폰하고 모니터링
+    -- Spawn and monitor
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- 모니터링 중지
+    -- Stop monitoring
     local ok, unmon_err = process.unmonitor(worker_pid)
     if unmon_err then
         return nil, "unmonitor failed: " .. tostring(unmon_err)
     end
 
-    -- 워커 취소
-    process.cancel(worker_pid)
+    -- Cancel worker
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- EXIT 이벤트를 받지 않아야 함 (모니터링 해제함)
+    -- No EXIT event will be received (we unmonitored)
     local timeout = time.after("200ms")
     local result = channel.select {
         events_ch:case_receive(),
@@ -141,37 +160,43 @@ local function main()
 end
 ```
 
-## 프로세스 링킹
+## 프로세스 연결
 
-### 명시적 링킹
+### 명시적 연결
 
-`process.link()`를 사용하여 양방향 링크 생성:
+양방향 연결을 만들려면 `process.link()`를 사용합니다.
 
 ```lua
--- 대상 프로세스에 링크하는 워커
+-- Worker that links to a target process
 local function worker_main()
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- LINK_DOWN 이벤트를 받기 위해 trap_links 활성화
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
-    -- 발신자로부터 대상 PID 수신
+    -- Receive target PID from sender
     local msg = inbox_ch:receive()
     local target_pid = msg:payload():data()
     local sender = msg:from()
 
-    -- 양방향 링크 생성
+    -- Create bidirectional link
     local ok, err = process.link(target_pid)
     if err then
         return nil, "link failed: " .. tostring(err)
     end
 
-    -- 발신자에게 링크됐음을 알림
-    process.send(sender, "linked", process.pid())
+    -- Notify sender we're linked
+    local _, send_err = process.send(sender, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- 대상이 종료될 때 LINK_DOWN 대기
+    -- Wait for LINK_DOWN when target exits with an error
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -189,18 +214,21 @@ local function worker_main()
 end
 ```
 
-### 링크와 함께 스폰
+### 연결과 함께 생성
 
-`process.spawn_linked()`를 사용하여 한 번의 호출로 스폰하고 링크:
+한 번의 호출로 생성하고 연결하려면 `process.spawn_linked()`를 사용합니다.
 
 ```lua
 local function parent_main()
-    -- 자식 사망을 처리하기 위해 trap_links 활성화
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle child death
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- 자식 스폰하고 링크
+    -- Spawn and link to child
     local child_pid, err = process.spawn_linked(
         "app.workers:child_worker",
         "app:processes"
@@ -209,7 +237,7 @@ local function parent_main()
         return nil, "spawn_linked failed: " .. tostring(err)
     end
 
-    -- 자식이 죽으면 LINK_DOWN 수신
+    -- If the child exits with an error, we receive LINK_DOWN
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         print("Child died:", event.from)
@@ -217,52 +245,63 @@ local function parent_main()
 end
 ```
 
-## Trap Links
+이 예제들이 `LINK_DOWN`을 받으려면 대상 또는 자식이 비정상적으로 종료되어야 합니다. 명시적 연결 예제에서는 해당 실패가 3초 대기 시간 안에 발생해야 합니다. 정상 완료는 이 이벤트를 방출하지 않습니다.
 
-기본적으로 링크된 프로세스가 실패하면 현재 프로세스도 실패합니다. LINK_DOWN 이벤트를 대신 받으려면 `trap_links=true`를 설정하세요.
+## 링크 트랩
 
-### 기본 동작 (trap_links=false)
+기본적으로 연결된 프로세스가 실패하면 현재 프로세스도 실패합니다. 대신 `LINK_DOWN` 이벤트를 받으려면 `trap_links=true`를 설정합니다.
 
-`trap_links` 없이 링크된 프로세스 실패는 현재 프로세스를 종료합니다:
+### 기본 동작(trap_links=false)
+
+`trap_links`가 없으면 연결된 프로세스의 실패가 현재 프로세스를 종료합니다.
 
 ```lua
 local function worker_main()
     local events_ch = process.events()
 
-    -- trap_links는 기본적으로 false
+    -- trap_links is false by default
     local opts = process.get_options()
     print("trap_links:", opts.trap_links)  -- false
 
-    -- 실패할 링크된 워커 스폰
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- 자식이 오류를 일으키면 이 프로세스도 종료됨
-    -- 이 지점에 도달하지 않음
+    -- When child errors, THIS process terminates
+    -- We never reach this point
     local event = events_ch:receive()
 end
 ```
 
 ### trap_links=true 사용
 
-LINK_DOWN 이벤트를 받고 생존하기 위해 `trap_links` 활성화:
+`LINK_DOWN` 이벤트를 받고 살아남으려면 `trap_links`를 활성화합니다.
 
 ```lua
 local function worker_main()
-    -- trap_links 활성화
-    process.set_options({ trap_links = true })
+    -- Enable trap_links
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- 실패할 링크된 워커 스폰
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- LINK_DOWN 이벤트 대기
+    -- Wait for LINK_DOWN event
     local event = events_ch:receive()
 
     if event.kind == process.event.LINK_DOWN then
@@ -274,30 +313,33 @@ end
 
 ## 취소
 
-### 취소 시그널 전송
+### 취소 신호 보내기
 
-`process.cancel()`을 사용하여 프로세스를 그레이스풀하게 종료:
+프로세스에 정상 취소를 요청하려면 `process.cancel()`을 사용합니다.
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 워커 스폰하고 모니터링
+    -- Spawn and monitor worker
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- 워커 취소
+    -- Cancel the worker
     local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
 
-    -- EXIT 이벤트 대기
+    -- Wait for EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker cancelled:", event.from)
@@ -307,7 +349,9 @@ end
 
 ### 취소 처리
 
-워커는 `process.events()`를 통해 CANCEL 이벤트를 받습니다:
+워커는 `process.events()`를 통해 `CANCEL` 이벤트를 받습니다.
+
+아래 `cleanup()`과 `handle_message()`는 이 레시피에서 정의하지 않는 애플리케이션 콜백입니다.
 
 ```lua
 local function worker_main()
@@ -323,37 +367,40 @@ local function worker_main()
         if result.channel == events_ch then
             local event = result.value
             if event.kind == process.event.CANCEL then
-                -- 리소스 정리
+                -- Cleanup resources
                 cleanup()
                 return "cancelled gracefully"
             end
         else
-            -- 인박스 메시지 처리
+            -- Process inbox message
             handle_message(result.value)
         end
     end
 end
 ```
 
-## 슈퍼비전 토폴로지
+## 감독 토폴로지
 
-### 스타 토폴로지
+### 별형 토폴로지
 
-부모에게 링크를 역으로 연결하는 여러 자식이 있는 부모:
+부모는 자신에게 다시 연결되는 여러 자식을 조정할 수 있습니다.
 
 ```lua
--- 부모 워커가 부모에게 링크하는 자식을 스폰
+-- Parent worker spawns children that link TO parent
 local function star_parent_main()
     local time = require("time")
     local events_ch = process.events()
     local child_count = 10
 
-    -- 자식 사망을 보기 위해 trap_links 활성화
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to see children die
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local children = {}
 
-    -- 자식 스폰
+    -- Spawn children
     for i = 1, child_count do
         local child_pid, err = process.spawn(
             "app.workers:linker_child",
@@ -363,12 +410,15 @@ local function star_parent_main()
             error("spawn child failed: " .. tostring(err))
         end
 
-        -- 자식에게 부모 PID 전송
-        process.send(child_pid, "inbox", process.pid())
+        -- Send parent PID to child
+        local _, send_err = process.send(child_pid, "inbox", process.pid())
+        if send_err then
+            error("send parent PID failed: " .. tostring(send_err))
+        end
         children[child_pid] = true
     end
 
-    -- 모든 자식이 링크를 확인할 때까지 대기
+    -- Wait for all children to confirm link
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -376,29 +426,41 @@ local function star_parent_main()
         end
     end
 
-    -- 실패 트리거 - 모든 자식이 LINK_DOWN을 받아야 함
+    -- Trigger failure - all children should receive LINK_DOWN
     error("PARENT_STAR_FAILURE")
 end
 ```
 
-부모에게 링크하는 자식 워커:
+부모에 연결하는 자식 워커:
 
 ```lua
 local function linker_child_main()
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- 부모 PID 수신
+    -- Receive parent PID
     local msg = inbox_ch:receive()
     local parent_pid = msg:payload():data()
 
-    -- 부모에게 링크
-    process.link(parent_pid)
+    -- Link to parent
+    local _, link_err = process.link(parent_pid)
+    if link_err then
+        return nil, "link failed: " .. tostring(link_err)
+    end
 
-    -- 링크 확인
-    process.send(parent_pid, "linked", process.pid())
+    -- Confirm link
+    local _, send_err = process.send(parent_pid, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- 부모가 죽을 때 LINK_DOWN 대기
+    -- Wait for LINK_DOWN when parent dies
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         return "parent_died"
@@ -408,39 +470,37 @@ end
 
 ### 체인 토폴로지
 
-각 노드가 부모에게 링크하는 선형 체인:
+선형 체인에서는 각 노드가 부모에 연결됩니다.
 
 ```lua
--- 체인 루트: A -> B -> C -> D -> E
+-- Chain root: A -> B -> C -> D -> E
 local function chain_root_main()
     local time = require("time")
 
-    -- 첫 번째 자식 스폰
+    -- Spawn first child
     local child_pid, err = process.spawn_linked(
         "app.workers:chain_node",
         "app:processes",
-        4  -- 남은 깊이
+        4  -- depth remaining
     )
     if err then
         error("spawn failed: " .. tostring(err))
     end
 
-    -- 체인 구성 대기
+    -- Wait for chain to build
     time.sleep("100ms")
 
-    -- 캐스케이드 트리거 - 링크된 모든 프로세스 종료
+    -- Trigger cascade - all linked processes die
     error("CHAIN_ROOT_FAILURE")
 end
 ```
 
-체인 노드가 다음 노드를 스폰하고 링크:
+체인 노드는 다음 노드를 생성하고 연결합니다.
 
 ```lua
 local function chain_node_main(depth)
-    local time = require("time")
-
     if depth > 0 then
-        -- 체인에서 다음 스폰
+        -- Spawn next in chain
         local child_pid, err = process.spawn_linked(
             "app.workers:chain_node",
             "app:processes",
@@ -451,14 +511,14 @@ local function chain_node_main(depth)
         end
     end
 
-    -- 기본 trap_links=false로 LINK_DOWN을 통해 부모 사망이 종료시킬 때까지 차단
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
     process.inbox():receive()
 end
 ```
 
-## 슈퍼비전이 있는 워커 풀
+## 감독 기능이 있는 워커 풀
 
-### 설정
+### 구성
 
 ```yaml
 # src/_index.yaml
@@ -466,6 +526,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: supervision-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.send
+        - process.spawn
+        - process.spawn.linked
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     host:
@@ -486,11 +557,23 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.supervisor:pool
+      policies:
+        - app:supervision-policy
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
+    input:
+      - 4
     lifecycle:
       auto_start: true
 ```
 
-### 슈퍼바이저 구현
+### 감독자 구현
 
 ```lua
 -- src/supervisor/pool.lua
@@ -498,8 +581,11 @@ local function main(worker_count)
     local time = require("time")
     worker_count = worker_count or 4
 
-    -- 워커 사망을 처리하기 위해 trap_links 활성화
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle worker deaths
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local events_ch = process.events()
     local workers = {}
@@ -520,14 +606,14 @@ local function main(worker_count)
         return pid
     end
 
-    -- 초기 풀 시작
+    -- Start initial pool
     for i = 1, worker_count do
         start_worker(i)
     end
 
     print("Supervisor started with " .. worker_count .. " workers")
 
-    -- 슈퍼비전 루프
+    -- Supervision loop
     while true do
         local timeout = time.after("60s")
         local result = channel.select {
@@ -536,7 +622,7 @@ local function main(worker_count)
         }
 
         if result.channel == timeout then
-            -- 주기적 헬스 체크
+            -- Periodic health check
             local count = 0
             for _ in pairs(workers) do count = count + 1 end
             print("Health check: " .. count .. " active workers")
@@ -551,7 +637,7 @@ local function main(worker_count)
                     local uptime = os.time() - dead_worker.started_at
                     print("Worker " .. dead_worker.id .. " died after " .. uptime .. "s, restarting")
 
-                    -- 재시작 전 짧은 지연
+                    -- Brief delay before restart
                     time.sleep("100ms")
                     start_worker(dead_worker.id)
                 end
@@ -563,7 +649,7 @@ end
 return { main = main }
 ```
 
-## 프로세스 설정
+## 프로세스 구성
 
 ### 워커 정의
 
@@ -579,6 +665,11 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.workers:task_worker
+      policies:
+        - app:supervision-policy
 ```
 
 ### 워커 구현
@@ -618,11 +709,14 @@ local function main(worker_id)
             if topic == "work" then
                 print("Worker " .. worker_id .. " processing: " .. payload)
                 time.sleep("100ms")
-                process.send(msg:from(), "result", "completed: " .. payload)
+                local _, send_err = process.send(msg:from(), "result", "completed: " .. payload)
+                if send_err then
+                    return nil, "send result failed: " .. tostring(send_err)
+                end
             end
 
         elseif result.channel == timeout then
-            -- 유휴 타임아웃
+            -- Idle timeout
             print("Worker " .. worker_id .. " idle")
         end
     end
@@ -633,55 +727,43 @@ return { main = main }
 
 ## 프로세스 호스트 설정
 
-프로세스 호스트는 프로세스를 실행하는 OS 스레드 수를 제어합니다:
+[구성](#구성)에서 정의한 `app:processes` 엔트리는 다음 호스트 설정을 사용합니다.
 
 ```yaml
-# src/_index.yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: processes
-    kind: process.host
-    host:
-      workers: 16  # OS 스레드 수
-    lifecycle:
-      auto_start: true
+# Within the app:processes entry in src/_index.yaml
+host:
+  workers: 16  # Worker goroutines (default: NumCPU)
 ```
 
-workers 설정:
-- CPU 바운드 작업의 병렬성 제어
-- 일반적으로 CPU 코어 수로 설정
-- 모든 프로세스가 이 스레드 풀을 공유
+`workers` 설정은 다음과 같이 작동합니다.
 
-## 이벤트 타입
+- CPU 중심 작업의 병렬성을 제어합니다.
+- 일반적으로 CPU 코어 수로 설정합니다.
+- 호스트의 모든 프로세스가 공유하는 스케줄러 풀에 적용됩니다.
 
-| 이벤트 | 트리거 조건 | 필요한 설정 |
-|-------|-------------|-------------|
-| `EXIT` | 모니터링된 프로세스 종료 | `spawn_monitored()` 또는 `monitor()` |
-| `LINK_DOWN` | 링크된 프로세스 실패 | `spawn_linked()` 또는 `link()`와 `trap_links=true` |
-| `CANCEL` | `process.cancel()` 호출됨 | 없음 (항상 전달됨) |
+## 이벤트 유형
 
-## 슈퍼바이저 풀 실행
+| 이벤트 | 발생 조건 | 필요한 설정 |
+|-------|--------------|----------------|
+| `EXIT` | 모니터링되는 프로세스 종료 | `spawn_monitored()` 또는 `monitor()` |
+| `LINK_DOWN` | 연결된 프로세스 실패 | `trap_links=true`와 함께 `spawn_linked()` 또는 `link()` |
+| `CANCEL` | `process.cancel()` 호출 | 대상이 `process.events()`를 소비 |
 
-[설정](#설정)에 표시된 구조에 풀 파일을 배치한 후:
+## 감독자 풀 레시피 사용
+
+표시된 풀은 워커를 시작하고 감독하지만 완전한 실행형 튜토리얼은 아닙니다. 제어 프로세스, 해당 프로세스의 종료 정책, 재시작에 대한 결정적 검증을 의도적으로 생략합니다. 레시피를 애플리케이션에 통합한 뒤 일반적인 방법으로 애플리케이션을 초기화하고 실행하세요.
 
 ```bash
 wippy init
 wippy run
 ```
 
-슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 워커 중 하나가 죽으면 재시작을 기록합니다. 다른 프로세스에서 워커를 종료하여 재시작을 트리거합니다:
+감독자가 자동 시작되어 워커 네 개를 생성합니다. 재시작 동작을 검증하려면 워커 PID를 찾고, 해당 PID에 대한 `process.terminate` 권한을 가지며, 워커를 종료하고, 감독자가 대체 워커를 시작했는지 확인하는 신뢰할 수 있는 제어 엔트리를 추가하세요.
 
-```lua
--- 임시 프로세스나 채팅 명령어에서
-process.cancel("<pid-from-supervisor-log>")
-```
-
-풀은 `LINK_DOWN`을 받고 100ms를 기다린 후 같은 id로 워커를 다시 스폰합니다.
+워커가 비정상 종료되면 풀은 `LINK_DOWN`을 받고 100ms 기다린 뒤 같은 ID로 워커를 다시 생성합니다. 정상적인 `process.cancel()`은 워커가 깨끗하게 종료되도록 하며 `LINK_DOWN`을 발생시키지 않으므로 재시작도 유발하지 않습니다. 검증이 끝나면 Ctrl+C로 애플리케이션을 중지합니다.
 
 ## 다음 단계
 
-- [프로세스](tutorials/processes.md) - 프로세스 기초
-- [채널](tutorials/channels.md) - 메시지 전달 패턴
-- [Process 모듈](lua/core/process.md) - API 레퍼런스
+- [프로세스](tutorials/processes.md) — 프로세스 기본 개념
+- [채널](tutorials/channels.md) — 메시지 전달 패턴
+- [프로세스 모듈](lua/core/process.md) — 프로세스 API 참조

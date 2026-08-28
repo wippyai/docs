@@ -1,11 +1,11 @@
 ---
 title: "Supervision"
-description: "The supervisor manages service lifecycles, handling startup ordering, automatic restarts, and graceful shutdown. Services with autostart: true are…"
+description: "Configure service startup order, restart policies, security context, state transitions, and graceful shutdown."
 ---
 
 # Supervision
 
-The supervisor manages service lifecycles, handling startup ordering, automatic restarts, and graceful shutdown. Services with `auto_start: true` are started when the application boots.
+The supervisor manages service startup, dependency order, restarts, and graceful shutdown. Services with `auto_start: true` start when the application boots.
 
 ## Lifecycle Configuration
 
@@ -25,6 +25,7 @@ Services register with the supervisor using a `lifecycle` block. For processes, 
   host: app:processes
   lifecycle:
     auto_start: true
+    startup: required
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
@@ -36,12 +37,15 @@ Services register with the supervisor using a `lifecycle` block. For processes, 
       max_attempts: 10
 ```
 
+`host` must reference a configured process host. The `requires` entry must resolve either to another supervised service or, through registry dependency extraction, to a supervised service that owns the referenced resource.
+
 | Field | Default | Description |
 |-------|---------|-------------|
 | `auto_start` | `false` | Start automatically when supervisor starts |
+| `startup` | `required` | Startup policy for an auto-start root: `required` blocks boot on failure; `optional` may fail and keep retrying without blocking independent branches |
 | `start_timeout` | `10s` | Maximum time allowed for startup |
 | `stop_timeout` | `10s` | Maximum time for graceful shutdown |
-| `stable_threshold` | `5s` | Runtime before service is considered stable |
+| `stable_threshold` | `5s` | Runtime after which a later failure resets the retry counter |
 | `requires` | `[]` | Services that must be running first (legacy alias: `depends_on`) |
 
 ## Dependency Resolution
@@ -59,36 +63,31 @@ graph LR
     C --> E[Cache]
 ```
 
-Dependencies start before dependents. If Service C depends on A and B, both A and B must reach `Running` state before C starts.
+Dependencies start before their dependents. If Service C depends on A and B, both dependencies must reach the `Running` state before C starts.
 
 <tip>
-You don't need to declare infrastructure entries like databases in <code>requires</code>. The supervisor automatically extracts dependencies from registry references in your entry configuration.
+You do not need to repeat an infrastructure reference in <code>requires</code> when registry dependency extraction can trace that reference to a supervised service. Use <code>requires</code> for lifecycle dependencies that are not already expressed by entry references.
 </tip>
 
 ## Restart Policy
 
-When a service fails, the supervisor retries with exponential backoff:
+When a service fails, the supervisor retries according to its `restart` block:
 
 ```yaml
 lifecycle:
   restart:
     initial_delay: 1s      # First retry wait
-    max_delay: 90s         # Maximum delay cap
-    backoff_factor: 2.0    # Delay multiplier per attempt
+    max_delay: 90s         # Accepted backoff cap; see current behavior below
+    backoff_factor: 2.0    # Accepted multiplier; see current behavior below
     jitter: 0.1            # ±10% randomization
     max_attempts: 0        # 0 = infinite retries
 ```
 
-| Attempt | Base Delay | With Jitter (±10%) |
-|---------|------------|-------------------|
-| 1 | 1s | 0.9s - 1.1s |
-| 2 | 2s | 1.8s - 2.2s |
-| 3 | 4s | 3.6s - 4.4s |
-| 4 | 8s | 7.2s - 8.8s |
-| ... | ... | ... |
-| N | 90s | 81s - 99s (capped) |
+In runtime v0.3.32a, the supervisor constructs a new backoff calculator for each retry and takes only its first interval. Each retry therefore waits `initial_delay` with the configured jitter (0.9s–1.1s for the values above). `backoff_factor` and `max_delay` are accepted configuration fields but do not change this schedule in the pinned runtime.
 
-When a service runs longer than `stable_threshold`, the retry counter resets. This prevents transient failures from permanently escalating delays.
+`max_attempts` counts the initial failed start. A value of `1` permits no retry, and `10` permits at most nine follow-up starts. A value of `0` allows unlimited attempts.
+
+When a service runs longer than `stable_threshold`, its retry counter resets, so later failures start from the initial retry delay.
 
 ### Terminal Errors
 
@@ -127,7 +126,7 @@ Services can run with a specific security identity:
         - app:data_access
 ```
 
-The security context sets:
+The security context defines:
 
 | Field | Description |
 |-------|-------------|
@@ -136,7 +135,7 @@ The security context sets:
 | `groups` | Policy groups to apply |
 | `policies` | Individual policies to apply |
 
-Code running in the service inherits this security context. The `security` module can then check permissions:
+Code running in the service inherits this security context. The `security` module can use it for permission checks:
 
 ```lua
 local security = require("security")
@@ -147,7 +146,7 @@ end
 ```
 
 <note>
-When no security context is configured, the service runs without an actor. In strict mode (default), security checks fail. Configure a security context for services that need authorization.
+When no security block is configured, the supervisor adds no service-specific actor or policy scope; any security values already present in the parent context remain inherited. In strict mode (default), a check with an incomplete resulting security context is denied. Configure a complete service security context for services that need authorization.
 </note>
 
 ## Service States
@@ -159,6 +158,7 @@ stateDiagram-v2
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
+    Stopping --> Failed : timeout/cancel
     Stopped --> [*]
 
     Running --> Failed
@@ -177,15 +177,15 @@ The supervisor transitions services through these states:
 | `Starting` | Startup in progress |
 | `Running` | Operating normally |
 | `Stopping` | Graceful shutdown in progress |
-| `Stopped` | Cleanly terminated |
+| `Stopped` | Stop operation completed; service-reported stop details may still contain an error |
 | `Exited` | Terminated by explicit request or a non-retryable/terminal error |
 | `Failed` | Error occurred, may retry |
 
 ## Startup and Shutdown Order
 
-**Startup**: Dependencies first, then dependents. Services at the same dependency level can start in parallel.
+**Startup:** Dependencies start before dependents. Services at the same dependency level can start in parallel.
 
-**Shutdown**: Dependents first, then dependencies. This ensures dependent services finish before their dependencies stop.
+**Shutdown:** Dependents stop before dependencies, allowing dependent services to finish first.
 
 ```
 Startup:  database → cache → handler → http_server
@@ -194,6 +194,6 @@ Shutdown: http_server → handler → cache → database
 
 ## See Also
 
-- [Process Model](concepts/process-model.md) - Process lifecycle
-- [Configuration](guides/configuration.md) - YAML configuration format
-- [Security Module](lua/security/security.md) - Permission checks in Lua
+- [Process Model](concepts/process-model.md) — Process lifecycle
+- [Configuration](guides/configuration.md) — YAML configuration format
+- [Security Module](lua/security/security.md) — Permission checks in Lua

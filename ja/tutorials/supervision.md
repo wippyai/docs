@@ -1,23 +1,40 @@
 ---
-title: "プロセススーパービジョン"
-description: "プロセスをモニタリングおよびリンクして、フォールトトレラントなシステムを構築します。"
+title: "プロセススーパービジョンのレシピ"
+description: "Wippyプロセスに監視、リンク、キャンセル、再起動のパターンを適用します。"
 ---
 
-# プロセススーパービジョン
+# プロセススーパービジョンのレシピ
 
-プロセスをモニタリングおよびリンクして、フォールトトレラントなシステムを構築します。
+監視とリンクを使ってプロセスの終了を観測し、障害を伝播し、キャンセルを処理し、ワーカーを再起動します。
+
+**分類:** 部分的なレシピです。ライフサイクルの各スニペットは独立しています。ワーカープールのセクションは
+主要なエントリを提供しますが、再起動を発生させて検証するための独立した制御プロセスは含みません。
+
+## コンテキストと依存関係
+
+各スニペットはWippyランタイム`v0.3.32a`を対象とし、実行可能なLuaエントリ、
+`app:processes`という稼働中の`process.host`、`app.workers:task_worker`などプロジェクトで定義した
+ワーカーエントリを前提とします。`process`と`channel` APIは実行コンテキストに組み込まれています。
+`time.*`を呼び出すスニペットでは、エントリに`time`モジュールを追加し、ソースで
+`local time = require("time")`を指定してください。
+
+プロセスの生成、ホスト選択、監視、リンク、送信、キャンセル、終了は保護された操作です。
+これらを使う実行可能エントリにはアクターと、範囲を限定したallowポリシーを付与してください。
+以下のワーカープール設定には必要なポリシーが含まれますが、独立したスニペットには含まれません。
 
 ## モニタリングとリンク
 
-**モニタリング**は一方向の監視を提供:
-- 親が子をモニタリング
-- 子が終了すると、親がEXITイベントを受信
-- 親は実行を継続
+**モニタリング**は一方向の監視を提供します：
 
-**リンク**は双方向の運命共有を作成:
-- 親と子がリンクされる
-- どちらかのプロセスが失敗すると、両方が終了
-- `trap_links=true`が設定されていない限り
+- 親が子を監視します。
+- 子が終了すると、親が`EXIT`イベントを受信します。
+- 親は実行を継続します。
+
+**リンク**は双方向に運命を共有します：
+
+- 親と子がリンクされます。
+- どちらかのプロセスが異常終了すると、もう一方も終了します。
+- `trap_links=true`を設定すると、障害を処理可能なイベントへ変換できます。
 
 ```mermaid
 flowchart TB
@@ -28,7 +45,7 @@ flowchart TB
 
     subgraph Linking["LINKING (bidirectional)"]
         direction TB
-        P2[Parent linked] <-->|LINK_DOWN<br/>both die| C2[Child exits]
+        P2[Parent linked] <-->|abnormal exit<br/>fate sharing| C2[Child fails]
     end
 ```
 
@@ -42,7 +59,7 @@ flowchart TB
 local function main()
     local events_ch = process.events()
 
-    -- ワーカーを生成してモニタリング開始
+    -- Spawn worker and start monitoring
     local worker_pid, err = process.spawn_monitored(
         "app.workers:task_worker",
         "app:processes"
@@ -51,7 +68,7 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- ワーカーの完了を待機
+    -- Wait for worker to complete
     local event = events_ch:receive()
 
     if event.kind == process.event.EXIT then
@@ -75,7 +92,7 @@ local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- モニタリングなしで生成
+    -- Spawn without monitoring
     local worker_pid, err = process.spawn(
         "app.workers:long_worker",
         "app:processes"
@@ -84,17 +101,20 @@ local function main()
         return nil, "spawn failed: " .. tostring(err)
     end
 
-    -- 後でモニタリングを開始
+    -- Start monitoring later
     local ok, monitor_err = process.monitor(worker_pid)
     if monitor_err then
         return nil, "monitor failed: " .. tostring(monitor_err)
     end
 
-    -- ワーカーをキャンセル
+    -- Cancel the worker
     time.sleep("5ms")
-    process.cancel(worker_pid)
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- EXITイベントを受信
+    -- Receive EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker terminated:", event.from)
@@ -111,24 +131,30 @@ local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- 生成してモニタリング
+    -- Spawn and monitor
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- モニタリングを停止
+    -- Stop monitoring
     local ok, unmon_err = process.unmonitor(worker_pid)
     if unmon_err then
         return nil, "unmonitor failed: " .. tostring(unmon_err)
     end
 
-    -- ワーカーをキャンセル
-    process.cancel(worker_pid)
+    -- Cancel worker
+    local _, cancel_err = process.cancel(worker_pid)
+    if cancel_err then
+        return nil, "cancel failed: " .. tostring(cancel_err)
+    end
 
-    -- EXITイベントは受信されない（モニタリング解除したため）
+    -- No EXIT event will be received (we unmonitored)
     local timeout = time.after("200ms")
     local result = channel.select {
         events_ch:case_receive(),
@@ -148,30 +174,36 @@ end
 双方向リンクを作成するには`process.link()`を使用:
 
 ```lua
--- ターゲットプロセスにリンクするワーカー
+-- Worker that links to a target process
 local function worker_main()
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- LINK_DOWNイベントを受信するためにtrap_linksを有効化
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
-    -- 送信者からターゲットPIDを受信
+    -- Receive target PID from sender
     local msg = inbox_ch:receive()
     local target_pid = msg:payload():data()
     local sender = msg:from()
 
-    -- 双方向リンクを作成
+    -- Create bidirectional link
     local ok, err = process.link(target_pid)
     if err then
         return nil, "link failed: " .. tostring(err)
     end
 
-    -- 送信者にリンク完了を通知
-    process.send(sender, "linked", process.pid())
+    -- Notify sender we're linked
+    local _, send_err = process.send(sender, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- ターゲット終了時のLINK_DOWNを待機
+    -- Wait for LINK_DOWN when target exits with an error
     local timeout = time.after("3s")
     local result = channel.select {
         events_ch:case_receive(),
@@ -195,12 +227,15 @@ end
 
 ```lua
 local function parent_main()
-    -- 子の死亡を処理するためにtrap_linksを有効化
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle child death
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- 子を生成してリンク
+    -- Spawn and link to child
     local child_pid, err = process.spawn_linked(
         "app.workers:child_worker",
         "app:processes"
@@ -209,7 +244,7 @@ local function parent_main()
         return nil, "spawn_linked failed: " .. tostring(err)
     end
 
-    -- 子が死亡するとLINK_DOWNを受信
+    -- If the child exits with an error, we receive LINK_DOWN
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         print("Child died:", event.from)
@@ -229,18 +264,21 @@ end
 local function worker_main()
     local events_ch = process.events()
 
-    -- trap_linksはデフォルトでfalse
+    -- trap_links is false by default
     local opts = process.get_options()
     print("trap_links:", opts.trap_links)  -- false
 
-    -- 失敗するリンクされたワーカーを生成
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- 子がエラーを起こすと、このプロセスは終了
-    -- この地点には到達しない
+    -- When child errors, THIS process terminates
+    -- We never reach this point
     local event = events_ch:receive()
 end
 ```
@@ -251,18 +289,24 @@ LINK_DOWNイベントを受信して生存するには`trap_links`を有効化:
 
 ```lua
 local function worker_main()
-    -- trap_linksを有効化
-    process.set_options({ trap_links = true })
+    -- Enable trap_links
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
 
     local events_ch = process.events()
 
-    -- 失敗するリンクされたワーカーを生成
+    -- Spawn linked worker that will fail
     local child_pid, err = process.spawn_linked(
         "app.workers:error_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn_linked failed: " .. tostring(err)
+    end
 
-    -- LINK_DOWNイベントを待機
+    -- Wait for LINK_DOWN event
     local event = events_ch:receive()
 
     if event.kind == process.event.LINK_DOWN then
@@ -272,32 +316,38 @@ local function worker_main()
 end
 ```
 
+これらの例で`LINK_DOWN`を受信するには、対象または子プロセスが異常終了する必要があります。
+明示的なリンクの例では、その障害が3秒の待機時間内に発生する必要もあります。正常終了ではイベントは発生しません。
+
 ## キャンセル
 
 ### キャンセルシグナルの送信
 
-プロセスを適切に終了させるには`process.cancel()`を使用:
+プロセスに正常なキャンセルを要求するには`process.cancel()`を使用します：
 
 ```lua
 local function main()
     local time = require("time")
     local events_ch = process.events()
 
-    -- ワーカーを生成してモニタリング
+    -- Spawn and monitor worker
     local worker_pid, err = process.spawn_monitored(
         "app.workers:long_worker",
         "app:processes"
     )
+    if err then
+        return nil, "spawn failed: " .. tostring(err)
+    end
 
     time.sleep("5ms")
 
-    -- ワーカーをキャンセル
+    -- Cancel the worker
     local ok, cancel_err = process.cancel(worker_pid)
     if cancel_err then
         return nil, "cancel failed: " .. tostring(cancel_err)
     end
 
-    -- EXITイベントを待機
+    -- Wait for EXIT event
     local event = events_ch:receive()
     if event.kind == process.event.EXIT then
         print("Worker cancelled:", event.from)
@@ -307,7 +357,9 @@ end
 
 ### キャンセルの処理
 
-ワーカーは`process.events()`経由でCANCELイベントを受信:
+ワーカーは`process.events()`経由で`CANCEL`イベントを受信します。
+
+以下の`cleanup()`と`handle_message()`は、このレシピでは定義していないアプリケーション側のコールバックです。
 
 ```lua
 local function worker_main()
@@ -323,12 +375,12 @@ local function worker_main()
         if result.channel == events_ch then
             local event = result.value
             if event.kind == process.event.CANCEL then
-                -- リソースをクリーンアップ
+                -- Cleanup resources
                 cleanup()
                 return "cancelled gracefully"
             end
         else
-            -- inboxメッセージを処理
+            -- Process inbox message
             handle_message(result.value)
         end
     end
@@ -339,21 +391,24 @@ end
 
 ### スタートポロジー
 
-親に戻ってリンクする複数の子を持つ親:
+親は、自身へリンクする複数の子を連携させられます：
 
 ```lua
--- 親ワーカーは親にリンクする子を生成
+-- Parent worker spawns children that link TO parent
 local function star_parent_main()
     local time = require("time")
     local events_ch = process.events()
     local child_count = 10
 
-    -- 子の死亡を確認するためにtrap_linksを有効化
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to see children die
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local children = {}
 
-    -- 子を生成
+    -- Spawn children
     for i = 1, child_count do
         local child_pid, err = process.spawn(
             "app.workers:linker_child",
@@ -363,12 +418,15 @@ local function star_parent_main()
             error("spawn child failed: " .. tostring(err))
         end
 
-        -- 親のPIDを子に送信
-        process.send(child_pid, "inbox", process.pid())
+        -- Send parent PID to child
+        local _, send_err = process.send(child_pid, "inbox", process.pid())
+        if send_err then
+            error("send parent PID failed: " .. tostring(send_err))
+        end
         children[child_pid] = true
     end
 
-    -- すべての子がリンク確認するまで待機
+    -- Wait for all children to confirm link
     for i = 1, child_count do
         local msg = process.inbox():receive()
         if msg:topic() ~= "linked" then
@@ -376,7 +434,7 @@ local function star_parent_main()
         end
     end
 
-    -- 失敗をトリガー - すべての子がLINK_DOWNを受信
+    -- Trigger failure - all children should receive LINK_DOWN
     error("PARENT_STAR_FAILURE")
 end
 ```
@@ -385,20 +443,32 @@ end
 
 ```lua
 local function linker_child_main()
+    -- Enable trap_links to receive LINK_DOWN events
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        return nil, "set_options failed: " .. tostring(options_err)
+    end
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
-    -- 親のPIDを受信
+    -- Receive parent PID
     local msg = inbox_ch:receive()
     local parent_pid = msg:payload():data()
 
-    -- 親にリンク
-    process.link(parent_pid)
+    -- Link to parent
+    local _, link_err = process.link(parent_pid)
+    if link_err then
+        return nil, "link failed: " .. tostring(link_err)
+    end
 
-    -- リンク確認
-    process.send(parent_pid, "linked", process.pid())
+    -- Confirm link
+    local _, send_err = process.send(parent_pid, "linked", process.pid())
+    if send_err then
+        return nil, "confirmation failed: " .. tostring(send_err)
+    end
 
-    -- 親が死亡したときのLINK_DOWNを待機
+    -- Wait for LINK_DOWN when parent dies
     local event = events_ch:receive()
     if event.kind == process.event.LINK_DOWN then
         return "parent_died"
@@ -408,27 +478,27 @@ end
 
 ### チェーントポロジー
 
-各ノードが親にリンクする線形チェーン:
+線形チェーンでは各ノードが親へリンクします：
 
 ```lua
--- チェーンルート: A -> B -> C -> D -> E
+-- Chain root: A -> B -> C -> D -> E
 local function chain_root_main()
     local time = require("time")
 
-    -- 最初の子を生成
+    -- Spawn first child
     local child_pid, err = process.spawn_linked(
         "app.workers:chain_node",
         "app:processes",
-        4  -- 残りの深さ
+        4  -- depth remaining
     )
     if err then
         error("spawn failed: " .. tostring(err))
     end
 
-    -- チェーン構築を待機
+    -- Wait for chain to build
     time.sleep("100ms")
 
-    -- カスケードをトリガー - すべてのリンクされたプロセスが終了
+    -- Trigger cascade - all linked processes die
     error("CHAIN_ROOT_FAILURE")
 end
 ```
@@ -437,10 +507,8 @@ end
 
 ```lua
 local function chain_node_main(depth)
-    local time = require("time")
-
     if depth > 0 then
-        -- チェーンの次を生成
+        -- Spawn next in chain
         local child_pid, err = process.spawn_linked(
             "app.workers:chain_node",
             "app:processes",
@@ -451,7 +519,7 @@ local function chain_node_main(depth)
         end
     end
 
-    -- 親の死亡がLINK_DOWN経由で終了させるまでブロック（デフォルトtrap_links=false）
+    -- Block until parent death kills us via LINK_DOWN (default trap_links=false)
     process.inbox():receive()
 end
 ```
@@ -466,6 +534,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: supervision-policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.host
+        - process.send
+        - process.spawn
+        - process.spawn.linked
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     host:
@@ -486,6 +565,18 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.supervisor:pool
+      policies:
+        - app:supervision-policy
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
+    input:
+      - 4
     lifecycle:
       auto_start: true
 ```
@@ -498,8 +589,11 @@ local function main(worker_count)
     local time = require("time")
     worker_count = worker_count or 4
 
-    -- ワーカーの死亡を処理するためにtrap_linksを有効化
-    process.set_options({ trap_links = true })
+    -- Enable trap_links to handle worker deaths
+    local _, options_err = process.set_options({ trap_links = true })
+    if options_err then
+        error("set_options failed: " .. tostring(options_err))
+    end
 
     local events_ch = process.events()
     local workers = {}
@@ -520,14 +614,14 @@ local function main(worker_count)
         return pid
     end
 
-    -- 初期プールを起動
+    -- Start initial pool
     for i = 1, worker_count do
         start_worker(i)
     end
 
     print("Supervisor started with " .. worker_count .. " workers")
 
-    -- スーパービジョンループ
+    -- Supervision loop
     while true do
         local timeout = time.after("60s")
         local result = channel.select {
@@ -536,7 +630,7 @@ local function main(worker_count)
         }
 
         if result.channel == timeout then
-            -- 定期的なヘルスチェック
+            -- Periodic health check
             local count = 0
             for _ in pairs(workers) do count = count + 1 end
             print("Health check: " .. count .. " active workers")
@@ -551,7 +645,7 @@ local function main(worker_count)
                     local uptime = os.time() - dead_worker.started_at
                     print("Worker " .. dead_worker.id .. " died after " .. uptime .. "s, restarting")
 
-                    -- 再起動前の短い遅延
+                    -- Brief delay before restart
                     time.sleep("100ms")
                     start_worker(dead_worker.id)
                 end
@@ -579,6 +673,11 @@ entries:
     method: main
     modules:
       - time
+    security:
+      actor:
+        id: app.workers:task_worker
+      policies:
+        - app:supervision-policy
 ```
 
 ### ワーカー実装
@@ -618,11 +717,14 @@ local function main(worker_id)
             if topic == "work" then
                 print("Worker " .. worker_id .. " processing: " .. payload)
                 time.sleep("100ms")
-                process.send(msg:from(), "result", "completed: " .. payload)
+                local _, send_err = process.send(msg:from(), "result", "completed: " .. payload)
+                if send_err then
+                    return nil, "send result failed: " .. tostring(send_err)
+                end
             end
 
         elseif result.channel == timeout then
-            -- アイドルタイムアウト
+            -- Idle timeout
             print("Worker " .. worker_id .. " idle")
         end
     end
@@ -631,28 +733,21 @@ end
 return { main = main }
 ```
 
-## プロセスホスト設定
+## プロセスホストの設定
 
-プロセスホストは、プロセスを実行するOSスレッドの数を制御します:
+「設定」セクションで定義した`app:processes`エントリは、次のホスト設定を使用します：
 
 ```yaml
-# src/_index.yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: processes
-    kind: process.host
-    host:
-      workers: 16  # OSスレッドの数
-    lifecycle:
-      auto_start: true
+# Within the app:processes entry in src/_index.yaml
+host:
+  workers: 16  # Worker goroutines (default: NumCPU)
 ```
 
-ワーカー設定:
-- CPUバウンドな作業の並列性を制御
-- 通常はCPUコア数に設定
-- すべてのプロセスがこのスレッドプールを共有
+`workers`設定：
+
+- CPUバウンドな処理の並列性を制御します。
+- 通常はCPUコア数に設定します。
+- ホスト上のすべてのプロセスが共有するスケジューラープールに適用されます。
 
 ## イベントタイプ
 
@@ -660,28 +755,28 @@ entries:
 |---------|---------|-----------|
 | `EXIT` | モニタリング対象のプロセスが終了 | `spawn_monitored()`または`monitor()` |
 | `LINK_DOWN` | リンクされたプロセスが失敗 | `spawn_linked()`または`link()`と`trap_links=true` |
-| `CANCEL` | `process.cancel()`が呼ばれた | なし（常に配信） |
+| `CANCEL` | `process.cancel()`が呼ばれた | 対象が`process.events()`を受信する |
 
-## スーパーバイザープールの実行
+## スーパーバイザープールのレシピを使う
 
-[設定](#設定)に示した構造にプールファイルを配置し、次を実行します:
+このプールはワーカーを起動して監視しますが、完全な実行可能チュートリアルではありません。
+制御プロセス、そのプロセスの終了ポリシー、再起動を決定的に検証するアサーションは意図的に省略しています。
+レシピをアプリケーションへ組み込んだら、通常どおり初期化して実行します：
 
 ```bash
 wippy init
 wippy run
 ```
 
-スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。別のプロセスからワーカーをキャンセルして再起動をトリガーできます:
+スーパーバイザーは自動起動して4つのワーカーを生成します。再起動動作を検証するには、ワーカーPIDを検出し、
+そのPIDへの`process.terminate`権限を持ち、ワーカーを終了して代替ワーカーの起動を確認する信頼済み制御エントリを追加してください。
 
-```lua
--- アドホックプロセスまたはchatコマンド内で
-process.cancel("<pid-from-supervisor-log>")
-```
-
-プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。
+ワーカーが異常終了するとプールは`LINK_DOWN`を受信し、100ミリ秒待ってから同じIDでワーカーを再生成します。
+正常な`process.cancel()`ではワーカーが正常終了するため`LINK_DOWN`は発生せず、再起動も行われません。
+検証が完了したらCtrl+Cでアプリケーションを停止してください。
 
 ## 次のステップ
 
-- [プロセス](tutorials/processes.md) - プロセスの基礎
-- [チャネル](tutorials/channels.md) - メッセージパッシングパターン
-- [プロセスモジュール](lua/core/process.md) - APIリファレンス
+- [プロセス](tutorials/processes.md) — プロセスの基礎
+- [チャネル](tutorials/channels.md) — メッセージパッシングのパターン
+- [プロセスモジュール](lua/core/process.md) — APIリファレンス

@@ -49,6 +49,19 @@ The dependency-free check rejects known misleading examples such as stale
 Wippy frontend package versions, raw product controls, direct parent-window
 routing, unsafe shadow-root rewrites, and invalid theme guidance.
 
+## Link validation
+
+After changing Markdown links, run:
+
+```bash
+node scripts/check-markdown-links.mjs
+```
+
+The checker follows the production documentation engine's URL rules: explicit
+`./` and `../` links are page-relative, while established bare paths may resolve
+from the locale root. It rejects local Markdown targets that do not exist under
+either supported form.
+
 ## Contributing
 
 We welcome contributions to improve our documentation! Please read the

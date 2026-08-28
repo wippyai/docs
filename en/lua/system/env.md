@@ -1,6 +1,6 @@
 ---
 title: "Environment Variables"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Read and update environment variables exposed by the configured environment system."
 ---
 
 # Environment Variables
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Access environment variables for configuration values, secrets, and runtime settings.
+The `env` module reads and updates environment variables exposed by the runtime.
+
+This is an API reference. Its snippets are isolated operations and assume the named variables and security policies already exist.
 
 Variables must be defined in the [Environment System](system/env.md) before they can be accessed. The system controls which storage backends (OS, file, memory) provide values and whether variables are read-only.
 
@@ -18,28 +20,26 @@ Variables must be defined in the [Environment System](system/env.md) before they
 local env = require("env")
 ```
 
-## get
+## `get`
 
-Gets an environment variable value.
+Retrieve an environment variable.
 
 ```lua
 -- Get database connection string
-local db_url = env.get("DATABASE_URL")
-if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+local db_url, db_err = env.get("DATABASE_URL")
+if db_err then return nil, db_err end
+
+-- Apply a fallback only to a missing variable. Permission and backend errors
+-- still propagate to the caller.
+local function get_or(key, fallback)
+    local value, err = env.get(key)
+    if not err then return value end
+    if errors.is(err, errors.NOT_FOUND) then return fallback end
+    return nil, err
 end
 
--- Get with fallback
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- Get secrets
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- Configuration
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | Parameter | Type | Description |
@@ -48,23 +48,17 @@ local debug_mode = env.get("DEBUG") == "true"
 
 **Returns:** `string, error`
 
-Returns `nil, error` if variable doesn't exist.
+The function returns `nil, error` when the variable does not exist.
 
-## set
+## `set`
 
-Sets an environment variable.
+Set an environment variable.
 
 ```lua
 -- Set runtime configuration
-env.set("APP_MODE", "production")
-
--- Override for testing
-env.set("API_URL", "http://localhost:8080")
-
--- Set based on conditions
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | Parameter | Type | Description |
@@ -74,25 +68,30 @@ end
 
 **Returns:** `boolean, error`
 
-## get_all
+## `get_all`
 
-Gets all accessible environment variables.
+Retrieve all environment variables accessible to the caller.
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- Log configuration (be careful not to log secrets)
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
+
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
 
 -- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({
+            message = "Missing required env var: " .. key,
+            kind = errors.INVALID
+        })
     end
 end
 ```
@@ -101,7 +100,7 @@ end
 
 ## Permissions
 
-Environment access is subject to security policy evaluation.
+Security policy evaluation applies to environment access.
 
 ### Security Actions
 

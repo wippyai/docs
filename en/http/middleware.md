@@ -5,11 +5,15 @@ description: "Middleware processes HTTP requests before and after route handling
 
 # HTTP Middleware
 
-Middleware processes HTTP requests before and after route handling.
+HTTP middleware runs in one of two router chains: before endpoint metadata is attached, or after the route has supplied its parameters and endpoint ID.
+
+**Classification: middleware reference.** Each YAML block is a router fragment;
+it assumes the named middleware is registered and any referenced token store,
+filesystem, endpoint, actor, and policy entries exist.
 
 ## How Middleware Works
 
-Middleware wraps HTTP handlers to add processing logic. Each middleware receives an options map and returns a handler wrapper:
+Each middleware receives an options map and returns a handler wrapper:
 
 ```yaml
 middleware:
@@ -22,15 +26,16 @@ options:
 
 Options use dot notation: `middleware_name.option.name`. Legacy underscore format is supported for backward compatibility.
 
-## Pre-Match vs Post-Match
+## Pre-Handler and Post-Match
 
 <tip>
-<b>Pre-match</b> runs before route matching—for cross-cutting concerns like CORS and compression.
-<b>Post-match</b> runs after the route is matched—for authorization that needs route info.
+<b>Pre-handler</b> middleware runs after the server selects a route but before route metadata is attached—for concerns such as CORS and compression.
+<b>Post-match</b> middleware runs after route metadata is attached—for authorization that needs the endpoint ID.
+Neither chain runs for an unmatched request.
 </tip>
 
 ```yaml
-middleware:        # Pre-match
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
@@ -48,7 +53,7 @@ post_options:
 
 ### CORS {#cors}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Cross-Origin Resource Sharing for browser requests.
 
@@ -76,7 +81,7 @@ OPTIONS preflight requests are handled automatically.
 
 ### Rate Limiting {#ratelimit}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Token bucket rate limiting with per-key tracking.
 
@@ -107,7 +112,7 @@ Returns `429 Too Many Requests` with headers: `X-RateLimit-Limit`, `X-RateLimit-
 
 ### Compression {#compress}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Gzip compression for responses.
 
@@ -130,7 +135,7 @@ Only compresses when client sends `Accept-Encoding: gzip`.
 
 ### Real IP {#real_ip}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Extract client IP from proxy headers.
 
@@ -143,7 +148,7 @@ options:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `real_ip.trusted.subnets` | Private networks | Trusted proxy CIDRs |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918 private, IPv4 link-local, CGNAT, IPv6 ULA, and IPv6 link-local ranges | Trusted proxy CIDRs |
 | `real_ip.trust_all` | `false` | Trust all sources (insecure) |
 
 **Header priority:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -152,7 +157,7 @@ options:
 
 ### Token Auth {#token_auth}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Token-based authentication. See [Security](system/security.md) for token store configuration.
 
@@ -177,9 +182,9 @@ Sets actor and security scope in context for downstream middleware. Does not blo
 
 ### Metrics {#metrics}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
-Prometheus-style HTTP metrics. No configuration options.
+Prometheus-style HTTP metrics. This middleware is registered only when a metrics collector is available, and it has no configuration options.
 
 ```yaml
 middleware:
@@ -198,7 +203,7 @@ middleware:
 
 <warning>Post-match</warning>
 
-Authorization based on matched endpoint. Requires actor from `token_auth`.
+Authorization based on the matched endpoint. It requires an actor and security scope in the request context; `token_auth` is one way to supply them.
 
 ```yaml
 post_middleware:
@@ -238,7 +243,7 @@ post_options:
 
 ### Sendfile {#sendfile}
 
-<note>Pre-match</note>
+<note>Pre-handler</note>
 
 Serve files via `X-Sendfile` header from handlers.
 
@@ -292,7 +297,7 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>Pre-handler</note>
 
 Records OpenTelemetry spans and metrics for incoming requests. Registered automatically when OTel is enabled; acts as a no-op otherwise.
 
@@ -307,7 +312,7 @@ Takes no options. Works alongside the `metrics` middleware; enable both when you
 
 ## Middleware Order
 
-Middleware executes in listed order. Recommended sequence:
+For requests, middleware executes in listed order; response handling unwinds in reverse order. Recommended sequence:
 
 ```yaml
 middleware:

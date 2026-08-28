@@ -1,6 +1,6 @@
 ---
 title: "프로세스 관리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Wippy 프로세스를 스폰, 모니터링, 링크, 메시징, 명명 및 업그레이드합니다."
 ---
 
 # 프로세스 관리
@@ -9,17 +9,22 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-자식 프로세스를 스폰하고 모니터링하며 통신합니다. 메시지 전달, 슈퍼비전, 라이프사이클 관리를 갖춘 액터 모델 패턴을 구현합니다.
+`process` 전역은 프로세스 스폰, 메시징, 모니터링, 링크, 명명 및 라이프사이클 제어를 제공합니다.
 
-`process` 전역은 항상 사용 가능합니다 — `require()`가 필요 없으며 `modules:`에 나열할 필요가 없습니다.
+`require()` 없이 사용할 수 있으며 `modules:`에 나열할 필요가 없습니다.
+
+이 페이지는 API 참조입니다. 호출 형식 블록의 `id`, `host`, `destination`, `topic`, `name` 같은 플레이스홀더는 애플리케이션 코드가 제공하는 값이며 독립 실행 프로그램이 아닙니다. `err` 결과와 함께 표시된 호출은 성공 시 문서화된 값을, 실패 시 실패 센티널과 `error`를 반환합니다. 센티널은 일반적으로 `nil`이지만 `process.set_options`는 `false`를 반환합니다. 애플리케이션 제어 흐름에서 오류를 처리해야 합니다.
 
 ## 프로세스 정보
 
 현재 프레임 ID 또는 프로세스 ID 가져오기:
 
 ```lua
-local frame_id = process.id()  -- 호출 체인 식별자
-local pid = process.pid()       -- 프로세스 ID
+local frame_id, err = process.id()  -- Registry ID of the current function, process, or workflow definition
+if err then return nil, err end
+
+local pid, err = process.pid()      -- Process ID
+if err then return nil, err end
 ```
 
 ## 메시지 전송
@@ -41,16 +46,16 @@ local ok, err = process.send(destination, topic, ...)
 ## 프로세스 스폰
 
 ```lua
--- 기본 스폰
+-- Basic spawn
 local pid, err = process.spawn(id, host, ...)
 
--- 모니터링과 함께 (EXIT 이벤트 수신)
+-- With monitoring (receive EXIT events)
 local pid, err = process.spawn_monitored(id, host, ...)
 
--- 링킹과 함께 (비정상 종료 시 LINK_DOWN 수신)
+-- With linking (receive LINK_DOWN on abnormal exit)
 local pid, err = process.spawn_linked(id, host, ...)
 
--- 링킹과 모니터링 모두
+-- Both linked and monitored
 local pid, err = process.spawn_linked_monitored(id, host, ...)
 ```
 
@@ -60,19 +65,15 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `host` | string | 호스트 ID (예: `"app:processes"`) |
 | `...` | any | 스폰된 프로세스에 전달되는 인수 |
 
-**권한:**
-- 프로세스 id에 대한 `process.spawn`
-- 호스트 id에 대한 `process.host`
-- 모니터링 변형에 대해 프로세스 id의 `process.spawn.monitored`
-- 링킹 변형에 대해 프로세스 id의 `process.spawn.linked`
+모든 변형에는 프로세스 ID에 대한 `process.spawn`이 필요합니다. 모니터링 변형에는 `process.spawn.monitored`, 링크 변형에는 `process.spawn.linked`도 필요합니다. 런타임 v0.3.32a에서는 모듈 수준 `spawn()`만 호스트 ID에 대한 `process.host`를 검사하며, 특수 모듈 수준 변형은 이 호스트 권한 검사를 수행하지 않습니다.
 
 ## 프로세스 제어
 
 ```lua
--- 프로세스 강제 종료
+-- Forcefully terminate a process
 local ok, err = process.terminate(destination)
 
--- 선택적 이유와 함께 그레이스풀 취소 요청
+-- Request graceful cancellation with an optional reason
 local ok, err = process.cancel(destination, "shutting down")
 ```
 
@@ -88,11 +89,11 @@ local ok, err = process.cancel(destination, "shutting down")
 기존 프로세스 모니터링 또는 링킹:
 
 ```lua
--- 모니터링: 대상 종료 시 EXIT 이벤트 수신
+-- Monitoring: receive EXIT events when target exits
 local ok, err = process.monitor(destination)
 local ok, err = process.unmonitor(destination)
 
--- 링킹: 양방향, 비정상 종료 시 LINK_DOWN 수신
+-- Linking: bidirectional, receive LINK_DOWN on abnormal exit
 local ok, err = process.link(destination)
 local ok, err = process.unlink(destination)
 ```
@@ -116,8 +117,8 @@ local ok, err = process.set_options({trap_links = true})
 메시지와 라이프사이클 이벤트를 수신하기 위한 채널 가져오기:
 
 ```lua
-local inbox = process.inbox()    -- @inbox 토픽의 메시지 객체
-local events = process.events()  -- @events 토픽의 라이프사이클 이벤트
+local inbox = process.inbox()    -- Message objects from @inbox topic
+local events = process.events()  -- Lifecycle events from @events topic
 ```
 
 ### 이벤트 타입
@@ -135,20 +136,22 @@ local events = process.events()  -- @events 토픽의 라이프사이클 이벤�
 |-------|------|------|
 | `kind` | string | 이벤트 타입 상수 |
 | `from` | string | 소스 PID |
-| `result` | any | EXIT의 경우: 반환된 값(정상 종료 시 존재) |
-| `error` | any | EXIT의 경우: 오류(비정상 종료 시 존재) |
+| `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`, 오류는 `result.error`에 있음 |
 | `reason` | string | CANCEL의 경우: 프로세스가 취소되는 이유 |
 | `sources` | string[] | OUTDATED의 경우: 변경되었거나 전이적으로 영향을 받은 레지스트리 ID |
 
-OUTDATED는 `process.set_options({upgradable = true})`로 옵트인한 프로세스에만 전달됩니다; 다른 프로세스는 이를 받지 않습니다. 여러 무효화는 `sources`의 합집합을 가진 하나의 대기 이벤트로 병합됩니다. 의도된 대응은 [`process.upgrade`](#프로세스-업그레이드)를 통한 핫 스왑입니다.
+`OUTDATED`는 `process.set_options({upgradable = true})`로 옵트인한 프로세스에만 전달됩니다. 여러 무효화는 `sources`의 합집합을 포함하는 하나의 대기 이벤트로 결합됩니다. [`process.upgrade`](#프로세스-업그레이드)를 호출해 이벤트를 처리하세요.
 
 ## 토픽 구독
 
 커스텀 토픽 구독:
 
 ```lua
-local ch = process.listen(topic, options)
-process.unlisten(ch)
+local ch, err = process.listen(topic, options)
+if err then return nil, err end
+
+local ok, err = process.unlisten(ch)
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -163,10 +166,10 @@ process.unlisten(ch)
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: 토픽 이름
-msg:from()             -- string|nil: 발신자 PID
-msg:payload()          -- Payload: 래퍼 (:data() 호출로 추출)
-msg:payload():data()   -- any: 실제 페이로드 값
+msg:topic()            -- string: topic name
+msg:from()             -- string|nil: sender PID
+msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:payload():data()   -- any: actual payload value
 ```
 
 ## 동기 호출
@@ -181,15 +184,21 @@ local result, err = process.exec(id, host, ...)
 
 ## 프로세스 업그레이드
 
-PID를 보존하면서 현재 프로세스를 새 정의로 업그레이드:
+PID를 유지하면서 현재 프로세스를 업그레이드합니다.
+
+아래 두 조각은 순차 작업이 아니라 대안적인 호출 형식입니다.
 
 ```lua
--- 상태를 전달하며 새 버전으로 업그레이드
+-- Upgrade to new version, passing state
 process.upgrade(id, ...)
+```
 
--- 같은 정의를 유지하며 새 상태로 재실행
+```lua
+-- Keep same definition, re-run with new state
 process.upgrade(nil, preserved_state)
 ```
+
+`process.upgrade`는 종료형 제어 이전입니다. 현재 실행을 지우고 같은 PID로 요청된 정의를 시작합니다. 호출 뒤의 코드는 이전 실행에서 수행되지 않습니다.
 
 ## 컨텍스트 스포너
 
@@ -217,15 +226,15 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 
 ### SpawnBuilder 메서드
 
-SpawnBuilder는 불변입니다 — 각 메서드는 새 인스턴스를 반환합니다:
+`SpawnBuilder`는 불변입니다. 각 구성 메서드는 새 인스턴스를 반환합니다.
 
 ```lua
-spawner:with_context(values)      -- 컨텍스트 값 추가
-spawner:with_actor(actor)         -- 보안 액터 설정
-spawner:with_scope(scope)         -- 보안 범위 설정
-spawner:with_name(name)           -- 프로세스 이름 설정
-spawner:with_message(topic, ...)  -- 스폰 후 전송할 메시지 큐에 추가
-spawner:with_options(options)     -- 스폰 시 옵션 병합 (예: 네트워크)
+spawner:with_context(values)      -- Add context values
+spawner:with_actor(actor)         -- Set security actor
+spawner:with_scope(scope)         -- Set security scope
+spawner:with_name(name)           -- Set process name
+spawner:with_message(topic, ...)  -- Queue message to send after spawn
+spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
 
 **권한:** `:with_actor()`와 `:with_scope()`에 대해 "security"에 대한 `process.security`
@@ -239,7 +248,7 @@ spawner:spawn_linked(id, host, ...)
 spawner:spawn_linked_monitored(id, host, ...)
 ```
 
-모듈 수준 스폰 함수와 동일한 권한.
+모든 `SpawnBuilder` 스폰 메서드에는 적용 가능한 `process.spawn`, `process.spawn.monitored`, `process.spawn.linked` 권한에 더해 호스트 ID에 대한 `process.host`가 필요합니다.
 
 ### 스포너 Exec
 
@@ -256,14 +265,14 @@ local result, err = spawner:exec(id, host, ...)
 프로세스를 이름으로 등록하고 PID 대신 해당 이름으로 도달합니다. `destination`을 받는 모든 함수(`send`, `terminate`, `cancel`, `monitor`, `link`, ...)는 PID 대신 등록된 이름을 허용합니다.
 
 ```lua
-local ok, err = process.registry.register(name)               -- 자신, 로컬 범위
+local ok, err = process.registry.register(name)               -- self, local scope
 local pid, err = process.registry.lookup(name)
 local ok, err = process.registry.unregister(name)
 ```
 
 ### 범위
 
-선택적 `scope` 인수는 이름의 일관성 보장을 선택합니다. 기본값은 `LOCAL`입니다. 네 가지 범위와 그 보장은 [클러스터 가이드](guides/cluster.md#명명-및-이름-범위)에 설명되어 있습니다; 간략히:
+선택적 `scope` 인수는 이름의 일관성 보장을 선택하며 기본값은 `LOCAL`입니다. 전체 모델은 [클러스터 가이드](../../guides/cluster.md#이름-지정과-이름-범위)를 참조하세요.
 
 | 상수 | 가시성 | 보장 |
 |----------|------------|-----------|
@@ -272,7 +281,7 @@ local ok, err = process.registry.unregister(name)
 | `process.registry.CONSISTENT` | 클러스터 전체 | 선형화 가능한 싱글톤 (Raft) |
 | `process.registry.STRONG` | 클러스터 전체 | Consistent + 모든 살아있는 노드 승인 |
 
-단독 노드에서는 `LOCAL`만 의미가 있습니다; 클러스터 범위는 [클러스터링](guides/cluster.md)이 필요합니다.
+독립 실행형 노드에서는 `LOCAL`만 사용할 수 있습니다. 클러스터 스코프에는 [클러스터링](guides/cluster.md)이 필요합니다.
 
 ### register
 
@@ -325,7 +334,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.spawn` | `spawn*()` | 프로세스 id |
 | `process.spawn.monitored` | `spawn_monitored()`, `spawn_linked_monitored()` | 프로세스 id |
 | `process.spawn.linked` | `spawn_linked()`, `spawn_linked_monitored()` | 프로세스 id |
-| `process.host` | `spawn*()`, `exec()` | 호스트 id |
+| `process.host` | 모듈 수준 `spawn()`, 모든 `SpawnBuilder` 스폰 메서드, `exec()` | 호스트 id |
 | `process.send` | `send()` | 대상 PID |
 | `process.exec` | `exec()` | 프로세스 id |
 | `process.terminate` | `terminate()` | 대상 PID |
@@ -349,9 +358,13 @@ local ok, err = process.registry.unregister(name, scope)
 | 작업 | 필요한 권한 |
 |-----------|---------------------|
 | `spawn()` | `process.spawn` + `process.host` |
-| `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
-| `spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
-| `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
+| 모듈 수준 `spawn_monitored()` | `process.spawn` + `process.spawn.monitored` |
+| 모듈 수준 `spawn_linked()` | `process.spawn` + `process.spawn.linked` |
+| 모듈 수준 `spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` |
+| `SpawnBuilder:spawn()` | `process.spawn` + `process.host` |
+| `SpawnBuilder:spawn_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.host` |
+| `SpawnBuilder:spawn_linked()` | `process.spawn` + `process.spawn.linked` + `process.host` |
+| `SpawnBuilder:spawn_linked_monitored()` | `process.spawn` + `process.spawn.monitored` + `process.spawn.linked` + `process.host` |
 | `exec()` | `process.exec` + `process.host` |
 | 커스텀 액터/범위로 스폰 | 스폰 권한 + `process.security` |
 
@@ -359,11 +372,10 @@ local ok, err = process.registry.unregister(name, scope)
 
 | 조건 | 종류 |
 |-----------|------|
-| 컨텍스트 없음 | `errors.INVALID` |
-| 프레임 컨텍스트 없음 | `errors.INVALID` |
+| 컨텍스트 없음 | `errors.INTERNAL` |
+| 프레임 컨텍스트 없음 | `errors.INTERNAL` |
 | 필수 인수 누락 | `errors.INVALID` |
 | 예약된 토픽 접두사 (`@`) | `errors.INVALID` |
-| 잘못된 duration 형식 | `errors.INVALID` |
 | 이름 미등록 | `errors.NOT_FOUND` |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 이름 이미 등록됨 | `errors.ALREADY_EXISTS` |
@@ -372,7 +384,7 @@ local ok, err = process.registry.unregister(name, scope)
 
 ## 참고
 
-- [채널](lua/core/channel.md) - 프로세스 간 통신
+- [채널](lua/core/channel.md) - 프로세스 내 코루틴 조율
 - [메시지 큐](lua/storage/queue.md) - 큐 기반 메시징
 - [함수](lua/core/funcs.md) - 함수 호출
 - [슈퍼비전](guides/supervision.md) - 프로세스 라이프사이클 관리

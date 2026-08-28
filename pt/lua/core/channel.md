@@ -1,6 +1,6 @@
 ---
 title: "Channels e Corrotinas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Crie channels com e sem buffer, troque valores, selecione operações e coordene trabalho concorrente."
 ---
 
 # Channels e Corrotinas
@@ -9,19 +9,19 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 
 
-Channels estilo Go para comunicação entre corrotinas. Crie channels com ou sem buffer, envie e receba valores, e coordene entre processos concorrentes usando instruções select.
+Channels estilo Go coordenam corrotinas dentro de um processo Lua. Os globais `channel` e `coroutine` estão sempre disponíveis; entre processos, use mensagens de processo, funções ou filas.
 
-O global `channel` está sempre disponível.
+Nos padrões parciais abaixo, `jobs` é a fila fornecida pela aplicação e `process` é seu callback de processamento; em outro exemplo, `data` e o callback `process` também vêm da aplicação. Um caso de channel selecionado retorna `{channel, value, ok}`; o branch padrão retorna `{default = true, ok = true}` quando nenhum caso está pronto e `default = true`. O padrão de timeout exige `time` em `modules:`, recebe `application_response_channel` da aplicação e usa `time.after`, que retorna um channel ou `nil, error`. Outros padrões usam o global ambiente `process`, ou recebem `ch` e o callback `process` da aplicação. No worker pool, `processed` contém `2`, `4`, `6` e `8`, em ordem dependente do agendamento.
 
 ## Criando Channels
 
 Channels sem buffer (tamanho 0) requerem que remetente e receptor estejam prontos antes da transferência completar. Channels com buffer permitem que envios completem imediatamente enquanto houver espaço disponível:
 
 ```lua
--- Sem buffer: sincroniza remetente e receptor
+-- Unbuffered: synchronizes sender and receiver
 local sync_ch = channel.new()
 
--- Com buffer: enfileirar até 10 mensagens
+-- Buffered: queue up to 10 messages
 local work_queue = channel.new(10)
 ```
 
@@ -36,12 +36,13 @@ local work_queue = channel.new(10)
 Enviar um valor para o channel. Bloqueia até um receptor estar pronto (sem buffer) ou espaço no buffer estar disponível (com buffer):
 
 ```lua
--- Enviar trabalho para pool de workers
+-- Send work to a worker pool
+local tasks = {"task-a", "task-b"}
 local jobs = channel.new(100)
 for i, task in ipairs(tasks) do
-    jobs:send(task)  -- Bloqueia se buffer cheio
+    jobs:send(task)  -- Blocks if buffer full
 end
-jobs:close()  -- Sinalizar que não há mais trabalho
+jobs:close()  -- Signal no more work
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -57,11 +58,11 @@ Lança erro se channel estiver fechado.
 Receber um valor do channel. Bloqueia até um valor estar disponível ou o channel estar fechado:
 
 ```lua
--- Worker consumindo da fila de jobs
+-- Worker consuming from job queue
 while true do
-    local job, ok = work:receive()
+    local job, ok = jobs:receive()
     if not ok then
-        break  -- Channel fechado, não há mais trabalho
+        break  -- Channel closed, no more work
     end
     process(job)
 end
@@ -74,16 +75,16 @@ end
 
 ## Fechando Channels
 
-Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Lança erro se já estiver fechado:
+Fechar o channel faz com que remetentes pendentes recebam um erro e receptores pendentes recebam `nil, false`. Fechar um channel que já está fechado não produz efeito:
 
 ```lua
 local results = channel.new(10)
 
--- Produtor preenche resultados
+-- Producer fills results
 for _, item in ipairs(data) do
     results:send(process(item))
 end
-results:close()  -- Sinalizar conclusão
+results:close()  -- Signal completion
 ```
 
 ## Selecionando de Múltiplos Channels
@@ -108,8 +109,11 @@ Aguardar resultado com timeout usando `time.after()`.
 ```lua
 local time = require("time")
 
-local result_ch = worker:response()
-local timeout = time.after("5s")
+local result_ch = application_response_channel
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     result_ch:case_receive(),
@@ -117,7 +121,13 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({
+        message = "Operation timed out",
+        kind = errors.TIMEOUT
+    })
+end
+if not r.ok then
+    return nil, errors.new("Response channel closed")
 end
 return r.value
 ```
@@ -159,7 +169,9 @@ local r = channel.select {
 }
 
 if r.default then
-    -- Nada disponível, fazer outra coisa
+    -- Nothing available, do something else
+elseif not r.ok then
+    -- The channel is closed
 else
     process(r.value)
 end
@@ -170,31 +182,48 @@ end
 Criar casos para uso com `channel.select`:
 
 ```lua
--- Caso send - completa quando channel pode aceitar valor
+-- Send case - completes when channel can accept value
 ch:case_send(value)
 
--- Caso receive - completa quando valor disponível
+-- Receive case - completes when value available
 ch:case_receive()
 ```
+
+Valores da tabela de casos que não sejam casos de envio ou recebimento são ignorados. Garanta que a tabela contenha pelo menos um caso válido, a menos que ela também tenha um branch padrão.
 
 ## Padrão Worker Pool
 
 ```lua
-local work = channel.new(100)
-local results = channel.new(100)
+local items = {1, 2, 3, 4}
+local num_workers = 2
 
--- Criar workers
-for i = 1, num_workers do
-    process.spawn("app.workers:processor", "app:processes", work, results)
+local function process_item(item)
+    return item * 2
 end
 
--- Alimentar trabalho
+local work = channel.new(#items)
+local results = channel.new(#items)
+
+-- Spawn workers
+for _ = 1, num_workers do
+    coroutine.spawn(function()
+        while true do
+            local item, ok = work:receive()
+            if not ok then
+                return
+            end
+            results:send(process_item(item))
+        end
+    end)
+end
+
+-- Feed work
 for _, item in ipairs(items) do
     work:send(item)
 end
 work:close()
 
--- Coletar resultados
+-- Collect results
 local processed = {}
 while #processed < #items do
     local result, ok = results:receive()
@@ -208,11 +237,9 @@ end
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Send em channel fechado | erro runtime | não |
-| Close de channel fechado | erro runtime | não |
-| Caso inválido em select | erro runtime | não |
 
 ## Veja Também
 
-- [Process Management](lua/core/process.md) - Criação e comunicação de processos
-- [Message Queue](lua/storage/queue.md) - Mensagens baseadas em fila
-- [Functions](lua/core/funcs.md) - Invocação de funções
+- [Gerenciamento de Processos](lua/core/process.md) - Criação e comunicação de processos
+- [Fila de Mensagens](lua/storage/queue.md) - Mensagens baseadas em fila
+- [Funções](lua/core/funcs.md) - Invocação de funções

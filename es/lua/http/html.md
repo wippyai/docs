@@ -1,39 +1,46 @@
 ---
-title: "Sanitizacion HTML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+title: "Saneamiento de HTML"
+description: "Sanea HTML no confiable con políticas predefinidas o personalizadas de elementos, atributos y URL."
 ---
 
-# Sanitizacion HTML
+# Saneamiento de HTML
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Sanitizar HTML no confiable para prevenir ataques XSS. Basado en [bluemonday](https://github.com/microcosm-cc/bluemonday).
+El módulo `html` sanea HTML no confiable mediante políticas basadas en [bluemonday](https://github.com/microcosm-cc/bluemonday).
 
-La sanitizacion funciona parseando HTML y filtrandolo a traves de una politica de lista blanca. Los elementos y atributos no permitidos explicitamente son eliminados. La salida siempre es HTML bien formado.
+El saneamiento analiza un fragmento HTML y lo filtra mediante una política de elementos permitidos. Los elementos y atributos que la política no permite se eliminan, y el fragmento restante se normaliza durante la serialización.
 
-## Carga
+Esta es una referencia de API. Los bloques de constructores son fragmentos de política autocontenidos; los bloques de métodos posteriores son fragmentos parciales de configuración que suponen que `policy` es una política ya creada. La salida saneada solo es adecuada para un contexto de contenido de elemento HTML. No es segura para interpolarla en JavaScript, CSS, URL ni atributos HTML; use un codificador apropiado para el contexto real de salida.
+
+## Cargar el módulo
 
 ```lua
 local html = require("html")
 ```
 
-## Politicas Preconfiguradas
+Añada `html` a la lista `modules:` de la entrada ejecutable antes de requerirlo.
 
-Tres politicas integradas para casos de uso comunes:
+## Políticas predefinidas
 
-| Politica | Caso de Uso | Permite |
+El módulo proporciona tres constructores de políticas predefinidas:
+
+| Política | Caso de uso | Permite |
 |----------|-------------|---------|
-| `new_policy` | Sanitizacion personalizada | Nada (construir desde cero) |
+| `new_policy` | Saneamiento personalizado | Nada (se construye desde cero) |
 | `ugc_policy` | Comentarios de usuario, foros | Formato comun (`p`, `b`, `i`, `a`, listas, etc.) |
-| `strict_policy` | Extraccion de texto plano | Nada (elimina todo HTML) |
+| `strict_policy` | Extracción de texto plano | Nada (elimina todo HTML) |
 
-### Politica Vacia
+Los tres constructores devuelven `Policy, nil`; actualmente la creación de políticas no falla.
 
-Crea una politica que no permite nada. Use esto para construir una lista blanca personalizada desde cero.
+### Política vacía
+
+Cree una política vacía y añada los elementos y atributos que deba permitir:
 
 ```lua
 local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 
 policy:allow_elements("p", "strong", "em")
 policy:allow_attrs("class"):globally()
@@ -43,12 +50,13 @@ local clean = policy:sanitize(user_input)
 
 **Devuelve:** `Policy, error`
 
-### Politica de Contenido de Usuario
+### Política para contenido de usuario
 
-Preconfigurada para contenido generado por usuarios. Permite elementos de formato comunes.
+Cree una política configurada para formatos habituales de contenido generado por usuarios:
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 
 local safe = policy:sanitize('<p>Hello <strong>world</strong></p>')
 -- '<p>Hello <strong>world</strong></p>'
@@ -59,12 +67,13 @@ local xss = policy:sanitize('<p>Hello <script>alert("xss")</script></p>')
 
 **Devuelve:** `Policy, error`
 
-### Politica Estricta
+### Política estricta
 
-Elimina todo HTML, devuelve solo texto plano.
+Cree una política estricta que elimine el HTML y devuelva texto plano:
 
 ```lua
-local policy = html.sanitize.strict_policy()
+local policy, err = html.sanitize.strict_policy()
+if err then return nil, err end
 
 local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 -- 'Hello world!'
@@ -72,14 +81,15 @@ local text = policy:sanitize('<p>Hello <b>world</b>!</p>')
 
 **Devuelve:** `Policy, error`
 
-## Control de Elementos
+## Control de elementos
 
 ### Permitir Elementos
 
-Lista blanca de elementos HTML especificos.
+Permita elementos HTML concretos:
 
 ```lua
-local policy = html.sanitize.new_policy()
+local policy, err = html.sanitize.new_policy()
+if err then return nil, err end
 policy:allow_elements("p", "strong", "em", "br")
 policy:allow_elements("h1", "h2", "h3")
 policy:allow_elements("a", "img")
@@ -94,11 +104,11 @@ local result = policy:sanitize('<p>Hello <strong>world</strong></p>')
 
 **Devuelve:** `Policy`
 
-## Control de Atributos
+## Control de atributos
 
 ### Permitir Atributos
 
-Iniciar permiso de atributos. Encadenar con `on_elements()` o `globally()`.
+Inicie una regla de atributos y aplíquela con `on_elements()` o `globally()`:
 
 ```lua
 policy:allow_attrs("href"):on_elements("a")
@@ -112,9 +122,9 @@ policy:allow_attrs("class", "id"):globally()
 
 **Devuelve:** `AttrBuilder`
 
-### En Elementos Especificos
+### En elementos específicos
 
-Permitir atributos solo en elementos especificos.
+Permita atributos solo en los elementos indicados:
 
 ```lua
 policy:allow_elements("a", "img")
@@ -128,9 +138,9 @@ policy:allow_attrs("src", "alt", "width", "height"):on_elements("img")
 
 **Devuelve:** `Policy`
 
-### En Todos los Elementos
+### En todos los elementos
 
-Permitir atributos globalmente en cualquier elemento permitido.
+Permita atributos en todos los elementos admitidos:
 
 ```lua
 policy:allow_attrs("class"):globally()
@@ -139,12 +149,12 @@ policy:allow_attrs("id"):globally()
 
 **Devuelve:** `Policy`
 
-### Con Coincidencia de Patrón
+### Con coincidencia de patrón
 
-Validar valores de atributos contra patrón regex.
+Exija que los valores de los atributos coincidan con una expresión regular:
 
 ```lua
--- Solo permitir colores hex en style
+-- Only allow hex colors in style
 local builder, err = policy:allow_attrs("style"):matching("^color:#[0-9a-fA-F]{6}$")
 if err then
     return nil, err
@@ -160,15 +170,15 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `pattern` | string | Patrón regex |
+| `pattern` | string | Expresión regular compatible con RE2 de Go |
 
 **Devuelve:** `AttrBuilder, error`
 
-## Seguridad de URL
+## Seguridad de las URL
 
 ### URLs Estandar
 
-Habilitar manejo de URL con valores predeterminados de seguridad.
+Active la política estándar de tratamiento de URL. Exige URL analizables, permite URL relativas y los esquemas `mailto`, `http` y `https`, y añade `rel="nofollow"` a los elementos de enlace permitidos:
 
 ```lua
 policy:allow_elements("a")
@@ -180,7 +190,7 @@ policy:allow_standard_urls()
 
 ### Esquemas de URL
 
-Restringir que esquemas de URL estan permitidos.
+Permita esquemas de URL específicos:
 
 ```lua
 policy:allow_url_schemes("https", "mailto")
@@ -200,7 +210,7 @@ policy:sanitize('<a href="javascript:alert(1)">XSS</a>')
 
 ### URLs Relativas
 
-Permitir o denegar URLs relativas.
+Configure si se permiten URL relativas:
 
 ```lua
 policy:allow_relative_urls(true)
@@ -217,7 +227,7 @@ policy:sanitize('<a href="/page">Link</a>')
 
 ### Requerir URLs Parseables
 
-Rechaza URLs que no se pueden parsear correctamente. Con `true`, las URLs de atributos que el sanitizador HTML no puede parsear son eliminadas en lugar de pasar.
+Rechace las URL que no se puedan analizar correctamente. Con `true`, las URL de atributos que el saneador HTML no puede analizar se eliminan en lugar de dejarse pasar.
 
 ```lua
 policy:require_parseable_urls(true)
@@ -231,10 +241,12 @@ policy:require_parseable_urls(true)
 
 ### Enlaces Nofollow
 
-Agregar `rel="nofollow"` a todos los enlaces. Previene spam SEO.
+Añada `rel="nofollow"` a los enlaces:
 
 ```lua
 policy:allow_attrs("href", "rel"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:require_nofollow_on_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -249,7 +261,7 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 ### Enlaces Noreferrer
 
-Agregar `rel="noreferrer"` a todos los enlaces. Previene fuga de referrer.
+Añada `rel="noreferrer"` a los enlaces:
 
 ```lua
 policy:require_noreferrer_on_links(true)
@@ -261,12 +273,14 @@ policy:require_noreferrer_on_links(true)
 
 **Devuelve:** `Policy`
 
-### Enlaces Externos en Nueva Pestana
+### Enlaces externos en una pestaña nueva
 
-Agregar `target="_blank"` a URLs completamente calificadas.
+Añada `target="_blank"` a las URL completas:
 
 ```lua
 policy:allow_attrs("href", "target"):on_elements("a")
+policy:allow_url_schemes("https")
+policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
@@ -279,11 +293,13 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **Devuelve:** `Policy`
 
-## Metodos de Conveniencia
+Cuando abra enlaces no confiables en una pestaña nueva, active también `require_noreferrer_on_links(true)` para evitar la filtración del referente y mitigar el acceso a la ventana de origen.
 
-### Permitir Imagenes
+## Métodos auxiliares
 
-Permitir `<img>` con atributos estandar.
+### Permitir imágenes
+
+Permita `<img>` con `align`, `alt`, `height`, `width` y `src`. Este método también activa la política estándar de URL, pero no permite imágenes en URI de datos.
 
 ```lua
 policy:allow_images()
@@ -294,24 +310,25 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 
 **Devuelve:** `Policy`
 
-### Permitir Imagenes Data URI
+### Permitir imágenes en URI de datos
 
-Permitir imagenes base64 incrustadas.
+Permita imágenes en URI de datos con Base64 sintácticamente válido y tipo `gif`, `jpeg`, `png`, `svg+xml` o `webp`. El saneador valida el tipo de medio y la codificación Base64, no el contenido decodificado de la imagen. Las URI de datos pueden transportar contenido activo; actívelas únicamente cuando confíe en los datos de la imagen:
 
 ```lua
 policy:allow_elements("img")
 policy:allow_attrs("src"):on_elements("img")
 policy:allow_data_uri_images()
 
-policy:sanitize('<img src="data:image/png;base64,iVBORw...">')
--- '<img src="data:image/png;base64,iVBORw...">'
+local input = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=">'
+policy:sanitize(input)
+-- The data URI is preserved.
 ```
 
 **Devuelve:** `Policy`
 
 ### Permitir Listas
 
-Permitir elementos de lista: `ul`, `ol`, `li`, `dl`, `dt`, `dd`.
+Permita `ul`, `ol`, `li`, `dl`, `dt` y `dd`. El método también admite atributos `type` validados en `ul`, `ol` y `li`, además de un atributo entero `value` en `li`.
 
 ```lua
 policy:allow_lists()
@@ -324,7 +341,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Permitir Tablas
 
-Permitir elementos de tabla: `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`, `caption`.
+Permita `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td` y `th`. También admite las dimensiones, alineación, extensiones de celda, cabeceras, ámbitos y atributos de presentación relacionados que valida este método.
 
 ```lua
 policy:allow_tables()
@@ -335,26 +352,27 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 **Devuelve:** `Policy`
 
-### Permitir Atributos Estandar
+### Permitir atributos estándar
 
-Permitir atributos comunes: `id`, `class`, `title`, `dir`, `lang`.
+Permita globalmente los atributos estándar `dir`, `id`, `lang` y `title`. Los valores están restringidos: `dir` es `ltr` o `rtl`, `lang` contiene entre 2 y 20 letras ASCII, y `id` y `title` deben coincidir con los patrones de caracteres seguros del saneador. Este método no permite `class`.
 
 ```lua
 policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **Devuelve:** `Policy`
 
-## Sanitizar
+## Sanear
 
-Aplicar politica a string HTML.
+Aplique una política a una cadena HTML:
 
 ```lua
-local policy = html.sanitize.ugc_policy()
+local policy, err = html.sanitize.ugc_policy()
+if err then return nil, err end
 policy:require_nofollow_on_links(true)
 
 local dirty = '<p>Hello</p><script>alert("xss")</script>'
@@ -368,10 +386,12 @@ local clean = policy:sanitize(dirty)
 
 **Devuelve:** `string`
 
+`sanitize` solo devuelve una cadena. En el entorno de ejecución `v0.3.32a`, el analizador de fragmentos subyacente puede convertir en una cadena vacía una entrada mal formada que no puede analizar, y el envoltorio Lua no puede distinguir ese caso de una entrada válida cuyo contenido eliminó la política. Trate el saneamiento como filtrado de salida, no como validación de entrada; valide por separado el contenido obligatorio cuando un resultado vacío sea relevante.
+
 ## Errores
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Patrón regex invalido | `errors.INVALID` | no |
+| Patrón de expresión regular no válido | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulte [Manejo de errores](lua/core/errors.md) para trabajar con errores.

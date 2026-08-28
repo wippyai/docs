@@ -1,6 +1,6 @@
 ---
 title: "テンプレートエンジン"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "設定済みのテンプレートセットからJetテンプレートをレンダリングします。"
 ---
 
 # テンプレートエンジン
@@ -8,9 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="external"/>
 
-[Jetテンプレートエンジン](https://github.com/CloudyKit/jet)を使用して動的コンテンツをレンダリングします。テンプレート継承とインクルードでHTMLページ、メール、ドキュメントを構築できます。
+`templates`モジュールは、設定済みのセットから[Jet](https://github.com/CloudyKit/jet)テンプレートをレンダリングします。テンプレートでは継承とインクルードを使用できます。このページは独立したレンダリング例を示すAPIリファレンスであり、単体で完結するテンプレートのデプロイ手順ではありません。レジストリIDとテンプレートソースは事前に設定し、実行エントリで`templates`を有効にして、要求するセットに対する`template.get`権限を付与する必要があります。
 
-テンプレートセットの設定については[テンプレートエンジン](system/template.md)を参照。
+テンプレートセットの設定については、[テンプレートエンジン](system/template.md)を参照してください。
 
 ## ロード
 
@@ -18,9 +18,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 local templates = require("templates")
 ```
 
-## テンプレートセットの取得
+## `templates.get`
 
-レンダリングを開始するためにレジストリIDでテンプレートセットを取得します:
+レジストリIDを指定してテンプレートセットを取得します。
 
 ```lua
 local set, err = templates.get("app.views:emails")
@@ -28,9 +28,9 @@ if err then
     return nil, err
 end
 
--- セットを使用...
+-- Use the set...
 
-set:release()
+return set:release()
 ```
 
 | パラメータ | 型 | 説明 |
@@ -39,26 +39,30 @@ set:release()
 
 **戻り値:** `Set, error`
 
-## テンプレートのレンダリング
+## `set:render`
 
 データを使用して名前でテンプレートをレンダリングします:
 
 ```lua
-local set = templates.get("app.views:emails")
+local set, get_err = templates.get("app.views:emails")
+if get_err then
+    return nil, get_err
+end
 
 local html, err = set:render("welcome", {
     user = {name = "Alice", email = "alice@example.com"},
-    activation_url = "https://example.com/activate?token=abc"
+    activation_url = "https://example.invalid/activate"
 })
 
+set:release()
 if err then
-    set:release()
     return nil, err
 end
 
-set:release()
 return html
 ```
+
+呼び出し側は、取得した各セットを`release()`するまで所有します。最後のレンダリング後に、エラーを確認した経路も含めて解放してください。複数回解放しても安全です。レンダリングによって、アプリケーションから渡した値があらゆる出力コンテキストで安全になるわけではありません。シークレットや一度限りのURLをログに残さず、レンダリング結果の利用先に応じて必要なエスケープまたはサニタイズを適用してください。
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -67,7 +71,9 @@ return html
 
 **戻り値:** `string, error`
 
-## セットメソッド
+## セットメソッドの概要
+
+セットハンドルは次のメソッドを提供します。
 
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
@@ -113,13 +119,13 @@ Jetは式と制御構造に`{{ }}`を使用し、コメントには`{* *}`を使
 ### 継承
 
 ```html
-{* 親: layout.jet *}
+{* Parent: layout.jet *}
 <html>
 <head><title>{{ yield title() }}</title></head>
 <body>{{ yield body() }}</body>
 </html>
 
-{* 子: page.jet *}
+{* Child: page.jet *}
 {{ extends "layout" }}
 {{ block title() }}My Page{{ end }}
 {{ block body() }}<p>Content</p>{{ end }}
@@ -137,12 +143,12 @@ Jetは式と制御構造に`{{ }}`を使用し、コメントには`{* *}`を使
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空のID | `errors.INVALID` | no |
-| 空のテンプレート名 | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| テンプレートが見つからない | `errors.NOT_FOUND` | no |
-| レンダリングエラー | `errors.INTERNAL` | no |
-| セットは既に解放済み | `errors.INTERNAL` | no |
+| 空のID | `errors.INVALID` | いいえ |
+| 空のテンプレート名 | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| テンプレートセットが存在しない、利用できない、またはリソース種別が正しくない | `errors.INTERNAL` | いいえ |
+| テンプレートが見つからない | `errors.NOT_FOUND` | いいえ |
+| レンダリングエラー | `errors.INTERNAL` | いいえ |
+| 解放済みセットでレンダリングを実行 | `errors.INTERNAL` | いいえ |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

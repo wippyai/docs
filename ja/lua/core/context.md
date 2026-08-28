@@ -1,6 +1,6 @@
 ---
 title: "リクエストコンテキスト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "関数呼び出しやプロセス呼び出しを通じて伝播される、リクエストスコープの値を読み取ります。"
 ---
 
 # リクエストコンテキスト
@@ -42,9 +42,8 @@ local values, err = ctx.all()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空のキー | `errors.INVALID` | no |
-| キーが見つからない | `errors.NOT_FOUND` | no |
-| コンテキストが利用不可 | `errors.INTERNAL` | no |
+| 空のキー | `errors.INVALID` | いいえ |
+| キーが見つからない | `errors.NOT_FOUND` | いいえ |
+| コンテキストが利用不可 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

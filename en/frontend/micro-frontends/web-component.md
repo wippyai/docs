@@ -7,6 +7,10 @@ description: "Portable view.component recipes for content-only and control-beari
 
 A web component is registered as `view.component` and normally renders in a shadow root. Choose the smallest valid setup.
 
+These are integration recipes for an existing Vue/Vite project. They show the
+Wippy-specific element, metadata, and build configuration rather than a
+standalone project scaffold.
+
 ## Variant A: content-only
 
 A chart, diagram, renderer, or visualization may omit PrimeVue and Tailwind when it renders no control and authors no shared Tailwind utility.
@@ -24,8 +28,9 @@ If a button, input, form, menu, or other PrimeVue-like control is later added, t
 ## Variant B: control-bearing
 
 A component with controls must install PrimeVue through the Wippy PrimeVue
-plugin and configure the required CSS delivery keys. The following entry is the
-current package-supported Vue path:
+plugin and receive the host's theme and PrimeVue CSS. The web-component package
+loads all host CSS keys by default; the explicit list below narrows that default
+to the assets this example uses plus the shared iframe/scrollbar CSS:
 
 ```ts
 import { defineComponent, h } from 'vue'
@@ -68,6 +73,8 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
+### Package metadata contract
+
 The package metadata must identify the same custom element:
 
 ```json
@@ -76,6 +83,7 @@ The package metadata must identify the same custom element:
   "version": "0.1.0",
   "type": "module",
   "specification": "wippy-component-1.0",
+  "browser": "dist/index.js",
   "wippy": {
     "type": "component",
     "tagName": "example-controls",
@@ -87,6 +95,9 @@ The package metadata must identify the same custom element:
   }
 }
 ```
+
+Valid package `wippy.type` values are `"component"` and `"widget"`. Do not use
+the registry kind `view.component` as a package `wippy.type` value.
 
 The component build uses the strict Wippy component plugin and the complete
 pinned target-host import-map snapshot:
@@ -107,10 +118,14 @@ export default defineConfig({
     },
     rollupOptions: {
       external: Object.keys(hostImportMap.imports),
+      preserveEntrySignatures: 'strict',
     },
   },
 })
 ```
+
+Keep `preserveEntrySignatures: 'strict'`. Other Rollup values do not satisfy the
+Wippy component build contract documented here.
 
 Use the shared Wippy Tailwind preset when this component authors Tailwind
 utilities. PrimeVue itself does not require a module to invent Tailwind
@@ -126,7 +141,10 @@ utilities.
 
 ## Metadata and build
 
-Document props and events in both package metadata and the registry entry as required by the selected schema. Invoke the module repository's Make target; its recipe uses:
+Document props and events in package metadata. A registry entry may repeat them
+as deployment-specific `meta.props` and `meta.events` overrides; when present,
+those overrides take precedence over the bundled metadata. Invoke the module
+repository's Make target; its recipe uses:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
