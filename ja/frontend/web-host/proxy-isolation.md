@@ -148,14 +148,14 @@ source HTML に対して authenticated API、state/WebSocket relay、nav-owner r
 
 | 属性 / プロパティ | 必須 | デフォルト | 説明 |
 |---|---|---|---|
-| `src` | No | — | proxy `api` で raw source HTML として取得する URL |
-| `srcdoc` | No | — | Raw source HTML。大きな string は `element.srcdoc = html` でも設定可能 |
-| `base-url` | No | `src` または `document.baseURI` から導出 | relative asset 解決用に注入する `<base href>` |
-| `resource-id` | No | element `id`、次に `src` | child context id。default state/log scope を設定 |
-| `resource-type` | No | `page` | child context type: `page` / `artifact` |
-| `sub-path` | No | parent route | initial child route。`GetConfig` handshake で `config.context.route` として転送 |
-| `auto-height` | No | `false` | child の `CmdBodySize` report に合わせ iframe height を変更 |
-| `nav-owner` | No | `false` | `CmdRouteChanged` を intercept し host URL を変えず `nav-owner-route` DOM event を dispatch |
+| `src` | いいえ | — | proxy `api` で raw source HTML として取得する URL |
+| `srcdoc` | いいえ | — | Raw source HTML。大きな string は `element.srcdoc = html` でも設定可能 |
+| `base-url` | いいえ | `src` または `document.baseURI` から導出 | relative asset 解決用に注入する `<base href>` |
+| `resource-id` | いいえ | element `id`、次に `src` | child context id。default state/log scope を設定 |
+| `resource-type` | いいえ | `page` | child context type: `page` / `artifact` |
+| `sub-path` | いいえ | parent route | initial child route。`GetConfig` handshake で `config.context.route` として転送 |
+| `auto-height` | いいえ | `false` | child の `CmdBodySize` report に合わせ iframe height を変更 |
+| `nav-owner` | いいえ | `false` | `CmdRouteChanged` を intercept し host URL を変えず `nav-owner-route` DOM event を dispatch |
 
 JS property:
 
@@ -241,12 +241,12 @@ const off = host.bridge.on('refresh', async (payload) => {
 
 | 属性 | 必須 | 値 | デフォルト | 説明 |
 |---|---|---|---|---|
-| `id` | Yes | Artifact / Page UUID | — | Content identifier |
-| `type` | No | `artifact` \| `page` | `artifact` | REST endpoint を決定 |
-| `auto-height` | No | boolean flag | `false` | inner `<w-iframe>` へ転送 |
-| `url` | No | Any URL | — | URL から直接取得し `id`/`type` を無視 |
-| `sub-path` | No | Path string | — | initial child route として転送 |
-| `nav-owner` | No | boolean flag | `false` | 転送し route change で `nav-owner-route` |
+| `id` | はい | Artifact / Page UUID | — | Content identifier |
+| `type` | いいえ | `artifact` \| `page` | `artifact` | REST endpoint を決定 |
+| `auto-height` | いいえ | boolean flag | `false` | inner `<w-iframe>` へ転送 |
+| `url` | いいえ | Any URL | — | URL から直接取得し `id`/`type` を無視 |
+| `sub-path` | いいえ | Path string | — | initial child route として転送 |
+| `nav-owner` | いいえ | boolean flag | `false` | 転送し route change で `nav-owner-route` |
 
 ### Event
 
@@ -274,16 +274,16 @@ w-artifact::part(frame)  { border: 0; }
 
 | 機能 | `<w-iframe>` | `<w-artifact>` | 生の `<iframe>` |
 |---|---|---|---|
-| Wippy runtime 注入 | Yes | Yes（`<w-iframe>` 経由） | No |
-| metadata 解決 | No | Yes | No |
-| authenticated fetch | Yes（raw HTML） | Yes | No |
-| state relay | Yes | Yes | No |
-| WebSocket relay | Yes | Yes | No |
-| parent-child bridge | Yes | Yes（転送） | No |
-| nav-owner support | Yes | Yes | No |
-| content-type detection | No | Yes | No |
+| Wippy runtime 注入 | はい | はい（`<w-iframe>` 経由） | いいえ |
+| metadata 解決 | いいえ | はい | いいえ |
+| authenticated fetch | はい（raw HTML） | はい | いいえ |
+| state relay | はい | はい | いいえ |
+| WebSocket relay | はい | はい | いいえ |
+| parent-child bridge | はい | はい（転送） | いいえ |
+| nav-owner support | はい | はい | いいえ |
+| content-type detection | いいえ | はい | いいえ |
 | shadow parts | `loader`, `error`, `frame` | 同左 | — |
-| `status` attribute | Yes | Yes | No |
+| `status` attribute | はい | はい | いいえ |
 
 Wippy artifact UUID/page ID には `<w-artifact>`、source HTML がある場合は `<w-iframe>`、Wippy API 不要の完全な external content だけに raw `<iframe>` を使います。
 

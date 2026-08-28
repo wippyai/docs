@@ -237,7 +237,7 @@ coroutine.spawn(stats_reporter)
 
 Isso inicia uma corrotina que compartilha memória com a função principal. Corrotinas cedem em operações de I/O como `time.sleep`.
 
-**Channel Select**
+**Seleção de canais**
 
 ```lua
 local r = channel.select {

@@ -286,13 +286,13 @@ Exec操作はセキュリティポリシー評価の対象です。
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効なID | `errors.INVALID` | no |
-| 権限拒否 | `errors.INVALID` | no |
-| プロセスがクローズ済み | `errors.INVALID` | no |
-| プロセスが開始されていない | `errors.INVALID` | no |
-| 既に開始済み | `errors.INVALID` | no |
-| executor の取得またはプロセス作成に失敗 | `errors.INTERNAL` | no |
-| start、wait、signal、stdin、ストリーム操作に失敗 | `errors.INTERNAL` | no |
+| 無効なID | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.INVALID` | いいえ |
+| プロセスがクローズ済み | `errors.INVALID` | いいえ |
+| プロセスが開始されていない | `errors.INVALID` | いいえ |
+| 既に開始済み | `errors.INVALID` | いいえ |
+| executor の取得またはプロセス作成に失敗 | `errors.INTERNAL` | いいえ |
+| start、wait、signal、stdin、ストリーム操作に失敗 | `errors.INTERNAL` | いいえ |
 
 ランタイム `v0.3.32a` では、`exec.get` と `exec.run` のポリシー拒否は `errors.PERMISSION_DENIED` ではなく `errors.INVALID` を使用します。
 

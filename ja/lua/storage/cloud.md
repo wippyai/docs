@@ -519,18 +519,18 @@ if close_err then return nil, close_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | no |
-| リソースが見つからない | `errors.NOT_FOUND` | no |
-| クラウドストレージリソースではない | `errors.INVALID` | no |
-| ストレージが解放済み | `errors.INVALID` | no |
-| キーが空 | `errors.INVALID` | no |
-| コンテンツがnil | `errors.INVALID` | no |
-| ライターが無効 | `errors.INVALID` | no |
-| オブジェクトが見つからない | `errors.NOT_FOUND` | no |
-| 条件付き前提条件の失敗 | `errors.CONFLICT` | no |
-| 範囲リーダーを開いている間にオブジェクトが変更された | `errors.CONFLICT` | no |
-| マルチパートアップロードが見つからない | `errors.NOT_FOUND` | no |
-| プロバイダーにマルチパートまたは範囲リーダー機能がない | `errors.UNAVAILABLE` | no |
+| リソースIDが空 | `errors.INVALID` | いいえ |
+| リソースが見つからない | `errors.NOT_FOUND` | いいえ |
+| クラウドストレージリソースではない | `errors.INVALID` | いいえ |
+| ストレージが解放済み | `errors.INVALID` | いいえ |
+| キーが空 | `errors.INVALID` | いいえ |
+| コンテンツがnil | `errors.INVALID` | いいえ |
+| ライターが無効 | `errors.INVALID` | いいえ |
+| オブジェクトが見つからない | `errors.NOT_FOUND` | いいえ |
+| 条件付き前提条件の失敗 | `errors.CONFLICT` | いいえ |
+| 範囲リーダーを開いている間にオブジェクトが変更された | `errors.CONFLICT` | いいえ |
+| マルチパートアップロードが見つからない | `errors.NOT_FOUND` | いいえ |
+| プロバイダーにマルチパートまたは範囲リーダー機能がない | `errors.UNAVAILABLE` | いいえ |
 | `cloudstorage.get` による権限拒否 | Lua エラーを送出 | 該当なし |
 | プロバイダー操作の失敗 | 利用可能な場合はプロバイダーから引き継ぐ。それ以外は unspecified | 状況による |
 

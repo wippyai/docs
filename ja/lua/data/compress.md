@@ -420,9 +420,9 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空の入力 | `errors.INVALID` | no |
-| レベルが範囲外 | `errors.INVALID` | no |
-| 無効な圧縮データ | `errors.INVALID` | no |
-| 解凍サイズが制限を超過 | `errors.INTERNAL` | no |
+| 空の入力 | `errors.INVALID` | いいえ |
+| レベルが範囲外 | `errors.INVALID` | いいえ |
+| 無効な圧縮データ | `errors.INVALID` | いいえ |
+| 解凍サイズが制限を超過 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

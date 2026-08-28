@@ -28,13 +28,13 @@ Luaエントリ種別は、ソースコードを関数、プロセス、ワー�
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `name` | yes | 名前空間内で一意の名前 |
-| `kind` | yes | 上記のLua種別の1つ |
-| `source` | yes | インラインLuaソース、またはレジストリ読み込み時に解決される `file://path.lua` 参照 |
+| `name` | はい | 名前空間内で一意の名前 |
+| `kind` | はい | 上記のLua種別の1つ |
+| `source` | はい | インラインLuaソース、またはレジストリ読み込み時に解決される `file://path.lua` 参照 |
 | `method` | function/process/workflow | エクスポートする関数（ライブラリでは使用しない） |
-| `modules` | no | `require()`で許可されるモジュール |
-| `imports` | no | ローカルモジュールとしての他のエントリ |
-| `meta` | no | 検索可能なメタデータ |
+| `modules` | いいえ | `require()`で許可されるモジュール |
+| `imports` | いいえ | ローカルモジュールとしての他のエントリ |
+| `meta` | いいえ | 検索可能なメタデータ |
 
 `pool` は `function.lua` にのみ適用されます。`security` は `function.lua` と `process.lua` に適用されます。
 

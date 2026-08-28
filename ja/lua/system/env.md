@@ -127,9 +127,9 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| キーが空 | `errors.INVALID` | no |
-| 変数が見つからない | `errors.NOT_FOUND` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| キーが空 | `errors.INVALID` | いいえ |
+| 変数が見つからない | `errors.NOT_FOUND` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
 
 エラーの処理については[エラー処理](../core/errors.md)を参照。
 

@@ -314,15 +314,15 @@ fs.seek.END       -- from end
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | パスが空 | `errors.INVALID` | unspecified |
-| パスに null バイトが含まれる | `errors.INVALID` | no |
+| パスに null バイトが含まれる | `errors.INVALID` | いいえ |
 | 無効なモード | `errors.INVALID` | unspecified |
 | クローズ済みファイルで `scanner()` を呼び出した | `errors.INVALID` | unspecified |
-| クローズ済みファイルで read、write、seek、stat、sync を呼び出した | `errors.INTERNAL` | no |
+| クローズ済みファイルで read、write、seek、stat、sync を呼び出した | `errors.INTERNAL` | いいえ |
 | すでにクローズ済みのファイルで `close()` を呼び出した | 成功 | 該当なし |
 | ファイルハンドルの読み取りが EOF に達した | `errors.NOT_FOUND` | unspecified |
 | パスが見つからない | `errors.NOT_FOUND` | 利用可能な場合は基盤のエラーから引き継ぐ |
 | パスがすでに存在する | `errors.ALREADY_EXISTS` | unspecified |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
 | ファイルスキャナのトークン化または読み取りが失敗した | `errors.INTERNAL` | 利用可能な場合は基盤のエラーから引き継ぐ |
 
 `unspecified` は `err:retryable()` が `nil` を返すことを意味します。`false` と同じではありません。

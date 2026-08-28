@@ -187,7 +187,7 @@ return value
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| `result()` を通じて操作がキャンセルされた | `errors.CANCELED` | no |
+| `result()` を通じて操作がキャンセルされた | `errors.CANCELED` | いいえ |
 | `result()` が返す操作エラー | 関数エラーの種別を保持 | 関数エラーから保持 |
-| `error()` が返す操作エラー | `errors.INTERNAL` | no |
-| キャンセルのディスパッチに失敗 | `errors.INTERNAL` | no |
+| `error()` が返す操作エラー | `errors.INTERNAL` | いいえ |
+| キャンセルのディスパッチに失敗 | `errors.INTERNAL` | いいえ |

@@ -213,12 +213,12 @@ if decode_err then return nil, decode_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 再帰的なテーブル参照 | `errors.INTERNAL` | no |
-| 疎な配列（インデックスにギャップ） | `errors.INTERNAL` | no |
-| テーブル内のキー型混在 | `errors.INTERNAL` | no |
-| ネストが128レベルを超過 | `errors.INTERNAL` | no |
-| 無効なJSON構文 | `errors.INTERNAL` | no |
-| スキーマコンパイル失敗 | `errors.INVALID` | no |
-| 検証失敗 | `errors.INVALID` | no |
+| 再帰的なテーブル参照 | `errors.INTERNAL` | いいえ |
+| 疎な配列（インデックスにギャップ） | `errors.INTERNAL` | いいえ |
+| テーブル内のキー型混在 | `errors.INTERNAL` | いいえ |
+| ネストが128レベルを超過 | `errors.INTERNAL` | いいえ |
+| 無効なJSON構文 | `errors.INTERNAL` | いいえ |
+| スキーマコンパイル失敗 | `errors.INVALID` | いいえ |
+| 検証失敗 | `errors.INVALID` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

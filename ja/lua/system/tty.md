@@ -370,9 +370,9 @@ tty.text.position.RIGHT    -- 1
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| ターミナルコンテキストまたは入力コントローラーがない | `errors.UNAVAILABLE` | no |
-| イベント購読にランタイムまたはプロセスコンテキストがない | `errors.INTERNAL` | no |
-| ターミナルの yield 応答が無効 | `errors.INTERNAL` | no |
+| ターミナルコンテキストまたは入力コントローラーがない | `errors.UNAVAILABLE` | いいえ |
+| イベント購読にランタイムまたはプロセスコンテキストがない | `errors.INTERNAL` | いいえ |
+| ターミナルの yield 応答が無効 | `errors.INTERNAL` | いいえ |
 
 ## 関連項目
 

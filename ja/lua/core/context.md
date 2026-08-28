@@ -42,8 +42,8 @@ local values, err = ctx.all()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空のキー | `errors.INVALID` | no |
-| キーが見つからない | `errors.NOT_FOUND` | no |
-| コンテキストが利用不可 | `errors.INTERNAL` | no |
+| 空のキー | `errors.INVALID` | いいえ |
+| キーが見つからない | `errors.NOT_FOUND` | いいえ |
+| コンテキストが利用不可 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については[エラー処理](errors.md)を参照。

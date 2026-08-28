@@ -13,7 +13,7 @@ Wippy フロントエンドモジュールは、デフォルトで移植可能�
 
 1. 設定されたページエンジン（従来の `about:srcdoc` iframe または Web Fragment）でレンダリングするアプリケーションには `view.page` を使用します。
 2. ホストドキュメント内で、通常は shadow root を使ってレンダリングする custom element には `view.component` を使用します。
-3. UI がボタン、入力、フォームフィールド、メニュー、overlay、その他 PrimeVue に類するコントロールを描画する場合、PrimeVue で必要な semantics と affordance を提供できない場合を除いて PrimeVue を使用します。
+3. UI がボタン、入力、フォームフィールド、メニュー、オーバーレイ、その他 PrimeVue に類するコントロールを描画する場合、PrimeVue で必要な意味と操作性を提供できない場合を除いて PrimeVue を使用します。
 4. コントロールを含まない Chart.js の可視化など、コンテンツ専用コンポーネントでは PrimeVue と Tailwind を省略できます。
 5. カスタムコントロールが必要な場合は、[ポータブル UI 契約](./portable-ui-contract.md)と[カスタムコンポジット](./micro-frontends/custom-composites.md)に従います。
 

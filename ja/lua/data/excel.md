@@ -357,20 +357,20 @@ if second_close_err then return nil, second_close_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| `new`または`open`にコンテキストがない | `errors.INTERNAL` | no |
-| `open`に無効または空のExcelファイルを渡した | `errors.INTERNAL` | no |
-| `new_sheet`、`get_sheet_list`、`get_rows`、`rows`、`bytes`のワークブックレシーバーが無効 | `errors.INVALID` | no |
-| `set_cell_value`、`write_to`、`close`のワークブックレシーバーが無効 | `errors.INTERNAL` | no |
-| `rows`でワークブックがクローズ済み | `errors.INVALID` | no |
-| その他のワークブック操作でワークブックがクローズ済み | `errors.INTERNAL` | no |
-| シートの作成に失敗 | `errors.INTERNAL` | no |
-| `rows`でシートが存在しない | `errors.INVALID` | no |
-| `get_rows`または`set_cell_value`でシートが存在しない | `errors.INTERNAL` | no |
-| 無効なセル参照 | `errors.INTERNAL` | no |
-| 無効なライターまたは書き込み失敗 | `errors.INTERNAL` | no |
-| `read`の行カーソルが無効またはクローズ済み、あるいはバッチサイズが1未満 | `errors.INVALID` | no |
-| `close`の行カーソルが無効 | `errors.INTERNAL` | no |
-| 行の読み取り、カーソルのクローズ、コンテキストのキャンセルに失敗 | `errors.INTERNAL` | no |
+| `new`または`open`にコンテキストがない | `errors.INTERNAL` | いいえ |
+| `open`に無効または空のExcelファイルを渡した | `errors.INTERNAL` | いいえ |
+| `new_sheet`、`get_sheet_list`、`get_rows`、`rows`、`bytes`のワークブックレシーバーが無効 | `errors.INVALID` | いいえ |
+| `set_cell_value`、`write_to`、`close`のワークブックレシーバーが無効 | `errors.INTERNAL` | いいえ |
+| `rows`でワークブックがクローズ済み | `errors.INVALID` | いいえ |
+| その他のワークブック操作でワークブックがクローズ済み | `errors.INTERNAL` | いいえ |
+| シートの作成に失敗 | `errors.INTERNAL` | いいえ |
+| `rows`でシートが存在しない | `errors.INVALID` | いいえ |
+| `get_rows`または`set_cell_value`でシートが存在しない | `errors.INTERNAL` | いいえ |
+| 無効なセル参照 | `errors.INTERNAL` | いいえ |
+| 無効なライターまたは書き込み失敗 | `errors.INTERNAL` | いいえ |
+| `read`の行カーソルが無効またはクローズ済み、あるいはバッチサイズが1未満 | `errors.INVALID` | いいえ |
+| `close`の行カーソルが無効 | `errors.INTERNAL` | いいえ |
+| 行の読み取り、カーソルのクローズ、コンテキストのキャンセルに失敗 | `errors.INTERNAL` | いいえ |
 
 `open`に`io.Reader`ではない値を渡す場合、または`write_to`にuserdataではない値を渡す場合、構造化エラーを返す代わりにLua引数エラーが発生します。`io.Writer`を実装していないライターuserdataでは`errors.INTERNAL`が返ります。行バッチが10,000を超える場合は拒否されず、10,000に制限されます。
 

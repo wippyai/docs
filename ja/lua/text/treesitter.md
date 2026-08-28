@@ -541,12 +541,12 @@ local field_id = lang:field_id_for_name("name")
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 言語がサポートされていない | `errors.INVALID` | no |
-| 言語にバインディングがない | `errors.INVALID` | no |
-| 無効なクエリパターン | `errors.INVALID` | no |
-| 無効な位置 | `errors.INVALID` | no |
-| パース失敗 | `errors.INTERNAL` | no |
-| 実行コンテキストなし | `errors.INTERNAL` | no |
+| 言語がサポートされていない | `errors.INVALID` | いいえ |
+| 言語にバインディングがない | `errors.INVALID` | いいえ |
+| 無効なクエリパターン | `errors.INVALID` | いいえ |
+| 無効な位置 | `errors.INVALID` | いいえ |
+| パース失敗 | `errors.INTERNAL` | いいえ |
+| 実行コンテキストなし | `errors.INTERNAL` | いいえ |
 
 既に閉じたパーサー、ツリー、クエリ、カーソルを再度閉じても安全です。閉じたハンドルでその他のメソッドを呼び出すと、Lua引数エラーが発生します。
 

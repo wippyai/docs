@@ -163,9 +163,9 @@ local formatted, err = uuid.format(id, "urn")
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な入力型 | `errors.INVALID` | no |
-| 無効なUUIDフォーマット | `errors.INVALID` | no |
-| サポートされていないフォーマットタイプ | `errors.INVALID` | no |
-| 生成失敗 | `errors.INTERNAL` | no |
+| 無効な入力型 | `errors.INVALID` | いいえ |
+| 無効なUUIDフォーマット | `errors.INVALID` | いいえ |
+| サポートされていないフォーマットタイプ | `errors.INVALID` | いいえ |
+| 生成失敗 | `errors.INTERNAL` | いいえ |
 
 エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。

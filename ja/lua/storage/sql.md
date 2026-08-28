@@ -1535,14 +1535,14 @@ local sql_str, args = executor:to_sql()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| リソースが見つからない | `errors.NOT_FOUND` | no |
-| リソースがデータベースではない | `errors.INVALID` | no |
-| 無効なパラメータ | `errors.INVALID` | no |
-| ステートメントがクローズ済み | `errors.INVALID` | no |
-| トランザクションがアクティブでない | `errors.INVALID` | no |
-| 無効なセーブポイント名 | `errors.INVALID` | no |
+| リソースIDが空 | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| リソースが見つからない | `errors.NOT_FOUND` | いいえ |
+| リソースがデータベースではない | `errors.INVALID` | いいえ |
+| 無効なパラメータ | `errors.INVALID` | いいえ |
+| ステートメントがクローズ済み | `errors.INVALID` | いいえ |
+| トランザクションがアクティブでない | `errors.INVALID` | いいえ |
+| 無効なセーブポイント名 | `errors.INVALID` | いいえ |
 | ドライバーまたはクエリ実行エラー | 利用可能な場合はドライバーから引き継ぐ。それ以外は unspecified | 状況による |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

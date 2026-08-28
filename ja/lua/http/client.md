@@ -188,11 +188,11 @@ if err then return nil, err end
 
 | ファイルフィールド | 型 | 必須 | 説明 |
 |------------|------|----------|-------------|
-| `name` | string | yes | フォームフィールド名 |
-| `filename` | string | no | 元のファイル名 |
+| `name` | string | はい | フォームフィールド名 |
+| `filename` | string | いいえ | 元のファイル名 |
 | `content` | string | yes* | ファイル内容 |
 | `reader` | userdata | yes* | 代替: 内容用のio.Reader |
-| `content_type` | string | no | 現在は無視され、常に `Content-Type: application/octet-stream` で送信 |
+| `content_type` | string | いいえ | 現在は無視され、常に `Content-Type: application/octet-stream` で送信 |
 
 *`content`または`reader`のいずれかが必須。
 
@@ -435,14 +435,14 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| セキュリティポリシーが拒否 | `errors.PERMISSION_DENIED` | no |
-| プライベートIPがブロック | `errors.PERMISSION_DENIED` | no |
-| Unixソケットが拒否 | `errors.PERMISSION_DENIED` | no |
-| 安全でないTLSが拒否 | `errors.PERMISSION_DENIED` | no |
-| 無効なURLまたはオプション | `errors.INVALID` | no |
-| コンテキストがない | `errors.INTERNAL` | no |
-| ネットワーク障害 | `errors.INTERNAL` | yes |
-| タイムアウト | `errors.INTERNAL` | yes |
+| セキュリティポリシーが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| プライベートIPがブロック | `errors.PERMISSION_DENIED` | いいえ |
+| Unixソケットが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| 安全でないTLSが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| 無効なURLまたはオプション | `errors.INVALID` | いいえ |
+| コンテキストがない | `errors.INTERNAL` | いいえ |
+| ネットワーク障害 | `errors.INTERNAL` | はい |
+| タイムアウト | `errors.INTERNAL` | はい |
 
 ```lua
 local resp, err = http_client.get(url)

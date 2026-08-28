@@ -56,7 +56,7 @@ local val = ch:receive()  -- receives "from spawn"
 local completed = done:receive()
 ```
 
-## Channel Select
+## Seleção de canais :id=channel-select
 
 `channel.select` aguarda múltiplos channels, retorna a primeira operação pronta:
 

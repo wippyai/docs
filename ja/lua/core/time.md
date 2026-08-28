@@ -569,11 +569,11 @@ time.SATURDAY   -- 6
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な期間フォーマット | `errors.INVALID` | no |
-| 解析失敗 | `errors.INVALID` | no |
-| 空のlocation名 | `errors.INVALID` | no |
-| Locationが見つからない | `errors.NOT_FOUND` | no |
-| Duration <= 0（timer/ticker） | `errors.INVALID` | no |
+| 無効な期間フォーマット | `errors.INVALID` | いいえ |
+| 解析失敗 | `errors.INVALID` | いいえ |
+| 空のlocation名 | `errors.INVALID` | いいえ |
+| Locationが見つからない | `errors.NOT_FOUND` | いいえ |
+| Duration <= 0（timer/ticker） | `errors.INVALID` | いいえ |
 
 ```lua
 local t, err = time.parse(time.RFC3339, "invalid")

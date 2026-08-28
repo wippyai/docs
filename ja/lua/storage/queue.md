@@ -159,13 +159,13 @@ return {main = main}
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| キューIDが空 | `errors.INVALID` | no |
-| メッセージ引数がない、または空のテーブル | `errors.INVALID` | no |
-| デリバリーコンテキストがない | `errors.INVALID` | no |
-| メッセージが解放済み、または確定済み | `errors.INVALID` | no |
-| パブリッシュ不許可 | `errors.INVALID` | no |
-| パブリッシュ失敗 | `errors.INTERNAL` | no |
-| `info` のキューまたはドライバーが見つからない | `errors.INTERNAL` | no |
+| キューIDが空 | `errors.INVALID` | いいえ |
+| メッセージ引数がない、または空のテーブル | `errors.INVALID` | いいえ |
+| デリバリーコンテキストがない | `errors.INVALID` | いいえ |
+| メッセージが解放済み、または確定済み | `errors.INVALID` | いいえ |
+| パブリッシュ不許可 | `errors.INVALID` | いいえ |
+| パブリッシュ失敗 | `errors.INTERNAL` | いいえ |
+| `info` のキューまたはドライバーが見つからない | `errors.INTERNAL` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
 

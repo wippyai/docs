@@ -161,9 +161,9 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 式が空 | `errors.INVALID` | no |
-| 式の構文が無効 | `errors.INTERNAL` | no |
-| 式の評価が失敗 | `errors.INTERNAL` | no |
-| 結果の変換が失敗 | `errors.INTERNAL` | no |
+| 式が空 | `errors.INVALID` | いいえ |
+| 式の構文が無効 | `errors.INTERNAL` | いいえ |
+| 式の評価が失敗 | `errors.INTERNAL` | いいえ |
+| 結果の変換が失敗 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については[エラー処理](../core/errors.md)を参照してください。

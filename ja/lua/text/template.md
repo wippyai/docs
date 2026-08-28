@@ -143,12 +143,12 @@ Jetは式と制御構造に`{{ }}`を使用し、コメントには`{* *}`を使
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空のID | `errors.INVALID` | no |
-| 空のテンプレート名 | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| テンプレートセットが存在しない、利用できない、またはリソース種別が正しくない | `errors.INTERNAL` | no |
-| テンプレートが見つからない | `errors.NOT_FOUND` | no |
-| レンダリングエラー | `errors.INTERNAL` | no |
-| 解放済みセットでレンダリングを実行 | `errors.INTERNAL` | no |
+| 空のID | `errors.INVALID` | いいえ |
+| 空のテンプレート名 | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| テンプレートセットが存在しない、利用できない、またはリソース種別が正しくない | `errors.INTERNAL` | いいえ |
+| テンプレートが見つからない | `errors.NOT_FOUND` | いいえ |
+| レンダリングエラー | `errors.INTERNAL` | いいえ |
+| 解放済みセットでレンダリングを実行 | `errors.INTERNAL` | いいえ |
 
 エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。

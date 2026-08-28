@@ -161,9 +161,9 @@ print(type(data.tags))     -- "table"
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 入力がテーブルではない（encode） | `errors.INVALID` | no |
-| 入力が文字列ではない（decode） | `errors.INVALID` | no |
-| 空文字列（decode） | `errors.INVALID` | no |
-| 無効なYAML構文 | `errors.INTERNAL` | no |
+| 入力がテーブルではない（encode） | `errors.INVALID` | いいえ |
+| 入力が文字列ではない（decode） | `errors.INVALID` | いいえ |
+| 空文字列（decode） | `errors.INVALID` | いいえ |
+| 無効なYAML構文 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

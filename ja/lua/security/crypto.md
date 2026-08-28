@@ -234,10 +234,10 @@ local equal = crypto.constant_time_compare(a, b)
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な長さ | `errors.INVALID` | no |
-| 空のキー | `errors.INVALID` | no |
-| 無効なキーサイズ | `errors.INVALID` | no |
-| 復号失敗 | `errors.INTERNAL` | no |
-| トークン期限切れ | `errors.INTERNAL` | no |
+| 無効な長さ | `errors.INVALID` | いいえ |
+| 空のキー | `errors.INVALID` | いいえ |
+| 無効なキーサイズ | `errors.INVALID` | いいえ |
+| 復号失敗 | `errors.INTERNAL` | いいえ |
+| トークン期限切れ | `errors.INTERNAL` | いいえ |
 
 エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。

@@ -431,14 +431,14 @@ WebSocket接続はセキュリティポリシー評価の対象。
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 接続が無効化 | `errors.PERMISSION_DENIED` | no |
-| URLが許可されていない | `errors.PERMISSION_DENIED` | no |
-| コンテキストがない | `errors.INTERNAL` | no |
-| 接続失敗 | `errors.INTERNAL` | yes |
-| ディスパッチャーが返した無効な接続 ID | `errors.INTERNAL` | no |
-| 購読失敗 | `errors.INTERNAL` | yes |
-| 購読時にプロセスコンテキストがない | `errors.INTERNAL` | no |
-| クローズ失敗 | `errors.INTERNAL` | no |
+| 接続が無効化 | `errors.PERMISSION_DENIED` | いいえ |
+| URLが許可されていない | `errors.PERMISSION_DENIED` | いいえ |
+| コンテキストがない | `errors.INTERNAL` | いいえ |
+| 接続失敗 | `errors.INTERNAL` | はい |
+| ディスパッチャーが返した無効な接続 ID | `errors.INTERNAL` | いいえ |
+| 購読失敗 | `errors.INTERNAL` | はい |
+| 購読時にプロセスコンテキストがない | `errors.INTERNAL` | いいえ |
+| クローズ失敗 | `errors.INTERNAL` | いいえ |
 
 空の URL、テーブル以外の options 値、無効な引数型、受信チャネル要求時に実行コンテキストまたはプロセス PID がない場合は Lua エラーが発生します。構造化エラーとしては返されません。ランタイム `v0.3.32a` は send または ping のトランスポート失敗を Lua 呼び出し側へ公開しません。
 

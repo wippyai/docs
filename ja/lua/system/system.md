@@ -477,16 +477,16 @@ return released
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 権限拒否（デプロイメントソースの読み込み） | `errors.PERMISSION_DENIED` | no |
-| 権限拒否（ソース以外の操作、分散ロックを除く） | `errors.INVALID` | no |
-| 権限拒否（分散ロックの取得/解放） | `errors.PERMISSION_DENIED` | no |
-| 無効な引数 | `errors.INVALID` | no |
-| 必須引数がない | `errors.INVALID` | no |
-| コードマネージャが利用不可 | `errors.INTERNAL` | no |
-| サービス情報が利用不可 | `errors.INTERNAL` | no |
-| OSエラー (hostname, cwd) | `errors.INTERNAL` | no |
-| このノードで Raft が実行されていない | `errors.INTERNAL` | no |
-| メンバーシップが利用不可 | `errors.INTERNAL` | no |
-| ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
+| 権限拒否（デプロイメントソースの読み込み） | `errors.PERMISSION_DENIED` | いいえ |
+| 権限拒否（ソース以外の操作、分散ロックを除く） | `errors.INVALID` | いいえ |
+| 権限拒否（分散ロックの取得/解放） | `errors.PERMISSION_DENIED` | いいえ |
+| 無効な引数 | `errors.INVALID` | いいえ |
+| 必須引数がない | `errors.INVALID` | いいえ |
+| コードマネージャが利用不可 | `errors.INTERNAL` | いいえ |
+| サービス情報が利用不可 | `errors.INTERNAL` | いいえ |
+| OSエラー (hostname, cwd) | `errors.INTERNAL` | いいえ |
+| このノードで Raft が実行されていない | `errors.INTERNAL` | いいえ |
+| メンバーシップが利用不可 | `errors.INTERNAL` | いいえ |
+| ロックが既に保持中 | `errors.ALREADY_EXISTS` | いいえ |
 
 エラーの処理については[エラー処理](../core/errors.md)を参照してください。

@@ -117,8 +117,8 @@ if err then return nil, err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 入力が文字列ではない | `errors.INVALID` | no |
-| 無効なbase64文字 | `errors.INVALID` | no |
-| 破損したパディング | `errors.INVALID` | no |
+| 入力が文字列ではない | `errors.INVALID` | いいえ |
+| 無効なbase64文字 | `errors.INVALID` | いいえ |
+| 破損したパディング | `errors.INVALID` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

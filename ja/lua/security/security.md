@@ -400,15 +400,15 @@ store:close()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| コンテキストなし | `errors.INTERNAL` | no |
-| 空のトークンストアID | `errors.INVALID` | no |
-| ポリシー、名前付きスコープ、またはトークン操作の権限拒否 | `errors.INVALID` | no |
-| アクターまたはスコープの作成、スコープ変更、トークンストア取得の拒否 | Luaエラーを発生 | no |
-| ポリシーが見つからない | `errors.INTERNAL` | no |
-| トークンストアが見つからない | `errors.INTERNAL` | no |
-| トークンストアがクローズ済み | `errors.INTERNAL` | no |
-| 無効な有効期限フォーマット | `errors.INVALID` | no |
-| トークン検証失敗 | `errors.INTERNAL` | no |
+| コンテキストなし | `errors.INTERNAL` | いいえ |
+| 空のトークンストアID | `errors.INVALID` | いいえ |
+| ポリシー、名前付きスコープ、またはトークン操作の権限拒否 | `errors.INVALID` | いいえ |
+| アクターまたはスコープの作成、スコープ変更、トークンストア取得の拒否 | Luaエラーを発生 | いいえ |
+| ポリシーが見つからない | `errors.INTERNAL` | いいえ |
+| トークンストアが見つからない | `errors.INTERNAL` | いいえ |
+| トークンストアがクローズ済み | `errors.INTERNAL` | いいえ |
+| 無効な有効期限フォーマット | `errors.INVALID` | いいえ |
+| トークン検証失敗 | `errors.INTERNAL` | いいえ |
 
 ```lua
 local store, err = security.token_store("app:tokens")

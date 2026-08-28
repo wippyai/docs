@@ -482,7 +482,7 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効なパターン構文 | `errors.INVALID` | no |
-| 内部エラー | `errors.INTERNAL` | no |
+| 無効なパターン構文 | `errors.INVALID` | いいえ |
+| 内部エラー | `errors.INTERNAL` | いいえ |
 
 エラーの扱いについては、[エラー処理](../core/errors.md)を参照してください。

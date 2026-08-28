@@ -200,8 +200,8 @@ print(result.computed_value)
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 変換失敗 | `errors.INTERNAL` | no |
-| 結果が有効なLua値ではない | `errors.INTERNAL` | no |
+| 変換失敗 | `errors.INTERNAL` | いいえ |
+| 結果が有効なLua値ではない | `errors.INTERNAL` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。
 

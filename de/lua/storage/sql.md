@@ -9,7 +9,7 @@ description: "Parametrisierte SQL-Abfragen, Transaktionen und vorbereitete Anwei
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Das Modul `sql` führt Abfragen für konfigurierte PostgreSQL-, MySQL- und SQLite-Datenbanken aus. Es unterstützt parametrisierte Abfragen, Transaktionen, vorbereitete Anweisungen und Query Builder.
+Das Modul `sql` führt Abfragen für konfigurierte PostgreSQL-, MySQL- und SQLite-Datenbanken aus. Es unterstützt parametrisierte Abfragen, Transaktionen, vorbereitete Anweisungen und Abfragegeneratoren.
 
 Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen eine konfigurierte Datenbank, die Berechtigung zum Abrufen dieser Datenbank und alle in der Abfrage genannten Tabellen voraus. Sie zeigen einzelne Aufrufe und keine eigenständige Anwendung. Das kombinierte Teilrezept am Ende nennt seine zusätzlichen Annahmen zu Schema und Treiber.
 
@@ -158,7 +158,7 @@ local query = sql.builder.select("id", "name")
 
 ### `sql.builder.insert`
 
-Erstellt INSERT Query Builder.
+Erstellt einen INSERT-Abfragegenerator.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -174,7 +174,7 @@ local query = sql.builder.insert("users")
 
 ### `sql.builder.update`
 
-Erstellt UPDATE Query Builder.
+Erstellt einen UPDATE-Abfragegenerator.
 
 ```lua
 local query = sql.builder.update("users")
@@ -190,7 +190,7 @@ local query = sql.builder.update("users")
 
 ### `sql.builder.delete`
 
-Erstellt DELETE Query Builder.
+Erstellt einen DELETE-Abfragegenerator.
 
 ```lua
 local query = sql.builder.delete("users")

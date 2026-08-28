@@ -128,10 +128,10 @@ local closed = sub:close() -- true
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 空のsystem | `errors.INVALID` | no |
-| 空のkind | `errors.INVALID` | no |
-| 空のpath | `errors.INVALID` | no |
-| ポリシー拒否 | `errors.INVALID` | no |
-| 実行コンテキストまたはプロセスコンテキストがない | `errors.INTERNAL` | no |
+| 空のsystem | `errors.INVALID` | いいえ |
+| 空のkind | `errors.INVALID` | いいえ |
+| 空のpath | `errors.INVALID` | いいえ |
+| ポリシー拒否 | `errors.INVALID` | いいえ |
+| 実行コンテキストまたはプロセスコンテキストがない | `errors.INTERNAL` | いいえ |
 
 エラーの処理については[エラー処理](./errors.md)を参照。

@@ -50,7 +50,7 @@ Managed layout은 Web Host, facade, 여러 `@wippy-fe/*` 패키지에 걸쳐 있
 
 ### 유지되는 웹 컴포넌트 activity
 
-Managed layout은 buffer 교환, breakpoint 변경, drawer 닫기/열기 사이에서도 패널을 마운트 상태로 유지합니다. 호스트는 직접 사용자 정의 요소를 connect하기 전에 `data-wippy-visible="true" | "false"`를 설정하고 논리적 소유권이 바뀌면 in-place로 업데이트합니다. 이는 CSS, viewport, 문서 visibility가 아니며 remount를 의미하지 않습니다.
+관리형 레이아웃은 버퍼 교환, 중단점 변경, 서랍 닫기/열기 사이에서도 패널을 마운트 상태로 유지합니다. 호스트는 직접 사용자 정의 요소를 연결하기 전에 `data-wippy-visible="true" | "false"`를 설정하고 논리적 소유권이 바뀌면 제자리에서 업데이트합니다. 이는 CSS, 뷰포트 또는 문서 가시성이 아니며 재마운트를 의미하지 않습니다.
 
 Vue 컴포넌트는 `useHostVisibility()`로 상태를 읽거나 `useHostVisibilityRefresh(task)`로 일반 초기 로드와 reveal refresh를 결합합니다. 후자는 mount 후 실행되고 이후 정확한 `false -> true`에서만 실행됩니다. 직접 WC에서 proxy `@visibility` topic을 사용하지 마십시오. 이는 iframe/Web Fragment 메시지 채널입니다.
 
@@ -355,7 +355,7 @@ swap.markReady(slot.index, slot.key)
 
 Web Host는 managed 페이지 surface에 같은 키 기반 준비 규율을 사용하며 최종 표시 상한은 14초입니다. 페이지와 직접 Web Component 렌더러는 Vue 이벤트 리스너를 통해 `load`/`error`를 내보내고 렌더러가 소유한 불변 콘텐츠 키를 포함합니다. 그려진 콘텐츠는 즉시 표시되며 상한은 보고하지 않는 콘텐츠용 폴백일 뿐입니다. 제거된 렌더러의 늦은 이벤트는 해당 버퍼 인덱스가 이미 재사용되었으면 거부됩니다.
 
-14초 호스트 상한을 애플리케이션 loading delay로 사용하거나 정상 page readiness 주위에 두 번째 timer를 추가하지 마십시오. 정기적으로 상한에 도달하는 페이지는 소유자가 수정해야 할 readiness 또는 lifecycle 경로가 망가진 것입니다.
+14초 호스트 상한을 애플리케이션 로딩 지연으로 사용하거나 정상적인 페이지 준비 상태 주위에 두 번째 타이머를 추가하지 마십시오. 정기적으로 상한에 도달하는 페이지는 소유자가 수정해야 할 준비 상태 또는 수명 주기 경로가 망가진 것입니다.
 
 ### 안정적 컴포넌트 업데이트와 패널 크기
 

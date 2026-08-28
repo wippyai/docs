@@ -648,12 +648,12 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| HTTPコンテキストがない | `errors.INTERNAL` | no |
-| ボディが大きすぎる | `errors.INVALID` | no |
-| 読み取りタイムアウト | `errors.INTERNAL` | no |
-| 無効なJSON | `errors.INVALID` | no |
-| マルチパートではない | `errors.INVALID` | no |
-| ヘッダーが既に送信済み | `errors.INVALID` | no |
-| 書き込み失敗 | `errors.INTERNAL` | no |
+| HTTPコンテキストがない | `errors.INTERNAL` | いいえ |
+| ボディが大きすぎる | `errors.INVALID` | いいえ |
+| 読み取りタイムアウト | `errors.INTERNAL` | いいえ |
+| 無効なJSON | `errors.INVALID` | いいえ |
+| マルチパートではない | `errors.INVALID` | いいえ |
+| ヘッダーが既に送信済み | `errors.INVALID` | いいえ |
+| 書き込み失敗 | `errors.INTERNAL` | いいえ |
 
 エラーの処理については[エラー処理](../core/errors.md)を参照。

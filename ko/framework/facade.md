@@ -54,16 +54,16 @@ entries:
 
 | 파라미터 | 필수 | 기본값 | 설명 |
 |-----------|----------|---------|-------------|
-| `server` | yes | — | 정적 콘텐츠 및 페이지를 제공할 HTTP 서버 |
-| `router` | yes | — | 설정 endpoint를 위한 공개 API router |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.56` | 프런트엔드 bundle의 기본 CDN URL |
-| `fe_entry_path` | no | `/iframe.html` | iframe embedding 모드에서 사용하는 bundle의 **iframe** entry 경로. 현재 facade 페이지는 대신 JS module entry(`module.js`/`managed-layout.js`)를 로드하며, 이 경로는 facade 없는 수동 iframe embedding에 사용할 수 있음 |
-| `fe_mode` | no | `compat` | facade 페이지가 로드할 shell. `compat`는 기본 chat shell인 `module.js`, `managed`는 opt-in 선언형 다중 panel layout인 `managed-layout.js`를 로드. `/facade/config`에서 `mode`/`module_file`로 제공 |
-| `host_config_layout` | no | `{}` | `hostConfig.layout`으로 방출되는 JSON layout 설정. **managed** shell만 사용 |
-| `render_engine` | no | `iframe` | `hostConfig.renderEngine`으로 방출되는 페이지 render engine. [Render engine](#render-engine) 참고 |
-| `login_path` | no | `/login.html` | 인증되지 않은 사용자를 redirect할 동일 origin 경로. `login_redirect_param`과 함께 작동 |
-| `login_redirect_param` | no | `""` (off) | `login_path`로 redirect할 때 로그인 후 반환 URL을 추가할 query 파라미터 이름. 빈 값은 추가 비활성화 |
-| `extra_scripts` | no | `[]` | facade 페이지가 로드할 추가 script URL의 JSON 배열. `/facade/config`에서 `extraScripts`로 방출 |
+| `server` | 예 | — | 정적 콘텐츠 및 페이지를 제공할 HTTP 서버 |
+| `router` | 예 | — | 설정 endpoint를 위한 공개 API router |
+| `fe_facade_url` | 아니요 | `https://web-host.wippy.ai/webcomponents-1.0.56` | 프런트엔드 bundle의 기본 CDN URL |
+| `fe_entry_path` | 아니요 | `/iframe.html` | iframe embedding 모드에서 사용하는 bundle의 **iframe** entry 경로. 현재 facade 페이지는 대신 JS module entry(`module.js`/`managed-layout.js`)를 로드하며, 이 경로는 facade 없는 수동 iframe embedding에 사용할 수 있음 |
+| `fe_mode` | 아니요 | `compat` | facade 페이지가 로드할 shell. `compat`는 기본 chat shell인 `module.js`, `managed`는 opt-in 선언형 다중 panel layout인 `managed-layout.js`를 로드. `/facade/config`에서 `mode`/`module_file`로 제공 |
+| `host_config_layout` | 아니요 | `{}` | `hostConfig.layout`으로 방출되는 JSON layout 설정. **managed** shell만 사용 |
+| `render_engine` | 아니요 | `iframe` | `hostConfig.renderEngine`으로 방출되는 페이지 render engine. [Render engine](#render-engine) 참고 |
+| `login_path` | 아니요 | `/login.html` | 인증되지 않은 사용자를 redirect할 동일 origin 경로. `login_redirect_param`과 함께 작동 |
+| `login_redirect_param` | 아니요 | `""` (off) | `login_path`로 redirect할 때 로그인 후 반환 URL을 추가할 query 파라미터 이름. 빈 값은 추가 비활성화 |
+| `extra_scripts` | 아니요 | `[]` | facade 페이지가 로드할 추가 script URL의 JSON 배열. `/facade/config`에서 `extraScripts`로 방출 |
 
 ### 렌더 엔진 :id=render-engine
 

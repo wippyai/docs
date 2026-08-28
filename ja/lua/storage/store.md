@@ -289,14 +289,14 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | no |
-| リソースレジストリを利用できない | `errors.NOT_FOUND` | no |
-| リソースが見つからない場合を含む、ストア取得の失敗 | `errors.INTERNAL` | no |
-| ストアが解放済み | `errors.INVALID` | no |
-| `info`、`entry`、`list`、`put` による権限拒否 | `errors.PERMISSION_DENIED` | no |
+| リソースIDが空 | `errors.INVALID` | いいえ |
+| リソースレジストリを利用できない | `errors.NOT_FOUND` | いいえ |
+| リソースが見つからない場合を含む、ストア取得の失敗 | `errors.INTERNAL` | いいえ |
+| ストアが解放済み | `errors.INVALID` | いいえ |
+| `info`、`entry`、`list`、`put` による権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
 | `store.get`、`get`、`set`、`delete`、`has` による権限拒否 | Lua エラーを送出 | 該当なし |
-| `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | no |
-| `if_version` 不一致 | `errors.CONFLICT` | yes |
-| サポートのないストアでの条件付き書き込み | `errors.INVALID` | no |
+| `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | いいえ |
+| `if_version` 不一致 | `errors.CONFLICT` | はい |
+| サポートのないストアでの条件付き書き込み | `errors.INVALID` | いいえ |
 
 エラーの処理については、[エラー処理](../core/errors.md)を参照してください。

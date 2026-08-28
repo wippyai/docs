@@ -392,6 +392,6 @@ local clean = policy:sanitize(dirty)
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な正規表現パターン | `errors.INVALID` | no |
+| 無効な正規表現パターン | `errors.INVALID` | いいえ |
 
 エラーの処理については[エラー処理](../core/errors.md)を参照。

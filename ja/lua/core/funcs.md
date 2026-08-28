@@ -366,12 +366,12 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| Targetが空 | `errors.INVALID` | no |
-| Namespaceがない | `errors.INVALID` | no |
-| Nameがない | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| サブスクライブ失敗 | `errors.INTERNAL` | no |
-| async start の dispatch 失敗 | `errors.INTERNAL` | no |
+| Targetが空 | `errors.INVALID` | いいえ |
+| Namespaceがない | `errors.INVALID` | いいえ |
+| Nameがない | `errors.INVALID` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| サブスクライブ失敗 | `errors.INTERNAL` | いいえ |
+| async start の dispatch 失敗 | `errors.INTERNAL` | いいえ |
 | 関数エラー | 様々 | 様々 |
 
 エラーの処理については[エラー処理](errors.md)を参照してください。

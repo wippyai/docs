@@ -26,10 +26,10 @@ require하기 전에 실행 가능 엔트리의 `modules:` 목록에 `archive`�
 
 | 형식 | 임의 읽기 | 순차 스캔 | 쓰기 |
 |--------|:-----------:|:---------------:|:-----:|
-| `zip` | yes | yes (local headers) | yes |
-| `tar` | yes | yes | yes |
-| `tar.gz` | no | yes | yes |
-| `tar.zst` | no | yes | yes |
+| `zip` | 예 | 예 (local headers) | 예 |
+| `tar` | 예 | 예 | 예 |
+| `tar.gz` | 아니요 | 예 | 예 |
+| `tar.zst` | 아니요 | 예 | 예 |
 
 `archive.formats()`는 등록된 format 이름 목록을 반환합니다.
 
