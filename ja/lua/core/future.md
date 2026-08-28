@@ -1,13 +1,13 @@
 ---
 title: "Future"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "非同期の関数呼び出しとコントラクト呼び出しの結果を受信、調査、キャンセルします。"
 ---
 
 # Future
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-非同期操作の結果。Futureは`funcs.async()`およびコントラクト非同期呼び出しによって返されます。
+Future は非同期操作の結果を表し、`funcs.async()` および非同期コントラクト呼び出しから返されます。このページは API リファレンスです。例にあるターゲット ID と引数はアプリケーションが定義します。
 
 ## ロード
 
@@ -23,7 +23,7 @@ end
 
 ## レスポンスチャネル
 
-結果を受信するためのチャネルを取得：
+レスポンスチャネルで完了を待ち、その後 Future からキャッシュ済み結果を読み取ります。
 
 ```lua
 local ch = future:response()
@@ -42,6 +42,8 @@ if data_err then return nil, data_err end
 
 `channel()`は`response()`のエイリアス。
 
+チャネル値は操作のペイロード、ペイロードテーブル、またはエラーです。チャネルが準備完了になった後に `result()` を呼ぶと、成功と失敗を一貫した形で処理でき、チャネルを読み終えた後もキャッシュ済み値が返ります。
+
 ## 完了チェック
 
 Futureが完了したかどうかのノンブロッキングチェック：
@@ -54,7 +56,7 @@ end
 
 ## キャンセルチェック
 
-`cancel()`が呼び出されたかどうかをチェック：
+Future がプロバイダーによってキャンセル済みとマークされたかどうかを確認します。
 
 ```lua
 if future:is_canceled() then
@@ -88,6 +90,8 @@ end
 ```
 
 **戻り値:** `error, boolean`
+
+操作が失敗した場合、`error()` は再試行不可の `INTERNAL` ラッパーを返します。呼び出した関数の元のエラー種別と再試行可能性を保持する必要がある場合は `result()` を使用してください。
 
 ## キャンセル
 
@@ -181,7 +185,9 @@ return value
 
 ## エラー
 
-| 条件 | 種別 |
-|-----------|------|
-| 操作がキャンセルされた | `CANCELED` |
-| 非同期操作が失敗 | 様々 |
+| 条件 | 種別 | 再試行可能 |
+|-----------|------|-----------|
+| `result()` を通じて操作がキャンセルされた | `errors.CANCELED` | no |
+| `result()` が返す操作エラー | 関数エラーの種別を保持 | 関数エラーから保持 |
+| `error()` が返す操作エラー | `errors.INTERNAL` | no |
+| キャンセルのディスパッチに失敗 | `errors.INTERNAL` | no |

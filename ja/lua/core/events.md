@@ -1,6 +1,6 @@
 ---
 title: "イベントバス"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "ベストエフォート型のランタイムイベントとアプリケーションイベントを発行および監視します。"
 ---
 
 # イベントバス
@@ -8,7 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-オブザーバビリティのためにイベントをパブリッシュおよびサブスクライブします — ランタイムとアプリケーションのアクティビティを監視してそれに反応します。
+イベントバスは、監視、ロギング、メトリクス、リアクティブな副作用のために、ランタイムおよびアプリケーションのアクティビティを発行します。このページは API リファレンスです。例は、記載されたモジュールと権限を持つ実行可能 Lua エントリを前提とします。
 
 <note>
 イベントバスは観察のためだけに使用してください: 監視、ロギング、メトリクス、およびリアクティブな副作用。これはベストエフォートのパブリッシュ/サブスクライブチャネルであり、信頼性のあるトランスポートではありません — ビジネスロジックを構築したり、確実な配信に依存したりしないでください。ビジネスクリティカルなメッセージングにはプロセスメッセージング（`process.send`）、チャネル、または[メッセージキュー](../storage/queue.md)を使用してください。
@@ -22,7 +22,7 @@ local events = require("events")
 
 ## イベントのサブスクライブ
 
-イベントバスからのイベントをサブスクライブ:
+1 つのシステムまたはシステムパターンを購読し、必要に応じてイベント種別で絞り込みます。
 
 ```lua
 -- Subscribe to all order events
@@ -41,6 +41,8 @@ while true do
     -- Process evt.data when the publisher supplied a payload.
 end
 ```
+
+2 番目の引数を渡すと、たとえば `events.subscribe("users", "user.created")` のように 1 つの種別だけを配信できます。種別を省略すると、一致するシステムのすべての種別を受け入れます。
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -80,6 +82,8 @@ end
 
 **戻り値:** `boolean, error`
 
+成功は、ランタイムが送信を受け付けたことだけを示します。購読者がイベントを受信または処理したことまでは保証しません。
+
 ## サブスクリプションメソッド
 
 ### チャネルの取得
@@ -101,7 +105,7 @@ if ok then
 end
 ```
 
-イベントフィールド: `system`、`kind`、`path`、`data`
+各イベントには `system`、`kind`、`path` が含まれます。`data` は発行側が nil ではないペイロードを渡した場合にのみ存在します。
 
 ### サブスクリプションのクローズ
 
@@ -110,6 +114,8 @@ end
 ```lua
 local closed = sub:close() -- true
 ```
+
+クローズは冪等です。バッファ済みイベントを読み終えた後、閉じたチャネルに対する `receive()` は `nil, false` を返します。
 
 ## 権限
 
@@ -126,5 +132,6 @@ local closed = sub:close() -- true
 | 空のkind | `errors.INVALID` | no |
 | 空のpath | `errors.INVALID` | no |
 | ポリシー拒否 | `errors.INVALID` | no |
+| 実行コンテキストまたはプロセスコンテキストがない | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](./errors.md)を参照。

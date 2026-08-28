@@ -103,6 +103,16 @@ message list/composer を別 element として custom layout できます。各 
 
 shared active session を駆動する session picker です。`active-session-id` は highlight 対象を指定します。`select` event の detail は `{ sessionId: string }` です。
 
+| Attribute | 型 | Default | 説明 |
+|-----------|----|---------|------|
+| `active-session-id` | string | — | この session を active として highlight する |
+
+**Event:**
+
+| Event | `detail` | 発生時 |
+|-------|----------|--------|
+| `select` | `{ sessionId: string }` | user が session を選択したとき。選択した session が shared active session になる |
+
 ```html
 <wippy-session-selector></wippy-session-selector>
 ```
@@ -139,6 +149,11 @@ document.querySelector('wippy-session-selector')
 
 - **Inherited CSS variable。** theme property は shadow boundary を継承します。PrimeVue/markdown/Tailwind selector は `chat-elements.css` として root 内へ注入します。`PrimeVuePlugin` は default body/null Portal target を owning shadow root 内の pinned overlay layer へ redirect します。`appendTo: 'self'` は scrolling Dialog/Drawer 内で clip し得る明示的 inline placement なので常用しません。Toast は proxy 経由で host native toast に委譲します。
 - **Per-instance override。** `custom-css` は shadow root の最後に append する raw CSS、`css-variables` は `:host` に適用する JSON object です。key は leading `--` を省略できます。
+
+| Attribute | 型 | 効果 |
+|-----------|----|------|
+| `custom-css` | string | raw CSS を element の shadow root の最後に追加するため、順序によって優先される |
+| `css-variables` | object（JSON） | instance ごとの CSS variable override を `:host` に適用する。key の先頭の `--` は省略可能 |
 
 両 attribute は trusted application configuration として扱います。untrusted input を raw CSS/value に copy しないでください。interface を隠したり external request を開始したりできます。
 

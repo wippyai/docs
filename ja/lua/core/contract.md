@@ -1,6 +1,6 @@
 ---
 title: "コントラクト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "型付きサービスバインディングを開き、コントラクトを調査し、実装を呼び出して、呼び出しコンテキストやセキュリティコンテキストを伝播します。"
 ---
 
 # コントラクト
@@ -9,7 +9,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="workflow"/>
 <secondary-label ref="permissions"/>
 
-型付きコントラクトを通じてサービスを呼び出し。スキーマ検証と非同期実行サポート付きでリモートAPI、ワークフロー、関数を呼び出し。
+`contract` モジュールは、リモート API、ワークフロー、関数の型付きサービスバインディングを開きます。コントラクトはスキーマ検証、非同期呼び出し、呼び出しコンテキストの伝播をサポートします。このページは API リファレンスです。`current_user` などの ID や値は、アプリケーション所有のエントリと周囲のハンドラー状態を表します。
 
 ## ロード
 
@@ -88,8 +88,10 @@ end
 |-------|------|-------------|
 | `name` | string | メソッド名 |
 | `description` | string | メソッドの説明 |
-| `input_schemas` | table[] | 入力スキーマ定義 |
-| `output_schemas` | table[] | 出力スキーマ定義 |
+| `input_schemas` | table[] または nil | 入力スキーマ定義。空の場合は省略 |
+| `output_schemas` | table[] または nil | 出力スキーマ定義。空の場合は省略 |
+
+各スキーマ要素には文字列 `format` が含まれ、必要に応じて `definition` 値も含まれます。
 
 ## 実装を検索
 
@@ -183,7 +185,7 @@ Futureメソッドについては[Future](./future.md)を参照。
 
 ## コントラクト経由で開く
 
-コントラクトオブジェクトを通じてバインディングを開く：
+コントラクトオブジェクトを通じてバインディングを開きます。以下の呼び出しは代替手段です。インスタンスを使用する前に、`contract.get()` と選択した `open()` 呼び出しの両方が返すエラーを確認してください。
 
 ```lua
 local c, err = contract.get("app.services:user")
@@ -289,4 +291,5 @@ if err then return nil, err end
 | メソッドが見つからない | `errors.NOT_FOUND` |
 | デフォルトバインディングがない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
-| 呼び出し失敗 | `errors.INTERNAL` |
+| コントラクトディスパッチまたはレスポンス変換に失敗 | `errors.INTERNAL` |
+| 実装がエラーを返した | 実装のエラー種別を保持 |

@@ -1,6 +1,6 @@
 ---
 title: "環境変数"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "構成済み環境システムが公開する環境変数を読み取り、更新します。"
 ---
 
 # 環境変数
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-設定値、シークレット、ランタイム設定のための環境変数へのアクセス。
+`env` モジュールは、ランタイムが公開する環境変数を読み取り、更新します。
+
+このページは API リファレンスです。各スニペットは独立した操作であり、指定した変数とセキュリティポリシーがすでに存在することを前提とします。
 
 変数にアクセスする前に[環境システム](../../system/env.md)で定義する必要がある。システムは値を提供するストレージバックエンド（OS、ファイル、メモリ）と変数が読み取り専用かどうかを制御。
 
@@ -106,7 +108,8 @@ end
 |--------|----------|-------------|
 | `env.get` | 変数名 | 環境変数を読み取り |
 | `env.set` | 変数名 | 環境変数を書き込み |
-| `env.get_all` | `*` | すべての変数を一覧 |
+
+`get_all` 専用のセキュリティアクションはありません。各変数名を `env.get` でフィルタリングし、呼び出し元に `env.get` が許可された変数だけを返します。
 
 ### アクセス確認
 

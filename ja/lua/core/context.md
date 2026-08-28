@@ -1,6 +1,6 @@
 ---
 title: "リクエストコンテキスト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "関数呼び出しやプロセス呼び出しを通じて伝播される、リクエストスコープの値を読み取ります。"
 ---
 
 # リクエストコンテキスト

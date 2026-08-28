@@ -1,6 +1,6 @@
 ---
 title: "メトリクス & テレメトリ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "アプリケーションのカウンター、ゲージ、ヒストグラム観測値を記録します。"
 ---
 
 # メトリクス & テレメトリ
@@ -8,7 +8,15 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-カウンター、ゲージ、ヒストグラムを使用してアプリケーションメトリクスを記録します。
+`metrics` モジュールは、アプリケーションのカウンター、ゲージ、ヒストグラム観測値を記録します。
+
+このページは API リファレンスです。各スニペットは一度に 1 つの観測値を示し、コレクターのエラーを伝播します。
+
+各関数は、アクティブなコレクターへ観測値を渡した後に `true, nil` を返します。実行コンテキストにコレクターがない場合は、`nil` と再試行不可の `errors.INTERNAL` エラーを返します。
+
+ラベルは省略できます。キーと値の両方が文字列であるエントリだけを記録し、それ以外は暗黙に無視します。テーブルではない labels 引数は、ラベルが指定されなかったものとして扱います。
+
+メトリクス名はローカル検証なしで転送されます。
 
 ## ロード
 
@@ -18,7 +26,9 @@ local metrics = require("metrics")
 
 ## カウンター
 
-### カウンターをインクリメント
+### `metrics.counter_inc`
+
+カウンターを 1 増やします。
 
 ```lua
 local recorded, err = metrics.counter_inc("requests_total", {method = "POST"})
@@ -33,7 +43,9 @@ return recorded
 
 **戻り値:** `boolean, error`
 
-### カウンターに加算
+### `metrics.counter_add`
+
+カウンターに値を加算します。
 
 ```lua
 local recorded, err = metrics.counter_add("bytes_total", 1024, {direction = "out"})
@@ -49,9 +61,13 @@ return recorded
 
 **戻り値:** `boolean, error`
 
+ランタイムは値を変更せず転送し、正の値であることを要求しません。
+
 ## ゲージ
 
-### ゲージを設定
+### `metrics.gauge_set`
+
+ゲージを現在値に設定します。
 
 ```lua
 local recorded, err = metrics.gauge_set("queue_depth", 42, {queue = "emails"})
@@ -67,7 +83,9 @@ return recorded
 
 **戻り値:** `boolean, error`
 
-### ゲージをインクリメント
+### `metrics.gauge_inc`
+
+ゲージを 1 増やします。
 
 ```lua
 local recorded, err = metrics.gauge_inc("connections", {pool = "db"})
@@ -82,7 +100,9 @@ return recorded
 
 **戻り値:** `boolean, error`
 
-### ゲージをデクリメント
+### `metrics.gauge_dec`
+
+ゲージを 1 減らします。
 
 ```lua
 local recorded, err = metrics.gauge_dec("connections", {pool = "db"})
@@ -99,7 +119,9 @@ return recorded
 
 ## ヒストグラム
 
-### 観測値の記録
+### `metrics.histogram`
+
+ヒストグラム観測値を記録します。
 
 ```lua
 local recorded, err = metrics.histogram("duration_seconds", 0.123, {method = "GET"})
@@ -120,5 +142,7 @@ return recorded
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | コレクターが利用不可 | `errors.INTERNAL` | no |
+
+無効な名前型または値型は、構造化エラーを返すのではなく Lua 引数エラーを発生させます。
 
 エラーの処理については[エラー処理](../core/errors.md)を参照。

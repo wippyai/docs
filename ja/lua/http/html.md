@@ -1,6 +1,6 @@
 ---
 title: "HTMLサニタイズ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "プリセットまたはカスタムの要素、属性、URL ポリシーを使用して、信頼できない HTML をサニタイズします。"
 ---
 
 # HTMLサニタイズ
@@ -10,13 +10,17 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 XSS攻撃を防ぐために信頼されていないHTMLをサニタイズ。[bluemonday](https://github.com/microcosm-cc/bluemonday)に基づく。
 
-サニタイズはHTMLをパースし、ホワイトリストポリシーを通じてフィルタリングすることで機能。明示的に許可されていない要素と属性は削除される。出力は常に整形式のHTML。
+サニタイズは HTML フラグメントを解析し、allowlist ポリシーでフィルタリングします。ポリシーが許可しない要素と属性は削除され、残りのフラグメントはシリアライズ時に正規化されます。
+
+このページは API リファレンスです。constructor のコードブロックは自己完結したポリシー例で、それ以降のメソッドブロックは `policy` が作成済みであることを前提とする部分的な構成例です。サニタイズ済み出力を安全に使用できるのは HTML 要素コンテンツのコンテキストだけです。JavaScript、CSS、URL、HTML 属性への補間には安全ではありません。実際の出力コンテキストに対応する encoder を使用してください。
 
 ## ロード
 
 ```lua
 local html = require("html")
 ```
+
+require する前に、実行可能エントリの `modules:` リストへ `html` を追加してください。
 
 ## プリセットポリシー
 
@@ -27,6 +31,8 @@ local html = require("html")
 | `new_policy` | カスタムサニタイズ | なし（ゼロから構築） |
 | `ugc_policy` | ユーザーコメント、フォーラム | 一般的なフォーマット（`p`、`b`、`i`、`a`、リストなど） |
 | `strict_policy` | プレーンテキスト抽出 | なし（すべてのHTMLを除去） |
+
+3 つの constructor はすべて `Policy, nil` を返します。現在、ポリシー構築は失敗しません。
 
 ### 空のポリシー
 
@@ -164,7 +170,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `pattern` | string | 正規表現パターン |
+| `pattern` | string | Go RE2 互換の正規表現 |
 
 **戻り値:** `AttrBuilder, error`
 
@@ -172,7 +178,7 @@ policy:sanitize('<span style="background:red">Bad</span>')
 
 ### 標準URL
 
-セキュリティデフォルトでURL処理を有効化。
+標準 URL 処理ポリシーを有効にします。解析可能な URL を要求し、相対 URL と `mailto`、`http`、`https` を許可し、許可済みリンク要素へ `rel="nofollow"` を追加します。
 
 ```lua
 policy:allow_elements("a")
@@ -287,11 +293,13 @@ policy:sanitize('<a href="https://example.com">Link</a>')
 
 **戻り値:** `Policy`
 
+信頼できないリンクを新しいタブで開く場合は、`require_noreferrer_on_links(true)` も有効にして referrer 漏えいを抑え、opener へのアクセスを緩和してください。
+
 ## 便利メソッド
 
 ### 画像の許可
 
-標準属性付きで`<img>`を許可。
+`align`、`alt`、`height`、`width`、`src` を持つ `<img>` を許可します。この helper は標準 URL ポリシーも有効にしますが、data URI 画像は許可しません。
 
 ```lua
 policy:allow_images()
@@ -304,7 +312,7 @@ policy:sanitize('<img src="photo.jpg" alt="Photo">')
 
 ### Data URI画像の許可
 
-base64埋め込み画像を許可。
+構文的に有効な Base64 エンコード済み `gif`、`jpeg`、`png`、`svg+xml`、`webp` data URI 画像を許可します。sanitizer が検証するのは media type と Base64 エンコードであり、デコード後の画像内容ではありません。data URI は active content を運べるため、画像データを信頼できるコンテンツにのみ有効化してください。
 
 ```lua
 policy:allow_elements("img")
@@ -320,7 +328,7 @@ policy:sanitize(input)
 
 ### リストの許可
 
-リスト要素を許可: `ul`、`ol`、`li`、`dl`、`dt`、`dd`。
+`ul`、`ol`、`li`、`dl`、`dt`、`dd` を許可します。helper は `ul`、`ol`、`li` の検証済み `type` 属性と、`li` の integer `value` 属性も許可します。
 
 ```lua
 policy:allow_lists()
@@ -333,7 +341,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### テーブルの許可
 
-テーブル要素を許可: `table`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th`、`caption`。
+`table`、`caption`、`col`、`colgroup`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th` を許可します。helper が検証する table dimension、alignment、span、header、scope、および関連する presentation 属性も許可します。
 
 ```lua
 policy:allow_tables()
@@ -346,7 +354,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### 標準属性の許可
 
-一般的な属性を許可: `id`、`class`、`title`、`dir`、`lang`。
+標準属性 `dir`、`id`、`lang`、`title` をグローバルに許可します。値には制約があり、`dir` は `ltr` または `rtl`、`lang` は 2～20 文字の ASCII 英字、`id` と `title` は sanitizer の安全な文字パターンに一致する必要があります。この helper は `class` を許可しません。
 
 ```lua
 policy:allow_elements("p")
@@ -377,6 +385,8 @@ local clean = policy:sanitize(dirty)
 | `html` | string | サニタイズするHTML |
 
 **戻り値:** `string`
+
+`sanitize` は文字列だけを返します。ランタイム `v0.3.32a` では、基礎となる fragment parser が解析できない不正入力を空文字列へ変換することがあり、Lua wrapper はそのケースを、ポリシーが内容を除去した有効入力と区別できません。サニタイズは出力フィルタリングとして扱い、入力検証としては扱わないでください。空の結果が重要な場合は、必要な内容を別途検証してください。
 
 ## エラー
 

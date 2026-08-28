@@ -260,11 +260,14 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.resizePanel(id, size)` | active breakpoint の named panel を resize |
 | `.collapsePanel(id)` | `collapsible: true` の panel を collapse |
 | `.expandPanel(id)` | collapsed panel を expand |
-| `.openDrawer(id)` / `.closeDrawer(id)` / `.toggleDrawer(id)` | drawer-mode panel を開閉 |
+| `.openDrawer(id)` | drawer-mode panel を開く |
+| `.closeDrawer(id)` | drawer-mode panel を閉じる |
+| `.toggleDrawer(id)` | drawer-mode panel を切り替える |
 | `.movePanel(id, target)` | panel を新しい tree position へ移動 |
 | `.removePanel(id)` | 全 breakpoint layout から panel を削除 |
 | `.updatePanel(id, def)` | runtime で panel definition を patch。`props` は shallow-merge、ほかは replace |
-| `.addFloating(id, def)` / `.removeFloating(id)` | floating panel を追加・削除 |
+| `.addFloating(id, def)` | floating panel を追加する |
+| `.removeFloating(id)` | floating panel を削除する |
 | `.openModal(id, def)` | modal を開く。public 0.0.56 API は `def` 必須で、同 id の declaration に merge。default は native `<dialog>.showModal()`、`useNativeDialog: false` で legacy overlay。open 済み id は no-op |
 | `.closeModal(id)` | open modal を閉じる |
 | `.broadcast(channel, payload)` | 全 panel へ publish |
@@ -289,7 +292,16 @@ nested object は replace され、prop key は削除できず overwrite のみ�
 
 ## Vue Composable — `@wippy-fe/vue-host`
 
-`useWippyLayout()`、`useWippyPanel(panelId)`、`useWippyBreakpoint()`、`useWippyMainRoute()` は reactive ref を返します。return 自体は null にならず、managed host がなければ内部 `.value` が null/empty、mutation は no-op。`layout.isManaged.value` で guard します。subscription は module-scoped で iframe lifetime 中存続します。
+これらの composable は proxy layout API を reactive な Vue 3 ref でラップします。基盤の subscription は module scope にあり、iframe の存続期間中維持されるため、component の unmount ごとの cleanup はありません。
+
+| Composable | 戻り値 |
+|------------|--------|
+| `useWippyLayout()` | layout state と変更メソッド全体 |
+| `useWippyPanel(panelId)` | 指定した panel の live state（`panelId` は必須で、`string`、`Ref<string>`、getter のいずれか） |
+| `useWippyBreakpoint()` | active breakpoint 名の reactive ref |
+| `useWippyMainRoute()` | main panel の現在の route を表す reactive ref |
+
+composable 自体は `null` を返しません。managed-layout host がない場合は内部の `.value` が低機能状態になります。`useWippyLayout().snapshot.value` は `null`（`isManaged.value` は `false` で、変更操作は何もしません）、`useWippyBreakpoint().value` と `useWippyMainRoute().value` は空文字列、存在しない ID に対する `useWippyPanel(id).value` は `null` です。戻り値を `=== null` で確認するのではなく、`layout.isManaged.value`（または `layout.snapshot.value !== null`）で host の存在を確認してください。
 
 ## Remount しない swap buffering
 

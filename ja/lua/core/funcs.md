@@ -1,6 +1,6 @@
 ---
 title: "関数呼び出し"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "登録済み関数を同期または非同期に呼び出し、リクエスト、セキュリティ、呼び出しオプションを伝播します。"
 ---
 
 # 関数呼び出し
@@ -159,7 +159,7 @@ if err then return nil, err end
 
 ### with_options
 
-タイムアウトや優先度などの呼び出しオプションを設定。時間制限が必要な操作に使用。
+呼び出しオプションを設定します。実装は独自のオプションを定義でき、ランタイムも送信ネットワークを選択する `network` を認識します。
 
 ```lua
 -- Set a 5 second timeout for external API call
@@ -175,7 +175,15 @@ end
 |-----------|------|-------------|
 | `options` | table | 実装固有のオプション |
 
+ランタイム定義のオプションは次のとおりです。
+
+| 認識されるオプション | 型 | 説明 |
+|-------------------|------|-------------|
+| `network` | string | 送信に使用する `network.*` エントリのレジストリ ID |
+
 **戻り値:** `Executor, error`
+
+ネットワークを選択するには、そのネットワーク ID に対する `network.select` 権限が必要です。
 
 ### call / async
 
@@ -352,6 +360,7 @@ end
 | `funcs.call` | Function ID | 特定の関数を呼び出し |
 | `funcs.context` | `context` | `with_context()`を使用してカスタムコンテキストを設定 |
 | `funcs.security` | `security` | `with_actor()`または`with_scope()`を使用 |
+| `network.select` | Network ID | `with_options()` で outbound network を選択 |
 
 ## エラー
 
@@ -362,6 +371,7 @@ end
 | Nameがない | `errors.INVALID` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
 | サブスクライブ失敗 | `errors.INTERNAL` | no |
+| async start の dispatch 失敗 | `errors.INTERNAL` | no |
 | 関数エラー | 様々 | 様々 |
 
 エラーの処理については[エラー処理](errors.md)を参照してください。

@@ -308,6 +308,8 @@ views モジュールは、設定されたルーター上に以下のエンド�
 | GET | `/components/list` | ビューコンポーネントをリストする |
 | GET | `/pages/content/{id}` | ページをレンダリングするか、コンポーネント記述子を返す |
 | GET | `/pages/public/{id}` | コンポーネントのベース URL を取得する |
+| GET | `/components/by-tag/{tag}` | カスタム要素のタグ名を `view.component` 記述子に解決する（ホストの `loadByTagName` が使用） |
+| GET | `/pages/routes` | `mountRoute` → `pageId` のマップを返す。無効または重複した `mountRoute` は HTTP 500。`announced` ではフィルタリングされず（非表示ページにも URL 解決が必要）、secure ページにはアクセス制御が適用される |
 
 ### レンダリングレスポンス
 

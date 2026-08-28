@@ -1,6 +1,6 @@
 ---
 title: "HTTPクライアント"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "ヘッダー、認証、フォーム、アップロード、TLS オプション、ストリーミング、バッチ処理を使用して HTTP リクエストを送信します。"
 ---
 
 # HTTPクライアント
@@ -8,7 +8,9 @@ description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <second
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-外部サービスへのHTTPリクエストを行う。すべてのHTTPメソッド、ヘッダー、クエリパラメータ、フォームデータ、ファイルアップロード、ストリーミングレスポンス、並行バッチリクエストをサポート。
+`http_client` モジュールは、ヘッダー、クエリパラメータ、フォーム、ファイルアップロード、認証、TLS オプション、ストリーミングレスポンス、並行バッチを使用して HTTP リクエストを送信します。
+
+このページは部分的なリクエストレシピを含む API リファレンスです。URL、トークン、認証情報、リクエストデータ、証明書素材は周囲のアプリケーションから与えられます。例ではレスポンスを使用する前に `Response, error` を確認し、ストリームボディを明示的に閉じます。
 
 ## ロード
 
@@ -120,6 +122,9 @@ if err then return nil, err end
 | `max_response_body` | number | 最大レスポンスサイズ（バイト単位）（0 = デフォルト） |
 | `unix_socket` | string | Unixソケットパス経由で接続 |
 | `tls` | table | リクエストごとのTLS設定（[TLSオプション](#tlsオプション)を参照） |
+| `overlay_network` | string | [network overlay](../../system/network.md) 経由でルーティングする `network.socks5` / `network.tailscale` / `network.i2p` エントリのレジストリ ID |
+
+`overlay_network` を選択するには、そのネットワーク ID に対する `network.select` 権限が必要です。
 
 ### クエリパラメータ
 
@@ -187,9 +192,13 @@ if err then return nil, err end
 | `filename` | string | no | 元のファイル名 |
 | `content` | string | yes* | ファイル内容 |
 | `reader` | userdata | yes* | 代替: 内容用のio.Reader |
-| `content_type` | string | no | MIMEタイプ（デフォルト: `application/octet-stream`） |
+| `content_type` | string | no | 現在は無視され、常に `Content-Type: application/octet-stream` で送信 |
 
 *`content`または`reader`のいずれかが必須。
+
+固定されたランタイムはディスパッチ前に `reader` 全体をメモリへ読み込み、閉じず、EOF 以外の読み取り失敗を個別には公開しません。その失敗までに蓄積したバイトを送信することがあります。サイズが制限済みのデータには `content` を優先し、呼び出し元所有の reader はリクエスト後に閉じてください。`content_type` は解析されますがランタイム `v0.3.32a` では転送されないため、アップロード part は transport のデフォルトを使用します。
+
+reader ベースのファイルは、このリリースでは単一リクエスト呼び出しだけでサポートされます。`request_batch` は `content` を転送しますが解析済み `reader` を破棄するため、バッチファイルアップロードでは `content` を指定してください。
 
 ### タイムアウト
 
@@ -234,6 +243,8 @@ local resp, err = http_client.get("https://secure.example.com/api", {
 })
 if err then return nil, err end
 ```
+
+`insecure_skip_verify` は管理下の診断 endpoint にのみ使用してください。証明書チェーン検証と hostname 検証の両方を無効にします。
 
 #### カスタムCA
 
@@ -396,6 +407,7 @@ HTTPリクエストはセキュリティポリシー評価の対象。
 | `http_client.unix_socket` | ソケットパス | Unixソケット接続を許可/拒否 |
 | `http_client.private_ip` | IPアドレス | プライベートIP範囲へのアクセスを許可/拒否 |
 | `http_client.insecure_tls` | URL | 安全でないTLS（検証スキップ）の許可/拒否 |
+| `network.select` | ネットワーク ID | 明示的な `overlay_network` 選択を許可/拒否 |
 
 ### アクセス確認
 

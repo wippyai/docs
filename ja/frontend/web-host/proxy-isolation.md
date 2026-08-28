@@ -277,7 +277,10 @@ w-artifact::part(frame)  { border: 0; }
 | Wippy runtime 注入 | Yes | Yes（`<w-iframe>` 経由） | No |
 | metadata 解決 | No | Yes | No |
 | authenticated fetch | Yes（raw HTML） | Yes | No |
-| state/WebSocket relay、bridge、nav-owner | Yes | Yes | No |
+| state relay | Yes | Yes | No |
+| WebSocket relay | Yes | Yes | No |
+| parent-child bridge | Yes | Yes（転送） | No |
+| nav-owner support | Yes | Yes | No |
 | content-type detection | No | Yes | No |
 | shadow parts | `loader`, `error`, `frame` | 同左 | — |
 | `status` attribute | Yes | Yes | No |

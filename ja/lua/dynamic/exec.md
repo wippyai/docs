@@ -1,6 +1,6 @@
 ---
 title: "コマンド実行"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "外部プロセスを開始し、ストリームデータを交換し、完了を待機してシグナルを送信します。"
 ---
 
 # コマンド実行
@@ -9,9 +9,11 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-I/Oストリームを完全に制御して外部コマンドとシェルスクリプトを実行します。
+`exec` モジュールは外部実行ファイルを開始し、その入力、出力、ライフサイクル、シグナルへアクセスできるようにします。このページは部分的なレシピを含む API リファレンスです。executor ID、コマンド、パス、環境値、セキュリティポリシーは周囲のアプリケーションから与えられます。
 
-エグゼキュータの設定については[エグゼキュータ](../../system/exec.md)を参照。
+executor はコマンド文字列を実行ファイルと引数へ解析し、シェルを起動しません。パイプ、リダイレクト、変数展開、コマンド置換などのシェル演算子は解釈されません。実行可能スクリプトを直接起動できるのは、選択したバックエンドと OS が対応している場合だけです。
+
+例を使用する前に、[エグゼキュータ](../../system/exec.md)の説明に従って executor リソースとコマンド allowlist を構成し、使用する正確なリソースに `exec.get` と `exec.run` を許可してください。例では Unix コマンドとパスを使うため、executor host で利用可能なものに置き換えてください。
 
 ## ロード
 
@@ -54,6 +56,8 @@ if err then
     return nil, err
 end
 ```
+
+引用符付き引数は native executor の parser によってグループ化され、シェル評価なしで実行ファイルへ直接渡されます。native executor では、`command_whitelist` のエントリと `exec.run` ポリシーリソースは、実行ファイル名だけでなく完全なコマンド文字列に一致します。
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -102,6 +106,8 @@ if exit_code ~= 0 then
     })
 end
 ```
+
+`wait()` は child の終了まで yield し、終了コードを返して reap した後、プロセスハンドルを閉じます。`wait()` 後の他のプロセスメソッドは、プロセスが閉じているため `errors.INVALID` を返します。
 
 ## stdout_stream / stderr_stream
 
@@ -244,6 +250,8 @@ if exit_code ~= 0 then
 end
 ```
 
+この部分的なレシピは、ブロック開始時点で `executor` が有効であることを前提とします。
+
 ## signal / close
 
 シグナルを送信またはプロセスを閉じます。
@@ -263,6 +271,8 @@ if close_err then return nil, close_err end
 -- local exit_code, wait_err = proc:wait()
 ```
 
+`close()` は冪等です。`close()` または `wait()` がハンドルを閉じた後は、`signal()`、`start()`、`wait()`、ストリームアクセスが `errors.INVALID` を返します。シグナル番号と動作は executor バックエンドおよび OS に依存します。
+
 ## 権限
 
 Exec操作はセキュリティポリシー評価の対象です。
@@ -281,5 +291,9 @@ Exec操作はセキュリティポリシー評価の対象です。
 | プロセスがクローズ済み | `errors.INVALID` | no |
 | プロセスが開始されていない | `errors.INVALID` | no |
 | 既に開始済み | `errors.INVALID` | no |
+| executor の取得またはプロセス作成に失敗 | `errors.INTERNAL` | no |
+| start、wait、signal、stdin、ストリーム操作に失敗 | `errors.INTERNAL` | no |
+
+ランタイム `v0.3.32a` では、`exec.get` と `exec.run` のポリシー拒否は `errors.PERMISSION_DENIED` ではなく `errors.INVALID` を使用します。
 
 エラーの処理については[エラー処理](../core/errors.md)を参照。

@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "サーバー側 HTTP リクエストを読み取り、ステータス、ヘッダー、JSON、ストリーム、イベントストリームのレスポンスを構築します。"
 ---
 
 # HTTP
@@ -8,7 +8,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-HTTPリクエストを処理しレスポンスを構築。リクエストデータ、ルートパラメータ、ヘッダー、ボディ内容にアクセス。ステータスコード、ヘッダー、ストリーミングサポート付きでレスポンスを構築。
+`http` モジュールは、現在のサーバー側リクエストを読み取り、ヘッダー、ルートデータ、ボディ内容、ストリーミング出力、Server-Sent Events を含むレスポンスを構築します。
+
+これは部分的なハンドラーレシピを含む API リファレンスです。`id`、`data`、`token` などの名前やアプリケーションのコールバックは、周囲のハンドラーから提供されます。リクエストアクセサーは通常 `value, error` を返し、レスポンスの変更操作は `error` を返します。結果を使用する例では、それらのエラーを確認しています。
 
 サーバー設定については[HTTPサーバー](../../http/server.md)を参照。
 
@@ -263,6 +265,8 @@ else
 end
 ```
 
+`has_body()` が `true` を返すのは、リクエストにボディオブジェクトがあり、かつ `Content-Length` が正の値の場合だけです。チャンク形式のリクエストや長さが不明なリクエストでは `false` になることがあります。そのようなボディを許可するハンドラーは、使用するボディリーダーを呼び出し、そのエラーを処理してください。
+
 ### is_content_type
 
 ```lua
@@ -299,6 +303,8 @@ else
     return res:write_json({error = "Cannot produce acceptable response"})
 end
 ```
+
+固定バージョンの `accepts()` ヘルパーは、カンマ区切りの完全一致と `*/*` だけを扱います。メディアタイプパラメーター、サブタイプワイルドカード、品質重みは処理せず、`Accept` ヘッダーがない場合は `false` を返します。これらの HTTP セマンティクスが必要な場合は、アプリケーション側でコンテントネゴシエーションを実装してください。
 
 ### remote_addr
 
@@ -379,6 +385,10 @@ if form.files.documents then
 end
 ```
 
+マルチパートフィールドの値は、フィールドが 1 回だけ現れる場合は文字列、複数回現れる場合は配列です。アップロードされたファイル名と `Content-Type` 値は信頼できないメタデータとして扱ってください。種類が重要な場合は、保存名を生成し、内容を独立して検査します。
+
+排他的な `wx` 書き込みは既存オブジェクトの上書きを防ぎます。書き込みの失敗は対象がこのリクエストに属することを証明しないため、失敗時に対象を無条件で削除してはいけません。部分書き込み後のクリーンアップが必要なアプリケーションでは、所有権を追跡できる一時名でアップロードをステージングし、書き込み成功後にだけ昇格させてください。
+
 ### stream
 
 大きなファイル用にリクエストボディをストリームとして取得。
@@ -403,6 +413,8 @@ if close_err then return nil, close_err end
 ## レスポンスメソッド
 
 ### set_status
+
+`set_status()` はステータスを書き込み、レスポンスヘッダーを直ちに確定します。先に `set_header()`、`set_content_type()`、`set_transfer()` を呼び出してください。その後のヘッダー変更は `errors.INVALID` を返します。
 
 ```lua
 local status_err = res:set_status(http.STATUS.CREATED)
@@ -621,9 +633,9 @@ http.TRANSFER.CHUNKED   -- "chunked"
 http.TRANSFER.SSE       -- "sse"
 ```
 
-### エラータイプ
+### 従来のエラータイプ定数
 
-正確なエラー処理のためのモジュール固有のエラータイプ定数。
+このモジュールは互換性のために次の文字列をエクスポートしていますが、現在のリクエストおよびレスポンスメソッドはこれらを返しません。実行時の失敗には、後述する構造化された `errors.*` の種別が使われます。
 
 ```lua
 http.ERROR.PARSE_FAILED   -- Form/multipart parse error

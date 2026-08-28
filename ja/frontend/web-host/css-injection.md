@@ -13,14 +13,14 @@ iframe は parent CSS を継承しないため、Host が child `srcdoc` に sty
 
 facade は global、host、children の 3 scope を公開します。主なルールは、custom property は WC host に継承し、selector rule は iframe/shadow boundary を自然には越えないため runtime injection が必要ということです。WippyElement は forced-theme inner root を通して effective global と children/page の property 名を bridge するため、local theme default はそれらを reset できません。host-only 名は通常の継承に依存し、inner root の local theme CSS が再宣言すると shadow され得ます。Web Host 1.0.43 以降は composed global + children custom CSS が component shadow root にも届き、`customCss` で opt out できます。
 
-| Facade knob | Host shell | `view.page` | `view.component` |
-|---|---|---|---|
-| `custom_css` | ✓ | ✓ | ✓（1.0.43+） |
-| `css_variables` | ✓ | ✓ | ✓ inherited + bridged |
-| `host_custom_css` | ✓ | ✗ | ✗ |
-| `host_css_variables` | ✓ | ✗ | host-mounted WC のみ |
-| `children_custom_css` | ✗ | ✓ | ✓（1.0.43+） |
-| `children_css_variables` | ✗ | ✓ | page WC のみ |
+| Facade knob | 配信内容 | Host shell document | `view.page` child realm | `view.component` shadow root |
+|---|---|---|---|---|
+| `custom_css`（global） | selector rule | ✓ 注入 | ✓ 注入¹ | ✓ 注入（1.0.43+、opt-out 可）¹ |
+| `css_variables`（global） | custom property | ✓ effective mode block | ✓ effective mode block | ✓ 継承 + bridge |
+| `host_custom_css`（host） | selector rule | ✓ 注入 | ✗ | ✗ |
+| `host_css_variables`（host） | custom property | ✓ `:root` | ✗ | host-mounted WC のみ² |
+| `children_custom_css`（children） | selector rule | ✗ | ✓ 注入¹ | ✓ 注入（1.0.43+、opt-out 可）¹ |
+| `children_css_variables`（children） | custom property | ✗ | ✓ `:root` | page WC のみ² |
 
 child が受け取る custom CSS は global + children の合成です。WC の custom property は mount 元 `:root` から継承し、host-mounted は global + host、page 内は global + children です。injected selector CSS は常に global + children。全 surface 共通は global scope に置きます。
 
@@ -44,7 +44,7 @@ logical cascade は themeConfig → primevue/tailwind → iframe → markdown �
 
 ## `ProxyConfig.injections.css` Flag
 
-nested flag は registry YAML と `package.json` の両方で lower camelCase。YAML は nested key 単位で優先します。
+nested flag は backend registry YAML と frontend `package.json` の `wippy.proxy.injections.css` の両方で lower camelCase です。facade requirement 名は文書化された snake_case を使い、registry field はそれぞれの schema に従います。nested proxy object の key は変換されずそのまま渡され、YAML が nested key ごとに優先します。
 
 ```yaml
 meta:

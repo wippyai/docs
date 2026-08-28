@@ -23,11 +23,39 @@ local logger = require("logger")
 
 ## ログレベル
 
-### Debug
+### `logger:debug`
+
+debug レベルのログメッセージを書き込みます。
 
 ```lua
 logger:debug("message", {key = "value"})
 ```
+
+### `logger:info`
+
+info レベルのログメッセージを書き込みます。
+
+```lua
+logger:info("message", {key = "value"})
+```
+
+### `logger:warn`
+
+warning レベルのログメッセージを書き込みます。
+
+```lua
+logger:warn("message", {key = "value"})
+```
+
+### `logger:error`
+
+error レベルのログメッセージを書き込みます。
+
+```lua
+logger:error("message", {key = "value"})
+```
+
+4 つのログレベルメソッドはすべて同じパラメータを受け取ります。
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -37,39 +65,6 @@ logger:debug("message", {key = "value"})
 フィールド名になるのは文字列キーだけです。文字列、数値、整数、真偽値、エラー、および構造化された Lua 値はログフィールドに変換され、文字列以外のキーは無視されます。
 
 `logger:error` では、`error` という名前のフィールドはエラーフィールドとして出力され、残りのフィールドを処理する前に渡されたテーブルから削除されます。`error` エントリを保持する必要がある場合、そのテーブルを再利用しないでください。
-
-### Info
-
-```lua
-logger:info("message", {key = "value"})
-```
-
-| パラメータ | 型 | 説明 |
-|-----------|------|-------------|
-| `message` | string | ログメッセージ |
-| `fields` | table? | コンテキストのキーバリューペア |
-
-### Warn
-
-```lua
-logger:warn("message", {key = "value"})
-```
-
-| パラメータ | 型 | 説明 |
-|-----------|------|-------------|
-| `message` | string | ログメッセージ |
-| `fields` | table? | コンテキストのキーバリューペア |
-
-### Error
-
-```lua
-logger:error("message", {key = "value"})
-```
-
-| パラメータ | 型 | 説明 |
-|-----------|------|-------------|
-| `message` | string | ログメッセージ |
-| `fields` | table? | コンテキストのキーバリューペア |
 
 ## ロガーのカスタマイズ
 
