@@ -1,6 +1,6 @@
 ---
 title: "템플릿 엔진"
-description: "<secondary-label ref='external'/"
+description: "CloudyKit Jet을 사용한 템플릿 렌더링."
 ---
 
 # 템플릿 엔진
@@ -31,6 +31,9 @@ description: "<secondary-label ref='external'/"
 | `engine.development_mode` | bool | false | 템플릿 캐싱 비활성화 |
 | `engine.delimiters.left` | string | `{{` | 변수 시작 구분자 |
 | `engine.delimiters.right` | string | `}}` | 변수 종료 구분자 |
+| `engine.delimiters.comment_left` | string | `{*` | 주석 시작 구분자 |
+| `engine.delimiters.comment_right` | string | `*}` | 주석 종료 구분자 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 템플릿 파일 확장자 |
 | `engine.globals` | map | - | 모든 템플릿에서 사용 가능한 변수 |
 
 ## 템플릿

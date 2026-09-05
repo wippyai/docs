@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 最初のノードは `join_addrs` 不要 — シードとして起動します。参加はバックオフで再試行され、孤立したノードは定期的に再参加を試みるため、新しい IP でノードが再起動（Kubernetes では一般的）してもすぐに再収束します。
 
-ゴシップはインラインまたはファイルから提供される共有キーで暗号化できます:
+ゴシップは常に共有キーで暗号化されます。インラインの `membership.secret_key` として、またはファイルから `membership.secret_file` として指定します。どちらも指定せずに起動したノードは、クラスタコンポーネントの起動に失敗します。値は base64 エンコードされ、すべてのノードで同一です。
+
+メンバーシップ変更（`NodeJoined`、`NodeLeft`、`NodeUpdated`）が Raft ブートストラップ、投票ノード調整、プロセスグループ同期、離脱ノードが所有する名前の自動クリーンアップを駆動するイベントです。
+
+## ノード間アイデンティティ
+
+各ノードは ed25519 キーペアを保持し、各ノードは信頼する公開鍵のマップを持ちます。`cluster.enabled: true` の場合、どちらも必須です。
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-メンバーシップ変更（`NodeJoined`、`NodeLeft`、`NodeUpdated`）が Raft ブートストラップ、投票ノード調整、プロセスグループ同期、離脱ノードが所有する名前の自動クリーンアップを駆動するイベントです。
+| キー | 内容 |
+|------|------|
+| `internode.identity_key` | ノードの秘密鍵（インライン）|
+| `internode.identity_key_file` | その鍵を保持するファイルのパス |
+| `internode.trusted_peer_keys` | 自ノードを含むメッシュ内のすべてのノードについての、ノード名から公開鍵へのマッピング |
+
+キー形式: base64（標準またはパディングなしの raw エンコーディング）。秘密鍵は 32 バイトの ed25519 シードまたは 64 バイトの完全な ed25519 秘密鍵にデコードされます。信頼するピアの鍵は 32 バイトの ed25519 公開鍵にデコードされます。鍵生成用のサブコマンドはありません — 任意の ed25519 ツールで鍵を作成し、raw バイトを base64 エンコードしてください:
+
+```bash
+# 32バイトのシードとその公開鍵をbase64エンコード
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` と `identity_key_file` は排他的で、いずれか一方が必須です。`trusted_peer_keys` には、ローカルの `cluster.name` に対応するエントリが含まれ、その値は自ノード自身の公開鍵でなければなりません。自ノードのエントリが欠けているか一致しない場合、起動は中止されます。これにより、信頼マップはすべてのノードへ変更せずに配布できる単一のアーティファクトになります。
+
+メッシュのハンドシェイクは相互認証です。双方は、両ノードIDと両nonceを束ねたトランスクリプトに対する HMAC によって共有ゴシップシークレットの知識を証明し、そのトランスクリプトを自身のアイデンティティキーで署名します。ピアはその署名を、当該ノードIDに対して保持している公開鍵と、ピアがゴシップで通知している鍵の両方に対して検証します。いずれかの検査に失敗すると接続は閉じられます。
+
+考慮すべき影響:
+
+- メッシュはアイデンティティを持たないノードとは相互運用できません。クラスタ内のすべてのノードにアイデンティティを設定する必要があります。
+- ノードIDが `trusted_peer_keys` に存在しないピアは拒否されます。ゴシップで通知された公開鍵が信頼エントリと一致しないピアも同様です。ノードの追加とは、その公開鍵を既存のノードへ配布することを意味します。
+- 鍵が解決されるにはノードIDが稼働中のゴシップメンバーシップに存在している必要があるため、ゴシップに参加していないピアはメッシュ接続を開けません。
 
 ## ブートストラップ
 
@@ -146,11 +187,17 @@ end
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-3ノード投票クラスタ:
+3ノード投票クラスタ（`node-2` と `node-3` は `name`、`identity_key_file`、`join_addrs` のみが異なります）:
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-ゴシップのみのクライアント（名前付け/メッセージングのために参加、Raft は実行しない）:
+ゴシップのみのクライアント（名前付け/メッセージングのために参加、Raft は実行しない）。これにもアイデンティティが必要で、投票ノード側も自身のマップにこのクライアントの公開鍵を持つ必要があります:
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

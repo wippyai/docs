@@ -156,7 +156,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- apply all pending migrations
 local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- roll back the most recently applied migration
 local status = runner:status()   -- list applied + pending migrations
 ```
 
@@ -185,15 +185,41 @@ local status = runner:status()   -- list applied + pending migrations
 
 ### `runner:rollback(options)`
 
-id(필수)로 단일 마이그레이션을 롤백합니다:
+적용된 마이그레이션을 적용 역순으로 롤백합니다. 옵션이 없으면 가장 최근에 적용된 마이그레이션 하나만 되돌립니다:
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- roll back the last migration
+runner:rollback({ count = 3 })                               -- roll back the last 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
 ```
+
+옵션:
+
+| 옵션 | 설명 |
+|--------|-------------|
+| `count` | 롤백할 마이그레이션 개수; 기본값은 `1` |
+| `allowed_ids` | 마이그레이션 id 배열; 이들만 롤백 대상이 됩니다 |
 
 ### `runner:status(options)`
 
-각각 `applied_at` 및 `meta.timestamp`로 정렬된 `{ applied = {...}, pending = {...} }`을 반환합니다.
+데이터베이스의 모든 마이그레이션을 설명하는 상태 보고서를 반환합니다:
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+적용된 마이그레이션이 먼저(`applied_at` 순), 이어서 대기 중인 마이그레이션이(`meta.timestamp`, 그다음 id 순) 나열됩니다.
 
 ## 레지스트리 API
 
@@ -210,7 +236,7 @@ runner:rollback({ id = "app:01_create_users_table" })
 
 ## 마이그레이션 추적
 
-러너는 첫 실행 시 각 대상 데이터베이스에 `wippy_migrations` 테이블을 생성합니다. 적용된 마이그레이션은 id로 기록되어 이후 실행에서 건너뜁니다. 추적 테이블은 자동으로 생성되므로, 이를 생성하기 위한 마이그레이션을 직접 작성하지 마세요.
+러너는 첫 실행 시 각 대상 데이터베이스에 `_migrations` 테이블을 생성합니다. 적용된 마이그레이션은 id로 기록되어 이후 실행에서 건너뜁니다. 추적 테이블은 자동으로 생성되므로, 이를 생성하기 위한 마이그레이션을 직접 작성하지 마세요.
 
 ## 모범 사례
 

@@ -1,6 +1,6 @@
 ---
 title: "Invocação de Funções"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "A forma principal de chamar outras funções no Wippy. Execute funções registradas síncronamente ou assíncronamente entre processos, com suporte…"
 ---
 
 # Invocação de Funções
@@ -110,7 +110,7 @@ local actor = security.actor()  -- Obter ator do usuário atual
 -- Chamar função admin com credenciais do usuário
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

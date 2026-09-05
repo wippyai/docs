@@ -98,22 +98,26 @@ l.Push(result)
 
 ### 类型定义（工具）
 
-`Types` 字段为 IDE 支持和文档提供类型签名：
+`Types` 字段为 IDE 支持和文档提供类型签名。类型使用 `typ` 包的流式构建器创建：
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +126,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | 类型 | 描述 |
 |------|-------------|
-| `types.String` | String 原语 |
-| `types.Number` | 数值 |
-| `types.Boolean` | 布尔值 |
-| `types.Any` | 任意 Lua 值 |
-| `types.LuaError` | 错误类型 |
-| `types.Optional(t)` | 类型 t 的可选值 |
-| `types.InterfaceType` | 带方法的对象 |
-| `types.FunctionType` | 带参数/返回值的函数签名 |
-| `types.RecordType` | 带字段的类结构体类型 |
-| `types.TableType` | 带键/值类型的 table |
+| `typ.String` | String 原语 |
+| `typ.Number` | 数值 |
+| `typ.Integer` | 整数值 |
+| `typ.Boolean` | 布尔值 |
+| `typ.Any` | 任意 Lua 值 |
+| `typ.Self` | 方法的接收者类型 |
+| `typ.LuaError` | 错误类型 |
+| `typ.NewOptional(t)` | 类型 t 的可选值 |
+| `typ.NewInterface(name, methods)` | 带方法的对象 |
+| `typ.Func()` | 函数签名构建器 |
+| `typ.NewRecord()` | 类结构体类型构建器（字段通过 `.Field`/`.OptField` 声明） |
+| `typ.NewArray(t)` | 元素类型为 t 的数组 |
+| `typ.NewMap(k, v)` | 带键/值类型的 map |
 
-函数签名支持可变参数：
+函数构建器链式调用 `Param`、`OptParam`、`Variadic` 和 `Returns`：
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-完整类型系统请参见 go-lua 中的 `types` 包。
+Record 用 `Field`（必需）和 `OptField`（可选）声明字段：
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+完整类型系统请参见 go-lua 中的 `typ` 包。
 
 ### UserData 绑定（运行时）
 
@@ -324,6 +341,14 @@ func newTestScheduler() *testScheduler {
     return ts
 }
 
+// Stop 封装 Scheduler.Stop，后者需要一个 context。
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+}
+
+// OnStart 与 OnComplete 一起满足 process.Lifecycle。
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
+
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
     ch, ok := ts.pending[p.UniqID]
@@ -358,17 +383,19 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
 使用要测试的模块从 Lua 脚本创建进程：
 
 ```go
-func bindMyModule(l *lua.LState) {
+func bindMyModule(l *lua.LState) error {
     tbl, _ := mymodule.Module.Build()
     l.SetGlobal(mymodule.Module.Name, tbl)
+    return nil
 }
 
 func newLuaProcess(script string) *engine.Process {
     proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
         engine.WithModuleBinder(bindMyModule),
     )
+    return proc
 }
 
 func TestMyModuleYields(t *testing.T) {

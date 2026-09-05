@@ -39,6 +39,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | Campo | Obrigatório | Descrição |
@@ -51,6 +64,16 @@ keywords:
 | `repository` | Não | URL do repositório de código |
 | `homepage` | Não | Página inicial do projeto |
 | `keywords` | Não | Palavras-chave de busca |
+| `authors` | Não | Lista de autores |
+| `version` | Não | Versão semântica; `--version` a sobrescreve |
+| `exclude` | Não | Padrões a descartar: valores contendo `:` são IDs de entradas, o restante é um glob de arquivos-fonte |
+| `embed` | Não | Padrões de incorporação `fs.directory` padrão quando `--embed` não é passado |
+| `exclude_meta` | Não | Mapa de campo de metadados para valores; entradas cujos metadados correspondem são descartadas |
+| `metadata` | Não | Metadados chave/valor arbitrários carregados com o módulo publicado |
+| `publish.profiles` | Não | Quais profiles de configuração entregar no pack (veja [Publicando Profiles](#publishing-profiles)) |
+| `publish.runtime` | Não | Quais seções da configuração de runtime entregar como padrões do pack; apenas `type: application` |
+
+`exclude` separa por forma, não por um campo distinto. `_old/**`, `test/**` e `*.test.lua` filtram arquivos-fonte conforme são coletados; `acme.http:debug_handler` desabilita uma entrada do registry depois que as entradas são decodificadas. Um segmento `**` abrange qualquer número de segmentos de diretório.
 
 `type` é a fonte de verdade de como o hub classifica o módulo e pode ser alterado em uma publicação posterior; `--module-type` o sobrescreve para uma única publicação. Quando omitido, módulos recém-criados assumem `application` com um aviso de obsolescência.
 
@@ -202,6 +225,15 @@ wippy lint
 ```bash
 wippy publish --dry-run
 ```
+
+O publish constrói o pack da mesma forma com ou sem `--dry-run`, então a validação cobre tudo o que a publicação real produziria:
+
+- `organization` e `module` devem ser alfanuméricos minúsculos com hifens internos, `version` deve ser semver, e `type` deve ser um dos quatro tipos de módulo.
+- `publish.runtime` pertence a aplicações: declarar `source`, `sections` ou `vars` sob ele sem `type: application` falha.
+- Todo recurso que declara `meta.artifact.format` é inspecionado por esse formato. Um artefato malformado falha aqui em vez de falhar em um consumidor, e dois artefatos cujas saídas cairiam em diretórios sobrepostos são rejeitados.
+- O formato `node-package` exige adicionalmente que o `package.json` carregue uma `version` semântica que **seja igual à versão do módulo sendo publicada**, um `name` de pacote válido, e nenhum script de ciclo de vida `preinstall`, `install`, `postinstall` ou `prepare`.
+
+A última regra é a que costuma pegar durante um release: incremente `version` no `wippy.yaml` e no `package.json` do artefato juntos, ou a publicação para.
 
 ### 4. Publicar
 

@@ -1,6 +1,6 @@
 ---
 title: "プロセスグループ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "プロセスを名前付きグループに参加させ、クラスタ全体のすべてのメンバーにブロードキャストします。Erlang/OTP pg をモデルにしています: グループは動的で、プロセスは複数のグループに所属でき、メンバーシップはクラスタ全体で追跡され、最終的整合性があります。"
 ---
 
 # プロセスグループ

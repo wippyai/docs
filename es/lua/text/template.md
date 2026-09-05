@@ -1,6 +1,6 @@
 ---
 title: "Motor de Plantillas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Renderizar contenido dinamico usando el motor de plantillas Jet. Construir paginas HTML, emails y documentos con herencia e inclusiones de plantillas."
 ---
 
 # Motor de Plantillas

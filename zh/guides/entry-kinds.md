@@ -69,7 +69,7 @@ Wippy 中所有可用入口类型的完整参考。
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # 端点
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## 数据库
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite 数据库 |
 | `db.sql.postgres` | PostgreSQL 数据库 |
 | `db.sql.mysql` | MySQL 数据库 |
+| `db.cdc.postgres` | Postgres 变更数据捕获源（参见 [CDC](system/cdc.md)） |
+| `db.cdc.sqlite` | SQLite 变更数据捕获源（参见 [CDC](system/cdc.md)） |
 
 ### SQLite
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- 发布消息
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- 在消费者处理函数中访问当前消息
-local msg = queue.message()
-local data = msg:body_json()
+-- 在消费者处理函数中：消息体就是处理函数的参数
+local function main(data)
+    -- 通过当前消息访问投递元数据
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-消费者的 <code>func</code> 会为每条消息调用。在处理函数中使用 <code>queue.message()</code> 访问当前消息。
+消费者的 <code>func</code> 每收到一条消息就被调用一次，消息体作为其参数。在处理函数中使用 <code>queue.message()</code> 获取该次投递的 <code>id()</code>、<code>header()</code>/<code>headers()</code> 和 <code>ack()</code>/<code>nack()</code>。
 </note>
 
 ## 进程管理
@@ -262,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | 进程执行宿主 |
 | `process.service` | 受监督的进程（包装 process.lua） |
 | `terminal.host` | 终端/CLI 宿主 |
+| `pg.scope` | 进程组作用域（参见 [进程组](system/process-groups.md)） |
 
 ```yaml
 # 进程宿主（进程运行的地方）
@@ -303,6 +312,39 @@ local data = msg:body_json()
 
 实时更新 `process.host` 条目会就地重设 `host.workers` 的规模 — 运行中的进程、PID 和队列都会保留。`host.queue_size`、`host.local_queue_size` 和 `lifecycle` 在构造时固定：实时更新更改它们会被拒绝；对 worker 采用亲和性管理的宿主调整 worker 数量同样会被拒绝。
 
+### 进程安全
+
+`process.lua` 和 `process.lua.bc` 条目接受一个顶层 `security:` 块。它属于条目本身，因此对该进程的每次 spawn 都生效，在 `process.host` 和 `terminal.host` 上都是如此：
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| 字段 | 说明 |
+|------|------|
+| `actor.id` | 进程运行时所用的主体身份；替换继承来的主体 |
+| `actor.meta` | 供策略求值的主体属性 |
+| `policies` | 合并进作用域的策略的注册表 ID（`namespace:name`） |
+| `groups` | 其策略被合并进作用域的策略组的注册表 ID |
+
+解析在进程启动时进行且是原子的：只要所列的任一策略或组无法解析，spawn 就会失败，并且不会安装任何不完整的上下文。省略 `actor` 会继承 spawn 发起方的主体；同时省略 `policies` 和 `groups` 会继承 spawn 发起方的作用域。`function.lua`、`function.lua.bc`、`process.lua` 和 `process.lua.bc` 都接受该块。
+
+命令条目还可以额外声明 `meta.command.security`，它只在该条目作为 CLI 命令启动时生效——参见[命令安全](guides/cli.md#command-security)。它不影响普通的 spawn。
+
+参见 [安全](system/security.md)。
+
 ## Temporal（工作流）
 
 | 类型 | 说明 |
@@ -339,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 单位为秒，默认 3600
 ```
 
 <tip>
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+策略组由策略自身构成：策略在 `groups:` 下列出它所属的组 ID，而一个组就是指定了该组的策略集合。不存在单独的组条目类型。组 ID 是注册表 ID——裸名称在声明该策略的命名空间中解析，因此上面的 `operators` 在命名空间 `app.security` 中声明时就是 `app.security:operators`。条目通过完整的 `namespace:name` 引用组。
 
 **Lua API：** 参见 [Security 模块](lua/security/security.md)
 
@@ -622,11 +668,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssembly 进程 |
 
 ```yaml
+# WAT 文本作为内联源码
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # 或 wasi-http
+
+# 二进制 WASM 从文件系统条目加载，并通过哈希校验
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # 或 wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` 和 `process.wasm` 接受 `fs`、`path` 和 `hash`——二进制条目上没有 `source` 字段；`source` 只属于 `function.wat`。`hash` 是必填的，且必须为 `sha256:<hex>`；字节不匹配时模块会被拒绝。
 
 参见 [WASM 概述](wasm/overview.md)。
 

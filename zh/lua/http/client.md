@@ -1,6 +1,6 @@
 ---
 title: "HTTP 客户端"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "向外部服务发起 HTTP 请求。支持所有 HTTP 方法、头部、查询参数、表单数据、文件上传、流式响应和并发批量请求。"
 ---
 
 # HTTP 客户端
@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | 最大响应大小（字节）（0 = 默认） |
 | `unix_socket` | string | 通过 Unix socket 路径连接 |
 | `tls` | table | 每请求 TLS 配置（参见 [TLS 选项](#tls-选项)） |
+| `overlay_network` | string | 通过[网络覆盖层](system/network.md)路由 —— `network.socks5` / `network.tailscale` / `network.i2p` 条目的注册表 ID |
 
 ### 查询参数
 
@@ -167,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | 否 | 原始文件名 |
 | `content` | string | 是* | 文件内容 |
 | `reader` | userdata | 是* | 替代方案：用于内容的 io.Reader |
-| `content_type` | string | 否 | MIME 类型（默认：`application/octet-stream`） |
+| `content_type` | string | 否 | 当前被忽略：无论此字段如何，每个上传部分始终以 `Content-Type: application/octet-stream` 发送 |
 
 *`content` 或 `reader` 必须提供其一。
 
@@ -367,12 +368,25 @@ end
 
 ### SSRF 防护
 
-私有 IP 范围（10.x、192.168.x、172.16-31.x、localhost）默认被阻止。访问需要 `http_client.private_ip` 权限。
+非公网 IP 范围默认被阻止。访问需要针对该地址的 `http_client.private_ip` 权限：
+
+- 回环地址、私有地址（10.x、172.16-31.x、192.168.x）、链路本地单播和组播地址，以及未指定地址
+- 运营商级 NAT `100.64.0.0/10`、`192.0.0.0/24`、组播 `224.0.0.0/4`、保留 `240.0.0.0/4`
+- 文档和基准测试范围 `192.0.2.0/24`、`198.18.0.0/15`、`198.51.100.0/24`、`203.0.113.0/24`、`2001:db8::/32`
+- IPv6 组播 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+该检查在拨号时进行，而非针对 URL 字符串，并覆盖主机解析出的每一个地址。解析出多个地址的主机名会逐个地址检查：被拒绝的地址会被跳过并尝试下一个，只有当所有候选地址都被拒绝或不可达时请求才失败。因此，解析到私有地址的公网主机名会像私有 IP 字面量一样被阻止。
+
+### 重定向
+
+最多跟随九次重定向；第十次会以 `stopped after 10 redirects` 失败，这个计数包含原始请求。
+
+每一跳都单独授权。在跟随重定向之前，客户端会针对目标 URL 评估 `http_client.request` 并对其应用私有 IP 检查，因此无法借助重定向从一个被允许的 URL 到达一个被拒绝的 URL。任一检查未通过的跳转都会中止该请求。
 
 参见 [安全模型](system/security.md) 了解策略配置。
 

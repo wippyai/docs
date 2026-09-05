@@ -41,7 +41,7 @@ Enruta el tráfico saliente y vincula escuchadores a través de redes de superpo
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ Enruta el tráfico saliente y vincula escuchadores a través de redes de superpo
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `hostname` | string | Nombre del nodo tsnet (usado en el directorio de estado por nodo) |
-| `auth_key` | string | Clave de autenticación tailnet en línea |
-| `auth_key_env` | string | Nombre de variable de entorno que contiene la clave de autenticación (resuelto a través del registro env) |
+| `auth_key` | string | Clave de autenticación tailnet — en línea o `${env:NAME}` resuelta mediante el [registro env](system/env.md) |
 | `state_dir` | string | Anulación del directorio de estado tsnet |
 | `control_url` | string | Servidor de coordinación alternativo |
 | `ephemeral` | bool | Registrar como nodo tailnet efímero |
 
-Se requiere `auth_key` o `auth_key_env`.
+`auth_key` es obligatorio (proporciónelo directamente o mediante `${env:NAME}`). La directiva heredada `auth_key_env` se resuelve de la misma manera pero está obsoleta; prefiera `auth_key: ${env:NAME}`.
 
 ## I2P
 
@@ -128,6 +127,14 @@ network_service:
 | `state_dir` | `.wippy/net` | Directorio para el estado del driver. Las rutas relativas se resuelven contra el directorio de configuracion de arranque. |
 | `default_network` | — | Registry ID de una superposicion aplicada a cualquier tarea o proceso que no establezca su propia red mediante opciones. |
 
+## Dials en Bruto
+
+La selección de superposición no se limita a los bordes de Lua. Los dials realizados a través del servicio de red del runtime — el [host `socket`](wasm/hosts.md#socket) de WASM y el dispatcher de `wasi:sockets` — leen la superposición del frame y enrutan a través de ella, ya sea que la haya establecido `with_options`, `meta.options.network` en la entrada, o `network_service.default_network`.
+
+La puerta de IP privada se comporta de forma distinta en esa ruta. Un dial directo resuelve el destino y comprueba cada dirección resultante contra `socket.private_ip`. Con una superposición seleccionada, solo se comprueba una dirección IP literal en el destino; los nombres de host se entregan a la superposición para que los resuelva, por lo que nunca se consulta el resolver local y no se comprueba nada de lo que este habría devuelto.
+
+Cuando hay una superposición seleccionada pero el contexto no lleva un registro de red, el dial falla con `network "<id>" selected without a network registry`.
+
 ## Actualizar Superposiciones
 
 Las entradas de superposición se intercambian en caliente al actualizar el registro. Cuando la configuración de una superposición cambia, el driver construye primero el servicio de reemplazo y solo lo intercambia una vez que se crea con éxito; si la nueva configuración falla, la superposición existente sigue ejecutándose. Los llamantes concurrentes ven el servicio antiguo o el nuevo, nunca un vacío.
@@ -138,11 +145,18 @@ Las entradas de superposición se intercambian en caliente al actualizar el regi
 |--------|----------|-------------|
 | `network.select` | Registry ID de red | Selección explícita de superposición en `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Registry ID de red | Vincular un listener de `http.service` a través de una superposición (el campo `network:`) |
+| `socket.connect` | `host:port` | Cualquier dial saliente a través del servicio de red |
+| `socket.listen` | `host:port` | Vincular un listener TCP o un socket UDP a través del servicio de red |
+| `socket.resolve` | Nombre de host | Resolución DNS a través del servicio de red |
+| `socket.private_ip` | Dirección IP | Alcanzar una dirección de loopback, privada, link-local o no especificada |
 
 Deniega `network.select` en un ámbito para impedir que el código dentro de él elija explícitamente una superposición. Las superposiciones heredadas no se ven afectadas — fueron autorizadas en el llamante. `network.bind` se comprueba cuando un servidor con una superposición `network:` inicia su listener.
+
+Los permisos `socket.*` los comprueba el propio servicio de red. `socket.connect`, `socket.listen` y `socket.resolve` se comprueban antes de cualquier enrutamiento por superposición, por lo que se aplican por igual al tráfico de clearnet y al de superposición; `socket.private_ip` se restringe a las direcciones literales una vez que hay una superposición seleccionada, como se describe en [Dials en Bruto](system/network.md#raw-dials).
 
 ## Véase también
 
 - [Seguridad](system/security.md) - Políticas y actores
 - [Servicio HTTP](http/server.md) - Vinculación del servidor
 - [Cliente HTTP](lua/http/client.md) - Selección de superposición por llamada
+- [Funciones Host](wasm/hosts.md) - Imports de socket de WASM

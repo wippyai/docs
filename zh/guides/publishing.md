@@ -39,6 +39,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | 字段 | 必填 | 说明 |
@@ -51,6 +64,16 @@ keywords:
 | `repository` | 否 | 源代码仓库 URL |
 | `homepage` | 否 | 项目主页 |
 | `keywords` | 否 | 搜索关键词 |
+| `authors` | 否 | 作者列表 |
+| `version` | 否 | 语义化版本；`--version` 会覆盖它 |
+| `exclude` | 否 | 要剔除的模式：包含 `:` 的值为条目 ID，其余为源文件 glob |
+| `embed` | 否 | 未传 `--embed` 时默认的 `fs.directory` 嵌入模式 |
+| `exclude_meta` | 否 | 元数据字段到取值的映射；元数据匹配的条目会被剔除 |
+| `metadata` | 否 | 随已发布模块一同携带的任意键值元数据 |
+| `publish.profiles` | 否 | 在包中发布哪些配置 profile（参见[发布 Profile](#publishing-profiles)） |
+| `publish.runtime` | 否 | 将哪些运行时配置段作为包默认值发布；仅限 `type: application` |
+
+`exclude` 按形态而非独立字段来划分。`_old/**`、`test/**` 和 `*.test.lua` 在收集源文件时过滤它们；`acme.http:debug_handler` 则在条目解码后禁用该注册表条目。`**` 段可以跨越任意数量的目录段。
 
 `type` 是 hub 对模块进行分类的权威来源，可以在后续发布时更改；`--module-type` 仅对单次发布覆盖它。省略时，新建模块默认为 `application` 并给出弃用警告。
 
@@ -202,6 +225,15 @@ wippy lint
 ```bash
 wippy publish --dry-run
 ```
+
+无论是否带 `--dry-run`，发布都以相同方式构建包，因此校验覆盖了真实发布会产出的一切：
+
+- `organization` 和 `module` 必须为小写字母数字并可含中间连字符，`version` 必须是 semver，`type` 必须是四种模块类型之一。
+- `publish.runtime` 归应用所有：在没有 `type: application` 的情况下于其下声明 `source`、`sections` 或 `vars` 会失败。
+- 每个声明了 `meta.artifact.format` 的资源都会由该格式检查。格式错误的构件会在此处失败，而不是在消费方失败；输出会落入相互重叠目录的两个构件会被拒绝。
+- `node-package` 格式还要求 `package.json` 携带一个**与所发布模块版本相同**的语义化 `version`、一个有效的包 `name`，并且没有 `preinstall`、`install`、`postinstall` 或 `prepare` 生命周期脚本。
+
+最后一条规则在发版时最容易踩坑：要同时提升 `wippy.yaml` 和构件 `package.json` 中的 `version`，否则发布会中止。
 
 ### 4. 发布
 

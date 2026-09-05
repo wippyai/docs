@@ -13,14 +13,63 @@ Einträge werden als geordnetes Slice mit einer Hash-Map-Index für O(1)-Lookups
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // Entry-Typ
-    Meta attrs.Bag       // Metadaten
-    Data payload.Payload // Inhalt
+    ID       ID              // namespace:name
+    Kind     Kind            // Entry-Typ
+    Meta     attrs.Bag       // Autoren-Metadaten
+    Data     payload.Payload // Inhalt
+    Registry EntryMetadata   // Registry-eigene Herkunft
+}
+
+type EntryMetadata struct {
+    Owner string // Deployment-Quelle, die den Eintrag geliefert hat
+    Root  bool   // Vom Deployment ausgewählte Abhängigkeitsdeklaration
 }
 ```
 
 Entry-IDs verwenden Gos `unique`-Paket zum Internieren - identische IDs teilen sich denselben Speicher.
+
+`Registry` gehört der Registry, nicht dem Autor des Eintrags. `Owner` wird aus der Deployment-Quelle vergeben; `Root` wird aus dem schreibseitigen Feld `dependency_root` eines `ns.dependency`-Eintrags gesetzt. Die gewöhnlichen Entry-APIs geben nur `ID`, `Kind`, `Meta` und `Data` zurück; die Herkunft wird über die Snapshot-State-API gelesen.
+
+## Snapshot
+
+`Registry.Snapshot()` gibt eine atomare Sicht zurück: die Version, die Einträge dieser Version und die Registry-eigenen Zustandsmetadaten derselben Version.
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+Version, Einträge und Auflösung als einen Wert zu lesen verhindert, dass ein Aufrufer Einträge mit einer Auflösung aus einer anderen Version paart. Der ausgewählte Modulgraph wird einmal pro Snapshot gespeichert, statt an jedem Eintrag wiederholt zu werden.
+
+## Overlays
+
+`OverlayWriter` ist eine optionale Registry-Fähigkeit für prozesslokale Einträge:
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+Overlay-Einträge werden unter einem logischen Owner-String gruppiert. Sie gehen in den effektiven Zustand ein und durchlaufen dieselbe topologische Sortierung und dieselben Handler-Übergänge wie dauerhafte Einträge, sodass Dienste für sie normal starten und stoppen, aber sie erzeugen nie eine Historienversion. Nach einem Kaltstart sind sie leer und müssen von ihrem besitzenden Steuerdienst abgeglichen werden.
+
+Schreibvorgänge sind optimistisch nebenläufig: `GetOverlay` gibt die aktuelle Generation des Owners zurück, und `ApplyOverlay` committet nur, wenn diese Generation noch aktuell ist, andernfalls gibt es einen wiederholbaren `Conflict` zurück. Jedes erfolgreiche Anwenden vergibt eine neue prozessweit eindeutige Generation, und für Owner, die mutiert haben, wird ein Tombstone behalten, damit eine ABA-Folge nicht für ein unverändertes Overlay gehalten werden kann.
+
+Die bei jedem Anwenden validierten Kompositionsregeln:
+
+- Ein Eintrag darf nur erstellt werden, wenn weder ein dauerhafter noch ein Overlay-Eintrag seine ID hält.
+- Nur die besitzende Identität darf ihre Overlay-Einträge aktualisieren oder löschen.
+- Overlay-Einträge dürfen keine Registry-eigenen Metadaten tragen und keine Kinds verwenden, die von Registry-Direktiven beansprucht werden.
+- Ein Löschen darf keinen Eintrag entfernen, von dem ein überlebender Eintrag abhängt.
+- Abhängigkeitskanten dürfen keine Owner-Grenzen überschreiten, und dauerhafte Einträge dürfen nicht von Overlay-Einträgen abhängen.
 
 ## Versionskette
 
@@ -101,12 +150,24 @@ Einträge können Abhängigkeiten von anderen Einträgen deklarieren. Der Resolv
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
 
 Abhängigkeiten werden aus Entry-Meta- und -Data-Feldern extrahiert und dann für topologische Sortierung während Zustandsübergängen verwendet.
+
+### Richtlinie für Abhängigkeitszugriff
+
+Der Zugriff auf externe Abhängigkeiten ist ein request-bezogener Kontextwert, kein globales Flag:
+
+| Richtlinie | Wirkung |
+|------------|---------|
+| `DependencyAccessUnspecified` | Aufrufer entscheiden; der eigene Standard des Aufrufers gilt |
+| `DependencyAccessOnline` | Externe Auflösung und Artefakt-Download sind erlaubt |
+| `DependencyAccessVerifiedOffline` | Externer Zugriff ist verboten; die Auflösung nutzt gelockte Manifeste und lokal vorhandene Artefakte |
+
+`LoadState()` fällt auf verifiziert-offline zurück, wenn der Kontext nichts angibt, sodass der Boot einen gespeicherten Graphen ohne Netzwerkzugriff wieder abspielt. Das Wiederherstellen einer Deployment-Baseline schaltet den Kontext auf online, weil es die von dieser Baseline benannten Module holen muss. Unter verifiziert-offline ersetzt ein Manifest-Provider, der nur gelockte Module ausliefert, den Hub-Provider, und ein fehlendes Artefakt schlägt als fehlender Beleg fehl, statt einen Download auszulösen.
 
 ## Versionshistorie
 

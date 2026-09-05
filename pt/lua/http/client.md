@@ -1,6 +1,6 @@
 ---
 title: "Cliente HTTP"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Faca requisicoes HTTP para serviços externos. Suporta todos os métodos HTTP, headers, parametros de query, dados de formulario, uploads de arquivo…"
 ---
 
 # Cliente HTTP
@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrão) |
 | `unix_socket` | string | Conectar via caminho de socket Unix |
 | `tls` | table | Configuracao TLS por requisicao (ver [Opcoes TLS](#opcoes-tls)) |
+| `overlay_network` | string | Roteia através de um [overlay de rede](system/network.md) — ID de registro de uma entrada `network.socks5` / `network.tailscale` / `network.i2p` |
 
 ### Parametros de Query
 
@@ -167,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | não | Nome original do arquivo |
 | `content` | string | sim* | Conteudo do arquivo |
 | `reader` | userdata | sim* | Alternativa: io.Reader para conteudo |
-| `content_type` | string | não | Tipo MIME (padrão: `application/octet-stream`) |
+| `content_type` | string | não | Atualmente ignorado: cada parte enviada é sempre transmitida com `Content-Type: application/octet-stream` independentemente deste campo |
 
 *`content` ou `reader` e obrigatorio.
 
@@ -367,12 +368,25 @@ end
 
 ### Protecao SSRF
 
-Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip`.
+Faixas de IP nao publicas sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip` no endereço:
+
+- loopback, privadas (10.x, 172.16-31.x, 192.168.x), link-local unicast e multicast, e o endereço não especificado
+- NAT de operadora `100.64.0.0/10`, `192.0.0.0/24`, multicast `224.0.0.0/4`, reservadas `240.0.0.0/4`
+- faixas de documentação e benchmarking `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- multicast IPv6 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Erro: not allowed: private IP 192.168.1.1
 ```
+
+A verificação ocorre no momento da conexão, não sobre a string da URL, e cobre todos os endereços para os quais o host resolve. Um hostname que resolve para vários endereços é verificado endereço por endereço: um endereço negado é ignorado e o próximo é tentado, e a requisição só falha quando todos os candidatos são negados ou inalcançáveis. Um hostname público que resolve para um endereço privado é portanto bloqueado exatamente como um IP privado literal.
+
+### Redirecionamentos
+
+Até nove redirecionamentos são seguidos; o décimo falha com `stopped after 10 redirects`, uma contagem que inclui a requisição original.
+
+Cada salto é autorizado por conta própria. Antes de seguir um redirecionamento, o cliente avalia `http_client.request` contra a URL alvo e aplica a verificação de IP privado a ela, então uma URL permitida não pode ser usada para alcançar uma negada por redirecionamento. Um salto que falha em qualquer das verificações aborta a requisição.
 
 Veja [Security Model](system/security.md) para configuração de políticas.
 

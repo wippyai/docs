@@ -249,6 +249,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### 安全上下文
+
+在安全上下文下调度的 activity 会收到已签名的 `wippy-security` 头部，其受众限定为该 activity ID。worker 校验签名和受众，然后在 activity 函数运行之前，把传播的 `ctx` 值和安全载荷合并到一个新的帧上。
+
+该合并是全有或全无的，并且**一旦失败对该 activity 是致命的**：activity 会在其代码执行之前返回错误，因此它绝不会带着不完整的上下文或未经校验的主体运行。以下情况会导致合并失败：签名或受众校验不通过；信封不一致（有主体却没有作用域，或有策略却没有主体）；或者信封中指定的某个策略在本地安全注册表中无法解析——后者是常见的运维成因：worker 的部署缺少调用方所拥有的某个策略记录。
+
+worker 从其引用的 `temporal.client` 记录中获取签名和校验密钥。参见 [安全上下文传播](temporal/overview.md#security-context-propagation)。
+
 ## 错误处理
 
 通过标准 Lua 模式返回错误：
@@ -258,7 +266,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -267,7 +275,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -295,6 +303,10 @@ end
 | 运行时崩溃 | `INTERNAL` | 是 | activity 中未处理的 Lua 错误 |
 | 缺少 activity | `NOT_FOUND` | 否 | Activity 未注册到 worker |
 | 超时 | `TIMEOUT` | 是 | Activity 超过配置的超时时间 |
+| 安全校验 | `Internal` | 是 | 传播的安全头部的签名、受众或信封检查失败 |
+| 缺少安全策略 | `Internal` | 是 | 安全信封中指定的某个策略在该 worker 上无法解析 |
+
+这两类安全失败都发生在上下文合并期间，即 activity 函数运行之前。它们没有被标记为不可重试，因此 activity 重试策略会持续重新尝试；重试并无帮助，因为签名错误和缺少策略记录都不会在两次尝试之间发生变化。对于希望快速失败的 activity，请限制 `maximum_attempts`；并且把反复出现且没有任何 activity 日志输出的 `Internal` 失败理解为上下文合并失败，而不是 activity 内部的故障。
 
 ```lua
 local executor = funcs.new():with_options({

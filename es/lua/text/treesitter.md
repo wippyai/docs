@@ -1,6 +1,6 @@
 ---
 title: "Parsing Tree-sitter"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Parsear código fuente en arboles de sintaxis concretos usando Tree-sitter. Basado en bindings de go-tree-sitter."
 ---
 
 # Parsing Tree-sitter
@@ -400,7 +400,7 @@ cursor:close()
 ```lua
 local lang = treesitter.language("go")
 
-print(lang:versión())           -- versión ABI
+print(lang:version())           -- versión ABI
 print(lang:node_kind_count())   -- número de tipos de nodo
 print(lang:field_count())       -- número de campos
 print(lang:parse_state_count()) -- número de estados de análisis

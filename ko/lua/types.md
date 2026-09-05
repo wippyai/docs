@@ -27,9 +27,10 @@ local u: unknown = something  -- 사용 전 좁혀야 함
 local a: any = get_data()
 a.foo.bar.baz()              -- 오류 없음, 런타임에 크래시할 수 있음
 
--- unknown: 안전한 unknown, 사용 전 좁혀야 함
+-- unknown: 안전한 unknown, 구체적 타입으로 사용하기 전에 좁혀야 함
 local u: unknown = get_data()
-u.foo                        -- 오류: unknown의 속성에 접근할 수 없음
+u.foo                        -- 오류 없음: unknown의 멤버 접근은 any처럼 동작
+local n: number = u          -- 오류: unknown은 number에 할당할 수 없음, 먼저 좁혀야 함
 if type(u) == "table" then
     -- 여기서 u는 table로 좁혀짐
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- user가 nil이 아님을 단언
+local name = (user!).name            -- user가 nil이 아님을 단언
 ```
 
-런타임에 값이 nil이면 오류가 발생합니다. 값이 nil이 될 수 없다는 것을 알지만 타입 검사기가 증명할 수 없을 때 사용합니다.
+`!`는 타입 검사기 전용 단언입니다 - 타입을 nil이 아닌 것으로 좁히지만 런타임 검사는 생성하지 않습니다. 값이 실제로 nil이면 이어지는 연산이 평소의 오류(예: nil 인덱싱)로 실패합니다. 값이 nil이 될 수 없다는 것을 알지만 타입 검사기가 증명할 수 없을 때 사용합니다.
 
 ## 타입 캐스트
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- 문자열 패턴
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- 인자 없는 검증자
-local x: number @integer = 42
 ```
 
 ### 내장 검증자

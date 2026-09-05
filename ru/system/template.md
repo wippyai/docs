@@ -1,6 +1,6 @@
 ---
 title: "Шаблонизатор"
-description: "<secondary-label ref='external'/"
+description: "Рендеринг шаблонов с помощью CloudyKit Jet."
 ---
 
 # Шаблонизатор
@@ -31,6 +31,9 @@ description: "<secondary-label ref='external'/"
 | `engine.development_mode` | bool | false | Отключить кеширование шаблонов |
 | `engine.delimiters.left` | string | `{{` | Открывающий разделитель |
 | `engine.delimiters.right` | string | `}}` | Закрывающий разделитель |
+| `engine.delimiters.comment_left` | string | `{*` | Открывающий разделитель комментария |
+| `engine.delimiters.comment_right` | string | `*}` | Закрывающий разделитель комментария |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Расширения файлов шаблонов |
 | `engine.globals` | map | - | Переменные, доступные во всех шаблонах |
 
 ## Шаблоны
@@ -52,7 +55,7 @@ description: "<secondary-label ref='external'/"
   source: |
     {{ extends "layout" }}
     {{ block content() }}
-      <h1>Добро пожаловать, {{ name }}</h1>
+      <h1>Welcome, {{ name }}</h1>
     {{ end }}
 ```
 
@@ -76,7 +79,7 @@ description: "<secondary-label ref='external'/"
     name: welcome
   source: |
     {{ include "header" }}
-    Привет, {{ user }}!
+    Hello {{ user }}!
 ```
 
 Этот шаблон регистрируется как `welcome` в наборе, так что другие шаблоны используют `{{ include "welcome" }}` или `{{ extends "welcome" }}`.
@@ -102,8 +105,8 @@ description: "<secondary-label ref='external'/"
   set: app.views:views
   source: |
     {{ extends "base" }}
-    {{ block title() }}Моя страница{{ end }}
-    {{ block body() }}<p>Контент</p>{{ end }}
+    {{ block title() }}My Page{{ end }}
+    {{ block body() }}<p>Content here</p>{{ end }}
 ```
 
 ## Lua API

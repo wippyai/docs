@@ -1,6 +1,6 @@
 ---
 title: "HTTP 클라이언트"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "외부 서비스에 HTTP 요청을 보냅니다. 모든 HTTP 메서드, 헤더, 쿼리 파라미터, 폼 데이터, 파일 업로드, 스트리밍 응답, 동시 배치 요청을 지원합니다."
 ---
 
 # HTTP 클라이언트
@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | 최대 응답 크기 바이트 (0 = 기본값) |
 | `unix_socket` | string | Unix 소켓 경로로 연결 |
 | `tls` | table | 요청별 TLS 설정 ([TLS 옵션](#tls-옵션) 참조) |
+| `overlay_network` | string | [네트워크 오버레이](system/network.md)를 통해 라우팅 — `network.socks5` / `network.tailscale` / `network.i2p` 엔트리의 레지스트리 ID |
 
 ### 쿼리 파라미터
 
@@ -367,12 +368,25 @@ end
 
 ### SSRF 보호
 
-사설 IP 범위(10.x, 192.168.x, 172.16-31.x, localhost)는 기본적으로 차단됩니다. 접근하려면 `http_client.private_ip` 권한이 필요합니다.
+공인 IP가 아닌 범위는 기본적으로 차단됩니다. 접근하려면 해당 주소에 대한 `http_client.private_ip` 권한이 필요합니다:
+
+- 루프백, 사설(10.x, 172.16-31.x, 192.168.x), 링크 로컬 유니캐스트 및 멀티캐스트, unspecified 주소
+- 캐리어 그레이드 NAT `100.64.0.0/10`, `192.0.0.0/24`, 멀티캐스트 `224.0.0.0/4`, 예약 `240.0.0.0/4`
+- 문서화 및 벤치마킹 범위 `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- IPv6 멀티캐스트 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+검사는 URL 문자열이 아니라 다이얼 시점에 수행되며, 호스트가 해석되는 모든 주소를 대상으로 합니다. 여러 주소로 해석되는 호스트 이름은 주소별로 검사됩니다: 거부된 주소는 건너뛰고 다음 주소를 시도하며, 모든 후보가 거부되거나 도달 불가능할 때만 요청이 실패합니다. 따라서 사설 주소로 해석되는 공개 호스트 이름은 사설 IP 리터럴과 정확히 동일하게 차단됩니다.
+
+### 리다이렉트
+
+리다이렉트는 최대 아홉 번까지 따라가며, 열 번째는 `stopped after 10 redirects`로 실패합니다. 이 횟수에는 원래 요청이 포함됩니다.
+
+모든 홉은 개별적으로 인가됩니다. 리다이렉트를 따라가기 전에 클라이언트는 대상 URL에 대해 `http_client.request`를 평가하고 사설 IP 검사를 적용하므로, 허용된 URL을 리다이렉트로 이용해 거부된 URL에 도달할 수 없습니다. 둘 중 하나라도 실패하는 홉은 요청을 중단시킵니다.
 
 정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 

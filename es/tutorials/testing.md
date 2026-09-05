@@ -125,10 +125,10 @@ vincula el framework, `calc` vincula la unidad bajo prueba.
 wippy test
 ```
 
-Filtra a una sola suite (coincide con el id de la entrada o el nombre de la suite) mientras iteras:
+Filtra por subcadena del id de entrada (namespace:name) mientras iteras:
 
 ```bash
-wippy test calculator
+wippy test calc_test
 ```
 
 Salida para la suite anterior:

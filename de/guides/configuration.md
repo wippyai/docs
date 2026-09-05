@@ -119,11 +119,11 @@ Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.pol
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `strict_mode` | bool | false | Zugriff verweigern wenn Sicherheitskontext unvollständig |
+| `strict_mode` | bool | true | Zugriff verweigern, wenn der Sicherheitskontext unvollständig ist |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 Siehe: [Sicherheitssystem](system/security.md), [Sicherheitsmodul](lua/security/security.md)
@@ -135,8 +135,16 @@ Eintragsspeicherung und Versionshistorie. Die Registry enthält alle Konfigurati
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enable_history` | bool | true | Eintragsversionen verfolgen |
-| `history_type` | string | memory | Speicher: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad |
+| `history_type` | string | memory | Speicher: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad (verwendet bei `history_type: sqlite`) |
+| `history_dsn` | string | | Postgres-DSN (verwendet bei `history_type: postgres`) |
+| `history_schema` | string | | Postgres-Schemaname (verwendet bei `history_type: postgres`) |
+| `event_wait_timeout` | duration | 30s | Wartezeit pro Operation auf die Bestätigung durch Listener während eines Registry-Apply |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Entry-Typen, die intern behandelt statt an Komponenten-Listener verteilt werden |
+| `dependency_resolve_timeout` | duration | 0 (keins) | Grenze für die Auflösung von Abhängigkeiten |
+| `dependency_download_timeout` | duration | 0 (keins) | Grenze für jeden Modul-Download und jede Download-URL-Anfrage |
+| `dependency_lock_path` | string | gefundene `wippy.lock` | Lock-Datei, die der Abhängigkeits-Handler liest und schreibt |
+| `dependency_vendor_dir` | string | `<lock-Verzeichnis>/<directories.modules>/vendor` | Verzeichnis mit den heruntergeladenen Modul-Packs |
 
 ```yaml
 registry:
@@ -144,7 +152,42 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
 Siehe: [Registry-Konzept](concepts/registry.md), [Registry-Modul](lua/core/registry.md)
+
+## Artifact
+
+Ausgabewurzel für materialisierte [Build-Zeit-Artefakte](guides/artifacts.md).
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `materialization_root` | string | übergeordnetes Verzeichnis des Dependency-Vendor-Verzeichnisses | Von der Anwendung besessene Wurzel, unter der jedes Artefaktformat seinen eigenen Teilbaum schreibt |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+Siehe: [Build-Zeit-Artefakte](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Lokale Modulersetzungen, adressiert über `org/module`. Die Werte sind Verzeichnisse; relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelöst, und `null` deaktiviert eine Ersetzung, die aus einer früheren Konfigurationsebene oder einem Profil geerbt wurde.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Ersetzungen werden nie in `wippy.lock` geschrieben. Siehe [Lokale Entwicklung mit Ersetzungen](guides/dependency-management.md#local-development-with-replacements).
 
 ## Relay
 
@@ -152,7 +195,7 @@ Nachrichtenrouting zwischen Prozessen über Knoten hinweg.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `node_name` | string | local | Bezeichner für diesen Relay-Knoten |
+| `node_name` | string | abgeleitete instanzspezifische ID | Bezeichner für diesen Relay-Knoten (Standard: UUIDv5 aus machine-id/Hostname + Arbeitsverzeichnis; überschreibbar über `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -192,10 +235,16 @@ Lua-VM-Caching und Expression-Auswertung.
 | `proto_cache_size` | int | 60000 | Kompilierter Prototype-Cache |
 | `main_cache_size` | int | 10000 | Main-Chunk-Cache |
 | `cache.enabled` | bool | false | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren |
-| `cache.dir` | string | (System-Cache-Verzeichnis) | Cache-Verzeichnis-Pfad |
-| `cache.mode` | string | `read_write` | Cache-Modus: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache-Verzeichnis-Pfad (relativ zum Konfigurations-/Arbeitsverzeichnis) |
+| `cache.mode` | string | `readwrite` | Cache-Modus: `readwrite` (Standard), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Kompilierten Bytecode persistieren (bei `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Typecheck-Ergebnisse persistieren (bei `cache.enabled`) |
 | `type_system.enabled` | bool | false | Statische Typprüfung aktivieren |
 | `type_system.strict` | bool | false | Typwarnungen als Fehler behandeln |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Wartezeit auf die Bestätigung der Code-Invalidierung nach einer Eintragsänderung |
+| `eval.max_steps` | int | 10000 | Standardbudget an Scheduler-Schritten für einen `eval`-Lauf; negative Werte werden abgelehnt |
+| `eval.cache_size` | int | 256 | Cache-Einträge kompilierter Programme für ausgewerteten Quellcode |
+| `eval.cache_ttl` | duration | 0 (kein Ablauf) | Lebensdauer eines zwischengespeicherten kompilierten Programms |
 
 ```yaml
 lua:
@@ -301,7 +350,7 @@ Prometheus-Metriken-Endpunkt.
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enabled` | bool | false | Metriken-Server starten |
-| `address` | string | localhost:9090 | Adresse zum Lauschen |
+| `address` | string | | Adresse zum Lauschen; muss explizit gesetzt werden, wenn `enabled: true`, sonst startet der Metriken-Server nicht |
 
 ```yaml
 prometheus:
@@ -345,6 +394,8 @@ SWIM-Gossip über memberlist. Wird für Knotenentdeckung, Fehlererkennung und Me
 | `membership.tcp_timeout` | duration | 1s | Timeout der TCP-Fallback-Probe |
 | `membership.suspicion_mult` | int | 3 | Multiplikator des Suspicion-Timeouts |
 
+Ein Gossip-Secret ist erforderlich. Entweder `membership.secret_key` oder `membership.secret_file` setzen (die Datei gewinnt, wenn beides angegeben ist); ohne beides startet die Cluster-Komponente nicht. Der Wert ist base64-kodiert.
+
 Die vier Probe-Schlüssel erben die Local-Network-Defaults von memberlist, wenn sie nicht gesetzt sind; erhöhen Sie sie für Verbindungen mit hoher Latenz (z.B. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (Transport)
@@ -358,8 +409,13 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh ü
 | `internode.auto_port` | bool | true | Tatsächlichen Port beim Start ermitteln, festlegen und im Gossip bewerben |
 | `internode.advertise_addr` | string | | Zusätzlicher Relay-Endpunkt (IP oder DNS-Name), veröffentlicht für aktualisierte Peers — für NAT- oder Load-Balancer-Erreichbarkeit |
 | `internode.advertise_port` | int | 0 | Port für `advertise_addr` (0 = Bind-Port; erfordert `advertise_addr`) |
+| `internode.identity_key` | string | | Base64-kodierter privater ed25519-Schlüssel, der diesen Knoten identifiziert (inline) |
+| `internode.identity_key_file` | string | | Pfad zu einer Datei, die diesen Schlüssel enthält |
+| `internode.trusted_peer_keys` | map | | Base64-kodierter öffentlicher ed25519-Schlüssel je Knotenname, einschließlich dieses Knotens |
 
 `advertise_addr`/`advertise_port` veröffentlichen einen additiven Endpunkt in den Knoten-Metadaten, während der Bind-Endpunkt unverändert beworben bleibt, sodass Cluster mit gemischten Versionen während eines Rolling Upgrades verbunden bleiben.
+
+Die Internode-Identität ist zwingend, sobald Clustering aktiviert ist. `identity_key` und `identity_key_file` schließen sich gegenseitig aus, und eines von beiden muss vorhanden sein; der Wert dekodiert (Standard- oder Raw-base64) entweder zu einem 32-Byte-ed25519-Seed oder zu einem 64-Byte-ed25519-Privatschlüssel. `trusted_peer_keys` bildet jeden Knotennamen auf den 32-Byte-ed25519-Public-Key dieses Knotens ab und muss einen Eintrag für den lokalen `cluster.name` enthalten, dessen Wert zur lokalen Identität passt — andernfalls schlägt der Start fehl. Siehe die [Cluster-Anleitung](guides/cluster.md#internode-identity).
 
 ### Raft (Konsens)
 
@@ -394,11 +450,17 @@ Einzelknoten (Entwicklung) — Clustering aktiviert, bootstrappt sich sofort:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Drei-Knoten-Voting-Cluster — jeder Knoten listet die anderen als Seeds und wartet auf alle drei vor der Quorumbildung:
+Drei-Knoten-Voting-Cluster — jeder Knoten listet die anderen als Seeds und wartet auf alle drei vor der Quorumbildung. Jeder Knoten trägt dieselbe `trusted_peer_keys`-Karte und seinen eigenen privaten Schlüssel:
 
 ```yaml
 cluster:
@@ -409,12 +471,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Gossip-only-Client — tritt dem Cluster für Benennung/Messaging bei, betreibt nie Raft:
+Gossip-only-Client — tritt dem Cluster für Benennung/Messaging bei, betreibt nie Raft. Er braucht dennoch eine eigene Identität und muss in der Vertrauenskarte jedes Knotens auftauchen:
 
 ```yaml
 cluster:
@@ -422,6 +490,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```
@@ -518,7 +594,7 @@ extensions:
 
 | Variable | Beschreibung |
 |----------|--------------|
-| `GOMEMLIMIT` | Speicherlimit (überschreibt `--memory-limit` Flag) |
+| `GOMEMLIMIT` | Speicherlimit-Fallback, wenn das Flag `--memory-limit` nicht gesetzt ist (Vorrang: Flag `--memory-limit` > `GOMEMLIMIT` > Standard 1G) |
 
 ## Siehe auch
 

@@ -102,11 +102,11 @@ end)
 | `meta.timestamp` | no | Marca de tiempo ISO-8601 usada para ordenar cuando multiples migraciones apuntan a la misma base de datos |
 | `meta.tags` | no | Array de etiquetas; el runner puede filtrar migraciones por etiqueta |
 
-Las migraciones para una base de datos se ejecutan en orden ascendente de `meta.timestamp`.
+Las migraciones para una base de datos se ejecutan en orden ascendente de `meta.timestamp`. `meta.timestamp` es opcional; el id completo de la entrada es el desempate, de modo que las migraciones con marcas de tiempo iguales o ausentes se ejecutan igualmente en un orden estable y determinista.
 
 ## DSL
 
-Dentro de la funcion pasada a `migration.define`, hay tres funciones anidadas disponibles:
+Dentro de la funcion pasada a `migration.define`, estan disponibles las siguientes funciones anidadas:
 
 | Funcion | Descripcion |
 |---------|-------------|
@@ -156,7 +156,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- aplicar todas las migraciones pendientes
 local result = runner:run_next() -- aplicar la siguiente migracion pendiente
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- revertir la migracion aplicada mas recientemente
 local status = runner:status()   -- listar migraciones aplicadas + pendientes
 ```
 
@@ -185,15 +185,41 @@ Opciones:
 
 ### `runner:rollback(options)`
 
-Revierte una sola migracion por id (requerido):
+Revierte las migraciones aplicadas en orden inverso al de aplicacion. Sin opciones revierte unicamente la migracion aplicada mas recientemente:
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- revertir la ultima migracion
+runner:rollback({ count = 3 })                               -- revertir las ultimas 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restringir a ids concretos
 ```
+
+Opciones:
+
+| Opcion | Descripcion |
+|--------|-------------|
+| `count` | Numero de migraciones a revertir; por defecto `1` |
+| `allowed_ids` | Array de ids de migracion; solo estas son elegibles para reversion |
 
 ### `runner:status(options)`
 
-Retorna `{ applied = {...}, pending = {...} }`, ordenado por `applied_at` y `meta.timestamp` respectivamente.
+Retorna un informe de estado que describe cada migracion de la base de datos:
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+Las migraciones aplicadas se listan primero (ordenadas por `applied_at`), seguidas de las pendientes (ordenadas por `meta.timestamp`, luego por id).
 
 ## API de Registry
 
@@ -210,7 +236,7 @@ El bootloader las usa para descubrir el conjunto completo de bases de datos dest
 
 ## Seguimiento de Migraciones
 
-El runner crea una tabla `wippy_migrations` en cada base de datos destino en la primera ejecucion. Las migraciones aplicadas se registran por id para que las ejecuciones posteriores las omitan. La tabla de seguimiento se crea automaticamente; no escribas tu propia migracion para crearla.
+El runner crea una tabla `_migrations` en cada base de datos destino en la primera ejecucion. Las migraciones aplicadas se registran por id para que las ejecuciones posteriores las omitan. La tabla de seguimiento se crea automaticamente; no escribas tu propia migracion para crearla.
 
 ## Buenas Practicas
 

@@ -1,6 +1,6 @@
 ---
 title: "ファイルシステム"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "サンドボックス化されたファイルシステムボリューム内でファイルを読み取り、書き込み、管理。"
 ---
 
 # ファイルシステム

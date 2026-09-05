@@ -1,6 +1,6 @@
 ---
 title: "WebSocket 클라이언트"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "서버와의 실시간 양방향 통신을 위한 WebSocket 클라이언트."
 ---
 
 # WebSocket 클라이언트
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### 텍스트 메시지
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- JSON 전송
 client:send(json.encode({

@@ -32,7 +32,9 @@ modules:
 | `directories.src` | Where your source code lives (default: `./src`) |
 | `modules[].name` | Module identifier in `org/module` format |
 | `modules[].version` | Pinned semantic version |
-| `modules[].hash` | Content hash for integrity verification |
+| `modules[].hash` | Artifact digest the downloaded pack must match; a bare hex value is read as `sha256` |
+| `modules[].root` | Marks the selected deployment root; at most one module may carry it |
+| `options.unpack_modules` | Extract packs into directories instead of loading them as `.wapp` files (default: `false`) |
 
 ### wippy.yaml
 
@@ -96,10 +98,23 @@ entries:
 
 - Each module resolves against the **intersection of all declared ranges** across the dependency graph. Incompatible ranges (diamond conflicts) fail resolution with an explicit error rather than silently picking one side.
 - Dependencies are solved from their declared ranges, not from previously resolved pins.
-- **Root declarations win over transitive ones**: when your app and a dependency both pull in the same module or requirement, your declaration takes precedence. A dependency entry carrying `meta.module` is transitive unless explicitly flagged as a root — published applications keep their source-declared dependencies as roots.
+- **Root declarations win over transitive ones**: when your app and a dependency both pull in the same module or requirement, your declaration takes precedence.
 - The same component may be declared as a root dependency only once — a duplicate declaration is rejected with a conflict error. Update the existing dependency instead.
 
+Two resolution failures are reported distinctly. A constraint expression that cannot be satisfied by any release ever — the intersection of live ranges is empty — is a conflict, and the error names the module and every requester that contributed a range. A valid range set for which the hub currently publishes no matching version is an availability failure instead: a later release can make it resolvable without any change to the declarations.
+
 The runtime persists each resolved graph in its registry history and replays it at boot instead of re-solving, so a deployed application boots with exactly the versions that were resolved when the dependency change was applied. `wippy.lock` remains the portable snapshot for source projects.
+
+### Entry provenance
+
+Provenance is registry-owned, not entry metadata. When entries are loaded, the registry stamps each one with the deployment source that supplied it:
+
+| Field | Description |
+|-------|-------------|
+| `registry.owner` | Module name (`org/module`) that supplied the entry; empty for application source |
+| `registry.root` | Set on `ns.dependency` entries supplied by the deployment root, marking them as root declarations |
+
+Entry authors never write these fields; they are assigned during loading and cannot be forged from an `_index.yaml`. Inspect them with `wippy registry list --registry-meta --json`.
 
 ## Workflow
 
@@ -182,12 +197,17 @@ With unpacking enabled:
 .wippy/
   vendor/
     acme/
+      http-v1.2.0.wapp
       http/
         wippy.yaml
         src/
           _index.yaml
           ...
 ```
+
+Unpacking never discards the pack. The canonical verified `.wapp` stays beside the extracted directory because it is the only content-addressed evidence for the module, and artifact materialization and repair read resources back out of it. The `.wapp` is what installation checks for: a directory whose pack is missing counts as not installed, and the module is downloaded again. Each install extracts the directory afresh from the verified archive, so hand-edits to a vendored directory do not survive.
+
+Modules resolved from a [workspace replacement](#local-development-with-replacements) are never downloaded or vendored; they load from the local path.
 
 ## Local Development with Replacements
 
@@ -206,7 +226,11 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory; the path must exist and be a directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](guides/configuration.md#profiles) so they activate only with `--profile workspace`.
+Keys are `org/module`, values are directories (relative paths resolve against the first `--config` file's directory). Setting a replacement to `null` disables one inherited from an earlier config layer or profile. Replacements can also live inside a [profile](guides/configuration.md#profiles) so they activate only with `--profile workspace`.
+
+The path is required to exist, and to be a directory, only for a module the lock graph actually selects. A replacement declared for a module that nothing depends on is a resolution input, not a boot input: it can point at a directory that is not checked out on this machine without failing validation.
+
+A replacement changes where a module's source comes from, not which release was chosen. The load path keeps the version and digest the lock selected for that module and is flagged as a replacement; entries loaded from it shadow the vendored ones with the same ID. When a replacement is declared for a module the lock does not pin a version for, resolution asks the hub for a release version, and until stronger evidence selects one it holds a local-only zero version.
 
 Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
 
@@ -224,10 +248,25 @@ Modules with active replacements skip their vendor path.
 
 ## Integrity Verification
 
-Each module in the lock file has a content hash. During installation, downloaded modules are verified against their expected hashes. Mismatched modules are rejected and re-downloaded from the registry.
+Every module in the lock file carries an artifact digest. Boot refuses to load a module whose lock entry has none; `wippy install` accepts such an entry and records the digest the hub serves with the download.
+
+At boot, downloads are staged: the pack is written to a temporary file next to its final location, verified against both the digest pinned in `wippy.lock` and the digest the hub served with the download URL (plus the served size), and only then renamed into place. A staged file that fails verification is deleted. `wippy install` renames the download into its vendor path before verifying it, checks it against the served digest and size only, deletes it on failure, and replaces a lock digest that differs from the served one rather than enforcing it.
+
+A digest mismatch is a hard, non-retryable failure. At boot it is `PermissionDenied`, "module integrity verification failed", raised for a fresh download and for an already-vendored pack, which is re-verified against the lock digest before entries are loaded. `wippy install` reports it as `Internal`: "failed to store module" wrapping "verify cached WAPP: digest mismatch" for a pack already in the vendor directory, and "failed to download module" wrapping "verify downloaded WAPP: digest mismatch" for a fresh download. Nothing retries, re-downloads over the mismatch, or falls back to the served content.
+
+The same check guards resolution. When the hub serves a manifest whose digest differs from the one the lock pins, the manifest cache is refreshed once and re-compared; if it still disagrees, resolution fails naming both digests.
+
+Extracted directories carry their own recorded digest, size, and tree digest, and are re-verified against the recorded values, so a modified vendored tree is detected rather than loaded.
+
+Replacement sources are content-addressed too. The runtime digests the replacement tree and rejects it when the resolved graph already pins a different digest or size for that module, so a replacement cannot silently stand in for content it does not match.
+
+## Build-time Artifacts
+
+A module can ship a filesystem resource marked with `meta.artifact.format` that consumers materialize onto disk instead of reading at runtime. Full and targeted `wippy install` and `wippy update`, cold boot, and runtime dependency operations reconcile those outputs as part of the same transaction that changes the module graph; `artifact.materialization_root` sets the output root. See [Build-time artifacts](guides/artifacts.md).
 
 ## See Also
 
+- [Build-time artifacts](guides/artifacts.md) - Declaring, materializing and reconciling artifact resources
 - [Building Components](guides/components.md) - The author side: `ns.requirement` and supplying values via `parameters`
 - [CLI](guides/cli.md) - Command reference
 - [Publishing](guides/publishing.md) - Publishing modules to the hub

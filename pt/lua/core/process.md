@@ -1,6 +1,6 @@
 ---
 title: "Gerenciamento de Processos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Crie, monitore e comunique-se com processos filhos. Implementa padrões de modelo de atores com passagem de mensagens, supervisão e gerenciamento de…"
 ---
 
 # Gerenciamento de Processos
@@ -73,7 +73,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 local ok, err = process.terminate(destination)
 
 -- Solicitar cancelamento gracioso com motivo opcional
-local ok, err = process.cancel(destination, "encerrando")
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -135,8 +135,7 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origem |
-| `result` | any | Para EXIT: o valor retornado (presente em saída normal) |
-| `error` | any | Para EXIT: o erro (presente em saída anormal) |
+| `result` | table | Para EXIT/LINK_DOWN: um registro {value, error}; o valor de retorno do processo está em `result.value` e qualquer erro em `result.error` |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
 
@@ -212,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
 | `network` | string | ID de registro de uma entrada `network.*` para as conexões de saída do processo filho |
+| `terminal` | string | Concessão de viewport que anexa um terminal virtual ao processo filho |
 
 **Permissão:** `process.context` em "context"; selecionar uma rede requer adicionalmente `network.select` nesse ID de rede.
+
+### Anexação de Terminal
+
+Uma concessão `terminal` vem de `viewport:grant()` e dá ao processo filho uma porta de terminal própria, de modo que ele pode usar o módulo [TTY](lua/system/tty.md) exatamente como faria em um terminal host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+A concessão é de uso único e é consumida na admissão: um start rejeitado a deixa não resolvida e reutilizável, um processo filho que resolve a porta a consome permanentemente, e um host que não suporta anexações de terminal rejeita o spawn em vez de descartar a opção. O processo que faz o spawn continua lendo os frames do filho através do viewport que criou. Veja [Terminal](system/terminal.md#composable-terminals).
 
 ### Métodos SpawnBuilder
 

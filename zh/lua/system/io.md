@@ -1,6 +1,6 @@
 ---
 title: "终端 I/O"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "为 CLI 应用程序读取 stdin 和写入 stdout/stderr。"
 ---
 
 # 终端 I/O

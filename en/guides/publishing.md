@@ -39,6 +39,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | Field | Required | Description |
@@ -51,6 +64,16 @@ keywords:
 | `repository` | No | Source repository URL |
 | `homepage` | No | Project homepage |
 | `keywords` | No | Search keywords |
+| `authors` | No | Author list |
+| `version` | No | Semantic version; `--version` overrides it |
+| `exclude` | No | Patterns to drop: values containing `:` are entry IDs, everything else is a source-file glob |
+| `embed` | No | Default `fs.directory` embed patterns when `--embed` is not passed |
+| `exclude_meta` | No | Metadata field to values map; entries whose metadata matches are dropped |
+| `metadata` | No | Arbitrary key/value metadata carried with the published module |
+| `publish.profiles` | No | Which config profiles to ship in the pack (see [Publishing Profiles](#publishing-profiles)) |
+| `publish.runtime` | No | Which runtime config sections to ship as pack defaults; `type: application` only |
+
+`exclude` splits by shape rather than by a separate field. `_old/**`, `test/**` and `*.test.lua` filter source files as they are collected; `acme.http:debug_handler` disables a registry entry after entries are decoded. A `**` segment spans any number of directory segments.
 
 `type` is the source of truth for how the hub classifies the module and can be changed on a later publish; `--module-type` overrides it for a single publish. When omitted, newly created modules default to `application` with a deprecation warning.
 
@@ -202,6 +225,15 @@ wippy lint
 ```bash
 wippy publish --dry-run
 ```
+
+Publish builds the pack the same way with or without `--dry-run`, so validation covers everything the real publish would produce:
+
+- `organization` and `module` must be lowercase alphanumeric with interior hyphens, `version` must be semver, and `type` must be one of the four module types.
+- `publish.runtime` is application-owned: declaring `source`, `sections`, or `vars` under it without `type: application` fails.
+- Every resource declaring `meta.artifact.format` is inspected by that format. A malformed artifact fails here rather than in a consumer, and two artifacts whose outputs would land in overlapping directories are rejected.
+- The `node-package` format additionally requires `package.json` to carry a semantic `version` that **equals the module version being published**, a valid package `name`, and no `preinstall`, `install`, `postinstall`, or `prepare` lifecycle script.
+
+The last rule is the one that bites during a release: bump `version` in `wippy.yaml` and in the artifact's `package.json` together, or the publish stops.
 
 ### 4. Publish
 

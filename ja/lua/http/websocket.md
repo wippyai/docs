@@ -1,6 +1,6 @@
 ---
 title: "WebSocketクライアント"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "サーバーとのリアルタイム双方向通信用WebSocketクライアント。"
 ---
 
 # WebSocketクライアント
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### テキストメッセージ
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- JSONを送信
 client:send(json.encode({
@@ -92,6 +89,8 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | メッセージ内容 |
 | `type` | number | `websocket.TEXT`（1）または`websocket.BINARY`（2） |
 
+メッセージが送信されるまでyieldします。
+
 **戻り値:** `boolean, error`
 
 ### Ping
@@ -99,6 +98,8 @@ client:send(binary_data, websocket.BINARY)
 ```lua
 client:ping()
 ```
+
+pingが送信されるまでyieldします。
 
 **戻り値:** `boolean, error`
 
@@ -183,7 +184,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | クローズコード（1000-4999）、デフォルト1000 |
 | `reason` | string | クローズ理由（オプション） |
 
-**戻り値:** `boolean, error`
+クローズフレームが送信されるまでyieldします。
 
 ## 定数
 

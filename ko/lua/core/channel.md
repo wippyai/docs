@@ -1,6 +1,6 @@
 ---
 title: "채널과 코루틴"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "코루틴 간 통신을 위한 Go 스타일 채널. 버퍼드 또는 언버퍼드 채널을 생성하고, 값을 보내고 받고, select 문을 사용하여 동시 프로세스 간에 조율합니다."
 ---
 
 # 채널과 코루틴
@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | select 케이스 배열 |
 | `default` | boolean | true이면 준비된 케이스가 없을 때 즉시 반환 |
 
-**반환:** `table` - 필드: `channel`, `value`, `ok`, `default`
+**반환:** `table`
+
+- 채널 케이스의 경우: `{channel, value, ok}` — `channel`은 해당 케이스의 채널, `value`는 수신/전송된 값, `ok`는 닫힌 채널에서 수신한 경우 false입니다.
+- 기본 분기의 경우(준비된 케이스가 없고 `default = true`일 때): `{default = true, ok = true}`.
 
 ### 타임아웃 패턴
 
@@ -208,7 +211,6 @@ end
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-----------|
 | 닫힌 채널에 Send | 런타임 에러 | 아니오 |
-| 닫힌 채널 Close | 런타임 에러 | 아니오 |
 | select에서 잘못된 케이스 | 런타임 에러 | 아니오 |
 
 ## 참고

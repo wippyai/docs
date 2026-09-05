@@ -69,7 +69,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # ファイルから
 - name: temporal_client
@@ -81,7 +81,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-`_env`で終わるフィールドはシステムで定義されている必要がある環境変数を参照します。環境ストレージと変数の設定については[環境変数システム](system/env.md)を参照してください。
+認証および認証情報フィールドは、デコード時に`${env:NAME}`プレースホルダを[環境変数システム](system/env.md)経由で解決します。従来の`api_key_env` / `key_pem_env`ディレクティブも同じように解決されますが非推奨です。`api_key: ${env:NAME}` / `key_pem: ${env:NAME}`を使用してください。
 
 #### mTLS
 
@@ -99,7 +99,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     ca_file: "/path/to/ca.pem"
 ```
 
-証明書とキーはPEM文字列または環境変数からも提供できます：
+証明書とキーはPEM文字列または環境レジストリからも提供できます：
 
 ```yaml
 auth:
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS設定
@@ -128,6 +128,30 @@ health_check:
   enabled: true
   interval: "30s"
 ```
+
+### セキュリティコンテキストの伝播
+
+Wippyは、呼び出し元のアクターとスコープを、署名されたTemporalヘッダーとしてワークフローとアクティビティに伝播します。署名はHMAC-SHA256で、鍵はクライアントエントリが保持します:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `security_hmac_key` | Base64エンコードされた署名鍵。デコード後に32バイト以上である必要がある |
+| `security_hmac_previous_keys` | ローテーションのため、検証時に引き続き受け入れるBase64エンコードされた鍵 |
+
+どちらのフィールドもバイト列フィールドであるため、YAMLではbase64で記述します。デコード後32バイト未満の鍵は設定検証時に拒否され、`security_hmac_key`なしで`security_hmac_previous_keys`を宣言した場合も同様です。新しいヘッダーは常に`security_hmac_key`で署名され、検証時には列挙されたすべての以前の鍵が試行されます。したがってローテーションの手順は、新しい鍵を`security_hmac_key`として追加し、古い鍵を`security_hmac_previous_keys`へ移し、その鍵を持つ実行中のものがなくなった時点で削除する、という流れになります。
+
+**アクターまたはスコープの下でワークフローを開始するには鍵が必要です。** 呼び出し元にセキュリティコンテキストがあり、クライアントに署名鍵がない場合、ヘッダーに署名できないため開始は失敗します。鍵を持たないクライアントは、アクターもスコープも持たないコンテキストからのみワークフローを開始できます。
+
+ワーカーは参照するクライアントエントリから鍵を取得するため、ワーカー自身は何も設定しなくても`client:`から署名と検証を継承します。[ワークフロー](temporal/workflows.md#security-context)と[アクティビティ](temporal/activities.md)を参照してください。
 
 ## ワーカー設定
 
@@ -161,11 +185,15 @@ health_check:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # アイデンティティ
+    identity: ""                          # ワーカーのアイデンティティ（Temporal UIに表示）
+
     # 並行性
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # ポーラー
     max_concurrent_activity_task_pollers: 20
@@ -180,6 +208,8 @@ health_check:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # 機能フラグ
     enable_logging_in_replay: false
@@ -187,16 +217,17 @@ health_check:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # バージョニング
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # 環境変数から読み取り
+    build_id: ${env:BUILD_ID}              # 環境レジストリから読み取り
     use_versioning: false
     default_versioning_behavior: "pinned" # または "auto_upgrade"
 ```
 
-`_env`で終わるフィールドは[環境変数システム](system/env.md)エントリで定義された環境変数を参照します。
+認証情報および識別子フィールドは、デコード時に`${env:NAME}`プレースホルダを[環境変数システム](system/env.md)経由で解決します。従来の`build_id_env`ディレクティブも同じように解決されますが非推奨です。`build_id: ${env:NAME}`を使用してください。
 
 ### バージョニング動作
 
@@ -207,7 +238,7 @@ health_check:
 | `pinned` | ワークフローは実行中、開始時のビルドIDに固定されます |
 | `auto_upgrade` | ワークフローは各タスク後に互換性のある最新のビルドIDで再開できます |
 
-`build_id_env`は、`build_id`が空の場合に指定された環境変数からビルドIDを読み取ります。
+`build_id: ${env:NAME}`は、リテラルの`build_id`が指定されていない場合に環境レジストリからビルドIDを読み取ります。
 
 ### セッションワーカー
 

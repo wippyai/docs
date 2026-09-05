@@ -1,6 +1,6 @@
 ---
 title: "Cliente WebSocket"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Cliente WebSocket para comunicação bidirecional em tempo real com servidores."
 ---
 
 # Cliente WebSocket
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Mensagens de Texto
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- Enviar JSON
 client:send(json.encode({
@@ -91,6 +88,8 @@ client:send(binary_data, websocket.BINARY)
 |-----------|------|-----------|
 | `data` | string | Conteudo da mensagem |
 | `type` | number | `websocket.TEXT` (1) ou `websocket.BINARY` (2) |
+
+Cede (yield) até a mensagem ser enviada.
 
 **Retorna:** `boolean, error`
 

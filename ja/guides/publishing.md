@@ -39,6 +39,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | フィールド | 必須 | 説明 |
@@ -51,6 +64,16 @@ keywords:
 | `repository` | いいえ | ソースリポジトリ URL |
 | `homepage` | いいえ | プロジェクトホームページ |
 | `keywords` | いいえ | 検索キーワード |
+| `authors` | いいえ | 作者一覧 |
+| `version` | いいえ | セマンティックバージョン。`--version` が上書きします |
+| `exclude` | いいえ | 除外するパターン: `:` を含む値はエントリ ID、それ以外はソースファイルのグロブ |
+| `embed` | いいえ | `--embed` を指定しない場合のデフォルトの `fs.directory` 埋め込みパターン |
+| `exclude_meta` | いいえ | メタデータフィールドと値のマップ。メタデータが一致するエントリは除外されます |
+| `metadata` | いいえ | 公開されるモジュールに付随する任意のキー/値メタデータ |
+| `publish.profiles` | いいえ | パックに同梱する設定プロファイル（[公開プロファイル](#publishing-profiles)を参照） |
+| `publish.runtime` | いいえ | パックのデフォルトとして同梱するランタイム設定セクション。`type: application` のみ |
+
+`exclude` は個別のフィールドではなく値の形で振り分けられます。`_old/**`、`test/**`、`*.test.lua` は収集時にソースファイルをフィルタします。`acme.http:debug_handler` はエントリのデコード後にレジストリエントリを無効化します。`**` セグメントは任意の数のディレクトリセグメントにまたがります。
 
 `type` は、ハブがモジュールをどう分類するかの信頼できる情報源であり、後の公開で変更できます。`--module-type` は単一の公開に対してこれを上書きします。省略した場合、新規作成されるモジュールは非推奨警告とともにデフォルトで `application` になります。
 
@@ -202,6 +225,15 @@ wippy lint
 ```bash
 wippy publish --dry-run
 ```
+
+公開処理は `--dry-run` の有無にかかわらず同じ方法でパックをビルドするため、検証は実際の公開が生成するすべてを対象とします:
+
+- `organization` と `module` は小文字の英数字と内部のハイフンで構成されなければならず、`version` は semver、`type` は4つのモジュールタイプのいずれかでなければなりません。
+- `publish.runtime` はアプリケーション所有です。`type: application` なしにその下で `source`、`sections`、`vars` を宣言すると失敗します。
+- `meta.artifact.format` を宣言するすべてのリソースは、そのフォーマットによって検査されます。不正なアーティファクトは消費側ではなくここで失敗し、出力先ディレクトリが重複する2つのアーティファクトは拒否されます。
+- `node-package` フォーマットはさらに、`package.json` が**公開されるモジュールのバージョンと等しい**セマンティックな `version` と、有効なパッケージ `name` を持ち、`preinstall`、`install`、`postinstall`、`prepare` のライフサイクルスクリプトを持たないことを要求します。
+
+リリース時に問題になりやすいのは最後の規則です。`wippy.yaml` とアーティファクトの `package.json` の `version` を揃えて上げないと、公開は中断します。
 
 ### 4. 公開
 

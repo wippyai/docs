@@ -1,6 +1,6 @@
 ---
 title: "Cola de Mensajes"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Publicar y consumir mensajes de colas distribuidas. Soporta multiples backends incluyendo RabbitMQ y otros brokers compatibles con AMQP."
 ---
 
 # Cola de Mensajes
@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## Patrón de Consumidor
 
-Los consumidores de cola se definen como puntos de entrada que reciben el payload directamente:
+Una entrada `queue.consumer` vincula una cola a una función handler (referenciada por `func`). El handler recibe el payload del mensaje directamente:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

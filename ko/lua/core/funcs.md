@@ -1,6 +1,6 @@
 ---
 title: "함수 호출"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Wippy에서 다른 함수를 호출하는 주요 방법. 컨텍스트 전파, 보안 자격 증명, 타임아웃을 완벽하게 지원하여 프로세스 간에 등록된 함수를 동기 또는 비동기로 실행합니다. 이 모듈은 컴포넌트가 통신해야 하는 분산 애플리케이션 구축의 핵심입니다."
 ---
 
 # 함수 호출
@@ -110,7 +110,7 @@ local actor = security.actor()  -- 현재 사용자의 액터 가져오기
 -- 사용자의 자격 증명으로 admin 함수 호출
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

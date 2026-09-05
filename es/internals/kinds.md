@@ -123,9 +123,9 @@ Para operaciones atómicas a través de múltiples entradas, implemente `Transac
 
 ```go
 type TransactionListener interface {
-    Begin(ctx context.Context)
-    Commit(ctx context.Context)
-    Discard(ctx context.Context)
+    Begin(ctx context.Context) error
+    Commit(ctx context.Context) error
+    Discard(ctx context.Context) error
 }
 ```
 

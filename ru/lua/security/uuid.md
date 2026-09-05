@@ -1,6 +1,6 @@
 ---
 title: "Генерация UUID"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Генерация универсальных уникальных идентификаторов. Адаптировано для workflow — случайные UUID возвращают одинаковые значения при повторном…"
 ---
 
 # Генерация UUID

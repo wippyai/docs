@@ -22,7 +22,7 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
 | `process.lua` | Langlebiger Lua-Prozess |
 | `workflow.lua` | Temporal-Workflow (deterministisch) |
 | `library.lua` | Gemeinsam genutzte Lua-Bibliothek |
-| `module.lua` | Lua-Modul-Oberflaeche |
+| `module.lua` | Lua-Modul-Oberfläche |
 | `function.lua.bc` | Vorkompiliertes Funktions-Bytecode |
 | `library.lua.bc` | Vorkompiliertes Bibliothek-Bytecode |
 | `process.lua.bc` | Vorkompiliertes Prozess-Bytecode |
@@ -69,7 +69,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpunkt
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Datenbanken
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite-Datenbank |
 | `db.sql.postgres` | PostgreSQL-Datenbank |
 | `db.sql.mysql` | MySQL-Datenbank |
+| `db.cdc.postgres` | Postgres-Change-Data-Capture-Quelle (siehe [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | SQLite-Change-Data-Capture-Quelle (siehe [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -150,7 +153,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Siehe [Datenbank](system/database.md) fuer `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
+Siehe [Datenbank](system/database.md) für `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
 
 **Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- Nachricht veröffentlichen
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- Im Consumer-Handler auf aktuelle Nachricht zugreifen
-local msg = queue.message()
-local data = msg:body_json()
+-- Im Consumer-Handler: der Nachrichtenrumpf ist das Argument des Handlers
+local function main(data)
+    -- Zustellungs-Metadaten über die aktuelle Nachricht abrufen
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwenden Sie <code>queue.message()</code> im Handler um auf die aktuelle Nachricht zuzugreifen.
+Die <code>func</code> des Consumers wird einmal pro Nachricht mit dem Nachrichtenrumpf als Argument aufgerufen. Verwende <code>queue.message()</code> im Handler für <code>id()</code>, <code>header()</code>/<code>headers()</code> und <code>ack()</code>/<code>nack()</code> der Zustellung.
 </note>
 
 ## Prozessverwaltung
@@ -262,6 +270,7 @@ Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwend
 | `process.host` | Prozessausführungs-Host |
 | `process.service` | Überwachter Prozess (umhüllt process.lua) |
 | `terminal.host` | Terminal/CLI-Host |
+| `pg.scope` | Prozessgruppen-Scope (siehe [Prozessgruppen](system/process-groups.md)) |
 
 ```yaml
 # Process Host (wo Prozesse laufen)
@@ -303,6 +312,39 @@ Verwenden Sie <code>process.service</code> wenn ein Prozess als überwachter Die
 
 Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers` im laufenden Betrieb — laufende Prozesse, PIDs und Queues bleiben erhalten. `host.queue_size`, `host.local_queue_size` und `lifecycle` sind bei der Konstruktion fixiert: Ein Live-Update, das sie ändert, wird abgelehnt, ebenso das Anpassen der Worker-Anzahl auf einem Host, dessen Worker affinitäts-verwaltet sind.
 
+### Prozess-Sicherheit
+
+`process.lua`- und `process.lua.bc`-Einträge akzeptieren einen `security:`-Block auf oberster Ebene. Er ist Teil des Eintrags und gilt daher für jeden Spawn dieses Prozesses, sowohl auf `process.host` als auch auf `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `actor.id` | Akteursidentität, unter der der Prozess läuft; ersetzt den geerbten Akteur |
+| `actor.meta` | Akteursattribute, die Policies auswerten |
+| `policies` | Registry-IDs (`namespace:name`) von Policies, die in den Scope eingefügt werden |
+| `groups` | Registry-IDs von Policy-Gruppen, deren Policies in den Scope eingefügt werden |
+
+Die Auflösung erfolgt beim Start des Prozesses und ist atomar: Lässt sich eine aufgeführte Policy oder Gruppe nicht auflösen, schlägt der Spawn fehl und es wird kein unvollständiger Kontext installiert. Wird `actor` weggelassen, wird der Akteur des spawnenden Prozesses geerbt; werden `policies` und `groups` beide weggelassen, wird dessen Scope geerbt. `function.lua`, `function.lua.bc`, `process.lua` und `process.lua.bc` akzeptieren den Block alle.
+
+Ein Kommando-Eintrag kann zusätzlich `meta.command.security` deklarieren, was nur gilt, wenn der Eintrag als CLI-Kommando gestartet wird — siehe [Kommando-Sicherheit](guides/cli.md#command-security). Auf gewöhnliche Spawns hat es keine Auswirkung.
+
+Siehe [Sicherheit](system/security.md).
+
 ## Temporal (Workflows)
 
 | Kind | Beschreibung |
@@ -339,8 +381,8 @@ Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- Sekunden, Standard 3600
 ```
 
 <tip>
@@ -368,7 +410,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 | Kind | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichniszugriff |
-| `fs.embed` | Schreibgeschuetztes eingebettetes Dateisystem |
+| `fs.embed` | Schreibgeschütztes eingebettetes Dateisystem |
 
 ```yaml
 - name: data_dir
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Policy-Gruppen werden von den Policies selbst gebildet: Eine Policy führt unter `groups:` die Gruppen-IDs auf, zu denen sie gehört, und eine Gruppe ist die Menge der Policies, die sie nennen. Es gibt keinen eigenen Gruppen-Entry-Typ. Gruppen-IDs sind Registry-IDs — ein bloßer Name wird im Namespace der deklarierenden Policy aufgelöst, aus `operators` oben wird also `app.security:operators`, wenn es im Namespace `app.security` deklariert wird. Einträge referenzieren Gruppen über ihren vollständigen `namespace:name`.
 
 **Lua-API:** Siehe [Sicherheitsmodul](lua/security/security.md)
 
@@ -622,11 +668,24 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 | `process.wasm` | WebAssembly-Prozess |
 
 ```yaml
+# WAT-Text ist Inline-Quellcode
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # oder wasi-http
+
+# Binäres WASM wird aus einem Dateisystem-Eintrag geladen und per Hash verifiziert
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # oder wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` und `process.wasm` nehmen `fs`, `path` und `hash` — es gibt kein `source`-Feld auf einem Binäreintrag; `source` gehört ausschließlich zu `function.wat`. `hash` ist erforderlich und muss die Form `sha256:<hex>` haben; das Modul wird abgelehnt, wenn die Bytes nicht übereinstimmen.
 
 Siehe [WASM-Übersicht](wasm/overview.md).
 
@@ -639,7 +698,7 @@ Siehe [WASM-Übersicht](wasm/overview.md).
 | `network.i2p` | I2P-Netzwerk-Overlay |
 | `network.tailscale` | Tailscale-Overlay |
 
-Wird von `http.service` ueber `network:`, von `funcs`/`process` ueber die Option `network` und von `http_client` ueber die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
+Wird von `http.service` über `network:`, von `funcs`/`process` über die Option `network` und von `http_client` über die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
 
 ## Registry-Primitive
 

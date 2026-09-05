@@ -98,22 +98,26 @@ l.Push(result)
 
 ### 타입 정의 (도구)
 
-`Types` 필드는 IDE 지원 및 문서화를 위한 타입 시그니처를 제공합니다:
+`Types` 필드는 IDE 지원 및 문서화를 위한 타입 시그니처를 제공합니다. 타입은 `typ` 패키지의 플루언트 빌더로 구성합니다:
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +126,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | 타입 | 설명 |
 |------|-------------|
-| `types.String` | 문자열 프리미티브 |
-| `types.Number` | 숫자 값 |
-| `types.Boolean` | 불리언 값 |
-| `types.Any` | 모든 Lua 값 |
-| `types.LuaError` | 에러 타입 |
-| `types.Optional(t)` | 타입 t의 선택적 값 |
-| `types.InterfaceType` | 메서드가 있는 객체 |
-| `types.FunctionType` | 파라미터/반환이 있는 함수 시그니처 |
-| `types.RecordType` | 필드가 있는 구조체 유사 타입 |
-| `types.TableType` | 키/값 타입이 있는 테이블 |
+| `typ.String` | 문자열 프리미티브 |
+| `typ.Number` | 숫자 값 |
+| `typ.Integer` | 정수 값 |
+| `typ.Boolean` | 불리언 값 |
+| `typ.Any` | 모든 Lua 값 |
+| `typ.Self` | 메서드의 리시버 타입 |
+| `typ.LuaError` | 에러 타입 |
+| `typ.NewOptional(t)` | 타입 t의 선택적 값 |
+| `typ.NewInterface(name, methods)` | 메서드가 있는 객체 |
+| `typ.Func()` | 함수 시그니처 빌더 |
+| `typ.NewRecord()` | 구조체 유사 타입 빌더 (필드는 `.Field`/`.OptField`로) |
+| `typ.NewArray(t)` | 요소 타입 t의 배열 |
+| `typ.NewMap(k, v)` | 키/값 타입이 있는 맵 |
 
-함수 시그니처는 가변 파라미터를 지원합니다:
+함수 빌더는 `Param`, `OptParam`, `Variadic`, `Returns`를 체이닝합니다:
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-전체 타입 시스템은 go-lua의 `types` 패키지를 참조하세요.
+레코드는 `Field`(필수)와 `OptField`(선택)로 필드를 선언합니다:
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+전체 타입 시스템은 go-lua의 `typ` 패키지를 참조하세요.
 
 ### UserData 바인딩 (런타임)
 
@@ -324,6 +341,14 @@ func newTestScheduler() *testScheduler {
     return ts
 }
 
+// Stop은 컨텍스트를 요구하는 Scheduler.Stop을 래핑합니다.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+}
+
+// OnStart는 OnComplete와 함께 process.Lifecycle을 충족합니다.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
+
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
     ch, ok := ts.pending[p.UniqID]
@@ -358,17 +383,19 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
 테스트하는 모듈로 Lua 스크립트에서 프로세스를 생성합니다:
 
 ```go
-func bindMyModule(l *lua.LState) {
+func bindMyModule(l *lua.LState) error {
     tbl, _ := mymodule.Module.Build()
     l.SetGlobal(mymodule.Module.Name, tbl)
+    return nil
 }
 
 func newLuaProcess(script string) *engine.Process {
     proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
         engine.WithModuleBinder(bindMyModule),
     )
+    return proc
 }
 
 func TestMyModuleYields(t *testing.T) {

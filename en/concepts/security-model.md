@@ -13,7 +13,7 @@ Wippy's isolation layer gives a process no ambient authority. A fresh Lua or WAS
 
 On top of that, access to registry capabilities is governed by attribute-based access control (ABAC). Every guarded operation is checked against the current actor's security scope, a set of policies that allow or deny an action on a resource, optionally conditioned on actor and resource metadata. This is declarative: you define policies in configuration, not in application code.
 
-When a process runs with both an actor and a scope, access is deny-by-default: a request is allowed only if a policy explicitly permits it and none denies it. **Strict mode** (off by default, enabled via `security.strict_mode`) governs the incomplete case, when no actor or scope is established: strict mode denies it, the permissive default allows it. Production deployments turn strict mode on so that an unauthenticated context fails closed. Combined with least-privilege policies, strict mode gives you fail-closed authorization on top of deny-by-absence isolation. See the [Security reference](system/security.md) for policy syntax and evaluation rules.
+When a process runs with both an actor and a scope, access is deny-by-default: a request is allowed only if a policy explicitly permits it and none denies it. **Strict mode** governs the incomplete case, when no actor or scope is established. It is **on by default**, so an incomplete context is denied; setting `security.strict_mode: false` in the runtime config opts into the permissive behavior instead. The consequence to plan for is that a process with no declared security context fails every check under the default — give such a process a `security:` block on its entry, or start it through a path that supplies one. Combined with least-privilege policies, this gives you fail-closed authorization on top of deny-by-absence isolation. See the [Security reference](system/security.md) for policy syntax, evaluation rules, and the shape of the `security:` block.
 
 ## Process Isolation
 
@@ -36,6 +36,8 @@ The registry is Wippy's capability store, and security policies are its authoriz
 **Entry IDs are namespaced.** An ID has the form `namespace:name` with a single colon, and namespaces are hierarchical via dot-separated segments, for example `tenant_acme.tools:read` (namespace `tenant_acme.tools`, name `read`). Policies match actions and resources, and resource patterns can target a namespace prefix, so a single rule can cover an entire namespace.
 
 **Policies decide access.** Each capability access (a registry lookup, a function call, a database handle, a file open) is checked against the actor's scope. A policy declares the actions and resources it covers, an allow or deny effect, and optional conditions on actor and resource metadata. Evaluation happens per access, not once at startup: if any policy denies, access is denied; if at least one allows and none denies, it is allowed; if no policy matches, access is denied. (When the context has no actor or scope at all, that incomplete case is resolved by strict mode rather than by policy evaluation.)
+
+**A context is declared, not inherited from thin air.** Functions inherit the caller's actor and scope. A spawned process inherits them too: its frame is forked from the spawner's, and the `security:` block on its own entry then modifies that inherited context — an `actor` it names replaces the inherited actor, and the policies and policy groups it lists by registry ID are merged into the inherited scope. Resolution is atomic — if any named policy or group is missing, the spawn fails rather than proceeding with a partial scope. A CLI command can additionally declare `meta.command.security`, applied only on the trusted launch path where the operator started the command themselves.
 
 **Tool arguments are schema-shaped.** A tool declares a JSON Schema for its inputs. That schema is given to the model so it generates conforming arguments, and access to the tool is policy-checked before the call runs.
 
@@ -110,7 +112,11 @@ Tools consumed over MCP run through the same function-call path and policy check
 | Concern | Wippy's approach |
 |---------|------------------|
 | Process isolation | Separate interpreter per process (Lua or WASM), no shared memory |
-| Default access | Unmatched policies deny when both an actor and a scope are set; strict mode additionally denies when no actor or scope is established. Use least-privilege policies plus strict mode for fail-closed authorization. |
+| Default access | Unmatched policies deny when both an actor and a scope are set; strict mode, on by default, denies when no actor or scope is established |
+| Context declaration | `security:` block on the entry (actor, policies, groups); resolution is atomic and fail-closed |
+| Supply chain | Module packs verified by digest at install and at boot; a mismatch refuses the module |
+| Node-to-node trust | Mutually authenticated internode mesh; ed25519 identity per node, explicit trusted-peer map |
+| Workflow propagation | Actor and scope carried to Temporal as a signed, audience-bound header; verification failure fails the execution |
 | Capability control | Registry entries governed by attribute-based security policies (actor, scope, action, resource) |
 | Data boundaries | Connections and storage are registry entries; each access is policy-checked by entry ID |
 | API key management | Stored in the environment system, read internally by providers, not exposed to process code |
@@ -123,7 +129,10 @@ Tools consumed over MCP run through the same function-call path and policy check
 
 ## See Also
 
-- [Security reference](system/security.md) - Policies, scopes, actors, and token stores
+- [Security reference](system/security.md) - Policies, scopes, actors, token stores, and the `security:` block
+- [Dependency Management](guides/dependency-management.md#integrity-verification) - Module digest verification
+- [Cluster](guides/cluster.md#internode-identity) - Internode identity and peer trust
+- [Temporal Workflows](temporal/workflows.md#security-context) - Signed context propagation
 - [Registry](concepts/registry.md) - The capability store
 - [Process Model](concepts/process-model.md) - Process isolation and lifecycle
 - [Agents](framework/agents.md) - Agent definitions and tool use

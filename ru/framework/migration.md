@@ -102,11 +102,11 @@ end)
 | `meta.timestamp` | нет | Метка времени ISO-8601, используемая для упорядочивания, когда несколько миграций нацелены на одну базу данных |
 | `meta.tags` | нет | Массив тегов; раннер может фильтровать миграции по тегам |
 
-Миграции для одной базы данных выполняются по возрастанию `meta.timestamp`.
+Миграции для одной базы данных выполняются по возрастанию `meta.timestamp`. `meta.timestamp` необязателен; полный идентификатор записи служит разрешителем ничьей, поэтому миграции с одинаковыми или отсутствующими метками времени всё равно выполняются в стабильном детерминированном порядке.
 
 ## DSL
 
-Внутри функции, переданной в `migration.define`, доступны три вложенных функции:
+Внутри функции, переданной в `migration.define`, доступны следующие вложенные функции:
 
 | Функция | Описание |
 |---------|----------|
@@ -156,7 +156,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- apply all pending migrations
 local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- roll back the most recently applied migration
 local status = runner:status()   -- list applied + pending migrations
 ```
 
@@ -185,15 +185,41 @@ local status = runner:status()   -- list applied + pending migrations
 
 ### `runner:rollback(options)`
 
-Откатывает одну миграцию по идентификатору (обязательный):
+Откатывает применённые миграции в порядке, обратном порядку применения. Без опций откатывает единственную последнюю применённую миграцию:
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- roll back the last migration
+runner:rollback({ count = 3 })                               -- roll back the last 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
 ```
+
+Опции:
+
+| Опция | Описание |
+|-------|----------|
+| `count` | Количество откатываемых миграций; по умолчанию `1` |
+| `allowed_ids` | Массив идентификаторов миграций; только они допускаются к откату |
 
 ### `runner:status(options)`
 
-Возвращает `{ applied = {...}, pending = {...} }`, отсортированные по `applied_at` и `meta.timestamp` соответственно.
+Возвращает отчёт о состоянии, описывающий каждую миграцию для базы данных:
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+Применённые миграции перечисляются первыми (упорядочены по `applied_at`), затем ожидающие (упорядочены по `meta.timestamp`, затем по идентификатору).
 
 ## API реестра
 
@@ -210,7 +236,7 @@ runner:rollback({ id = "app:01_create_users_table" })
 
 ## Отслеживание миграций
 
-Раннер создаёт таблицу `wippy_migrations` в каждой целевой базе данных при первом запуске. Применённые миграции записываются по идентификатору, чтобы последующие запуски пропускали их. Таблица отслеживания создаётся автоматически; не пишите собственную миграцию для её создания.
+Раннер создаёт таблицу `_migrations` в каждой целевой базе данных при первом запуске. Применённые миграции записываются по идентификатору, чтобы последующие запуски пропускали их. Таблица отслеживания создаётся автоматически; не пишите собственную миграцию для её создания.
 
 ## Рекомендации
 

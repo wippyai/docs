@@ -1,6 +1,6 @@
 ---
 title: "环境变量"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "访问环境变量以获取配置值、密钥和运行时设置。"
 ---
 
 # 环境变量
@@ -109,7 +109,8 @@ end
 |--------|----------|-------------|
 | `env.get` | 变量名 | 读取环境变量 |
 | `env.set` | 变量名 | 写入环境变量 |
-| `env.get_all` | `*` | 列出所有变量 |
+
+`get_all` 没有专门的安全操作：它只返回允许执行 `env.get` 操作的变量，逐个变量名通过 `env.get` 进行过滤。
 
 ### 检查访问权限
 

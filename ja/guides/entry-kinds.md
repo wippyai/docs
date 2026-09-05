@@ -69,7 +69,7 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # エンドポイント
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## データベース
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLiteデータベース |
 | `db.sql.postgres` | PostgreSQLデータベース |
 | `db.sql.mysql` | MySQLデータベース |
+| `db.cdc.postgres` | Postgres変更データキャプチャソース（[CDC](system/cdc.md)を参照）|
+| `db.cdc.sqlite` | SQLite変更データキャプチャソース（[CDC](system/cdc.md)を参照）|
 
 ### SQLite
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- メッセージを公開
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- コンシューマハンドラ内で現在のメッセージにアクセス
-local msg = queue.message()
-local data = msg:body_json()
+-- コンシューマハンドラ内: メッセージ本体がハンドラの引数になります
+local function main(data)
+    -- 現在のメッセージから配信メタデータにアクセスします
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-コンシューマの<code>func</code>は各メッセージに対して呼び出されます。ハンドラ内で<code>queue.message()</code>を使用して現在のメッセージにアクセスします。
+コンシューマの<code>func</code>は、メッセージ本体を引数として各メッセージにつき1回呼び出されます。配信の<code>id()</code>、<code>header()</code>/<code>headers()</code>、<code>ack()</code>/<code>nack()</code>にはハンドラ内で<code>queue.message()</code>を使用します。
 </note>
 
 ## プロセス管理
@@ -262,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | プロセス実行ホスト |
 | `process.service` | 監督されたプロセス（process.luaをラップ） |
 | `terminal.host` | ターミナル/CLIホスト |
+| `pg.scope` | プロセスグループのスコープ（[プロセスグループ](system/process-groups.md)を参照） |
 
 ```yaml
 # プロセスホスト（プロセスが実行される場所）
@@ -303,6 +312,39 @@ local data = msg:body_json()
 
 稼働中の`process.host`エントリを更新すると、`host.workers`はその場で再スケールされます — 実行中のプロセス、PID、キューは保持されます。`host.queue_size`、`host.local_queue_size`、`lifecycle`は構築時に固定されており、これらを変更するライブ更新は拒否されます。ワーカーがアフィニティ管理されているホストでのワーカー数の変更も同様に拒否されます。
 
+### プロセスのセキュリティ
+
+`process.lua`と`process.lua.bc`エントリは、トップレベルの`security:`ブロックを受け付けます。これはエントリの一部であるため、`process.host`と`terminal.host`のいずれにおいても、そのプロセスのすべてのスポーンに適用されます:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| フィールド | 説明 |
+|------------|------|
+| `actor.id` | プロセスが実行時に名乗るアクターID。継承したアクターを置き換える |
+| `actor.meta` | ポリシーが評価するアクター属性 |
+| `policies` | スコープにマージされるポリシーのレジストリID（`namespace:name`）|
+| `groups` | ポリシーがスコープにマージされるポリシーグループのレジストリID |
+
+解決はプロセスの起動時に行われ、アトミックです。列挙されたポリシーまたはグループのいずれかが解決できない場合、スポーンは失敗し、部分的なコンテキストがインストールされることはありません。`actor`を省略するとスポーン元のアクターを継承し、`policies`と`groups`の両方を省略するとスポーン元のスコープを継承します。`function.lua`、`function.lua.bc`、`process.lua`、`process.lua.bc`のすべてがこのブロックを受け付けます。
+
+コマンドエントリはさらに`meta.command.security`を宣言できます。これはエントリがCLIコマンドとして起動された場合にのみ適用されます — [コマンドのセキュリティ](guides/cli.md#command-security)を参照してください。通常のスポーンには影響しません。
+
+[セキュリティ](system/security.md)を参照してください。
+
 ## Temporal（ワークフロー）
 
 | 種別 | 説明 |
@@ -339,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 秒単位、デフォルトは3600
 ```
 
 <tip>
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+ポリシーグループはポリシー自身によって形成されます。ポリシーが`groups:`配下に所属するグループIDを列挙し、グループとはそれを指名しているポリシーの集合です。グループ専用のエントリ種別はありません。グループIDはレジストリIDです。名前だけを書いた場合は宣言元ポリシーの名前空間で解決されるため、名前空間`app.security`で宣言された上記の`operators`は`app.security:operators`になります。エントリはグループを完全な`namespace:name`で参照します。
 
 **Lua API:** [セキュリティモジュール](lua/security/security.md)を参照
 
@@ -534,9 +580,9 @@ local actor = security.actor()
   kind: contract.definition
   methods:
     - name: greet
-      description: 挨拶メッセージを返す
+      description: Returns a greeting message
     - name: greet_with_name
-      description: パーソナライズされた挨拶を返す
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -622,11 +668,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssemblyプロセス |
 
 ```yaml
+# WATテキストはインラインのソース
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # または wasi-http
+
+# バイナリWASMはファイルシステムエントリからロードされ、ハッシュで検証される
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # または wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm`と`process.wasm`は`fs`、`path`、`hash`を取ります。バイナリエントリに`source`フィールドはありません。`source`は`function.wat`専用です。`hash`は必須で、`sha256:<hex>`形式でなければなりません。バイト列が一致しない場合、モジュールは拒否されます。
 
 [WASM概要](wasm/overview.md)を参照。
 

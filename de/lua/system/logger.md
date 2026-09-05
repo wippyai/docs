@@ -1,6 +1,6 @@
 ---
 title: "Protokollierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Strukturierte Protokollierung mit debug, info, warn und error Levels."
 ---
 
 # Protokollierung

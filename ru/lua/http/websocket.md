@@ -1,6 +1,6 @@
 ---
 title: "WebSocket-клиент"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "WebSocket-клиент для двунаправленной связи с серверами в реальном времени."
 ---
 
 # WebSocket-клиент
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Текстовые сообщения
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- Отправка JSON
 client:send(json.encode({

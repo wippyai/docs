@@ -1,6 +1,6 @@
 ---
 title: "WebSocket 客户端"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "用于与服务器进行实时双向通信的 WebSocket 客户端。"
 ---
 
 # WebSocket 客户端
@@ -69,12 +69,9 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### 文本消息
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
--- Send JSON
+-- 发送 JSON
 client:send(json.encode({
     type = "subscribe",
     channel = "orders"

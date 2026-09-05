@@ -1,6 +1,6 @@
 ---
 title: "Сжатие данных"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Сжатие и распаковка данных с использованием алгоритмов gzip, deflate, zlib, brotli и zstd."
 ---
 
 # Сжатие данных

@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-声明依赖并将 `target_db` 要求指向你的应用数据库：
+声明依赖，并通过依赖项的 `parameters` 将 `target_db` 要求指向你的应用数据库：
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-启动时，`wippy/migration` 会拾取 `01_create_embeddings_table` 迁移，并为你的数据库驱动创建带有相应向量索引的 `embeddings` 表。
+启动时，`wippy/migration` 会拾取 `01_create_embeddings_table` 迁移，并为你的数据库驱动创建带有相应向量索引的 `embeddings_512` 表。
 
 ## 配置常量
 
@@ -151,8 +149,8 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 迁移会根据 `target_db` 处的数据库驱动创建相应的模式：
 
-- **PostgreSQL** - `embeddings` 表带有 `vector(512)` 列和 IVFFlat 索引。需要 `pgvector` 扩展。
-- **SQLite** - `embeddings` 表将向量以文本形式存储，并配备用于 KNN 搜索的 `sqlite-vec` 虚拟表。
+- **PostgreSQL** - `embeddings_512` 表带有 `vector(512)` 列和 IVFFlat 索引。需要 `pgvector` 扩展。
+- **SQLite** - `embeddings_512` `vec0` 虚拟表，包含 `embedding float[512]` 向量列以及用于 KNN 搜索的元数据和内容列。
 
 向量在 API 层始终通过纯 JSON 数组进行来回传递。
 

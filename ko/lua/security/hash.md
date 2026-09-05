@@ -1,6 +1,6 @@
 ---
 title: "해시 함수"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "암호화 해시 함수와 HMAC 메시지 인증을 제공합니다."
 ---
 
 # 해시 함수

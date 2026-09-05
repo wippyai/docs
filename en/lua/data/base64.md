@@ -1,6 +1,6 @@
 ---
 title: "Base64 Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode binary data to base64 strings and decode base64 back to binary. Uses standard base64 encoding per RFC 4648."
 ---
 
 # Base64 Encoding

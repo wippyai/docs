@@ -24,7 +24,7 @@ description: "Эндпоинты (http.endpoint) определяют обраб
 | Поле | Тип | Обязательно | Описание |
 |------|-----|-------------|----------|
 | `meta.router` | registry.ID | Нет | Родительский роутер (по умолчанию используется единственный зарегистрированный роутер, если он один) |
-| `method` | string | Да | HTTP-метод |
+| `method` | string | Да | HTTP-метод либо `"*"` для любого метода |
 | `path` | string | Да | Шаблон URL-пути |
 | `func` | registry.ID | Да | Выполняемая функция |
 
@@ -42,6 +42,23 @@ description: "Эндпоинты (http.endpoint) определяют обраб
 | `HEAD` | Только заголовки |
 | `OPTIONS` | CORS preflight (автоматически) |
 | `TRACE` | Диагностический loopback |
+| `*` | Любой метод |
+
+Имена методов пишутся в верхнем регистре; `method` обязателен, а любое значение вне этого набора отклоняется как ошибка конфигурации.
+
+### Эндпоинты, не зависящие от метода
+
+`method: "*"` регистрирует путь для всех HTTP-методов, а обработчик читает фактический метод через `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+Для обычного эндпоинта роутер дополнительно регистрирует обработчик `OPTIONS` на том же пути, поэтому CORS-middleware может ответить на preflight, не запуская эндпоинт. Эндпоинт с `*` такого обработчика не получает: он и так совпадает с `OPTIONS`. Middleware роутера по-прежнему оборачивает его, поэтому настроенное CORS-middleware отвечает на разрешённый preflight кодом `204` до запуска эндпоинта; любой другой запрос `OPTIONS` доходит до самой функции эндпоинта, которая и должна на него отвечать.
 
 ## Параметры пути
 
@@ -85,12 +102,11 @@ end
   func: serve_file
 ```
 
+Этот catch-all-сегмент заставляет маршрут совпадать с запросами вида `/files/docs/readme.md`. Захваченный хвост читается как любой другой параметр — под именем без завершающих точек:
+
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## Функция-обработчик
@@ -278,7 +294,22 @@ entries:
 
 ### Защищённый эндпоинт
 
+Middleware авторизации настраивается на родительском роутере, а не на эндпоинте. Post-match middleware (например, `endpoint_firewall`) выполняется после сопоставления маршрута и применяется ко всем эндпоинтам роутера:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -286,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## См. также

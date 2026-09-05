@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Render dynamic content using the Jet template engine. Build HTML pages, emails, and documents with template inheritance and includes."
 ---
 
 # Template Engine

@@ -93,13 +93,13 @@ TLS 블록:
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-인라인 `cert`/`key`/`ca` 필드는 PEM 콘텐츠를 담습니다. `*_env` 변형은 env 레지스트리를 통해 해결됩니다. 두 소스는 필드별로 상호 배타적입니다. `insecure_skip_verify`는 인증서 검증을 비활성화합니다 (개발용 전용).
+`cert`/`key`/`ca`는 PEM 콘텐츠를 담습니다 — 인라인, `file://`, 또는 [env 레지스트리](system/env.md)를 통해 해석되는 `${env:NAME}` 플레이스홀더로 지정합니다. `insecure_skip_verify`는 인증서 검증을 비활성화합니다 (개발용 전용). 레거시 `cert_env`/`key_env`/`ca_env` 디렉티브도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `${env:NAME}`을 사용하세요.
 
 ### SQS 드라이버
 
@@ -109,14 +109,14 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,13 +126,13 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 |------|------|--------|------|
 | `config` | Registry ID | 필수 | 리전 및 자격 증명을 제공하는 `config.aws` 리소스 |
 | `endpoint` | string | - | 사용자 지정 엔드포인트 URL (LocalStack, ElasticMQ); 실제 AWS의 경우 생략 |
-| `message_retention_period` | int | `345600` (4일) | 큐 수준 보존 시간(초) (60–1209600) |
+| `message_retention_period` | int | - | 큐 수준 보존 시간(초) (60–1209600), 생성 시 큐 속성으로 설정됩니다. 생략하면 AWS 기본값 345600(4일)이 유지됩니다. |
 | `default_delay_seconds` | int | `0` | CreateQueue 시 적용되는 기본 전달 지연 (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | 송수신 시 SQS 메시지 체크섬 검사 비활성화 |
 | `use_fips` | bool | `false` | FIPS 호환 엔드포인트 사용 |
 | `use_dual_stack` | bool | `false` | 듀얼 스택 (IPv4 + IPv6) 엔드포인트 사용 |
 
-큐는 첫 사용 시 드라이버에 의해 자동 생성됩니다. 발행 시 SQS 특정 속성을 지정하려면 SQS 접두사 헤더 (`sqs.*`)를 사용하세요. `correlation_id` 및 `content_type`과 같은 중립 키는 가능한 경우 SQS 시스템 속성으로 변환됩니다.
+큐는 첫 사용 시 드라이버에 의해 자동 생성됩니다. 발행 시 SQS 특정 필드를 지정하려면 SQS 접두사 헤더를 사용하세요: `sqs.delay_seconds`, `sqs.message_group_id`, `sqs.message_deduplication_id`는 타입이 지정된 SQS 메시지 필드에 매핑됩니다. 그 외 모든 헤더(`correlation_id`, `content_type` 같은 중립 키와 `sqs.message_attributes.*` 키)는 SQS 메시지 속성으로 그대로 전달됩니다.
 
 ## 큐 설정
 

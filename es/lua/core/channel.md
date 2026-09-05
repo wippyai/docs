@@ -1,6 +1,6 @@
 ---
 title: "Canales y Corrutinas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Canales estilo Go para comunicación entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos…"
 ---
 
 # Canales y Corrutinas
@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | Array de casos select |
 | `default` | boolean | Si true, devuelve inmediatamente cuando ningun caso este listo |
 
-**Devuelve:** `table` con campos: `channel`, `value`, `ok`, `default`
+**Devuelve:** `table`
+
+- Para un caso de canal: `{channel, value, ok}` — `channel` es el canal del caso, `value` es el valor recibido/enviado, `ok` es false para una recepción de canal cerrado.
+- Para la rama por defecto (cuando ningún caso está listo y `default = true`): `{default = true, ok = true}`.
 
 ### Patrón de Timeout
 
@@ -208,7 +211,6 @@ end
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Enviar en canal cerrado | error de runtime | no |
-| Cerrar canal cerrado | error de runtime | no |
 | Caso invalido en select | error de runtime | no |
 
 ## Vea También

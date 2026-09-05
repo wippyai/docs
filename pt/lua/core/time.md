@@ -1,6 +1,6 @@
 ---
 title: "Time e Duração"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execução por periodos especificos, parse e formate…"
 ---
 
 # Time e Duração
@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Formato de duração inválido | `errors.INVALID` | não |
-| Parse falhou | `errors.INTERNAL` | não |
+| Parse falhou | `errors.INVALID` | não |
 | Nome de location vazio | `errors.INVALID` | não |
-| Location não encontrada | `errors.INTERNAL` | não |
+| Location não encontrada | `errors.NOT_FOUND` | não |
 | Duração <= 0 (timer/ticker) | `errors.INVALID` | não |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location não encontrada:", err:message())
     end
     return nil, err

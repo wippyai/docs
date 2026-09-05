@@ -1,6 +1,6 @@
 ---
 title: "Security & Access Control"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Manage authentication actors, authorization scopes, and access policies."
 ---
 
 # Security & Access Control

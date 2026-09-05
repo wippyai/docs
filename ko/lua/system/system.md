@@ -1,6 +1,6 @@
 ---
 title: "시스템"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "메모리 사용량, 가비지 컬렉션 통계, CPU 세부 정보, 프로세스 메타데이터를 포함한 런타임 시스템 정보를 조회합니다."
 ---
 
 # 시스템
@@ -47,6 +47,40 @@ local mods, err = system.modules()
 | `name` | string | 모듈 이름 |
 | `description` | string | 모듈 설명 |
 | `class` | string[] | 모듈 분류 태그 |
+
+## 배포 소스
+
+`system.source` 하위 테이블은 정규화된 배포 베이스라인, 즉 레지스트리 히스토리가 적용되기 전에 애플리케이션이 조립된 소스들이 만들어낸 엔트리 집합을 읽습니다.
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**반환:** `table, error`
+
+| 필드 | 타입 | 설명 |
+|-------|------|-------------|
+| `owners` | string[] | 베이스라인 엔트리에 대해 권한을 가지는 소스 소유자 |
+| `entries` | table[] | `id`, `kind`, `meta`, `data`를 가진 베이스라인 엔트리 |
+
+`owners`는 애플리케이션 소유자가 먼저 오고 나머지 소유자가 알파벳순으로 정렬됩니다. 애플리케이션 소유자는 문자열 `"application"`입니다.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+로드는 하나의 안정된 소스 세대에서 가져오므로 엔트리와 소유자는 항상 동일한 베이스라인을 기술합니다. 각 소스 뒤의 파일시스템 경로는 런타임 내부용이며 노출되지 않습니다. 로드가 실패하면 백킹 경로를 노출하는 대신 일반적인 내부 에러를 보고합니다.
+
+**권한:** `sources`에 대한 `system.read`
 
 ## 메모리 통계
 
@@ -426,6 +460,7 @@ end
 | `system.read` | `cwd` | 작업 디렉토리 읽기 |
 | `system.read` | `hosts` | 호스트 / 호스트 프로세스 목록 조회 |
 | `system.read` | `modules` | 로드된 모듈 목록 조회 |
+| `system.read` | `sources` | 배포 소스 베이스라인 로드 |
 | `system.read` | `supervisor` | 슈퍼바이저 상태 읽기 |
 | `system.read` | `node` | 이 노드의 정체성 읽기 |
 | `system.read` | `cluster` | 클러스터 멤버십 및 리더 읽기 |

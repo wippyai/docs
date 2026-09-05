@@ -68,7 +68,7 @@ flowchart TB
 | フィールド | 型 | 説明 |
 |------------|-----|------|
 | `meta.router` | Registry ID | 親ルーター |
-| `method` | string | HTTPメソッド（GET、POST、PUT、DELETE、PATCH、HEAD） |
+| `method` | string | HTTPメソッド: `GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS`、`TRACE`、または任意のメソッドを表す`*` |
 | `path` | string | URLパスパターン（`/`で開始） |
 | `func` | Registry ID | ハンドラ関数 |
 
@@ -114,12 +114,24 @@ end
   func: serve_file
 ```
 
+ワイルドカードは残りのセグメントにマッチするため、`GET /api/v1/files/docs/guides/readme.md` のようなリクエストはハンドラにディスパッチされます。キャプチャされた末尾部分は、末尾のドットを除いた名前で`req:param`から読み取ります:
+
 ```lua
--- リクエスト: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 ワイルドカードはパスの最後のセグメントである必要があります。
+
+## ルートの優先順位
+
+すべてのルーターは、ルーターの`prefix`を前置した形で自身のエンドポイントを単一のパターンセットに登録し、どのパターンがリクエストを処理するかはGoの`ServeMux`が決定します。そのルールがそのまま適用されます:
+
+- 最も具体的なパターンが優先されます。あるパターンが別のパターンのリクエストの真部分集合にマッチする場合、前者のほうが具体的です。したがって`/users/admin`は`/users/{id}`に優先し、`/files/{name}`は`/files/{path...}`に優先します。
+- メソッドを指定したパターンは、同じパスでメソッドを指定しないパターンより具体的です。したがって`GET`リクエストでは、同じパス上の`*`エンドポイントより`GET`エンドポイントが優先されます。
+- 末尾の`{path...}`または`/`はサブツリー全体にマッチし、その部分集合にマッチするパターンには負けます。
+- マッチングは正規化・デコード済みのパスに対して行われ、具体性が登録順に依存することはありません。
+
+2つのパターンが正面から衝突することもあります。どちらも他方より具体的ではないのに重なり合う場合で、`/users/{id}/settings`と`/users/admin/{section}`がその例です。これは設定エラーです。ルーターは再構築時にこれを検出し、再構築は失敗し、以前のルートセットがそのまま稼働し続けます。
 
 ## ハンドラ関数
 
@@ -127,7 +139,6 @@ local file_path = req:param("filepath")  -- "docs/guides/readme.md"
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -136,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -167,7 +178,7 @@ options:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## マッチ前 vs マッチ後ミドルウェア
@@ -288,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

@@ -1,6 +1,6 @@
 ---
 title: "Метрики и телеметрия"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Запись метрик приложения с использованием счётчиков, датчиков и гистограмм."
 ---
 
 # Метрики и телеметрия

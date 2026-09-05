@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='external'/"
+description: "使用 CloudyKit Jet 的模板渲染。"
 ---
 
 # Template Engine
@@ -31,6 +31,9 @@ description: "<secondary-label ref='external'/"
 | `engine.development_mode` | bool | false | 禁用模板缓存 |
 | `engine.delimiters.left` | string | `{{` | 变量左分隔符 |
 | `engine.delimiters.right` | string | `}}` | 变量右分隔符 |
+| `engine.delimiters.comment_left` | string | `{*` | 注释左分隔符 |
+| `engine.delimiters.comment_right` | string | `*}` | 注释右分隔符 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 模板文件扩展名 |
 | `engine.globals` | map | - | 所有模板可用的变量 |
 
 ## 模板

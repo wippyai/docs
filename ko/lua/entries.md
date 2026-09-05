@@ -168,18 +168,16 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # 기본값
-    size: 4           # 초기 워커 수
-    max_size: 16      # 탄력적 풀의 상한
+    type: adaptive    # 명시적 지정; 생략하면 자동 선택(lazy)
+    max_size: 16      # 탄력적 확장의 상한
 ```
 
 | 필드 | 풀 | 설명 |
 |------|----|------|
 | `type` | 모두 | 스케줄러 구현 (아래 표 참조) |
-| `size` | static, lazy, adaptive | 초기 워커 수 |
-| `workers` | engine v2 | 워커 스레드 수 |
-| `buffer` | static, adaptive | 작업 큐 용량 (기본값 `workers * 64`) |
-| `warm_start` | adaptive | 시작 시 엔트리 사전 컴파일 |
+| `workers` | static | 워커 스레드 수 (없으면 `size`, 그다음 8로 폴백) |
+| `size` | static | `workers`가 없을 때의 워커 수; 자동 선택을 static 풀 쪽으로 유도하기도 합니다 |
+| `buffer` | static | 작업 큐 용량 (기본값 `workers * 64`) |
 | `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16) |
 
 | 유형 | 동작 |
@@ -187,7 +185,9 @@ imports:
 | `inline` | 호출자의 고루틴에서 동기 실행. 최저 지연, 호출 간 격리 없음. |
 | `lazy` | 유휴 시 워커 없음, 요청 시 생성, 유휴 시 제거. |
 | `static` | 채널 기반 고정 크기 풀. 안정 부하에서 예측 가능. |
-| `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. 기본값. |
+| `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. |
+
+`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀입니다.
 
 ## 메타데이터
 
@@ -211,7 +211,7 @@ imports:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## 참고

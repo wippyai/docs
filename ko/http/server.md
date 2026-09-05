@@ -163,11 +163,15 @@ entries:
 
 서버는 직접 TLS를 종료할 수 있습니다. `tls.mode`를 `manual` (자체 인증서 제공) 또는 `auto` (오버레이 네트워크 드라이버가 인증서 제공, 예: `network.tailscale`)로 설정하세요. 일반 clearnet 리스너는 `auto`를 지원하지 않습니다. `tls`를 생략하거나 mode를 비워두면 일반 HTTP로 실행됩니다.
 
-`auto` 모드에서 서버는 `cert`/`key`/`cert_env`/`key_env`를 지정해서는 안 됩니다 — 네트워크 드라이버가 제공합니다.
+`auto` 모드에서 서버는 `cert`/`key`를 지정해서는 안 됩니다 — 네트워크 드라이버가 제공합니다.
 
 ### 수동 인증서
 
-cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합니다 (둘 다는 불가):
+`mode: manual`에서 `cert`와 `key`는 PEM 콘텐츠를 담습니다. 다음 세 가지 방식 중 하나로 콘텐츠를 제공하세요(필드마다 하나만 선택하고, 절대 혼용하지 마세요):
+
+1. **인라인 PEM** — PEM 문자열 그대로.
+2. **`file://` 참조** — manifest 기준 상대 경로로, 로드 시점에 해석되어 인라인 처리됩니다(경로 탈출 안전).
+3. **환경 레지스트리 참조** — `${env:NAME}` 플레이스홀더로 디코드 시점에 등록된 [env 변수](system/env.md)에서 PEM을 가져옵니다.
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합�
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+`${env:NAME}` 플레이스홀더는 [환경 레지스트리](system/env.md)를 통해 `NAME`을 해석합니다 — 등록된 변수의 공개 이름 또는 엔트리 ID(예: `app.env:tls_cert`). 이는 원시 OS 환경 변수가 아닙니다. OS 값은 해당 이름으로 `env.storage.os` 기반 변수가 등록된 경우에만 접근할 수 있습니다. 기본값은 `${env:NAME|default}`로 지정할 수 있습니다.
+
+<note>
+레거시 <code>cert_env</code> / <code>key_env</code> 보조 필드도 동일하게 환경 레지스트리를 통해 해석되지만 <b>더 이상 권장되지 않습니다</b> — 위에 제시된 <code>${env:NAME}</code> 플레이스홀더를 사용하세요.
+</note>
 
 | 필드 | 설명 |
 |------|------|
 | `mode` | `""` (끔), `auto`, 또는 `manual` |
-| `cert` / `key` | PEM 콘텐츠 (일반적으로 `file://`로 로드) |
-| `cert_env` / `key_env` | [env 레지스트리](system/env.md)를 통해 해석되는 환경 변수 이름 |
+| `cert` / `key` | PEM 콘텐츠 — 인라인, `file://` 참조 또는 `${env:NAME}` 플레이스홀더 |
 
 ### Mutual TLS (mTLS)
 
@@ -202,17 +211,18 @@ cert와 key를 인라인/파일 로드 또는 환경 변수를 통해 제공합�
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca`는 `cert`/`key`와 동일한 세 가지 형식(인라인 PEM, `file://`, `${env:NAME}`)을 받습니다. 레거시 `client_ca_env` 보조 필드도 마찬가지로 `client_ca: ${env:NAME}` 사용을 권장하며 더 이상 권장되지 않습니다.
+
 | 필드 | 설명 |
 |------|------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | 신뢰할 수 있는 클라이언트 CA의 PEM 번들 |
-| `client_ca_env` | CA 번들을 보유하는 환경 변수 (`client_ca`와 상호 배타적) |
+| `client_ca` | 신뢰할 수 있는 클라이언트 CA의 PEM 번들 (인라인, `file://` 또는 `${env:NAME}`) |
 
 `verify_if_given`과 `require_and_verify`는 CA가 필요합니다. `request`와 `require_any`는 CA 검증 없이 모든 클라이언트 인증서를 수락합니다.
 

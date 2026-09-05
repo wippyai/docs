@@ -365,12 +365,14 @@ flow.create()
 
 ```lua
 {
-    input = <workflow_input>,
+    input = <workflow_input>,  -- 첫 번째 반복(iteration == 1)에서만 제공되며 이후에는 nil
     state = <accumulated_state>,
     last_result = <previous_iteration_output>,
     iteration = <current_iteration_number>
 }
 ```
+
+`input`은 첫 번째 반복에서만 워크플로우 입력을 담고 그 이후에는 `nil`입니다. 반복 간에 필요한 값은 `state`에 저장하세요.
 
 함수는 계속을 제어합니다:
 
@@ -386,8 +388,9 @@ function my_cycle(cycle_context)
     end
 
     -- spawn child workflow for this iteration
+    -- 첫 번째 반복 이후에는 cycle_context.input이 nil이므로 task를 state에서 읽음
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()

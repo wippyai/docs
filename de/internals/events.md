@@ -75,6 +75,12 @@ Vier Action-Typen fließen durch die Queue:
 
 Subscribe und Unsubscribe blockieren bis der Dispatcher bestätigt. Send ist Fire-and-Forget.
 
+`Subscribe` schlägt sofort fehl, wenn der Subscription-Kontext bereits abgebrochen ist, und erneut im Dispatcher, wenn er vor der Ownership-Entscheidung abgebrochen wird — der Bus übernimmt niemals einen Channel, den er nicht installiert hat.
+
+`Unsubscribe` ist eine Ownership-Barriere, kein Best-Effort-Hinweis. Es kehrt erst zurück, nachdem der Dispatcher bestätigt hat, sodass der Aufrufer den Channel freigeben kann in dem Wissen, dass der Bus keine laufende Send-Referenz mehr hält. Trifft es nach `Stop` ein, wartet die Bestätigung, bis der Dispatcher den bereits gedrainten Batch vollständig zugestellt hat.
+
+`Stop` ist ebenfalls terminal: Ein zweites nebenläufiges `Stop` kehrt nicht vorzeitig über das bereits gesetzte closed-Flag zurück, sondern wartet, bis der Dispatcher gedraint und beendet ist.
+
 ## Queue-Swapping
 
 Der Dispatcher verwendet Slice-Swapping um Allokationen im Steady-State zu vermeiden:
@@ -178,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -226,21 +232,24 @@ defer router.Stop()
 
 Jeder Handler implementiert `Pattern()` und `Handle()`. Der Router erstellt einen Subscriber für jeden und schließt alle bei Stop.
 
-### Awaiter
+### AwaitService
 
-Synchrones Warten auf ein spezifisches Event:
+Request-Response über Pub/Sub. Er hält eine einzige Subscription pro `(system, kind)`-Paar und leitet Events anhand von `Path` an die Waiter weiter:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // blockiert bis Match oder Timeout
+result := waiter.Wait()  // liefert AwaitResult{Event, Accepted, Error}
 ```
 
-Das Vorbereiten-dann-Warten-Muster vermeidet Race-Conditions: Erst abonnieren, bevor das Ereignis ausgelöst wird, das die Antwort erzeugt.
+`Prepare` registriert den Waiter, bevor das auslösende Event gesendet wird, und vermeidet so die Race-Condition, bei der die Antwort eintrifft, bevor das Warten registriert ist. `Wait` blockiert, bis ein passendes `Path`-Event eintrifft oder der Timeout abläuft (Standard `DefaultAwaitTimeout`, 30s, wenn nicht positiv). `Accepted` ist true, wenn die Event-Kind `accept`, `*.accept` oder `*.accepted` ist; andernfalls gilt die Kind als Ablehnung und ein `error` in `Data` erscheint als `Error`. Die Komfortfunktion `Await(ctx, system, kind, path, timeout)` kombiniert Prepare und Wait. Die Boot-Infrastruktur registriert einen AwaitService im Kontext (`event.GetAwaitService`).
 
 ## Shutdown
 

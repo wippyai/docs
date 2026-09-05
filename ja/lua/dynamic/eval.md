@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -101,6 +102,35 @@ local result, err = runner.run({
 | `context` | table | `ctx`として利用可能な値 |
 | `allow_classes` | string[] | 追加のモジュールクラス |
 | `custom_modules` | table | モジュールとしてのカスタムテーブル |
+| `limits` | table | この実行に対する実行制限 |
+
+### ステップ制限
+
+`limits.max_steps`は1回の`runner.run`が実行できる長さを制限します:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+1ステップはevalスケジューラの1ターンです。プログラムはyieldするか終了するまで進み、resumeごとに1ステップを消費します。yield間の純粋な計算はどれだけ長く実行されても1ステップとして数えられるため、この制限はCPU時間ではなくスケジューリングのターン数を制限します。
+
+カウントが制限を超えると実行は停止し、`eval exceeded maximum step limit`とともに`errors.INTERNAL`を返します。
+
+`max_steps = 0`は無制限を意味します。`limits`を省略するとホストのデフォルトを継承します:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # limits.max_steps を持たない実行のデフォルト予算
+                      # 0 = 無制限。負の値は起動に失敗します
+```
+
+`limits`は`runner.run`にのみ適用されます。`runner.compile`は制限を受け付けません。`limits`は`max_steps`のみを含むテーブルでなければならず、`max_steps`は非負の整数でなければなりません。それ以外はプログラムの実行前に`errors.INVALID`を返します。
 
 ### モジュールアクセス
 
@@ -125,6 +155,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -176,7 +207,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })
@@ -249,8 +280,8 @@ runner.run({
 # .wippy.yaml
 lua:
   eval:
-    cache_size: 256   # entries; 0 or less disables caching (default: 256)
-    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+    cache_size: 256   # エントリ数。0以下でキャッシュ無効（デフォルト: 256）
+    cache_ttl: 0      # 有効期限。0 = 無期限（デフォルト: 0）
 ```
 
 ## エラー処理

@@ -121,7 +121,7 @@ otel:
   # Tracing de chamadas de função
   interceptor:
     enabled: true
-    order: 0                   # Ordem de execução do interceptador
+    order: 100                 # Ordem de execução do interceptador
 ```
 
 ### Workflows Temporal

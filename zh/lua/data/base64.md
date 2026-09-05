@@ -1,6 +1,6 @@
 ---
 title: "Base64 编码"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "将二进制数据编码为 base64 字符串，并将 base64 解码回二进制。使用符合 RFC 4648 的标准 base64 编码。"
 ---
 
 # Base64 编码

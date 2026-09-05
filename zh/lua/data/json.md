@@ -1,6 +1,6 @@
 ---
 title: "JSON 编码"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "将 Lua 表编码为 JSON，并将 JSON 字符串解码为 Lua 值。包含 JSON Schema 验证功能，用于数据校验和 API 契约验证。"
 ---
 
 # JSON 编码

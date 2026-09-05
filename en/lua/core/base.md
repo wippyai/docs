@@ -1,6 +1,6 @@
 ---
 title: "Standard Lua Libraries"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Core Lua libraries automatically available in all Wippy processes. No require() needed."
 ---
 
 # Standard Lua Libraries

@@ -1,6 +1,6 @@
 ---
 title: "Вызов функций"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Основной способ вызова других функций в Wippy. Выполнение зарегистрированных функций синхронно или асинхронно между процессами с полной поддержкой…"
 ---
 
 # Вызов функций
@@ -110,7 +110,7 @@ local actor = security.actor()  -- Получить актора текущег�
 -- Вызов админской функции с учётными данными пользователя
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

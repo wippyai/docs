@@ -1,6 +1,6 @@
 ---
 title: "Работа со временем (os)"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Стандартные функции Lua для работы с датой и временем. Позволяют получать текущее время, форматировать даты и выполнять вычисления с временными…"
 ---
 
 # Работа со временем (os)

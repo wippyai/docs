@@ -75,6 +75,12 @@ Quatro tipos de ação fluem pela fila:
 
 Subscribe e Unsubscribe bloqueiam até o dispatcher confirmar. Send é fire-and-forget.
 
+`Subscribe` falha imediatamente quando o contexto da inscrição já está cancelado, e novamente no dispatcher se for cancelado antes da decisão de posse ser tomada — o bus nunca assume um canal que não instalou.
+
+`Unsubscribe` é uma barreira de posse, não uma dica de melhor esforço. Ele retorna apenas depois que o dispatcher confirma, então o chamador pode liberar o canal sabendo que o bus não mantém nenhuma referência de envio em andamento. Quando chega depois de `Stop`, a confirmação aguarda o dispatcher terminar de entregar o lote que já havia drenado.
+
+`Stop` é igualmente terminal: um segundo `Stop` concorrente não retorna antecipadamente pela flag de já fechado, mas aguarda o dispatcher drenar e sair.
+
 ## Troca de Fila
 
 O dispatcher usa troca de slices para evitar alocações em estado estável:
@@ -178,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -226,21 +232,24 @@ defer router.Stop()
 
 Cada handler implementa `Pattern()` e `Handle()`. O router cria um Subscriber para cada e fecha todos em Stop.
 
-### Awaiter
+### AwaitService
 
-Espera síncrona por um evento específico:
+Requisição-resposta sobre pub/sub. Mantém uma única inscrição por par `(system, kind)` e roteia eventos para os waiters por `Path`:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // bloqueia até match ou timeout
+result := waiter.Wait()  // retorna AwaitResult{Event, Accepted, Error}
 ```
 
-O padrão Prepare-then-Wait evita race conditions: inscrição antes de acionar o evento que produz a resposta.
+`Prepare` registra o waiter antes de o evento acionador ser enviado, evitando a race em que a resposta chega antes de a espera ser registrada. `Wait` bloqueia até que um evento com `Path` correspondente chegue ou o timeout (padrão `DefaultAwaitTimeout`, 30s, quando não positivo) expire. `Accepted` é true quando o kind do evento é `accept`, `*.accept` ou `*.accepted`; caso contrário o kind é tratado como rejeição e qualquer `error` em `Data` aparece como `Error`. A conveniência `Await(ctx, system, kind, path, timeout)` combina Prepare e Wait. A infraestrutura de boot registra um AwaitService no contexto (`event.GetAwaitService`).
 
 ## Shutdown
 

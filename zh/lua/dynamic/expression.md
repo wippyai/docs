@@ -1,6 +1,6 @@
 ---
 title: "表达式语言"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "使用 expr-lang 语法求值动态表达式。编译和执行安全表达式，用于过滤、验证和规则求值，无需完整的 Lua 执行。"
 ---
 
 # 表达式语言
@@ -10,16 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 使用 [expr-lang](https://expr-lang.org/) 语法求值动态表达式。编译和执行安全表达式，用于过滤、验证和规则求值，无需完整的 Lua 执行。
 
-## 配置
+## 缓存
 
-表达式缓存在启动时配置：
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # 启用表达式缓存
-    capacity: 5000        # 缓存容量
-```
+`expr.eval` 在内部维护一个已编译表达式的 LRU 缓存（默认容量 1000）。该缓存内置于模块中，无需配置。
 
 ## 加载
 
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- 数组函数
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

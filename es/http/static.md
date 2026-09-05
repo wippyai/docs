@@ -16,7 +16,6 @@ Sirva archivos estáticos desde cualquier filesystem usando `http.static`. Los m
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ Sirva archivos estáticos desde cualquier filesystem usando `http.static`. Los m
 | `meta.server` | ID de Registro | Servidor HTTP padre |
 | `path` | string | Ruta de montaje URL (debe comenzar con `/`) |
 | `fs` | ID de Registro | Entrada de filesystem desde donde servir |
-| `directory` | string | Subdirectorio dentro del filesystem |
 | `static_options.spa` | bool | Modo SPA - servir index para rutas no matcheadas |
 | `static_options.index` | string | Archivo index (requerido cuando spa=true) |
 | `static_options.cache` | string | Valor del header Cache-Control |
@@ -61,16 +59,20 @@ entries:
 
 La solicitud `/static/css/style.css` sirve `./public/css/style.css`.
 
-El campo `directory` selecciona un subdirectorio dentro del filesystem:
+Para servir un subdirectorio, apunte la referencia `fs` a una entrada de filesystem cuya raíz sea ese directorio—por ejemplo un `fs.directory` con `directory:` establecido al subdirectorio:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## Modo SPA
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

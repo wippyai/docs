@@ -1,6 +1,6 @@
 ---
 title: "Variables de Entorno"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Acceder a variables de entorno para valores de configuración, secretos y ajustes de tiempo de ejecución."
 ---
 
 # Variables de Entorno
@@ -109,7 +109,8 @@ El acceso a entorno esta sujeto a evaluacion de politica de seguridad.
 |--------|---------|-------------|
 | `env.get` | Nombre de variable | Leer variable de entorno |
 | `env.set` | Nombre de variable | Escribir variable de entorno |
-| `env.get_all` | `*` | Listar todas las variables |
+
+`get_all` no tiene una acción de seguridad dedicada: devuelve solo las variables para las que la acción `env.get` está permitida, filtrando cada nombre de variable a través de `env.get`.
 
 ### Verificar Acceso
 

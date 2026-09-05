@@ -98,22 +98,26 @@ Los módulos usan dos mecanismos de tipado separados pero complementarios.
 
 ### Definiciones de Tipos (Herramientas)
 
-El campo `Types` proporciona firmas de tipo para soporte en IDE y documentación:
+El campo `Types` proporciona firmas de tipo para soporte en IDE y documentación. Los tipos se construyen con los constructores fluidos del paquete `typ`:
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +126,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | Tipo | Descripción |
 |------|-------------|
-| `types.String` | Primitivo string |
-| `types.Number` | Valor numérico |
-| `types.Boolean` | Valor booleano |
-| `types.Any` | Cualquier valor Lua |
-| `types.LuaError` | Tipo error |
-| `types.Optional(t)` | Valor opcional de tipo t |
-| `types.InterfaceType` | Objeto con métodos |
-| `types.FunctionType` | Firma de función con parámetros/retornos |
-| `types.RecordType` | Tipo tipo struct con campos |
-| `types.TableType` | Tabla con tipos de clave/valor |
+| `typ.String` | Primitivo string |
+| `typ.Number` | Valor numérico |
+| `typ.Integer` | Valor entero |
+| `typ.Boolean` | Valor booleano |
+| `typ.Any` | Cualquier valor Lua |
+| `typ.Self` | Tipo receptor para métodos |
+| `typ.LuaError` | Tipo error |
+| `typ.NewOptional(t)` | Valor opcional de tipo t |
+| `typ.NewInterface(name, methods)` | Objeto con métodos |
+| `typ.Func()` | Constructor de firmas de función |
+| `typ.NewRecord()` | Constructor de tipos tipo struct (campos vía `.Field`/`.OptField`) |
+| `typ.NewArray(t)` | Array de elementos de tipo t |
+| `typ.NewMap(k, v)` | Mapa con tipos de clave/valor |
 
-Las firmas de función soportan parámetros variádicos:
+Los constructores de función encadenan `Param`, `OptParam`, `Variadic` y `Returns`:
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-Consulte el paquete `types` en go-lua para el sistema de tipos completo.
+Los records declaran campos con `Field` (obligatorio) y `OptField` (opcional):
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+Consulte el paquete `typ` en go-lua para el sistema de tipos completo.
 
 ### Bindings UserData (Runtime)
 
@@ -324,6 +341,14 @@ func newTestScheduler() *testScheduler {
     return ts
 }
 
+// Stop envuelve Scheduler.Stop, que requiere un context.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+}
+
+// OnStart satisface process.Lifecycle junto con OnComplete.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
+
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
     ch, ok := ts.pending[p.UniqID]
@@ -358,17 +383,19 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
 Cree procesos desde scripts Lua con los módulos que esté probando:
 
 ```go
-func bindMyModule(l *lua.LState) {
+func bindMyModule(l *lua.LState) error {
     tbl, _ := mymodule.Module.Build()
     l.SetGlobal(mymodule.Module.Name, tbl)
+    return nil
 }
 
 func newLuaProcess(script string) *engine.Process {
     proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
         engine.WithModuleBinder(bindMyModule),
     )
+    return proc
 }
 
 func TestMyModuleYields(t *testing.T) {

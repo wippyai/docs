@@ -1,6 +1,6 @@
 ---
 title: "Event Bus"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Publish and subscribe to events for observability — monitoring runtime and application activity and reacting to it."
 ---
 
 # Event Bus

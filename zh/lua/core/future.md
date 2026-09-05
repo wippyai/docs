@@ -1,6 +1,6 @@
 ---
 title: "Future"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "异步操作结果。Future 由 funcs.async() 和 contract 异步调用返回。"
 ---
 
 # Future

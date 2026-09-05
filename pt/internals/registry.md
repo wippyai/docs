@@ -13,14 +13,63 @@ Entradas são armazenadas como um slice ordenado com um índice de hash map para
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // Tipo da entrada
-    Meta attrs.Bag       // Metadados
-    Data payload.Payload // Conteúdo
+    ID       ID              // namespace:name
+    Kind     Kind            // Tipo da entrada
+    Meta     attrs.Bag       // Metadados do autor
+    Data     payload.Payload // Conteúdo
+    Registry EntryMetadata   // Proveniência de propriedade do registry
+}
+
+type EntryMetadata struct {
+    Owner string // Fonte de deployment que forneceu a entrada
+    Root  bool   // Declaração de dependência selecionada pelo deployment
 }
 ```
 
 IDs de entrada usam o pacote `unique` do Go para interning - IDs idênticos compartilham memória.
+
+`Registry` pertence ao registry, não ao autor da entrada. `Owner` é atribuído a partir da fonte de deployment; `Root` é definido a partir do campo de escrita `dependency_root` em uma entrada `ns.dependency`. As APIs comuns de entrada retornam apenas `ID`, `Kind`, `Meta` e `Data`; a proveniência é lida através da API de estado do snapshot.
+
+## Snapshot
+
+`Registry.Snapshot()` retorna uma visão atômica: a versão, as entradas naquela versão e os metadados de estado de propriedade do registry para essa mesma versão.
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+Ler versão, entradas e resolução como um único valor impede que um chamador combine entradas com uma resolução de outra versão. O grafo de módulos selecionado é armazenado uma vez por snapshot em vez de repetido em cada entrada.
+
+## Overlays
+
+`OverlayWriter` é uma capacidade opcional do registry para entradas locais ao processo:
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+Entradas de overlay são agrupadas sob uma string de owner lógico. Elas se juntam ao estado efetivo e passam pela mesma ordenação topológica e pelas mesmas transições de handler que as entradas duráveis, então serviços iniciam e param normalmente para elas, mas nunca produzem uma versão de histórico. Elas ficam vazias após um cold boot e devem ser reconciliadas pelo serviço de controle que as possui.
+
+As escritas são otimisticamente concorrentes: `GetOverlay` retorna a geração atual do owner, e `ApplyOverlay` só faz commit se essa geração ainda for a atual, caso contrário retorna um `Conflict` retentável. Cada aplicação bem-sucedida emite uma nova geração única no processo, e um tombstone é retido para owners que sofreram mutação, de modo que uma sequência ABA não possa ser confundida com um overlay inalterado.
+
+As regras de composição validadas em cada aplicação:
+
+- Uma entrada só pode ser criada se nenhuma entrada durável e nenhuma entrada de overlay detiver seu ID.
+- Apenas a identidade proprietária pode atualizar ou deletar suas entradas de overlay.
+- Entradas de overlay não podem carregar metadados de propriedade do registry, nem usar kinds reivindicados por diretivas do registry.
+- Um delete não pode remover uma entrada da qual uma entrada sobrevivente depende.
+- Arestas de dependência não podem cruzar fronteiras de owner, e entradas duráveis não podem depender de entradas de overlay.
 
 ## Cadeia de Versões
 
@@ -101,12 +150,24 @@ Entradas podem declarar dependências de outras entradas. O resolver extrai depe
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
 
 Dependências são extraídas dos campos Meta e Data da entrada, depois usadas para ordenação topológica durante transições de estado.
+
+### Política de Acesso a Dependências
+
+O acesso a dependências externas é um valor de contexto com escopo de requisição, não uma flag global:
+
+| Política | Efeito |
+|--------|--------|
+| `DependencyAccessUnspecified` | Os chamadores escolhem; o padrão do próprio chamador se aplica |
+| `DependencyAccessOnline` | Resolução externa e download de artefatos são permitidos |
+| `DependencyAccessVerifiedOffline` | Acesso externo é proibido; a resolução usa manifestos travados e artefatos presentes localmente |
+
+`LoadState()` assume verified-offline quando o contexto não especifica nada, então o boot reproduz um grafo armazenado sem alcançar a rede. Restaurar uma baseline de deployment muda o contexto para online porque precisa buscar os módulos que essa baseline nomeia. Sob verified-offline, um provedor de manifestos que serve apenas módulos travados substitui o provedor do hub, e um artefato ausente falha como evidência ausente em vez de disparar um download.
 
 ## Histórico de Versões
 

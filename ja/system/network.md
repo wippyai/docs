@@ -41,7 +41,7 @@ description: "オーバーレイネットワーク（SOCKS5 プロキシ、Tor�
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "オーバーレイネットワーク（SOCKS5 プロキシ、Tor�
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `hostname` | string | tsnet ノード名（ノードごとの状態ディレクトリで使用） |
-| `auth_key` | string | インライン tailnet 認証キー |
-| `auth_key_env` | string | 認証キーを保持する環境変数名（env レジストリで解決） |
+| `auth_key` | string | Tailnet 認証キー — インライン、または [env レジストリ](system/env.md)で解決される `${env:NAME}` |
 | `state_dir` | string | tsnet 状態ディレクトリのオーバーライド |
 | `control_url` | string | 代替調整サーバー |
 | `ephemeral` | bool | エフェメラル tailnet ノードとして登録 |
 
-`auth_key` または `auth_key_env` のいずれかが必要です。
+`auth_key` は必須です（直接指定するか `${env:NAME}` 経由で指定します）。レガシーの `auth_key_env` ディレクティブも同じ方法で解決されますが非推奨です。`auth_key: ${env:NAME}` を推奨します。
 
 ## I2P
 
@@ -128,6 +127,14 @@ network_service:
 | `state_dir` | `.wippy/net` | ドライバ状態用のディレクトリ。相対パスはブート設定ディレクトリを基準に解決されます。 |
 | `default_network` | — | オプションで独自のネットワークを設定しないすべてのタスクまたはプロセスに適用されるオーバーレイのレジストリ ID。 |
 
+## 生のダイヤル
+
+オーバーレイの選択は Lua のエッジに限られません。ランタイムのネットワークサービス経由のダイヤル — WASM の [`socket` ホスト](wasm/hosts.md#socket)と `wasi:sockets` ディスパッチャ — はフレームからオーバーレイを読み取り、それを経由してルーティングします。`with_options`、エントリの `meta.options.network`、`network_service.default_network` のいずれで設定されたものであっても同様です。
+
+このパスではプライベート IP のゲートの挙動が異なります。直接のダイヤルは対象を解決し、得られたすべてのアドレスを `socket.private_ip` に対してチェックします。オーバーレイが選択されている場合、チェックされるのは対象に含まれるリテラルの IP アドレスのみです。ホスト名は解決のためにオーバーレイへ渡されるため、ローカルのリゾルバは参照されず、それが返したはずの結果に対するチェックも行われません。
+
+オーバーレイが選択されているのにコンテキストがネットワークレジストリを持たない場合、ダイヤルは `network "<id>" selected without a network registry` で失敗します。
+
 ## オーバーレイの更新
 
 オーバーレイエントリはレジストリ更新時にホットスワップされます。オーバーレイの設定が変更されると、ドライバはまず置き換え用のサービスを構築し、それが正常に作成された場合にのみ切り替えます。新しい設定が失敗した場合は、既存のオーバーレイがそのまま稼働を続けます。同時に呼び出した側は、古いサービスか新しいサービスのいずれかを見ることになり、間隙が生じることはありません。
@@ -138,11 +145,18 @@ network_service:
 |--------|----------|-------------|
 | `network.select` | ネットワーク Registry ID | `funcs.call`、`process.spawn`、`http_client` での明示的なオーバーレイ選択 |
 | `network.bind` | ネットワーク Registry ID | `http.service` リスナーをオーバーレイ経由でバインド（`network:` フィールド） |
+| `socket.connect` | `host:port` | ネットワークサービス経由のあらゆるアウトバウンドダイヤル |
+| `socket.listen` | `host:port` | ネットワークサービス経由での TCP リスナーまたは UDP ソケットのバインド |
+| `socket.resolve` | ホスト名 | ネットワークサービス経由の DNS 解決 |
+| `socket.private_ip` | IP アドレス | ループバック、プライベート、リンクローカル、未指定のアドレスへの到達 |
 
 スコープで `network.select` を拒否して、その中のコードが明示的にオーバーレイを選択するのを停止します。継承されたオーバーレイは影響を受けません — 呼び出し元で承認済みです。`network.bind` は、`network:` オーバーレイを持つサーバーがリスナーを開始するときにチェックされます。
+
+`socket.*` 権限はネットワークサービス自身がチェックします。`socket.connect`、`socket.listen`、`socket.resolve` はオーバーレイによるルーティングの前にチェックされるため、クリアネットのトラフィックにもオーバーレイのトラフィックにも等しく適用されます。`socket.private_ip` は、[生のダイヤル](system/network.md#raw-dials)で述べたとおり、オーバーレイが選択されるとリテラルのアドレスのみに絞られます。
 
 ## 関連項目
 
 - [セキュリティ](system/security.md) - ポリシーとアクター
 - [HTTP サービス](http/server.md) - サーバーバインディング
 - [HTTP クライアント](lua/http/client.md) - 呼び出しごとのオーバーレイ選択
+- [ホスト関数](wasm/hosts.md) - WASM ソケットインポート

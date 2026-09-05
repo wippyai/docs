@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-未指定 `max_size` 时，默认弹性池最大值为 100 个工作者。
+100 个 worker 的默认值仅适用于隐式选择的池（未设置 `type` 时）。当显式设置 `type: lazy` 或 `type: adaptive` 而未指定 `max_size` 时，默认最大值为 16 个 worker。
 
 ### Worker 类与核心亲和性
 
@@ -201,14 +200,26 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 执行限制
 
-为函数设置最大执行时间：
+`limits` 块限定函数的执行时间、其热 worker 的内存，以及它可以打开的 socket：
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-超过限制时，执行将被取消并返回错误。
+| 字段 | 默认值 | 描述 |
+|------|--------|------|
+| `max_execution_ms` | 无限制 | 单次调用的挂钟时间预算。超过时执行将被取消并返回错误。 |
+| `max_retained_memory_bytes` | `67108864`（64 MiB） | 调用后回收的触发阈值。线性内存超过该值的热 worker 会在调用后退役，而不是被复用。显式设为 `0` 将禁用保留内存回收。 |
+| `retained_memory_check_interval` | 使用内置限制时为 `16`，显式设置限制时为每次调用 | 两次调用后内存检查之间间隔的调用次数。 |
+| `max_open_sockets` | `16` | `socket` 宿主中每个实例并发打开的连接数。 |
+| `socket_timeout_ms` | `30000` | `socket` 拨号以及每次发送/接收的截止时间。 |
+
+负值会在启动时被拒绝。
 
 ## WASI 配置
 

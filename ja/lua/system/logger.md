@@ -1,6 +1,6 @@
 ---
 title: "ロギング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "debug、info、warn、errorレベル付きの構造化ロギングを提供します。"
 ---
 
 # ロギング

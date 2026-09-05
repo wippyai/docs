@@ -1,6 +1,6 @@
 ---
 title: "에러"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "분류와 재시도 메타데이터가 있는 구조화된 에러 처리. 전역 errors 테이블은 require 없이 사용 가능합니다."
 ---
 
 # 에러

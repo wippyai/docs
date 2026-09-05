@@ -1,6 +1,6 @@
 ---
 title: "Verschlüsselung & Signierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Kryptografische Operationen einschließlich Verschlüsselung, HMAC, JWT und Schlüsselableitung. Angepasst für Workflows."
 ---
 
 # Verschlüsselung & Signierung

@@ -1,6 +1,6 @@
 ---
 title: "Обработка текста"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Модуль для работы с регулярными выражениями, сравнения текстов и разбиения документов на части."
 ---
 
 # Обработка текста

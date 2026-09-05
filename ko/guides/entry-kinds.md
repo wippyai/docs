@@ -69,7 +69,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # 엔드포인트
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## 데이터베이스
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite 데이터베이스 |
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |
+| `db.cdc.postgres` | Postgres 변경 데이터 캡처 소스 ([CDC](system/cdc.md) 참조) |
+| `db.cdc.sqlite` | SQLite 변경 데이터 캡처 소스 ([CDC](system/cdc.md) 참조) |
 
 ### SQLite
 
@@ -150,7 +153,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-`*_env` 접미사 변형, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
+`${env:NAME}` 시크릿 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
 
 **Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- 메시지 발행
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- 컨슈머 핸들러에서 현재 메시지 접근
-local msg = queue.message()
-local data = msg:body_json()
+-- 컨슈머 핸들러에서: 메시지 본문이 핸들러의 인자로 전달됨
+local function main(data)
+    -- 현재 메시지를 통해 전달 메타데이터에 접근
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-컨슈머의 <code>func</code>는 각 메시지마다 호출됩니다. 핸들러 내에서 <code>queue.message()</code>로 현재 메시지에 접근합니다.
+컨슈머의 <code>func</code>는 메시지마다 한 번씩 메시지 본문을 인자로 받아 호출됩니다. 핸들러 내에서 <code>queue.message()</code>를 사용하면 해당 전달의 <code>id()</code>, <code>header()</code>/<code>headers()</code>, <code>ack()</code>/<code>nack()</code>에 접근할 수 있습니다.
 </note>
 
 ## 프로세스 관리
@@ -262,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | 프로세스 실행 호스트 |
 | `process.service` | 슈퍼바이즈드 프로세스 (process.lua 래핑) |
 | `terminal.host` | 터미널/CLI 호스트 |
+| `pg.scope` | 프로세스 그룹 스코프 ([프로세스 그룹](system/process-groups.md) 참조) |
 
 ```yaml
 # 프로세스 호스트 (프로세스가 실행되는 곳)
@@ -303,6 +312,39 @@ local data = msg:body_json()
 
 라이브 `process.host` 엔트리를 업데이트하면 `host.workers`가 제자리에서 재조정됩니다 — 실행 중인 프로세스, PID, 큐는 보존됩니다. `host.queue_size`, `host.local_queue_size`, `lifecycle`은 생성 시 고정됩니다: 이를 변경하는 라이브 업데이트는 거부되며, 워커가 어피니티로 관리되는 호스트에서 워커 수를 조정하는 것도 마찬가지로 거부됩니다.
 
+### 프로세스 보안
+
+`process.lua`와 `process.lua.bc` 엔트리는 최상위 `security:` 블록을 받습니다. 이는 엔트리의 일부이므로 `process.host`와 `terminal.host` 양쪽에서 해당 프로세스의 모든 스폰에 적용됩니다:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| 필드 | 설명 |
+|-------|-------------|
+| `actor.id` | 프로세스가 실행되는 액터 아이덴티티; 상속된 액터를 대체 |
+| `actor.meta` | 정책이 평가하는 액터 속성 |
+| `policies` | 스코프에 병합되는 정책의 레지스트리 ID (`namespace:name`) |
+| `groups` | 정책이 스코프에 병합되는 정책 그룹의 레지스트리 ID |
+
+해석은 프로세스가 시작될 때 일어나며 원자적입니다: 나열된 정책이나 그룹 중 하나라도 해석할 수 없으면 스폰이 실패하고 부분적인 컨텍스트는 설치되지 않습니다. `actor`를 생략하면 스폰한 쪽의 액터를 상속하고, `policies`와 `groups`를 모두 생략하면 스폰한 쪽의 스코프를 상속합니다. `function.lua`, `function.lua.bc`, `process.lua`, `process.lua.bc` 모두 이 블록을 받습니다.
+
+커맨드 엔트리는 추가로 `meta.command.security`를 선언할 수 있으며, 이는 엔트리가 CLI 커맨드로 실행될 때만 적용됩니다 — [커맨드 보안](guides/cli.md#command-security)을 참조하세요. 일반 스폰에는 영향을 주지 않습니다.
+
+[보안](system/security.md)을 참조하세요.
+
 ## Temporal (워크플로우)
 
 | Kind | 설명 |
@@ -339,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 초 단위, 기본값 3600
 ```
 
 <tip>
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+정책 그룹은 정책 자체에 의해 형성됩니다: 정책이 `groups:` 아래에 자신이 속한 그룹 ID를 나열하고, 그룹은 그 그룹을 지명한 정책들의 집합입니다. 별도의 그룹 엔트리 kind는 없습니다. 그룹 ID는 레지스트리 ID입니다 — 이름만 쓰면 선언한 정책의 네임스페이스에서 해석되므로, 위의 `operators`는 네임스페이스 `app.security`에서 선언되면 `app.security:operators`가 됩니다. 엔트리는 전체 `namespace:name`으로 그룹을 참조합니다.
 
 **Lua API:** [보안 모듈](lua/security/security.md) 참조
 
@@ -622,11 +668,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssembly 프로세스 |
 
 ```yaml
+# WAT 텍스트는 인라인 소스입니다
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # 또는 wasi-http
+
+# 바이너리 WASM은 파일시스템 엔트리에서 로드되고 해시로 검증됩니다
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # 또는 wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm`과 `process.wasm`은 `fs`, `path`, `hash`를 받습니다 — 바이너리 엔트리에는 `source` 필드가 없으며, `source`는 `function.wat`에만 해당합니다. `hash`는 필수이며 `sha256:<hex>` 형식이어야 합니다; 바이트가 일치하지 않으면 모듈이 거부됩니다.
 
 [WASM 개요](wasm/overview.md) 참조.
 

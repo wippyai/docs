@@ -168,26 +168,26 @@ Configure el pool de ejecución para funciones:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # por defecto
-    size: 4           # workers iniciales
-    max_size: 16      # tope para pools elásticos
+    type: adaptive    # explícito; omítalo para usar la auto-selección (lazy)
+    max_size: 16      # tope para el crecimiento elástico
 ```
 
 | Campo | Pools | Descripción |
 |-------|-------|-------------|
 | `type` | todos | Implementación del scheduler (ver tabla abajo) |
-| `size` | static, lazy, adaptive | Cantidad inicial de workers |
-| `workers` | engine v2 | Cantidad de hilos worker |
-| `buffer` | static, adaptive | Capacidad de la cola de tareas (por defecto `workers * 64`) |
-| `warm_start` | adaptive | Precompilar entradas al inicio |
-| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto 16) |
+| `workers` | static | Cantidad de hilos worker (recurre a `size`, y luego a 8) |
+| `size` | static | Cantidad de workers cuando `workers` no está definido; además orienta la auto-selección hacia un pool static |
+| `buffer` | static | Capacidad de la cola de tareas (por defecto: `workers * 64`) |
+| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto: 16) |
 
 | Tipo | Comportamiento |
 |------|----------------|
 | `inline` | Ejecución síncrona en la goroutine del llamador. Mínima latencia, sin aislamiento entre llamadas. |
 | `lazy` | Cero workers en reposo, se crean bajo demanda y se eliminan cuando están inactivos. |
 | `static` | Pool de tamaño fijo basado en canales. Predecible bajo carga estable. |
-| `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. Predeterminado. |
+| `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. |
+
+Cuando se omite `type`, el pool se auto-selecciona a partir de los demás campos: un pool lazy por defecto, o un pool static si `workers` está definido.
 
 ## Metadatos
 
@@ -211,7 +211,7 @@ Los metadatos son buscables vía el registro:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## Vea También

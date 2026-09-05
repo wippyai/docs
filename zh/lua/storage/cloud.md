@@ -1,6 +1,6 @@
 ---
 title: "云存储"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "访问 S3 兼容的对象存储。上传、下载、列出和管理对象，为下载、上传和分段 part 生成预签名 URL，并以随机访问方式读取对象。"
 ---
 
 # 云存储
@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-访问 S3 兼容的对象存储。支持上传、下载、列出和管理文件，以及预签名 URL。
+访问 S3 兼容的对象存储。上传、下载、列出和管理对象，为下载、上传和分段 part 生成预签名 URL，并以随机访问方式读取对象。
 
 存储配置请参阅 [云存储](system/cloudstorage.md)。
 
@@ -249,6 +249,8 @@ storage:release()
 
 **返回:** `boolean, error`
 
+每个键都会被尝试删除。删除不存在的键不算错误。当提供方报告了逐键失败时，该调用返回单个错误，其中列出每个失败的键及其提供方错误码。
+
 ## 下载 URL
 
 创建允许无凭证下载对象的临时 URL。适用于与外部用户共享文件或通过应用程序提供内容。
@@ -315,6 +317,143 @@ return {upload_url = url}
 
 **返回:** `string, error`
 
+## 分段上传
+
+单个预签名 PUT 的对象上限是 5 GiB。预签名分段上传把更大的对象拆分成多个 part，由客户端直接上传，然后在服务端组装。分段上传是提供方的能力：S3 实现了它，不支持的提供方返回 `errors.UNAVAILABLE`。
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local mp, err = storage:create_multipart_upload("backups/huge.zip", {
+    content_type = "application/zip",
+    metadata = { source = "uploader" },
+})
+if err then return nil, err end
+
+local urls, err = storage:presigned_part_urls("backups/huge.zip", mp.upload_id, {
+    count = 3,
+    expiration = 900,
+})
+if err then
+    storage:abort_multipart_upload("backups/huge.zip", mp.upload_id)
+    return nil, err
+end
+
+-- 客户端对每个 url 执行 PUT，并从响应头部取回 ETag。
+local done, err = storage:complete_multipart_upload("backups/huge.zip", mp.upload_id, {
+    { part_number = 1, etag = etag1 },
+    { part_number = 2, etag = etag2 },
+    { part_number = 3, etag = etag3 },
+})
+
+storage:release()
+```
+
+### create_multipart_upload
+
+为某个键启动分段上传。
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `key` | string | 最终对象的对象键 |
+| `options` | table | `content_type`、`cache_control`、`content_disposition`、`content_encoding`、`metadata`、`headers`——语义与 `upload_object` 相同 |
+
+**返回:** `table, error` — 该表携带 `upload_id`，用于标识此次上传的后续每次 part、complete 和 abort 调用。
+
+条件写入（`if_match`、`if_none_match`、`only_if_absent`）不属于分段协议，这里不接受这些参数。
+
+### presigned_part_urls
+
+为进行中的上传的各个 part 生成预签名 PUT URL。每个 URL 通过普通 HTTP PUT 上传；上传方必须保留每个 part 响应的 `ETag` 头部，供 `complete_multipart_upload` 使用。
+
+| 参数 | 类型 | 默认值 | 描述 |
+|-----------|------|--------|-------------|
+| `key` | string | 必填 | 对象键 |
+| `upload_id` | string | 必填 | 来自 `create_multipart_upload` |
+| `options.parts` | int[] | - | 显式指定的 part 编号（1-10000，不可重复） |
+| `options.count` | int | - | 为 `1..count` 的 part 生成预签名 URL |
+| `options.headers` | table | - | 每个 part 请求所需的头部；它们会被签名，上传方也必须发送 |
+| `options.expiration` | int | 3600 | URL 过期前的秒数 |
+
+`parts` 和 `count` 必须且只能提供其中之一，且单次调用最多预签名 1000 个 URL——超大对象请分页预签名。
+
+**返回:** `table, error` — 由 `{ part_number, url }` 组成的数组。
+
+除最后一个之外的每个 part 至少为 5 MiB；提供方会在完成时强制该限制。
+
+### complete_multipart_upload
+
+用已上传的 part 组装出最终对象。part 可以按任意顺序上报，完成前会按 part 编号排序。
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `key` | string | 对象键 |
+| `upload_id` | string | 来自 `create_multipart_upload` |
+| `parts` | table | 由 `{ part_number = int, etag = string }` 组成的数组 |
+
+**返回:** `table, error` — `etag`，以及提供方报告时的 `version_id` 和 `location`。未知的 upload ID 返回 `errors.NOT_FOUND`。
+
+### abort_multipart_upload
+
+丢弃进行中的上传并释放其已存储的 part。
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `key` | string | 对象键 |
+| `upload_id` | string | 来自 `create_multipart_upload` |
+
+**返回:** `boolean, error`
+
+从未完成的上传会一直保留其 part 并持续计费，直到被中止。请在每条失败路径上执行中止，并配置存储桶生命周期规则作为兜底——参见 [Cloud Storage](system/cloudstorage.md#multipart-uploads)。
+
+## 范围读取器
+
+`open_reader` 使用范围 GET 打开对象的随机访问——不做本地暂存，也不整体下载。它的主要使用方是 [`archive.open`](lua/data/archive.md)，后者以有界内存直接从对象存储读取数 GB 的归档文件。
+
+```lua
+local archive = require("archive")
+local storage = cloudstorage.get("app.infra:files")
+
+local reader, err = storage:open_reader("uploads/huge.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4,
+})
+if err then return nil, err end
+
+local r = assert(archive.open(reader))
+for e in r:entries() do
+    print(e.name, e.size)
+end
+r:close()
+reader:close()
+
+storage:release()
+```
+
+| 参数 | 类型 | 默认值 | 描述 |
+|-----------|------|--------|-------------|
+| `key` | string | 必填 | 对象键 |
+| `options.block_size` | int | 8388608 | 范围 GET 的单位字节数（64 KiB 到 128 MiB） |
+| `options.cache_blocks` | int | 4 | 驻留的 LRU 块数（1 到 64） |
+
+`block_size * cache_blocks` 不得超过 256 MiB。对象不存在时返回 `errors.NOT_FOUND`。
+
+**返回:** `Reader, error`
+
+读取器打开时会固定对象的 ETag，并在每次范围读取时以 `If-Match` 发送，因此读取过程中被覆盖的对象会以 `errors.CONFLICT` 失败，而不会提供混合了两个对象版本的数据。无法提供 ETag 的提供方返回 `errors.UNAVAILABLE`；读取器绝不提供未固定版本的对象。
+
+缓存未命中的读取会在调用任务中执行阻塞式网络 IO，并使并发读取串行化，因此按条目顺序访问——即归档的使用模式——才是预期的用法。
+
+### Reader 方法
+
+| 方法 | 返回 | 描述 |
+|--------|---------|-------------|
+| `size()` | `integer` | 对象字节大小，取自打开时的 stat |
+| `key()` | `string` | 读取器所读取的对象键 |
+| `close()` | `boolean, error` | 释放块缓存；幂等 |
+
+如果没有显式关闭，读取器会在任务作用域结束时自动关闭。
+
 ## 存储方法
 
 | 方法 | 返回 | 描述 |
@@ -326,6 +465,11 @@ return {upload_url = url}
 | `delete_objects(keys)` | `boolean, error` | 删除多个对象 |
 | `presigned_get_url(key, opts?)` | `string, error` | 生成临时下载 URL |
 | `presigned_put_url(key, opts?)` | `string, error` | 生成临时上传 URL |
+| `create_multipart_upload(key, opts?)` | `table, error` | 启动预签名分段上传 |
+| `presigned_part_urls(key, upload_id, opts)` | `table, error` | 为上传的 part 生成预签名 PUT URL |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | 用已上传的 part 组装对象 |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 丢弃进行中的分段上传 |
+| `open_reader(key, opts?)` | `Reader, error` | 打开范围随机访问读取器 |
 | `release()` | `boolean` | 释放存储资源 |
 
 ## 权限
@@ -348,7 +492,11 @@ return {upload_url = url}
 | 内容为 nil | `errors.INVALID` | 否 |
 | 写入器无效 | `errors.INVALID` | 否 |
 | 对象未找到 | `errors.NOT_FOUND` | 否 |
+| 未知的 upload ID | `errors.NOT_FOUND` | 否 |
 | 条件前置条件失败 | `errors.CONFLICT` | 否 |
+| 范围读取期间对象被覆盖 | `errors.CONFLICT` | 否 |
+| 提供方不支持分段上传 | `errors.UNAVAILABLE` | 否 |
+| 提供方未为 `open_reader` 提供 ETag | `errors.UNAVAILABLE` | 否 |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
 | 操作失败 | `errors.INTERNAL` | 否 |
 

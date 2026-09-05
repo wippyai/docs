@@ -48,13 +48,20 @@ wippy install
 | `wippy add` | 依存関係を追加 |
 | `wippy install` | 依存関係をインストール |
 | `wippy update` | 依存関係を更新 |
+| `wippy artifacts` | ビルド時のファイルシステムアーティファクトを実体化 |
 | `wippy pack` | スナップショットを作成 |
 | `wippy publish` | ハブに公開 |
 | `wippy search` | モジュールを検索 |
+| `wippy readme` | ハブからモジュールの README を取得 |
+| `wippy registry` | ロード済みのレジストリエントリを調べる |
 | `wippy auth` | 認証を管理 |
 | `wippy version` | バージョン情報を表示 |
 
 完全なドキュメントは[CLIリファレンス](guides/cli.md)を参照してください。
+
+## トラブルシューティング
+
+インストール後に `wippy version` が見つからない場合は、シェルを開き直すか、インストールディレクトリが `PATH` に含まれているか確認してください。
 
 ## 次のステップ
 

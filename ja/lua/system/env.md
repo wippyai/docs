@@ -1,6 +1,6 @@
 ---
 title: "環境変数"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "設定値、シークレット、ランタイム設定のための環境変数へのアクセス。"
 ---
 
 # 環境変数
@@ -109,7 +109,8 @@ end
 |--------|----------|-------------|
 | `env.get` | 変数名 | 環境変数を読み取り |
 | `env.set` | 変数名 | 環境変数を書き込み |
-| `env.get_all` | `*` | すべての変数を一覧 |
+
+`get_all` に専用のセキュリティアクションはありません。各変数名を `env.get` でフィルタリングし、`env.get` アクションが許可されている変数のみを返します。
 
 ### アクセス確認
 

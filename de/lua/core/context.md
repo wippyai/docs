@@ -1,6 +1,6 @@
 ---
 title: "Request-Kontext"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über Funcs oder Process gesetzt."
 ---
 
 # Request-Kontext

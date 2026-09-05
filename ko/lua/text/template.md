@@ -1,6 +1,6 @@
 ---
 title: "템플릿 엔진"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Jet 템플릿 엔진을 사용하여 동적 콘텐츠를 렌더링합니다. 템플릿 상속과 포함을 사용하여 HTML 페이지, 이메일, 문서를 빌드합니다."
 ---
 
 # 템플릿 엔진

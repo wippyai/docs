@@ -1,6 +1,6 @@
 ---
 title: "Umgebungsvariablen"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen."
 ---
 
 # Umgebungsvariablen
@@ -109,7 +109,8 @@ Umgebungszugriff unterliegt der Sicherheitsrichtlinienauswertung.
 |--------|----------|-------------|
 | `env.get` | Variablenname | Umgebungsvariable lesen |
 | `env.set` | Variablenname | Umgebungsvariable schreiben |
-| `env.get_all` | `*` | Alle Variablen auflisten |
+
+`get_all` hat keine eigene Sicherheitsaktion: Es gibt nur die Variablen zurück, für die die Aktion `env.get` erlaubt ist, und filtert jeden Variablennamen durch `env.get`.
 
 ### Zugriff prüfen
 

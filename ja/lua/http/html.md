@@ -1,6 +1,6 @@
 ---
 title: "HTMLサニタイズ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "XSS攻撃を防ぐために信頼されていないHTMLをサニタイズ。bluemondayに基づく。"
 ---
 
 # HTMLサニタイズ

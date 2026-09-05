@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "HTTPリクエストを処理しレスポンスを構築。リクエストデータ、ルートパラメータ、ヘッダー、ボディ内容にアクセス。ステータスコード、ヘッダー、ストリーミングサポート付きでレスポンスを構築。"
 ---
 
 # HTTP
@@ -121,6 +121,23 @@ end
 local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
+
+ルックアップは大文字小文字を区別しません。`req:header("content-type")`と`req:header("Content-Type")`は同じ値を返します。複数回送信されたヘッダーは、値が`", "`で連結されて返されます。存在しないヘッダーは`nil`を返します。
+
+### headers
+
+リクエストのすべてのヘッダーを取得します。
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**戻り値:** `table, error`
+
+キーはクライアントが送信した表記に関係なく、正規化されたヘッダー名（`Content-Type`、`X-Correlation-ID`）になります。重複するヘッダーは`req:header()`と同様に`", "`で連結されます。
 
 ### content_type
 

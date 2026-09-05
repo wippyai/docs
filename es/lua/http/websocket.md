@@ -1,6 +1,6 @@
 ---
 title: "Cliente WebSocket"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Cliente WebSocket para comunicación bidireccional en tiempo real con servidores."
 ---
 
 # Cliente WebSocket
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Mensajes de Texto
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- Enviar JSON
 client:send(json.encode({

@@ -1,6 +1,6 @@
 ---
 title: "UUID 生成"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "生成通用唯一标识符。适配工作流使用 - 随机 UUID 在重放时返回一致的值。"
 ---
 
 # UUID 生成

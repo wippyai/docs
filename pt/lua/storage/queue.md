@@ -1,6 +1,6 @@
 ---
 title: "Message Queue"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP."
 ---
 
 # Message Queue
@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## Padrão de Consumer
 
-Consumers de fila sao definidos como entry points que recebem o payload diretamente:
+Uma entrada `queue.consumer` vincula uma fila a uma função handler (referenciada por `func`). O handler recebe o payload da mensagem diretamente:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

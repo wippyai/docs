@@ -1,6 +1,6 @@
 ---
 title: "プロセス管理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "子プロセスのスポーン、監視、通信。メッセージパッシング、スーパービジョン、ライフサイクル管理によるアクターモデルパターンを実装。"
 ---
 
 # プロセス管理
@@ -135,8 +135,7 @@ local events = process.events()  -- @eventsトピックからのライフサイ�
 |-------|------|-------------|
 | `kind` | string | イベントタイプ定数 |
 | `from` | string | ソースPID |
-| `result` | any | EXIT用: 返された値（正常終了時に存在） |
-| `error` | any | EXIT用: エラー（異常終了時に存在） |
+| `result` | table | EXIT/LINK_DOWN用: {value, error} レコード。プロセスの戻り値は `result.value`、エラーは `result.error` にある |
 | `reason` | string | CANCEL用: プロセスがキャンセルされている理由 |
 | `sources` | string[] | OUTDATED用: 変更された、または推移的に影響を受けたレジストリID |
 
@@ -212,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | オプション | 型 | 説明 |
 |--------|------|-------------|
 | `network` | string | 子プロセスの送信接続に使用する`network.*`エントリのレジストリID |
+| `terminal` | string | 子プロセスに仮想ターミナルをアタッチするビューポートグラント |
 
 **権限:** "context"に対する`process.context`。ネットワークの選択にはさらに、そのネットワークIDに対する`network.select`が必要。
+
+### ターミナルのアタッチ
+
+`terminal`グラントは`viewport:grant()`から取得し、子プロセスに専用のターミナルポートを与えます。これにより子プロセスは、ターミナルホスト上と同じように[TTY](lua/system/tty.md)モジュールを使用できます:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+グラントはワンショットで、アドミッション時に消費されます。起動が拒否された場合はグラントは未解決のまま再利用でき、ポートを解決した子プロセスはグラントを恒久的に消費し、ターミナルのアタッチをサポートしないホストはオプションを黙って破棄するのではなくスポーンを拒否します。スポーン元のプロセスは、自身が作成したビューポートを通じて子プロセスのフレームを読み取り続けます。[ターミナル](system/terminal.md#composable-terminals)を参照してください。
 
 ### SpawnBuilderメソッド
 

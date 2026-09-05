@@ -1,6 +1,6 @@
 ---
 title: "Стандартные библиотеки Lua"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Базовые библиотеки Lua, автоматически доступные во всех процессах Wippy. Не требуют require()."
 ---
 
 # Стандартные библиотеки Lua
@@ -79,7 +79,6 @@ table.insert(t, [pos,] value)  -- Вставить значение в пози�
 table.remove(t [,pos])         -- Удалить и вернуть элемент в позиции pos (по умолчанию: последний)
 table.concat(t [,sep [,i [,j]]]) -- Конкатенировать элементы массива с разделителем
 table.sort(t [,comp])          -- Сортировать на месте, comp(a,b) возвращает true если a < b
-table.pack(...)                -- Упаковать varargs в таблицу с полем 'n'
 table.unpack(t [,i [,j]])      -- Распаковать элементы таблицы как множественные значения
 ```
 
@@ -124,7 +123,7 @@ string.sub(s, i [,j])      -- Подстрока от i до j (отрицате
 string.len(s)              -- Длина строки (или используйте #s)
 string.byte(s [,i [,j]])   -- Числовые коды символов
 string.char(...)           -- Создать строку из кодов символов
-string.rep(s, n [,sep])    -- Повторить строку n раз с разделителем
+string.rep(s, n)           -- Повторить строку n раз
 string.reverse(s)          -- Перевернуть строку
 ```
 
@@ -208,14 +207,16 @@ math.fmod(x, y)       -- Остаток от деления с плавающе�
 math.sqrt(x)          -- Квадратный корень
 math.pow(x, y)        -- x^y (или используйте оператор x^y)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Натуральный логарифм (или логарифм по основанию n)
+math.log(x)           -- Натуральный логарифм
+math.log10(x)         -- Логарифм по основанию 10
 ```
 
 ### Тригонометрия
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Радианы
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Арктангенс y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Гиперболические
 math.deg(r)   -- Радианы в градусы
 math.rad(d)   -- Градусы в радианы
@@ -328,44 +329,6 @@ err:details()    -- Получить таблицу деталей или nil
 err:stack()      -- Получить стек трейс как строку
 ```
 
-## UTF-8 Unicode
-
-Обработка UTF-8 строк:
-
-### Константы {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Паттерн, соответствующий одному UTF-8 символу
-```
-
-### Функции {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Создать строку из Unicode codepoints
-utf8.codes(s)            -- Итератор по codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Получить codepoints в позициях от i до j
-utf8.len(s [,i [,j]])    -- Посчитать UTF-8 символы (не байты)
-utf8.offset(s, n [,i])   -- Позиция в байтах n-го символа от позиции i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Подсчёт символов (не байтов)
-print(utf8.len(s))  -- 9
-
--- Итерация по codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Получить codepoint в позиции
-local code = utf8.codepoint(s, 8)  -- Первый китайский символ
-
--- Создать строку из codepoints
-local emoji = utf8.char(0x1F600)  -- Улыбающееся лицо
-```
-
 ## Ограниченные возможности
 
 Следующие стандартные возможности Lua НЕ доступны из соображений безопасности:
@@ -377,7 +340,8 @@ local emoji = utf8.char(0x1F600)  -- Улыбающееся лицо
 | `rawlen` | Используйте оператор `#` |
 | `io.*` | Используйте модуль [Файловая система](lua/storage/filesystem.md) |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Используйте модули [Выполнение команд](lua/dynamic/exec.md), [Окружение](lua/system/env.md) |
-| `debug.*` (кроме traceback) | Недоступно |
+| `debug.*` | Недоступно |
+| `utf8.*` | Недоступно |
 | `package.loadlib` | Нативные библиотеки не поддерживаются |
 
 ## См. также

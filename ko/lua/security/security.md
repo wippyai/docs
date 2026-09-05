@@ -1,6 +1,6 @@
 ---
 title: "보안 및 접근 제어"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "인증 액터, 권한 스코프, 접근 정책을 관리합니다."
 ---
 
 # 보안 및 접근 제어

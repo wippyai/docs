@@ -1,6 +1,6 @@
 ---
 title: "Fehler"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die globale errors-Tabelle ist ohne require verfügbar."
 ---
 
 # Fehler

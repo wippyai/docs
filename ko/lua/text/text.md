@@ -1,6 +1,6 @@
 ---
 title: "텍스트 처리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "정규 표현식, 텍스트 비교, 의미론적 텍스트 분할을 제공합니다."
 ---
 
 # 텍스트 처리

@@ -1,6 +1,6 @@
 ---
 title: "Base de Datos SQL"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Ejecuta consultas SQL contra bases de datos PostgreSQL, MySQL y SQLite. Incluye consultas parametrizadas, transacciones, sentencias preparadas y un…"
 ---
 
 # Base de Datos SQL

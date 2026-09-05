@@ -1,6 +1,6 @@
 ---
 title: "Funktionsaufruf"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron über Prozesse hinweg aus…"
 ---
 
 # Funktionsaufruf
@@ -110,7 +110,7 @@ local actor = security.actor()  -- Actor des aktuellen Benutzers holen
 -- Admin-Funktion mit Benutzeranmeldedaten aufrufen
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

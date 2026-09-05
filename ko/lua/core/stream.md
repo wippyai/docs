@@ -1,6 +1,6 @@
 ---
 title: "스트림"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "효율적인 데이터 처리를 위한 스트림 읽기/쓰기 작업. 스트림 객체는 다른 모듈(HTTP, 파일시스템 등)에서 얻습니다."
 ---
 
 # 스트림
@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `size` | integer | 읽을 바이트 (0 = 사용 가능한 모든 것 읽기) |
+| `size` | integer | 읽을 바이트 (0 = 기본 32KB 청크) |
 
-**반환:** `string, error` - EOF에서 nil
-
-```lua
--- 남은 모든 데이터 읽기
-local data, err = stream:read_all()
-```
+**반환:** `string, error` — EOF에서 `nil, nil`
 
 ## 쓰기
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### 스캐너 메서드
 
 ```lua
-local has_more = scanner:scan()  -- 다음 토큰으로 진행
-local token = scanner:text()      -- 현재 토큰 가져오기
-local err_msg = scanner:err()     -- 에러가 있으면 가져오기
+local has_more, err = scanner:scan()  -- 다음 토큰으로 진행
+local token = scanner:text()           -- 현재 토큰
+local err_msg = scanner:err()          -- 스캐너 에러(있는 경우)
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

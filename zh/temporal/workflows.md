@@ -405,6 +405,36 @@ local tenant = ctx.get("tenant")         -- "tenant-1"
 local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
 ```
 
+### 安全上下文
+
+调用方的角色身份和作用域会随 workflow 一同传递，与 `ctx` 值分开，并遵循更严格的规则。它们通过两个 Temporal header 携带：
+
+| Header | 内容 |
+|--------|------|
+| `wippy-security` | JSON 信封：角色身份 ID、角色元数据、策略 ID 和受众 |
+| `wippy-security-signature` | 对该信封的 HMAC-SHA256，使用客户端的 `security_hmac_key` 作为密钥 |
+
+受众是该 header 所签发的执行的 ID — 对于启动或信号是 workflow ID，对于 activity 是 activity ID。针对另一个执行重放的 header 无法通过受众检查，因此被截获的 header 无法在别处复用。
+
+校验发生在 workflow 主体运行之前。签名必须匹配客户端的某个密钥，受众必须等于本次执行的 ID，且信封中指定的每个策略都必须在本地安全 registry 中解析成功。**其中任何一项失败都会使 workflow 执行失败** — 这不是警告，workflow 也不会以降级的上下文运行。内部不一致的信封同样如此，例如有角色身份却没有作用域，或有策略却没有角色身份。
+
+在 [`temporal.client`](temporal/overview.md#security-context-propagation) 条目上配置这些密钥。从带有角色身份或作用域的上下文启动 workflow 需要签名密钥；没有密钥时启动会失败，而不是以未签名方式继续。
+
+#### 受保护的 workflow 拒绝未签名的信号
+
+在安全上下文下运行的 workflow 要求每个传入信号都携带经过签名的中继票据 — header `wippy-relay-signal` 和 `wippy-relay-signal-signature` — 并绑定到该 workflow ID 和该信号名称。未签名或地址不符的信号会被拒绝而不是投递。Wippy 进程通过 `process.send` 发送的信号会自动签名。从 Wippy 外部注入的信号 — Temporal CLI、`tctl` 或其他 SDK — 不携带票据，因此对受保护的 workflow 会失败。只应从 Wippy 驱动受保护的 workflow。
+
+#### 确定性的子 workflow 和 activity ID
+
+在安全上下文下，未显式指定 ID 而启动的子 workflow 或 activity 会得到派生的 ID 而不是随机 ID，因为该 ID 就是 header 签名所针对的受众，必须在重放时可复现：
+
+| 从受保护的 workflow 启动 | 生成的 ID |
+|--------------------------|-----------|
+| 子 workflow | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` 在 workflow 执行内计数。显式提供的 `temporal.workflow.id` 或 activity ID 会按原样使用并成为受众。没有安全上下文时，ID 一如既往交由 Temporal 生成。
+
 ### 从 HTTP 处理器启动
 
 ```lua
@@ -853,7 +883,7 @@ local now = time.now()
 local id = uuid.v4()
 
 -- Crypto operations
-local bytes = crypto.random_bytes(32)
+local bytes = crypto.random.bytes(32)
 
 -- Child workflows
 local result = workflow.exec("app:child", input)

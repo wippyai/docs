@@ -20,10 +20,10 @@ sequenceDiagram
     W->>R: getHandler(cmdID)
     R-->>W: handler
     W->>H: Handle(cmd, tag, receiver)
-    H-->>H: trabajo asíncrono
+    H-->>H: async work
     H->>W: CompleteYield(tag, result)
-    W->>P: encolar evento, despertar
-    P->>P: resume con resultado
+    W->>P: queue event, wake
+    P->>P: resume with result
 ```
 
 ## Registry de Comandos
@@ -46,7 +46,7 @@ Comandos de sistema (0-255) usan indexación de array. Comandos extendidos usan 
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
+| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
 | 50-59 | stream | Read, Write, Close, Seek |
 | 60-69 | http | Request, RequestBatch |
 | 70-79 | tty | E/S de terminal |
@@ -59,8 +59,9 @@ Comandos de sistema (0-255) usan indexación de array. Comandos extendidos usan 
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (grupo de procesos) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Servicios definidos por usuario |
 
 El registro ocurre durante boot vía `MustRegisterCommands()`. Las colisiones causan panic en startup.
@@ -70,7 +71,7 @@ El registro ocurre durante boot vía `MustRegisterCommands()`. Las colisiones ca
 Los comandos son estructuras de datos con un `CommandID` único:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

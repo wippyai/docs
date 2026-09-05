@@ -41,7 +41,7 @@ description: "오버레이 네트워크(SOCKS5 프록시, Tor, Tailscale 메시,
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "오버레이 네트워크(SOCKS5 프록시, Tor, Tailscale 메시,
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `hostname` | string | tsnet 노드 이름 (노드별 상태 디렉토리에서 사용) |
-| `auth_key` | string | 인라인 tailnet 인증 키 |
-| `auth_key_env` | string | 인증 키를 담고 있는 환경 변수 이름 (env 레지스트리를 통해 해결) |
+| `auth_key` | string | Tailnet 인증 키 — 인라인 또는 [env 레지스트리](system/env.md)를 통해 해석되는 `${env:NAME}` |
 | `state_dir` | string | tsnet 상태 디렉토리 재정의 |
 | `control_url` | string | 대체 조정 서버 |
 | `ephemeral` | bool | 임시 tailnet 노드로 등록 |
 
-`auth_key` 또는 `auth_key_env` 중 하나가 필요합니다.
+`auth_key`는 필수입니다(직접 지정하거나 `${env:NAME}`으로 제공). 레거시 `auth_key_env` 디렉티브도 동일한 방식으로 해석되지만 더 이상 사용되지 않습니다. `auth_key: ${env:NAME}`을 사용하세요.
 
 ## I2P
 
@@ -128,6 +127,14 @@ network_service:
 | `state_dir` | `.wippy/net` | 드라이버 상태 디렉터리. 상대 경로는 부트 config 디렉터리를 기준으로 해석됩니다. |
 | `default_network` | — | 옵션을 통해 자체 네트워크를 설정하지 않는 모든 작업 또는 프로세스에 적용되는 오버레이의 레지스트리 ID. |
 
+## Raw 다이얼
+
+오버레이 선택은 Lua 경계에만 국한되지 않습니다. 런타임 네트워크 서비스를 통한 다이얼 — WASM [`socket` 호스트](wasm/hosts.md#socket)와 `wasi:sockets` 디스패처 — 은 프레임에서 오버레이를 읽어 그 경로로 라우팅합니다. 오버레이가 `with_options`로 설정되었든, 엔트리의 `meta.options.network`로 설정되었든, `network_service.default_network`로 설정되었든 동일합니다.
+
+프라이빗 IP 게이트는 이 경로에서 다르게 동작합니다. 직접 다이얼은 대상을 해석하고 그 결과 나온 모든 주소를 `socket.private_ip`에 대해 검사합니다. 오버레이가 선택된 경우에는 대상에 들어 있는 리터럴 IP 주소만 검사합니다. 호스트 이름은 오버레이가 해석하도록 넘겨지므로 로컬 리졸버는 전혀 사용되지 않고, 그것이 반환했을 값에 대한 검사도 이루어지지 않습니다.
+
+오버레이가 선택되었지만 컨텍스트에 네트워크 레지스트리가 없으면 다이얼은 `network "<id>" selected without a network registry`로 실패합니다.
+
 ## 오버레이 업데이트
 
 오버레이 엔트리는 레지스트리 업데이트 시 핫스왑됩니다. 오버레이의 설정이 변경되면 드라이버는 먼저 교체 서비스를 빌드하고, 성공적으로 생성된 후에만 교체합니다. 새 설정이 실패하면 기존 오버레이가 계속 실행됩니다. 동시 호출자는 이전 서비스나 새 서비스 중 하나를 보게 되며, 중간에 끊김이 발생하지 않습니다.
@@ -138,11 +145,18 @@ network_service:
 |--------|----------|-------------|
 | `network.select` | 네트워크 Registry ID | `funcs.call`, `process.spawn`, `http_client`에서 명시적 오버레이 선택 |
 | `network.bind` | 네트워크 Registry ID | 오버레이를 통해 `http.service` 리스너를 바인딩(`network:` 필드) |
+| `socket.connect` | `host:port` | 네트워크 서비스를 통한 모든 아웃바운드 다이얼 |
+| `socket.listen` | `host:port` | 네트워크 서비스를 통한 TCP 리스너 또는 UDP 소켓 바인딩 |
+| `socket.resolve` | 호스트 이름 | 네트워크 서비스를 통한 DNS 해석 |
+| `socket.private_ip` | IP 주소 | 루프백, 프라이빗, 링크 로컬 또는 unspecified 주소에 대한 접근 |
 
 범위에서 `network.select`를 거부하여 그 안의 코드가 명시적으로 오버레이를 선택하지 못하도록 합니다. 상속된 오버레이는 영향을 받지 않습니다 — 호출자에서 권한이 부여되었습니다. `network.bind`는 `network:` 오버레이가 설정된 서버가 리스너를 시작할 때 검사됩니다.
+
+`socket.*` 권한은 네트워크 서비스 자체가 검사합니다. `socket.connect`, `socket.listen`, `socket.resolve`는 오버레이 라우팅 이전에 검사되므로 클리어넷 트래픽과 오버레이 트래픽에 동일하게 적용됩니다. `socket.private_ip`는 오버레이가 선택되면 [Raw 다이얼](system/network.md#raw-다이얼)에서 설명한 대로 리터럴 주소로 범위가 좁혀집니다.
 
 ## 참고
 
 - [보안](system/security.md) - 정책 및 액터
 - [HTTP 서비스](http/server.md) - 서버 바인딩
 - [HTTP 클라이언트](lua/http/client.md) - 호출별 오버레이 선택
+- [호스트 함수](wasm/hosts.md) - WASM 소켓 임포트

@@ -1,6 +1,6 @@
 ---
 title: "Terminal I/O"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Read from stdin and write to stdout/stderr for CLI applications."
 ---
 
 # Terminal I/O

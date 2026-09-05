@@ -118,10 +118,10 @@ entries:
 wippy test
 ```
 
-在迭代时过滤到单个套件（匹配入口 id 或套件名称）：
+在迭代时按入口 id 子串（namespace:name）过滤：
 
 ```bash
-wippy test calculator
+wippy test calc_test
 ```
 
 上述套件的输出：

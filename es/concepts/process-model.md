@@ -41,6 +41,8 @@ Cada proceso se ejecuta bajo una identidad de actor y política de seguridad. T�
 
 El control de acceso funciona en múltiples niveles. Los procesos individuales tienen sus propios niveles de acceso. El envío de mensajes entre hosts puede ser prohibido basado en la política de seguridad: un proceso de usuario aislado podría no estar autorizado a enviar mensajes a hosts del sistema en absoluto. La política adjunta al actor actual determina qué operaciones están permitidas.
 
+Para las implicaciones de seguridad del aislamiento de procesos, consulte el [Modelo de Seguridad](concepts/security-model.md).
+
 ## Creando Procesos
 
 Cree procesos en segundo plano con `process.spawn()`:
@@ -70,7 +72,7 @@ process.send(target_pid, "topic", payload)
 Los mensajes del mismo remitente llegan en orden. Los mensajes de diferentes remitentes pueden intercalarse. La entrega es de tipo disparar y olvidar: use patrones de solicitud-respuesta cuando necesite confirmación.
 
 <note>
-Los procesos pueden registrarse en un registro de nombres local y ser direccionados por nombre en lugar de PID (ej., `session_manager`). El registro global para direccionamiento entre nodos está planeado.
+Los procesos pueden registrarse en un registro de nombres local y ser direccionados por nombre en lugar de PID (ej., `session_manager`). Los nombres también pueden registrarse a nivel de clúster para direccionamiento entre nodos mediante `process.registry`, usando los alcances EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).
 </note>
 
 ## Supervisión
@@ -97,7 +99,9 @@ A nivel raíz, el runtime proporciona servicios que inician y supervisan proceso
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 El servicio inicia automáticamente, reinicia en caso de fallo con backoff, y se integra con la gestión de ciclo de vida del runtime.

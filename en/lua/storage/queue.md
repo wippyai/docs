@@ -1,6 +1,6 @@
 ---
 title: "Message Queue"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Publish and consume messages from distributed queues. Supports multiple backends including RabbitMQ and other AMQP-compatible brokers."
 ---
 
 # Message Queue

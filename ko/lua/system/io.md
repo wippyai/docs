@@ -1,6 +1,6 @@
 ---
 title: "터미널 I/O"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "CLI 애플리케이션을 위해 stdin에서 읽고 stdout/stderr에 씁니다."
 ---
 
 # 터미널 I/O

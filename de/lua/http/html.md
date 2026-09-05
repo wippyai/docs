@@ -1,6 +1,6 @@
 ---
 title: "HTML-Bereinigung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Bereinigen Sie nicht vertrauenswürdiges HTML, um XSS-Angriffe zu verhindern. Basiert auf bluemonday."
 ---
 
 # HTML-Bereinigung

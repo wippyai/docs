@@ -1,6 +1,6 @@
 ---
 title: "Future"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "非同期操作の結果。Futureはfuncs.async()およびコントラクト非同期呼び出しによって返されます。"
 ---
 
 # Future

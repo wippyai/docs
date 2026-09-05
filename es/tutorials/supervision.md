@@ -385,6 +385,9 @@ Worker hijo que enlaza al padre:
 
 ```lua
 local function linker_child_main()
+    -- Habilitar trap_links para recibir eventos LINK_DOWN
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -671,14 +674,14 @@ wippy init
 wippy run
 ```
 
-El supervisor arranca automáticamente, lanza cuatro workers y registra los reinicios cuando cualquiera de ellos muere. Desencadenar un reinicio cancelando un worker desde otro proceso:
+El supervisor arranca automáticamente, lanza cuatro workers y registra los reinicios cuando cualquiera de ellos muere. `LINK_DOWN` solo se entrega cuando un proceso enlazado termina con error, así que desencadene un reinicio terminando forzosamente un worker desde otro proceso:
 
 ```lua
 -- en un proceso ad-hoc o comando de chat
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-El pool recibe `LINK_DOWN`, espera 100 ms y relanza el worker con el mismo id.
+El pool recibe `LINK_DOWN`, espera 100 ms y relanza el worker con el mismo id. Un `process.cancel()` controlado permite que el worker salga limpiamente, lo que no genera `LINK_DOWN` y por tanto no desencadena un reinicio.
 
 ## Próximos Pasos
 

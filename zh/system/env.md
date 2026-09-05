@@ -119,7 +119,7 @@ description: "通过可配置的存储后端管理环境变量。"
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | 属性 | 类型 | 描述 |
@@ -127,7 +127,7 @@ description: "通过可配置的存储后端管理环境变量。"
 | `variable` | string | 公共变量名（可选，必须唯一） |
 | `storage` | string | 存储引用（`namespace:name`） |
 | `default` | string | 未找到时的默认值 |
-| `read_only` | boolean | 阻止修改 |
+| `readonly` | boolean | 阻止修改 |
 
 ### 变量命名
 

@@ -1,6 +1,6 @@
 ---
 title: "Хеш-функции"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Криптографические хеш-функции и аутентификация сообщений HMAC."
 ---
 
 # Хеш-функции

@@ -1,6 +1,6 @@
 ---
 title: "Bibliotecas Lua Padrão"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Bibliotecas Lua centrais automaticamente disponíveis em todos os processos Wippy. Nenhum require() necessário."
 ---
 
 # Bibliotecas Lua Padrão
@@ -79,7 +79,6 @@ table.insert(t, [pos,] value)  -- Inserir valor em pos (padrão: fim)
 table.remove(t [,pos])         -- Remover e retornar elemento em pos (padrão: último)
 table.concat(t [,sep [,i [,j]]]) -- Concatenar elementos array com separador
 table.sort(t [,comp])          -- Ordenar in place, comp(a,b) retorna true se a < b
-table.pack(...)                -- Empacotar varargs em tabela com campo 'n'
 table.unpack(t [,i [,j]])      -- Desempacotar elementos de tabela como múltiplos valores
 ```
 
@@ -124,7 +123,7 @@ string.sub(s, i [,j])      -- Substring de i até j (índices negativos do fim)
 string.len(s)              -- Tamanho da string (ou use #s)
 string.byte(s [,i [,j]])   -- Códigos numéricos de caracteres
 string.char(...)           -- Criar string de códigos de caractere
-string.rep(s, n [,sep])    -- Repetir string n vezes com separador
+string.rep(s, n)           -- Repetir string n vezes
 string.reverse(s)          -- Inverter string
 ```
 
@@ -208,14 +207,16 @@ math.fmod(x, y)       -- Resto de ponto flutuante
 math.sqrt(x)          -- Raiz quadrada
 math.pow(x, y)        -- x^y (ou use operador x^y)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Log natural (ou log base n)
+math.log(x)           -- Log natural
+math.log10(x)         -- Log base 10
 ```
 
 ### Trigonometria
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Radianos
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arco tangente de y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hiperbólico
 math.deg(r)   -- Radianos para graus
 math.rad(d)   -- Graus para radianos
@@ -328,44 +329,6 @@ err:details()    -- Obter tabela de detalhes ou nil
 err:stack()      -- Obter stack trace como string
 ```
 
-## UTF-8 Unicode
-
-Tratamento de strings UTF-8 Unicode:
-
-### Constantes {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Pattern correspondendo um único caractere UTF-8
-```
-
-### Funções {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Criar string de codepoints Unicode
-utf8.codes(s)            -- Iterador sobre codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Obter codepoints nas posições i até j
-utf8.len(s [,i [,j]])    -- Contar caracteres UTF-8 (não bytes)
-utf8.offset(s, n [,i])   -- Posição em bytes do n-ésimo caractere a partir da posição i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Contar caracteres (não bytes)
-print(utf8.len(s))  -- 9
-
--- Iterar sobre codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Obter codepoint na posição
-local code = utf8.codepoint(s, 8)  -- Primeiro caractere chinês
-
--- Criar string de codepoints
-local emoji = utf8.char(0x1F600)  -- Rosto sorridente
-```
-
 ## Recursos Restritos
 
 Os seguintes recursos Lua padrão NÃO estão disponíveis por segurança:
@@ -377,7 +340,8 @@ Os seguintes recursos Lua padrão NÃO estão disponíveis por segurança:
 | `rawlen` | Use operador `#` |
 | `io.*` | Use módulo [File System](lua/storage/filesystem.md) |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use módulos [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) |
-| `debug.*` (exceto traceback) | Não disponível |
+| `debug.*` | Não disponível |
+| `utf8.*` | Não disponível |
 | `package.loadlib` | Bibliotecas nativas não suportadas |
 
 ## Veja Também

@@ -1,110 +1,110 @@
 ---
-title: "Architecture"
-description: "<note This page is a work in progress. Content may be incomplete or change. </note"
+title: "Архитектура"
+description: "Wippy — многослойная система, построенная на Go. Компоненты инициализируются в порядке зависимостей, взаимодействуют через шину событий и выполняют…"
 ---
 
-# Architecture
+# Архитектура
 
 <note>
-This page is a work in progress. Content may be incomplete or change.
+Эта страница находится в разработке. Содержимое может быть неполным или измениться.
 </note>
 
-Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a work-stealing scheduler.
+Wippy — многослойная система, построенная на Go. Компоненты инициализируются в порядке зависимостей, взаимодействуют через шину событий и выполняют Lua-процессы через планировщик с work-stealing.
 
-## Layers
+## Слои
 
-| Layer | Components |
+| Слой | Компоненты |
 |-------|------------|
-| Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (gopher-lua), 50+ modules |
-| Services | HTTP, Queue, Storage, Temporal |
-| System | Topology, Factory, Functions, Contracts |
-| Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
-| Infrastructure | AppContext, Logger, Transcoder |
+| Приложение | Lua-процессы, функции, воркфлоу |
+| Рантайм | Lua-движок (wippyai/go-lua), 50+ модулей |
+| Сервисы | HTTP, Queue, Storage, Temporal |
+| Система | Topology, Factory, Functions, Contracts |
+| Ядро | Scheduler, Registry, Dispatcher, EventBus, Relay |
+| Инфраструктура | AppContext, Logger, Transcoder |
 
-Each layer depends only on layers below it. The Core layer provides fundamental primitives, while Services build higher-level abstractions on top.
+Каждый слой зависит только от слоёв ниже него. Слой ядра предоставляет базовые примитивы, а сервисы строят поверх них абстракции более высокого уровня.
 
-## Boot Sequence
+## Последовательность загрузки
 
-Application startup proceeds through four phases.
+Запуск приложения проходит четыре фазы.
 
-### Phase 1: Infrastructure
+### Фаза 1: Инфраструктура
 
-Creates core infrastructure before any components load:
+Создаёт базовую инфраструктуру до загрузки каких-либо компонентов:
 
-| Component | Purpose |
+| Компонент | Назначение |
 |-----------|---------|
-| AppContext | Sealed dictionary for component references |
-| EventBus | Pub/sub for inter-component communication |
-| Transcoder | Payload serialization (JSON, YAML, Lua) |
-| Logger | Structured logging with event streaming |
-| Relay | Message routing (Node, Router, Mailbox) |
+| AppContext | Запечатываемый словарь ссылок на компоненты |
+| EventBus | Pub/sub для взаимодействия между компонентами |
+| Transcoder | Сериализация payload (JSON, YAML, Lua) |
+| Logger | Структурированное логирование с потоковой передачей событий |
+| Relay | Маршрутизация сообщений (Node, Router, Mailbox) |
 
-### Phase 2: Component Loading
+### Фаза 2: Загрузка компонентов
 
-The Loader resolves dependencies via topological sort and loads components level by level. Components at the same level load in parallel.
+Loader разрешает зависимости топологической сортировкой и загружает компоненты уровень за уровнем. Компоненты одного уровня загружаются параллельно.
 
-Базовые компоненты (PIDGen, Dispatcher, Registry, Finder, Supervisor) инициализируются первыми, затем следуют системные компоненты (Topology, Lifecycle, Factory, Functions, Contracts). Конкретные уровни вычисляются во время выполнения из графа зависимостей, поэтому порядок адаптируется при добавлении или удалении компонентов.
+Сначала инициализируются компоненты ядра (PIDGen, Dispatcher, Registry, Finder, Supervisor), затем системные компоненты (Topology, Lifecycle, Factory, Functions, Contracts). Конкретные уровни вычисляются во время выполнения из графа зависимостей, поэтому порядок адаптируется при добавлении или удалении компонентов.
 
-Each component attaches itself to context during Load, making services available to dependent components.
+Каждый компонент привязывает себя к контексту во время Load, делая сервисы доступными зависимым компонентам.
 
-### Phase 3: Activation
+### Фаза 3: Активация
 
-After all components load:
+После загрузки всех компонентов:
 
-1. **Freeze Dispatcher** - Locks command handler registry for lock-free lookups
-2. **Seal AppContext** - No more writes allowed, enables lock-free reads
-3. **Start Components** - Calls `Start()` on each component with `Starter` interface
+1. **Заморозка Dispatcher** - Блокирует реестр обработчиков команд для поиска без блокировок
+2. **Запечатывание AppContext** - Запись больше не допускается, включается чтение без блокировок
+3. **Запуск компонентов** - Вызывает `Start()` у каждого компонента с интерфейсом `Starter`
 
-### Phase 4: Entry Loading
+### Фаза 4: Загрузка записей
 
-Registry entries (from YAML files) are loaded and validated:
+Записи реестра (из YAML-файлов) загружаются и валидируются:
 
-1. Entries parsed from project files
-2. Pipeline stages transform entries (override, link, bytecode)
-3. Services marked `auto_start: true` begin running
-4. Supervisor monitors registered services
+1. Записи разбираются из файлов проекта
+2. Этапы конвейера преобразуют записи (override, link, bytecode)
+3. Сервисы с пометкой `auto_start: true` начинают работу
+4. Супервизор наблюдает за зарегистрированными сервисами
 
-## Components
+## Компоненты
 
-Components are Go services that participate in application lifecycle.
+Компоненты — это Go-сервисы, участвующие в жизненном цикле приложения.
 
-### Lifecycle Phases
+### Фазы жизненного цикла
 
-| Phase | Method | Purpose |
+| Фаза | Метод | Назначение |
 |-------|--------|---------|
-| Load | `Load(ctx) (ctx, error)` | Initialize and attach to context |
-| Start | `Start(ctx) error` | Begin active operation |
-| Stop | `Stop(ctx) error` | Graceful shutdown |
+| Load | `Load(ctx) (ctx, error)` | Инициализация и привязка к контексту |
+| Start | `Start(ctx) error` | Начало активной работы |
+| Stop | `Stop(ctx) error` | Корректное завершение |
 
-Components declare dependencies. The loader builds a directed acyclic graph and executes in topological order. Shutdown occurs in reverse order.
+Компоненты объявляют зависимости. Loader строит направленный ациклический граф и выполняет их в топологическом порядке. Остановка происходит в обратном порядке.
 
-### Standard Components
+### Стандартные компоненты
 
-| Component | Dependencies | Purpose |
+| Компонент | Зависимости | Назначение |
 |-----------|--------------|---------|
-| PIDGen | none | Process ID generation |
-| Dispatcher | PIDGen | Command handler dispatch |
-| Registry | Dispatcher | Entry storage and versioning |
-| Finder | Registry | Entry lookup and search |
-| Supervisor | Registry | Service restart policies |
-| Topology | Supervisor | Process parent/child tree |
-| Lifecycle | Topology | Service lifecycle management |
-| Factory | Lifecycle | Process spawning |
-| Functions | Factory | Stateless function calls |
+| PIDGen | нет | Генерация ID процессов |
+| Dispatcher | нет | Диспатчинг обработчиков команд |
+| Registry | нет | Хранение и версионирование записей |
+| Finder | Registry | Поиск и выборка записей |
+| Supervisor | Registry | Политики перезапуска сервисов |
+| Topology | нет | Дерево родитель/потомок процессов |
+| Lifecycle | Topology | Управление жизненным циклом сервисов |
+| Factory | нет | Порождение процессов |
+| Functions | Registry | Вызовы функций без состояния |
 
-## Event Bus
+## Шина событий
 
-Asynchronous pub/sub for inter-component communication.
+Асинхронный pub/sub для взаимодействия между компонентами.
 
-### Design
+### Устройство
 
-- Single dispatcher goroutine processes all events
-- Queue-based action delivery prevents blocking publishers
-- Pattern matching supports exact topics and wildcards (`*`)
-- Context-based lifecycle ties subscriptions to cancellation
+- Единственная горутина диспатчера обрабатывает все события
+- Доставка действий через очередь не блокирует публикаторов
+- Сопоставление паттернов поддерживает точные топики и подстановки (`*`)
+- Жизненный цикл на основе контекста привязывает подписки к отмене
 
-### Event Flow
+### Поток событий
 
 ```mermaid
 sequenceDiagram
@@ -118,29 +118,29 @@ sequenceDiagram
     S->>S: Execute callback
 ```
 
-### Common Topics
+### Основные топики
 
-Topics are `<system>:<kind>`. The built-in systems publish:
+Топики имеют вид `<system>:<kind>`. Встроенные системы публикуют:
 
-| System | Kind | Purpose |
+| Система | Kind | Назначение |
 |--------|------|---------|
-| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Entry mutations |
-| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Transaction boundaries |
-| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | Factory registration for process kinds |
-| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | Service lifecycle |
+| `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Изменения записей |
+| `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Границы транзакций |
+| `process` | `factory.register`, `factory.delete`, `factory.accept`, `factory.reject` | Регистрация фабрик для видов процессов |
+| `supervisor` | `service.register`, `service.remove`, `service.update`, `service.start`, `service.stop` | Жизненный цикл сервисов |
 
-## Registry
+## Реестр
 
-Versioned storage for entry definitions.
+Версионированное хранилище определений записей.
 
-### Features
+### Возможности
 
-- **Versioned State** - Each mutation creates new version
-- **History** - SQLite-backed history for audit trail
-- **Observation** - Watch specific entries for changes
-- **Event-driven** - Publishes events on mutations
+- **Версионированное состояние** - Каждое изменение создаёт новую версию
+- **История** - По умолчанию история в памяти; опционально история на SQLite для долговременного аудита (history_type: sqlite)
+- **Наблюдение** - Отслеживание изменений конкретных записей
+- **Событийность** - Публикация событий при изменениях
 
-### Entry Lifecycle
+### Жизненный цикл записи
 
 ```mermaid
 flowchart LR
@@ -151,21 +151,21 @@ flowchart LR
     Validation --> Active
 ```
 
-Pipeline stages transform entries:
+Этапы конвейера преобразуют записи:
 
-| Stage | Purpose |
+| Этап | Назначение |
 |-------|---------|
-| Override | Apply config overrides |
-| Disable | Remove entries by pattern |
-| Link | Resolve requirements and dependencies |
-| Bytecode | Compile Lua to bytecode |
-| EmbedFS | Collect filesystem entries |
+| Override | Применение переопределений из конфигурации |
+| Disable | Удаление записей по паттерну |
+| Link | Разрешение требований и зависимостей |
+| Bytecode | Компиляция Lua в байткод |
+| EmbedFS | Сбор записей файловой системы |
 
 ## Relay
 
-Message routing between processes across nodes.
+Маршрутизация сообщений между процессами на разных узлах.
 
-### Three-Tier Routing
+### Трёхуровневая маршрутизация
 
 ```mermaid
 flowchart LR
@@ -179,46 +179,46 @@ flowchart LR
     Inter -.- I[Remote]
 ```
 
-1. **Local** - Direct delivery within same node
-2. **Peer** - Forward to peer nodes in cluster
-3. **Internode** - Route to remote nodes via network
+1. **Local** - Прямая доставка в пределах одного узла
+2. **Peer** - Пересылка узлам-пирам в кластере
+3. **Internode** - Маршрутизация на удалённые узлы по сети
 
 ### Mailbox
 
-Each node has a mailbox with worker pool:
+У каждого узла есть mailbox с пулом воркеров:
 
-- FNV-1a hashing assigns senders to workers
-- Preserves per-sender message ordering
-- Workers process messages concurrently
-- Back-pressure when queue fills
+- Хеширование FNV-1a закрепляет отправителей за воркерами
+- Сохраняется порядок сообщений для каждого отправителя
+- Воркеры обрабатывают сообщения параллельно
+- Back-pressure при заполнении очереди
 
 ## AppContext
 
-Sealed dictionary for component references.
+Запечатываемый словарь ссылок на компоненты.
 
-| Property | Behavior |
+| Свойство | Поведение |
 |----------|----------|
-| Before seal | Однопоточная запись во время загрузки |
-| After seal | Lock-free reads, panics on write |
-| Duplicate keys | Panic |
-| Type safety | Typed getter functions |
+| До запечатывания | Однопоточная запись во время загрузки |
+| После запечатывания | Чтение без блокировок, паника при записи |
+| Дублирующиеся ключи | Паника |
+| Типобезопасность | Типизированные функции-геттеры |
 
-Components attach services during Load phase. After boot completes, AppContext is sealed for optimal read performance.
+Компоненты привязывают сервисы на фазе Load. После завершения загрузки AppContext запечатывается для оптимальной производительности чтения.
 
-## Shutdown
+## Завершение работы
 
-Graceful shutdown proceeds in reverse dependency order:
+Корректное завершение происходит в обратном порядке зависимостей:
 
-1. SIGINT/SIGTERM triggers shutdown
-2. Supervisor stops managed services
-3. Components with `Stopper` interface receive `Stop()`
-4. Infrastructure cleanup
+1. SIGINT/SIGTERM запускает завершение
+2. Супервизор останавливает управляемые сервисы
+3. Компоненты с интерфейсом `Stopper` получают `Stop()`
+4. Очистка инфраструктуры
 
-Second signal forces immediate exit.
+Повторный сигнал принудительно завершает процесс немедленно.
 
-## See Also
+## См. также
 
-- [Scheduler](internals/scheduler.md) - Process execution
-- [Event Bus](internals/events.md) - Pub/sub system
-- [Registry](internals/registry.md) - State management
-- [Command Dispatch](internals/dispatch.md) - Yield handling
+- [Планировщик](internals/scheduler.md) - Выполнение процессов
+- [Шина событий](internals/events.md) - Система pub/sub
+- [Реестр](internals/registry.md) - Управление состоянием
+- [Диспатчинг команд](internals/dispatch.md) - Обработка yield'ов

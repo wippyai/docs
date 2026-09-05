@@ -1,6 +1,6 @@
 ---
 title: "ハッシュ関数"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "暗号学的ハッシュ関数とHMACメッセージ認証を提供します。"
 ---
 
 # ハッシュ関数

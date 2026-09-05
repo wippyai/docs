@@ -1,6 +1,6 @@
 ---
 title: "Generacion de UUID"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Generar identificadores unicos universales. Adaptado para workflows - los UUIDs aleatorios devuelven valores consistentes en replay."
 ---
 
 # Generacion de UUID
@@ -98,7 +98,7 @@ local valid = uuid.validate(input)
 ### Obtener Versión
 
 ```lua
-local ver, err = uuid.versión(id)
+local ver, err = uuid.version(id)
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -132,7 +132,7 @@ local info, err = uuid.parse(id)
 **Devuelve:** `table, error`
 
 Campos de tabla devuelta:
-- `versión` (integer): Versión UUID (1, 3, 4, 5, o 7)
+- `version` (integer): Versión UUID (1, 3, 4, 5, o 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, o Invalid
 - `timestamp` (integer): Marca de tiempo Unix (solo v1 y v7)
 - `node` (string): ID de nodo (solo v1)

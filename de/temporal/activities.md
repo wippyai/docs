@@ -249,6 +249,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Sicherheitskontext
+
+Eine unter einem Sicherheitskontext geplante Activity erhält den signierten `wippy-security`-Header, dessen Audience die Activity-ID ist. Der Worker prüft Signatur und Audience und führt dann die propagierten `ctx`-Werte und die Sicherheits-Payload auf einem frischen Frame zusammen, bevor die Activity-Funktion läuft.
+
+Diese Zusammenführung ist alles oder nichts und **für die Activity fatal, wenn sie fehlschlägt**: Die Activity gibt einen Fehler zurück, bevor ihr Code ausgeführt wird, sie läuft also nie mit unvollständigem Kontext oder mit einem nicht verifizierten Akteur. Die Zusammenführung schlägt fehl, wenn Signatur oder Audience nicht verifiziert werden, wenn der Envelope inkonsistent ist (ein Akteur ohne Scope oder Policies ohne Akteur) oder wenn eine im Envelope genannte Policy in der lokalen Security-Registry nicht aufgelöst wird — was die häufigste betriebliche Ursache ist: Dem Deployment des Workers fehlt ein Policy-Eintrag, den der Aufrufer hatte.
+
+Der Worker bezieht seine Signier- und Verifizierungsschlüssel aus dem `temporal.client`-Eintrag, auf den er verweist. Siehe [Propagierung des Sicherheitskontexts](temporal/overview.md#security-context-propagation).
+
 ## Fehlerbehandlung
 
 Fehler über das Standard-Lua-Muster zurückgeben:
@@ -258,7 +266,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -267,7 +275,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -295,6 +303,10 @@ end
 | Laufzeitabsturz | `INTERNAL` | ja | Unbehandelter Lua-Fehler in Activity |
 | Fehlende Activity | `NOT_FOUND` | nein | Activity nicht beim Worker registriert |
 | Timeout | `TIMEOUT` | ja | Activity hat konfiguriertes Timeout überschritten |
+| Sicherheitsverifizierung | `Internal` | ja | Signatur-, Audience- oder Envelope-Prüfung des propagierten Sicherheits-Headers fehlgeschlagen |
+| Fehlende Sicherheits-Policy | `Internal` | ja | Eine im Sicherheits-Envelope genannte Policy wird auf diesem Worker nicht aufgelöst |
+
+Beide Sicherheitsfehler treten während der Kontext-Zusammenführung auf, bevor die Activity-Funktion läuft. Sie sind nicht als nicht wiederholbar markiert, sodass die Activity-Retry-Policy sie weiter versucht; Wiederholungen helfen nicht, weil sich weder eine falsche Signatur noch ein fehlender Policy-Eintrag zwischen den Versuchen ändert. `maximum_attempts` bei Activities begrenzen, die schnell fehlschlagen sollen, und einen wiederkehrenden `Internal`-Fehler ohne Activity-Log-Ausgabe als Fehler bei der Kontext-Zusammenführung statt als Fehler in der Activity deuten.
 
 ```lua
 local executor = funcs.new():with_options({

@@ -1,6 +1,6 @@
 ---
 title: "チャネルとコルーチン"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "コルーチン間通信のためのGo形式チャネルを提供します。バッファ付きまたはアンバッファードチャネルを作成し、値を送受信し、select文を使用して並行プロセス間で調整できます。"
 ---
 
 # チャネルとコルーチン
@@ -208,7 +208,6 @@ end
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | クローズされたチャネルへの送信 | runtime error | no |
-| クローズされたチャネルのクローズ | runtime error | no |
 | selectで無効なケース | runtime error | no |
 
 ## 関連項目

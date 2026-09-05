@@ -48,13 +48,20 @@ wippy install
 | `wippy add` | Agregar una dependencia |
 | `wippy install` | Instalar dependencias |
 | `wippy update` | Actualizar dependencias |
+| `wippy artifacts` | Materializar artefactos de sistema de archivos en tiempo de build |
 | `wippy pack` | Crear un snapshot |
 | `wippy publish` | Publicar al hub |
 | `wippy search` | Buscar módulos |
+| `wippy readme` | Obtener el README de un módulo desde el hub |
+| `wippy registry` | Inspeccionar las entradas del registro cargadas |
 | `wippy auth` | Gestionar autenticación |
 | `wippy version` | Mostrar información de versión |
 
 Consulte la [Referencia CLI](guides/cli.md) para la documentación completa.
+
+## Solución de Problemas
+
+Si `wippy version` no se encuentra tras la instalación, vuelva a abrir su shell o verifique que el directorio de instalación esté en su `PATH`.
 
 ## Próximos Pasos
 

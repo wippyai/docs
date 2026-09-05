@@ -75,6 +75,12 @@ type Bus struct {
 
 SubscribeとUnsubscribeはディスパッチャが確認するまでブロック。Sendはファイアアンドフォーゲット。
 
+`Subscribe`は、サブスクリプションのコンテキストが既にキャンセルされている場合は即座に失敗し、所有権の判断が下される前にキャンセルされた場合はディスパッチャ側で再度失敗する。バスは自身がインストールしていないチャネルを決して受け取らない。
+
+`Unsubscribe`はベストエフォートのヒントではなく、所有権のバリアである。ディスパッチャが確認応答した後にのみ戻るため、呼び出し側はバスが送信中の参照を保持していないことを前提にチャネルを解放できる。`Stop`の後に到着した場合、確認応答はディスパッチャが既にドレイン済みのバッチの配信を終えるまで待機する。
+
+`Stop`も同様に終端的である。並行する2回目の`Stop`は、クローズ済みフラグを見て早期に戻ることはなく、ディスパッチャがドレインして終了するまで待機する。
+
 ## キュースワッピング
 
 ディスパッチャは定常状態でアロケーションを避けるためにスライススワッピングを使用：
@@ -178,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -226,21 +232,24 @@ defer router.Stop()
 
 各ハンドラは`Pattern()`と`Handle()`を実装。RouterはそれぞれにSubscriberを作成し、Stop時にすべてをクローズ。
 
-### Awaiter
+### AwaitService
 
-特定のイベントの同期待機：
+pub/sub上でのリクエスト・レスポンス。`(system, kind)`ペアごとに単一のサブスクリプションを保持し、`Path`によってイベントをwaiterにルーティング：
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // マッチまたはタイムアウトまでブロック
+result := waiter.Wait()  // AwaitResult{Event, Accepted, Error}を返す
 ```
 
-Prepare-then-Waitパターンは競合状態を回避：レスポンスを生成するイベントをトリガーする前にサブスクライブ。
+`Prepare`はトリガーとなるイベントを送信する前にwaiterを登録し、待機の登録前にレスポンスが到着する競合状態を回避する。`Wait`は`Path`がマッチするイベントの到着、またはタイムアウト（非正の値の場合はデフォルトの`DefaultAwaitTimeout`、30秒）の満了までブロック。`Accepted`はイベント種別が`accept`、`*.accept`、`*.accepted`のいずれかの場合にtrueとなり、それ以外の種別は拒否として扱われ、`Data`内の`error`は`Error`として返される。便宜的な`Await(ctx, system, kind, path, timeout)`はPrepareとWaitを組み合わせたもの。ブートインフラストラクチャはAwaitServiceをコンテキストに登録する（`event.GetAwaitService`）。
 
 ## シャットダウン
 

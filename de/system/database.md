@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # :memory: für In-Memory verwenden
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+Eine private In-Memory-SQLite-Datenbank (<code>file: ":memory:"</code>) ist auf eine physische Verbindung beschränkt, daher werden <code>max_open</code> und <code>max_idle</code> auf <code>1</code> gesetzt. Eine dateibasierte Datenbank berücksichtigt die konfigurierten <code>pool</code>-Einstellungen, was eine CDC-Snapshot-Lesetransaktion benötigt, damit sie nicht die einzige Schreibverbindung belegt. Der Journal-Modus ist immer <code>WAL</code>.
+</note>
 
 ## Verbindungsfelder
 
@@ -75,37 +77,37 @@ entries:
 
 ### SQLite-Felder
 
-| Feld | Typ | Beschreibung |
-|------|-----|--------------|
-| `file` | string | Datenbankdateipfad oder `:memory:` |
-| `pool` | object | Connection-Pool-Einstellungen |
-| `options` | map | SQLite-spezifische Optionen |
-| `lifecycle` | object | Lebenszyklus-Konfiguration |
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `file` | string | erforderlich | Datenbankdateipfad oder `:memory:` |
+| `pool` | object | - | Connection-Pool-Einstellungen; `max_open` und `max_idle` werden für `:memory:` auf `1` gesetzt |
+| `max_mutation_changes` | int | 100000 | Zeilen, die eine Transaktion im Beobachter für committete Mutationen halten darf |
+| `max_mutation_bytes` | int | 67108864 | Logische Bytes, die eine Transaktion im Beobachter halten darf (64 MiB) |
+| `options` | map | - | Akzeptiert, aber ignoriert |
+| `lifecycle` | object | - | Lebenszyklus-Konfiguration |
 
-### Umgebungsvariablen-Felder
+`max_mutation_changes` und `max_mutation_bytes` begrenzen den In-Memory-Beobachter für committete Mutationen, der eine [`db.cdc.sqlite`](system/cdc.md)-Quelle speist. Null bei einem der Felder wählt den Standardwert; negative Werte werden abgelehnt. Die Grenzen sind konservativ statt exakt: SQLite liefert eine vollständige Zeile an den Pre-Update-Hook, sodass eine Zeile materialisiert werden kann, bevor die Grenze den Kandidaten ablehnt.
 
-Verwenden Sie das Suffix `_env` um Werte aus Umgebungsvariablen oder [env.variable](system/env.md)-Einträgen zu laden:
+### Geheimnis- und Umgebungswerte
 
-| Feld | Beschreibung |
-|------|--------------|
-| `host_env` | Host aus Umgebungsvariable |
-| `port_env` | Port aus Umgebungsvariable |
-| `database_env` | Datenbankname aus Umgebung |
-| `username_env` | Benutzername aus Umgebung |
-| `password_env` | Passwort aus Umgebung |
+Hole Verbindungswerte über `${env:NAME}`-Platzhalter aus der [Umgebungs-Registry](system/env.md); sie werden beim Dekodieren aufgelöst. `NAME` ist der öffentliche Name einer registrierten Variable oder deren Entry-ID (z. B. `app.secrets:db_password`); es ist keine rohe Betriebssystem-Umgebungsvariable.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Referenz auf env.variable-Eintrag
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+Ältere Konfigurationen verwenden eine benachbarte <code>&lt;field&gt;_env</code>-Direktive (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>), die auf dieselbe Weise aufgelöst wird. Diese Form ist <b>veraltet</b> — migriere sie auf den oben gezeigten <code>${env:NAME}</code>-Platzhalter.
+</note>
+
 <warning>
-Vermeiden Sie das Hardcodieren von Passwörtern in der Konfiguration. Verwenden Sie Umgebungsvariablen oder <code>env.variable</code>-Einträge für Anmeldedaten. Siehe <a href="system/env.md">Umgebung</a> für sicheres Geheimnis-Management.
+Vermeiden Sie das Hardcodieren von Passwörtern in der Konfiguration. Verwenden Sie <code>env.variable</code>-Einträge für Anmeldedaten. Siehe <a href="system/env.md">Umgebung</a> für sicheres Geheimnis-Management.
 </warning>
 
 ## Connection-Pool
@@ -115,7 +117,7 @@ Konfigurieren Sie das Connection-Pooling-Verhalten. Pool-Einstellungen werden au
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `max_open` | int | 0 | Maximale offene Verbindungen (0 = unbegrenzt) |
-| `max_idle` | int | 0 | Maximale untätige Verbindungen (0 = unbegrenzt) |
+| `max_idle` | int | 0 | Maximale untätige Verbindungen (0 = keine untätigen Verbindungen werden gehalten) |
 | `max_lifetime` | duration | 1h | Maximale Verbindungslebensdauer |
 
 ```yaml
@@ -131,25 +133,27 @@ Setzen Sie <code>max_idle</code> kleiner oder gleich <code>max_open</code>. Verb
 
 ## DSN-Formate
 
-Jeder Datenbanktyp konstruiert einen DSN aus der Konfiguration:
+Jeder Datenbanktyp konstruiert einen DSN aus der Konfiguration. Etwaige `options` werden angehängt (nach Schlüssel sortiert); standardmäßig ist keine enthalten.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Jeder Wert außer dem Port wird in einfache Anführungszeichen gesetzt, und eingebettete `'` und `\` werden mit Backslash escaped, sodass Hosts, Passwörter und Optionswerte mit Leerzeichen oder Anführungszeichen unverändert durchgereicht werden.
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## Datenbankoptionen
@@ -176,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite wendet die `options`-Map nicht auf seinen DSN an. Dateidatenbanken öffnen immer mit `mode=rwc`, und der Journal-Modus ist immer auf `WAL` gesetzt. Das `options`-Feld wird akzeptiert, aber ignoriert.
 
 ## Beispiele
 
@@ -194,7 +193,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -217,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -234,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### Mehrere Datenbanken Setup
@@ -249,22 +242,22 @@ entries:
   # Primäre Datenbank
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # Analytics-Datenbank
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -287,5 +280,6 @@ Siehe [SQL-Modul](lua/storage/sql.md) für die Datenbankoperationen-API.
 ## Siehe auch
 
 - [SQL-Modul](lua/storage/sql.md) - Lua-API-Referenz
-- [Store](system/store.md) - Key-Value-Store basierend auf `database.sql`
+- [Store](system/store.md) - Key-Value-Store auf Basis einer `db.sql.*`-Datenbank
 - [Queue](system/queue.md) - SQL-gestützter Queue-Handler
+- [Change Data Capture](system/cdc.md) - Zeilenweise Änderungen aus einer `db.sql.sqlite`- oder Postgres-Datenbank streamen

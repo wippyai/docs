@@ -29,6 +29,13 @@ description: "目录和嵌入式文件系统访问。"
 | `directory` | string | required | 根路径 |
 | `auto_init` | bool | false | 目录不存在时自动创建 |
 | `mode` | string | 0755 | Unix 权限模式（八进制） |
+| `base` | string | - | 相对路径的基准：`project`（进程工作目录）或 `module`（所属模块的加载根目录） |
+
+绝对路径按原样使用，无论 `base` 如何设置。
+
+对于相对路径，`base: project` 使其相对于进程工作目录。`base: module` 和未设置 `base` 都会通过条目的注册表所有者查找所属模块，并相对于该模块的加载根目录解析路径。当条目没有所属模块，或该模块没有可解析的资源根目录时，路径仍相对于进程工作目录。
+
+其他任何取值都会以 `invalid directory base` 拒绝。
 
 mode 限制所有文件操作。当存在读取位时，执行位会自动添加。
 

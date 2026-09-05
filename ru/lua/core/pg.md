@@ -1,6 +1,6 @@
 ---
 title: "Группы процессов"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Объединение процессов в именованные группы и широковещательная рассылка каждому члену в кластере. Смоделировано по образцу Erlang/OTP pg: группы…"
 ---
 
 # Группы процессов

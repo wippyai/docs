@@ -1,6 +1,6 @@
 ---
 title: "Sanitização HTML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Sanitize HTML não confiavel para prevenir ataques XSS. Baseado em bluemonday."
 ---
 
 # Sanitização HTML

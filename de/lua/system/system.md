@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten."
 ---
 
 # System
@@ -47,6 +47,40 @@ Jede Modul-Tabelle enthält:
 | `name` | string | Modulname |
 | `description` | string | Modulbeschreibung |
 | `class` | string[] | Modul-Klassifizierungs-Tags |
+
+## Deployment-Quellen
+
+Die Untertabelle `system.source` liest die normalisierte Deployment-Baseline: die Entry-Menge, die aus den Quellen entsteht, aus denen die Anwendung zusammengesetzt wurde, bevor irgendeine Registry-Historie angewendet wird.
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**Gibt zurück:** `table, error`
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `owners` | string[] | Quell-Owner, die über die Baseline-Entries bestimmen |
+| `entries` | table[] | Baseline-Entries mit `id`, `kind`, `meta`, `data` |
+
+`owners` ist sortiert, mit dem Anwendungs-Owner zuerst und den übrigen Ownern alphabetisch danach. Der Anwendungs-Owner ist der String `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+Der Ladevorgang wird aus einer stabilen Quell-Generation genommen, sodass Entries und Owner immer dieselbe Baseline beschreiben. Die Dateisystempfade hinter jeder Quelle sind runtime-privat und werden nicht offengelegt; ein fehlgeschlagener Ladevorgang meldet einen generischen internen Fehler, statt den zugrunde liegenden Pfad preiszugeben.
+
+**Berechtigung:** `system.read` auf `sources`
 
 ## Speicherstatistiken
 
@@ -426,6 +460,7 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `cwd` | Arbeitsverzeichnis lesen |
 | `system.read` | `hosts` | Hosts / Host-Prozesse auflisten |
 | `system.read` | `modules` | Geladene Module auflisten |
+| `system.read` | `sources` | Deployment-Quell-Baseline laden |
 | `system.read` | `supervisor` | Supervisor-Status lesen |
 | `system.read` | `node` | Identität dieses Knotens lesen |
 | `system.read` | `cluster` | Cluster-Mitgliedschaft und Leader lesen |

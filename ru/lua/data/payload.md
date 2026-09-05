@@ -1,6 +1,6 @@
 ---
 title: "Кодирование Payload"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Преобразование данных между форматами, включая JSON, MessagePack и бинарный. Работа с типизированными payload для межсервисного взаимодействия и…"
 ---
 
 # Кодирование Payload

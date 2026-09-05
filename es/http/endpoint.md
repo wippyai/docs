@@ -24,7 +24,7 @@ Los endpoints (`http.endpoint`) definen manejadores de rutas HTTP que ejecutan f
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `meta.router` | registry.ID | No | Router padre (por defecto, el único router si exactamente uno está registrado) |
-| `method` | string | Sí | Método HTTP |
+| `method` | string | Sí | Método HTTP, o `"*"` para cualquier método |
 | `path` | string | Sí | Patrón de ruta URL |
 | `func` | registry.ID | Sí | Función a ejecutar |
 
@@ -42,6 +42,23 @@ Métodos soportados:
 | `HEAD` | Solo headers |
 | `OPTIONS` | Preflight CORS (auto-manejado) |
 | `TRACE` | Loopback de diagnóstico |
+| `*` | Cualquier método |
+
+Los nombres de método van en mayúsculas; `method` es obligatorio, y cualquier valor fuera de este conjunto se rechaza como error de configuración.
+
+### Endpoints Agnósticos al Método
+
+`method: "*"` registra la ruta para todos los métodos HTTP, y el handler lee el método real con `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+Para un endpoint normal el router también registra un handler `OPTIONS` en la misma ruta, de modo que el middleware CORS puede responder un preflight sin que el endpoint se ejecute. Un endpoint `*` no obtiene ese handler: ya coincide con `OPTIONS`. El middleware del router sigue envolviéndolo, así que un middleware CORS configurado responde un preflight permitido con `204` antes de que el endpoint se ejecute; cualquier otra solicitud `OPTIONS` llega a la propia función del endpoint, que debe responderla.
 
 ## Parámetros de Ruta
 
@@ -85,12 +102,11 @@ Capture la ruta restante con `{path...}`:
   func: serve_file
 ```
 
+Este segmento catch-all hace que la ruta coincida con solicitudes como `/files/docs/readme.md`. La cola capturada se lee como cualquier otro parámetro, bajo el nombre sin los puntos finales:
+
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## Función Handler
@@ -278,7 +294,22 @@ entries:
 
 ### Endpoint Protegido
 
+El middleware de autorización se configura en el router padre, no en el endpoint. El middleware post-match (como `endpoint_firewall`) se ejecuta después del matching de ruta y se aplica a todos los endpoints bajo el router:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -286,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## Ver También

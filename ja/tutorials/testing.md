@@ -118,10 +118,10 @@ entries:
 wippy test
 ```
 
-反復作業中に単一のスイートに絞り込みます (エントリ ID またはスイート名に一致)：
+反復作業中はエントリ ID の部分文字列 (namespace:name) で絞り込みます：
 
 ```bash
-wippy test calculator
+wippy test calc_test
 ```
 
 上記スイートの出力：

@@ -1,6 +1,6 @@
 ---
 title: "リクエストコンテキスト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "リクエストスコープのコンテキスト値にアクセス。コンテキストはFuncsまたはProcess経由で設定されます。"
 ---
 
 # リクエストコンテキスト

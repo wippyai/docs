@@ -1,6 +1,6 @@
 ---
 title: "Seguridad y Control de Acceso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Gestionar actores de autenticación, alcances de autorizacion y politicas de acceso."
 ---
 
 # Seguridad y Control de Acceso
@@ -96,7 +96,7 @@ local actor = security.new_actor("user:" .. user.id, {
 -- Crear actor de servicio
 local service_actor = security.new_actor("service:payment-processor", {
     type = "service",
-    versión = "1.0.0"
+    version = "1.0.0"
 })
 ```
 

@@ -121,7 +121,7 @@ otel:
   # 함수 호출 트레이싱
   interceptor:
     enabled: true
-    order: 0                   # 인터셉터 실행 순서
+    order: 100                 # 인터셉터 실행 순서
 ```
 
 ### Temporal 워크플로우

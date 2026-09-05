@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Invoke services through typed contracts. Call remote APIs, workflows, and functions with schema validation and async execution support."
 ---
 
 # Contracts

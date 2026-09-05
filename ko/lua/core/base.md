@@ -1,6 +1,6 @@
 ---
 title: "표준 Lua 라이브러리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "모든 Wippy 프로세스에서 자동으로 사용 가능한 핵심 Lua 라이브러리. require() 불필요."
 ---
 
 # 표준 Lua 라이브러리
@@ -79,7 +79,6 @@ table.insert(t, [pos,] value)  -- pos에 값 삽입 (기본값: 끝)
 table.remove(t [,pos])         -- pos의 요소 제거 및 반환 (기본값: 마지막)
 table.concat(t [,sep [,i [,j]]]) -- 배열 요소를 구분자로 연결
 table.sort(t [,comp])          -- 제자리 정렬, comp(a,b)는 a < b이면 true 반환
-table.pack(...)                -- varargs를 'n' 필드가 있는 테이블로 팩
 table.unpack(t [,i [,j]])      -- 테이블 요소를 다중 값으로 언팩
 ```
 
@@ -124,7 +123,7 @@ string.sub(s, i [,j])      -- i부터 j까지 부분 문자열 (음수 인덱스
 string.len(s)              -- 문자열 길이 (또는 #s 사용)
 string.byte(s [,i [,j]])   -- 문자의 숫자 코드
 string.char(...)           -- 문자 코드에서 문자열 생성
-string.rep(s, n [,sep])    -- 문자열을 구분자와 함께 n번 반복
+string.rep(s, n)           -- 문자열을 n번 반복
 string.reverse(s)          -- 문자열 뒤집기
 ```
 
@@ -208,14 +207,16 @@ math.fmod(x, y)       -- 부동소수 나머지
 math.sqrt(x)          -- 제곱근
 math.pow(x, y)        -- x^y (또는 x^y 연산자 사용)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- 자연 로그 (또는 base n 로그)
+math.log(x)           -- 자연 로그
+math.log10(x)         -- 상용 로그 (밑 10)
 ```
 
 ### 삼각함수
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- 라디안
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- y/x의 아크탄젠트
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 쌍곡선
 math.deg(r)   -- 라디안을 도로
 math.rad(d)   -- 도를 라디안으로
@@ -328,44 +329,6 @@ err:details()    -- 상세 테이블 또는 nil 가져오기
 err:stack()      -- 스택 트레이스를 문자열로 가져오기
 ```
 
-## UTF-8 유니코드
-
-유니코드 UTF-8 문자열 처리:
-
-### 상수 {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- 단일 UTF-8 문자에 매칭하는 패턴
-```
-
-### 함수 {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- 유니코드 코드포인트에서 문자열 생성
-utf8.codes(s)            -- 코드포인트에 대한 이터레이터: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- 위치 i부터 j까지의 코드포인트 가져오기
-utf8.len(s [,i [,j]])    -- UTF-8 문자 수 (바이트 아님)
-utf8.offset(s, n [,i])   -- 위치 i에서 n번째 문자의 바이트 위치
-```
-
-```lua
-local s = "Hello, 세계"
-
--- 문자 수 (바이트 아님)
-print(utf8.len(s))  -- 9
-
--- 코드포인트 순회
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- 위치의 코드포인트 가져오기
-local code = utf8.codepoint(s, 8)  -- 첫 번째 한글 문자
-
--- 코드포인트에서 문자열 생성
-local emoji = utf8.char(0x1F600)  -- 웃는 얼굴
-```
-
 ## 제한된 기능
 
 보안을 위해 다음 표준 Lua 기능은 사용 불가:
@@ -377,7 +340,8 @@ local emoji = utf8.char(0x1F600)  -- 웃는 얼굴
 | `rawlen` | `#` 연산자 사용 |
 | `io.*` | [파일 시스템](lua/storage/filesystem.md) 모듈 사용 |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
-| `debug.*` (traceback 제외) | 사용 불가 |
+| `debug.*` | 사용 불가 |
+| `utf8.*` | 사용 불가 |
 | `package.loadlib` | 네이티브 라이브러리 미지원 |
 
 ## 참고

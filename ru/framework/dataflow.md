@@ -1,22 +1,22 @@
 ---
 title: "Dataflow"
-description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
+description: "Модуль wippy/dataflow предоставляет движок оркестрации рабочих процессов на основе направленных ациклических графов (DAG). Рабочие процессы состоят из узлов —…"
 ---
 
 # Dataflow
 
-The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
+Модуль `wippy/dataflow` предоставляет движок оркестрации рабочих процессов на основе направленных ациклических графов (DAG). Рабочие процессы состоят из узлов — функций, агентов, циклов и параллельных обработчиков, — соединённых типизированными маршрутами данных. Оркестратор управляет выполнением, сохранением состояния и восстановлением.
 
-## Setup
+## Настройка
 
-Add the module to your project:
+Добавьте модуль в проект:
 
 ```bash
 wippy add wippy/dataflow
 wippy install
 ```
 
-Declare the dependency:
+Объявите зависимость:
 
 ```yaml
 version: "1.0"
@@ -29,13 +29,13 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
+Модуль dataflow зависит от `wippy/agent`, `wippy/llm` и `wippy/session` — они разрешаются автоматически при запуске `wippy install`. Для сохранения рабочих процессов модулю требуется ресурс базы данных `app:db`; миграции запускаются автоматически через `wippy/migration`.
 
-The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
+Модуль публикует запись `env.variable` `userspace.dataflow.env:web_host_origin` (по умолчанию `https://front.wippy.ai`), которую нижестоящие потоки могут читать для построения публичных URL. Переопределите её через маршрутизатор окружения или requirement.
 
-## Flow Builder
+## Построитель потоков
 
-The flow builder provides a fluent interface for composing workflows. Import it into your entry:
+Построитель потоков предоставляет fluent-интерфейс для составления рабочих процессов. Импортируйте его в запись:
 
 ```yaml
 imports:
@@ -46,7 +46,7 @@ imports:
 local flow = require("flow")
 ```
 
-### Core API
+### Основной API
 
 ```lua
 flow.create()
@@ -59,16 +59,16 @@ flow.create()
     :to(target, input_key, transform)
     :error_to(target, input_key, transform)
     :when(condition)
-    :run()   -- synchronous
-    :start() -- asynchronous
+    :run()   -- синхронно
+    :start() -- асинхронно
 
 flow.template()
     :[operations]...
 ```
 
-### Linear Pipeline
+### Линейный конвейер
 
-Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
+Узлы связываются автоматически, если явная маршрутизация не задана. Вывод каждого узла передаётся следующему:
 
 ```lua
 local result, err = flow.create()
@@ -79,9 +79,9 @@ local result, err = flow.create()
     :run()
 ```
 
-### Named Routing
+### Именованная маршрутизация
 
-Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
+Используйте `:as()` для именования узлов и `:to()` для маршрутизации данных между ними. Применяйте `:as()` только тогда, когда на узел нужно ссылаться:
 
 ```lua
 local result, err = flow.create()
@@ -101,11 +101,11 @@ local result, err = flow.create()
     :run()
 ```
 
-The second parameter to `:to()` is the **discriminator** — the input key at the receiving node. When a node receives multiple inputs, they are collected as a table keyed by discriminator.
+Второй параметр `:to()` — **дискриминатор**, ключ входа на принимающем узле. Когда узел получает несколько входов, они собираются в таблицу с ключами по дискриминатору.
 
-### Workflow Input and Static Data
+### Входные данные и статические данные рабочего процесса
 
-`:with_input()` is the single primary input to the workflow. `:with_data()` creates independent static data sources:
+`:with_input()` — единственный основной вход рабочего процесса. `:with_data()` создаёт независимые источники статических данных:
 
 ```lua
 flow.create()
@@ -129,11 +129,11 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
+Используйте `:with_input()` для внешних данных, поступающих в рабочий процесс. Используйте `:with_data()` для конфигурации, констант и справочных данных, разделяемых несколькими узлами. Статические данные используют оптимизацию по ссылке — первый маршрут создаёт реальные данные, последующие маршруты создают лёгкие ссылки.
 
-### Conditional Routing
+### Условная маршрутизация
 
-Use `:when()` after `:to()` to add conditions. Conditions evaluate against the node's output using `expr` syntax:
+Используйте `:when()` после `:to()`, чтобы добавить условия. Условия вычисляются над выводом узла с использованием синтаксиса `expr`:
 
 ```lua
 flow.create()
@@ -148,7 +148,7 @@ flow.create()
     :run()
 ```
 
-Conditions can combine with inline transforms for more complex routing:
+Условия можно сочетать со встроенными преобразованиями для более сложной маршрутизации:
 
 ```lua
 :func("app:decompose"):as("decompose")
@@ -156,20 +156,20 @@ Conditions can combine with inline transforms for more complex routing:
     :to("processor", "items", "output.items")
 ```
 
-Conditional expressions support: comparisons (`output.score > 0.8`), logical operators (`output.valid && output.count > 5`), array functions (`len(output.items) > 0`, `any(output.errors, {.critical})`), string operations (`output.status contains 'success'`), and optional chaining (`output.data?.nested?.value`).
+Условные выражения поддерживают: сравнения (`output.score > 0.8`), логические операторы (`output.valid && output.count > 5`), функции для массивов (`len(output.items) > 0`, `any(output.errors, {.critical})`), строковые операции (`output.status contains 'success'`) и опциональную цепочку (`output.data?.nested?.value`).
 
-### Workflow Terminals
+### Терминалы рабочего процесса
 
-Route to `@success` or `@fail` to terminate the workflow explicitly. In nested contexts (cycles, parallel), terminals create node outputs instead of workflow outputs:
+Направьте маршрут в `@success` или `@fail`, чтобы явно завершить рабочий процесс. Во вложенных контекстах (циклы, параллельные узлы) терминалы создают выводы узла, а не выводы рабочего процесса:
 
 ```lua
 :func("app:final_step"):to("@success")
 :func("app:handler"):error_to("@fail")
 ```
 
-### Error Routing
+### Маршрутизация ошибок
 
-Use `:error_to()` to route node errors to a handler. Errors can be routed as normal inputs to recovery nodes:
+Используйте `:error_to()`, чтобы направить ошибки узла обработчику. Ошибки можно маршрутизировать как обычные входы в узлы восстановления:
 
 ```lua
 :agent("app:gpt_planner", { model = "gpt-5" }):as("gpt_planner")
@@ -185,57 +185,57 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
+Этот паттерн запускает оба планировщика параллельно — если один из них завершается ошибкой, эта ошибка становится входом консолидатора, который продолжает работу с теми результатами, которые доступны.
 
-## Input Merging
+## Слияние входов
 
-How nodes receive inputs depends on discriminators and whether `args` is configured.
+То, как узлы получают входы, зависит от дискриминаторов и от того, задан ли `args`.
 
-**Without args — single default input:**
+**Без args — один вход по умолчанию:**
 
 ```lua
 :func("source"):to("target")
--- target receives: raw content (unwrapped)
+-- target получает: сырое содержимое (без обёртки)
 ```
 
-**Without args — single named input:**
+**Без args — один именованный вход:**
 
 ```lua
 :func("source"):to("target", "task")
--- target receives: { task = content }
+-- target получает: { task = content }
 ```
 
-**Without args — multiple inputs:**
+**Без args — несколько входов:**
 
 ```lua
 :func("source1"):to("target", "data")
 :func("source2"):to("target", "config")
--- target receives: { data = content1, config = content2 }
+-- target получает: { data = content1, config = content2 }
 ```
 
-**With args — inputs merge into base:**
+**С args — входы сливаются в базовую таблицу:**
 
 ```lua
 :func("app:api_client", {
     args = { base_url = "https://api.com", timeout = 5000 }
 })
--- with :to("api_client", "body") from upstream
--- api_client receives: { base_url = "https://api.com", timeout = 5000, body = content }
+-- при :to("api_client", "body") от вышестоящего узла
+-- api_client получает: { base_url = "https://api.com", timeout = 5000, body = content }
 ```
 
 <note>
-Nodes with <code>args</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
+Узлы с <code>args</code> не могут получать входы с дискриминатором <code>"default"</code>. Используйте именованные дискриминаторы через <code>:to(target, "input_key")</code>.
 </note>
 
-## Input Transforms
+## Преобразования входов
 
-Transform data before it reaches a node:
+Преобразуйте данные до того, как они достигнут узла:
 
 ```lua
--- String transform: single expression
+-- Строковое преобразование: одно выражение
 :func("app:step", { input_transform = "input.nested.field" })
 
--- Table transform: named expressions
+-- Табличное преобразование: именованные выражения
 :func("app:step", {
     input_transform = {
         task = "inputs.task",
@@ -245,11 +245,11 @@ Transform data before it reaches a node:
 })
 ```
 
-Context variables available in transforms: `input` (workflow input), `inputs` (all incoming node inputs), `output` (current node's output when routing).
+Контекстные переменные, доступные в преобразованиях: `input` (вход рабочего процесса), `inputs` (все входящие входы узла), `output` (вывод текущего узла при маршрутизации).
 
-### Inline Route Transforms
+### Встроенные преобразования маршрутов
 
-The third parameter to `:to()` is an inline transform expression:
+Третий параметр `:to()` — встроенное выражение преобразования:
 
 ```lua
 :func("source"):as("source")
@@ -258,11 +258,11 @@ The third parameter to `:to()` is an inline transform expression:
     :to("list", nil, "map(output.items, {.id})")
 ```
 
-## Node Types
+## Типы узлов
 
-### Function Node
+### Узел функции
 
-Executes a registered `function.lua` entry:
+Выполняет зарегистрированную запись `function.lua`:
 
 ```lua
 :func("app:my_function", {
@@ -274,19 +274,19 @@ Executes a registered `function.lua` entry:
 })
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `args` | table | Base arguments merged with node inputs |
-| `inputs` | table | Input requirements: `{ required = {...}, optional = {...} }` |
-| `context` | table | Execution context passed to function |
-| `input_transform` | string/table | Expression to transform inputs |
-| `metadata` | table | Node metadata (e.g., `{ title = "..." }`) |
+| `args` | table | Базовые аргументы, сливаемые с входами узла |
+| `inputs` | table | Требования к входам: `{ required = {...}, optional = {...} }` |
+| `context` | table | Контекст выполнения, передаваемый функции |
+| `input_transform` | string/table | Выражение для преобразования входов |
+| `metadata` | table | Метаданные узла (например, `{ title = "..." }`) |
 
-If the function returns `{ _control = { commands = [...] } }`, the orchestrator spawns a child workflow. This is how nested flows work.
+Если функция возвращает `{ _control = { commands = [...] } }`, оркестратор порождает дочерний рабочий процесс. Так работают вложенные потоки.
 
-### Agent Node
+### Узел агента
 
-Executes an agent with tool calling and optional structured exit:
+Выполняет агента с вызовом инструментов и опциональным структурированным выходом:
 
 ```lua
 :agent("app:content_writer", {
@@ -310,23 +310,23 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `model` | string | Override model |
-| `arena.prompt` | string | System prompt |
-| `arena.max_iterations` | number | Max reasoning loops (default: 64) |
-| `arena.min_iterations` | number | Min iterations before exit (default: 1) |
+| `model` | string | Переопределение модели |
+| `arena.prompt` | string | Системный промпт |
+| `arena.max_iterations` | number | Максимум циклов рассуждения (по умолчанию: 32) |
+| `arena.min_iterations` | number | Минимум итераций до выхода (по умолчанию: 1) |
 | `arena.tool_calling` | string | `"auto"`, `"any"` (требует `exit_schema`), `"none"` (отклоняет `exit_schema`) |
-| `arena.tools` | array | Tool registry IDs |
-| `arena.exit_schema` | table | JSON schema for structured exit |
-| `arena.exit_func_id` | string | Function to validate exit output |
-| `arena.context` | table | Additional context |
-| `inputs` | table | Input requirements |
-| `show_tool_calls` | boolean | Include tool calls in output |
-| `input_transform` | string/table | Transform inputs |
-| `metadata` | table | Node metadata |
+| `arena.tools` | array | Идентификаторы инструментов в реестре |
+| `arena.exit_schema` | table | JSON-схема для структурированного выхода |
+| `arena.exit_func_id` | string | Функция для проверки выходных данных |
+| `arena.context` | table | Дополнительный контекст |
+| `inputs` | table | Требования к входам |
+| `show_tool_calls` | boolean | Включать вызовы инструментов в вывод |
+| `input_transform` | string/table | Преобразование входов |
+| `metadata` | table | Метаданные узла |
 
-**Dynamic agent selection:** Pass an empty string as agent ID and resolve it via `input_transform`:
+**Динамический выбор агента:** передайте пустую строку в качестве идентификатора агента и разрешите его через `input_transform`:
 
 ```lua
 :agent("", {
@@ -342,11 +342,11 @@ Executes an agent with tool calling and optional structured exit:
 })
 ```
 
-**Exit validation:** When `exit_func_id` is set, the function validates the agent's exit output. On validation failure, the agent receives the error as observation and continues (up to `max_iterations`).
+**Проверка выхода:** когда задан `exit_func_id`, функция проверяет выходные данные агента. При неудачной проверке агент получает ошибку как наблюдение и продолжает работу (до `max_iterations`).
 
-### Cycle Node
+### Узел цикла
 
-Iterates a function or template repeatedly with persistent state:
+Многократно выполняет функцию или шаблон с сохраняемым состоянием:
 
 ```lua
 :cycle({
@@ -361,22 +361,24 @@ Iterates a function or template repeatedly with persistent state:
 })
 ```
 
-The cycle function receives on each iteration:
+На каждой итерации функция цикла получает:
 
 ```lua
 {
-    input = <workflow_input>,
+    input = <workflow_input>,  -- только на первой итерации (iteration == 1); далее nil
     state = <accumulated_state>,
     last_result = <previous_iteration_output>,
     iteration = <current_iteration_number>
 }
 ```
 
-The function controls continuation:
+`input` содержит вход рабочего процесса только на первой итерации, далее равен `nil`; всё, что нужно между итерациями, сохраняйте в `state`.
+
+Функция управляет продолжением:
 
 ```lua
 function my_cycle(cycle_context)
-    -- stop if approved
+    -- остановиться, если одобрено
     if cycle_context.last_result and cycle_context.last_result.approved then
         return {
             state = cycle_context.state,
@@ -385,24 +387,25 @@ function my_cycle(cycle_context)
         }
     end
 
-    -- spawn child workflow for this iteration
+    -- породить дочерний рабочий процесс для этой итерации
+    -- задача читается из state, так как cycle_context.input равен nil после первой итерации
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()
 end
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `func_id` | string | Iteration function (mutually exclusive with `template`) |
-| `template` | FlowBuilder | Template for each iteration (mutually exclusive with `func_id`) |
-| `max_iterations` | number | Maximum iterations |
-| `initial_state` | table | Starting state |
-| `continue_condition` | string | Expression: continue while true |
+| `func_id` | string | Функция итерации (взаимоисключима с `template`) |
+| `template` | FlowBuilder | Шаблон для каждой итерации (взаимоисключим с `func_id`) |
+| `max_iterations` | number | Максимальное число итераций |
+| `initial_state` | table | Начальное состояние |
+| `continue_condition` | string | Выражение: продолжать, пока истинно |
 
-**Template-based cycle:**
+**Цикл на основе шаблона:**
 
 ```lua
 :cycle({
@@ -413,9 +416,9 @@ end
 })
 ```
 
-### Parallel Node
+### Параллельный узел
 
-Map-reduce pattern over arrays:
+Паттерн map-reduce по массивам:
 
 ```lua
 :parallel({
@@ -444,18 +447,18 @@ Map-reduce pattern over arrays:
 })
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `source_array_key` | string | Input key containing the array (required) |
-| `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
-| `iteration_input_key` | string | Input key for current item (default: `"default"`) |
-| `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
-| `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
-| `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
-| `passthrough_keys` | array | Input keys forwarded to every iteration |
+| `source_array_key` | string | Ключ входа, содержащий массив (обязателен) |
+| `template` | FlowBuilder | Шаблон для каждого элемента (обязателен, должен вести в `@success`) |
+| `iteration_input_key` | string | Ключ входа для текущего элемента (по умолчанию: `"default"`) |
+| `batch_size` | number | Элементов в одном параллельном пакете (по умолчанию: 1 = последовательно) |
+| `on_error` | string | `"collect_errors"` (по умолчанию) или `"fail_fast"` |
+| `filter` | string | `"all"` (по умолчанию), `"successes"`, `"failures"` |
+| `unwrap` | boolean | Возвращать сырые результаты вместо обёрнутых метаданными (по умолчанию: false) |
+| `passthrough_keys` | array | Ключи входов, передаваемые в каждую итерацию |
 
-**Passthrough keys** provide shared context (config, task description) to every iteration without duplicating data in the source array:
+**Сквозные ключи** передают общий контекст (конфигурацию, описание задачи) в каждую итерацию без дублирования данных в исходном массиве:
 
 ```lua
 :with_data(file_list):as("files"):to("processor", "files")
@@ -474,9 +477,9 @@ Map-reduce pattern over arrays:
 }):as("processor")
 ```
 
-### Signal Node
+### Узел сигнала
 
-Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
+Приостанавливает выполнение до прихода внешнего сигнала. Используйте для согласований человеком, внешних событий или поэтапных рабочих процессов:
 
 ```lua
 :signal({
@@ -486,50 +489,50 @@ Pauses execution until an external signal arrives. Use for human approvals, exte
 })
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
-| `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before the node receives them |
-| `metadata` | table | Node metadata |
+| `signal_id` | string | Имя сигнала, сопоставляемое с `client:signal()`. Если пусто или не задано, во время выполнения генерируется UUID v7 |
+| `inputs` | table | Требования к входам |
+| `input_transform` | string/table | Преобразование входов до их получения узлом |
+| `metadata` | table | Метаданные узла |
 
-Send the signal from outside the workflow using the client API (see `client:signal()` below).
+Отправьте сигнал извне рабочего процесса через клиентский API (см. `client:signal()` ниже).
 
-#### Behavior
+#### Поведение
 
-The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
+Узел уступает выполнение с `wait_for_signal = true` и сохраняет этот yield в состоянии рабочего процесса. Оркестратор возобновляет узел, когда приходит подходящий коммит `NODE_SIGNAL`.
 
-- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
-- A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
-- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
-- Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
-- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
-- If the `signal_id` field is absent, matching falls back to the node's discriminator.
-- Delivered signal data is passed to the node's output as the signal payload.
+- Сигнал считается доставленным при любой полезной нагрузке, отличной от `nil`. `false`, `0`, `""` и `{}` удовлетворяют yield; только `nil` оставляет его в ожидании.
+- Yield сигнала блокирует `COMPLETE_WORKFLOW`, но не блокирует другие ожидающие узлы — параллельные ветви продолжают выполняться, пока одна ветвь ждёт.
+- Сигналы можно поставить в очередь до `:start()`: если подходящий коммит `NODE_SIGNAL` приходит до того, как узел сигнала достигнет yield, он доставляется в момент регистрации yield.
+- Каждый yield удовлетворяется только одним сигналом. Если второй сигнал с тем же `signal_id` приходит до удовлетворения yield, он перезаписывает первый.
+- Когда несколько yield сигналов разделяют один `signal_id`, данные получает первый подходящий yield.
+- Если поле `signal_id` отсутствует, сопоставление выполняется по дискриминатору узла.
+- Доставленные данные сигнала передаются в вывод узла как полезная нагрузка сигнала.
 
-#### Durability and recovery
+#### Долговечность и восстановление
 
-The signal yield is part of the workflow state, persisted through the same outbox mechanism as every other command. If the orchestrator process is killed while waiting:
+Yield сигнала является частью состояния рабочего процесса и сохраняется через тот же механизм outbox, что и любая другая команда. Если процесс оркестратора завершается во время ожидания:
 
-- The pending yield is restored on restart.
-- Signals delivered during the outage are queued and applied when the state reloads.
-- Compound pipelines (`func → signal → signal → func`) recover step-by-step — each signal can be delivered across a separate restart.
+- Ожидающий yield восстанавливается при перезапуске.
+- Сигналы, доставленные во время простоя, ставятся в очередь и применяются при перезагрузке состояния.
+- Составные конвейеры (`func → signal → signal → func`) восстанавливаются пошагово — каждый сигнал может быть доставлен через отдельный перезапуск.
 
-Orphaned signal yields (yields whose parent process exited without completion) are cleaned up by the workflow state's process exit handler.
+Осиротевшие yield сигналов (родительский процесс которых завершился без завершения yield) очищаются обработчиком завершения процесса в состоянии рабочего процесса.
 
-#### Pipeline patterns
+#### Паттерны конвейеров
 
-Signal nodes participate in any topology:
+Узлы сигналов участвуют в любой топологии:
 
 ```lua
--- Human-in-the-loop approval between two functions
+-- Согласование человеком между двумя функциями
 flow.create()
     :func("app:draft")
     :signal({ signal_id = "approve_draft" })
     :func("app:publish")
     :run()
 
--- Two parallel approvals that must both arrive before release
+-- Два параллельных согласования, оба должны прийти до релиза
 flow.create()
     :with_input({ doc = "release-notes" })
         :as("trigger")
@@ -552,11 +555,11 @@ flow.create()
     :run()
 ```
 
-Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
+Данные сигнала становятся выводом узла, поэтому нижестоящие узлы получают то, что было передано в `client:signal()`.
 
-### Join Node
+### Узел объединения
 
-Collects multiple inputs before proceeding:
+Собирает несколько входов перед продолжением:
 
 ```lua
 :join({
@@ -566,15 +569,15 @@ Collects multiple inputs before proceeding:
 })
 ```
 
-| Option | Type | Description |
+| Опция | Тип | Описание |
 |--------|------|-------------|
-| `output_mode` | string | `"object"` (default) or `"array"` (arrival order) |
-| `ignored_keys` | array | Input keys excluded from output |
-| `inputs` | table | Input requirements |
+| `output_mode` | string | `"object"` (по умолчанию) или `"array"` (в порядке поступления) |
+| `ignored_keys` | array | Ключи входов, исключаемые из вывода |
+| `inputs` | table | Требования к входам |
 
-## Templates
+## Шаблоны
 
-Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
+Шаблоны определяют переиспользуемые подпроцессы. Создавайте через `flow.template()`, встраивайте через `:use()`:
 
 ```lua
 local preprocessor = flow.template()
@@ -588,11 +591,11 @@ flow.create()
     :run()
 ```
 
-Templates inline their operations into the parent flow at compile time.
+Шаблоны встраивают свои операции в родительский поток на этапе компиляции.
 
-## Nested Workflows
+## Вложенные рабочие процессы
 
-Functions used in cycles and parallel nodes can spawn child workflows by returning `flow.create():run()`:
+Функции, используемые в циклах и параллельных узлах, могут порождать дочерние рабочие процессы, возвращая `flow.create():run()`:
 
 ```lua
 function my_processor(input)
@@ -604,15 +607,15 @@ function my_processor(input)
 end
 ```
 
-When `:run()` executes inside an existing dataflow context, it returns `{ _control = { commands = [...] } }` instead of executing directly. The orchestrator handles the child workflow through the yield mechanism.
+Когда `:run()` выполняется внутри существующего контекста dataflow, он возвращает `{ _control = { commands = [...] } }` вместо непосредственного выполнения. Оркестратор обрабатывает дочерний рабочий процесс через механизм yield.
 
 <note>
-Functions that participate in dataflow composition <strong>must</strong> return <code>flow.create():run()</code>. Functions returning anything else cannot spawn child workflows.
+Функции, участвующие в композиции dataflow, <strong>обязаны</strong> возвращать <code>flow.create():run()</code>. Функции, возвращающие что-либо иное, не могут порождать дочерние рабочие процессы.
 </note>
 
-## Synchronous vs Asynchronous
+## Синхронный и асинхронный режимы
 
-`:run()` blocks until the workflow completes and returns output:
+`:run()` блокируется до завершения рабочего процесса и возвращает вывод:
 
 ```lua
 local result, err = flow.create()
@@ -621,7 +624,7 @@ local result, err = flow.create()
     :run()
 ```
 
-`:start()` returns immediately with a workflow ID:
+`:start()` возвращается немедленно с идентификатором рабочего процесса:
 
 ```lua
 local dataflow_id, err = flow.create()
@@ -630,11 +633,11 @@ local dataflow_id, err = flow.create()
     :start()
 ```
 
-`:start()` cannot be used in nested contexts.
+`:start()` нельзя использовать во вложенных контекстах.
 
-## Client API
+## Клиентский API
 
-For programmatic workflow management:
+Для программного управления рабочими процессами:
 
 ```yaml
 imports:
@@ -647,34 +650,34 @@ local client = require("client")
 local c, err = client.new()
 ```
 
-| Method | Description |
+| Метод | Описание |
 |--------|-------------|
-| `client.new()` | Create client (requires security actor) |
-| `:create_workflow(commands, options?)` | Create workflow, returns `dataflow_id` |
-| `:execute(dataflow_id, options?)` | Run synchronously, returns result |
-| `:start(dataflow_id, options?)` | Run asynchronously, returns `dataflow_id` |
-| `:output(dataflow_id)` | Fetch workflow outputs |
-| `:get_status(dataflow_id)` | Get current status |
-| `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
-| `:terminate(dataflow_id)` | Force terminate |
-| `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
+| `client.new()` | Создать клиент (требует актора безопасности) |
+| `:create_workflow(commands, options?)` | Создать рабочий процесс, возвращает `dataflow_id` |
+| `:execute(dataflow_id, options?)` | Выполнить синхронно, возвращает результат |
+| `:start(dataflow_id, options?)` | Выполнить асинхронно, возвращает `dataflow_id` |
+| `:output(dataflow_id)` | Получить выводы рабочего процесса |
+| `:get_status(dataflow_id)` | Получить текущий статус |
+| `:cancel(dataflow_id, timeout?)` | Корректно отменить (по умолчанию: 30 с) |
+| `:terminate(dataflow_id)` | Принудительно завершить |
+| `:signal(dataflow_id, signal_id, data?)` | Доставить внешний сигнал ожидающему узлу сигнала |
 
-## Workflow Status
+## Статусы рабочего процесса
 
-| Status | Description |
+| Статус | Описание |
 |--------|-------------|
-| `template` | Node is a template instance |
-| `pending` | Waiting for inputs |
-| `ready` | Inputs collected, ready to execute |
-| `running` | Actively executing |
-| `paused` | Yielded, waiting for child workflow |
-| `completed` | Finished successfully |
-| `failed` | Failed |
-| `cancelled` | User cancelled |
-| `skipped` | Conditional branch not taken |
-| `terminated` | Force terminated |
+| `template` | Узел является экземпляром шаблона |
+| `pending` | Ожидание входов |
+| `ready` | Входы собраны, готов к выполнению |
+| `running` | Выполняется |
+| `paused` | Уступил выполнение, ожидает дочерний рабочий процесс |
+| `completed` | Успешно завершён |
+| `failed` | Завершён с ошибкой |
+| `cancelled` | Отменён пользователем |
+| `skipped` | Условная ветвь не выбрана |
+| `terminated` | Принудительно завершён |
 
-## Metadata
+## Метаданные
 
 ```lua
 flow.create()
@@ -684,53 +687,53 @@ flow.create()
     :run()
 ```
 
-Title defaults to "Flow Builder Workflow" if not provided.
+Если заголовок не задан, по умолчанию используется "Flow Builder Workflow".
 
-## Validation Rules
+## Правила валидации
 
-The compiler validates workflows at compile time:
+Компилятор проверяет рабочие процессы на этапе компиляции:
 
-- All `:as(name)` names must be unique
-- All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
-- Graph must be acyclic
-- All nodes must have incoming routes (from another node, workflow input, or static data)
-- `:cycle()` requires `func_id` or `template` (not both)
-- `:parallel()` requires `source_array_key` and `template`
-- At least one path must lead to `@success` or have auto-output
-- `:when()` only follows `:to()` or `:error_to()` from nodes (not static data)
-- Nodes with `args` cannot receive inputs with `"default"` discriminator
+- Все имена `:as(name)` должны быть уникальными
+- Все цели `:to()` и `:error_to()` должны ссылаться на существующие имена (кроме `@success`, `@fail`)
+- Граф должен быть ациклическим
+- У всех узлов должны быть входящие маршруты (от другого узла, входа рабочего процесса или статических данных)
+- `:cycle()` требует `func_id` или `template` (не оба сразу)
+- `:parallel()` требует `source_array_key` и `template`
+- Хотя бы один путь должен вести в `@success` или иметь автоматический вывод
+- `:when()` следует только за `:to()` или `:error_to()` от узлов (не от статических данных)
+- Узлы с `args` не могут получать входы с дискриминатором `"default"`
 
-## Expression Reference
+## Справочник по выражениям
 
-Expressions use the `expr` module syntax, available in `:when()` conditions and `input_transform` values.
+Выражения используют синтаксис модуля `expr` и доступны в условиях `:when()` и значениях `input_transform`.
 
-**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
+**Операторы:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
 
-**Array functions:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
+**Функции для массивов:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
 
-**Math functions:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
+**Математические функции:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
 
-**String functions:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
+**Строковые функции:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
 
-**Type functions:** `type()`, `int()`, `float()`, `string()`
+**Функции типов:** `type()`, `int()`, `float()`, `string()`
 
-**Literals:** numbers, strings, booleans (`true`/`false`), null (`nil`), arrays (`[1, 2, 3]`), objects (`{key: value}`)
+**Литералы:** числа, строки, булевы значения (`true`/`false`), null (`nil`), массивы (`[1, 2, 3]`), объекты (`{key: value}`)
 
-**Ternary:** `output.age >= 18 ? output.verified : false`
+**Тернарный оператор:** `output.age >= 18 ? output.verified : false`
 
-**Optional chaining:** `output.data?.nested?.value`
+**Опциональная цепочка:** `output.data?.nested?.value`
 
-## Error Handling
+## Обработка ошибок
 
-Both `:run()` and `:start()` follow standard Lua error conventions:
+И `:run()`, и `:start()` следуют стандартным соглашениям Lua об ошибках:
 
-- Success: `data, nil` (run) or `dataflow_id, nil` (start)
-- Failure: `nil, error_message`
+- Успех: `data, nil` (run) или `dataflow_id, nil` (start)
+- Ошибка: `nil, error_message`
 
-Error categories: compilation errors, client errors, workflow creation errors, execution errors, and workflow failures.
+Категории ошибок: ошибки компиляции, ошибки клиента, ошибки создания рабочего процесса, ошибки выполнения и сбои рабочего процесса.
 
-## See Also
+## Смотрите также
 
-- [Agents](framework/agents.md) - Agent framework used by agent nodes
-- [LLM](framework/llm.md) - LLM module
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Агенты](framework/agents.md) - фреймворк агентов, используемый узлами агентов
+- [LLM](framework/llm.md) - модуль LLM
+- [Обзор фреймворка](framework/overview.md) - использование модулей фреймворка

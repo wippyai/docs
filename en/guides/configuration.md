@@ -119,11 +119,11 @@ Global security behavior. Individual policies are defined as [security.policy en
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Deny access when security context is incomplete |
+| `strict_mode` | bool | true | Deny access when the security context is incomplete |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 See: [Security System](system/security.md), [Security Module](lua/security/security.md)
@@ -139,6 +139,12 @@ Entry storage and version history. The registry holds all configuration entries.
 | `history_path` | string | .wippy/registry.db | SQLite file path (used when `history_type: sqlite`) |
 | `history_dsn` | string | | Postgres DSN (used when `history_type: postgres`) |
 | `history_schema` | string | | Postgres schema name (used when `history_type: postgres`) |
+| `event_wait_timeout` | duration | 30s | Per-operation wait for listener acknowledgement during a registry apply |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Entry kinds handled internally instead of dispatched to component listeners |
+| `dependency_resolve_timeout` | duration | 0 (none) | Bound on dependency resolution |
+| `dependency_download_timeout` | duration | 0 (none) | Bound on each module download and download-URL request |
+| `dependency_lock_path` | string | discovered `wippy.lock` | Lock file the dependency handler reads and writes |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | Directory holding downloaded module packs |
 
 ```yaml
 registry:
@@ -154,6 +160,34 @@ registry:
 ```
 
 See: [Registry Concept](concepts/registry.md), [Registry Module](lua/core/registry.md)
+
+## Artifact
+
+Output root for materialized [build-time artifacts](guides/artifacts.md).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `materialization_root` | string | parent of the dependency vendor directory | Application-owned root under which each artifact format writes its own subtree |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+See: [Build-time artifacts](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Local module replacements, keyed by `org/module`. Values are directories; relative paths resolve against the first `--config` file's directory, and `null` disables a replacement inherited from an earlier config layer or profile.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Replacements are never written to `wippy.lock`. See [Local Development with Replacements](guides/dependency-management.md#local-development-with-replacements).
 
 ## Relay
 
@@ -207,6 +241,10 @@ Lua VM caching and expression evaluation.
 | `cache.typecheck.enabled` | bool | true | Persist typecheck results (when `cache.enabled`) |
 | `type_system.enabled` | bool | false | Enable static type checking |
 | `type_system.strict` | bool | false | Treat type warnings as errors |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Wait for code invalidation to be acknowledged after an entry changes |
+| `eval.max_steps` | int | 10000 | Default scheduler-step budget for an `eval` run; negative values are rejected |
+| `eval.cache_size` | int | 256 | Compiled-program cache entries for evaluated source |
+| `eval.cache_ttl` | duration | 0 (no expiry) | Lifetime of a cached compiled program |
 
 ```yaml
 lua:
@@ -356,6 +394,8 @@ SWIM gossip via memberlist. Used for node discovery, failure detection, and meta
 | `membership.tcp_timeout` | duration | 1s | TCP fallback probe timeout |
 | `membership.suspicion_mult` | int | 3 | Suspicion timeout multiplier |
 
+A gossip secret is required. Set `membership.secret_key` or `membership.secret_file` (the file wins if both are given); with neither, the cluster component fails to start. The value is base64-encoded.
+
 The four probe keys inherit memberlist's local-network defaults when unset; raise them for high-latency links (e.g. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (transport)
@@ -369,8 +409,13 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 | `internode.auto_port` | bool | true | Discover the actual port at boot, pin it, and advertise it in gossip |
 | `internode.advertise_addr` | string | | Additional relay endpoint (IP or DNS name) published for upgraded peers — for NAT or load-balanced reachability |
 | `internode.advertise_port` | int | 0 | Port for `advertise_addr` (0 = bind port; requires `advertise_addr`) |
+| `internode.identity_key` | string | | Base64-encoded ed25519 private key identifying this node (inline) |
+| `internode.identity_key_file` | string | | Path to a file holding that key |
+| `internode.trusted_peer_keys` | map | | Base64-encoded ed25519 public key per node name, including this node |
 
 `advertise_addr`/`advertise_port` publish an additive endpoint in node metadata while the bind endpoint stays advertised unchanged, so mixed-version clusters keep connecting during a rolling upgrade.
+
+Internode identity is mandatory whenever clustering is enabled. `identity_key` and `identity_key_file` are mutually exclusive and one of them must be present; the value decodes (standard or raw base64) to either a 32-byte ed25519 seed or a 64-byte ed25519 private key. `trusted_peer_keys` maps each node name to that node's 32-byte ed25519 public key, and must contain an entry for the local `cluster.name` whose value matches the local identity — otherwise startup fails. See the [Cluster Guide](guides/cluster.md#internode-identity).
 
 ### Raft (consensus)
 
@@ -405,11 +450,17 @@ Single-node (development) — clustering on, bootstraps itself immediately:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Three-node voting cluster — each node lists the others as seeds and waits for all three before forming quorum:
+Three-node voting cluster — each node lists the others as seeds and waits for all three before forming quorum. Every node carries the same `trusted_peer_keys` map and its own private key:
 
 ```yaml
 cluster:
@@ -420,12 +471,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Gossip-only client — joins the cluster for naming/messaging but never runs Raft:
+Gossip-only client — joins the cluster for naming/messaging but never runs Raft. It still needs its own identity and must appear in every node's trusted map:
 
 ```yaml
 cluster:
@@ -433,6 +490,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

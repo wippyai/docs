@@ -1,6 +1,6 @@
 ---
 title: "UUID生成"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "ユニバーサル一意識別子を生成します。ワークフロー向けに適応されており、ランダムUUIDはリプレイ時に一貫した値を返します。"
 ---
 
 # UUID生成

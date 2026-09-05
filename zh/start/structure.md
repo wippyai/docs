@@ -12,7 +12,7 @@ description: "项目布局、YAML 定义文件和命名规范。"
 ```
 myapp/
 ├── .wippy.yaml          # 运行时配置
-├── wippy.lock           # 源目录配置
+├── wippy.lock           # 源目录与锁定的模块
 ├── .wippy/              # 已安装的模块
 └── src/                 # 应用源代码
     ├── _index.yaml      # 记录定义
@@ -32,7 +32,7 @@ YAML 定义在启动时加载到注册表中。注册表是唯一的数据源—
 
 ### 文件结构
 
-任何包含 `version` 和 `namespace` 的 YAML 文件都是有效的：
+任何包含 `namespace`、且带有 `entries` 数组或顶层 `name`+`kind` 的 YAML 文件都是有效的定义文件。`version` 是可选的：
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | 字段 | 必需 | 描述 |
 |------|------|------|
-| `version` | 是 | 架构版本（当前为 `"1.0"`） |
+| `version` | 否 | 架构版本（当前为 `"1.0"`） |
 | `namespace` | 是 | 此文件中记录的命名空间 |
 | `entries` | 是 | 记录定义数组 |
 
@@ -100,17 +100,35 @@ app.workers
 
 记录完整 ID 由命名空间和名称组成：`app.api:get_user`
 
-### 源目录
+### 锁文件
 
-`wippy.lock` 文件定义了 Wippy 从哪里加载定义：
+`wippy.lock` 记录 Wippy 从哪里加载定义，以及选定了哪些模块版本：
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy 递归扫描这些目录查找 YAML 文件。
+| 字段 | 说明 |
+|------|------|
+| `directories.src` | 应用源目录，递归扫描其中的 YAML 定义文件 |
+| `directories.modules` | vendored 模块的基准目录；包会放在 `<modules>/vendor/` 下 |
+| `options.unpack_modules` | 把每个 `.wapp` 解压到其旁边的目录中，而不是直接加载该包（默认 `false`） |
+| `modules[].name` | `org/module` 形式的模块标识符 |
+| `modules[].version` | 选定的版本 |
+| `modules[].hash` | vendored 包必须匹配的制品摘要 |
+| `modules[].root` | 标记选定的部署根；最多只能有一个模块带有它 |
+
+vendored 包以 `.wapp` 文件形式保存。当 `unpack_modules: true` 时，每个模块还会被解压到一个目录中，且经过校验的 `.wapp` 仍保留在其旁边——安装会去查找该包，因此包缺失的目录会被重新下载。
+
+`wippy.lock` 中的 `replacements:` 段已弃用。它仍可加载，但会发出警告；请改为在运行时配置文件中的 `workspace.replacements` 下声明本地模块覆盖。参见 [依赖管理](guides/dependency-management.md#local-development-with-replacements)。
 
 ## 记录定义
 
@@ -189,44 +207,45 @@ entries:
 项目根目录的运行时配置：
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 详见 [配置指南](guides/configuration.md)。
 
 ### wippy.lock
 
-定义源目录：
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+源目录与选定的模块图——参见上文的 [锁文件](#the-lock-file)。
 
 ## 引用记录
 
-通过完整 ID 或相对名称引用记录：
+通过完整 ID 或相对名称引用记录。子记录通过 `meta` 挂接到父记录，而不是由父记录一侧维护列表：
 
 ```yaml
-# 完整 ID（跨命名空间）
-- name: main.router
+# 路由器声明自己所属的服务器
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 同一命名空间 - 直接使用名称
+# 端点通过注册表 ID 引用路由器（跨命名空间的方式相同）
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## 示例项目

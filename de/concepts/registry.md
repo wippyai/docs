@@ -20,6 +20,8 @@ app:templates             → Template-Set
 
 Jeder Eintrag hat eine `ID` (namespace:name-Format), einen `kind`, der seinen Handler bestimmt, beliebige `meta`-Felder und kind-spezifische `data`.
 
+Neben diesem verfassten Inhalt führt die Registry für jeden Eintrag ihre eigene Herkunftsinformation: den `owner`, also die Deployment-Quelle, aus der der Eintrag stammt, und `root`, das eine vom Deployment ausgewählte Abhängigkeitsdeklaration markiert. Dieser Zustand wird von der Registry vergeben und nicht vom Autor des Eintrags geschrieben, und er wird getrennt von `meta` gehalten, damit beide nie verwechselt werden können. Gelesen wird er über die Snapshot-State-API statt über die gewöhnlichen Eintrags-APIs — siehe [Registry-Modul](lua/core/registry.md#snapshot-state).
+
 ## Kind-Handler
 
 Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Laufzeit-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `sql.database`-Eintrag richtet einen Verbindungspool ein. Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für verfügbare Typen und [Benutzerdefinierte Entry-Typen](internals/kinds.md) für die Implementierung von Handlern.

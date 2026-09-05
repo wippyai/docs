@@ -68,7 +68,7 @@ flowchart TB
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `meta.router` | Registry ID | 父级路由器 |
-| `method` | string | HTTP 方法 (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP 方法：`GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS`、`TRACE`，或用 `*` 匹配任意方法 |
 | `path` | string | URL 路径模式 (以 `/` 开头) |
 | `func` | Registry ID | 处理函数 |
 
@@ -114,12 +114,24 @@ end
   func: serve_file
 ```
 
+通配符匹配剩余的路径段，因此像 `GET /api/v1/files/docs/guides/readme.md` 这样的请求会被派发到处理器。捕获到的尾部通过 `req:param` 以去掉末尾点号的名称读取：
+
 ```lua
--- 请求: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 通配符必须是路径中的最后一个段。
+
+## 路由优先级
+
+所有路由器都把各自的端点注册到同一个模式集合中，并以路由器的 `prefix` 作为前缀，由 Go 的 `ServeMux` 决定哪个模式服务某个请求。它的规则原样适用：
+
+- 最具体的模式获胜。当一个模式匹配的请求是另一个模式所匹配请求的严格子集时，它就更具体，因此 `/users/admin` 胜过 `/users/{id}`，`/files/{name}` 胜过 `/files/{path...}`。
+- 带方法的模式比同一路径上不带方法的模式更具体，因此对于 `GET` 请求，同一路径上的 `GET` 端点优先于 `*` 端点。
+- 末尾的 `{path...}` 或 `/` 匹配整个子树，会输给任何匹配其子集的模式。
+- 匹配基于清理并解码后的路径进行；具体程度从不取决于注册顺序。
+
+两个模式也可能直接冲突：彼此都不比对方更具体，却又相互重叠，例如 `/users/{id}/settings` 和 `/users/admin/{section}`。这属于配置错误。路由器会在重建时暴露该错误，重建失败，先前的路由集合继续提供服务。
 
 ## 处理函数
 
@@ -127,7 +139,6 @@ local file_path = req:param("filepath")  -- "docs/guides/readme.md"
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -136,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -167,7 +178,7 @@ options:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## 匹配前与匹配后中间件
@@ -288,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

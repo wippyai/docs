@@ -69,7 +69,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # Aus Datei
 - name: temporal_client
@@ -81,7 +81,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Felder die mit `_env` enden referenzieren Umgebungsvariablen, die im System definiert sein müssen. Siehe [Umgebungssystem](system/env.md) für die Konfiguration von Umgebungsspeicher und Variablen.
+Auth- und Credential-Felder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktiven `api_key_env` / `key_pem_env` werden auf dieselbe Weise aufgelöst, sind aber veraltet; bevorzugen Sie `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS-Konfiguration
@@ -128,6 +128,30 @@ health_check:
   enabled: true
   interval: "30s"
 ```
+
+### Propagierung des Sicherheitskontexts
+
+Wippy propagiert den aufrufenden Akteur und dessen Scope als signierten Temporal-Header an Workflows und Activities. Signiert wird mit HMAC-SHA256 und einem Schlüssel, den der Client-Eintrag hält:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `security_hmac_key` | Base64-kodierter Signierschlüssel; muss zu mindestens 32 Bytes dekodieren |
+| `security_hmac_previous_keys` | Base64-kodierte Schlüssel, die zur Verifizierung weiterhin akzeptiert werden, für die Rotation |
+
+Beide Felder sind in YAML base64-kodiert, weil es Byte-Felder sind. Ein Schlüssel mit weniger als 32 dekodierten Bytes wird bei der Konfigurationsvalidierung abgelehnt, ebenso das Deklarieren von `security_hmac_previous_keys` ohne `security_hmac_key`. Neue Header werden immer mit `security_hmac_key` signiert; bei der Verifizierung wird jeder aufgeführte vorherige Schlüssel probiert. Die Rotation lautet also: den neuen Schlüssel als `security_hmac_key` hinzufügen, den alten nach `security_hmac_previous_keys` verschieben und ihn entfernen, sobald keine laufende Ausführung ihn mehr trägt.
+
+**Das Starten eines Workflows unter einem Akteur oder Scope erfordert den Schlüssel.** Hat der Aufrufer einen Sicherheitskontext und der Client keinen Signierschlüssel, kann der Header nicht signiert werden und der Start schlägt fehl. Ein Client ohne Schlüssel kann Workflows nur aus einem Kontext starten, der weder Akteur noch Scope trägt.
+
+Der Worker bezieht die Schlüssel aus dem Client-Eintrag, auf den er verweist, sodass ein Worker Signierung und Verifizierung von `client:` erbt, ohne selbst etwas zu konfigurieren. Siehe [Workflows](temporal/workflows.md#security-context) und [Activities](temporal/activities.md).
 
 ## Worker-Konfiguration
 
@@ -161,11 +185,15 @@ Worker-Verhalten fein abstimmen:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Identität
+    identity: ""                          # Worker-Identität (erscheint in der Temporal-UI)
+
     # Nebenläufigkeit
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Poller
     max_concurrent_activity_task_pollers: 20
@@ -180,6 +208,8 @@ Worker-Verhalten fein abstimmen:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Feature-Flags
     enable_logging_in_replay: false
@@ -187,16 +217,17 @@ Worker-Verhalten fein abstimmen:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Versionierung
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Aus Umgebungsvariable lesen
+    build_id: ${env:BUILD_ID}              # Aus der Env-Registry lesen
     use_versioning: false
     default_versioning_behavior: "pinned" # oder "auto_upgrade"
 ```
 
-Felder die mit `_env` enden referenzieren Umgebungsvariablen, die über [Umgebungssystem](system/env.md)-Einträge definiert sind.
+Credential- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktive `build_id_env` wird auf dieselbe Weise aufgelöst, ist aber veraltet; bevorzugen Sie `build_id: ${env:NAME}`.
 
 ### Versionierungsverhalten
 
@@ -207,7 +238,7 @@ Felder die mit `_env` enden referenzieren Umgebungsvariablen, die über [Umgebun
 | `pinned` | Workflow bleibt für die gesamte Laufzeit auf der Build-ID, mit der er gestartet wurde |
 | `auto_upgrade` | Workflow kann nach jedem Task auf der neuesten kompatiblen Build-ID fortgesetzt werden |
 
-`build_id_env` liest die Build-ID aus der angegebenen Umgebungsvariable, wenn `build_id` leer ist.
+`build_id: ${env:NAME}` liest die Build-ID aus der Env-Registry, wenn keine literale `build_id` angegeben ist.
 
 ### Session Worker
 

@@ -1,6 +1,6 @@
 ---
 title: "Future"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "비동기 작업 결과. Future는 funcs.async() 및 계약 비동기 호출에서 반환됩니다."
 ---
 
 # Future

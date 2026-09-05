@@ -1,6 +1,6 @@
 ---
 title: "文件系统"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "在沙箱化的文件系统卷中读取、写入和管理文件。"
 ---
 
 # 文件系统

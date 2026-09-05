@@ -1,6 +1,6 @@
 ---
 title: "프로세스 관리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "자식 프로세스를 스폰하고 모니터링하며 통신합니다. 메시지 전달, 슈퍼비전, 라이프사이클 관리를 갖춘 액터 모델 패턴을 구현합니다."
 ---
 
 # 프로세스 관리
@@ -135,8 +135,7 @@ local events = process.events()  -- @events 토픽의 라이프사이클 이벤�
 |-------|------|------|
 | `kind` | string | 이벤트 타입 상수 |
 | `from` | string | 소스 PID |
-| `result` | any | EXIT의 경우: 반환된 값(정상 종료 시 존재) |
-| `error` | any | EXIT의 경우: 오류(비정상 종료 시 존재) |
+| `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`에, 오류는 `result.error`에 있습니다 |
 | `reason` | string | CANCEL의 경우: 프로세스가 취소되는 이유 |
 | `sources` | string[] | OUTDATED의 경우: 변경되었거나 전이적으로 영향을 받은 레지스트리 ID |
 
@@ -212,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
 | `network` | string | 자식의 아웃바운드 연결에 사용할 `network.*` 엔트리의 레지스트리 ID |
+| `terminal` | string | 자식에 가상 터미널을 붙이는 뷰포트 grant |
 
 **권한:** "context"에 대한 `process.context`; 네트워크를 선택하면 해당 네트워크 ID에 대한 `network.select`가 추가로 필요합니다.
+
+### 터미널 연결
+
+`terminal` grant는 `viewport:grant()`에서 얻으며 자식에게 자체 터미널 포트를 부여하므로, 자식은 터미널 호스트에서와 똑같이 [TTY](lua/system/tty.md) 모듈을 사용할 수 있습니다:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+grant는 일회성이며 승인 시점에 소비됩니다: 시작이 거부되면 grant는 해석되지 않은 채 남아 재사용할 수 있고, 포트를 해석한 자식은 이를 영구적으로 소비하며, 터미널 연결을 지원하지 않는 호스트는 옵션을 무시하는 대신 스폰을 거부합니다. 스폰하는 프로세스는 자신이 만든 뷰포트를 통해 자식의 프레임을 계속 읽습니다. [Terminal](system/terminal.md#composable-terminals)을 참조하세요.
 
 ### SpawnBuilder 메서드
 

@@ -1,6 +1,6 @@
 ---
 title: "テキスト処理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "正規表現、テキスト差分、セマンティックテキスト分割を提供します。"
 ---
 
 # テキスト処理

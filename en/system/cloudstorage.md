@@ -1,12 +1,12 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='external'/"
+description: "S3-compatible object storage with presigned URLs, multipart uploads and ranged reads."
 ---
 
 # Cloud Storage
 <secondary-label ref="external"/>
 
-S3-compatible object storage with presigned URLs.
+S3-compatible object storage with presigned URLs, multipart uploads and ranged reads.
 
 ## Entry Kinds
 
@@ -72,9 +72,32 @@ For MinIO or other S3-compatible services, set a custom endpoint:
 
 When an endpoint is provided, path-style access is enabled automatically.
 
+## Multipart Uploads
+
+Presigned multipart uploads are a provider capability, not a runtime feature. The `cloudstorage.s3` kind implements them; a provider that does not support the multipart protocol fails `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` and `abort_multipart_upload` with `errors.UNAVAILABLE`.
+
+Parts of an upload that is never completed or aborted stay stored and billed. Applications abort on every failure path, but a crashed client leaves nothing to run that abort. Configure an `AbortIncompleteMultipartUpload` lifecycle rule on the bucket as the backstop:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Ranged Reads
+
+`open_reader` reads an object through ranged GETs and pins the object's ETag with `If-Match` on every read. A provider that does not return an ETag on the initial stat fails the call with `errors.UNAVAILABLE`, and a provider that ignores `If-Match` loses the overwrite protection - the read then cannot detect that it mixed two object generations.
+
 ## Lua API
 
-See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
+See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs, multipart uploads, ranged readers).
 
 ## See Also
 

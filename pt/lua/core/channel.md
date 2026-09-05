@@ -1,6 +1,6 @@
 ---
 title: "Channels e Corrotinas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Channels estilo Go para comunicação entre corrotinas. Crie channels com ou sem buffer, envie e receba valores, e coordene entre processos…"
 ---
 
 # Channels e Corrotinas
@@ -74,7 +74,7 @@ end
 
 ## Fechando Channels
 
-Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Lança erro se já estiver fechado:
+Fechar o channel. Remetentes pendentes recebem erro, receptores pendentes recebem `nil, false`. Fechar um channel já fechado é uma no-op:
 
 ```lua
 local results = channel.new(10)
@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | Array de casos select |
 | `default` | boolean | Se true, retorna imediatamente quando nenhum caso está pronto |
 
-**Retorna:** `table` com campos: `channel`, `value`, `ok`, `default`
+**Retorna:** `table`
+
+- Para um caso de channel: `{channel, value, ok}` — `channel` é o channel do caso, `value` é o valor recebido/enviado, `ok` é false para um receive em channel fechado.
+- Para o ramo default (quando nenhum caso está pronto e `default = true`): `{default = true, ok = true}`.
 
 ### Padrão de Timeout
 
@@ -208,7 +211,6 @@ end
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Send em channel fechado | erro runtime | não |
-| Close de channel fechado | erro runtime | não |
 | Caso inválido em select | erro runtime | não |
 
 ## Veja Também

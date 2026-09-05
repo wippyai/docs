@@ -405,6 +405,36 @@ local tenant = ctx.get("tenant")         -- "tenant-1"
 local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
 ```
 
+### Sicherheitskontext
+
+Actor und Scope des Aufrufers reisen mit dem Workflow, getrennt von den `ctx`-Werten und unter strengeren Regeln. Sie werden in zwei Temporal-Headern getragen:
+
+| Header | Inhalt |
+|--------|--------|
+| `wippy-security` | JSON-Umschlag: Actor-ID, Actor-Metadaten, Richtlinien-IDs und der Adressat |
+| `wippy-security-signature` | HMAC-SHA256 über diesen Umschlag, mit dem `security_hmac_key` des Clients |
+
+Der Adressat ist die ID der Ausführung, für die der Header geprägt wurde — die Workflow-ID bei einem Start oder einem Signal, die Activity-ID bei einer Activity. Ein Header, der gegen eine andere Ausführung wiedereingespielt wird, besteht die Adressatenprüfung nicht, ein mitgeschnittener Header lässt sich also nicht anderswo wiederverwenden.
+
+Die Prüfung findet statt, bevor der Workflow-Rumpf läuft. Die Signatur muss zu einem der Schlüssel des Clients passen, der Adressat muss der ID dieser Ausführung entsprechen, und jede im Umschlag genannte Richtlinie muss sich in der lokalen Sicherheits-Registry auflösen lassen. **Scheitert eines davon, scheitert die Workflow-Ausführung** — das ist keine Warnung, und der Workflow läuft nicht mit einem reduzierten Kontext weiter. Dasselbe gilt für einen in sich widersprüchlichen Umschlag, etwa einen Actor ohne Scope oder Richtlinien ohne Actor.
+
+Konfiguriere die Schlüssel am [`temporal.client`](temporal/overview.md#security-context-propagation)-Entry. Einen Workflow aus einem Kontext zu starten, der einen Actor oder einen Scope hat, erfordert einen Signierschlüssel; ohne einen scheitert der Start, statt unsigniert fortzufahren.
+
+#### Gesicherte Workflows weisen unsignierte Signale ab
+
+Ein Workflow, der unter einem Sicherheitskontext läuft, verlangt von jedem eingehenden Signal ein signiertes Relay-Ticket — die Header `wippy-relay-signal` und `wippy-relay-signal-signature` — gebunden an diese Workflow-ID und diesen Signalnamen. Ein unsigniertes oder falsch adressiertes Signal wird abgewiesen statt zugestellt. Signale, die Wippy-Prozesse über `process.send` senden, werden automatisch signiert. Signale, die von außerhalb Wippys eingespeist werden — die Temporal-CLI, `tctl` oder ein anderes SDK — tragen kein Ticket und scheitern daher an einem gesicherten Workflow. Steuere einen gesicherten Workflow nur aus Wippy heraus.
+
+#### Deterministische Kind- und Activity-IDs
+
+Unter einem Sicherheitskontext bekommt ein Kind-Workflow oder eine Activity, die ohne explizite ID gestartet wird, eine abgeleitete statt einer zufälligen ID, denn die ID ist der Adressat, für den der Header signiert ist, und muss beim Replay reproduzierbar sein:
+
+| Gestartet aus einem gesicherten Workflow | Erzeugte ID |
+|------------------------------------------|-------------|
+| Kind-Workflow | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` zählt innerhalb der Workflow-Ausführung. Eine explizit angegebene `temporal.workflow.id` oder Activity-ID wird unverändert verwendet und wird zum Adressaten. Ohne Sicherheitskontext bleiben die IDs wie bisher Temporal überlassen.
+
 ### Von HTTP-Handlern
 
 ```lua
@@ -853,7 +883,7 @@ local now = time.now()
 local id = uuid.v4()
 
 -- Crypto operations
-local bytes = crypto.random_bytes(32)
+local bytes = crypto.random.bytes(32)
 
 -- Child workflows
 local result = workflow.exec("app:child", input)

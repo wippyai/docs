@@ -1,6 +1,6 @@
 ---
 title: "계약"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "타입화된 계약을 통해 서비스를 호출합니다. 스키마 검증과 비동기 실행 지원으로 원격 API, 워크플로우, 함수를 호출합니다."
 ---
 
 # 계약

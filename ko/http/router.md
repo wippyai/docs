@@ -68,7 +68,7 @@ flowchart TB
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `meta.router` | 레지스트리 ID | 부모 라우터 |
-| `method` | string | HTTP 메서드 (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP 메서드: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, 또는 모든 메서드를 뜻하는 `*` |
 | `path` | string | URL 경로 패턴 (`/`로 시작) |
 | `func` | 레지스트리 ID | 핸들러 함수 |
 
@@ -114,12 +114,24 @@ end
   func: serve_file
 ```
 
+와일드카드는 나머지 세그먼트에 매칭되므로 `GET /api/v1/files/docs/guides/readme.md` 같은 요청이 핸들러로 디스패치됩니다. 캡처된 꼬리 부분은 끝의 점을 뺀 이름으로 `req:param`을 통해 읽습니다:
+
 ```lua
--- 요청: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 와일드카드는 경로의 마지막 세그먼트여야 합니다.
+
+## 라우트 우선순위
+
+모든 라우터는 라우터의 `prefix`를 앞에 붙여 자신의 엔드포인트를 하나의 패턴 집합에 등록하며, 어떤 패턴이 요청을 처리할지는 Go의 `ServeMux`가 결정합니다. 그 규칙이 그대로 적용됩니다:
+
+- 가장 구체적인 패턴이 이깁니다. 한 패턴이 다른 패턴이 매칭하는 요청의 진부분집합에 매칭되면 더 구체적이므로, `/users/admin`이 `/users/{id}`를 이기고 `/files/{name}`이 `/files/{path...}`를 이깁니다.
+- 메서드가 있는 패턴이 메서드가 없는 동일 경로보다 더 구체적이므로, `GET` 요청에 대해서는 같은 경로의 `*` 엔드포인트보다 `GET` 엔드포인트가 우선합니다.
+- 끝의 `{path...}`나 `/`는 하위 트리 전체에 매칭되며, 그 부분집합에 매칭되는 어떤 패턴에도 집니다.
+- 매칭은 정리되고 디코딩된 경로에 대해 수행되며, 구체성은 등록 순서에 의존하지 않습니다.
+
+두 패턴이 정면으로 충돌할 수도 있습니다: 어느 쪽도 다른 쪽보다 더 구체적이지 않으면서 겹치는 경우로, `/users/{id}/settings`와 `/users/admin/{section}`이 그렇습니다. 이는 설정 오류입니다. 라우터는 재빌드 시 이를 드러내고, 재빌드가 실패하며, 이전 라우트 집합이 계속 서비스됩니다.
 
 ## 핸들러 함수
 
@@ -127,7 +139,6 @@ local file_path = req:param("filepath")  -- "docs/guides/readme.md"
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -136,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -167,7 +178,7 @@ options:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## 매칭 전 vs 매칭 후 미들웨어
@@ -288,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

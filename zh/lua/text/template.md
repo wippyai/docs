@@ -1,6 +1,6 @@
 ---
 title: "模板引擎"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "使用 Jet 模板引擎 渲染动态内容。使用模板继承和包含构建 HTML 页面、电子邮件和文档。"
 ---
 
 # 模板引擎

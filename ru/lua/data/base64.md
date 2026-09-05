@@ -1,6 +1,6 @@
 ---
 title: "Кодирование Base64"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Кодирование бинарных данных в base64-строки и декодирование обратно. Используется стандартное кодирование base64 согласно RFC 4648."
 ---
 
 # Кодирование Base64

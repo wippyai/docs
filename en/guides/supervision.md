@@ -150,6 +150,21 @@ end
 When no security context is configured, the service runs without an actor. In strict mode (default), security checks fail. Configure a security context for services that need authorization.
 </note>
 
+## Re-registration and Replacement
+
+A registry change can re-register an ID that already has a running controller. If the registration carries the same service instance, nothing is disturbed. If it carries a **different** instance — the manager rebuilt the service because its configuration changed — the supervisor retires the existing controller and adopts the replacement.
+
+Retirement covers more than the one service. A running dependent captured the superseded instance, so it cannot keep running against a service that is being replaced underneath it; the retirement closure is the replaced service plus every running service that depends on it, stopped in dependency order (dependents first). Services already stopped are not stopped a second time — a manager that stops its own instance before re-registering does not see a redundant `Stop`.
+
+The handover is transactional:
+
+1. The plan is computed without touching anything, so a planning failure leaves the running set intact.
+2. The stop batch runs. **If any stop fails, the handover is rejected**: the services the batch already stopped are brought back up and the error is reported. A service that could not be brought back is named in that error. The supervisor ends up owning the same running set it had before the commit, never a half-retired one.
+3. Only after the batch succeeds are the retired controllers dropped and canceled, freeing the superseded service instances.
+4. The replacement is created and started through the same dependency-aware sequencer as any other start, and the dependents that were stopped for the handover come back up against the adopted instance.
+
+A service that was running before the replacement is restarted afterwards even when the new registration sets `auto_start: false` — replacing an active service is an update, not an implicit stop. Restarting a stopped dependent is governed by its own restart policy and does not gate the commit.
+
 ## Service States
 
 ```mermaid
@@ -190,6 +205,14 @@ The supervisor transitions services through these states:
 ```
 Startup:  database → cache → handler → http_server
 Shutdown: http_server → handler → cache → database
+```
+
+On SIGINT or SIGTERM the runtime begins a graceful shutdown and the whole sequence runs under a single budget, `shutdown.timeout` in the runtime config (default 30s). That budget is a fresh deadline that does not inherit the interrupted context, so a Ctrl-C does not cut component shutdown short; per-service `stop_timeout` still bounds each individual stop within it. A second signal skips the sequence and exits immediately.
+
+```yaml
+# .wippy.yaml
+shutdown:
+  timeout: 60s
 ```
 
 ## See Also

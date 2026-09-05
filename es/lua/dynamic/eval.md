@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -101,6 +102,35 @@ local result, err = runner.run({
 | `context` | table | Valores disponibles como `ctx` |
 | `allow_classes` | string[] | Clases de módulo adicionales |
 | `custom_modules` | table | Tablas personalizadas como modulos |
+| `limits` | table | Limites de ejecucion para esta corrida |
+
+### Limite de Pasos
+
+`limits.max_steps` acota cuanto puede ejecutarse un `runner.run`:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+Un paso es un turno del scheduler de eval: el programa avanza hasta que cede o termina, y cada resume consume un paso. El computo puro entre cesiones cuenta como un solo paso sin importar cuanto dure, asi que el limite acota turnos de planificacion, no tiempo de CPU.
+
+Cuando la cuenta excede el limite, la corrida se detiene y devuelve `errors.INTERNAL` con `eval exceeded maximum step limit`.
+
+`max_steps = 0` significa sin limite. Omitir `limits` hereda el valor por defecto del host:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # presupuesto por defecto para corridas sin limits.max_steps
+                      # 0 = sin limite; un valor negativo hace fallar el arranque
+```
+
+`limits` se aplica solo a `runner.run`; `runner.compile` no acepta limites. `limits` debe ser una tabla que contenga unicamente `max_steps`, y `max_steps` debe ser un entero no negativo — cualquier otra cosa devuelve `errors.INVALID` antes de que el programa se ejecute.
 
 ### Acceso a Modulos
 
@@ -125,6 +155,7 @@ Importar entradas del registro:
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -161,10 +192,10 @@ Inyectar tablas personalizadas:
 ```lua
 runner.run({
     source = [[
-        return sdk.versión
+        return sdk.version
     ]],
     custom_modules = {
-        sdk = {versión = "1.0.0", api_key = "xxx"}
+        sdk = {version = "1.0.0", api_key = "xxx"}
     }
 })
 ```
@@ -176,7 +207,7 @@ Pasar datos accesibles como `ctx`:
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })

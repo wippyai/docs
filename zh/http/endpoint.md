@@ -24,7 +24,7 @@ description: "端点 (http.endpoint) 定义执行 Lua 函数的 HTTP 路由处�
 | 字段 | 类型 | 必需 | 说明 |
 |------|------|------|------|
 | `meta.router` | registry.ID | 否 | 父级路由器 (如果仅注册了一个路由器则默认使用该路由器) |
-| `method` | string | 是 | HTTP 方法 |
+| `method` | string | 是 | HTTP 方法，或用 `"*"` 表示任意方法 |
 | `path` | string | 是 | URL 路径模式 |
 | `func` | registry.ID | 是 | 要执行的函数 |
 
@@ -42,6 +42,23 @@ description: "端点 (http.endpoint) 定义执行 Lua 函数的 HTTP 路由处�
 | `HEAD` | 仅获取头部 |
 | `OPTIONS` | CORS 预检 (自动处理) |
 | `TRACE` | 诊断回环 |
+| `*` | 任意方法 |
+
+方法名为大写；`method` 为必填项，该集合之外的任何取值都会被作为配置错误拒绝。
+
+### 与方法无关的端点
+
+`method: "*"` 会为每个 HTTP 方法注册该路径，处理函数通过 `req:method()` 读取实际方法：
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+对于普通端点，路由器还会在同一路径上注册一个 `OPTIONS` 处理器，因此 CORS 中间件可以在端点不运行的情况下应答预检请求。`*` 端点不会获得这样的处理器：它本身就匹配 `OPTIONS`。路由器中间件仍然会包裹它，因此已配置的 CORS 中间件会在端点运行之前以 `204` 应答被允许的预检请求；其他任何 `OPTIONS` 请求都会到达端点函数本身，必须由它来应答。
 
 ## 路径参数
 
@@ -85,12 +102,11 @@ end
   func: serve_file
 ```
 
+这个通配段使该路由匹配 `/files/docs/readme.md` 这类请求。捕获到的尾部像其他参数一样读取，名称为去掉末尾点号后的部分：
+
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## 处理函数
@@ -278,7 +294,22 @@ entries:
 
 ### 受保护端点
 
+授权中间件配置在父路由器上，而不是端点上。匹配后中间件（如 `endpoint_firewall`）在路由匹配之后运行，并作用于该路由器下的每个端点：
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -286,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## 参见

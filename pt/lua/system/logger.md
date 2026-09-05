@@ -1,6 +1,6 @@
 ---
 title: "Logging"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Logging estruturado com niveis debug, info, warn e error."
 ---
 
 # Logging

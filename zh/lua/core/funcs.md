@@ -1,6 +1,6 @@
 ---
 title: "函数调用"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "在 Wippy 中调用其他函数的主要方式。跨进程同步或异步执行已注册的函数，完全支持上下文传播、安全凭证和超时。此模块是构建需要组件间通信的分布式应用的核心。"
 ---
 
 # 函数调用
@@ -110,7 +110,7 @@ local actor = security.actor()  -- 获取当前用户的 actor
 -- 用用户凭证调用管理函数
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

@@ -123,9 +123,25 @@ Each process has an MPSC (multi-producer, single-consumer) event queue:
 - **Producers**: Command handlers (`CompleteYield`), message senders (`Send`)
 - **Consumer**: Worker drains events in `Step()`
 
+A generation counter guards the queue. Every producer binds to the generation it observed; `Reset` bumps it, so a sender left over from a previous execution cannot push into a reused queue.
+
+Ordinary event traffic is unbounded. Accounting is opt-in per message: a message that carries `MaxItems` or `MaxBytes` is admitted against a per-topic budget, and the tightest limit seen for a topic wins. A message holds its reservation until the consuming process releases it, and terminals never consume backlog capacity.
+
+When a topic's budget is exhausted, the queue appends one synthetic message in the overflowing message's place, carrying `message queue limit exceeded` followed by a terminal payload. Further traffic on that topic is discarded until the queue is reset, so a bounded subscription ends with an error terminal rather than growing without bound.
+
 ## Message Routing
 
-The scheduler implements `relay.Receiver` to route messages to processes. When `Send()` is called, it looks up the target PID in `byPID` map, pushes the message as an event to the process queue, and wakes the process if it is idle or blocked. It re-queues via injectOrGlobal, which pushes to the last worker's per-worker inject queue when the process has a known worker affinity, and falls back to the global queue otherwise.
+The scheduler implements `relay.Receiver` to route messages to processes. `Send` delegates to `SendContext` with a background context; `SendContext` checks cancellation before the target lookup and before admission, because admission itself is non-blocking and irreversible once it succeeds.
+
+Both look up the target PID in the `byPID` map and push the package onto the process queue under the processor's current generation. Admission is three-way:
+
+| Result | Meaning | Package ownership |
+|--------|---------|-------------------|
+| Accepted | The queue took the package | Queue, released by the scheduler after processing |
+| Dropped | A per-topic budget overflowed and the queue retained nothing but its own overflow terminal | Caller, released immediately |
+| Rejected | The queue is closed or the generation is stale | Caller; `SendContext` returns `ErrProcessClosed` |
+
+An accepted or dropped push then wakes the process if it is idle or blocked. It re-queues via injectOrGlobal, which pushes to the last worker's per-worker inject queue when the process has a known worker affinity, and falls back to the global queue otherwise.
 
 ## Shutdown
 

@@ -1,6 +1,6 @@
 ---
 title: "Function Invocation"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "The primary way to call other functions in Wippy. Execute registered functions synchronously or asynchronously across processes, with full support…"
 ---
 
 # Function Invocation

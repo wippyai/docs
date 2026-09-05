@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Behandeln Sie HTTP-Anfragen und erstellen Sie Responses. Zugriff auf Anfragedaten, Route-Parameter, Header und Body-Inhalt. Erstellen Sie Responses…"
 ---
 
 # HTTP
@@ -121,6 +121,23 @@ end
 local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
+
+Die Suche ist nicht case-sensitiv: `req:header("content-type")` und `req:header("Content-Type")` liefern denselben Wert. Ein mehrfach gesendeter Header liefert seine Werte mit `", "` verbunden. Ein nicht vorhandener Header liefert `nil`.
+
+### headers
+
+Ruft alle Request-Header ab.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Gibt zurück:** `table, error`
+
+Die Schlüssel sind kanonische Header-Namen (`Content-Type`, `X-Correlation-ID`), unabhängig von der Schreibweise, die der Client gesendet hat. Wiederholte Header werden mit `", "` verbunden, wie bei `req:header()`.
 
 ### content_type
 

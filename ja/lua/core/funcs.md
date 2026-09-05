@@ -1,6 +1,6 @@
 ---
 title: "関数呼び出し"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Wippyで他の関数を呼び出すプライマリな方法。コンテキスト伝播、セキュリティ資格情報、タイムアウトをフルサポートして、登録された関数をプロセス間で同期または非同期に実行。このモジュールは、コンポーネントが通信する必要のある分散アプリケーションを構築する上で中心的な役割を果たします。"
 ---
 
 # 関数呼び出し
@@ -110,7 +110,7 @@ local actor = security.actor()  -- 現在のユーザーのアクターを取得
 -- ユーザーの資格情報でadmin関数を呼び出し
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

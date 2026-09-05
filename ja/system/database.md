@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # インメモリには:memory:を使用
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+プライベートなインメモリSQLiteデータベース（<code>file: ":memory:"</code>）は1本の物理接続にスコープされるため、<code>max_open</code>と<code>max_idle</code>は<code>1</code>に強制されます。ファイルベースのデータベースは設定された<code>pool</code>の値をそのまま使用します。CDCのスナップショット読み取りトランザクションが唯一のライター接続を占有しないために、これが必要です。ジャーナルモードは常に<code>WAL</code>です。
+</note>
 
 ## 接続フィールド
 
@@ -75,37 +77,37 @@ entries:
 
 ### SQLiteフィールド
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `file` | string | データベースファイルパスまたは`:memory:` |
-| `pool` | object | 接続プール設定 |
-| `options` | map | SQLite固有のオプション |
-| `lifecycle` | object | ライフサイクル設定 |
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|-----------|------|
+| `file` | string | 必須 | データベースファイルパスまたは`:memory:` |
+| `pool` | object | - | 接続プール設定。`:memory:`では`max_open`と`max_idle`は`1`に強制される |
+| `max_mutation_changes` | int | 100000 | コミット済みミューテーションオブザーバーで1トランザクションが保持できる行数 |
+| `max_mutation_bytes` | int | 67108864 | オブザーバーで1トランザクションが保持できる論理バイト数（64 MiB） |
+| `options` | map | - | 受け付けられるが無視される |
+| `lifecycle` | object | - | ライフサイクル設定 |
 
-### 環境変数フィールド
+`max_mutation_changes`と`max_mutation_bytes`は、[`db.cdc.sqlite`](system/cdc.md)ソースに供給するインメモリのコミット済みミューテーションオブザーバーの上限を定めます。いずれのフィールドも0を指定するとデフォルトが選択され、負の値は拒否されます。この上限は厳密ではなく保守的なものです。SQLiteはpre-updateフックに行全体を渡すため、上限が候補を拒否する前に1行が実体化することがあります。
 
-環境変数または[env.variable](system/env.md)エントリから値をロードするには`_env`サフィックスを使用：
+### シークレットと環境変数の値
 
-| フィールド | 説明 |
-|------------|------|
-| `host_env` | 環境変数からのホスト |
-| `port_env` | 環境変数からのポート |
-| `database_env` | 環境変数からのデータベース名 |
-| `username_env` | 環境変数からのユーザー名 |
-| `password_env` | 環境変数からのパスワード |
+接続値は`${env:NAME}`プレースホルダで[環境レジストリ](system/env.md)から取得され、デコード時に解決されます。`NAME`は登録済み変数の公開名またはそのエントリID（例: `app.secrets:db_password`）であり、生のOS環境変数ではありません。
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # env.variableエントリを参照
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+古い設定では、同じ方法で解決される兄弟の<code>&lt;field&gt;_env</code>ディレクティブ（<code>host_env</code>、<code>port_env</code>、<code>database_env</code>、<code>username_env</code>、<code>password_env</code>）を使用します。この形式は<b>非推奨</b>です — 上記の<code>${env:NAME}</code>プレースホルダに移行してください。
+</note>
+
 <warning>
-設定にパスワードをハードコードしないでください。認証情報には環境変数または<code>env.variable</code>エントリを使用してください。セキュアなシークレット管理については<a href="system/env.md">環境変数</a>を参照してください。
+設定にパスワードをハードコードしないでください。認証情報には<code>env.variable</code>エントリを使用してください。セキュアなシークレット管理については<a href="system/env.md">環境変数</a>を参照してください。
 </warning>
 
 ## 接続プール
@@ -115,7 +117,7 @@ entries:
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `max_open` | int | 0 | 最大オープン接続数（0 = 無制限） |
-| `max_idle` | int | 0 | 最大アイドル接続数（0 = 無制限） |
+| `max_idle` | int | 0 | 最大アイドル接続数（0 = アイドル接続を保持しない） |
 | `max_lifetime` | duration | 1h | 最大接続寿命 |
 
 ```yaml
@@ -131,25 +133,27 @@ pool:
 
 ## DSN形式
 
-各データベースタイプは設定からDSNを構築します：
+各データベースタイプは設定からDSNを構築します。`options`はすべて（キー順にソートして）付加されます。デフォルトで含まれるものはありません。
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+ポート以外のすべての値はシングルクォートで囲まれ、埋め込まれた`'`と`\`はバックスラッシュでエスケープされます。そのため、スペースやクォートを含むホスト、パスワード、オプション値もそのまま渡されます。
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## データベースオプション
@@ -176,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLiteは`options`マップをDSNに適用しません。ファイルデータベースは常に`mode=rwc`で開かれ、ジャーナルモードは常に`WAL`に設定されます。`options`フィールドは受け付けられますが無視されます。
 
 ## 例
 
@@ -194,7 +193,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -217,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -234,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### 複数データベースセットアップ
@@ -249,22 +242,22 @@ entries:
   # プライマリデータベース
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # 分析データベース
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -287,5 +280,6 @@ entries:
 ## 関連項目
 
 - [SQLモジュール](lua/storage/sql.md) - Lua APIリファレンス
-- [ストア](system/store.md) - `database.sql`に基づくキーバリューストア
+- [ストア](system/store.md) - `db.sql.*`データベースをバックエンドとするキーバリューストア
 - [キュー](system/queue.md) - SQLバックエンドのキューハンドラ
+- [変更データキャプチャ](system/cdc.md) - `db.sql.sqlite`またはPostgresデータベースからの行レベル変更のストリーミング

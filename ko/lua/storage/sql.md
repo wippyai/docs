@@ -1,6 +1,6 @@
 ---
 title: "SQL 데이터베이스"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다."
 ---
 
 # SQL 데이터베이스

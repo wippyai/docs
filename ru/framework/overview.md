@@ -1,24 +1,24 @@
 ---
-title: "Framework"
-description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
+title: "Фреймворк"
+description: "Wippy предоставляет официальные модули фреймворка через хаб. Эти модули сопровождаются организацией wippy и могут быть добавлены в любой проект."
 ---
 
-# Framework
+# Фреймворк
 
-Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
+Wippy предоставляет официальные модули фреймворка через хаб. Эти модули сопровождаются организацией `wippy` и могут быть добавлены в любой проект.
 
-## Adding Framework Modules
+## Добавление модулей фреймворка
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-This adds the module to your lock file and downloads it to `.wippy/vendor/`.
+Это добавляет модуль в lock-файл и загружает его в `.wippy/vendor/`.
 
-## Declaring Dependencies in Source
+## Объявление зависимостей в исходниках
 
-Framework modules can also be declared as dependencies in your `_index.yaml`:
+Модули фреймворка можно также объявить как зависимости в `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -31,15 +31,15 @@ entries:
     version: "^0.3.0"
 ```
 
-Then resolve and install:
+Затем разрешите и установите их:
 
 ```bash
 wippy update
 ```
 
-## Importing Framework Libraries
+## Импорт библиотек фреймворка
 
-Once installed, import framework libraries into your entries:
+После установки импортируйте библиотеки фреймворка в свои записи:
 
 ```yaml
 entries:
@@ -54,31 +54,33 @@ entries:
       test: wippy.test:test
 ```
 
-The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
+Импорт отображает `wippy.test:test` (запись `test` из пространства имён `wippy.test`) на локальное имя `test`, которое затем используется как `require("test")` в Lua.
 
-## Available Modules
+## Доступные модули
 
-| Module | Description |
-|--------|-------------|
-| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
-| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
-| `wippy/test` | BDD-style testing framework with assertions and mocking |
-| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
-| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
-| `wippy/views` | Virtual page/component system with template rendering |
+| Модуль | Описание |
+|--------|----------|
+| `wippy/llm` | Единый интерфейс к LLM с генерацией, стримингом, вызовом инструментов и структурированным выводом |
+| `wippy/agent` | Фреймворк агентов с инструментами, делегатами, трейтами и памятью |
+| `wippy/embeddings` | Хранение векторных эмбеддингов и поиск по сходству |
+| `wippy/test` | Фреймворк тестирования в стиле BDD с ассертами и моками |
+| `wippy/dataflow` | Оркестрация рабочих процессов с выполнением узлов на основе DAG |
+| `wippy/relay` | WebSocket-релей с хабами по пользователям и маршрутизацией плагинов |
+| `wippy/views` | Система виртуальных страниц и компонентов с рендерингом шаблонов |
 | `wippy/facade` | Конфигурация фронтенд-хоста, тематизация и эндпоинт конфигурации |
-| `wippy/terminal` | Terminal UI components |
+| `wippy/terminal` | Компоненты терминального UI |
+| `wippy/migration` | Миграции схемы базы данных |
 | `wippy/security` | Области действия акторов, наборы политик и помощники безопасности |
 | `wippy/usage` | Учёт токенов и расходов для LLM-вызовов |
 
-More modules are available and being published regularly. Search the hub:
+Доступны и другие модули, они публикуются регулярно. Ищите в хабе:
 
 ```bash
 wippy search wippy
 ```
 
-## See Also
+## См. также
 
-- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
-- [Publishing](guides/publishing.md) - Publishing your own modules
-- [CLI Reference](guides/cli.md) - CLI commands
+- [Управление зависимостями](guides/dependency-management.md) - Lock-файл и ограничения версий
+- [Публикация](guides/publishing.md) - Публикация собственных модулей
+- [Справочник CLI](guides/cli.md) - Команды CLI

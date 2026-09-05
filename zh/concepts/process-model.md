@@ -97,7 +97,9 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 服务自动启动，在崩溃时带退避重启，并与运行时的生命周期管理集成。

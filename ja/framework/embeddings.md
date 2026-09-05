@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-依存関係を宣言し、`target_db` 要件をアプリケーションデータベースに向けます:
+依存関係を宣言し、依存関係の `parameters` を通じて `target_db` 要件をアプリケーションデータベースに向けます:
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-起動時に、`wippy/migration` が `01_create_embeddings_table` マイグレーションを取得し、使用しているデータベースドライバーに適したベクトルインデックスを持つ `embeddings` テーブルを作成します。
+起動時に、`wippy/migration` が `01_create_embeddings_table` マイグレーションを取得し、使用しているデータベースドライバーに適したベクトルインデックスを持つ `embeddings_512` テーブルを作成します。
 
 ## 設定定数
 
@@ -151,8 +149,8 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 マイグレーションは、`target_db` のデータベースドライバーに適したスキーマを作成します:
 
-- **PostgreSQL** - `vector(512)` カラムと IVFFlat インデックスを持つ `embeddings` テーブル。`pgvector` 拡張機能が必要です。
-- **SQLite** - ベクトルをテキストとして保存する `embeddings` テーブルと、KNN 検索用の `sqlite-vec` 仮想テーブル。
+- **PostgreSQL** - `vector(512)` カラムと IVFFlat インデックスを持つ `embeddings_512` テーブル。`pgvector` 拡張機能が必要です。
+- **SQLite** - KNN 検索のために、メタデータおよびコンテンツのカラムと並べて `embedding float[512]` ベクトルカラムを保持する `embeddings_512` `vec0` 仮想テーブル。
 
 ベクトルは API レイヤーでは常にプレーンな JSON 配列として受け渡しされます。
 

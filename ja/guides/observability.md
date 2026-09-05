@@ -121,7 +121,7 @@ otel:
   # 関数呼び出しトレーシング
   interceptor:
     enabled: true
-    order: 0                   # インターセプター実行順序
+    order: 100                 # インターセプター実行順序
 ```
 
 ### Temporalワークフロー

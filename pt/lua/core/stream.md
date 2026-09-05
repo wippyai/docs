@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Operações de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.)."
 ---
 
 # Streams
@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `size` | integer | Bytes para ler (0 = ler tudo disponível) |
+| `size` | integer | Bytes para ler (0 = bloco padrão de 32KB) |
 
-**Retorna:** `string, error` - nil em EOF
-
-```lua
--- Ler todos os dados restantes
-local data, err = stream:read_all()
-```
+**Retorna:** `string, error` — `nil, nil` em EOF
 
 ## Escrita
 
@@ -47,7 +42,7 @@ local bytes, err = stream:write(data)
 |-----------|------|-----------|
 | `data` | string | Dados para escrever |
 
-**Retorna:** `integer, error` - bytes escritos
+**Retorna:** `integer, error` — bytes escritos
 
 ## Seeking
 
@@ -60,7 +55,7 @@ local pos, err = stream:seek(whence, offset)
 | `whence` | string | `"set"`, `"cur"` ou `"end"` |
 | `offset` | integer | Offset em bytes |
 
-**Retorna:** `integer, error` - nova posicao
+**Retorna:** `integer, error` — nova posicao
 
 ## Flushing
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### Métodos do Scanner
 
 ```lua
-local has_more = scanner:scan()  -- Avancar para proximo token
-local token = scanner:text()      -- Obter token atual
-local err_msg = scanner:err()     -- Obter erro se houver
+local has_more, err = scanner:scan()  -- avancar para o proximo token
+local token = scanner:text()           -- token atual
+local err_msg = scanner:err()          -- erro do scanner, se houver
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

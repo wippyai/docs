@@ -163,11 +163,15 @@ entries:
 
 O servidor pode terminar TLS diretamente. Defina `tls.mode` como `manual` (forneça seu próprio certificado) ou `auto` (certificado fornecido por um driver de rede overlay, ex. `network.tailscale`). Listeners clearnet simples não suportam `auto`. Omita `tls` ou deixe o mode vazio para executar HTTP simples.
 
-No modo `auto` o servidor não deve especificar `cert`/`key`/`cert_env`/`key_env` — o driver de rede os fornece.
+No modo `auto` o servidor não deve especificar `cert`/`key` — o driver de rede os fornece.
 
 ### Certificado manual
 
-Forneça cert e key inline/carregados de arquivo ou via variáveis de ambiente (nunca ambos):
+Sob `mode: manual`, `cert` e `key` carregam conteúdo PEM. Forneça esse conteúdo de uma de três formas (escolha uma por campo, nunca misture):
+
+1. **PEM inline** — a string PEM literal.
+2. **Referência `file://`** — caminho relativo ao manifesto, resolvido e embutido no momento do carregamento (seguro contra traversal).
+3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](system/env.md) registrada no momento da decodificação, usando um placeholder `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ Forneça cert e key inline/carregados de arquivo ou via variáveis de ambiente (
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+O placeholder `${env:NAME}` resolve `NAME` através do [registro de ambiente](system/env.md) — o nome público de uma variável registrada ou o ID da sua entrada (ex. `app.env:tls_cert`). Não é uma variável de ambiente bruta do SO; um valor do SO só é alcançável quando uma variável com backend `env.storage.os` está registrada sob aquele nome. Um padrão pode ser fornecido com `${env:NAME|default}`.
+
+<note>
+Os campos companheiros legados <code>cert_env</code> / <code>key_env</code> ainda resolvem através do registro de ambiente da mesma forma, mas estão <b>deprecados</b> — prefira o placeholder <code>${env:NAME}</code> mostrado acima.
+</note>
 
 | Campo | Descrição |
 |-------|-----------|
 | `mode` | `""` (off), `auto` ou `manual` |
-| `cert` / `key` | Conteúdo PEM (tipicamente carregado via `file://`) |
-| `cert_env` / `key_env` | Nomes de variáveis de ambiente resolvidas via o [registro env](system/env.md) |
+| `cert` / `key` | Conteúdo PEM — inline, referência `file://` ou placeholder `${env:NAME}` |
 
 ### Mutual TLS (mTLS)
 
@@ -202,17 +211,18 @@ Sob `mode: manual` o servidor pode adicionalmente verificar certificados de clie
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` aceita as mesmas três formas de `cert`/`key` (PEM inline, `file://` ou `${env:NAME}`). O campo companheiro legado `client_ca_env` está igualmente deprecado em favor de `client_ca: ${env:NAME}`.
+
 | Campo | Descrição |
 |-------|-----------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | Bundle PEM de CAs de cliente confiáveis |
-| `client_ca_env` | Variável de ambiente contendo o bundle da CA (mutuamente exclusiva com `client_ca`) |
+| `client_ca` | Bundle PEM de CAs de cliente confiáveis (inline, `file://` ou `${env:NAME}`) |
 
 `verify_if_given` e `require_and_verify` exigem uma CA. `request` e `require_any` aceitam qualquer certificado de cliente sem verificação de CA.
 

@@ -12,7 +12,7 @@ description: "프로젝트 레이아웃, YAML 정의 파일, 명명 규칙."
 ```
 myapp/
 ├── .wippy.yaml          # 런타임 설정
-├── wippy.lock           # 소스 디렉토리 설정
+├── wippy.lock           # 소스 디렉토리 및 잠긴 모듈
 ├── .wippy/              # 설치된 모듈
 └── src/                 # 애플리케이션 소스
     ├── _index.yaml      # 엔트리 정의
@@ -32,7 +32,7 @@ YAML 정의는 시작 시 레지스트리에 로드됩니다. 레지스트리가
 
 ### 파일 구조
 
-`version`과 `namespace`가 있는 모든 YAML 파일이 유효합니다:
+`namespace`와 함께 `entries` 배열 또는 최상위 `name`+`kind`가 있는 모든 YAML 파일이 유효한 정의 파일입니다. `version`은 선택적입니다:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `version` | 예 | 스키마 버전 (현재 `"1.0"`) |
+| `version` | 아니오 | 스키마 버전 (현재 `"1.0"`) |
 | `namespace` | 예 | 이 파일의 엔트리 네임스페이스 |
 | `entries` | 예 | 엔트리 정의 배열 |
 
@@ -100,17 +100,35 @@ app.workers
 
 엔트리 전체 ID는 네임스페이스와 이름을 결합합니다: `app.api:get_user`
 
-### 소스 디렉토리
+### 잠금 파일
 
-`wippy.lock` 파일은 Wippy가 정의를 로드하는 위치를 정의합니다:
+`wippy.lock`은 Wippy가 정의를 로드하는 위치와 어떤 모듈 버전이 선택되었는지를 기록합니다:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy는 이러한 디렉토리를 재귀적으로 스캔하여 YAML 파일을 찾습니다.
+| 필드 | 설명 |
+|-------|-------------|
+| `directories.src` | 애플리케이션 소스 디렉토리, YAML 정의 파일을 재귀적으로 스캔 |
+| `directories.modules` | vendor된 모듈의 기본 디렉토리; 팩은 `<modules>/vendor/` 아래에 놓임 |
+| `options.unpack_modules` | 팩을 직접 로드하는 대신 각 `.wapp`을 옆의 디렉토리로 추출 (기본값 `false`) |
+| `modules[].name` | `org/module` 형식의 모듈 식별자 |
+| `modules[].version` | 선택된 버전 |
+| `modules[].hash` | vendor된 팩이 일치해야 하는 아티팩트 다이제스트 |
+| `modules[].root` | 선택된 배포 루트 표시; 최대 하나의 모듈만 가질 수 있음 |
+
+vendor된 팩은 `.wapp` 파일로 보관됩니다. `unpack_modules: true`이면 각 모듈이 디렉토리로도 추출되고, 검증된 `.wapp`은 그 옆에 남습니다 — 설치는 팩을 찾으므로 팩이 없는 디렉토리는 다시 다운로드됩니다.
+
+`wippy.lock`의 `replacements:` 섹션은 더 이상 사용되지 않습니다. 경고와 함께 여전히 로드되지만, 로컬 모듈 오버라이드는 런타임 설정 파일의 `workspace.replacements` 아래에 선언하세요. [의존성 관리](guides/dependency-management.md#local-development-with-replacements)를 참조하세요.
 
 ## 엔트리 정의
 
@@ -189,44 +207,45 @@ UI 표시용 정보는 `meta`에 지정합니다:
 프로젝트 루트의 런타임 설정:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 모든 옵션은 [설정 가이드](guides/configuration.md)를 참조하세요.
 
 ### wippy.lock
 
-소스 디렉토리 정의:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+소스 디렉토리와 선택된 모듈 그래프 — 위의 [잠금 파일](#the-lock-file)을 참조하세요.
 
 ## 엔트리 참조
 
-전체 ID 또는 상대 이름으로 엔트리를 참조합니다:
+전체 ID 또는 상대 이름으로 엔트리를 참조합니다. 자식은 부모 쪽 목록이 아니라 `meta`를 통해 부모에 연결됩니다:
 
 ```yaml
-# 전체 ID (네임스페이스 간)
-- name: main.router
+# 라우터가 서버에 대해 자신을 선언
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 같은 네임스페이스 - 이름만 사용
+# 엔드포인트는 레지스트리 ID로 라우터를 참조 (네임스페이스 간에도 동일하게 동작)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## 예제 프로젝트

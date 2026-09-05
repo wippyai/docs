@@ -119,7 +119,7 @@ Las variables proporcionan acceso nombrado a valores de almacenes.
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | Propiedad | Tipo | Descripción |
@@ -127,7 +127,7 @@ Las variables proporcionan acceso nombrado a valores de almacenes.
 | `variable` | string | Nombre de variable pública (opcional, debe ser único) |
 | `storage` | string | Referencia de almacén (`namespace:nombre`) |
 | `default` | string | Valor por defecto si no se encuentra |
-| `read_only` | boolean | Prevenir modificaciones |
+| `readonly` | boolean | Prevenir modificaciones |
 
 ### Nomenclatura de Variables
 

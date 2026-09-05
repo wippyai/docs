@@ -29,7 +29,8 @@ a.foo.bar.baz()              -- エラーなし、ランタイムでクラッシ
 
 -- unknown: 安全な未知の型、使用前にナローイングが必要
 local u: unknown = get_data()
-u.foo                        -- エラー: unknown のプロパティにはアクセスできません
+u.foo                        -- エラーなし: unknown へのメンバーアクセスは any と同様に振る舞う
+local n: number = u          -- エラー: unknown は number に代入できない。先にナローイングする
 if type(u) == "table" then
     -- ここで u は table にナローイングされる
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- user が非 nil であることをアサート
+local name = (user!).name            -- user が非 nil であることをアサート
 ```
 
-ランタイム時に値が nil の場合、エラーが発生します。値が nil でないことが分かっているが、型チェッカーがそれを証明できない場合に使用します。
+`!` は型チェッカー上のアサーションにすぎません。型を非 nil にナローイングしますが、ランタイムチェックは生成しません。値が実際に nil であれば、後続の操作は通常のエラー（nil のインデックス参照など）で失敗します。値が nil でないことが分かっているが、型チェッカーがそれを証明できない場合に使用します。
 
 ## 型キャスト
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- 文字列パターン
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- 引数なしバリデータ
-local x: number @integer = 42
 ```
 
 ### 組み込みバリデータ

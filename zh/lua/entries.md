@@ -17,7 +17,7 @@ Lua 相关记录的配置：函数、进程、工作流和库。
 | `library.lua` | 被其他记录导入的共享代码 |
 | `module.lua` | 模块表面（多方法库） |
 
-每种类型都有一个预编译的字节码对应版本（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`），由 `wippy pack --bytecode` 生成。作者编写 `.lua` 记录；打包时会自动生成字节码类型。
+每种类型都有一个预编译的字节码对应版本（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`），由 `wippy pack --bytecode '**'`（或 `--bytecode 'app:**'` 这样的模式）生成。作者编写 `.lua` 记录；使用该标志打包时会产出字节码类型。
 
 ## 通用字段
 
@@ -168,26 +168,26 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # 默认
-    size: 4           # 初始 worker 数
-    max_size: 16      # 弹性池上限
+    type: adaptive    # 显式指定；省略则使用自动选择（lazy）
+    max_size: 16      # 弹性增长的上限
 ```
 
 | 字段 | 池类型 | 描述 |
 |------|--------|------|
 | `type` | 全部 | 调度器实现（参见下表） |
-| `size` | static, lazy, adaptive | 初始 worker 数 |
-| `workers` | engine v2 | worker 线程数 |
-| `buffer` | static, adaptive | 任务队列容量（默认 `workers * 64`） |
-| `warm_start` | adaptive | 启动时预编译条目 |
-| `max_size` | lazy, adaptive | 弹性扩展上限（默认 16） |
+| `workers` | static | worker 线程数（未设置时回退到 `size`，再回退到 8） |
+| `size` | static | 未设置 `workers` 时的 worker 数；同时会引导自动选择走向 static 池 |
+| `buffer` | static | 任务队列容量（默认 `workers * 64`） |
+| `max_size` | lazy, adaptive | 弹性增长的上限（默认 16） |
 
 | 类型 | 行为 |
 |------|------|
 | `inline` | 在调用者的 goroutine 中同步执行。延迟最低，调用之间无隔离。 |
 | `lazy` | 空闲时无 worker，按需创建，空闲时回收。 |
 | `static` | 基于 channel 的固定大小池。在稳定负载下可预测。 |
-| `adaptive` | 自动扩展池——负载下扩容，空闲时收缩。默认。 |
+| `adaptive` | 自动扩展池——负载下扩容，空闲时收缩。 |
+
+省略 `type` 时，池会依据其他字段自动选择：默认为 lazy 池；若设置了 `workers`，则为 static 池。
 
 ## 元数据
 
@@ -211,7 +211,7 @@ imports:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## 另请参阅

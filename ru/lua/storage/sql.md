@@ -1,6 +1,6 @@
 ---
 title: "База данных SQL"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Выполнение SQL-запросов к базам данных PostgreSQL, MySQL и SQLite. Поддержка параметризованных запросов, транзакций, подготовленных выражений и…"
 ---
 
 # База данных SQL

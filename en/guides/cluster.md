@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 The first node needs no `join_addrs` — it starts as a seed. Joins retry with backoff, and a node that finds itself isolated periodically re-attempts to rejoin, so a node restarted with a new IP (common in Kubernetes) reconverges quickly.
 
-Gossip can be encrypted with a shared key, supplied inline or from a file:
+Gossip is always encrypted with a shared key. Supply it inline as `membership.secret_key` or from a file as `membership.secret_file`; a node started with neither fails to bring the cluster component up. The value is base64-encoded and identical on every node.
+
+Membership changes (`NodeJoined`, `NodeLeft`, `NodeUpdated`) are the events that drive Raft bootstrap, voter reconciliation, process-group sync, and automatic cleanup of names owned by a departed node.
+
+## Internode identity
+
+Every node holds an ed25519 key pair, and every node carries the map of public keys it trusts. Both are mandatory when `cluster.enabled: true`.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-Membership changes (`NodeJoined`, `NodeLeft`, `NodeUpdated`) are the events that drive Raft bootstrap, voter reconciliation, process-group sync, and automatic cleanup of names owned by a departed node.
+| Key | Content |
+|-----|---------|
+| `internode.identity_key` | The node's private key, inline |
+| `internode.identity_key_file` | Path to a file holding that key |
+| `internode.trusted_peer_keys` | Node name to public key, for every node in the mesh including this one |
+
+Key format: base64, standard or raw (unpadded) encoding. A private key decodes to either a 32-byte ed25519 seed or a full 64-byte ed25519 private key; a trusted peer key decodes to a 32-byte ed25519 public key. There is no key-generation subcommand — mint keys with any ed25519 tool and base64 the raw bytes:
+
+```bash
+# 32-byte seed and its public key, base64-encoded
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` and `identity_key_file` are mutually exclusive, and one of them is required. `trusted_peer_keys` must contain an entry for the local `cluster.name` whose value is this node's own public key; a missing or mismatched self entry aborts startup. This makes the trusted map a single artifact you can distribute unchanged to every node.
+
+The mesh handshake is mutual. Each side proves knowledge of the shared gossip secret with an HMAC over a transcript binding both node IDs and both nonces, and signs that transcript with its identity key; the peer verifies the signature against the public key it has for that node ID and against the key the peer advertises in gossip. Either check failing closes the connection.
+
+Consequences to plan for:
+
+- The mesh does not interoperate with a node that has no identity. Every node in the cluster must be configured with one.
+- A peer whose node ID is absent from `trusted_peer_keys` is rejected, as is one whose gossip-advertised public key disagrees with the trusted entry. Adding a node means distributing its public key to the existing nodes.
+- A node ID must be present in the live gossip membership before its key resolves, so a peer that has not joined gossip cannot open a mesh connection.
 
 ## Bootstrap
 
@@ -146,11 +187,17 @@ Single node (development):
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Three-node voting cluster:
+Three-node voting cluster (`node-2` and `node-3` differ only in `name`, `identity_key_file`, and `join_addrs`):
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-Gossip-only client (joins for naming/messaging, never runs Raft):
+Gossip-only client (joins for naming/messaging, never runs Raft). It still needs an identity, and the voters need its public key in their own maps:
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

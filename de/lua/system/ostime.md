@@ -1,6 +1,6 @@
 ---
 title: "OS-Zeit"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Standard-Lua-os-Zeitfunktionen. Liefert echte Wanduhrzeit für Zeitstempel, Datumsformatierung und Zeitberechnungen."
 ---
 
 # OS-Zeit

@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Для in-memory используйте :memory:
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+Приватная in-memory база SQLite (<code>file: ":memory:"</code>) ограничена одним физическим соединением, поэтому <code>max_open</code> и <code>max_idle</code> принудительно приводятся к <code>1</code>. База на файле соблюдает заданные настройки <code>pool</code>, что необходимо транзакции чтения снапшота CDC, чтобы она не занимала единственное соединение для записи. Режим журнала всегда <code>WAL</code>.
+</note>
 
 ## Поля подключения
 
@@ -75,37 +77,37 @@ entries:
 
 ### Поля SQLite
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `file` | string | Путь к файлу БД или `:memory:` |
-| `pool` | object | Настройки пула |
-| `options` | map | Опции SQLite |
-| `lifecycle` | object | Настройки жизненного цикла |
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `file` | string | обязательно | Путь к файлу БД или `:memory:` |
+| `pool` | object | - | Настройки пула соединений; для `:memory:` `max_open` и `max_idle` принудительно равны `1` |
+| `max_mutation_changes` | int | 100000 | Сколько строк одна транзакция может удерживать в наблюдателе зафиксированных мутаций |
+| `max_mutation_bytes` | int | 67108864 | Сколько логических байт одна транзакция может удерживать в наблюдателе (64 МиБ) |
+| `options` | map | - | Принимаются, но игнорируются |
+| `lifecycle` | object | - | Настройки жизненного цикла |
 
-### Поля из переменных окружения
+`max_mutation_changes` и `max_mutation_bytes` ограничивают находящийся в памяти наблюдатель зафиксированных мутаций, который питает источник [`db.cdc.sqlite`](system/cdc.md). Ноль в любом из полей выбирает значение по умолчанию; отрицательные значения отклоняются. Ограничения консервативные, а не точные: SQLite передаёт в pre-update hook целую строку, поэтому одна строка может материализоваться до того, как ограничение отклонит кандидата.
 
-Суффикс `_env` позволяет загружать значения из переменных окружения или записей [env.variable](system/env.md):
+### Секреты и значения из окружения
 
-| Поле | Описание |
-|------|----------|
-| `host_env` | Хост из переменной окружения |
-| `port_env` | Порт из переменной окружения |
-| `database_env` | Имя БД из переменной окружения |
-| `username_env` | Пользователь из переменной окружения |
-| `password_env` | Пароль из переменной окружения |
+Значения подключения берутся из [реестра окружения](system/env.md) через плейсхолдеры `${env:NAME}`, разрешаемые при декодировании. `NAME` — публичное имя зарегистрированной переменной или её ID записи (например, `app.secrets:db_password`); это не сырая переменная окружения ОС.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Ссылка на запись env.variable
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+Более старые конфигурации используют парную директиву <code>&lt;field&gt;_env</code> (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>), которая разрешается так же. Эта форма <b>объявлена устаревшей</b> — переводите её на плейсхолдер <code>${env:NAME}</code>, показанный выше.
+</note>
+
 <warning>
-Не храните пароли в конфигурации напрямую. Используйте переменные окружения или записи <code>env.variable</code> для учётных данных. См. <a href="system/env.md">Окружение</a> для безопасного хранения секретов.
+Не храните пароли в конфигурации напрямую. Используйте записи <code>env.variable</code> для учётных данных. См. <a href="system/env.md">Окружение</a> для безопасного хранения секретов.
 </warning>
 
 ## Пул подключений
@@ -115,7 +117,7 @@ entries:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `max_open` | int | 0 | Максимум открытых подключений (0 = без ограничений) |
-| `max_idle` | int | 0 | Максимум простаивающих подключений (0 = без ограничений) |
+| `max_idle` | int | 0 | Максимум простаивающих подключений (0 = простаивающие подключения не удерживаются) |
 | `max_lifetime` | duration | 1h | Максимальное время жизни подключения |
 
 ```yaml
@@ -131,25 +133,27 @@ pool:
 
 ## Форматы DSN
 
-Для каждого типа БД формируется свой DSN из конфигурации:
+Для каждого типа БД формируется свой DSN из конфигурации. Любые `options` добавляются в конец (отсортированные по ключу); по умолчанию не включается ни одна.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Каждое значение, кроме порта, заключено в одинарные кавычки, а встроенные `'` и `\` экранируются обратным слэшем, поэтому хосты, пароли и значения опций с пробелами или кавычками передаются без искажений.
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## Опции баз данных
@@ -176,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite не применяет карту `options` к своему DSN. Файловые базы всегда открываются с `mode=rwc`, а режим журнала всегда устанавливается в `WAL`. Поле `options` принимается, но игнорируется.
 
 ## Примеры
 
@@ -194,7 +193,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -217,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -234,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### Несколько баз данных
@@ -249,22 +242,22 @@ entries:
   # Основная база
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # Аналитика
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -287,5 +280,6 @@ entries:
 ## См. также
 
 - [Модуль SQL](lua/storage/sql.md) — справочник Lua API
-- [Store](system/store.md) — key-value хранилище на основе `database.sql`
+- [Store](system/store.md) — key-value хранилище на основе базы `db.sql.*`
 - [Queue](system/queue.md) — обработчик очередей на основе SQL
+- [Change Data Capture](system/cdc.md) — стриминг построчных изменений из базы `db.sql.sqlite` или Postgres

@@ -1,6 +1,6 @@
 ---
 title: "イベントバス"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "オブザーバビリティのためにイベントをパブリッシュおよびサブスクライブします — ランタイムとアプリケーションのアクティビティを監視してそれに反応します。"
 ---
 
 # イベントバス

@@ -1,6 +1,6 @@
 ---
 title: "Ausdruckssprache"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Werten Sie dynamische Ausdrücke mit expr-lang-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung…"
 ---
 
 # Ausdruckssprache
@@ -10,16 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Werten Sie dynamische Ausdrücke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung ohne vollständige Lua-Ausführung aus.
 
-## Konfiguration
+## Caching
 
-Ausdruck-Cache wird beim Start konfiguriert:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Ausdruck-Caching aktivieren
-    capacity: 5000        # Cache-Kapazität
-```
+`expr.eval` hält einen internen LRU-Cache kompilierter Ausdrücke (Standardkapazität 1000). Der Cache ist im Modul eingebaut und erfordert keine Konfiguration.
 
 ## Laden
 
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- Array-Funktionen
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

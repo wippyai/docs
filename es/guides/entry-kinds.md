@@ -69,7 +69,7 @@ Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponi
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpoint
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Bases de Datos
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | Base de datos SQLite |
 | `db.sql.postgres` | Base de datos PostgreSQL |
 | `db.sql.mysql` | Base de datos MySQL |
+| `db.cdc.postgres` | Fuente de Change Data Capture de Postgres (ver [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | Fuente de Change Data Capture de SQLite (ver [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- Publicar un mensaje
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- En el handler del consumidor, acceder al mensaje actual
-local msg = queue.message()
-local data = msg:body_json()
+-- En un handler de consumidor: el cuerpo del mensaje es el argumento del handler
+local function main(data)
+    -- acceder a los metadatos de entrega mediante el mensaje actual
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue.message()</code> dentro del handler para acceder al mensaje actual.
+El <code>func</code> del consumidor se invoca una vez por mensaje con el cuerpo del mensaje como argumento. Use <code>queue.message()</code> dentro del handler para el <code>id()</code> de la entrega, <code>header()</code>/<code>headers()</code> y <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Gestión de Procesos
@@ -262,6 +270,7 @@ El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue
 | `process.host` | Host de ejecución de procesos |
 | `process.service` | Proceso supervisado (envuelve process.lua) |
 | `terminal.host` | Host de terminal/CLI |
+| `pg.scope` | Scope de grupo de procesos (ver [Grupos de Procesos](system/process-groups.md)) |
 
 ```yaml
 # Host de procesos (donde se ejecutan los procesos)
@@ -303,6 +312,39 @@ Use <code>process.service</code> cuando necesite que un proceso se ejecute como 
 
 Actualizar una entrada `process.host` en vivo reescala `host.workers` en su lugar — los procesos en ejecución, los PIDs y las colas se preservan. `host.queue_size`, `host.local_queue_size` y `lifecycle` quedan fijados en la construcción: una actualización en vivo que los cambie se rechaza, igual que redimensionar los workers de un host cuyos workers se gestionan por afinidad.
 
+### Seguridad de proceso
+
+Las entradas `process.lua` y `process.lua.bc` aceptan un bloque `security:` de nivel superior. Forma parte de la entrada, por lo que se aplica a cada spawn de ese proceso, tanto en `process.host` como en `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `actor.id` | Identidad de actor bajo la que se ejecuta el proceso; reemplaza al actor heredado |
+| `actor.meta` | Atributos del actor que evalúan las políticas |
+| `policies` | IDs de registro (`namespace:name`) de políticas fusionadas en el scope |
+| `groups` | IDs de registro de grupos de políticas cuyas políticas se fusionan en el scope |
+
+La resolución ocurre cuando el proceso arranca y es atómica: si alguna política o grupo listado no puede resolverse, el spawn falla y no se instala ningún contexto parcial. Omitir `actor` hereda el actor del proceso que hace el spawn; omitir tanto `policies` como `groups` hereda su scope. `function.lua`, `function.lua.bc`, `process.lua` y `process.lua.bc` aceptan todos el bloque.
+
+Una entrada de comando puede además declarar `meta.command.security`, que se aplica solo cuando la entrada se lanza como comando CLI — ver [Seguridad de comandos](guides/cli.md#command-security). No afecta a los spawns ordinarios.
+
+Ver [Security](system/security.md).
+
 ## Temporal (Flujos de Trabajo)
 
 | Tipo | Descripción |
@@ -339,8 +381,8 @@ Actualizar una entrada `process.host` en vivo reescala `host.workers` en su luga
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})
 ```
 
 <tip>
@@ -385,7 +427,7 @@ local fs = require("fs")
 local filesystem, err = fs.get("app:data_dir")
 
 local file = filesystem:open("output.txt", "w")
-file:write("Hola, Mundo!")
+file:write("Hello, World!")
 file:close()
 ```
 
@@ -468,7 +510,7 @@ local set, err = templates.get("app:templates")
 
 local html = set:render("email", {
     user = "Alice",
-    message = "Bienvenido!"
+    message = "Welcome!"
 })
 ```
 
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Los grupos de políticas los forman las propias políticas: una política lista bajo `groups:` los IDs de grupo a los que pertenece, y un grupo es el conjunto de políticas que lo nombran. No hay un tipo de entrada de grupo aparte. Los IDs de grupo son IDs de registro — un nombre simple se resuelve en el namespace de la política que lo declara, por lo que `operators` arriba se convierte en `app.security:operators` cuando se declara en el namespace `app.security`. Las entradas referencian grupos por su `namespace:name` completo.
 
 **API Lua:** Ver [Módulo Security](lua/security/security.md)
 
@@ -534,9 +580,9 @@ Las políticas se evalúan en orden. La primera política que coincide determina
   kind: contract.definition
   methods:
     - name: greet
-      description: Retorna un mensaje de saludo
+      description: Returns a greeting message
     - name: greet_with_name
-      description: Retorna un saludo personalizado
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -622,11 +668,24 @@ Marque un binding como <code>default: true</code> para usarlo cuando se abra un 
 | `process.wasm` | Proceso WebAssembly |
 
 ```yaml
+# El texto WAT es source en línea
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # o wasi-http
+
+# El WASM binario se carga desde una entrada de filesystem y se verifica por hash
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # o wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` y `process.wasm` toman `fs`, `path` y `hash` — no hay campo `source` en una entrada binaria; `source` pertenece solo a `function.wat`. `hash` es obligatorio y debe ser `sha256:<hex>`; el módulo se rechaza si los bytes no coinciden.
 
 Ver [Resumen de WASM](wasm/overview.md).
 

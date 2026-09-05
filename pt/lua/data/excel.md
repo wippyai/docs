@@ -1,6 +1,6 @@
 ---
 title: "Planilhas Excel"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Leia e escreva arquivos Microsoft Excel (.xlsx). Crie workbooks, gerencie planilhas, leia valores de celulas e gere relatorios com suporte a…"
 ---
 
 # Planilhas Excel
@@ -276,6 +276,37 @@ end
 | `writer` | File | Deve implementar io.Writer (ex: fs.File) |
 
 **Retorna:** `error`
+
+### Serializar para String
+
+Renderiza o workbook em uma string de bytes `xlsx`, sem sistema de arquivos nem writer. Use isso para entregar um workbook a uma resposta HTTP, a um object store ou a uma mensagem de fila.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Retorna:** `string, error`
+
+O workbook inteiro é materializado em memória. `write_to` constrói o mesmo buffer em memória e depois o copia para o writer, então economiza a string Lua mas não faz streaming de um workbook grande.
+
+Chamar `bytes()` em um workbook fechado retorna um erro `errors.INTERNAL`.
 
 ### Fechar Workbook
 

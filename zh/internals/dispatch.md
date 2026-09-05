@@ -46,7 +46,7 @@ type Registry struct {
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
+| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
 | 50-59 | stream | Read, Write, Close, Seek |
 | 60-69 | http | Request, RequestBatch |
 | 70-79 | tty | 终端 I/O |
@@ -59,8 +59,9 @@ type Registry struct {
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (process group) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | 用户定义的服务 |
 
 注册在启动期间通过 `MustRegisterCommands()` 完成。冲突会在启动时 panic。
@@ -70,7 +71,7 @@ type Registry struct {
 Command 是具有唯一 `CommandID` 的数据结构：
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

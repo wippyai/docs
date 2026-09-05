@@ -1,6 +1,6 @@
 ---
 title: "Event-Bus"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Ereignisse veröffentlichen und abonnieren für Observability — Überwachen von Runtime- und Anwendungsaktivität und Reagieren darauf."
 ---
 
 # Event-Bus

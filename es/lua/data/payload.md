@@ -1,6 +1,6 @@
 ---
 title: "Codificacion de Payload"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Convertir datos entre formatos incluyendo JSON, MessagePack y binario. Manejar payloads tipados para comunicación entre servicios y paso de datos en…"
 ---
 
 # Codificacion de Payload

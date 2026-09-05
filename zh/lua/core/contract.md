@@ -1,6 +1,6 @@
 ---
 title: "Contract"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "通过类型化契约调用服务。调用远程 API、工作流和函数，支持模式验证和异步执行。"
 ---
 
 # Contract

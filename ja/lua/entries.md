@@ -17,7 +17,7 @@ Luaベースエントリの設定：関数、プロセス、ワークフロー�
 | `library.lua` | 他のエントリにインポートされる共有コード |
 | `module.lua` | モジュール表面（複数メソッドのライブラリ） |
 
-各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode` によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はパック時に自動生成されます。
+各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode '**'`（または `--bytecode 'app:**'` のようなパターン）によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はそのフラグ付きでパックしたときに出力されます。
 
 ## 共通フィールド
 
@@ -168,26 +168,26 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # デフォルト
-    size: 4           # 初期ワーカー数
-    max_size: 16      # エラスティックプールの上限
+    type: adaptive    # 明示指定。省略すると自動選択（lazy）
+    max_size: 16      # エラスティック拡張の上限
 ```
 
 | フィールド | プール | 説明 |
 |-----------|--------|------|
 | `type` | すべて | スケジューラ実装（下表参照） |
-| `size` | static, lazy, adaptive | 初期ワーカー数 |
-| `workers` | engine v2 | ワーカースレッド数 |
-| `buffer` | static, adaptive | タスクキュー容量（デフォルト `workers * 64`） |
-| `warm_start` | adaptive | 起動時にエントリを事前コンパイル |
-| `max_size` | lazy, adaptive | エラスティック拡張の上限（デフォルト 16） |
+| `workers` | static | ワーカースレッド数（`size`、次に8にフォールバック） |
+| `size` | static | `workers`が未設定の場合のワーカー数。自動選択をstaticプールに誘導もします |
+| `buffer` | static | タスクキュー容量（デフォルト: `workers * 64`） |
+| `max_size` | lazy, adaptive | エラスティック拡張の上限（デフォルト: 16） |
 
 | タイプ | 動作 |
 |--------|------|
 | `inline` | 呼び出し元のゴルーチンで同期実行。最低レイテンシ、呼び出し間に分離なし。 |
 | `lazy` | アイドル時はワーカーなし、オンデマンドで生成、アイドルで破棄。 |
 | `static` | チャンネルベースの固定サイズプール。安定負荷で予測可能。 |
-| `adaptive` | 自動スケーリングプール — 負荷時に拡大、アイドル時に縮小。デフォルト。 |
+| `adaptive` | 自動スケーリングプール — 負荷時に拡大、アイドル時に縮小。 |
+
+`type`を省略すると、プールは他のフィールドから自動選択されます: デフォルトではlazyプール、`workers`が設定されている場合はstaticプールになります。
 
 ## メタデータ
 
@@ -211,7 +211,7 @@ imports:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## 関連項目

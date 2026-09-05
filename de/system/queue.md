@@ -93,13 +93,13 @@ TLS-Block:
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Inline-Felder `cert`/`key`/`ca` enthalten PEM-Inhalt; `*_env`-Varianten werden über die Env-Registry aufgelöst. Die beiden Quellen schließen sich pro Feld gegenseitig aus. `insecure_skip_verify` deaktiviert die Zertifikatsprüfung (nur für Entwicklung).
+`cert`/`key`/`ca` enthalten PEM-Inhalt — inline, über `file://` oder über einen `${env:NAME}`-Platzhalter, der über die [Env-Registry](system/env.md) aufgelöst wird. `insecure_skip_verify` deaktiviert die Zertifikatsprüfung (nur für Entwicklung). Die Legacy-Direktiven `cert_env`/`key_env`/`ca_env` werden auf dieselbe Weise aufgelöst, sind aber veraltet; bevorzugen Sie `${env:NAME}`.
 
 ### SQS-Driver
 
@@ -109,14 +109,14 @@ Für AWS SQS und SQS-kompatible Endpoints (LocalStack, ElasticMQ). Anmeldedaten,
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ Für AWS SQS und SQS-kompatible Endpoints (LocalStack, ElasticMQ). Anmeldedaten,
 |------|-----|----------|--------------|
 | `config` | Registry-ID | erforderlich | `config.aws`-Ressource mit Region und Anmeldedaten |
 | `endpoint` | string | - | Eigene Endpoint-URL (LocalStack, ElasticMQ); für echtes AWS weglassen |
-| `message_retention_period` | int | `345600` (4d) | Queue-weite Aufbewahrung in Sekunden (60–1209600) |
+| `message_retention_period` | int | - | Queue-weite Aufbewahrung in Sekunden (60–1209600), wird beim Erstellen als Queue-Attribut gesetzt. Weglassen, um den AWS-Standard von 345600 (4 Tage) beizubehalten. |
 | `default_delay_seconds` | int | `0` | Standard-Delivery-Verzögerung bei CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | SQS-Nachrichten-Prüfsummen beim Senden/Empfangen deaktivieren |
 | `use_fips` | bool | `false` | FIPS-konforme Endpoints verwenden |

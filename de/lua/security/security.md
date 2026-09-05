@@ -1,6 +1,6 @@
 ---
 title: "Sicherheit & Zugriffskontrolle"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Verwalten Sie Authentifizierungs-Actors, Autorisierungs-Scopes und Zugriffsrichtlinien."
 ---
 
 # Sicherheit & Zugriffskontrolle

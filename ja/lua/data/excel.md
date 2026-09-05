@@ -1,6 +1,6 @@
 ---
 title: "Excelスプレッドシート"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Microsoft Excelファイル（.xlsx）の読み書き。ワークブックの作成、シートの管理、セル値の読み取り、フォーマットサポート付きレポートの生成。"
 ---
 
 # Excelスプレッドシート
@@ -276,6 +276,37 @@ end
 | `writer` | File | io.Writerを実装（例: fs.File） |
 
 **戻り値:** `error`
+
+### 文字列へのシリアライズ
+
+ファイルシステムやライターを使わずに、ワークブックを`xlsx`のバイト文字列としてレンダリングします。HTTPレスポンス、オブジェクトストア、キューメッセージにワークブックを渡す場合に使用します。
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**戻り値:** `string, error`
+
+ワークブック全体がメモリ上に展開されます。`write_to`も同じメモリ上のバッファを構築してからライターへコピーするため、Lua文字列は節約できますが、大きなワークブックをストリーミングするわけではありません。
+
+閉じられたワークブックに対して`bytes()`を呼び出すと、`errors.INTERNAL`エラーが返ります。
 
 ### ワークブックを閉じる
 

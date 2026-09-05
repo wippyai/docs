@@ -13,14 +13,63 @@ description: "레지스트리는 버전화되고 이벤트 기반인 상태 저�
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // 엔트리 타입
-    Meta attrs.Bag       // 메타데이터
-    Data payload.Payload // 내용
+    ID       ID              // namespace:name
+    Kind     Kind            // 엔트리 타입
+    Meta     attrs.Bag       // 작성자 메타데이터
+    Data     payload.Payload // 내용
+    Registry EntryMetadata   // 레지스트리 소유 출처 정보
+}
+
+type EntryMetadata struct {
+    Owner string // 엔트리를 공급한 배포 소스
+    Root  bool   // 배포가 선택한 의존성 선언
 }
 ```
 
 엔트리 ID는 인터닝을 위해 Go의 `unique` 패키지를 사용합니다—동일한 ID는 메모리를 공유합니다.
+
+`Registry`는 엔트리 작성자가 아니라 레지스트리가 소유합니다. `Owner`는 배포 소스에서 할당되고, `Root`는 `ns.dependency` 엔트리의 쓰기 측 필드 `dependency_root`에서 설정됩니다. 일반 엔트리 API는 `ID`, `Kind`, `Meta`, `Data`만 반환하며, 출처 정보는 스냅샷 상태 API를 통해 읽습니다.
+
+## 스냅샷
+
+`Registry.Snapshot()`은 하나의 원자적 뷰를 반환합니다: 버전, 그 버전의 엔트리, 그리고 동일한 버전에 대한 레지스트리 소유 상태 메타데이터입니다.
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+버전, 엔트리, 해결 결과를 하나의 값으로 읽으면 호출자가 엔트리를 다른 버전의 해결 결과와 짝지을 수 없습니다. 선택된 모듈 그래프는 모든 엔트리마다 반복되는 대신 스냅샷당 한 번 저장됩니다.
+
+## 오버레이
+
+`OverlayWriter`는 프로세스 로컬 엔트리를 위한 선택적 레지스트리 기능입니다:
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+오버레이 엔트리는 논리적 소유자 문자열 아래 그룹화됩니다. 이들은 유효 상태에 합류하며 지속 엔트리와 동일한 토폴로지 정렬과 핸들러 전환을 거치므로 서비스가 정상적으로 시작되고 중지되지만, 히스토리 버전을 만들지는 않습니다. 콜드 부트 후에는 비어 있으며 소유 제어 서비스가 조정해야 합니다.
+
+쓰기는 낙관적 동시성으로 처리됩니다: `GetOverlay`는 소유자의 현재 세대를 반환하고, `ApplyOverlay`는 그 세대가 여전히 최신일 때만 커밋하며, 그렇지 않으면 재시도 가능한 `Conflict`를 반환합니다. 성공한 적용마다 프로세스 내에서 고유한 새 세대가 발급되고, 변경이 있었던 소유자에 대해서는 툼스톤이 유지되어 ABA 시퀀스가 변경 없는 오버레이로 오인되지 않습니다.
+
+적용할 때마다 검증되는 구성 규칙:
+
+- 지속 엔트리와 오버레이 엔트리 어느 쪽도 해당 ID를 가지고 있지 않을 때만 엔트리를 생성할 수 있습니다.
+- 소유 아이덴티티만 자신의 오버레이 엔트리를 갱신하거나 삭제할 수 있습니다.
+- 오버레이 엔트리는 레지스트리 소유 메타데이터를 가질 수 없으며, 레지스트리 디렉티브가 점유한 종류를 사용할 수 없습니다.
+- 살아남는 엔트리가 의존하는 엔트리는 삭제할 수 없습니다.
+- 의존성 엣지는 소유자 경계를 넘을 수 없으며, 지속 엔트리는 오버레이 엔트리에 의존할 수 없습니다.
 
 ## 버전 체인
 
@@ -101,12 +150,24 @@ sequenceDiagram
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```
 
 의존성은 엔트리 Meta와 Data 필드에서 추출된 다음 상태 전환 중 토폴로지 정렬에 사용됩니다.
+
+### 의존성 접근 정책
+
+외부 의존성 접근은 전역 플래그가 아니라 요청 스코프의 컨텍스트 값입니다:
+
+| 정책 | 효과 |
+|--------|--------|
+| `DependencyAccessUnspecified` | 호출자가 선택. 호출자 자신의 기본값이 적용됨 |
+| `DependencyAccessOnline` | 외부 해결과 아티팩트 다운로드가 허용됨 |
+| `DependencyAccessVerifiedOffline` | 외부 접근이 금지됨. 해결은 잠긴 매니페스트와 로컬에 존재하는 아티팩트를 사용 |
+
+`LoadState()`는 컨텍스트가 아무것도 지정하지 않으면 verified-offline을 기본값으로 하므로, 부팅은 네트워크에 접속하지 않고 저장된 그래프를 리플레이합니다. 배포 베이스라인을 복원할 때는 그 베이스라인이 명시한 모듈을 가져와야 하므로 컨텍스트가 online으로 전환됩니다. verified-offline에서는 잠긴 모듈만 제공하는 매니페스트 프로바이더가 허브 프로바이더를 대체하며, 아티팩트가 없으면 다운로드를 유발하는 대신 증거 부재로 실패합니다.
 
 ## 버전 히스토리
 

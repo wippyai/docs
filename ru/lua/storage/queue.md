@@ -1,6 +1,6 @@
 ---
 title: "Очередь сообщений"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Публикация и потребление сообщений из распределённых очередей. Поддержка нескольких бэкендов, включая RabbitMQ и другие AMQP-совместимые брокеры."
 ---
 
 # Очередь сообщений
@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## Паттерн консьюмера
 
-Консьюмеры очередей определяются как точки входа, получающие payload напрямую:
+Запись `queue.consumer` связывает очередь с функцией-обработчиком (указанной в `func`). Обработчик получает payload сообщения напрямую:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

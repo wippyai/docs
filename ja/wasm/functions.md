@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-`max_size`が指定されていない場合、デフォルトの弾力的プール最大値は100ワーカーです。
+100ワーカーのデフォルトは、暗黙的に選択されたプール（`type`が設定されていない場合）にのみ適用されます。`max_size`なしで明示的に`type: lazy`または`type: adaptive`を設定した場合、デフォルトの最大値は16ワーカーです。
 
 ### ワーカークラスとコアアフィニティ
 
@@ -201,14 +200,26 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 実行制限
 
-関数の最大実行時間を設定します:
+`limits`ブロックは、関数の実行時間、ウォームワーカーのメモリ、および開けるソケット数を制限します:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-制限を超過すると、実行がキャンセルされエラーが返されます。
+| フィールド | デフォルト | 説明 |
+|-------|---------|-------------|
+| `max_execution_ms` | 無制限 | 1回の呼び出しに対する実時間の予算。超過すると実行がキャンセルされエラーが返されます。 |
+| `max_retained_memory_bytes` | `67108864`（64 MiB） | 呼び出し後のリサイクルのトリガー。リニアメモリがこれを超えたウォームワーカーは、再利用されずに呼び出し後に退役します。明示的に`0`を指定すると保持メモリによるリサイクルが無効になります。 |
+| `retained_memory_check_interval` | 組み込みの制限では`16`、明示的な制限では毎回の呼び出し | 呼び出し後のメモリ検査の間隔（呼び出し回数）。 |
+| `max_open_sockets` | `16` | `socket`ホストにおけるインスタンスあたりの同時オープン接続数。 |
+| `socket_timeout_ms` | `30000` | `socket`のダイヤルおよび各送受信のデッドライン。 |
+
+負の値は起動時に拒否されます。
 
 ## WASI設定
 

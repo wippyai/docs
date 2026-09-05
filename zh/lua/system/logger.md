@@ -1,6 +1,6 @@
 ---
 title: "日志"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "支持 debug、info、warn 和 error 级别的结构化日志。"
 ---
 
 # 日志

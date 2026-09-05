@@ -29,6 +29,13 @@ Verzeichnis- und eingebetteter Dateisystemzugriff.
 | `directory` | string | erforderlich | Wurzelpfad |
 | `auto_init` | bool | false | Verzeichnis erstellen wenn nicht vorhanden |
 | `mode` | string | 0755 | Unix-Berechtigungsmodus (oktal) |
+| `base` | string | - | Basis für relative Pfade: `project` (Arbeitsverzeichnis des Prozesses) oder `module` (Lade-Wurzel des besitzenden Moduls) |
+
+Absolute Pfade werden unverändert verwendet, unabhängig von `base`.
+
+Bei einem relativen Pfad hält `base: project` ihn relativ zum Arbeitsverzeichnis des Prozesses. Sowohl `base: module` als auch ein nicht gesetztes `base` lösen ihn gegen die Lade-Wurzel des Moduls auf, dem der Eintrag gehört, ermittelt über den Registry-Owner des Eintrags. Hat der Eintrag kein besitzendes Modul oder dieses Modul keine auflösbare Ressourcen-Wurzel, bleibt der Pfad relativ zum Arbeitsverzeichnis des Prozesses.
+
+Jeder andere Wert wird mit `invalid directory base` abgelehnt.
 
 Der Modus beschränkt alle Dateioperationen. Ausführungsbits werden automatisch hinzugefügt wenn Lesebits vorhanden sind.
 

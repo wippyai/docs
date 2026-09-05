@@ -1,6 +1,6 @@
 ---
 title: "時間と期間"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "時間値、期間、タイムゾーン、スケジューリングを扱う。タイマーの作成、指定期間のスリープ、タイムスタンプの解析とフォーマット。"
 ---
 
 # 時間と期間
@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | 無効な期間フォーマット | `errors.INVALID` | no |
-| 解析失敗 | `errors.INTERNAL` | no |
+| 解析失敗 | `errors.INVALID` | no |
 | 空のlocation名 | `errors.INVALID` | no |
-| Locationが見つからない | `errors.INTERNAL` | no |
+| Locationが見つからない | `errors.NOT_FOUND` | no |
 | Duration <= 0（timer/ticker） | `errors.INVALID` | no |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location not found:", err:message())
     end
     return nil, err

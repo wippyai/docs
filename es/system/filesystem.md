@@ -29,6 +29,13 @@ Acceso a directorio y sistema de archivos embebido.
 | `directory` | string | requerido | Ruta raíz |
 | `auto_init` | bool | false | Crear directorio si no existe |
 | `mode` | string | 0755 | Modo de permisos Unix (octal) |
+| `base` | string | - | Base de rutas relativas: `project` (directorio de trabajo del proceso) o `module` (raíz de carga del módulo propietario) |
+
+Las rutas absolutas se usan tal cual, sea cual sea el valor de `base`.
+
+Para una ruta relativa, `base: project` la mantiene relativa al directorio de trabajo del proceso. Tanto `base: module` como un `base` sin definir la resuelven contra la raíz de carga del módulo propietario de la entrada, localizada a través del propietario de la entrada en el registro. Cuando la entrada no tiene módulo propietario, o ese módulo no tiene una raíz de recursos resoluble, la ruta permanece relativa al directorio de trabajo del proceso.
+
+Cualquier otro valor se rechaza con `invalid directory base`.
 
 El modo restringe todas las operaciones de archivo. Los bits de ejecución se agregan automáticamente cuando los bits de lectura están presentes.
 

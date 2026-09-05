@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Structured error handling with categorization and retry metadata. Global errors table available without require."
 ---
 
 # Errors

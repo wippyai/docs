@@ -163,11 +163,15 @@ entries:
 
 Сервер может сам терминировать TLS. Установите `tls.mode` в `manual` (вы предоставляете свой сертификат) или `auto` (сертификат предоставляется драйвером overlay-сети, напр. `network.tailscale`). Обычные clearnet-listener'ы не поддерживают `auto`. Опустите `tls` или оставьте mode пустым для работы по обычному HTTP.
 
-В режиме `auto` сервер не должен указывать `cert`/`key`/`cert_env`/`key_env` — их предоставляет сетевой драйвер.
+В режиме `auto` сервер не должен указывать `cert`/`key` — их предоставляет сетевой драйвер.
 
 ### Ручной сертификат
 
-Предоставьте cert и key либо inline/файлом, либо через переменные окружения (никогда одновременно):
+При `mode: manual` поля `cert` и `key` содержат PEM. Задать это содержимое можно одним из трёх способов (выберите один на поле, никогда не смешивайте):
+
+1. **Inline PEM** — буквальная PEM-строка.
+2. **Ссылка `file://`** — путь относительно манифеста, разрешается и встраивается при загрузке (защищён от обхода каталогов).
+3. **Ссылка на реестр окружения** — извлечение PEM из зарегистрированной [переменной окружения](system/env.md) при декодировании через плейсхолдер `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ entries:
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+Плейсхолдер `${env:NAME}` разрешает `NAME` через [реестр окружения](system/env.md) — по публичному имени зарегистрированной переменной или по её ID записи (например, `app.env:tls_cert`). Это не сырая переменная окружения ОС; значение ОС доступно только если под этим именем зарегистрирована переменная на базе `env.storage.os`. Значение по умолчанию задаётся как `${env:NAME|default}`.
+
+<note>
+Устаревшие парные поля <code>cert_env</code> / <code>key_env</code> по-прежнему разрешаются через реестр окружения тем же способом, но <b>объявлены устаревшими</b> — предпочитайте плейсхолдер <code>${env:NAME}</code>, показанный выше.
+</note>
 
 | Поле | Описание |
 |------|----------|
 | `mode` | `""` (выключено), `auto` или `manual` |
-| `cert` / `key` | Содержимое PEM (обычно загружается через `file://`) |
-| `cert_env` / `key_env` | Имена переменных окружения, разрешаемые через [env registry](system/env.md) |
+| `cert` / `key` | Содержимое PEM — inline, ссылка `file://` или плейсхолдер `${env:NAME}` |
 
 ### Mutual TLS (mTLS)
 
@@ -202,17 +211,18 @@ entries:
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` принимает те же три формы, что `cert`/`key` (inline PEM, `file://` или `${env:NAME}`). Устаревшее парное поле `client_ca_env` также объявлено устаревшим в пользу `client_ca: ${env:NAME}`.
+
 | Поле | Описание |
 |------|----------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | PEM-bundle доверенных клиентских CA |
-| `client_ca_env` | Переменная окружения с CA-bundle (взаимоисключающа с `client_ca`) |
+| `client_ca` | PEM-bundle доверенных клиентских CA (inline, `file://` или `${env:NAME}`) |
 
 `verify_if_given` и `require_and_verify` требуют CA. `request` и `require_any` принимают любой клиентский сертификат без проверки CA.
 

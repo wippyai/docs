@@ -1,6 +1,6 @@
 ---
 title: "Excel 电子表格"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "读写 Microsoft Excel 文件（.xlsx）。创建工作簿、管理工作表、读取单元格值，并支持格式化生成报表。"
 ---
 
 # Excel 电子表格
@@ -276,6 +276,37 @@ end
 | `writer` | File | 必须实现 io.Writer（如 fs.File） |
 
 **返回:** `error`
+
+### 序列化为字符串
+
+在不使用文件系统或写入器的情况下，把工作簿渲染成 `xlsx` 字节字符串。可用于把工作簿交给 HTTP 响应、对象存储或队列消息。
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**返回：** `string, error`
+
+整个工作簿会在内存中物化。`write_to` 会构建同样的内存缓冲区，然后再复制到写入器，因此它省去了 Lua 字符串，但并不会以流式方式写入大型工作簿。
+
+在已关闭的工作簿上调用 `bytes()` 会返回 `errors.INTERNAL` 错误。
 
 ### 关闭工作簿
 

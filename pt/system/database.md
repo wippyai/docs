@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: para em memória
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+Um banco de dados SQLite privado em memória (<code>file: ":memory:"</code>) é limitado a uma conexão física, portanto <code>max_open</code> e <code>max_idle</code> são forçados para <code>1</code>. Um banco de dados baseado em arquivo respeita as configurações de <code>pool</code>, das quais uma transação de leitura de snapshot CDC precisa para não consumir a única conexão de escrita. O modo de journal é sempre <code>WAL</code>.
+</note>
 
 ## Campos de Conexão
 
@@ -75,37 +77,37 @@ entries:
 
 ### Campos SQLite
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `file` | string | Caminho do arquivo de banco de dados ou `:memory:` |
-| `pool` | object | Configurações de pool de conexões |
-| `options` | map | Opções específicas do SQLite |
-| `lifecycle` | object | Configuração de ciclo de vida |
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `file` | string | obrigatório | Caminho do arquivo de banco de dados ou `:memory:` |
+| `pool` | object | - | Configurações de pool de conexões; `max_open` e `max_idle` são forçados para `1` com `:memory:` |
+| `max_mutation_changes` | int | 100000 | Linhas que uma transação pode manter no observador de mutações commitadas |
+| `max_mutation_bytes` | int | 67108864 | Bytes lógicos que uma transação pode manter no observador (64 MiB) |
+| `options` | map | - | Aceito mas ignorado |
+| `lifecycle` | object | - | Configuração de ciclo de vida |
 
-### Campos de Variáveis de Ambiente
+`max_mutation_changes` e `max_mutation_bytes` limitam o observador de mutações commitadas em memória que alimenta uma origem [`db.cdc.sqlite`](system/cdc.md). Zero em qualquer um dos campos seleciona o padrão; valores negativos são rejeitados. Os limites são conservadores em vez de exatos: o SQLite entrega uma linha completa ao hook de pre-update, então uma linha pode materializar-se antes que o limite rejeite o candidato.
 
-Use o sufixo `_env` para carregar valores de variáveis de ambiente ou entradas [env.variable](system/env.md):
+### Valores de Segredo e de Ambiente
 
-| Campo | Descrição |
-|-------|-----------|
-| `host_env` | Host de variável de ambiente |
-| `port_env` | Porta de variável de ambiente |
-| `database_env` | Nome do banco de dados do ambiente |
-| `username_env` | Usuário do ambiente |
-| `password_env` | Senha do ambiente |
+Obtenha valores de conexão do [registro de ambiente](system/env.md) com placeholders `${env:NAME}`, resolvidos no momento da decodificação. `NAME` é o nome público de uma variável registrada ou o ID da sua entrada (ex. `app.secrets:db_password`); não é uma variável de ambiente bruta do SO.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Referencia entrada env.variable
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+Configurações mais antigas usam uma diretiva irmã <code>&lt;field&gt;_env</code> (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>) que resolve da mesma forma. Essa forma está <b>deprecada</b> — migre-a para o placeholder <code>${env:NAME}</code> mostrado acima.
+</note>
+
 <warning>
-Evite codificar senhas na configuração. Use variáveis de ambiente ou entradas <code>env.variable</code> para credenciais. Veja <a href="system/env.md">Ambiente</a> para gerenciamento seguro de segredos.
+Evite codificar senhas na configuração. Use entradas <code>env.variable</code> para credenciais. Veja <a href="system/env.md">Ambiente</a> para gerenciamento seguro de segredos.
 </warning>
 
 ## Pool de Conexões
@@ -115,7 +117,7 @@ Configure o comportamento de pool de conexões. Configurações de pool mapeiam 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `max_open` | int | 0 | Máximo de conexões abertas (0 = ilimitado) |
-| `max_idle` | int | 0 | Máximo de conexões ociosas (0 = ilimitado) |
+| `max_idle` | int | 0 | Máximo de conexões ociosas (0 = nenhuma conexão ociosa retida) |
 | `max_lifetime` | duration | 1h | Tempo de vida máximo da conexão |
 
 ```yaml
@@ -131,25 +133,27 @@ Defina <code>max_idle</code> menor ou igual a <code>max_open</code>. Conexões e
 
 ## Formatos DSN
 
-Cada tipo de banco de dados constrói um DSN a partir da configuração:
+Cada tipo de banco de dados constrói um DSN a partir da configuração. Quaisquer `options` são anexadas (ordenadas por chave); nenhuma é incluída por padrão.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Todos os valores exceto a porta são delimitados por aspas simples, e `'` e `\` embutidos são escapados com barra invertida, de modo que hosts, senhas e valores de opção contendo espaços ou aspas são passados intactos.
 
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## Opções de Banco de Dados
@@ -176,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+O SQLite não aplica o mapa `options` ao seu DSN. Bancos de dados em arquivo sempre abrem com `mode=rwc`, e o modo de journal é sempre definido como `WAL`. O campo `options` é aceito, mas ignorado.
 
 ## Exemplos
 
@@ -194,7 +193,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -217,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -234,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### Configuração com Múltiplos Bancos de Dados
@@ -249,22 +242,22 @@ entries:
   # Banco de dados principal
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # Banco de dados de analytics
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -287,5 +280,6 @@ Veja [Módulo SQL](lua/storage/sql.md) para API de operações de banco de dados
 ## Veja Também
 
 - [Módulo SQL](lua/storage/sql.md) - Referência da API Lua
-- [Store](system/store.md) - Armazenamento chave-valor baseado em `database.sql`
+- [Store](system/store.md) - Armazenamento chave-valor baseado em um banco de dados `db.sql.*`
 - [Queue](system/queue.md) - Handler de fila baseado em SQL
+- [Change Data Capture](system/cdc.md) - Streaming de mudanças em nível de linha a partir de um banco `db.sql.sqlite` ou Postgres

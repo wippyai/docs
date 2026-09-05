@@ -1,6 +1,6 @@
 ---
 title: "Безопасность и контроль доступа"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Управление актёрами аутентификации, областями авторизации и политиками доступа."
 ---
 
 # Безопасность и контроль доступа

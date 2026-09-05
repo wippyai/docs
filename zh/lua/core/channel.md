@@ -1,6 +1,6 @@
 ---
 title: "通道与协程"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Go 风格的通道用于协程间通信。创建有缓冲或无缓冲通道，发送和接收值，使用 select 语句协调并发进程。"
 ---
 
 # 通道与协程
@@ -74,7 +74,7 @@ end
 
 ## 关闭通道
 
-关闭通道。等待中的发送方收到错误，等待中的接收方收到 `nil, false`。已关闭时抛出错误：
+关闭通道。等待中的发送方收到错误，等待中的接收方收到 `nil, false`。关闭一个已经关闭的通道是空操作：
 
 ```lua
 local results = channel.new(10)
@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | select case 数组 |
 | `default` | boolean | 若为 true，无 case 就绪时立即返回 |
 
-**返回:** 包含字段的 `table`：`channel`、`value`、`ok`、`default`
+**返回:** `table`
+
+- 对于通道 case：`{channel, value, ok}` —— `channel` 是该 case 的通道，`value` 是接收/发送的值，对已关闭通道的接收 `ok` 为 false。
+- 对于 default 分支（无 case 就绪且 `default = true` 时）：`{default = true, ok = true}`。
 
 ### 超时模式
 
@@ -208,7 +211,6 @@ end
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 向已关闭通道发送 | 运行时错误 | 否 |
-| 关闭已关闭通道 | 运行时错误 | 否 |
 | select 中无效 case | 运行时错误 | 否 |
 
 ## 参见

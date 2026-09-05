@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-Das Standard-Maximum fuer elastische Pools betraegt 100 Worker, wenn `max_size` nicht angegeben ist.
+Der Standard von 100 Workern gilt nur fuer den implizit gewaehlten Pool (wenn kein `type` gesetzt ist). Wird `type: lazy` oder `type: adaptive` explizit ohne `max_size` gesetzt, betraegt das Standard-Maximum 16 Worker.
 
 ### Worker-Klassen und Core-Affinitaet
 
@@ -201,14 +200,26 @@ Der `wasi-http`-Transport bildet HTTP-Requests auf WASM ab und schreibt Ergebnis
 
 ## Ausfuehrungslimits
 
-Legen Sie eine maximale Ausfuehrungszeit fuer eine Funktion fest:
+Der `limits`-Block begrenzt die Ausfuehrungszeit einer Funktion, den Speicher ihres warmen Workers und die Sockets, die sie oeffnen darf:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-Wenn das Limit ueberschritten wird, wird die Ausfuehrung abgebrochen und ein Fehler zurueckgegeben.
+| Feld | Standard | Beschreibung |
+|------|----------|--------------|
+| `max_execution_ms` | unbegrenzt | Wanduhr-Budget fuer einen Aufruf. Bei Ueberschreitung wird die Ausfuehrung abgebrochen und ein Fehler zurueckgegeben. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Ausloeser fuer das Recycling nach einem Aufruf. Ein warmer Worker, dessen linearer Speicher diesen Wert ueberschreitet, wird nach dem Aufruf ausgemustert statt wiederverwendet. Eine explizite `0` schaltet das Speicher-Recycling ab. |
+| `retained_memory_check_interval` | `16` beim eingebauten Limit, jeder Aufruf bei einem expliziten Limit | Anzahl der Aufrufe zwischen den Speicherpruefungen nach einem Aufruf. |
+| `max_open_sockets` | `16` | Gleichzeitig offene Verbindungen pro Instanz fuer den `socket`-Host. |
+| `socket_timeout_ms` | `30000` | Deadline fuer einen `socket`-Verbindungsaufbau und fuer jedes Senden/Empfangen. |
+
+Negative Werte werden beim Boot abgelehnt.
 
 ## WASI-Konfiguration
 

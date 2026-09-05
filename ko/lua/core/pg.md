@@ -1,6 +1,6 @@
 ---
 title: "프로세스 그룹"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "프로세스를 명명된 그룹에 참여시키고 클러스터 전체의 모든 멤버에게 브로드캐스트합니다. Erlang/OTP pg를 모델로 합니다: 그룹은 동적이고, 프로세스는 여러 그룹에 속할 수 있으며, 멤버십은 클러스터 전체에서 추적되며 결과적으로 일관성이 있습니다."
 ---
 
 # 프로세스 그룹

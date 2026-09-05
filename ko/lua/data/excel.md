@@ -1,6 +1,6 @@
 ---
 title: "Excel 스프레드시트"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Microsoft Excel 파일(.xlsx) 읽기 및 쓰기. 워크북 생성, 시트 관리, 셀 값 읽기, 서식 지원으로 보고서 생성."
 ---
 
 # Excel 스프레드시트
@@ -276,6 +276,37 @@ end
 | `writer` | File | io.Writer 구현 필수 (예: fs.File) |
 
 **반환:** `error`
+
+### 문자열로 직렬화
+
+파일시스템이나 writer 없이 워크북을 `xlsx` 바이트 문자열로 렌더링합니다. 워크북을 HTTP 응답, 오브젝트 스토어 또는 큐 메시지로 넘길 때 사용합니다.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**반환:** `string, error`
+
+워크북 전체가 메모리에 구체화됩니다. `write_to`도 같은 메모리 내 버퍼를 만든 다음 writer로 복사하므로, Lua 문자열은 절약하지만 큰 워크북을 스트리밍하지는 않습니다.
+
+닫힌 워크북에서 `bytes()`를 호출하면 `errors.INTERNAL` 에러를 반환합니다.
 
 ### 워크북 닫기
 

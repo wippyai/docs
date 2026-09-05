@@ -1,6 +1,6 @@
 ---
 title: "Lenguaje de Expresiones"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Evaluar expresiones dinamicas usando sintaxis expr-lang. Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin…"
 ---
 
 # Lenguaje de Expresiones
@@ -10,16 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Evaluar expresiones dinamicas usando sintaxis [expr-lang](https://expr-lang.org/). Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin ejecución completa de Lua.
 
-## Configuración
+## Cacheo
 
-El cache de expresiones se configura al inicio:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Habilitar cache de expresiones
-    capacity: 5000        # Capacidad del cache
-```
+`expr.eval` mantiene un cache LRU interno de expresiones compiladas (capacidad por defecto 1000). El cache esta integrado en el modulo y no requiere configuracion.
 
 ## Carga
 
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- Funciones de array
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

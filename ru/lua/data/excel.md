@@ -1,6 +1,6 @@
 ---
 title: "Таблицы Excel"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Чтение и запись файлов Microsoft Excel (.xlsx). Создание книг, управление листами, чтение значений ячеек и генерация отчётов с поддержкой…"
 ---
 
 # Таблицы Excel
@@ -276,6 +276,37 @@ end
 | `writer` | File | Должен реализовывать io.Writer (например, fs.File) |
 
 **Возвращает:** `error`
+
+### Сериализация в строку
+
+Рендерит книгу в байтовую строку `xlsx` без файловой системы и writer'а. Используйте это, чтобы передать книгу в HTTP-ответ, объектное хранилище или сообщение очереди.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Возвращает:** `string, error`
+
+Книга целиком материализуется в памяти. `write_to` собирает тот же буфер в памяти и затем копирует его в writer, поэтому он экономит Lua-строку, но не стримит большую книгу.
+
+Вызов `bytes()` на закрытой книге возвращает ошибку `errors.INTERNAL`.
 
 ### Закрытие книги
 

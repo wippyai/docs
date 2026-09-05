@@ -1,6 +1,6 @@
 ---
 title: "Process Groups"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Join processes into named groups and broadcast to every member across the cluster. Modeled on Erlang/OTP pg: groups are dynamic, a process can belong…"
 ---
 
 # Process Groups

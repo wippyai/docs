@@ -1,6 +1,6 @@
 ---
 title: "Request Context"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Access request-scoped context values. Context is set via Funcs or Process."
 ---
 
 # Request Context

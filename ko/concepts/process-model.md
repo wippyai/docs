@@ -97,7 +97,9 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 서비스는 자동으로 시작되고, 크래시 시 백오프를 적용하며 재시작되고, 런타임의 라이프사이클 관리와 통합됩니다.

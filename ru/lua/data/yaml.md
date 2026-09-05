@@ -1,6 +1,6 @@
 ---
 title: "Кодирование YAML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Разбор YAML-документов в Lua-таблицы и сериализация Lua-значений в YAML-строки."
 ---
 
 # Кодирование YAML

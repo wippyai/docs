@@ -20,6 +20,8 @@ app:templates             → 模板集
 
 每个记录有一个 `ID`（命名空间:名称格式）、一个决定其处理器的 `kind`、任意 `meta` 字段和特定于 kind 的 `data`。
 
+除了这些由作者编写的内容之外，注册表还为每个记录保存自己的来源信息：`owner` 表示该记录来自哪个部署源，`root` 标记部署所选择的依赖声明。此状态由注册表分配，而非由记录作者编写，并且与 `meta` 分开保存，使两者永远不会混淆。它通过快照状态 API 读取，而不是通过普通的记录 API——参见 [Registry 模块](lua/core/registry.md#snapshot-state)。
+
 ## Kind 处理器
 
 当提交记录时，其 `kind` 决定哪个处理器处理它。处理器验证配置并创建运行时资源——`http.service` 记录启动 HTTP 服务器，`function.lua` 记录创建函数池，`sql.database` 记录建立连接池。参见 [记录类型指南](guides/entry-kinds.md) 了解可用类型，[自定义记录类型](internals/kinds.md) 了解如何实现处理器。

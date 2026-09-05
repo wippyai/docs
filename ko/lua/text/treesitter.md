@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter 파싱"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Tree-sitter를 사용하여 소스 코드를 구체적 구문 트리로 파싱합니다. go-tree-sitter 바인딩 기반입니다."
 ---
 
 # Tree-sitter 파싱

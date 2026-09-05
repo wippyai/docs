@@ -1,6 +1,6 @@
 ---
 title: "安全与访问控制"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "管理认证主体、授权范围和访问策略。"
 ---
 
 # 安全与访问控制

@@ -1,6 +1,6 @@
 ---
 title: "Futures"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Asynchrone Operationsergebnisse. Futures werden von funcs.async() und asynchronen Contract-Aufrufen zurückgegeben."
 ---
 
 # Futures

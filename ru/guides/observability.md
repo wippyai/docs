@@ -121,7 +121,7 @@ otel:
   # Трассировка вызовов функций
   interceptor:
     enabled: true
-    order: 0                   # Порядок выполнения интерсептора
+    order: 100                 # Порядок выполнения интерсептора
 ```
 
 ### Temporal Workflows

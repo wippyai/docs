@@ -249,6 +249,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Contexto de Seguridad
+
+Una activity programada bajo un contexto de seguridad recibe la cabecera firmada `wippy-security`, con audiencia dirigida al ID de la activity. El worker verifica la firma y la audiencia, luego fusiona los valores de `ctx` propagados y el payload de seguridad sobre un frame nuevo antes de que se ejecute la función de la activity.
+
+Esa fusión es de todo o nada y **fatal para la activity si falla**: la activity retorna un error antes de que su código se ejecute, por lo que nunca se ejecuta con contexto parcial o con un actor no verificado. Una fusión falla cuando la firma o la audiencia no se verifican, cuando el envelope es inconsistente (un actor sin scope, o políticas sin actor), o cuando una política nombrada en el envelope no se resuelve en el registro de seguridad local — que es la causa operativa común: al despliegue del worker le falta una entrada de política que el llamador sí tenía.
+
+El worker toma sus claves de firma y verificación de la entrada `temporal.client` a la que hace referencia. Consulte [Propagación del contexto de seguridad](temporal/overview.md#security-context-propagation).
+
 ## Manejo de Errores
 
 Retorne errores mediante el patrón estándar de Lua:
@@ -258,7 +266,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -267,7 +275,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -295,6 +303,10 @@ end
 | Crash en tiempo de ejecución | `INTERNAL` | sí | Error Lua no manejado en activity |
 | Activity faltante | `NOT_FOUND` | no | Activity no registrada con el worker |
 | Timeout | `TIMEOUT` | sí | La activity excedió el timeout configurado |
+| Verificación de seguridad | `Internal` | sí | Falló la comprobación de firma, audiencia o envelope en la cabecera de seguridad propagada |
+| Política de seguridad faltante | `Internal` | sí | Una política nombrada en el envelope de seguridad no se resuelve en este worker |
+
+Ambos fallos de seguridad ocurren durante la fusión del contexto, antes de que se ejecute la función de la activity. No están marcados como no reintentables, por lo que la política de reintentos de la activity sigue reintentándolos; los reintentos no ayudan, porque ni una firma inválida ni una entrada de política faltante cambian entre intentos. Limite `maximum_attempts` en las activities que quiera que fallen rápido, y lea un fallo `Internal` repetido sin salida en el log de la activity como un fallo de fusión de contexto en lugar de un defecto en la activity.
 
 ```lua
 local executor = funcs.new():with_options({

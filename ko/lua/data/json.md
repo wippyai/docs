@@ -1,6 +1,6 @@
 ---
 title: "JSON 인코딩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Lua 테이블을 JSON으로 인코딩하고 JSON 문자열을 Lua 값으로 디코딩합니다. 데이터 검증 및 API 계약 적용을 위한 JSON Schema 검증을 포함합니다."
 ---
 
 # JSON 인코딩

@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-Declare a dependencia e aponte o requisito `target_db` para o banco de dados da sua aplicacao:
+Declare a dependencia e aponte o requisito `target_db` para o banco de dados da sua aplicacao por meio dos `parameters` da dependencia:
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-Na inicializacao, `wippy/migration` seleciona a migracao `01_create_embeddings_table` e cria a tabela `embeddings` com o indice vetorial apropriado para o driver do seu banco de dados.
+Na inicializacao, `wippy/migration` seleciona a migracao `01_create_embeddings_table` e cria a tabela `embeddings_512` com o indice vetorial apropriado para o driver do seu banco de dados.
 
 ## Constantes de Configuracao
 
@@ -151,8 +149,8 @@ Use o repositorio diretamente quando voce ja tiver um vetor e quiser pular a ger
 
 A migracao cria o schema apropriado para o driver do banco de dados em `target_db`:
 
-- **PostgreSQL** - tabela `embeddings` com uma coluna `vector(512)` e um indice IVFFlat. Requer a extensao `pgvector`.
-- **SQLite** - tabela `embeddings` com o vetor armazenado como texto, alem de uma tabela virtual `sqlite-vec` complementar para busca KNN.
+- **PostgreSQL** - tabela `embeddings_512` com uma coluna `vector(512)` e um indice IVFFlat. Requer a extensao `pgvector`.
+- **SQLite** - tabela virtual `vec0` `embeddings_512` que guarda a coluna vetorial `embedding float[512]` junto com as colunas de metadados e conteudo para busca KNN.
 
 Os vetores sao sempre transportados como um array JSON simples na camada da API.
 

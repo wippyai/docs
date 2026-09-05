@@ -1,6 +1,6 @@
 ---
 title: "Hojas de Calculo Excel"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Leer y escribir archivos Microsoft Excel (.xlsx). Crear libros de trabajo, gestionar hojas, leer valores de celdas y generar reportes con soporte de…"
 ---
 
 # Hojas de Calculo Excel
@@ -276,6 +276,37 @@ end
 | `writer` | File | Debe implementar io.Writer (ej., fs.File) |
 
 **Devuelve:** `error`
+
+### Serializar a una Cadena
+
+Renderiza el libro de trabajo en una cadena de bytes `xlsx`, sin sistema de archivos ni writer. Úselo para entregar un libro de trabajo a una respuesta HTTP, un almacén de objetos o un mensaje de cola.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Devuelve:** `string, error`
+
+Todo el libro de trabajo se materializa en memoria. `write_to` construye el mismo búfer en memoria y luego lo copia al writer, así que ahorra la cadena Lua pero no transmite en streaming un libro de trabajo grande.
+
+Llamar a `bytes()` sobre un libro de trabajo cerrado devuelve un error `errors.INTERNAL`.
 
 ### Cerrar Libro de Trabajo
 

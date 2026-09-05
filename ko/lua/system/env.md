@@ -1,6 +1,6 @@
 ---
 title: "환경 변수"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "설정 값, 비밀, 런타임 설정을 위한 환경 변수에 접근합니다."
 ---
 
 # 환경 변수
@@ -109,7 +109,8 @@ end
 |------|--------|------|
 | `env.get` | 변수 이름 | 환경 변수 읽기 |
 | `env.set` | 변수 이름 | 환경 변수 쓰기 |
-| `env.get_all` | `*` | 모든 변수 목록 |
+
+`get_all`에는 전용 보안 액션이 없습니다. 각 변수 이름을 `env.get`으로 필터링하여 `env.get` 액션이 허용된 변수만 반환합니다.
 
 ### 접근 확인
 

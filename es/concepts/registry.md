@@ -20,6 +20,8 @@ app:templates             -> Conjunto de plantillas
 
 Cada entrada tiene un `ID` (formato namespace:nombre), un `kind` que determina su manejador, campos `meta` arbitrarios, y `data` específica del kind.
 
+Junto a ese contenido autorado, el registro mantiene su propia procedencia para cada entrada: el `owner`, es decir la fuente de despliegue de la que proviene la entrada, y `root`, que marca una declaración de dependencia que el despliegue seleccionó. Este estado lo asigna el registro, no lo escribe el autor de la entrada, y se mantiene separado de `meta` para que ambos nunca se confundan. Se lee a través de la API de estado del snapshot en lugar de las APIs de entrada ordinarias—consulte el [Módulo de registro](lua/core/registry.md#snapshot-state).
+
 ## Manejadores de Kind
 
 Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `sql.database` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internals/kinds.md) para implementar manejadores.

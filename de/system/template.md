@@ -1,6 +1,6 @@
 ---
 title: "Template-Engine"
-description: "<secondary-label ref='external'/"
+description: "Template-Rendering mit CloudyKit Jet."
 ---
 
 # Template-Engine
@@ -31,6 +31,9 @@ Alle Konfiguration ist optional mit sinnvollen Standardwerten:
 | `engine.development_mode` | bool | false | Template-Caching deaktivieren |
 | `engine.delimiters.left` | string | `{{` | Variablen-Öffnungstrennzeichen |
 | `engine.delimiters.right` | string | `}}` | Variablen-Schließtrennzeichen |
+| `engine.delimiters.comment_left` | string | `{*` | Kommentar-Öffnungstrennzeichen |
+| `engine.delimiters.comment_right` | string | `*}` | Kommentar-Schließtrennzeichen |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Template-Dateiendungen |
 | `engine.globals` | map | - | Variablen verfügbar für alle Templates |
 
 ## Templates

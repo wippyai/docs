@@ -1,6 +1,6 @@
 ---
 title: "Sistema de Archivos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Leer, escribir y gestionar archivos dentro de volumenes de sistema de archivos aislados."
 ---
 
 # Sistema de Archivos

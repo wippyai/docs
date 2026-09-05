@@ -75,6 +75,12 @@ type Bus struct {
 
 Subscribe 和 Unsubscribe 阻塞直到 dispatcher 确认。Send 是即发即弃。
 
+当订阅上下文已被取消时，`Subscribe` 立即失败；如果在做出所有权决定之前被取消，则会在 dispatcher 处再次失败——总线绝不会接管一个它没有安装的通道。
+
+`Unsubscribe` 是所有权屏障，而非尽力而为的提示。它只在 dispatcher 确认后才返回，因此调用方可以确信总线不再持有任何进行中的发送引用，从而安全释放该通道。当它在 `Stop` 之后到达时，确认会等待 dispatcher 完成投递它已经取出的那批消息。
+
+`Stop` 同样是终止性的：第二个并发的 `Stop` 不会因已关闭标志而提前返回，而是等待 dispatcher 排空并退出。
+
 ## 队列交换
 
 Dispatcher 使用切片交换以避免稳态下的分配：
@@ -178,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -226,21 +232,24 @@ defer router.Stop()
 
 每个 handler 实现 `Pattern()` 和 `Handle()`。Router 为每个创建 Subscriber，并在 Stop 时关闭所有。
 
-### Awaiter
+### AwaitService
 
-同步等待特定事件：
+基于 pub/sub 的请求-响应。它为每个 `(system, kind)` 对只保留一个订阅，并按 `Path` 将事件路由给等待者：
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // 阻塞直到匹配或超时
+result := waiter.Wait()  // 返回 AwaitResult{Event, Accepted, Error}
 ```
 
-Prepare-then-Wait 模式避免竞态条件：在触发产生响应的事件之前订阅。
+`Prepare` 在发送触发事件之前注册等待者，避免响应先于等待注册到达的竞态。`Wait` 阻塞直到匹配 `Path` 的事件到达或超时（超时为非正值时使用默认 `DefaultAwaitTimeout`，即 30 秒）。当事件 kind 为 `accept`、`*.accept` 或 `*.accepted` 时 `Accepted` 为 true；否则该 kind 视为拒绝，`Data` 中的任何 `error` 会以 `Error` 形式返回。便捷方法 `Await(ctx, system, kind, path, timeout)` 将 Prepare 和 Wait 合二为一。启动基础设施会在上下文中注册一个 AwaitService（`event.GetAwaitService`）。
 
 ## 关闭
 

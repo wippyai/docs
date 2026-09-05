@@ -1,6 +1,6 @@
 ---
 title: "Prozessverwaltung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Kindprozesse spawnen, überwachen und mit ihnen kommunizieren. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und…"
 ---
 
 # Prozessverwaltung
@@ -135,8 +135,7 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 |------|-----|--------------|
 | `kind` | string | Event-Typ-Konstante |
 | `from` | string | Quell-PID |
-| `result` | any | Für EXIT: der zurückgegebene Wert (bei normalem Exit vorhanden) |
-| `error` | any | Für EXIT: der Fehler (bei abnormalem Exit vorhanden) |
+| `result` | table | Für EXIT/LINK_DOWN: ein {value, error}-Datensatz; der Rückgabewert des Prozesses steht in `result.value` und ein etwaiger Fehler in `result.error` |
 | `reason` | string | Für CANCEL: Grund der Kanzellierung |
 | `sources` | string[] | Für OUTDATED: Registry-IDs, die sich geändert haben oder transitiv betroffen sind |
 
@@ -212,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Option | Typ | Beschreibung |
 |--------|-----|--------------|
 | `network` | string | Registry-ID eines `network.*`-Eintrags für die ausgehenden Verbindungen des Kindprozesses |
+| `terminal` | string | Viewport-Grant, der dem Kindprozess ein virtuelles Terminal anhängt |
 
 **Berechtigung:** `process.context` auf "context"; die Auswahl eines Netzwerks erfordert zusätzlich `network.select` auf dieser Netzwerk-ID.
+
+### Terminal-Anbindung
+
+Ein `terminal`-Grant stammt von `viewport:grant()` und gibt dem Kindprozess einen eigenen Terminal-Port, sodass er das [TTY](lua/system/tty.md)-Modul genauso verwenden kann wie auf einem Terminal-Host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+Der Grant ist einmalig und wird bei der Zulassung verbraucht: Ein abgelehnter Start lässt ihn unaufgelöst und wiederverwendbar, ein Kindprozess, der den Port auflöst, verbraucht ihn dauerhaft, und ein Host, der keine Terminal-Anbindungen unterstützt, lehnt den Spawn ab, statt die Option zu verwerfen. Der spawnende Prozess liest die Frames des Kindprozesses weiterhin über den von ihm erstellten Viewport. Siehe [Terminal](system/terminal.md#composable-terminals).
 
 ### SpawnBuilder-Methoden
 

@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Manejar solicitudes HTTP y construir respuestas. Acceder a datos de solicitud, parametros de ruta, cabeceras y contenido del cuerpo. Construir…"
 ---
 
 # HTTP
@@ -121,6 +121,23 @@ end
 local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
+
+La búsqueda no distingue mayúsculas de minúsculas: `req:header("content-type")` y `req:header("Content-Type")` devuelven el mismo valor. Una cabecera enviada más de una vez devuelve sus valores unidos con `", "`. Una cabecera que no está presente devuelve `nil`.
+
+### headers
+
+Obtiene todas las cabeceras de la solicitud.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Devuelve:** `table, error`
+
+Las claves son nombres canónicos de cabecera (`Content-Type`, `X-Correlation-ID`), sin importar las mayúsculas y minúsculas que envió el cliente. Las cabeceras repetidas se unen con `", "`, igual que en `req:header()`.
 
 ### content_type
 

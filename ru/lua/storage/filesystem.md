@@ -1,6 +1,6 @@
 ---
 title: "Файловая система"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Чтение, запись и управление файлами в изолированных томах файловой системы."
 ---
 
 # Файловая система

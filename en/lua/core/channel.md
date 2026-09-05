@@ -1,6 +1,6 @@
 ---
 title: "Channels and Coroutines"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Go-style channels for inter-coroutine communication. Create buffered or unbuffered channels, send and receive values, and coordinate between…"
 ---
 
 # Channels and Coroutines

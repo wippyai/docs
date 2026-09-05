@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -101,6 +102,35 @@ local result, err = runner.run({
 | `context` | table | Значения, доступные как `ctx` |
 | `allow_classes` | string[] | Дополнительные классы модулей |
 | `custom_modules` | table | Пользовательские таблицы как модули |
+| `limits` | table | Лимиты выполнения для этого запуска |
+
+### Лимит шагов
+
+`limits.max_steps` ограничивает, сколько может выполняться один `runner.run`:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+Шаг — это один такт планировщика eval: программа продвигается, пока не сделает yield или не завершится, и каждое возобновление расходует один шаг. Чистые вычисления между yield'ами считаются одним шагом, сколько бы они ни длились, поэтому лимит ограничивает такты планирования, а не процессорное время.
+
+Когда счётчик превышает лимит, запуск останавливается и возвращает `errors.INTERNAL` с текстом `eval exceeded maximum step limit`.
+
+`max_steps = 0` означает «без ограничений». Отсутствие `limits` наследует значение по умолчанию хоста:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # бюджет по умолчанию для запусков без limits.max_steps
+                      # 0 = без ограничений; отрицательное значение ломает загрузку
+```
+
+`limits` применяется только к `runner.run`; `runner.compile` лимиты не принимает. `limits` должен быть таблицей, содержащей только `max_steps`, а `max_steps` должен быть неотрицательным целым — всё остальное возвращает `errors.INVALID` до запуска программы.
 
 ### Доступ к модулям
 
@@ -125,6 +155,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -176,7 +207,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
-        return "Привет, " .. ctx.user
+        return "Привет, " .. ctx.get("user")
     ]],
     context = {user = "Алексей"}
 })
@@ -249,8 +280,8 @@ runner.run({
 # .wippy.yaml
 lua:
   eval:
-    cache_size: 256   # entries; 0 or less disables caching (default: 256)
-    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+    cache_size: 256   # записей; 0 и меньше отключает кэширование (по умолчанию: 256)
+    cache_ttl: 0      # срок жизни; 0 = без истечения (по умолчанию: 0)
 ```
 
 ## Обработка ошибок

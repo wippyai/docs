@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter 解析"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "使用 Tree-sitter 将源代码解析为具体语法树。基于 go-tree-sitter 绑定。"
 ---
 
 # Tree-sitter 解析

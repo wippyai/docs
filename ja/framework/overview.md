@@ -1,24 +1,24 @@
 ---
 title: "Framework"
-description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
+description: "Wippyはハブを通じて公式のフレームワークモジュールを提供します。これらのモジュールはwippy組織の下で保守されており、任意のプロジェクトに追加できます。"
 ---
 
 # Framework
 
-Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
+Wippyはハブを通じて公式のフレームワークモジュールを提供します。これらのモジュールは`wippy`組織の下で保守されており、任意のプロジェクトに追加できます。
 
-## Adding Framework Modules
+## フレームワークモジュールの追加
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-This adds the module to your lock file and downloads it to `.wippy/vendor/`.
+これによりモジュールがロックファイルに追加され、`.wippy/vendor/`にダウンロードされます。
 
-## Declaring Dependencies in Source
+## ソースでの依存関係の宣言
 
-Framework modules can also be declared as dependencies in your `_index.yaml`:
+フレームワークモジュールは、`_index.yaml`で依存関係として宣言することもできます:
 
 ```yaml
 version: "1.0"
@@ -31,15 +31,15 @@ entries:
     version: "^0.3.0"
 ```
 
-Then resolve and install:
+その後、解決してインストールします:
 
 ```bash
 wippy update
 ```
 
-## Importing Framework Libraries
+## フレームワークライブラリのインポート
 
-Once installed, import framework libraries into your entries:
+インストール後、フレームワークのライブラリをエントリにインポートします:
 
 ```yaml
 entries:
@@ -54,33 +54,33 @@ entries:
       test: wippy.test:test
 ```
 
-The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
+このインポートは`wippy.test:test`（`wippy.test`名前空間の`test`エントリ）をローカル名`test`にマッピングし、Luaでは`require("test")`で読み込みます。
 
-## Available Modules
+## 利用可能なモジュール
 
-| Module | Description |
+| モジュール | 説明 |
 |--------|-------------|
-| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
-| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
+| `wippy/llm` | 生成、ストリーミング、ツール呼び出し、構造化出力を備えた統一LLMインターフェース |
+| `wippy/agent` | ツール、デリゲート、トレイト、メモリを備えたエージェントフレームワーク |
 | `wippy/embeddings` | ベクトル埋め込みストレージと類似度検索 |
-| `wippy/test` | BDD-style testing framework with assertions and mocking |
-| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
-| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
-| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/test` | アサーションとモックを備えたBDDスタイルのテストフレームワーク |
+| `wippy/dataflow` | DAGベースのノード実行によるワークフローオーケストレーション |
+| `wippy/relay` | ユーザーごとのハブとプラグインルーティングを備えたWebSocketリレー |
+| `wippy/views` | テンプレートレンダリングを備えた仮想ページ/コンポーネントシステム |
 | `wippy/facade` | フロントエンドホスト設定、テーマ、設定エンドポイント |
-| `wippy/terminal` | Terminal UI components |
+| `wippy/terminal` | ターミナルUIコンポーネント |
 | `wippy/migration` | データベーススキーママイグレーション |
 | `wippy/security` | アクタースコープ、ポリシーバンドル、セキュリティヘルパー |
-| `wippy/usage` | LLM 呼び出しのトークンおよびコスト使用量の集計 |
+| `wippy/usage` | LLM呼び出しのトークンおよびコスト使用量の集計 |
 
-More modules are available and being published regularly. Search the hub:
+さらに多くのモジュールが利用可能で、定期的に公開されています。ハブを検索してください:
 
 ```bash
 wippy search wippy
 ```
 
-## See Also
+## 関連項目
 
-- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
-- [Publishing](guides/publishing.md) - Publishing your own modules
-- [CLI Reference](guides/cli.md) - CLI commands
+- [依存関係の管理](guides/dependency-management.md) - ロックファイルとバージョン制約
+- [公開](guides/publishing.md) - 独自モジュールの公開
+- [CLIリファレンス](guides/cli.md) - CLIコマンド

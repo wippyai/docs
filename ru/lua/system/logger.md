@@ -1,6 +1,6 @@
 ---
 title: "Логирование"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Структурированное логирование с уровнями debug, info, warn и error."
 ---
 
 # Логирование

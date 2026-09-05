@@ -1,6 +1,6 @@
 ---
 title: "파일시스템"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "샌드박스된 파일시스템 볼륨 내에서 파일을 읽고, 쓰고, 관리합니다."
 ---
 
 # 파일시스템

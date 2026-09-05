@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-El maximo por defecto del pool elastico es 100 workers cuando `max_size` no esta especificado.
+El valor por defecto de 100 workers se aplica solo al pool seleccionado implicitamente (cuando no se define `type`). Cuando define explicitamente `type: lazy` o `type: adaptive` sin `max_size`, el maximo por defecto es de 16 workers.
 
 ### Clases de Workers y Afinidad de Nucleos
 
@@ -201,14 +200,26 @@ El transporte `wasi-http` mapea solicitudes HTTP a WASM y escribe los resultados
 
 ## Limites de Ejecucion
 
-Establece un tiempo maximo de ejecucion para una funcion:
+El bloque `limits` acota el tiempo de ejecucion de una funcion, la memoria de su worker caliente y los sockets que puede abrir:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-Cuando se excede el limite, la ejecucion se cancela y se retorna un error.
+| Campo | Por defecto | Descripcion |
+|-------|-------------|-------------|
+| `max_execution_ms` | sin limite | Presupuesto de tiempo real para una llamada. Cuando se excede, la ejecucion se cancela y se retorna un error. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Disparador de reciclaje posterior a la llamada. Un worker caliente cuya memoria lineal supera esto se retira tras la llamada en lugar de reutilizarse. Un `0` explicito desactiva el reciclaje por memoria retenida. |
+| `retained_memory_check_interval` | `16` con el limite integrado, cada llamada con un limite explicito | Numero de llamadas entre inspecciones de memoria posteriores a la llamada. |
+| `max_open_sockets` | `16` | Conexiones abiertas concurrentemente por instancia para el host `socket`. |
+| `socket_timeout_ms` | `30000` | Plazo para un dial de `socket` y para cada envio/recepcion. |
+
+Los valores negativos se rechazan en el arranque.
 
 ## Configuracion WASI
 

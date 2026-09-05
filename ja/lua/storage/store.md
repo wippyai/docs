@@ -1,6 +1,6 @@
 ---
 title: "キーバリューストア"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "TTLサポート付きの高速キーバリューストレージ。キャッシュ、セッション、一時的な状態に最適。"
 ---
 
 # キーバリューストア
@@ -162,14 +162,14 @@ end
 ```lua
 -- キーが存在しない場合のみ作成
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- 他の誰かが保持している
 end
 
 -- compare-and-set: バージョンがまだ一致する場合のみ書き込み
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- 並行ライターが変更した。再読み取りして再試行
 end
 ```
@@ -235,10 +235,12 @@ end
 | アクション | リソース | 属性 | 説明 |
 |--------|----------|------------|-------------|
 | `store.get` | Store ID | - | ストアリソースを取得 |
-| `store.key.get` | Store ID | `key` | キー値を読み取り |
-| `store.key.set` | Store ID | `key` | キー値を書き込み |
+| `store.info` | Store ID | - | ストアのケーパビリティを調べる |
+| `store.key.get` | Store ID | `key` | キー値を読み取り（`entry` も同様） |
+| `store.key.set` | Store ID | `key` | キー値を書き込み（`put` も同様） |
 | `store.key.delete` | Store ID | `key` | キーを削除 |
 | `store.key.has` | Store ID | `key` | キーの存在を確認 |
+| `store.key.list` | Store ID | `prefix` | エントリを一覧 |
 
 ## エラー
 

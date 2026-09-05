@@ -1,6 +1,6 @@
 ---
 title: "UUID 생성"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "범용 고유 식별자를 생성합니다. 워크플로우에 맞게 조정됨 - 난수 UUID는 리플레이 시 일관된 값을 반환합니다."
 ---
 
 # UUID 생성

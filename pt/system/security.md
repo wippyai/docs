@@ -301,11 +301,14 @@ local policies = scope:policies()
 ### Fluxo de Avaliação
 
 ```
-1. Verifica cada política no escopo
-2. Se QUALQUER política retorna Deny -> Resultado é Deny
-3. Se pelo menos um Allow e nenhum Deny -> Resultado é Allow
-4. Nenhuma política aplicável -> Resultado é Undefined
+1. Sem ator ou sem escopo no contexto → o modo estrito decide (nega por padrão)
+2. Verifica cada política no escopo
+3. Se QUALQUER política retorna Deny → Resultado é Deny
+4. Se pelo menos um Allow e nenhum Deny → Resultado é Allow
+5. Nenhuma política aplicável → Resultado é Undefined
 ```
+
+Uma verificação de acesso só passa com `Allow`. `Undefined` nega o acesso, exatamente como `Deny` — o modo estrito não participa uma vez que um ator e um escopo estejam ambos presentes.
 
 ### Resultados de Avaliação
 
@@ -325,7 +328,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 if result == "deny" then
     return nil, errors.new("FORBIDDEN", "Acesso negado")
 elseif result == "undefined" then
-    -- Nenhuma política correspondeu - depende do modo estrito
+    -- Nenhuma política correspondeu - verificações de acesso tratam isso como negado
 end
 ```
 
@@ -375,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Opções do Token Store
@@ -385,10 +388,9 @@ entries:
 | `store` | obrigatório | Referência do store chave-valor de apoio |
 | `token_length` | 32 | Tamanho do token em bytes (256 bits) |
 | `default_expiration` | 24h | TTL padrão do token |
-| `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto) |
-| `token_key_env` | nenhum | Nome da variável de ambiente para chave de assinatura |
+| `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto, ou `${env:NAME}` para obter do [registro env](system/env.md)) |
 
-Use `token_key_env` em produção para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system/env.md) para registrar variáveis de ambiente.
+Use `token_key: ${env:NAME}` em produção para evitar embutir segredos em entradas. A diretiva legada `token_key_env` resolve da mesma forma, mas está deprecada; prefira `${env:NAME}`.
 
 ### Criando Tokens
 
@@ -473,44 +475,84 @@ local result, err = funcs.new()
 | Escopo | Sim - passa para chamadas filhas |
 | Modo estrito | Não - aplicação-wide |
 
-Funções herdam contexto de segurança do chamador. Processos criados iniciam do zero.
+Funções e processos criados herdam ambos o contexto de segurança do chamador. Um processo criado inicia em um frame bifurcado a partir do frame de quem o criou, que carrega o ator e o escopo de quem o criou, e o bloco `security:` de sua própria entrada modifica esse contexto herdado. Quando a entrada não declara bloco algum, o processo mantém inalterados o ator e o escopo de quem o criou; um criador que não tem nenhum dos dois produz um filho sem nenhum dos dois, o que o modo estrito nega. Um bloco declarado que nomeia um `actor` substitui o ator herdado, e seus `policies` e `groups` são mesclados ao escopo herdado; um bloco que omite `actor` mantém o ator de quem o criou, e um que omite tanto `policies` quanto `groups` mantém o escopo de quem o criou.
 
-## Segurança em Nível de Serviço
+## Declarando Segurança em Entradas
 
-Configure segurança padrão para serviços:
+Um bloco de segurança tem a mesma forma em todos os lugares onde aparece:
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `actor.id` | string | Identidade do ator; substitui o ator herdado |
+| `actor.meta` | map | Atributos do ator avaliados pelas políticas |
+| `policies` | list | Registry IDs de políticas, mesclados no escopo |
+| `groups` | list | Registry IDs de grupos de políticas, cujas políticas são mescladas no escopo |
+
+`policies` e `groups` são **registry IDs no formato `namespace:name`**. Um nome simples não resolve — diferente do campo `groups:` em uma entrada de política, que assume o namespace da própria política, essas referências não têm namespace padrão.
+
+A resolução é atômica e fail-closed. Toda política e todo grupo listado é resolvido antes de qualquer coisa ser instalada; se algum deles estiver ausente, vazio, ou não contiver políticas, toda a configuração falha e nenhum ator e nenhum escopo parcial é aplicado. Um chamador portanto nunca cruza uma fronteira carregando meio contexto.
+
+### Entradas de Processo
+
+Entradas `process.lua`, `process.lua.bc`, `function.lua` e `function.lua.bc` aceitam um bloco `security:` de nível superior que se aplica a toda execução daquela entrada:
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+O bloco é aplicado quando o processo inicia, tanto em `process.host` quanto em `terminal.host`. Uma falha de resolução aborta o spawn em vez de iniciar o processo com um contexto mais fraco.
+
+### Ciclo de Vida de Serviço
+
+Serviços supervisionados aceitam o mesmo bloco sob `lifecycle`, resolvido uma vez quando o controller do serviço é criado e selado pelo tempo de vida do serviço:
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
+
+### Comandos da CLI
+
+Uma entrada de comando declara `meta.command.security`, aplicado apenas quando a entrada é lançada como comando da CLI — o operador executando `wippy run <name>` é a âncora de confiança para esse contexto. Isso nunca afeta um spawn comum da mesma entrada. O bloco é validado estritamente: campos desconhecidos são rejeitados, um bloco vazio é rejeitado, e `security` sem um `name` de comando é rejeitado. Veja [Segurança de comandos](guides/cli.md#command-security).
 
 ## Modo Estrito
 
-Habilite modo estrito para negar acesso quando contexto de segurança está ausente:
+O modo estrito decide o que acontece quando uma requisição não carrega ator nem escopo. Ele está **ligado por padrão**, então um contexto incompleto é negado. Desligá-lo é uma escolha explícita, feita no arquivo de configuração do runtime (`.wippy.yaml`), não no manifesto de módulo `wippy.yaml`:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 | Modo | Contexto Ausente | Comportamento |
 |------|------------------|---------------|
-| Normal | Sem ator/escopo | Permite (permissivo) |
-| Estrito | Sem ator/escopo | Nega (padrão seguro) |
+| Estrito (padrão) | Sem ator/escopo | Nega |
+| Permissivo (`strict_mode: false`) | Sem ator/escopo | Permite |
+
+O modo estrito não muda nada uma vez que um ator e um escopo estejam presentes: a avaliação nega por padrão de qualquer forma. Ele governa apenas o caso incompleto, e é por isso que um processo que executa sem um contexto de segurança declarado falha em toda verificação sob o padrão. Dê a esse processo um bloco `security:`, ou inicie-o por um caminho que forneça um.
 
 ## Fluxo de Autenticação
 
@@ -558,12 +600,28 @@ local store, _ = security.token_store("app.auth:tokens")
 local token, err = store:create(actor, scope, {expiration = "24h"})
 ```
 
+## Fronteiras de Confiança do Runtime
+
+A avaliação de políticas governa o que o código pode fazer. Três mecanismos separados governam qual código é admitido e para onde um contexto pode viajar.
+
+### Integridade de Módulos
+
+Todo módulo no `wippy.lock` carrega um digest de artefato. No boot, um download é verificado contra o digest fixado no lock e contra o digest servido pelo hub, e packs já vendorizados são reverificados contra o lock antes de serem carregados; uma divergência é uma falha de integridade não retentável que não é contornada — o módulo não é carregado. `wippy install` verifica um download novo apenas contra o digest e o tamanho servidos pelo hub, apaga o arquivo e falha em caso de divergência, e então grava o digest servido de volta no lock, de modo que um digest fixado é restabelecido pelo install em vez de imposto por ele; apenas packs já presentes no diretório de vendor são conferidos contra o digest do lock. Diretórios de módulo extraídos carregam seu próprio digest e digest de árvore registrados e são verificados da mesma forma, então uma árvore vendorizada modificada é detectada em vez de considerada confiável. Veja [Gerenciamento de Dependências](guides/dependency-management.md#integrity-verification).
+
+### Identidade Internodal do Cluster
+
+Nós em um cluster se autenticam mutuamente. Cada nó guarda uma chave de identidade ed25519 e o mapa de chaves públicas de pares em que confia; o handshake da malha é mútuo, vinculando um HMAC sobre o segredo de gossip compartilhado a uma assinatura ed25519 sobre um transcript cobrindo ambos os IDs de nó e ambos os nonces. Um par que não está no mapa confiável, ou cuja chave anunciada por gossip discorda da entrada confiável, é rejeitado. Não existe modo não autenticado: um nó sem identidade não pode entrar na malha. Veja [Identidade internodal](guides/cluster.md#internode-identity).
+
+### Propagação para o Temporal
+
+Um contexto de segurança que cruza para o Temporal é carregado como um header assinado, e não como entrada comum de workflow. O ator, seus metadados e os IDs de política são serializados em um envelope `wippy-security` e assinados com a chave HMAC do cliente, com audiência para o ID específico de workflow ou activity. O worker receptor verifica a assinatura e a audiência e resolve localmente toda política nomeada antes de o workflow ou a activity executar; qualquer falha faz a execução falhar. Um workflow executando sob um contexto de segurança também recusa signals não assinados, então um cliente Temporal externo não pode conduzi-lo. Veja [Workflows](temporal/workflows.md#security-context) e [Visão geral do Temporal](temporal/overview.md#security-context-propagation).
+
 ## Boas Práticas
 
 1. **Menor privilégio** - Conceda permissões mínimas necessárias
 2. **Negue por padrão** - Use políticas de allow explícitas, habilite modo estrito
 3. **Use grupos de políticas** - Organize políticas por role/função
-4. **Assine tokens** - Sempre defina `token_key_env` em produção
+4. **Assine tokens** - Sempre defina `token_key` a partir de uma referência `${env:NAME}` em produção
 5. **Expiração curta** - Use tempos de vida de token mais curtos para operações sensíveis
 6. **Condicione no contexto** - Use condições dinâmicas sobre políticas estáticas
 7. **Audite ações sensíveis** - Registre operações relevantes para segurança

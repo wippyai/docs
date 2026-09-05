@@ -1,6 +1,6 @@
 ---
 title: "HTTP Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Make HTTP requests to external services. Supports all HTTP methods, headers, query parameters, form data, file uploads, streaming responses, and…"
 ---
 
 # HTTP Client
@@ -368,12 +368,25 @@ end
 
 ### SSRF Protection
 
-Private IP ranges (10.x, 192.168.x, 172.16-31.x, localhost) are blocked by default. Access requires the `http_client.private_ip` permission.
+Non-public IP ranges are blocked by default. Access requires the `http_client.private_ip` permission on the address:
+
+- loopback, private (10.x, 172.16-31.x, 192.168.x), link-local unicast and multicast, and the unspecified address
+- carrier-grade NAT `100.64.0.0/10`, `192.0.0.0/24`, multicast `224.0.0.0/4`, reserved `240.0.0.0/4`
+- documentation and benchmarking ranges `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- IPv6 multicast `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+The check runs at dial time, not on the URL string, and it covers every address the host resolves to. A hostname that resolves to several addresses is checked address by address: a denied address is skipped and the next one is tried, and the request fails only when every candidate is denied or unreachable. A public hostname that resolves to a private address is therefore blocked exactly like a private IP literal.
+
+### Redirects
+
+Up to nine redirects are followed; the tenth fails with `stopped after 10 redirects`, a count that includes the original request.
+
+Every hop is authorized on its own. Before following a redirect the client evaluates `http_client.request` against the target URL and applies the private-IP check to it, so a permitted URL cannot be used to reach a denied one by redirection. A hop that fails either check aborts the request.
 
 See [Security Model](system/security.md) for policy configuration.
 

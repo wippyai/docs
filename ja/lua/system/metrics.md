@@ -1,6 +1,6 @@
 ---
 title: "メトリクス & テレメトリ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "カウンター、ゲージ、ヒストグラムを使用してアプリケーションメトリクスを記録します。"
 ---
 
 # メトリクス & テレメトリ

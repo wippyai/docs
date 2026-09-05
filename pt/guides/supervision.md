@@ -28,7 +28,7 @@ Serviços se registram com o supervisor usando um bloco `lifecycle`. Para proces
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -150,12 +150,27 @@ end
 Quando nenhum contexto de segurança está configurado, o serviço executa sem um ator. No modo estrito (padrão), verificações de segurança falham. Configure um contexto de segurança para serviços que precisam de autorização.
 </note>
 
+## Reregistro e Substituição
+
+Uma mudança no registry pode reregistrar um ID que já tem um controller em execução. Se o registro carrega a mesma instância de serviço, nada é perturbado. Se carrega uma instância **diferente** — o manager reconstruiu o serviço porque sua configuração mudou — o supervisor aposenta o controller existente e adota o substituto.
+
+A aposentadoria abrange mais que o serviço isolado. Um dependente em execução capturou a instância substituída, então não pode continuar rodando contra um serviço que está sendo trocado por baixo dele; o fecho de aposentadoria é o serviço substituído mais todo serviço em execução que depende dele, parados em ordem de dependência (dependentes primeiro). Serviços já parados não são parados uma segunda vez — um manager que para sua própria instância antes de reregistrar não recebe um `Stop` redundante.
+
+A transferência é transacional:
+
+1. O plano é computado sem tocar em nada, então uma falha de planejamento deixa o conjunto em execução intacto.
+2. O lote de paradas é executado. **Se qualquer parada falhar, a transferência é rejeitada**: os serviços que o lote já parou são reerguidos e o erro é reportado. Um serviço que não pôde ser reerguido é nomeado nesse erro. O supervisor termina possuindo o mesmo conjunto em execução que tinha antes do commit, nunca um parcialmente aposentado.
+3. Somente depois de o lote ter sucesso os controllers aposentados são descartados e cancelados, liberando as instâncias de serviço substituídas.
+4. O substituto é criado e iniciado através do mesmo sequenciador ciente de dependências de qualquer outro início, e os dependentes que foram parados para a transferência voltam a subir contra a instância adotada.
+
+Um serviço que estava em execução antes da substituição é reiniciado depois dela mesmo quando o novo registro define `auto_start: false` — substituir um serviço ativo é uma atualização, não uma parada implícita. Reiniciar um dependente parado é regido por sua própria política de reinicialização e não bloqueia o commit.
+
 ## Estados de Serviço
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -164,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 O supervisor transiciona serviços através destes estados:
 
 | Estado | Descrição |
 |--------|-----------|
-| `Inactive` | Registrado mas não iniciado |
+| `Unknown` | Registrado mas não iniciado |
 | `Starting` | Inicialização em progresso |
 | `Running` | Operando normalmente |
 | `Stopping` | Encerramento gracioso em progresso |
 | `Stopped` | Terminado de forma limpa |
+| `Exited` | Terminado por requisição explícita ou por um erro terminal/não recuperável |
 | `Failed` | Erro ocorreu, pode tentar novamente |
 
 ## Ordem de Inicialização e Encerramento
@@ -184,8 +203,16 @@ O supervisor transiciona serviços através destes estados:
 **Encerramento**: Dependentes primeiro, depois dependências. Isso garante que serviços dependentes terminem antes de suas dependências pararem.
 
 ```
-Inicialização:  database -> cache -> handler -> http_server
-Encerramento:   http_server -> handler -> cache -> database
+Inicialização: database → cache → handler → http_server
+Encerramento:  http_server → handler → cache → database
+```
+
+Em SIGINT ou SIGTERM, o runtime inicia um encerramento gracioso e a sequência inteira roda sob um único orçamento, `shutdown.timeout` na configuração do runtime (padrão 30s). Esse orçamento é um prazo novo que não herda o contexto interrompido, então um Ctrl-C não corta o encerramento dos componentes; o `stop_timeout` por serviço continua limitando cada parada individual dentro dele. Um segundo sinal pula a sequência e sai imediatamente.
+
+```yaml
+# .wippy.yaml
+shutdown:
+  timeout: 60s
 ```
 
 ## Veja Também

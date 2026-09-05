@@ -1,6 +1,6 @@
 ---
 title: "Codificacion Base64"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Codificar datos binarios a strings base64 y decodificar base64 de vuelta a binario. Usa codificacion base64 estandar segun RFC 4648."
 ---
 
 # Codificacion Base64

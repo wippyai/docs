@@ -162,7 +162,7 @@ Sobreposições que suportam tráfego de entrada (Tailscale, I2P) também podem 
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
-    auth_key_env: TS_AUTHKEY
+    auth_key: ${env:TS_AUTHKEY}
     ephemeral: true
 
   - name: gateway

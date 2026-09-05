@@ -97,10 +97,12 @@ Auf oberster Ebene bietet die Laufzeitumgebung Dienste, die langlebige Prozesse 
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
-Der Dienst startet automatisch, startet bei Abstürzen mit Verzögerung neu und integriert sich in die Lebenszyklus-Verwaltung der Laufzeitumgebung.
+Der Dienst startet automatisch, startet bei Abstürzen mit Backoff neu und integriert sich in die Lebenszyklus-Verwaltung der Laufzeitumgebung.
 
 ## Prozess-Upgrade
 

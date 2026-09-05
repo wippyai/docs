@@ -1,6 +1,6 @@
 ---
 title: "消息队列"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "向分布式队列发布和消费消息。支持多种后端，包括 RabbitMQ 和其他 AMQP 兼容的代理。"
 ---
 
 # 消息队列
@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## 消费者模式
 
-队列消费者定义为直接接收负载的入口点：
+`queue.consumer` 条目将队列绑定到一个处理函数（通过 `func` 引用）。处理函数直接接收消息负载：
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

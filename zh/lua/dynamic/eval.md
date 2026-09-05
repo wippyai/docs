@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -101,6 +102,35 @@ local result, err = runner.run({
 | `context` | table | 作为 `ctx` 可用的值 |
 | `allow_classes` | string[] | 附加模块类 |
 | `custom_modules` | table | 作为模块的自定义表 |
+| `limits` | table | 本次运行的执行限制 |
+
+### 步数限制
+
+`limits.max_steps` 限定单次 `runner.run` 可以执行多久：
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+一步是 eval 调度器的一个轮次：程序一直推进直到让出或结束，每次恢复消耗一步。两次让出之间的纯计算无论运行多久都只算一步，因此该限制约束的是调度轮次，而非 CPU 时间。
+
+当计数超过限制时，运行会停止并返回 `errors.INTERNAL`，附带 `eval exceeded maximum step limit`。
+
+`max_steps = 0` 表示不限制。省略 `limits` 则继承宿主默认值：
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # 未设置 limits.max_steps 的运行的默认预算
+                      # 0 = 不限制；负值会导致启动失败
+```
+
+`limits` 仅适用于 `runner.run`；`runner.compile` 不接受任何限制。`limits` 必须是仅包含 `max_steps` 的表，且 `max_steps` 必须是非负整数——否则会在程序运行前返回 `errors.INVALID`。
 
 ### 模块访问
 
@@ -125,6 +155,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -176,7 +207,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })

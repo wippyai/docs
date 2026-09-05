@@ -69,7 +69,7 @@ Forneça a chave de API via um destes métodos:
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # De arquivo
 - name: temporal_client
@@ -81,7 +81,7 @@ Forneça a chave de API via um destes métodos:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Campos terminando em `_env` referenciam variáveis de ambiente que devem ser definidas no sistema. Veja [Sistema de Ambiente](system/env.md) para configurar armazenamento de ambiente e variáveis.
+Campos de autenticação e credenciais resolvem placeholders `${env:NAME}` através do [registro de ambiente](system/env.md) no momento da decodificação. As diretivas legadas `api_key_env` / `key_pem_env` resolvem da mesma forma, mas estão obsoletas; prefira `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### Configuração TLS
@@ -128,6 +128,30 @@ health_check:
   enabled: true
   interval: "30s"
 ```
+
+### Propagação de Contexto de Segurança
+
+O Wippy propaga o ator e o escopo do chamador para workflows e atividades como um header Temporal assinado. A assinatura é HMAC-SHA256 com uma chave mantida pela entrada do cliente:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `security_hmac_key` | Chave de assinatura codificada em base64; deve decodificar para ao menos 32 bytes |
+| `security_hmac_previous_keys` | Chaves codificadas em base64 ainda aceitas para verificação, para rotação |
+
+Ambos os campos são base64 no YAML porque são campos de bytes. Uma chave com menos de 32 bytes decodificados é rejeitada na validação da configuração, assim como declarar `security_hmac_previous_keys` sem `security_hmac_key`. Novos headers são sempre assinados com `security_hmac_key`; toda chave anterior listada é tentada na verificação, então a rotação é: adicione a nova chave como `security_hmac_key`, mova a antiga para `security_hmac_previous_keys` e remova-a assim que nenhuma execução em andamento a carregue.
+
+**Iniciar um workflow sob um ator ou escopo requer a chave.** Se o chamador tem um contexto de segurança e o cliente não tem chave de assinatura, o header não pode ser assinado e o start falha. Um cliente sem chave só pode iniciar workflows a partir de um contexto que não carregue nem ator nem escopo.
+
+O worker obtém as chaves da entrada de cliente que referencia, portanto um worker herda assinatura e verificação de `client:` sem configurar nada por conta própria. Veja [Workflows](temporal/workflows.md#security-context) e [Atividades](temporal/activities.md).
 
 ## Configuração do Worker
 
@@ -161,11 +185,15 @@ Ajuste fino do comportamento do worker:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Identidade
+    identity: ""                          # Identidade do worker (aparece na UI do Temporal)
+
     # Concorrência
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Pollers
     max_concurrent_activity_task_pollers: 20
@@ -180,6 +208,8 @@ Ajuste fino do comportamento do worker:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Feature flags
     enable_logging_in_replay: false
@@ -187,16 +217,17 @@ Ajuste fino do comportamento do worker:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Versionamento
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Lê de variável de ambiente
+    build_id: ${env:BUILD_ID}              # Lê do registro env
     use_versioning: false
     default_versioning_behavior: "pinned" # ou "auto_upgrade"
 ```
 
-Campos terminando em `_env` referenciam variáveis de ambiente definidas via entradas do [Sistema de Ambiente](system/env.md).
+Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` através do [registro de ambiente](system/env.md) no momento da decodificação. A diretiva legada `build_id_env` resolve da mesma forma, mas está obsoleta; prefira `build_id: ${env:NAME}`.
 
 ### Comportamento de Versionamento
 
