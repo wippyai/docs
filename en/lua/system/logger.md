@@ -6,7 +6,6 @@ description: "Structured logging with debug, info, warn, and error levels."
 # Logging
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 Structured logging with debug, info, warn, and error levels.
@@ -97,8 +96,6 @@ named:info("message")
 
 ## Errors
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Empty name string | `errors.INVALID` | no |
+`logger:named("")` raises a Lua argument error (`name cannot be empty`) instead of returning an error value. Logging methods return nothing.
 
 See [Error Handling](lua/core/errors.md) for working with errors.

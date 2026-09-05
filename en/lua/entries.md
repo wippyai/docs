@@ -176,9 +176,9 @@ Configure execution pool for functions:
 |-------|-------|-------------|
 | `type` | all | Scheduler implementation (see table below) |
 | `workers` | static | Worker thread count (falls back to `size`, then 8) |
-| `size` | static | Worker count when `workers` is unset; also steers auto-select toward a static pool |
+| `size` | static | Worker count when `workers` is unset; with `type` omitted, `size` without `max_size` selects an inline pool |
 | `buffer` | static | Task queue capacity (default: `workers * 64`) |
-| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16) |
+| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16; 100 when `type` is omitted) |
 
 | Type | Behavior |
 |------|----------|
@@ -187,7 +187,7 @@ Configure execution pool for functions:
 | `static` | Fixed-size channel-based pool. Predictable under steady load. |
 | `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. |
 
-When `type` is omitted, the pool is auto-selected from the other fields: a lazy pool by default, a static pool if `workers` is set.
+When `type` is omitted, the pool is auto-selected from the other fields: a lazy pool by default, a static pool if `workers` is set, an inline pool if only `size` is set.
 
 ## Metadata
 

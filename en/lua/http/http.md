@@ -302,8 +302,14 @@ if form.files.avatar then
 
     -- Read file content
     local stream = file:stream()
-    local content = stream:read(0)
+    local parts = {}
+    while true do
+        local chunk, err = stream:read(65536)
+        if err or not chunk then break end
+        parts[#parts + 1] = chunk
+    end
     stream:close()
+    local content = table.concat(parts)
 
     -- Save to storage
     storage.write("avatars/" .. filename, content)

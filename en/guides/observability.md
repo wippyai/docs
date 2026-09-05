@@ -36,7 +36,7 @@ The log manager controls log propagation and event streaming:
 logmanager:
   propagate_downstream: true   # Propagate to child components
   stream_to_events: false      # Forward logs to event bus
-  min_level: -1                # -1=debug (default), 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run sets 0, or -1 with -v)
 ```
 
 When `stream_to_events` is enabled, log entries become events that processes can subscribe to via the event bus.
@@ -56,7 +56,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Metrics are exposed at `/metrics` on the configured address.
+Metrics are exposed at `/metrics` on the configured address; the same listener serves `/livez`. `max_cardinality` (default 1024) caps the number of live label sets per exporter; the least recently updated series are evicted beyond it.
 
 ### Scrape Configuration
 
@@ -95,7 +95,7 @@ otel:
 
 ### Trace Sources
 
-Enable tracing for specific components:
+All trace sources are on by default once `otel.enabled` is true; each can be disabled individually:
 
 ```yaml
 otel:
@@ -150,10 +150,10 @@ Traced operations:
 
 | Component | Span Name | Attributes |
 |-----------|-----------|------------|
-| HTTP requests | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP requests | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | Function calls | Function ID | process.pid, frame.id |
 | Process lifecycle | `{source}.started/terminated` | process.pid |
-| Queue messages | Message topic | Trace context in headers |
+| Queue messages | `{queue}.publish` | messaging.operation, messaging.destination.name |
 | Temporal workflows | Workflow/Activity name | workflow.id, run.id |
 
 ### Context Propagation
@@ -177,6 +177,8 @@ OTEL can be configured via environment:
 | `OTEL_SERVICE_NAME` | Service name |
 | `OTEL_SERVICE_VERSION` | Service version |
 | `OTEL_TRACES_SAMPLER_ARG` | Sample rate (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio`, or `parentbased_traceidratio` (ratio from `OTEL_TRACES_SAMPLER_ARG`) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Set to `true` to allow non-TLS connections |
 | `OTEL_PROPAGATORS` | Propagator list |
 
 ## Runtime Statistics

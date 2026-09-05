@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | Method name |
 | `description` | string | Method description |
-| `input_schemas` | table[] | Input schema definitions |
-| `output_schemas` | table[] | Output schema definitions |
+| `input_schemas` | table[] | Input schema definitions (absent when the method declares none) |
+| `output_schemas` | table[] | Output schema definitions (absent when the method declares none) |
 
 ## Finding Implementations
 
@@ -195,7 +195,12 @@ Options apply to every method call on the returned instance. Only retryable erro
 | Option | Type | Description |
 |--------|------|-------------|
 | `retry.max_attempts` | int | Maximum attempts including the first (1 disables retry) |
-| `retry.initial_delay` | int/duration | Delay before first retry (ms or duration string) |
+| `retry.initial_delay` | int/duration | Delay before first retry (ms or duration string), default `100` |
+| `retry.max_delay` | int/duration | Upper bound for the backoff delay (ms or duration string), default `10s` |
+| `retry.backoff_factor` | number | Multiplier applied to the delay after each attempt, default `2.0` |
+| `retry.jitter` | number | Random jitter fraction applied to each delay, default `0.1` |
+| `retry.retry_kinds` | string[] | Only retry errors of these kinds; by default every kind except `Invalid`, `PermissionDenied` and `Internal` is retried |
+| `retry.skip_kinds` | string[] | Never retry errors of these kinds |
 
 ## Security Context
 
@@ -233,4 +238,4 @@ Without explicit `with_actor`/`with_scope`, an opened contract inherits the call
 | Method not found | `errors.NOT_FOUND` |
 | No default binding | `errors.NOT_FOUND` |
 | Permission denied | `errors.PERMISSION_DENIED` |
-| Call failed | `errors.INTERNAL` |
+| Call failed | kind of the implementation's error (preserved); `errors.INTERNAL` for dispatch failures |

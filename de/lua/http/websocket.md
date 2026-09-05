@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | Verbindungs-Timeout (ms oder "5s") |
 | `read_timeout` | number/string | Lese-Timeout |
 | `write_timeout` | number/string | Schreib-Timeout |
-| `compression` | number | Komprimierungsmodus (siehe Konstanten) |
+| `compression` | number/string | Komprimierungsmodus (siehe Konstanten) oder `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
 | `compression_threshold` | number | Min. Größe zum Komprimieren (0-100MB) |
 | `read_limit` | number | Max. Nachrichtengröße (0-128MB) |
 | `channel_capacity` | number | Empfangs-Channel-Puffer (1-10000) |
@@ -89,7 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Nachrichteninhalt |
 | `type` | number | `websocket.TEXT` (1) oder `websocket.BINARY` (2) |
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis die Nachricht gesendet ist. Gibt keine Werte zurück.
 
 ### Ping
 
@@ -97,7 +97,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis der Ping gesendet ist. Gibt keine Werte zurück.
 
 ## Nachrichten empfangen
 
@@ -180,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Schließ-Code (1000-4999), Standard 1000 |
 | `reason` | string | Schließgrund (optional) |
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis der Close-Frame gesendet ist.
 
 ## Konstanten
 

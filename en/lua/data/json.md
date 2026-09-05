@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- Handle errors
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
     print(err:message())  -- parse error details
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Now safe to decode
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | Mixed key types in table | `errors.INTERNAL` | no |
 | Nesting exceeds 128 levels | `errors.INTERNAL` | no |
 | Invalid JSON syntax | `errors.INTERNAL` | no |
+| Input not a string or empty string (decode) | `errors.INVALID` | no |
 | Schema compilation failed | `errors.INVALID` | no |
 | Validation failed | `errors.INVALID` | no |
 

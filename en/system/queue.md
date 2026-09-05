@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery per driver
+        return nil, err  -- nack: redelivery per driver
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,8 +286,8 @@ The runtime auto-settles based on the handler return:
 
 | Handler Result | Action |
 |----------------|--------|
-| `true` or non-false return | Ack |
-| `false` | Nack (redeliver per driver) |
+| Any plain return value (including `false`) | Ack |
+| `nil, err` return | Nack (redeliver per driver) |
 | Raised error | Nack |
 
 Call `msg:ack()` or `msg:nack()` explicitly only to settle early. Settlement is single-shot: whichever call lands first wins.

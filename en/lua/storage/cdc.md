@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 Unknown option keys are rejected with `errors.INVALID`. Table names are matched case-insensitively against both the qualified relation and the bare table name. Snapshot rows are filtered by `tables` only; `ops` applies to live changes.
 
-A stream receives a snapshot when either `opts.snapshot` is true or the source entry's `snapshot` field is set; snapshot rows arrive first with `op = "snapshot"`, then the stream continues into live changes with no gap. `opts.after` is only honored by drivers whose `capture_resume` capability is set — every driver shipped today returns `errors.INVALID` ("cdc operation is not supported by this source") for it.
+A stream receives a snapshot when either `opts.snapshot` is true or the source entry's `snapshot` field is set; snapshot rows arrive first with `op = "snapshot"`, then the stream continues into live changes with no gap. `opts.after` is reserved for drivers that resume from a cursor — every driver shipped today returns `errors.INVALID` ("cdc operation is not supported by this source") for it, including `db.cdc.postgres` when it reports `capture_resume`.
 
 Filters narrow delivery only. Access to a source is granted by the `cdc.subscribe` permission, never by a filter.
 
@@ -154,7 +154,7 @@ Each message received on the channel is a change table:
 | `slot` | Replication slot name (`db.cdc.postgres`) |
 | `publication` | Postgres publication, when configured |
 | `tables` | Captured tables, when configured |
-| `streaming` | Whether the source is currently running |
+| `streaming` | `db.cdc.sqlite`: whether the source is running; `db.cdc.postgres`: the entry's `streaming` protocol setting |
 | `failover` | Failover slot mode (`db.cdc.postgres`) |
 | `temporary` | Temporary slot (`db.cdc.postgres`) |
 | `snapshot` | Entry-level snapshot default |
@@ -187,7 +187,7 @@ A denied action returns `errors.PERMISSION_DENIED`.
 
 | Condition | Kind |
 |-----------|------|
-| No context / no process PID | `errors.INTERNAL` |
+| No context | `errors.INTERNAL` |
 | Source name required | `errors.INVALID` |
 | Invalid or unknown stream option | `errors.INVALID` |
 | `after` on a source without `capture_resume` | `errors.INVALID` |

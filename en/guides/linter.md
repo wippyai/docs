@@ -242,6 +242,8 @@ Example GitHub Actions step:
 | `--rules` | | false | Enable lint rules (W-series style/quality checks) |
 | `--cache-reset` | | false | Clear cache before linting |
 | `--lock-file` | `-l` | wippy.lock | Path to lock file |
+| `--profile` | | | Apply a workspace profile from the merged runtime config (repeatable, applied in order) |
+| `--set` | | | Override a merged runtime config value (`section.path=value`, repeatable) |
 
 ## See Also
 

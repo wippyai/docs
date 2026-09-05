@@ -45,7 +45,7 @@ Connections are automatically returned to the pool when the function exits, but 
 </note>
 
 <note>
-Placeholders are passed to the database driver unchanged; the runtime does not rewrite them. SQLite and MySQL use `?`, PostgreSQL uses `$1, $2` — write them in the form your driver expects. The examples below use `?` (SQLite/MySQL). For queries that target more than one engine, build them with the [query builder](#query-builder) and set the dialect's `placeholder_format`.
+Placeholders are passed to the database driver unchanged; the runtime does not rewrite them. SQLite and MySQL use `?`, PostgreSQL uses `$1, $2` — write them in the form your driver expects. The examples below use `?` (SQLite/MySQL). For queries that target more than one engine, build them with the [query builder](#query-builder): `run_with` rewrites placeholders to `$1, $2` when the handle is PostgreSQL, and `to_sql` uses the builder's `placeholder_format`.
 </note>
 
 ## Constants
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Array of Sqlizer or table conditions |
 
 **Returns:** `Sqlizer`
+
+## sqlizer:to_sql
+
+Generates the SQL fragment and bind arguments of a condition.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Returns:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ Sets multiple columns from table.
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `map` | table | {column = value} pairs |
+| `map` | table | {column = value} pairs; values are plain values, `sql.NULL`, or `sql.as.*` (use `set` for expressions) |
 
 **Returns:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ Database access is subject to security policy evaluation.
 | Resource not found | `errors.NOT_FOUND` | no |
 | Resource not database | `errors.INVALID` | no |
 | Invalid parameters | `errors.INVALID` | no |
-| SQL syntax error | `errors.INVALID` | no |
+| SQL syntax error | `errors.UNKNOWN` | nil |
 | Statement closed | `errors.INVALID` | no |
 | Transaction not active | `errors.INVALID` | no |
 | Invalid savepoint name | `errors.INVALID` | no |
-| Query execution error | varies | varies |
+| Query execution error | `errors.UNKNOWN` | nil |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

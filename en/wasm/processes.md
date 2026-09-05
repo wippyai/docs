@@ -75,7 +75,7 @@ wippy run list
 | `name` | Yes | Command name used with `wippy run <name>` |
 | `short` | No | Short description shown in `wippy run list` |
 
-A `terminal.host` and `process.host` must be present for CLI commands to work.
+A `terminal.host` must be present for CLI commands to work; it is the process host that runs the command.
 
 ## Process Lifecycle
 

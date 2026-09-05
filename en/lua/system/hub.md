@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | List files for a version (`version` required); returns `{items, total, page, page_size}` |
 
+## Cache
+
+```lua
+local cached, err = hub.cache.list()
+-- each entry: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| Function | Description |
+|----------|-------------|
+| `hub.cache.list(opts?)` | List cached artifacts under the vendor directory; `pinned` is `true` when the lock file references the artifact |
+| `hub.cache.remove(module, version, opts?)` | Remove one cached artifact; refuses a lock-pinned artifact (kind `errors.CONFLICT`) unless `opts.force` is `true`; returns `true` |
+| `hub.cache.prune(opts?)` | Remove every cached artifact the lock file does not reference; with `opts.dry_run = true` nothing is deleted; returns the pruned (or would-be-pruned) entries |
+
+**Permissions:** `hub.cache.list`, `hub.cache.remove` (resource: module name), `hub.cache.prune`
+
 ## Authentication
 
 Push a registry token into the running process — every hub consumer picks it up on its next call, without a restart:

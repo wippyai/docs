@@ -16,7 +16,7 @@ Wippy is a layered system built on Go. Components initialize in dependency order
 | Layer | Components |
 |-------|------------|
 | Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (wippyai/go-lua), 50+ modules |
+| Runtime | Lua engine (wippyai/go-lua), 40+ modules |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,7 +42,7 @@ Creates core infrastructure before any components load:
 
 ### Phase 2: Component Loading
 
-The Loader resolves dependencies via topological sort and loads components level by level. Components at the same level load in parallel.
+The Loader resolves dependencies via topological sort and loads components level by level, one component at a time.
 
 Core components (PIDGen, Dispatcher, Registry, Finder, Supervisor) initialize first, followed by system components (Topology, Lifecycle, Factory, Functions, Contracts). Concrete levels are computed at runtime from the dependency graph, so the ordering adapts as components are added or removed.
 
@@ -85,7 +85,7 @@ Components declare dependencies. The loader builds a directed acyclic graph and 
 |-----------|--------------|---------|
 | PIDGen | none | Process ID generation |
 | Dispatcher | none | Command handler dispatch |
-| Registry | none | Entry storage and versioning |
+| Registry | Artifact | Entry storage and versioning |
 | Finder | Registry | Entry lookup and search |
 | Supervisor | Registry | Service restart policies |
 | Topology | none | Process parent/child tree |
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ### Common Topics
 
-Topics are `<system>:<kind>`. The built-in systems publish:
+Every event carries a `System` and a `Kind`. The built-in systems publish:
 
 | System | Kind | Purpose |
 |--------|------|---------|
@@ -137,7 +137,6 @@ Versioned storage for entry definitions.
 
 - **Versioned State** - Each mutation creates new version
 - **History** - In-memory history by default; optional SQLite-backed history for a durable audit trail (history_type: sqlite)
-- **Observation** - Watch specific entries for changes
 - **Event-driven** - Publishes events on mutations
 
 ### Entry Lifecycle
@@ -174,14 +173,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same process]
-    Peer -.- P[Same cluster]
-    Inter -.- I[Remote]
+    Local -.- L[This node]
+    Peer -.- P[Registered peer receiver]
+    Inter -.- I[Other cluster nodes]
 ```
 
 1. **Local** - Direct delivery within same node
-2. **Peer** - Forward to peer nodes in cluster
-3. **Internode** - Route to remote nodes via network
+2. **Peer** - Deliver to a receiver registered for that node ID (an external peer such as a Temporal worker)
+3. **Internode** - Fall back to the cluster internode transport, installed by the cluster component after boot
 
 ### Mailbox
 

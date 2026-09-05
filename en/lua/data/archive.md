@@ -166,6 +166,12 @@ s:close()
 
 **Permission:** `archive.read`
 
+A walker also supports `extract_all` with the same options as the random-access reader, streaming every entry into a destination filesystem in one call:
+
+```lua
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
+```
+
 `tar`, `tar.gz`, and `tar.zst` stream natively. `zip` is parsed via per-entry local headers; entries written with a streaming data descriptor (size/CRC trailing the data) are read by decompressing to the entry boundary. For robust zip handling of large uploads, land the upload as a file first (a bounded sequential copy) then use `archive.open`:
 
 ```lua
@@ -197,7 +203,7 @@ Add an entry from a string, bytes, reader, or `stream.Stream`:
 
 ```lua
 w:add("notes.txt", "hello")
-w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
 ### add_file
@@ -224,7 +230,7 @@ Finalize the archive (writes the central directory for zip). Idempotent; also au
 w:close()
 ```
 
-`add*` options: `{ method = "store"|"deflate", mode, modified }`. The zip writer streams to non-seekable writers using data descriptors, so writing to a response stream works.
+`add*` options: `{ method = "store"|"deflate", mode, size }`. Tar formats need the entry size up front, so `add()` from a stream or reader into a `tar*` archive requires `size` (strings and `add_file` supply it). The zip writer streams to non-seekable writers using data descriptors, so writing to a response stream works.
 
 ## Errors
 

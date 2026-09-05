@@ -111,7 +111,7 @@ local actor = security.actor()  -- Get current user's actor
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -140,20 +140,35 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-Sets call options like timeout and priority. Use this for operations that need time limits.
+Sets call options such as the retry policy or the overlay network. Options are merged over any preset options of the target function entry.
 
 ```lua
--- Set a 5 second timeout for external API call
-local exec = funcs.new():with_options({timeout = 5000})
+-- Retry transient failures up to 5 times with exponential backoff
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Handle timeout or other error
+    -- All attempts failed, or the error was not retryable
 end
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `options` | table | Implementation-specific options |
+| `options` | table | Call options |
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `retry.max_attempts` | int | Maximum attempts including the first (1 disables retry) |
+| `retry.initial_delay` | int/duration | Delay before first retry (ms or duration string), default `100` |
+| `retry.max_delay` | int/duration | Upper bound for the backoff delay (ms or duration string), default `10s` |
+| `retry.backoff_factor` | number | Multiplier applied to the delay after each attempt, default `2.0` |
+| `retry.jitter` | number | Random jitter fraction applied to each delay, default `0.1` |
+| `retry.retry_kinds` | string[] | Only retry errors of these kinds; by default every kind except `Invalid`, `PermissionDenied` and `Internal` is retried |
+| `retry.skip_kinds` | string[] | Never retry errors of these kinds |
+| `network` | string | Registry ID of an overlay network to route the call's outbound traffic through; requires the `network.select` permission |
+
+Only retryable errors trigger retries; non-retryable errors surface immediately. Temporal activity options are described in [Activities](temporal/activities.md).
 
 **Returns:** `Executor, error`
 
@@ -165,7 +180,7 @@ Executor versions of call and async that use the configured context.
 -- Build reusable executor with context
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Make multiple calls with same context
 local users, _ = exec:call("app.api:list_users")
@@ -297,6 +312,7 @@ Function operations are subject to security policy evaluation.
 | `funcs.call` | Function ID | Call a specific function |
 | `funcs.context` | `context` | Use `with_context()` to set custom context |
 | `funcs.security` | `security` | Use `with_actor()` or `with_scope()` |
+| `network.select` | Network ID | Use `with_options({network = ...})` to select an overlay network |
 
 ## Errors
 
@@ -306,6 +322,7 @@ Function operations are subject to security policy evaluation.
 | Namespace missing | `errors.INVALID` | no |
 | Name missing | `errors.INVALID` | no |
 | Permission denied | `errors.PERMISSION_DENIED` | no |
+| Async outside a process | `errors.INTERNAL` | no |
 | Subscribe failed | `errors.INTERNAL` | no |
 | Function error | varies | varies |
 

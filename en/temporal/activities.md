@@ -31,6 +31,7 @@ Add `meta.temporal.activity` to register a function as an activity:
 |-------|----------|-------------|
 | `worker` | Yes | Reference to `temporal.worker` entry |
 | `local` | No | Execute as local activity (default: false) |
+| `name` | No | Custom activity type name (defaults to entry ID) |
 
 ## Implementation
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Wait for activity cancellation |
 | `activity.disable_eager_execution` | boolean | false | Disable eager execution |
 | `activity.retry_policy` | table | - | Retry configuration (see below) |
+| `activity.name` | string | - | Activity type name to call, when it differs from the registry ID |
+| `activity.summary` | string | - | Human-readable summary shown in the Temporal UI |
+| `activity.priority` | table | - | Task priority: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (inherit the build ID) or `default` (use assignment rules) |
 
 Duration values accept strings (`"5s"`, `"10m"`, `"1h"`) or milliseconds as numbers.
 

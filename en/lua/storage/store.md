@@ -88,7 +88,7 @@ Check if a key exists without retrieving:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ Store operations are subject to security policy evaluation.
 
 ## Errors
 
-`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`).
+`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`), except that a permission denial in `store.get`, `get`, `set`, `has` and `delete` raises a Lua error instead.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty resource ID | `errors.INVALID` | no |
-| Resource not found | `errors.NOT_FOUND` | no |
+| Resource not found | `errors.INTERNAL` | no |
 | Store released | `errors.INVALID` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
+| Permission denied (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` and key exists | `errors.ALREADY_EXISTS` | no |
 | `if_version` mismatch | `errors.CONFLICT` | yes |
 | Conditional write on a store without support | `errors.INVALID` | no |

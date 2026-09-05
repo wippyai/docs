@@ -37,7 +37,7 @@ For a relative path, `base: project` keeps it relative to the process working di
 
 Any other value is rejected with `invalid directory base`.
 
-The mode restricts all file operations. Execute bits are added automatically when read bits are present.
+The mode restricts all file operations. Execute bits are added automatically when all read bits are set and no execute bit is.
 
 <note>
 Paths are normalized and validated. It is not possible to access files outside the configured root directory.
@@ -68,6 +68,7 @@ Both filesystem types implement:
 | OpenFile (write) | Yes | No |
 | Remove | Yes | No |
 | Mkdir | Yes | No |
+| Rename | Yes | No |
 
 Write operations on embedded filesystems return an error.
 

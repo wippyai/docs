@@ -97,9 +97,9 @@ entries:
 ### Resolution Rules
 
 - Each module resolves against the **intersection of all declared ranges** across the dependency graph. Incompatible ranges (diamond conflicts) fail resolution with an explicit error rather than silently picking one side.
-- Dependencies are solved from their declared ranges, not from previously resolved pins.
-- **Root declarations win over transitive ones**: when your app and a dependency both pull in the same module or requirement, your declaration takes precedence.
-- The same component may be declared as a root dependency only once — a duplicate declaration is rejected with a conflict error. Update the existing dependency instead.
+- A full `wippy update` solves every module from its declared ranges; a targeted update and boot-time repair keep a pinned version that still satisfies every live range.
+- **Root parameters win over transitive ones**: when your app and a dependency both bind the same requirement, the parameters on your `ns.dependency` take precedence. Version ranges are never overridden; every declaration joins the intersection.
+- A component declared by several root `ns.dependency` entries is controlled by one of them — established declarations before new ones, parameter carriers before plain ones, ties on the lowest entry ID — and the others fold into references to it. A duplicate whose parameters disagree with the controlling declaration is rejected with a conflict error; update the existing dependency instead.
 
 Two resolution failures are reported distinctly. A constraint expression that cannot be satisfied by any release ever — the intersection of live ranges is empty — is a conflict, and the error names the module and every requester that contributed a range. A valid range set for which the hub currently publishes no matching version is an availability failure instead: a later release can make it resolvable without any change to the declarations.
 

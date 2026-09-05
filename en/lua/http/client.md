@@ -355,6 +355,7 @@ HTTP requests are subject to security policy evaluation.
 | `http_client.unix_socket` | Socket path | Allow/deny Unix socket connections |
 | `http_client.private_ip` | IP address | Allow/deny access to private IP ranges |
 | `http_client.insecure_tls` | URL | Allow/deny insecure TLS (skip verification) |
+| `network.select` | Network entry ID | Allow/deny routing through the `overlay_network` given in the request |
 
 ### Checking Access
 

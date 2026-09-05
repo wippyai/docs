@@ -229,7 +229,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-The compiled program is informational; execute by calling `runner.run` with the source and method.
+The options table accepts the same `modules` and `imports` fields as `runner.run`, and the same `eval.module` and `eval.import` permission checks apply. The compiled program is informational; execute by calling `runner.run` with the source and method.
 
 ## Security Model
 

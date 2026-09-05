@@ -125,12 +125,6 @@ binds the framework, `calc` binds the unit under test.
 wippy test
 ```
 
-Filter by entry id substring (namespace:name) while iterating:
-
-```bash
-wippy test calc_test
-```
-
 Output for the suite above:
 
 ```
