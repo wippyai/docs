@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` proporciona el grupo de políticas `wippy.security:process` bajo el que se ejecutan los servicios en segundo plano del módulo LLM; sin él no arrancan.
 
 ### Políticas de Seguridad
 

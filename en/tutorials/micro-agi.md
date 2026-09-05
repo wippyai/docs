@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` provides the `wippy.security:process` policy group that the LLM module's background services run under; without it they fail to start.
 
 ### Security Policies
 

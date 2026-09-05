@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` 提供 `wippy.security:process` 策略组，LLM 模块的后台服务在该组下运行；缺少它们将无法启动。
 
 ### 安全策略
 
