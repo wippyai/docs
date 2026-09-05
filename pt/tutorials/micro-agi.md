@@ -71,7 +71,7 @@ A ideia central: ferramentas são entradas do registro. Criar uma ferramenta é 
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ Duas entradas `security.policy` restringem em quais namespaces o agente pode esc
 ```
 
 Essas políticas são carregadas como um escopo nomeado (`app:agent_security`) por `create_tool` e avaliadas antes de qualquer escrita no registro. O agente pode escrever em `app.generated:*` (nenhuma política deny corresponde), mas não pode escrever em `app:*` (entradas centrais, modelos, definição do agente) ou `app.tools:*` (ferramentas embutidas).
+
+Uma terceira política concede ao próprio processo acesso ao registro. Um processo iniciado sem contexto de segurança tem toda leitura do registro negada, então o comando `agent` carrega esta política como seu próprio escopo:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 Veja [Modelo de Segurança](system/security.md) para detalhes sobre a avaliação de políticas.
 
@@ -260,6 +271,11 @@ O prompt é deliberadamente conciso. Regras principais:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ O prompt é deliberadamente conciso. Regras principais:
       compress: wippy.llm.util:compress
 ```
 
-O processo executa como um comando de terminal. A imposição de segurança ocorre dentro de `create_tool`, que carrega o grupo de políticas `agent_security` e o avalia antes de escrever.
+O processo executa como um comando de terminal. `meta.command.security` fornece a ele o ator e o escopo sob os quais executa — sem isso `registry.get` falha com `not allowed to access entry` e o agente nunca carrega. A imposição de segurança para escritas ocorre dentro de `create_tool`, que carrega o grupo de políticas `agent_security` e o avalia antes de escrever.
 
 Imports:
 - `prompt` — construtor de conversação

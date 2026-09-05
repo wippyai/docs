@@ -148,13 +148,29 @@ return { main = main }
 
 ## Systeminformationen
 
-Zugriff auf Runtime-Statistiken mit dem `system`-Modul:
+Zugriff auf Runtime-Statistiken mit dem `system`-Modul. Jeder Lesezugriff ist durch die Aktion `system.read` abgesichert, der Prozess braucht also zusätzlich eine Policy, die sie erlaubt:
 
 ```yaml
-# Zu Entry-Definition hinzufügen
-modules:
-  - io
-  - system
+  # Zu den Entries hinzufügen
+  - name: system_read
+    kind: security.policy
+    policy:
+      actions:
+        - system.read
+      resources: "*"
+      effect: allow
+
+  # Den CLI-Eintrag aktualisieren
+  - name: cli
+    kind: process.lua
+    source: file://cli.lua
+    method: main
+    security:
+      policies:
+        - app:system_read
+    modules:
+      - io
+      - system
 ```
 
 ```lua
@@ -206,7 +222,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## Exit-Codes

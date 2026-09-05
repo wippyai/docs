@@ -32,6 +32,7 @@ Instale as dependências:
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -43,6 +44,7 @@ fornece uma migração que cria a tabela vetorial; o bootloader a executa na ini
 Conecte as peças:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -61,6 +63,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -68,6 +71,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -75,6 +79,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -82,7 +87,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+O bootloader e os serviços de provedor rodam sob o grupo de policies
+`wippy.security:process`, portanto `wippy/security` e uma policy nesse grupo fazem parte da conexão.
 
 O bootloader precisa de um store de ambiente; adicione o padrão em seu próprio namespace:
 

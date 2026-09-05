@@ -18,15 +18,15 @@ description: "wippy/test フレームワークで Lua コードのテストを�
 ## 前提条件
 
 - Wippy プロジェクト ([app-template](https://github.com/wippyai/app-template) をクローンするか、空のディレクトリで `wippy init` を実行)。
-- テストフレームワークとターミナルホストがインストールされていること：
+- テストフレームワークがインストールされていること：
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  ランナーはライブのターミナル UI をレンダリングするため、`wippy/test` とともに `wippy/terminal` が必要です。
+  ランナーはライブのターミナル UI を `wippy/terminal` 上でレンダリングしますが、これは
+  `wippy/test` が自動的に取り込みます。
 
 ## テスト対象のコード
 
@@ -89,10 +89,16 @@ return { run = test.run_cases(define_tests) }
 両方のエントリを登録します。検出は `meta.type: test` をキーにします。`meta.suite` は出力で結果をグループ化します：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -110,7 +116,10 @@ entries:
       calc: app:calc
 ```
 
-`imports` マップは、テスト内で `require(...)` が解決する対象を制御します。`test` はフレームワークをバインドし、`calc` はテスト対象のユニットをバインドします。
+`ns.dependency` エントリがアプリケーションに `wippy/test` をマウントします。これがないと
+フレームワークの名前空間がレジストリに届かず、`wippy.test:test` を解決できません。`imports`
+マップは、テスト内で `require(...)` が解決する対象を制御します。`test` はフレームワークを
+バインドし、`calc` はテスト対象のユニットをバインドします。
 
 ## 実行
 
@@ -121,13 +130,19 @@ wippy test
 上記スイートの出力：
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` はすべてのケースが合格すると `0` で、失敗があれば `1` で終了するため、そのまま CI に組み込めます。

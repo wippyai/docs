@@ -74,6 +74,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # Политика доступа для обработчиков, воркеров и миграции
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # Драйвер очереди в памяти
   - name: queue_driver
     kind: queue.driver.memory
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:task_policy
 
   # Сервис миграции (автозапуск, завершается при успехе)
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   # Воркер очереди
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: "service:worker"
+      policies:
+        - app:task_policy
 
   # Эндпоинты
   - name: create_task.endpoint
@@ -176,6 +207,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+Строгий режим включён по умолчанию, поэтому записи, обращающейся к базе данных или очереди, нужны актор и область. Блок `security:` в каждой Lua-записи даёт и то, и другое из `app:task_policy`. См. [Модель безопасности](system/security.md).
+</tip>
 
 ## Процесс миграции
 

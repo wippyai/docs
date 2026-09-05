@@ -19,7 +19,6 @@ description: "シンプルな LLM 呼び出しからツール付きストリー�
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ LLM モジュールには2つのインフラストラクチャエントリが必
 - `env.storage.os` は環境変数から API キーを提供します
 - `process.host` は LLM モジュールが内部で使用するプロセスランタイムを提供します
 
-`terminal.host` は `wippy run -x` が `ask` プロセスを実行する場所であり、`io.print` の出力先です。
+`wippy/terminal` 依存関係は、コマンドが実行される `terminal.host` を提供し、そこが `io.print` の出力先になります。
+
+`meta.command` はプロセスに名前を与え、`wippy run ask` が残りの引数を文字列ペイロードとして渡して起動できるようにします。その `security` ブロックはその起動用のアクターとポリシースコープをインストールします。LLM モジュールはレジストリからモデルを解決するため、スコープなしで起動されたコマンドはレジストリから何も読み取れません。
 
 ### 生成コード
 
@@ -150,7 +167,7 @@ LLM モジュールはレジストリからモデルを解決します。`_index
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 これは質問を引数として `ask` プロセスをターミナルホスト上で実行し、結果を表示します。モデル定義は、LLM モジュールにどのプロバイダーを使用し、API にどのモデル名を送信するかを伝えます。
@@ -161,20 +178,20 @@ wippy run -x app:ask "What is the capital of France?"
 
 ### エントリ定義の更新
 
-`ask` エントリを `chat` プロセスに置き換え、ターミナル依存関係を追加します:
+`ask` エントリを `chat` プロセスに置き換えます:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

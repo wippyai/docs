@@ -20,6 +20,41 @@ description: "生成隔离的进程并通过消息传递进行通信。"
 - 通过事件监控进程生命周期
 - 链接进程以协调故障处理
 
+## 权限
+
+进程操作会针对调用方条目的安全策略进行权限检查。声明一个授予下述动作的 `security.policy` 条目，并将其附加到每个生成、发送、监控、链接或注册名称的条目上：
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+没有该授权时，这些调用会返回诸如 `not allowed to spawn process: app.test.process:echo_worker` 的错误。完整的动作列表见[权限参考](lua/core/process.md)。
+
 ## 生成进程
 
 从条目引用生成新进程。
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### 消息模式获取发送者信息

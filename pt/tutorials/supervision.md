@@ -496,7 +496,37 @@ entries:
     host: app:processes
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+O modo estrito está ativo por padrão, então um serviço que não declara contexto de segurança tem toda verificação negada, inclusive `process.spawn`. Conceda ao pool as ações que ele e seus workers usam:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+Os workers herdam o ator e o escopo do pool que os cria, portanto não precisam de bloco próprio.
 
 ### Implementação do Supervisor
 
@@ -552,6 +582,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -597,6 +631,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- Registra sob um nome para que outros processos possam alcançar este worker
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -679,14 +716,57 @@ wippy init
 wippy run
 ```
 
-O supervisor inicia automaticamente, cria quatro workers e registra reinicializações quando qualquer um deles morre. `LINK_DOWN` só é entregue quando um processo vinculado sai com erro, então acione uma reinicialização terminando forçadamente um worker a partir de outro processo:
+O supervisor inicia automaticamente, cria quatro workers e registra `Worker N started` para cada um. `LINK_DOWN` só é entregue quando um processo vinculado sai com erro, então acione uma reinicialização terminando forçadamente um worker. O código que faz o encerramento precisa executar dentro do mesmo runtime, então adicione-o como um serviço avulso:
 
-```lua
--- em um processo avulso ou comando de chat
-process.terminate("<pid-from-supervisor-log>")
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
 ```
 
-O pool recebe `LINK_DOWN`, aguarda 100 ms e recria o worker com o mesmo id. Um `process.cancel()` gracioso deixa o worker sair de forma limpa, o que não gera `LINK_DOWN` e portanto não dispara uma reinicialização.
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+Execute `wippy init` novamente para captar as novas entradas, depois `wippy run`. Dois segundos depois, o pool recebe `LINK_DOWN`, aguarda 100 ms e recria o worker com o mesmo id:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+Um `process.cancel()` gracioso deixa o worker sair de forma limpa, o que não gera `LINK_DOWN` e portanto não dispara uma reinicialização — é por isso que o loop de supervisão retorna em `CANCEL` em vez de tratar o desligamento como falha de worker.
 
 ## Próximos Passos
 

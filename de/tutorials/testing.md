@@ -21,16 +21,15 @@ Eine kleine Bibliothek und eine Test-Suite, die sie abdeckt:
 
 - Ein Wippy-Projekt (klone [app-template](https://github.com/wippyai/app-template) oder
   führe `wippy init` in einem leeren Verzeichnis aus).
-- Das Test-Framework und ein Terminal-Host sind installiert:
+- Das Test-Framework ist installiert:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  Der Runner rendert eine Live-Terminal-UI, daher ist `wippy/terminal` neben
-  `wippy/test` erforderlich.
+  Der Runner rendert eine Live-Terminal-UI auf `wippy/terminal`, das `wippy/test`
+  für dich mitbringt.
 
 ## Der zu testende Code
 
@@ -96,10 +95,16 @@ Registriere beide Einträge. Die Erkennung knüpft an `meta.type: test` an; `met
 gruppiert die Ergebnisse in der Ausgabe:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -117,8 +122,10 @@ entries:
       calc: app:calc
 ```
 
-Die `imports`-Map steuert, worauf `require(...)` innerhalb des Tests aufgelöst wird:
-`test` bindet das Framework, `calc` bindet die zu testende Einheit.
+Der `ns.dependency`-Eintrag ist das, was `wippy/test` in die Anwendung einbindet; ohne
+ihn erreicht der Framework-Namespace nie die Registry und `wippy.test:test` lässt sich
+nicht auflösen. Die `imports`-Map steuert, worauf `require(...)` innerhalb des Tests
+aufgelöst wird: `test` bindet das Framework, `calc` bindet die zu testende Einheit.
 
 ## Ausführen
 
@@ -129,13 +136,19 @@ wippy test
 Ausgabe für die obige Suite:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` beendet sich mit `0`, wenn jeder Fall besteht, und mit `1` bei

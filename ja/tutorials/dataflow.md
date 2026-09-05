@@ -24,6 +24,7 @@ description: "自分のマシン上にナレッジベースを構築します �
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -33,6 +34,7 @@ wippy install
 KB はローカルの SQLite データベースに存在します。`wippy/embeddings` はベクトルテーブルを作成するマイグレーションを同梱しており、ブートローダーが起動時にそれを実行します。各部分を接続します：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -51,6 +53,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -58,6 +61,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -65,6 +69,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -72,7 +77,23 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+ブートローダーとプロバイダーサービスは`wippy.security:process`ポリシーグループの下で実行されるため、`wippy/security`とそのグループに属するポリシーが配線の一部になります。
 
 ブートローダーには環境ストアが必要です。独自の名前空間に標準のものを追加します：
 

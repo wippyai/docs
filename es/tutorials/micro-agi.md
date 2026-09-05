@@ -71,7 +71,7 @@ La idea clave: las herramientas son entradas del registro. Crear una herramienta
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ Dos entradas `security.policy` restringen los namespaces en los que puede escrib
 ```
 
 Estas políticas se cargan como un ámbito con nombre (`app:agent_security`) por `create_tool` y se evalúan antes de cualquier escritura en el registro. El agente puede escribir en `app.generated:*` (ninguna política deny coincide), pero no puede escribir en `app:*` (entradas core, modelos, definición del agente) ni en `app.tools:*` (herramientas integradas).
+
+Una tercera política concede al propio proceso acceso al registro. Un proceso lanzado sin contexto de seguridad tiene denegada toda lectura del registro, así que el comando `agent` lleva esta política como su propio ámbito:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 Vea [Modelo de Seguridad](system/security.md) para detalles sobre la evaluación de políticas.
 
@@ -260,6 +271,11 @@ El prompt es deliberadamente escueto. Reglas clave:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ El prompt es deliberadamente escueto. Reglas clave:
       compress: wippy.llm.util:compress
 ```
 
-El proceso se ejecuta como un comando de terminal. La aplicación de la seguridad ocurre dentro de `create_tool`, que carga el grupo de políticas `agent_security` y lo evalúa antes de escribir.
+El proceso se ejecuta como un comando de terminal. `meta.command.security` le da el actor y el ámbito bajo los que se ejecuta — sin ello `registry.get` falla con `not allowed to access entry` y el agente nunca se carga. La aplicación de la seguridad para las escrituras ocurre dentro de `create_tool`, que carga el grupo de políticas `agent_security` y lo evalúa antes de escribir.
 
 Imports:
 - `prompt` — constructor de conversaciones

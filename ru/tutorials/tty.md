@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-События — это записи, различаемые по `type`. Для печатной клавиши `key_type` равен `"runes"`, а `key` содержит текст; для именованной клавиши и `key_type`, и `key` содержат имя (`"enter"`, `"backspace"`, `"up"`). Координаты в событиях мыши начинаются с единицы.
+События — это записи, различаемые по `type`. Для печатной клавиши `key_type` равен `"runes"`, а `key` содержит текст; для именованной клавиши и `key_type`, и `key` содержат имя (`"enter"`, `"backspace"`, `"space"`, `"up"`). Координаты в событиях мыши начинаются с единицы.
 
 ## Шаг 3: Рисование кадров
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

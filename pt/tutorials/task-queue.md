@@ -74,6 +74,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # Política de acesso para handlers, workers e a migração
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # Driver de fila em memória
   - name: queue_driver
     kind: queue.driver.memory
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:task_policy
 
   # Serviço de migração (auto-inicia, termina em sucesso)
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   # Worker da fila
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: "service:worker"
+      policies:
+        - app:task_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -176,6 +207,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+O modo estrito está ativo por padrão, então uma entrada que acessa o banco de dados ou a fila precisa de um ator e um escopo. O bloco `security:` em cada entrada Lua fornece ambos a partir de `app:task_policy`. Veja [Modelo de Segurança](system/security.md).
+</tip>
 
 ## Processo de Migração
 

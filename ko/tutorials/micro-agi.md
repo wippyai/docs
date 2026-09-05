@@ -71,7 +71,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ entries:
 ```
 
 이 정책들은 `create_tool`에 의해 명명된 스코프(`app:agent_security`)로 로드되며, 모든 레지스트리 쓰기 전에 평가됩니다. 에이전트는 `app.generated:*`에 쓸 수 있지만(거부 정책이 일치하지 않음), `app:*`(코어 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(내장 도구)에는 쓸 수 없습니다.
+
+세 번째 정책은 프로세스 자체에 레지스트리 접근 권한을 부여합니다. 보안 컨텍스트 없이 시작된 프로세스는 모든 레지스트리 읽기가 거부되므로, `agent` 명령은 이 정책을 자체 스코프로 지닙니다:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 정책 평가에 대한 자세한 내용은 [보안 모델](system/security.md)을 참조하세요.
 
@@ -260,6 +271,11 @@ GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ GPT-5.1은 추론과 도구 사용을 처리합니다. GPT-4.1 Nano는 25배 낮
       compress: wippy.llm.util:compress
 ```
 
-프로세스는 터미널 명령으로 실행됩니다. 보안 강제 적용은 `agent_security` 정책 그룹을 로드하고 쓰기 전에 평가하는 `create_tool` 내부에서 발생합니다.
+프로세스는 터미널 명령으로 실행됩니다. `meta.command.security`는 프로세스가 실행되는 액터와 스코프를 부여합니다 — 이것이 없으면 `registry.get`이 `not allowed to access entry`로 실패하고 에이전트가 로드되지 않습니다. 쓰기에 대한 보안 강제 적용은 `agent_security` 정책 그룹을 로드하고 쓰기 전에 평가하는 `create_tool` 내부에서 발생합니다.
 
 임포트:
 - `prompt` — 대화 빌더

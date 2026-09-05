@@ -31,6 +31,7 @@ Installiere die Abhängigkeiten:
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -42,6 +43,7 @@ die die Vektor-Tabelle erstellt; der Bootloader führt sie beim Start aus. Verdr
 einzelnen Teile:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -60,6 +62,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -67,6 +70,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -74,6 +78,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -81,7 +86,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+Der Bootloader und die Provider-Services laufen unter der Policy-Gruppe
+`wippy.security:process`, deshalb gehören `wippy/security` und eine Policy in dieser Gruppe zur Verdrahtung.
 
 Der Bootloader benötigt einen Environment Store; füge den Standard-Store in seinem eigenen
 Namespace hinzu:

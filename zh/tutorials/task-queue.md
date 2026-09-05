@@ -74,6 +74,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # 处理程序、worker 和迁移的访问策略
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # 内存队列驱动
   - name: queue_driver
     kind: queue.driver.memory
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:task_policy
 
   # 迁移服务（自动启动，成功后退出）
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   # 队列 worker
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: "service:worker"
+      policies:
+        - app:task_policy
 
   # 端点
   - name: create_task.endpoint
@@ -176,6 +207,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+严格模式默认开启，因此访问数据库或队列的条目需要一个执行者和一个作用域。每个 Lua 条目上的 `security:` 块从 `app:task_policy` 提供两者。参见[安全模型](system/security.md)。
+</tip>
 
 ## 迁移进程
 

@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: net_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: system.probe
+          policies:
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -68,6 +82,8 @@ entries:
 ```
 
 `isolate_streams: true` hace que el driver SOCKS5 genere credenciales aleatorias por conexión para que Tor abra un circuito nuevo en cada dial.
+
+La seguridad es estricta por defecto, así que el comando lleva el actor y la política bajo los que se ejecuta su lanzamiento. `http_client.request` cubre la llamada saliente y `network.select` cubre la elección explícita de superposición; sin ellos toda comprobación falla en cerrado.
 
 ## Paso 2: Enrutar Llamadas Salientes
 
@@ -159,6 +175,13 @@ La función anidada o el proceso generado utiliza la superposición en cada dial
 Las superposiciones que soportan tráfico entrante (Tailscale, I2P) también pueden aceptar listeners HTTP. Adjunta la superposición al `http.service` en lugar del cliente:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -171,9 +194,16 @@ Las superposiciones que soportan tráfico entrante (Tailscale, I2P) también pue
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-El servidor se vincula en la interfaz de tailnet; los clientes lo alcanzan a través de la dirección de Tailscale. SOCKS5 es solo para salida — asignarlo a `http.service` es rechazado.
+`auth_key` se resuelve a través del [registro de entorno](system/env.md), por lo que `TS_AUTHKEY` es una variable registrada — un valor del sistema operativo necesita una `env.variable` respaldada por `env.storage.os`.
+
+Vincular a través de una superposición está controlado por `network.bind`, comprobado cuando arranca el listener, así que el servicio declara un ámbito que lo permite. El servidor se vincula en la interfaz de tailnet; los clientes lo alcanzan a través de la dirección de Tailscale. SOCKS5 es solo para salida — asignarlo a `http.service` hace que el listener falle con `inbound listeners are not exposed over SOCKS5`.
 
 ## Predeterminado para Toda la App
 

@@ -19,7 +19,6 @@ description: "Пошаговое создание терминального ч�
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ entries:
 - `env.storage.os` предоставляет API-ключи из переменных окружения
 - `process.host` предоставляет среду выполнения процессов, используемую модулем LLM
 
-`terminal.host` — это то, на чём `wippy run -x` выполняет процесс `ask` и куда пишет `io.print`.
+Зависимость `wippy/terminal` предоставляет `terminal.host`, на котором выполняются команды и куда пишет `io.print`.
+
+`meta.command` даёт процессу имя, так что `wippy run ask` запускает его, передавая оставшиеся аргументы как строковые полезные нагрузки. Блок `security` устанавливает актора и скоуп политик для этого запуска: модуль LLM разрешает модели из реестра, а команда, запущенная без скоупа, ничего из него не прочитает.
 
 ### Код генерации
 
@@ -150,7 +167,7 @@ return { main = main }
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 Это запускает процесс `ask` на терминальном хосте с вопросом в качестве аргумента и выводит результат. Определение модели указывает модулю LLM, какой провайдер использовать и какое имя модели отправлять в API.
@@ -161,20 +178,20 @@ wippy run -x app:ask "What is the capital of France?"
 
 ### Обновление определений записей
 
-Замените запись `ask` на процесс `chat` и добавьте зависимость терминала:
+Замените запись `ask` на процесс `chat`:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

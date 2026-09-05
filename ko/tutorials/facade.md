@@ -27,7 +27,8 @@ Wippy UI를 서빙하는 백엔드 앱:
 
 ## 작동 방식
 
-1. `index.html`이 HTTP 서버에서 정적 파일로 서빙됩니다.
+1. 셸은 파사드의 템플릿에서 렌더링되어 HTTP 서버의 `/`에서 서빙됩니다; 그 에셋과
+   딥링크 폴백은 동일한 서버의 정적 마운트에서 옵니다.
 2. 로드 시 `GET /api/public/facade/config`를 가져옵니다.
 3. `localStorage`에서 인증 토큰을 확인하고, 없으면 `login_path`로 리디렉션합니다.
 4. CDN (`facade_url + '/module.js'`) 에서 Web Host 번들을 임포트하고 구성과 함께 `initWippyApp(...)`을 호출합니다.
@@ -58,6 +59,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -67,7 +69,8 @@ entries:
         value: Verify App
 ```
 
-제공되는 `index.html`은 `/api/public/facade/config`를 가져오므로, 기본 셸이 구성을 찾으려면 공개 라우터의 접두사가 `/api/public`이어야 합니다.
+셸은 구성, 테마 스크립트, CSS 변수를 `/api/public/facade/` 아래에서 요청하므로,
+공개 라우터의 접두사는 `/api/public`이어야 합니다.
 
 ## 실행하기
 
@@ -83,17 +86,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -115,7 +124,10 @@ curl http://localhost:8087/api/public/facade/config
 | `css_variables` | CSS 사용자 정의 속성의 JSON 문자열, 예: `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN 번들 URL (파사드 릴리스마다 고정됨; 재정의하지 않는 한 기본값 유지) |
 
-두 값은 매개변수가 아니라 `PUBLIC_API_URL` 환경 변수에서 런타임에 파생됩니다: API 기본 URL과 WebSocket URL (`http`→`ws`, `https`→`wss`). 설정되지 않으면 브라우저는 `window.location.origin`으로 폴백합니다.
+두 값은 매개변수가 아니라 `PUBLIC_API_URL`에서 런타임에 파생됩니다: API 기본 URL과
+WebSocket URL (`http`→`ws`, `https`→`wss`). 파사드는 이를 env 레지스트리를 통해 읽으므로,
+앱에서 `env.variable`로 선언하세요. 설정되지 않으면 브라우저는 `window.location.origin`으로
+폴백합니다.
 
 ## 참고 사항
 

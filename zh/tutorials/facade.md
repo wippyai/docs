@@ -27,7 +27,8 @@ description: "使用 wippy/facade 从一个纯后端应用中提供 Wippy Web UI
 
 ## 工作原理
 
-1. `index.html` 作为静态文件由您的 HTTP 服务器提供。
+1. 外壳由 facade 的模板渲染，并由您的 HTTP 服务器在 `/` 提供；
+   它的资源文件和深链接回退来自同一服务器上的一个静态挂载。
 2. 加载时它会获取 `GET /api/public/facade/config`。
 3. 它检查 `localStorage` 中的认证令牌，如果缺失则重定向到 `login_path`。
 4. 它从 CDN（`facade_url + '/module.js'`）导入 Web Host 包，并使用该配置调用 `initWippyApp(...)`。
@@ -58,6 +59,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -67,7 +69,7 @@ entries:
         value: Verify App
 ```
 
-随附的 `index.html` 会获取 `/api/public/facade/config`，因此公共路由器的前缀必须是 `/api/public`，默认外壳才能找到它的配置。
+外壳在 `/api/public/facade/` 下请求它的配置、主题脚本和 CSS 变量，因此公共路由器的前缀必须是 `/api/public`。
 
 ## 运行
 
@@ -83,17 +85,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -115,7 +123,7 @@ curl http://localhost:8087/api/public/facade/config
 | `css_variables` | CSS 自定义属性的 JSON 字符串，例如 `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN 包 URL（每个 facade 版本固定；除非要覆盖否则保留默认值） |
 
-有两个值是在运行时从 `PUBLIC_API_URL` 环境变量派生的，而非来自参数：API 基础 URL 和 WebSocket URL（`http`→`ws`，`https`→`wss`）。如果未设置，浏览器会回退到 `window.location.origin`。
+有两个值是在运行时从 `PUBLIC_API_URL` 派生的，而非来自参数：API 基础 URL 和 WebSocket URL（`http`→`ws`，`https`→`wss`）。facade 通过 env 注册表读取它，因此需要在您的应用中将其声明为 `env.variable`。如果未设置，浏览器会回退到 `window.location.origin`。
 
 ## 说明
 

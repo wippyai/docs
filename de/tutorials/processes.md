@@ -20,6 +20,41 @@ Schlüsselkonzepte:
 - Prozess-Lebenszyklus mit Events überwachen
 - Prozesse für koordinierte Fehlerbehandlung verlinken
 
+## Berechtigungen
+
+Prozess-Operationen werden gegen die Sicherheitsrichtlinie des aufrufenden Eintrags geprüft. Deklarieren Sie einen `security.policy`-Eintrag, der die unten verwendeten Aktionen gewährt, und hängen Sie ihn an jeden Eintrag an, der Prozesse startet, Nachrichten sendet, überwacht, verlinkt oder Namen registriert:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Ohne diese Berechtigung geben die Aufrufe Fehler zurück wie `not allowed to spawn process: app.test.process:echo_worker`. Die vollständige Aktionsliste steht in der [Berechtigungsreferenz](lua/core/process.md).
+
 ## Prozesse starten
 
 Starten Sie einen neuen Prozess aus einer Entry-Referenz.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Message-Modus für Sender-Info

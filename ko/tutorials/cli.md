@@ -148,13 +148,29 @@ return { main = main }
 
 ## 시스템 정보
 
-`system` 모듈로 런타임 통계에 접근:
+`system` 모듈로 런타임 통계에 접근합니다. 모든 읽기는 `system.read` 액션으로 보호되므로, 프로세스에는 이를 허용하는 정책도 필요합니다:
 
 ```yaml
-# 엔트리 정의에 추가
-modules:
-  - io
-  - system
+  # 엔트리에 추가
+  - name: system_read
+    kind: security.policy
+    policy:
+      actions:
+        - system.read
+      resources: "*"
+      effect: allow
+
+  # cli 엔트리 업데이트
+  - name: cli
+    kind: process.lua
+    source: file://cli.lua
+    method: main
+    security:
+      policies:
+        - app:system_read
+    modules:
+      - io
+      - system
 ```
 
 ```lua
@@ -206,7 +222,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## 종료 코드

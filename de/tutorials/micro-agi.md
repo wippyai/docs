@@ -71,7 +71,7 @@ Die zentrale Erkenntnis: Tools sind Registry-Einträge. Ein Tool zu erstellen be
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ Zwei `security.policy`-Einträge schränken ein, in welche Namespaces der Agent 
 ```
 
 Diese Richtlinien werden als benannter Scope (`app:agent_security`) durch `create_tool` geladen und vor jedem Registry-Schreibvorgang ausgewertet. Der Agent kann in `app.generated:*` schreiben (keine Deny-Richtlinie passt), aber nicht in `app:*` (Kerneinträge, Modelle, Agentendefinition) oder `app.tools:*` (eingebaute Tools).
+
+Eine dritte Richtlinie gewährt dem Prozess selbst Zugriff auf die Registry. Einem Prozess, der ohne Sicherheitskontext gestartet wird, wird jeder Registry-Lesevorgang verweigert, daher trägt der Befehl `agent` diese Richtlinie als eigenen Scope:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 Siehe [Sicherheitsmodell](system/security.md) für Details zur Richtlinien-Auswertung.
 
@@ -260,6 +271,11 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
       compress: wippy.llm.util:compress
 ```
 
-Der Prozess läuft als Terminalbefehl. Die Sicherheitsdurchsetzung erfolgt innerhalb von `create_tool`, das die Richtliniengruppe `agent_security` lädt und vor dem Schreiben auswertet.
+Der Prozess läuft als Terminalbefehl. `meta.command.security` gibt ihm den Actor und den Scope, unter dem er läuft — ohne das schlägt `registry.get` mit `not allowed to access entry` fehl und der Agent lädt nie. Die Sicherheitsdurchsetzung für Schreibvorgänge erfolgt innerhalb von `create_tool`, das die Richtliniengruppe `agent_security` lädt und vor dem Schreiben auswertet.
 
 Imports:
 - `prompt` — Konversations-Builder

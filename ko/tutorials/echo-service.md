@@ -63,6 +63,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+        - process.registry.register
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -81,6 +92,8 @@ entries:
       - io
       - process
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay
     kind: process.lua
@@ -90,6 +103,8 @@ entries:
       - process
       - logger
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay-service
     kind: process.service
@@ -105,7 +120,11 @@ entries:
     modules:
       - process
       - time
+    security:
+      policies: [app:policy]
 ```
+
+보안은 기본적으로 거부이므로, 각 프로세스는 자신이 수행하는 액션(이름 등록, 메시지 전송, 모니터링되는 워커 스폰)을 부여하는 정책을 지정하는 `security:` 블록을 가집니다.
 
 ## 릴레이 프로세스
 
@@ -149,7 +168,10 @@ local function main()
 
         if r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                logger:info("relay stopping", stats)
+                return
+            elseif event.kind == process.event.EXIT then
                 logger:info("worker exited", {
                     from = event.from,
                     result = event.result
@@ -200,7 +222,7 @@ local r = channel.select {
 }
 ```
 
-여러 채널에서 대기합니다. `r.channel`은 어떤 것이 발생했는지 식별하고, `r.value`는 데이터를 포함합니다.
+여러 채널에서 대기합니다. `r.channel`은 어떤 것이 발생했는지 식별하고, `r.value`는 데이터를 포함합니다. 런타임이 서비스를 종료할 때 `CANCEL` 이벤트가 동일한 이벤트 채널로 도착합니다. 여기서 `main`에서 반환하면 호스트가 중지 타임아웃을 기다리는 대신 깔끔하게 중지할 수 있습니다.
 
 **페이로드 추출**
 
@@ -352,7 +374,7 @@ Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
-  from worker: {app:processes|0x00004}
+  from worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
 ## 다음 단계

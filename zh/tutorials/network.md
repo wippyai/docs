@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: net_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: system.probe
+          policies:
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -68,6 +82,8 @@ entries:
 ```
 
 `isolate_streams: true` 使 SOCKS5 驱动在每次连接时生成随机凭据，从而让 Tor 为每次拨号开启新的回路。
+
+严格模式默认开启，因此该命令携带其启动时运行所依据的执行者和策略。`http_client.request` 覆盖出站调用，`network.select` 覆盖显式的覆盖层选择；缺少它们时每次检查都会失败关闭。
 
 ## 步骤 2：路由出站调用
 
@@ -159,6 +175,13 @@ local pid, err = process.with_options({ network = "app:tor" })
 支持入站流量的覆盖层（Tailscale、I2P）也可以接受 HTTP 监听器。将覆盖层附加到 `http.service` 而非客户端：
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -171,9 +194,16 @@ local pid, err = process.with_options({ network = "app:tor" })
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-服务器绑定在 tailnet 接口上；客户端通过 Tailscale 地址访问。SOCKS5 仅支持出站 — 将其分配给 `http.service` 会被拒绝。
+`auth_key` 通过 [env 注册表](system/env.md)解析，因此 `TS_AUTHKEY` 是一个已注册的变量 — 操作系统中的值需要一个由 `env.storage.os` 支撑的 `env.variable`。
+
+通过覆盖层绑定受 `network.bind` 管控，在监听器启动时检查，因此该服务声明了一个允许它的作用域。服务器绑定在 tailnet 接口上；客户端通过 Tailscale 地址访问。SOCKS5 仅支持出站 — 将其分配给 `http.service` 会使监听器以 `inbound listeners are not exposed over SOCKS5` 失败。
 
 ## 应用级默认值
 

@@ -20,6 +20,41 @@ Conceitos-chave:
 - Monitorar ciclo de vida de processos com eventos
 - Vincular processos para tratamento coordenado de falhas
 
+## Permissões
+
+As operações de processo são verificadas por permissão contra a política de segurança da entrada chamadora. Declare uma entrada `security.policy` concedendo as ações usadas abaixo e associe-a a toda entrada que cria, envia, monitora, vincula ou registra nomes:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Sem essa concessão, essas chamadas retornam erros como `not allowed to spawn process: app.test.process:echo_worker`. A lista completa de ações está na [Referência de Permissões](lua/core/process.md).
+
 ## Criando Processos
 
 Crie um novo processo a partir de uma referência de entrada.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Modo de Mensagem para Info do Remetente

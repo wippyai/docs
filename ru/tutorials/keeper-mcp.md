@@ -41,6 +41,7 @@ Wippy Keeper — это control plane для работающего прилож
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ Keeper автоматически монтирует три поверхност
 Создайте токен через API токенов (или на странице MCP в UI Keeper):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,14 +96,14 @@ Codex это `.mcp.json` в корне проекта:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-В развёрнутом окружении вместо `http://localhost:8085` используйте публичный базовый URL
+В развёрнутом окружении вместо `http://localhost:8080` используйте публичный базовый URL
 приложения.
 
 ## Как устроена поверхность MCP
@@ -116,7 +117,9 @@ Keeper не предоставляет плоский фиксированный
 - `use_trait` / `drop_trait` (и `set_traits`) — активировать или убрать трейт; при этом
   отправляется MCP-уведомление `notifications/tools/list_changed`, так что видимые инструменты
   меняются на лету.
-- `list_tools` / `call_tool` — перечислить и вызвать инструменты, материализованные трейтом.
+- `list_tools` — перечислить инструменты, материализованные трейтом, вместе с их схемами.
+- `call_tool` — вызвать любой инструмент реестра по id; виден только токену, обладающему
+  `mcp.root`.
 
 То, что токен может активировать, ограничено его **областями** — примерно `registry.*`,
 `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,

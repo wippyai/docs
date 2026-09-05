@@ -20,6 +20,41 @@ description: "Создание изолированных процессов и 
 - Мониторинг жизненного цикла процессов через события
 - Связывание процессов для координированной обработки отказов
 
+## Разрешения
+
+Операции с процессами проверяются по политике безопасности вызывающей записи. Объявите запись `security.policy`, дающую права на используемые ниже действия, и подключите её к каждой записи, которая порождает, отправляет, мониторит, связывает или регистрирует имена:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Без этого разрешения такие вызовы возвращают ошибки вида `not allowed to spawn process: app.test.process:echo_worker`. Полный список действий приведён в [справочнике по разрешениям](lua/core/process.md).
+
 ## Создание процессов
 
 Создание нового процесса по ссылке на запись.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Режим сообщений для информации об отправителе

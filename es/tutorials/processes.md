@@ -20,6 +20,41 @@ Conceptos clave:
 - Monitorear el ciclo de vida del proceso con eventos
 - Enlazar procesos para el manejo coordinado de fallos
 
+## Permisos
+
+Las operaciones de proceso se comprueban contra la política de seguridad de la entrada que las invoca. Declare una entrada `security.policy` que conceda las acciones usadas más abajo, y adjúntela a toda entrada que genere, envíe, monitoree, enlace o registre nombres:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Sin esa concesión, estas llamadas devuelven errores como `not allowed to spawn process: app.test.process:echo_worker`. La lista completa de acciones está en la [Permission Reference](lua/core/process.md).
+
 ## Generación de Procesos
 
 Genere un nuevo proceso desde una referencia de entrada.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Modo Mensaje para Información del Remitente

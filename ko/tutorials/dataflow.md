@@ -24,6 +24,7 @@ description: "자신의 머신에서 지식 베이스를 구축합니다 — 벡
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -33,6 +34,7 @@ wippy install
 KB는 로컬 SQLite 데이터베이스에 있습니다. `wippy/embeddings`는 벡터 테이블을 생성하는 마이그레이션을 제공합니다; 부트로더가 시작 시 이를 실행합니다. 조각들을 함께 연결합니다:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -51,6 +53,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -58,6 +61,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -65,6 +69,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -72,7 +77,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+부트로더와 프로바이더 서비스는 `wippy.security:process` 정책 그룹 아래에서 실행되므로,
+`wippy/security`와 해당 그룹의 정책이 이 배선의 일부입니다.
 
 부트로더는 환경 스토어가 필요합니다; 자체 네임스페이스에 표준 스토어를 추가합니다:
 

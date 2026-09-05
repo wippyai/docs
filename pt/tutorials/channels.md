@@ -7,6 +7,8 @@ description: "Channels estilo Go para programação concorrente dentro de proces
 
 Channels estilo Go para programação concorrente dentro de processos.
 
+Esta página é uma introdução: cada trecho mostra uma API isolada. Cole-os na função `main` de uma entrada `process.lua` para executá-los, como configurado no tutorial [Aplicações CLI](tutorials/cli.md).
+
 ## Criando Channels
 
 Channels são canais de comunicação para corrotinas. Crie com `channel.new(capacity)`:
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### Select com Send
 
-Use `case_send` para tentar envios não-bloqueantes:
+Use `case_send` para oferecer um envio dentro de um select. O case é escolhido assim que o channel consegue aceitar o valor:
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true (envio bem-sucedido)
 
 local v = ch:receive()  -- "sent"
+```
+
+Select bloqueia até que um de seus cases esteja pronto. Adicione `default = true` à tabela de cases para retornar imediatamente, com `result.default` definido como true quando nada estava pronto:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer cheio, nada enviado)
 ```
 
 ## Padrão Produtor-Consumidor

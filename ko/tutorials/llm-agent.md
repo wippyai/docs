@@ -19,7 +19,6 @@ description: "간단한 LLM 호출부터 도구를 갖춘 스트리밍 에이전
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ LLM 모듈에는 두 가지 인프라 엔트리가 필요합니다:
 - `env.storage.os`는 환경 변수에서 API 키를 제공합니다
 - `process.host`는 LLM 모듈이 내부적으로 사용하는 프로세스 런타임을 제공합니다
 
-`terminal.host`는 `wippy run -x`가 `ask` 프로세스를 실행하는 곳이자 `io.print`가 출력하는 곳입니다.
+`wippy/terminal` 의존성은 명령이 실행되는 곳이자 `io.print`가 출력하는 `terminal.host`를 제공합니다.
+
+`meta.command`는 프로세스에 이름을 부여하여 `wippy run ask`가 나머지 인자를 문자열 페이로드로 전달하며 실행하도록 합니다. 그 `security` 블록은 해당 실행에 대한 액터와 정책 스코프를 설치합니다: LLM 모듈은 레지스트리에서 모델을 해석하는데, 스코프 없이 실행된 명령은 레지스트리에서 아무것도 읽지 못합니다.
 
 ### 생성 코드
 
@@ -150,7 +167,7 @@ LLM 모듈은 레지스트리에서 모델을 해석합니다. `_index.yaml`에 
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 이는 `ask` 프로세스를 터미널 호스트에서 질문을 인자로 하여 실행하고 결과를 출력합니다. 모델 정의는 LLM 모듈에 어떤 제공자를 사용하고 API에 어떤 모델 이름을 전송할지 알려줍니다.
@@ -161,20 +178,20 @@ wippy run -x app:ask "What is the capital of France?"
 
 ### 엔트리 정의 업데이트
 
-`ask` 엔트리를 `chat` 프로세스로 교체하고 터미널 의존성을 추가합니다:
+`ask` 엔트리를 `chat` 프로세스로 교체합니다:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

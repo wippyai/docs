@@ -496,7 +496,37 @@ entries:
     host: app:processes
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+ストリクトモードはデフォルトで有効なため、セキュリティコンテキストを宣言しないサービスは`process.spawn`を含むすべてのチェックで拒否されます。プールとそのワーカーが使用するアクションを許可します:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+ワーカーはスポーン元のプールのアクターとスコープを継承するため、独自のブロックは不要です。
 
 ### スーパーバイザー実装
 
@@ -552,6 +582,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -597,6 +631,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- 他のプロセスからこのワーカーに到達できるよう名前で登録する
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -679,14 +716,57 @@ wippy init
 wippy run
 ```
 
-スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。`LINK_DOWN`はリンクされたプロセスがエラーで終了した場合にのみ配信されるため、別のプロセスからワーカーを強制終了して再起動をトリガーします:
+スーパーバイザーが自動起動し、4つのワーカーをスポーンし、それぞれについて`Worker N started`をログに記録します。`LINK_DOWN`はリンクされたプロセスがエラーで終了した場合にのみ配信されるため、ワーカーを強制終了して再起動をトリガーします。終了させるコードは同じランタイム内で実行される必要があるため、アドホックなサービスとして追加します:
 
-```lua
--- アドホックプロセスまたはchatコマンド内で
-process.terminate("<pid-from-supervisor-log>")
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
 ```
 
-プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。グレースフルな`process.cancel()`はワーカーを正常終了させるため`LINK_DOWN`は発生せず、したがって再起動もトリガーされません。
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+新しいエントリを取り込むために`wippy init`を再実行し、`wippy run`を実行します。2秒後、プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+グレースフルな`process.cancel()`はワーカーを正常終了させるため`LINK_DOWN`は発生せず、したがって再起動もトリガーされません。だからこそ監視ループはシャットダウンをワーカーの障害として扱わず、`CANCEL`で戻ります。
 
 ## 次のステップ
 
