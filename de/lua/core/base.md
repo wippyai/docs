@@ -79,7 +79,6 @@ table.insert(t, [pos,] value)  -- Fügt Wert an Position ein (Standard: Ende)
 table.remove(t [,pos])         -- Entfernt und gibt Element an Position zurück (Standard: letztes)
 table.concat(t [,sep [,i [,j]]]) -- Verkettet Array-Elemente mit Trennzeichen
 table.sort(t [,comp])          -- Sortiert in-place, comp(a,b) gibt true zurück wenn a < b
-table.pack(...)                -- Packt varargs in Tabelle mit 'n'-Feld
 table.unpack(t [,i [,j]])      -- Entpackt Tabellen-Elemente als mehrere Werte
 ```
 
@@ -124,7 +123,7 @@ string.sub(s, i [,j])      -- Substring von i bis j (negative Indizes vom Ende)
 string.len(s)              -- String-Länge (oder #s verwenden)
 string.byte(s [,i [,j]])   -- Numerische Codes der Zeichen
 string.char(...)           -- Erstellt String aus Zeichencodes
-string.rep(s, n [,sep])    -- Wiederholt String n-mal mit Trennzeichen
+string.rep(s, n)           -- Wiederholt String n-mal
 string.reverse(s)          -- Kehrt String um
 ```
 
@@ -208,14 +207,16 @@ math.fmod(x, y)       -- Gleitkomma-Rest
 math.sqrt(x)          -- Quadratwurzel
 math.pow(x, y)        -- x^y (oder x^y-Operator verwenden)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Natürlicher Log (oder Log zur Basis n)
+math.log(x)           -- Natürlicher Log
+math.log10(x)         -- Log zur Basis 10
 ```
 
 ### Trigonometrie
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Radiant
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Arkustangens von y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolisch
 math.deg(r)   -- Radiant zu Grad
 math.rad(d)   -- Grad zu Radiant
@@ -328,44 +329,6 @@ err:details()    -- Details-Tabelle holen oder nil
 err:stack()      -- Stack-Trace als String holen
 ```
 
-## UTF-8 Unicode
-
-Unicode UTF-8 String-Behandlung:
-
-### Konstanten {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Muster das einzelnes UTF-8-Zeichen matcht
-```
-
-### Funktionen {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Erstellt String aus Unicode-Codepoints
-utf8.codes(s)            -- Iterator über Codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Holt Codepoints an Positionen i bis j
-utf8.len(s [,i [,j]])    -- Zählt UTF-8-Zeichen (nicht Bytes)
-utf8.offset(s, n [,i])   -- Byte-Position des n-ten Zeichens ab Position i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Zeichen zählen (nicht Bytes)
-print(utf8.len(s))  -- 9
-
--- Über Codepoints iterieren
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Codepoint an Position holen
-local code = utf8.codepoint(s, 8)  -- Erstes chinesisches Zeichen
-
--- String aus Codepoints erstellen
-local emoji = utf8.char(0x1F600)  -- Grinsendes Gesicht
-```
-
 ## Eingeschränkte Features
 
 Die folgenden Standard-Lua-Features sind aus Sicherheitsgründen NICHT verfügbar:
@@ -377,7 +340,8 @@ Die folgenden Standard-Lua-Features sind aus Sicherheitsgründen NICHT verfügba
 | `rawlen` | `#`-Operator verwenden |
 | `io.*` | [Dateisystem](lua/storage/filesystem.md)-Modul verwenden |
 | `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [Befehlsausführung](lua/dynamic/exec.md), [Umgebung](lua/system/env.md)-Module verwenden |
-| `debug.*` (außer traceback) | Nicht verfügbar |
+| `debug.*` | Nicht verfügbar |
+| `utf8.*` | Nicht verfügbar |
 | `package.loadlib` | Native Bibliotheken nicht unterstützt |
 
 ## Siehe auch

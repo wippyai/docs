@@ -294,7 +294,22 @@ entries:
 
 ### Endpoint Protegido
 
+El middleware de autorización se configura en el router padre, no en el endpoint. El middleware post-match (como `endpoint_firewall`) se ejecuta después del matching de ruta y se aplica a todos los endpoints bajo el router:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -302,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## Ver También

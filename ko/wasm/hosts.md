@@ -61,9 +61,15 @@ WASM 모듈은 호스트 함수 임포트를 통해 런타임 기능에 접근�
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`, `wasi:io/poll`
+**Interfaces:** `wasi:io/error`, `wasi:io/streams`
 
-스트림 읽기/쓰기 연산 및 비동기 폴링. poll 인터페이스는 디스패처를 통한 협력적 양보를 가능하게 합니다.
+스트림 읽기/쓰기 연산 및 오류 처리. `wasi:io/poll` 인터페이스는 `wasi:poll` 임포트가 별도로 제공합니다.
+
+### wasi:poll
+
+**Interfaces:** `wasi:io/poll`
+
+비동기 폴링. poll 인터페이스는 디스패처를 통한 협력적 양보를 가능하게 합니다.
 
 ### wasi:cli
 

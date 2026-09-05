@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | Array von Select-Cases |
 | `default` | boolean | Wenn true, kehrt sofort zurück wenn kein Case bereit |
 
-**Gibt zurück:** `table` mit Feldern: `channel`, `value`, `ok`, `default`
+**Gibt zurück:** `table`
+
+- Für einen Channel-Case: `{channel, value, ok}` — `channel` ist der Channel des Cases, `value` ist der empfangene/gesendete Wert, `ok` ist false bei einem Empfang auf einem geschlossenen Channel.
+- Für den Default-Zweig (wenn kein Case bereit ist und `default = true`): `{default = true, ok = true}`.
 
 ### Timeout-Muster
 
@@ -208,7 +211,6 @@ end
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Send auf geschlossenem Channel | Laufzeitfehler | nein |
-| Close eines geschlossenen Channels | Laufzeitfehler | nein |
 | Ungültiger Case in Select | Laufzeitfehler | nein |
 
 ## Siehe auch

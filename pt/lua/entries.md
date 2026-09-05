@@ -17,7 +17,7 @@ Configuração para entradas baseadas em Lua: funções, processos, workflows e 
 | `library.lua` | Código compartilhado importado por outras entradas |
 | `module.lua` | Superfície de módulo (biblioteca com vários métodos) |
 
-Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode`. Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos automaticamente ao empacotar.
+Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode '**'` (ou um padrão como `--bytecode 'app:**'`). Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos ao empacotar com essa flag.
 
 ## Campos Comuns
 
@@ -168,26 +168,26 @@ Configure pool de execução para funções:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # padrão
-    size: 4           # workers iniciais
-    max_size: 16      # limite para pools elásticos
+    type: adaptive    # explícito; omita para usar a seleção automática (lazy)
+    max_size: 16      # limite para crescimento elástico
 ```
 
 | Campo | Pools | Descrição |
 |-------|-------|-----------|
 | `type` | todos | Implementação do scheduler (ver tabela abaixo) |
-| `size` | static, lazy, adaptive | Quantidade inicial de workers |
-| `workers` | engine v2 | Quantidade de threads worker |
-| `buffer` | static, adaptive | Capacidade da fila de tarefas (padrão `workers * 64`) |
-| `warm_start` | adaptive | Pré-compilar entradas na inicialização |
-| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão 16) |
+| `workers` | static | Quantidade de threads worker (recorre a `size`, depois 8) |
+| `size` | static | Quantidade de workers quando `workers` não está definido; também direciona a seleção automática para um pool static |
+| `buffer` | static | Capacidade da fila de tarefas (padrão: `workers * 64`) |
+| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão: 16) |
 
 | Tipo | Comportamento |
 |------|---------------|
 | `inline` | Execução síncrona na goroutine do chamador. Latência mínima, sem isolamento entre chamadas. |
 | `lazy` | Sem workers ociosos, criados sob demanda, removidos quando ociosos. |
 | `static` | Pool de tamanho fixo baseado em canais. Previsível sob carga estável. |
-| `adaptive` | Pool com auto-escala — cresce sob carga, encolhe quando ocioso. Padrão. |
+| `adaptive` | Pool com auto-escala — cresce sob carga, encolhe quando ocioso. |
+
+Quando `type` é omitido, o pool é selecionado automaticamente a partir dos demais campos: um pool lazy por padrão, ou um pool static se `workers` estiver definido.
 
 ## Metadados
 
@@ -211,7 +211,7 @@ Metadados são pesquisáveis via registro:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## Veja Também

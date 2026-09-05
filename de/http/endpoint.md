@@ -294,7 +294,22 @@ entries:
 
 ### Geschützter Endpunkt
 
+Autorisierungs-Middleware wird auf dem übergeordneten Router konfiguriert, nicht auf dem Endpunkt. Post-Match-Middleware (wie `endpoint_firewall`) läuft nach dem Routen-Matching und gilt für jeden Endpunkt unter dem Router:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -302,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## Siehe auch

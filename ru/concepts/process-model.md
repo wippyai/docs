@@ -97,7 +97,9 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 Сервис запускается автоматически, перезапускается при падении с backoff и интегрируется с управлением жизненным циклом среды исполнения.

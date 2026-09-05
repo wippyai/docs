@@ -42,8 +42,8 @@ local entry, err = registry.get("app.lib:assert")
 ## 엔트리 찾기
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
 필터 필드는 엔트리 메타데이터와 매칭됩니다.

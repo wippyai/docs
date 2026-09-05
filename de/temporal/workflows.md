@@ -883,7 +883,7 @@ local now = time.now()
 local id = uuid.v4()
 
 -- Crypto operations
-local bytes = crypto.random_bytes(32)
+local bytes = crypto.random.bytes(32)
 
 -- Child workflows
 local result = workflow.exec("app:child", input)

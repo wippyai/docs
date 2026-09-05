@@ -105,11 +105,8 @@ end
 このキャッチオールセグメントにより、ルートは`/files/docs/readme.md`のようなリクエストにマッチします。キャプチャされた末尾は、末尾のドットを除いた名前で、他のパラメータと同じように読み取れます：
 
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## ハンドラ関数
@@ -297,7 +294,22 @@ entries:
 
 ### 保護されたエンドポイント
 
+認可ミドルウェアはエンドポイントではなく親ルーターに設定します。ポストマッチミドルウェア（`endpoint_firewall`など）はルートマッチング後に実行され、ルーター配下のすべてのエンドポイントに適用されます：
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -305,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## 関連項目

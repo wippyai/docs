@@ -5,7 +5,10 @@ description: "Модуль wippy/views предоставляет систему
 
 # Views
 
-Модуль `wippy/views` предоставляет систему виртуальных страниц и компонентов с рендерингом шаблонов, управлением ресурсами и маппингом переменных окружения. Страницы могут опираться на Jet-шаблоны или внешние компоненты (SPA, микро-фронтенды).
+Модуль `wippy/views` предоставляет систему виртуальных страниц и компонентов с рендерингом шаблонов, управлением ресурсами и маппингом переменных окружения. Страницы бывают двух видов:
+
+- **Jet-шаблонные страницы** (`kind: template.jet`) — HTML, рендерится на сервере. Данные и ресурсы страницы собираются и внедряются на сервере, затем движок Jet рендерит итоговый HTML. Это унаследованная серверная модель. См. [Шаблонные страницы](#template-pages).
+- **Фронтенды на записях реестра** (`kind: registry.entry`) — два вида: микро-фронтенд-приложения (`view.page`, полноценные SPA) и переиспользуемые веб-компоненты (`view.component`), отдаваемые с CDN или статического монтирования. Запись реестра содержит только маршрутизацию и политику развёртывания; внедрение прокси и CSS описывается в `package.json` фронтенд-пакета. См. [Компонентные страницы](#component-pages) и [View-компоненты](#view-components).
 
 ## Установка
 
@@ -37,11 +40,14 @@ entries:
 | Параметр | Обязательный | По умолчанию | Описание |
 |-----------|----------|---------|-------------|
 | `api_router` | да | — | HTTP-роутер для API-эндпоинтов представлений |
-| `env_storage` | нет | внутреннее | Хранилище переменных окружения, обеспечивающее переменную `PUBLIC_API_URL` |
+| `env_storage` | да | — | Хранилище переменных окружения, обеспечивающее переменную `PUBLIC_API_URL` |
+| `server` | нет | `app:gateway` | HTTP-сервис, к которому привязывается самомонтируемый роутер [шлюза Web Fragments](#web-fragments-gateway) (`/@fragment`). Переопределяйте только если ID вашей `http.service` отличается от `app:gateway`. |
 
 ## Шаблонные страницы
 
-Шаблонные страницы рендерятся на сервере с помощью Jet-шаблонов:
+> **Серверная модель рендеринга.** Шаблонные страницы — унаследованный механизм серверного рендеринга: `wippy/views` собирает данные и ресурсы страницы на сервере и рендерит итоговый HTML движком Jet. Здесь нет ни iframe-прокси, ни клиентского микро-фронтенда — ответ является обычным HTML. Для внешних SPA и компонентов см. [Компонентные страницы](#component-pages).
+
+Шаблонные страницы рендерятся на сервере с помощью Jet-шаблонов. Данные внедряются через `data.set`, `data.data_func` и `data.resources` (серверное внедрение ресурсов):
 
 ```yaml
 entries:
@@ -106,7 +112,9 @@ entries:
 
 ## Компонентные страницы
 
-Компонентные страницы указывают на внешние приложения (SPA, микро-фронтенды):
+Компонентные страницы указывают на внешние одностраничные приложения (SPA, микро-фронтенды), которые Web Host загружает внутри iframe. Запись реестра содержит **только поля маршрутизации в реестре и политики развёртывания** — отдачу URL, контроль доступа, маршрут монтирования и постраничные переопределения конфигурации:
+
+> **Обязательная форма записи реестра:** компонентные страницы — это `kind: registry.entry` с `meta.type: view.page`. `view.page` никогда не является значением `kind`. Переопределения развёртывания прокси располагаются в `meta.proxy`, а не в `data.proxy`.
 
 ```yaml
 entries:
@@ -117,65 +125,74 @@ entries:
       name: dashboard
       title: Dashboard
       icon: chart-bar
-      url: https://cdn.example.com/dashboard/
+      url: /app
+      base_path: app/dashboard
+      entry_point: index.html
+      mountRoute: /dashboard/:part(.*)*
       secure: true
       announced: true
-    data:
-      proxy:
-        enabled: true
-        css:
-          prime_vue: true
-          theme_config: true
-        tailwind_config: true
+      config_overrides:
+        customization:
+          cssVariables:
+            "--p-primary": "#7c9ed9"
 ```
 
-API возвращает дескриптор компонента с базовым URL и конфигурацией прокси. Фронтенд рендерит компонент в iframe или inline.
+API возвращает дескриптор компонента с разрешённым базовым URL. Web Host рендерит SPA в iframe и применяет внедрения прокси, запрошенные фронтенд-пакетом.
 
 ### Поля компонента
 
 | Поле | Тип | По умолчанию | Описание |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | Публичный URL компонента |
-| `meta.entry_point` | string | `index.html` (страницы), `index.js` (компоненты) | Файл точки входа |
+| `meta.url` | string | — | Префикс базового URL, по которому смонтирован бандл (origin CDN или путь `http.static`) |
+| `meta.base_path` | string | — | Подкаталог внутри статического монтирования |
+| `meta.entry_point` | string | `index.html` | HTML-файл точки входа; составляется как `<url>/<base_path>/<entry_point>` |
+| `meta.mountRoute` | string | — | Занимает путь URL в роутере хоста; допустима только форма catch-all `/:part(.*)*` (корень) или `/<literal-prefix>/:part(.*)*` — произвольные шаблоны Vue Router отклоняются (HTTP 500). См. [view-page.md](../frontend/frontend-registry/view-page.md) / [dynamic-routing.md](../frontend/frontend-registry/dynamic-routing.md) |
+| `meta.announced` | boolean | — | Показывать в навигации и `pages/list` |
+| `meta.secure` | boolean | `false` | Требует аутентификации |
+| `meta.config_overrides` | object | — | Постраничные переопределения AppConfig (camelCase), глубоко объединяемые поверх значений по умолчанию из бандла |
 
 ### Конфигурация прокси
 
-Прокси контролирует, какие CSS и поведение внедряются в компонент:
+Внедрение прокси для SPA-страниц настраивается в блоке `wippy.proxy.injections` (camelCase) в package.json фронтенда и запекается в `wippy-meta.json` во время сборки. Его также можно переопределить для конкретного развёртывания через блок `proxy:` в camelCase, вложенный в `meta:` записи реестра (та же форма и та же обёртка `injections`, что и в блоке `wippy.proxy` из package.json); хост глубоко объединяет его поверх `wippy.proxy` из бандла, и значение из YAML побеждает для каждого вложенного ключа. Формы в snake_case не существует, нормализации регистра нет. Учтите, что `config_overrides` глубоко объединяет только `customization`, `axiosDefaults`, `routePrefix` и `apiRoutes` — он никогда не влияет на `proxy.injections`. См. [Микро-фронтенд-приложения (view.page)](../frontend/frontend-registry/view-page.md) и [Внедрение CSS](../frontend/web-host/css-injection.md).
 
-| Опция | По умолчанию | Описание |
-|--------|---------|-------------|
-| `proxy.enabled` | `true` | Включить обёртку прокси |
-| `proxy.css.fonts` | `true` | Внедрять стили шрифтов |
-| `proxy.css.theme_config` | `true` | Внедрять переменные темы |
-| `proxy.css.iframe` | `true` | Стили, специфичные для iframe |
-| `proxy.css.prime_vue` | `false` | Стили компонентов PrimeVue |
-| `proxy.css.markdown` | `false` | Стили рендеринга Markdown |
-| `proxy.css.custom_css` | `false` | Пользовательский CSS |
-| `proxy.css.custom_variables` | `false` | Пользовательские CSS-переменные |
-| `proxy.tailwind_config` | `false` | Внедрять конфигурацию Tailwind |
-| `proxy.resize_observer` | `true` | Авторесайз iframe |
-| `proxy.prevent_link_clicks` | `true` | Перехватывать навигацию по ссылкам |
-| `proxy.iconify_icons` | `false` | Загружать набор иконок Iconify |
-
-## View-компоненты
-
-Самостоятельные компоненты, не являющиеся страницами (без записи в навигации):
+Минимальная корректная форма переопределения при развёртывании:
 
 ```yaml
 entries:
-  - name: widget
+  - name: dashboard
+    kind: registry.entry
+    meta:
+      type: view.page
+      proxy:
+        enabled: true
+        injections:
+          css:
+            themeConfig: true
+            customCss: true
+            customVariables: true
+          tailwindConfig: false
+```
+
+## View-компоненты
+
+View-компоненты — это переиспользуемые пользовательские элементы (веб-компоненты, микро-фронтенды), которые Web Host обнаруживает и регистрирует; они не являются страницами и не имеют записи в навигации. Как и у компонентных страниц, запись реестра несёт только маршрутизацию и политику развёртывания:
+
+```yaml
+entries:
+  - name: reaction-bar
     kind: registry.entry
     meta:
       type: view.component
-      name: chat-widget
-      title: Chat Widget
-      url: https://cdn.example.com/chat-widget/
-    data:
-      proxy:
-        enabled: true
+      name: reaction-bar
+      tag_name: example-reaction-bar
+      announced: true
+      auto_register: true
+      secure: false
+      url: /app/wc/reaction-bar
+      entry_point: index.js
 ```
 
-Компоненты используют `meta.type: view.component` вместо `view.page`. По умолчанию точкой входа является `index.js`.
+Компоненты используют `meta.type: view.component` вместо `view.page`, идентифицируют себя через `meta.tag_name` и по умолчанию используют `index.js` как точку входа. Внедрение прокси и CSS темы для компонентов точно так же описываются в package.json фронтенда (camelCase), а CSS для shadow DOM объявляется через `hostCssKeys` — не в YAML реестра. См. [Веб-компоненты (view.component)](../frontend/frontend-registry/view-component.md) и [Внедрение CSS](../frontend/web-host/css-injection.md).
 
 ## Ресурсы
 
@@ -282,9 +299,11 @@ entries:
 | Метод | Путь | Описание |
 |--------|------|-------------|
 | GET | `/pages/list` | Список доступных, объявленных страниц |
-| GET | `/components/list` | Список view-компонентов |
+| GET | `/components/list` | Список доступных, объявленных view-компонентов |
 | GET | `/pages/content/{id}` | Отрендерить страницу или вернуть дескриптор компонента |
 | GET | `/pages/public/{id}` | Получить базовый URL компонента |
+| GET | `/components/by-tag/{tag}` | Разрешить имя тега пользовательского элемента в дескриптор `view.component` (используется хостом в `loadByTagName`) |
+| GET | `/pages/routes` | Вернуть карту `mountRoute` → `pageId`; HTTP 500 при некорректном или дублирующемся `mountRoute`. Не фильтруется по `announced` (скрытым страницам всё равно нужно разрешение URL); контроль доступа применяется к защищённым страницам |
 
 ### Ответ рендеринга
 
@@ -305,7 +324,7 @@ entries:
         "proxy": {
             "enabled": true,
             "injections": {
-                "css": { "fonts": true, "themeConfig": true, "iframe": true },
+                "css": { "themeConfig": true, "iframe": true },
                 "tailwindConfig": false,
                 "resizeObserver": true,
                 "preventLinkClicks": true
@@ -314,6 +333,47 @@ entries:
     }
 }
 ```
+
+Флаги внедрения `css` — это `themeConfig`, `iframe`, `primevue`, `markdown`, `customCss` и `customVariables`. Флага `fonts` нет — Google Fonts доставляются через `theming.global.customCSS` (правило `@import`) и внедряются флагом `customCss`.
+
+## Шлюз Web Fragments
+
+Когда Web Host рендерит страницу с [движком рендеринга fragment](../frontend/web-host/render-engines.md), страница монтируется как `<web-fragment src="/@fragment/{id}/">`. `wippy/views` обслуживает этот контракт reframing через отдельный эндпоинт шлюза по адресу **`/@fragment/{id}/{path...}`**.
+
+В отличие от view API (который монтируется на `api_router` потребителя), шлюз **предоставляется самим `wippy/views` (≥ 0.5.9)**: модуль внутренне объявляет собственный корневой `http.router` `/@fragment`, поэтому он кэшируем и маршрутизируем через CDN и свободен от `token_auth` — шлюз не зависит от аутентификации (внедряемый прокси фрагмента выполняет handshake с хостом на стороне клиента). **Потребителю не нужна никакая обвязка для фрагментов** — ни записи роутера, ни параметра `fragment_router`. Приложение загружается штатно на движке iframe независимо от того, включены фрагменты или нет.
+
+Самомонтируемый роутер привязывается к требованию `server`, которое **по умолчанию равно `app:gateway`**. Единственное необязательное переопределение: если запись `http.service` вашего приложения имеет ID, отличный от `app:gateway`, задайте параметр `server` модуля `wippy/views` соответствующим образом:
+
+```yaml
+entries:
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: api_router
+        value: app:api.public
+      - name: env_storage
+        value: app:env.storage
+      - name: server                 # необязательно — только если ID вашей http.service ≠ app:gateway
+        value: app:my_http_service
+```
+
+> **Нет обвязки фрагментов — нет риска при старте.** Поскольку `wippy/views` владеет роутером `/@fragment` и привязывает его к `server` (по умолчанию `app:gateway`), потребитель, обновивший модуль, загружается штатно на движке iframe при нулевой конфигурации фрагментов. Страница, которая включает фрагменты постранично (`wippy.renderEngine: "fragment"`) в остальном iframe-развёртывании, защищена runtime-**проверкой возможностей**, которая **молча оставляет её на движке iframe**, если шлюз или `proxy-fragment.js` недоступны. Глобальный переключатель `render_engine: fragment` доверяет оператору и проверку не выполняет.
+
+### Контракт reframing
+
+Шлюз отвечает на один и тот же URL `/@fragment/{id}/` тремя способами, различая их по заголовку запроса `Sec-Fetch-Dest` и подпути:
+
+| Запрос | Ответ |
+|---------|----------|
+| Загрузка iframe realm (`Sec-Fetch-Dest: iframe`) | Крошечная **reframed-заглушка** с import map хоста, `loading.js` и `proxy-fragment.js`. |
+| Запрос документа (пустой подпуть) | HTML приложения страницы, преобразованный для realm (`<base>`, ссылки на CSS хоста, переименование `<html>`/`<head>`/`<body>` → `<wf-*>`). |
+| Ресурс (непустой подпуть) | Проксируется на реальный `base_url` страницы + подпуть. |
+
+Ответы несут `Cache-Control`: заглушка кэшируема совместно (`public, max-age=300`); документ и ресурсы, закрытые контролем доступа, помечены `private` (они проходят проверку `can_access` для каждого пользователя, поэтому общий кэш утекал бы между пользователями). Ошибки времени выполнения — это явные HTTP-ответы: `400 Missing fragment id`, `404 Fragment page not found`, `401 Access denied`, `502 Fragment document fetch failed: … (url: …)`.
+
+Фронтенд выбирает движок и монтирует фрагмент — см. [Движки рендеринга](../frontend/web-host/render-engines.md).
 
 ## Контроль доступа
 
@@ -336,8 +396,11 @@ data:
 
 ## См. также
 
-- [Facade](framework/facade.md) — Iframe-фасад фронтенда и боковая панель навигации
-- [Template](system/template.md) — Движок Jet-шаблонов
-- [Security](system/security.md) — Акторы безопасности и контроль доступа
-- [Environment](system/env.md) — Хранение переменных окружения
-- [Обзор фреймворка](framework/overview.md) — Использование модулей фреймворка
+- [Facade](./facade.md) — Iframe-фасад фронтенда и боковая панель навигации
+- [Template](../system/template.md) — Движок Jet-шаблонов
+- [Security](../system/security.md) — Акторы безопасности и контроль доступа
+- [Environment](../system/env.md) — Хранение переменных окружения
+- [Обзор фреймворка](./overview.md) — Использование модулей фреймворка
+- [Микро-фронтенд-приложения (view.page)](../frontend/frontend-registry/view-page.md) — Полный справочник по метаданным view.page и внедрению прокси
+- [Веб-компоненты (view.component)](../frontend/frontend-registry/view-component.md) — Полный справочник по автозагрузке и props для view.component
+- [Движки рендеринга](../frontend/web-host/render-engines.md) — Рендеринг страниц через iframe и Web Fragment (потребитель шлюза `/@fragment`)

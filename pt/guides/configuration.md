@@ -135,7 +135,7 @@ Armazenamento de entradas e histórico de versões. O registro armazena todas as
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enable_history` | bool | true | Rastreia versões de entradas |
-| `history_type` | string | memory | Armazenamento: memory, sqlite, nil |
+| `history_type` | string | memory | Armazenamento: `memory`, `sqlite`, `postgres`, `nil` |
 | `history_path` | string | .wippy/registry.db | Caminho do arquivo SQLite (usado quando `history_type: sqlite`) |
 | `history_dsn` | string | | DSN do Postgres (usado quando `history_type: postgres`) |
 | `history_schema` | string | | Nome do schema do Postgres (usado quando `history_type: postgres`) |
@@ -150,6 +150,13 @@ Armazenamento de entradas e histórico de versões. O registro armazena todas as
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 Veja: [Conceito de Registro](concepts/registry.md), [Módulo Registry](lua/core/registry.md)
@@ -228,8 +235,10 @@ Cache de VM Lua e avaliação de expressões.
 | `proto_cache_size` | int | 60000 | Cache de protótipos compilados |
 | `main_cache_size` | int | 10000 | Cache de chunks principais |
 | `cache.enabled` | bool | false | Persistir cache de bytecode/typecheck compilado em disco |
-| `cache.dir` | string | (diretório de cache do sistema) | Caminho do diretório de cache |
-| `cache.mode` | string | `read_write` | Modo de cache: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Caminho do diretório de cache (relativo ao diretório de configuração/trabalho) |
+| `cache.mode` | string | `readwrite` | Modo de cache: `readwrite` (padrão), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Persistir bytecode compilado (quando `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Persistir resultados de typecheck (quando `cache.enabled`) |
 | `type_system.enabled` | bool | false | Habilitar verificação estática de tipos |
 | `type_system.strict` | bool | false | Tratar avisos de tipo como erros |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Espera pelo reconhecimento da invalidação de código após a alteração de uma entrada |

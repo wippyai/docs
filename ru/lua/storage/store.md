@@ -162,14 +162,14 @@ end
 ```lua
 -- создать только если ключ не существует
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- ключ держит кто-то другой
 end
 
 -- compare-and-set: записать только если версия всё ещё совпадает
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- конкурентный писатель изменил его; перечитать и повторить
 end
 ```
@@ -235,10 +235,12 @@ end
 | Действие | Ресурс | Атрибуты | Описание |
 |----------|--------|----------|----------|
 | `store.get` | ID хранилища | - | Получить ресурс хранилища |
-| `store.key.get` | ID хранилища | `key` | Прочитать значение ключа |
-| `store.key.set` | ID хранилища | `key` | Записать значение ключа |
+| `store.info` | ID хранилища | - | Просмотреть возможности хранилища |
+| `store.key.get` | ID хранилища | `key` | Прочитать значение ключа (также `entry`) |
+| `store.key.set` | ID хранилища | `key` | Записать значение ключа (также `put`) |
 | `store.key.delete` | ID хранилища | `key` | Удалить ключ |
 | `store.key.has` | ID хранилища | `key` | Проверить существование ключа |
+| `store.key.list` | ID хранилища | `prefix` | Перечислить записи |
 
 ## Ошибки
 

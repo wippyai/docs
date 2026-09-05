@@ -61,13 +61,19 @@ WASM-модули получают доступ к возможностям ср
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`, `wasi:io/poll`
+**Interfaces:** `wasi:io/error`, `wasi:io/streams`
 
-Операции чтения/записи потоков и асинхронный опрос (polling). Интерфейс poll обеспечивает кооперативную передачу управления через диспетчер.
+Операции чтения/записи потоков и обработка ошибок. Интерфейс `wasi:io/poll` предоставляется отдельно импортом `wasi:poll`.
+
+### wasi:poll
+
+**Interfaces:** `wasi:io/poll`
+
+Асинхронный опрос. Интерфейс poll обеспечивает кооперативную передачу управления через диспетчер.
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Доступ к переменным окружения, кодам выхода процесса и стандартным потокам ввода/вывода. Переменные окружения привязываются из реестра окружения Wippy через конфигурацию WASI.
 

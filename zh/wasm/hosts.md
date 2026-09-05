@@ -61,13 +61,19 @@ WASM 模块通过宿主函数导入访问运行时能力。每个导入在条目
 
 ### wasi:io
 
-**接口：** `wasi:io/error`、`wasi:io/streams`、`wasi:io/poll`
+**接口：** `wasi:io/error`、`wasi:io/streams`
 
-流读写操作和异步轮询。poll 接口通过调度器实现协作式让出。
+流读写操作和错误处理。`wasi:io/poll` 接口由 `wasi:poll` 导入单独提供。
+
+### wasi:poll
+
+**接口：** `wasi:io/poll`
+
+异步轮询。poll 接口通过调度器实现协作式让出。
 
 ### wasi:cli
 
-**接口：** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`
+**接口：** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`、`wasi:cli/terminal-stdin`、`wasi:cli/terminal-stdout`、`wasi:cli/terminal-stderr`
 
 访问环境变量、进程退出码和标准 I/O 流。环境变量通过 WASI 配置从 Wippy 环境注册表映射。
 
@@ -93,7 +99,7 @@ wasi:
 
 ### wasi:sockets
 
-**接口：** `wasi:sockets/network`、`wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`
+**接口：** `wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`、`wasi:sockets/udp-create-socket`
 
 TCP 和 UDP 网络，支持 DNS 解析。套接字操作会挂起客户端并通过调度器运行，由调度器在[网络服务](system/network.md)上执行每一次拨号、绑定和查找。
 

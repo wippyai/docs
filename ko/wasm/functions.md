@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-`max_size`가 지정되지 않은 경우 기본 탄력적 풀 최대값은 워커 100개입니다.
+워커 100개 기본값은 암묵적으로 선택된 풀(`type`이 설정되지 않은 경우)에만 적용됩니다. `max_size` 없이 `type: lazy` 또는 `type: adaptive`를 명시적으로 설정하면 기본 최대값은 워커 16개입니다.
 
 ### 워커 클래스와 코어 어피니티
 

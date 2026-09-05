@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | Max. Response-Größe in Bytes (0 = Standard) |
 | `unix_socket` | string | Über Unix-Socket-Pfad verbinden |
 | `tls` | table | TLS-Konfiguration pro Anfrage (siehe [TLS-Optionen](#tls-optionen)) |
+| `overlay_network` | string | Über ein [Netzwerk-Overlay](system/network.md) routen — Registry-ID eines `network.socks5`- / `network.tailscale`- / `network.i2p`-Eintrags |
 
 ### Query-Parameter
 
@@ -167,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | nein | Originaler Dateiname |
 | `content` | string | ja* | Dateiinhalt |
 | `reader` | userdata | ja* | Alternative: io.Reader für Inhalt |
-| `content_type` | string | nein | MIME-Typ (Standard: `application/octet-stream`) |
+| `content_type` | string | nein | Derzeit ignoriert: jeder hochgeladene Part wird unabhängig von diesem Feld immer mit `Content-Type: application/octet-stream` gesendet |
 
 *Entweder `content` oder `reader` ist erforderlich.
 

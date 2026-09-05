@@ -1,6 +1,6 @@
 ---
 title: "安装"
-description: "快速安装"
+description: "安装 Wippy 运行时"
 ---
 
 # 安装
@@ -52,10 +52,16 @@ wippy install
 | `wippy pack` | 创建快照包 |
 | `wippy publish` | 发布到 Hub |
 | `wippy search` | 搜索模块 |
+| `wippy readme` | 从 Hub 获取模块 README |
+| `wippy registry` | 检查已加载的注册表条目 |
 | `wippy auth` | 管理认证 |
 | `wippy version` | 显示版本信息 |
 
 详见 [CLI 参考](guides/cli.md)。
+
+## 故障排查
+
+如果安装后找不到 `wippy version`，请重新打开 shell，或确认安装目录已加入 `PATH`。
 
 ## 下一步
 

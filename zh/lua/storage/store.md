@@ -80,7 +80,7 @@ end
 
 **返回:** `any, error`
 
-如果键不存在则返回 `nil`。
+如果键不存在或已过期，返回 `nil` 和一个 `errors.NOT_FOUND` 错误。
 
 ## 检查存在
 
@@ -162,14 +162,14 @@ end
 ```lua
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- someone else holds it
 end
 
 -- compare-and-set: write only if the version still matches
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- a concurrent writer changed it; re-read and retry
 end
 ```
@@ -235,14 +235,16 @@ end
 | 操作 | 资源 | 属性 | 描述 |
 |--------|----------|------------|-------------|
 | `store.get` | 存储 ID | - | 获取存储资源 |
-| `store.key.get` | 存储 ID | `key` | 读取键值 |
-| `store.key.set` | 存储 ID | `key` | 写入键值 |
+| `store.info` | 存储 ID | - | 检查存储能力 |
+| `store.key.get` | 存储 ID | `key` | 读取键值（也用于 `entry`） |
+| `store.key.set` | 存储 ID | `key` | 写入键值（也用于 `put`） |
 | `store.key.delete` | 存储 ID | `key` | 删除键 |
 | `store.key.has` | 存储 ID | `key` | 检查键是否存在 |
+| `store.key.list` | 存储 ID | `prefix` | 列出条目 |
 
 ## 错误
 
-`store.get()` 以及存储句柄上的所有方法（`get`、`set`、`has`、`delete`）都返回结构化错误（使用 `err:kind()`）。
+`store.get()` 以及存储句柄上的所有方法（`get`、`entry`、`set`、`put`、`list`、`has`、`delete`、`info`）都返回结构化错误（使用 `err:kind()`）。
 
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|

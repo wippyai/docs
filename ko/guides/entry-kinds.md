@@ -69,7 +69,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # 엔드포인트
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## 데이터베이스
@@ -152,7 +153,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-`*_env` 접미사 변형, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
+`${env:NAME}` 시크릿 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
 
 **Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
@@ -248,13 +249,18 @@ local queue = require("queue")
 -- 메시지 발행
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- 컨슈머 핸들러에서 현재 메시지 접근
-local msg = queue.message()
-local data = msg:body_json()
+-- 컨슈머 핸들러에서: 메시지 본문이 핸들러의 인자로 전달됨
+local function main(data)
+    -- 현재 메시지를 통해 전달 메타데이터에 접근
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-컨슈머의 <code>func</code>는 각 메시지마다 호출됩니다. 핸들러 내에서 <code>queue.message()</code>로 현재 메시지에 접근합니다.
+컨슈머의 <code>func</code>는 메시지마다 한 번씩 메시지 본문을 인자로 받아 호출됩니다. 핸들러 내에서 <code>queue.message()</code>를 사용하면 해당 전달의 <code>id()</code>, <code>header()</code>/<code>headers()</code>, <code>ack()</code>/<code>nack()</code>에 접근할 수 있습니다.
 </note>
 
 ## 프로세스 관리
@@ -264,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | 프로세스 실행 호스트 |
 | `process.service` | 슈퍼바이즈드 프로세스 (process.lua 래핑) |
 | `terminal.host` | 터미널/CLI 호스트 |
+| `pg.scope` | 프로세스 그룹 스코프 ([프로세스 그룹](system/process-groups.md) 참조) |
 
 ```yaml
 # 프로세스 호스트 (프로세스가 실행되는 곳)
@@ -374,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -391,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 초 단위, 기본값 3600
 ```
 
 <tip>

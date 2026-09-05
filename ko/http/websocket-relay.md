@@ -91,7 +91,7 @@ local function handler()
     local pid = process.spawn("app.ws:handler", "app:processes")
 
     -- 릴레이 설정
-    res:header("X-WS-Relay", json.encode({
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",

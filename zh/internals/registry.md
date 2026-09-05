@@ -150,7 +150,7 @@ Entry 可以声明对其他 entry 的依赖。解析器通过注册的模式提�
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```

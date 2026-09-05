@@ -88,30 +88,26 @@ entries:
 
 `max_mutation_changes` 和 `max_mutation_bytes` 限定为 [`db.cdc.sqlite`](system/cdc.md) 源供数的内存中已提交变更观察器的上限。任一字段为零表示选用默认值；负值会被拒绝。这些上限是保守的而非精确的：SQLite 会把完整的一行交给 pre-update 钩子，因此在上限拒绝该候选之前，可能已经物化了一行。
 
-### 环境变量字段
+### 密钥与环境值
 
-使用 `_env` 后缀从环境变量或 [env.variable](system/env.md) entry 加载值：
-
-| 字段 | 描述 |
-|------|------|
-| `host_env` | 从环境变量获取主机 |
-| `port_env` | 从环境变量获取端口 |
-| `database_env` | 从环境变量获取数据库名称 |
-| `username_env` | 从环境变量获取用户名 |
-| `password_env` | 从环境变量获取密码 |
+使用 `${env:NAME}` 占位符从[环境注册表](system/env.md)中取连接值，在解码时解析。`NAME` 是已注册变量的公开名称或其条目 ID（例如 `app.secrets:db_password`）；它不是原始的操作系统环境变量。
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # Reference env.variable entry
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+较早的配置使用同级的 <code>&lt;field&gt;_env</code> 指令（<code>host_env</code>、<code>port_env</code>、<code>database_env</code>、<code>username_env</code>、<code>password_env</code>），其解析方式相同。该形式已<b>弃用</b> — 请迁移到上面所示的 <code>${env:NAME}</code> 占位符。
+</note>
+
 <warning>
-避免在配置中硬编码密码。使用环境变量或 <code>env.variable</code> entry 来管理凭据。参见 <a href="system/env.md">Environment</a> 了解安全的密钥管理。
+避免在配置中硬编码密码。使用 <code>env.variable</code> entry 来管理凭据。参见 <a href="system/env.md">Environment</a> 了解安全的密钥管理。
 </warning>
 
 ## 连接池
@@ -121,7 +117,7 @@ entries:
 | 字段 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
 | `max_open` | int | 0 | 最大打开连接数（0 = 无限制） |
-| `max_idle` | int | 0 | 最大空闲连接数（0 = 无限制） |
+| `max_idle` | int | 0 | 最大空闲连接数（0 = 不保留空闲连接） |
 | `max_lifetime` | duration | 1h | 连接最大生命周期 |
 
 ```yaml
@@ -137,7 +133,7 @@ pool:
 
 ## DSN 格式
 
-每种数据库类型从配置构建 DSN：
+每种数据库类型从配置构建 DSN。所有 `options` 都会被追加（按键排序）；默认不包含任何选项。
 
 ### PostgreSQL {id="dsn-postgresql"}
 
@@ -150,14 +146,14 @@ host='host' port=port user='username' password='password' dbname='database' [opt
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## 数据库选项
@@ -184,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite 不会把 `options` 映射应用到它的 DSN。文件数据库始终以 `mode=rwc` 打开，日志模式始终设为 `WAL`。`options` 字段被接受但会被忽略。
 
 ## 示例
 
@@ -225,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -242,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### 多数据库配置
@@ -257,22 +242,22 @@ entries:
   # Primary database
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -295,6 +280,6 @@ entries:
 ## 另请参阅
 
 - [SQL 模块](lua/storage/sql.md) - Lua API 参考
-- [Store](system/store.md) - 基于 `database.sql` 的键值存储
+- [Store](system/store.md) - 基于 `db.sql.*` 数据库的键值存储
 - [Queue](system/queue.md) - SQL 支持的队列处理器
 - [变更数据捕获](system/cdc.md) - 从 `db.sql.sqlite` 或 Postgres 数据库流式获取行级变更

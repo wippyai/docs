@@ -40,7 +40,7 @@ type Event struct {
 
 ## Struktur
 
-Der Scheduler startet standardmäßig `GOMAXPROCS` Worker. Jeder Worker hat eine lokale Deque für cache-freundlichen LIFO-Zugriff. Eine globale FIFO-Queue behandelt neue Submissions und Cross-Worker-Transfers. Prozesse werden per PID für Nachrichtenrouting verfolgt.
+Der Scheduler startet standardmäßig `GOMAXPROCS` Worker. Jeder Worker hat eine lokale Deque für cache-freundlichen LIFO-Zugriff und eine Worker-eigene MPSC-Inject-Queue für asynchrone Completions mit Affinität zu diesem Worker. Eine globale FIFO-Queue behandelt neue Submissions und affinitätslose Neueinreihungen. Prozesse werden per PID für Nachrichtenrouting verfolgt.
 
 ## Arbeit finden
 
@@ -48,7 +48,9 @@ Der Scheduler startet standardmäßig `GOMAXPROCS` Worker. Jeder Worker hat eine
 flowchart TD
     W[Worker braucht Arbeit] --> L{Lokale Deque?}
     L -->|hat Items| LP[Von unten LIFO poppen]
-    L -->|leer| G{Globale Queue?}
+    L -->|leer| I{Inject-Queue?}
+    I -->|hat Items| IP[Poppen + bis zu 16 lokal draint]
+    I -->|leer| G{Globale Queue?}
     G -->|hat Items| GP[Poppen + Batch-Transfer bis zu 16]
     G -->|leer| S[Von zufälligem Opfer stehlen]
     S --> SH[StealHalfInto Opfer-Deque]
@@ -59,10 +61,11 @@ Worker prüfen Quellen in Prioritätsreihenfolge:
 | Priorität | Quelle | Muster |
 |-----------|--------|--------|
 | 1 | Lokale Deque | LIFO Pop, lock-frei, cache-freundlich |
-| 2 | Globale Queue | FIFO Pop mit Batch-Transfer |
-| 3 | Andere Worker | Hälfte von Opfer-Deque stehlen |
+| 2 | Inject-Queue | MPSC-Pop affiner asynchroner Completions, bis zu 16 lokal draint |
+| 3 | Globale Queue | FIFO Pop mit Batch-Transfer |
+| 4 | Andere Worker | Hälfte von Opfer-Deque stehlen |
 
-Beim Poppen von global nehmen Worker ein Item und transferieren bis zu 16 weitere in Batch zu ihrer lokalen Deque.
+Beim Poppen aus der Inject- oder globalen Queue nehmen Worker ein Item und verschieben bis zu 16 weitere in ihre lokale Deque.
 
 ## Chase-Lev-Deque
 

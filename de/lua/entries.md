@@ -17,7 +17,7 @@ Konfiguration für Lua-basierte Entries: Funktionen, Prozesse, Workflows und Bib
 | `library.lua` | Gemeinsam genutzter Code, der von anderen Entries importiert wird |
 | `module.lua` | Modul-Oberfläche (Bibliothek mit mehreren Methoden) |
 
-Jede Art hat ein vorkompiliertes Bytecode-Gegenstück (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`), das von `wippy pack --bytecode` erzeugt wird. Autoren schreiben `.lua`-Entries; die Bytecode-Arten werden beim Packen automatisch erzeugt.
+Jede Art hat ein vorkompiliertes Bytecode-Gegenstück (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`), das von `wippy pack --bytecode '**'` (oder einem Muster wie `--bytecode 'app:**'`) erzeugt wird. Autoren schreiben `.lua`-Entries; die Bytecode-Arten werden beim Packen mit diesem Flag ausgegeben.
 
 ## Gemeinsame Felder
 
@@ -168,18 +168,16 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # Standard
-    size: 4           # Anfangs-Worker
-    max_size: 16      # Obergrenze für elastische Pools
+    type: adaptive    # explizit; weglassen, um die Auto-Auswahl (lazy) zu nutzen
+    max_size: 16      # Obergrenze für elastisches Wachstum
 ```
 
 | Feld | Pools | Beschreibung |
 |------|-------|--------------|
 | `type` | alle | Scheduler-Implementierung (siehe Tabelle unten) |
-| `size` | static, lazy, adaptive | Anfängliche Worker-Anzahl |
-| `workers` | Engine v2 | Anzahl der Worker-Threads |
-| `buffer` | static, adaptive | Aufgabenwarteschlange-Kapazität (Standard: `workers * 64`) |
-| `warm_start` | adaptive | Einträge beim Start vorkompilieren |
+| `workers` | static | Anzahl der Worker-Threads (fällt auf `size` zurück, dann 8) |
+| `size` | static | Worker-Anzahl, wenn `workers` nicht gesetzt ist; lenkt zudem die Auto-Auswahl zu einem statischen Pool |
+| `buffer` | static | Aufgabenwarteschlange-Kapazität (Standard: `workers * 64`) |
 | `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16) |
 
 | Typ | Verhalten |
@@ -187,7 +185,9 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
 | `inline` | Synchrone Ausführung in der Goroutine des Aufrufers. Geringste Latenz, keine Isolation zwischen Aufrufen. |
 | `lazy` | Keine Idle-Worker, Erstellung bei Bedarf, Abbau im Leerlauf. |
 | `static` | Pool fester Größe (Channel-basiert). Vorhersagbar bei stabiler Last. |
-| `adaptive` | Auto-skalierender Pool — wächst bei Last, schrumpft im Leerlauf. Standard. |
+| `adaptive` | Auto-skalierender Pool — wächst bei Last, schrumpft im Leerlauf. |
+
+Wird `type` weggelassen, wird der Pool aus den übrigen Feldern automatisch gewählt: standardmäßig ein Lazy-Pool, ein statischer Pool, wenn `workers` gesetzt ist.
 
 ## Metadaten
 
@@ -211,7 +211,7 @@ Metadaten sind über die Registry durchsuchbar:
 
 ```lua
 local registry = require("registry")
-local handlers = registry.find({type = "handler"})
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 ## Siehe auch

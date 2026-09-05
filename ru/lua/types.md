@@ -29,7 +29,8 @@ a.foo.bar.baz()              -- нет ошибки, может упасть в 
 
 -- unknown: безопасный неизвестный тип, нужно сузить перед использованием
 local u: unknown = get_data()
-u.foo                        -- ОШИБКА: нельзя обращаться к полю unknown
+u.foo                        -- нет ошибки: обращение к полю unknown ведёт себя как any
+local n: number = u          -- ОШИБКА: unknown не присваивается number, сначала сузьте
 if type(u) == "table" then
     -- u сужено до table здесь
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- утверждаем, что user не nil
+local name = (user!).name            -- утверждаем, что user не nil
 ```
 
-Если значение во время выполнения nil, возникает ошибка. Используйте, когда вы знаете, что значение не может быть nil, но проверщик типов не может это доказать.
+`!` — утверждение только для проверщика типов: оно сужает тип до non-nil, но не порождает проверку во время выполнения. Если значение на самом деле nil, следующая операция завершается обычной ошибкой (например, индексация nil). Используйте, когда вы знаете, что значение не может быть nil, но проверщик типов не может это доказать.
 
 ## Приведения типов
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- Шаблон строки
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- Валидатор без аргументов
-local x: number @integer = 42
 ```
 
 ### Встроенные валидаторы

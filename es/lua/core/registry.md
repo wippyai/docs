@@ -42,8 +42,8 @@ local entry, err = registry.get("app.lib:assert")
 ## Buscar Entradas
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
 Los campos de filtro coinciden con los metadatos de entrada.
@@ -73,7 +73,7 @@ local snap, err = registry.snapshot_at(5)       -- en versión 5
 | `snap:get(id)` | `Entry, error` | Entrada unica por ID |
 | `snap:find(filter)` | `Entry[]` | Filtrar entradas |
 | `snap:namespace(ns)` | `Entry[]` | Entradas en namespace |
-| `snap:versión()` | `Versión` | Versión de instantanea |
+| `snap:version()` | `Version` | Versión de instantanea |
 | `snap:changes()` | `Changes` | Crear conjunto de cambios |
 
 ### Estado de la Instantanea
@@ -117,13 +117,13 @@ Las entradas de `roots` y `references` tienen `id`, `component` y `version`. Las
 ## Versiones
 
 ```lua
-local versión, err = registry.current_version()
+local version, err = registry.current_version()
 local versions, err = registry.versions()
 
-print(versión:id())       -- ID numerico
-print(versión:string())   -- cadena de visualizacion
-local prev = versión:previous()  -- versión anterior o nil
-local next = versión:next()      -- versión siguiente o nil
+print(version:id())       -- ID numerico
+print(version:string())   -- cadena de visualizacion
+local prev = version:previous()  -- versión anterior o nil
+local next = version:next()      -- versión siguiente o nil
 ```
 
 ## Historial
@@ -131,8 +131,8 @@ local next = versión:next()      -- versión siguiente o nil
 ```lua
 local hist, err = registry.history()
 local versions, err = hist:versions()
-local versión, err = hist:get_version(5)
-local snap, err = hist:snapshot_at(versión)
+local version, err = hist:get_version(5)
+local snap, err = hist:snapshot_at(version)
 ```
 
 ## Conjuntos de Cambios

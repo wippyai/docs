@@ -184,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -232,21 +232,24 @@ defer router.Stop()
 
 各ハンドラは`Pattern()`と`Handle()`を実装。RouterはそれぞれにSubscriberを作成し、Stop時にすべてをクローズ。
 
-### Awaiter
+### AwaitService
 
-特定のイベントの同期待機：
+pub/sub上でのリクエスト・レスポンス。`(system, kind)`ペアごとに単一のサブスクリプションを保持し、`Path`によってイベントをwaiterにルーティング：
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // マッチまたはタイムアウトまでブロック
+result := waiter.Wait()  // AwaitResult{Event, Accepted, Error}を返す
 ```
 
-Prepare-then-Waitパターンは競合状態を回避：レスポンスを生成するイベントをトリガーする前にサブスクライブ。
+`Prepare`はトリガーとなるイベントを送信する前にwaiterを登録し、待機の登録前にレスポンスが到着する競合状態を回避する。`Wait`は`Path`がマッチするイベントの到着、またはタイムアウト（非正の値の場合はデフォルトの`DefaultAwaitTimeout`、30秒）の満了までブロック。`Accepted`はイベント種別が`accept`、`*.accept`、`*.accepted`のいずれかの場合にtrueとなり、それ以外の種別は拒否として扱われ、`Data`内の`error`は`Error`として返される。便宜的な`Await(ctx, system, kind, path, timeout)`はPrepareとWaitを組み合わせたもの。ブートインフラストラクチャはAwaitServiceをコンテキストに登録する（`event.GetAwaitService`）。
 
 ## シャットダウン
 

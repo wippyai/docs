@@ -135,8 +135,10 @@ security:
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | 엔트리 버전 추적 |
-| `history_type` | string | memory | 스토리지: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite 파일 경로 |
+| `history_type` | string | memory | 스토리지: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | SQLite 파일 경로 (`history_type: sqlite`일 때 사용) |
+| `history_dsn` | string | | Postgres DSN (`history_type: postgres`일 때 사용) |
+| `history_schema` | string | | Postgres 스키마 이름 (`history_type: postgres`일 때 사용) |
 | `event_wait_timeout` | duration | 30s | 레지스트리 적용 중 리스너 확인 응답에 대한 작업별 대기 시간 |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | 컴포넌트 리스너로 디스패치되지 않고 내부적으로 처리되는 엔트리 kind |
 | `dependency_resolve_timeout` | duration | 0 (없음) | 의존성 해석에 대한 제한 시간 |
@@ -148,6 +150,13 @@ security:
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 참조: [레지스트리 개념](concepts/registry.md), [레지스트리 모듈](lua/core/registry.md)
@@ -226,8 +235,10 @@ Lua VM 캐싱 및 표현식 평가.
 | `proto_cache_size` | int | 60000 | 컴파일된 프로토타입 캐시 |
 | `main_cache_size` | int | 10000 | 메인 청크 캐시 |
 | `cache.enabled` | bool | false | 컴파일된 바이트코드/타입체크 캐시를 디스크에 영속화 |
-| `cache.dir` | string | (시스템 캐시 디렉토리) | 캐시 디렉토리 경로 |
-| `cache.mode` | string | `read_write` | 캐시 모드: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | 캐시 디렉토리 경로 (설정/작업 디렉토리 기준 상대 경로) |
+| `cache.mode` | string | `readwrite` | 캐시 모드: `readwrite` (기본값), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | 컴파일된 바이트코드 영속화 (`cache.enabled`일 때) |
+| `cache.typecheck.enabled` | bool | true | 타입체크 결과 영속화 (`cache.enabled`일 때) |
 | `type_system.enabled` | bool | false | 정적 타입 검사 활성화 |
 | `type_system.strict` | bool | false | 타입 경고를 오류로 처리 |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | 엔트리 변경 후 코드 무효화 확인 응답 대기 시간 |

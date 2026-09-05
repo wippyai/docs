@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -154,6 +155,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -205,7 +207,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })

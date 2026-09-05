@@ -121,7 +121,7 @@ otel:
   # Trazado de llamadas de funciones
   interceptor:
     enabled: true
-    order: 0                   # Orden de ejecución del interceptor
+    order: 100                 # Orden de ejecución del interceptor
 ```
 
 ### Flujos de Trabajo Temporal

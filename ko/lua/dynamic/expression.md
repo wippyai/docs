@@ -10,17 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 [expr-lang](https://expr-lang.org/) 구문을 사용하여 동적 표현식을 평가합니다. 전체 Lua 실행 없이 필터링, 검증, 규칙 평가를 위한 안전한 표현식을 컴파일하고 실행합니다.
 
-## 설정
+## 캐싱
 
-표현식 캐시는 부팅 시 설정됩니다:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # 표현식 캐싱 활성화
-    capacity: 5000        # 캐시 용량
-```
-
+`expr.eval`은 컴파일된 표현식의 내부 LRU 캐시를 유지합니다(기본 용량 1000). 캐시는 모듈에 내장되어 있으며 별도 설정이 필요 없습니다.
 ## 로딩
 
 ```lua

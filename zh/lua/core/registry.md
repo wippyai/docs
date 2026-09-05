@@ -42,8 +42,8 @@ local entry, err = registry.get("app.lib:assert")
 ## 查找条目
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
 过滤字段与条目元数据匹配。

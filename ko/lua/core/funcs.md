@@ -110,7 +110,7 @@ local actor = security.actor()  -- 현재 사용자의 액터 가져오기
 -- 사용자의 자격 증명으로 admin 함수 호출
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

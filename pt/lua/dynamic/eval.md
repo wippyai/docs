@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -154,6 +155,7 @@ Importar entradas do registry:
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -205,7 +207,7 @@ Passar dados acessiveis como `ctx`:
 ```lua
 runner.run({
     source = [[
-        return "Ola, " .. ctx.user
+        return "Ola, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })

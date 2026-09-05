@@ -378,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Token Store 选项
@@ -388,10 +388,9 @@ entries:
 | `store` | required | 后端键值存储引用 |
 | `token_length` | 32 | Token 大小（字节，256 位） |
 | `default_expiration` | 24h | 默认 token TTL |
-| `token_key` | none | HMAC-SHA256 签名密钥（直接值） |
-| `token_key_env` | none | 签名密钥的环境变量名 |
+| `token_key` | none | HMAC-SHA256 签名密钥（直接值，或用 `${env:NAME}` 从 [env 注册表](system/env.md)中取值） |
 
-在生产环境中使用 `token_key_env` 以避免在 entry 中嵌入密钥。参见 [Environment 系统](system/env.md) 了解环境变量注册。
+在生产环境中使用 `token_key: ${env:NAME}` 以避免在 entry 中嵌入密钥。遗留的 `token_key_env` 指令解析方式相同，但已弃用；请优先使用 `${env:NAME}`。
 
 ### 创建 Token
 
@@ -622,7 +621,7 @@ local token, err = store:create(actor, scope, {expiration = "24h"})
 1. **最小权限** - 授予最小必需权限
 2. **默认拒绝** - 使用显式允许策略，启用 strict 模式
 3. **使用策略组** - 按角色/功能组织策略
-4. **签名 Token** - 生产环境始终设置 `token_key_env`
+4. **签名 Token** - 生产环境始终通过 `${env:NAME}` 引用设置 `token_key`
 5. **短期过期** - 对敏感操作使用较短的 token 生命周期
 6. **基于上下文的条件** - 使用动态条件而非静态策略
 7. **审计敏感操作** - 记录安全相关操作

@@ -139,7 +139,6 @@ local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -148,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -179,7 +178,7 @@ options:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## 匹配前与匹配后中间件
@@ -300,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

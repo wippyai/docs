@@ -385,6 +385,9 @@ end
 
 ```lua
 local function linker_child_main()
+    -- Enable trap_links to receive LINK_DOWN events
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -671,14 +674,14 @@ wippy init
 wippy run
 ```
 
-监管器自动启动，生成四个 worker，并在任意 worker 死亡时记录重启日志。通过在另一个进程中取消某个 worker 来触发重启：
+监管器自动启动，生成四个 worker，并在任意 worker 死亡时记录重启日志。`LINK_DOWN` 只在链接的进程以错误退出时才会投递，因此要触发重启，需从另一个进程强制终止某个 worker：
 
 ```lua
 -- in an ad-hoc process or chat command
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-池收到 `LINK_DOWN` 事件，等待 100 毫秒，然后以相同 id 重新生成该 worker。
+池收到 `LINK_DOWN` 事件，等待 100 毫秒，然后以相同 id 重新生成该 worker。优雅的 `process.cancel()` 让 worker 干净地退出，这不会引发 `LINK_DOWN`，因此也不会触发重启。
 
 ## 下一步
 

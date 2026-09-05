@@ -5,7 +5,10 @@ description: "O módulo wippy/views fornece um sistema de páginas e componentes
 
 # Views
 
-O módulo `wippy/views` fornece um sistema de páginas e componentes virtuais com renderização de templates, gerenciamento de recursos e mapeamento de variáveis de ambiente. Páginas podem ser respaldadas por templates Jet ou componentes externos (SPAs, micro-frontends).
+O módulo `wippy/views` fornece um sistema de páginas e componentes virtuais com renderização de templates, gerenciamento de recursos e mapeamento de variáveis de ambiente. As páginas vêm em dois sabores distintos:
+
+- **Páginas de template Jet** (`kind: template.jet`) — HTML renderizado no lado do servidor. Os dados e recursos da página são montados e injetados no servidor, e então o motor Jet renderiza o HTML final. Este é o modelo legado, renderizado no servidor. Veja [Páginas Template](#template-pages).
+- **Frontends de entrada de registro** (`kind: registry.entry`) — dois tipos: aplicações micro frontend (`view.page`, SPAs completas) e web components reutilizáveis (`view.component`), servidos de um CDN ou de um mount estático. A entrada de registro guarda apenas o roteamento e a política de deployment; a injeção de proxy/CSS é declarada no `package.json` do pacote frontend. Veja [Páginas de Componente](#component-pages) e [Componentes de View](#view-components).
 
 ## Configuração
 
@@ -37,11 +40,14 @@ entries:
 | Parâmetro | Obrigatório | Padrão | Descrição |
 |-----------|----------|---------|-------------|
 | `api_router` | sim | — | Roteador HTTP para os endpoints da API de views |
-| `env_storage` | não | interno | Armazenamento de ambiente que fornece a variavel `PUBLIC_API_URL` |
+| `env_storage` | sim | — | Armazenamento de ambiente que respalda a variavel `PUBLIC_API_URL` |
+| `server` | não | `app:gateway` | Serviço HTTP ao qual o roteador do [gateway de Web Fragments](#web-fragments-gateway) auto-montado (`/@fragment`) se vincula. Sobrescreva apenas se o id do seu `http.service` for diferente de `app:gateway`. |
 
 ## Páginas Template
 
-Páginas template renderizam no lado do servidor usando templates Jet:
+> **Modelo renderizado no servidor.** Páginas template são o mecanismo legado de renderização no lado do servidor: `wippy/views` monta os dados e recursos da página no servidor e renderiza o HTML final com o motor de templates Jet. Não há proxy de iframe nem micro-frontend no cliente — a resposta é HTML puro. Para SPAs e componentes externos, veja [Páginas de Componente](#component-pages).
+
+Páginas template renderizam no lado do servidor usando templates Jet. Os dados são injetados via `data.set`, `data.data_func` e `data.resources` (injeção de recursos no servidor):
 
 ```yaml
 entries:
@@ -106,7 +112,9 @@ A `data_func` recebe `{ params, query }` e retorna uma tabela que se torna o con
 
 ## Páginas de Componente
 
-Páginas de componente apontam para aplicações externas (SPAs, micro-frontends):
+Páginas de componente apontam para aplicações de página única externas (SPAs, micro-frontends) carregadas pelo Web Host dentro de um iframe. A entrada de registro guarda **apenas campos de roteamento de registro e de política de deployment** — serviço de URL, controle de acesso, rota de mount e sobrescritas de configuração por página:
+
+> **Formato de registro obrigatório:** páginas de componente são `kind: registry.entry` com `meta.type: view.page`. `view.page` nunca é um valor de `kind`. Sobrescritas de deployment de proxy ficam em `meta.proxy`, não em `data.proxy`.
 
 ```yaml
 entries:
@@ -117,65 +125,74 @@ entries:
       name: dashboard
       title: Dashboard
       icon: chart-bar
-      url: https://cdn.example.com/dashboard/
+      url: /app
+      base_path: app/dashboard
+      entry_point: index.html
+      mountRoute: /dashboard/:part(.*)*
       secure: true
       announced: true
-    data:
-      proxy:
-        enabled: true
-        css:
-          prime_vue: true
-          theme_config: true
-        tailwind_config: true
+      config_overrides:
+        customization:
+          cssVariables:
+            "--p-primary": "#7c9ed9"
 ```
 
-A API retorna um descritor de componente com a URL base e configuração de proxy. O frontend renderiza o componente em um iframe ou inline.
+A API retorna um descritor de componente com a URL base resolvida. O Web Host renderiza a SPA em um iframe e aplica as injeções de proxy que o pacote frontend solicitou.
 
-### Campos do Componente
+### Campos da Página de Componente
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|---------|-------------|
-| `meta.url` | string | — | URL pública do componente |
-| `meta.entry_point` | string | `index.html` (páginas), `index.js` (componentes) | Arquivo de entrada |
+| `meta.url` | string | — | Prefixo de URL base onde o bundle é montado (origem do CDN ou caminho `http.static`) |
+| `meta.base_path` | string | — | Subdiretório dentro do mount estático |
+| `meta.entry_point` | string | `index.html` | Arquivo HTML de entrada; combinado como `<url>/<base_path>/<entry_point>` |
+| `meta.mountRoute` | string | — | Reivindica um caminho de URL no roteador do host; apenas a forma catch-all `/:part(.*)*` (raiz) ou `/<prefixo-literal>/:part(.*)*` é permitida — padrões arbitrários do Vue Router são rejeitados (HTTP 500). Veja [view-page.md](../frontend/frontend-registry/view-page.md) / [dynamic-routing.md](../frontend/frontend-registry/dynamic-routing.md) |
+| `meta.announced` | boolean | — | Mostrar na navegação e em `pages/list` |
+| `meta.secure` | boolean | `false` | Requer autenticação |
+| `meta.config_overrides` | object | — | Sobrescritas de AppConfig por página (camelCase), mescladas profundamente sobre os padrões do bundle |
 
-### Configuração do Proxy
+### Injeção de Proxy
 
-O proxy controla qual CSS e comportamento é injetado no componente:
+A injeção de proxy para páginas SPA é configurada no bloco `wippy.proxy.injections` do package.json do FE (camelCase) e embutida em `wippy-meta.json` no momento do build. Ela também pode ser sobrescrita por deployment através de um bloco `proxy:` em camelCase aninhado sob `meta:` na entrada de registro (mesmo formato e mesmo wrapper `injections` do bloco `wippy.proxy` do package.json); o host o mescla profundamente sobre o `wippy.proxy` do bundle, e o valor do YAML vence por chave aninhada. Não existe forma em snake_case nem normalização de capitalização. Note que `config_overrides` só mescla profundamente `customization`, `axiosDefaults`, `routePrefix` e `apiRoutes` — nunca afeta `proxy.injections`. Veja [Aplicações Micro Frontend (view.page)](../frontend/frontend-registry/view-page.md) e [Injeção de CSS](../frontend/web-host/css-injection.md).
 
-| Opção | Padrão | Descrição |
-|--------|---------|-------------|
-| `proxy.enabled` | `true` | Habilita o wrapper de proxy |
-| `proxy.css.fonts` | `true` | Injeta estilos de fontes |
-| `proxy.css.theme_config` | `true` | Injeta variáveis de tema |
-| `proxy.css.iframe` | `true` | Estilos específicos de iframe |
-| `proxy.css.prime_vue` | `false` | Estilos de componentes PrimeVue |
-| `proxy.css.markdown` | `false` | Estilos de renderização Markdown |
-| `proxy.css.custom_css` | `false` | CSS personalizado |
-| `proxy.css.custom_variables` | `false` | Variáveis CSS personalizadas |
-| `proxy.tailwind_config` | `false` | Injeta configuração do Tailwind |
-| `proxy.resize_observer` | `true` | Auto-redimensionar iframe |
-| `proxy.prevent_link_clicks` | `true` | Intercepta navegação por links |
-| `proxy.iconify_icons` | `false` | Carrega o conjunto de ícones Iconify |
-
-## Componentes de View
-
-Componentes autônomos que não são páginas (sem entrada de navegação):
+Formato mínimo correto de sobrescrita de deployment:
 
 ```yaml
 entries:
-  - name: widget
+  - name: dashboard
+    kind: registry.entry
+    meta:
+      type: view.page
+      proxy:
+        enabled: true
+        injections:
+          css:
+            themeConfig: true
+            customCss: true
+            customVariables: true
+          tailwindConfig: false
+```
+
+## Componentes de View
+
+Componentes de view são custom elements reutilizáveis (web components, micro-frontends) que o Web Host descobre e registra — eles não são páginas e não têm entrada de navegação. Assim como as páginas de componente, a entrada de registro carrega apenas roteamento e política de deployment:
+
+```yaml
+entries:
+  - name: reaction-bar
     kind: registry.entry
     meta:
       type: view.component
-      name: chat-widget
-      title: Chat Widget
-      url: https://cdn.example.com/chat-widget/
-    data:
-      proxy:
-        enabled: true
+      name: reaction-bar
+      tag_name: example-reaction-bar
+      announced: true
+      auto_register: true
+      secure: false
+      url: /app/wc/reaction-bar
+      entry_point: index.js
 ```
 
-Componentes usam `meta.type: view.component` em vez de `view.page`. Eles assumem `index.js` como ponto de entrada por padrão.
+Componentes usam `meta.type: view.component` em vez de `view.page`, se identificam por `meta.tag_name` e assumem `index.js` como ponto de entrada por padrão. A injeção de proxy e o CSS de tema para componentes também são declarados no package.json do FE (camelCase) e, para CSS de shadow DOM, declarados via `hostCssKeys` — não no YAML do registro. Veja [Web Components (view.component)](../frontend/frontend-registry/view-component.md) e [Injeção de CSS](../frontend/web-host/css-injection.md).
 
 ## Recursos
 
@@ -282,9 +299,11 @@ O módulo views registra estes endpoints no roteador configurado:
 | Método | Caminho | Descrição |
 |--------|------|-------------|
 | GET | `/pages/list` | Lista páginas anunciadas e acessíveis |
-| GET | `/components/list` | Lista componentes de view |
+| GET | `/components/list` | Lista componentes de view anunciados e acessíveis |
 | GET | `/pages/content/{id}` | Renderiza a página ou retorna o descritor do componente |
 | GET | `/pages/public/{id}` | Obtém a URL base do componente |
+| GET | `/components/by-tag/{tag}` | Resolve um nome de tag de custom element para seu descritor `view.component` (usado pelo `loadByTagName` do host) |
+| GET | `/pages/routes` | Retorna o mapa `mountRoute` → `pageId`; HTTP 500 em caso de `mountRoute` inválido ou duplicado. Não é filtrado por `announced` (páginas ocultas ainda precisam de resolução de URL); o controle de acesso se aplica a páginas seguras |
 
 ### Resposta de Renderização
 
@@ -305,7 +324,7 @@ Para páginas de componente, retorna um descritor:
         "proxy": {
             "enabled": true,
             "injections": {
-                "css": { "fonts": true, "themeConfig": true, "iframe": true },
+                "css": { "themeConfig": true, "iframe": true },
                 "tailwindConfig": false,
                 "resizeObserver": true,
                 "preventLinkClicks": true
@@ -314,6 +333,47 @@ Para páginas de componente, retorna um descritor:
     }
 }
 ```
+
+As flags de injeção de `css` são `themeConfig`, `iframe`, `primevue`, `markdown`, `customCss` e `customVariables`. Não existe flag `fonts` — as Google Fonts são entregues via `theming.global.customCSS` (uma regra `@import`), injetada por `customCss`.
+
+## Gateway de Web Fragments
+
+Quando o Web Host renderiza uma página com o [render engine de fragments](../frontend/web-host/render-engines.md), a página é montada como `<web-fragment src="/@fragment/{id}/">`. `wippy/views` serve esse contrato de reframing através de um endpoint de gateway dedicado em **`/@fragment/{id}/{path...}`**.
+
+Diferente da API de views (que monta no `api_router` do consumidor), o gateway é **auto-fornecido por `wippy/views` (≥ 0.5.9)**: o módulo declara internamente seu próprio `http.router` de nível superior `/@fragment`, de modo que ele é roteável por cache de CDN e livre de `token_auth` — o gateway é agnóstico de autenticação (o proxy de fragment injetado faz o handshake de autenticação com o host no cliente). **Um consumidor não precisa de nenhuma configuração de fragment** — nenhuma entrada de roteador e nenhum parâmetro `fragment_router`. A aplicação inicializa normalmente no engine de iframe, estejam os fragments habilitados ou não.
+
+O roteador auto-montado se vincula a um requisito `server` que **assume `app:gateway` por padrão**. A única sobrescrita opcional: se a entrada `http.service` da sua aplicação tiver um id diferente de `app:gateway`, defina o parâmetro `server` de `wippy/views` para corresponder a ela:
+
+```yaml
+entries:
+  - name: dep.views
+    kind: ns.dependency
+    component: wippy/views
+    version: "*"
+    parameters:
+      - name: api_router
+        value: app:api.public
+      - name: env_storage
+        value: app:env.storage
+      - name: server                 # opcional — apenas se o id do seu http.service ≠ app:gateway
+        value: app:my_http_service
+```
+
+> **Sem configuração de fragment, sem risco de boot.** Como `wippy/views` é dono do roteador `/@fragment` e o vincula a `server` (padrão `app:gateway`), um consumidor que atualiza o módulo inicializa normalmente no engine de iframe com zero configuração de fragment. Uma página que opta por fragments por página (`wippy.renderEngine: "fragment"`) em um deployment que de outra forma usa iframe é protegida por uma **sonda de capacidade** em tempo de execução que **silenciosamente a mantém no engine de iframe** quando o gateway ou `proxy-fragment.js` está indisponível. A chave global `render_engine: fragment` confia no operador e não faz sondagem.
+
+### Contrato de reframing
+
+O gateway responde à mesma URL `/@fragment/{id}/` de três formas, discriminadas pelo header `Sec-Fetch-Dest` da requisição e pelo subcaminho:
+
+| Requisição | Resposta |
+|---------|----------|
+| Carregamento do iframe do realm (`Sec-Fetch-Dest: iframe`) | Um pequeno **stub reframed** carregando o import map do host + `loading.js` + `proxy-fragment.js`. |
+| Fetch de documento (subcaminho vazio) | O HTML da aplicação da página, transformado para o realm (`<base>`, links de CSS do host, renomeação de `<html>`/`<head>`/`<body>` → `<wf-*>`). |
+| Asset (subcaminho não vazio) | Encaminhado para o `base_url` real da página + subcaminho. |
+
+As respostas carregam `Cache-Control`: o stub é cacheável de forma compartilhada (`public, max-age=300`); o documento e os assets protegidos por acesso são `private` (eles passam por uma verificação `can_access` por usuário, então um cache compartilhado vazaria entre usuários). Erros em tempo de execução são respostas HTTP explícitas — `400 Missing fragment id`, `404 Fragment page not found`, `401 Access denied`, `502 Fragment document fetch failed: … (url: …)`.
+
+O FE seleciona o engine e monta o fragment — veja [Render Engines](../frontend/web-host/render-engines.md).
 
 ## Controle de Acesso
 
@@ -336,8 +396,11 @@ data:
 
 ## Veja Também
 
-- [Facade](framework/facade.md) - Facade de iframe do frontend e barra lateral de navegação
-- [Template](system/template.md) - Motor de templates Jet
-- [Segurança](system/security.md) - Atores de segurança e controle de acesso
-- [Ambiente](system/env.md) - Armazenamento de variáveis de ambiente
-- [Visão Geral do Framework](framework/overview.md) - Uso do módulo do framework
+- [Facade](./facade.md) - Facade de iframe do frontend e barra lateral de navegação
+- [Template](../system/template.md) - Motor de templates Jet
+- [Segurança](../system/security.md) - Atores de segurança e controle de acesso
+- [Ambiente](../system/env.md) - Armazenamento de variáveis de ambiente
+- [Visão Geral do Framework](./overview.md) - Uso do módulo do framework
+- [Aplicações Micro Frontend (view.page)](../frontend/frontend-registry/view-page.md) - Referência completa de metadados e injeção de proxy de view.page
+- [Web Components (view.component)](../frontend/frontend-registry/view-component.md) - Referência completa de autoload e props de view.component
+- [Render Engines](../frontend/web-host/render-engines.md) - Renderização de página com iframe vs Web Fragment (o consumidor do gateway `/@fragment`)

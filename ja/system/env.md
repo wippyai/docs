@@ -119,7 +119,7 @@ description: "設定可能なストレージバックエンドを通じて環境
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | プロパティ | 型 | 説明 |
@@ -127,7 +127,7 @@ description: "設定可能なストレージバックエンドを通じて環境
 | `variable` | string | パブリック変数名（オプション、一意である必要があります） |
 | `storage` | string | ストレージ参照（`namespace:name`） |
 | `default` | string | 見つからない場合のデフォルト値 |
-| `read_only` | boolean | 変更を防止 |
+| `readonly` | boolean | 変更を防止 |
 
 ### 変数の命名
 

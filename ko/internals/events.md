@@ -184,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -232,21 +232,24 @@ defer router.Stop()
 
 각 핸들러는 `Pattern()`과 `Handle()`을 구현합니다. 라우터는 각각에 대해 Subscriber를 생성하고 Stop 시 모두 닫습니다.
 
-### Awaiter
+### AwaitService
 
-특정 이벤트에 대한 동기 대기:
+pub/sub 위의 요청-응답입니다. `(system, kind)` 쌍마다 하나의 구독만 유지하고, 이벤트를 `Path` 기준으로 대기자에게 라우팅합니다:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // 매칭 또는 타임아웃까지 블록
+result := waiter.Wait()  // AwaitResult{Event, Accepted, Error} 반환
 ```
 
-Prepare-then-Wait 패턴은 레이스 조건을 피합니다: 응답을 생성하는 이벤트를 트리거하기 전에 구독합니다.
+`Prepare`는 트리거 이벤트를 보내기 전에 대기자를 등록하므로, 대기가 등록되기 전에 응답이 도착하는 레이스를 피합니다. `Wait`는 `Path`가 매칭되는 이벤트가 도착하거나 타임아웃(0 이하이면 기본값 `DefaultAwaitTimeout`, 30초)이 만료될 때까지 블록합니다. 이벤트 kind가 `accept`, `*.accept`, `*.accepted`이면 `Accepted`가 true이고, 그 외의 kind는 거부로 취급되어 `Data`의 `error`가 `Error`로 드러납니다. 편의 함수 `Await(ctx, system, kind, path, timeout)`은 Prepare와 Wait를 합친 것입니다. 부트 인프라는 컨텍스트에 AwaitService를 등록합니다(`event.GetAwaitService`).
 
 ## 셧다운
 

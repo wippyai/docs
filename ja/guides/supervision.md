@@ -28,7 +28,7 @@ description: "スーパーバイザはサービスライフサイクルを管理
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -42,13 +42,13 @@ description: "スーパーバイザはサービスライフサイクルを管理
 | `start_timeout` | `10s` | 起動の最大許容時間 |
 | `stop_timeout` | `10s` | グレースフルシャットダウンの最大時間 |
 | `stable_threshold` | `5s` | サービスが安定とみなされるまでの実行時間 |
-| `depends_on` | `[]` | 先に実行されている必要があるサービス |
+| `requires` | `[]` | 先に実行されている必要があるサービス（レガシーの別名: `depends_on`）|
 
 ## 依存関係解決
 
 スーパーバイザは2つのソースから依存関係を解決します：
 
-1. `depends_on`で宣言された**明示的な依存関係**
+1. `requires`（またはレガシーの `depends_on`）で宣言された**明示的な依存関係**
 2. エントリ参照から抽出された**レジストリ抽出依存関係**（設定内の`database: app:db`など）
 
 ```mermaid
@@ -62,7 +62,7 @@ graph LR
 依存関係は被依存者より先に起動します。サービスCがAとBに依存する場合、AとBの両方が`Running`状態に達してからCが起動します。
 
 <tip>
-データベースなどのインフラストラクチャエントリを<code>depends_on</code>で宣言する必要はありません。スーパーバイザはエントリ設定内のレジストリ参照から依存関係を自動的に抽出します。
+データベースなどのインフラストラクチャエントリを<code>requires</code>で宣言する必要はありません。スーパーバイザはエントリ設定内のレジストリ参照から依存関係を自動的に抽出します。
 </tip>
 
 ## 再起動ポリシー
@@ -169,8 +169,8 @@ end
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 スーパーバイザはサービスをこれらの状態間で遷移させます：
 
 | 状態 | 説明 |
 |------|------|
-| `Inactive` | 登録済みだが未起動 |
+| `Unknown` | 登録済みだが未起動 |
 | `Starting` | 起動中 |
 | `Running` | 正常に動作中 |
 | `Stopping` | グレースフルシャットダウン中 |
 | `Stopped` | 正常終了 |
+| `Exited` | 明示的な要求、またはリトライ不可能／終端的なエラーによる終了 |
 | `Failed` | エラー発生、リトライの可能性あり |
 
 ## 起動とシャットダウンの順序

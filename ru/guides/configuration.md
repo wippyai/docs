@@ -135,8 +135,10 @@ security:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `enable_history` | bool | true | Отслеживать версии записей |
-| `history_type` | string | memory | Хранилище: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | Путь к SQLite |
+| `history_type` | string | memory | Хранилище: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | Путь к файлу SQLite (используется при `history_type: sqlite`) |
+| `history_dsn` | string | | DSN Postgres (используется при `history_type: postgres`) |
+| `history_schema` | string | | Имя схемы Postgres (используется при `history_type: postgres`) |
 | `event_wait_timeout` | duration | 30s | Ожидание подтверждения от слушателя на каждую операцию при применении изменений реестра |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Типы записей, обрабатываемые внутренне, а не рассылаемые слушателям компонентов |
 | `dependency_resolve_timeout` | duration | 0 (нет) | Ограничение на разрешение зависимостей |
@@ -148,6 +150,13 @@ security:
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 См.: [Концепция реестра](concepts/registry.md), [Модуль Registry](lua/core/registry.md)
@@ -226,8 +235,10 @@ supervisor:
 | `proto_cache_size` | int | 60000 | Кэш скомпилированных прототипов |
 | `main_cache_size` | int | 10000 | Кэш main-чанков |
 | `cache.enabled` | bool | false | Сохранять скомпилированный байткод/typecheck-кэш на диск |
-| `cache.dir` | string | (системный каталог кэша) | Путь к каталогу кэша |
-| `cache.mode` | string | `read_write` | Режим кэша: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Путь к каталогу кэша (относительно каталога конфигурации/рабочего каталога) |
+| `cache.mode` | string | `readwrite` | Режим кэша: `readwrite` (по умолчанию), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Сохранять скомпилированный байткод (при `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Сохранять результаты проверки типов (при `cache.enabled`) |
 | `type_system.enabled` | bool | false | Включить статическую проверку типов |
 | `type_system.strict` | bool | false | Считать предупреждения типов ошибками |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Ожидание подтверждения инвалидации кода после изменения записи |

@@ -301,11 +301,11 @@ local policies = scope:policies()
 ### Fluxo de Avaliação
 
 ```
-1. Sem ator ou sem escopo no contexto -> o modo estrito decide (nega por padrão)
+1. Sem ator ou sem escopo no contexto → o modo estrito decide (nega por padrão)
 2. Verifica cada política no escopo
-3. Se QUALQUER política retorna Deny -> Resultado é Deny
-4. Se pelo menos um Allow e nenhum Deny -> Resultado é Allow
-5. Nenhuma política aplicável -> Resultado é Undefined
+3. Se QUALQUER política retorna Deny → Resultado é Deny
+4. Se pelo menos um Allow e nenhum Deny → Resultado é Allow
+5. Nenhuma política aplicável → Resultado é Undefined
 ```
 
 Uma verificação de acesso só passa com `Allow`. `Undefined` nega o acesso, exatamente como `Deny` — o modo estrito não participa uma vez que um ator e um escopo estejam ambos presentes.
@@ -378,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Opções do Token Store
@@ -388,10 +388,9 @@ entries:
 | `store` | obrigatório | Referência do store chave-valor de apoio |
 | `token_length` | 32 | Tamanho do token em bytes (256 bits) |
 | `default_expiration` | 24h | TTL padrão do token |
-| `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto) |
-| `token_key_env` | nenhum | Nome da variável de ambiente para chave de assinatura |
+| `token_key` | nenhum | Chave de assinatura HMAC-SHA256 (valor direto, ou `${env:NAME}` para obter do [registro env](system/env.md)) |
 
-Use `token_key_env` em produção para evitar embutir segredos em entradas. Veja [Sistema de Ambiente](system/env.md) para registrar variáveis de ambiente.
+Use `token_key: ${env:NAME}` em produção para evitar embutir segredos em entradas. A diretiva legada `token_key_env` resolve da mesma forma, mas está deprecada; prefira `${env:NAME}`.
 
 ### Criando Tokens
 
@@ -622,7 +621,7 @@ Um contexto de segurança que cruza para o Temporal é carregado como um header 
 1. **Menor privilégio** - Conceda permissões mínimas necessárias
 2. **Negue por padrão** - Use políticas de allow explícitas, habilite modo estrito
 3. **Use grupos de políticas** - Organize políticas por role/função
-4. **Assine tokens** - Sempre defina `token_key_env` em produção
+4. **Assine tokens** - Sempre defina `token_key` a partir de uma referência `${env:NAME}` em produção
 5. **Expiração curta** - Use tempos de vida de token mais curtos para operações sensíveis
 6. **Condicione no contexto** - Use condições dinâmicas sobre políticas estáticas
 7. **Audite ações sensíveis** - Registre operações relevantes para segurança

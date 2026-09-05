@@ -41,7 +41,7 @@ description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）
 | 字段 | 类型 | 描述 |
 |-------|------|-------------|
 | `hostname` | string | tsnet 节点名称（用于每节点状态目录） |
-| `auth_key` | string | 内联 tailnet 认证密钥 |
-| `auth_key_env` | string | 持有认证密钥的环境变量名（通过 env 注册表解析） |
+| `auth_key` | string | tailnet 认证密钥 —— 内联或通过 [env 注册表](system/env.md)解析的 `${env:NAME}` |
 | `state_dir` | string | 覆盖 tsnet 状态目录 |
 | `control_url` | string | 备用协调服务器 |
 | `ephemeral` | bool | 注册为临时 tailnet 节点 |
 
-需要 `auth_key` 或 `auth_key_env` 之一。
+`auth_key` 是必填的（直接提供或通过 `${env:NAME}` 提供）。旧的 `auth_key_env` 指令解析方式相同，但已废弃；请优先使用 `auth_key: ${env:NAME}`。
 
 ## I2P
 

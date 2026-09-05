@@ -110,7 +110,7 @@ local actor = security.actor()  -- 获取当前用户的 actor
 -- 用用户凭证调用管理函数
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
-if err and err:kind() == "PERMISSION_DENIED" then
+if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
 end
 ```

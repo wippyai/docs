@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `size` | integer | Zu lesende Bytes (0 = alle verfügbaren lesen) |
+| `size` | integer | Zu lesende Bytes (0 = Standard-Chunk von 32 KB) |
 
-**Gibt zurück:** `string, error` — nil bei EOF
-
-```lua
--- Alle verbleibenden Daten lesen
-local data, err = stream:read_all()
-```
+**Gibt zurück:** `string, error` — `nil, nil` bei EOF
 
 ## Schreiben
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### Scanner-Methoden
 
 ```lua
-local has_more = scanner:scan()  -- Zum nächsten Token vorrücken
-local token = scanner:text()      -- Aktuelles Token abrufen
-local err_msg = scanner:err()     -- Fehler abrufen falls vorhanden
+local has_more, err = scanner:scan()  -- Zum nächsten Token vorrücken
+local token = scanner:text()           -- Aktuelles Token
+local err_msg = scanner:err()          -- Scanner-Fehler falls vorhanden
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

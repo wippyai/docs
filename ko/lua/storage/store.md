@@ -162,14 +162,14 @@ end
 ```lua
 -- 키가 존재하지 않을 때만 생성
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- 다른 누군가가 보유 중
 end
 
 -- compare-and-set: 버전이 여전히 일치할 때만 쓰기
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- 동시 쓰기가 이를 변경함; 다시 읽고 재시도
 end
 ```
@@ -235,10 +235,12 @@ end
 | 액션 | 리소스 | 속성 | 설명 |
 |------|--------|------|------|
 | `store.get` | 스토어 ID | - | 스토어 리소스 획득 |
-| `store.key.get` | 스토어 ID | `key` | 키 값 읽기 |
-| `store.key.set` | 스토어 ID | `key` | 키 값 쓰기 |
+| `store.info` | 스토어 ID | - | 스토어 기능 조회 |
+| `store.key.get` | 스토어 ID | `key` | 키 값 읽기(`entry`도 포함) |
+| `store.key.set` | 스토어 ID | `key` | 키 값 쓰기(`put`도 포함) |
 | `store.key.delete` | 스토어 ID | `key` | 키 삭제 |
 | `store.key.has` | 스토어 ID | `key` | 키 존재 확인 |
+| `store.key.list` | 스토어 ID | `prefix` | 엔트리 목록 조회 |
 
 ## 에러
 

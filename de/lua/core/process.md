@@ -135,8 +135,7 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 |------|-----|--------------|
 | `kind` | string | Event-Typ-Konstante |
 | `from` | string | Quell-PID |
-| `result` | any | Für EXIT: der zurückgegebene Wert (bei normalem Exit vorhanden) |
-| `error` | any | Für EXIT: der Fehler (bei abnormalem Exit vorhanden) |
+| `result` | table | Für EXIT/LINK_DOWN: ein {value, error}-Datensatz; der Rückgabewert des Prozesses steht in `result.value` und ein etwaiger Fehler in `result.error` |
 | `reason` | string | Für CANCEL: Grund der Kanzellierung |
 | `sources` | string[] | Für OUTDATED: Registry-IDs, die sich geändert haben oder transitiv betroffen sind |
 

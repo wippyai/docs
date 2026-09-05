@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 无效时长格式 | `errors.INVALID` | 否 |
-| 解析失败 | `errors.INTERNAL` | 否 |
+| 解析失败 | `errors.INVALID` | 否 |
 | 空位置名称 | `errors.INVALID` | 否 |
-| 位置未找到 | `errors.INTERNAL` | 否 |
+| 位置未找到 | `errors.NOT_FOUND` | 否 |
 | 时长 <= 0（timer/ticker） | `errors.INVALID` | 否 |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("位置未找到:", err:message())
     end
     return nil, err

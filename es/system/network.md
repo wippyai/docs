@@ -41,7 +41,7 @@ Enruta el tráfico saliente y vincula escuchadores a través de redes de superpo
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ Enruta el tráfico saliente y vincula escuchadores a través de redes de superpo
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `hostname` | string | Nombre del nodo tsnet (usado en el directorio de estado por nodo) |
-| `auth_key` | string | Clave de autenticación tailnet en línea |
-| `auth_key_env` | string | Nombre de variable de entorno que contiene la clave de autenticación (resuelto a través del registro env) |
+| `auth_key` | string | Clave de autenticación tailnet — en línea o `${env:NAME}` resuelta mediante el [registro env](system/env.md) |
 | `state_dir` | string | Anulación del directorio de estado tsnet |
 | `control_url` | string | Servidor de coordinación alternativo |
 | `ephemeral` | bool | Registrar como nodo tailnet efímero |
 
-Se requiere `auth_key` o `auth_key_env`.
+`auth_key` es obligatorio (proporciónelo directamente o mediante `${env:NAME}`). La directiva heredada `auth_key_env` se resuelve de la misma manera pero está obsoleta; prefiera `auth_key: ${env:NAME}`.
 
 ## I2P
 

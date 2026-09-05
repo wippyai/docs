@@ -69,7 +69,7 @@ Wippy 集成 [Temporal.io](https://temporal.io) 以实现持久化 workflow 执�
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # 从文件读取
 - name: temporal_client
@@ -81,7 +81,7 @@ Wippy 集成 [Temporal.io](https://temporal.io) 以实现持久化 workflow 执�
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-以 `_env` 结尾的字段引用系统中定义的环境变量。有关配置环境存储和变量的详细信息，请参阅[环境系统](../system/env.md)。
+认证和凭证字段在解码时通过[环境注册表](system/env.md)解析 `${env:NAME}` 占位符。旧式的 `api_key_env` / `key_pem_env` 指令以同样方式解析，但已弃用；请优先使用 `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`。
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS 配置
@@ -185,11 +185,15 @@ worker 从其引用的 client 记录获取这些密钥，因此 worker 无需自
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # 身份
+    identity: ""                          # Worker 身份（显示在 Temporal UI 中）
+
     # 并发
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # 轮询器
     max_concurrent_activity_task_pollers: 20
@@ -204,6 +208,8 @@ worker 从其引用的 client 记录获取这些密钥，因此 worker 无需自
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # 功能标志
     enable_logging_in_replay: false
@@ -211,16 +217,17 @@ worker 从其引用的 client 记录获取这些密钥，因此 worker 无需自
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # 版本控制
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # 从环境变量读取
+    build_id: ${env:BUILD_ID}              # 从 env registry 读取
     use_versioning: false
     default_versioning_behavior: "pinned" # 或 "auto_upgrade"
 ```
 
-以 `_env` 结尾的字段引用通过[环境系统](../system/env.md)条目定义的环境变量。
+凭证和标识符字段在解码时通过[环境注册表](system/env.md)解析 `${env:NAME}` 占位符。旧式的 `build_id_env` 指令以同样方式解析，但已弃用；请优先使用 `build_id: ${env:NAME}`。
 
 ### 版本控制行为
 
@@ -231,7 +238,7 @@ worker 从其引用的 client 记录获取这些密钥，因此 worker 无需自
 | `pinned` | 工作流在整个运行期间保持在启动时所用的构建 ID 上 |
 | `auto_upgrade` | 工作流可在每个任务后在最新兼容的构建 ID 上恢复 |
 
-当 `build_id` 为空时，`build_id_env` 从指定的环境变量读取构建 ID。
+当未提供字面量 `build_id` 时，`build_id: ${env:NAME}` 从 env registry 读取构建 ID。
 
 ### Session Worker
 

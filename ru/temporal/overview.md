@@ -69,7 +69,7 @@ API-ключ можно указать несколькими способами
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # Из файла
 - name: temporal_client
@@ -81,7 +81,7 @@ API-ключ можно указать несколькими способами
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Поля с суффиксом `_env` ссылаются на переменные окружения, которые должны быть определены в системе. См. [Система окружения](system/env.md) для настройки хранилищ и переменных окружения.
+Поля аутентификации и учётных данных разрешают плейсхолдеры `${env:NAME}` через [реестр окружения](system/env.md) при декодировании. Устаревшие директивы `api_key_env` / `key_pem_env` разрешаются так же, но не рекомендуются; предпочитайте `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### Настройка TLS
@@ -185,11 +185,15 @@ Wippy передаёт вызывающего актора и область в 
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Идентичность
+    identity: ""                          # Идентичность воркера (отображается в UI Temporal)
+
     # Параллелизм
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Поллеры
     max_concurrent_activity_task_pollers: 20
@@ -204,6 +208,8 @@ Wippy передаёт вызывающего актора и область в 
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Флаги
     enable_logging_in_replay: false
@@ -211,16 +217,17 @@ Wippy передаёт вызывающего актора и область в 
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Версионирование
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Чтение из переменной окружения
+    build_id: ${env:BUILD_ID}              # Чтение из реестра окружения
     use_versioning: false
     default_versioning_behavior: "pinned" # или "auto_upgrade"
 ```
 
-Поля с суффиксом `_env` ссылаются на переменные окружения, определённые через записи [Системы окружения](system/env.md).
+Поля учётных данных и идентификаторов разрешают плейсхолдеры `${env:NAME}` через [реестр окружения](system/env.md) при декодировании. Устаревшая директива `build_id_env` разрешается так же, но не рекомендуется; предпочитайте `build_id: ${env:NAME}`.
 
 ### Поведение версионирования
 
@@ -231,7 +238,7 @@ Wippy передаёт вызывающего актора и область в 
 | `pinned` | Workflow остаётся на том build ID, с которым был запущен, на всё время выполнения |
 | `auto_upgrade` | Workflow может возобновляться на последнем совместимом build ID после каждой задачи |
 
-`build_id_env` читает build ID из указанной переменной окружения, когда `build_id` пуст.
+`build_id: ${env:NAME}` читает build ID из реестра окружения, когда литеральный `build_id` не задан.
 
 ### Session Worker
 

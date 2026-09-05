@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `size` | integer | 読み取るバイト数（0 = 利用可能なすべてを読み取り） |
+| `size` | integer | 読み取るバイト数（0 = デフォルトの 32KB チャンク） |
 
-**戻り値:** `string, error` — EOFでnil
-
-```lua
--- 残りのすべてのデータを読み取り
-local data, err = stream:read_all()
-```
+**戻り値:** `string, error` — EOF では `nil, nil`
 
 ## 書き込み
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### スキャナメソッド
 
 ```lua
-local has_more = scanner:scan()  -- 次のトークンに進む
-local token = scanner:text()      -- 現在のトークンを取得
-local err_msg = scanner:err()     -- エラーがあれば取得
+local has_more, err = scanner:scan()  -- 次のトークンに進む
+local token = scanner:text()           -- 現在のトークン
+local err_msg = scanner:err()          -- スキャナのエラー（あれば）
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

@@ -118,10 +118,10 @@ entries:
 wippy test
 ```
 
-반복 작업 중에 단일 스위트로 필터링합니다 (엔트리 id 또는 스위트 이름과 매칭):
+반복 작업 중에는 엔트리 id 부분 문자열(namespace:name)로 필터링합니다:
 
 ```bash
-wippy test calculator
+wippy test calc_test
 ```
 
 위 스위트의 출력:

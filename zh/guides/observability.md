@@ -121,7 +121,7 @@ otel:
   # 函数调用追踪
   interceptor:
     enabled: true
-    order: 0                   # 拦截器执行顺序
+    order: 100                 # 拦截器执行顺序
 ```
 
 ### Temporal 工作流

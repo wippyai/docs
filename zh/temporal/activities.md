@@ -266,7 +266,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -275,7 +275,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())

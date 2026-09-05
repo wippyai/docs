@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Formato de duración invalido | `errors.INVALID` | no |
-| Parseo fallido | `errors.INTERNAL` | no |
+| Parseo fallido | `errors.INVALID` | no |
 | Nombre de ubicacion vacio | `errors.INVALID` | no |
-| Ubicacion no encontrada | `errors.INTERNAL` | no |
+| Ubicacion no encontrada | `errors.NOT_FOUND` | no |
 | Duración <= 0 (timer/ticker) | `errors.INVALID` | no |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location not found:", err:message())
     end
     return nil, err

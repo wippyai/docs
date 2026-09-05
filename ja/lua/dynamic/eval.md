@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -154,6 +155,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -205,7 +207,7 @@ runner.run({
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })
@@ -278,8 +280,8 @@ runner.run({
 # .wippy.yaml
 lua:
   eval:
-    cache_size: 256   # entries; 0 or less disables caching (default: 256)
-    cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
+    cache_size: 256   # エントリ数。0以下でキャッシュ無効（デフォルト: 256）
+    cache_ttl: 0      # 有効期限。0 = 無期限（デフォルト: 0）
 ```
 
 ## エラー処理

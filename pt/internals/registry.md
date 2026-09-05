@@ -150,7 +150,7 @@ Entradas podem declarar dependências de outras entradas. O resolver extrai depe
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```

@@ -294,7 +294,22 @@ entries:
 
 ### Защищённый эндпоинт
 
+Middleware авторизации настраивается на родительском роутере, а не на эндпоинте. Post-match middleware (например, `endpoint_firewall`) выполняется после сопоставления маршрута и применяется ко всем эндпоинтам роутера:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -302,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## См. также

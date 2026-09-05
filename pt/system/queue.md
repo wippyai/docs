@@ -93,13 +93,13 @@ Bloco TLS:
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Os campos inline `cert`/`key`/`ca` carregam conteúdo PEM; as variantes `*_env` são resolvidas através do registro env. As duas fontes são mutuamente exclusivas por campo. `insecure_skip_verify` desativa a verificação de certificado (apenas desenvolvimento).
+`cert`/`key`/`ca` carregam conteúdo PEM — inline, via `file://`, ou via um placeholder `${env:NAME}` resolvido através do [registro env](system/env.md). `insecure_skip_verify` desativa a verificação de certificado (apenas desenvolvimento). As diretivas legadas `cert_env`/`key_env`/`ca_env` resolvem da mesma forma, mas estão obsoletas; prefira `${env:NAME}`.
 
 ### Driver SQS
 
@@ -109,8 +109,8 @@ Para AWS SQS e endpoints compatíveis com SQS (LocalStack, ElasticMQ). Credencia
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -132,7 +132,7 @@ Para AWS SQS e endpoints compatíveis com SQS (LocalStack, ElasticMQ). Credencia
 | `use_fips` | bool | `false` | Usa endpoints compatíveis com FIPS |
 | `use_dual_stack` | bool | `false` | Usa endpoints dual-stack (IPv4 + IPv6) |
 
-As filas são criadas automaticamente pelo driver no primeiro uso. Use headers com prefixo SQS (`sqs.*`) para endereçar atributos específicos do SQS na publicação; chaves neutras como `correlation_id` e `content_type` são traduzidas para atributos do sistema SQS quando possível.
+As filas são criadas automaticamente pelo driver no primeiro uso. Use headers com prefixo SQS para endereçar campos específicos do SQS na publicação: `sqs.delay_seconds`, `sqs.message_group_id` e `sqs.message_deduplication_id` mapeiam para campos tipados de mensagem SQS. Todos os demais headers (chaves neutras como `correlation_id` e `content_type`, mais quaisquer chaves `sqs.message_attributes.*`) são carregados verbatim como atributos de mensagem SQS.
 
 ## Configuração de Fila
 

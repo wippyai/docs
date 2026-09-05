@@ -23,7 +23,7 @@ sequenceDiagram
     H-->>H: async work
     H->>W: CompleteYield(tag, result)
     W->>P: queue event, wake
-    P->>P: продолжить с результатом
+    P->>P: resume with result
 ```
 
 ## Реестр команд
@@ -61,6 +61,7 @@ type Registry struct {
 | 170-179 | eval | Compile, Run |
 | 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (группа процессов) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Пользовательские сервисы |
 
 Регистрация происходит при загрузке через `MustRegisterCommands()`. Коллизии вызывают panic при старте.
@@ -70,7 +71,7 @@ type Registry struct {
 Команды — это структуры данных с уникальным `CommandID`:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

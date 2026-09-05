@@ -378,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### 토큰 스토어 옵션
@@ -388,10 +388,9 @@ entries:
 | `store` | 필수 | 백킹 키-값 스토어 참조 |
 | `token_length` | 32 | 토큰 크기 (바이트, 256비트) |
 | `default_expiration` | 24h | 기본 토큰 TTL |
-| `token_key` | 없음 | HMAC-SHA256 서명 키 (직접 값) |
-| `token_key_env` | 없음 | 서명 키용 환경 변수 이름 |
+| `token_key` | 없음 | HMAC-SHA256 서명 키 (직접 값, 또는 [env 레지스트리](system/env.md)에서 가져오려면 `${env:NAME}`) |
 
-프로덕션에서는 `token_key_env`를 사용하여 엔트리에 시크릿을 포함시키지 마세요. 환경 변수 등록은 [환경 시스템](system/env.md)을 참조하세요.
+엔트리에 시크릿을 포함시키지 않으려면 프로덕션에서 `token_key: ${env:NAME}`을 사용하세요. 레거시 `token_key_env` 디렉티브도 동일하게 해석되지만 더 이상 권장되지 않으며, `${env:NAME}`을 사용하세요.
 
 ### 토큰 생성
 
@@ -622,7 +621,7 @@ Temporal로 넘어가는 보안 컨텍스트는 일반 워크플로우 입력이
 1. **최소 권한** - 필요한 최소 권한만 부여
 2. **기본 거부** - 명시적 허용 정책 사용, 엄격 모드 활성화
 3. **정책 그룹 사용** - 역할/기능별로 정책 구성
-4. **토큰 서명** - 프로덕션에서 항상 `token_key_env` 설정
+4. **토큰 서명** - 프로덕션에서 항상 `${env:NAME}` 참조로 `token_key` 설정
 5. **짧은 만료** - 민감한 작업에 더 짧은 토큰 수명 사용
 6. **컨텍스트 조건** - 정적 정책보다 동적 조건 사용
 7. **민감한 액션 감사** - 보안 관련 작업 로깅

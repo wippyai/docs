@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `size` | integer | Bytes a leer (0 = leer todo disponible) |
+| `size` | integer | Bytes a leer (0 = fragmento por defecto de 32KB) |
 
-**Devuelve:** `string, error` - nil en EOF
-
-```lua
--- Leer todos los datos restantes
-local data, err = stream:read_all()
-```
+**Devuelve:** `string, error` — `nil, nil` en EOF
 
 ## Escritura
 
@@ -47,7 +42,7 @@ local bytes, err = stream:write(data)
 |-----------|------|-------------|
 | `data` | string | Datos a escribir |
 
-**Devuelve:** `integer, error` - bytes escritos
+**Devuelve:** `integer, error` — bytes escritos
 
 ## Posicionamiento
 
@@ -60,7 +55,7 @@ local pos, err = stream:seek(whence, offset)
 | `whence` | string | `"set"`, `"cur"`, o `"end"` |
 | `offset` | integer | Desplazamiento en bytes |
 
-**Devuelve:** `integer, error` - nueva posicion
+**Devuelve:** `integer, error` — nueva posicion
 
 ## Flush
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### Metodos de Scanner
 
 ```lua
-local has_more = scanner:scan()  -- Avanzar al siguiente token
-local token = scanner:text()      -- Obtener token actual
-local err_msg = scanner:err()     -- Obtener error si hay alguno
+local has_more, err = scanner:scan()  -- avanzar al siguiente token
+local token = scanner:text()           -- token actual
+local err_msg = scanner:err()          -- error del scanner si lo hay
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

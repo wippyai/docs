@@ -93,13 +93,13 @@ TLS 块：
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-内联 `cert`/`key`/`ca` 字段携带 PEM 内容；`*_env` 变体通过 env registry 解析。两种来源在每个字段上互斥。`insecure_skip_verify` 禁用证书验证（仅用于开发）。
+`cert`/`key`/`ca` 携带 PEM 内容——可以内联、通过 `file://`、或通过经由 [env registry](system/env.md) 解析的 `${env:NAME}` 占位符提供。`insecure_skip_verify` 禁用证书验证（仅用于开发）。旧式的 `cert_env`/`key_env`/`ca_env` 指令以同样方式解析，但已弃用；请优先使用 `${env:NAME}`。
 
 ### SQS 驱动
 
@@ -109,8 +109,8 @@ TLS 块：
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -132,7 +132,7 @@ TLS 块：
 | `use_fips` | bool | `false` | 使用 FIPS 兼容的 endpoint |
 | `use_dual_stack` | bool | `false` | 使用 dual-stack（IPv4 + IPv6）endpoint |
 
-队列在首次使用时由驱动自动创建。在发布时使用 SQS 前缀的 header（`sqs.*`）来寻址 SQS 特定属性；像 `correlation_id` 和 `content_type` 这样的中性键在可能的情况下会被翻译为 SQS 系统属性。
+队列在首次使用时由驱动自动创建。在发布时使用 SQS 前缀的 header 来寻址 SQS 特定字段：`sqs.delay_seconds`、`sqs.message_group_id` 和 `sqs.message_deduplication_id` 映射到带类型的 SQS 消息字段。所有其他 header（像 `correlation_id` 和 `content_type` 这样的中性键，以及任何 `sqs.message_attributes.*` 键）都会原样作为 SQS 消息属性携带。
 
 ## 队列配置
 

@@ -69,7 +69,7 @@ Wippy 中所有可用入口类型的完整参考。
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # 端点
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## 数据库
@@ -98,6 +99,7 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite 数据库 |
 | `db.sql.postgres` | PostgreSQL 数据库 |
 | `db.sql.mysql` | MySQL 数据库 |
+| `db.cdc.postgres` | Postgres 变更数据捕获源（参见 [CDC](system/cdc.md)） |
 | `db.cdc.sqlite` | SQLite 变更数据捕获源（参见 [CDC](system/cdc.md)） |
 
 ### SQLite
@@ -247,13 +249,18 @@ local queue = require("queue")
 -- 发布消息
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- 在消费者处理函数中访问当前消息
-local msg = queue.message()
-local data = msg:body_json()
+-- 在消费者处理函数中：消息体就是处理函数的参数
+local function main(data)
+    -- 通过当前消息访问投递元数据
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-消费者的 <code>func</code> 会为每条消息调用。在处理函数中使用 <code>queue.message()</code> 访问当前消息。
+消费者的 <code>func</code> 每收到一条消息就被调用一次，消息体作为其参数。在处理函数中使用 <code>queue.message()</code> 获取该次投递的 <code>id()</code>、<code>header()</code>/<code>headers()</code> 和 <code>ack()</code>/<code>nack()</code>。
 </note>
 
 ## 进程管理
@@ -263,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | 进程执行宿主 |
 | `process.service` | 受监督的进程（包装 process.lua） |
 | `terminal.host` | 终端/CLI 宿主 |
+| `pg.scope` | 进程组作用域（参见 [进程组](system/process-groups.md)） |
 
 ```yaml
 # 进程宿主（进程运行的地方）
@@ -373,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -390,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 单位为秒，默认 3600
 ```
 
 <tip>

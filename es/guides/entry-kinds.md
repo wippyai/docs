@@ -69,7 +69,7 @@ Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponi
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpoint
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Bases de Datos
@@ -248,13 +249,18 @@ local queue = require("queue")
 -- Publicar un mensaje
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- En el handler del consumidor, acceder al mensaje actual
-local msg = queue.message()
-local data = msg:body_json()
+-- En un handler de consumidor: el cuerpo del mensaje es el argumento del handler
+local function main(data)
+    -- acceder a los metadatos de entrega mediante el mensaje actual
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue.message()</code> dentro del handler para acceder al mensaje actual.
+El <code>func</code> del consumidor se invoca una vez por mensaje con el cuerpo del mensaje como argumento. Use <code>queue.message()</code> dentro del handler para el <code>id()</code> de la entrega, <code>header()</code>/<code>headers()</code> y <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Gestión de Procesos
@@ -264,6 +270,7 @@ El <code>func</code> del consumidor se invoca para cada mensaje. Use <code>queue
 | `process.host` | Host de ejecución de procesos |
 | `process.service` | Proceso supervisado (envuelve process.lua) |
 | `terminal.host` | Host de terminal/CLI |
+| `pg.scope` | Scope de grupo de procesos (ver [Grupos de Procesos](system/process-groups.md)) |
 
 ```yaml
 # Host de procesos (donde se ejecutan los procesos)
@@ -374,8 +381,8 @@ Ver [Security](system/security.md).
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -391,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})
 ```
 
 <tip>
@@ -420,7 +427,7 @@ local fs = require("fs")
 local filesystem, err = fs.get("app:data_dir")
 
 local file = filesystem:open("output.txt", "w")
-file:write("Hola, Mundo!")
+file:write("Hello, World!")
 file:close()
 ```
 
@@ -503,7 +510,7 @@ local set, err = templates.get("app:templates")
 
 local html = set:render("email", {
     user = "Alice",
-    message = "Bienvenido!"
+    message = "Welcome!"
 })
 ```
 
@@ -573,9 +580,9 @@ Las políticas se evalúan en orden. La primera política que coincide determina
   kind: contract.definition
   methods:
     - name: greet
-      description: Retorna un mensaje de saludo
+      description: Returns a greeting message
     - name: greet_with_name
-      description: Retorna un saludo personalizado
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}

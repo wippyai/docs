@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## 컨슈머 패턴
 
-큐 컨슈머는 페이로드를 직접 받는 진입점으로 정의됩니다:
+`queue.consumer` 엔트리는 큐를 핸들러 함수(`func`로 참조)에 바인딩합니다. 핸들러는 메시지 페이로드를 직접 받습니다:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

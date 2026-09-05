@@ -41,7 +41,7 @@ description: "オーバーレイネットワーク（SOCKS5 プロキシ、Tor�
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "オーバーレイネットワーク（SOCKS5 プロキシ、Tor�
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `hostname` | string | tsnet ノード名（ノードごとの状態ディレクトリで使用） |
-| `auth_key` | string | インライン tailnet 認証キー |
-| `auth_key_env` | string | 認証キーを保持する環境変数名（env レジストリで解決） |
+| `auth_key` | string | Tailnet 認証キー — インライン、または [env レジストリ](system/env.md)で解決される `${env:NAME}` |
 | `state_dir` | string | tsnet 状態ディレクトリのオーバーライド |
 | `control_url` | string | 代替調整サーバー |
 | `ephemeral` | bool | エフェメラル tailnet ノードとして登録 |
 
-`auth_key` または `auth_key_env` のいずれかが必要です。
+`auth_key` は必須です（直接指定するか `${env:NAME}` 経由で指定します）。レガシーの `auth_key_env` ディレクティブも同じ方法で解決されますが非推奨です。`auth_key: ${env:NAME}` を推奨します。
 
 ## I2P
 

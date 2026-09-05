@@ -20,28 +20,27 @@ S3-kompatibler Objektspeicher mit vorsignierten URLs, Multipart-Uploads und Bere
 ```yaml
 - name: aws_config
   kind: config.aws
-  region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  region: ${env:AWS_REGION}
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
-| `region` | string | Bedingt | AWS-Region. Erforderlich, sofern `region_env` nicht gesetzt ist |
-| `region_env` | string | Bedingt | Name der Umgebungsvariable, die die Region enthält |
-| `access_key_id_env` | string | Nein | Umgebungsvariablenname für Access Key |
-| `secret_access_key_env` | string | Nein | Umgebungsvariablenname für Secret Key |
+| `region` | string | Ja | AWS-Region. Über `${env:NAME}` bereitstellen, wenn sie sich je Deployment unterscheidet |
+| `access_key_id` | string | Nein | AWS Access Key ID (inline oder `${env:NAME}`) |
+| `secret_access_key` | string | Nein | AWS Secret Access Key (inline oder `${env:NAME}`) |
 
-Anmeldedaten werden aus den angegebenen Umgebungsvariablen geladen. Sowohl `access_key_id_env` als auch `secret_access_key_env` müssen sich zu nicht-leeren Werten auflösen, damit statische Anmeldedaten greifen; andernfalls wird die AWS SDK Standard-Anmeldekette verwendet (IAM-Rollen, Instanzprofile, etc.).
+Anmeldedaten werden zur Dekodierzeit aus der [Umgebungs-Registry](system/env.md) aufgelöst. Sowohl `access_key_id` als auch `secret_access_key` müssen sich zu nicht-leeren Werten auflösen, damit statische Anmeldedaten greifen; andernfalls wird die AWS SDK Standard-Anmeldekette verwendet (IAM-Rollen, Instanzprofile, etc.).
 
 Requests werden vom AWS SDK mit AWS Signature Version 4 unter Verwendung der aufgelösten Anmeldedaten signiert. Es ist keine Signierungskonfiguration erforderlich.
 
 <note>
-Verwenden Sie die <code>_env</code>-Varianten (<code>region_env</code> sowie <code>bucket_env</code>/<code>endpoint_env</code> unten), wenn ein Wert je Deployment unterschiedlich ist. Der Variablenname wird beim Start aus der Umgebungs-Registry aufgelöst.
+Ältere Konfigurationen verwenden eine benachbarte <code>&lt;feld&gt;_env</code>-Direktive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>), die sich genauso auflöst. Diese Form ist <b>veraltet</b> — migrieren Sie sie auf den oben gezeigten <code>${env:NAME}</code>-Platzhalter.
 </note>
 
 <note>
-AWS-Konfiguration ist geplant, in zukünftigen Releases mit anderen AWS-Diensten (SQS, etc.) geteilt zu werden.
+Ein einzelner <code>config.aws</code>-Eintrag kann über AWS-gestützte Dienste hinweg wiederverwendet werden. <code>queue.driver.sqs</code> referenziert denselben Eintrag über sein <code>config:</code>-Feld.
 </note>
 
 ## S3-Speicher
@@ -55,11 +54,9 @@ AWS-Konfiguration ist geplant, in zukünftigen Releases mit anderen AWS-Diensten
 
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
-| `bucket` | string | Bedingt | S3-Bucket-Name. Erforderlich, sofern `bucket_env` nicht gesetzt ist |
-| `bucket_env` | string | Bedingt | Name der Umgebungsvariable, die den Bucket-Namen enthält |
+| `bucket` | string | Bedingt | S3-Bucket-Name. Über `${env:NAME}` bereitstellen, wenn er sich je Deployment unterscheidet |
 | `config` | reference | Ja | AWS-Konfigurations-Entry-Referenz |
-| `endpoint` | string | Nein | Benutzerdefinierter Endpunkt für S3-kompatible Dienste |
-| `endpoint_env` | string | Nein | Name der Umgebungsvariable, die den benutzerdefinierten Endpunkt enthält |
+| `endpoint` | string | Nein | Benutzerdefinierter Endpunkt für S3-kompatible Dienste (inline oder `${env:NAME}`) |
 
 ### S3-kompatible Dienste
 

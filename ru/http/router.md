@@ -114,9 +114,10 @@ end
   func: serve_file
 ```
 
+Wildcard соответствует оставшимся сегментам, поэтому запрос вида `GET /api/v1/files/docs/guides/readme.md` попадает в обработчик. Захваченный хвост читается через `req:param` по имени без завершающих точек:
+
 ```lua
--- Запрос: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 Wildcard должен быть последним сегментом пути.
@@ -138,7 +139,6 @@ Wildcard должен быть последним сегментом пути.
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -147,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -178,7 +178,7 @@ Post-match middleware используют `post_options`:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## Pre-Match vs Post-Match Middleware
@@ -299,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

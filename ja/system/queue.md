@@ -93,13 +93,13 @@ TLS ブロック：
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-インライン `cert`/`key`/`ca` フィールドは PEM コンテンツを保持します。`*_env` バリアントは env レジストリ経由で解決されます。2つのソースはフィールドごとに排他的です。`insecure_skip_verify` は証明書検証を無効化します（開発用のみ）。
+`cert`/`key`/`ca` は PEM コンテンツを保持します。インライン、`file://` 経由、または [env レジストリ](system/env.md)で解決される `${env:NAME}` プレースホルダ経由で指定できます。`insecure_skip_verify` は証明書検証を無効化します（開発用のみ）。従来の `cert_env`/`key_env`/`ca_env` ディレクティブも同じように解決されますが非推奨です。`${env:NAME}` を使用してください。
 
 ### SQS ドライバ
 
@@ -109,8 +109,8 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -132,7 +132,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 | `use_fips` | bool | `false` | FIPS 準拠エンドポイントを使用 |
 | `use_dual_stack` | bool | `false` | デュアルスタック（IPv4 + IPv6）エンドポイントを使用 |
 
-キューは初回使用時にドライバによって自動作成されます。発行時に SQS 固有属性を指定するには SQS プレフィックス付きヘッダ（`sqs.*`）を使用してください。`correlation_id` や `content_type` のような中立的なキーは可能な限り SQS システム属性に変換されます。
+キューは初回使用時にドライバによって自動作成されます。発行時に SQS 固有のフィールドを指定するには SQS プレフィックス付きヘッダを使用してください。`sqs.delay_seconds`、`sqs.message_group_id`、`sqs.message_deduplication_id` は型付きの SQS メッセージフィールドにマッピングされます。それ以外のヘッダ（`correlation_id` や `content_type` のような中立的なキー、および任意の `sqs.message_attributes.*` キー）は SQS メッセージ属性としてそのまま運ばれます。
 
 ## キュー設定
 
@@ -156,8 +156,8 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 | `codec` | string | いいえ | メッセージ本体のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照）|
 | `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名）|
 | `driver_options` | object | いいえ | ドライバ kind でキー付けされたドライバごとのサブバッグ |
-| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージのキュー ID |
-| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数 |
+| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージのキュー ID（受け付けられるが、組み込みドライバではまだ適用されない）|
+| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数（受け付けられるが、組み込みドライバではまだ適用されない）|
 
 ### ドライバオプション
 
@@ -167,7 +167,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 
 | キー | 説明 |
 |------|------|
-| `max_length` | 境界バッファサイズ（0 = 無制限）|
+| `max_length` | 境界バッファサイズ（0 または未設定 = デフォルト 1000）|
 
 **amqp：**
 
@@ -215,7 +215,7 @@ AMQP ドライバは、発行されるメッセージに対応する `content-ty
 | `queue` | 必須 | キューレジストリ ID |
 | `func` | 必須 | ハンドラ関数レジストリ ID |
 | `concurrency` | 1 | 並列ワーカー数 |
-| `prefetch` | 10 | ワーカーごとのバッファサイズ |
+| `prefetch` | 10 | 配信バッファの合計 / ワーカー間で共有される最大処理中メッセージ数 |
 | `auto_ack` | false | true の場合、ランタイムはブローカー ack を呼び出さない；ハンドラの成功/失敗が唯一の settle シグナル |
 | `driver_options` | - | ドライバごとのサブバッグ（キューと同じ構造）|
 
@@ -262,7 +262,7 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return false  -- nack: ドライバに応じて再配信
     end
     return true       -- ack: remove from queue
 end
@@ -287,14 +287,14 @@ return { main = main }
 | ハンドラ結果 | アクション |
 |-------------|----------|
 | `true` または非 `false` の戻り値 | Ack |
-| `false` | Nack（ドライバに応じて再配信または dead-letter）|
+| `false` | Nack（ドライバに応じて再配信）|
 | 投げられたエラー | Nack |
 
 早期 settle のためにのみ `msg:ack()` または `msg:nack()` を明示的に呼び出してください。Settlement はシングルショット：最初に到着した呼び出しが優先されます。
 
 ### Dead-Letter ルーティング
 
-キューに `dead_letter` が設定されている場合、`max_attempts` を超えて nack されたメッセージは、ドライバによって設定された `x_dead_letter_reason` と `x_original_queue` ヘッダ付きで DLQ にルーティングされます。発行者は `x_*` ヘッダを設定してはいけません。これらは DLQ の記録用に予約されています。
+Dead-letter ルーティングはまだ実装されていません。`dead_letter` ブロック（[キュー設定](#queue-configuration)を参照）は設定として受け付けられますが、現時点で試行回数を数え、nack されたメッセージを設定済みの DLQ にルーティングし、`x_dead_letter_*` ヘッダを設定する組み込みドライバはありません。nack されたメッセージはドライバ自身のポリシーに従って再配信されます。`x_*` ヘッダ名前空間は将来の DLQ 記録用に予約されているため、発行者は `x_*` ヘッダを設定しないでください。
 
 ## メッセージの発行
 

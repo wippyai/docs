@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## コンシューマパターン
 
-キューコンシューマはペイロードを直接受け取るエントリポイントとして定義します:
+`queue.consumer`エントリは、キューをハンドラ関数（`func`で参照）に結び付けます。ハンドラはメッセージペイロードを直接受け取ります:
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

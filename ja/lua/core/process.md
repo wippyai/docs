@@ -135,8 +135,7 @@ local events = process.events()  -- @eventsトピックからのライフサイ�
 |-------|------|-------------|
 | `kind` | string | イベントタイプ定数 |
 | `from` | string | ソースPID |
-| `result` | any | EXIT用: 返された値（正常終了時に存在） |
-| `error` | any | EXIT用: エラー（異常終了時に存在） |
+| `result` | table | EXIT/LINK_DOWN用: {value, error} レコード。プロセスの戻り値は `result.value`、エラーは `result.error` にある |
 | `reason` | string | CANCEL用: プロセスがキャンセルされている理由 |
 | `sources` | string[] | OUTDATED用: 変更された、または推移的に影響を受けたレジストリID |
 

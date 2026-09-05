@@ -69,7 +69,7 @@ description: "Полный справочник всех типов записе
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Эндпоинт
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Базы данных
@@ -248,13 +249,18 @@ local queue = require("queue")
 -- Публикация сообщения
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- В обработчике — доступ к текущему сообщению
-local msg = queue.message()
-local data = msg:body_json()
+-- В обработчике потребителя: тело сообщения — аргумент обработчика
+local function main(data)
+    -- доступ к метаданным доставки через текущее сообщение
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-Функция <code>func</code> потребителя вызывается для каждого сообщения. Используйте <code>queue.message()</code> внутри обработчика для доступа к текущему сообщению.
+Функция <code>func</code> потребителя вызывается один раз на сообщение, получая тело сообщения аргументом. Используйте <code>queue.message()</code> внутри обработчика для <code>id()</code> доставки, <code>header()</code>/<code>headers()</code> и <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Управление процессами
@@ -264,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | Хост выполнения процессов |
 | `process.service` | Супервизируемый процесс (обёртка над process.lua) |
 | `terminal.host` | Хост терминала/CLI |
+| `pg.scope` | Область группы процессов (см. [Группы процессов](system/process-groups.md)) |
 
 ```yaml
 # Хост процессов (где выполняются процессы)
@@ -374,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -391,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- в секундах, по умолчанию 3600
 ```
 
 <tip>

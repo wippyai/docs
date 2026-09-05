@@ -372,6 +372,8 @@ flow.create()
 }
 ```
 
+`input` 仅在第一次迭代时携带工作流输入，之后为 `nil`；需要跨迭代保留的内容请存入 `state`。
+
 该函数控制是否继续：
 
 ```lua
@@ -386,8 +388,9 @@ function my_cycle(cycle_context)
     end
 
     -- spawn child workflow for this iteration
+    -- task 从 state 读取，因为第一次迭代之后 cycle_context.input 为 nil
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()

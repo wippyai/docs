@@ -16,7 +16,6 @@ Stellen Sie statische Dateien aus jedem Dateisystem mit `http.static` bereit. St
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ Stellen Sie statische Dateien aus jedem Dateisystem mit `http.static` bereit. St
 | `meta.server` | Registry-ID | Übergeordneter HTTP-Server |
 | `path` | string | URL-Mount-Pfad (muss mit `/` beginnen) |
 | `fs` | Registry-ID | Dateisystem-Eintrag zum Bereitstellen |
-| `directory` | string | Unterverzeichnis innerhalb des Dateisystems |
 | `static_options.spa` | bool | SPA-Modus - Index für nicht gematchte Pfade bereitstellen |
 | `static_options.index` | string | Index-Datei (erforderlich wenn spa=true) |
 | `static_options.cache` | string | Cache-Control-Header-Wert |
@@ -61,16 +59,20 @@ entries:
 
 Anfrage `/static/css/style.css` stellt `./public/css/style.css` bereit.
 
-Das `directory`-Feld wählt ein Unterverzeichnis innerhalb des Dateisystems aus:
+Um ein Unterverzeichnis bereitzustellen, richten Sie die `fs`-Referenz auf einen Dateisystem-Eintrag, der dort verwurzelt ist - zum Beispiel ein `fs.directory` mit `directory:` auf das Unterverzeichnis gesetzt:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA-Modus
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

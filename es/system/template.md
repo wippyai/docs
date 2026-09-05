@@ -31,6 +31,9 @@ Toda la configuración es opcional con valores por defecto sensatos:
 | `engine.development_mode` | bool | false | Deshabilitar caché de plantillas |
 | `engine.delimiters.left` | string | `{{` | Delimitador de apertura de variable |
 | `engine.delimiters.right` | string | `}}` | Delimitador de cierre de variable |
+| `engine.delimiters.comment_left` | string | `{*` | Delimitador de apertura de comentario |
+| `engine.delimiters.comment_right` | string | `*}` | Delimitador de cierre de comentario |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Extensiones de archivo de plantilla |
 | `engine.globals` | map | - | Variables disponibles para todas las plantillas |
 
 ## Plantillas
@@ -52,7 +55,7 @@ Las plantillas pertenecen a un conjunto y se identifican por nombre para resoluc
   source: |
     {{ extends "layout" }}
     {{ block content() }}
-      <h1>Bienvenido, {{ name }}</h1>
+      <h1>Welcome, {{ name }}</h1>
     {{ end }}
 ```
 
@@ -76,7 +79,7 @@ Las plantillas se referencian entre sí usando nombres, no IDs de registro. La r
     name: welcome
   source: |
     {{ include "header" }}
-    Hola {{ user }}!
+    Hello {{ user }}!
 ```
 
 Esta plantilla se registra como `welcome` en el conjunto, así que otras plantillas usan `{{ include "welcome" }}` o `{{ extends "welcome" }}`.
@@ -102,8 +105,8 @@ Las plantillas pueden extender plantillas padre y sobrescribir bloques:
   set: app.views:views
   source: |
     {{ extends "base" }}
-    {{ block title() }}Mi Página{{ end }}
-    {{ block body() }}<p>Contenido aquí</p>{{ end }}
+    {{ block title() }}My Page{{ end }}
+    {{ block body() }}<p>Content here</p>{{ end }}
 ```
 
 ## API Lua

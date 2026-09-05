@@ -126,7 +126,8 @@ pool:
 
 ```lua
 local contract = require("contract")
-local email = contract.get("app.email:sender")
+local sender = contract.get("app.email:sender")
+local email = sender:open("app.email:sender_impl")
 email:send({to = "user@example.com", subject = "Hello"})
 ```
 

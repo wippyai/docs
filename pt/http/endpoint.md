@@ -102,12 +102,11 @@ Capture caminho restante com `{path...}`:
   func: serve_file
 ```
 
+Esse segmento catch-all faz a rota corresponder a requisições como `/files/docs/readme.md`. A cauda capturada é lida como qualquer outro parâmetro, sob o nome sem os pontos finais:
+
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## Função Handler
@@ -295,7 +294,22 @@ entries:
 
 ### Endpoint Protegido
 
+O middleware de autorização é configurado no roteador pai, não no endpoint. Middleware pós-match (como `endpoint_firewall`) executa após o match de rota e se aplica a todos os endpoints sob o roteador:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -303,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## Veja Também

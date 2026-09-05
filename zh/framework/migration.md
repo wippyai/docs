@@ -102,11 +102,11 @@ end)
 | `meta.timestamp` | 否 | ISO-8601 时间戳，用于在多个迁移针对同一数据库时排序 |
 | `meta.tags` | 否 | 标签数组；运行器可按标签过滤迁移 |
 
-某个数据库的迁移按 `meta.timestamp` 升序运行。
+某个数据库的迁移按 `meta.timestamp` 升序运行。`meta.timestamp` 是可选的；完整条目 id 作为并列时的决胜依据，因此时间戳相同或缺失的迁移仍会以稳定、确定的顺序运行。
 
 ## DSL
 
-在传递给 `migration.define` 的函数内部，可使用三个嵌套函数：
+在传递给 `migration.define` 的函数内部，可使用以下嵌套函数：
 
 | 函数 | 说明 |
 |----------|-------------|
@@ -156,7 +156,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- apply all pending migrations
 local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- roll back the most recently applied migration
 local status = runner:status()   -- list applied + pending migrations
 ```
 
@@ -185,15 +185,41 @@ local status = runner:status()   -- list applied + pending migrations
 
 ### `runner:rollback(options)`
 
-按 id 回滚单个迁移（必填）：
+按与应用相反的顺序回滚已应用的迁移。不带选项时，它只回滚最近应用的那一个迁移：
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- roll back the last migration
+runner:rollback({ count = 3 })                               -- roll back the last 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
 ```
+
+选项：
+
+| 选项 | 说明 |
+|--------|-------------|
+| `count` | 要回滚的迁移数量；默认为 `1` |
+| `allowed_ids` | 迁移 id 数组；只有这些 id 有资格被回滚 |
 
 ### `runner:status(options)`
 
-返回 `{ applied = {...}, pending = {...} }`，分别按 `applied_at` 和 `meta.timestamp` 排序。
+返回描述该数据库每个迁移的状态报告：
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+已应用的迁移排在前面（按 `applied_at` 排序），随后是待执行的迁移（按 `meta.timestamp` 排序，然后按 id 排序）。
 
 ## 注册表 API
 
@@ -210,7 +236,7 @@ runner:rollback({ id = "app:01_create_users_table" })
 
 ## 迁移跟踪
 
-运行器首次执行时会在每个目标数据库中创建 `wippy_migrations` 表。已应用的迁移按 id 记录，后续运行会跳过它们。该跟踪表会自动创建；请勿编写自己的迁移来创建它。
+运行器首次执行时会在每个目标数据库中创建 `_migrations` 表。已应用的迁移按 id 记录，后续运行会跳过它们。该跟踪表会自动创建；请勿编写自己的迁移来创建它。
 
 ## 最佳实践
 

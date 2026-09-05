@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-Das Standard-Maximum fuer elastische Pools betraegt 100 Worker, wenn `max_size` nicht angegeben ist.
+Der Standard von 100 Workern gilt nur fuer den implizit gewaehlten Pool (wenn kein `type` gesetzt ist). Wird `type: lazy` oder `type: adaptive` explizit ohne `max_size` gesetzt, betraegt das Standard-Maximum 16 Worker.
 
 ### Worker-Klassen und Core-Affinitaet
 

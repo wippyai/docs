@@ -1,25 +1,18 @@
 ---
-title: "Linguagem de Expressao"
+title: "Linguagem de Expressão"
 description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
 ---
 
-# Linguagem de Expressao
+# Linguagem de Expressão
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Avalie expressoes dinamicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressoes seguras para filtragem, validação e avaliação de regras sem execução Lua completa.
+Avalie expressões dinâmicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressões seguras para filtragem, validação e avaliação de regras sem execução Lua completa.
 
-## Configuração
+## Cache
 
-O cache de expressoes e configurado no boot:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Habilitar cache de expressoes
-    capacity: 5000        # Capacidade do cache
-```
+`expr.eval` mantém um cache LRU interno de expressões compiladas (capacidade padrão 1000). O cache é embutido no módulo e não requer configuração.
 
 ## Carregamento
 
@@ -27,21 +20,21 @@ lua:
 local expr = require("expr")
 ```
 
-## Avaliando Expressoes
+## Avaliando Expressões
 
-Avaliar uma string de expressao e retornar o resultado. Usa cache LRU interno para expressoes compiladas:
+Avaliar uma string de expressão e retornar o resultado. Usa cache LRU interno para expressões compiladas:
 
 ```lua
--- Matematica simples
+-- Matemática simples
 local result = expr.eval("1 + 2 * 3")  -- 7
 
--- Com variaveis
+-- Com variáveis
 local total = expr.eval("price * quantity", {
     price = 29.99,
     quantity = 3
 })  -- 89.97
 
--- Expressoes booleanas
+-- Expressões booleanas
 local is_adult = expr.eval("age >= 18", {age = 21})  -- true
 
 -- Operações com string
@@ -50,7 +43,7 @@ local greeting = expr.eval('name + " is " + status', {
     status = "online"
 })  -- "Alice is online"
 
--- Operador ternario
+-- Operador ternário
 local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
 })  -- "B"
@@ -63,14 +56,14 @@ local has_admin = expr.eval('"admin" in roles', {
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `expression` | string | Expressao em sintaxe expr-lang |
-| `env` | table | Ambiente de variaveis para expressao (opcional) |
+| `expression` | string | Expressão em sintaxe expr-lang |
+| `env` | table | Ambiente de variáveis para expressão (opcional) |
 
 **Retorna:** `any, error`
 
-## Compilando Expressoes
+## Compilando Expressões
 
-Compilar uma expressao em um objeto Program reutilizavel para avaliação repetida:
+Compilar uma expressão em um objeto Program reutilizável para avaliação repetida:
 
 ```lua
 -- Compilar uma vez para uso repetido
@@ -87,14 +80,14 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `expression` | string | Expressao em sintaxe expr-lang |
+| `expression` | string | Expressão em sintaxe expr-lang |
 | `env` | table | Ambiente de tipos para compilação (opcional) |
 
 **Retorna:** `Program, error`
 
 ## Executando Programas Compilados
 
-Executar uma expressao compilada com ambiente fornecido:
+Executar uma expressão compilada com ambiente fornecido:
 
 ```lua
 -- Regra de validação
@@ -118,7 +111,7 @@ local order_total = pricer:run({
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `env` | table | Ambiente de variaveis para expressao (opcional) |
+| `env` | table | Ambiente de variáveis para expressão (opcional) |
 
 **Retorna:** `any, error`
 
@@ -127,7 +120,7 @@ local order_total = pricer:run({
 Expr-lang fornece muitas funções built-in:
 
 ```lua
--- Funções matematicas
+-- Funções matemáticas
 expr.eval("max(1, 5, 3)")        -- 5
 expr.eval("min(10, 2, 8)")       -- 2
 expr.eval("abs(-42)")            -- 42
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- Funções de array
 expr.eval("len(items)", {items = {1,2,3}})  -- 3
@@ -150,9 +143,10 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Expressao vazia | `errors.INVALID` | não |
-| Sintaxe de expressao invalida | `errors.INTERNAL` | não |
-| Avaliação de expressao falhou | `errors.INTERNAL` | não |
-| Conversao de resultado falhou | `errors.INTERNAL` | não |
+| Expressão vazia | `errors.INVALID` | não |
+| Sintaxe de expressão inválida | `errors.INTERNAL` | não |
+| Avaliação de expressão falhou | `errors.INTERNAL` | não |
+| Conversão de resultado falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+

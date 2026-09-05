@@ -119,7 +119,7 @@ Variablen bieten benannten Zugriff auf Speicherwerte.
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | Eigenschaft | Typ | Beschreibung |
@@ -127,7 +127,7 @@ Variablen bieten benannten Zugriff auf Speicherwerte.
 | `variable` | string | Öffentlicher Variablenname (optional, muss eindeutig sein) |
 | `storage` | string | Speicherreferenz (`namespace:name`) |
 | `default` | string | Standardwert wenn nicht gefunden |
-| `read_only` | boolean | Änderungen verhindern |
+| `readonly` | boolean | Änderungen verhindern |
 
 ### Variablenbenennung
 
@@ -149,9 +149,30 @@ Variablennamen dürfen nur enthalten: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
-## Konfigurationsreferenzen in Einträgen
+## Platzhalter-Interpolation
 
-Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfiguration gezogen; `NAME` ist der öffentliche Name einer Variable oder ihre Entry-ID.
+Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfiguration gezogen und beim Dekodieren zentral gegen diese Registry aufgelöst. Jedes String-Feld in den Daten eines Eintrags darf eine Variable auf diese Weise referenzieren.
+
+| Syntax | Bedeutung |
+|--------|-----------|
+| `${env:NAME}` | `NAME` über die env-Registry auflösen; Fehler, wenn nicht gesetzt und kein Default vorhanden |
+| `${env:NAME\|default}` | `NAME` auflösen, mit Rückfall auf `default`, wenn nicht gesetzt |
+| `${NAME\|default}` | Kurzform; `NAME` muss Upper-Snake sein (`A-Z0-9_`) und das `\|default` ist erforderlich — ein bloßes `${VAR}` bleibt unangetastet, damit eingebettete Shell-/Template-Abschnitte nicht als Referenzen missverstanden werden |
+| `$${` | Wörtliches `${` (Escape) |
+
+`NAME` ist der öffentliche Name einer registrierten Variable oder deren Entry-ID (Registry-ID-Form mit Punkten/Doppelpunkten, z. B. `app.env:tls_cert`). Es ist **keine** rohe Betriebssystem-Umgebungsvariable: Ein Betriebssystemwert ist nur erreichbar, wenn unter diesem Namen eine von `env.storage.os` gestützte Variable registriert ist.
+
+```yaml
+- name: api
+  kind: http.service
+  addr: ":443"
+  tls:
+    mode: manual
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
+```
+
+Ein Feld, dessen gesamter Wert ein einzelner Platzhalter ist, übernimmt den typisierten Wert der Variable (zu bool/int/float gecastet, wenn ein typisierter Default angegeben ist); ein Platzhalter, der mit umgebendem Text gemischt ist, wird in einen String interpoliert. Der eigene `default` einer Variable hat Vorrang vor dem inline angegebenen `|default` des Platzhalters. Eine Referenz, die zu nichts aufgelöst wird und keinen Default hat, lässt das Dekodieren fehlschlagen.
 
 Die Auflösung geschieht nur zur Dekodierzeit: Der gespeicherte Registry-Eintrag behält die rohen Platzhalter, sodass aufgelöste Secrets nie in `registry.get`-Ergebnissen oder persistiertem Zustand erscheinen. Einträge, die `${env:...}` referenzieren, ordnen sich beim Boot automatisch hinter den env-Speichern und -Variablen ein, von denen sie abhängen.
 

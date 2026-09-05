@@ -385,6 +385,9 @@ end
 
 ```lua
 local function linker_child_main()
+    -- LINK_DOWN 이벤트를 받기 위해 trap_links 활성화
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -671,14 +674,14 @@ wippy init
 wippy run
 ```
 
-슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 워커 중 하나가 죽으면 재시작을 기록합니다. 다른 프로세스에서 워커를 종료하여 재시작을 트리거합니다:
+슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 워커 중 하나가 죽으면 재시작을 기록합니다. `LINK_DOWN`은 링크된 프로세스가 에러로 종료될 때만 전달되므로, 다른 프로세스에서 워커를 강제 종료하여 재시작을 트리거합니다:
 
 ```lua
 -- 임시 프로세스나 채팅 명령어에서
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-풀은 `LINK_DOWN`을 받고 100ms를 기다린 후 같은 id로 워커를 다시 스폰합니다.
+풀은 `LINK_DOWN`을 받고 100ms를 기다린 후 같은 id로 워커를 다시 스폰합니다. 그레이스풀한 `process.cancel()`은 워커를 정상 종료시키며, 이 경우 `LINK_DOWN`이 발생하지 않으므로 재시작도 트리거되지 않습니다.
 
 ## 다음 단계
 

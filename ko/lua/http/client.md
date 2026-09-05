@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | 최대 응답 크기 바이트 (0 = 기본값) |
 | `unix_socket` | string | Unix 소켓 경로로 연결 |
 | `tls` | table | 요청별 TLS 설정 ([TLS 옵션](#tls-옵션) 참조) |
+| `overlay_network` | string | [네트워크 오버레이](system/network.md)를 통해 라우팅 — `network.socks5` / `network.tailscale` / `network.i2p` 엔트리의 레지스트리 ID |
 
 ### 쿼리 파라미터
 

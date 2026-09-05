@@ -109,7 +109,8 @@ Acesso a ambiente está sujeito a avaliação de política de segurança.
 |------|---------|-----------|
 | `env.get` | Nome da variavel | Ler variavel de ambiente |
 | `env.set` | Nome da variavel | Escrever variavel de ambiente |
-| `env.get_all` | `*` | Listar todas as variaveis |
+
+`get_all` não tem ação de segurança dedicada: retorna apenas as variaveis para as quais a ação `env.get` é permitida, filtrando cada nome de variavel através de `env.get`.
 
 ### Verificando Acesso
 

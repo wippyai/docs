@@ -59,8 +59,9 @@ type Registry struct {
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (プロセスグループ) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | ユーザー定義サービス |
 
 登録は`MustRegisterCommands()`経由でブート時に行われます。衝突はスタートアップ時にパニック。
@@ -70,7 +71,7 @@ type Registry struct {
 コマンドは一意の`CommandID`を持つデータ構造です：
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

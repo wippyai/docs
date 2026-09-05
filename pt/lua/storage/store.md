@@ -162,14 +162,14 @@ end
 ```lua
 -- cria apenas se a chave não existir
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- outra pessoa a detém
 end
 
 -- compare-and-set: escreve apenas se a versão ainda corresponder
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- um escritor concorrente a alterou; releia e tente novamente
 end
 ```
@@ -235,10 +235,12 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 | Ação | Recurso | Atributos | Descrição |
 |------|---------|-----------|-----------|
 | `store.get` | ID do Store | - | Adquirir um recurso store |
-| `store.key.get` | ID do Store | `key` | Ler valor de uma chave |
-| `store.key.set` | ID do Store | `key` | Escrever valor de uma chave |
+| `store.info` | ID do Store | - | Inspecionar capacidades do store |
+| `store.key.get` | ID do Store | `key` | Ler valor de uma chave (também `entry`) |
+| `store.key.set` | ID do Store | `key` | Escrever valor de uma chave (também `put`) |
 | `store.key.delete` | ID do Store | `key` | Deletar uma chave |
 | `store.key.has` | ID do Store | `key` | Verificar existencia de chave |
+| `store.key.list` | ID do Store | `prefix` | Listar entradas |
 
 ## Erros
 

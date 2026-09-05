@@ -32,7 +32,7 @@ YAML 定义在启动时加载到注册表中。注册表是唯一的数据源—
 
 ### 文件结构
 
-任何包含 `version` 和 `namespace` 的 YAML 文件都是有效的：
+任何包含 `namespace`、且带有 `entries` 数组或顶层 `name`+`kind` 的 YAML 文件都是有效的定义文件。`version` 是可选的：
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | 字段 | 必需 | 描述 |
 |------|------|------|
-| `version` | 是 | 架构版本（当前为 `"1.0"`） |
+| `version` | 否 | 架构版本（当前为 `"1.0"`） |
 | `namespace` | 是 | 此文件中记录的命名空间 |
 | `entries` | 是 | 记录定义数组 |
 
@@ -207,14 +207,17 @@ entries:
 项目根目录的运行时配置：
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 详见 [配置指南](guides/configuration.md)。
@@ -225,20 +228,24 @@ http:
 
 ## 引用记录
 
-通过完整 ID 或相对名称引用记录：
+通过完整 ID 或相对名称引用记录。子记录通过 `meta` 挂接到父记录，而不是由父记录一侧维护列表：
 
 ```yaml
-# 完整 ID（跨命名空间）
-- name: main.router
+# 路由器声明自己所属的服务器
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 同一命名空间 - 直接使用名称
+# 端点通过注册表 ID 引用路由器（跨命名空间的方式相同）
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## 示例项目

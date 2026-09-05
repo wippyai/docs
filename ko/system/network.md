@@ -41,7 +41,7 @@ description: "오버레이 네트워크(SOCKS5 프록시, Tor, Tailscale 메시,
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "오버레이 네트워크(SOCKS5 프록시, Tor, Tailscale 메시,
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `hostname` | string | tsnet 노드 이름 (노드별 상태 디렉토리에서 사용) |
-| `auth_key` | string | 인라인 tailnet 인증 키 |
-| `auth_key_env` | string | 인증 키를 담고 있는 환경 변수 이름 (env 레지스트리를 통해 해결) |
+| `auth_key` | string | Tailnet 인증 키 — 인라인 또는 [env 레지스트리](system/env.md)를 통해 해석되는 `${env:NAME}` |
 | `state_dir` | string | tsnet 상태 디렉토리 재정의 |
 | `control_url` | string | 대체 조정 서버 |
 | `ephemeral` | bool | 임시 tailnet 노드로 등록 |
 
-`auth_key` 또는 `auth_key_env` 중 하나가 필요합니다.
+`auth_key`는 필수입니다(직접 지정하거나 `${env:NAME}`으로 제공). 레거시 `auth_key_env` 디렉티브도 동일한 방식으로 해석되지만 더 이상 사용되지 않습니다. `auth_key: ${env:NAME}`을 사용하세요.
 
 ## I2P
 

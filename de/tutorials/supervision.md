@@ -385,6 +385,9 @@ Kind-Worker, der sich mit dem Elternteil verknüpft:
 
 ```lua
 local function linker_child_main()
+    -- trap_links aktivieren, um LINK_DOWN-Events zu empfangen
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -671,14 +674,14 @@ wippy init
 wippy run
 ```
 
-Der Supervisor startet automatisch, spawnt vier Worker und protokolliert Neustarts, wenn einer davon stirbt. Einen Neustart auslösen, indem ein Worker aus einem anderen Prozess beendet wird:
+Der Supervisor startet automatisch, spawnt vier Worker und protokolliert Neustarts, wenn einer davon stirbt. `LINK_DOWN` wird nur zugestellt, wenn ein verknüpfter Prozess mit einem Fehler endet; einen Neustart löst man daher aus, indem ein Worker aus einem anderen Prozess erzwungen beendet wird:
 
 ```lua
 -- in einem Ad-hoc-Prozess oder Chat-Befehl
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-Der Pool empfängt `LINK_DOWN`, wartet 100 ms und respawnt den Worker unter derselben ID.
+Der Pool empfängt `LINK_DOWN`, wartet 100 ms und respawnt den Worker unter derselben ID. Ein ordnungsgemäßes `process.cancel()` lässt den Worker sauber beenden, was kein `LINK_DOWN` auslöst und daher keinen Neustart anstößt.
 
 ## Nächste Schritte
 

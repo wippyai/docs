@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Textnachrichten
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- JSON senden
 client:send(json.encode({

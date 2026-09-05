@@ -34,7 +34,7 @@ entries:
       suite: math
       name: 수학 연산
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```
@@ -357,7 +357,7 @@ entries:
       type: test
       suite: math
     source: file://math_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 
@@ -367,7 +367,7 @@ entries:
       type: test
       suite: user
     source: file://user_test.lua
-    method: run
+    method: main
     imports:
       test: wippy.test:test
 ```

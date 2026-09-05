@@ -32,7 +32,7 @@ Las definiciones YAML se cargan en el registro al iniciar. El registro es la fue
 
 ### Estructura del Archivo
 
-Cualquier archivo YAML con `version` y `namespace` es válido:
+Cualquier archivo YAML con un `namespace` más un array `entries` o un `name`+`kind` de nivel superior es un archivo de definición válido. `version` es opcional:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `version` | sí | Versión del esquema (actualmente `"1.0"`) |
+| `version` | no | Versión del esquema (actualmente `"1.0"`) |
 | `namespace` | sí | Namespace de entradas para este archivo |
 | `entries` | sí | Array de definiciones de entradas |
 
@@ -207,14 +207,17 @@ Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para la referenci
 Configuración del runtime en la raíz del proyecto:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 Consulte la [Guía de Configuración](guides/configuration.md) para todas las opciones.
@@ -225,20 +228,24 @@ Directorios fuente y el grafo de módulos seleccionado — consulte [El Archivo 
 
 ## Referenciando Entradas
 
-Referencie entradas por ID completo o nombre relativo:
+Referencie entradas por ID completo o nombre relativo. Los hijos se vinculan a su padre a través de `meta`, no mediante listas del lado del padre:
 
 ```yaml
-# ID completo (cross-namespace)
-- name: main.router
+# El router se declara contra un servidor
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Mismo namespace - solo use el nombre
+# El endpoint referencia al router por ID de registro (cross-namespace funciona igual)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Proyecto de Ejemplo

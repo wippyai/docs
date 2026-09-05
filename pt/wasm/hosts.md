@@ -73,7 +73,7 @@ Polling assincrono. A interface poll permite yield cooperativo atraves do dispat
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Acesso a variaveis de ambiente, codigos de saida de processo e streams de I/O padrao. Variaveis de ambiente sao mapeadas a partir do registro de ambiente do Wippy atraves da configuracao WASI.
 
@@ -99,7 +99,7 @@ Geracao de numeros aleatorios criptograficamente seguros e inseguros.
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/network`, `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`
+**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 Rede TCP e UDP com resolucao DNS. Operacoes de socket suspendem o guest e executam atraves do dispatcher, que realiza cada dial, bind e lookup no [servico de rede](system/network.md).
 

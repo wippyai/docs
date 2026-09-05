@@ -135,8 +135,10 @@ Eintragsspeicherung und Versionshistorie. Die Registry enthält alle Konfigurati
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enable_history` | bool | true | Eintragsversionen verfolgen |
-| `history_type` | string | memory | Speicher: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad |
+| `history_type` | string | memory | Speicher: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad (verwendet bei `history_type: sqlite`) |
+| `history_dsn` | string | | Postgres-DSN (verwendet bei `history_type: postgres`) |
+| `history_schema` | string | | Postgres-Schemaname (verwendet bei `history_type: postgres`) |
 | `event_wait_timeout` | duration | 30s | Wartezeit pro Operation auf die Bestätigung durch Listener während eines Registry-Apply |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Entry-Typen, die intern behandelt statt an Komponenten-Listener verteilt werden |
 | `dependency_resolve_timeout` | duration | 0 (keins) | Grenze für die Auflösung von Abhängigkeiten |
@@ -148,6 +150,13 @@ Eintragsspeicherung und Versionshistorie. Die Registry enthält alle Konfigurati
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 Siehe: [Registry-Konzept](concepts/registry.md), [Registry-Modul](lua/core/registry.md)
@@ -186,7 +195,7 @@ Nachrichtenrouting zwischen Prozessen über Knoten hinweg.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `node_name` | string | local | Bezeichner für diesen Relay-Knoten |
+| `node_name` | string | abgeleitete instanzspezifische ID | Bezeichner für diesen Relay-Knoten (Standard: UUIDv5 aus machine-id/Hostname + Arbeitsverzeichnis; überschreibbar über `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -226,8 +235,10 @@ Lua-VM-Caching und Expression-Auswertung.
 | `proto_cache_size` | int | 60000 | Kompilierter Prototype-Cache |
 | `main_cache_size` | int | 10000 | Main-Chunk-Cache |
 | `cache.enabled` | bool | false | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren |
-| `cache.dir` | string | (System-Cache-Verzeichnis) | Cache-Verzeichnis-Pfad |
-| `cache.mode` | string | `read_write` | Cache-Modus: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache-Verzeichnis-Pfad (relativ zum Konfigurations-/Arbeitsverzeichnis) |
+| `cache.mode` | string | `readwrite` | Cache-Modus: `readwrite` (Standard), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Kompilierten Bytecode persistieren (bei `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Typecheck-Ergebnisse persistieren (bei `cache.enabled`) |
 | `type_system.enabled` | bool | false | Statische Typprüfung aktivieren |
 | `type_system.strict` | bool | false | Typwarnungen als Fehler behandeln |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Wartezeit auf die Bestätigung der Code-Invalidierung nach einer Eintragsänderung |
@@ -339,7 +350,7 @@ Prometheus-Metriken-Endpunkt.
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enabled` | bool | false | Metriken-Server starten |
-| `address` | string | localhost:9090 | Adresse zum Lauschen |
+| `address` | string | | Adresse zum Lauschen; muss explizit gesetzt werden, wenn `enabled: true`, sonst startet der Metriken-Server nicht |
 
 ```yaml
 prometheus:
@@ -581,7 +592,7 @@ extensions:
 
 | Variable | Beschreibung |
 |----------|--------------|
-| `GOMEMLIMIT` | Speicherlimit (überschreibt `--memory-limit` Flag) |
+| `GOMEMLIMIT` | Speicherlimit-Fallback, wenn das Flag `--memory-limit` nicht gesetzt ist (Vorrang: Flag `--memory-limit` > `GOMEMLIMIT` > Standard 1G) |
 
 ## Siehe auch
 

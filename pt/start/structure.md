@@ -32,7 +32,7 @@ Definições YAML são carregadas no registro na inicialização. O registro é 
 
 ### Estrutura do Arquivo
 
-Qualquer arquivo YAML com `version` e `namespace` é válido:
+Qualquer arquivo YAML com um `namespace` mais um array `entries` ou um `name`+`kind` no nível raiz é um arquivo de definição válido. `version` é opcional:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `version` | sim | Versão do schema (atualmente `"1.0"`) |
+| `version` | não | Versão do schema (atualmente `"1.0"`) |
 | `namespace` | sim | Namespace das entradas deste arquivo |
 | `entries` | sim | Array de definições de entradas |
 
@@ -207,14 +207,17 @@ Consulte o [Guia de Tipos de Entradas](guides/entry-kinds.md) para referência c
 Configuração do runtime na raiz do projeto:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 Consulte o [Guia de Configuração](guides/configuration.md) para todas as opções.
@@ -225,20 +228,24 @@ Diretórios fonte e o grafo de módulos selecionado — veja [O Arquivo de Lock]
 
 ## Referenciando Entradas
 
-Referencie entradas pelo ID completo ou nome relativo:
+Referencie entradas pelo ID completo ou nome relativo. Filhos se vinculam ao pai por meio de `meta`, não por listas do lado do pai:
 
 ```yaml
-# ID completo (cross-namespace)
-- name: main.router
+# O roteador se declara contra um servidor
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Mesmo namespace — apenas use o nome
+# O endpoint referencia o roteador pelo ID de registro (cross-namespace funciona da mesma forma)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Exemplo de Projeto

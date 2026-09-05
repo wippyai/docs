@@ -27,9 +27,10 @@ local u: unknown = something  -- must narrow before use
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
 
--- unknown: safe unknown, must narrow before use
+-- unknown: sicheres unknown, vor Verwendung als konkreter Typ eingrenzen
 local u: unknown = get_data()
-u.foo                        -- ERROR: cannot access property of unknown
+u.foo                        -- kein Fehler: Member-Zugriff auf unknown verhält sich wie any
+local n: number = u          -- ERROR: unknown nicht an number zuweisbar, zuerst eingrenzen
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ Verwende `!`, um zu beteuern, dass ein Ausdruck nicht nil ist:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- assert user is non-nil
+local name = (user!).name            -- assert user is non-nil
 ```
 
-Wenn der Wert zur Laufzeit nil ist, wird ein Fehler ausgelöst. Verwende dies, wenn du weißt, dass ein Wert nicht nil sein kann, der Typprüfer dies aber nicht beweisen kann.
+`!` ist ausschließlich eine Assertion für den Typprüfer - sie grenzt den Typ auf nicht-nil ein, erzeugt aber keine Laufzeitprüfung. Ist der Wert tatsächlich nil, schlägt die folgende Operation mit dem üblichen Fehler fehl (z. B. Indizierung von nil). Verwende dies, wenn du weißt, dass ein Wert nicht nil sein kann, der Typprüfer dies aber nicht beweisen kann.
 
 ## Typ-Casts
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- String pattern
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- No-arg validator
-local x: number @integer = 42
 ```
 
 ### Eingebaute Validatoren

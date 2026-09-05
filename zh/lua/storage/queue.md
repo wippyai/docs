@@ -98,17 +98,18 @@ local stats, err = queue.info("app:tasks")
 
 ## 消费者模式
 
-队列消费者定义为直接接收负载的入口点：
+`queue.consumer` 条目将队列绑定到一个处理函数（通过 `func` 引用）。处理函数直接接收消息负载：
 
 ```yaml
 entries:
   - kind: queue.consumer
     id: email_worker
     queue: app:emails
-    method: handle_email
+    func: app:email_handler
 ```
 
 ```lua
+-- app:email_handler
 function handle_email(payload)
     local msg = queue.message()
 

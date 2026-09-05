@@ -135,7 +135,7 @@ security:
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `enable_history` | bool | true | エントリバージョンを追跡 |
-| `history_type` | string | memory | ストレージ: memory, sqlite, nil |
+| `history_type` | string | memory | ストレージ: `memory`、`sqlite`、`postgres`、`nil` |
 | `history_path` | string | .wippy/registry.db | SQLiteファイルパス（`history_type: sqlite` の場合に使用）|
 | `history_dsn` | string | | Postgres DSN（`history_type: postgres` の場合に使用）|
 | `history_schema` | string | | Postgres スキーマ名（`history_type: postgres` の場合に使用）|
@@ -150,6 +150,13 @@ security:
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 参照: [レジストリコンセプト](concepts/registry.md), [レジストリモジュール](lua/core/registry.md)
@@ -188,7 +195,7 @@ workspace:
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `node_name` | string | local | このリレーノードの識別子 |
+| `node_name` | string | インスタンスごとに導出される ID | このリレーノードの識別子（デフォルト: machine-id/ホスト名 + 作業ディレクトリの UUIDv5。`WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` で上書き可能）|
 
 ```yaml
 relay:
@@ -228,8 +235,10 @@ Lua VMキャッシュと式評価。
 | `proto_cache_size` | int | 60000 | コンパイル済みプロトタイプキャッシュ |
 | `main_cache_size` | int | 10000 | メインチャンクキャッシュ |
 | `cache.enabled` | bool | false | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化 |
-| `cache.dir` | string | （システムキャッシュディレクトリ） | キャッシュディレクトリパス |
-| `cache.mode` | string | `read_write` | キャッシュモード: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | キャッシュディレクトリパス（設定/作業ディレクトリからの相対）|
+| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off` |
+| `cache.compile.enabled` | bool | true | コンパイル済みバイトコードを永続化（`cache.enabled` の場合）|
+| `cache.typecheck.enabled` | bool | true | 型チェック結果を永続化（`cache.enabled` の場合）|
 | `type_system.enabled` | bool | false | 静的型チェックを有効化 |
 | `type_system.strict` | bool | false | 型警告をエラーとして扱う |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s）| エントリ変更後、コードの無効化が確認応答されるまでの待機時間 |

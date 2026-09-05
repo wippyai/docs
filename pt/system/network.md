@@ -41,7 +41,7 @@ Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposiç�
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ Roteia o tráfego de saída e vincula ouvintes através de redes de sobreposiç�
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
 | `hostname` | string | Nome do nó tsnet (usado no diretório de estado por nó) |
-| `auth_key` | string | Chave de autenticação tailnet inline |
-| `auth_key_env` | string | Nome da variável de ambiente contendo a chave de autenticação (resolvida via registro env) |
+| `auth_key` | string | Chave de autenticação tailnet — inline ou `${env:NAME}` resolvida via o [registro env](system/env.md) |
 | `state_dir` | string | Sobrescrita do diretório de estado tsnet |
 | `control_url` | string | Servidor de coordenação alternativo |
 | `ephemeral` | bool | Registrar como nó tailnet efêmero |
 
-É necessário `auth_key` ou `auth_key_env`.
+`auth_key` é obrigatório (forneça-o diretamente ou via `${env:NAME}`). A diretiva legada `auth_key_env` resolve da mesma forma, mas está obsoleta; prefira `auth_key: ${env:NAME}`.
 
 ## I2P
 
@@ -120,7 +119,7 @@ Drivers de overlay leem configuracoes a nivel de app a partir de um bloco `netwo
 ```yaml
 network_service:
   state_dir: .wippy/net          # Diretorio base para o estado do driver (chaves do Tailscale, etc.)
-  default_network: app.net:tailnet  # Overlay usado quando nenhuma chamada define um
+  default_network: app.net:tailnet  # Overlay aplicado quando nenhuma chamada define um
 ```
 
 | Campo | Padrao | Descricao |

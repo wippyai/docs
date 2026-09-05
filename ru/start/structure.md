@@ -32,7 +32,7 @@ YAML-определения загружаются в реестр при ста
 
 ### Структура файла
 
-Любой YAML с полями `version` и `namespace` считается валидным:
+Любой YAML-файл с `namespace` и либо массивом `entries`, либо `name`+`kind` на верхнем уровне считается валидным файлом определений. `version` необязателен:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | Поле | Обязательно | Описание |
 |------|-------------|----------|
-| `version` | да | Версия схемы (сейчас `"1.0"`) |
+| `version` | нет | Версия схемы (сейчас `"1.0"`) |
 | `namespace` | да | Пространство имён для записей |
 | `entries` | да | Массив определений записей |
 
@@ -207,14 +207,17 @@ entries:
 Конфигурация среды исполнения в корне проекта:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 Подробнее в [руководстве по конфигурации](guides/configuration.md).
@@ -225,20 +228,24 @@ http:
 
 ## Ссылки на записи
 
-Ссылайтесь по полному ID или относительному имени:
+Ссылайтесь по полному ID или относительному имени. Дочерние записи привязываются к родителю через `meta`, а не через списки на стороне родителя:
 
 ```yaml
-# Полный ID (между пространствами имён)
-- name: main.router
+# Роутер объявляет себя относительно сервера
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# В том же пространстве — просто имя
+# Эндпоинт ссылается на роутер по ID в реестре (между пространствами имён — так же)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Пример проекта

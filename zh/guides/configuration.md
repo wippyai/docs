@@ -135,8 +135,10 @@ security:
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enable_history` | bool | true | 跟踪入口版本 |
-| `history_type` | string | memory | 存储类型：memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite 文件路径 |
+| `history_type` | string | memory | 存储类型：`memory`、`sqlite`、`postgres`、`nil` |
+| `history_path` | string | .wippy/registry.db | SQLite 文件路径（`history_type: sqlite` 时使用） |
+| `history_dsn` | string | | Postgres DSN（`history_type: postgres` 时使用） |
+| `history_schema` | string | | Postgres schema 名称（`history_type: postgres` 时使用） |
 | `event_wait_timeout` | duration | 30s | 注册表应用期间，每次操作等待监听器确认的时长 |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | 由内部处理而不派发给组件监听器的记录类型 |
 | `dependency_resolve_timeout` | duration | 0（无） | 依赖解析的时间上限 |
@@ -148,6 +150,13 @@ security:
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 参见：[注册表概念](concepts/registry.md)、[Registry 模块](lua/core/registry.md)
@@ -186,7 +195,7 @@ workspace:
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `node_name` | string | local | 中继节点标识符 |
+| `node_name` | string | 按实例派生的 ID | 此中继节点的标识符（默认：machine-id/hostname + 工作目录的 UUIDv5；可通过 `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` 覆盖） |
 
 ```yaml
 relay:
@@ -226,8 +235,10 @@ Lua 虚拟机缓存和表达式求值。
 | `proto_cache_size` | int | 60000 | 编译原型缓存 |
 | `main_cache_size` | int | 10000 | 主块缓存 |
 | `cache.enabled` | bool | false | 将编译后的字节码/类型检查缓存持久化到磁盘 |
-| `cache.dir` | string | （系统缓存目录） | 缓存目录路径 |
-| `cache.mode` | string | `read_write` | 缓存模式：`read_write`、`read_only`、`write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | 缓存目录路径（相对于配置/工作目录） |
+| `cache.mode` | string | `readwrite` | 缓存模式：`readwrite`（默认）、`readonly`、`off` |
+| `cache.compile.enabled` | bool | true | 持久化编译后的字节码（当 `cache.enabled` 时） |
+| `cache.typecheck.enabled` | bool | true | 持久化类型检查结果（当 `cache.enabled` 时） |
 | `type_system.enabled` | bool | false | 启用静态类型检查 |
 | `type_system.strict` | bool | false | 将类型警告视为错误 |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s） | 记录变更后等待代码失效被确认的时长 |
@@ -339,7 +350,7 @@ Prometheus 指标端点。
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | bool | false | 启动指标服务 |
-| `address` | string | localhost:9090 | 监听地址 |
+| `address` | string | | 监听地址；`enabled: true` 时必须显式设置，否则指标服务器不会启动 |
 
 ```yaml
 prometheus:
@@ -581,7 +592,7 @@ extensions:
 
 | 变量 | 说明 |
 |------|------|
-| `GOMEMLIMIT` | 内存限制（覆盖 `--memory-limit` 参数） |
+| `GOMEMLIMIT` | 未设置 `--memory-limit` 参数时的内存限制回退值（优先级：`--memory-limit` 参数 > `GOMEMLIMIT` > 默认 1G） |
 
 ## 另请参阅
 

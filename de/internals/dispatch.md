@@ -46,7 +46,7 @@ System-Commands (0-255) verwenden Array-Indexierung. Erweiterte Commands verwend
 |---------|-------|-----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
+| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
 | 50-59 | stream | Read, Write, Close, Seek |
 | 60-69 | http | Request, RequestBatch |
 | 70-79 | tty | Terminal-E/A |
@@ -59,8 +59,9 @@ System-Commands (0-255) verwenden Array-Indexierung. Erweiterte Commands verwend
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (Prozessgruppe) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Benutzerdefinierte Services |
 
 Registrierung erfolgt während Boot via `MustRegisterCommands()`. Kollisionen verursachen Panic beim Start.
@@ -70,7 +71,7 @@ Registrierung erfolgt während Boot via `MustRegisterCommands()`. Kollisionen ve
 Commands sind Datenstrukturen mit einer eindeutigen `CommandID`:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

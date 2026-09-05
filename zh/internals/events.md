@@ -184,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -232,21 +232,24 @@ defer router.Stop()
 
 每个 handler 实现 `Pattern()` 和 `Handle()`。Router 为每个创建 Subscriber，并在 Stop 时关闭所有。
 
-### Awaiter
+### AwaitService
 
-同步等待特定事件：
+基于 pub/sub 的请求-响应。它为每个 `(system, kind)` 对只保留一个订阅，并按 `Path` 将事件路由给等待者：
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // 阻塞直到匹配或超时
+result := waiter.Wait()  // 返回 AwaitResult{Event, Accepted, Error}
 ```
 
-Prepare-then-Wait 模式避免竞态条件：在触发产生响应的事件之前订阅。
+`Prepare` 在发送触发事件之前注册等待者，避免响应先于等待注册到达的竞态。`Wait` 阻塞直到匹配 `Path` 的事件到达或超时（超时为非正值时使用默认 `DefaultAwaitTimeout`，即 30 秒）。当事件 kind 为 `accept`、`*.accept` 或 `*.accepted` 时 `Accepted` 为 true；否则该 kind 视为拒绝，`Data` 中的任何 `error` 会以 `Error` 形式返回。便捷方法 `Await(ctx, system, kind, path, timeout)` 将 Prepare 和 Wait 合二为一。启动基础设施会在上下文中注册一个 AwaitService（`event.GetAwaitService`）。
 
 ## 关闭
 

@@ -16,7 +16,6 @@ description: "使用 http.static 从任意文件系统提供静态文件。静�
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ description: "使用 http.static 从任意文件系统提供静态文件。静�
 | `meta.server` | Registry ID | 父级 HTTP 服务器 |
 | `path` | string | URL 挂载路径 (必须以 `/` 开头) |
 | `fs` | Registry ID | 要提供服务的文件系统条目 |
-| `directory` | string | 文件系统中的子目录 |
 | `static_options.spa` | bool | SPA 模式 - 未匹配路径返回 index 文件 |
 | `static_options.index` | string | Index 文件 (spa=true 时必填) |
 | `static_options.cache` | string | Cache-Control 头的值 |
@@ -61,16 +59,20 @@ entries:
 
 请求 `/static/css/style.css` 会提供 `./public/css/style.css`。
 
-`directory` 字段选择文件系统中的子目录：
+要提供某个子目录，请将 `fs` 引用指向以该目录为根的文件系统条目——例如一个 `directory:` 设为该子目录的 `fs.directory`：
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA 模式
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

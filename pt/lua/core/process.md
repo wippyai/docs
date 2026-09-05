@@ -73,7 +73,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 local ok, err = process.terminate(destination)
 
 -- Solicitar cancelamento gracioso com motivo opcional
-local ok, err = process.cancel(destination, "encerrando")
+local ok, err = process.cancel(destination, "shutting down")
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -135,8 +135,7 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
 | `from` | string | PID de origem |
-| `result` | any | Para EXIT: o valor retornado (presente em saída normal) |
-| `error` | any | Para EXIT: o erro (presente em saída anormal) |
+| `result` | table | Para EXIT/LINK_DOWN: um registro {value, error}; o valor de retorno do processo está em `result.value` e qualquer erro em `result.error` |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
 

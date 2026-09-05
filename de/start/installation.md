@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Schnellinstallation"
+description: "Die Wippy-Runtime installieren"
 ---
 
 # Installation
@@ -52,10 +52,16 @@ wippy install
 | `wippy pack` | Snapshot erstellen |
 | `wippy publish` | Zum Hub veröffentlichen |
 | `wippy search` | Nach Modulen suchen |
+| `wippy readme` | README eines Moduls aus dem Hub abrufen |
+| `wippy registry` | Geladene Registry-Einträge inspizieren |
 | `wippy auth` | Authentifizierung verwalten |
 | `wippy version` | Versionsinformationen ausgeben |
 
 Siehe [CLI-Referenz](guides/cli.md) für vollständige Dokumentation.
+
+## Fehlerbehebung
+
+Wird `wippy version` nach der Installation nicht gefunden, öffnen Sie Ihre Shell erneut oder prüfen Sie, ob das Installationsverzeichnis in Ihrem `PATH` liegt.
 
 ## Nächste Schritte
 

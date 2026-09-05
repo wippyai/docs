@@ -294,7 +294,22 @@ entries:
 
 ### 受保护端点
 
+授权中间件配置在父路由器上，而不是端点上。匹配后中间件（如 `endpoint_firewall`）在路由匹配之后运行，并作用于该路由器下的每个端点：
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -302,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## 参见

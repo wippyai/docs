@@ -1,9 +1,10 @@
 ---
 title: "テンプレートエンジン"
-description: "CloudyKit Jetを使用したテンプレートレンダリング。"
+description: "<secondary-label ref='external'/"
 ---
 
 # テンプレートエンジン
+<secondary-label ref="external"/>
 
 [CloudyKit Jet](https://github.com/CloudyKit/jet)を使用したテンプレートレンダリング。
 
@@ -30,6 +31,9 @@ description: "CloudyKit Jetを使用したテンプレートレンダリング�
 | `engine.development_mode` | bool | false | テンプレートキャッシュを無効化 |
 | `engine.delimiters.left` | string | `{{` | 変数開始デリミタ |
 | `engine.delimiters.right` | string | `}}` | 変数終了デリミタ |
+| `engine.delimiters.comment_left` | string | `{*` | コメント開始デリミタ |
+| `engine.delimiters.comment_right` | string | `*}` | コメント終了デリミタ |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | テンプレートファイルの拡張子 |
 | `engine.globals` | map | - | すべてのテンプレートで利用可能な変数 |
 
 ## テンプレート

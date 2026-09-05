@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-Declara la dependencia y apunta el requisito `target_db` a tu base de datos de aplicacion:
+Declara la dependencia y apunta el requisito `target_db` a tu base de datos de aplicacion mediante los `parameters` de la dependencia:
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-Al iniciar, `wippy/migration` toma la migracion `01_create_embeddings_table` y crea la tabla `embeddings` con el indice vectorial apropiado para tu driver de base de datos.
+Al iniciar, `wippy/migration` toma la migracion `01_create_embeddings_table` y crea la tabla `embeddings_512` con el indice vectorial apropiado para tu driver de base de datos.
 
 ## Constantes de Configuracion
 
@@ -86,7 +84,7 @@ Genera un embedding para `content` y lo persiste.
 | `context_id` | string | no | Clave de ambito adicional (seccion, chat, tenant) |
 | `meta` | table | no | Metadatos arbitrarios serializables a JSON |
 
-Retorna `{ id, content, content_type, origin_id, context_id, meta }` o `nil, err`.
+Retorna `{ entry_id, origin_id, content_type, context_id }` o `nil, err`.
 
 ### add_batch
 
@@ -151,8 +149,8 @@ Usa el repositorio directamente cuando ya tengas un vector y quieras omitir la g
 
 La migracion crea el esquema apropiado para el driver de base de datos en `target_db`:
 
-- **PostgreSQL** - Tabla `embeddings` con una columna `vector(512)` y un indice IVFFlat. Requiere la extension `pgvector`.
-- **SQLite** - Tabla `embeddings` con el vector almacenado como texto mas una tabla virtual `sqlite-vec` companera para busqueda KNN.
+- **PostgreSQL** - Tabla `embeddings_512` con una columna `vector(512)` y un indice IVFFlat. Requiere la extension `pgvector`.
+- **SQLite** - Tabla virtual `vec0` `embeddings_512` que contiene la columna vectorial `embedding float[512]` junto con las columnas de metadatos y contenido para busqueda KNN.
 
 Los vectores siempre se transportan como un array JSON plano en la capa de API.
 

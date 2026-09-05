@@ -135,8 +135,7 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 |------|------|------|
 | `kind` | string | 事件类型常量 |
 | `from` | string | 源 PID |
-| `result` | any | EXIT 时：返回的值（正常退出时存在） |
-| `error` | any | EXIT 时：错误（异常退出时存在） |
+| `result` | table | EXIT/LINK_DOWN 时：一个 {value, error} 记录；进程返回值位于 `result.value`，错误位于 `result.error` |
 | `reason` | string | CANCEL 时：进程被取消的原因 |
 | `sources` | string[] | OUTDATED 时：发生变更或受传递性影响的注册表 ID |
 

@@ -46,7 +46,7 @@ Konfigurieren Sie Timeouts um Ressourcenerschöpfung zu verhindern:
 
 ```yaml
 timeouts:
-  read: "10s"    # Max Zeit zum Lesen von Request-Headern
+  read: "10s"    # Max Zeit zum Lesen der gesamten Anfrage (Header + Body)
   write: "60s"   # Max Zeit zum Schreiben der Response
   idle: "120s"   # Keep-Alive-Timeout
 ```
@@ -163,11 +163,15 @@ entries:
 
 Der Server kann TLS direkt terminieren. Setzen Sie `tls.mode` auf `manual` (eigenes Zertifikat bereitstellen) oder `auto` (Zertifikat wird von einem Overlay-Netzwerktreiber bereitgestellt, z. B. `network.tailscale`). Reine Clearnet-Listener unterstützen `auto` nicht. Lassen Sie `tls` weg oder den Modus leer, um reines HTTP auszuführen.
 
-Im `auto`-Modus darf der Server `cert`/`key`/`cert_env`/`key_env` nicht angeben — der Netzwerktreiber stellt sie bereit.
+Im `auto`-Modus darf der Server `cert`/`key` nicht angeben — der Netzwerktreiber stellt sie bereit.
 
 ### Manuelles Zertifikat
 
-Stellen Sie Zertifikat und Schlüssel entweder inline/aus einer Datei oder über Umgebungsvariablen bereit (niemals beides):
+Unter `mode: manual` tragen `cert` und `key` PEM-Inhalt. Stelle diesen Inhalt auf eine von drei Arten bereit (pro Feld genau eine Variante, niemals gemischt):
+
+1. **Inline-PEM** — der wörtliche PEM-String.
+2. **`file://`-Referenz** — manifest-relativer Pfad, der beim Laden aufgelöst und inline eingefügt wird (traversal-sicher).
+3. **Referenz auf die Env-Registry** — hole das PEM beim Dekodieren aus einer registrierten [Umgebungsvariable](system/env.md) über einen `${env:NAME}`-Platzhalter.
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ Stellen Sie Zertifikat und Schlüssel entweder inline/aus einer Datei oder über
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+Der Platzhalter `${env:NAME}` löst `NAME` über die [Umgebungs-Registry](system/env.md) auf — den öffentlichen Namen einer registrierten Variable oder deren Entry-ID (z. B. `app.env:tls_cert`). Es handelt sich nicht um eine rohe Betriebssystem-Umgebungsvariable; ein Betriebssystemwert ist nur erreichbar, wenn unter diesem Namen eine von `env.storage.os` gestützte Variable registriert ist. Ein Standardwert lässt sich mit `${env:NAME|default}` angeben.
+
+<note>
+Die alten Begleitfelder <code>cert_env</code> / <code>key_env</code> werden weiterhin auf dieselbe Weise über die Umgebungs-Registry aufgelöst, sind aber <b>veraltet</b> — bevorzuge den oben gezeigten Platzhalter <code>${env:NAME}</code>.
+</note>
 
 | Feld | Beschreibung |
 |------|--------------|
 | `mode` | `""` (aus), `auto` oder `manual` |
-| `cert` / `key` | PEM-Inhalt (typischerweise via `file://` geladen) |
-| `cert_env` / `key_env` | Namen von Umgebungsvariablen, aufgelöst über die [env-Registry](system/env.md) |
+| `cert` / `key` | PEM-Inhalt — inline, `file://`-Referenz oder `${env:NAME}`-Platzhalter |
 
 ### Mutual TLS (mTLS)
 
@@ -202,17 +211,18 @@ Unter `mode: manual` kann der Server zusätzlich Client-Zertifikate verifizieren
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` akzeptiert dieselben drei Formen wie `cert`/`key` (Inline-PEM, `file://` oder `${env:NAME}`). Das alte Begleitfeld `client_ca_env` ist ebenfalls veraltet zugunsten von `client_ca: ${env:NAME}`.
+
 | Feld | Beschreibung |
 |------|--------------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | PEM-Bundle vertrauenswürdiger Client-CAs |
-| `client_ca_env` | Umgebungsvariable mit dem CA-Bundle (gegenseitig ausschließend mit `client_ca`) |
+| `client_ca` | PEM-Bundle vertrauenswürdiger Client-CAs (inline, `file://` oder `${env:NAME}`) |
 
 `verify_if_given` und `require_and_verify` benötigen eine CA. `request` und `require_any` akzeptieren jedes Client-Zertifikat ohne CA-Verifizierung.
 

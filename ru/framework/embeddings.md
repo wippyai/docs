@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-Объявите зависимость и укажите в требовании `target_db` базу данных вашего приложения:
+Объявите зависимость и укажите в требовании `target_db` базу данных вашего приложения через `parameters` зависимости:
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-При запуске `wippy/migration` подхватывает миграцию `01_create_embeddings_table` и создаёт таблицу `embeddings` с соответствующим векторным индексом для вашего драйвера базы данных.
+При запуске `wippy/migration` подхватывает миграцию `01_create_embeddings_table` и создаёт таблицу `embeddings_512` с соответствующим векторным индексом для вашего драйвера базы данных.
 
 ## Константы конфигурации
 

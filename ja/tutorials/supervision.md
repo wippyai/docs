@@ -385,6 +385,9 @@ end
 
 ```lua
 local function linker_child_main()
+    -- LINK_DOWNイベントを受信するためにtrap_linksを有効化
+    process.set_options({ trap_links = true })
+
     local events_ch = process.events()
     local inbox_ch = process.inbox()
 
@@ -671,14 +674,14 @@ wippy init
 wippy run
 ```
 
-スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。別のプロセスからワーカーをキャンセルして再起動をトリガーできます:
+スーパーバイザーが自動起動し、4つのワーカーをスポーンし、いずれかが終了すると再起動をログに記録します。`LINK_DOWN`はリンクされたプロセスがエラーで終了した場合にのみ配信されるため、別のプロセスからワーカーを強制終了して再起動をトリガーします:
 
 ```lua
 -- アドホックプロセスまたはchatコマンド内で
-process.cancel("<pid-from-supervisor-log>")
+process.terminate("<pid-from-supervisor-log>")
 ```
 
-プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。
+プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします。グレースフルな`process.cancel()`はワーカーを正常終了させるため`LINK_DOWN`は発生せず、したがって再起動もトリガーされません。
 
 ## 次のステップ
 

@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-未指定 `max_size` 时，默认弹性池最大值为 100 个工作者。
+100 个 worker 的默认值仅适用于隐式选择的池（未设置 `type` 时）。当显式设置 `type: lazy` 或 `type: adaptive` 而未指定 `max_size` 时，默认最大值为 16 个 worker。
 
 ### Worker 类与核心亲和性
 

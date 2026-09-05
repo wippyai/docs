@@ -28,14 +28,9 @@ local chunk, err = stream:read(size)
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
-| `size` | integer | 要读取的字节数（0 = 读取所有可用） |
+| `size` | integer | 要读取的字节数（0 = 默认 32KB 块） |
 
-**返回:** `string, error` — EOF 时返回 nil
-
-```lua
--- 读取所有剩余数据
-local data, err = stream:read_all()
-```
+**返回:** `string, error` — EOF 时返回 `nil, nil`
 
 ## 写入
 
@@ -107,18 +102,17 @@ local scanner, err = stream:scanner(split)
 ### Scanner 方法
 
 ```lua
-local has_more = scanner:scan()  -- 前进到下一个 token
-local token = scanner:text()      -- 获取当前 token
-local err_msg = scanner:err()     -- 获取错误（如有）
+local has_more, err = scanner:scan()  -- 前进到下一个 token
+local token = scanner:text()           -- 当前 token
+local err_msg = scanner:err()          -- scanner 错误（如有）
 ```
 
 ```lua
-while scanner:scan() do
-    local line = scanner:text()
-    process(line)
-end
-if scanner:err() then
-    return nil, errors.new("INTERNAL", scanner:err())
+while true do
+    local has_token, err = scanner:scan()
+    if err then return nil, err end
+    if not has_token then break end  -- EOF
+    process(scanner:text())
 end
 ```
 

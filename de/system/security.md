@@ -378,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Token-Store-Optionen
@@ -388,10 +388,9 @@ entries:
 | `store` | erforderlich | Backing-Key-Value-Store-Referenz |
 | `token_length` | 32 | Token-Größe in Bytes (256 Bits) |
 | `default_expiration` | 24h | Standard-Token-TTL |
-| `token_key` | keiner | HMAC-SHA256-Signaturschlüssel (direkter Wert) |
-| `token_key_env` | keiner | Umgebungsvariablenname für Signaturschlüssel |
+| `token_key` | keiner | HMAC-SHA256-Signaturschlüssel (direkter Wert oder `${env:NAME}`, um ihn aus der [env-Registry](system/env.md) zu holen) |
 
-Verwenden Sie `token_key_env` in Produktion um Geheimnisse nicht in Einträgen einzubetten. Siehe [Umgebungssystem](system/env.md) für das Registrieren von Umgebungsvariablen.
+Verwende `token_key: ${env:NAME}` in Produktion, um Geheimnisse nicht in Einträgen einzubetten. Die alte `token_key_env`-Direktive löst auf dieselbe Weise auf, ist aber veraltet; bevorzuge `${env:NAME}`.
 
 ### Tokens erstellen
 
@@ -622,7 +621,7 @@ Ein Sicherheitskontext, der nach Temporal übergeht, wird als signierter Header 
 1. **Minimale Privilegien** - Nur minimal erforderliche Berechtigungen gewähren
 2. **Standardmäßig verweigern** - Explizite Allow-Richtlinien verwenden, strikten Modus aktivieren
 3. **Richtliniengruppen verwenden** - Richtlinien nach Rolle/Funktion organisieren
-4. **Tokens signieren** - Immer `token_key_env` in Produktion setzen
+4. **Tokens signieren** - `token_key` in Produktion immer aus einer `${env:NAME}`-Referenz setzen
 5. **Kurzer Ablauf** - Kürzere Token-Lebensdauern für sensible Operationen verwenden
 6. **Kontext-Bedingungen** - Dynamische Bedingungen statt statischer Richtlinien verwenden
 7. **Sensible Aktionen protokollieren** - Sicherheitsrelevante Operationen loggen

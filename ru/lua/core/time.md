@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | Условие | Kind | Повторяемо |
 |---------|------|------------|
 | Неверный формат длительности | `errors.INVALID` | нет |
-| Парсинг не удался | `errors.INTERNAL` | нет |
+| Парсинг не удался | `errors.INVALID` | нет |
 | Пустое имя location | `errors.INVALID` | нет |
-| Location не найден | `errors.INTERNAL` | нет |
+| Location не найден | `errors.NOT_FOUND` | нет |
 | Duration <= 0 (timer/ticker) | `errors.INVALID` | нет |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location не найден:", err:message())
     end
     return nil, err

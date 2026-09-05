@@ -32,7 +32,7 @@ YAML定義は起動時にレジストリにロードされます。レジスト�
 
 ### ファイル構造
 
-`version`と`namespace`を持つYAMLファイルは有効です：
+`namespace`に加えて、`entries`配列またはトップレベルの`name`+`kind`のいずれかを持つYAMLファイルは有効な定義ファイルです。`version`は省略可能です：
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `version` | はい | スキーマバージョン（現在は`"1.0"`） |
+| `version` | いいえ | スキーマバージョン（現在は`"1.0"`） |
 | `namespace` | はい | このファイルのエントリ名前空間 |
 | `entries` | はい | エントリ定義の配列 |
 
@@ -207,14 +207,17 @@ UI向けの情報には`meta`を使用します：
 プロジェクトルートのランタイム設定：
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 すべてのオプションについては[設定ガイド](guides/configuration.md)を参照してください。
@@ -225,20 +228,24 @@ http:
 
 ## エントリの参照
 
-エントリはフルIDまたは相対名で参照できます：
+エントリはフルIDまたは相対名で参照できます。子は親側のリストではなく、`meta`を通じて親に紐付きます：
 
 ```yaml
-# フルID（名前空間をまたぐ場合）
-- name: main.router
+# ルーターは自身をサーバーに対して宣言する
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 同じ名前空間内 - 名前だけで参照
+# エンドポイントはレジストリIDでルーターを参照する（名前空間をまたぐ場合も同じ）
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## プロジェクト例

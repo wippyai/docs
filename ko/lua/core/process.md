@@ -135,8 +135,7 @@ local events = process.events()  -- @events 토픽의 라이프사이클 이벤�
 |-------|------|------|
 | `kind` | string | 이벤트 타입 상수 |
 | `from` | string | 소스 PID |
-| `result` | any | EXIT의 경우: 반환된 값(정상 종료 시 존재) |
-| `error` | any | EXIT의 경우: 오류(비정상 종료 시 존재) |
+| `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`에, 오류는 `result.error`에 있습니다 |
 | `reason` | string | CANCEL의 경우: 프로세스가 취소되는 이유 |
 | `sources` | string[] | OUTDATED의 경우: 변경되었거나 전이적으로 영향을 받은 레지스트리 ID |
 

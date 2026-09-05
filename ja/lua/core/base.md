@@ -79,7 +79,6 @@ table.insert(t, [pos,] value)  -- pos位置に値を挿入（デフォルト: �
 table.remove(t [,pos])         -- pos位置の要素を削除して返す（デフォルト: 最後）
 table.concat(t [,sep [,i [,j]]]) -- 配列要素をセパレータで連結
 table.sort(t [,comp])          -- インプレースでソート、comp(a,b)はa < bならtrueを返す
-table.pack(...)                -- 可変長引数を'n'フィールド付きテーブルにパック
 table.unpack(t [,i [,j]])      -- テーブル要素を複数の値としてアンパック
 ```
 
@@ -124,7 +123,7 @@ string.sub(s, i [,j])      -- iからjまでのサブ文字列（負のインデ
 string.len(s)              -- 文字列長（または#sを使用）
 string.byte(s [,i [,j]])   -- 文字の数値コード
 string.char(...)           -- 文字コードから文字列を作成
-string.rep(s, n [,sep])    -- 文字列をn回繰り返しセパレータ付き
+string.rep(s, n)           -- 文字列をn回繰り返す
 string.reverse(s)          -- 文字列を反転
 ```
 
@@ -208,14 +207,16 @@ math.fmod(x, y)       -- 浮動小数点剰余
 math.sqrt(x)          -- 平方根
 math.pow(x, y)        -- x^y（またはx^y演算子を使用）
 math.exp(x)           -- e^x
-math.log(x [,base])   -- 自然対数（またはbase底の対数）
+math.log(x)           -- 自然対数
+math.log10(x)         -- 10を底とする対数
 ```
 
 ### 三角関数
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- ラジアン
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- y/xの逆正接
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 双曲線
 math.deg(r)   -- ラジアンから度
 math.rad(d)   -- 度からラジアン
@@ -328,44 +329,6 @@ err:details()    -- 詳細テーブルまたはnilを取得
 err:stack()      -- スタックトレースを文字列として取得
 ```
 
-## UTF-8 Unicode
-
-Unicode UTF-8文字列処理：
-
-### 定数 {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- 単一のUTF-8文字にマッチするパターン
-```
-
-### 関数 {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Unicodeコードポイントから文字列を作成
-utf8.codes(s)            -- コードポイントに対するイテレータ: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- 位置iからjのコードポイントを取得
-utf8.len(s [,i [,j]])    -- UTF-8文字数をカウント（バイトではない）
-utf8.offset(s, n [,i])   -- 位置iからn番目の文字のバイト位置
-```
-
-```lua
-local s = "Hello, 世界"
-
--- 文字数をカウント（バイトではない）
-print(utf8.len(s))  -- 9
-
--- コードポイントをイテレート
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- 位置のコードポイントを取得
-local code = utf8.codepoint(s, 8)  -- 最初の中国語文字
-
--- コードポイントから文字列を作成
-local emoji = utf8.char(0x1F600)  -- 笑顔
-```
-
 ## 制限された機能
 
 セキュリティのため以下の標準Lua機能は利用不可：
@@ -377,7 +340,8 @@ local emoji = utf8.char(0x1F600)  -- 笑顔
 | `rawlen` | `#`演算子を使用 |
 | `io.*` | [ファイルシステム](lua/storage/filesystem.md)モジュールを使用 |
 | `os.execute`、`os.exit`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua/dynamic/exec.md)、[環境](lua/system/env.md)モジュールを使用 |
-| `debug.*`（tracebackを除く） | 利用不可 |
+| `debug.*` | 利用不可 |
+| `utf8.*` | 利用不可 |
 | `package.loadlib` | ネイティブライブラリはサポートされていない |
 
 ## 関連項目

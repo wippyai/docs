@@ -40,7 +40,7 @@ type Event struct {
 
 ## Estrutura
 
-O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque local para acesso LIFO amigável ao cache. Uma fila global FIFO trata novas submissões e transferências entre workers. Processos são rastreados por PID para roteamento de mensagens.
+O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque local para acesso LIFO amigável ao cache e uma fila de injeção MPSC por worker para completações assíncronas que têm afinidade com aquele worker. Uma fila global FIFO trata novas submissões e re-enfileiramentos sem afinidade. Processos são rastreados por PID para roteamento de mensagens.
 
 ## Busca de Trabalho
 
@@ -48,7 +48,9 @@ O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque loca
 flowchart TD
     W[Worker needs work] --> L{Local deque?}
     L -->|has items| LP[Pop from bottom LIFO]
-    L -->|empty| G{Global queue?}
+    L -->|empty| I{Inject queue?}
+    I -->|has items| IP[Pop + drain up to 16 to local]
+    I -->|empty| G{Global queue?}
     G -->|has items| GP[Pop + batch transfer up to 16]
     G -->|empty| S[Steal from random victim]
     S --> SH[StealHalfInto victim's deque]
@@ -59,10 +61,11 @@ Workers verificam fontes em ordem de prioridade:
 | Prioridade | Fonte | Padrão |
 |------------|-------|--------|
 | 1 | Deque local | LIFO pop, sem lock, amigável ao cache |
-| 2 | Fila global | FIFO pop com transferência em batch |
-| 3 | Outros workers | Roubar metade do deque da vítima |
+| 2 | Fila de injeção | MPSC pop de completações assíncronas afins, drena até 16 para o local |
+| 3 | Fila global | FIFO pop com transferência em batch |
+| 4 | Outros workers | Roubar metade do deque da vítima |
 
-Ao fazer pop da global, workers pegam um item e transferem em batch até 16 mais para seu deque local.
+Ao fazer pop da fila de injeção ou da global, workers pegam um item e movem até 16 mais para seu deque local.
 
 ## Deque Chase-Lev
 

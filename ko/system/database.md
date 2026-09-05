@@ -52,8 +52,6 @@ entries:
       max_open: 4
       max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
@@ -90,30 +88,26 @@ entries:
 
 `max_mutation_changes`와 `max_mutation_bytes`는 [`db.cdc.sqlite`](system/cdc.md) 소스에 데이터를 공급하는 인메모리 커밋 변경 관찰자의 한계를 정합니다. 두 필드 중 하나가 0이면 기본값이 선택되고, 음수 값은 거부됩니다. 이 한계는 정확하기보다 보수적입니다: SQLite는 pre-update 훅에 완전한 행을 전달하므로, 한계가 후보를 거부하기 전에 행 하나가 구체화될 수 있습니다.
 
-### 환경 변수 필드
+### 시크릿 및 환경 값
 
-`_env` 접미사를 사용하여 환경 변수나 [env.variable](system/env.md) 엔트리에서 값을 로드:
-
-| 필드 | 설명 |
-|-------|-------------|
-| `host_env` | 환경 변수에서 호스트 |
-| `port_env` | 환경 변수에서 포트 |
-| `database_env` | 환경에서 데이터베이스 이름 |
-| `username_env` | 환경에서 사용자명 |
-| `password_env` | 환경에서 비밀번호 |
+`${env:NAME}` 플레이스홀더로 [환경 레지스트리](system/env.md)에서 연결 값을 가져오며, 디코드 시점에 해석됩니다. `NAME`은 등록된 변수의 공개 이름 또는 엔트리 ID(예: `app.secrets:db_password`)이며, 원시 OS 환경 변수가 아닙니다.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
-  host_env: "DB_HOST"
-  port_env: "DB_PORT"
-  database_env: "DB_NAME"
-  username_env: "DB_USER"
-  password_env: "app.secrets:db_password"  # env.variable 엔트리 참조
+  host: ${env:DB_HOST}
+  port: ${env:DB_PORT}
+  database: ${env:DB_NAME}
+  username: ${env:DB_USER}
+  password: ${env:app.secrets:db_password}
 ```
 
+<note>
+이전 설정은 형제 <code>&lt;field&gt;_env</code> 디렉티브(<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>)를 사용하며 동일하게 해석됩니다. 이 형식은 <b>더 이상 권장되지 않습니다</b> — 위에 제시된 <code>${env:NAME}</code> 플레이스홀더로 이전하세요.
+</note>
+
 <warning>
-설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 환경 변수나 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system/env.md">환경</a>을 참조하세요.
+설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system/env.md">환경</a>을 참조하세요.
 </warning>
 
 ## 연결 풀
@@ -123,7 +117,7 @@ entries:
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `max_open` | int | 0 | 최대 열린 연결 (0 = 무제한) |
-| `max_idle` | int | 0 | 최대 유휴 연결 (0 = 무제한) |
+| `max_idle` | int | 0 | 최대 유휴 연결 (0 = 유휴 연결을 유지하지 않음) |
 | `max_lifetime` | duration | 1h | 최대 연결 수명 |
 
 ```yaml
@@ -139,7 +133,7 @@ pool:
 
 ## DSN 형식
 
-각 데이터베이스 타입은 설정에서 DSN을 구성합니다:
+각 데이터베이스 타입은 설정에서 DSN을 구성합니다. `options`가 있으면 키 순으로 정렬되어 뒤에 붙으며, 기본으로 포함되는 옵션은 없습니다.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
@@ -152,14 +146,14 @@ host='host' port=port user='username' password='password' dbname='database' [opt
 ### MySQL {id="dsn-mysql"}
 
 ```
-username:password@tcp(host:port)/database?charset=utf8mb4
+username:password@tcp(host:port)/database[?option=value&...]
 ```
 
 ### SQLite {id="dsn-sqlite"}
 
 ```
-file:/path/to/database.db?cache=shared
-:memory:?mode=memory
+file:/path/to/database.db?mode=rwc
+:memory:
 ```
 
 ## 데이터베이스 옵션
@@ -186,12 +180,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-```yaml
-options:
-  cache: "shared"         # shared, private
-  mode: "rwc"            # ro, rw, rwc, memory
-  _journal_mode: "WAL"   # DELETE, TRUNCATE, PERSIST, MEMORY, WAL, OFF
-```
+SQLite는 `options` 맵을 DSN에 적용하지 않습니다. 파일 데이터베이스는 항상 `mode=rwc`로 열리며 저널 모드는 항상 `WAL`로 설정됩니다. `options` 필드는 허용되지만 무시됩니다.
 
 ## 예제
 
@@ -227,7 +216,7 @@ options:
   port: 3306
   database: "app"
   username: "readonly"
-  password_env: "REPLICA_PASSWORD"
+  password: ${env:app.secrets:replica_password}
   pool:
     max_open: 20
     max_idle: 5
@@ -244,12 +233,6 @@ options:
 - name: test_db
   kind: db.sql.sqlite
   file: ":memory:"
-  pool:
-    max_open: 1
-    max_idle: 1
-  options:
-    cache: "shared"
-    mode: "memory"
 ```
 
 ### 여러 데이터베이스 구성
@@ -259,22 +242,22 @@ entries:
   # 기본 데이터베이스
   - name: users_db
     kind: db.sql.postgres
-    host_env: "USERS_DB_HOST"
+    host: ${env:USERS_DB_HOST}
     port: 5432
     database: "users"
-    username_env: "USERS_DB_USER"
-    password_env: "USERS_DB_PASSWORD"
+    username: ${env:USERS_DB_USER}
+    password: ${env:app.secrets:users_db_password}
     lifecycle:
       auto_start: true
 
   # 분석 데이터베이스
   - name: analytics_db
     kind: db.sql.mysql
-    host_env: "ANALYTICS_DB_HOST"
+    host: ${env:ANALYTICS_DB_HOST}
     port: 3306
     database: "analytics"
-    username_env: "ANALYTICS_DB_USER"
-    password_env: "ANALYTICS_DB_PASSWORD"
+    username: ${env:ANALYTICS_DB_USER}
+    password: ${env:app.secrets:analytics_db_password}
     lifecycle:
       auto_start: true
 
@@ -297,6 +280,6 @@ entries:
 ## 참고
 
 - [SQL 모듈](lua/storage/sql.md) - Lua API 레퍼런스
-- [Store](system/store.md) - `database.sql` 기반의 키-값 저장소
+- [Store](system/store.md) - `db.sql.*` 데이터베이스 기반의 키-값 저장소
 - [Queue](system/queue.md) - SQL 기반 큐 핸들러
 - [변경 데이터 캡처](system/cdc.md) - `db.sql.sqlite` 또는 Postgres 데이터베이스에서 행 수준 변경 스트리밍

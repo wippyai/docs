@@ -28,7 +28,7 @@ Dienste registrieren sich beim Supervisor mit einem `lifecycle`-Block. Für Proz
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -42,13 +42,13 @@ Dienste registrieren sich beim Supervisor mit einem `lifecycle`-Block. Für Proz
 | `start_timeout` | `10s` | Maximale erlaubte Zeit für den Start |
 | `stop_timeout` | `10s` | Maximale Zeit für Graceful Shutdown |
 | `stable_threshold` | `5s` | Laufzeit bevor Dienst als stabil gilt |
-| `depends_on` | `[]` | Dienste die zuerst laufen müssen |
+| `requires` | `[]` | Dienste, die zuerst laufen müssen (Legacy-Alias: `depends_on`) |
 
 ## Abhängigkeitsauflösung
 
 Der Supervisor löst Abhängigkeiten aus zwei Quellen auf:
 
-1. **Explizite Abhängigkeiten** deklariert in `depends_on`
+1. **Explizite Abhängigkeiten** deklariert in `requires` (oder dem Legacy-`depends_on`)
 2. **Registry-extrahierte Abhängigkeiten** aus Entry-Referenzen (z.B. `database: app:db` in Ihrer Konfiguration)
 
 ```mermaid
@@ -62,7 +62,7 @@ graph LR
 Abhängigkeiten starten vor Abhängigen. Wenn Dienst C von A und B abhängt, müssen sowohl A als auch B den `Running`-Zustand erreichen, bevor C startet.
 
 <tip>
-Sie müssen Infrastruktur-Einträge wie Datenbanken nicht in <code>depends_on</code> deklarieren. Der Supervisor extrahiert Abhängigkeiten automatisch aus Registry-Referenzen in Ihrer Entry-Konfiguration.
+Sie müssen Infrastruktur-Einträge wie Datenbanken nicht in <code>requires</code> deklarieren. Der Supervisor extrahiert Abhängigkeiten automatisch aus Registry-Referenzen in Ihrer Entry-Konfiguration.
 </tip>
 
 ## Neustart-Richtlinie
@@ -169,8 +169,8 @@ Ein Dienst, der vor der Ersetzung lief, wird danach neu gestartet, selbst wenn d
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 Der Supervisor überführt Dienste durch diese Zustände:
 
 | Zustand | Beschreibung |
 |---------|--------------|
-| `Inactive` | Registriert aber nicht gestartet |
+| `Unknown` | Registriert aber nicht gestartet |
 | `Starting` | Start in Bearbeitung |
 | `Running` | Läuft normal |
 | `Stopping` | Kontrolliertes Herunterfahren in Bearbeitung |
 | `Stopped` | Sauber beendet |
+| `Exited` | Durch ausdrückliche Anforderung oder einen nicht wiederholbaren/terminalen Fehler beendet |
 | `Failed` | Fehler aufgetreten, kann wiederholt werden |
 
 ## Start- und Shutdown-Reihenfolge

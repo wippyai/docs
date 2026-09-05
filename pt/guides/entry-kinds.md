@@ -69,7 +69,7 @@ Use <code>imports</code> para referenciar outras entradas Lua. Elas se tornam di
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpoint
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Bancos de Dados
@@ -248,13 +249,18 @@ local queue = require("queue")
 -- Publica uma mensagem
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- No handler do consumidor, acessa mensagem atual
-local msg = queue.message()
-local data = msg:body_json()
+-- No handler do consumidor: o corpo da mensagem é o argumento do handler
+local function main(data)
+    -- acessa os metadados de entrega via a mensagem atual
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queue.message()</code> dentro do handler para acessar a mensagem atual.
+O <code>func</code> do consumidor é invocado uma vez por mensagem, com o corpo da mensagem como argumento. Use <code>queue.message()</code> dentro do handler para obter <code>id()</code>, <code>header()</code>/<code>headers()</code> e <code>ack()</code>/<code>nack()</code> da entrega.
 </note>
 
 ## Gerenciamento de Processos
@@ -264,6 +270,7 @@ O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queu
 | `process.host` | Host de execução de processos |
 | `process.service` | Processo supervisionado (encapsula process.lua) |
 | `terminal.host` | Host de terminal/CLI |
+| `pg.scope` | Escopo de grupo de processos (veja [Process Groups](system/process-groups.md)) |
 
 ```yaml
 # Host de processos (onde processos executam)
@@ -374,8 +381,8 @@ Veja [Segurança](system/security.md).
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -391,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- segundos, padrão 3600
 ```
 
 <tip>

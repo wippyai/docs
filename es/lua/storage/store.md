@@ -80,7 +80,7 @@ end
 
 **Devuelve:** `any, error`
 
-Devuelve `nil` si la clave no existe.
+Devuelve `nil` y un error `errors.NOT_FOUND` si la clave no existe o ha expirado.
 
 ## Verificar Existencia
 
@@ -162,14 +162,14 @@ end
 ```lua
 -- crear solo si la clave no existe
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- otro la tiene
 end
 
 -- compare-and-set: escribir solo si la versión aún coincide
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- un escritor concurrente la cambió; volver a leer y reintentar
 end
 ```
@@ -235,14 +235,16 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 | Accion | Recurso | Atributos | Descripción |
 |--------|---------|-----------|-------------|
 | `store.get` | ID de Store | - | Adquirir un recurso de almacen |
-| `store.key.get` | ID de Store | `key` | Leer valor de una clave |
-| `store.key.set` | ID de Store | `key` | Escribir valor de una clave |
+| `store.info` | ID de Store | - | Inspeccionar las capacidades del almacen |
+| `store.key.get` | ID de Store | `key` | Leer valor de una clave (tambien `entry`) |
+| `store.key.set` | ID de Store | `key` | Escribir valor de una clave (tambien `put`) |
 | `store.key.delete` | ID de Store | `key` | Eliminar una clave |
 | `store.key.has` | ID de Store | `key` | Verificar existencia de clave |
+| `store.key.list` | ID de Store | `prefix` | Listar entradas |
 
 ## Errores
 
-`store.get()` y todos los métodos del manejador de store (`get`, `set`, `has`, `delete`) devuelven errores estructurados (usa `err:kind()`).
+`store.get()` y todos los métodos del manejador de store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) devuelven errores estructurados (usa `err:kind()`).
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|

@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-`max_size`が指定されていない場合、デフォルトの弾力的プール最大値は100ワーカーです。
+100ワーカーのデフォルトは、暗黙的に選択されたプール（`type`が設定されていない場合）にのみ適用されます。`max_size`なしで明示的に`type: lazy`または`type: adaptive`を設定した場合、デフォルトの最大値は16ワーカーです。
 
 ### ワーカークラスとコアアフィニティ
 

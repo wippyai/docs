@@ -42,8 +42,8 @@ local entry, err = registry.get("app.lib:assert")
 ## Encontrar Entries
 
 ```lua
-local entries, err = registry.find({kind = "function.lua"})
-local entries, err = registry.find({kind = "http.endpoint", namespace = "app.api"})
+local entries, err = registry.find({[".kind"] = "function.lua"})
+local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
 Campos de filtro correspondem aos metadados da entrada.

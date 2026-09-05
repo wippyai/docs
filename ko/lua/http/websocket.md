@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### 텍스트 메시지
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- JSON 전송
 client:send(json.encode({

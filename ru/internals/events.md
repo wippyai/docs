@@ -184,7 +184,7 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
         if !matchPattern(sub.system, evt.System) {
             continue
         }
-        if sub.kind != "" && !matchPattern(sub.kind, evt.Kind) {
+        if sub.kind != "" && sub.kind != "*" && !matchPattern(sub.kind, evt.Kind) {
             continue
         }
 
@@ -232,21 +232,24 @@ defer router.Stop()
 
 Каждый обработчик реализует `Pattern()` и `Handle()`. Роутер создаёт Subscriber для каждого и закрывает все при Stop.
 
-### Awaiter
+### AwaitService
 
-Синхронное ожидание конкретного события:
+Запрос-ответ поверх pub/sub. Сервис держит одну подписку на каждую пару `(system, kind)` и направляет события ожидающим по `Path`:
 
 ```go
-awaiter := eventbus.NewAwaiter(bus, "registry", "accept")
-waiter, _ := awaiter.Prepare(ctx, "service-id")
+svc := eventbus.NewAwaitService(bus)
+svc.Start(ctx)
+defer svc.Stop()
+
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // блокирует до совпадения или таймаута
+result := waiter.Wait()  // возвращает AwaitResult{Event, Accepted, Error}
 ```
 
-Паттерн Prepare-then-Wait избегает гонок: подписка до запуска события, которое производит ответ.
+`Prepare` регистрирует ожидающего до отправки инициирующего события, избегая гонки, при которой ответ приходит раньше регистрации ожидания. `Wait` блокирует, пока не придёт событие с совпадающим `Path` или не истечёт таймаут (по умолчанию `DefaultAwaitTimeout`, 30s, если значение неположительное). `Accepted` равен true, когда kind события — `accept`, `*.accept` или `*.accepted`; иначе kind трактуется как отказ, а `error` из `Data` попадает в `Error`. Удобная обёртка `Await(ctx, system, kind, path, timeout)` объединяет Prepare и Wait. Инфраструктура загрузки регистрирует AwaitService в контексте (`event.GetAwaitService`).
 
 ## Завершение работы
 

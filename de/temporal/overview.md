@@ -69,7 +69,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # Aus Datei
 - name: temporal_client
@@ -81,7 +81,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Felder die mit `_env` enden referenzieren Umgebungsvariablen, die im System definiert sein müssen. Siehe [Umgebungssystem](system/env.md) für die Konfiguration von Umgebungsspeicher und Variablen.
+Auth- und Credential-Felder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktiven `api_key_env` / `key_pem_env` werden auf dieselbe Weise aufgelöst, sind aber veraltet; bevorzugen Sie `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS-Konfiguration
@@ -185,11 +185,15 @@ Worker-Verhalten fein abstimmen:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Identität
+    identity: ""                          # Worker-Identität (erscheint in der Temporal-UI)
+
     # Nebenläufigkeit
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Poller
     max_concurrent_activity_task_pollers: 20
@@ -204,6 +208,8 @@ Worker-Verhalten fein abstimmen:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Feature-Flags
     enable_logging_in_replay: false
@@ -211,16 +217,17 @@ Worker-Verhalten fein abstimmen:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Versionierung
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Aus Umgebungsvariable lesen
+    build_id: ${env:BUILD_ID}              # Aus der Env-Registry lesen
     use_versioning: false
     default_versioning_behavior: "pinned" # oder "auto_upgrade"
 ```
 
-Felder die mit `_env` enden referenzieren Umgebungsvariablen, die über [Umgebungssystem](system/env.md)-Einträge definiert sind.
+Credential- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktive `build_id_env` wird auf dieselbe Weise aufgelöst, ist aber veraltet; bevorzugen Sie `build_id: ${env:NAME}`.
 
 ### Versionierungsverhalten
 
@@ -231,7 +238,7 @@ Felder die mit `_env` enden referenzieren Umgebungsvariablen, die über [Umgebun
 | `pinned` | Workflow bleibt für die gesamte Laufzeit auf der Build-ID, mit der er gestartet wurde |
 | `auto_upgrade` | Workflow kann nach jedem Task auf der neuesten kompatiblen Build-ID fortgesetzt werden |
 
-`build_id_env` liest die Build-ID aus der angegebenen Umgebungsvariable, wenn `build_id` leer ist.
+`build_id: ${env:NAME}` liest die Build-ID aus der Env-Registry, wenn keine literale `build_id` angegeben ist.
 
 ### Session Worker
 

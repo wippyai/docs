@@ -29,7 +29,8 @@ a.foo.bar.baz()              -- sem erro, pode falhar em tempo de execução
 
 -- unknown: desconhecido seguro, deve ser estreitado antes do uso
 local u: unknown = get_data()
-u.foo                        -- ERRO: não é possível acessar propriedade de unknown
+u.foo                        -- sem erro: acesso a membro em unknown se comporta como any
+local n: number = u          -- ERRO: unknown não atribuível a number, estreite primeiro
 if type(u) == "table" then
     -- u estreitado para table aqui
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ Use `!` para afirmar que uma expressão é não-nil:
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- afirma que user é não-nil
+local name = (user!).name            -- afirma que user é não-nil
 ```
 
-Se o valor for nil em tempo de execução, um erro é levantado. Use quando souber que um valor não pode ser nil mas o verificador de tipos não consegue prová-lo.
+`!` é uma asserção apenas do verificador de tipos — estreita o tipo para não-nil, mas não emite nenhuma verificação em tempo de execução. Se o valor for de fato nil, a operação seguinte falha com o erro usual (por exemplo, indexar nil). Use quando souber que um valor não pode ser nil mas o verificador de tipos não consegue prová-lo.
 
 ## Conversões de Tipo
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- Padrão de string
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- Validador sem argumentos
-local x: number @integer = 42
 ```
 
 ### Validadores Embutidos

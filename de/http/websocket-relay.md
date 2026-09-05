@@ -91,7 +91,7 @@ local function handler()
     local pid = process.spawn("app.ws:handler", "app:processes")
 
     -- Relay konfigurieren
-    res:header("X-WS-Relay", json.encode({
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",

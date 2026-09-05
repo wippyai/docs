@@ -372,6 +372,8 @@ The cycle function receives on each iteration:
 }
 ```
 
+`input` enthält die Workflow-Eingabe nur in der ersten Iteration und ist danach `nil`; alles, was über Iterationen hinweg benötigt wird, muss in `state` abgelegt werden.
+
 The function controls continuation:
 
 ```lua
@@ -386,8 +388,9 @@ function my_cycle(cycle_context)
     end
 
     -- spawn child workflow for this iteration
+    -- task wird aus state gelesen, da cycle_context.input ab Iteration 2 nil ist
     return flow.create()
-        :with_input({ task = cycle_context.input.task })
+        :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()

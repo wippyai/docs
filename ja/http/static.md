@@ -16,7 +16,6 @@ description: "http.staticを使用して任意のファイルシステムから�
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ description: "http.staticを使用して任意のファイルシステムから�
 | `meta.server` | Registry ID | 親HTTPサーバー |
 | `path` | string | URLマウントパス（`/`で開始する必要があります） |
 | `fs` | Registry ID | 配信元のファイルシステムエントリ |
-| `directory` | string | ファイルシステム内のサブディレクトリ |
 | `static_options.spa` | bool | SPAモード - マッチしないパスにindexを配信 |
 | `static_options.index` | string | インデックスファイル（spa=trueの場合必須） |
 | `static_options.cache` | string | Cache-Controlヘッダー値 |
@@ -61,16 +59,20 @@ entries:
 
 リクエスト`/static/css/style.css`は`./public/css/style.css`を配信します。
 
-`directory`フィールドはファイルシステム内のサブディレクトリを選択：
+サブディレクトリを配信するには、`fs` 参照をそのディレクトリをルートとするファイルシステムエントリに向けます—たとえば `directory:` にサブディレクトリを設定した `fs.directory` です：
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPAモード
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

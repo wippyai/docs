@@ -46,7 +46,7 @@ HTTP 服务器 (`http.service`) 监听端口并承载路由器、端点和静态
 
 ```yaml
 timeouts:
-  read: "10s"    # 读取请求头的最大时间
+  read: "10s"    # 读取整个请求（请求头 + 请求体）的最大时间
   write: "60s"   # 写入响应的最大时间
   idle: "120s"   # Keep-alive 超时
 ```
@@ -163,11 +163,15 @@ entries:
 
 服务器可以直接终止 TLS。将 `tls.mode` 设置为 `manual`（提供您自己的证书）或 `auto`（由 overlay 网络驱动提供证书，例如 `network.tailscale`）。普通 clearnet 监听器不支持 `auto`。省略 `tls` 或将 mode 留空以运行纯 HTTP。
 
-在 `auto` 模式下，服务器不得指定 `cert`/`key`/`cert_env`/`key_env` — 由网络驱动提供。
+在 `auto` 模式下，服务器不得指定 `cert`/`key` — 由网络驱动提供。
 
 ### 手动证书
 
-通过内联/文件加载或环境变量提供证书和密钥（不能同时使用两者）：
+在 `mode: manual` 下，`cert` 和 `key` 携带 PEM 内容。可通过以下三种方式之一提供该内容（每个字段只选一种，切勿混用）：
+
+1. **内联 PEM** — 字面的 PEM 字符串。
+2. **`file://` 引用** — 相对于 manifest 的路径，在加载时解析并内联（防目录穿越）。
+3. **环境注册表引用** — 使用 `${env:NAME}` 占位符，在解码时从已注册的 [env 变量](system/env.md) 中取出 PEM。
 
 ```yaml
 - name: api
@@ -185,15 +189,20 @@ entries:
   addr: ":443"
   tls:
     mode: manual
-    cert_env: TLS_SERVER_CERT
-    key_env:  TLS_SERVER_KEY
+    cert: ${env:app.env:tls_cert}
+    key:  ${env:app.env:tls_key}
 ```
+
+`${env:NAME}` 占位符通过[环境注册表](system/env.md)解析 `NAME` — 可以是已注册变量的公开名称，也可以是其条目 ID（例如 `app.env:tls_cert`）。它不是原始的操作系统环境变量；只有当以该名称注册了由 `env.storage.os` 支撑的变量时，才能取到操作系统的值。可以用 `${env:NAME|default}` 提供默认值。
+
+<note>
+遗留的 <code>cert_env</code> / <code>key_env</code> 伴随字段仍以同样方式通过环境注册表解析，但已<b>弃用</b> — 请优先使用上面所示的 <code>${env:NAME}</code> 占位符。
+</note>
 
 | 字段 | 说明 |
 |------|------|
 | `mode` | `""`（关闭）、`auto` 或 `manual` |
-| `cert` / `key` | PEM 内容（通常通过 `file://` 加载） |
-| `cert_env` / `key_env` | 通过 [env 注册表](system/env.md) 解析的环境变量名 |
+| `cert` / `key` | PEM 内容 — 内联、`file://` 引用或 `${env:NAME}` 占位符 |
 
 ### 双向 TLS (mTLS)
 
@@ -202,17 +211,18 @@ entries:
 ```yaml
 tls:
   mode: manual
-  cert_env: TLS_SERVER_CERT
-  key_env:  TLS_SERVER_KEY
+  cert: ${env:app.env:tls_cert}
+  key:  ${env:app.env:tls_key}
   client_ca: file://./certs/clients-ca.pem
   client_auth: require_and_verify
 ```
 
+`client_ca` 接受与 `cert`/`key` 相同的三种形式（内联 PEM、`file://` 或 `${env:NAME}`）。遗留的 `client_ca_env` 伴随字段同样已弃用，请改用 `client_ca: ${env:NAME}`。
+
 | 字段 | 说明 |
 |------|------|
 | `client_auth` | `request`、`require_any`、`verify_if_given`、`require_and_verify` |
-| `client_ca` | 受信任客户端 CA 的 PEM 包 |
-| `client_ca_env` | 持有 CA 包的环境变量（与 `client_ca` 互斥） |
+| `client_ca` | 受信任客户端 CA 的 PEM 包（内联、`file://` 或 `${env:NAME}`） |
 
 `verify_if_given` 和 `require_and_verify` 需要 CA。`request` 和 `require_any` 接受任何客户端证书而不进行 CA 验证。
 

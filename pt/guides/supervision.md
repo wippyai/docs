@@ -28,7 +28,7 @@ Serviços se registram com o supervisor usando um bloco `lifecycle`. Para proces
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -169,8 +169,8 @@ Um serviço que estava em execução antes da substituição é reiniciado depoi
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 O supervisor transiciona serviços através destes estados:
 
 | Estado | Descrição |
 |--------|-----------|
-| `Inactive` | Registrado mas não iniciado |
+| `Unknown` | Registrado mas não iniciado |
 | `Starting` | Inicialização em progresso |
 | `Running` | Operando normalmente |
 | `Stopping` | Encerramento gracioso em progresso |
 | `Stopped` | Terminado de forma limpa |
+| `Exited` | Terminado por requisição explícita ou por um erro terminal/não recuperável |
 | `Failed` | Erro ocorreu, pode tentar novamente |
 
 ## Ordem de Inicialização e Encerramento
@@ -199,8 +203,8 @@ O supervisor transiciona serviços através destes estados:
 **Encerramento**: Dependentes primeiro, depois dependências. Isso garante que serviços dependentes terminem antes de suas dependências pararem.
 
 ```
-Inicialização:  database -> cache -> handler -> http_server
-Encerramento:   http_server -> handler -> cache -> database
+Inicialização: database → cache → handler → http_server
+Encerramento:  http_server → handler → cache → database
 ```
 
 Em SIGINT ou SIGTERM, o runtime inicia um encerramento gracioso e a sequência inteira roda sob um único orçamento, `shutdown.timeout` na configuração do runtime (padrão 30s). Esse orçamento é um prazo novo que não herda o contexto interrompido, então um Ctrl-C não corta o encerramento dos componentes; o `stop_timeout` por serviço continua limitando cada parada individual dentro dele. Um segundo sinal pula a sequência e sai imediatamente.

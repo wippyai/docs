@@ -28,7 +28,7 @@ Los servicios se registran con el supervisor usando un bloque `lifecycle`. Para 
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -42,13 +42,13 @@ Los servicios se registran con el supervisor usando un bloque `lifecycle`. Para 
 | `start_timeout` | `10s` | Tiempo máximo permitido para inicio |
 | `stop_timeout` | `10s` | Tiempo máximo para apagado graceful |
 | `stable_threshold` | `5s` | Tiempo de ejecución antes de considerarse estable |
-| `depends_on` | `[]` | Servicios que deben estar ejecutándose primero |
+| `requires` | `[]` | Servicios que deben estar ejecutándose primero (alias heredado: `depends_on`) |
 
 ## Resolución de Dependencias
 
 El supervisor resuelve dependencias de dos fuentes:
 
-1. **Dependencias explícitas** declaradas en `depends_on`
+1. **Dependencias explícitas** declaradas en `requires` (o el heredado `depends_on`)
 2. **Dependencias extraídas del registro** desde referencias de entrada (ej., `database: app:db` en su config)
 
 ```mermaid
@@ -75,11 +75,11 @@ lifecycle:
     initial_delay: 1s      # Espera del primer reintento
     max_delay: 90s         # Tope máximo de delay
     backoff_factor: 2.0    # Multiplicador de delay por intento
-    jitter: 0.1            # +-10% de aleatorización
+    jitter: 0.1            # ±10% de aleatorización
     max_attempts: 0        # 0 = reintentos infinitos
 ```
 
-| Intento | Delay Base | Con Jitter (+-10%) |
+| Intento | Delay Base | Con Jitter (±10%) |
 |---------|------------|-------------------|
 | 1 | 1s | 0.9s - 1.1s |
 | 2 | 2s | 1.8s - 2.2s |
@@ -169,8 +169,8 @@ Un servicio que estaba en ejecución antes del reemplazo se reinicia después, i
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : reintentar
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 El supervisor transiciona servicios a través de estos estados:
 
 | Estado | Descripción |
 |-------|-------------|
-| `Inactive` | Registrado pero no iniciado |
+| `Unknown` | Registrado pero no iniciado |
 | `Starting` | Inicio en progreso |
 | `Running` | Operando normalmente |
 | `Stopping` | Apagado graceful en progreso |
 | `Stopped` | Terminado limpiamente |
+| `Exited` | Terminado por petición explícita o por un error no reintentable/terminal |
 | `Failed` | Ocurrió un error, puede reintentar |
 
 ## Orden de Inicio y Apagado
@@ -199,8 +203,8 @@ El supervisor transiciona servicios a través de estos estados:
 **Apagado**: Dependientes primero, luego dependencias. Esto asegura que los servicios dependientes terminen antes de que sus dependencias se detengan.
 
 ```
-Inicio:  database -> cache -> handler -> http_server
-Apagado: http_server -> handler -> cache -> database
+Inicio:  database → cache → handler → http_server
+Apagado: http_server → handler → cache → database
 ```
 
 Con SIGINT o SIGTERM el runtime comienza un apagado graceful y toda la secuencia se ejecuta bajo un único presupuesto, `shutdown.timeout` en la configuración del runtime (30s por defecto). Ese presupuesto es un plazo nuevo que no hereda el contexto interrumpido, por lo que un Ctrl-C no corta el apagado de los componentes; el `stop_timeout` por servicio sigue acotando cada detención individual dentro de él. Una segunda señal omite la secuencia y sale inmediatamente.

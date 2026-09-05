@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | 最大レスポンスサイズ（バイト単位）（0 = デフォルト） |
 | `unix_socket` | string | Unixソケットパス経由で接続 |
 | `tls` | table | リクエストごとのTLS設定（[TLSオプション](#tlsオプション)を参照） |
+| `overlay_network` | string | [ネットワークオーバーレイ](system/network.md)経由でルーティング — `network.socks5` / `network.tailscale` / `network.i2p` エントリのレジストリ ID |
 
 ### クエリパラメータ
 

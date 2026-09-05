@@ -28,7 +28,7 @@ description: "监督器管理服务生命周期，处理启动顺序、自动重
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -42,13 +42,13 @@ description: "监督器管理服务生命周期，处理启动顺序、自动重
 | `start_timeout` | `10s` | 允许的最大启动时间 |
 | `stop_timeout` | `10s` | 优雅关闭的最长时间 |
 | `stable_threshold` | `5s` | 视为稳定的运行时长 |
-| `depends_on` | `[]` | 必须先运行的服务 |
+| `requires` | `[]` | 必须先运行的服务（旧别名：`depends_on`） |
 
 ## 依赖解析
 
 监督器从两个来源解析依赖：
 
-1. **显式依赖**：在 `depends_on` 中声明
+1. **显式依赖**：在 `requires`（或旧的 `depends_on`）中声明
 2. **注册表提取的依赖**：从入口引用中提取（例如配置中的 `database: app:db`）
 
 ```mermaid
@@ -62,7 +62,7 @@ graph LR
 依赖先于依赖它们的服务启动。如果服务 C 依赖 A 和 B，则 A 和 B 必须先达到 `Running` 状态，C 才能启动。
 
 <tip>
-无需在 <code>depends_on</code> 中声明数据库等基础设施入口。监督器会自动从入口配置中的注册表引用提取依赖关系。
+无需在 <code>requires</code> 中声明数据库等基础设施入口。监督器会自动从入口配置中的注册表引用提取依赖关系。
 </tip>
 
 ## 重启策略
@@ -169,8 +169,8 @@ end
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 监督器将服务在这些状态间转换：
 
 | 状态 | 说明 |
 |------|------|
-| `Inactive` | 已注册但未启动 |
+| `Unknown` | 已注册但未启动 |
 | `Starting` | 启动进行中 |
 | `Running` | 正常运行 |
 | `Stopping` | 优雅关闭进行中 |
 | `Stopped` | 已干净终止 |
+| `Exited` | 因显式请求或不可重试/终止性错误而终止 |
 | `Failed` | 发生错误，可能重试 |
 
 ## 启动和关闭顺序

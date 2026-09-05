@@ -29,7 +29,8 @@ a.foo.bar.baz()              -- 无错误，运行时可能崩溃
 
 -- unknown: 安全的未知类型，必须先收窄才能使用
 local u: unknown = get_data()
-u.foo                        -- 错误：无法访问 unknown 的属性
+u.foo                        -- 无错误：对 unknown 的成员访问行为与 any 相同
+local n: number = u          -- 错误：unknown 不能赋给 number，需先收窄
 if type(u) == "table" then
     -- 此处 u 收窄为 table
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- 断言 user 为非 nil
+local name = (user!).name            -- 断言 user 为非 nil
 ```
 
-如果运行时值为 nil，则抛出错误。在你知道某值不能为 nil 但类型检查器无法证明时使用。
+`!` 仅是类型检查器层面的断言——它将类型收窄为非 nil，但不生成任何运行时检查。如果值实际为 nil，后续操作会以通常的错误失败（例如对 nil 进行索引）。在你知道某值不能为 nil 但类型检查器无法证明时使用。
 
 ## 类型转换
 
@@ -424,9 +425,6 @@ local x: number @min(0) @max(100) = 50
 
 -- 字符串模式
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- 无参验证器
-local x: number @integer = 42
 ```
 
 ### 内置验证器

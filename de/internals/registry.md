@@ -150,7 +150,7 @@ Einträge können Abhängigkeiten von anderen Einträgen deklarieren. Der Resolv
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```

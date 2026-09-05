@@ -16,7 +16,6 @@ description: "Раздача статических файлов из любой
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ description: "Раздача статических файлов из любой
 | `meta.server` | Registry ID | Родительский HTTP-сервер |
 | `path` | string | URL-путь монтирования (начинается с `/`) |
 | `fs` | Registry ID | Запись файловой системы для раздачи |
-| `directory` | string | Поддиректория внутри файловой системы |
 | `static_options.spa` | bool | SPA-режим — отдавать index для несопоставленных путей |
 | `static_options.index` | string | Index-файл (обязателен при spa=true) |
 | `static_options.cache` | string | Значение заголовка Cache-Control |
@@ -61,16 +59,20 @@ entries:
 
 Запрос `/static/css/style.css` отдаёт `./public/css/style.css`.
 
-Поле `directory` выбирает поддиректорию внутри файловой системы:
+Чтобы раздавать поддиректорию, укажите в ссылке `fs` запись файловой системы с корнем в ней — например, `fs.directory` с `directory:`, указывающим на поддиректорию:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA-режим
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

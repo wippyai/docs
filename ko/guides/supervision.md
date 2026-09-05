@@ -28,7 +28,7 @@ description: "슈퍼바이저는 서비스 수명 주기를 관리하며, 시작
     start_timeout: 30s
     stop_timeout: 10s
     stable_threshold: 5s
-    depends_on:
+    requires:
       - app:database
     restart:
       initial_delay: 2s
@@ -42,7 +42,7 @@ description: "슈퍼바이저는 서비스 수명 주기를 관리하며, 시작
 | `start_timeout` | `10s` | 시작에 허용된 최대 시간 |
 | `stop_timeout` | `10s` | 정상 종료 최대 시간 |
 | `stable_threshold` | `5s` | 서비스가 안정적으로 간주되기 전 실행 시간 |
-| `depends_on` | `[]` | 먼저 실행되어야 하는 서비스 |
+| `requires` | `[]` | 먼저 실행되어야 하는 서비스 (레거시 별칭: `depends_on`) |
 
 ## 의존성 해결
 
@@ -169,8 +169,8 @@ end
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Inactive
-    Inactive --> Starting
+    [*] --> Unknown
+    Unknown --> Starting
     Starting --> Running
     Running --> Stopping
     Stopping --> Stopped
@@ -179,17 +179,21 @@ stateDiagram-v2
     Running --> Failed
     Starting --> Failed
     Failed --> Starting : retry
+    Running --> Exited
+    Starting --> Exited
+    Exited --> [*]
 ```
 
 슈퍼바이저는 서비스를 다음 상태로 전환합니다:
 
 | 상태 | 설명 |
 |-------|-------------|
-| `Inactive` | 등록되었지만 시작되지 않음 |
+| `Unknown` | 등록되었지만 시작되지 않음 |
 | `Starting` | 시작 진행 중 |
 | `Running` | 정상 작동 중 |
 | `Stopping` | 정상 종료 진행 중 |
 | `Stopped` | 정상 종료됨 |
+| `Exited` | 명시적 요청 또는 재시도 불가/최종 에러로 종료됨 |
 | `Failed` | 에러 발생, 재시도 가능 |
 
 ## 시작 및 종료 순서

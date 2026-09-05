@@ -1,24 +1,24 @@
 ---
 title: "Framework"
-description: "Wippy provides official framework modules through the hub. These modules are maintained under the wippy organization and can be added to any project."
+description: "Wippy stellt offizielle Framework-Module über den Hub bereit. Diese Module werden unter der Organisation wippy gepflegt und können jedem Projekt hinzugefügt werden."
 ---
 
 # Framework
 
-Wippy provides official framework modules through the hub. These modules are maintained under the `wippy` organization and can be added to any project.
+Wippy stellt offizielle Framework-Module über den Hub bereit. Diese Module werden unter der Organisation `wippy` gepflegt und können jedem Projekt hinzugefügt werden.
 
-## Adding Framework Modules
+## Framework-Module hinzufügen
 
 ```bash
 wippy add wippy/test
 wippy install
 ```
 
-This adds the module to your lock file and downloads it to `.wippy/vendor/`.
+Das trägt das Modul in deine Lock-Datei ein und lädt es nach `.wippy/vendor/` herunter.
 
-## Declaring Dependencies in Source
+## Abhängigkeiten im Quellcode deklarieren
 
-Framework modules can also be declared as dependencies in your `_index.yaml`:
+Framework-Module lassen sich auch als Abhängigkeiten in deiner `_index.yaml` deklarieren:
 
 ```yaml
 version: "1.0"
@@ -31,15 +31,15 @@ entries:
     version: "^0.3.0"
 ```
 
-Then resolve and install:
+Anschließend auflösen und installieren:
 
 ```bash
 wippy update
 ```
 
-## Importing Framework Libraries
+## Framework-Bibliotheken importieren
 
-Once installed, import framework libraries into your entries:
+Nach der Installation importierst du Framework-Bibliotheken in deine Einträge:
 
 ```yaml
 entries:
@@ -54,31 +54,33 @@ entries:
       test: wippy.test:test
 ```
 
-The import maps `wippy.test:test` (the `test` entry from the `wippy.test` namespace) to the local name `test`, which you then `require("test")` in Lua.
+Der Import bildet `wippy.test:test` (den Eintrag `test` aus dem Namespace `wippy.test`) auf den lokalen Namen `test` ab, den du dann in Lua per `require("test")` einbindest.
 
-## Available Modules
+## Verfügbare Module
 
-| Module | Description |
+| Modul | Beschreibung |
 |--------|-------------|
-| `wippy/llm` | Unified LLM interface with generation, streaming, tool calling, structured output |
-| `wippy/agent` | Agent framework with tools, delegates, traits, and memory |
-| `wippy/test` | BDD-style testing framework with assertions and mocking |
-| `wippy/dataflow` | Workflow orchestration with DAG-based node execution |
-| `wippy/relay` | WebSocket relay with per-user hubs and plugin routing |
-| `wippy/views` | Virtual page/component system with template rendering |
+| `wippy/llm` | Einheitliche LLM-Schnittstelle mit Generierung, Streaming, Tool-Calling und strukturierter Ausgabe |
+| `wippy/agent` | Agent-Framework mit Tools, Delegates, Traits und Memory |
+| `wippy/embeddings` | Speicherung von Vektor-Embeddings und Ähnlichkeitssuche |
+| `wippy/test` | Test-Framework im BDD-Stil mit Assertions und Mocking |
+| `wippy/dataflow` | Workflow-Orchestrierung mit DAG-basierter Node-Ausführung |
+| `wippy/relay` | WebSocket-Relay mit Hubs pro Benutzer und Plugin-Routing |
+| `wippy/views` | Virtuelles Seiten- und Komponentensystem mit Template-Rendering |
 | `wippy/facade` | Frontend-Host-Konfiguration, Theming und Config-Endpoint |
-| `wippy/terminal` | Terminal UI components |
+| `wippy/terminal` | Terminal-UI-Komponenten |
+| `wippy/migration` | Datenbank-Schema-Migrationen |
 | `wippy/security` | Akteur-Scopes, Policy-Bundles und Sicherheits-Helfer |
-| `wippy/usage` | Token- und Kostenabrechnung fuer LLM-Aufrufe |
+| `wippy/usage` | Token- und Kostenabrechnung für LLM-Aufrufe |
 
-More modules are available and being published regularly. Search the hub:
+Es sind weitere Module verfügbar, und es werden regelmäßig neue veröffentlicht. Durchsuche den Hub:
 
 ```bash
 wippy search wippy
 ```
 
-## See Also
+## Siehe auch
 
-- [Dependency Management](guides/dependency-management.md) - Lock file and version constraints
-- [Publishing](guides/publishing.md) - Publishing your own modules
-- [CLI Reference](guides/cli.md) - CLI commands
+- [Dependency Management](guides/dependency-management.md) - Lock-Datei und Versionsbeschränkungen
+- [Publishing](guides/publishing.md) - Eigene Module veröffentlichen
+- [CLI-Referenz](guides/cli.md) - CLI-Befehle

@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-----------|
 | 잘못된 기간 형식 | `errors.INVALID` | 아니오 |
-| 파싱 실패 | `errors.INTERNAL` | 아니오 |
+| 파싱 실패 | `errors.INVALID` | 아니오 |
 | 빈 location 이름 | `errors.INVALID` | 아니오 |
-| Location을 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
+| Location을 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 기간 <= 0 (timer/ticker) | `errors.INVALID` | 아니오 |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location not found:", err:message())
     end
     return nil, err

@@ -119,7 +119,7 @@ description: "설정 가능한 스토리지 백엔드를 통해 환경 변수를
   variable: DATABASE_URL
   storage: app.config:file
   default: postgres://localhost/app
-  read_only: false
+  readonly: false
 ```
 
 | 속성 | 타입 | 설명 |
@@ -127,7 +127,7 @@ description: "설정 가능한 스토리지 백엔드를 통해 환경 변수를
 | `variable` | string | 공개 변수 이름 (선택적, 고유해야 함) |
 | `storage` | string | 스토리지 참조 (`namespace:name`) |
 | `default` | string | 찾지 못하면 기본값 |
-| `read_only` | boolean | 수정 방지 |
+| `readonly` | boolean | 수정 방지 |
 
 ### 변수 명명
 

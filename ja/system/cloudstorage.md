@@ -19,28 +19,27 @@ description: "署名付きURL、マルチパートアップロード、範囲指
 ```yaml
 - name: aws_config
   kind: config.aws
-  region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  region: ${env:AWS_REGION}
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
 | フィールド | 型 | 必須 | 説明 |
 |------------|-----|------|------|
-| `region` | string | 条件付き | AWSリージョン。`region_env` が設定されていない限り必須 |
-| `region_env` | string | 条件付き | リージョンを保持する環境変数名 |
-| `access_key_id_env` | string | いいえ | アクセスキー用環境変数名 |
-| `secret_access_key_env` | string | いいえ | シークレットキー用環境変数名 |
+| `region` | string | はい | AWSリージョン。デプロイごとに異なる場合は `${env:NAME}` で指定します |
+| `access_key_id` | string | いいえ | AWS アクセスキー ID（インラインまたは `${env:NAME}`） |
+| `secret_access_key` | string | いいえ | AWS シークレットアクセスキー（インラインまたは `${env:NAME}`） |
 
-認証情報は指定された環境変数からロードされます。静的な認証情報を適用するには `access_key_id_env` と `secret_access_key_env` の両方が空でない値に解決される必要があります。そうでない場合は、AWS SDK のデフォルト認証チェーン（IAM ロール、インスタンスプロファイルなど）が使用されます。
+認証情報はデコード時に[環境レジストリ](system/env.md)から解決されます。静的な認証情報を適用するには `access_key_id` と `secret_access_key` の両方が空でない値に解決される必要があります。そうでない場合は、AWS SDK のデフォルト認証チェーン（IAM ロール、インスタンスプロファイルなど）が使用されます。
 
 リクエストは、解決された認証情報を使用して AWS SDK によって AWS Signature Version 4 で署名されます。署名の設定は不要です。
 
 <note>
-値がデプロイごとに異なる場合は、<code>_env</code> バリアント（<code>region_env</code>、および後述の <code>bucket_env</code>/<code>endpoint_env</code>）を使用してください。変数名は起動時に環境レジストリから解決されます。
+古い設定では、同じ方法で解決される兄弟ディレクティブ <code>&lt;field&gt;_env</code>（<code>region_env</code>、<code>access_key_id_env</code>、<code>secret_access_key_env</code>）が使われています。この形式は<b>非推奨</b>です — 上記の <code>${env:NAME}</code> プレースホルダーへ移行してください。
 </note>
 
 <note>
-AWS設定は将来のリリースで他のAWSサービス（SQSなど）と共有される予定です。
+1 つの <code>config.aws</code> エントリは、AWS をバックエンドとする複数のサービスで再利用できます。<code>queue.driver.sqs</code> は <code>config:</code> フィールドで同じエントリを参照します。
 </note>
 
 ## S3ストレージ
@@ -54,11 +53,9 @@ AWS設定は将来のリリースで他のAWSサービス（SQSなど）と共�
 
 | フィールド | 型 | 必須 | 説明 |
 |------------|-----|------|------|
-| `bucket` | string | 条件付き | S3バケット名。`bucket_env` が設定されていない限り必須 |
-| `bucket_env` | string | 条件付き | バケット名を保持する環境変数名 |
+| `bucket` | string | 条件付き | S3バケット名。デプロイごとに異なる場合は `${env:NAME}` で指定します |
 | `config` | reference | はい | AWS設定エントリ参照 |
-| `endpoint` | string | いいえ | S3互換サービス用カスタムエンドポイント |
-| `endpoint_env` | string | いいえ | カスタムエンドポイントを保持する環境変数名 |
+| `endpoint` | string | いいえ | S3互換サービス用カスタムエンドポイント（インラインまたは `${env:NAME}`） |
 
 ### S3互換サービス
 

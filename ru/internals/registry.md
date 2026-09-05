@@ -150,7 +150,7 @@ sequenceDiagram
 
 ```go
 resolver.RegisterPattern(registry.DependencyPattern{
-    Path: "meta.server",
+    Path:          "meta.server",
     AllowWildcard: true,
 })
 ```

@@ -16,7 +16,6 @@ description: "http.static을 사용하여 모든 파일시스템에서 정적 �
     server: gateway
   path: /
   fs: app:public
-  directory: dist
   static_options:
     spa: true
     index: index.html
@@ -28,7 +27,6 @@ description: "http.static을 사용하여 모든 파일시스템에서 정적 �
 | `meta.server` | 레지스트리 ID | 부모 HTTP 서버 |
 | `path` | string | URL 마운트 경로 (`/`로 시작해야 함) |
 | `fs` | 레지스트리 ID | 서빙할 파일시스템 엔트리 |
-| `directory` | string | 파일시스템 내 하위 디렉토리 |
 | `static_options.spa` | bool | SPA 모드 - 매칭되지 않는 경로에 인덱스 서빙 |
 | `static_options.index` | string | 인덱스 파일 (spa=true일 때 필수) |
 | `static_options.cache` | string | Cache-Control 헤더 값 |
@@ -61,16 +59,20 @@ entries:
 
 `/static/css/style.css` 요청은 `./public/css/style.css`를 서빙합니다.
 
-`directory` 필드는 파일시스템 내 하위 디렉토리를 선택합니다:
+하위 디렉토리를 서빙하려면 그 위치를 루트로 하는 파일시스템 엔트리를 `fs`로 참조하세요—예를 들어 `directory:`를 해당 하위 디렉토리로 설정한 `fs.directory`입니다:
 
 ```yaml
-- name: docs
-  kind: http.static
-  meta:
-    server: gateway
-  path: /docs
-  fs: app:content
-  directory: documentation/html
+entries:
+  - name: content
+    kind: fs.directory
+    directory: ./app/documentation/html
+
+  - name: docs
+    kind: http.static
+    meta:
+      server: gateway
+    path: /docs
+    fs: content
 ```
 
 ## SPA 모드
@@ -116,7 +118,6 @@ entries:
       server: gateway
     path: /assets
     fs: app_fs
-    directory: assets
     static_options:
       cache: "public, max-age=31536000, immutable"
 

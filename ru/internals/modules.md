@@ -98,22 +98,26 @@ l.Push(result)
 
 ### Определения типов (тулинг)
 
-Поле `Types` предоставляет сигнатуры типов для поддержки IDE и документации:
+Поле `Types` предоставляет сигнатуры типов для поддержки IDE и документации. Типы строятся fluent-билдерами пакета `typ`:
 
 ```go
-func ModuleTypes() *types.TypeManifest {
-    m := types.NewManifest("mymodule")
+import (
+    "github.com/wippyai/go-lua/types/io"
+    "github.com/wippyai/go-lua/types/typ"
+)
 
-    objectType := &types.InterfaceType{
-        Name: "mymodule.Object",
-        Methods: map[string]*types.FunctionType{
-            "get_value": types.NewFunction(nil, []types.Type{types.String}),
-            "set_value": types.NewFunction([]types.Type{types.String}, nil),
-        },
-    }
+func ModuleTypes() *io.Manifest {
+    m := io.NewManifest("mymodule")
+
+    objectType := typ.NewInterface("mymodule.Object", []typ.Method{
+        {Name: "get_value", Type: typ.Func().Param("self", typ.Self).
+            Returns(typ.String, typ.NewOptional(typ.LuaError)).Build()},
+        {Name: "set_value", Type: typ.Func().Param("self", typ.Self).
+            Param("value", typ.String).Returns(typ.NewOptional(typ.LuaError)).Build()},
+    })
 
     m.DefineType("Object", objectType)
-    m.SetExport(moduleType)
+    m.SetExport(objectType)
     return m
 }
 ```
@@ -122,29 +126,42 @@ func ModuleTypes() *types.TypeManifest {
 
 | Тип | Описание |
 |-----|----------|
-| `types.String` | Строковый примитив |
-| `types.Number` | Числовое значение |
-| `types.Boolean` | Булево значение |
-| `types.Any` | Любое Lua-значение |
-| `types.LuaError` | Тип ошибки |
-| `types.Optional(t)` | Необязательное значение типа t |
-| `types.InterfaceType` | Объект с методами |
-| `types.FunctionType` | Сигнатура функции с params/returns |
-| `types.RecordType` | Struct-подобный тип с полями |
-| `types.TableType` | Таблица с типами ключ/значение |
+| `typ.String` | Строковый примитив |
+| `typ.Number` | Числовое значение |
+| `typ.Integer` | Целочисленное значение |
+| `typ.Boolean` | Булево значение |
+| `typ.Any` | Любое Lua-значение |
+| `typ.Self` | Тип получателя для методов |
+| `typ.LuaError` | Тип ошибки |
+| `typ.NewOptional(t)` | Необязательное значение типа t |
+| `typ.NewInterface(name, methods)` | Объект с методами |
+| `typ.Func()` | Билдер сигнатуры функции |
+| `typ.NewRecord()` | Билдер struct-подобного типа (поля через `.Field`/`.OptField`) |
+| `typ.NewArray(t)` | Массив элементов типа t |
+| `typ.NewMap(k, v)` | Карта с типами ключа и значения |
 
-Сигнатуры функций поддерживают variadic-параметры:
+Билдеры функций цепочкой принимают `Param`, `OptParam`, `Variadic` и `Returns`:
 
 ```go
 // (string, ...any) -> (string, error?)
-types.FunctionType{
-    Params:   []types.Type{types.String},
-    Variadic: types.Any,
-    Returns:  []types.Type{types.String, types.Optional(types.LuaError)},
-}
+typ.Func().
+    Param("first", typ.String).
+    Variadic(typ.Any).
+    Returns(typ.String, typ.NewOptional(typ.LuaError)).
+    Build()
 ```
 
-См. пакет `types` в go-lua для полной системы типов.
+Записи объявляют поля через `Field` (обязательное) и `OptField` (необязательное):
+
+```go
+typ.NewRecord().
+    Field("key", typ.String).
+    Field("value", typ.Any).
+    OptField("ttl", typ.Number).
+    Build()
+```
+
+См. пакет `typ` в go-lua для полной системы типов.
 
 ### UserData-привязки (runtime)
 
@@ -324,6 +341,14 @@ func newTestScheduler() *testScheduler {
     return ts
 }
 
+// Stop оборачивает Scheduler.Stop, которому требуется context.
+func (ts *testScheduler) Stop() {
+    ts.Scheduler.Stop(context.Background())
+}
+
+// OnStart удовлетворяет process.Lifecycle наряду с OnComplete.
+func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
+
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
     ts.mu.Lock()
     ch, ok := ts.pending[p.UniqID]
@@ -358,17 +383,19 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
 Создание процессов из Lua-скриптов с тестируемыми модулями:
 
 ```go
-func bindMyModule(l *lua.LState) {
+func bindMyModule(l *lua.LState) error {
     tbl, _ := mymodule.Module.Build()
     l.SetGlobal(mymodule.Module.Name, tbl)
+    return nil
 }
 
 func newLuaProcess(script string) *engine.Process {
     proto, _ := lua.CompileString(script, "test.lua")
-    return engine.NewProcess(
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
         engine.WithModuleBinder(bindMyModule),
     )
+    return proc
 }
 
 func TestMyModuleYields(t *testing.T) {

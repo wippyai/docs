@@ -10,16 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 Вычисление динамических выражений на синтаксисе [expr-lang](https://expr-lang.org/). Компиляция и выполнение безопасных выражений для фильтрации, валидации и применения правил без полноценного выполнения Lua.
 
-## Настройка
+## Кеширование
 
-Кеш выражений настраивается при запуске:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # Включить кеширование выражений
-    capacity: 5000        # Размер кеша
-```
+`expr.eval` поддерживает внутренний LRU-кеш скомпилированных выражений (ёмкость по умолчанию 1000). Кеш встроен в модуль и не требует настройки.
 
 ## Подключение
 
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- Функции для массивов
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

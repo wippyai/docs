@@ -301,11 +301,11 @@ local policies = scope:policies()
 ### Flujo de Evaluación
 
 ```
-1. Sin actor o sin scope en el contexto → decide el modo estricto (deniega por defecto)
-2. Verifica cada política en el scope
-3. Si ALGUNA política devuelve Deny → El resultado es Deny
-4. Si hay al menos un Allow y ningún Deny → El resultado es Allow
-5. Sin políticas aplicables → El resultado es Undefined
+1. No actor or no scope in context → strict mode decides (deny by default)
+2. Check each policy in scope
+3. If ANY policy returns Deny → Result is Deny
+4. If at least one Allow and no Deny → Result is Allow
+5. No applicable policies → Result is Undefined
 ```
 
 Una verificación de acceso solo pasa con `Allow`. `Undefined` deniega el acceso, exactamente igual que `Deny` — el modo estricto no interviene una vez que hay tanto un actor como un scope.
@@ -378,7 +378,7 @@ entries:
     store: app.auth:token_data
     token_length: 32
     default_expiration: "24h"
-    token_key_env: "AUTH_SECRET_KEY"
+    token_key: ${env:AUTH_SECRET_KEY}
 ```
 
 ### Opciones del Almacén de Tokens
@@ -388,10 +388,9 @@ entries:
 | `store` | requerido | Referencia al almacén clave-valor de respaldo |
 | `token_length` | 32 | Tamaño del token en bytes (256 bits) |
 | `default_expiration` | 24h | TTL predeterminado del token |
-| `token_key` | ninguno | Clave de firma HMAC-SHA256 (valor directo) |
-| `token_key_env` | ninguno | Nombre de la variable de entorno para la clave de firma |
+| `token_key` | ninguno | Clave de firma HMAC-SHA256 (valor directo, o `${env:NAME}` para obtenerla del [registro de entorno](system/env.md)) |
 
-Use `token_key_env` en producción para evitar incrustar secretos en las entradas. Consulte [Sistema de Entorno](system/env.md) para registrar variables de entorno.
+Use `token_key: ${env:NAME}` en producción para evitar incrustar secretos en las entradas. La directiva heredada `token_key_env` se resuelve de la misma forma pero está obsoleta; prefiera `${env:NAME}`.
 
 ### Creación de Tokens
 

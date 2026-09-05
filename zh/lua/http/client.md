@@ -105,6 +105,7 @@ local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folde
 | `max_response_body` | number | 最大响应大小（字节）（0 = 默认） |
 | `unix_socket` | string | 通过 Unix socket 路径连接 |
 | `tls` | table | 每请求 TLS 配置（参见 [TLS 选项](#tls-选项)） |
+| `overlay_network` | string | 通过[网络覆盖层](system/network.md)路由 —— `network.socks5` / `network.tailscale` / `network.i2p` 条目的注册表 ID |
 
 ### 查询参数
 
@@ -167,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | 否 | 原始文件名 |
 | `content` | string | 是* | 文件内容 |
 | `reader` | userdata | 是* | 替代方案：用于内容的 io.Reader |
-| `content_type` | string | 否 | MIME 类型（默认：`application/octet-stream`） |
+| `content_type` | string | 否 | 当前被忽略：无论此字段如何，每个上传部分始终以 `Content-Type: application/octet-stream` 发送 |
 
 *`content` 或 `reader` 必须提供其一。
 

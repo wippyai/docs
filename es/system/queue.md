@@ -93,13 +93,13 @@ Bloque TLS:
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Los campos inline `cert`/`key`/`ca` contienen contenido PEM; las variantes `*_env` se resuelven a través del registro env. Las dos fuentes son mutuamente excluyentes por campo. `insecure_skip_verify` desactiva la verificación de certificado (solo desarrollo).
+`cert`/`key`/`ca` contienen contenido PEM — inline, vía `file://`, o mediante un placeholder `${env:NAME}` resuelto a través del [registro env](system/env.md). `insecure_skip_verify` desactiva la verificación de certificado (solo desarrollo). Las directivas heredadas `cert_env`/`key_env`/`ca_env` se resuelven de la misma forma pero están obsoletas; prefiera `${env:NAME}`.
 
 ### Driver SQS
 
@@ -109,8 +109,8 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs

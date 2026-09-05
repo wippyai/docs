@@ -1,6 +1,6 @@
 ---
 title: "설치"
-description: "빠른 설치"
+description: "Wippy 런타임 설치"
 ---
 
 # 설치
@@ -52,10 +52,16 @@ wippy install
 | `wippy pack` | 스냅샷 생성 |
 | `wippy publish` | 허브에 퍼블리시 |
 | `wippy search` | 모듈 검색 |
+| `wippy readme` | 허브에서 모듈 README 가져오기 |
+| `wippy registry` | 로드된 레지스트리 엔트리 검사 |
 | `wippy auth` | 인증 관리 |
 | `wippy version` | 버전 정보 출력 |
 
 전체 문서는 [CLI 레퍼런스](guides/cli.md)를 참조하세요.
+
+## 문제 해결
+
+설치 후 `wippy version`을 찾을 수 없다면 셸을 다시 열거나 설치 디렉토리가 `PATH`에 있는지 확인하세요.
 
 ## 다음 단계
 

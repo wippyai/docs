@@ -80,7 +80,7 @@ end
 
 **Gibt zurück:** `any, error`
 
-Gibt `nil` zurück, wenn der Schlüssel nicht existiert.
+Gibt `nil` und einen `errors.NOT_FOUND`-Fehler zurück, wenn der Schlüssel nicht existiert oder abgelaufen ist.
 
 ## Existenz prüfen
 
@@ -162,14 +162,14 @@ end
 ```lua
 -- nur erstellen, wenn der Schlüssel nicht existiert
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
-if err and err:kind() == "ALREADY_EXISTS" then
+if err and err:kind() == errors.ALREADY_EXISTS then
     -- jemand anderes hält ihn
 end
 
 -- compare-and-set: nur schreiben, wenn die Version noch übereinstimmt
 local cur = cache:entry("config")
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
-if err2 and err2:kind() == "CONFLICT" then
+if err2 and err2:kind() == errors.CONFLICT then
     -- ein gleichzeitiger Schreiber hat ihn geändert; erneut lesen und wiederholen
 end
 ```
@@ -235,14 +235,16 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Aktion | Ressource | Attribute | Beschreibung |
 |--------|----------|------------|-------------|
 | `store.get` | Store-ID | - | Store-Ressource abrufen |
-| `store.key.get` | Store-ID | `key` | Schlüsselwert lesen |
-| `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben |
+| `store.info` | Store-ID | - | Store-Fähigkeiten inspizieren |
+| `store.key.get` | Store-ID | `key` | Schlüsselwert lesen (auch `entry`) |
+| `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben (auch `put`) |
 | `store.key.delete` | Store-ID | `key` | Schlüssel löschen |
 | `store.key.has` | Store-ID | `key` | Schlüsselexistenz prüfen |
+| `store.key.list` | Store-ID | `prefix` | Einträge auflisten |
 
 ## Fehler
 
-`store.get()` und alle Methoden des Store-Handles (`get`, `set`, `has`, `delete`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`).
+`store.get()` und alle Methoden des Store-Handles (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`).
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|

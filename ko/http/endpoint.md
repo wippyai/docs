@@ -102,12 +102,11 @@ end
   func: serve_file
 ```
 
+이 catch-all 세그먼트 덕분에 라우트는 `/files/docs/readme.md` 같은 요청에 매칭됩니다. 캡처된 꼬리 부분은 끝의 점을 뺀 이름으로 다른 파라미터와 똑같이 읽습니다:
+
 ```lua
-local function handler()
-    local req = http.request()
-    local file_path = req:param("path")
-    -- /files/docs/readme.md -> path = "docs/readme.md"
-end
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
 ```
 
 ## 핸들러 함수
@@ -295,7 +294,22 @@ entries:
 
 ### 보호된 엔드포인트
 
+인가 미들웨어는 엔드포인트가 아니라 부모 라우터에 설정합니다. 매칭 후 미들웨어(예: `endpoint_firewall`)는 라우트 매칭 이후에 실행되며 해당 라우터 아래의 모든 엔드포인트에 적용됩니다:
+
 ```yaml
+- name: admin_router
+  kind: http.router
+  meta:
+    server: gateway
+  prefix: /admin
+  middleware:
+    - cors
+    - token_auth
+  post_middleware:
+    - endpoint_firewall
+  post_options:
+    endpoint_firewall.action: "admin"
+
 - name: admin_endpoint
   kind: http.endpoint
   meta:
@@ -303,10 +317,6 @@ entries:
   method: POST
   path: /settings
   func: app.admin:update_settings
-  post_middleware:
-    - endpoint_firewall
-  post_options:
-    endpoint_firewall.action: "admin"
 ```
 
 ## 참고

@@ -41,7 +41,7 @@ description: "Маршрутизация исходящего трафика и 
 - name: tailnet
   kind: network.tailscale
   hostname: "wippy-node"
-  auth_key_env: "TS_AUTHKEY"
+  auth_key: ${env:TS_AUTHKEY}
   ephemeral: false
   control_url: ""
 ```
@@ -49,13 +49,12 @@ description: "Маршрутизация исходящего трафика и 
 | Поле | Тип | Описание |
 |-------|------|-------------|
 | `hostname` | string | Имя узла tsnet (используется в каталоге состояния для каждого узла) |
-| `auth_key` | string | Встроенный ключ аутентификации tailnet |
-| `auth_key_env` | string | Имя переменной окружения с ключом аутентификации (разрешается через env-реестр) |
+| `auth_key` | string | Ключ аутентификации tailnet — напрямую или `${env:NAME}`, разрешаемый через [реестр окружения](system/env.md) |
 | `state_dir` | string | Переопределение каталога состояния tsnet |
 | `control_url` | string | Альтернативный координационный сервер |
 | `ephemeral` | bool | Регистрация как эфемерного узла tailnet |
 
-Требуется либо `auth_key`, либо `auth_key_env`.
+`auth_key` обязателен (укажите его напрямую или через `${env:NAME}`). Устаревшая директива `auth_key_env` разрешается тем же способом, но не рекомендуется; предпочитайте `auth_key: ${env:NAME}`.
 
 ## I2P
 

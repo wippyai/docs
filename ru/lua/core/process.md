@@ -135,8 +135,7 @@ local events = process.events()  -- События жизненного цикл
 |------|-----|----------|
 | `kind` | string | Константа типа события |
 | `from` | string | Исходный PID |
-| `result` | any | Для EXIT: возвращённое значение (присутствует при нормальном завершении) |
-| `error` | any | Для EXIT: ошибка (присутствует при аварийном завершении) |
+| `result` | table | Для EXIT/LINK_DOWN: запись {value, error}; возвращаемое значение процесса находится в `result.value`, а ошибка — в `result.error` |
 | `reason` | string | Для CANCEL: причина отмены процесса |
 | `sources` | string[] | Для OUTDATED: registry ID записей, которые изменились или были затронуты транзитивно |
 

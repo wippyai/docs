@@ -32,7 +32,7 @@ YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist di
 
 ### Dateistruktur
 
-Jede YAML-Datei mit `version` und `namespace` ist gültig:
+Jede YAML-Datei mit einem `namespace` plus entweder einem `entries`-Array oder einem `name`+`kind` auf oberster Ebene ist eine gültige Definitionsdatei. `version` ist optional:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | Feld | Erforderlich | Beschreibung |
 |------|--------------|--------------|
-| `version` | ja | Schemaversion (aktuell `"1.0"`) |
+| `version` | nein | Schemaversion (aktuell `"1.0"`) |
 | `namespace` | ja | Entry-Namespace für diese Datei |
 | `entries` | ja | Array von Entry-Definitionen |
 
@@ -207,14 +207,17 @@ Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für vollständige Referenz
 Runtime-Konfiguration im Projektstamm:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 Siehe [Konfigurationsanleitung](guides/configuration.md) für alle Optionen.
@@ -225,20 +228,24 @@ Quellverzeichnisse und der ausgewählte Modulgraph — siehe [Die Lock-Datei](#t
 
 ## Einträge referenzieren
 
-Referenzieren Sie Einträge nach vollständiger ID oder relativem Namen:
+Referenzieren Sie Einträge nach vollständiger ID oder relativem Namen. Kinder hängen sich über `meta` an ihren Parent, nicht über Listen auf Parent-Seite:
 
 ```yaml
-# Vollständige ID (namespace-übergreifend)
-- name: main.router
+# Router deklariert sich gegen einen Server
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# Gleicher Namespace - nur Name verwenden
+# Endpunkt referenziert den Router per Registry-ID (namespace-übergreifend funktioniert es genauso)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## Beispielprojekt

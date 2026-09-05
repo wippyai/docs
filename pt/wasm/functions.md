@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-O maximo padrao do pool elastico e 100 workers quando `max_size` nao e especificado.
+O padrao de 100 workers aplica-se apenas ao pool selecionado implicitamente (quando nenhum `type` e definido). Quando voce define explicitamente `type: lazy` ou `type: adaptive` sem `max_size`, o maximo padrao e 16 workers.
 
 ### Classes de Workers e Afinidade de Core
 

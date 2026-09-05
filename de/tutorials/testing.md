@@ -126,11 +126,10 @@ Die `imports`-Map steuert, worauf `require(...)` innerhalb des Tests aufgelöst 
 wippy test
 ```
 
-Filtere während des Iterierens auf eine einzelne Suite (passt zur Entry-ID oder zum
-Suite-Namen):
+Filtere während des Iterierens nach einem Teilstring der Entry-ID (namespace:name):
 
 ```bash
-wippy test calculator
+wippy test calc_test
 ```
 
 Ausgabe für die obige Suite:

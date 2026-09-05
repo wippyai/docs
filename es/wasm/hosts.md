@@ -61,13 +61,19 @@ Reloj de pared y reloj monotonico para operaciones de tiempo. El reloj monotonic
 
 ### wasi:io
 
-**Interfaces:** `wasi:io/error`, `wasi:io/streams`, `wasi:io/poll`
+**Interfaces:** `wasi:io/error`, `wasi:io/streams`
 
-Operaciones de lectura/escritura de streams y polling asincrono. La interfaz poll permite la cesion cooperativa a traves del dispatcher.
+Operaciones de lectura/escritura de streams y manejo de errores. La interfaz `wasi:io/poll` la proporciona por separado el import `wasi:poll`.
+
+### wasi:poll
+
+**Interfaces:** `wasi:io/poll`
+
+Polling asíncrono. La interfaz poll permite la cesión cooperativa a través del dispatcher.
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Acceso a variables de entorno, codigos de salida del proceso y flujos de E/S estandar. Las variables de entorno se mapean desde el registro de entorno de Wippy a traves de la configuracion WASI.
 
@@ -93,7 +99,7 @@ Generacion de numeros aleatorios criptograficamente seguros e inseguros.
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/network`, `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`
+**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 Redes TCP y UDP con resolucion DNS. Las operaciones de sockets suspenden el guest y se ejecutan a través del dispatcher, que realiza cada dial, bind y lookup en el [servicio de red](system/network.md).
 

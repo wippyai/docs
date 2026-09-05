@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-El maximo por defecto del pool elastico es 100 workers cuando `max_size` no esta especificado.
+El valor por defecto de 100 workers se aplica solo al pool seleccionado implicitamente (cuando no se define `type`). Cuando define explicitamente `type: lazy` o `type: adaptive` sin `max_size`, el maximo por defecto es de 16 workers.
 
 ### Clases de Workers y Afinidad de Nucleos
 

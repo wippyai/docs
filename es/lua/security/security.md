@@ -96,7 +96,7 @@ local actor = security.new_actor("user:" .. user.id, {
 -- Crear actor de servicio
 local service_actor = security.new_actor("service:payment-processor", {
     type = "service",
-    versión = "1.0.0"
+    version = "1.0.0"
 })
 ```
 

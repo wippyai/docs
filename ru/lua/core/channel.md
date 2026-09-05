@@ -8,6 +8,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
+
 Каналы в стиле Go для коммуникации между корутинами. Создание буферизованных и небуферизованных каналов, отправка и получение значений, координация между конкурентными процессами с помощью select.
 
 Глобальная переменная `channel` всегда доступна.
@@ -98,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | Массив случаев select |
 | `default` | boolean | Если true, возвращает немедленно когда ни один случай не готов |
 
-**Возвращает:** `table` с полями: `channel`, `value`, `ok`, `default`
+**Возвращает:** `table`
+
+- Для случая с каналом: `{channel, value, ok}` — `channel` это канал случая, `value` — полученное/отправленное значение, `ok` равно false при получении из закрытого канала.
+- Для ветки default (когда ни один случай не готов и `default = true`): `{default = true, ok = true}`.
 
 ### Паттерн таймаута
 
@@ -207,7 +211,6 @@ end
 | Условие | Kind | Повторяемо |
 |---------|------|------------|
 | Отправка в закрытый канал | runtime error | нет |
-| Закрытие закрытого канала | runtime error | нет |
 | Неверный случай в select | runtime error | нет |
 
 ## См. также

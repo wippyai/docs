@@ -69,7 +69,7 @@ Wippy는 내구성 있는 워크플로우 실행, 자동 리플레이, 재시작
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # 파일에서
 - name: temporal_client
@@ -81,7 +81,7 @@ Wippy는 내구성 있는 워크플로우 실행, 자동 리플레이, 재시작
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-`_env`로 끝나는 필드는 시스템에 정의되어야 하는 환경 변수를 참조합니다. 환경 스토리지와 변수 설정은 [환경 시스템](system/env.md)을 참조하세요.
+인증 및 자격 증명 필드는 디코드 시점에 [환경 레지스트리](system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 레거시 `api_key_env` / `key_pem_env` 디렉티브도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`을 사용하세요.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### TLS 설정
@@ -185,11 +185,15 @@ Wippy는 호출하는 액터와 스코프를 서명된 Temporal 헤더로 워크
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # 아이덴티티
+    identity: ""                          # 워커 아이덴티티 (Temporal UI에 표시됨)
+
     # 동시성
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # 폴러
     max_concurrent_activity_task_pollers: 20
@@ -204,6 +208,8 @@ Wippy는 호출하는 액터와 스코프를 서명된 Temporal 헤더로 워크
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # 기능 플래그
     enable_logging_in_replay: false
@@ -211,16 +217,17 @@ Wippy는 호출하는 액터와 스코프를 서명된 Temporal 헤더로 워크
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # 버전닝
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # 환경 변수에서 읽기
+    build_id: ${env:BUILD_ID}              # env 레지스트리에서 읽기
     use_versioning: false
     default_versioning_behavior: "pinned" # 또는 "auto_upgrade"
 ```
 
-`_env`로 끝나는 필드는 [환경 시스템](system/env.md) 엔트리를 통해 정의된 환경 변수를 참조합니다.
+자격 증명 및 식별자 필드는 디코드 시점에 [환경 레지스트리](system/env.md)를 통해 `${env:NAME}` 플레이스홀더를 해석합니다. 레거시 `build_id_env` 디렉티브도 같은 방식으로 해석되지만 더 이상 권장되지 않습니다. `build_id: ${env:NAME}`을 사용하세요.
 
 ### 버전 관리 동작
 
@@ -231,7 +238,7 @@ Wippy는 호출하는 액터와 스코프를 서명된 Temporal 헤더로 워크
 | `pinned` | 워크플로는 실행 전체에 걸쳐 시작했던 빌드 ID에 고정됩니다 |
 | `auto_upgrade` | 워크플로는 각 태스크 이후 호환되는 최신 빌드 ID에서 재개될 수 있습니다 |
 
-`build_id_env`는 `build_id`가 비어 있을 때 지정된 환경 변수에서 빌드 ID를 읽습니다.
+`build_id: ${env:NAME}`은 리터럴 `build_id`가 제공되지 않았을 때 env 레지스트리에서 빌드 ID를 읽습니다.
 
 ### 세션 워커
 

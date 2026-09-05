@@ -97,7 +97,9 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 サービスは自動的に開始し、バックオフ付きでクラッシュ時に再起動し、ランタイムのライフサイクル管理と統合されます。

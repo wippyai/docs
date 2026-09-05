@@ -10,16 +10,9 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 
 [expr-lang](https://expr-lang.org/)構文を使用して動的式を評価します。完全なLua実行なしで、フィルタリング、検証、ルール評価のための安全な式をコンパイルして実行できます。
 
-## 設定
+## キャッシュ
 
-式キャッシュは起動時に設定します:
-
-```yaml
-lua:
-  expr:
-    cache_enabled: true   # 式キャッシュを有効化
-    capacity: 5000        # キャッシュ容量
-```
+`expr.eval`はコンパイル済み式の内部LRUキャッシュを保持します（デフォルト容量は1000）。このキャッシュはモジュールに組み込まれており、設定は不要です。
 
 ## ロード
 
@@ -139,7 +132,7 @@ expr.eval('len("hello")')        -- 5
 expr.eval('upper("hello")')      -- "HELLO"
 expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
-expr.eval('contains("hello", "ell")')  -- true
+expr.eval('"hello" contains "ell"')  -- true
 
 -- 配列関数
 expr.eval("len(items)", {items = {1,2,3}})  -- 3

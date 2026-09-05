@@ -46,7 +46,7 @@ Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam 
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
-| 30-39 | socket | Dial, Listen, Accept, Close |
+| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
 | 50-59 | stream | Read, Write, Close, Seek |
 | 60-69 | http | Request, RequestBatch |
 | 70-79 | tty | E/S de terminal |
@@ -59,8 +59,9 @@ Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam 
 | 150-159 | exec | ProcessWait |
 | 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
 | 170-179 | eval | Compile, Run |
-| 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (grupo de processos) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Serviços definidos pelo usuário |
 
 Registro acontece durante boot via `MustRegisterCommands()`. Colisões causam panic na inicialização.
@@ -70,7 +71,7 @@ Registro acontece durante boot via `MustRegisterCommands()`. Colisões causam pa
 Comandos são estruturas de dados com um `CommandID` único:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

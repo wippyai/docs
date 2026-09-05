@@ -22,7 +22,7 @@ Vollständige Referenz aller in Wippy verfügbaren Entry-Typen.
 | `process.lua` | Langlebiger Lua-Prozess |
 | `workflow.lua` | Temporal-Workflow (deterministisch) |
 | `library.lua` | Gemeinsam genutzte Lua-Bibliothek |
-| `module.lua` | Lua-Modul-Oberflaeche |
+| `module.lua` | Lua-Modul-Oberfläche |
 | `function.lua.bc` | Vorkompiliertes Funktions-Bytecode |
 | `library.lua.bc` | Vorkompiliertes Bibliothek-Bytecode |
 | `process.lua.bc` | Vorkompiliertes Prozess-Bytecode |
@@ -69,7 +69,7 @@ Verwenden Sie <code>imports</code> um andere Lua-Einträge zu referenzieren. Sie
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Endpunkt
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Datenbanken
@@ -152,7 +153,7 @@ resp:status(200):json({users = get_users()})
     auto_start: true
 ```
 
-Siehe [Datenbank](system/database.md) fuer `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
+Siehe [Datenbank](system/database.md) für `${env:NAME}`-Secret-Referenzen, TLS-Optionen und Verbindungs-Pool-Tuning. Ändert sich ein env-gestützter Wert hinter einem Datenbank-Eintrag, wird der Pool live ausgetauscht — aktive Ausleihen laufen mit den alten Verbindungseinstellungen zu Ende.
 
 **Lua-API:** Siehe [SQL-Modul](lua/storage/sql.md)
 
@@ -248,13 +249,18 @@ local queue = require("queue")
 -- Nachricht veröffentlichen
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- Im Consumer-Handler auf aktuelle Nachricht zugreifen
-local msg = queue.message()
-local data = msg:body_json()
+-- Im Consumer-Handler: der Nachrichtenrumpf ist das Argument des Handlers
+local function main(data)
+    -- Zustellungs-Metadaten über die aktuelle Nachricht abrufen
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwenden Sie <code>queue.message()</code> im Handler um auf die aktuelle Nachricht zuzugreifen.
+Die <code>func</code> des Consumers wird einmal pro Nachricht mit dem Nachrichtenrumpf als Argument aufgerufen. Verwende <code>queue.message()</code> im Handler für <code>id()</code>, <code>header()</code>/<code>headers()</code> und <code>ack()</code>/<code>nack()</code> der Zustellung.
 </note>
 
 ## Prozessverwaltung
@@ -264,6 +270,7 @@ Die <code>func</code> des Consumers wird für jede Nachricht aufgerufen. Verwend
 | `process.host` | Prozessausführungs-Host |
 | `process.service` | Überwachter Prozess (umhüllt process.lua) |
 | `terminal.host` | Terminal/CLI-Host |
+| `pg.scope` | Prozessgruppen-Scope (siehe [Prozessgruppen](system/process-groups.md)) |
 
 ```yaml
 # Process Host (wo Prozesse laufen)
@@ -374,8 +381,8 @@ Siehe [Sicherheit](system/security.md).
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -391,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- Sekunden, Standard 3600
 ```
 
 <tip>
@@ -403,7 +410,7 @@ Verwenden Sie <code>endpoint</code> um sich mit S3-kompatiblen Diensten wie MinI
 | Kind | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichniszugriff |
-| `fs.embed` | Schreibgeschuetztes eingebettetes Dateisystem |
+| `fs.embed` | Schreibgeschütztes eingebettetes Dateisystem |
 
 ```yaml
 - name: data_dir
@@ -691,7 +698,7 @@ Siehe [WASM-Übersicht](wasm/overview.md).
 | `network.i2p` | I2P-Netzwerk-Overlay |
 | `network.tailscale` | Tailscale-Overlay |
 
-Wird von `http.service` ueber `network:`, von `funcs`/`process` ueber die Option `network` und von `http_client` ueber die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
+Wird von `http.service` über `network:`, von `funcs`/`process` über die Option `network` und von `http_client` über die Option `overlay_network` referenziert. Siehe [Netzwerk](system/network.md).
 
 ## Registry-Primitive
 

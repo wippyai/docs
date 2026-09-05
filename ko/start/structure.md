@@ -32,7 +32,7 @@ YAML 정의는 시작 시 레지스트리에 로드됩니다. 레지스트리가
 
 ### 파일 구조
 
-`version`과 `namespace`가 있는 모든 YAML 파일이 유효합니다:
+`namespace`와 함께 `entries` 배열 또는 최상위 `name`+`kind`가 있는 모든 YAML 파일이 유효한 정의 파일입니다. `version`은 선택적입니다:
 
 ```yaml
 version: "1.0"
@@ -60,7 +60,7 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `version` | 예 | 스키마 버전 (현재 `"1.0"`) |
+| `version` | 아니오 | 스키마 버전 (현재 `"1.0"`) |
 | `namespace` | 예 | 이 파일의 엔트리 네임스페이스 |
 | `entries` | 예 | 엔트리 정의 배열 |
 
@@ -207,14 +207,17 @@ UI 표시용 정보는 `meta`에 지정합니다:
 프로젝트 루트의 런타임 설정:
 
 ```yaml
+version: "1.0"
+
 logger:
   encoding: json
 
-host:
-  worker_count: 16
+logmanager:
+  min_level: 0
 
-http:
-  address: :8080
+supervisor:
+  host:
+    worker_count: 16
 ```
 
 모든 옵션은 [설정 가이드](guides/configuration.md)를 참조하세요.
@@ -225,20 +228,24 @@ http:
 
 ## 엔트리 참조
 
-전체 ID 또는 상대 이름으로 엔트리를 참조합니다:
+전체 ID 또는 상대 이름으로 엔트리를 참조합니다. 자식은 부모 쪽 목록이 아니라 `meta`를 통해 부모에 연결됩니다:
 
 ```yaml
-# 전체 ID (네임스페이스 간)
-- name: main.router
+# 라우터가 서버에 대해 자신을 선언
+- name: api
   kind: http.router
-  endpoints:
-    - app.api:get_user.endpoint
-    - app.api:list_orders.endpoint
+  meta:
+    server: app:gateway
+  prefix: /api
 
-# 같은 네임스페이스 - 이름만 사용
+# 엔드포인트는 레지스트리 ID로 라우터를 참조 (네임스페이스 간에도 동일하게 동작)
 - name: get_user.endpoint
   kind: http.endpoint
-  func: get_user
+  meta:
+    router: app.api:api
+  method: GET
+  path: /users/{id}
+  func: app.api:get_user
 ```
 
 ## 예제 프로젝트

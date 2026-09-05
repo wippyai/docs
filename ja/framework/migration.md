@@ -102,11 +102,11 @@ end)
 | `meta.timestamp` | no | 同一データベースに対して複数のマイグレーションがある場合の並び順に使用される ISO-8601 タイムスタンプ |
 | `meta.tags` | no | タグの配列。ランナーはタグでマイグレーションをフィルタリングできます |
 
-データベースに対するマイグレーションは、`meta.timestamp` の昇順で実行されます。
+データベースに対するマイグレーションは、`meta.timestamp` の昇順で実行されます。`meta.timestamp` は省略可能で、完全なエントリ ID がタイブレーカーとなるため、タイムスタンプが同一または存在しないマイグレーションも安定した決定的な順序で実行されます。
 
 ## DSL
 
-`migration.define` に渡される関数の内部では、3 つのネストされた関数が利用できます:
+`migration.define` に渡される関数の内部では、以下のネストされた関数が利用できます:
 
 | 関数 | 説明 |
 |----------|-------------|
@@ -156,7 +156,7 @@ local runner = require("runner").setup("app:app_db")
 
 local result = runner:run()      -- apply all pending migrations
 local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback({ id = "app:01_create_users_table" })
+local result = runner:rollback() -- roll back the most recently applied migration
 local status = runner:status()   -- list applied + pending migrations
 ```
 
@@ -185,15 +185,41 @@ local status = runner:status()   -- list applied + pending migrations
 
 ### `runner:rollback(options)`
 
-ID（必須）により単一のマイグレーションをロールバックします:
+適用済みのマイグレーションを適用順とは逆の順序でロールバックします。オプションなしの場合、直近に適用された 1 件のみを取り消します:
 
 ```lua
-runner:rollback({ id = "app:01_create_users_table" })
+runner:rollback()                                            -- roll back the last migration
+runner:rollback({ count = 3 })                               -- roll back the last 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
 ```
+
+オプション:
+
+| オプション | 説明 |
+|--------|-------------|
+| `count` | ロールバックするマイグレーションの件数。デフォルトは `1` |
+| `allowed_ids` | マイグレーション ID の配列。ロールバックの対象となるのはこれらのみ |
 
 ### `runner:status(options)`
 
-`{ applied = {...}, pending = {...} }` を返し、それぞれ `applied_at` と `meta.timestamp` でソートされます。
+データベースのすべてのマイグレーションを記述したステータスレポートを返します:
+
+```lua
+{
+    database_id        = "app:app_db",
+    db_type            = "sqlite",
+    total_migrations   = 3,
+    applied_migrations = 2,
+    pending_migrations = 1,
+    migrations = {
+        { id = "app:01_...", description = "...", timestamp = "...",
+          tags = {}, status = "applied", applied_at = ... },
+        -- ...
+    },
+}
+```
+
+適用済みのマイグレーションが先に（`applied_at` 順で）並び、続いて保留中のもの（`meta.timestamp` 順、次に ID 順）が並びます。
 
 ## Registry API
 
@@ -210,7 +236,7 @@ runner:rollback({ id = "app:01_create_users_table" })
 
 ## マイグレーション追跡
 
-ランナーは初回実行時に、各対象データベースに `wippy_migrations` テーブルを作成します。適用されたマイグレーションは ID で記録されるため、以降の実行ではスキップされます。追跡テーブルは自動的に作成されるため、独自のマイグレーションで作成しないでください。
+ランナーは初回実行時に、各対象データベースに `_migrations` テーブルを作成します。適用されたマイグレーションは ID で記録されるため、以降の実行ではスキップされます。追跡テーブルは自動的に作成されるため、独自のマイグレーションで作成しないでください。
 
 ## ベストプラクティス
 

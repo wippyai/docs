@@ -16,7 +16,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-의존성을 선언하고 `target_db` 요구사항을 애플리케이션 데이터베이스에 연결합니다:
+의존성을 선언하고, 의존성의 `parameters`를 통해 `target_db` 요구사항을 애플리케이션 데이터베이스에 연결합니다:
 
 ```yaml
 version: "1.0"
@@ -25,20 +25,18 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    path: ./data/app.db
+    file: ./data/app.db
 
   - name: dep.embeddings
     kind: ns.dependency
     component: wippy/embeddings
     version: "*"
-
-  - name: target_db
-    kind: registry.entry
-    meta:
-      wippy.embeddings.target_db: app:app_db
+    parameters:
+      - name: target_db
+        value: app:app_db
 ```
 
-시작 시 `wippy/migration`이 `01_create_embeddings_table` 마이그레이션을 수행하여 데이터베이스 드라이버에 적합한 벡터 인덱스를 갖춘 `embeddings` 테이블을 생성합니다.
+시작 시 `wippy/migration`이 `01_create_embeddings_table` 마이그레이션을 수행하여 데이터베이스 드라이버에 적합한 벡터 인덱스를 갖춘 `embeddings_512` 테이블을 생성합니다.
 
 ## 구성 상수
 

@@ -61,13 +61,19 @@ WASMモジュールはホスト関数インポートを通じてランタイム�
 
 ### wasi:io
 
-**インターフェース:** `wasi:io/error`、`wasi:io/streams`、`wasi:io/poll`
+**インターフェース:** `wasi:io/error`、`wasi:io/streams`
 
-ストリーム読み書き操作と非同期ポーリング。pollインターフェースはディスパッチャを通じた協調的yieldを可能にします。
+ストリームの読み書き操作とエラー処理。`wasi:io/poll`インターフェースは`wasi:poll`インポートが別途提供します。
+
+### wasi:poll
+
+**インターフェース:** `wasi:io/poll`
+
+非同期ポーリング。pollインターフェースはディスパッチャを通じた協調的yieldを可能にします。
 
 ### wasi:cli
 
-**インターフェース:** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`
+**インターフェース:** `wasi:cli/environment`、`wasi:cli/exit`、`wasi:cli/stdin`、`wasi:cli/stdout`、`wasi:cli/stderr`、`wasi:cli/terminal-stdin`、`wasi:cli/terminal-stdout`、`wasi:cli/terminal-stderr`
 
 環境変数、プロセス終了コード、標準I/Oストリームへのアクセス。環境変数はWASI設定を通じてWippy環境レジストリからマッピングされます。
 
@@ -93,7 +99,7 @@ wasi:
 
 ### wasi:sockets
 
-**インターフェース:** `wasi:sockets/network`、`wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`
+**インターフェース:** `wasi:sockets/instance-network`、`wasi:sockets/ip-name-lookup`、`wasi:sockets/tcp`、`wasi:sockets/tcp-create-socket`、`wasi:sockets/udp`、`wasi:sockets/udp-create-socket`
 
 DNS解決を伴うTCPおよびUDPネットワーキング。ソケット操作はゲストをサスペンドしてディスパッチャ経由で実行され、ディスパッチャはすべてのdial、bind、ルックアップを[ネットワークサービス](system/network.md)上で行います。
 

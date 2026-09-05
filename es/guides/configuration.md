@@ -135,19 +135,28 @@ Almacenamiento de entradas e historial de versiones. El registro almacena todas 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | Rastrear versiones de entradas |
-| `history_type` | string | memory | Almacenamiento: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite |
+| `history_type` | string | memory | Almacenamiento: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite (usada cuando `history_type: sqlite`) |
+| `history_dsn` | string | | DSN de Postgres (usado cuando `history_type: postgres`) |
+| `history_schema` | string | | Nombre del esquema de Postgres (usado cuando `history_type: postgres`) |
 | `event_wait_timeout` | duration | 30s | Espera por operación a la confirmación de los listeners durante un apply del registro |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Tipos de entrada gestionados internamente en lugar de despacharse a los listeners de componentes |
 | `dependency_resolve_timeout` | duration | 0 (ninguno) | Límite para la resolución de dependencias |
 | `dependency_download_timeout` | duration | 0 (ninguno) | Límite para cada descarga de módulo y solicitud de URL de descarga |
 | `dependency_lock_path` | string | `wippy.lock` descubierto | Archivo de bloqueo que el handler de dependencias lee y escribe |
-| `dependency_vendor_dir` | string | `<dir del lock>/<directories.modules>/vendor` | Directorio que contiene los packs de módulos descargados |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | Directorio que contiene los packs de módulos descargados |
 
 ```yaml
 registry:
   history_type: sqlite
   history_path: /var/lib/wippy/registry.db
+```
+
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
 ```
 
 Ver: [Concepto de Registro](concepts/registry.md), [Módulo de Registro](lua/core/registry.md)
@@ -186,7 +195,7 @@ Enrutamiento de mensajes entre procesos a través de nodos.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `node_name` | string | local | Identificador de este nodo relay |
+| `node_name` | string | ID derivado por instancia | Identificador de este nodo relay (por defecto: UUIDv5 de machine-id/hostname + directorio de trabajo; anulable mediante `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -226,8 +235,10 @@ Caché de la VM de Lua y evaluación de expresiones.
 | `proto_cache_size` | int | 60000 | Caché de prototipos compilados |
 | `main_cache_size` | int | 10000 | Caché del chunk principal |
 | `cache.enabled` | bool | false | Persistir caché de bytecode/verificación de tipos en disco |
-| `cache.dir` | string | (directorio de caché del sistema) | Ruta del directorio de caché |
-| `cache.mode` | string | `read_write` | Modo de caché: `read_write`, `read_only`, `write_only` |
+| `cache.dir` | string | `.wippy/cache/lua` | Ruta del directorio de caché (relativa al directorio de configuración/trabajo) |
+| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (por defecto), `readonly`, `off` |
+| `cache.compile.enabled` | bool | true | Persistir el bytecode compilado (cuando `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Persistir los resultados de verificación de tipos (cuando `cache.enabled`) |
 | `type_system.enabled` | bool | false | Habilitar verificación estática de tipos |
 | `type_system.strict` | bool | false | Tratar advertencias de tipos como errores |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Espera a que se confirme la invalidación de código tras cambiar una entrada |
@@ -339,7 +350,7 @@ Endpoint de métricas de Prometheus.
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Iniciar servidor de métricas |
-| `address` | string | localhost:9090 | Dirección de escucha |
+| `address` | string | | Dirección de escucha; debe establecerse explícitamente cuando `enabled: true`, de lo contrario el servidor de métricas no arranca |
 
 ```yaml
 prometheus:
@@ -581,7 +592,7 @@ extensions:
 
 | Variable | Descripción |
 |----------|-------------|
-| `GOMEMLIMIT` | Límite de memoria (sobrescribe el flag `--memory-limit`) |
+| `GOMEMLIMIT` | Límite de memoria de respaldo cuando no se establece el flag `--memory-limit` (precedencia: flag `--memory-limit` > `GOMEMLIMIT` > 1G por defecto) |
 
 ## Ver También
 

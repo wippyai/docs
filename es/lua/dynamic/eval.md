@@ -82,8 +82,9 @@ local result, err = runner.run({
         local function double(x)
             return x * 2
         end
-        return double(input)
+        return { double = double }
     ]],
+    method = "double",
     args = {21}
 })
 -- result = 42
@@ -154,6 +155,7 @@ Importar entradas del registro:
 ```lua
 runner.run({
     source = [[
+        local data = ...
         local utils = require("utils")
         return utils.format(data)
     ]],
@@ -190,10 +192,10 @@ Inyectar tablas personalizadas:
 ```lua
 runner.run({
     source = [[
-        return sdk.versión
+        return sdk.version
     ]],
     custom_modules = {
-        sdk = {versión = "1.0.0", api_key = "xxx"}
+        sdk = {version = "1.0.0", api_key = "xxx"}
     }
 })
 ```
@@ -205,7 +207,7 @@ Pasar datos accesibles como `ctx`:
 ```lua
 runner.run({
     source = [[
-        return "Hello, " .. ctx.user
+        return "Hello, " .. ctx.get("user")
     ]],
     context = {user = "Alice"}
 })

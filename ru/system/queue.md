@@ -93,13 +93,13 @@ flowchart LR
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Инлайновые поля `cert`/`key`/`ca` содержат PEM-контент; варианты `*_env` разрешаются через реестр env. Эти два источника взаимоисключающие для каждого поля. `insecure_skip_verify` отключает проверку сертификата (только для разработки).
+`cert`/`key`/`ca` содержат PEM-контент — инлайн, через `file://` или через плейсхолдер `${env:NAME}`, разрешаемый через [реестр env](system/env.md). `insecure_skip_verify` отключает проверку сертификата (только для разработки). Устаревшие директивы `cert_env`/`key_env`/`ca_env` разрешаются так же, но не рекомендуются; предпочитайте `${env:NAME}`.
 
 ### Драйвер SQS
 
@@ -109,8 +109,8 @@ flowchart LR
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
@@ -132,7 +132,7 @@ flowchart LR
 | `use_fips` | bool | `false` | Использовать FIPS-совместимые эндпойнты |
 | `use_dual_stack` | bool | `false` | Использовать dual-stack эндпойнты (IPv4 + IPv6) |
 
-Очереди создаются драйвером автоматически при первом использовании. Используйте заголовки с префиксом `sqs.*` для адресации SQS-специфичных атрибутов при публикации; нейтральные ключи вроде `correlation_id` и `content_type` по возможности транслируются в системные атрибуты SQS.
+Очереди создаются драйвером автоматически при первом использовании. Используйте заголовки с префиксом `sqs.` для адресации SQS-специфичных полей при публикации: `sqs.delay_seconds`, `sqs.message_group_id` и `sqs.message_deduplication_id` отображаются в типизированные поля сообщения SQS. Все остальные заголовки (нейтральные ключи вроде `correlation_id` и `content_type`, а также любые ключи `sqs.message_attributes.*`) передаются как есть в виде атрибутов сообщения SQS.
 
 ## Настройка очереди
 

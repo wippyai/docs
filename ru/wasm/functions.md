@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-Максимум эластичного пула по умолчанию -- 100 воркеров, если `max_size` не указан.
+Значение по умолчанию в 100 воркеров применяется только к неявно выбранному пулу (когда `type` не задан). Если явно указать `type: lazy` или `type: adaptive` без `max_size`, максимум по умолчанию -- 16 воркеров.
 
 ### Классы воркеров и привязка к ядрам
 
