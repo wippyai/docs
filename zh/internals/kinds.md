@@ -24,7 +24,7 @@ Handler 使用模式订阅：
 |---------|---------|
 | `http.service` | 仅完全匹配 |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Entry Listener 接口
 

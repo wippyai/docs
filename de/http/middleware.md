@@ -101,7 +101,7 @@ options:
 
 **Schlüssel-Strategien:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Gibt `429 Too Many Requests` mit Headern zurück: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Gibt `429 Too Many Requests` mit Headern zurück: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 

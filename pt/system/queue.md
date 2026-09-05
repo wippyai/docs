@@ -157,7 +157,7 @@ As filas são criadas automaticamente pelo driver no primeiro uso. Use headers c
 | `queue_name` | string | Não | Nome externo da fila (padrão é o nome da entrada) |
 | `driver_options` | object | Não | Sub-bag por driver, indexado pelo kind do driver |
 | `dead_letter.queue` | ID do Registro | Não | ID da fila para mensagens com falha |
-| `dead_letter.max_attempts` | int | Não | Tentativas antes de rotear para a DLQ |
+| `dead_letter.max_attempts` | int | Não | Tentativas antes de rotear para a DLQ (aceito, mas ainda não aplicado por nenhum driver integrado) |
 
 ### Opções do Driver
 
@@ -294,7 +294,7 @@ Chame `msg:ack()` ou `msg:nack()` explicitamente apenas para fazer settle anteci
 
 ### Roteamento Dead-Letter
 
-Quando `dead_letter` está configurado na fila, uma mensagem que é nack além de `max_attempts` é roteada para a DLQ com os headers `x_dead_letter_reason` e `x_original_queue` definidos pelo driver. Publicadores não devem definir nenhum header `x_*` — estes são reservados para registro da DLQ.
+O roteamento dead-letter ainda não está implementado. O bloco `dead_letter` (veja [Configuração de Fila](#queue-configuration)) é aceito na configuração, mas nenhum driver integrado atualmente conta tentativas, roteia mensagens nack para a DLQ configurada ou define headers `x_dead_letter_*`. Uma mensagem nack é reentregue conforme a política do próprio driver. O namespace de headers `x_*` é reservado para registro futuro da DLQ, portanto publicadores devem evitar definir headers `x_*`.
 
 ## Publicando Mensagens
 

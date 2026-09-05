@@ -203,7 +203,7 @@ fs.seek.END       -- 末尾から
 | `isdir(path)` | `boolean, error` | ディレクトリか確認 |
 | `mkdir(path)` | `boolean, error` | ディレクトリを作成 |
 | `remove(path)` | `boolean, error` | ファイル/空のディレクトリを削除 |
-| `readdir(path)` | `iterator` | ディレクトリを一覧 |
+| `readdir(path)` | `iterator, state` | ディレクトリを一覧（汎用 `for` ループで使用）|
 | `open(path, mode)` | `File, error` | ファイルハンドルを開く |
 | `chdir(path)` | `boolean, error` | 作業ディレクトリを変更 |
 | `pwd()` | `string, error` | 作業ディレクトリを取得 |

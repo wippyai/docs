@@ -20,7 +20,7 @@ options:
   ratelimit.requests: "100"
 ```
 
-Las opciones usan notación de punto: `nombre_middleware.opcion.nombre`. El formato heredado con guion bajo es soportado para compatibilidad hacia atrás.
+Las opciones usan notación de punto: `middleware_name.option.name`. El formato heredado con guion bajo es soportado para compatibilidad hacia atrás.
 
 ## Pre-Match vs Post-Match
 
@@ -101,7 +101,7 @@ options:
 
 **Estrategias de clave:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Retorna `429 Too Many Requests` con headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Retorna `429 Too Many Requests` con headers: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 

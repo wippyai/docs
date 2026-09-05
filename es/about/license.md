@@ -25,4 +25,6 @@ Debe hacer disponible el código fuente de cualquier archivo MPL modificado cuan
 
 ## Dependencias
 
-Wippy usa varias dependencias de código abierto, cada una con sus propias licencias. Todas las dependencias son compatibles con uso comercial.
+Wippy usa varias dependencias, cada una con sus propias licencias. La mayoría son bibliotecas de código abierto con licencias permisivas compatibles con uso comercial.
+
+Un componente incluido, el runtime WASM (`wippyai/wasm-runtime`), está licenciado bajo la Business Source License 1.1. Puede usarlo en producción, excepto para ofrecerlo a terceros de forma alojada o embebida de manera que compita con los productos o servicios de Wippy AI. Cuatro años después de la publicación de cada versión, esa versión pasa a la Apache License 2.0.

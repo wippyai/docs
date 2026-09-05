@@ -17,7 +17,7 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
 | `library.lua` | 다른 엔트리가 임포트하는 공유 코드 |
 | `module.lua` | 모듈 표면 (다중 메서드 라이브러리) |
 
-각 종류에는 `wippy pack --bytecode`로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 패킹 시 자동으로 생성됩니다.
+각 종류에는 `wippy pack --bytecode '**'`(또는 `--bytecode 'app:**'` 같은 패턴)로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 해당 플래그로 패킹할 때 생성됩니다.
 
 ## 공통 필드
 

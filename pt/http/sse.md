@@ -60,7 +60,7 @@ process.monitor(stream_pid)
 ```
 
 <tip>
-O relay monitora o processo alvo. Se o alvo sair, o stream SSE fecha automaticamente e o cliente recebe um evento <code>done</code>.
+O relay monitora o processo alvo. Se o alvo sair, o stream SSE fecha automaticamente e o cliente recebe um evento `done`.
 </tip>
 
 ## Configuração

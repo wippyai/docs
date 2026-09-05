@@ -180,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | 关闭码（1000-4999），默认 1000 |
 | `reason` | string | 关闭原因（可选） |
 
-**返回:** `boolean, error`
+在关闭帧发送完成前会让出执行。
 
 ## 常量
 

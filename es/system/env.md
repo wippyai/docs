@@ -16,7 +16,7 @@ El sistema de entorno separa el almacenamiento del acceso:
 
 Las variables pueden referenciarse por:
 - **Nombre público** - El valor del campo `variable` (debe ser único en el sistema)
-- **ID de Entrada** - Referencia completa `namespace:nombre`
+- **ID de Entrada** - Referencia completa `namespace:name`
 
 Si no desea que una variable sea accesible públicamente por nombre, omita el campo `variable`.
 
@@ -125,7 +125,7 @@ Las variables proporcionan acceso nombrado a valores de almacenes.
 | Propiedad | Tipo | Descripción |
 |----------|------|-------------|
 | `variable` | string | Nombre de variable pública (opcional, debe ser único) |
-| `storage` | string | Referencia de almacén (`namespace:nombre`) |
+| `storage` | string | Referencia de almacén (`namespace:name`) |
 | `default` | string | Valor por defecto si no se encuentra |
 | `readonly` | boolean | Prevenir modificaciones |
 

@@ -185,8 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-La selección explícita con `network = nil` elimina el predeterminado para esa llamada.
-
 ## Permisos
 
 La acción `network.select` controla la selección explícita de superposición. Deniégala en un scope para evitar que el código elija una superposición:

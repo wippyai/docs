@@ -98,7 +98,7 @@ O primeiro argumento de `generate()` pode ser uma string de prompt, um construto
 | Campo | Tipo | Descricao |
 |-------|------|-----------|
 | `result` | string | Conteudo de texto gerado |
-| `tokens` | table | Uso de tokens: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | Uso de tokens: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, mais os opcionais `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Motivo da interrupcao da geracao: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array de chamadas de ferramentas (se o modelo invocou ferramentas) |
 | `metadata` | table | Metadados especificos do provedor |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Adiciona mensagem do assistente |
 | `:add_developer(content, meta?)` | Adiciona mensagem do desenvolvedor |
 | `:add_message(role, content_parts, name?, meta?)` | Adiciona mensagem com papel e partes de conteudo |
-| `:add_function_call(name, args, id?)` | Adiciona chamada de ferramenta do assistente |
+| `:add_function_call(name, arguments, id?, options?)` | Adiciona chamada de ferramenta do assistente (`arguments` é a string JSON bruta) |
 | `:add_function_result(name, result, id?)` | Adiciona resultado de execucao de ferramenta |
 | `:add_cache_marker(id?)` | Marca limite de cache (modelos Claude) |
 | `:get_messages()` | Obtem o array de mensagens |

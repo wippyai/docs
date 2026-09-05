@@ -165,7 +165,7 @@ Lua API는 [Process Groups](lua/core/pg.md)를, 설정은 [`pg.scope` 엔트리 
 
 ## 분산 잠금
 
-`system.lock`은 Strong 이름 범위 위에 직접 구축된 클러스터 전체 상호 배제입니다. 잠금 획득은 호출 프로세스가 소유한 Strong 범위 아래 이름을 등록합니다; 해제는 등록을 취소합니다. Strong은 모든 살아있는 노드의 승인을 요구하므로 클러스터 전체에 최대 하나의 보유자만 존재할 수 있습니다.
+`system.lock`은 공유 키-값 저장소의 raft-선형화 가능 조건부 쓰기 위에 구축된 클러스터 전체 상호 배제입니다. 잠금 획득은 `_sys:lock:<name>`에 보유자 PID를 set-if-absent로 기록합니다; 해제는 여전히 호출자가 보유 중인 경우 해당 엔트리를 삭제합니다. 조건부 쓰기가 Raft를 거치므로(리더가 아닌 노드의 쓰기는 리더로 전달됨) 선형화 가능하며, 따라서 클러스터 전체에 최대 하나의 보유자만 존재할 수 있습니다.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

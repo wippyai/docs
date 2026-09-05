@@ -191,7 +191,7 @@ group:release()
 |------|------|
 | 权限被拒绝 | `errors.PERMISSION_DENIED` |
 | 参数缺失或为空 | `errors.INVALID` |
-| 作用域未找到 | `errors.NOT_FOUND` |
+| 作用域未找到 | `errors.INTERNAL` |
 | 离开未加入的组 | `errors.NOT_FOUND` |
 | 实例已释放 | `errors.INVALID` |
 

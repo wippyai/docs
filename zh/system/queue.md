@@ -157,7 +157,7 @@ TLS 块：
 | `queue_name` | string | 否 | 外部队列名（默认为 entry 名）|
 | `driver_options` | object | 否 | 按驱动 kind 索引的子配置 |
 | `dead_letter.queue` | Registry ID | 否 | 失败消息的队列 ID |
-| `dead_letter.max_attempts` | int | 否 | 路由到 DLQ 之前的尝试次数 |
+| `dead_letter.max_attempts` | int | 否 | 路由到 DLQ 之前的尝试次数（配置可接受，但内置驱动尚未强制执行） |
 
 ### 驱动选项
 
@@ -294,7 +294,7 @@ Runtime 根据处理器返回值自动 settle：
 
 ### Dead-Letter 路由
 
-当队列上配置了 `dead_letter` 时，nack 超过 `max_attempts` 的消息会被路由到 DLQ，驱动会设置 `x_dead_letter_reason` 和 `x_original_queue` header。发布者不得设置任何 `x_*` header——这些保留给 DLQ 簿记使用。
+死信路由尚未实现。`dead_letter` 块（参见[队列配置](#queue-configuration)）在配置中可以接受，但目前没有内置驱动会统计尝试次数、把 nack 的消息路由到配置的 DLQ，或设置 `x_dead_letter_*` header。被 nack 的消息按驱动自身的策略重新投递。`x_*` header 命名空间保留给未来的 DLQ 簿记使用，因此发布者应避免设置 `x_*` header。
 
 ## 发布消息
 

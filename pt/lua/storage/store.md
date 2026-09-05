@@ -80,7 +80,7 @@ end
 
 **Retorna:** `any, error`
 
-Retorna `nil` se chave não existe.
+Retorna `nil` e um erro `errors.NOT_FOUND` se a chave não existe ou expirou.
 
 ## Verificando Existencia
 

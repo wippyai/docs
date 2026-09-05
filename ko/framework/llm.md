@@ -98,7 +98,7 @@ return { handler = handler }
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
 | `result` | string | 생성된 텍스트 콘텐츠 |
-| `tokens` | table | 토큰 사용량: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | 토큰 사용량: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, 그리고 선택적으로 `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | 생성이 중지된 이유: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | 도구 호출 배열 (모델이 도구를 호출한 경우) |
 | `metadata` | table | 제공자별 메타데이터 |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | 어시스턴트 메시지 추가 |
 | `:add_developer(content, meta?)` | 개발자 메시지 추가 |
 | `:add_message(role, content_parts, name?, meta?)` | 역할과 콘텐츠 파트를 지정하여 메시지 추가 |
-| `:add_function_call(name, args, id?)` | 어시스턴트의 도구 호출 추가 |
+| `:add_function_call(name, arguments, id?, options?)` | 어시스턴트의 도구 호출 추가 (`arguments`는 원시 JSON 문자열) |
 | `:add_function_result(name, result, id?)` | 도구 실행 결과 추가 |
 | `:add_cache_marker(id?)` | 캐시 경계 표시 (Claude 모델) |
 | `:get_messages()` | 메시지 배열 가져오기 |

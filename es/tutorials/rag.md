@@ -295,11 +295,11 @@ curl -X POST http://localhost:8080/api/ask \
 
 ## Notas operativas
 
-- **Tamaño de chunk**: 500–1000 tokens es un buen punto de partida. Demasiado pequeño pierde contexto local; demasiado grande diluye las puntuaciones de similitud. Usa `chunk_overlap` (~10–20 % del tamaño del chunk) para preservar frases a través de los límites.
+- **Tamaño de chunk**: `chunk_size` y `chunk_overlap` cuentan caracteres, no tokens (el splitter mide la longitud con `utf8.RuneCountInString`). Aproximadamente 2000–4000 caracteres es un buen punto de partida. Demasiado pequeño pierde contexto local; demasiado grande diluye las puntuaciones de similitud. Usa `chunk_overlap` (~10–20 % del tamaño del chunk) para preservar frases a través de los límites.
 - **Tipos de contenido**: Usa valores `content_type` distintos (`doc_chunk`, `faq`, `code_snippet`) para que la búsqueda pueda filtrar por tipo.
 - **Reindexado**: Elimina y reingiere por documento vía `embedding_repo.delete_by_origin(doc_id)` antes de agregar nuevos chunks.
 - **Búsqueda híbrida**: Para coincidencia exacta de términos (nombres, IDs), combina la búsqueda vectorial con la búsqueda de texto completo sobre tu tabla fuente y re-rankea.
-- **Elección de modelo**: El modelo por defecto de 512 dimensiones `text-embedding-3-small` es rentable. Actualiza a 1024 o 3072 dimensiones solo si el recall es insuficiente — vectores más grandes significan mayor almacenamiento y búsqueda más lenta.
+- **Elección de modelo**: `wippy/embeddings` está fijado a `text-embedding-3-small` con 512 dimensiones, y la tabla `embeddings_512` almacena `vector(512)`/`float[512]`. Un modelo o tamaño de vector distinto implica cambiar las constantes de la biblioteca y la tabla de migración.
 
 ## Siguientes Pasos
 

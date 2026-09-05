@@ -24,7 +24,7 @@ description: "エントリハンドラはkindごとにレジストリエント�
 |---------|------|
 | `http.service` | 完全一致のみ |
 | `http.*` | `http.service`、`http.router`、`http.endpoint` |
-| `function.*` | `function.lua`、`function.lua.bc` |
+| `function.**` | `function.lua`、`function.lua.bc` |
 
 ## EntryListenerインターフェース
 

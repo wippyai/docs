@@ -72,7 +72,7 @@ Ejecuta comandos dentro de contenedores Docker aislados.
 | `default_env` | map | - | Variables de entorno |
 | `command_whitelist` | string[] | - | Comandos permitidos (coincidencia exacta) |
 | `network_mode` | string | bridge | Modo de red: `host`, `bridge`, `none` |
-| `volumes` | string[] | - | Montajes de volumen: `host:contenedor[:ro]` |
+| `volumes` | string[] | - | Montajes de volumen: `host:container[:ro]` |
 | `user` | string | - | Usuario para ejecutar dentro del contenedor |
 | `memory_limit` | int | 0 | Límite de memoria en bytes (0 = ilimitado) |
 | `cpu_quota` | int | 0 | Cuota de CPU (100000 = 1 CPU, 0 = ilimitado) |

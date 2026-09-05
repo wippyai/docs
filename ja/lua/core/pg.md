@@ -191,7 +191,7 @@ group:release()
 |-----------|------|
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 引数が欠損または空 | `errors.INVALID` |
-| スコープが見つからない | `errors.NOT_FOUND` |
+| スコープが見つからない | `errors.INTERNAL` |
 | メンバーでないグループからの離脱 | `errors.NOT_FOUND` |
 | インスタンスが解放済み | `errors.INVALID` |
 

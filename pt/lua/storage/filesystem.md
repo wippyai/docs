@@ -203,7 +203,7 @@ fs.seek.END       -- do fim
 | `isdir(path)` | `boolean, error` | Verificar se e diretorio |
 | `mkdir(path)` | `boolean, error` | Criar diretorio |
 | `remove(path)` | `boolean, error` | Remover arquivo/diretorio vazio |
-| `readdir(path)` | `iterator` | Listar diretorio |
+| `readdir(path)` | `iterator, state` | Listar diretorio (use em loop `for` generico) |
 | `open(path, mode)` | `File, error` | Abrir file handle |
 | `chdir(path)` | `boolean, error` | Mudar diretorio de trabalho |
 | `pwd()` | `string, error` | Obter diretorio de trabalho |

@@ -98,7 +98,7 @@ return { handler = handler }
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `result` | string | 生成されたテキストコンテンツ |
-| `tokens` | table | トークン使用量: `prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens` |
+| `tokens` | table | トークン使用量: `prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens`、およびオプションの `cache_read_input_tokens`、`cache_read_tokens`、`cache_creation_input_tokens`、`cache_write_tokens` |
 | `finish_reason` | string | 生成が停止した理由: `"stop"`、`"length"`、`"tool_call"`、`"filtered"`、`"error"` |
 | `tool_calls` | table? | ツール呼び出しの配列（モデルがツールを呼び出した場合） |
 | `metadata` | table | プロバイダー固有のメタデータ |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | アシスタントメッセージを追加 |
 | `:add_developer(content, meta?)` | 開発者メッセージを追加 |
 | `:add_message(role, content_parts, name?, meta?)` | ロールとコンテンツパーツを指定してメッセージを追加 |
-| `:add_function_call(name, args, id?)` | アシスタントからのツール呼び出しを追加 |
+| `:add_function_call(name, arguments, id?, options?)` | アシスタントからのツール呼び出しを追加（`arguments` は生の JSON 文字列）|
 | `:add_function_result(name, result, id?)` | ツール実行結果を追加 |
 | `:add_cache_marker(id?)` | キャッシュ境界をマーク（Claude モデル） |
 | `:get_messages()` | メッセージ配列を取得 |

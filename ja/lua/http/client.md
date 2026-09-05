@@ -168,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | no | 元のファイル名 |
 | `content` | string | yes* | ファイル内容 |
 | `reader` | userdata | yes* | 代替: 内容用のio.Reader |
-| `content_type` | string | no | MIMEタイプ（デフォルト: `application/octet-stream`） |
+| `content_type` | string | no | 現在は無視されます: アップロードされる各パートは、このフィールドに関わらず常に `Content-Type: application/octet-stream` で送信されます |
 
 *`content`または`reader`のいずれかが必須。
 

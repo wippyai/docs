@@ -70,7 +70,7 @@ process.send(target_pid, "topic", payload)
 Nachrichten vom selben Absender kommen in Reihenfolge an. Nachrichten von verschiedenen Absendern können sich überlappen. Die Zustellung erfolgt ohne Bestätigung — verwenden Sie Anfrage-Antwort-Muster, wenn Sie eine Bestätigung benötigen.
 
 <note>
-Prozesse können sich in einem lokalen Namensverzeichnis registrieren und anstelle der PID über den Namen adressiert werden (z. B. <code>session_manager</code>). Ein globales Verzeichnis für knotenübergreifende Adressierung ist geplant.
+Prozesse können sich in einem lokalen Namensverzeichnis registrieren und anstelle der PID über den Namen adressiert werden (z. B. `session_manager`). Namen können über `process.registry` auch clusterweit für knotenübergreifende Adressierung registriert werden, mit den Scopes EVENTUAL (gossip-basiert), CONSISTENT oder STRONG (beide Raft-gestützt).
 </note>
 
 ## Supervision

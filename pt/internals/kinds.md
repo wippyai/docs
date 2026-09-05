@@ -24,7 +24,7 @@ Handlers se inscrevem usando padrões:
 |--------|-------------|
 | `http.service` | Apenas match exato |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Interface EntryListener
 

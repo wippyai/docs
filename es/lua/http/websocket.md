@@ -180,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Código de cierre (1000-4999), predeterminado 1000 |
 | `reason` | string | Razon de cierre (opcional) |
 
-**Devuelve:** `boolean, error`
+Cede hasta que se envía el frame de cierre.
 
 ## Constantes
 

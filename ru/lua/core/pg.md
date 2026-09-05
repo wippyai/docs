@@ -191,7 +191,7 @@ group:release()
 |---------|------|
 | Разрешение отклонено | `errors.PERMISSION_DENIED` |
 | Отсутствует или пустой аргумент | `errors.INVALID` |
-| Область не найдена | `errors.NOT_FOUND` |
+| Область не найдена | `errors.INTERNAL` |
 | Выход из группы без членства | `errors.NOT_FOUND` |
 | Экземпляр освобождён | `errors.INVALID` |
 

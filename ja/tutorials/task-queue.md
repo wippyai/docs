@@ -372,7 +372,7 @@ return { main = main }
 ```
 
 <note>
-コンシューマーはハンドラが正常に返ると自動でack、エラーを発生させると自動でnackします。ハンドラ終了前に明示的な制御が必要な場合のみ、<code>queue.message()</code>経由で<code>msg:ack()</code>または<code>msg:nack()</code>を呼び出してください。
+コンシューマーはハンドラが正常に返ると自動でack、エラーを発生させると自動でnackします。ハンドラ終了前に明示的な制御が必要な場合のみ、`queue.message()` 経由で `msg:ack()` または `msg:nack()`を呼び出してください。
 </note>
 
 ## サービスの実行

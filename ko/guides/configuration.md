@@ -194,7 +194,7 @@ workspace:
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `node_name` | string | local | 이 릴레이 노드의 식별자 |
+| `node_name` | string | 인스턴스별 파생 ID | 이 릴레이 노드의 식별자 (기본값: machine-id/hostname + 작업 디렉터리의 UUIDv5; `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`로 재정의 가능) |
 
 ```yaml
 relay:
@@ -365,7 +365,7 @@ Prometheus 메트릭 엔드포인트.
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | 메트릭 서버 시작 |
-| `address` | string | localhost:9090 | 리슨 주소 |
+| `address` | string | | 리슨 주소; `enabled: true`일 때 명시적으로 설정해야 하며, 그렇지 않으면 메트릭 서버가 시작되지 않습니다 |
 | `max_cardinality` | int | 1024 | 메트릭당 유지되는 고유 레이블 세트 수 (LRU); `0` 이하이면 기본값 사용 |
 
 ```yaml

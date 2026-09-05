@@ -24,7 +24,7 @@ description: "Обработчики записей обрабатывают з�
 |---------|-----------|
 | `http.service` | Только точное совпадение |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Интерфейс Entry Listener
 

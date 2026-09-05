@@ -183,7 +183,7 @@ Configurar comportamiento automático de reintentos para activities fallidas:
 
 ## Activities Locales
 
-Las activities locales se ejecutan en el proceso del workflow worker sin polling de cola de tareas separado:
+El campo `local` se acepta en una activity:
 
 ```yaml
 - name: validate_input
@@ -199,14 +199,7 @@ Las activities locales se ejecutan en el proceso del workflow worker sin polling
         local: true
 ```
 
-Características:
-- Se ejecutan en el proceso del workflow worker
-- Menor latencia (sin ida y vuelta a la cola de tareas)
-- Sin overhead de cola de tareas separada
-- Limitadas a tiempos de ejecución cortos (limitadas por `local_activity_options.schedule_to_close_timeout`, normalmente unos segundos)
-- Sin heartbeating
-
-Use activities locales para operaciones rápidas y cortas como validación de entrada, transformación de datos o consultas a caché. Para trabajo de larga duración, use una activity regular en su lugar.
+Actualmente `local: true` se parsea pero se comporta igual que una activity regular: se registra y se ejecuta a través de la ruta estándar de activities. Todavía no existe una ejecución diferenciada de activity local, por lo que no cambia la latencia, el comportamiento de la cola de tareas ni el heartbeating.
 
 ## Nombrado de Activities
 
@@ -305,9 +298,9 @@ end
 | Fallo | Tipo de Error | Reintentable | Descripción |
 |-------|---------------|--------------|-------------|
 | Error de aplicación | Lo que la activity haya retornado | Heredado del error retornado | Error retornado por código de activity vía `return nil, err` |
-| Crash en tiempo de ejecución | `INTERNAL` | sí | Error Lua no manejado en activity |
-| Activity faltante | `NOT_FOUND` | no | Activity no registrada con el worker |
-| Timeout | `TIMEOUT` | sí | La activity excedió el timeout configurado |
+| Crash en tiempo de ejecución | `Internal` | no | Error Lua no manejado en activity |
+| Activity faltante | `NotFound` | no | Activity no registrada con el worker |
+| Timeout | `Timeout` | no | La activity excedió el timeout configurado |
 | Verificación de seguridad | `Internal` | sí | Falló la comprobación de firma, audiencia o envelope en la cabecera de seguridad propagada |
 | Política de seguridad faltante | `Internal` | sí | Una política nombrada en el envelope de seguridad no se resuelve en este worker |
 
@@ -320,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

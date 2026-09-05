@@ -17,7 +17,7 @@ Configuración para entradas basadas en Lua: funciones, procesos, flujos de trab
 | `library.lua` | Código compartido importado por otras entradas |
 | `module.lua` | Superficie de módulo (biblioteca con múltiples métodos) |
 
-Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode`. Los autores escriben entradas `.lua`; los tipos de bytecode se emiten automáticamente al empaquetar.
+Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode '**'` (o un patrón como `--bytecode 'app:**'`). Los autores escriben entradas `.lua`; los tipos de bytecode se emiten al empaquetar con esa bandera.
 
 ## Campos Comunes
 

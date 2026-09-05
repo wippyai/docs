@@ -191,7 +191,7 @@ Libera a instância imediatamente. Idempotente; após a liberação, cada métod
 |----------|------|
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Argumento ausente ou vazio | `errors.INVALID` |
-| Escopo não encontrado | `errors.NOT_FOUND` |
+| Escopo não encontrado | `errors.INTERNAL` |
 | Sair de um grupo sem associação | `errors.NOT_FOUND` |
 | Instância liberada | `errors.INVALID` |
 

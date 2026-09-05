@@ -194,7 +194,7 @@ Roteamento de mensagens entre processos através de nós.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `node_name` | string | local | Identificador para este nó de relay |
+| `node_name` | string | ID derivado por instância | Identificador para este nó de relay (padrão: UUIDv5 de machine-id/hostname + diretório de trabalho; sobrescrevível via `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -365,7 +365,7 @@ Endpoint de métricas Prometheus.
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `enabled` | bool | false | Inicia servidor de métricas |
-| `address` | string | localhost:9090 | Endereço de escuta |
+| `address` | string | | Endereço de escuta; deve ser definido explicitamente quando `enabled: true`, caso contrário o servidor de métricas não inicia |
 | `max_cardinality` | int | 1024 | Conjuntos de labels distintos retidos por métrica (LRU); `0` ou menos usa o padrão |
 
 ```yaml

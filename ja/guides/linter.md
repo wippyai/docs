@@ -26,7 +26,7 @@ wippy lint --summary              # Group results by error code
 - `process.lua` - プロセス
 - `workflow.lua` - ワークフロー
 
-それらのプリコンパイル済み `.bc` バリアント（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）もリントされます。
+バイトコードエントリはソースではなくコンパイル済みバイトコード（fs/path/hash）を保持するため、パースも型チェックもできません。リンターはソースを持つ Lua エントリのみをチェックします（`.bc` バリアントはスキップされますが、エントリ総数には現れることがあります）。
 
 各エントリはパースされ、型チェックされ、正確性の問題が解析されます。
 

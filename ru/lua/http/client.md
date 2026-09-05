@@ -168,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | нет | Исходное имя файла |
 | `content` | string | да* | Содержимое файла |
 | `reader` | userdata | да* | Альтернатива: io.Reader для содержимого |
-| `content_type` | string | нет | MIME-тип (по умолчанию: `application/octet-stream`) |
+| `content_type` | string | нет | Сейчас игнорируется: каждая загружаемая часть всегда отправляется с `Content-Type: application/octet-stream` независимо от этого поля |
 
 *Требуется либо `content`, либо `reader`.
 

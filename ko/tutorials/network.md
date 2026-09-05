@@ -185,8 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-`network = nil`로 명시적 선택을 하면 해당 호출에서 기본값이 지워집니다.
-
 ## 권한
 
 `network.select` 액션은 명시적 오버레이 선택을 제어합니다. 스코프에서 거부하면 해당 코드가 오버레이를 선택할 수 없습니다:

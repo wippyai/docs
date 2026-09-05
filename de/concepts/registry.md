@@ -24,7 +24,7 @@ Neben diesem verfassten Inhalt führt die Registry für jeden Eintrag ihre eigen
 
 ## Kind-Handler
 
-Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Laufzeit-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `sql.database`-Eintrag richtet einen Verbindungspool ein. Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für verfügbare Typen und [Benutzerdefinierte Entry-Typen](internals/kinds.md) für die Implementierung von Handlern.
+Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Laufzeit-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `db.sql.postgres`-Eintrag richtet einen Verbindungspool ein. Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für verfügbare Typen und [Benutzerdefinierte Entry-Typen](internals/kinds.md) für die Implementierung von Handlern.
 
 ## Live-Updates
 

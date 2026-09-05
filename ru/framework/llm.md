@@ -98,7 +98,7 @@ return { handler = handler }
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `result` | string | Сгенерированный текстовый контент |
-| `tokens` | table | Использование токенов: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | Использование токенов: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, а также опциональные `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Причина остановки генерации: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Массив вызовов инструментов (если модель использовала инструменты) |
 | `metadata` | table | Метаданные, специфичные для провайдера |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Добавить сообщение ассистента |
 | `:add_developer(content, meta?)` | Добавить сообщение разработчика |
 | `:add_message(role, content_parts, name?, meta?)` | Добавить сообщение с ролью и частями контента |
-| `:add_function_call(name, args, id?)` | Добавить вызов инструмента от ассистента |
+| `:add_function_call(name, arguments, id?, options?)` | Добавить вызов инструмента от ассистента (`arguments` — сырая JSON-строка) |
 | `:add_function_result(name, result, id?)` | Добавить результат выполнения инструмента |
 | `:add_cache_marker(id?)` | Отметить границу кэша (модели Claude) |
 | `:get_messages()` | Получить массив сообщений |

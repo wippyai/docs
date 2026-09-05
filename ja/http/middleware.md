@@ -101,7 +101,7 @@ options:
 
 **キー戦略:** `ip`、`header:X-API-Key`、`query:api_key`
 
-`429 Too Many Requests`をヘッダー付きで返します：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`。
+`429 Too Many Requests`をヘッダー付きで返します：`X-RateLimit-Limit`、`X-RateLimit-Window`。
 
 ---
 

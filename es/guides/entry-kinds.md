@@ -7,7 +7,7 @@ description: "Referencia completa de todos los tipos de entrada disponibles en W
 
 Referencia completa de todos los tipos de entrada disponibles en Wippy.
 
-> Las entradas se referencian entre sí usando el formato `namespace:nombre`. El registro conecta automáticamente las dependencias basándose en estas referencias, asegurando que los recursos se inicialicen en el orden correcto.
+> Las entradas se referencian entre sí usando el formato `namespace:name`. El registro conecta automáticamente las dependencias basándose en estas referencias, asegurando que los recursos se inicialicen en el orden correcto.
 
 ## Ver También
 
@@ -153,7 +153,7 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-Consulta [Database](system/database.md) para variantes con sufijo `*_env`, opciones TLS y ajuste del pool de conexiones. Cuando cambia un valor respaldado por env detrás de una entrada de base de datos, el pool se intercambia en vivo — los préstamos activos terminan con la configuración de conexión anterior.
+Consulta [Database](system/database.md) para referencias a secretos `${env:NAME}`, opciones TLS y ajuste del pool de conexiones. Cuando cambia un valor respaldado por env detrás de una entrada de base de datos, el pool se intercambia en vivo — los préstamos activos terminan con la configuración de conexión anterior.
 
 **API Lua:** Ver [Módulo SQL](lua/storage/sql.md)
 
@@ -738,7 +738,7 @@ Use <code>depends_on</code> para asegurar que las entradas inicien en el orden c
 
 ## Formato de Referencia de Entrada
 
-Las entradas se referencian usando el formato `namespace:nombre`:
+Las entradas se referencian usando el formato `namespace:name`:
 
 ```yaml
 # Definición

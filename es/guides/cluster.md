@@ -165,7 +165,7 @@ Ver [Grupos de Proceso](lua/core/pg.md) para la API Lua y el [tipo de entrada `p
 
 ## Bloqueos distribuidos
 
-`system.lock` es exclusión mutua a nivel de cluster construida directamente sobre el ámbito de nombre Strong. Adquirir un bloqueo registra su nombre bajo el ámbito Strong propiedad del proceso que llama; liberarlo lo desregistra. Dado que Strong requiere que cada nodo activo reconozca, puede existir como máximo un titular en todo el cluster.
+`system.lock` es exclusión mutua a nivel de cluster construida sobre una escritura condicional raft-linealizable en el almacén clave-valor compartido. Adquirir un bloqueo realiza un set-if-absent del PID titular en `_sys:lock:<name>`; liberarlo elimina esa entrada si el caller aún la mantiene. Dado que la escritura condicional pasa por Raft (con las escrituras fuera del líder reenviadas al líder), es linealizable, por lo que puede existir como máximo un titular en todo el cluster.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

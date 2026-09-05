@@ -191,7 +191,7 @@ Gibt die Instanz sofort frei. Idempotent; nach der Freigabe gibt jede Methode ei
 |-----------|-----|
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Fehlendes oder leeres Argument | `errors.INVALID` |
-| Scope nicht gefunden | `errors.NOT_FOUND` |
+| Scope nicht gefunden | `errors.INTERNAL` |
 | Gruppe verlassen ohne Mitgliedschaft | `errors.NOT_FOUND` |
 | Instanz freigegeben | `errors.INVALID` |
 

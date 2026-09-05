@@ -191,7 +191,7 @@ group:release()
 |-----------|------|
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 인수 누락 또는 빈 인수 | `errors.INVALID` |
-| 범위 찾을 수 없음 | `errors.NOT_FOUND` |
+| 범위 찾을 수 없음 | `errors.INTERNAL` |
 | 멤버십 없는 그룹 탈퇴 | `errors.NOT_FOUND` |
 | 인스턴스 해제됨 | `errors.INVALID` |
 

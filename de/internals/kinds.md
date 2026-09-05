@@ -24,7 +24,7 @@ Handler subscriben mit Patterns:
 |---------|---------|
 | `http.service` | Nur exakter Match |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## EntryListener-Interface
 

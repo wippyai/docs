@@ -168,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | 아니오 | 원본 파일명 |
 | `content` | string | 예* | 파일 내용 |
 | `reader` | userdata | 예* | 대안: 내용용 io.Reader |
-| `content_type` | string | 아니오 | MIME 타입 (기본값: `application/octet-stream`) |
+| `content_type` | string | 아니오 | 현재 무시됨: 이 필드와 무관하게 업로드되는 각 파트는 항상 `Content-Type: application/octet-stream`으로 전송됨 |
 
 *`content` 또는 `reader` 중 하나가 필수입니다.
 

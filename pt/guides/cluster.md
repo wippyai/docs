@@ -165,7 +165,7 @@ Veja [Grupos de Processos](lua/core/pg.md) para a API Lua e o [tipo de entrada `
 
 ## Locks distribuídos
 
-`system.lock` é exclusão mútua em todo o cluster construída diretamente sobre o escopo Strong de nomes. Adquirir um lock registra seu nome sob escopo Strong, de propriedade do processo chamador; liberar cancela o registro. Como Strong requer que todos os nós ativos reconheçam, no máximo um detentor pode existir em todo o cluster.
+`system.lock` é exclusão mútua em todo o cluster construída sobre uma escrita condicional raft-linearizável no key-value store compartilhado. Adquirir um lock executa um set-if-absent do PID do detentor em `_sys:lock:<name>`; liberar apaga essa entrada se ela ainda pertencer ao chamador. Como a escrita condicional passa pelo Raft (com escritas fora do líder encaminhadas ao líder), ela é linearizável, então no máximo um detentor pode existir em todo o cluster.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

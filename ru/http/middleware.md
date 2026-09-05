@@ -101,7 +101,7 @@ options:
 
 **Стратегии ключа:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Возвращает `429 Too Many Requests` с заголовками: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Возвращает `429 Too Many Requests` с заголовками: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 

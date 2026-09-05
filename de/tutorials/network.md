@@ -185,8 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-Explizite Auswahl mit `network = nil` hebt den Standard für diesen Aufruf auf.
-
 ## Berechtigungen
 
 Die Aktion `network.select` steuert die explizite Overlay-Auswahl. Sie in einem Scope verweigern, um zu verhindern, dass Code ein Overlay wählt:

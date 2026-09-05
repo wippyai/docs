@@ -185,7 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-A seleção explícita com `network = nil` cancela o padrão para aquela chamada.
 
 ## Permissões
 

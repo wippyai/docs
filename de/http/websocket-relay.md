@@ -157,7 +157,7 @@ end
 
 ## An Client senden
 
-Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird als `{topic, data}` JSON verpackt und an den WebSocket weitergeleitet. Der Frame-Typ wird durch das Payload-Format bestimmt: Strings werden zu Text-Frames, Bytes zu Binär-Frames (base64-kodiert innerhalb des JSON-Wrappers).
+Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird als `{topic, data}` JSON verpackt und an den WebSocket weitergeleitet. Jede Server-zu-Client-Nachricht wird als einzelner WebSocket-TEXT-Frame mit dem `{topic, data}` JSON-Wrapper gesendet. Binäre Payloads werden base64-kodiert im `data`-Feld übertragen; sie werden NICHT als separate Binär-Frames gesendet.
 
 ```lua
 -- Strukturierte Nachricht senden (beliebiger Topic-Name)

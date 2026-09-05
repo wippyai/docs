@@ -199,14 +199,7 @@ Atividades locais executam no processo do worker de workflow sem polling de task
         local: true
 ```
 
-Características:
-- Executam no processo do worker de workflow
-- Menor latência (sem roundtrip de task queue)
-- Sem overhead de task queue separado
-- Limitado a tempos de execução curtos (limitado por `local_activity_options.schedule_to_close_timeout`, tipicamente alguns segundos)
-- Sem heartbeating
-
-Use atividades locais para operações rápidas e curtas como validação de entrada, transformação de dados ou consultas em cache. Para trabalho de longa duração, use uma activity regular em vez disso.
+Atualmente `local: true` é interpretado, mas se comporta de forma idêntica a uma activity regular: é registrada e executada pelo caminho padrão de activity. Ainda não existe uma execução distinta de activity local, portanto isso não altera latência, comportamento de task queue nem heartbeating.
 
 ## Nomenclatura de Activity
 

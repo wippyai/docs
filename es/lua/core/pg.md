@@ -191,7 +191,7 @@ Libera la instancia inmediatamente. Idempotente; tras la liberación, cada méto
 |-----------|------|
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Argumento faltante o vacío | `errors.INVALID` |
-| Ámbito no encontrado | `errors.NOT_FOUND` |
+| Ámbito no encontrado | `errors.INTERNAL` |
 | Salir de un grupo sin membresía | `errors.NOT_FOUND` |
 | Instancia liberada | `errors.INVALID` |
 

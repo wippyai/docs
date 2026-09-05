@@ -24,7 +24,7 @@ Los handlers se suscriben usando patrones:
 |--------|---------|
 | `http.service` | Solo match exacto |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Interfaz Entry Listener
 

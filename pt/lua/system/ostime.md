@@ -113,7 +113,7 @@ local t = os.date("*t", now)
 | `%b` | Mes abreviado | Jun |
 | `%w` | Dia da semana (0-6, Domingo=0) | 6 |
 | `%j` | Dia do ano (001-366) | 167 |
-| `%U` | Numero da semana (00-53) | 24 |
+| `%U` | Numero da semana ISO 8601 (01-53, semana comeca na segunda) | 24 |
 | `%W` | Numero da semana ISO 8601 (01-53, semana comeca na segunda) | 24 |
 | `%z` | Offset de fuso horario | -0700 |
 | `%Z` | Nome do fuso horario | PDT |

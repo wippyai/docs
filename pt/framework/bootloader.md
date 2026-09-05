@@ -78,7 +78,7 @@ Um bootloader e qualquer entrada `function.lua` com `meta.type: bootloader`:
 | Campo | Obrigatorio | Descricao |
 |-------|----------|-------------|
 | `meta.type` | Sim | Deve ser `bootloader` |
-| `meta.order` | Nao | Ordem de execucao (padrao `100`); menor executa primeiro |
+| `meta.order` | Nao | Ordem de execucao (padrao `999`); menor executa primeiro |
 | `meta.description` | Nao | Resumo legivel por humanos |
 | `meta.requires` | Nao | Dicas de dependencia exibidas nos logs |
 

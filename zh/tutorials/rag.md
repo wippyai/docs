@@ -295,11 +295,11 @@ curl -X POST http://localhost:8080/api/ask \
 
 ## 运行说明
 
-- **块大小**：500–1000 个 token 是一个良好的起点。太小会丢失局部上下文；太大会稀释相似度分数。使用 `chunk_overlap`（块大小的 ~10–20%）来在边界之间保留句子。
+- **块大小**：`chunk_size` 和 `chunk_overlap` 统计的是字符而非 token（分割器用 `utf8.RuneCountInString` 测量长度）。大约 2000–4000 个字符是一个良好的起点。太小会丢失局部上下文；太大会稀释相似度分数。使用 `chunk_overlap`（块大小的 ~10–20%）来在边界之间保留句子。
 - **内容类型**：使用不同的 `content_type` 值（`doc_chunk`、`faq`、`code_snippet`），以便搜索可以按类型过滤。
 - **重新索引**：在添加新块之前，通过 `embedding_repo.delete_by_origin(doc_id)` 按文档删除并重新摄取。
 - **混合搜索**：对于精确术语召回（名称、ID），将向量搜索与对源表的全文搜索相结合并重新排序。
-- **模型选择**：默认的 512 维 `text-embedding-3-small` 具有成本效益。只有在召回不足时才升级到 1024 或 3072 维 — 更大的向量意味着更大的存储和更慢的搜索。
+- **模型选择**：`wippy/embeddings` 固定使用 512 维的 `text-embedding-3-small`，`embeddings_512` 表存储 `vector(512)`/`float[512]`。更换模型或向量维度意味着要修改库常量和迁移表。
 
 ## 下一步
 

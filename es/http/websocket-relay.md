@@ -157,7 +157,7 @@ end
 
 ## Enviar al Cliente
 
-Envíe mensajes de vuelta usando el PID del cliente. Cualquier tópico que elija se envuelve como JSON `{topic, data}` y se reenvía al WebSocket. El tipo de frame se decide por el formato del payload: las cadenas se convierten en frames de texto, los bytes en frames binarios (codificados en base64 dentro del envoltorio JSON).
+Envíe mensajes de vuelta usando el PID del cliente. Cualquier tópico que elija se envuelve como JSON `{topic, data}` y se reenvía al WebSocket. Cada mensaje de servidor a cliente se envía como un único frame WebSocket TEXT que contiene el envoltorio JSON `{topic, data}`. Los payloads binarios se codifican en base64 dentro del campo `data`; NO se envían como frames binarios separados.
 
 ```lua
 -- Enviar un mensaje estructurado (cualquier nombre de tópico)

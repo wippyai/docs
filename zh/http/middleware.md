@@ -101,7 +101,7 @@ options:
 
 **Key 策略:** `ip`、`header:X-API-Key`、`query:api_key`
 
-返回 `429 Too Many Requests`，包含响应头：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`。
+返回 `429 Too Many Requests`，包含响应头：`X-RateLimit-Limit`、`X-RateLimit-Window`。
 
 ---
 

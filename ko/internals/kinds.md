@@ -24,7 +24,7 @@ description: "엔트리 핸들러는 종류별로 레지스트리 엔트리를 �
 |---------|---------|
 | `http.service` | 정확한 매칭만 |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## 엔트리 리스너 인터페이스
 

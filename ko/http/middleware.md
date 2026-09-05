@@ -101,7 +101,7 @@ options:
 
 **키 전략:** `ip`, `header:X-API-Key`, `query:api_key`
 
-헤더와 함께 `429 Too Many Requests` 반환: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+헤더와 함께 `429 Too Many Requests` 반환: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
