@@ -24,6 +24,7 @@ description: "在您自己的机器上构建知识库 — 创建向量存储，�
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -33,6 +34,7 @@ wippy install
 KB 存放在一个本地 SQLite 数据库中。`wippy/embeddings` 附带一个创建向量表的迁移；bootloader 在启动时运行它。将各部分连接在一起：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -51,6 +53,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -58,6 +61,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -65,6 +69,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -72,7 +77,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+bootloader 和各个 provider 服务运行在 `wippy.security:process`
+策略组下，因此 `wippy/security` 以及一个属于该组的策略也是这套接线的一部分。
 
 bootloader 需要一个环境存储；在它自己的命名空间中添加标准存储：
 

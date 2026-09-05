@@ -32,7 +32,8 @@ Eine Backend-App, die die Wippy-UI ausliefert:
 
 ## Wie es funktioniert
 
-1. `index.html` wird als statische Datei von deinem HTTP-Server ausgeliefert.
+1. Die Hülle wird aus dem Template der Facade gerendert und von deinem HTTP-Server unter `/`
+   ausgeliefert; ihre Assets und der Deep-Link-Fallback kommen von einem statischen Mount auf demselben Server.
 2. Beim Laden ruft sie `GET /api/public/facade/config` ab.
 3. Sie prüft `localStorage` auf ein Auth-Token und leitet zu `login_path` um, falls keines vorhanden ist.
 4. Sie importiert das Web-Host-Bundle vom CDN (`facade_url + '/module.js'`) und ruft
@@ -66,6 +67,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -75,8 +77,8 @@ entries:
         value: Verify App
 ```
 
-Die mitgelieferte `index.html` ruft `/api/public/facade/config` ab, daher muss der Präfix
-des öffentlichen Routers `/api/public` sein, damit die Standard-Hülle ihre Konfiguration findet.
+Die Hülle fordert ihre Konfiguration, ihr Theme-Skript und ihre CSS-Variablen unter
+`/api/public/facade/` an, daher muss der Präfix des öffentlichen Routers `/api/public` sein.
 
 ## Ausführen
 
@@ -93,17 +95,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -126,9 +134,10 @@ JSON-kodierte Strings). Häufige sind:
 | `css_variables` | JSON-String mit benutzerdefinierten CSS-Eigenschaften, z. B. `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN-Bundle-URL (pro Facade-Release fixiert; Standard belassen, sofern nicht überschrieben) |
 
-Zwei Werte werden zur Laufzeit aus der Umgebungsvariable `PUBLIC_API_URL` abgeleitet statt
-aus Parametern: die API-Basis-URL und die WebSocket-URL (`http`→`ws`, `https`→`wss`). Ist
-sie nicht gesetzt, fällt der Browser auf `window.location.origin` zurück.
+Zwei Werte werden zur Laufzeit aus `PUBLIC_API_URL` abgeleitet statt aus Parametern: die
+API-Basis-URL und die WebSocket-URL (`http`→`ws`, `https`→`wss`). Die Facade liest sie über
+die Env-Registry, deklariere sie also als `env.variable` in deiner App. Ist sie nicht
+gesetzt, fällt der Browser auf `window.location.origin` zurück.
 
 ## Hinweise
 

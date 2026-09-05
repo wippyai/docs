@@ -7,6 +7,8 @@ description: "プロセス内の並行プログラミングのためのGo風チ�
 
 プロセス内の並行プログラミングのためのGo風チャネル。
 
+このページは入門です。各スニペットは1つのAPIを単独で示しています。実行するには、[CLIアプリケーション](tutorials/cli.md)チュートリアルで設定したように、`process.lua`エントリの`main`関数に貼り付けてください。
+
 ## チャネルの作成
 
 チャネルはコルーチン間の通信パイプです。`channel.new(capacity)`で作成：
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### 送信付きselect
 
-非ブロッキング送信を試みるには`case_send`を使用：
+select内で送信を提示するには`case_send`を使用します。チャネルが値を受け入れられるようになった時点でそのケースが選択されます：
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true（送信成功）
 
 local v = ch:receive()  -- "sent"
+```
+
+selectはいずれかのケースが準備できるまでブロックします。ケーステーブルに`default = true`を追加すると、代わりに即座に戻り、準備できたものがなければ`result.default`がtrueになります：
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true（バッファがいっぱいで、何も送信されていない）
 ```
 
 ## プロデューサー/コンシューマーパターン

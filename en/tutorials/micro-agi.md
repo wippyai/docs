@@ -71,7 +71,7 @@ The key insight: tools are registry entries. Creating a tool is just writing a `
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ Two `security.policy` entries restrict which namespaces the agent can write to:
 ```
 
 These policies are loaded as a named scope (`app:agent_security`) by `create_tool` and evaluated before any registry write. The agent can write to `app.generated:*` (no deny policy matches), but cannot write to `app:*` (core entries, models, agent definition) or `app.tools:*` (built-in tools).
+
+A third policy grants the process itself access to the registry. A process launched without a security context is denied every registry read, so the `agent` command carries this policy as its own scope:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 See [Security Model](system/security.md) for details on policy evaluation.
 
@@ -260,6 +271,11 @@ The prompt is deliberately terse. Key rules:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ The prompt is deliberately terse. Key rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. Security enforcement happens inside `create_tool` which loads the `agent_security` policy group and evaluates it before writing.
+The process runs as a terminal command. `meta.command.security` gives it the actor and scope it runs under — without it `registry.get` fails with `not allowed to access entry` and the agent never loads. Security enforcement for writes happens inside `create_tool`, which loads the `agent_security` policy group and evaluates it before writing.
 
 Imports:
 - `prompt` — conversation builder

@@ -32,7 +32,8 @@ Uma aplicação backend que serve a UI do Wippy:
 
 ## Como funciona
 
-1. `index.html` é servido como arquivo estático a partir do seu servidor HTTP.
+1. O shell é renderizado a partir do template do facade e servido em `/` pelo seu servidor
+   HTTP; seus assets e o fallback de deep link vêm de um mount estático no mesmo servidor.
 2. Ao carregar, ele busca `GET /api/public/facade/config`.
 3. Ele verifica o `localStorage` por um token de autenticação, redirecionando para
    `login_path` se ausente.
@@ -67,6 +68,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -76,8 +78,8 @@ entries:
         value: Verify App
 ```
 
-O `index.html` enviado busca `/api/public/facade/config`, então o prefixo do router
-público deve ser `/api/public` para que o shell padrão encontre sua configuração.
+O shell requisita sua configuração, script de tema e variáveis CSS sob
+`/api/public/facade/`, então o prefixo do router público deve ser `/api/public`.
 
 ## Execute
 
@@ -94,17 +96,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -127,9 +135,10 @@ valores JSON são strings codificadas em JSON). Os mais comuns:
 | `css_variables` | String JSON de propriedades CSS customizadas, por exemplo `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | URL do bundle na CDN (fixada por release do facade; deixe o padrão a menos que sobrescreva) |
 
-Dois valores são derivados em runtime a partir da variável de ambiente `PUBLIC_API_URL`
-em vez de parâmetros: a URL base da API e a URL do WebSocket (`http`→`ws`, `https`→`wss`).
-Se não definida, o navegador recorre a `window.location.origin`.
+Dois valores são derivados em runtime a partir de `PUBLIC_API_URL` em vez de parâmetros: a
+URL base da API e a URL do WebSocket (`http`→`ws`, `https`→`wss`). O facade a lê através do
+registry de ambiente, então declare-a como uma `env.variable` na sua aplicação. Se não
+definida, o navegador recorre a `window.location.origin`.
 
 ## Notas
 

@@ -74,6 +74,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # 핸들러, 워커, 마이그레이션을 위한 접근 정책
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # 메모리 큐 드라이버
   - name: queue_driver
     kind: queue.driver.memory
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:task_policy
 
   # 마이그레이션 서비스 (자동 시작, 성공 시 종료)
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   # 큐 워커
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: "service:worker"
+      policies:
+        - app:task_policy
 
   # 엔드포인트
   - name: create_task.endpoint
@@ -176,6 +207,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+엄격 모드가 기본으로 켜져 있으므로, 데이터베이스나 큐에 접근하는 엔트리에는 액터와 스코프가 필요합니다. 각 Lua 엔트리의 `security:` 블록이 `app:task_policy`로부터 둘 다 제공합니다. [보안 모델](system/security.md)을 참조하세요.
+</tip>
 
 ## 마이그레이션 프로세스
 

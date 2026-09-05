@@ -21,16 +21,15 @@ BDD-раннер с ассертами, хуками жизненного цик
 
 - Проект Wippy (склонируйте [app-template](https://github.com/wippyai/app-template) или
   выполните `wippy init` в пустой директории).
-- Установленный тестовый фреймворк и хост терминала:
+- Установленный тестовый фреймворк:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  Раннер отрисовывает живой терминальный UI, поэтому `wippy/terminal` требуется наряду с
-  `wippy/test`.
+  Раннер отрисовывает живой терминальный UI на `wippy/terminal`, который `wippy/test`
+  подтягивает за вас.
 
 ## Тестируемый код
 
@@ -95,10 +94,16 @@ return { run = test.run_cases(define_tests) }
 `meta.suite` группирует результаты в выводе:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -116,8 +121,10 @@ entries:
       calc: app:calc
 ```
 
-Карта `imports` определяет, во что разрешается `require(...)` внутри теста: `test`
-привязывает фреймворк, `calc` привязывает тестируемый модуль.
+Запись `ns.dependency` — это то, что монтирует `wippy/test` в приложение; без неё
+пространство имён фреймворка никогда не попадёт в реестр и `wippy.test:test` не будет
+разрешён. Карта `imports` определяет, во что разрешается `require(...)` внутри теста:
+`test` привязывает фреймворк, `calc` привязывает тестируемый модуль.
 
 ## Запуск
 
@@ -128,13 +135,19 @@ wippy test
 Вывод для набора выше:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` завершается с кодом `0`, когда все кейсы проходят, и `1` при любом

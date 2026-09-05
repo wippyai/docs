@@ -41,6 +41,7 @@ MCPクライアントを接続します。
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ MCPトランスポートは`MCP_ENABLED`環境変数（デフォルト`true`）�
 （またはKeeper UIのMCPページ）から1つ作成します:
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,14 +96,14 @@ Codexの場合は、プロジェクトルートに`.mcp.json`を置きます:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-デプロイ環境では、`http://localhost:8085`の代わりにアプリのパブリックなベースURLを使用してください。
+デプロイ環境では、`http://localhost:8080`の代わりにアプリのパブリックなベースURLを使用してください。
 
 ## MCPサーフェスの仕組み
 
@@ -114,7 +115,8 @@ Keeperはフラットで固定的なツール一覧を公開しません。い�
 - `list_traits` / `describe_trait` — 利用可能なものを探索します。
 - `use_trait` / `drop_trait`（および`set_traits`） — トレイトを有効化または削除します。これはMCPの
   `notifications/tools/list_changed`を発行するため、表示されるツールがライブに変化します。
-- `list_tools` / `call_tool` — トレイトが実体化したツールを列挙し、呼び出します。
+- `list_tools` — トレイトが実体化したツールを、そのスキーマとともに列挙します。
+- `call_tool` — 任意のレジストリツールをIDで呼び出します。`mcp.root`を保持するトークンにのみ表示されます。
 
 トークンが有効化できる範囲は、その**スコープ**によって制限されます。おおむね`registry.*`、
 `state.*`、`hub.*`、`knowledge.*`、`git.*`、`components.*`、`tasks.*`、`agents.*`、

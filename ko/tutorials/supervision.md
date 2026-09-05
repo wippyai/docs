@@ -496,7 +496,37 @@ entries:
     host: app:processes
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+엄격 모드가 기본으로 켜져 있으므로, 보안 컨텍스트를 선언하지 않은 서비스는 `process.spawn`을 포함한 모든 검사에서 거부됩니다. 풀과 그 워커가 사용하는 액션을 부여하세요:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+워커는 자신을 스폰한 풀의 액터와 스코프를 상속하므로, 자체 블록이 필요하지 않습니다.
 
 ### 슈퍼바이저 구현
 
@@ -552,6 +582,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -597,6 +631,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- 다른 프로세스가 이 워커에 도달할 수 있도록 이름으로 등록
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -679,14 +716,57 @@ wippy init
 wippy run
 ```
 
-슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 워커 중 하나가 죽으면 재시작을 기록합니다. `LINK_DOWN`은 링크된 프로세스가 에러로 종료될 때만 전달되므로, 다른 프로세스에서 워커를 강제 종료하여 재시작을 트리거합니다:
+슈퍼바이저가 자동 시작되고 네 개의 워커를 스폰하며, 각각에 대해 `Worker N started`를 기록합니다. `LINK_DOWN`은 링크된 프로세스가 에러로 종료될 때만 전달되므로, 워커를 강제 종료하여 재시작을 트리거합니다. 종료를 수행하는 코드는 동일한 런타임 안에서 실행되어야 하므로, 임시 서비스로 추가합니다:
 
-```lua
--- 임시 프로세스나 채팅 명령어에서
-process.terminate("<pid-from-supervisor-log>")
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
 ```
 
-풀은 `LINK_DOWN`을 받고 100ms를 기다린 후 같은 id로 워커를 다시 스폰합니다. 그레이스풀한 `process.cancel()`은 워커를 정상 종료시키며, 이 경우 `LINK_DOWN`이 발생하지 않으므로 재시작도 트리거되지 않습니다.
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+새 엔트리를 반영하려면 `wippy init`을 다시 실행한 다음 `wippy run`을 실행합니다. 2초 후 풀은 `LINK_DOWN`을 받고 100ms를 기다린 뒤 같은 id로 워커를 다시 스폰합니다:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+그레이스풀한 `process.cancel()`은 워커를 정상 종료시키며, 이 경우 `LINK_DOWN`이 발생하지 않으므로 재시작도 트리거되지 않습니다 — 슈퍼비전 루프가 종료를 워커 실패로 취급하는 대신 `CANCEL`에서 반환하는 이유가 이것입니다.
 
 ## 다음 단계
 

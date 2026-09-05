@@ -63,6 +63,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+        - process.registry.register
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -81,6 +92,8 @@ entries:
       - io
       - process
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay
     kind: process.lua
@@ -90,6 +103,8 @@ entries:
       - process
       - logger
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay-service
     kind: process.service
@@ -105,7 +120,11 @@ entries:
     modules:
       - process
       - time
+    security:
+      policies: [app:policy]
 ```
+
+A segurança nega por padrão, então cada processo carrega um bloco `security:` nomeando a policy que concede as ações que ele realiza: registrar um nome, enviar mensagens e criar workers monitorados.
 
 ## O Processo Relay
 
@@ -149,7 +168,10 @@ local function main()
 
         if r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                logger:info("relay stopping", stats)
+                return
+            elseif event.kind == process.event.EXIT then
                 logger:info("worker exited", {
                     from = event.from,
                     result = event.result
@@ -200,7 +222,7 @@ local r = channel.select {
 }
 ```
 
-Aguarda múltiplos channels. `r.channel` identifica qual disparou, `r.value` contém os dados.
+Aguarda múltiplos channels. `r.channel` identifica qual disparou, `r.value` contém os dados. O evento `CANCEL` chega no mesmo channel de eventos quando o runtime encerra o serviço; retornar de `main` nesse ponto permite que o host pare de forma limpa em vez de esperar o timeout de parada.
 
 **Extração de Payload**
 
@@ -352,7 +374,7 @@ Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
-  from worker: {app:processes|0x00004}
+  from worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
 ## Próximos Passos

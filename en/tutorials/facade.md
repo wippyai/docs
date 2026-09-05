@@ -31,7 +31,8 @@ A backend app that serves the Wippy UI:
 
 ## How It Works
 
-1. `index.html` is served as a static file from your HTTP server.
+1. The shell is rendered from the facade's template and served at `/` by your HTTP
+   server; its assets and the deep-link fallback come from a static mount on the same server.
 2. On load it fetches `GET /api/public/facade/config`.
 3. It checks `localStorage` for an auth token, redirecting to `login_path` if missing.
 4. It imports the Web Host bundle from the CDN (`facade_url + '/module.js'`) and calls
@@ -65,6 +66,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -74,8 +76,8 @@ entries:
         value: Verify App
 ```
 
-The shipped `index.html` fetches `/api/public/facade/config`, so the public router's
-prefix must be `/api/public` for the default shell to find its config.
+The shell requests its config, theme script, and CSS variables under
+`/api/public/facade/`, so the public router's prefix must be `/api/public`.
 
 ## Run It
 
@@ -92,17 +94,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -125,9 +133,10 @@ JSON-encoded strings). Common ones:
 | `css_variables` | JSON string of CSS custom properties, e.g. `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN bundle URL (pinned per facade release; leave default unless overriding) |
 
-Two values are derived at runtime from the `PUBLIC_API_URL` environment variable rather
-than parameters: the API base URL and the WebSocket URL (`http`→`ws`, `https`→`wss`). If
-unset, the browser falls back to `window.location.origin`.
+Two values are derived at runtime from `PUBLIC_API_URL` rather than parameters: the API
+base URL and the WebSocket URL (`http`→`ws`, `https`→`wss`). The facade reads it through
+the env registry, so declare it as an `env.variable` in your app. If unset, the browser
+falls back to `window.location.origin`.
 
 ## Notes
 

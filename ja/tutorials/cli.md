@@ -148,13 +148,29 @@ return { main = main }
 
 ## システム情報
 
-`system`モジュールでランタイム統計にアクセス：
+`system`モジュールでランタイム統計にアクセスします。すべての読み取りは`system.read`アクションでガードされているため、プロセスにはそれを許可するポリシーも必要です：
 
 ```yaml
-# エントリ定義に追加
-modules:
-  - io
-  - system
+  # エントリに追加
+  - name: system_read
+    kind: security.policy
+    policy:
+      actions:
+        - system.read
+      resources: "*"
+      effect: allow
+
+  # cliエントリを更新
+  - name: cli
+    kind: process.lua
+    source: file://cli.lua
+    method: main
+    security:
+      policies:
+        - app:system_read
+    modules:
+      - io
+      - system
 ```
 
 ```lua
@@ -206,7 +222,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## 終了コード

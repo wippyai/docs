@@ -225,7 +225,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+WASMモジュールへのファイルシステムのマウントと、WASM関数の呼び出しはどちらも保護されたアクションです。ポリシーがそれらを許可し、必要とするエントリがそれを参照します。
 
 ### WASM関数
 
@@ -338,6 +351,9 @@ entries:
       command:
         name: ls
         short: List files from mounted directory
+        security:
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -353,7 +369,7 @@ entries:
           guest: /data
 ```
 
-`meta.command`ブロックはプロセスを名前付きCLIコマンドとして登録します。`greet`コマンドは文字列操作のみを使用するためWASIインポートは不要です。`ls`コマンドはファイルシステムアクセスが必要です。
+`meta.command`ブロックはプロセスを名前付きCLIコマンドとして登録します。`greet`コマンドは文字列操作のみを使用するためWASIインポートは不要です。`ls`コマンドはファイルシステムアクセスが必要なため、マウントを許可するセキュリティコンテキストも携えます。
 
 ### HTTPエンドポイント
 
@@ -400,18 +416,27 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet someone via WASM
-  ls       List files from mounted directory
+
+  greet  Greet someone via WASM  (demo.cli:greet)
+  ls  List files from mounted directory  (demo.cli:ls)
+
+Run with: wippy run <command>
 ```
+
+コマンド名の後の引数は、エクスポートされた関数に文字列パラメータとして渡されます。そのため各コマンドは、そのWITシグネチャが宣言する引数をちょうど受け取ります:
 
 ```bash
 # Run greet
-wippy run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
 # Run ls to list mounted directory
-wippy run ls
+wippy run ls /data
 ```
 
 ### サービスとして実行
@@ -420,15 +445,19 @@ wippy run ls
 wippy run
 ```
 
-HTTPサーバーがポート8090で起動します。エンドポイントをテストします:
+HTTPサーバーがポート8090で起動します。`wasi-http`トランスポートは、リクエストボディを関数の単一の文字列引数として渡します:
 
 ```bash
-curl -X POST http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
+```
+
+```
+Hello, World!
 ```
 
 ### Luaからの呼び出し
 
-WASM関数はLua関数と同じ方法で呼び出されます:
+WASM関数はLua関数と同じ方法で呼び出されます。呼び出し元のプロセスには対象への`funcs.call`が必要で、これは`demo:policy`が許可します:
 
 ```lua
 local funcs = require("funcs")

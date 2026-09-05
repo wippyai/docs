@@ -115,8 +115,8 @@ wippy run -c
 次のような出力が表示されます：
 
 ```
-╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime
-║║║║╠═╝╠═╝╚╦╝  v0.1.20
+╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime https://wippy.ai
+║║║║╠═╝╠═╝╚╦╝  v0.3.40a
 ╚╩╝╩╩  ╩   ╩   by Spiral Scout
 
 0.00s  INFO  run          runtime ready

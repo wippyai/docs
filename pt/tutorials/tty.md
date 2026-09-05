@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-Eventos são registros discriminados por `type`. Para uma tecla imprimível, `key_type` é `"runes"` e `key` contém o texto; para uma tecla nomeada, tanto `key_type` quanto `key` contêm o nome (`"enter"`, `"backspace"`, `"up"`). As coordenadas em eventos de mouse começam em um.
+Eventos são registros discriminados por `type`. Para uma tecla imprimível, `key_type` é `"runes"` e `key` contém o texto; para uma tecla nomeada, tanto `key_type` quanto `key` contêm o nome (`"enter"`, `"backspace"`, `"space"`, `"up"`). As coordenadas em eventos de mouse começam em um.
 
 ## Passo 3: Desenhando Frames
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

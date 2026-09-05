@@ -60,6 +60,7 @@ flowchart TB
     subgraph "보안 레이어"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
+        SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
@@ -71,10 +72,6 @@ flowchart TB
         Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>연결당]
         Ticker[ticker<br/>싱글톤]
-    end
-
-    subgraph "외부"
-        CryptoAPI[암호화폐 가격 API]
     end
 
     %% 클라이언트 연결
@@ -99,6 +96,8 @@ flowchart TB
     %% 토큰 스토어 의존성
     MemStore --> TokenStore
     Policy -->|토큰에 첨부| TokenStore
+    SysPolicy -->|"액터 + 스코프"| AuthEndpoint
+    SysPolicy -->|"액터 + 스코프"| Ticker
 
     %% Auth가 API 키를 위해 DB 사용
     AuthEndpoint -->|API 키 조회| DB
@@ -107,9 +106,6 @@ flowchart TB
     WSHandler -->|구독| Ticker
     Ticker -->|브로드캐스트| WSHandler
     WSRelay <-->|"ws 프레임"| Browser
-
-    %% 외부
-    Ticker -->|가격 조회| CryptoAPI
 ```
 
 ## 보안 흐름
@@ -162,6 +158,23 @@ entries:
     groups:
       - user
 
+  # 최종 사용자 액터 없이 실행되는 내부 코드를 위한 정책
+  - name: system_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - security.actor.create
+        - security.policy.get
+        - security.scope.create
+        - security.token_store.get
+        - security.token.create
+        - process.registry.register
+        - process.send
+        - process.monitor
+      resources: "*"
+      effect: allow
+
   # 프로세스 호스트
   - name: processes
     kind: process.host
@@ -174,6 +187,11 @@ entries:
     source: file://migrate.lua
     method: main
     modules: [sql, logger, crypto]
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:system_policy
 
   - name: migrate-service
     kind: process.service
@@ -187,7 +205,12 @@ entries:
     kind: process.lua
     source: file://ticker.lua
     method: main
-    modules: [logger, time, json, crypto]
+    modules: [logger, time, crypto]
+    security:
+      actor:
+        id: "service:ticker"
+      policies:
+        - app:system_policy
 
   - name: ticker-service
     kind: process.service
@@ -240,7 +263,7 @@ entries:
   # 정적 파일
   - name: public_fs
     kind: fs.directory
-    directory: ./public
+    directory: ./src/public
 
   - name: static
     kind: http.static
@@ -258,6 +281,11 @@ entries:
     source: file://auth_token.lua
     method: handler
     modules: [http, sql, crypto, security, json]
+    security:
+      actor:
+        id: "service:auth"
+      policies:
+        - app:system_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -282,6 +310,8 @@ entries:
     path: /ticker
     func: app:ws_ticker
 ```
+
+`user_policy`는 발급된 모든 토큰 안에 실려 다니며 인증된 연결이 수행하는 작업을 다룹니다. `system_policy`는 토큰이 존재하기 전에 실행되는 코드, 즉 마이그레이션, 티커, 토큰 교환 자체를 다룹니다. 액터와 스코프 없이 이루어진 게이트된 호출은 거부되기 때문입니다.
 
 프로덕션에서는 HMAC 키를 하드코딩하는 대신 플레이스홀더(`token_key: ${env:TOKEN_KEY}`)로 환경 변수에서 읽으세요. [환경 시스템](system/env.md)을 참조하세요.
 
@@ -435,6 +465,8 @@ return { handler = handler }
 - `ws.message` - 클라이언트가 메시지를 보냄. 페이로드는 원시 프레임입니다(텍스트 프레임의 경우 문자열)
 - `ws.leave` - 연결 종료됨 (연결 해제 시 자동으로 전송)
 
+반대 방향으로, 클라이언트 PID로 보낸 메시지는 `{topic, data}` 형태의 단일 JSON 텍스트 프레임으로 브라우저에 도달합니다. 토픽은 직접 정하며 페이로드는 `data`로 도착합니다.
+
 `ws_handler.lua` - 이러한 라이프사이클 메시지를 처리합니다:
 
 ```lua
@@ -466,20 +498,14 @@ local function main(user_id)
             subscribed = true
 
             -- 환영 메시지 전송
-            process.send(client_pid, "ws.send", {
-                type = "text",
-                data = json.encode({type = "welcome", user_id = user_id})
-            })
+            process.send(client_pid, "welcome", {user_id = user_id})
 
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
             local content = json.decode(data)
             if content and content.type == "ping" then
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "pong"})
-                })
+                process.send(client_pid, "pong", {})
             end
 
         elseif topic == "ws.leave" then
@@ -505,7 +531,6 @@ return { main = main }
 ```lua
 local logger = require("logger")
 local time = require("time")
-local json = require("json")
 local crypto = require("crypto")
 
 -- handler_pid -> client_pid 매핑
@@ -517,10 +542,9 @@ local prices = {
     ["SOL-USD"] = 95.00
 }
 
-local function broadcast(message)
-    local data = json.encode(message)
+local function broadcast(updates)
     for _, client_pid in pairs(subscriptions) do
-        process.send(client_pid, "ws.send", {type = "text", data = data})
+        process.send(client_pid, "ticker", updates)
     end
 end
 
@@ -566,12 +590,16 @@ local function main()
         if r.channel == tick_ch then
             update_prices()
             if next(subscriptions) then
-                broadcast({type = "ticker", data = get_updates()})
+                broadcast(get_updates())
             end
 
         elseif r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                ticker:stop()
+                logger:info("ticker stopping")
+                return 0
+            elseif event.kind == process.event.EXIT then
                 -- 핸들러가 종료됨, 구독 제거
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
@@ -593,10 +621,7 @@ local function main()
 
                 logger:info("subscribed", {handler_pid = handler_pid, client_pid = client_pid})
 
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "ticker", data = get_updates()})
-                })
+                process.send(client_pid, "ticker", get_updates())
 
             elseif topic == "unsubscribe" then
                 subscriptions[data.handler_pid] = nil
@@ -666,9 +691,71 @@ end
 return { main = main }
 ```
 
+## 브라우저 클라이언트
+
+`public/index.html` - API 키를 토큰으로 교환한 다음 가격을 스트리밍합니다. 브라우저는 WebSocket 핸드셰이크에 헤더를 설정할 수 없으므로, 토큰은 `token_auth`도 함께 읽는 `x-auth-token` 쿼리 파라미터로 전달됩니다:
+
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Crypto Ticker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+    #status { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Crypto Ticker</h1>
+  <input id="key" placeholder="demo API key" size="40">
+  <button id="connect">Connect</button>
+  <p id="status">disconnected</p>
+  <table><thead><tr><th>Symbol</th><th>Price</th></tr></thead><tbody id="rows"></tbody></table>
+
+  <script>
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
+
+    document.getElementById("connect").onclick = async () => {
+      const res = await fetch("/auth/token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({api_key: document.getElementById("key").value})
+      });
+      if (!res.ok) { status.textContent = "auth failed"; return; }
+      const {token} = await res.json();
+
+      const url = `ws://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        status.textContent = "connected";
+        ws.send(JSON.stringify({type: "ping"}));
+      };
+      ws.onclose = () => { status.textContent = "disconnected"; };
+
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.topic !== "ticker") return;
+        rows.innerHTML = "";
+        for (const quote of msg.data) {
+          rows.insertAdjacentHTML("beforeend",
+            `<tr><td>${quote.symbol}</td><td>${quote.price.toFixed(2)}</td></tr>`);
+        }
+      };
+    };
+  </script>
+</body>
+</html>
+```
+
 ## 실행
 
 ```bash
+mkdir -p data
 wippy init
 wippy run
 ```

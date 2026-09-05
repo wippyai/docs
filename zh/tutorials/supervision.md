@@ -496,7 +496,37 @@ entries:
     host: app:processes
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+严格模式默认开启，因此未声明安全上下文的服务会在每次检查中被拒绝，包括 `process.spawn`。为该池授予它和它的 worker 使用的动作：
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+Worker 继承生成它们的池的执行者和作用域，因此它们不需要自己的安全块。
 
 ### Supervisor 实现
 
@@ -552,6 +582,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -597,6 +631,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- 注册一个名称，以便其他进程可以访问该 worker
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -679,14 +716,57 @@ wippy init
 wippy run
 ```
 
-监管器自动启动，生成四个 worker，并在任意 worker 死亡时记录重启日志。`LINK_DOWN` 只在链接的进程以错误退出时才会投递，因此要触发重启，需从另一个进程强制终止某个 worker：
+监管器自动启动，生成四个 worker，并为每个 worker 记录 `Worker N started`。`LINK_DOWN` 只在链接的进程以错误退出时才会投递，因此要触发重启，需强制终止某个 worker。执行终止的代码必须运行在同一个运行时中，因此将其添加为一个临时服务：
 
-```lua
--- in an ad-hoc process or chat command
-process.terminate("<pid-from-supervisor-log>")
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
 ```
 
-池收到 `LINK_DOWN` 事件，等待 100 毫秒，然后以相同 id 重新生成该 worker。优雅的 `process.cancel()` 让 worker 干净地退出，这不会引发 `LINK_DOWN`，因此也不会触发重启。
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+再次运行 `wippy init` 以拾取新条目，然后 `wippy run`。两秒后，池收到 `LINK_DOWN`，等待 100 毫秒，并以相同 id 重新生成该 worker：
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+优雅的 `process.cancel()` 让 worker 干净地退出，这不会引发 `LINK_DOWN`，因此也不会触发重启 — 这正是监管循环在收到 `CANCEL` 时返回、而不是把关闭当作 worker 故障处理的原因。
 
 ## 下一步
 

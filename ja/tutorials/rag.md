@@ -18,14 +18,42 @@ description: "自分のドキュメントから質問に答えるナレッジベ
 ## 前提条件
 
 - データベース: `db.sql.sqlite` (`vec0` サポートを含む) または `pgvector` 拡張機能を持つ `db.sql.postgres`。
-- 埋め込みモデル (例: `text-embedding-3-small`) で構成された LLM プロバイダー — [LLM フレームワーク](framework/llm.md) を参照。
-- Wippy プロジェクトがブートストラップされている (`wippy init`、`wippy add wippy/embeddings`)。
+- 環境変数の `OPENAI_API_KEY` — 埋め込みと生成の呼び出しはこれを経由します。
+
+プロジェクトを作成し、モジュールをインストールします：
+
+```bash
+mkdir rag && cd rag
+mkdir -p src/app data
+wippy init
+wippy add wippy/embeddings
+wippy add wippy/migration
+wippy add wippy/bootloader
+wippy add wippy/security
+wippy install
+```
+
+```
+rag/
+├── wippy.lock
+├── data/
+└── src/
+    ├── _index.yaml
+    ├── env/
+    │   └── _index.yaml
+    └── app/
+        ├── ingest.lua
+        ├── answer.lua
+        ├── answer_http.lua
+        └── seed.lua
+```
 
 ## 依存関係
 
-`wippy/embeddings` 依存関係を宣言し、データベースを指します。`target_db` パラメータは、埋め込みテーブルが存在するデータベースエントリの Registry ID です：
+`wippy/embeddings` 依存関係を宣言し、データベースを指します。`target_db` パラメータは、埋め込みテーブルが存在するデータベースエントリの Registry ID です。`wippy/embeddings` は `wippy/llm` と `embeddings_512` テーブルを作成するマイグレーションをプルインするため、`wippy/migration` と `wippy/bootloader` の配線も必要です。ブートローダーは起動時にマイグレーションを実行し、ブートローダーと LLM モジュールはどちらも `wippy/security` が提供する `wippy.security:process` ポリシーグループの下でプロセスを実行します：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -36,6 +64,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
@@ -43,21 +76,112 @@ entries:
     parameters:
       - name: target_db
         value: app:db
+
+  - name: migration
+    kind: ns.dependency
+    component: wippy/migration
+    version: "*"
+    parameters:
+      - name: app_db
+        value: app:db
+
+  - name: bootloader
+    kind: ns.dependency
+    component: wippy/bootloader
+    version: "*"
+    parameters:
+      - name: application_host
+        value: app:processes
+      - name: env_storage
+        value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
 
-`wippy/embeddings` は `wippy/llm` と、`embeddings_512` テーブル (PostgreSQL `pgvector` または SQLite `vec0` 仮想テーブル) を作成するマイグレーションをプルインします。
+ブートローダーは生成した `ENCRYPTION_KEY` を永続化するため、書き込み可能な環境ストアが必要です：
+
+```yaml
+# src/env/_index.yaml
+version: "1.0"
+namespace: app.env
+
+entries:
+  - name: file
+    kind: env.storage.file
+    auto_create: true
+    file_path: .env
+    lifecycle:
+      auto_start: true
+
+  - name: os
+    kind: env.storage.os
+    lifecycle:
+      auto_start: true
+
+  - name: store
+    kind: env.storage.router
+    lifecycle:
+      auto_start: true
+    storages:
+      - app.env:file
+      - app.env:os
+```
+
+## モデル
+
+`wippy/embeddings` は `text-embedding-3-small` で `llm.embed` を呼び出し、以下の生成では `gpt-4o-mini` を使用します。どちらもレジストリから解決されるため、`src/_index.yaml` にも宣言します：
+
+```yaml
+  - name: text-embedding-3-small
+    kind: registry.entry
+    meta:
+      name: text-embedding-3-small
+      type: llm.model
+      title: Text Embedding 3 Small
+      capabilities:
+        - embed
+    dimensions: 512
+    max_tokens: 8191
+    pricing:
+      input: 0.02
+      output: 0
+    providers:
+      - id: wippy.llm.openai:provider
+        provider_model: text-embedding-3-small
+
+  - name: gpt-4o-mini
+    kind: registry.entry
+    meta:
+      name: gpt-4o-mini
+      type: llm.model
+      title: GPT-4o mini
+      capabilities:
+        - generate
+    max_tokens: 128000
+    output_tokens: 16384
+    pricing:
+      input: 0.15
+      output: 0.6
+    providers:
+      - id: wippy.llm.openai:provider
+        provider_model: gpt-4o-mini
+```
+
+OpenAI プロバイダーはデフォルトで OS 環境から `OPENAI_API_KEY` を読み取ります。他のプロバイダーやモデルのフィールドについては [LLM フレームワーク](framework/llm.md) を参照してください。
 
 ## ドキュメントの取り込み
 
 分割は `text` モジュールによって処理されます。埋め込みと永続化は `embeddings` ライブラリによって処理されます。
 
 ```lua
--- app/ingest.lua
+-- src/app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
-local uuid = require("uuid")
 
-local function ingest(doc_id, title, markdown)
+local function ingest(doc_id: string, title: string, markdown: string)
     local splitter, err = text.splitter.markdown({
         chunk_size = 800,
         chunk_overlap = 100,
@@ -95,7 +219,6 @@ return { ingest = ingest }
   method: ingest
   modules:
     - text
-    - uuid
   imports:
     embeddings: wippy.embeddings:embeddings
 ```
@@ -132,7 +255,7 @@ local hits = embeddings.find_by_origin("refund policy", "doc-42", { limit = 3 })
 取得したチャンクをプロンプトに構成して LLM を呼び出します。ここでは、取得されたテキストがシステムプロンプトに追加されます。ユーザーの質問がユーザーターンになります：
 
 ```lua
--- app/answer.lua
+-- src/app/answer.lua
 local embeddings = require("embeddings")
 local llm = require("llm")
 local prompt = require("prompt")
@@ -152,7 +275,7 @@ local function format_context(hits)
     return table.concat(parts, "\n\n")
 end
 
-local function answer(question)
+local function answer(question: string)
     local hits, err = embeddings.search(question, { limit = 4 })
     if err then return nil, err end
 
@@ -186,34 +309,15 @@ return { answer = answer }
 
 ## エンドツーエンドの例
 
-HTTP エンドポイントの背後にまとめます：
+HTTP エンドポイントの背後にまとめます。以下のエントリを `src/_index.yaml` に追加します：
 
 ```yaml
-version: "1.0"
-namespace: app
-
-entries:
-  - name: db
-    kind: db.sql.sqlite
-    file: ./data/app.db
-    lifecycle:
-      auto_start: true
-
-  - name: embeddings
-    kind: ns.dependency
-    component: wippy/embeddings
-    version: "*"
-    parameters:
-      - name: target_db
-        value: app:db
-
   - name: ingest
     kind: function.lua
     source: file://app/ingest.lua
     method: ingest
     modules:
       - text
-      - uuid
     imports:
       embeddings: wippy.embeddings:embeddings
 
@@ -226,11 +330,31 @@ entries:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt
 
+  - name: seed
+    kind: process.lua
+    meta:
+      command:
+        name: seed
+        short: Ingest the sample document
+        security:
+          groups:
+            - wippy.security:process
+    source: file://app/seed.lua
+    method: main
+    modules:
+      - funcs
+      - io
+
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: gateway
+        groups:
+          - wippy.security:process
 
   - name: api
     kind: http.router
@@ -256,8 +380,10 @@ entries:
       answer: app:answer
 ```
 
+サーバーがセキュリティコンテキストを宣言しているのは、取得処理がレジストリから埋め込みモデルを解決するためです。アクターとスコープを持たないリクエストはエントリを一切読み取れず、モデル解決は `Model or class not found` で失敗します。
+
 ```lua
--- app/answer_http.lua
+-- src/app/answer_http.lua
 local http = require("http")
 local answer = require("answer")
 
@@ -272,7 +398,7 @@ local function handler()
         return
     end
 
-    local result, ans_err = answer.answer(body.question)
+    local result, ans_err = answer.answer(tostring(body.question))
     if ans_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({ error = ans_err })
@@ -285,7 +411,44 @@ end
 return { handler = handler }
 ```
 
-セットアッププロセスまたは CLI コマンド (`meta.command` を持つ `process.lua`) から `ingest` を呼び出してインデックスをシードし、クエリを実行します：
+CLI コマンドからインデックスをシードします。`meta.command` によってプロセスは `wippy run seed` として実行可能になり、その `security` ブロックが `app:ingest` を呼び出すために必要なスコープを与えます：
+
+```lua
+-- src/app/seed.lua
+local funcs = require("funcs")
+local io = require("io")
+
+local DOC = [[
+# TLS Configuration
+
+Wippy servers terminate TLS when the `tls` block is present on the
+`http.service` entry. Set `cert_file` and `key_file` to PEM paths.
+
+## Refund Policy
+
+Refunds are issued within 14 days of purchase.
+]]
+
+local function main()
+    local res, err = funcs.call("app:ingest", "doc-42", "Handbook", DOC)
+    if err then
+        io.print("ingest failed: " .. tostring(err))
+        return
+    end
+    io.print("ingested " .. tostring(res.count) .. " chunks")
+end
+
+return { main = main }
+```
+
+最初の `wippy run` が `data/app.db` を作成し、embeddings のマイグレーションを適用します。インデックスをシードしてから、サーバーを起動してクエリを実行します：
+
+```bash
+wippy run seed
+# ingested 2 chunks
+
+wippy run
+```
 
 ```bash
 curl -X POST http://localhost:8080/api/ask \
@@ -293,11 +456,28 @@ curl -X POST http://localhost:8080/api/ask \
     -d '{"question":"how do I configure TLS?"}'
 ```
 
+```json
+{
+  "answer": "You can configure TLS by adding a `tls` block to the `http.service` entry. Set `cert_file` and `key_file` to the paths of your PEM files. (See: Handbook, TLS Configuration)",
+  "sources": [
+    {
+      "entry_id": "52fafcc0-2d18-40d9-8a6e-7662ef9d9bea",
+      "origin_id": "doc-42",
+      "context_id": "1",
+      "content_type": "doc_chunk",
+      "content": "# TLS Configuration\nWippy servers terminate TLS when the `tls` block is present on the\n`http.service` entry. Set `cert_file` and `key_file` to PEM paths.",
+      "meta": { "title": "Handbook", "chunk": 1 },
+      "similarity": 0.0736
+    }
+  ]
+}
+```
+
 ## 運用上の注意
 
 - **チャンクサイズ**: `chunk_size` と `chunk_overlap` はトークンではなく文字数を数えます (スプリッタは `utf8.RuneCountInString` で長さを測定します)。おおよそ 2000〜4000 文字が良い出発点です。小さすぎるとローカルコンテキストが失われ、大きすぎると類似度スコアが希釈されます。境界を越えて文を保持するために `chunk_overlap` (チャンクサイズの約 10〜20%) を使用します。
 - **コンテンツタイプ**: 検索がタイプでフィルタリングできるように、異なる `content_type` 値 (`doc_chunk`、`faq`、`code_snippet`) を使用します。
-- **再インデックス**: 新しいチャンクを追加する前に、`embedding_repo.delete_by_origin(doc_id)` によってドキュメントごとに削除して再取り込みします。
+- **再インデックス**: 新しいチャンクを追加する前に、`embedding_repo.delete_by_origin(doc_id)` によってドキュメントごとに削除して再取り込みします。リポジトリは別のライブラリです — `embedding_repo: wippy.embeddings:embedding_repo` としてインポートします。
 - **ハイブリッド検索**: 正確な用語の再現 (名前、ID) のために、ベクトル検索とソーステーブルの全文検索を組み合わせ、再ランク付けします。
 - **モデル選択**: `wippy/embeddings` は 512 次元の `text-embedding-3-small` に固定されており、`embeddings_512` テーブルは `vector(512)`/`float[512]` を格納します。別のモデルやベクトルサイズを使うには、ライブラリの定数とマイグレーションのテーブルを変更する必要があります。
 

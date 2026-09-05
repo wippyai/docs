@@ -496,7 +496,37 @@ entries:
     host: app:processes
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+Строгий режим включён по умолчанию, поэтому сервису, не объявляющему контекст безопасности, отказано в любой проверке, включая `process.spawn`. Выдайте пулу права на действия, которые используют он и его воркеры:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+Воркеры наследуют актора и область пула, который их порождает, поэтому собственный блок им не нужен.
 
 ### Реализация супервизора
 
@@ -552,6 +582,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -597,6 +631,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- Register under a name so other processes can reach this worker
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -679,14 +716,57 @@ wippy init
 wippy run
 ```
 
-Супервизор автоматически стартует, порождает четырёх воркеров и логирует перезапуски при гибели любого из них. `LINK_DOWN` доставляется только когда связанный процесс завершается с ошибкой, поэтому для перезапуска принудительно завершите воркер из другого процесса:
+Супервизор автоматически стартует, порождает четырёх воркеров и логирует `Worker N started` для каждого. `LINK_DOWN` доставляется только когда связанный процесс завершается с ошибкой, поэтому для перезапуска принудительно завершите воркер. Завершающий код должен выполняться внутри того же рантайма, поэтому добавьте его как отдельный сервис:
 
-```lua
--- in an ad-hoc process or chat command
-process.terminate("<pid-from-supervisor-log>")
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
 ```
 
-Пул получает `LINK_DOWN`, ждёт 100 мс и перезапускает воркер под тем же идентификатором. Корректное завершение через `process.cancel()` позволяет воркеру выйти чисто, что не порождает `LINK_DOWN` и, соответственно, не вызывает перезапуск.
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+Выполните `wippy init` ещё раз, чтобы подхватить новые записи, затем `wippy run`. Через две секунды пул получает `LINK_DOWN`, ждёт 100 мс и перезапускает воркер под тем же идентификатором:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+Корректное завершение через `process.cancel()` позволяет воркеру выйти чисто, что не порождает `LINK_DOWN` и, соответственно, не вызывает перезапуск — именно поэтому цикл супервизии возвращается по `CANCEL`, а не трактует остановку как отказ воркера.
 
 ## Следующие шаги
 

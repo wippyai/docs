@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-Ereignisse sind Datensätze, die über `type` unterschieden werden. Bei einer druckbaren Taste ist `key_type` gleich `"runes"` und `key` enthält den Text; bei einer benannten Taste enthalten sowohl `key_type` als auch `key` den Namen (`"enter"`, `"backspace"`, `"up"`). Koordinaten in Maus-Ereignissen sind einsbasiert.
+Ereignisse sind Datensätze, die über `type` unterschieden werden. Bei einer druckbaren Taste ist `key_type` gleich `"runes"` und `key` enthält den Text; bei einer benannten Taste enthalten sowohl `key_type` als auch `key` den Namen (`"enter"`, `"backspace"`, `"space"`, `"up"`). Koordinaten in Maus-Ereignissen sind einsbasiert.
 
 ## Schritt 3: Frames zeichnen
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

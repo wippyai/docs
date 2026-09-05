@@ -19,7 +19,6 @@ A terminal chat agent that:
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ The LLM module needs two infrastructure entries:
 - `env.storage.os` provides API keys from environment variables
 - `process.host` provides the process runtime the LLM module uses internally
 
-`terminal.host` is what `wippy run -x` executes the `ask` process on and where `io.print` writes.
+The `wippy/terminal` dependency provides the `terminal.host` that commands execute on and where `io.print` writes.
+
+`meta.command` gives the process a name so `wippy run ask` launches it with the remaining arguments as string payloads. Its `security` block installs the actor and policy scope for that launch: the LLM module resolves models from the registry, and a command launched without a scope reads nothing from it.
 
 ### Generation Code
 
@@ -150,7 +167,7 @@ The LLM module resolves models from the registry. Add a model entry to `_index.y
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 This runs the `ask` process on the terminal host with the question as its argument and prints the result. The model definition tells the LLM module which provider to use and what model name to send to the API.
@@ -161,20 +178,20 @@ Upgrade from a single call to a multi-turn conversation using the prompt builder
 
 ### Update Entry Definitions
 
-Replace the `ask` entry with a `chat` process and add the terminal dependency:
+Replace the `ask` entry with a `chat` process:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ Switch to the agent framework. Update the entry imports:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

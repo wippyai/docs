@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: net_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: system.probe
+          policies:
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -68,6 +82,8 @@ entries:
 ```
 
 `isolate_streams: true`는 SOCKS5 드라이버가 연결마다 임의의 자격증명을 생성하도록 하여 Tor가 각 다이얼에 대해 새로운 회로를 열게 합니다.
+
+보안은 기본적으로 엄격하므로, 명령은 실행에 사용할 액터와 정책을 지닙니다. `http_client.request`는 아웃바운드 호출을, `network.select`는 명시적인 오버레이 선택을 담당합니다. 이들이 없으면 모든 검사가 실패로 닫힙니다.
 
 ## 2단계: 아웃바운드 호출 라우팅
 
@@ -159,6 +175,13 @@ local pid, err = process.with_options({ network = "app:tor" })
 인바운드 트래픽을 지원하는 오버레이(Tailscale, I2P)는 HTTP 리스너도 수신할 수 있습니다. 클라이언트 대신 `http.service`에 오버레이를 첨부합니다:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -171,9 +194,16 @@ local pid, err = process.with_options({ network = "app:tor" })
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-서버는 tailnet 인터페이스에 바인딩되고 클라이언트는 Tailscale 주소를 통해 접근합니다. SOCKS5는 아웃바운드 전용으로 `http.service`에 할당하면 거부됩니다.
+`auth_key`는 [env 레지스트리](system/env.md)를 통해 해석되므로 `TS_AUTHKEY`는 등록된 변수입니다 — OS 값을 사용하려면 `env.storage.os`가 뒷받침하는 `env.variable`이 필요합니다.
+
+오버레이를 통한 바인딩은 리스너가 시작될 때 검사되는 `network.bind`로 게이트되므로, 서비스는 이를 허용하는 스코프를 선언합니다. 서버는 tailnet 인터페이스에 바인딩되고 클라이언트는 Tailscale 주소를 통해 접근합니다. SOCKS5는 아웃바운드 전용으로, `http.service`에 할당하면 리스너가 `inbound listeners are not exposed over SOCKS5`로 실패합니다.
 
 ## 앱 전체 기본값
 

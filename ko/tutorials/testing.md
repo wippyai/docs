@@ -18,15 +18,15 @@ description: "wippy/test 프레임워크로 Lua 코드의 테스트를 작성하
 ## 전제 조건
 
 - Wippy 프로젝트 ([app-template](https://github.com/wippyai/app-template) 클론, 또는 빈 디렉토리에서 `wippy init`).
-- 설치된 테스트 프레임워크와 터미널 호스트:
+- 설치된 테스트 프레임워크:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  러너는 라이브 터미널 UI를 렌더링하므로 `wippy/test`와 함께 `wippy/terminal`이 필요합니다.
+  러너는 `wippy/terminal` 위에서 라이브 터미널 UI를 렌더링하며, `wippy/test`가
+  이를 함께 가져옵니다.
 
 ## 테스트 대상 코드
 
@@ -89,10 +89,16 @@ return { run = test.run_cases(define_tests) }
 두 엔트리를 모두 등록합니다. 디스커버리는 `meta.type: test`를 기준으로 동작합니다; `meta.suite`는 출력에서 결과를 그룹화합니다:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -110,7 +116,10 @@ entries:
       calc: app:calc
 ```
 
-`imports` 맵은 테스트 내부에서 `require(...)`가 무엇으로 해석되는지 제어합니다: `test`는 프레임워크를, `calc`는 테스트 대상 유닛을 바인딩합니다.
+`ns.dependency` 엔트리가 `wippy/test`를 애플리케이션에 마운트합니다. 이것이 없으면
+프레임워크 네임스페이스가 레지스트리에 도달하지 못해 `wippy.test:test` 해석이 실패합니다.
+`imports` 맵은 테스트 내부에서 `require(...)`가 무엇으로 해석되는지 제어합니다:
+`test`는 프레임워크를, `calc`는 테스트 대상 유닛을 바인딩합니다.
 
 ## 실행하기
 
@@ -121,13 +130,19 @@ wippy test
 위 스위트의 출력:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test`는 모든 케이스가 통과하면 `0`으로, 실패가 있으면 `1`로 종료되므로 CI에 바로 적용됩니다.

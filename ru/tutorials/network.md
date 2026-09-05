@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: net_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: system.probe
+          policies:
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -68,6 +82,8 @@ entries:
 ```
 
 `isolate_streams: true` заставляет SOCKS5-драйвер генерировать случайные учётные данные для каждого соединения, чтобы Tor открывал новую цепочку при каждом подключении.
+
+Безопасность по умолчанию строгая, поэтому команда несёт актора и политику, под которыми выполняется её запуск. `http_client.request` покрывает исходящий вызов, а `network.select` — явный выбор оверлея; без них каждая проверка завершается отказом.
 
 ## Шаг 2: Маршрутизация исходящих вызовов
 
@@ -159,6 +175,13 @@ local pid, err = process.with_options({ network = "app:tor" })
 Оверлеи с поддержкой входящего трафика (Tailscale, I2P) могут также принимать HTTP-слушателей. Привяжите оверлей к `http.service` вместо клиента:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -171,9 +194,16 @@ local pid, err = process.with_options({ network = "app:tor" })
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-Сервер привязывается на интерфейсе tailnet; клиенты обращаются к нему через Tailscale-адрес. SOCKS5 работает только на исходящий трафик — назначение его `http.service` отклоняется.
+`auth_key` разрешается через [реестр окружения](system/env.md), поэтому `TS_AUTHKEY` — зарегистрированная переменная: значению из ОС нужна запись `env.variable`, опирающаяся на `env.storage.os`.
+
+Привязка через оверлей контролируется действием `network.bind`, которое проверяется при старте слушателя, поэтому сервис объявляет область, разрешающую его. Сервер привязывается на интерфейсе tailnet; клиенты обращаются к нему через Tailscale-адрес. SOCKS5 работает только на исходящий трафик — назначение его `http.service` приводит к отказу слушателя с ошибкой `inbound listeners are not exposed over SOCKS5`.
 
 ## Глобальный дефолт
 

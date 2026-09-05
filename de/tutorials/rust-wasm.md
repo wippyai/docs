@@ -225,7 +225,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+Das Einhängen eines Dateisystems in ein WASM-Modul und der Aufruf einer WASM-Funktion sind beides abgesicherte Aktionen. Die Richtlinie gewährt sie; Einträge, die sie benötigen, referenzieren sie.
 
 ### WASM-Funktionen
 
@@ -338,6 +351,9 @@ entries:
       command:
         name: ls
         short: List files from mounted directory
+        security:
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -353,7 +369,7 @@ entries:
           guest: /data
 ```
 
-Der `meta.command`-Block registriert den Prozess als benannten CLI-Befehl. Der `greet`-Befehl benötigt keine WASI-Imports, da er nur String-Operationen verwendet. Der `ls`-Befehl benötigt Dateisystemzugriff.
+Der `meta.command`-Block registriert den Prozess als benannten CLI-Befehl. Der `greet`-Befehl benötigt keine WASI-Imports, da er nur String-Operationen verwendet. Der `ls`-Befehl benötigt Dateisystemzugriff und trägt daher zusätzlich den Sicherheitskontext, der das Einhängen gewährt.
 
 ### HTTP-Endpunkt
 
@@ -400,18 +416,27 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet someone via WASM
-  ls       List files from mounted directory
+
+  greet  Greet someone via WASM  (demo.cli:greet)
+  ls  List files from mounted directory  (demo.cli:ls)
+
+Run with: wippy run <command>
 ```
+
+Argumente nach dem Befehlsnamen werden der exportierten Funktion als String-Parameter übergeben, sodass jeder Befehl genau die Argumente entgegennimmt, die seine WIT-Signatur deklariert:
 
 ```bash
 # Run greet
-wippy run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
 # Run ls to list mounted directory
-wippy run ls
+wippy run ls /data
 ```
 
 ### Als Dienst ausführen
@@ -420,15 +445,19 @@ wippy run ls
 wippy run
 ```
 
-Dies startet den HTTP-Server auf Port 8090. Testen Sie den Endpunkt:
+Dies startet den HTTP-Server auf Port 8090. Der `wasi-http`-Transport übergibt den Request-Body als einziges String-Argument der Funktion:
 
 ```bash
-curl -X POST http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
+```
+
+```
+Hello, World!
 ```
 
 ### Aus Lua aufrufen
 
-WASM-Funktionen werden auf dieselbe Weise wie Lua-Funktionen aufgerufen:
+WASM-Funktionen werden auf dieselbe Weise wie Lua-Funktionen aufgerufen. Der aufrufende Prozess benötigt `funcs.call` auf dem Ziel, was `demo:policy` gewährt:
 
 ```lua
 local funcs = require("funcs")

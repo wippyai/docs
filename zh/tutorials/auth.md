@@ -60,6 +60,7 @@ flowchart TB
     subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
+        SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
@@ -71,10 +72,6 @@ flowchart TB
         Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>每连接]
         Ticker[ticker<br/>单例]
-    end
-
-    subgraph "External"
-        CryptoAPI[加密货币价格 API]
     end
 
     %% 客户端连接
@@ -99,6 +96,8 @@ flowchart TB
     %% Token store 依赖
     MemStore --> TokenStore
     Policy -->|附加到 token| TokenStore
+    SysPolicy -->|"actor + scope"| AuthEndpoint
+    SysPolicy -->|"actor + scope"| Ticker
 
     %% Auth 使用 DB 存储 API keys
     AuthEndpoint -->|查找 API key| DB
@@ -107,9 +106,6 @@ flowchart TB
     WSHandler -->|订阅| Ticker
     Ticker -->|广播| WSHandler
     WSRelay <-->|"ws 帧"| Browser
-
-    %% 外部
-    Ticker -->|获取价格| CryptoAPI
 ```
 
 ## 安全流程
@@ -162,6 +158,23 @@ entries:
     groups:
       - user
 
+  # 面向没有终端用户 actor 的内部代码的策略
+  - name: system_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - security.actor.create
+        - security.policy.get
+        - security.scope.create
+        - security.token_store.get
+        - security.token.create
+        - process.registry.register
+        - process.send
+        - process.monitor
+      resources: "*"
+      effect: allow
+
   # 进程宿主
   - name: processes
     kind: process.host
@@ -174,6 +187,11 @@ entries:
     source: file://migrate.lua
     method: main
     modules: [sql, logger, crypto]
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:system_policy
 
   - name: migrate-service
     kind: process.service
@@ -187,7 +205,12 @@ entries:
     kind: process.lua
     source: file://ticker.lua
     method: main
-    modules: [logger, time, json, crypto]
+    modules: [logger, time, crypto]
+    security:
+      actor:
+        id: "service:ticker"
+      policies:
+        - app:system_policy
 
   - name: ticker-service
     kind: process.service
@@ -240,7 +263,7 @@ entries:
   # 静态文件
   - name: public_fs
     kind: fs.directory
-    directory: ./public
+    directory: ./src/public
 
   - name: static
     kind: http.static
@@ -258,6 +281,11 @@ entries:
     source: file://auth_token.lua
     method: handler
     modules: [http, sql, crypto, security, json]
+    security:
+      actor:
+        id: "service:auth"
+      policies:
+        - app:system_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -282,6 +310,8 @@ entries:
     path: /ticker
     func: app:ws_ticker
 ```
+
+`user_policy` 随每个签发的 token 一起传递，覆盖已认证连接所做的事情。`system_policy` 覆盖在任何 token 存在之前运行的代码——迁移、行情广播器以及 token 交换本身——因为没有 actor 和作用域发起的受控调用会被拒绝。
 
 生产环境中，使用占位符（`token_key: ${env:TOKEN_KEY}`）从环境变量读取 HMAC 密钥，而不是硬编码。参见[环境系统](system/env.md)。
 
@@ -435,6 +465,8 @@ return { handler = handler }
 - `ws.message` - 客户端发送了消息；负载是原始帧（文本帧为字符串）
 - `ws.leave` - 连接关闭（断开时自动发送）
 
+反向发往客户端 PID 的消息，会以形如 `{topic, data}` 的单个 JSON 文本帧到达浏览器。topic 由你自己选择，负载则以 `data` 的形式送达。
+
 `ws_handler.lua` - 处理这些生命周期消息：
 
 ```lua
@@ -466,20 +498,14 @@ local function main(user_id)
             subscribed = true
 
             -- 发送欢迎消息
-            process.send(client_pid, "ws.send", {
-                type = "text",
-                data = json.encode({type = "welcome", user_id = user_id})
-            })
+            process.send(client_pid, "welcome", {user_id = user_id})
 
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
             local content = json.decode(data)
             if content and content.type == "ping" then
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "pong"})
-                })
+                process.send(client_pid, "pong", {})
             end
 
         elseif topic == "ws.leave" then
@@ -505,7 +531,6 @@ return { main = main }
 ```lua
 local logger = require("logger")
 local time = require("time")
-local json = require("json")
 local crypto = require("crypto")
 
 -- handler_pid -> client_pid 映射
@@ -517,10 +542,9 @@ local prices = {
     ["SOL-USD"] = 95.00
 }
 
-local function broadcast(message)
-    local data = json.encode(message)
+local function broadcast(updates)
     for _, client_pid in pairs(subscriptions) do
-        process.send(client_pid, "ws.send", {type = "text", data = data})
+        process.send(client_pid, "ticker", updates)
     end
 end
 
@@ -566,12 +590,16 @@ local function main()
         if r.channel == tick_ch then
             update_prices()
             if next(subscriptions) then
-                broadcast({type = "ticker", data = get_updates()})
+                broadcast(get_updates())
             end
 
         elseif r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                ticker:stop()
+                logger:info("ticker stopping")
+                return 0
+            elseif event.kind == process.event.EXIT then
                 -- 处理器退出，移除订阅
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
@@ -593,10 +621,7 @@ local function main()
 
                 logger:info("subscribed", {handler_pid = handler_pid, client_pid = client_pid})
 
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "ticker", data = get_updates()})
-                })
+                process.send(client_pid, "ticker", get_updates())
 
             elseif topic == "unsubscribe" then
                 subscriptions[data.handler_pid] = nil
@@ -666,9 +691,71 @@ end
 return { main = main }
 ```
 
+## 浏览器客户端
+
+`public/index.html` - 用 API key 换取 token，然后流式接收价格。浏览器无法在 WebSocket 握手时设置请求头，因此 token 通过 `token_auth` 同样会读取的 `x-auth-token` 查询参数传递：
+
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Crypto Ticker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+    #status { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Crypto Ticker</h1>
+  <input id="key" placeholder="demo API key" size="40">
+  <button id="connect">Connect</button>
+  <p id="status">disconnected</p>
+  <table><thead><tr><th>Symbol</th><th>Price</th></tr></thead><tbody id="rows"></tbody></table>
+
+  <script>
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
+
+    document.getElementById("connect").onclick = async () => {
+      const res = await fetch("/auth/token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({api_key: document.getElementById("key").value})
+      });
+      if (!res.ok) { status.textContent = "auth failed"; return; }
+      const {token} = await res.json();
+
+      const url = `ws://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        status.textContent = "connected";
+        ws.send(JSON.stringify({type: "ping"}));
+      };
+      ws.onclose = () => { status.textContent = "disconnected"; };
+
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.topic !== "ticker") return;
+        rows.innerHTML = "";
+        for (const quote of msg.data) {
+          rows.insertAdjacentHTML("beforeend",
+            `<tr><td>${quote.symbol}</td><td>${quote.price.toFixed(2)}</td></tr>`);
+        }
+      };
+    };
+  </script>
+</body>
+</html>
+```
+
 ## 运行
 
 ```bash
+mkdir -p data
 wippy init
 wippy run
 ```

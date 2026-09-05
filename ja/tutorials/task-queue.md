@@ -74,6 +74,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # ハンドラ、ワーカー、マイグレーション用のアクセスポリシー
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # メモリキュードライバ
   - name: queue_driver
     kind: queue.driver.memory
@@ -106,6 +117,11 @@ entries:
     modules:
       - sql
       - logger
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:task_policy
 
   # マイグレーションサービス（自動起動、成功時に終了）
   - name: migrate-service
@@ -130,6 +146,11 @@ entries:
       - http
       - queue
       - uuid
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -138,6 +159,11 @@ entries:
     modules:
       - http
       - sql
+    security:
+      actor:
+        id: "service:api"
+      policies:
+        - app:task_policy
 
   # キューワーカー
   - name: process_task
@@ -148,6 +174,11 @@ entries:
       - sql
       - logger
       - json
+    security:
+      actor:
+        id: "service:worker"
+      policies:
+        - app:task_policy
 
   # エンドポイント
   - name: create_task.endpoint
@@ -176,6 +207,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+ストリクトモードはデフォルトで有効なため、データベースやキューにアクセスするエントリにはアクターとスコープが必要です。各 Lua エントリの `security:` ブロックが `app:task_policy` からその両方を与えます。[セキュリティモデル](system/security.md)を参照してください。
+</tip>
 
 ## マイグレーションプロセス
 

@@ -71,7 +71,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -165,6 +165,17 @@ entries:
 ```
 
 これらのポリシーは `create_tool` によって名前付きスコープ（`app:agent_security`）としてロードされ、レジストリへの書き込み前に評価されます。エージェントは `app.generated:*` には書き込めますが（拒否ポリシーが一致しない）、`app:*`（コアエントリ、モデル、エージェント定義）や `app.tools:*`（組み込みツール）には書き込めません。
+
+3 つ目のポリシーは、プロセス自身にレジストリへのアクセスを与えます。セキュリティコンテキストなしで起動されたプロセスはすべてのレジストリ読み取りを拒否されるため、`agent` コマンドはこのポリシーを自身のスコープとして携えます：
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 ポリシー評価の詳細については、[セキュリティモデル](system/security.md) を参照してください。
 
@@ -260,6 +271,11 @@ GPT-5.1 は推論とツール使用を担当します。GPT-4.1 Nano は 25 倍�
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +285,7 @@ GPT-5.1 は推論とツール使用を担当します。GPT-4.1 Nano は 25 倍�
       compress: wippy.llm.util:compress
 ```
 
-プロセスはターミナルコマンドとして実行されます。セキュリティ強制は `create_tool` 内部で行われ、`agent_security` ポリシーグループをロードして書き込み前に評価します。
+プロセスはターミナルコマンドとして実行されます。`meta.command.security` が、実行時のアクターとスコープを与えます。これがないと `registry.get` が `not allowed to access entry` で失敗し、エージェントはロードされません。書き込みに対するセキュリティ強制は `create_tool` 内部で行われ、`agent_security` ポリシーグループをロードして書き込み前に評価します。
 
 インポート：
 - `prompt` — 会話ビルダー

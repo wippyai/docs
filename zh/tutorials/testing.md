@@ -18,15 +18,14 @@ description: "使用 wippy/test 框架为您的 Lua 代码编写和运行测试 
 ## 先决条件
 
 - 一个 Wippy 项目（克隆 [app-template](https://github.com/wippyai/app-template)，或在空目录中执行 `wippy init`）。
-- 已安装测试框架和终端宿主：
+- 已安装测试框架：
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  运行器会渲染一个实时的终端 UI，因此 `wippy/terminal` 必须与 `wippy/test` 一同安装。
+  运行器在 `wippy/terminal` 上渲染实时的终端 UI，`wippy/test` 会为您引入它。
 
 ## 被测代码
 
@@ -89,10 +88,16 @@ return { run = test.run_cases(define_tests) }
 注册这两个入口。发现机制依据 `meta.type: test`；`meta.suite` 在输出中将结果分组：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -110,7 +115,7 @@ entries:
       calc: app:calc
 ```
 
-`imports` 映射控制测试内部 `require(...)` 解析到的内容：`test` 绑定框架，`calc` 绑定被测单元。
+`ns.dependency` 入口负责将 `wippy/test` 挂载到应用中；没有它，框架命名空间永远不会进入注册表，`wippy.test:test` 也无法解析。`imports` 映射控制测试内部 `require(...)` 解析到的内容：`test` 绑定框架，`calc` 绑定被测单元。
 
 ## 运行
 
@@ -121,13 +126,19 @@ wippy test
 上述套件的输出：
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 当每个用例都通过时，`wippy test` 退出码为 `0`，任何失败时为 `1`，因此可以直接接入 CI。

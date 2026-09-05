@@ -41,6 +41,7 @@ aquí explícitamente por claridad:
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ Los tokens los emite un usuario administrador, están delimitados y se muestran 
 API de tokens (o la página MCP en la UI de Keeper):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,14 +96,14 @@ Codex, un `.mcp.json` en la raíz del proyecto:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-Use la URL base pública de la aplicación en lugar de `http://localhost:8085` en un entorno
+Use la URL base pública de la aplicación en lugar de `http://localhost:8080` en un entorno
 desplegado.
 
 ## Cómo Funciona la Superficie MCP
@@ -115,7 +116,9 @@ opta por una capacidad:
 - `list_traits` / `describe_trait` — descubra qué hay disponible.
 - `use_trait` / `drop_trait` (y `set_traits`) — active o elimine un trait; esto emite
   una `notifications/tools/list_changed` de MCP, de modo que las herramientas visibles cambian en vivo.
-- `list_tools` / `call_tool` — enumere e invoque las herramientas que un trait materializó.
+- `list_tools` — enumere las herramientas que un trait materializó, con sus esquemas.
+- `call_tool` — invoque cualquier herramienta del registro por id; visible solo para un token que
+  posea `mcp.root`.
 
 Lo que un token puede activar está acotado por sus **scopes** — a grandes rasgos `registry.*`,
 `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,

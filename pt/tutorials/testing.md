@@ -21,16 +21,15 @@ Uma pequena biblioteca e uma suíte de testes que a cobre:
 
 - Um projeto Wippy (clone o [app-template](https://github.com/wippyai/app-template), ou
   `wippy init` em um diretório vazio).
-- O framework de testes e um host de terminal instalados:
+- O framework de testes instalado:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  O runner renderiza uma UI de terminal ao vivo, então `wippy/terminal` é necessário
-  junto com `wippy/test`.
+  O runner renderiza uma UI de terminal ao vivo sobre `wippy/terminal`, que `wippy/test`
+  traz para você.
 
 ## O código sob teste
 
@@ -95,10 +94,16 @@ Registre ambas as entradas. A descoberta se baseia em `meta.type: test`; `meta.s
 agrupa os resultados na saída:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -116,7 +121,9 @@ entries:
       calc: app:calc
 ```
 
-O mapa `imports` controla o que `require(...)` resolve dentro do teste: `test` vincula
+A entrada `ns.dependency` é o que monta `wippy/test` na aplicação; sem ela o namespace
+do framework nunca chega ao registro e `wippy.test:test` não é resolvido. O mapa
+`imports` controla o que `require(...)` resolve dentro do teste: `test` vincula
 o framework, `calc` vincula a unidade sob teste.
 
 ## Execute
@@ -128,13 +135,19 @@ wippy test
 Saída para a suíte acima:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` sai com `0` quando todos os casos passam e `1` em qualquer falha, então

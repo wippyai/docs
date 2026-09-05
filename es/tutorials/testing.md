@@ -21,16 +21,15 @@ Una pequeña biblioteca y una suite de tests que la cubre:
 
 - Un proyecto Wippy (clona [app-template](https://github.com/wippyai/app-template), o
   `wippy init` en un directorio vacío).
-- El framework de testing y un host de terminal instalados:
+- El framework de testing instalado:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  El runner renderiza una UI de terminal en vivo, por lo que se requiere `wippy/terminal`
-  junto con `wippy/test`.
+  El runner renderiza una UI de terminal en vivo sobre `wippy/terminal`, que `wippy/test`
+  incorpora por ti.
 
 ## El código bajo prueba
 
@@ -95,10 +94,16 @@ Registra ambas entradas. El descubrimiento se basa en `meta.type: test`; `meta.s
 los resultados en la salida:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -116,8 +121,10 @@ entries:
       calc: app:calc
 ```
 
-El mapa `imports` controla a qué resuelve `require(...)` dentro del test: `test`
-vincula el framework, `calc` vincula la unidad bajo prueba.
+La entrada `ns.dependency` es lo que monta `wippy/test` en la aplicación; sin
+ella el namespace del framework nunca llega al registro y `wippy.test:test` no se
+resuelve. El mapa `imports` controla a qué resuelve `require(...)` dentro del test:
+`test` vincula el framework, `calc` vincula la unidad bajo prueba.
 
 ## Ejecutarlo
 
@@ -128,13 +135,19 @@ wippy test
 Salida para la suite anterior:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` sale con `0` cuando todos los casos pasan y con `1` ante cualquier fallo, por lo que

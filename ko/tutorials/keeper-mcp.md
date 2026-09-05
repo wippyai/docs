@@ -41,6 +41,7 @@ Codex 등)에 노출한다는 점입니다. 이 페이지에서는 앱에 Keeper
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ MCP 전송은 `MCP_ENABLED` 환경 변수로 통제됩니다(기본값 `true`).
 하나 생성합니다(또는 Keeper UI의 MCP 페이지에서):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,14 +96,14 @@ Codex의 경우 프로젝트 루트에 `.mcp.json`을 둡니다:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-배포 환경에서는 `http://localhost:8085` 대신 앱의 공개 기본 URL을 사용하십시오.
+배포 환경에서는 `http://localhost:8080` 대신 앱의 공개 기본 URL을 사용하십시오.
 
 ## MCP 표면의 동작 방식
 
@@ -114,7 +115,9 @@ Keeper는 평평하고 고정된 도구 목록을 노출하지 않습니다. 몇
 - `list_traits` / `describe_trait` — 사용 가능한 것을 탐색합니다.
 - `use_trait` / `drop_trait`(및 `set_traits`) — 트레이트를 활성화하거나 제거합니다. 이는
   MCP `notifications/tools/list_changed`를 발생시키므로 보이는 도구가 실시간으로 바뀝니다.
-- `list_tools` / `call_tool` — 트레이트가 구체화한 도구를 나열하고 호출합니다.
+- `list_tools` — 트레이트가 구체화한 도구를 스키마와 함께 나열합니다.
+- `call_tool` — 모든 레지스트리 도구를 id로 호출합니다. `mcp.root`를 가진 토큰에만
+  보입니다.
 
 토큰이 활성화할 수 있는 범위는 그 **스코프**로 제한됩니다. 대략 `registry.*`,
 `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,

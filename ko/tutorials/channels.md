@@ -7,6 +7,8 @@ description: "프로세스 내 동시 프로그래밍을 위한 Go 스타일 채
 
 프로세스 내 동시 프로그래밍을 위한 Go 스타일 채널.
 
+이 페이지는 입문서입니다. 각 스니펫은 하나의 API를 따로 떼어 보여줍니다. [CLI 애플리케이션](tutorials/cli.md) 튜토리얼에서 설정한 대로 `process.lua` 항목의 `main` 함수에 붙여 넣으면 실행됩니다.
+
 ## 채널 생성
 
 채널은 코루틴 간 통신 파이프입니다. `channel.new(capacity)`로 생성합니다:
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### Send를 포함한 Select
 
-`case_send`를 사용하여 논블로킹 전송을 시도합니다:
+select 안에서 전송을 제안하려면 `case_send`를 사용합니다. 채널이 값을 받을 수 있게 되면 해당 케이스가 선택됩니다:
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true (전송 성공)
 
 local v = ch:receive()  -- "sent"
+```
+
+select는 케이스 중 하나가 준비될 때까지 블로킹합니다. 케이스 테이블에 `default = true`를 추가하면 대신 즉시 반환하며, 준비된 것이 없으면 `result.default`가 true로 설정됩니다:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (버퍼가 가득 참, 전송되지 않음)
 ```
 
 ## 생산자-소비자 패턴

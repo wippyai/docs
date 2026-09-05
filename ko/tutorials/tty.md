@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-이벤트는 `type`으로 구분되는 레코드입니다. 인쇄 가능한 키의 경우 `key_type`은 `"runes"`이고 `key`에 텍스트가 담깁니다. 이름이 있는 키의 경우 `key_type`과 `key` 모두 그 이름(`"enter"`, `"backspace"`, `"up"`)을 담습니다. 마우스 이벤트의 좌표는 1부터 시작합니다.
+이벤트는 `type`으로 구분되는 레코드입니다. 인쇄 가능한 키의 경우 `key_type`은 `"runes"`이고 `key`에 텍스트가 담깁니다. 이름이 있는 키의 경우 `key_type`과 `key` 모두 그 이름(`"enter"`, `"backspace"`, `"space"`, `"up"`)을 담습니다. 마우스 이벤트의 좌표는 1부터 시작합니다.
 
 ## 3단계: 프레임 그리기
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

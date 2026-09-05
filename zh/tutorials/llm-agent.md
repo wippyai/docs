@@ -19,7 +19,6 @@ description: "分步构建一个终端聊天智能体，从简单的 LLM 调用�
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ LLM 模块需要两个基础设施条目：
 - `env.storage.os` 从环境变量提供 API 密钥
 - `process.host` 提供 LLM 模块内部使用的进程运行时
 
-`terminal.host` 是 `wippy run -x` 执行 `ask` 进程的地方，也是 `io.print` 写入的目标。
+`wippy/terminal` 依赖提供命令执行所在的 `terminal.host`，也是 `io.print` 写入的目标。
+
+`meta.command` 为该进程指定一个名称，因此 `wippy run ask` 会启动它，并把余下的参数作为字符串负载传入。它的 `security` 块为此次启动装配 actor 和策略作用域：LLM 模块从注册表解析模型，而没有作用域启动的命令读不到注册表中的任何内容。
 
 ### 生成代码
 
@@ -150,7 +167,7 @@ LLM 模块从注册表解析模型。在 `_index.yaml` 中添加模型条目：
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 这会在终端宿主上运行 `ask` 进程，将问题作为参数传入并打印结果。模型定义告诉 LLM 模块使用哪个提供商以及向 API 发送什么模型名称。
@@ -161,20 +178,20 @@ wippy run -x app:ask "What is the capital of France?"
 
 ### 更新条目定义
 
-将 `ask` 条目替换为 `chat` 进程并添加终端依赖：
+将 `ask` 条目替换为 `chat` 进程：
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

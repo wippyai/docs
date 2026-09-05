@@ -225,7 +225,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+将文件系统挂载到 WASM 模块以及调用 WASM 函数都是受保护的动作。该策略授予这些权限；需要它们的条目引用该策略。
 
 ### WASM 函数
 
@@ -338,6 +351,9 @@ entries:
       command:
         name: ls
         short: List files from mounted directory
+        security:
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -353,7 +369,7 @@ entries:
           guest: /data
 ```
 
-`meta.command` 块将进程注册为命名 CLI 命令。`greet` 命令不需要 WASI 导入，因为它只使用字符串操作。`ls` 命令需要文件系统访问。
+`meta.command` 块将进程注册为命名 CLI 命令。`greet` 命令不需要 WASI 导入，因为它只使用字符串操作。`ls` 命令需要文件系统访问，因此它还携带授予该挂载权限的安全上下文。
 
 ### HTTP 端点
 
@@ -400,18 +416,27 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet someone via WASM
-  ls       List files from mounted directory
+
+  greet  Greet someone via WASM  (demo.cli:greet)
+  ls  List files from mounted directory  (demo.cli:ls)
+
+Run with: wippy run <command>
 ```
+
+命令名之后的参数会作为字符串形参传递给导出的函数，因此每个命令接受的参数正好是其 WIT 签名所声明的：
 
 ```bash
 # Run greet
-wippy run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
 # Run ls to list mounted directory
-wippy run ls
+wippy run ls /data
 ```
 
 ### 作为服务运行
@@ -420,15 +445,19 @@ wippy run ls
 wippy run
 ```
 
-在端口 8090 启动 HTTP 服务器。测试端点：
+在端口 8090 启动 HTTP 服务器。`wasi-http` 传输将请求体作为该函数唯一的字符串参数传入：
 
 ```bash
-curl -X POST http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
+```
+
+```
+Hello, World!
 ```
 
 ### 从 Lua 调用
 
-WASM 函数的调用方式与 Lua 函数相同：
+WASM 函数的调用方式与 Lua 函数相同。调用进程需要对目标拥有 `funcs.call` 权限，`demo:policy` 授予了该权限：
 
 ```lua
 local funcs = require("funcs")

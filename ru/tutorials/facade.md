@@ -32,7 +32,8 @@ Wippy Web Host из CDN и конфигурирует его из JSON-эндп�
 
 ## Как это работает
 
-1. `index.html` раздаётся как статический файл с вашего HTTP-сервера.
+1. Оболочка отрисовывается из шаблона фасада и раздаётся по `/` вашим HTTP-сервером;
+   её ассеты и фолбэк для глубоких ссылок приходят со статического монтирования на том же сервере.
 2. При загрузке он запрашивает `GET /api/public/facade/config`.
 3. Он проверяет `localStorage` на наличие токена авторизации, перенаправляя на `login_path`, если его нет.
 4. Он импортирует бандл Web Host из CDN (`facade_url + '/module.js'`) и вызывает
@@ -66,6 +67,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -75,9 +77,8 @@ entries:
         value: Verify App
 ```
 
-Поставляемый `index.html` запрашивает `/api/public/facade/config`, поэтому префикс
-публичного роутера должен быть `/api/public`, чтобы оболочка по умолчанию нашла свою
-конфигурацию.
+Оболочка запрашивает свою конфигурацию, скрипт темы и CSS-переменные по пути
+`/api/public/facade/`, поэтому префикс публичного роутера должен быть `/api/public`.
 
 ## Запуск
 
@@ -93,17 +94,23 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.23",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.23/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "module_file": "/module.js",
+  "mode": "compat",
   "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -126,8 +133,9 @@ JSON-кодированные строки). Распространённые и
 | `css_variables` | JSON-строка с CSS-переменными, например `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | URL бандла CDN (зафиксирован для каждого релиза фасада; оставьте по умолчанию, если не переопределяете) |
 
-Два значения выводятся в рантайме из переменной окружения `PUBLIC_API_URL`, а не из
-параметров: базовый URL API и URL WebSocket (`http`→`ws`, `https`→`wss`). Если она не
+Два значения выводятся в рантайме из `PUBLIC_API_URL`, а не из параметров: базовый URL
+API и URL WebSocket (`http`→`ws`, `https`→`wss`). Фасад читает её через реестр
+окружения, поэтому объявите её как `env.variable` в своём приложении. Если она не
 задана, браузер откатывается на `window.location.origin`.
 
 ## Заметки

@@ -60,6 +60,7 @@ flowchart TB
     subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
+        SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
@@ -71,10 +72,6 @@ flowchart TB
         Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>per-connection]
         Ticker[ticker<br/>singleton]
-    end
-
-    subgraph "External"
-        CryptoAPI[Crypto Price API]
     end
 
     %% Client-Verbindungen
@@ -99,6 +96,8 @@ flowchart TB
     %% Token-Store-Abhängigkeiten
     MemStore --> TokenStore
     Policy -->|attached to token| TokenStore
+    SysPolicy -->|"actor + scope"| AuthEndpoint
+    SysPolicy -->|"actor + scope"| Ticker
 
     %% Auth verwendet DB für API-Schlüssel
     AuthEndpoint -->|lookup API key| DB
@@ -107,9 +106,6 @@ flowchart TB
     WSHandler -->|subscribe| Ticker
     Ticker -->|broadcast| WSHandler
     WSRelay <-->|"ws frames"| Browser
-
-    %% Extern
-    Ticker -->|fetch prices| CryptoAPI
 ```
 
 ## Sicherheits-Flow
@@ -162,6 +158,23 @@ entries:
     groups:
       - user
 
+  # Policy für internen Code, der ohne Endbenutzer-Actor läuft
+  - name: system_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - security.actor.create
+        - security.policy.get
+        - security.scope.create
+        - security.token_store.get
+        - security.token.create
+        - process.registry.register
+        - process.send
+        - process.monitor
+      resources: "*"
+      effect: allow
+
   # Prozess-Host
   - name: processes
     kind: process.host
@@ -174,6 +187,11 @@ entries:
     source: file://migrate.lua
     method: main
     modules: [sql, logger, crypto]
+    security:
+      actor:
+        id: "service:migrate"
+      policies:
+        - app:system_policy
 
   - name: migrate-service
     kind: process.service
@@ -187,7 +205,12 @@ entries:
     kind: process.lua
     source: file://ticker.lua
     method: main
-    modules: [logger, time, json, crypto]
+    modules: [logger, time, crypto]
+    security:
+      actor:
+        id: "service:ticker"
+      policies:
+        - app:system_policy
 
   - name: ticker-service
     kind: process.service
@@ -240,7 +263,7 @@ entries:
   # Statische Dateien
   - name: public_fs
     kind: fs.directory
-    directory: ./public
+    directory: ./src/public
 
   - name: static
     kind: http.static
@@ -258,6 +281,11 @@ entries:
     source: file://auth_token.lua
     method: handler
     modules: [http, sql, crypto, security, json]
+    security:
+      actor:
+        id: "service:auth"
+      policies:
+        - app:system_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -282,6 +310,8 @@ entries:
     path: /ticker
     func: app:ws_ticker
 ```
+
+`user_policy` reist in jedem ausgestellten Token mit und deckt ab, was eine authentifizierte Verbindung tut. `system_policy` deckt den Code ab, der läuft, bevor ein Token existiert - die Migration, den Ticker und den Token-Austausch selbst -, denn ein abgesicherter Aufruf ohne Actor und Scope wird abgelehnt.
 
 Für Produktion lesen Sie den HMAC-Schlüssel mit einem Platzhalter aus einer Umgebungsvariable (`token_key: ${env:TOKEN_KEY}`) statt ihn hartzukodieren. Siehe [Umgebungssystem](system/env.md).
 
@@ -435,6 +465,8 @@ Die `websocket_relay` Middleware sendet automatisch Lebenszyklus-Nachrichten an 
 - `ws.message` - Client hat Nachricht gesendet; die Payload ist der rohe Frame (ein String bei Text-Frames)
 - `ws.leave` - Verbindung geschlossen (wird automatisch bei Disconnect gesendet)
 
+Nachrichten in die Gegenrichtung, an die Client-PID, erreichen den Browser als einzelnen JSON-Text-Frame der Form `{topic, data}`. Das Topic wählen Sie selbst, die Payload kommt als `data` an.
+
 `ws_handler.lua` - behandelt diese Lebenszyklus-Nachrichten:
 
 ```lua
@@ -466,20 +498,14 @@ local function main(user_id)
             subscribed = true
 
             -- Willkommen senden
-            process.send(client_pid, "ws.send", {
-                type = "text",
-                data = json.encode({type = "welcome", user_id = user_id})
-            })
+            process.send(client_pid, "welcome", {user_id = user_id})
 
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
             local content = json.decode(data)
             if content and content.type == "ping" then
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "pong"})
-                })
+                process.send(client_pid, "pong", {})
             end
 
         elseif topic == "ws.leave" then
@@ -505,7 +531,6 @@ return { main = main }
 ```lua
 local logger = require("logger")
 local time = require("time")
-local json = require("json")
 local crypto = require("crypto")
 
 -- handler_pid -> client_pid Mapping
@@ -517,10 +542,9 @@ local prices = {
     ["SOL-USD"] = 95.00
 }
 
-local function broadcast(message)
-    local data = json.encode(message)
+local function broadcast(updates)
     for _, client_pid in pairs(subscriptions) do
-        process.send(client_pid, "ws.send", {type = "text", data = data})
+        process.send(client_pid, "ticker", updates)
     end
 end
 
@@ -566,12 +590,16 @@ local function main()
         if r.channel == tick_ch then
             update_prices()
             if next(subscriptions) then
-                broadcast({type = "ticker", data = get_updates()})
+                broadcast(get_updates())
             end
 
         elseif r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                ticker:stop()
+                logger:info("ticker stopping")
+                return 0
+            elseif event.kind == process.event.EXIT then
                 -- Handler beendet, Subscription entfernen
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
@@ -593,10 +621,7 @@ local function main()
 
                 logger:info("subscribed", {handler_pid = handler_pid, client_pid = client_pid})
 
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "ticker", data = get_updates()})
-                })
+                process.send(client_pid, "ticker", get_updates())
 
             elseif topic == "unsubscribe" then
                 subscriptions[data.handler_pid] = nil
@@ -666,9 +691,71 @@ end
 return { main = main }
 ```
 
+## Browser-Client
+
+`public/index.html` - tauscht den API-Schlüssel gegen einen Token und streamt dann Preise. Ein Browser kann beim WebSocket-Handshake keine Header setzen, deshalb reist der Token im Query-Parameter `x-auth-token`, den `token_auth` ebenfalls liest:
+
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Crypto Ticker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+    #status { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Crypto Ticker</h1>
+  <input id="key" placeholder="demo API key" size="40">
+  <button id="connect">Connect</button>
+  <p id="status">disconnected</p>
+  <table><thead><tr><th>Symbol</th><th>Price</th></tr></thead><tbody id="rows"></tbody></table>
+
+  <script>
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
+
+    document.getElementById("connect").onclick = async () => {
+      const res = await fetch("/auth/token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({api_key: document.getElementById("key").value})
+      });
+      if (!res.ok) { status.textContent = "auth failed"; return; }
+      const {token} = await res.json();
+
+      const url = `ws://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        status.textContent = "connected";
+        ws.send(JSON.stringify({type: "ping"}));
+      };
+      ws.onclose = () => { status.textContent = "disconnected"; };
+
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.topic !== "ticker") return;
+        rows.innerHTML = "";
+        for (const quote of msg.data) {
+          rows.insertAdjacentHTML("beforeend",
+            `<tr><td>${quote.symbol}</td><td>${quote.price.toFixed(2)}</td></tr>`);
+        }
+      };
+    };
+  </script>
+</body>
+</html>
+```
+
 ## Ausführen
 
 ```bash
+mkdir -p data
 wippy init
 wippy run
 ```

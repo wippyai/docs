@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-イベントは`type`で判別されるレコードです。印字可能なキーでは`key_type`が`"runes"`で`key`がそのテキストを保持します。名前付きキーでは`key_type`と`key`の両方が名前（`"enter"`、`"backspace"`、`"up"`）を保持します。マウスイベントの座標は1始まりです。
+イベントは`type`で判別されるレコードです。印字可能なキーでは`key_type`が`"runes"`で`key`がそのテキストを保持します。名前付きキーでは`key_type`と`key`の両方が名前（`"enter"`、`"backspace"`、`"space"`、`"up"`）を保持します。マウスイベントの座標は1始まりです。
 
 ## ステップ3: フレームの描画
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

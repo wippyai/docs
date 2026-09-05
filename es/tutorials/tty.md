@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-Los eventos son registros discriminados por `type`. Para una tecla imprimible, `key_type` es `"runes"` y `key` contiene el texto; para una tecla con nombre, tanto `key_type` como `key` contienen el nombre (`"enter"`, `"backspace"`, `"up"`). Las coordenadas en los eventos de ratón empiezan en uno.
+Los eventos son registros discriminados por `type`. Para una tecla imprimible, `key_type` es `"runes"` y `key` contiene el texto; para una tecla con nombre, tanto `key_type` como `key` contienen el nombre (`"enter"`, `"backspace"`, `"space"`, `"up"`). Las coordenadas en los eventos de ratón empiezan en uno.
 
 ## Paso 3: Dibujar Marcos
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

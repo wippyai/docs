@@ -20,6 +20,41 @@ description: "격리된 프로세스를 스폰하고 메시지 전달을 통해 
 - 이벤트로 프로세스 라이프사이클 모니터링
 - 조율된 실패 처리를 위한 프로세스 연결
 
+## 권한
+
+프로세스 작업은 호출하는 엔트리의 보안 정책에 대해 권한 검사를 거칩니다. 아래에서 사용하는 액션을 허용하는 `security.policy` 엔트리를 선언하고, 프로세스를 스폰하거나 메시지를 보내거나 모니터링하거나 연결하거나 이름을 등록하는 모든 엔트리에 연결하세요:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+이 권한이 없으면 이러한 호출은 `not allowed to spawn process: app.test.process:echo_worker`와 같은 에러를 반환합니다. 전체 액션 목록은 [권한 레퍼런스](lua/core/process.md)에 있습니다.
+
 ## 프로세스 스폰
 
 엔트리 참조에서 새 프로세스를 스폰합니다.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### 발신자 정보를 위한 메시지 모드

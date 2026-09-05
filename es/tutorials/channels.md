@@ -7,6 +7,8 @@ description: "Canales estilo Go para programación concurrente dentro de proceso
 
 Canales estilo Go para programación concurrente dentro de procesos.
 
+Esta página es una introducción: cada fragmento muestra una API de forma aislada. Péguelos en la función `main` de una entrada `process.lua` para ejecutarlos, tal como se configura en el tutorial de [Aplicaciones CLI](tutorials/cli.md).
+
 ## Crear Canales
 
 Los canales son tuberías de comunicación para coroutines. Cree con `channel.new(capacity)`:
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### Select con Send
 
-Use `case_send` para intentar envíos no bloqueantes:
+Use `case_send` para ofrecer un envío dentro de un select. El caso se elige cuando el canal puede aceptar el valor:
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true (envío exitoso)
 
 local v = ch:receive()  -- "sent"
+```
+
+Select bloquea hasta que uno de sus casos esté listo. Agregue `default = true` a la tabla de casos para retornar de inmediato en su lugar, con `result.default` en true cuando nada estaba listo:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer lleno, nada enviado)
 ```
 
 ## Patrón Productor-Consumidor

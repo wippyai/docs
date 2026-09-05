@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-事件是以 `type` 区分的记录。对于可打印按键，`key_type` 为 `"runes"`，`key` 保存文本；对于命名按键，`key_type` 和 `key` 都保存名称（`"enter"`、`"backspace"`、`"up"`）。鼠标事件中的坐标是从 1 开始的。
+事件是以 `type` 区分的记录。对于可打印按键，`key_type` 为 `"runes"`，`key` 保存文本；对于命名按键，`key_type` 和 `key` 都保存名称（`"enter"`、`"backspace"`、`"space"`、`"up"`）。鼠标事件中的坐标是从 1 开始的。
 
 ## 步骤 3：绘制帧
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

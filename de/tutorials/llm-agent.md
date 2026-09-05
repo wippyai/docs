@@ -19,7 +19,6 @@ Einen Terminal-Chat-Agenten, der:
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,16 +50,18 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
   - name: processes
     kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: terminal
-    kind: terminal.host
     lifecycle:
       auto_start: true
 
@@ -74,8 +75,22 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
     kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -88,7 +103,9 @@ Das LLM-Modul benötigt zwei Infrastruktur-Einträge:
 - `env.storage.os` stellt API-Schlüssel aus Umgebungsvariablen bereit
 - `process.host` stellt die Prozess-Laufzeitumgebung bereit, die das LLM-Modul intern nutzt
 
-`terminal.host` ist das, worauf `wippy run -x` den `ask`-Prozess ausführt und wohin `io.print` schreibt.
+Die Abhängigkeit `wippy/terminal` stellt den `terminal.host` bereit, auf dem Befehle ausgeführt werden und wohin `io.print` schreibt.
+
+`meta.command` gibt dem Prozess einen Namen, sodass `wippy run ask` ihn mit den restlichen Argumenten als String-Payloads startet. Sein `security`-Block installiert den Actor und den Policy-Scope für diesen Start: Das LLM-Modul löst Modelle aus der Registry auf, und ein ohne Scope gestarteter Befehl liest nichts aus ihr.
 
 ### Generierungscode
 
@@ -150,7 +167,7 @@ Das LLM-Modul löst Modelle aus der Registry auf. Füge einen Modelleintrag zur 
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
 Dies führt den `ask`-Prozess auf dem Terminal-Host mit der Frage als Argument aus und gibt das Ergebnis aus. Die Modelldefinition teilt dem LLM-Modul mit, welchen Anbieter es verwenden und welchen Modellnamen es an die API senden soll.
@@ -161,20 +178,20 @@ Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgäng
 
 ### Eintragsdefinitionen aktualisieren
 
-Ersetze den `ask`-Eintrag durch einen `chat`-Prozess und füge die Terminal-Abhängigkeit hinzu:
+Ersetze den `ask`-Eintrag durch einen `chat`-Prozess:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -293,6 +310,11 @@ Wechsle zum Agent-Framework. Aktualisiere die Eintrag-Imports:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -762,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

@@ -36,6 +36,15 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: net_policy
+    kind: security.policy
+    policy:
+      actions:
+        - http_client.request
+        - network.select
+      resources: "*"
+      effect: allow
+
   - name: processes
     kind: process.host
     lifecycle:
@@ -59,6 +68,11 @@ entries:
       command:
         name: probe
         short: Check outbound IP through overlays
+        security:
+          actor:
+            id: system.probe
+          policies:
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -68,6 +82,8 @@ entries:
 ```
 
 `isolate_streams: true`を指定すると、SOCKS5ドライバーが接続ごとにランダムなクレデンシャルを生成し、Torが各ダイアルで新しいサーキットを開きます。
+
+セキュリティはデフォルトでストリクトなため、コマンドは起動時に使用するアクターとポリシーを携えます。`http_client.request`がアウトバウンドコールを、`network.select`が明示的なオーバーレイ選択をカバーします。これらがないとすべてのチェックがフェイルクローズします。
 
 ## ステップ2: アウトバウンドコールをルーティングする
 
@@ -159,6 +175,13 @@ local pid, err = process.with_options({ network = "app:tor" })
 インバウンドトラフィックをサポートするオーバーレイ（Tailscale、I2P）はHTTPリスナーも受け付けられます。クライアントの代わりに`http.service`にオーバーレイを付与します：
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -171,9 +194,16 @@ local pid, err = process.with_options({ network = "app:tor" })
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-サーバーはtailnetインターフェースにバインドし、クライアントはTailscaleアドレス経由でアクセスします。SOCKS5はアウトバウンド専用です — `http.service`に割り当てると拒否されます。
+`auth_key`は[env レジストリ](system/env.md)経由で解決されるため、`TS_AUTHKEY`は登録済みの変数です。OSの値を使うには`env.storage.os`に紐づく`env.variable`が必要です。
+
+オーバーレイ経由のバインドは`network.bind`で制御され、リスナーの起動時にチェックされます。そのためサービスはそれを許可するスコープを宣言します。サーバーはtailnetインターフェースにバインドし、クライアントはTailscaleアドレス経由でアクセスします。SOCKS5はアウトバウンド専用です — `http.service`に割り当てるとリスナーが`inbound listeners are not exposed over SOCKS5`で失敗します。
 
 ## アプリ全体のデフォルト
 

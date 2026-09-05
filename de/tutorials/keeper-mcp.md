@@ -41,6 +41,7 @@ zur Klarheit explizit gezeigt:
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ Token werden von einem Admin-Benutzer ausgestellt, sind begrenzt und werden gena
 Token-API (oder die MCP-Seite in der Keeper-UI):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,7 +96,7 @@ Codex eine `.mcp.json` im Projektstammverzeichnis:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
@@ -103,7 +104,7 @@ Codex eine `.mcp.json` im Projektstammverzeichnis:
 ```
 
 Verwenden Sie in einer bereitgestellten Umgebung die öffentliche Basis-URL der App anstelle von
-`http://localhost:8085`.
+`http://localhost:8080`.
 
 ## Wie die MCP-Oberfläche funktioniert
 
@@ -115,7 +116,9 @@ für eine Capability entscheiden:
 - `list_traits` / `describe_trait` — herausfinden, was verfügbar ist.
 - `use_trait` / `drop_trait` (und `set_traits`) — einen Trait aktivieren oder entfernen; das sendet
   ein MCP-`notifications/tools/list_changed`, sodass sich die sichtbaren Tools live ändern.
-- `list_tools` / `call_tool` — die von einem Trait materialisierten Tools auflisten und aufrufen.
+- `list_tools` — die von einem Trait materialisierten Tools samt ihren Schemas auflisten.
+- `call_tool` — jedes Registry-Tool über seine ID aufrufen; nur für ein Token sichtbar, das
+  `mcp.root` besitzt.
 
 Was ein Token aktivieren kann, wird durch seine **Scopes** begrenzt — grob `registry.*`,
 `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,
