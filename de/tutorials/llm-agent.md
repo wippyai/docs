@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ Das LLM-Modul benötigt zwei Infrastruktur-Einträge:
 - `env.storage.os` stellt API-Schlüssel aus Umgebungsvariablen bereit
 - `process.host` stellt die Prozess-Laufzeitumgebung bereit, die das LLM-Modul intern nutzt
 
+`terminal.host` ist das, worauf `wippy run -x` den `ask`-Prozess ausführt und wohin `io.print` schreibt.
+
 ### Generierungscode
 
 Erstelle `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Modelldefinition
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Dies ruft die Funktion direkt auf und gibt das Ergebnis aus. Die Modelldefinition teilt dem LLM-Modul mit, welchen Anbieter es verwenden und welchen Modellnamen es an die API senden soll.
+Dies führt den `ask`-Prozess auf dem Terminal-Host mit der Frage als Argument aus und gibt das Ergebnis aus. Die Modelldefinition teilt dem LLM-Modul mit, welchen Anbieter es verwenden und welchen Modellnamen es an die API senden soll.
 
 ## Phase 2: Konversationen
 
-Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgängen mithilfe des Prompt-Builders. Ändere den Eintrag von einer Funktion zu einem Prozess mit Terminal-I/O.
+Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgängen mithilfe des Prompt-Builders. Registriere den Prozess als benannten Befehl.
 
 ### Eintragsdefinitionen aktualisieren
 

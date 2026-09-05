@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 Chaves de opção desconhecidas são rejeitadas com `errors.INVALID`. Nomes de tabelas são comparados sem diferenciar maiúsculas de minúsculas, tanto contra a relação qualificada quanto contra o nome simples da tabela. Linhas de snapshot são filtradas apenas por `tables`; `ops` aplica-se às mudanças ao vivo.
 
-Um stream recebe um snapshot quando `opts.snapshot` é true ou quando o campo `snapshot` da entrada da fonte está definido; as linhas de snapshot chegam primeiro com `op = "snapshot"`, e então o stream continua nas mudanças ao vivo sem lacuna. `opts.after` só é honrado por drivers cuja capacidade `capture_resume` esteja definida — todo driver entregue hoje retorna `errors.INVALID` ("cdc operation is not supported by this source") para ele.
+Um stream recebe um snapshot quando `opts.snapshot` é true ou quando o campo `snapshot` da entrada da fonte está definido; as linhas de snapshot chegam primeiro com `op = "snapshot"`, e então o stream continua nas mudanças ao vivo sem lacuna. `opts.after` é reservado para drivers que retomam a partir de um cursor — todo driver entregue hoje retorna `errors.INVALID` ("cdc operation is not supported by this source") para ele, incluindo `db.cdc.postgres` quando ele reporta `capture_resume`.
 
 Filtros apenas restringem a entrega. O acesso a uma fonte é concedido pela permissão `cdc.subscribe`, nunca por um filtro.
 
@@ -154,7 +154,7 @@ Cada mensagem recebida no channel é uma tabela de mudança:
 | `slot` | Nome do slot de replicação (`db.cdc.postgres`) |
 | `publication` | Publicação do Postgres, quando configurada |
 | `tables` | Tabelas capturadas, quando configuradas |
-| `streaming` | Se a fonte está atualmente em execução |
+| `streaming` | `db.cdc.sqlite`: se a fonte está em execução; `db.cdc.postgres`: a configuração do protocolo `streaming` da entrada |
 | `failover` | Modo de slot de failover (`db.cdc.postgres`) |
 | `temporary` | Slot temporário (`db.cdc.postgres`) |
 | `snapshot` | Padrão de snapshot no nível da entrada |
@@ -187,7 +187,7 @@ Uma ação negada retorna `errors.PERMISSION_DENIED`.
 
 | Condição | Tipo |
 |-----------|------|
-| Sem contexto / sem PID de processo | `errors.INTERNAL` |
+| Sem contexto | `errors.INTERNAL` |
 | Nome da fonte obrigatório | `errors.INVALID` |
 | Opção de stream inválida ou desconhecida | `errors.INVALID` |
 | `after` em uma fonte sem `capture_resume` | `errors.INVALID` |

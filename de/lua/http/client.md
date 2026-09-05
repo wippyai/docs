@@ -355,6 +355,7 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 | `http_client.unix_socket` | Socket-Pfad | Unix-Socket-Verbindungen erlauben/verweigern |
 | `http_client.private_ip` | IP-Adresse | Zugriff auf private IP-Bereiche erlauben/verweigern |
 | `http_client.insecure_tls` | URL | Unsichere TLS-Verbindungen erlauben/verweigern (Verifizierung überspringen) |
+| `network.select` | Netzwerk-Entry-ID | Routing über das in der Anfrage angegebene `overlay_network` erlauben/verweigern |
 
 ### Zugriff prüfen
 

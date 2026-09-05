@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ LLM 모듈에는 두 가지 인프라 엔트리가 필요합니다:
 - `env.storage.os`는 환경 변수에서 API 키를 제공합니다
 - `process.host`는 LLM 모듈이 내부적으로 사용하는 프로세스 런타임을 제공합니다
 
+`terminal.host`는 `wippy run -x`가 `ask` 프로세스를 실행하는 곳이자 `io.print`가 출력하는 곳입니다.
+
 ### 생성 코드
 
 `src/ask.lua`를 생성합니다:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### 모델 정의
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-함수를 직접 호출하고 결과를 출력합니다. 모델 정의는 LLM 모듈에 어떤 제공자를 사용하고 API에 어떤 모델 이름을 전송할지 알려줍니다.
+이는 `ask` 프로세스를 터미널 호스트에서 질문을 인자로 하여 실행하고 결과를 출력합니다. 모델 정의는 LLM 모듈에 어떤 제공자를 사용하고 API에 어떤 모델 이름을 전송할지 알려줍니다.
 
 ## 2단계: 대화
 
-단일 호출에서 프롬프트 빌더를 사용한 다중 턴 대화로 업그레이드합니다. 엔트리를 함수에서 터미널 I/O를 갖춘 프로세스로 변경합니다.
+단일 호출에서 프롬프트 빌더를 사용한 다중 턴 대화로 업그레이드합니다. 프로세스를 이름 있는 명령으로 등록합니다.
 
 ### 엔트리 정의 업데이트
 

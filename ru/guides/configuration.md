@@ -59,7 +59,7 @@ wippy run --profile pg
 - Секция `disable` поддерживает операции над списками внутри профилей — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — так что профиль может корректировать базовый список вместо его замены.
 - Ссылки `${name}` интерполируются из объединённой секции `vars:`. Ссылки на переменные окружения ОС внутри vars профилей не допускаются; используйте `${env:NAME}` в базовой конфигурации, разрешаемый при загрузке файла.
 
-`wippy run`, `test` и `pack` принимают `--profile`; `install`, `update`, `lint` и `registry` также принимают его для профилей рабочего пространства (вместе с `--set`). Приложения могут поставлять профили внутри pack-файлов — см. [Публикация профилей](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` и `pack` принимают `--profile`; `run list`, `install`, `update`, `lint` и `registry` также принимают его для профилей рабочего пространства (вместе с `--set`). Приложения могут поставлять профили внутри pack-файлов — см. [Публикация профилей](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------|-----|--------------|----------|
 | `propagate_downstream` | bool | true | Передавать логи в консоль/файл |
 | `stream_to_events` | bool | false | Публиковать логи в шину событий для программного доступа |
-| `min_level` | int | -1 | Минимальный уровень: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-1` при `-v`) | Минимальный уровень: -1=debug, 0=info, 1=warn, 2=error. CLI записывает этот ключ из своих флагов после чтения файла, поэтому значение из файла игнорируется; меняйте его через `--set logmanager.min_level=<n>` |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 См.: [Модуль Logger](lua/system/logger.md)
@@ -232,13 +231,14 @@ supervisor:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `proto_cache_size` | int | 60000 | Кэш скомпилированных прототипов |
-| `main_cache_size` | int | 10000 | Кэш main-чанков |
-| `cache.enabled` | bool | false | Сохранять скомпилированный байткод/typecheck-кэш на диск |
+| `cache.enabled` | bool | `type_system.enabled` | Сохранять скомпилированный байткод/typecheck-кэш на диск; следует за `type_system.enabled`, если не задано явно |
 | `cache.dir` | string | `.wippy/cache/lua` | Путь к каталогу кэша (относительно каталога конфигурации/рабочего каталога) |
-| `cache.mode` | string | `readwrite` | Режим кэша: `readwrite` (по умолчанию), `readonly`, `off` |
+| `cache.mode` | string | `readwrite` | Режим кэша: `readwrite` (по умолчанию), `readonly`, `off`; неизвестные значения трактуются как `readwrite` |
 | `cache.compile.enabled` | bool | true | Сохранять скомпилированный байткод (при `cache.enabled`) |
 | `cache.typecheck.enabled` | bool | true | Сохранять результаты проверки типов (при `cache.enabled`) |
+| `cache.max_bytes` | int | 1073741824 | Верхняя граница размера дискового кэша в байтах |
+| `cache.max_entries` | int | 20000 | Максимальное число записей в кэше |
+| `cache.prune_interval` | int | 256 | Число записей между проходами очистки кэша |
 | `type_system.enabled` | bool | false | Включить статическую проверку типов |
 | `type_system.strict` | bool | false | Считать предупреждения типов ошибками |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Ожидание подтверждения инвалидации кода после изменения записи |
@@ -248,7 +248,6 @@ supervisor:
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -257,6 +256,22 @@ lua:
 ```
 
 См.: [Обзор Lua](lua/overview.md)
+
+## Scheduler
+
+Разделение ядер для среды исполнения WASM. Когда включено, `reserved_cores` CPU отводятся под выполнение WASM, а остальные обслуживают планировщик акторов; некорректное разделение (например, зарезервированных ядер больше, чем доступно) логируется и игнорируется.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `wasm_isolation.enabled` | bool | false | Разделять ядра между WASM и работой акторов |
+| `wasm_isolation.reserved_cores` | int | 1 | Ядер, зарезервированных под выполнение WASM |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -307,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Стандартные переменные окружения OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) переопределяют соответствующие поля.
+Стандартные переменные окружения OTEL (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`) переопределяют соответствующие поля.
 
 См.: [Наблюдаемость](guides/observability.md)
 
@@ -331,7 +346,7 @@ shutdown:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `buffer.size` | int | 10000 | Размер буфера метрик |
-| `interceptor.enabled` | bool | false | Автоматически отслеживать вызовы функций |
+| `interceptor.enabled` | bool | true | Автоматически отслеживать вызовы функций |
 
 ```yaml
 metrics:
@@ -351,6 +366,7 @@ metrics:
 |------|-----|--------------|----------|
 | `enabled` | bool | false | Запустить сервер метрик |
 | `address` | string | localhost:9090 | Адрес прослушивания |
+| `max_cardinality` | int | 1024 | Число различных наборов меток, удерживаемых для метрики (LRU); `0` или меньше означает значение по умолчанию |
 
 ```yaml
 prometheus:
@@ -358,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Открывает эндпоинт `/metrics` для Prometheus.
+Открывает эндпоинт `/metrics` для Prometheus, а также `/livez`.
 
 См.: [Наблюдаемость](guides/observability.md)
 
@@ -373,6 +389,8 @@ prometheus:
 | `enabled` | bool | false | Включить кластеризацию |
 | `name` | string | hostname | Имя ноды; должно быть уникальным в кластере |
 | `failure_domain` | string | | Метка зоны/стойки; рекламируется через gossip, чтобы voters распределялись по доменам |
+| `kv_crdt_tombstone_retention` | duration | 0 | Возраст, после которого tombstone-записи удалений `store.kv.crdt` утилизируются; `0` отключает сборку по возрасту |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | Использовать текущий состав живых участников как множество подтверждений tombstone |
 
 ### Membership (gossip)
 
@@ -443,6 +461,8 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 | `raft.max_append_entries` | int | 16 | Максимум записей в одном AppendEntries RPC |
 | `raft.leader_probe_interval` | duration | 3s | Период проверки доступности лидера глобального реестра |
 | `raft.leader_probe_grace` | int | 3 | Последовательных неудач проверки до признания лидера недоступным |
+| `raft.registry_backend` | string | kv | Реализация кластерного реестра имён: `kv` (общее пространство ключей kv) или `fsm` (выделенный Raft FSM) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | Как долго кэш распространения глобальных имён хранит tombstone-записи удалений |
 
 Одна нода (разработка) — кластеризация включена, нода сразу bootstrap-ит себя:
 

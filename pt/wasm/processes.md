@@ -75,7 +75,7 @@ wippy run list
 | `name` | Sim | Nome do comando usado com `wippy run <name>` |
 | `short` | Nao | Descricao curta mostrada em `wippy run list` |
 
-Um `terminal.host` e um `process.host` devem estar presentes para que comandos CLI funcionem.
+Um `terminal.host` deve estar presente para que comandos CLI funcionem; ele e o host de processos que executa o comando.
 
 ## Ciclo de Vida do Processo
 

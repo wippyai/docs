@@ -6,7 +6,6 @@ description: "debug, info, warn, error 레벨을 지원하는 구조화된 로�
 # 로깅
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 debug, info, warn, error 레벨을 지원하는 구조화된 로깅입니다.
@@ -97,8 +96,6 @@ named:info("message")
 
 ## 에러
 
-| 조건 | 종류 | 재시도 가능 |
-|------|------|-------------|
-| 빈 이름 문자열 | `errors.INVALID` | 아니오 |
+`logger:named("")`는 에러 값을 반환하는 대신 Lua 인자 에러(`name cannot be empty`)를 발생시킵니다. 로깅 메서드는 아무것도 반환하지 않습니다.
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

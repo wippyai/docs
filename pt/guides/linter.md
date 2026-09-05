@@ -242,6 +242,8 @@ Exemplo de step no GitHub Actions:
 | `--rules` | | false | Ativar regras de lint (verificacoes de estilo/qualidade serie W) |
 | `--cache-reset` | | false | Limpar cache antes de executar o lint |
 | `--lock-file` | `-l` | wippy.lock | Caminho para o arquivo de lock |
+| `--profile` | | | Aplica um profile de workspace da configuração de runtime mesclada (repetível, aplicado em ordem) |
+| `--set` | | | Sobrescreve um valor da configuração de runtime mesclada (`secao.caminho=valor`, repetível) |
 
 ## Veja Tambem
 

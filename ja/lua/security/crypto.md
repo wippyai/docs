@@ -176,7 +176,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | 検証するJWTトークン |
 | `key` | string | シークレット（HMAC）またはPEM公開鍵（RSA） |
 | `alg` | string? | 期待するアルゴリズム（デフォルト: HS256） |
-| `require_exp` | boolean? | 有効期限を検証（デフォルト: true） |
+| `require_exp` | boolean? | `exp`クレームの存在を必須にする（デフォルト: true）。存在する`exp`は常に検証されます |
 
 **戻り値:** `table, error`
 

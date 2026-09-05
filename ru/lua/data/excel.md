@@ -329,10 +329,11 @@ wb:close()
 |---------|------|------------|
 | Нет контекста | `errors.INTERNAL` | нет |
 | Некорректная книга | `errors.INVALID` | нет |
-| Книга закрыта | `errors.INTERNAL` | нет |
-| Не reader/writer | `errors.INTERNAL` | нет |
+| Книга закрыта | `errors.INTERNAL` (`errors.INVALID` из `rows`) | нет |
+| Не writer (`write_to`) | `errors.INTERNAL` | нет |
+| Не reader (`open`) | возбуждается как ошибка аргумента | нет |
 | Некорректный Excel-файл | `errors.INTERNAL` | нет |
-| Несуществующий лист | `errors.INTERNAL` | нет |
+| Несуществующий лист | `errors.INTERNAL` (`errors.INVALID` из `rows`) | нет |
 | Некорректная ссылка на ячейку | `errors.INTERNAL` | нет |
 | Ошибка записи | `errors.INTERNAL` | нет |
 

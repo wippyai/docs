@@ -329,10 +329,11 @@ wb:close()
 |------|------|-------------|
 | 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
 | 잘못된 워크북 | `errors.INVALID` | 아니오 |
-| 워크북 닫힘 | `errors.INTERNAL` | 아니오 |
-| reader/writer 아님 | `errors.INTERNAL` | 아니오 |
+| 워크북 닫힘 | `errors.INTERNAL` (`rows`에서는 `errors.INVALID`) | 아니오 |
+| writer 아님 (`write_to`) | `errors.INTERNAL` | 아니오 |
+| reader 아님 (`open`) | 인수 에러로 발생 | 아니오 |
 | 잘못된 Excel 파일 | `errors.INTERNAL` | 아니오 |
-| 존재하지 않는 시트 | `errors.INTERNAL` | 아니오 |
+| 존재하지 않는 시트 | `errors.INTERNAL` (`rows`에서는 `errors.INVALID`) | 아니오 |
 | 잘못된 셀 참조 | `errors.INTERNAL` | 아니오 |
 | 쓰기 실패 | `errors.INTERNAL` | 아니오 |
 

@@ -75,7 +75,7 @@ wippy run list
 | `name` | Yes | `wippy run <name>`で使用するコマンド名 |
 | `short` | No | `wippy run list`に表示される短い説明 |
 
-CLIコマンドが動作するには`terminal.host`と`process.host`が必要です。
+CLIコマンドが動作するには`terminal.host`が必要です。これがコマンドを実行するプロセスホストです。
 
 ## プロセスライフサイクル
 

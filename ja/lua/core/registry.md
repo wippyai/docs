@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-フィルターフィールドはエントリメタデータと照合。
+`.`で始まるキーはエントリフィールド（`.kind`、`.ns`、`.name`、`.id`）と照合し、`*`によるグロブを受け付ける。`meta.`で始まるキーはエントリメタデータと照合し、`meta.`キーの先頭に付けた`~`、`*`、`^`、`$`はそれぞれ正規表現、部分一致、前方一致、後方一致を選択する。どちらのプレフィックスも持たないキーは無視される。
 
 ## IDの解析
 

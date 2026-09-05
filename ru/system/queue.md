@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery per driver
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,8 +286,8 @@ return { main = main }
 
 | Результат обработчика | Действие |
 |-----------------------|----------|
-| `true` или возврат, не равный `false` | Ack |
-| `false` | Nack (повторная доставка или dead-letter в зависимости от драйвера) |
+| Любое обычное возвращаемое значение (включая `false`) | Ack |
+| Возврат `nil, err` | Nack (повторная доставка в зависимости от драйвера) |
 | Брошенная ошибка | Nack |
 
 Вызывайте `msg:ack()` или `msg:nack()` явно только для досрочной фиксации. Фиксация однократна: побеждает первый сработавший вызов.

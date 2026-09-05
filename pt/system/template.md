@@ -31,9 +31,9 @@ Toda configuração é opcional com padrões sensíveis:
 | `engine.development_mode` | bool | false | Desabilita cache de templates |
 | `engine.delimiters.left` | string | `{{` | Delimitador de abertura de variável |
 | `engine.delimiters.right` | string | `}}` | Delimitador de fechamento de variável |
-| `engine.delimiters.comment_left` | string | `{*` | Delimitador de abertura de comentário |
-| `engine.delimiters.comment_right` | string | `*}` | Delimitador de fechamento de comentário |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Extensões de arquivo de template |
+| `engine.delimiters.comment_left` | string | `{*` | Apenas validado; comentários sempre usam o `{*` do Jet |
+| `engine.delimiters.comment_right` | string | `*}` | Apenas validado; comentários sempre usam o `*}` do Jet |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Apenas validado; a busca por nome sempre tenta os `.jet`, `.html.jet`, `.jet.html` embutidos do Jet |
 | `engine.globals` | map | - | Variáveis disponíveis para todos os templates |
 
 ## Templates

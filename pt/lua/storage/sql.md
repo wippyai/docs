@@ -45,7 +45,7 @@ Conexoes sao automaticamente retornadas ao pool quando a função termina, mas c
 </note>
 
 <note>
-Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, construa-as com o [Query Builder](#query-builder) e defina o `placeholder_format` do dialeto.
+Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, construa-as com o [Query Builder](#query-builder): `run_with` reescreve os marcadores para `$1, $2` quando o handle é PostgreSQL, e `to_sql` usa o `placeholder_format` do builder.
 </note>
 
 ## Constantes
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Array de condicoes Sqlizer ou table |
 
 **Retorna:** `Sqlizer`
+
+## sqlizer:to_sql
+
+Gera o fragmento SQL e os argumentos de bind de uma condicao.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Retorna:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ Define multiplas colunas de tabela.
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `map` | table | Pares {coluna = valor} |
+| `map` | table | Pares {coluna = valor}; os valores são valores simples, `sql.NULL` ou `sql.as.*` (use `set` para expressões) |
 
 **Retorna:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ Acesso a banco de dados está sujeito a avaliação de política de segurança.
 | Recurso não encontrado | `errors.NOT_FOUND` | não |
 | Recurso não e database | `errors.INVALID` | não |
 | Parametros inválidos | `errors.INVALID` | não |
-| Erro de sintaxe SQL | `errors.INVALID` | não |
+| Erro de sintaxe SQL | `errors.UNKNOWN` | nil |
 | Statement fechado | `errors.INVALID` | não |
 | Transação não ativa | `errors.INVALID` | não |
 | Nome de savepoint inválido | `errors.INVALID` | não |
-| Erro de execução de query | varia | varia |
+| Erro de execução de query | `errors.UNKNOWN` | nil |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
 

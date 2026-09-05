@@ -213,8 +213,9 @@ LLM für fundierte Antworten zuführst.
 
 ## Betriebshinweise
 
-- **Chunk-Größe**: 500–1000 Tokens sind ein guter Ausgangspunkt. Verwende `chunk_overlap`
-  (~10–20 % der Chunk-Größe), damit Sätze nicht über Grenzen hinweg abgeschnitten werden.
+- **Chunk-Größe**: `chunk_size` und `chunk_overlap` zählen Zeichen, keine Tokens;
+  2000–4000 Zeichen sind ein guter Ausgangspunkt. Verwende `chunk_overlap` (~10–20 % der
+  Chunk-Größe), damit Sätze nicht über Grenzen hinweg abgeschnitten werden.
 - **Dimensionen**: `text-embedding-3-small` mit 512 Dimensionen ist kostengünstig und passt
   zur Tabelle `embeddings_512`. Größere Vektoren bedeuten größeren Speicher und langsamere Suche.
 - **Lokal vs. geteilt**: SQLite (`vec0`) hält die gesamte KB in einer lokalen Datei — ideal für

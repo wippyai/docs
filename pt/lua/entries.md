@@ -176,9 +176,9 @@ Configure pool de execução para funções:
 |-------|-------|-----------|
 | `type` | todos | Implementação do scheduler (ver tabela abaixo) |
 | `workers` | static | Quantidade de threads worker (recorre a `size`, depois 8) |
-| `size` | static | Quantidade de workers quando `workers` não está definido; também direciona a seleção automática para um pool static |
+| `size` | static | Quantidade de workers quando `workers` não está definido; com `type` omitido, `size` sem `max_size` seleciona um pool inline |
 | `buffer` | static | Capacidade da fila de tarefas (padrão: `workers * 64`) |
-| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão: 16) |
+| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão: 16; 100 quando `type` é omitido) |
 
 | Tipo | Comportamento |
 |------|---------------|
@@ -187,7 +187,7 @@ Configure pool de execução para funções:
 | `static` | Pool de tamanho fixo baseado em canais. Previsível sob carga estável. |
 | `adaptive` | Pool com auto-escala — cresce sob carga, encolhe quando ocioso. |
 
-Quando `type` é omitido, o pool é selecionado automaticamente a partir dos demais campos: um pool lazy por padrão, ou um pool static se `workers` estiver definido.
+Quando `type` é omitido, o pool é selecionado automaticamente a partir dos demais campos: um pool lazy por padrão, um pool static se `workers` estiver definido, um pool inline se apenas `size` estiver definido.
 
 ## Metadados
 

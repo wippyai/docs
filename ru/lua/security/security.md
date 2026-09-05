@@ -58,12 +58,12 @@ end
 ```lua
 -- Проверка права на чтение
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Нет доступа к данным пользователя")
+    return nil, errors.new("Нет доступа к данным пользователя"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Проверка права на запись
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Нет доступа к изменению заказа")
+    return nil, errors.new("Нет доступа к изменению заказа"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Проверка с метаданными
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny" или "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Доступ запрещён")
+    return nil, errors.new("Доступ запрещён"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ local token, err = store:create(actor, scope, {
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Неверный токен")
+    return nil, errors.new("Неверный токен"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ store:close()
 |----------|--------|----------|
 | `security.policy.get` | ID политики | Доступ к определениям политик |
 | `security.policy_group.get` | ID группы | Доступ к именованным областям |
-| `security.scope.create` | `custom` | Создание пользовательских областей |
+| `security.scope.create` | `custom`, `with`, `without` | Создание пользовательских областей (`new_scope`) и добавление/удаление политик (`scope:with`, `scope:without`) |
 | `security.actor.create` | ID актёра | Создание актёров |
 | `security.token_store.get` | ID хранилища | Доступ к хранилищам токенов |
 | `security.token.validate` | ID хранилища | Проверка токенов |
@@ -349,7 +349,8 @@ store:close()
 |----------|-----|--------|
 | Нет контекста | `errors.INTERNAL` | нет |
 | Пустой ID хранилища | `errors.INVALID` | нет |
-| Доступ запрещён | `errors.INVALID` | нет |
+| Доступ запрещён (`policy`, `named_scope`, токен `create`/`validate`/`revoke`) | `errors.INVALID` | нет |
+| Доступ запрещён (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | выбрасывается как ошибка Lua | нет |
 | Политика не найдена | `errors.INTERNAL` | нет |
 | Хранилище не найдено | `errors.INTERNAL` | нет |
 | Хранилище закрыто | `errors.INTERNAL` | нет |

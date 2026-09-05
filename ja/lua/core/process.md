@@ -134,7 +134,7 @@ local events = process.events()  -- @eventsトピックからのライフサイ�
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `kind` | string | イベントタイプ定数 |
-| `from` | string | ソースPID |
+| `from` | string | ソースPID（OUTDATEDでは存在しない）|
 | `result` | table | EXIT/LINK_DOWN用: {value, error} レコード。プロセスの戻り値は `result.value`、エラーは `result.error` にある |
 | `reason` | string | CANCEL用: プロセスがキャンセルされている理由 |
 | `sources` | string[] | OUTDATED用: 変更された、または推移的に影響を受けたレジストリID |
@@ -163,8 +163,8 @@ inboxまたは`{message = true}`で受信する場合:
 local msg = inbox:receive()
 
 msg:topic()            -- string: トピック名
-msg:from()             -- string|nil: 送信者PID
-msg:payload()          -- Payload: ラッパー（値を取得するには :data() を呼び出す）
+msg:from()             -- string: 送信者PID（不明な場合は空文字列）
+msg:payload()          -- Payload: ラッパー（値を取得するには :data() を呼び出す）。空の場合はnil、複数の値の場合はラッパーのテーブル
 msg:payload():data()   -- any: 実際のペイロード値
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilderはイミュータブル — 各メソッドは新しいインスタ
 spawner:with_context(values)      -- コンテキスト値を追加
 spawner:with_actor(actor)         -- セキュリティアクターを設定
 spawner:with_scope(scope)         -- セキュリティスコープを設定
-spawner:with_name(name)           -- プロセス名を設定
+spawner:with_name(name)           -- 起動時に名前を登録。使用済みの場合、spawnは既存のPIDを返し、キューされたメッセージはそのPIDへ送られる
 spawner:with_message(topic, ...)  -- スポーン後に送信するメッセージをキュー
 spawner:with_options(options)     -- スポーン時のオプションをマージ（例: network）
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | いいえ | self | 登録するPID。デフォルトは呼び出しプロセス |
 | `scope` | number | いいえ | `LOCAL` | 上記のスコープ定数のいずれか |
 
-成功時は `true`、失敗時は `nil, error` を返します。競合（異なるPIDに同じ名前がクラスタスコープで既に登録されている）は `errors.ALREADY_EXISTS` を返します。同じPIDに同じ名前を登録することは冪等です。`STRONG` 登録はすべてのライブノードが確認するか予約期限が切れるまでブロックします。タイムアウト時はエラーを返します。
+成功時は `true`、失敗時は `nil, error` を返します。競合（異なるPIDに同じ名前が既に登録されている）は `errors.ALREADY_EXISTS` を返します。同じPIDに同じ名前を登録することは冪等です。`STRONG` 登録はすべてのライブノードが確認するか予約期限が切れるまでブロックします。タイムアウト時はエラーを返します。
 
 別のPIDを代理して登録する場合は、対象PIDに対する `process.registry.foreign` 権限が追加で必要です。
 
@@ -346,7 +346,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | target PID |
 | `process.link` | `link()` | target PID |
 | `process.unlink` | `unlink()` | target PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`、`with_options()` | "context" |
 | `process.security` | `:with_actor()`、`:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | name |
 | `process.registry.unregister` | `registry.unregister()` | name |
@@ -371,11 +371,11 @@ local ok, err = process.registry.unregister(name, scope)
 
 | 条件 | 種別 |
 |-----------|------|
-| コンテキストが見つからない | `errors.INVALID` |
-| フレームコンテキストが見つからない | `errors.INVALID` |
+| コンテキストが見つからない | `errors.INTERNAL` |
+| フレームコンテキストが見つからない | `errors.INTERNAL` |
 | 必須引数がない | `errors.INVALID` |
 | 予約済みトピックプレフィックス（`@`） | `errors.INVALID` |
-| 無効な期間フォーマット | `errors.INVALID` |
+| 宛先がPIDでも登録済みの名前でもない | `errors.NOT_FOUND` |
 | 名前が登録されていない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 名前が既に登録済み | `errors.ALREADY_EXISTS` |

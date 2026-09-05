@@ -87,6 +87,8 @@ end
 future:cancel()
 ```
 
+**반환:** `boolean, error`
+
 이미 진행 중이면 작업이 여전히 완료될 수 있습니다.
 
 ## 타임아웃 패턴
@@ -102,7 +104,7 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 return r.value:data()
@@ -134,4 +136,4 @@ return r.value:data()
 | 조건 | 종류 |
 |------|------|
 | 작업 취소됨 | `CANCELED` |
-| 비동기 작업 실패 | 다양함 |
+| 비동기 작업 실패 | `result()`는 작업의 종류를 보존; `error()`는 `INTERNAL`을 보고 |

@@ -167,11 +167,31 @@ local n = hash.fnv64("data")
 
 **반환:** `number, error`
 
+## 키 파생
+
+### PBKDF2
+
+```lua
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
+```
+
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `password` | string | 비밀번호/패스프레이즈 (비어 있으면 안 됨) |
+| `salt` | string | 솔트 값 (비어 있으면 안 됨) |
+| `iterations` | integer | 반복 횟수 (1 ~ 10,000,000) |
+| `key_length` | integer | 원하는 키 길이 (바이트) |
+| `hash` | string? | `sha256` 또는 `sha512` (기본값: `sha256`) |
+
+**반환:** `string, error` (원시 키 바이트)
+
 ## 에러
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
 | 입력이 문자열이 아님 | `errors.INVALID` | 아니오 |
 | 비밀이 문자열이 아님 (HMAC) | `errors.INVALID` | 아니오 |
+| 빈 비밀번호/솔트, 0 이하이거나 과도한 반복 횟수, 지원하지 않는 해시 (PBKDF2) | `errors.INVALID` | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

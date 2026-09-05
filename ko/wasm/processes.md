@@ -75,7 +75,7 @@ wippy run list
 | `name` | Yes | `wippy run <name>`에서 사용하는 명령 이름 |
 | `short` | No | `wippy run list`에 표시되는 간단한 설명 |
 
-CLI 명령이 동작하려면 `terminal.host`와 `process.host`가 있어야 합니다.
+CLI 명령이 동작하려면 `terminal.host`가 있어야 합니다. 이것이 명령을 실행하는 프로세스 호스트입니다.
 
 ## 프로세스 생명주기
 

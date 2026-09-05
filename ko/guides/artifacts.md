@@ -32,8 +32,10 @@ entries:
     directory: ./package
 ```
 
-그 외에는 달라지는 것이 없습니다. 리소스는 평소처럼 WAPP에 패킹됩니다. 선언된
-아티팩트는 **모듈 게시와 애플리케이션 패킹 중에 검증되므로**, 잘못된 아티팩트는
+그 외에는 달라지는 것이 없습니다. 리소스는 다른 `fs.directory`와 마찬가지로 WAPP에
+임베드됩니다. `wippy.yaml`의 `embed:`에 나열하거나 `wippy publish`와 `wippy pack`에
+`--embed`를 전달하십시오. 임베드되지 않은 디렉터리는 패킹되지도, 검증되지도 않습니다.
+선언된 아티팩트는 **모듈 게시와 애플리케이션 패킹 중에 검증되므로**, 잘못된 아티팩트는
 소비자 쪽이 아니라 게시 시점에 실패합니다.
 
 ## 포맷
@@ -184,10 +186,10 @@ platform/ui-kit/
 
 ```bash
 # 게시하지 않고 검증
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # 게시
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 선언된 아티팩트는 게시 과정의 일부로 검증되므로, 포맷 규칙을 통과하지 못하는
@@ -200,7 +202,7 @@ package.json은 소비자의 빌드가 아니라 여기서 거부됩니다.
 
 ```bash
 # 생산자 모듈에서
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # 소비자는 게시된 팩 대신 로컬 팩에서 구체화
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -241,6 +243,9 @@ build:
 
 ```yaml
 # build-inputs/wippy.lock — 가져오기 위해서만 존재하는 프로젝트
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

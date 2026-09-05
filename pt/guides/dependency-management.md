@@ -97,9 +97,9 @@ entries:
 ### Regras de Resolucao
 
 - Cada modulo resolve contra a **intersecao de todas as faixas declaradas** no grafo de dependencias. Faixas incompativeis (conflitos de diamante) falham a resolucao com um erro explicito em vez de escolher silenciosamente um dos lados.
-- Dependencias sao resolvidas a partir de suas faixas declaradas, nao de pins resolvidos anteriormente.
-- **Declaracoes raiz vencem as transitivas**: quando sua aplicacao e uma dependencia puxam o mesmo modulo ou requirement, sua declaracao tem precedencia.
-- O mesmo componente pode ser declarado como dependencia raiz apenas uma vez — uma declaracao duplicada e rejeitada com um erro de conflito. Atualize a dependencia existente em vez disso.
+- Um `wippy update` completo resolve cada modulo a partir de suas faixas declaradas; uma atualizacao direcionada e o reparo no boot mantem uma versao fixada que ainda satisfaz todas as faixas vigentes.
+- **Parametros raiz vencem os transitivos**: quando sua aplicacao e uma dependencia vinculam o mesmo requirement, os parametros do seu `ns.dependency` tem precedencia. Faixas de versao nunca sao sobrescritas; toda declaracao entra na intersecao.
+- Um componente declarado por varias entradas `ns.dependency` raiz e controlado por uma delas — declaracoes estabelecidas antes das novas, portadoras de parametros antes das simples, empates pelo menor ID de entrada — e as demais viram referencias a ela. Uma duplicata cujos parametros divergem da declaracao controladora e rejeitada com um erro de conflito; atualize a dependencia existente em vez disso.
 
 Duas falhas de resolucao sao reportadas de forma distinta. Uma expressao de restricao que nunca podera ser satisfeita por nenhum release — a intersecao das faixas vigentes e vazia — e um conflito, e o erro nomeia o modulo e todo solicitante que contribuiu com uma faixa. Um conjunto de faixas valido para o qual o hub atualmente nao publica nenhuma versao correspondente e, em vez disso, uma falha de disponibilidade: um release posterior pode torna-lo resolvivel sem nenhuma mudanca nas declaracoes.
 

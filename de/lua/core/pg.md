@@ -178,12 +178,12 @@ Gibt die Instanz sofort frei. Idempotent; nach der Freigabe gibt jede Methode ei
 | `pg.leave` | `leave()` | Gruppenname |
 | `pg.get_members` | `get_members()` | Gruppenname |
 | `pg.get_local_members` | `get_local_members()` | Gruppenname |
-| `pg.which_groups` | `which_groups()` | (Scope) |
-| `pg.which_local_groups` | `which_local_groups()` | (Scope) |
+| `pg.which_groups` | `which_groups()` | (keine) |
+| `pg.which_local_groups` | `which_local_groups()` | (keine) |
 | `pg.broadcast` | `broadcast()` | Gruppenname |
 | `pg.broadcast_local` | `broadcast_local()` | Gruppenname |
 | `pg.monitor` | `monitor()` | Gruppenname |
-| `pg.events` | `events()` | (Scope) |
+| `pg.events` | `events()` | (keine) |
 
 ## Fehler
 
@@ -192,7 +192,7 @@ Gibt die Instanz sofort frei. Idempotent; nach der Freigabe gibt jede Methode ei
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Fehlendes oder leeres Argument | `errors.INVALID` |
 | Scope nicht gefunden | `errors.NOT_FOUND` |
-| Gruppe verlassen ohne Mitgliedschaft | `errors.INVALID` |
+| Gruppe verlassen ohne Mitgliedschaft | `errors.NOT_FOUND` |
 | Instanz freigegeben | `errors.INVALID` |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

@@ -31,6 +31,7 @@ description: "アクティビティは非決定論的な操作を実行する関
 |-----------|------|------|
 | `worker` | はい | `temporal.worker`エントリへの参照 |
 | `local` | いいえ | ローカルアクティビティとして実行（デフォルト: false） |
+| `name` | いいえ | カスタムのアクティビティ型名（デフォルトはエントリID） |
 
 ## 実装
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | アクティビティキャンセルを待機 |
 | `activity.disable_eager_execution` | boolean | false | イーガー実行を無効化 |
 | `activity.retry_policy` | table | - | リトライ設定（下記参照） |
+| `activity.name` | string | - | 呼び出すアクティビティ型名。レジストリIDと異なる場合に指定 |
+| `activity.summary` | string | - | Temporal UIに表示される人間可読なサマリ |
+| `activity.priority` | table | - | タスク優先度: `priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `activity.versioning_intent` | string | - | `compatible`（ビルドIDを継承）または`default`（割り当てルールを使用） |
 
 duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数値を受け付けます。
 

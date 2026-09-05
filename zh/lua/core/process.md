@@ -134,7 +134,7 @@ local events = process.events()  -- 来自 @events 主题的生命周期事件
 | 字段 | 类型 | 描述 |
 |------|------|------|
 | `kind` | string | 事件类型常量 |
-| `from` | string | 源 PID |
+| `from` | string | 源 PID（OUTDATED 时不存在） |
 | `result` | table | EXIT/LINK_DOWN 时：一个 {value, error} 记录；进程返回值位于 `result.value`，错误位于 `result.error` |
 | `reason` | string | CANCEL 时：进程被取消的原因 |
 | `sources` | string[] | OUTDATED 时：发生变更或受传递性影响的注册表 ID |
@@ -163,8 +163,8 @@ process.unlisten(ch)
 local msg = inbox:receive()
 
 msg:topic()            -- string: 主题名称
-msg:from()             -- string|nil: 发送方 PID
-msg:payload()          -- Payload: 包装器（调用 :data() 提取）
+msg:from()             -- string: 发送方 PID（未知时为空字符串）
+msg:payload()          -- Payload: 包装器（调用 :data() 提取）；为空时为 nil，多个值时为包装器组成的表
 msg:payload():data()   -- any: 实际负载值
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilder 是不可变的——每个方法返回新实例：
 spawner:with_context(values)      -- 添加上下文值
 spawner:with_actor(actor)         -- 设置安全 actor
 spawner:with_scope(scope)         -- 设置安全作用域
-spawner:with_name(name)           -- 设置进程名称
+spawner:with_name(name)           -- 启动时注册名称；若名称已被占用，spawn 返回已有的 PID，排队的消息发往它
 spawner:with_message(topic, ...)  -- 排队启动后发送的消息
 spawner:with_options(options)     -- 合并启动时选项（如 network）
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | 否 | 自身 | 要注册的 PID；默认为调用进程 |
 | `scope` | number | 否 | `LOCAL` | 上述作用域常量之一 |
 
-成功返回 `true`，失败返回 `nil, error`。冲突（名称在集群作用域下已注册给不同 PID）返回 `errors.ALREADY_EXISTS`。将同一名称注册给同一 PID 是幂等的。`STRONG` 注册会阻塞，直到所有存活节点确认或预留截止时间到期；超时返回错误。
+成功返回 `true`，失败返回 `nil, error`。冲突（名称已注册给不同 PID）返回 `errors.ALREADY_EXISTS`。将同一名称注册给同一 PID 是幂等的。`STRONG` 注册会阻塞，直到所有存活节点确认或预留截止时间到期；超时返回错误。
 
 代表不同 PID 注册时，还需要在目标 PID 上的 `process.registry.foreign` 权限。
 
@@ -346,7 +346,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | 目标 PID |
 | `process.link` | `link()` | 目标 PID |
 | `process.unlink` | `unlink()` | 目标 PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`、`with_options()` | "context" |
 | `process.security` | `:with_actor()`、`:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | 名称 |
 | `process.registry.unregister` | `registry.unregister()` | 名称 |
@@ -371,11 +371,11 @@ local ok, err = process.registry.unregister(name, scope)
 
 | 条件 | 类型 |
 |------|------|
-| 未找到上下文 | `errors.INVALID` |
-| 未找到帧上下文 | `errors.INVALID` |
+| 未找到上下文 | `errors.INTERNAL` |
+| 未找到帧上下文 | `errors.INTERNAL` |
 | 缺少必需参数 | `errors.INVALID` |
 | 保留主题前缀（`@`） | `errors.INVALID` |
-| 无效时长格式 | `errors.INVALID` |
+| 目标既不是 PID 也不是已注册的名称 | `errors.NOT_FOUND` |
 | 名称未注册 | `errors.NOT_FOUND` |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` |
 | 名称已注册 | `errors.ALREADY_EXISTS` |

@@ -242,6 +242,8 @@ Ejemplo de paso en GitHub Actions:
 | `--rules` | | false | Activar reglas de lint (verificaciones de estilo/calidad serie W) |
 | `--cache-reset` | | false | Limpiar cache antes del analisis |
 | `--lock-file` | `-l` | wippy.lock | Ruta al archivo de bloqueo |
+| `--profile` | | | Aplicar un perfil de workspace desde la configuracion de runtime combinada (repetible, aplicado en orden) |
+| `--set` | | | Sobrescribir un valor de la configuracion de runtime combinada (`section.path=value`, repetible) |
 
 ## Ver Tambien
 

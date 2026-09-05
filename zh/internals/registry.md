@@ -144,6 +144,8 @@ Handler 有 30 秒时间来接受或拒绝每个操作。如果被拒绝，regis
 - `ns.dependency` - 模块依赖
 - `ns.definition` - 模块元数据（readme、wiki、许可证、作者）
 
+这是默认集合；运行时配置中的 `registry.dispatch_internal_kinds` 会替换它。
+
 ## 依赖解析
 
 Entry 可以声明对其他 entry 的依赖。解析器通过注册的模式提取依赖：

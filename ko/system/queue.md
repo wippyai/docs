@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery or DLQ
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,8 +286,8 @@ return { main = main }
 
 | 핸들러 결과 | 액션 |
 |----------------|--------|
-| `true` 또는 비 `false` 반환 | Ack |
-| `false` | Nack (드라이버에 따라 재배달 또는 dead-letter) |
+| 일반 반환값 (`false` 포함) | Ack |
+| `nil, err` 반환 | Nack (드라이버에 따라 재배달) |
 | 발생한 오류 | Nack |
 
 조기 settle을 위해서만 `msg:ack()` 또는 `msg:nack()`을 명시적으로 호출하세요. Settlement은 단일 샷입니다: 먼저 도착한 호출이 우선합니다.

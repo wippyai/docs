@@ -109,7 +109,7 @@ end
 | `target_pid` | string | obrigatório | PID do processo para receber mensagens |
 | `message_topic` | string | `ws.message` | Tópico para mensagens do cliente |
 | `heartbeat_interval` | duration | - | Frequência de heartbeat (ex: `30s`) |
-| `metadata` | object | - | Anexado a todas as mensagens |
+| `metadata` | object | - | Anexado a mensagens de join/leave/heartbeat |
 
 ## Tópicos de Mensagens
 
@@ -162,9 +162,6 @@ Envia mensagens de volta usando o PID do cliente. Qualquer tópico que você esc
 ```lua
 -- Envia uma mensagem estruturada (qualquer nome de tópico)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Envia binário
-process.send(client_pid, "data", binary_content)
 
 -- Fecha conexão (payload é a string do motivo de fechamento)
 process.send(client_pid, "ws.close", "Sessão encerrada")

@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | Timeout de conexión (ms o "5s") |
 | `read_timeout` | number/string | Timeout de lectura |
 | `write_timeout` | number/string | Timeout de escritura |
-| `compression` | number | Modo de compresion (ver Constantes) |
+| `compression` | number/string | Modo de compresion (ver Constantes), o `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
 | `compression_threshold` | number | Tamano minimo para comprimir (0-100MB) |
 | `read_limit` | number | Tamano maximo de mensaje (0-128MB) |
 | `channel_capacity` | number | Buffer de canal de recepcion (1-10000) |
@@ -89,9 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Contenido del mensaje |
 | `type` | number | `websocket.TEXT` (1) o `websocket.BINARY` (2) |
 
-Cede hasta que el mensaje se envía.
-
-**Devuelve:** `boolean, error`
+Cede hasta que el mensaje se envía. No devuelve valores.
 
 ### Ping
 
@@ -99,9 +97,7 @@ Cede hasta que el mensaje se envía.
 client:ping()
 ```
 
-Cede hasta que el ping se envía.
-
-**Devuelve:** `boolean, error`
+Cede hasta que el ping se envía. No devuelve valores.
 
 ## Recibir Mensajes
 

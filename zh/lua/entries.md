@@ -176,9 +176,9 @@ imports:
 |------|--------|------|
 | `type` | 全部 | 调度器实现（参见下表） |
 | `workers` | static | worker 线程数（未设置时回退到 `size`，再回退到 8） |
-| `size` | static | 未设置 `workers` 时的 worker 数；同时会引导自动选择走向 static 池 |
+| `size` | static | 未设置 `workers` 时的 worker 数；省略 `type` 时，只设置 `size` 而不设置 `max_size` 会选择 inline 池 |
 | `buffer` | static | 任务队列容量（默认 `workers * 64`） |
-| `max_size` | lazy, adaptive | 弹性增长的上限（默认 16） |
+| `max_size` | lazy, adaptive | 弹性增长的上限（默认 16；省略 `type` 时为 100） |
 
 | 类型 | 行为 |
 |------|------|
@@ -187,7 +187,7 @@ imports:
 | `static` | 基于 channel 的固定大小池。在稳定负载下可预测。 |
 | `adaptive` | 自动扩展池——负载下扩容，空闲时收缩。 |
 
-省略 `type` 时，池会依据其他字段自动选择：默认为 lazy 池；若设置了 `workers`，则为 static 池。
+省略 `type` 时，池会依据其他字段自动选择：默认为 lazy 池；若设置了 `workers`，则为 static 池；若只设置了 `size`，则为 inline 池。
 
 ## 元数据
 

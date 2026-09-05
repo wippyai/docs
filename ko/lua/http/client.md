@@ -355,6 +355,7 @@ HTTP 요청은 보안 정책 평가 대상입니다.
 | `http_client.unix_socket` | 소켓 경로 | Unix 소켓 연결 허용/거부 |
 | `http_client.private_ip` | IP 주소 | 사설 IP 범위 접근 허용/거부 |
 | `http_client.insecure_tls` | URL | 안전하지 않은 TLS 허용/거부 (검증 건너뛰기) |
+| `network.select` | 네트워크 엔트리 ID | 요청에 지정된 `overlay_network`를 통한 라우팅 허용/거부 |
 
 ### 접근 확인
 

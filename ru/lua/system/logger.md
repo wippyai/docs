@@ -6,7 +6,6 @@ description: "Структурированное логирование с ур�
 # Логирование
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 Структурированное логирование с уровнями debug, info, warn и error.
@@ -97,8 +96,6 @@ named:info("message")
 
 ## Ошибки
 
-| Условие | Kind | Повторяемо |
-|---------|------|------------|
-| Пустая строка имени | `errors.INVALID` | нет |
+`logger:named("")` выбрасывает ошибку аргумента Lua (`name cannot be empty`) вместо возврата значения ошибки. Методы логирования ничего не возвращают.
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

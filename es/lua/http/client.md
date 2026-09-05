@@ -355,6 +355,7 @@ Las solicitudes HTTP estan sujetas a evaluacion de politica de seguridad.
 | `http_client.unix_socket` | Ruta de socket | Permitir/denegar conexiones de socket Unix |
 | `http_client.private_ip` | Direccion IP | Permitir/denegar acceso a rangos de IP privados |
 | `http_client.insecure_tls` | URL | Permitir/denegar TLS inseguro (omitir verificacion) |
+| `network.select` | ID de entrada de red | Permitir/denegar el enrutamiento a traves del `overlay_network` indicado en la solicitud |
 
 ### Verificar Acceso
 

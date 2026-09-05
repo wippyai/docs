@@ -152,7 +152,7 @@ res:set_header("X-SSE-Relay", json.encode({
 클라이언트는 `ready` 이벤트를 수신합니다:
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:gateway|0x0002a}", "message_topic": "sse.message"}
 ```
 
 ## 메시지 토픽
@@ -163,7 +163,7 @@ res:set_header("X-SSE-Relay", json.encode({
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | 클라이언트 연결 | `client_pid`, `metadata` |
 | `sse.message` | target → stream | 기본 이벤트 토픽 | SSE 이벤트로 전달됨 |
-| `sse.heartbeat` | stream → target | 주기적 (설정된 경우) | `client_pid`, `uptime`, `message_count` |
+| `sse.heartbeat` | stream → target | 주기적 (기본 30초마다) | `client_pid`, `uptime`, `message_count`, `metadata` |
 | `sse.leave` | stream → target | 클라이언트 연결 끊김 | `client_pid`, `metadata` |
 | `sse.control` | any → stream | 제어 명령 | 릴레이 설정 필드 |
 | `sse.close` | any → stream | 강제 종료 | 선택적 사유 문자열 |

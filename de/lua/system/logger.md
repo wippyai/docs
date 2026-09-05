@@ -6,7 +6,6 @@ description: "Strukturierte Protokollierung mit debug, info, warn und error Leve
 # Protokollierung
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 Strukturierte Protokollierung mit debug, info, warn und error Levels.
@@ -97,8 +96,6 @@ named:info("message")
 
 ## Fehler
 
-| Bedingung | Art | Wiederholbar |
-|-----------|------|-----------|
-| Leerer Name-String | `errors.INVALID` | nein |
+`logger:named("")` löst einen Lua-Argumentfehler aus (`name cannot be empty`), statt einen Fehlerwert zurückzugeben. Logging-Methoden geben nichts zurück.
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

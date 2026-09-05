@@ -58,12 +58,12 @@ end
 ```lua
 -- 読み取り権限をチェック
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- 書き込み権限をチェック
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- メタデータ付きでチェック
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow"、"deny"、または"undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ local token, err = store:create(actor, scope, {
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ store:close()
 |--------|----------|-------------|
 | `security.policy.get` | ポリシーID | ポリシー定義へのアクセス |
 | `security.policy_group.get` | グループID | 名前付きスコープへのアクセス |
-| `security.scope.create` | `custom` | カスタムスコープの作成 |
+| `security.scope.create` | `custom`、`with`、`without` | カスタムスコープの作成（`new_scope`）とポリシーの追加/削除（`scope:with`、`scope:without`） |
 | `security.actor.create` | アクターID | アクターの作成 |
 | `security.token_store.get` | ストアID | トークンストアへのアクセス |
 | `security.token.validate` | ストアID | トークンの検証 |
@@ -349,7 +349,8 @@ store:close()
 |-----------|------|-----------|
 | コンテキストなし | `errors.INTERNAL` | no |
 | 空のトークンストアID | `errors.INVALID` | no |
-| 権限拒否 | `errors.INVALID` | no |
+| 権限拒否（`policy`、`named_scope`、トークンの`create`/`validate`/`revoke`） | `errors.INVALID` | no |
+| 権限拒否（`new_scope`、`new_actor`、`token_store`、`scope:with`/`without`） | Luaエラーとして送出 | no |
 | ポリシーが見つからない | `errors.INTERNAL` | no |
 | トークンストアが見つからない | `errors.INTERNAL` | no |
 | トークンストアがクローズ済み | `errors.INTERNAL` | no |

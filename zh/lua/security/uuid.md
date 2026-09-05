@@ -135,7 +135,7 @@ local info, err = uuid.parse(id)
 - `version` (integer): UUID 版本（1、3、4、5 或 7）
 - `variant` (string): RFC4122、Reserved、Microsoft、Future、NCS 或 Invalid
 - `timestamp` (integer): Unix 时间戳（仅 v1 和 v7）
-- `node` (string): 节点 ID（仅 v1）
+- `node` (string): 6 个原始节点 ID 字节（仅 v1）
 
 ### 格式化
 

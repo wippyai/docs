@@ -88,7 +88,7 @@ end
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ end
 
 ## Ошибки
 
-`store.get()` и все методы дескриптора хранилища (`get`, `set`, `has`, `delete`) возвращают структурированные ошибки (используйте `err:kind()`).
+`store.get()` и все методы дескриптора хранилища (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) возвращают структурированные ошибки (используйте `err:kind()`), за исключением отказа в доступе в `store.get`, `get`, `set`, `has` и `delete` — он выбрасывается как ошибка Lua.
 
 | Условие | Kind | Повторяемо |
 |---------|------|------------|
 | Пустой ID ресурса | `errors.INVALID` | нет |
-| Ресурс не найден | `errors.NOT_FOUND` | нет |
+| Ресурс не найден | `errors.INTERNAL` | нет |
 | Хранилище освобождено | `errors.INVALID` | нет |
-| Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
+| Доступ запрещён (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | нет |
 | `only_if_absent` и ключ существует | `errors.ALREADY_EXISTS` | нет |
 | Несовпадение `if_version` | `errors.CONFLICT` | да |
 | Условная запись на хранилище без поддержки | `errors.INVALID` | нет |

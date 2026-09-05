@@ -270,7 +270,7 @@ policy:allow_attrs("href", "target"):on_elements("a")
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -324,7 +324,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### 테이블 허용
 
-테이블 요소를 허용합니다: `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`, `caption`.
+테이블 요소를 허용합니다: `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`.
 
 ```lua
 policy:allow_tables()
@@ -337,14 +337,14 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### 표준 속성 허용
 
-일반 속성을 허용합니다: `id`, `class`, `title`, `dir`, `lang`.
+일반 속성을 허용합니다: `id`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **반환:** `Policy`

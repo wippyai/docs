@@ -229,7 +229,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-编译后的程序仅供参考；执行需通过传入源码和方法调用 `runner.run`。
+选项表接受与 `runner.run` 相同的 `modules` 和 `imports` 字段，并适用相同的 `eval.module` 与 `eval.import` 权限检查。编译后的程序仅供参考；执行需通过传入源码和方法调用 `runner.run`。
 
 ## 安全模型
 

@@ -43,6 +43,7 @@ Serviços se registram com o supervisor usando um bloco `lifecycle`. Para proces
 | `stop_timeout` | `10s` | Tempo máximo para encerramento gracioso |
 | `stable_threshold` | `5s` | Tempo de execução antes do serviço ser considerado estável |
 | `depends_on` | `[]` | Serviços que devem estar executando primeiro |
+| `startup` | `required` | `required` reporta um auto-start falho ou bloqueado como erro de transação; `optional` deixa o serviço continuar tentando em segundo plano sem falhar o lote |
 
 ## Resolução de Dependências
 

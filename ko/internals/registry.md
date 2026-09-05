@@ -144,6 +144,8 @@ sequenceDiagram
 - `ns.dependency` - 모듈 의존성
 - `ns.definition` - 모듈 메타데이터 (readme, wiki, 라이선스, 저자)
 
+이것이 기본 집합이며, 런타임 설정의 `registry.dispatch_internal_kinds`가 이를 대체합니다.
+
 ## 의존성 해결
 
 엔트리는 다른 엔트리에 대한 의존성을 선언할 수 있습니다. 리졸버는 등록된 패턴을 통해 의존성을 추출합니다:

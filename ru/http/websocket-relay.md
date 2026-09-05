@@ -109,7 +109,7 @@ end
 | `target_pid` | string | обязательно | PID процесса для получения сообщений |
 | `message_topic` | string | `ws.message` | Топик для сообщений клиента |
 | `heartbeat_interval` | duration | - | Частота heartbeat (напр. `30s`) |
-| `metadata` | object | - | Прикрепляется ко всем сообщениям |
+| `metadata` | object | - | Прикрепляется к сообщениям join/leave/heartbeat |
 
 ## Топики сообщений
 
@@ -162,9 +162,6 @@ end
 ```lua
 -- Отправка структурированного сообщения (любое имя топика)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Отправка бинарных данных
-process.send(client_pid, "data", binary_content)
 
 -- Закрытие соединения (payload — строка с причиной закрытия)
 process.send(client_pid, "ws.close", "Session ended")

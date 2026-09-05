@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | Выход варьируется (время, random) |
 | `ClassIO` | Внешние I/O-операции |
 | `ClassNetwork` | Сетевые операции |
+| `ClassEncoding` | Сериализация и кодирование |
+| `ClassTime` | Доступ к часам и таймерам |
+| `ClassProcess` | Управление процессами |
+| `ClassSecurity` | Контекст безопасности и токены |
 | `ClassStorage` | Персистентность данных |
 | `ClassWorkflow` | Workflow-безопасные операции |
 
-Модули только с тегом `ClassDeterministic` безопасны для workflow. Добавление классов I/O или network ограничивает модуль функциями и процессами.
+Workflow-процессы компилируются с разрешёнными классами `ClassDeterministic` и `ClassWorkflow`: модуль доступен workflow, если несёт хотя бы один из них, иначе он ограничен функциями и процессами.
 
 ## Экспорт функций
 

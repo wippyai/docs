@@ -420,17 +420,19 @@ Alle verfügbaren Befehle auflisten:
 wippy run list
 ```
 
+`wippy run list` akzeptiert `--profile` und `--set`, sodass die Auflistung dieselbe zusammengeführte Laufzeitkonfiguration widerspiegelt, die `wippy run` verwenden würde.
+
 ### Befehl-Metadatenfelder
 
 | Feld | Erforderlich | Beschreibung |
 |------|--------------|--------------|
 | `name` | Ja | Befehlsname, verwendet mit `wippy run <name>` |
 | `short` | Nein | Kurzbeschreibung, angezeigt in `wippy run list` |
-| `main` | Nein | Diesen Entry als Standardbefehl markieren (automatisch ausgewählt von Packs und Hub-Modulen, die einen einzigen Befehl ausliefern) |
+| `main` | Nein | Diesen Entry als Standard-Entrypoint markieren. Wird ein Pack oder Hub-Modul ohne Befehlsnamen ausgeführt, wird der einzelne `main`-Entry dieses Use Case ausgeführt; ein einzelner Entrypoint wird auch ohne `main` ausgewählt, mehrere Entrypoints ohne `main` sind ein Fehler |
 | `use_case` | Nein | Entrypoint-Kategorie, Standard `run`. Der Entry, der `use_case: test` deklariert, ist das, was `wippy test` ausführt |
 | `security` | Nein | Sicherheitskontext, unter dem der Befehl läuft, wenn er über die CLI gestartet wird |
 
-Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Der Befehlsname muss über alle geladenen Entries eindeutig sein. Argumente nach dem Befehlsnamen werden als String-Payloads an den Prozess übergeben.
+Jede Art von Prozess-Entry funktioniert (`process.lua`, `process.wasm`). Befehlsnamen werden nicht auf Eindeutigkeit geprüft; deklarieren mehrere geladene Entries denselben Namen, läuft der erste Treffer in Registry-Reihenfolge. Argumente nach dem Befehlsnamen werden als String-Payloads an den Prozess übergeben.
 
 ### Befehlssicherheit
 
@@ -562,7 +564,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # debug
+  stream_to_events: true
 
 profiler:
   enabled: true

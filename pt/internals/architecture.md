@@ -16,7 +16,7 @@ Wippy é um sistema em camadas construído em Go. Componentes inicializam em ord
 | Camada | Componentes |
 |--------|-------------|
 | Aplicação | Processos Lua, funções, workflows |
-| Runtime | Motor Lua (gopher-lua), 50+ módulos |
+| Runtime | Motor Lua (gopher-lua), 40+ módulos |
 | Serviços | HTTP, Queue, Storage, Temporal |
 | Sistema | Topology, Factory, Functions, Contracts |
 | Núcleo | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,7 +42,7 @@ Cria infraestrutura central antes de qualquer componente carregar:
 
 ### Fase 2: Carregamento de Componentes
 
-O Loader resolve dependências via ordenação topológica e carrega componentes nível por nível. Componentes no mesmo nível carregam em paralelo.
+O Loader resolve dependências via ordenação topológica e carrega componentes nível por nível, um componente por vez.
 
 Os componentes core (PIDGen, Dispatcher, Registry, Finder, Supervisor) inicializam primeiro, seguidos pelos componentes de sistema (Topology, Lifecycle, Factory, Functions, Contracts). Os níveis concretos são calculados em tempo de execução a partir do grafo de dependências, então a ordenação se adapta à medida que componentes são adicionados ou removidos.
 
@@ -85,7 +85,7 @@ Componentes declaram dependências. O loader constrói um grafo acíclico direci
 |------------|--------------|-----------|
 | PIDGen | nenhuma | Geração de ID de processo |
 | Dispatcher | PIDGen | Despacho de handlers de comando |
-| Registry | Dispatcher | Armazenamento e versionamento de entradas |
+| Registry | Artifact | Armazenamento e versionamento de entradas |
 | Finder | Registry | Lookup e busca de entradas |
 | Supervisor | Registry | Políticas de reinício de serviço |
 | Topology | Supervisor | Árvore pai/filho de processos |
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ### Tópicos Comuns
 
-Os tópicos têm o formato `<system>:<kind>`. Os sistemas integrados publicam:
+Cada evento carrega um `System` e um `Kind`. Os sistemas integrados publicam:
 
 | Sistema | Kind | Propósito |
 |---------|------|-----------|
@@ -137,7 +137,6 @@ Armazenamento versionado para definições de entradas.
 
 - **Estado Versionado** - Cada mutação cria nova versão
 - **Histórico** - Histórico em SQLite para trilha de auditoria
-- **Observação** - Observar entradas específicas para mudanças
 - **Orientado a Eventos** - Publica eventos em mutações
 
 ### Ciclo de Vida de Entrada
@@ -174,14 +173,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same process]
-    Peer -.- P[Same cluster]
-    Inter -.- I[Remote]
+    Local -.- L[Este nó]
+    Peer -.- P[Receptor peer registrado]
+    Inter -.- I[Outros nós do cluster]
 ```
 
 1. **Local** - Entrega direta dentro do mesmo nó
-2. **Peer** - Encaminhar para nós peer no cluster
-3. **Internode** - Rotear para nós remotos via rede
+2. **Peer** - Entregar a um receptor registrado para aquele ID de nó (um peer externo, como um worker do Temporal)
+3. **Internode** - Recorrer ao transporte internode do cluster, instalado pelo componente de cluster após o boot
 
 ### Mailbox
 

@@ -88,7 +88,7 @@ Verificar si una clave existe sin recuperar:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 
 ## Errores
 
-`store.get()` y todos los métodos del manejador de store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) devuelven errores estructurados (usa `err:kind()`).
+`store.get()` y todos los métodos del manejador de store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) devuelven errores estructurados (usa `err:kind()`), salvo que una denegación de permiso en `store.get`, `get`, `set`, `has` y `delete` lanza un error de Lua en su lugar.
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | ID de recurso vacio | `errors.INVALID` | no |
-| Recurso no encontrado | `errors.NOT_FOUND` | no |
+| Recurso no encontrado | `errors.INTERNAL` | no |
 | Almacen liberado | `errors.INVALID` | no |
-| Permiso denegado | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` y la clave existe | `errors.ALREADY_EXISTS` | no |
 | Discrepancia de `if_version` | `errors.CONFLICT` | sí |
 | Escritura condicional en un almacén sin soporte | `errors.INVALID` | no |

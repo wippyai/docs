@@ -31,7 +31,9 @@ entries:
     directory: ./package
 ```
 
-それ以外は何も変わりません。リソースは通常どおりWAPPへパックされます。宣言された
+それ以外は何も変わりません。リソースは他の`fs.directory`と同様にWAPPへ埋め込まれます。
+`wippy.yaml`の`embed:`に列挙するか、`wippy publish`と`wippy pack`に`--embed`を渡してください。
+埋め込まれていないディレクトリは、パックも検証もされません。宣言された
 アーティファクトは**モジュールの公開時とアプリケーションのパック時に検証される**ため、不正なものは利用側ではなく公開時に失敗します。
 
 ## フォーマット
@@ -175,10 +177,10 @@ importされたスタイルシートをデッドコードとみなして削除�
 
 ```bash
 # 公開せずに検証する
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # 公開する
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 宣言されたアーティファクトは公開の一環として検証されるため、フォーマットのルールに
@@ -191,7 +193,7 @@ wippy publish --create --module-type library --module-visibility public --versio
 
 ```bash
 # 提供側モジュールから
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # 利用側は公開されたものではなくローカルのパックから実体化する
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -230,6 +232,9 @@ build:
 
 ```yaml
 # build-inputs/wippy.lock — 取得のためだけに存在するプロジェクト
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

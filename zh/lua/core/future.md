@@ -87,6 +87,8 @@ end
 future:cancel()
 ```
 
+**返回:** `boolean, error`
+
 如果操作已在进行中，仍可能完成。
 
 ## 超时模式
@@ -102,7 +104,7 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 return r.value:data()
@@ -134,4 +136,4 @@ return r.value:data()
 | 条件 | 类型 |
 |-----------|------|
 | 操作被取消 | `CANCELED` |
-| 异步操作失败 | 各异 |
+| 异步操作失败 | `result()` 保留该操作的错误类型；`error()` 报告 `INTERNAL` |

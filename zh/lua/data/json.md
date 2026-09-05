@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- Handle errors
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal"（errors.INTERNAL）
     print(err:message())  -- parse error details
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Now safe to decode
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | 表中混合键类型 | `errors.INTERNAL` | 否 |
 | 嵌套超过 128 层 | `errors.INTERNAL` | 否 |
 | 无效的 JSON 语法 | `errors.INTERNAL` | 否 |
+| 输入不是字符串或为空字符串（decode） | `errors.INVALID` | 否 |
 | Schema 编译失败 | `errors.INVALID` | 否 |
 | 验证失败 | `errors.INVALID` | 否 |
 

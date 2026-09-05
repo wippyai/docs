@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | 親クローズ時の子の動作 |
 | `temporal.workflow.wait_for_cancellation` | boolean | キャンセル完了を待機 |
 | `temporal.workflow.namespace` | string | Temporal名前空間のオーバーライド |
+| `temporal.workflow.name` | string | 開始するワークフロー型名。レジストリIDと異なる場合に指定 |
+| `temporal.workflow.versioning_intent` | string | `compatible`（ビルドIDを継承）または`default`（割り当てルールを使用） |
+| `temporal.workflow.priority` | table | タスク優先度: `priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `workflow.summary` | string | Temporal UIに表示される人間可読なサマリ |
+| `workflow.details` | string | Temporal UIに表示される人間可読な詳細 |
+| `workflow.versioning_override` | table | ワーカーバージョニングのオーバーライド: `mode`は`auto_upgrade`、または`deployment_name`と`build_id`を伴う`pinned` |
+
+すべてのオプションは短縮キー（`workflow.id`、`workflow.task_queue`、...）でも受け付けられます。`temporal.workflow.`プレフィックスはレガシーのエイリアスです。`summary`と`details`に`temporal.workflow.`のエイリアスはありません。
 
 duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数値を受け付けます。
 

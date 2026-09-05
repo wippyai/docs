@@ -242,6 +242,8 @@ GitHub Actions 步骤示例：
 | `--rules` | | false | 启用 lint 规则（W 系列风格/质量检查） |
 | `--cache-reset` | | false | 检查前清除缓存 |
 | `--lock-file` | `-l` | wippy.lock | 锁定文件路径 |
+| `--profile` | | | 应用合并后运行时配置中的工作区 profile（可重复，按顺序应用） |
+| `--set` | | | 覆盖合并后运行时配置中的值（`section.path=value`，可重复） |
 
 ## 另请参阅
 

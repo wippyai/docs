@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- エラーを処理
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal"（errors.INTERNAL）
     print(err:message())  -- パースエラーの詳細
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- これで安全にデコードできる
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | テーブル内のキー型混在 | `errors.INTERNAL` | no |
 | ネストが128レベルを超過 | `errors.INTERNAL` | no |
 | 無効なJSON構文 | `errors.INTERNAL` | no |
+| 入力が文字列でない、または空文字列（decode）| `errors.INVALID` | no |
 | スキーマコンパイル失敗 | `errors.INVALID` | no |
 | 検証失敗 | `errors.INVALID` | no |
 

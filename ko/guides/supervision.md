@@ -43,6 +43,7 @@ description: "슈퍼바이저는 서비스 수명 주기를 관리하며, 시작
 | `stop_timeout` | `10s` | 정상 종료 최대 시간 |
 | `stable_threshold` | `5s` | 서비스가 안정적으로 간주되기 전 실행 시간 |
 | `requires` | `[]` | 먼저 실행되어야 하는 서비스 (레거시 별칭: `depends_on`) |
+| `startup` | `required` | `required`는 자동 시작 실패나 차단을 트랜잭션 오류로 보고합니다. `optional`은 배치를 실패시키지 않고 서비스가 백그라운드에서 계속 재시도하도록 둡니다 |
 
 ## 의존성 해결
 

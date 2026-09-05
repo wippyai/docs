@@ -178,12 +178,12 @@ group:release()
 | `pg.leave` | `leave()` | group name |
 | `pg.get_members` | `get_members()` | group name |
 | `pg.get_local_members` | `get_local_members()` | group name |
-| `pg.which_groups` | `which_groups()` | (scope) |
-| `pg.which_local_groups` | `which_local_groups()` | (scope) |
+| `pg.which_groups` | `which_groups()` | (なし) |
+| `pg.which_local_groups` | `which_local_groups()` | (なし) |
 | `pg.broadcast` | `broadcast()` | group name |
 | `pg.broadcast_local` | `broadcast_local()` | group name |
 | `pg.monitor` | `monitor()` | group name |
-| `pg.events` | `events()` | (scope) |
+| `pg.events` | `events()` | (なし) |
 
 ## エラー
 
@@ -192,7 +192,7 @@ group:release()
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 引数が欠損または空 | `errors.INVALID` |
 | スコープが見つからない | `errors.NOT_FOUND` |
-| メンバーでないグループからの離脱 | `errors.INVALID` |
+| メンバーでないグループからの離脱 | `errors.NOT_FOUND` |
 | インスタンスが解放済み | `errors.INVALID` |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。

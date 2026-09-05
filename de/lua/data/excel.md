@@ -329,10 +329,11 @@ wb:close()
 |-----------|------|-----------|
 | Kein Kontext | `errors.INTERNAL` | nein |
 | Ungültige Arbeitsmappe | `errors.INVALID` | nein |
-| Arbeitsmappe geschlossen | `errors.INTERNAL` | nein |
-| Kein Reader/Writer | `errors.INTERNAL` | nein |
+| Arbeitsmappe geschlossen | `errors.INTERNAL` (`errors.INVALID` aus `rows`) | nein |
+| Kein Writer (`write_to`) | `errors.INTERNAL` | nein |
+| Kein Reader (`open`) | wird als Argumentfehler ausgelöst | nein |
 | Ungültige Excel-Datei | `errors.INTERNAL` | nein |
-| Nicht existierendes Tabellenblatt | `errors.INTERNAL` | nein |
+| Nicht existierendes Tabellenblatt | `errors.INTERNAL` (`errors.INVALID` aus `rows`) | nein |
 | Ungültige Zellreferenz | `errors.INTERNAL` | nein |
 | Schreiben fehlgeschlagen | `errors.INTERNAL` | nein |
 

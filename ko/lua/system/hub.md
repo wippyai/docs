@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | 버전의 파일 목록 조회(`version` 필수); `{items, total, page, page_size}` 반환 |
 
+## 캐시
+
+```lua
+local cached, err = hub.cache.list()
+-- 각 항목: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| 함수 | 설명 |
+|----------|-------------|
+| `hub.cache.list(opts?)` | vendor 디렉터리 아래 캐시된 아티팩트 목록 조회; 락 파일이 아티팩트를 참조하면 `pinned`가 `true` |
+| `hub.cache.remove(module, version, opts?)` | 캐시된 아티팩트 하나 제거; 락에 고정된 아티팩트는 `opts.force`가 `true`가 아니면 거부(종류 `errors.CONFLICT`); `true` 반환 |
+| `hub.cache.prune(opts?)` | 락 파일이 참조하지 않는 모든 캐시 아티팩트 제거; `opts.dry_run = true`이면 아무것도 삭제하지 않음; 제거된(또는 제거될) 항목 반환 |
+
+**권한:** `hub.cache.list`, `hub.cache.remove` (리소스: 모듈 이름), `hub.cache.prune`
+
 ## 인증
 
 레지스트리 토큰을 실행 중인 프로세스에 푸시합니다 — 모든 hub 소비자가 재시작 없이 다음 호출에서 이를 사용합니다:

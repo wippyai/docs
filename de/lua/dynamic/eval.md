@@ -229,7 +229,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-Das kompilierte Programm ist informativ; ausgeführt wird durch Aufruf von `runner.run` mit Quellcode und Methode.
+Die Optionstabelle akzeptiert dieselben Felder `modules` und `imports` wie `runner.run`, und es gelten dieselben Berechtigungsprüfungen `eval.module` und `eval.import`. Das kompilierte Programm ist informativ; ausgeführt wird durch Aufruf von `runner.run` mit Quellcode und Methode.
 
 ## Sicherheitsmodell
 

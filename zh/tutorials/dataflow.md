@@ -196,7 +196,7 @@ local results, err = embeddings.search("how do I configure TLS?", {
 
 ## 运行说明
 
-- **块大小**：500–1000 个 token 是一个良好的默认值。使用 `chunk_overlap`（块大小的 ~10–20%），以免句子在边界处被切断。
+- **块大小**：`chunk_size` 和 `chunk_overlap` 统计的是字符而非 token；2000–4000 个字符是一个良好的默认值。使用 `chunk_overlap`（块大小的 ~10–20%），以免句子在边界处被切断。
 - **维度**：512 维的 `text-embedding-3-small` 具有成本效益，并与 `embeddings_512` 表匹配。更大的向量意味着更大的存储和更慢的搜索。
 - **本地 vs. 共享**：SQLite（`vec0`）将整个 KB 保存在一个本地文件中 — 非常适合开发和单节点应用。将 `target_db` 指向带有 `pgvector` 的 `db.sql.postgres` 即可获得共享的生产存储；摄取代码无需改动。
 

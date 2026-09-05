@@ -329,10 +329,11 @@ wb:close()
 |-----------|------|-----------|
 | 无上下文 | `errors.INTERNAL` | 否 |
 | 无效的工作簿 | `errors.INVALID` | 否 |
-| 工作簿已关闭 | `errors.INTERNAL` | 否 |
-| 不是读取器/写入器 | `errors.INTERNAL` | 否 |
+| 工作簿已关闭 | `errors.INTERNAL`（来自 `rows` 时为 `errors.INVALID`） | 否 |
+| 不是写入器（`write_to`） | `errors.INTERNAL` | 否 |
+| 不是读取器（`open`） | 作为参数错误抛出 | 否 |
 | 无效的 Excel 文件 | `errors.INTERNAL` | 否 |
-| 不存在的工作表 | `errors.INTERNAL` | 否 |
+| 不存在的工作表 | `errors.INTERNAL`（来自 `rows` 时为 `errors.INVALID`） | 否 |
 | 无效的单元格引用 | `errors.INTERNAL` | 否 |
 | 写入失败 | `errors.INTERNAL` | 否 |
 

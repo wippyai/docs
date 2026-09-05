@@ -50,6 +50,7 @@ Bus 使用简单结构存储状态：
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -74,6 +75,8 @@ type Bus struct {
 | Stop | 清空订阅者，排空队列，退出循环 |
 
 Subscribe 和 Unsubscribe 阻塞直到 dispatcher 确认。Send 是即发即弃。
+
+当总线持有 `DefaultMaxSubscribers`（4096）个活动订阅后，`Subscribe` 会被以 `ErrSubscribersCapReached` 拒绝。
 
 当订阅上下文已被取消时，`Subscribe` 立即失败；如果在做出所有权决定之前被取消，则会在 dispatcher 处再次失败——总线绝不会接管一个它没有安装的通道。
 

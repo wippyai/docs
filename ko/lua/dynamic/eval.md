@@ -229,7 +229,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-컴파일된 프로그램은 정보 제공용입니다. 실행하려면 소스와 메서드로 `runner.run`을 호출하세요.
+옵션 테이블은 `runner.run`과 동일한 `modules` 및 `imports` 필드를 받으며, 동일한 `eval.module`과 `eval.import` 권한 검사가 적용됩니다. 컴파일된 프로그램은 정보 제공용입니다. 실행하려면 소스와 메서드로 `runner.run`을 호출하세요.
 
 ## 보안 모델
 

@@ -355,6 +355,7 @@ Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
 | `http_client.private_ip` | Endereco IP | Permitir/negar acesso a faixas de IP privado |
 | `http_client.insecure_tls` | URL | Permitir/negar TLS inseguro (pular verificacao) |
+| `network.select` | ID da entrada de rede | Permitir/negar roteamento pela `overlay_network` informada na requisição |
 
 ### Verificando Acesso
 

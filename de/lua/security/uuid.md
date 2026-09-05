@@ -135,7 +135,7 @@ Zurückgegebene Tabellenfelder:
 - `version` (integer): UUID-Version (1, 3, 4, 5 oder 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS oder Invalid
 - `timestamp` (integer): Unix-Zeitstempel (nur v1 und v7)
-- `node` (string): Knoten-ID (nur v1)
+- `node` (string): 6 rohe Knoten-ID-Bytes (nur v1)
 
 ### Formatieren
 

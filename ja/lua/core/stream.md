@@ -120,7 +120,7 @@ end
 
 | 条件 | 種別 |
 |-----------|------|
-| 無効なwhence/splitタイプ | `INVALID` |
+| 無効なwhence/splitタイプ | Luaエラーとして送出される（返されない）|
 | ストリームがクローズ済み | `INTERNAL` |
 | 読み取り/書き込み不可 | `INTERNAL` |
 | 読み取り/書き込み失敗 | `INTERNAL` |

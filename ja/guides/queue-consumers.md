@@ -27,7 +27,7 @@ flowchart LR
 | `func` | 必須 | - | ハンドラ関数レジストリID |
 | `concurrency` | 1 | 1000 | ワーカー数 |
 | `prefetch` | 10 | 10000 | メッセージバッファサイズ |
-| `auto_ack` | false | - | ハンドラ実行前に自動的にAckする |
+| `auto_ack` | false | - | ドライバレベルの自動Ack（AMQPの`Consume` autoAck。メモリドライバでは無視される）|
 | `driver_options` | `{}` | - | ドライバ固有のコンシューマオプション |
 
 ## エントリ定義
@@ -84,6 +84,8 @@ return handler
 |------|----------|------|
 | 成功 | Ack | メッセージがキューから削除される |
 | エラー | Nack | メッセージが再キューされる（ドライバ依存） |
+
+ハンドラは`queue.message()`と`msg:ack()` / `msg:nack()`でメッセージ自身を確定できます。その場合、コンシューマは自身のack/nackをスキップします。
 
 ## ワーカープール
 

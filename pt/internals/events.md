@@ -50,6 +50,7 @@ O bus armazena estado em uma estrutura simples:
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -74,6 +75,8 @@ Quatro tipos de ação fluem pela fila:
 | Stop | Limpa subscribers, drena fila, sai do loop |
 
 Subscribe e Unsubscribe bloqueiam até o dispatcher confirmar. Send é fire-and-forget.
+
+`Subscribe` é rejeitado com `ErrSubscribersCapReached` assim que o barramento atinge `DefaultMaxSubscribers` (4096) assinaturas ativas.
 
 `Subscribe` falha imediatamente quando o contexto da inscrição já está cancelado, e novamente no dispatcher se for cancelado antes da decisão de posse ser tomada — o bus nunca assume um canal que não instalou.
 

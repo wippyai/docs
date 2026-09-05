@@ -210,8 +210,9 @@ LLM para obtener respuestas fundamentadas.
 
 ## Notas operativas
 
-- **Tamaño de chunk**: 500–1000 tokens es un buen valor por defecto. Usa `chunk_overlap` (~10–20 % del
-  tamaño del chunk) para que las frases no se corten a través de los límites.
+- **Tamaño de chunk**: `chunk_size` y `chunk_overlap` cuentan caracteres, no tokens;
+  2000–4000 caracteres es un buen valor por defecto. Usa `chunk_overlap` (~10–20 % del tamaño del
+  chunk) para que las frases no se corten a través de los límites.
 - **Dimensiones**: `text-embedding-3-small` a 512 dimensiones es rentable y
   coincide con la tabla `embeddings_512`. Vectores más grandes significan mayor almacenamiento y búsqueda
   más lenta.

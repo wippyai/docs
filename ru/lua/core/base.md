@@ -80,6 +80,9 @@ table.remove(t [,pos])         -- Удалить и вернуть элемен�
 table.concat(t [,sep [,i [,j]]]) -- Конкатенировать элементы массива с разделителем
 table.sort(t [,comp])          -- Сортировать на месте, comp(a,b) возвращает true если a < b
 table.unpack(t [,i [,j]])      -- Распаковать элементы таблицы как множественные значения
+table.create(narr, nhash)      -- Предвыделить таблицу с ёмкостью массива и хеш-части
+table.freeze(t)                -- Сделать таблицу неизменяемой, возвращает t
+table.isfrozen(t)              -- true, если таблица неизменяема
 ```
 
 ```lua
@@ -131,6 +134,9 @@ string.reverse(s)          -- Перевернуть строку
 
 ```lua
 string.format(fmt, ...)    -- Форматирование в стиле printf
+string.pack(fmt, ...)      -- Упаковать значения в бинарную строку
+string.unpack(fmt, s [,pos]) -- Распаковать бинарную строку, возвращает значения и следующую позицию
+string.packsize(fmt)       -- Размер упакованного формата в байтах
 ```
 
 Спецификаторы формата: `%d` (целое), `%f` (дробное), `%s` (строка), `%q` (в кавычках), `%x` (hex), `%o` (octal), `%e` (научная нотация), `%%` (буквальный %)
@@ -184,7 +190,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Бесконечность
+math.huge     -- Наибольшее представимое число с плавающей точкой
 math.mininteger  -- Минимальное целое
 math.maxinteger  -- Максимальное целое
 ```
@@ -209,6 +215,8 @@ math.pow(x, y)        -- x^y (или используйте оператор x^y
 math.exp(x)           -- e^x
 math.log(x)           -- Натуральный логарифм
 math.log10(x)         -- Логарифм по основанию 10
+math.frexp(x)         -- Мантисса и экспонента
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Тригонометрия
@@ -228,7 +236,7 @@ math.rad(d)   -- Градусы в радианы
 math.random()         -- Случайное дробное [0,1)
 math.random(n)        -- Случайное целое [1,n]
 math.random(m, n)     -- Случайное целое [m,n]
-math.randomseed(x)    -- Установить seed
+math.randomseed(x)    -- Не действует; генератор инициализируется автоматически
 ```
 
 ### Преобразование типов
@@ -338,8 +346,9 @@ err:stack()      -- Получить стек трейс как строку
 | `load`, `loadstring`, `loadfile`, `dofile` | Используйте модуль [Динамическое выполнение](lua/dynamic/eval.md) |
 | `collectgarbage` | Автоматический GC |
 | `rawlen` | Используйте оператор `#` |
-| `io.*` | Используйте модуль [Файловая система](lua/storage/filesystem.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Используйте модули [Выполнение команд](lua/dynamic/exec.md), [Окружение](lua/system/env.md) |
+| Стандартная файловая библиотека `io.*` | Используйте модуль [Файловая система](lua/storage/filesystem.md); модуль `io` в Wippy — это [Терминальный ввод-вывод](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Используйте модули [Выполнение команд](lua/dynamic/exec.md), [Окружение](lua/system/env.md) |
+| `string.dump` | Недоступно |
 | `debug.*` | Недоступно |
 | `utf8.*` | Недоступно |
 | `package.loadlib` | Нативные библиотеки не поддерживаются |

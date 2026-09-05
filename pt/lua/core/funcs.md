@@ -111,7 +111,7 @@ local actor = security.actor()  -- Obter ator do usuário atual
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -140,20 +140,35 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-Define opções de chamada como timeout e prioridade. Use para operações que precisam de limites de tempo.
+Define opções de chamada como a política de retry ou a rede overlay. As opções são mescladas sobre quaisquer opções pré-definidas da entrada de função alvo.
 
 ```lua
--- Definir timeout de 5 segundos para chamada de API externa
-local exec = funcs.new():with_options({timeout = 5000})
+-- Repetir falhas transitórias até 5 vezes com backoff exponencial
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Tratar timeout ou outro erro
+    -- Todas as tentativas falharam, ou o erro não era retentável
 end
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options` | table | Opções específicas da implementação |
+| `options` | table | Opções de chamada |
+
+| Opção | Tipo | Descrição |
+|-------|------|-----------|
+| `retry.max_attempts` | int | Máximo de tentativas incluindo a primeira (1 desabilita retry) |
+| `retry.initial_delay` | int/duration | Atraso antes do primeiro retry (ms ou string de duração), padrão `100` |
+| `retry.max_delay` | int/duration | Limite superior do atraso de backoff (ms ou string de duração), padrão `10s` |
+| `retry.backoff_factor` | number | Multiplicador aplicado ao atraso após cada tentativa, padrão `2.0` |
+| `retry.jitter` | number | Fração de jitter aleatório aplicada a cada atraso, padrão `0.1` |
+| `retry.retry_kinds` | string[] | Só repete erros destes kinds; por padrão todo kind exceto `Invalid`, `PermissionDenied` e `Internal` é repetido |
+| `retry.skip_kinds` | string[] | Nunca repete erros destes kinds |
+| `network` | string | ID de registro de uma rede overlay pela qual rotear o tráfego de saída da chamada; requer a permissão `network.select` |
+
+Apenas erros retentáveis disparam retries; erros não retentáveis surgem imediatamente. Opções de atividade do Temporal são descritas em [Activities](temporal/activities.md).
 
 **Retorna:** `Executor, error`
 
@@ -165,7 +180,7 @@ Versões Executor de call e async que usam o contexto configurado.
 -- Construir executor reutilizável com contexto
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Fazer multiplas chamadas com mesmo contexto
 local users, _ = exec:call("app.api:list_users")
@@ -297,6 +312,7 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | `funcs.call` | ID da Função | Chamar uma função específica |
 | `funcs.context` | `context` | Usar `with_context()` para definir contexto customizado |
 | `funcs.security` | `security` | Usar `with_actor()` ou `with_scope()` |
+| `network.select` | ID da Rede | Usar `with_options({network = ...})` para selecionar uma rede overlay |
 
 ## Erros
 
@@ -306,6 +322,7 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | Namespace ausente | `errors.INVALID` | não |
 | Nome ausente | `errors.INVALID` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Async fora de um processo | `errors.INTERNAL` | não |
 | Falha de inscrição | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |
 

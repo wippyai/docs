@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 未知的选项键会以 `errors.INVALID` 被拒绝。表名会不区分大小写地同时与限定关系名和裸表名匹配。快照行仅按 `tables` 过滤；`ops` 适用于实时变更。
 
-当 `opts.snapshot` 为 true 或源条目的 `snapshot` 字段被设置时，流会收到一个快照；快照行先以 `op = "snapshot"` 到达，随后流无缝地继续进入实时变更。`opts.after` 只有在设置了 `capture_resume` 能力的驱动上才被接受——目前发布的每个驱动对它都返回 `errors.INVALID`（"cdc operation is not supported by this source"）。
+当 `opts.snapshot` 为 true 或源条目的 `snapshot` 字段被设置时，流会收到一个快照；快照行先以 `op = "snapshot"` 到达，随后流无缝地继续进入实时变更。`opts.after` 保留给能够从游标恢复的驱动——目前发布的每个驱动对它都返回 `errors.INVALID`（"cdc operation is not supported by this source"），包括报告了 `capture_resume` 的 `db.cdc.postgres`。
 
 过滤器只会收窄投递范围。对源的访问由 `cdc.subscribe` 权限授予，绝不由过滤器授予。
 
@@ -154,7 +154,7 @@ stream:close()
 | `slot` | 复制槽名称（`db.cdc.postgres`） |
 | `publication` | Postgres publication，当配置时 |
 | `tables` | 被捕获的表，当配置时 |
-| `streaming` | 源当前是否正在运行 |
+| `streaming` | `db.cdc.sqlite`：源是否正在运行；`db.cdc.postgres`：条目的 `streaming` 协议设置 |
 | `failover` | 故障转移槽模式（`db.cdc.postgres`） |
 | `temporary` | 临时槽（`db.cdc.postgres`） |
 | `snapshot` | 条目级快照默认值 |
@@ -187,7 +187,7 @@ end
 
 | 条件 | 类型 |
 |-----------|------|
-| 没有上下文/没有进程 PID | `errors.INTERNAL` |
+| 没有上下文 | `errors.INTERNAL` |
 | 需要源名称 | `errors.INVALID` |
 | 无效或未知的流选项 | `errors.INVALID` |
 | 在没有 `capture_resume` 的源上使用 `after` | `errors.INVALID` |

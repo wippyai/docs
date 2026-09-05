@@ -80,7 +80,7 @@ Solo disponible cuando se procesan mensajes de cola en contexto de consumidor.
 | Método | Devuelve | Descripción |
 |--------|----------|-------------|
 | `id()` | `string, error` | Identificador único de mensaje |
-| `header(key)` | `any, error` | Valor de cabecera individual (nil si falta) |
+| `header(key)` | `string, error` | Valor de cabecera individual como string (nil si falta) |
 | `headers()` | `table, error` | Todas las cabeceras del mensaje |
 | `ack()` | `boolean, error` | Confirmar procesamiento (single-shot) |
 | `nack()` | `boolean, error` | Señalar fallo para reentrega o dead-letter (single-shot) |
@@ -103,7 +103,7 @@ Una entrada `queue.consumer` vincula una cola a una función handler (referencia
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

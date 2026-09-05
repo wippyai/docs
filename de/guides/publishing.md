@@ -11,7 +11,7 @@ Teile wiederverwendbaren Code im Wippy Hub.
 
 1. Erstelle ein Konto auf [hub.wippy.ai](https://hub.wippy.ai)
 2. Erstelle eine Organisation oder tritt einer bei
-3. Registriere deinen Modulnamen unter deiner Organisation
+3. Habe die Berechtigung, Module in dieser Organisation anzulegen — das erste `wippy publish` registriert das Modul automatisch
 
 ## Modulstruktur
 
@@ -262,7 +262,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Statische Dateien einbetten
 
-Module mit `fs.directory`-Einträgen (statische Assets, Templates, öffentliche Dateien) müssen `--embed` verwenden, um sie in das veröffentlichte Paket aufzunehmen. Ohne dieses Flag werden `fs.directory`-Einträge ausgeschlossen.
+Module mit `fs.directory`-Einträgen (statische Assets, Templates, öffentliche Dateien) müssen `--embed` verwenden, um sie in das veröffentlichte Paket aufzunehmen. Ohne dieses Flag wird ein `fs.directory`-Eintrag ohne seinen Verzeichnisinhalt gepackt.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

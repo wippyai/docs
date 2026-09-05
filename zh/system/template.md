@@ -31,9 +31,9 @@ description: "使用 CloudyKit Jet 的模板渲染。"
 | `engine.development_mode` | bool | false | 禁用模板缓存 |
 | `engine.delimiters.left` | string | `{{` | 变量左分隔符 |
 | `engine.delimiters.right` | string | `}}` | 变量右分隔符 |
-| `engine.delimiters.comment_left` | string | `{*` | 注释左分隔符 |
-| `engine.delimiters.comment_right` | string | `*}` | 注释右分隔符 |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 模板文件扩展名 |
+| `engine.delimiters.comment_left` | string | `{*` | 仅做校验；注释始终使用 Jet 的 `{*` |
+| `engine.delimiters.comment_right` | string | `*}` | 仅做校验；注释始终使用 Jet 的 `*}` |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 仅做校验；名称查找始终尝试 Jet 内置的 `.jet`、`.html.jet`、`.jet.html` |
 | `engine.globals` | map | - | 所有模板可用的变量 |
 
 ## 模板

@@ -152,7 +152,7 @@ res:set_header("X-SSE-Relay", json.encode({
 クライアントは `ready` イベントを受信します：
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:gateway|0x0002a}", "message_topic": "sse.message"}
 ```
 
 ## メッセージトピック
@@ -163,7 +163,7 @@ res:set_header("X-SSE-Relay", json.encode({
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | クライアント接続時 | `client_pid`、`metadata` |
 | `sse.message` | target → stream | デフォルトのイベントトピック | SSE イベントとして転送 |
-| `sse.heartbeat` | stream → target | 周期的（設定時） | `client_pid`、`uptime`、`message_count` |
+| `sse.heartbeat` | stream → target | 周期的（デフォルトは30秒ごと） | `client_pid`、`uptime`、`message_count`、`metadata` |
 | `sse.leave` | stream → target | クライアント切断時 | `client_pid`、`metadata` |
 | `sse.control` | any → stream | 制御コマンド | リレー設定フィールド |
 | `sse.close` | any → stream | 強制クローズ | 任意の理由文字列 |

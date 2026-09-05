@@ -167,11 +167,31 @@ local n = hash.fnv64("data")
 
 **Devuelve:** `number, error`
 
+## Derivacion de Claves
+
+### PBKDF2
+
+```lua
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
+```
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `password` | string | Contraseña/frase de paso (no vacía) |
+| `salt` | string | Valor de salt (no vacío) |
+| `iterations` | integer | Cantidad de iteraciones (1 a 10.000.000) |
+| `key_length` | integer | Longitud deseada de la clave en bytes |
+| `hash` | string? | `sha256` o `sha512` (predeterminado: `sha256`) |
+
+**Devuelve:** `string, error` (bytes crudos de la clave)
+
 ## Errores
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
 | Entrada no es string | `errors.INVALID` | no |
 | Secreto no es string (HMAC) | `errors.INVALID` | no |
+| Contraseña/salt vacíos, iteraciones no positivas o excesivas, hash no soportado (PBKDF2) | `errors.INVALID` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

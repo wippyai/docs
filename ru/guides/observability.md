@@ -36,7 +36,7 @@ Log manager управляет распространением логов и п
 logmanager:
   propagate_downstream: true   # Передавать дочерним компонентам
   stream_to_events: false      # Отправлять логи в шину событий
-  min_level: -1                # -1=debug (по умолчанию), 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run ставит 0, или -1 при -v)
 ```
 
 При включённом `stream_to_events` записи логов становятся событиями, на которые процессы могут подписаться через шину событий.
@@ -56,7 +56,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Метрики доступны по `/metrics` на указанном адресе.
+Метрики доступны по `/metrics` на указанном адресе; тот же слушатель обслуживает `/livez`. `max_cardinality` (по умолчанию 1024) ограничивает число живых наборов меток на экспортёр; сверх него вытесняются наименее недавно обновлённые серии.
 
 ### Конфигурация скрейпинга
 
@@ -95,7 +95,7 @@ otel:
 
 ### Источники трейсов
 
-Включение трассировки для конкретных компонентов:
+Все источники трейсов включены по умолчанию, как только `otel.enabled` равно true; каждый можно отключить по отдельности:
 
 ```yaml
 otel:
@@ -150,10 +150,10 @@ otel:
 
 | Компонент | Имя спана | Атрибуты |
 |-----------|-----------|----------|
-| HTTP-запросы | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP-запросы | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | Вызовы функций | ID функции | process.pid, frame.id |
 | Жизненный цикл процессов | `{source}.started/terminated` | process.pid |
-| Сообщения очереди | Топик сообщения | Контекст трассировки в заголовках |
+| Сообщения очереди | `{queue}.publish` | messaging.operation, messaging.destination.name |
 | Temporal workflows | Имя Workflow/Activity | workflow.id, run.id |
 
 ### Распространение контекста
@@ -177,6 +177,8 @@ OTEL можно настроить через окружение:
 | `OTEL_SERVICE_NAME` | Имя сервиса |
 | `OTEL_SERVICE_VERSION` | Версия сервиса |
 | `OTEL_TRACES_SAMPLER_ARG` | Частота семплирования (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` или `parentbased_traceidratio` (доля из `OTEL_TRACES_SAMPLER_ARG`) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Установите `true`, чтобы разрешить соединения без TLS |
 | `OTEL_PROPAGATORS` | Список пропагаторов |
 
 ## Статистика среды исполнения

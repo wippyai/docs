@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## Декодирование данных записи
 
-Используйте `entry.DecodeEntryConfig` из `internal/entry` для десериализации данных записи. Этот хелпер находится в `internal/`, поэтому импортируется только внутри модуля runtime; расширения вне дерева должны скопировать этот шаблон или использовать транскодер напрямую:
+Используйте `entry.DecodeEntryConfig` из `system/entry` для десериализации данных записи. `DecodeEntryConfigFromContext` берёт транскодер из контекста вместо аргумента, а `DecodeEntryConfigRaw` пропускает разрешение плейсхолдеров:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 Декодер:
-1. Десериализует `entry.Data` в вашу структуру конфига
-2. Заполняет `ID` и `Meta` из записи
-3. Вызывает `InitDefaults()`, если реализован
-4. Вызывает `Validate()`, если реализован
+1. Разрешает плейсхолдеры `${env:...}` и парные поля `*_env` по реестру окружения
+2. Десериализует `entry.Data` в вашу структуру конфига
+3. Заполняет `ID` и `Meta` из записи, если структура оставляет их пустыми
+4. Вызывает `InitDefaults()`, если реализован
+5. Вызывает `Validate()`, если реализован
 
 ## Структура конфига
 

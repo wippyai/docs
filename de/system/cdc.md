@@ -53,9 +53,9 @@ Beide Kinds stellen dieselbe Lua-API, denselben Quellinformations-Datensatz und 
 | `streaming` | bool | false | Die Streaming-Protokollversion von `pgoutput` verwenden |
 | `temporary` | bool | false | Einen temporären Replikations-Slot verwenden (beim Trennen entfernt) |
 | `failover` | bool | false | Failover-Slot-Modus aktivieren (schließt sich mit `temporary` gegenseitig aus) |
-| `standby_interval` | duration | - | Intervall der Standby-Statusnachrichten (z. B. `10s`) |
-| `status_interval` | duration | - | Intervall der Statusaktualisierungen an den Server |
-| `snapshot_fetch_size` | int | - | Pro Snapshot-Batch geholte Zeilen (muss >= 0 sein) |
+| `standby_interval` | duration | `10s` | Intervall der Standby-Statusnachrichten (z. B. `10s`) |
+| `status_interval` | duration | `30s` | Intervall der Statusaktualisierungen an den Server |
+| `snapshot_fetch_size` | int | 1000 | Pro Snapshot-Batch geholte Zeilen (muss >= 0 sein) |
 | `max_transaction_changes` | int | 1000000 | Maximale Anzahl gepufferter Änderungen beim Dekodieren einer Transaktion |
 | `max_transaction_bytes` | int | 268435456 | Maximale logische Bytes, die beim Dekodieren einer Transaktion gepuffert werden (256 MiB) |
 | `max_inflight_changes` | int | 1000000 | Maximale Anzahl von Änderungen über alle laufenden Transaktionen hinweg |

@@ -150,6 +150,7 @@ return { handler = handler }
 | `req:query(name)` | string | 쿼리 파라미터 |
 | `req:query_params()` | table | 모든 쿼리 파라미터 |
 | `req:header(name)` | string | 요청 헤더 |
+| `req:headers()` | table | 모든 요청 헤더 |
 | `req:body()` | string | 요청 본문 |
 | `req:body_json()` | table, error | JSON 본문 파싱 |
 | `req:has_body()` | boolean | 본문 존재 여부 확인 |

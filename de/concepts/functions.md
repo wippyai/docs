@@ -96,7 +96,7 @@ pool:
 ```
 
 <tip>
-Wenn Sie keinen Pool-Typ angeben, wählt die Laufzeitumgebung einen basierend auf Ihrer Konfiguration. Setzen Sie <code>workers</code> für static, <code>max_size</code> für lazy, oder setzen Sie explizit <code>type</code> für volle Kontrolle.
+Wenn Sie keinen Pool-Typ angeben, wählt die Laufzeitumgebung einen basierend auf Ihrer Konfiguration. Setzen Sie <code>workers</code> für static, <code>max_size</code> für lazy, oder setzen Sie explizit <code>type</code> für volle Kontrolle. Ist keines von beiden gesetzt, ist der Pool lazy mit maximal 16 Workern.
 </tip>
 
 ## Interceptors

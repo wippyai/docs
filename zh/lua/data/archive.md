@@ -166,6 +166,12 @@ s:close()
 
 **权限：** `archive.read`
 
+Walker 同样支持 `extract_all`，其选项与随机访问读取器相同，一次调用即可把每个条目流式写入目标文件系统：
+
+```lua
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
+```
+
 `tar`、`tar.gz` 和 `tar.zst` 原生支持流式处理。`zip` 通过每个条目的本地头解析；用流式数据描述符（大小/CRC 跟在数据之后）写入的条目通过解压到条目边界来读取。若要稳健地处理大型上传的 zip，先把上传落成一个文件（一次有界的顺序复制），然后使用 `archive.open`：
 
 ```lua
@@ -197,7 +203,7 @@ local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
 
 ```lua
 w:add("notes.txt", "hello")
-w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
 ### add_file
@@ -224,7 +230,7 @@ w:add_dir("empty/")
 w:close()
 ```
 
-`add*` 的选项：`{ method = "store"|"deflate", mode, modified }`。zip 写入器使用数据描述符向不可寻址的写入器流式写入，因此写入响应流是可行的。
+`add*` 的选项：`{ method = "store"|"deflate", mode, size }`。tar 系格式需要预先知道条目大小，因此从流或读取器 `add()` 到 `tar*` 归档时必须提供 `size`（字符串和 `add_file` 会自行提供）。zip 写入器使用数据描述符向不可寻址的写入器流式写入，因此写入响应流是可行的。
 
 ## 错误
 

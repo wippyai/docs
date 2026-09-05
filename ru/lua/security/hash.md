@@ -167,11 +167,31 @@ local n = hash.fnv64("data")
 
 **Возвращает:** `number, error`
 
+## Вывод ключей
+
+### PBKDF2
+
+```lua
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
+```
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `password` | string | Пароль/парольная фраза (непустая) |
+| `salt` | string | Значение соли (непустое) |
+| `iterations` | integer | Число итераций (от 1 до 10 000 000) |
+| `key_length` | integer | Требуемая длина ключа в байтах |
+| `hash` | string? | `sha256` или `sha512` (по умолчанию: `sha256`) |
+
+**Возвращает:** `string, error` (сырые байты ключа)
+
 ## Ошибки
 
 | Ситуация | Тип | Повтор |
 |----------|-----|--------|
 | Вход не является строкой | `errors.INVALID` | нет |
 | Секрет не является строкой (HMAC) | `errors.INVALID` | нет |
+| Пустой пароль/соль, неположительное или чрезмерное число итераций, неподдерживаемый хеш (PBKDF2) | `errors.INVALID` | нет |
 
 Подробнее см. [Обработка ошибок](lua/core/errors.md).

@@ -80,7 +80,7 @@ local all_headers = msg:headers()
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
 | `id()` | `string, error` | 一意のメッセージ識別子 |
-| `header(key)` | `any, error` | 単一のヘッダー値（存在しない場合nil） |
+| `header(key)` | `string, error` | 単一のヘッダー値を文字列で返す（存在しない場合nil） |
 | `headers()` | `table, error` | すべてのメッセージヘッダー |
 | `ack()` | `boolean, error` | 処理を確認 (single-shot) |
 | `nack()` | `boolean, error` | 再配信またはデッドレターの失敗を通知 (single-shot) |
@@ -103,7 +103,7 @@ local stats, err = queue.info("app:tasks")
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

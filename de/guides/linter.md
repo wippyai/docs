@@ -242,6 +242,8 @@ Beispiel fur einen GitHub-Actions-Schritt:
 | `--rules` | | false | Lint-Regeln aktivieren (W-Serie Stil-/Qualitatsprufungen) |
 | `--cache-reset` | | false | Cache vor dem Linting leeren |
 | `--lock-file` | `-l` | wippy.lock | Pfad zur Lock-Datei |
+| `--profile` | | | Ein Workspace-Profil aus der zusammengeführten Laufzeitkonfiguration anwenden (wiederholbar, in Reihenfolge angewendet) |
+| `--set` | | | Einen zusammengeführten Laufzeitkonfigurationswert überschreiben (`section.path=value`, wiederholbar) |
 
 ## Siehe auch
 

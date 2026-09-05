@@ -143,7 +143,7 @@ options:
 
 | 옵션 | 기본값 | 설명 |
 |--------|---------|-------------|
-| `real_ip.trusted.subnets` | 프라이빗 네트워크 | 신뢰할 수 있는 프록시 CIDR |
+| `real_ip.trusted.subnets` | 루프백, RFC 1918, 링크 로컬, CGNAT 및 IPv6 로컬 범위 | 신뢰할 수 있는 프록시 CIDR |
 | `real_ip.trust_all` | `false` | 모든 소스 신뢰 (비보안) |
 
 **헤더 우선순위:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -294,7 +294,7 @@ post_options:
 
 <warning>Pre-match</warning>
 
-수신 요청에 대한 OpenTelemetry 스팬과 메트릭을 기록합니다. OTel이 활성화되면 자동으로 등록되며, 그렇지 않으면 no-op로 작동합니다.
+수신 요청에 대한 OpenTelemetry 서버 스팬을 기록합니다. 항상 등록되며, OTel이나 그 HTTP 계측이 비활성화된 경우 no-op로 작동합니다.
 
 ```yaml
 middleware:

@@ -80,6 +80,9 @@ table.remove(t [,pos])         -- Remover y devolver elemento en pos (por defect
 table.concat(t [,sep [,i [,j]]]) -- Concatenar elementos de array con separador
 table.sort(t [,comp])          -- Ordenar in place, comp(a,b) devuelve true si a < b
 table.unpack(t [,i [,j]])      -- Desempacar elementos de tabla como multiples valores
+table.create(narr, nhash)      -- Preasignar tabla con capacidad de arreglo y hash
+table.freeze(t)                -- Hacer la tabla inmutable, devuelve t
+table.isfrozen(t)              -- true si la tabla es inmutable
 ```
 
 ```lua
@@ -131,6 +134,9 @@ string.reverse(s)          -- Invertir string
 
 ```lua
 string.format(fmt, ...)    -- Formateo estilo printf
+string.pack(fmt, ...)      -- Empaquetar valores en una cadena binaria
+string.unpack(fmt, s [,pos]) -- Desempaquetar cadena binaria, devuelve los valores y la siguiente posicion
+string.packsize(fmt)       -- Tamano en bytes de un formato empaquetado
 ```
 
 Especificadores de formato: `%d` (entero), `%f` (flotante), `%s` (string), `%q` (citado), `%x` (hex), `%o` (octal), `%e` (cientifico), `%%` (% literal)
@@ -184,7 +190,7 @@ Funciones y constantes matematicas:
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinito
+math.huge     -- Mayor float representable
 math.mininteger  -- Entero minimo
 math.maxinteger  -- Entero maximo
 ```
@@ -209,6 +215,8 @@ math.pow(x, y)        -- x^y (o usar operador x^y)
 math.exp(x)           -- e^x
 math.log(x)           -- Log natural
 math.log10(x)         -- Log base 10
+math.frexp(x)         -- Mantisa y exponente
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Trigonometria
@@ -228,7 +236,7 @@ math.rad(d)   -- Grados a radianes
 math.random()         -- Flotante aleatorio [0,1)
 math.random(n)        -- Entero aleatorio [1,n]
 math.random(m, n)     -- Entero aleatorio [m,n]
-math.randomseed(x)    -- Establecer semilla aleatoria
+math.randomseed(x)    -- Sin efecto; el generador se auto-siembra
 ```
 
 ### Conversion de Tipo
@@ -338,8 +346,9 @@ Las siguientes caracteristicas estandar de Lua NO estan disponibles por segurida
 | `load`, `loadstring`, `loadfile`, `dofile` | Usar módulo [Evaluacion Dinamica](lua/dynamic/eval.md) |
 | `collectgarbage` | GC automatico |
 | `rawlen` | Usar operador `#` |
-| `io.*` | Usar módulo [Sistema de Archivos](lua/storage/filesystem.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua/dynamic/exec.md), [Entorno](lua/system/env.md) |
+| Biblioteca de archivos estándar `io.*` | Usar módulo [Sistema de Archivos](lua/storage/filesystem.md); el módulo `io` en Wippy es [Terminal I/O](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua/dynamic/exec.md), [Entorno](lua/system/env.md) |
+| `string.dump` | No disponible |
 | `debug.*` | No disponible |
 | `utf8.*` | No disponible |
 | `package.loadlib` | Bibliotecas nativas no soportadas |

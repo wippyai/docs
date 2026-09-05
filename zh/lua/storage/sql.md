@@ -45,7 +45,7 @@ db:release()
 </note>
 
 <note>
-占位符按原样传递给数据库驱动程序，运行时不会重写它们。SQLite 和 MySQL 使用 `?`，PostgreSQL 使用 `$1, $2` — 请按驱动程序期望的形式书写。下面的示例使用 `?`（SQLite/MySQL）。对于面向多种引擎的查询，请使用查询构建器构建，并设置对应方言的 `placeholder_format`。
+占位符按原样传递给数据库驱动程序，运行时不会重写它们。SQLite 和 MySQL 使用 `?`，PostgreSQL 使用 `$1, $2` — 请按驱动程序期望的形式书写。下面的示例使用 `?`（SQLite/MySQL）。对于面向多种引擎的查询，请使用[查询构建器](#query-builder)构建：当句柄是 PostgreSQL 时，`run_with` 会将占位符重写为 `$1, $2`，而 `to_sql` 使用构建器的 `placeholder_format`。
 </note>
 
 ## 常量
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Sqlizer 或表条件数组 |
 
 **返回:** `Sqlizer`
+
+## sqlizer:to_sql
+
+生成条件的 SQL 片段和绑定参数。
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**返回:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ local query = sql.builder.update("users")
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
-| `map` | table | {列名 = 值} 键值对 |
+| `map` | table | {列名 = 值} 键值对；值为普通值、`sql.NULL` 或 `sql.as.*`（表达式请使用 `set`） |
 
 **返回:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ local sql_str, args = executor:to_sql()
 | 资源未找到 | `errors.NOT_FOUND` | 否 |
 | 资源不是数据库 | `errors.INVALID` | 否 |
 | 参数无效 | `errors.INVALID` | 否 |
-| SQL 语法错误 | `errors.INVALID` | 否 |
+| SQL 语法错误 | `errors.UNKNOWN` | nil |
 | 语句已关闭 | `errors.INVALID` | 否 |
 | 事务未激活 | `errors.INVALID` | 否 |
 | 保存点名称无效 | `errors.INVALID` | 否 |
-| 查询执行错误 | 各种 | 各种 |
+| 查询执行错误 | `errors.UNKNOWN` | nil |
 
 错误处理请参阅 [错误处理](lua/core/errors.md)。
 

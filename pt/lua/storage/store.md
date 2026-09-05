@@ -88,7 +88,7 @@ Verificar se uma chave existe sem recuperar:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 
 ## Erros
 
-`store.get()` e todos os métodos do handle do store (`get`, `set`, `has`, `delete`) retornam erros estruturados (use `err:kind()`).
+`store.get()` e todos os métodos do handle do store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) retornam erros estruturados (use `err:kind()`), exceto que uma negação de permissão em `store.get`, `get`, `set`, `has` e `delete` levanta um erro Lua em vez disso.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
-| Recurso não encontrado | `errors.NOT_FOUND` | não |
+| Recurso não encontrado | `errors.INTERNAL` | não |
 | Store liberado | `errors.INVALID` | não |
-| Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Permissão negada (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | não |
 | `only_if_absent` e chave existe | `errors.ALREADY_EXISTS` | não |
 | Divergência de `if_version` | `errors.CONFLICT` | sim |
 | Escrita condicional em store sem suporte | `errors.INVALID` | não |

@@ -53,9 +53,9 @@ Ambos kinds exponen la misma API de Lua, el mismo registro de información de fu
 | `streaming` | bool | false | Usar la versión de streaming del protocolo `pgoutput` |
 | `temporary` | bool | false | Usar un slot de replicación temporal (se elimina al desconectar) |
 | `failover` | bool | false | Habilitar el modo de slot de failover (mutuamente excluyente con `temporary`) |
-| `standby_interval` | duration | - | Intervalo del mensaje de estado standby (por ejemplo, `10s`) |
-| `status_interval` | duration | - | Intervalo de actualización de estado hacia el servidor |
-| `snapshot_fetch_size` | int | - | Filas obtenidas por lote de snapshot (debe ser >= 0) |
+| `standby_interval` | duration | `10s` | Intervalo del mensaje de estado standby (por ejemplo, `10s`) |
+| `status_interval` | duration | `30s` | Intervalo de actualización de estado hacia el servidor |
+| `snapshot_fetch_size` | int | 1000 | Filas obtenidas por lote de snapshot (debe ser >= 0) |
 | `max_transaction_changes` | int | 1000000 | Máximo de cambios almacenados en búfer al decodificar una transacción |
 | `max_transaction_bytes` | int | 268435456 | Máximo de bytes lógicos en búfer al decodificar una transacción (256 MiB) |
 | `max_inflight_changes` | int | 1000000 | Máximo de cambios retenidos entre todas las transacciones en vuelo |

@@ -270,7 +270,7 @@ policy:allow_attrs("href", "target"):on_elements("a")
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -324,7 +324,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Permitir Tablas
 
-Permitir elementos de tabla: `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`, `caption`.
+Permitir elementos de tabla: `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`.
 
 ```lua
 policy:allow_tables()
@@ -337,14 +337,14 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Permitir Atributos Estandar
 
-Permitir atributos comunes: `id`, `class`, `title`, `dir`, `lang`.
+Permitir atributos comunes: `id`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **Devuelve:** `Policy`

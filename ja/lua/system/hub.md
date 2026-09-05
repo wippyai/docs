@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | バージョンのファイル一覧（`version` は必須）。`{items, total, page, page_size}` を返す |
 
+## キャッシュ
+
+```lua
+local cached, err = hub.cache.list()
+-- 各エントリ: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| 関数 | 説明 |
+|----------|-------------|
+| `hub.cache.list(opts?)` | vendor ディレクトリ配下のキャッシュ済みアーティファクトを一覧。ロックファイルがそのアーティファクトを参照している場合 `pinned` は `true` |
+| `hub.cache.remove(module, version, opts?)` | キャッシュ済みアーティファクトを1つ削除。ロックで固定されたアーティファクトは `opts.force` が `true` でない限り拒否（種別 `errors.CONFLICT`）。`true` を返す |
+| `hub.cache.prune(opts?)` | ロックファイルが参照していないキャッシュ済みアーティファクトをすべて削除。`opts.dry_run = true` の場合は何も削除しない。削除した（または削除される）エントリを返す |
+
+**権限:** `hub.cache.list`、`hub.cache.remove`（リソース: モジュール名）、`hub.cache.prune`
+
 ## 認証
 
 実行中のプロセスにレジストリトークンをプッシュします — すべてのハブ利用側が次回の呼び出しから、再起動なしでそのトークンを使用します：

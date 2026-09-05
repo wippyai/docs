@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | Lista los archivos de una versión (`version` requerido); devuelve `{items, total, page, page_size}` |
 
+## Cache
+
+```lua
+local cached, err = hub.cache.list()
+-- cada entrada: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| Función | Descripción |
+|----------|-------------|
+| `hub.cache.list(opts?)` | Lista los artefactos en caché dentro del directorio vendor; `pinned` es `true` cuando el archivo de lock referencia el artefacto |
+| `hub.cache.remove(module, version, opts?)` | Elimina un artefacto en caché; rechaza un artefacto fijado por el lock (tipo `errors.CONFLICT`) salvo que `opts.force` sea `true`; devuelve `true` |
+| `hub.cache.prune(opts?)` | Elimina todos los artefactos en caché que el archivo de lock no referencia; con `opts.dry_run = true` no se borra nada; devuelve las entradas eliminadas (o que se eliminarían) |
+
+**Permisos:** `hub.cache.list`, `hub.cache.remove` (recurso: nombre del módulo), `hub.cache.prune`
+
 ## Autenticación
 
 Inyecta un token de registry en el proceso en ejecución — cada consumidor del hub lo toma en su próxima llamada, sin reiniciar:

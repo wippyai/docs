@@ -109,7 +109,7 @@ end
 | `target_pid` | string | 必須 | メッセージを受信するプロセスPID |
 | `message_topic` | string | `ws.message` | クライアントメッセージ用トピック |
 | `heartbeat_interval` | duration | - | ハートビート頻度（例：`30s`） |
-| `metadata` | object | - | すべてのメッセージに付与 |
+| `metadata` | object | - | join/leave/heartbeatメッセージに付与 |
 
 ## メッセージトピック
 
@@ -162,9 +162,6 @@ end
 ```lua
 -- 構造化メッセージを送信 (任意のトピック名)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- バイナリを送信
-process.send(client_pid, "data", binary_content)
 
 -- 接続を閉じる (ペイロードはクローズ理由文字列)
 process.send(client_pid, "ws.close", "Session ended")

@@ -178,12 +178,12 @@ Libera la instancia inmediatamente. Idempotente; tras la liberación, cada méto
 | `pg.leave` | `leave()` | nombre de grupo |
 | `pg.get_members` | `get_members()` | nombre de grupo |
 | `pg.get_local_members` | `get_local_members()` | nombre de grupo |
-| `pg.which_groups` | `which_groups()` | (ámbito) |
-| `pg.which_local_groups` | `which_local_groups()` | (ámbito) |
+| `pg.which_groups` | `which_groups()` | (ninguno) |
+| `pg.which_local_groups` | `which_local_groups()` | (ninguno) |
 | `pg.broadcast` | `broadcast()` | nombre de grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nombre de grupo |
 | `pg.monitor` | `monitor()` | nombre de grupo |
-| `pg.events` | `events()` | (ámbito) |
+| `pg.events` | `events()` | (ninguno) |
 
 ## Errores
 
@@ -192,7 +192,7 @@ Libera la instancia inmediatamente. Idempotente; tras la liberación, cada méto
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Argumento faltante o vacío | `errors.INVALID` |
 | Ámbito no encontrado | `errors.NOT_FOUND` |
-| Salir de un grupo sin membresía | `errors.INVALID` |
+| Salir de un grupo sin membresía | `errors.NOT_FOUND` |
 | Instancia liberada | `errors.INVALID` |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

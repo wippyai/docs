@@ -16,7 +16,7 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 | 계층 | 컴포넌트 |
 |-------|------------|
 | 애플리케이션 | Lua 프로세스, 함수, 워크플로우 |
-| 런타임 | Lua 엔진 (gopher-lua), 50+ 모듈 |
+| 런타임 | Lua 엔진 (gopher-lua), 40+ 모듈 |
 | 서비스 | HTTP, Queue, Storage, Temporal |
 | 시스템 | Topology, Factory, Functions, Contracts |
 | 코어 | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,7 +42,7 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 
 ### 2단계: 컴포넌트 로딩
 
-Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 컴포넌트를 로드합니다. 같은 레벨의 컴포넌트는 병렬로 로드됩니다.
+Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로, 한 번에 하나의 컴포넌트씩 로드합니다.
 
 코어 컴포넌트(PIDGen, Dispatcher, Registry, Finder, Supervisor)가 먼저 초기화되고, 이어서 시스템 컴포넌트(Topology, Lifecycle, Factory, Functions, Contracts)가 초기화됩니다. 구체적인 레벨은 런타임에 의존성 그래프로부터 계산되므로, 컴포넌트가 추가되거나 제거될 때 순서가 적응됩니다.
 
@@ -85,7 +85,7 @@ Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로 �
 |-----------|--------------|---------|
 | PIDGen | 없음 | 프로세스 ID 생성 |
 | Dispatcher | PIDGen | 명령 핸들러 디스패치 |
-| Registry | Dispatcher | 엔트리 스토리지 및 버전닝 |
+| Registry | Artifact | 엔트리 스토리지 및 버전닝 |
 | Finder | Registry | 엔트리 조회 및 검색 |
 | Supervisor | Registry | 서비스 재시작 정책 |
 | Topology | Supervisor | 프로세스 부모/자식 트리 |
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ### 일반적인 토픽
 
-토픽은 `<system>:<kind>` 형식입니다. 내장 시스템이 발행합니다:
+모든 이벤트는 `System`과 `Kind`를 가집니다. 내장 시스템이 발행합니다:
 
 | System | Kind | 목적 |
 |--------|------|------|
@@ -137,7 +137,6 @@ sequenceDiagram
 
 - **버전화된 상태** - 각 변경이 새 버전 생성
 - **히스토리** - 감사 추적을 위한 SQLite 백업 히스토리
-- **관찰** - 특정 엔트리의 변경 감시
 - **이벤트 기반** - 변경 시 이벤트 퍼블리시
 
 ### 엔트리 라이프사이클
@@ -174,14 +173,14 @@ flowchart LR
         Peer --> Inter[노드간]
     end
 
-    Local -.- L[같은 프로세스]
-    Peer -.- P[같은 클러스터]
-    Inter -.- I[원격]
+    Local -.- L[이 노드]
+    Peer -.- P[등록된 피어 수신자]
+    Inter -.- I[다른 클러스터 노드]
 ```
 
 1. **Local** - 같은 노드 내 직접 전달
-2. **Peer** - 클러스터 내 피어 노드로 전달
-3. **Internode** - 네트워크를 통해 원격 노드로 라우팅
+2. **Peer** - 해당 노드 ID로 등록된 수신자에게 전달 (Temporal 워커 같은 외부 피어)
+3. **Internode** - 부팅 후 클러스터 컴포넌트가 설치하는 클러스터 노드간 전송으로 폴백
 
 ### 메일박스
 

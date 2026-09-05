@@ -143,7 +143,7 @@ options:
 
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
-| `real_ip.trusted.subnets` | 私有网络 | 受信任的代理 CIDR |
+| `real_ip.trusted.subnets` | 回环、RFC 1918、链路本地、CGNAT 及 IPv6 本地范围 | 受信任的代理 CIDR |
 | `real_ip.trust_all` | `false` | 信任所有来源 (不安全) |
 
 **头部优先级:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -294,7 +294,7 @@ post_options:
 
 <warning>Pre-match</warning>
 
-记录传入请求的 OpenTelemetry spans 和指标。启用 OTel 时自动注册；否则作为 no-op 运行。
+记录传入请求的 OpenTelemetry 服务端 span。始终注册；当 OTel 或其 HTTP 埋点被禁用时作为 no-op 运行。
 
 ```yaml
 middleware:

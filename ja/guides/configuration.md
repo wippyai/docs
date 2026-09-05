@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` セクションはプロファイル内でのリスト操作をサポートします — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — これにより、プロファイルはベースのリストを置き換えるのではなく調整できます。
 - `${name}` 参照はマージ後の `vars:` セクションから補間されます。プロファイルの vars 内で OS 環境変数を参照することはできません。ベース設定で `${env:NAME}` を使用してください。これはファイルのロード時に解決されます。
 
-`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます — [プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
+`wippy run`、`test`、`pack` は `--profile` を受け付けます。`run list`、`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます — [プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------------|-----|------------|------|
 | `propagate_downstream` | bool | true | ログをコンソール/ファイル出力に送信 |
 | `stream_to_events` | bool | false | プログラムアクセス用にログをイベントバスに公開 |
-| `min_level` | int | -1 | 最小レベル: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0（`-v` 指定時は `-1`）| 最小レベル: -1=debug, 0=info, 1=warn, 2=error。CLI はファイル読み込み後に自身のフラグからこのキーを書き込むため、ファイルの値は無視されます。変更するには `--set logmanager.min_level=<n>` を使用してください |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 参照: [ロガーモジュール](lua/system/logger.md)
@@ -232,13 +231,14 @@ Lua VMキャッシュと式評価。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `proto_cache_size` | int | 60000 | コンパイル済みプロトタイプキャッシュ |
-| `main_cache_size` | int | 10000 | メインチャンクキャッシュ |
-| `cache.enabled` | bool | false | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化 |
+| `cache.enabled` | bool | `type_system.enabled` | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化。明示的に設定しない限り `type_system.enabled` に従う |
 | `cache.dir` | string | `.wippy/cache/lua` | キャッシュディレクトリパス（設定/作業ディレクトリからの相対）|
-| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off` |
+| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off`。未知の値は `readwrite` にフォールバックする |
 | `cache.compile.enabled` | bool | true | コンパイル済みバイトコードを永続化（`cache.enabled` の場合）|
 | `cache.typecheck.enabled` | bool | true | 型チェック結果を永続化（`cache.enabled` の場合）|
+| `cache.max_bytes` | int | 1073741824 | ディスク上のキャッシュサイズ上限（バイト）|
+| `cache.max_entries` | int | 20000 | キャッシュエントリの最大数 |
+| `cache.prune_interval` | int | 256 | キャッシュの整理パス間の書き込み回数 |
 | `type_system.enabled` | bool | false | 静的型チェックを有効化 |
 | `type_system.strict` | bool | false | 型警告をエラーとして扱う |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s）| エントリ変更後、コードの無効化が確認応答されるまでの待機時間 |
@@ -248,7 +248,6 @@ Lua VMキャッシュと式評価。
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -257,6 +256,22 @@ lua:
 ```
 
 参照: [Lua概要](lua/overview.md)
+
+## スケジューラ
+
+WASM ランタイム向けのコア分割。有効にすると `reserved_cores` 個の CPU が WASM 実行のために確保され、残りがアクターのスケジューラに割り当てられます。不正な分割（たとえば利用可能な数より多いコアの予約）はログに記録され、無視されます。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `wasm_isolation.enabled` | bool | false | WASM とアクターの作業でコアを分割 |
+| `wasm_isolation.reserved_cores` | int | 1 | WASM 実行のために確保するコア数 |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## ファインダー
 
@@ -307,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-標準 OTEL 環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）は一致するフィールドを上書きします。
+標準 OTEL 環境変数（`OTEL_SDK_DISABLED`、`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_EXPORTER_OTLP_PROTOCOL`、`OTEL_EXPORTER_OTLP_INSECURE`、`OTEL_SERVICE_NAME`、`OTEL_SERVICE_VERSION`、`OTEL_TRACES_SAMPLER`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`）は一致するフィールドを上書きします。
 
 参照: [可観測性ガイド](guides/observability.md)
 
@@ -331,7 +346,7 @@ shutdown:
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `buffer.size` | int | 10000 | メトリクスバッファ容量 |
-| `interceptor.enabled` | bool | false | 関数呼び出しを自動追跡 |
+| `interceptor.enabled` | bool | true | 関数呼び出しを自動追跡 |
 
 ```yaml
 metrics:
@@ -351,6 +366,7 @@ Prometheusメトリクスエンドポイント。
 |------------|-----|------------|------|
 | `enabled` | bool | false | メトリクスサーバーを起動 |
 | `address` | string | localhost:9090 | リッスンアドレス |
+| `max_cardinality` | int | 1024 | メトリクスごとに保持される個別のラベルセット数（LRU）。`0` 以下はデフォルトを使用 |
 
 ```yaml
 prometheus:
@@ -358,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Prometheusスクレイピング用の`/metrics`エンドポイントを公開します。
+Prometheusスクレイピング用の`/metrics`エンドポイントに加え、`/livez`を公開します。
 
 参照: [可観測性ガイド](guides/observability.md)
 
@@ -373,6 +389,8 @@ Prometheusスクレイピング用の`/metrics`エンドポイントを公開し
 | `enabled` | bool | false | クラスタリングを有効化 |
 | `name` | string | hostname | ノード名。クラスタ全体で一意でなければならない |
 | `failure_domain` | string | | ゾーン/ラックラベル。ゴシップで通知され、投票ノードがドメインをまたぐように分散される |
+| `kv_crdt_tombstone_retention` | duration | 0 | `store.kv.crdt` の削除トゥームストーンが回収されるまでの経過時間。`0` は経過時間による GC を無効化 |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | 現在の alive メンバーシップをトゥームストーンの確認応答集合として使用 |
 
 ### メンバーシップ（ゴシップ）
 
@@ -443,6 +461,8 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 | `raft.max_append_entries` | int | 16 | AppendEntries RPC あたりの最大エントリ数 |
 | `raft.leader_probe_interval` | duration | 3s | グローバルレジストリのリーダー到達可能性プローブ間隔 |
 | `raft.leader_probe_grace` | int | 3 | リーダーが到達不能と宣言されるまでの連続プローブ失敗回数 |
+| `raft.registry_backend` | string | kv | クラスタ名前レジストリの実装: `kv`（共有 kv キースペース）または `fsm`（専用の Raft FSM）|
+| `raft.global_dissem_tombstone_retention` | duration | 0 | グローバル名の伝播キャッシュが削除トゥームストーンを保持する期間 |
 
 単一ノード（開発用）— クラスタリング有効、即座にブートストラップ:
 

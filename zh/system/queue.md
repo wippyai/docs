@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery or DLQ
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,8 +286,8 @@ Runtime 根据处理器返回值自动 settle：
 
 | 处理结果 | 动作 |
 |----------|------|
-| `true` 或非 `false` 返回 | Ack |
-| `false` | Nack（根据驱动重新投递或 dead-letter）|
+| 任意普通返回值（包括 `false`） | Ack |
+| 返回 `nil, err` | Nack（根据驱动重新投递或 dead-letter）|
 | 抛出错误 | Nack |
 
 仅在需要提前 settle 时显式调用 `msg:ack()` 或 `msg:nack()`。Settlement 是单次的：先到达的调用获胜。

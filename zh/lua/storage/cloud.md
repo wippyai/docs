@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | 对象键 |
 | `options.expiration` | integer | URL 过期秒数（默认：3600） |
 | `options.content_type` | string | 上传所需的内容类型 |
-| `options.content_length` | integer | 最大上传大小（字节） |
+| `options.content_length` | integer | 预期的上传大小（字节） |
 
 **返回:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **返回:** `Reader, error`
 
-读取器打开时会固定对象的 ETag，并在每次范围读取时以 `If-Match` 发送，因此读取过程中被覆盖的对象会以 `errors.CONFLICT` 失败，而不会提供混合了两个对象版本的数据。无法提供 ETag 的提供方返回 `errors.UNAVAILABLE`；读取器绝不提供未固定版本的对象。
+读取器打开时会固定对象的 ETag，并在每次范围读取时以 `If-Match` 发送，因此读取过程中被覆盖的对象会以提供方的前置条件错误使读取失败，而不会提供混合了两个对象版本的数据；`archive` 将其表现为 `errors.INTERNAL`。无法提供 ETag 的提供方返回 `errors.UNAVAILABLE`；读取器绝不提供未固定版本的对象。
 
 缓存未命中的读取会在调用任务中执行阻塞式网络 IO，并使并发读取串行化，因此按条目顺序访问——即归档的使用模式——才是预期的用法。
 
@@ -494,10 +494,10 @@ storage:release()
 | 对象未找到 | `errors.NOT_FOUND` | 否 |
 | 未知的 upload ID | `errors.NOT_FOUND` | 否 |
 | 条件前置条件失败 | `errors.CONFLICT` | 否 |
-| 范围读取期间对象被覆盖 | `errors.CONFLICT` | 否 |
+| 范围读取期间对象被覆盖（由 `archive` 表现） | `errors.INTERNAL` | 否 |
 | 提供方不支持分段上传 | `errors.UNAVAILABLE` | 否 |
 | 提供方未为 `open_reader` 提供 ETag | `errors.UNAVAILABLE` | 否 |
-| 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
-| 操作失败 | `errors.INTERNAL` | 否 |
+| 权限被拒绝 | 抛出为 Lua 错误，而非返回 | - |
+| 提供方操作失败 | `errors.UNKNOWN` | 未设置 |
 
 错误处理请参阅 [错误处理](lua/core/errors.md)。

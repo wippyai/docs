@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Campos de filtro correspondem aos metadados da entrada.
+Chaves prefixadas com `.` correspondem a campos da entrada (`.kind`, `.ns`, `.name`, `.id`) e aceitam globs `*`. Chaves prefixadas com `meta.` correspondem aos metadados da entrada; um `~`, `*`, `^` ou `$` inicial em uma chave `meta.` seleciona correspondência por regex, contém, prefixo ou sufixo. Chaves sem nenhum dos prefixos são ignoradas.
 
 ## Parse de ID
 

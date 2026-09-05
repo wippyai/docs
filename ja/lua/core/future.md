@@ -87,6 +87,8 @@ end
 future:cancel()
 ```
 
+**戻り値:** `boolean, error`
+
 操作が既に進行中の場合でも完了する可能性あり。
 
 ## タイムアウトパターン
@@ -102,7 +104,7 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 return r.value:data()
@@ -134,5 +136,5 @@ return r.value:data()
 | 条件 | 種別 |
 |-----------|------|
 | 操作がキャンセルされた | `CANCELED` |
-| 非同期操作が失敗 | 様々 |
+| 非同期操作が失敗 | `result()`は操作の kind を保持する。`error()`は`INTERNAL`を報告する |
 

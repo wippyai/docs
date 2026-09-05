@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | 오브젝트 키 |
 | `options.expiration` | integer | URL 만료까지 초 (기본값: 3600) |
 | `options.content_type` | string | 업로드에 필요한 콘텐츠 타입 |
-| `options.content_length` | integer | 최대 업로드 크기 바이트 |
+| `options.content_length` | integer | 예상 업로드 크기 바이트 |
 
 **반환:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **반환:** `Reader, error`
 
-리더가 열릴 때 오브젝트의 ETag가 고정되고 모든 범위 읽기에 `If-Match`로 전송되므로, 읽는 도중 덮어써진 오브젝트는 두 세대의 오브젝트가 섞여 제공되는 대신 `errors.CONFLICT`로 실패합니다. ETag를 제공할 수 없는 제공자는 `errors.UNAVAILABLE`을 반환하며; 리더는 고정되지 않은 오브젝트를 절대 제공하지 않습니다.
+리더가 열릴 때 오브젝트의 ETag가 고정되고 모든 범위 읽기에 `If-Match`로 전송되므로, 읽는 도중 덮어써진 오브젝트는 두 세대의 오브젝트가 섞여 제공되는 대신 제공자의 전제 조건 에러로 읽기가 실패합니다. `archive`는 이를 `errors.INTERNAL`로 표면화합니다. ETag를 제공할 수 없는 제공자는 `errors.UNAVAILABLE`을 반환하며; 리더는 고정되지 않은 오브젝트를 절대 제공하지 않습니다.
 
 캐시 미스 읽기는 호출 태스크에서 블로킹 네트워크 IO를 수행하고 동시 리더를 직렬화하므로, 엔트리별 순차 접근 - 아카이브 패턴 - 이 의도된 형태입니다.
 
@@ -494,10 +494,10 @@ storage:release()
 | 오브젝트를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 알 수 없는 업로드 ID | `errors.NOT_FOUND` | 아니오 |
 | 조건부 전제 조건 실패 | `errors.CONFLICT` | 아니오 |
-| 범위 읽기 중 오브젝트가 덮어써짐 | `errors.CONFLICT` | 아니오 |
+| 범위 읽기 중 오브젝트가 덮어써짐 (`archive`가 표면화) | `errors.INTERNAL` | 아니오 |
 | 제공자가 멀티파트 업로드를 지원하지 않음 | `errors.UNAVAILABLE` | 아니오 |
 | 제공자가 `open_reader`용 ETag를 제공하지 않음 | `errors.UNAVAILABLE` | 아니오 |
-| 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
-| 작업 실패 | `errors.INTERNAL` | 아니오 |
+| 권한 거부됨 | 반환되지 않고 Lua 에러로 발생 | - |
+| 제공자 작업 실패 | `errors.UNKNOWN` | 미설정 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

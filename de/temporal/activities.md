@@ -31,6 +31,7 @@ Activities sind Funktionen, die nicht-deterministische Operationen ausführen. J
 |------|--------------|--------------|
 | `worker` | Ja | Referenz auf `temporal.worker`-Eintrag |
 | `local` | Nein | Als lokale Activity ausführen (Standard: false) |
+| `name` | Nein | Benutzerdefinierter Activity-Typname (Standard: Eintrags-ID) |
 
 ## Implementierung
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Auf Activity-Stornierung warten |
 | `activity.disable_eager_execution` | boolean | false | Sofortige Ausführung deaktivieren |
 | `activity.retry_policy` | table | - | Retry-Konfiguration (siehe unten) |
+| `activity.name` | string | - | Aufzurufender Activity-Typname, wenn er von der Registry-ID abweicht |
+| `activity.summary` | string | - | Menschenlesbare Zusammenfassung, die in der Temporal-UI angezeigt wird |
+| `activity.priority` | table | - | Task-Priorität: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (Build-ID erben) oder `default` (Zuweisungsregeln verwenden) |
 
 Duration-Werte akzeptieren Strings (`"5s"`, `"10m"`, `"1h"`) oder Millisekunden als Zahlen.
 

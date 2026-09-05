@@ -29,7 +29,7 @@ local encoded = base64.encode("Hello, World!")
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
 -- 바이너리 데이터 인코딩 (예: 파일에서)
-local image_data = fs.read_binary("photo.jpg")
+local image_data = fs.get("app:data"):readfile("photo.jpg")
 local image_b64 = base64.encode(image_data)
 
 -- 전송을 위해 JSON 인코딩
@@ -62,7 +62,7 @@ print(decoded)  -- "Hello, World!"
 -- 에러 처리와 함께 디코딩
 local data, err = base64.decode(user_input)
 if err then
-    return nil, errors.new("INVALID", "Invalid base64 data")
+    return nil, errors.new("Invalid base64 data"):kind(errors.INVALID)
 end
 
 -- 바이너리 데이터 디코딩
@@ -71,12 +71,11 @@ local image_data, err = base64.decode(image_b64)
 if err then
     return nil, err
 end
-fs.write_binary("output.jpg", image_data)
+fs.get("app:data"):writefile("output.jpg", image_data)
 
--- JWT 부분 디코딩
-local parts = string.split(jwt_token, ".")
-local header = json.decode(base64.decode(parts[1]))
-local payload = json.decode(base64.decode(parts[2]))
+-- base64로 감싼 JSON 문서 디코딩
+local json = require("json")
+local doc = json.decode(base64.decode(encoded_json))
 ```
 
 | 파라미터 | 타입 | 설명 |

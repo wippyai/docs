@@ -36,7 +36,7 @@ Der Log-Manager steuert Log-Propagierung und Event-Streaming:
 logmanager:
   propagate_downstream: true   # An Kindkomponenten propagieren
   stream_to_events: false      # Logs an Event-Bus weiterleiten
-  min_level: -1                # -1=debug (Standard), 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run setzt 0, oder -1 mit -v)
 ```
 
 Wenn `stream_to_events` aktiviert ist, werden Log-Einträge zu Events, die Prozesse über den Event-Bus abonnieren können.
@@ -56,7 +56,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Metriken werden unter `/metrics` auf der konfigurierten Adresse bereitgestellt.
+Metriken werden unter `/metrics` auf der konfigurierten Adresse bereitgestellt; derselbe Listener bedient `/livez`. `max_cardinality` (Standard 1024) begrenzt die Anzahl aktiver Label-Sets pro Exporter; darüber hinaus werden die am längsten nicht aktualisierten Serien verdrängt.
 
 ### Scrape-Konfiguration
 
@@ -95,7 +95,7 @@ otel:
 
 ### Trace-Quellen
 
-Tracing für bestimmte Komponenten aktivieren:
+Alle Trace-Quellen sind standardmäßig aktiv, sobald `otel.enabled` true ist; jede kann einzeln deaktiviert werden:
 
 ```yaml
 otel:
@@ -150,10 +150,10 @@ Getracete Operationen:
 
 | Komponente | Span-Name | Attribute |
 |------------|-----------|-----------|
-| HTTP-Requests | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP-Requests | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | Funktionsaufrufe | Funktions-ID | process.pid, frame.id |
 | Prozess-Lebenszyklus | `{source}.started/terminated` | process.pid |
-| Queue-Nachrichten | Nachrichten-Topic | Trace-Kontext in Headern |
+| Queue-Nachrichten | `{queue}.publish` | messaging.operation, messaging.destination.name |
 | Temporal-Workflows | Workflow/Activity-Name | workflow.id, run.id |
 
 ### Kontext-Propagierung
@@ -177,6 +177,8 @@ OTEL kann über Umgebungsvariablen konfiguriert werden:
 | `OTEL_SERVICE_NAME` | Dienstname |
 | `OTEL_SERVICE_VERSION` | Dienstversion |
 | `OTEL_TRACES_SAMPLER_ARG` | Sample-Rate (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` oder `parentbased_traceidratio` (Verhältnis aus `OTEL_TRACES_SAMPLER_ARG`) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Auf `true` setzen um Verbindungen ohne TLS zu erlauben |
 | `OTEL_PROPAGATORS` | Propagator-Liste |
 
 ## Runtime-Statistiken

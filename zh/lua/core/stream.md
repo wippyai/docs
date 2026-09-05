@@ -120,7 +120,7 @@ end
 
 | 条件 | 类型 |
 |-----------|------|
-| 无效的 whence/split 类型 | `INVALID` |
+| 无效的 whence/split 类型 | 作为 Lua 错误抛出（不返回） |
 | 流已关闭 | `INTERNAL` |
 | 不可读/不可写 | `INTERNAL` |
 | 读写失败 | `INTERNAL` |

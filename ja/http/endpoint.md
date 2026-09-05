@@ -150,6 +150,7 @@ return { handler = handler }
 | `req:query(name)` | string | クエリパラメータ |
 | `req:query_params()` | table | すべてのクエリパラメータ |
 | `req:header(name)` | string | リクエストヘッダー |
+| `req:headers()` | table | すべてのリクエストヘッダー |
 | `req:body()` | string | リクエストボディ |
 | `req:body_json()` | table, error | JSONボディをパース |
 | `req:has_body()` | boolean | ボディの有無を確認 |

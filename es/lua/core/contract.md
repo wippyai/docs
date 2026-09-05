@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | Nombre del método |
 | `description` | string | Descripción del método |
-| `input_schemas` | table[] | Definiciones de esquema de entrada |
-| `output_schemas` | table[] | Definiciones de esquema de salida |
+| `input_schemas` | table[] | Definiciones de esquema de entrada (ausente cuando el método no declara ninguno) |
+| `output_schemas` | table[] | Definiciones de esquema de salida (ausente cuando el método no declara ninguno) |
 
 ## Encontrar Implementaciones
 
@@ -195,7 +195,12 @@ Las opciones se aplican a cada llamada de método en la instancia devuelta. Solo
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `retry.max_attempts` | int | Intentos máximos incluyendo el primero (1 desactiva reintentos) |
-| `retry.initial_delay` | int/duration | Retardo antes del primer reintento (ms o cadena de duración) |
+| `retry.initial_delay` | int/duration | Retardo antes del primer reintento (ms o cadena de duración), por defecto `100` |
+| `retry.max_delay` | int/duration | Límite superior del retardo de backoff (ms o cadena de duración), por defecto `10s` |
+| `retry.backoff_factor` | number | Multiplicador aplicado al retardo tras cada intento, por defecto `2.0` |
+| `retry.jitter` | number | Fracción de jitter aleatorio aplicada a cada retardo, por defecto `0.1` |
+| `retry.retry_kinds` | string[] | Reintentar solo los errores de estos tipos; por defecto se reintenta cualquier tipo excepto `Invalid`, `PermissionDenied` e `Internal` |
+| `retry.skip_kinds` | string[] | Nunca reintentar los errores de estos tipos |
 
 ## Contexto de Seguridad
 
@@ -233,4 +238,4 @@ Sin `with_actor`/`with_scope` explícitos, un contrato abierto hereda el actor y
 | Método no encontrado | `errors.NOT_FOUND` |
 | Sin binding por defecto | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
-| Llamada fallida | `errors.INTERNAL` |
+| Llamada fallida | tipo del error de la implementación (preservado); `errors.INTERNAL` para fallos de despacho |

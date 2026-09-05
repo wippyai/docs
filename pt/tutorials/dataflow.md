@@ -213,8 +213,9 @@ um LLM para respostas fundamentadas.
 
 ## Notas operacionais
 
-- **Tamanho do chunk**: 500–1000 tokens é um bom padrão. Use `chunk_overlap` (~10–20% do
-  tamanho do chunk) para que as frases não sejam cortadas através das fronteiras.
+- **Tamanho do chunk**: `chunk_size` e `chunk_overlap` contam caracteres, não tokens;
+  2000–4000 caracteres é um bom padrão. Use `chunk_overlap` (~10–20% do tamanho do chunk)
+  para que as frases não sejam cortadas através das fronteiras.
 - **Dimensões**: `text-embedding-3-small` em 512 dimensões é econômico e corresponde à
   tabela `embeddings_512`. Vetores maiores significam maior armazenamento e busca mais lenta.
 - **Local vs. compartilhado**: O SQLite (`vec0`) mantém toda a base de conhecimento em um

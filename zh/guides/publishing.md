@@ -11,7 +11,7 @@ description: "在 Wippy Hub 上分享可重用代码。"
 
 1. 在 [hub.wippy.ai](https://hub.wippy.ai) 创建账号
 2. 创建组织或加入组织
-3. 在你的组织下注册模块名称
+3. 拥有在该组织中创建模块的权限 — 第一次 `wippy publish` 会自动注册模块
 
 ## 模块结构
 
@@ -262,7 +262,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 嵌入静态文件
 
-带有 `fs.directory` 入口（静态资产、模板、公共文件）的模块必须使用 `--embed` 将它们包含在发布的包中。否则，`fs.directory` 入口会被排除。
+带有 `fs.directory` 入口（静态资产、模板、公共文件）的模块必须使用 `--embed` 将它们包含在发布的包中。否则，`fs.directory` 入口会在不带目录内容的情况下被打包。
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

@@ -48,7 +48,7 @@ local meta = actor:meta()    -- {role="admin", ...}
 -- 컨텍스트에서 현재 액터 가져오기
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "No actor in context")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No actor in context" })
 end
 ```
 
@@ -326,7 +326,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 elseif result == "undefined" then
     -- 일치하는 정책 없음 - 접근 검사는 이를 거부로 취급함
 end
@@ -341,7 +341,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 end
 ```
 
@@ -434,7 +434,7 @@ end
 -- 토큰 검증
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Invalid token")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Invalid token" })
 end
 
 -- 액터와 스코프가 저장된 데이터에서 재구성됨

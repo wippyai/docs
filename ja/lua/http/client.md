@@ -355,6 +355,7 @@ HTTPリクエストはセキュリティポリシー評価の対象。
 | `http_client.unix_socket` | ソケットパス | Unixソケット接続を許可/拒否 |
 | `http_client.private_ip` | IPアドレス | プライベートIP範囲へのアクセスを許可/拒否 |
 | `http_client.insecure_tls` | URL | 安全でないTLS（検証スキップ）の許可/拒否 |
+| `network.select` | ネットワークエントリID | リクエストで指定された`overlay_network`経由のルーティングの許可/拒否 |
 
 ### アクセス確認
 

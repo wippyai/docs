@@ -80,6 +80,9 @@ table.remove(t [,pos])         -- pos의 요소 제거 및 반환 (기본값: �
 table.concat(t [,sep [,i [,j]]]) -- 배열 요소를 구분자로 연결
 table.sort(t [,comp])          -- 제자리 정렬, comp(a,b)는 a < b이면 true 반환
 table.unpack(t [,i [,j]])      -- 테이블 요소를 다중 값으로 언팩
+table.create(narr, nhash)      -- 배열과 해시 용량을 미리 할당한 테이블 생성
+table.freeze(t)                -- 테이블을 불변으로 만들고 t 반환
+table.isfrozen(t)              -- 테이블이 불변이면 true
 ```
 
 ```lua
@@ -131,6 +134,9 @@ string.reverse(s)          -- 문자열 뒤집기
 
 ```lua
 string.format(fmt, ...)    -- Printf 스타일 포맷팅
+string.pack(fmt, ...)      -- 값들을 바이너리 문자열로 패킹
+string.unpack(fmt, s [,pos]) -- 바이너리 문자열을 언팩, 값들과 다음 위치 반환
+string.packsize(fmt)       -- 패킹된 포맷의 바이트 크기
 ```
 
 포맷 지정자: `%d` (정수), `%f` (부동소수), `%s` (문자열), `%q` (인용), `%x` (16진수), `%o` (8진수), `%e` (과학적), `%%` (리터럴 %)
@@ -184,7 +190,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- 무한대
+math.huge     -- 표현 가능한 가장 큰 부동소수점 값
 math.mininteger  -- 최소 정수
 math.maxinteger  -- 최대 정수
 ```
@@ -209,6 +215,8 @@ math.pow(x, y)        -- x^y (또는 x^y 연산자 사용)
 math.exp(x)           -- e^x
 math.log(x)           -- 자연 로그
 math.log10(x)         -- 상용 로그 (밑 10)
+math.frexp(x)         -- 가수와 지수
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### 삼각함수
@@ -228,7 +236,7 @@ math.rad(d)   -- 도를 라디안으로
 math.random()         -- [0,1) 랜덤 부동소수
 math.random(n)        -- [1,n] 랜덤 정수
 math.random(m, n)     -- [m,n] 랜덤 정수
-math.randomseed(x)    -- 랜덤 시드 설정
+math.randomseed(x)    -- 효과 없음; 생성기는 자동으로 시드됨
 ```
 
 ### 타입 변환
@@ -338,8 +346,9 @@ err:stack()      -- 스택 트레이스를 문자열로 가져오기
 | `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua/dynamic/eval.md) 모듈 사용 |
 | `collectgarbage` | 자동 GC |
 | `rawlen` | `#` 연산자 사용 |
-| `io.*` | [파일 시스템](lua/storage/filesystem.md) 모듈 사용 |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
+| 표준 `io.*` 파일 라이브러리 | [파일 시스템](lua/storage/filesystem.md) 모듈 사용; Wippy의 `io` 모듈은 [터미널 I/O](lua/system/io.md)입니다 |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
+| `string.dump` | 사용 불가 |
 | `debug.*` | 사용 불가 |
 | `utf8.*` | 사용 불가 |
 | `package.loadlib` | 네이티브 라이브러리 미지원 |

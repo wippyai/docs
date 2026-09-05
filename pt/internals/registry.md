@@ -144,6 +144,8 @@ Alguns tipos pulam o event bus completamente:
 - `ns.dependency` - Dependências de módulo
 - `ns.definition` - Metadados do módulo (readme, wiki, licença, autores)
 
+Esse é o conjunto padrão; `registry.dispatch_internal_kinds` na configuração do runtime o substitui.
+
 ## Resolução de Dependências
 
 Entradas podem declarar dependências de outras entradas. O resolver extrai dependências via padrões registrados:

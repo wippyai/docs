@@ -11,7 +11,7 @@ Comparta código reutilizable en el Wippy Hub.
 
 1. Cree una cuenta en [hub.wippy.ai](https://hub.wippy.ai)
 2. Cree una organización o únase a una
-3. Registre el nombre de su módulo bajo su organización
+3. Tenga permiso para crear módulos en esa organización — el primer `wippy publish` registra el módulo automáticamente
 
 ## Estructura del Módulo
 
@@ -262,7 +262,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Empaquetado de Archivos Estáticos
 
-Los módulos con entradas `fs.directory` (assets estáticos, plantillas, archivos públicos) deben usar `--embed` para incluirlos en el paquete publicado. Sin él, las entradas `fs.directory` se excluyen.
+Los módulos con entradas `fs.directory` (assets estáticos, plantillas, archivos públicos) deben usar `--embed` para incluirlos en el paquete publicado. Sin él, una entrada `fs.directory` se empaqueta sin el contenido de su directorio.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 Unbekannte Optionsschlüssel werden mit `errors.INVALID` abgelehnt. Tabellennamen werden ohne Beachtung der Groß-/Kleinschreibung sowohl gegen die qualifizierte Relation als auch gegen den bloßen Tabellennamen gematcht. Snapshot-Zeilen werden nur über `tables` gefiltert; `ops` gilt für Live-Änderungen.
 
-Ein Stream erhält einen Snapshot, wenn entweder `opts.snapshot` wahr ist oder das Feld `snapshot` des Quelleintrags gesetzt ist; Snapshot-Zeilen treffen zuerst mit `op = "snapshot"` ein, danach setzt der Stream ohne Lücke mit Live-Änderungen fort. `opts.after` wird nur von Treibern beachtet, deren Capability `capture_resume` gesetzt ist — jeder heute ausgelieferte Treiber gibt dafür `errors.INVALID` zurück ("cdc operation is not supported by this source").
+Ein Stream erhält einen Snapshot, wenn entweder `opts.snapshot` wahr ist oder das Feld `snapshot` des Quelleintrags gesetzt ist; Snapshot-Zeilen treffen zuerst mit `op = "snapshot"` ein, danach setzt der Stream ohne Lücke mit Live-Änderungen fort. `opts.after` ist für Treiber reserviert, die ab einem Cursor fortsetzen — jeder heute ausgelieferte Treiber gibt dafür `errors.INVALID` zurück ("cdc operation is not supported by this source"), auch `db.cdc.postgres`, wenn er `capture_resume` meldet.
 
 Filter schränken nur die Zustellung ein. Zugriff auf eine Quelle wird durch die Berechtigung `cdc.subscribe` gewährt, niemals durch einen Filter.
 
@@ -154,7 +154,7 @@ Jede auf dem Channel empfangene Nachricht ist eine Änderungstabelle:
 | `slot` | Name des Replikations-Slots (`db.cdc.postgres`) |
 | `publication` | Postgres-Publication, sofern konfiguriert |
 | `tables` | Erfasste Tabellen, sofern konfiguriert |
-| `streaming` | Ob die Quelle derzeit läuft |
+| `streaming` | `db.cdc.sqlite`: ob die Quelle läuft; `db.cdc.postgres`: die Protokolleinstellung `streaming` des Eintrags |
 | `failover` | Failover-Slot-Modus (`db.cdc.postgres`) |
 | `temporary` | Temporärer Slot (`db.cdc.postgres`) |
 | `snapshot` | Snapshot-Standard auf Eintragsebene |
@@ -187,7 +187,7 @@ Eine verweigerte Aktion gibt `errors.PERMISSION_DENIED` zurück.
 
 | Bedingung | Kind |
 |-----------|------|
-| Kein Kontext / keine Prozess-PID | `errors.INTERNAL` |
+| Kein Kontext | `errors.INTERNAL` |
 | Quellname erforderlich | `errors.INVALID` |
 | Ungültige oder unbekannte Stream-Option | `errors.INVALID` |
 | `after` auf einer Quelle ohne `capture_resume` | `errors.INVALID` |

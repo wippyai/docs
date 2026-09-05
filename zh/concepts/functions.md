@@ -96,7 +96,7 @@ pool:
 ```
 
 <tip>
-如果不指定池类型，运行时会根据你的配置选择一个。设置 <code>workers</code> 使用 static，<code>max_size</code> 使用 lazy，或显式设置 <code>type</code> 以完全控制。
+如果不指定池类型，运行时会根据你的配置选择一个。设置 <code>workers</code> 使用 static，<code>max_size</code> 使用 lazy，或显式设置 <code>type</code> 以完全控制。两者都不设置时，池为 lazy，最多 16 个 worker。
 </tip>
 
 ## 拦截器

@@ -58,12 +58,12 @@ Prüft, ob der aktuelle Kontext eine Aktion auf einer Ressource erlaubt.
 ```lua
 -- Leseberechtigung prüfen
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Schreibberechtigung prüfen
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Mit Metadaten prüfen
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny" oder "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ Token validieren und Actor/Scope holen.
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ Sicherheitsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 |--------|----------|-------------|
 | `security.policy.get` | Richtlinien-ID | Auf Richtliniendefinitionen zugreifen |
 | `security.policy_group.get` | Gruppen-ID | Auf benannte Scopes zugreifen |
-| `security.scope.create` | `custom` | Benutzerdefinierte Scopes erstellen |
+| `security.scope.create` | `custom`, `with`, `without` | Benutzerdefinierte Scopes erstellen (`new_scope`) und Richtlinien hinzufügen/entfernen (`scope:with`, `scope:without`) |
 | `security.actor.create` | Actor-ID | Actors erstellen |
 | `security.token_store.get` | Store-ID | Auf Token-Stores zugreifen |
 | `security.token.validate` | Store-ID | Tokens validieren |
@@ -349,7 +349,8 @@ Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 |-----------|------|-----------|
 | Kein Kontext | `errors.INTERNAL` | nein |
 | Leere Token-Store-ID | `errors.INVALID` | nein |
-| Berechtigung verweigert | `errors.INVALID` | nein |
+| Berechtigung verweigert (`policy`, `named_scope`, Token `create`/`validate`/`revoke`) | `errors.INVALID` | nein |
+| Berechtigung verweigert (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | wird als Lua-Fehler ausgelöst | nein |
 | Richtlinie nicht gefunden | `errors.INTERNAL` | nein |
 | Token-Store nicht gefunden | `errors.INTERNAL` | nein |
 | Token-Store geschlossen | `errors.INTERNAL` | nein |

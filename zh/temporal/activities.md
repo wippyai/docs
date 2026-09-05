@@ -31,6 +31,7 @@ Activity 是执行非确定性操作的函数。任何 `function.lua` 或 `proce
 |-------|----------|-------------|
 | `worker` | 是 | 对 `temporal.worker` 条目的引用 |
 | `local` | 否 | 作为本地 activity 执行（默认: false） |
+| `name` | 否 | 自定义 activity 类型名（默认为条目 ID） |
 
 ## 实现
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | 等待 activity 取消完成 |
 | `activity.disable_eager_execution` | boolean | false | 禁用即时执行 |
 | `activity.retry_policy` | table | - | 重试配置（见下文） |
+| `activity.name` | string | - | 与注册表 ID 不同时，要调用的 activity 类型名 |
+| `activity.summary` | string | - | 在 Temporal UI 中显示的可读摘要 |
+| `activity.priority` | table | - | 任务优先级：`priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `activity.versioning_intent` | string | - | `compatible`（继承 build ID）或 `default`（使用分配规则） |
 
 Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单位的数字。
 

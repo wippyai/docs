@@ -45,10 +45,14 @@ El campo `Class` determina dónde se puede usar el módulo:
 | `ClassNondeterministic` | La salida varía (tiempo, aleatoriedad) |
 | `ClassIO` | Operaciones de I/O externas |
 | `ClassNetwork` | Operaciones de red |
+| `ClassEncoding` | Serialización y codificación |
+| `ClassTime` | Acceso a reloj y temporizadores |
+| `ClassProcess` | Control de procesos |
+| `ClassSecurity` | Contexto de seguridad y tokens |
 | `ClassStorage` | Persistencia de datos |
 | `ClassWorkflow` | Operaciones seguras para workflows |
 
-Los módulos marcados solo con `ClassDeterministic` son seguros para workflows. Añadir clases de I/O o red restringe el módulo a funciones y procesos.
+Los procesos de workflow se compilan con `ClassDeterministic` y `ClassWorkflow` como clases permitidas: un módulo está disponible para workflows si lleva al menos una de ellas; en caso contrario queda restringido a funciones y procesos.
 
 ## Exponer Funciones
 

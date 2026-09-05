@@ -176,9 +176,9 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
 |------|-------|--------------|
 | `type` | alle | Scheduler-Implementierung (siehe Tabelle unten) |
 | `workers` | static | Anzahl der Worker-Threads (fällt auf `size` zurück, dann 8) |
-| `size` | static | Worker-Anzahl, wenn `workers` nicht gesetzt ist; lenkt zudem die Auto-Auswahl zu einem statischen Pool |
+| `size` | static | Worker-Anzahl, wenn `workers` nicht gesetzt ist; wird `type` weggelassen, wählt `size` ohne `max_size` einen Inline-Pool |
 | `buffer` | static | Aufgabenwarteschlange-Kapazität (Standard: `workers * 64`) |
-| `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16) |
+| `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16; 100, wenn `type` weggelassen wird) |
 
 | Typ | Verhalten |
 |------|----------|
@@ -187,7 +187,7 @@ Konfigurieren Sie den Ausführungspool für Funktionen:
 | `static` | Pool fester Größe (Channel-basiert). Vorhersagbar bei stabiler Last. |
 | `adaptive` | Auto-skalierender Pool — wächst bei Last, schrumpft im Leerlauf. |
 
-Wird `type` weggelassen, wird der Pool aus den übrigen Feldern automatisch gewählt: standardmäßig ein Lazy-Pool, ein statischer Pool, wenn `workers` gesetzt ist.
+Wird `type` weggelassen, wird der Pool aus den übrigen Feldern automatisch gewählt: standardmäßig ein Lazy-Pool, ein statischer Pool, wenn `workers` gesetzt ist, ein Inline-Pool, wenn nur `size` gesetzt ist.
 
 ## Metadaten
 

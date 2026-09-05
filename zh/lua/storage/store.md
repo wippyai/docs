@@ -88,7 +88,7 @@ end
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ end
 
 ## 错误
 
-`store.get()` 以及存储句柄上的所有方法（`get`、`entry`、`set`、`put`、`list`、`has`、`delete`、`info`）都返回结构化错误（使用 `err:kind()`）。
+`store.get()` 以及存储句柄上的所有方法（`get`、`entry`、`set`、`put`、`list`、`has`、`delete`、`info`）都返回结构化错误（使用 `err:kind()`），但 `store.get`、`get`、`set`、`has` 和 `delete` 中的权限拒绝会抛出 Lua 错误而非返回错误。
 
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 资源 ID 为空 | `errors.INVALID` | 否 |
-| 资源未找到 | `errors.NOT_FOUND` | 否 |
+| 资源未找到 | `errors.INTERNAL` | 否 |
 | 存储已释放 | `errors.INVALID` | 否 |
-| 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
+| 权限被拒绝（`entry`、`put`、`list`、`info`） | `errors.PERMISSION_DENIED` | 否 |
 | `only_if_absent` 且键已存在 | `errors.ALREADY_EXISTS` | 否 |
 | `if_version` 不匹配 | `errors.CONFLICT` | 是 |
 | 在不支持的存储上进行条件写入 | `errors.INVALID` | 否 |

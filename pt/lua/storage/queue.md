@@ -80,7 +80,7 @@ Disponível apenas ao processar mensagens de fila em contexto de consumer.
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `id()` | `string, error` | Identificador único da mensagem |
-| `header(key)` | `any, error` | Valor de header único (nil se ausente) |
+| `header(key)` | `string, error` | Valor de header único como string (nil se ausente) |
 | `headers()` | `table, error` | Todos os headers da mensagem |
 | `ack()` | `boolean, error` | Confirmar processamento (single-shot) |
 | `nack()` | `boolean, error` | Sinalizar falha para reentrega ou dead-letter (single-shot) |
@@ -103,7 +103,7 @@ Uma entrada `queue.consumer` vincula uma fila a uma função handler (referencia
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

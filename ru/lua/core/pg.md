@@ -178,12 +178,12 @@ group:release()
 | `pg.leave` | `leave()` | имя группы |
 | `pg.get_members` | `get_members()` | имя группы |
 | `pg.get_local_members` | `get_local_members()` | имя группы |
-| `pg.which_groups` | `which_groups()` | (область) |
-| `pg.which_local_groups` | `which_local_groups()` | (область) |
+| `pg.which_groups` | `which_groups()` | (нет) |
+| `pg.which_local_groups` | `which_local_groups()` | (нет) |
 | `pg.broadcast` | `broadcast()` | имя группы |
 | `pg.broadcast_local` | `broadcast_local()` | имя группы |
 | `pg.monitor` | `monitor()` | имя группы |
-| `pg.events` | `events()` | (область) |
+| `pg.events` | `events()` | (нет) |
 
 ## Ошибки
 
@@ -192,7 +192,7 @@ group:release()
 | Разрешение отклонено | `errors.PERMISSION_DENIED` |
 | Отсутствует или пустой аргумент | `errors.INVALID` |
 | Область не найдена | `errors.NOT_FOUND` |
-| Выход из группы без членства | `errors.INVALID` |
+| Выход из группы без членства | `errors.NOT_FOUND` |
 | Экземпляр освобождён | `errors.INVALID` |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

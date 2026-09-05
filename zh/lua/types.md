@@ -305,7 +305,9 @@ local user = data as User            -- 与 :: 相同
 ### 种类与名称
 
 ```lua
-print(Number:kind())                 -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -334,23 +336,20 @@ print(nameType:kind())               -- "string"
 ### 集合类型
 
 ```lua
-local arr: {number} = {1, 2, 3}
-local arrType = typeof(arr)
-print(arrType:elem():kind())         -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-local map: {[string]: number} = {}
-local mapType = typeof(map)
-print(mapType:key():kind())          -- "string"
-print(mapType:val():kind())          -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### 可选类型
 
 ```lua
-local opt: number? = nil
-local optType = typeof(opt)
-print(optType:kind())                -- "optional"
-print(optType:inner():kind())        -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### 联合类型
@@ -366,31 +365,36 @@ end
 ### 函数类型
 
 ```lua
-local fn: (number, string) -> boolean
+type Predicate = (number, string) -> boolean
 
-local fnType = typeof(fn)
-for param in fnType:params() do
+for param in Predicate:params() do
     print(param:kind())
 end
-print(fnType:ret():kind())           -- "boolean"
+print(Predicate:ret():kind())        -- "boolean"
 ```
 
 ### 类型比较
 
 ```lua
-print(Number == Number)              -- true
-print(Integer <= Number)             -- true (子类型)
-print(Integer < Number)              -- true (严格子类型)
+type Num = number
+type Int = integer
+
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (子类型)
+print(Int < Num)                     -- true (严格子类型)
 ```
 
 ### 类型作为表键
 
 ```lua
-local handlers = {}
-handlers[Number] = function() return "number handler" end
-handlers[String] = function() return "string handler" end
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
-local h = handlers[typeof(value)]
+local handlers = {}
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
+
+local h = handlers[Point]
 if h then h() end
 ```
 

@@ -146,7 +146,7 @@ local yaml_p, err = p:transcode(payload.format.YAML)
 local data, err = p:unmarshal()
 ```
 
-`unmarshal()`은 항상 Lua 형식으로 트랜스코딩하고 결과 Lua 값을 반환합니다. 원시 기본 값(비-Lua 형식의 경우 Go 객체일 수 있음)을 반환하는 `data()`와 달리 `unmarshal()`은 완전히 디코딩된 Lua 값을 보장합니다.
+`unmarshal()`은 `data()`와 동일하게 동작합니다: 둘 다 비-Lua 페이로드를 Lua 형식으로 트랜스코딩하고 결과 Lua 값을 반환합니다. 유일한 차이는 트랜스코딩된 데이터가 유효한 Lua 값이 아닐 때 `unmarshal()`은 에러를 반환하고 `data()`는 `nil`을 반환한다는 점입니다.
 
 **반환:** `any, error`
 

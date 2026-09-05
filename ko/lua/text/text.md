@@ -336,7 +336,7 @@ local splitter, err = text.splitter.markdown({
     heading_hierarchy = true
 })
 
-local readme = fs.read("README.md")
+local readme = fs.get("app:docs"):readfile("README.md")
 local chunks, err = splitter:split_text(readme)
 ```
 
@@ -352,6 +352,7 @@ local chunks, err = splitter:split_text(readme)
 | `reference_links` | boolean | false | 참조 링크 보존 |
 | `heading_hierarchy` | boolean | false | 헤딩 레벨 존중 |
 | `join_table_rows` | boolean | false | 테이블 행을 함께 유지 |
+| `separators` | string[] | nil | 커스텀 구분자 목록 |
 
 ### 텍스트 분할
 

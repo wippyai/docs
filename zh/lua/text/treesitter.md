@@ -261,7 +261,13 @@ end
 if node:is_missing() then
     -- 解析器插入此节点以从错误中恢复
 end
+
+if node:is_extra() then
+    -- 节点是语法未要求的"额外"节点（例如注释）
+end
 ```
+
+其他节点方法：`descendant_count()` 和 `named_descendant_for_point_range(start_pt, end_pt)`。
 
 ### S-Expression
 
@@ -298,7 +304,7 @@ local query, err = treesitter.query("go", [[
 -- 获取所有捕获（扁平化）
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
+    print(capture.name)   -- "func_name"
     print(capture.text)   -- 实际文本
     print(capture.index)  -- 捕获索引
     -- capture.node 是 Node 对象
@@ -344,6 +350,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+其他检查方法：`string_count()`、`start_byte_for_pattern(i)`、`end_byte_for_pattern(i)`、`get_match_limit()`、`get_timeout()`、`is_pattern_rooted(i)`、`is_pattern_non_local(i)`、`is_pattern_guaranteed(i)`、`capture_quantifier(pattern, capture)`、`set_max_start_depth(n)`、`get_property_predicates(i)`、`get_property_settings(i)`、`get_text_predicates(i)`。
 
 ## 树游标
 

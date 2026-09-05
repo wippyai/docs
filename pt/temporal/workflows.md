@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | Comportamento do filho quando o pai é encerrado |
 | `temporal.workflow.wait_for_cancellation` | boolean | Aguarda conclusão do cancelamento |
 | `temporal.workflow.namespace` | string | Sobrescrita de namespace Temporal |
+| `temporal.workflow.name` | string | Nome do tipo de workflow a iniciar, quando difere do ID no registro |
+| `temporal.workflow.versioning_intent` | string | `compatible` (herda o build ID) ou `default` (usa regras de atribuição) |
+| `temporal.workflow.priority` | table | Prioridade da tarefa: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Resumo legível exibido na UI do Temporal |
+| `workflow.details` | string | Detalhes legíveis exibidos na UI do Temporal |
+| `workflow.versioning_override` | table | Sobrescrita de versionamento do worker: `mode` é `auto_upgrade`, ou `pinned` com `deployment_name` e `build_id` |
+
+Toda opção também é aceita sob sua chave curta (`workflow.id`, `workflow.task_queue`, ...); o prefixo `temporal.workflow.` é um alias legado. `summary` e `details` não têm alias `temporal.workflow.`.
 
 Valores de duração aceitam strings (`"5s"`, `"10m"`, `"1h"`) ou milissegundos como números.
 

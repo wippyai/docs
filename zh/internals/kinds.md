@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## 解码 Entry Data
 
-使用 `internal/entry` 中的 `entry.DecodeEntryConfig` 反序列化 entry 数据。该辅助函数位于 `internal/` 下，因此只能在 runtime 模块内部导入；树外扩展必须复制该模式或直接使用 transcoder：
+使用 `system/entry` 中的 `entry.DecodeEntryConfig` 反序列化 entry 数据。`DecodeEntryConfigFromContext` 从上下文中取 transcoder 而不是通过参数传入，`DecodeEntryConfigRaw` 则跳过占位符解析：
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 解码器：
-1. 将 `entry.Data` 反序列化到你的配置结构体
-2. 从 entry 填充 `ID` 和 `Meta`
-3. 如果实现了 `InitDefaults()` 则调用
-4. 如果实现了 `Validate()` 则调用
+1. 针对环境注册表解析 `${env:...}` 占位符和 `*_env` 配套字段
+2. 将 `entry.Data` 反序列化到你的配置结构体
+3. 当结构体中为空时，从 entry 填充 `ID` 和 `Meta`
+4. 如果实现了 `InitDefaults()` 则调用
+5. 如果实现了 `Validate()` 则调用
 
 ## Config 结构
 

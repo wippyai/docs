@@ -176,9 +176,9 @@ imports:
 |------|----|------|
 | `type` | 모두 | 스케줄러 구현 (아래 표 참조) |
 | `workers` | static | 워커 스레드 수 (없으면 `size`, 그다음 8로 폴백) |
-| `size` | static | `workers`가 없을 때의 워커 수; 자동 선택을 static 풀 쪽으로 유도하기도 합니다 |
+| `size` | static | `workers`가 없을 때의 워커 수; `type`을 생략한 상태에서 `max_size` 없이 `size`만 주면 inline 풀이 선택됩니다 |
 | `buffer` | static | 작업 큐 용량 (기본값 `workers * 64`) |
-| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16) |
+| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16, `type`을 생략하면 100) |
 
 | 유형 | 동작 |
 |------|------|
@@ -187,7 +187,7 @@ imports:
 | `static` | 채널 기반 고정 크기 풀. 안정 부하에서 예측 가능. |
 | `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. |
 
-`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀입니다.
+`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀, `size`만 설정되어 있으면 inline 풀입니다.
 
 ## 메타데이터
 

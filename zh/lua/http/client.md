@@ -355,6 +355,7 @@ HTTP 请求受安全策略评估约束。
 | `http_client.unix_socket` | Socket 路径 | 允许/拒绝 Unix socket 连接 |
 | `http_client.private_ip` | IP 地址 | 允许/拒绝访问私有 IP 范围 |
 | `http_client.insecure_tls` | URL | 允许/禁止不安全的 TLS（跳过验证） |
+| `network.select` | 网络条目 ID | 允许/禁止通过请求中给定的 `overlay_network` 路由 |
 
 ### 检查访问权限
 

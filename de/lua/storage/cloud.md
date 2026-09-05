@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | Objektschlüssel |
 | `options.expiration` | integer | Sekunden bis URL abläuft (Standard: 3600) |
 | `options.content_type` | string | Erforderlicher Content-Type für Upload |
-| `options.content_length` | integer | Maximale Upload-Größe in Bytes |
+| `options.content_length` | integer | Erwartete Upload-Größe in Bytes |
 
 **Gibt zurück:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **Gibt zurück:** `Reader, error`
 
-Das ETag des Objekts wird beim Öffnen des Readers fixiert und bei jedem Bereichs-Lesevorgang als `If-Match` gesendet, sodass ein während des Lesens überschriebenes Objekt mit `errors.CONFLICT` fehlschlägt, statt eine Mischung aus zwei Objektgenerationen zu liefern. Ein Provider, der kein ETag liefern kann, gibt `errors.UNAVAILABLE` zurück; der Reader liefert nie ein nicht fixiertes Objekt.
+Das ETag des Objekts wird beim Öffnen des Readers fixiert und bei jedem Bereichs-Lesevorgang als `If-Match` gesendet, sodass ein während des Lesens überschriebenes Objekt den Lesevorgang mit dem Vorbedingungsfehler des Providers fehlschlagen lässt, statt eine Mischung aus zwei Objektgenerationen zu liefern; `archive` gibt ihn als `errors.INTERNAL` weiter. Ein Provider, der kein ETag liefern kann, gibt `errors.UNAVAILABLE` zurück; der Reader liefert nie ein nicht fixiertes Objekt.
 
 Lesevorgänge mit Cache-Miss führen blockierende Netzwerk-IO in der aufrufenden Task aus und serialisieren gleichzeitige Reader, sodass sequenzieller Zugriff pro Eintrag - das Archiv-Muster - die vorgesehene Form ist.
 
@@ -494,10 +494,10 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Objekt nicht gefunden | `errors.NOT_FOUND` | nein |
 | Unbekannte Upload-ID | `errors.NOT_FOUND` | nein |
 | Bedingte Vorbedingung fehlgeschlagen | `errors.CONFLICT` | nein |
-| Objekt während eines Bereichs-Lesevorgangs überschrieben | `errors.CONFLICT` | nein |
+| Objekt während eines Bereichs-Lesevorgangs überschrieben (von `archive` weitergegeben) | `errors.INTERNAL` | nein |
 | Provider unterstützt keine Multipart-Uploads | `errors.UNAVAILABLE` | nein |
 | Provider liefert kein ETag für `open_reader` | `errors.UNAVAILABLE` | nein |
-| Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
-| Operation fehlgeschlagen | `errors.INTERNAL` | nein |
+| Berechtigung verweigert | wird als Lua-Fehler ausgelöst, nicht zurückgegeben | - |
+| Provider-Operation fehlgeschlagen | `errors.UNKNOWN` | nicht gesetzt |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

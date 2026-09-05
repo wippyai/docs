@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph "HTTPレイヤー"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "パブリックルーター"
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph "プロセスレイヤー"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>接続ごと]
         Ticker[ticker<br/>シングルトン]
     end
@@ -276,7 +276,7 @@ entries:
     func: app:ws_ticker
 ```
 
-本番環境では、HMACキーをハードコードする代わりに`token_key_env`を使用して環境変数から読み取ります。[環境システム](system/env.md)を参照。
+本番環境では、HMACキーをハードコードする代わりにプレースホルダ（`token_key: ${env:TOKEN_KEY}`）で環境変数から読み取ります。[環境システム](system/env.md)を参照。
 
 ## トークン交換
 
@@ -425,7 +425,7 @@ return { handler = handler }
 
 `websocket_relay`ミドルウェアはライフサイクルメッセージを自動的にハンドラプロセスに送信：
 - `ws.join` - 接続確立、レスポンス送信用の`client_pid`を含む
-- `ws.message` - クライアントがメッセージを送信
+- `ws.message` - クライアントがメッセージを送信。ペイロードは生のフレーム（テキストフレームの場合は文字列）
 - `ws.leave` - 接続終了（切断時に自動送信）
 
 `ws_handler.lua` - これらのライフサイクルメッセージを処理：
@@ -467,7 +467,7 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -477,7 +477,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- リレーは切断時にこれを自動送信
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end

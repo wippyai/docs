@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | オブジェクトキー |
 | `options.expiration` | integer | URLが期限切れになるまでの秒数（デフォルト: 3600） |
 | `options.content_type` | string | アップロードに必要なコンテンツタイプ |
-| `options.content_length` | integer | 最大アップロードサイズ（バイト単位） |
+| `options.content_length` | integer | 想定されるアップロードサイズ（バイト単位） |
 
 **戻り値:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **戻り値:** `Reader, error`
 
-リーダーを開いた時点でオブジェクトのETagが固定され、範囲指定読み取りのたびに`If-Match`として送信されます。そのため読み取り中に上書きされたオブジェクトは、2つのオブジェクト世代を混在させて返すのではなく`errors.CONFLICT`で失敗します。ETagを提供できないプロバイダーは`errors.UNAVAILABLE`を返します。リーダーが固定されていないオブジェクトを提供することはありません。
+リーダーを開いた時点でオブジェクトのETagが固定され、範囲指定読み取りのたびに`If-Match`として送信されます。そのため読み取り中に上書きされたオブジェクトは、2つのオブジェクト世代を混在させて返すのではなく、プロバイダーの前提条件エラーで読み取りが失敗します。`archive`はこれを`errors.INTERNAL`として表面化します。ETagを提供できないプロバイダーは`errors.UNAVAILABLE`を返します。リーダーが固定されていないオブジェクトを提供することはありません。
 
 キャッシュミス時の読み取りは呼び出し元のタスク内でブロッキングのネットワークIOを行い、並行するリーダーを直列化します。したがってエントリごとの逐次アクセス — アーカイブのパターン — が想定された使い方です。
 
@@ -494,11 +494,11 @@ storage:release()
 | オブジェクトが見つからない | `errors.NOT_FOUND` | no |
 | 未知のアップロードID | `errors.NOT_FOUND` | no |
 | 条件付き前提条件の失敗 | `errors.CONFLICT` | no |
-| 範囲指定読み取り中にオブジェクトが上書きされた | `errors.CONFLICT` | no |
+| 範囲指定読み取り中にオブジェクトが上書きされた（`archive`が表面化） | `errors.INTERNAL` | no |
 | プロバイダーがマルチパートアップロードに対応していない | `errors.UNAVAILABLE` | no |
 | プロバイダーが`open_reader`用のETagを提供しない | `errors.UNAVAILABLE` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
-| 操作失敗 | `errors.INTERNAL` | no |
+| 権限拒否 | 返されず、Luaエラーとして送出 | - |
+| プロバイダー操作の失敗 | `errors.UNKNOWN` | 未設定 |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

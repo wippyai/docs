@@ -144,6 +144,8 @@ Einige Arten überspringen den Event-Bus komplett:
 - `ns.dependency` - Modul-Abhängigkeiten
 - `ns.definition` - Modul-Metadaten (Readme, Wiki, Lizenz, Autoren)
 
+Dies ist die Standardmenge; `registry.dispatch_internal_kinds` in der Laufzeitkonfiguration ersetzt sie.
+
 ## Abhängigkeitsauflösung
 
 Einträge können Abhängigkeiten von anderen Einträgen deklarieren. Der Resolver extrahiert Abhängigkeiten über registrierte Muster:

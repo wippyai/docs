@@ -178,12 +178,12 @@ group:release()
 | `pg.leave` | `leave()` | 그룹 이름 |
 | `pg.get_members` | `get_members()` | 그룹 이름 |
 | `pg.get_local_members` | `get_local_members()` | 그룹 이름 |
-| `pg.which_groups` | `which_groups()` | (범위) |
-| `pg.which_local_groups` | `which_local_groups()` | (범위) |
+| `pg.which_groups` | `which_groups()` | (없음) |
+| `pg.which_local_groups` | `which_local_groups()` | (없음) |
 | `pg.broadcast` | `broadcast()` | 그룹 이름 |
 | `pg.broadcast_local` | `broadcast_local()` | 그룹 이름 |
 | `pg.monitor` | `monitor()` | 그룹 이름 |
-| `pg.events` | `events()` | (범위) |
+| `pg.events` | `events()` | (없음) |
 
 ## 에러
 
@@ -192,7 +192,7 @@ group:release()
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 인수 누락 또는 빈 인수 | `errors.INVALID` |
 | 범위 찾을 수 없음 | `errors.NOT_FOUND` |
-| 멤버십 없는 그룹 탈퇴 | `errors.INVALID` |
+| 멤버십 없는 그룹 탈퇴 | `errors.NOT_FOUND` |
 | 인스턴스 해제됨 | `errors.INVALID` |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Los campos de filtro coinciden con los metadatos de entrada.
+Las claves con prefijo `.` coinciden con campos de la entrada (`.kind`, `.ns`, `.name`, `.id`) y aceptan globs `*`. Las claves con prefijo `meta.` coinciden con los metadatos de la entrada; un `~`, `*`, `^` o `$` inicial en una clave `meta.` selecciona coincidencia por regex, contiene, prefijo o sufijo. Las claves sin ninguno de los dos prefijos se ignoran.
 
 ## Parsear ID
 

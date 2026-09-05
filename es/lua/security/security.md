@@ -58,12 +58,12 @@ Verifica si el contexto actual permite una accion sobre un recurso.
 ```lua
 -- Verificar permiso de lectura
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Verificar permiso de escritura
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Verificar con metadatos
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", o "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ Validar token y obtener actor/alcance.
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 |--------|---------|-------------|
 | `security.policy.get` | ID de Policy | Acceder a definiciones de politica |
 | `security.policy_group.get` | ID de Group | Acceder a alcances nombrados |
-| `security.scope.create` | `custom` | Crear alcances personalizados |
+| `security.scope.create` | `custom`, `with`, `without` | Crear alcances personalizados (`new_scope`) y agregar/quitar politicas (`scope:with`, `scope:without`) |
 | `security.actor.create` | ID de Actor | Crear actores |
 | `security.token_store.get` | ID de Store | Acceder a almacenes de tokens |
 | `security.token.validate` | ID de Store | Validar tokens |
@@ -349,7 +349,8 @@ Consulte [Modelo de Seguridad](system/security.md) para configuración de politi
 |-----------|------|--------------|
 | Sin contexto | `errors.INTERNAL` | no |
 | ID de almacen de tokens vacio | `errors.INVALID` | no |
-| Permiso denegado | `errors.INVALID` | no |
+| Permiso denegado (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | no |
+| Permiso denegado (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | lanzado como error de Lua | no |
 | Politica no encontrada | `errors.INTERNAL` | no |
 | Almacen de tokens no encontrado | `errors.INTERNAL` | no |
 | Almacen de tokens cerrado | `errors.INTERNAL` | no |

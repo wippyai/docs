@@ -341,7 +341,7 @@ local states, err = system.supervisor.states()
 
 ## 集群原语
 
-`system.node`、`system.cluster`、`system.raft` 和 `system.lock` 子表暴露集群层。[启用集群](guides/cluster.md)时最为有用；在独立节点上会优雅降级——`system.raft.*` 报告"raft not available"，`system.cluster` 仅报告本地节点，`system.lock` 需要集群提供的全局注册表。
+`system.node`、`system.cluster`、`system.raft` 和 `system.lock` 子表暴露集群层。[启用集群](guides/cluster.md)时最为有用；在独立节点上会优雅降级——`system.raft.*` 报告"raft not available"，`system.cluster` 仅报告本地节点，`system.lock` 需要集群提供的 Raft 支持的 KV 存储。
 
 所有读取调用都是本地且廉价的：报告此节点已提交状态的视图，从不阻塞网络。
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- 原始统计映射（string 
 
 ### 分布式锁
 
-`system.lock` 提供集群范围的互斥锁。锁是调用进程拥有的全局唯一名称。基于 Strong 名称作用域构建，因此整个集群最多只能有一个持有者，且持有者进程退出或其节点离开时锁自动释放——不会产生卡死的锁需要清理。
+`system.lock` 提供集群范围的互斥锁。锁是调用进程拥有的全局唯一名称。基于 Raft 复制的系统 KV 存储构建，因此整个集群最多只能有一个持有者，且持有者进程退出或其节点离开时锁自动释放——不会产生卡死的锁需要清理。
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ end
 
 | 条件 | 类型 | 可重试 |
 |------|------|--------|
-| 权限被拒绝 | `errors.INVALID` | 否 |
+| 权限被拒绝（`system.source.load`、`system.lock.*`） | `errors.PERMISSION_DENIED` | 否 |
+| 权限被拒绝（所有其他调用） | `errors.INVALID` | 否 |
 | 参数无效 | `errors.INVALID` | 否 |
 | 缺少必需参数 | `errors.INVALID` | 否 |
 | 代码管理器不可用 | `errors.INTERNAL` | 否 |
@@ -482,5 +483,6 @@ end
 | 此节点 Raft 未运行 | `errors.INTERNAL` | 否 |
 | 成员资格不可用 | `errors.INTERNAL` | 否 |
 | 锁已被持有 | `errors.ALREADY_EXISTS` | 否 |
+| 锁服务不可用（此节点无 Raft） | `errors.INTERNAL` | 否 |
 
 错误处理参见[错误处理](lua/core/errors.md)。

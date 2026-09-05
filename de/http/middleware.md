@@ -143,7 +143,7 @@ options:
 
 | Option | Standard | Beschreibung |
 |--------|----------|--------------|
-| `real_ip.trusted.subnets` | Private Netzwerke | Vertrauenswürdige Proxy-CIDRs |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918, Link-Local, CGNAT und lokale IPv6-Bereiche | Vertrauenswürdige Proxy-CIDRs |
 | `real_ip.trust_all` | `false` | Allen Quellen vertrauen (unsicher) |
 
 **Header-Priorität:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -294,7 +294,7 @@ post_options:
 
 <warning>Pre-match</warning>
 
-Zeichnet OpenTelemetry-Spans und -Metriken fuer eingehende Anfragen auf. Wird automatisch registriert, wenn OTel aktiviert ist; wirkt andernfalls als No-Op.
+Zeichnet OpenTelemetry-Server-Spans fuer eingehende Anfragen auf. Wird immer registriert; wirkt als No-Op, wenn OTel oder dessen HTTP-Instrumentierung deaktiviert ist.
 
 ```yaml
 middleware:

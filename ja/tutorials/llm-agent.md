@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ LLM モジュールには2つのインフラストラクチャエントリが必
 - `env.storage.os` は環境変数から API キーを提供します
 - `process.host` は LLM モジュールが内部で使用するプロセスランタイムを提供します
 
+`terminal.host` は `wippy run -x` が `ask` プロセスを実行する場所であり、`io.print` の出力先です。
+
 ### 生成コード
 
 `src/ask.lua` を作成します:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### モデル定義
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-関数を直接呼び出して結果を表示します。モデル定義は、LLM モジュールにどのプロバイダーを使用し、API にどのモデル名を送信するかを伝えます。
+これは質問を引数として `ask` プロセスをターミナルホスト上で実行し、結果を表示します。モデル定義は、LLM モジュールにどのプロバイダーを使用し、API にどのモデル名を送信するかを伝えます。
 
 ## フェーズ 2: 会話
 
-プロンプトビルダーを使用して、単一の呼び出しからマルチターン会話にアップグレードします。エントリを関数からターミナル I/O を持つプロセスに変更します。
+プロンプトビルダーを使用して、単一の呼び出しからマルチターン会話にアップグレードします。プロセスを名前付きコマンドとして登録します。
 
 ### エントリ定義の更新
 

@@ -109,7 +109,7 @@ end
 | `target_pid` | string | 필수 | 메시지를 받을 프로세스 PID |
 | `message_topic` | string | `ws.message` | 클라이언트 메시지의 토픽 |
 | `heartbeat_interval` | duration | - | 하트비트 빈도 (예: `30s`) |
-| `metadata` | object | - | 모든 메시지에 첨부 |
+| `metadata` | object | - | join/leave/heartbeat 메시지에 첨부 |
 
 ## 메시지 토픽
 
@@ -162,9 +162,6 @@ end
 ```lua
 -- 구조화된 메시지 전송 (임의의 토픽 이름)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- 바이너리 전송
-process.send(client_pid, "data", binary_content)
 
 -- 연결 종료 (페이로드는 종료 사유 문자열)
 process.send(client_pid, "ws.close", "Session ended")

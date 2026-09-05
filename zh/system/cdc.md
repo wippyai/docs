@@ -53,9 +53,9 @@ description: "使用 db.cdc.postgres 和 db.cdc.sqlite 从 Postgres 逻辑复制
 | `streaming` | bool | false | 使用流式 `pgoutput` 协议版本 |
 | `temporary` | bool | false | 使用临时复制槽（断开连接时移除） |
 | `failover` | bool | false | 启用故障转移槽模式（与 `temporary` 互斥） |
-| `standby_interval` | duration | - | 备用状态消息间隔（例如 `10s`） |
-| `status_interval` | duration | - | 向服务器发送状态更新的间隔 |
-| `snapshot_fetch_size` | int | - | 每个快照批次获取的行数（必须 >= 0） |
+| `standby_interval` | duration | `10s` | 备用状态消息间隔（例如 `10s`） |
+| `status_interval` | duration | `30s` | 向服务器发送状态更新的间隔 |
+| `snapshot_fetch_size` | int | 1000 | 每个快照批次获取的行数（必须 >= 0） |
 | `max_transaction_changes` | int | 1000000 | 解码单个事务时缓冲的最大变更数 |
 | `max_transaction_bytes` | int | 268435456 | 解码单个事务时缓冲的最大逻辑字节数（256 MiB） |
 | `max_inflight_changes` | int | 1000000 | 所有进行中事务合计持有的最大变更数 |

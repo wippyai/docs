@@ -242,6 +242,8 @@ GitHub Actions 단계 예시:
 | `--rules` | | false | 린트 규칙 활성화 (W 시리즈 스타일/품질 검사) |
 | `--cache-reset` | | false | 린팅 전 캐시 지우기 |
 | `--lock-file` | `-l` | wippy.lock | 잠금 파일 경로 |
+| `--profile` | | | 병합된 런타임 설정에서 워크스페이스 프로파일 적용 (반복 가능, 순서대로 적용) |
+| `--set` | | | 병합된 런타임 설정 값 재정의 (`section.path=value`, 반복 가능) |
 
 ## 같이 보기
 

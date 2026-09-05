@@ -58,12 +58,12 @@ end
 ```lua
 -- 检查读取权限
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- 检查写入权限
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- 带元数据检查
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", 或 "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ local token, err = store:create(actor, scope, {
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ store:close()
 |--------|----------|-------------|
 | `security.policy.get` | Policy ID | 访问策略定义 |
 | `security.policy_group.get` | Group ID | 访问命名范围 |
-| `security.scope.create` | `custom` | 创建自定义范围 |
+| `security.scope.create` | `custom`、`with`、`without` | 创建自定义范围（`new_scope`）以及添加/移除策略（`scope:with`、`scope:without`） |
 | `security.actor.create` | Actor ID | 创建主体 |
 | `security.token_store.get` | Store ID | 访问令牌存储 |
 | `security.token.validate` | Store ID | 验证令牌 |
@@ -349,7 +349,8 @@ store:close()
 |-----------|------|-----------|
 | 无上下文 | `errors.INTERNAL` | 否 |
 | 令牌存储 ID 为空 | `errors.INVALID` | 否 |
-| 权限被拒绝 | `errors.INVALID` | 否 |
+| 权限被拒绝（`policy`、`named_scope`、令牌 `create`/`validate`/`revoke`） | `errors.INVALID` | 否 |
+| 权限被拒绝（`new_scope`、`new_actor`、`token_store`、`scope:with`/`without`） | 抛出为 Lua 错误 | 否 |
 | 策略未找到 | `errors.INTERNAL` | 否 |
 | 令牌存储未找到 | `errors.INTERNAL` | 否 |
 | 令牌存储已关闭 | `errors.INTERNAL` | 否 |

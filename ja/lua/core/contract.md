@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | メソッド名 |
 | `description` | string | メソッドの説明 |
-| `input_schemas` | table[] | 入力スキーマ定義 |
-| `output_schemas` | table[] | 出力スキーマ定義 |
+| `input_schemas` | table[] | 入力スキーマ定義（メソッドが宣言していない場合は存在しない）|
+| `output_schemas` | table[] | 出力スキーマ定義（メソッドが宣言していない場合は存在しない）|
 
 ## 実装を検索
 
@@ -195,7 +195,12 @@ local result, err = inst:call()
 | オプション | 型 | 説明 |
 |--------|------|-------------|
 | `retry.max_attempts` | int | 最初を含む最大試行回数 (1 はリトライを無効化) |
-| `retry.initial_delay` | int/duration | 最初のリトライ前の遅延（ミリ秒または duration 文字列） |
+| `retry.initial_delay` | int/duration | 最初のリトライ前の遅延（ミリ秒または duration 文字列）、デフォルト `100` |
+| `retry.max_delay` | int/duration | バックオフ遅延の上限（ミリ秒または duration 文字列）、デフォルト `10s` |
+| `retry.backoff_factor` | number | 各試行後に遅延へ適用される乗数、デフォルト `2.0` |
+| `retry.jitter` | number | 各遅延に適用されるランダムジッターの割合、デフォルト `0.1` |
+| `retry.retry_kinds` | string[] | これらの kind のエラーのみリトライする。デフォルトでは `Invalid`、`PermissionDenied`、`Internal` を除くすべての kind がリトライされる |
+| `retry.skip_kinds` | string[] | これらの kind のエラーは決してリトライしない |
 
 ## セキュリティコンテキスト
 
@@ -233,4 +238,4 @@ local admin, err = secured:open()
 | メソッドが見つからない | `errors.NOT_FOUND` |
 | デフォルトバインディングがない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
-| 呼び出し失敗 | `errors.INTERNAL` |
+| 呼び出し失敗 | 実装側のエラーの kind（保持される）。ディスパッチ失敗の場合は `errors.INTERNAL` |

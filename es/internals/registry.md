@@ -144,6 +144,8 @@ Algunos kinds omiten el event bus completamente:
 - `ns.dependency` - Dependencias de módulos
 - `ns.definition` - Metadatos del módulo (readme, wiki, licencia, autores)
 
+Este es el conjunto por defecto; `registry.dispatch_internal_kinds` en la configuración del runtime lo reemplaza.
+
 ## Resolución de Dependencias
 
 Las entradas pueden declarar dependencias en otras entradas. El resolver extrae dependencias vía patrones registrados:

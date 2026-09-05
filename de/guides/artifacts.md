@@ -32,9 +32,12 @@ entries:
     directory: ./package
 ```
 
-Sonst ändert sich nichts: Die Ressource wird wie gewohnt in das WAPP gepackt. Deklarierte
-Artefakte werden **beim Veröffentlichen des Moduls und beim Packen der Anwendung validiert**, sodass ein
-fehlerhaftes Artefakt beim Veröffentlichen scheitert statt bei einem Konsumenten.
+Sonst ändert sich nichts: Die Ressource wird wie jedes andere `fs.directory` in das WAPP
+eingebettet — listen Sie sie unter `embed:` in `wippy.yaml` auf oder übergeben Sie `--embed` an
+`wippy publish` und `wippy pack`; ein nicht eingebettetes Verzeichnis wird weder gepackt
+noch validiert. Deklarierte Artefakte werden **beim Veröffentlichen des Moduls und beim
+Packen der Anwendung validiert**, sodass ein fehlerhaftes Artefakt beim Veröffentlichen
+scheitert statt bei einem Konsumenten.
 
 ## Formate
 
@@ -187,10 +190,10 @@ Release des Pakets und umgekehrt.
 
 ```bash
 # validieren, ohne zu veröffentlichen
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # veröffentlichen
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 Deklarierte Artefakte werden als Teil des Veröffentlichens validiert, sodass eine package.json, die
@@ -203,7 +206,7 @@ Materialisierungsschritt des Konsumenten stattdessen auf diese Datei:
 
 ```bash
 # aus dem Produzentenmodul
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # Konsumenten materialisieren aus dem lokalen Pack statt aus dem veröffentlichten
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -244,6 +247,9 @@ praktikable Muster ist ein winziges Wippy-Projekt, dessen einzige Aufgabe es ist
 
 ```yaml
 # build-inputs/wippy.lock — ein Projekt, das nur zum Abrufen existiert
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

@@ -11,7 +11,7 @@ description: "再利用可能なコードを Wippy Hub で共有します。"
 
 1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成する
 2. 組織を作成するか、既存の組織に参加する
-3. 組織内でモジュール名を登録する
+3. その組織でモジュールを作成する権限を持つ — 最初の `wippy publish` がモジュールを自動的に登録する
 
 ## モジュール構造
 
@@ -262,7 +262,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 静的ファイルの埋め込み
 
-`fs.directory` エントリ（静的アセット、テンプレート、公開ファイル）を含むモジュールは、それらを公開パッケージに含めるために `--embed` を使用する必要があります。これがない場合、`fs.directory` エントリは除外されます。
+`fs.directory` エントリ（静的アセット、テンプレート、公開ファイル）を含むモジュールは、それらを公開パッケージに含めるために `--embed` を使用する必要があります。これがない場合、`fs.directory` エントリはディレクトリの内容を伴わずにパックされます。
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

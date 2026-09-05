@@ -193,6 +193,8 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### 使用 WASI Clocks 的异步 Sleep
 
-导入 `wasi:clocks` 和 `wasi:io` 的 WASM 组件可以使用时钟和轮询。异步 yield 机制与 Wippy 调度器集成：
+导入 `wasi:clocks`、`wasi:io` 和 `wasi:poll` 的 WASM 组件可以使用时钟和轮询。异步 yield 机制与 Wippy 调度器集成：
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ local active, err = funcs.call("myns:filter_active", users)
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

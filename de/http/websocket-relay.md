@@ -109,7 +109,7 @@ end
 | `target_pid` | string | erforderlich | Prozess-PID zum Empfangen von Nachrichten |
 | `message_topic` | string | `ws.message` | Topic für Client-Nachrichten |
 | `heartbeat_interval` | duration | - | Heartbeat-Frequenz (z.B. `30s`) |
-| `metadata` | object | - | An alle Nachrichten angehängt |
+| `metadata` | object | - | An Join-/Leave-/Heartbeat-Nachrichten angehängt |
 
 ## Nachrichten-Topics
 
@@ -162,9 +162,6 @@ Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird
 ```lua
 -- Strukturierte Nachricht senden (beliebiger Topic-Name)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Binär senden
-process.send(client_pid, "data", binary_content)
 
 -- Verbindung schließen (Payload ist der Schließgrund-String)
 process.send(client_pid, "ws.close", "Sitzung beendet")

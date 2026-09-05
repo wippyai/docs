@@ -111,7 +111,7 @@ local actor = security.actor()  -- Получить актора текущег�
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -140,20 +140,35 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-Устанавливает опции вызова: таймаут и приоритет. Используйте для операций, которым нужны временные ограничения.
+Устанавливает опции вызова, такие как политика retry или оверлейная сеть. Опции накладываются поверх предустановленных опций целевой записи функции.
 
 ```lua
--- Установить таймаут 5 секунд для вызова внешнего API
-local exec = funcs.new():with_options({timeout = 5000})
+-- Повторять временные сбои до 5 раз с экспоненциальным backoff
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Обработать таймаут или другую ошибку
+    -- Все попытки провалились, либо ошибка не была повторяемой
 end
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
-| `options` | table | Опции, специфичные для реализации |
+| `options` | table | Опции вызова |
+
+| Опция | Тип | Описание |
+|-------|-----|----------|
+| `retry.max_attempts` | int | Максимум попыток включая первую (1 отключает retry) |
+| `retry.initial_delay` | int/duration | Задержка перед первым retry (ms или строка duration), по умолчанию `100` |
+| `retry.max_delay` | int/duration | Верхняя граница задержки backoff (ms или строка duration), по умолчанию `10s` |
+| `retry.backoff_factor` | number | Множитель, применяемый к задержке после каждой попытки, по умолчанию `2.0` |
+| `retry.jitter` | number | Доля случайного джиттера, применяемая к каждой задержке, по умолчанию `0.1` |
+| `retry.retry_kinds` | string[] | Повторять только ошибки этих kind; по умолчанию повторяется любой kind, кроме `Invalid`, `PermissionDenied` и `Internal` |
+| `retry.skip_kinds` | string[] | Никогда не повторять ошибки этих kind |
+| `network` | string | ID оверлейной сети в реестре, через которую маршрутизируется исходящий трафик вызова; требует разрешение `network.select` |
+
+Retry запускают только повторяемые ошибки; неповторяемые возвращаются сразу. Опции activity в Temporal описаны в [Activities](temporal/activities.md).
 
 **Возвращает:** `Executor, error`
 
@@ -165,7 +180,7 @@ end
 -- Создать переиспользуемый executor с контекстом
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Несколько вызовов с тем же контекстом
 local users, _ = exec:call("app.api:list_users")
@@ -297,6 +312,7 @@ end
 | `funcs.call` | ID функции | Вызов конкретной функции |
 | `funcs.context` | `context` | Использовать `with_context()` для установки контекста |
 | `funcs.security` | `security` | Использовать `with_actor()` или `with_scope()` |
+| `network.select` | ID сети | Использовать `with_options({network = ...})` для выбора оверлейной сети |
 
 ## Ошибки
 
@@ -306,6 +322,7 @@ end
 | Отсутствует namespace | `errors.INVALID` | нет |
 | Отсутствует name | `errors.INVALID` | нет |
 | Разрешение отклонено | `errors.PERMISSION_DENIED` | нет |
+| Async вне процесса | `errors.INTERNAL` | нет |
 | Подписка не удалась | `errors.INTERNAL` | нет |
 | Ошибка функции | varies | varies |
 

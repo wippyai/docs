@@ -31,6 +31,7 @@ Activity — это функции, выполняющие недетермин�
 |------|-------------|----------|
 | `worker` | Да | Ссылка на запись `temporal.worker` |
 | `local` | Нет | Выполнять как локальную activity (по умолчанию: false) |
+| `name` | Нет | Собственное имя типа activity (по умолчанию — ID записи) |
 
 ## Реализация
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Ожидание завершения отмены activity |
 | `activity.disable_eager_execution` | boolean | false | Отключение немедленного выполнения |
 | `activity.retry_policy` | table | - | Конфигурация повторных попыток (см. ниже) |
+| `activity.name` | string | - | Имя типа activity для вызова, когда оно отличается от ID в реестре |
+| `activity.summary` | string | - | Человекочитаемая сводка, показываемая в UI Temporal |
+| `activity.priority` | table | - | Приоритет задачи: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (наследовать build ID) или `default` (использовать правила назначения) |
 
 Значения длительности принимают строки (`"5s"`, `"10m"`, `"1h"`) или числа в миллисекундах.
 

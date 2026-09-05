@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | Chave do objeto |
 | `options.expiration` | integer | Segundos até URL expirar (padrão: 3600) |
 | `options.content_type` | string | Content type obrigatorio para upload |
-| `options.content_length` | integer | Tamanho maximo de upload em bytes |
+| `options.content_length` | integer | Tamanho esperado de upload em bytes |
 
 **Retorna:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **Retorna:** `Reader, error`
 
-O ETag do objeto é fixado quando o leitor abre e enviado como `If-Match` em cada leitura por intervalo, de modo que um objeto sobrescrito durante a leitura falha com `errors.CONFLICT` em vez de servir uma mistura de duas gerações do objeto. Um provedor que não consegue fornecer um ETag retorna `errors.UNAVAILABLE`; o leitor nunca serve um objeto não fixado.
+O ETag do objeto é fixado quando o leitor abre e enviado como `If-Match` em cada leitura por intervalo, de modo que um objeto sobrescrito durante a leitura faz a leitura falhar com o erro de pré-condição do provedor em vez de servir uma mistura de duas gerações do objeto; `archive` o expõe como `errors.INTERNAL`. Um provedor que não consegue fornecer um ETag retorna `errors.UNAVAILABLE`; o leitor nunca serve um objeto não fixado.
 
 Leituras com cache miss realizam IO de rede bloqueante na task chamadora e serializam leitores concorrentes, portanto o acesso sequencial por entrada - o padrão do archive - é o formato pretendido.
 
@@ -494,10 +494,10 @@ Operações de cloud storage estao sujeitas a avaliação de política de segura
 | Objeto não encontrado | `errors.NOT_FOUND` | não |
 | ID de upload desconhecido | `errors.NOT_FOUND` | não |
 | Pré-condição condicional falhou | `errors.CONFLICT` | não |
-| Objeto sobrescrito durante uma leitura por intervalo | `errors.CONFLICT` | não |
+| Objeto sobrescrito durante uma leitura por intervalo (exposto por `archive`) | `errors.INTERNAL` | não |
 | Provedor não suporta uploads multipart | `errors.UNAVAILABLE` | não |
 | Provedor não fornece ETag para `open_reader` | `errors.UNAVAILABLE` | não |
-| Permissão negada | `errors.PERMISSION_DENIED` | não |
-| Operação falhou | `errors.INTERNAL` | não |
+| Permissão negada | levantada como erro Lua, não retornada | - |
+| Operação do provedor falhou | `errors.UNKNOWN` | não definido |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

@@ -261,7 +261,13 @@ end
 if node:is_missing() then
     -- Узел добавлен парсером для восстановления после ошибки
 end
+
+if node:is_extra() then
+    -- Узел является "extra" (например, комментарием), не требуемым грамматикой
+end
 ```
+
+Прочие методы узла: `descendant_count()` и `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-выражение
 
@@ -298,7 +304,7 @@ local query, err = treesitter.query("go", [[
 -- Получить все захваты (плоский список)
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
+    print(capture.name)   -- "func_name"
     print(capture.text)   -- исходный текст
     print(capture.index)  -- индекс захвата
     -- capture.node — объект узла
@@ -344,6 +350,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+Дополнительные методы интроспекции: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
 
 ## Курсор
 

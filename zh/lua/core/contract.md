@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |-------|------|-------------|
 | `name` | string | 方法名称 |
 | `description` | string | 方法描述 |
-| `input_schemas` | table[] | 输入模式定义 |
-| `output_schemas` | table[] | 输出模式定义 |
+| `input_schemas` | table[] | 输入模式定义（方法未声明时不存在） |
+| `output_schemas` | table[] | 输出模式定义（方法未声明时不存在） |
 
 ## 查找实现
 
@@ -195,7 +195,12 @@ local result, err = inst:call()
 | 选项 | 类型 | 描述 |
 |--------|------|-------------|
 | `retry.max_attempts` | int | 最大尝试次数包括第一次 (1 禁用重试) |
-| `retry.initial_delay` | int/duration | 首次重试前的延迟（毫秒或 duration 字符串） |
+| `retry.initial_delay` | int/duration | 首次重试前的延迟（毫秒或 duration 字符串），默认 `100` |
+| `retry.max_delay` | int/duration | 退避延迟的上限（毫秒或 duration 字符串），默认 `10s` |
+| `retry.backoff_factor` | number | 每次尝试后应用于延迟的乘数，默认 `2.0` |
+| `retry.jitter` | number | 应用于每次延迟的随机抖动比例，默认 `0.1` |
+| `retry.retry_kinds` | string[] | 仅重试这些类型的错误；默认除 `Invalid`、`PermissionDenied` 和 `Internal` 之外的所有类型都会重试 |
+| `retry.skip_kinds` | string[] | 绝不重试这些类型的错误 |
 
 ## 安全上下文
 
@@ -233,4 +238,4 @@ local admin, err = secured:open()
 | 方法未找到 | `errors.NOT_FOUND` |
 | 无默认绑定 | `errors.NOT_FOUND` |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` |
-| 调用失败 | `errors.INTERNAL` |
+| 调用失败 | 保留实现方错误的类型；分发失败时为 `errors.INTERNAL` |

@@ -45,7 +45,7 @@ db:release()
 </note>
 
 <note>
-Плейсхолдеры передаются драйверу базы данных без изменений; среда выполнения их не переписывает. SQLite и MySQL используют `?`, PostgreSQL использует `$1, $2` — записывайте их в форме, ожидаемой вашим драйвером. В примерах ниже используется `?` (SQLite/MySQL). Для запросов, рассчитанных на несколько движков, стройте их с помощью конструктора запросов и задавайте `placeholder_format` нужного диалекта.
+Плейсхолдеры передаются драйверу базы данных без изменений; среда выполнения их не переписывает. SQLite и MySQL используют `?`, PostgreSQL использует `$1, $2` — записывайте их в форме, ожидаемой вашим драйвером. В примерах ниже используется `?` (SQLite/MySQL). Для запросов, рассчитанных на несколько движков, стройте их с помощью конструктора запросов: `run_with` переписывает плейсхолдеры в `$1, $2`, когда дескриптор — PostgreSQL, а `to_sql` использует `placeholder_format` конструктора.
 </note>
 
 ## Константы
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Массив Sqlizer или табличных условий |
 
 **Возвращает:** `Sqlizer`
+
+## sqlizer:to_sql
+
+Формирует SQL-фрагмент и аргументы привязки условия.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Возвращает:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ local query = sql.builder.update("users")
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
-| `map` | table | Пары {колонка = значение} |
+| `map` | table | Пары {колонка = значение}; значения — обычные значения, `sql.NULL` или `sql.as.*` (для выражений используйте `set`) |
 
 **Возвращает:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ local sql_str, args = executor:to_sql()
 | Ресурс не найден | `errors.NOT_FOUND` | нет |
 | Ресурс не является базой данных | `errors.INVALID` | нет |
 | Некорректные параметры | `errors.INVALID` | нет |
-| Синтаксическая ошибка SQL | `errors.INVALID` | нет |
+| Синтаксическая ошибка SQL | `errors.UNKNOWN` | nil |
 | Statement закрыт | `errors.INVALID` | нет |
 | Транзакция не активна | `errors.INVALID` | нет |
 | Некорректное имя точки сохранения | `errors.INVALID` | нет |
-| Ошибка выполнения запроса | varies | varies |
+| Ошибка выполнения запроса | `errors.UNKNOWN` | nil |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.
 

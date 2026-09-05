@@ -125,12 +125,6 @@ entries:
 wippy test
 ```
 
-Фильтруйте по подстроке id записи (namespace:name) в процессе работы:
-
-```bash
-wippy test calc_test
-```
-
 Вывод для набора выше:
 
 ```
