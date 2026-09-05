@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` は LLM モジュールのバックグラウンドサービスが動作するポリシーグループ `wippy.security:process` を提供します。これがないとサービスは起動しません。
 
 ### セキュリティポリシー
 

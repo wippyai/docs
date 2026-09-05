@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security`는 LLM 모듈의 백그라운드 서비스가 실행되는 정책 그룹 `wippy.security:process`를 제공합니다. 이것이 없으면 해당 서비스는 시작되지 않습니다.
 
 ### 보안 정책
 
