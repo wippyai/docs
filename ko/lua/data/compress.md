@@ -1,6 +1,6 @@
 ---
 title: "압축"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "gzip, deflate, zlib, brotli, zstd 알고리즘을 사용하여 데이터를 압축 및 해제합니다."
 ---
 
 # 압축

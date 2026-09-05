@@ -1,6 +1,6 @@
 ---
 title: "HTTP-клиент"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Выполнение HTTP-запросов к внешним сервисам. Поддержка всех HTTP-методов, заголовков, query-параметров, данных форм, загрузки файлов, потоковых…"
 ---
 
 # HTTP-клиент

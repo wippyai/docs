@@ -1,6 +1,6 @@
 ---
 title: "OS 시간"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "표준 Lua os 시간 함수입니다. 타임스탬프, 날짜 포맷팅, 시간 계산을 위한 실제 벽시계 시간을 제공합니다."
 ---
 
 # OS 시간

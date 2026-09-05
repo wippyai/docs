@@ -1,6 +1,6 @@
 ---
 title: "Invocacion de Funciones"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "La forma principal de llamar otras funciones en Wippy. Ejecutar funciones registradas sincrona o asincronamente entre procesos, con soporte completo…"
 ---
 
 # Invocacion de Funciones

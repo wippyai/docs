@@ -1,6 +1,6 @@
 ---
 title: "Cifrado y Firma"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Operaciones criptograficas incluyendo cifrado, HMAC, JWT y derivacion de claves. Adaptado para workflows."
 ---
 
 # Cifrado y Firma

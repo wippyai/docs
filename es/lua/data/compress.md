@@ -1,6 +1,6 @@
 ---
 title: "Compresion"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Comprimir y descomprimir datos usando algoritmos gzip, deflate, zlib, brotli y zstd."
 ---
 
 # Compresion

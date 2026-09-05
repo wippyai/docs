@@ -1,6 +1,6 @@
 ---
 title: "Ausdruckssprache"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Werten Sie dynamische Ausdrücke mit expr-lang-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung…"
 ---
 
 # Ausdruckssprache

@@ -1,6 +1,6 @@
 ---
 title: "Prozessverwaltung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Kindprozesse spawnen, überwachen und mit ihnen kommunizieren. Implementiert Actor-Modell-Muster mit Nachrichtenübergabe, Supervision und…"
 ---
 
 # Prozessverwaltung

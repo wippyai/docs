@@ -1,6 +1,6 @@
 ---
 title: "Planilhas Excel"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Leia e escreva arquivos Microsoft Excel (.xlsx). Crie workbooks, gerencie planilhas, leia valores de celulas e gere relatorios com suporte a…"
 ---
 
 # Planilhas Excel

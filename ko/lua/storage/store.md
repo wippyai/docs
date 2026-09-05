@@ -1,6 +1,6 @@
 ---
 title: "키-값 스토어"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "TTL 지원이 있는 빠른 키-값 스토리지. 캐싱, 세션, 임시 상태에 이상적입니다."
 ---
 
 # 키-값 스토어

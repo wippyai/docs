@@ -1,6 +1,6 @@
 ---
 title: "エラー"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "カテゴリ分けとリトライメタデータ付きの構造化エラー処理。グローバルerrorsテーブルはrequireなしで利用可能。"
 ---
 
 # エラー

@@ -1,6 +1,6 @@
 ---
 title: "표현식 언어"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "expr-lang 구문을 사용하여 동적 표현식을 평가합니다. 전체 Lua 실행 없이 필터링, 검증, 규칙 평가를 위한 안전한 표현식을 컴파일하고 실행합니다."
 ---
 
 # 표현식 언어

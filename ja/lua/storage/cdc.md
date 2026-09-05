@@ -1,6 +1,6 @@
 ---
 title: "CDC"
-description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <secondary-label ref='nondeterministic'/"
+description: "db.cdc.postgresおよびdb.cdc.sqliteのソースから、Change Data Capture（変更データキャプチャ）ストリームを購読します。設定済みのソースを一覧し、ストリームを開き、行レベルの変更イベントをチャネル経由で受信します。APIはドライバー中立です。…"
 ---
 
 # CDC

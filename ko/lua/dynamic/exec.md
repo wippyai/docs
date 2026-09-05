@@ -1,6 +1,6 @@
 ---
 title: "명령 실행"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "I/O 스트림에 대한 완전한 제어와 함께 외부 명령과 셸 스크립트를 실행합니다."
 ---
 
 # 명령 실행

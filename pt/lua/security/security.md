@@ -1,6 +1,6 @@
 ---
 title: "Segurança & Controle de Acesso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Gerencie actors de autenticação, escopos de autorização e políticas de acesso."
 ---
 
 # Segurança & Controle de Acesso

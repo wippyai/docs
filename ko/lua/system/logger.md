@@ -1,6 +1,6 @@
 ---
 title: "로깅"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "debug, info, warn, error 레벨을 지원하는 구조화된 로깅입니다."
 ---
 
 # 로깅

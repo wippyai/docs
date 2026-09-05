@@ -1,6 +1,6 @@
 ---
 title: "Environment Variables"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Access environment variables for configuration values, secrets, and runtime settings."
 ---
 
 # Environment Variables

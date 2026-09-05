@@ -1,6 +1,6 @@
 ---
 title: "JSONエンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "LuaテーブルをJSONにエンコードし、JSON文字列をLua値にデコード。データ検証とAPIコントラクト強制のためのJSON Schema検証を含む。"
 ---
 
 # JSONエンコーディング

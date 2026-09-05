@@ -1,6 +1,6 @@
 ---
 title: "WebSocket 클라이언트"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "서버와의 실시간 양방향 통신을 위한 WebSocket 클라이언트."
 ---
 
 # WebSocket 클라이언트

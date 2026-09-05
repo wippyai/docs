@@ -1,6 +1,6 @@
 ---
 title: "Sistema"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Consultar información del sistema en tiempo de ejecución incluyendo uso de memoria, estadísticas de recolección de basura, detalles de CPU y…"
 ---
 
 # Sistema

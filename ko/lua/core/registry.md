@@ -1,6 +1,6 @@
 ---
 title: "엔트리 레지스트리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "등록된 엔트리를 쿼리하고 수정합니다. 메타데이터, 스냅샷, 버전 히스토리에 접근합니다."
 ---
 
 # 엔트리 레지스트리

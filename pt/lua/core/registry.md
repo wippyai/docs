@@ -1,6 +1,6 @@
 ---
 title: "Entry Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Consulte e modifique entradas registradas. Acesse metadados, snapshots e historico de versoes."
 ---
 
 # Entry Registry

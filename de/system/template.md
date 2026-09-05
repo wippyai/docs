@@ -1,6 +1,6 @@
 ---
 title: "Template-Engine"
-description: "<secondary-label ref='external'/"
+description: "Template-Rendering mit CloudyKit Jet."
 ---
 
 # Template-Engine

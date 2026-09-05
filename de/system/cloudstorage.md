@@ -1,6 +1,6 @@
 ---
 title: "Cloud-Speicher"
-description: "<secondary-label ref='external'/"
+description: "S3-kompatibler Objektspeicher mit vorsignierten URLs, Multipart-Uploads und Bereichs-Lesevorgängen."
 ---
 
 # Cloud-Speicher

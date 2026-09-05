@@ -1,6 +1,6 @@
 ---
 title: "Шифрование и подпись"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Криптографические операции: шифрование, HMAC, JWT и деривация ключей. Адаптировано для использования в workflow."
 ---
 
 # Шифрование и подпись

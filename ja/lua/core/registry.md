@@ -1,6 +1,6 @@
 ---
 title: "エントリレジストリ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "登録されたエントリのクエリと変更。メタデータ、スナップショット、バージョン履歴にアクセス。"
 ---
 
 # エントリレジストリ

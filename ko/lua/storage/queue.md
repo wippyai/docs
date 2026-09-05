@@ -1,6 +1,6 @@
 ---
 title: "메시지 큐"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "분산 큐에서 메시지를 발행하고 소비합니다. RabbitMQ 및 기타 AMQP 호환 브로커를 포함한 여러 백엔드를 지원합니다."
 ---
 
 # 메시지 큐

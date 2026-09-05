@@ -1,6 +1,6 @@
 ---
 title: "压缩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "使用 gzip、deflate、zlib、brotli 和 zstd 算法压缩和解压数据。"
 ---
 
 # 压缩

@@ -1,6 +1,6 @@
 ---
 title: "时间与时长"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "处理时间值、时长、时区和调度。创建定时器、休眠指定时间、解析和格式化时间戳。"
 ---
 
 # 时间与时长

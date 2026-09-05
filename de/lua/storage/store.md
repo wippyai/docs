@@ -1,6 +1,6 @@
 ---
 title: "Key-Value-Speicher"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Schneller Key-Value-Speicher mit TTL-Unterstützung. Ideal für Caching, Sessions und temporäre Zustände."
 ---
 
 # Key-Value-Speicher

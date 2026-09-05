@@ -1,6 +1,6 @@
 ---
 title: "Cola de Mensajes"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Publicar y consumir mensajes de colas distribuidas. Soporta multiples backends incluyendo RabbitMQ y otros brokers compatibles con AMQP."
 ---
 
 # Cola de Mensajes

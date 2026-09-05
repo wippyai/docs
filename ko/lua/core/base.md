@@ -1,6 +1,6 @@
 ---
 title: "표준 Lua 라이브러리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "모든 Wippy 프로세스에서 자동으로 사용 가능한 핵심 Lua 라이브러리. require() 불필요."
 ---
 
 # 표준 Lua 라이브러리

@@ -1,6 +1,6 @@
 ---
 title: "Prozessgruppen"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Prozesse in benannte Gruppen aufnehmen und an jedes Mitglied im Cluster senden. Modelliert nach Erlang/OTP pg: Gruppen sind dynamisch, ein Prozess…"
 ---
 
 # Prozessgruppen

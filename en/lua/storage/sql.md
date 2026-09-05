@@ -1,6 +1,6 @@
 ---
 title: "SQL Database"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Execute SQL queries against PostgreSQL, MySQL, and SQLite databases. Features include parameterized queries, transactions, prepared statements, and a…"
 ---
 
 # SQL Database

@@ -1,6 +1,6 @@
 ---
 title: "Command Execution"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Execute external commands and shell scripts with full control over I/O streams."
 ---
 
 # Command Execution

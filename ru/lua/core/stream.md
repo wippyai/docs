@@ -1,6 +1,6 @@
 ---
 title: "Потоки"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Операции чтения/записи потоков для эффективной обработки данных. Объекты Stream получаются из других модулей (HTTP, файловая система и т.д.)."
 ---
 
 # Потоки

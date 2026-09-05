@@ -1,6 +1,6 @@
 ---
 title: "Lua 标准库"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "所有 Wippy 进程中自动可用的核心 Lua 库，无需 require()。"
 ---
 
 # Lua 标准库

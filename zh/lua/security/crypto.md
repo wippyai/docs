@@ -1,6 +1,6 @@
 ---
 title: "加密与签名"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "加密操作，包括加密、HMAC、JWT 和密钥派生。适配工作流使用。"
 ---
 
 # 加密与签名

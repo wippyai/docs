@@ -1,6 +1,6 @@
 ---
 title: "Язык выражений"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Вычисление динамических выражений на синтаксисе expr-lang. Компиляция и выполнение безопасных выражений для фильтрации, валидации и применения правил…"
 ---
 
 # Язык выражений

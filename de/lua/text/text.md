@@ -1,6 +1,6 @@
 ---
 title: "Textverarbeitung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Reguläre Ausdrücke, Text-Diffing und semantisches Text-Splitting."
 ---
 
 # Textverarbeitung

@@ -1,6 +1,6 @@
 ---
 title: "JSON-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthält JSON-Schema-Validierung für Datenverifizierung und…"
 ---
 
 # JSON-Kodierung

@@ -1,6 +1,6 @@
 ---
 title: "Lenguaje de Expresiones"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Evaluar expresiones dinamicas usando sintaxis expr-lang. Compilar y ejecutar expresiones seguras para filtrado, validacion y evaluacion de reglas sin…"
 ---
 
 # Lenguaje de Expresiones

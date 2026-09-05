@@ -1,6 +1,6 @@
 ---
 title: "Registro de Entradas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Consultar y modificar entradas registradas. Acceder a metadatos, instantaneas e historial de versiones."
 ---
 
 # Registro de Entradas

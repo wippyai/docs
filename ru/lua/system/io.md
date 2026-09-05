@@ -1,6 +1,6 @@
 ---
 title: "Терминальный ввод/вывод"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Чтение из stdin и запись в stdout/stderr для CLI-приложений."
 ---
 
 # Терминальный ввод/вывод

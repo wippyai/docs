@@ -1,6 +1,6 @@
 ---
 title: "Excel 스프레드시트"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Microsoft Excel 파일(.xlsx) 읽기 및 쓰기. 워크북 생성, 시트 관리, 셀 값 읽기, 서식 지원으로 보고서 생성."
 ---
 
 # Excel 스프레드시트

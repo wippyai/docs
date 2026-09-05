@@ -1,6 +1,6 @@
 ---
 title: "Excelスプレッドシート"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Microsoft Excelファイル（.xlsx）の読み書き。ワークブックの作成、シートの管理、セル値の読み取り、フォーマットサポート付きレポートの生成。"
 ---
 
 # Excelスプレッドシート

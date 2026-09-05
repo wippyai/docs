@@ -1,6 +1,6 @@
 ---
 title: "Linguagem de Expressão"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Avalie expressões dinâmicas usando a sintaxe expr-lang. Compile e execute expressões seguras para filtragem, validação e avaliação de regras sem…"
 ---
 
 # Linguagem de Expressão

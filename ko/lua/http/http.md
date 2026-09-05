@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "HTTP 요청을 처리하고 응답을 빌드합니다. 요청 데이터, 라우트 파라미터, 헤더, 본문 내용에 접근합니다. 상태 코드, 헤더, 스트리밍 지원으로 응답을 빌드합니다."
 ---
 
 # HTTP

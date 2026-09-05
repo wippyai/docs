@@ -1,6 +1,6 @@
 ---
 title: "消息队列"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "向分布式队列发布和消费消息。支持多种后端，包括 RabbitMQ 和其他 AMQP 兼容的代理。"
 ---
 
 # 消息队列

@@ -1,6 +1,6 @@
 ---
 title: "환경 변수"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "설정 값, 비밀, 런타임 설정을 위한 환경 변수에 접근합니다."
 ---
 
 # 환경 변수

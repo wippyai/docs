@@ -1,6 +1,6 @@
 ---
 title: "Bibliotecas Lua Padrão"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Bibliotecas Lua centrais automaticamente disponíveis em todos os processos Wippy. Nenhum require() necessário."
 ---
 
 # Bibliotecas Lua Padrão

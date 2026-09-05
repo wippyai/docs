@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "Чтение и запись архивов zip/tar с ограниченным потреблением памяти. Архивы никогда не загружаются в RAM и не распаковываются на диск — пиковое…"
 ---
 
 # Archive

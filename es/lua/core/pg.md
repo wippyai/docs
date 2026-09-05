@@ -1,6 +1,6 @@
 ---
 title: "Grupos de Proceso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Unir procesos en grupos con nombre y difundir a todos los miembros en el cluster. Modelado sobre pg de Erlang/OTP: los grupos son dinámicos, un…"
 ---
 
 # Grupos de Proceso

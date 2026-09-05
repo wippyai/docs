@@ -1,6 +1,6 @@
 ---
 title: "Время и длительности"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Работа со значениями времени, длительностями, часовыми поясами и планированием. Создание таймеров, паузы на заданные периоды, парсинг и…"
 ---
 
 # Время и длительности

@@ -1,6 +1,6 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='external'/"
+description: "S3 兼容的对象存储，支持预签名 URL、分段上传和范围读取。"
 ---
 
 # Cloud Storage

@@ -1,6 +1,6 @@
 ---
 title: "CDC"
-description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <secondary-label ref='nondeterministic'/"
+description: "Подписка на потоки Change Data Capture из источников db.cdc.postgres и db.cdc.sqlite. Позволяет перечислить настроенные источники, открыть поток и…"
 ---
 
 # CDC

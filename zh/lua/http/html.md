@@ -1,6 +1,6 @@
 ---
 title: "HTML 过滤"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "过滤不受信任的 HTML 以防止 XSS 攻击。基于 bluemonday。"
 ---
 
 # HTML 过滤

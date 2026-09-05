@@ -1,6 +1,6 @@
 ---
 title: "YAML 인코딩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "YAML 문서를 Lua 테이블로 파싱하고 Lua 값을 YAML 문자열로 직렬화합니다."
 ---
 
 # YAML 인코딩

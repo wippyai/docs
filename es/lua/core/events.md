@@ -1,6 +1,6 @@
 ---
 title: "Bus de Eventos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Publicar y suscribirse a eventos para observabilidad — monitorear la actividad del runtime y de la aplicación y reaccionar a ella."
 ---
 
 # Bus de Eventos

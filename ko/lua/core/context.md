@@ -1,6 +1,6 @@
 ---
 title: "요청 컨텍스트"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "요청 범위 컨텍스트 값에 접근합니다. 컨텍스트는 Funcs 또는 Process를 통해 설정됩니다."
 ---
 
 # 요청 컨텍스트

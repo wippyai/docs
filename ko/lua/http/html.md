@@ -1,6 +1,6 @@
 ---
 title: "HTML 새니타이제이션"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "XSS 공격을 방지하기 위해 신뢰할 수 없는 HTML을 새니타이즈합니다. bluemonday 기반."
 ---
 
 # HTML 새니타이제이션

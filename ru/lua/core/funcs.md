@@ -1,6 +1,6 @@
 ---
 title: "Вызов функций"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Основной способ вызова других функций в Wippy. Выполнение зарегистрированных функций синхронно или асинхронно между процессами с полной поддержкой…"
 ---
 
 # Вызов функций

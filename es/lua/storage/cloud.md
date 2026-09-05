@@ -1,6 +1,6 @@
 ---
 title: "Almacenamiento en la Nube"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "Acceder a almacenamiento de objetos compatible con S3. Cargar, descargar, listar y gestionar objetos, prefirmar URLs de descarga, carga y partes…"
 ---
 
 # Almacenamiento en la Nube

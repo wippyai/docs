@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "<secondary-label ref='external'/"
+description: "使用 CloudyKit Jet 的模板渲染。"
 ---
 
 # Template Engine

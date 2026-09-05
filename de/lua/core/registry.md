@@ -1,6 +1,6 @@
 ---
 title: "Entry-Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Abfragen und modifizieren Sie registrierte Entries. Zugriff auf Metadaten, Snapshots und Versionshistorie."
 ---
 
 # Entry-Registry

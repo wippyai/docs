@@ -1,6 +1,6 @@
 ---
 title: "プロセス管理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "子プロセスのスポーン、監視、通信。メッセージパッシング、スーパービジョン、ライフサイクル管理によるアクターモデルパターンを実装。"
 ---
 
 # プロセス管理

@@ -1,6 +1,6 @@
 ---
 title: "메트릭 및 텔레메트리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "카운터, 게이지, 히스토그램을 사용하여 애플리케이션 메트릭을 기록합니다."
 ---
 
 # 메트릭 및 텔레메트리

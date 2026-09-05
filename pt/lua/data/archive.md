@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "Leia e escreva arquivos zip/tar com memória limitada. Os arquivos nunca são carregados em RAM nem extraídos para disco — o pico de memória independe…"
 ---
 
 # Archive

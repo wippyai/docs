@@ -1,6 +1,6 @@
 ---
 title: "进程管理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "启动、监控子进程并与之通信。实现带消息传递、监督和生命周期管理的 Actor 模型模式。"
 ---
 
 # 进程管理

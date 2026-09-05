@@ -1,6 +1,6 @@
 ---
 title: "Base64エンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "バイナリデータをbase64文字列にエンコードし、base64をバイナリにデコード。RFC 4648に準拠した標準base64エンコーディングを使用。"
 ---
 
 # Base64エンコーディング

@@ -1,6 +1,6 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "Access S3-compatible object storage. Upload, download, list, and manage objects, presign download, upload and multipart-part URLs, and read objects…"
 ---
 
 # Cloud Storage

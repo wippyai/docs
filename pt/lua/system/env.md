@@ -1,6 +1,6 @@
 ---
 title: "Variaveis de Ambiente"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime."
 ---
 
 # Variaveis de Ambiente

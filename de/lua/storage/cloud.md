@@ -1,6 +1,6 @@
 ---
 title: "Cloud-Speicher"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "Zugriff auf S3-kompatiblen Objektspeicher. Objekte hochladen, herunterladen, auflisten und verwalten, URLs für Download, Upload und Multipart-Teile…"
 ---
 
 # Cloud-Speicher

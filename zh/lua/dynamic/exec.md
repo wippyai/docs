@@ -1,6 +1,6 @@
 ---
 title: "命令执行"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "执行外部命令和 shell 脚本，完全控制 I/O 流。"
 ---
 
 # 命令执行

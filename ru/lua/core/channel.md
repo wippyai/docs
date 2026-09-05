@@ -1,6 +1,6 @@
 ---
 title: "Каналы и корутины"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Каналы в стиле Go для коммуникации между корутинами. Создание буферизованных и небуферизованных каналов, отправка и получение значений, координация…"
 ---
 
 # Каналы и корутины

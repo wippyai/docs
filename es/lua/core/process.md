@@ -1,6 +1,6 @@
 ---
 title: "Gestión de Procesos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Crear, monitorear y comunicarse con procesos hijos. Implementa patrones de modelo de actores con paso de mensajes, supervisión y gestión de ciclo de…"
 ---
 
 # Gestión de Procesos

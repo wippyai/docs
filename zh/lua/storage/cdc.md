@@ -1,6 +1,6 @@
 ---
 title: "CDC"
-description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <secondary-label ref='nondeterministic'/"
+description: "订阅来自 db.cdc.postgres 和 db.cdc.sqlite 源的变更数据捕获（Change Data Capture）流。列出已配置的源、打开一个流，并通过通道接收行级变更事件。该 API 与驱动无关：两种 kind 返回相同的源信息和相同的变更事件，仅在它们发布的能力上有所不同。"
 ---
 
 # CDC

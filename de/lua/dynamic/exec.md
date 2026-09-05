@@ -1,6 +1,6 @@
 ---
 title: "Befehlsausführung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Führen Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus."
 ---
 
 # Befehlsausführung

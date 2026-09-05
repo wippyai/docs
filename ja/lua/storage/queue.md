@@ -1,6 +1,6 @@
 ---
 title: "メッセージキュー"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "分散キューからメッセージをパブリッシュおよびコンシュームします。RabbitMQなどのAMQP互換ブローカーを含む複数のバックエンドをサポートしています。"
 ---
 
 # メッセージキュー

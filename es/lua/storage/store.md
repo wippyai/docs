@@ -1,6 +1,6 @@
 ---
 title: "Almacen Clave-Valor"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal."
 ---
 
 # Almacen Clave-Valor

@@ -1,6 +1,6 @@
 ---
 title: "系统"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "查询运行时系统信息，包括内存使用、垃圾回收统计、CPU 详情和进程元数据。"
 ---
 
 # 系统

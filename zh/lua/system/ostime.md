@@ -1,6 +1,6 @@
 ---
 title: "操作系统时间"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "标准 Lua os 时间函数。提供用于时间戳、日期格式化和时间计算的真实墙上时钟时间。"
 ---
 
 # 操作系统时间

@@ -1,6 +1,6 @@
 ---
 title: "式言語"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "expr-lang構文を使用して動的式を評価します。完全なLua実行なしで、フィルタリング、検証、ルール評価のための安全な式をコンパイルして実行できます。"
 ---
 
 # 式言語

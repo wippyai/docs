@@ -1,6 +1,6 @@
 ---
 title: "Parsing Tree-sitter"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Parsear código fuente en arboles de sintaxis concretos usando Tree-sitter. Basado en bindings de go-tree-sitter."
 ---
 
 # Parsing Tree-sitter

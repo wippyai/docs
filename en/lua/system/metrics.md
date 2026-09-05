@@ -1,6 +1,6 @@
 ---
 title: "Metrics & Telemetry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Record application metrics using counters, gauges, and histograms."
 ---
 
 # Metrics & Telemetry

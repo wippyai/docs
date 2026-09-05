@@ -1,6 +1,6 @@
 ---
 title: "キーバリューストア"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "TTLサポート付きの高速キーバリューストレージ。キャッシュ、セッション、一時的な状態に最適。"
 ---
 
 # キーバリューストア

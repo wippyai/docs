@@ -1,6 +1,6 @@
 ---
 title: "Contexto de Solicitud"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Acceder a valores de contexto con alcance de solicitud. El contexto se establece via Funcs o Process."
 ---
 
 # Contexto de Solicitud

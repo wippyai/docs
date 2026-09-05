@@ -1,6 +1,6 @@
 ---
 title: "Выполнение команд"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Запуск внешних команд и shell-скриптов с полным контролем над потоками ввода-вывода."
 ---
 
 # Выполнение команд

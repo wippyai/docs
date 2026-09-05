@@ -1,6 +1,6 @@
 ---
 title: "コントラクト"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "型付きコントラクトを通じてサービスを呼び出し。スキーマ検証と非同期実行サポート付きでリモートAPI、ワークフロー、関数を呼び出し。"
 ---
 
 # コントラクト

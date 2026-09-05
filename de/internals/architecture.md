@@ -1,6 +1,6 @@
 ---
 title: "Architektur"
-description: "<note Diese Seite ist in Bearbeitung. Inhalte können unvollständig sein oder sich ändern. </note"
+description: "Wippy ist ein geschichtetes System, das auf Go aufgebaut ist. Komponenten initialisieren sich in Abhängigkeitsreihenfolge, kommunizieren über einen…"
 ---
 
 # Architektur

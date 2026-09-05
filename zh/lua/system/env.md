@@ -1,6 +1,6 @@
 ---
 title: "环境变量"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "访问环境变量以获取配置值、密钥和运行时设置。"
 ---
 
 # 环境变量

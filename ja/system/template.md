@@ -1,6 +1,6 @@
 ---
 title: "テンプレートエンジン"
-description: "<secondary-label ref='external'/"
+description: "CloudyKit Jetを使用したテンプレートレンダリング。"
 ---
 
 # テンプレートエンジン

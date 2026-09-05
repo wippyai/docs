@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Funções de tempo padrão Lua os. Fornece tempo de relogio de parede real para timestamps, formatação de datas e calculos de tempo."
 ---
 
 # OS Time

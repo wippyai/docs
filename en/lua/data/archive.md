@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "Read and write zip/tar archives with bounded memory. Archives are never loaded into RAM nor extracted to disk — peak memory is independent of archive…"
 ---
 
 # Archive

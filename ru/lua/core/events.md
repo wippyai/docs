@@ -1,6 +1,6 @@
 ---
 title: "Шина событий"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Публикация и подписка на события для наблюдаемости — мониторинга активности среды выполнения и приложения и реакции на неё."
 ---
 
 # Шина событий

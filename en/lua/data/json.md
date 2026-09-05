@@ -1,6 +1,6 @@
 ---
 title: "JSON Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Encode Lua tables to JSON and decode JSON strings to Lua values. Includes JSON Schema validation for data verification and API contract enforcement."
 ---
 
 # JSON Encoding

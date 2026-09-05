@@ -1,6 +1,6 @@
 ---
 title: "哈希函数"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "加密哈希函数和 HMAC 消息认证。"
 ---
 
 # 哈希函数

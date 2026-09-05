@@ -1,6 +1,6 @@
 ---
 title: "条目注册表"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "查询和修改已注册条目。访问元数据、快照和版本历史。"
 ---
 
 # 条目注册表

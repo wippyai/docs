@@ -1,6 +1,6 @@
 ---
 title: "Шаблонизатор"
-description: "<secondary-label ref='external'/"
+description: "Рендеринг шаблонов с помощью CloudyKit Jet."
 ---
 
 # Шаблонизатор

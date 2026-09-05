@@ -1,6 +1,6 @@
 ---
 title: "HTTP 客户端"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "向外部服务发起 HTTP 请求。支持所有 HTTP 方法、头部、查询参数、表单数据、文件上传、流式响应和并发批量请求。"
 ---
 
 # HTTP 客户端

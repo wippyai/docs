@@ -1,6 +1,6 @@
 ---
 title: "Excel Spreadsheets"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Read and write Microsoft Excel files (.xlsx). Create workbooks, manage sheets, read cell values, and generate reports with formatting support."
 ---
 
 # Excel Spreadsheets

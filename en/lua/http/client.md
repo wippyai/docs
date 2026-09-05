@@ -1,6 +1,6 @@
 ---
 title: "HTTP Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Make HTTP requests to external services. Supports all HTTP methods, headers, query parameters, form data, file uploads, streaming responses, and…"
 ---
 
 # HTTP Client

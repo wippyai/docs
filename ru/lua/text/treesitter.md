@@ -1,6 +1,6 @@
 ---
 title: "Парсинг с Tree-sitter"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Парсинг исходного кода в синтаксические деревья с помощью Tree-sitter. Модуль основан на биндингах go-tree-sitter."
 ---
 
 # Парсинг с Tree-sitter

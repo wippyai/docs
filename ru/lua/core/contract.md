@@ -1,6 +1,6 @@
 ---
 title: "Контракты"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Вызов сервисов через типизированные контракты. Обращение к удалённым API, workflow и функциям с валидацией схем и поддержкой асинхронного выполнения."
 ---
 
 # Контракты

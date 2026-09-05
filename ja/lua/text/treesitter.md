@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitterパース"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Tree-sitterを使用してソースコードを具象構文木にパースします。go-tree-sitterバインディングベースです。"
 ---
 
 # Tree-sitterパース

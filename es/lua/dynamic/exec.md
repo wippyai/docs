@@ -1,6 +1,6 @@
 ---
 title: "Ejecución de Comandos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Ejecutar comandos externos y scripts de shell con control total sobre streams de E/S."
 ---
 
 # Ejecución de Comandos

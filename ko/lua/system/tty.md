@@ -1,6 +1,6 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "터미널 입력 이벤트, 스타일이 적용된 출력, 표시 서피스, 로컬 가상 뷰포트입니다."
 ---
 
 # TTY

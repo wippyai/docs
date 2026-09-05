@@ -1,6 +1,6 @@
 ---
 title: "Таблицы Excel"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Чтение и запись файлов Microsoft Excel (.xlsx). Создание книг, управление листами, чтение значений ячеек и генерация отчётов с поддержкой…"
 ---
 
 # Таблицы Excel

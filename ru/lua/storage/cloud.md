@@ -1,6 +1,6 @@
 ---
 title: "Облачное хранилище"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "Доступ к S3-совместимому объектному хранилищу. Загрузка, скачивание, перечисление и управление объектами, presigned URL для скачивания, загрузки и…"
 ---
 
 # Облачное хранилище

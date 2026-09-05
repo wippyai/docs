@@ -1,6 +1,6 @@
 ---
 title: "Payload-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Konvertieren Sie Daten zwischen Formaten einschließlich JSON, MessagePack und Binär. Behandeln Sie typisierte Payloads für…"
 ---
 
 # Payload-Kodierung

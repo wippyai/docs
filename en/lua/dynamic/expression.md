@@ -1,6 +1,6 @@
 ---
 title: "Expression Language"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Evaluate dynamic expressions using expr-lang syntax. Compile and execute safe expressions for filtering, validation, and rule evaluation without full…"
 ---
 
 # Expression Language

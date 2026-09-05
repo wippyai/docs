@@ -1,6 +1,6 @@
 ---
 title: "云存储"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "访问 S3 兼容的对象存储。上传、下载、列出和管理对象，为下载、上传和分段 part 生成预签名 URL，并以随机访问方式读取对象。"
 ---
 
 # 云存储

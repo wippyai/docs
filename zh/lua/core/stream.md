@@ -1,6 +1,6 @@
 ---
 title: "流"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "用于高效处理数据的流读写操作。Stream 对象从其他模块（HTTP、文件系统等）获取。"
 ---
 
 # 流

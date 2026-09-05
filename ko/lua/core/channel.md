@@ -1,6 +1,6 @@
 ---
 title: "채널과 코루틴"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "코루틴 간 통신을 위한 Go 스타일 채널. 버퍼드 또는 언버퍼드 채널을 생성하고, 값을 보내고 받고, select 문을 사용하여 동시 프로세스 간에 조율합니다."
 ---
 
 # 채널과 코루틴

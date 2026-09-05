@@ -1,6 +1,6 @@
 ---
 title: "Hash Functions"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Cryptographic hash functions and HMAC message authentication."
 ---
 
 # Hash Functions

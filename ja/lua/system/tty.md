@@ -1,6 +1,6 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "ターミナルの入力イベント、スタイル付き出力、プレゼンテーションサーフェス、ローカルな仮想ビューポート。"
 ---
 
 # TTY

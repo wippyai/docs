@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Query runtime system information including memory usage, garbage collection stats, CPU details, and process metadata."
 ---
 
 # System

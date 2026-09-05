@@ -1,6 +1,6 @@
 ---
 title: "Arquitectura"
-description: "<note Esta página está en progreso. El contenido puede estar incompleto o cambiar. </note"
+description: "Wippy es un sistema de capas construido en Go. Los componentes se inicializan en orden de dependencias, se comunican a través de un event bus, y…"
 ---
 
 # Arquitectura

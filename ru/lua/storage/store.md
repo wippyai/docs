@@ -1,6 +1,6 @@
 ---
 title: "Key-Value хранилище"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Быстрое key-value хранилище с поддержкой TTL. Идеально для кэширования, сессий и временного состояния."
 ---
 
 # Key-Value хранилище

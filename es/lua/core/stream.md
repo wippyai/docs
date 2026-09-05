@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "Operaciones de lectura/escritura de streams para manejar datos eficientemente. Los objetos stream se obtienen de otros modulos (HTTP, sistema de…"
 ---
 
 # Streams

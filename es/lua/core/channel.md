@@ -1,6 +1,6 @@
 ---
 title: "Canales y Corrutinas"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Canales estilo Go para comunicación entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos…"
 ---
 
 # Canales y Corrutinas

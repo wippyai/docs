@@ -1,6 +1,6 @@
 ---
 title: "프로세스 관리"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "자식 프로세스를 스폰하고 모니터링하며 통신합니다. 메시지 전달, 슈퍼비전, 라이프사이클 관리를 갖춘 액터 모델 패턴을 구현합니다."
 ---
 
 # 프로세스 관리

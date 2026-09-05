@@ -1,6 +1,6 @@
 ---
 title: "SQL-Datenbank"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Führen Sie SQL-Abfragen gegen PostgreSQL-, MySQL- und SQLite-Datenbanken aus. Features umfassen parametrisierte Abfragen, Transaktionen, Prepared…"
 ---
 
 # SQL-Datenbank

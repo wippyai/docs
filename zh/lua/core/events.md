@@ -1,6 +1,6 @@
 ---
 title: "事件总线"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "发布和订阅事件，用于观测——监控运行时和应用活动并对其做出响应。"
 ---
 
 # 事件总线

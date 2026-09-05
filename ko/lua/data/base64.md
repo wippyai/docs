@@ -1,6 +1,6 @@
 ---
 title: "Base64 인코딩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "바이너리 데이터를 base64 문자열로 인코딩하고 base64를 다시 바이너리로 디코딩합니다. RFC 4648에 따른 표준 base64 인코딩을 사용합니다."
 ---
 
 # Base64 인코딩

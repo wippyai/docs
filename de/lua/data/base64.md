@@ -1,6 +1,6 @@
 ---
 title: "Base64-Kodierung"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Kodieren Sie binäre Daten zu Base64-Strings und dekodieren Sie Base64 zurück zu Binärdaten. Verwendet Standard-Base64-Kodierung nach RFC 4648."
 ---
 
 # Base64-Kodierung

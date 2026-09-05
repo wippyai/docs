@@ -1,6 +1,6 @@
 ---
 title: "SQLデータベース"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。"
 ---
 
 # SQLデータベース

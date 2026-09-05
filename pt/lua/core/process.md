@@ -1,6 +1,6 @@
 ---
 title: "Gerenciamento de Processos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Crie, monitore e comunique-se com processos filhos. Implementa padrões de modelo de atores com passagem de mensagens, supervisão e gerenciamento de…"
 ---
 
 # Gerenciamento de Processos

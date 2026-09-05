@@ -1,6 +1,6 @@
 ---
 title: "Entry Registry"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Query and modify registered entries. Access metadata, snapshots, and version history."
 ---
 
 # Entry Registry

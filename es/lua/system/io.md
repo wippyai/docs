@@ -1,6 +1,6 @@
 ---
 title: "E/S de Terminal"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Leer desde stdin y escribir a stdout/stderr para aplicaciones CLI."
 ---
 
 # E/S de Terminal

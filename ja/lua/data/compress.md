@@ -1,6 +1,6 @@
 ---
 title: "圧縮"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "gzip、deflate、zlib、brotli、zstdアルゴリズムを使用してデータを圧縮・解凍。"
 ---
 
 # 圧縮

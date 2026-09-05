@@ -1,6 +1,6 @@
 ---
 title: "암호화 및 서명"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "암호화, HMAC, JWT, 키 파생을 포함한 암호화 작업을 제공합니다. 워크플로우에 맞게 조정되었습니다."
 ---
 
 # 암호화 및 서명

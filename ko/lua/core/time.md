@@ -1,6 +1,6 @@
 ---
 title: "시간과 기간"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "시간 값, 기간, 타임존, 스케줄링 작업. 타이머 생성, 지정된 기간 동안 슬립, 타임스탬프 파싱 및 포맷."
 ---
 
 # 시간과 기간

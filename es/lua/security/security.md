@@ -1,6 +1,6 @@
 ---
 title: "Seguridad y Control de Acceso"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Gestionar actores de autenticación, alcances de autorizacion y politicas de acceso."
 ---
 
 # Seguridad y Control de Acceso

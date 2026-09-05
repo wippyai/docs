@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Обработка HTTP-запросов и формирование ответов. Доступ к данным запроса, параметрам маршрута, заголовкам и телу. Формирование ответов с кодами…"
 ---
 
 # HTTP

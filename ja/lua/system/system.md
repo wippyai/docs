@@ -1,6 +1,6 @@
 ---
 title: "システム"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "メモリ使用量、ガベージコレクション統計、CPU詳細、プロセスメタデータを含むランタイムシステム情報のクエリ。"
 ---
 
 # システム

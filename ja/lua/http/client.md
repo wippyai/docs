@@ -1,6 +1,6 @@
 ---
 title: "HTTPクライアント"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "外部サービスへのHTTPリクエストを行う。すべてのHTTPメソッド、ヘッダー、クエリパラメータ、フォームデータ、ファイルアップロード、ストリーミングレスポンス、並行バッチリクエストをサポート。"
 ---
 
 # HTTPクライアント

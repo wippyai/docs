@@ -1,6 +1,6 @@
 ---
 title: "클라우드 스토리지"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "S3 호환 오브젝트 스토리지에 접근합니다. 오브젝트를 업로드, 다운로드, 목록 조회, 관리하고, 다운로드/업로드/멀티파트 파트 URL을 presign하며, 랜덤 액세스로 오브젝트를 읽습니다."
 ---
 
 # 클라우드 스토리지

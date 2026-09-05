@@ -1,6 +1,6 @@
 ---
 title: "WebSocketクライアント"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "サーバーとのリアルタイム双方向通信用WebSocketクライアント。"
 ---
 
 # WebSocketクライアント

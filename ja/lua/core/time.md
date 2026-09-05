@@ -1,6 +1,6 @@
 ---
 title: "時間と期間"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "時間値、期間、タイムゾーン、スケジューリングを扱う。タイマーの作成、指定期間のスリープ、タイムスタンプの解析とフォーマット。"
 ---
 
 # 時間と期間

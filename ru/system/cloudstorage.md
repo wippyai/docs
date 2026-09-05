@@ -1,6 +1,6 @@
 ---
 title: "Облачное хранилище"
-description: "<secondary-label ref='external'/"
+description: "S3-совместимое объектное хранилище с presigned URLs, multipart-загрузками и чтением по диапазонам."
 ---
 
 # Облачное хранилище

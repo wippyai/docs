@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "处理 HTTP 请求并构建响应。访问请求数据、路由参数、头部和正文内容。使用状态码、头部和流式支持构建响应。"
 ---
 
 # HTTP

@@ -1,6 +1,6 @@
 ---
 title: "Time & Duration"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Work with time values, durations, timezones, and scheduling. Create timers, sleep for specified periods, parse and format timestamps."
 ---
 
 # Time & Duration

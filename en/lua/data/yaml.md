@@ -1,6 +1,6 @@
 ---
 title: "YAML Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Parse YAML documents into Lua tables and serialize Lua values to YAML strings."
 ---
 
 # YAML Encoding

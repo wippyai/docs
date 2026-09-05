@@ -1,6 +1,6 @@
 ---
 title: "Motor de Templates"
-description: "<secondary-label ref='external'/"
+description: "Renderização de templates usando CloudyKit Jet."
 ---
 
 # Motor de Templates

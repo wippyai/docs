@@ -1,6 +1,6 @@
 ---
 title: "WebSocket-Client"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "WebSocket-Client für bidirektionale Echtzeit-Kommunikation mit Servern."
 ---
 
 # WebSocket-Client

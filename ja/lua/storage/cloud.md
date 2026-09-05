@@ -1,6 +1,6 @@
 ---
 title: "クラウドストレージ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/ <secondary-label…"
+description: "S3互換オブジェクトストレージへのアクセス。オブジェクトのアップロード、ダウンロード、一覧表示、管理に加え、ダウンロード・アップロード・マルチパートパートのURLの署名付き生成、およびランダムアクセスによるオブジェクトの読み取りを行います。"
 ---
 
 # クラウドストレージ

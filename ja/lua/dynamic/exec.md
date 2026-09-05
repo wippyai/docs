@@ -1,6 +1,6 @@
 ---
 title: "コマンド実行"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "I/Oストリームを完全に制御して外部コマンドとシェルスクリプトを実行します。"
 ---
 
 # コマンド実行

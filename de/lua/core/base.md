@@ -1,6 +1,6 @@
 ---
 title: "Standard-Lua-Bibliotheken"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Kern-Lua-Bibliotheken, die automatisch in allen Wippy-Prozessen verfügbar sind. Kein require() erforderlich."
 ---
 
 # Standard-Lua-Bibliotheken

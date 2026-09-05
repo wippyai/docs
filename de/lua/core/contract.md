@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Rufen Sie Services über typisierte Contracts auf. Rufen Sie Remote-APIs, Workflows und Funktionen mit Schema-Validierung und Unterstützung für…"
 ---
 
 # Contracts

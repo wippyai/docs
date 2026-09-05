@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten."
 ---
 
 # System

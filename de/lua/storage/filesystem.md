@@ -1,6 +1,6 @@
 ---
 title: "Dateisystem"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Lesen, Schreiben und Verwalten von Dateien innerhalb von Sandbox-Dateisystem-Volumes."
 ---
 
 # Dateisystem

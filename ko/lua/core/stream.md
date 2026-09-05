@@ -1,6 +1,6 @@
 ---
 title: "스트림"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "효율적인 데이터 처리를 위한 스트림 읽기/쓰기 작업. 스트림 객체는 다른 모듈(HTTP, 파일시스템 등)에서 얻습니다."
 ---
 
 # 스트림

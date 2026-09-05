@@ -1,6 +1,6 @@
 ---
 title: "进程组"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "将进程加入命名组并向集群中所有成员广播。以 Erlang/OTP pg 为模型：组是动态的，进程可以属于多个组，成员资格在集群范围内追踪，并具有最终一致性。"
 ---
 
 # 进程组

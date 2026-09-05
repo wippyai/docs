@@ -1,6 +1,6 @@
 ---
 title: "Variables de Entorno"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Acceder a variables de entorno para valores de configuración, secretos y ajustes de tiempo de ejecución."
 ---
 
 # Variables de Entorno

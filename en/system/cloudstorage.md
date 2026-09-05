@@ -1,6 +1,6 @@
 ---
 title: "Cloud Storage"
-description: "<secondary-label ref='external'/"
+description: "S3-compatible object storage with presigned URLs, multipart uploads and ranged reads."
 ---
 
 # Cloud Storage

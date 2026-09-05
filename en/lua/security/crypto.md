@@ -1,6 +1,6 @@
 ---
 title: "Encryption & Signing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='io'/"
+description: "Cryptographic operations including encryption, HMAC, JWT, and key derivation. Adapted for workflows."
 ---
 
 # Encryption & Signing

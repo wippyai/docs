@@ -1,6 +1,6 @@
 ---
 title: "Motor de Plantillas"
-description: "<secondary-label ref='external'/"
+description: "Renderizado de plantillas usando CloudyKit Jet."
 ---
 
 # Motor de Plantillas

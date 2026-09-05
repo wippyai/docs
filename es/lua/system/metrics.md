@@ -1,6 +1,6 @@
 ---
 title: "Metricas y Telemetria"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Registrar metricas de aplicación usando contadores, gauges e histogramas."
 ---
 
 # Metricas y Telemetria

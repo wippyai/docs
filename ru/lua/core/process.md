@@ -1,6 +1,6 @@
 ---
 title: "Управление процессами"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Создание, мониторинг и коммуникация с дочерними процессами. Реализует паттерны акторной модели с передачей сообщений, супервизией и управлением…"
 ---
 
 # Управление процессами

@@ -1,6 +1,6 @@
 ---
 title: "Codificacion YAML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Parsear documentos YAML a tablas Lua y serializar valores Lua a strings YAML."
 ---
 
 # Codificacion YAML

@@ -1,6 +1,6 @@
 ---
 title: "ストリーム"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/"
+description: "データを効率的に処理するためのストリーム読み書き操作。ストリームオブジェクトは他のモジュール（HTTP、ファイルシステムなど）から取得されます。"
 ---
 
 # ストリーム

@@ -1,6 +1,6 @@
 ---
 title: "Architecture"
-description: "<note This page is a work in progress. Content may be incomplete or change. </note"
+description: "Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a…"
 ---
 
 # Architecture

@@ -1,6 +1,6 @@
 ---
 title: "Process Management"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Spawn, monitor, and communicate with child processes. Implements actor-model patterns with message passing, supervision, and lifecycle management."
 ---
 
 # Process Management

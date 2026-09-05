@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "제한된 메모리로 zip/tar 아카이브를 읽고 씁니다. 아카이브는 RAM으로 로드되지도, 디스크로 추출되지도 않습니다. 최대 메모리는 아카이브와 항목 크기와 무관하므로, 수 GB 아카이브도 RAM이 적은 서버에서 처리됩니다."
 ---
 
 # Archive

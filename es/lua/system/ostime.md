@@ -1,6 +1,6 @@
 ---
 title: "Tiempo de OS"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Funciones de tiempo os estandar de Lua. Proporciona tiempo de reloj de pared real para marcas de tiempo, formato de fechas y calculos de tiempo."
 ---
 
 # Tiempo de OS

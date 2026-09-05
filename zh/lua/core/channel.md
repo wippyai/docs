@@ -1,6 +1,6 @@
 ---
 title: "通道与协程"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Go 风格的通道用于协程间通信。创建有缓冲或无缓冲通道，发送和接收值，使用 select 语句协调并发进程。"
 ---
 
 # 通道与协程

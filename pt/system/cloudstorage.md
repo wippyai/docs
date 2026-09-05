@@ -1,6 +1,6 @@
 ---
 title: "Armazenamento em Nuvem"
-description: "<secondary-label ref='external'/"
+description: "Armazenamento de objetos compatível com S3 com URLs pré-assinadas, uploads multipart e leituras por intervalo."
 ---
 
 # Armazenamento em Nuvem

@@ -1,6 +1,6 @@
 ---
 title: "Banco de Dados SQL"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Execute queries SQL em bancos de dados PostgreSQL, MySQL e SQLite. Recursos incluem queries parametrizadas, transacoes, prepared statements e um…"
 ---
 
 # Banco de Dados SQL

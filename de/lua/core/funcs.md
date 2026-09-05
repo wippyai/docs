@@ -1,6 +1,6 @@
 ---
 title: "Funktionsaufruf"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron über Prozesse hinweg aus…"
 ---
 
 # Funktionsaufruf

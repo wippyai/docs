@@ -1,6 +1,6 @@
 ---
 title: "请求上下文"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "访问请求作用域的上下文值。上下文通过 Funcs 或 Process 设置。"
 ---
 
 # 请求上下文

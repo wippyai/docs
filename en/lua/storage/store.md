@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Fast key-value storage with TTL support. Ideal for caching, sessions, and temporary state."
 ---
 
 # Key-Value Store

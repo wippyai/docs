@@ -1,6 +1,6 @@
 ---
 title: "Metriken & Telemetrie"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Erfassen Sie Anwendungsmetriken mit Countern, Gauges und Histogrammen."
 ---
 
 # Metriken & Telemetrie

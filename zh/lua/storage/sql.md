@@ -1,6 +1,6 @@
 ---
 title: "SQL 数据库"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "对 PostgreSQL、MySQL 和 SQLite 数据库执行 SQL 查询。支持参数化查询、事务、预处理语句和流式查询构建器。"
 ---
 
 # SQL 数据库

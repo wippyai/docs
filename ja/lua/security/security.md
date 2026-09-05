@@ -1,6 +1,6 @@
 ---
 title: "セキュリティ & アクセス制御"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "認証アクター、認可スコープ、アクセスポリシーを管理します。"
 ---
 
 # セキュリティ & アクセス制御

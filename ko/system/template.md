@@ -1,6 +1,6 @@
 ---
 title: "템플릿 엔진"
-description: "<secondary-label ref='external'/"
+description: "CloudyKit Jet을 사용한 템플릿 렌더링."
 ---
 
 # 템플릿 엔진

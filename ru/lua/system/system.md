@@ -1,6 +1,6 @@
 ---
 title: "Система"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Получение информации о среде выполнения: использование памяти, статистика сборщика мусора, сведения о CPU и метаданные процесса."
 ---
 
 # Система

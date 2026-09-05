@@ -1,6 +1,6 @@
 ---
 title: "Стандартные библиотеки Lua"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Базовые библиотеки Lua, автоматически доступные во всех процессах Wippy. Не требуют require()."
 ---
 
 # Стандартные библиотеки Lua

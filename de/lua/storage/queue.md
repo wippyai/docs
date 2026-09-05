@@ -1,6 +1,6 @@
 ---
 title: "Nachrichten-Queue"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Veröffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstützt mehrere Backends einschließlich RabbitMQ und andere…"
 ---
 
 # Nachrichten-Queue

@@ -1,6 +1,6 @@
 ---
 title: "键值存储"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "支持 TTL 的快速键值存储。适用于缓存、会话和临时状态。"
 ---
 
 # 键值存储

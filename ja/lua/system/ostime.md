@@ -1,6 +1,6 @@
 ---
 title: "OS時間"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "標準Lua os時間関数。タイムスタンプ、日付フォーマット、時間計算のための実際のウォールクロック時間を提供。"
 ---
 
 # OS時間

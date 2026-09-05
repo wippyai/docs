@@ -1,6 +1,6 @@
 ---
 title: "Кодирование JSON"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Преобразование Lua-таблиц в JSON и разбор JSON-строк в Lua-значения. Включает валидацию по JSON Schema для проверки данных и контрактов API."
 ---
 
 # Кодирование JSON

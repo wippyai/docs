@@ -1,6 +1,6 @@
 ---
 title: "Grupos de Processos"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Agrupe processos em grupos nomeados e faça broadcast para todos os membros em todo o cluster. Modelado no pg do Erlang/OTP: grupos são dinâmicos, um…"
 ---
 
 # Grupos de Processos

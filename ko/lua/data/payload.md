@@ -1,6 +1,6 @@
 ---
 title: "페이로드 인코딩"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "JSON, MessagePack, 바이너리를 포함한 형식 간 데이터 변환. 서비스 간 통신 및 워크플로우 데이터 전달을 위한 타입화된 페이로드 처리."
 ---
 
 # 페이로드 인코딩

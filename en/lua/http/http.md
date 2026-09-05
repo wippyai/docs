@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Handle HTTP requests and build responses. Access request data, route parameters, headers, and body content. Build responses with status codes…"
 ---
 
 # HTTP

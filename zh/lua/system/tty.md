@@ -1,6 +1,6 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "终端输入事件、样式化输出、呈现 surface 和本地虚拟 viewport。"
 ---
 
 # TTY

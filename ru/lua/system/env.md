@@ -1,6 +1,6 @@
 ---
 title: "Переменные окружения"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Доступ к переменным окружения для конфигурации, секретов и настроек среды выполнения."
 ---
 
 # Переменные окружения

@@ -1,6 +1,6 @@
 ---
 title: "归档"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "以有界内存读写 zip/tar 归档。归档既不会被加载到 RAM，也不会被解压到磁盘——峰值内存与归档和条目大小无关，因此多 GB 的归档也能在低内存服务器上运行。"
 ---
 
 # 归档

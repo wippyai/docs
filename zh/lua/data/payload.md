@@ -1,6 +1,6 @@
 ---
 title: "Payload 编码"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "在 JSON、MessagePack 和二进制等格式之间转换数据。处理类型化负载用于服务间通信和工作流数据传递。"
 ---
 
 # Payload 编码

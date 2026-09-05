@@ -1,6 +1,6 @@
 ---
 title: "WebSocket 客户端"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "用于与服务器进行实时双向通信的 WebSocket 客户端。"
 ---
 
 # WebSocket 客户端

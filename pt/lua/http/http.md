@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Trate requisicoes HTTP e construa respostas. Acesse dados da requisição, parametros de rota, headers e conteudo do corpo. Construa respostas com…"
 ---
 
 # HTTP

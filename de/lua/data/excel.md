@@ -1,6 +1,6 @@
 ---
 title: "Excel-Tabellen"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "Lesen und schreiben Sie Microsoft Excel-Dateien (.xlsx). Erstellen Sie Arbeitsmappen, verwalten Sie Tabellenblätter, lesen Sie Zellwerte und…"
 ---
 
 # Excel-Tabellen

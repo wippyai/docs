@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "zip/tarアーカイブを有限のメモリで読み書きします。アーカイブはRAMに読み込まれることも、ディスクへ展開されることもありません。ピークメモリはアーカイブやエントリのサイズに依存しないため、数GBのアーカイブも低RAMのサーバーで扱えます。"
 ---
 
 # Archive

@@ -1,6 +1,6 @@
 ---
 title: "ターミナルI/O"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "CLIアプリケーション用のstdinからの読み取りとstdout/stderrへの書き込み。"
 ---
 
 # ターミナルI/O

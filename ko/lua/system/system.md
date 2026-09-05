@@ -1,6 +1,6 @@
 ---
 title: "시스템"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "메모리 사용량, 가비지 컬렉션 통계, CPU 세부 정보, 프로세스 메타데이터를 포함한 런타임 시스템 정보를 조회합니다."
 ---
 
 # 시스템

@@ -1,6 +1,6 @@
 ---
 title: "TTY"
-description: "<secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "Eventos de entrada de terminal, salida estilizada, superficies de presentación y viewports virtuales locales."
 ---
 
 # TTY

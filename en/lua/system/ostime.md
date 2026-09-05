@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Standard Lua os time functions. Provides real wall-clock time for timestamps, date formatting, and time calculations."
 ---
 
 # OS Time

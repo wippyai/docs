@@ -1,6 +1,6 @@
 ---
 title: "Umgebungsvariablen"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen."
 ---
 
 # Umgebungsvariablen

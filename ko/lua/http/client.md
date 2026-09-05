@@ -1,6 +1,6 @@
 ---
 title: "HTTP 클라이언트"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "외부 서비스에 HTTP 요청을 보냅니다. 모든 HTTP 메서드, 헤더, 쿼리 파라미터, 폼 데이터, 파일 업로드, 스트리밍 응답, 동시 배치 요청을 지원합니다."
 ---
 
 # HTTP 클라이언트

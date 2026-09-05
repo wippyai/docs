@@ -1,6 +1,6 @@
 ---
 title: "Payload Encoding"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Convert data between formats including JSON, MessagePack, and binary. Handle typed payloads for inter-service communication and workflow data passing."
 ---
 
 # Payload Encoding

@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "<secondary-label ref='function'/ <secondary-label ref='io'/ <secondary-label ref='encoding'/"
+description: "Lesen und Schreiben von zip/tar-Archiven mit begrenztem Speicherverbrauch. Archive werden weder in den RAM geladen noch auf die Festplatte entpackt —…"
 ---
 
 # Archive

@@ -1,6 +1,6 @@
 ---
 title: "Text Processing"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Regular expressions, text diffing, and semantic text splitting."
 ---
 
 # Text Processing

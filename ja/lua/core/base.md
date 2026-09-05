@@ -1,6 +1,6 @@
 ---
 title: "標準Luaライブラリ"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "すべてのWippyプロセスで自動的に利用可能なコアLuaライブラリ。require()不要。"
 ---
 
 # 標準Luaライブラリ

@@ -1,6 +1,6 @@
 ---
 title: "環境変数"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "設定値、シークレット、ランタイム設定のための環境変数へのアクセス。"
 ---
 
 # 環境変数

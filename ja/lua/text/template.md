@@ -1,6 +1,6 @@
 ---
 title: "テンプレートエンジン"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Jetテンプレートエンジンを使用して動的コンテンツをレンダリングします。テンプレート継承とインクルードでHTMLページ、メール、ドキュメントを構築できます。"
 ---
 
 # テンプレートエンジン

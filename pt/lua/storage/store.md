@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario."
 ---
 
 # Key-Value Store

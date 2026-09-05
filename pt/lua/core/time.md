@@ -1,6 +1,6 @@
 ---
 title: "Time e Duração"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execução por periodos especificos, parse e formate…"
 ---
 
 # Time e Duração

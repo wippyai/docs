@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "HTTPリクエストを処理しレスポンスを構築。リクエストデータ、ルートパラメータ、ヘッダー、ボディ内容にアクセス。ステータスコード、ヘッダー、ストリーミングサポート付きでレスポンスを構築。"
 ---
 
 # HTTP

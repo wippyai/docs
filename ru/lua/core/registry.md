@@ -1,6 +1,6 @@
 ---
 title: "Реестр записей"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Запрос и изменение зарегистрированных записей. Доступ к метаданным, снимкам и истории версий."
 ---
 
 # Реестр записей

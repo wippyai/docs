@@ -1,6 +1,6 @@
 ---
 title: "Excel 电子表格"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='external'/"
+description: "读写 Microsoft Excel 文件（.xlsx）。创建工作簿、管理工作表、读取单元格值，并支持格式化生成报表。"
 ---
 
 # Excel 电子表格

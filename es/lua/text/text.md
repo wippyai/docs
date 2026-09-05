@@ -1,6 +1,6 @@
 ---
 title: "Procesamiento de Texto"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Expresiones regulares, comparacion de texto y division semantica de texto."
 ---
 
 # Procesamiento de Texto

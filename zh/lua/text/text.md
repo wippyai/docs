@@ -1,6 +1,6 @@
 ---
 title: "文本处理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "正则表达式、文本差异比较和语义文本分割。"
 ---
 
 # 文本处理

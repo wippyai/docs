@@ -1,6 +1,6 @@
 ---
 title: "表达式语言"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "使用 expr-lang 语法求值动态表达式。编译和执行安全表达式，用于过滤、验证和规则求值，无需完整的 Lua 执行。"
 ---
 
 # 表达式语言

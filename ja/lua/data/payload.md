@@ -1,6 +1,6 @@
 ---
 title: "ペイロードエンコーディング"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "JSON、MessagePack、バイナリなどのフォーマット間でデータを変換。サービス間通信とワークフローデータ受け渡し用の型付きペイロードを処理。"
 ---
 
 # ペイロードエンコーディング

@@ -1,6 +1,6 @@
 ---
 title: "클라우드 스토리지"
-description: "<secondary-label ref='external'/"
+description: "사전 서명 URL, 멀티파트 업로드, 범위 읽기를 갖춘 S3 호환 오브젝트 스토리지."
 ---
 
 # 클라우드 스토리지
