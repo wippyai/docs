@@ -68,7 +68,7 @@ Entradas referenciam pais via metadados:
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `meta.router` | ID do Registro | Roteador pai |
-| `method` | string | Método HTTP (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | Método HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, ou `*` para qualquer método |
 | `path` | string | Padrão de caminho URL (começa com `/`) |
 | `func` | ID do Registro | Função handler |
 
@@ -114,12 +114,24 @@ Capture segmentos de caminho restantes com `{param...}`:
   func: serve_file
 ```
 
+O curinga corresponde aos segmentos restantes, de modo que uma requisição como `GET /api/v1/files/docs/guides/readme.md` é despachada para o handler. A cauda capturada é lida com `req:param` sob o nome sem os pontos finais:
+
 ```lua
--- Requisição: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 O curinga deve ser o último segmento no caminho.
+
+## Precedência de Rotas
+
+Todos os roteadores registram seus endpoints em um único conjunto de padrões, prefixado pelo `prefix` do roteador, e o `ServeMux` do Go decide qual padrão atende uma requisição. Suas regras se aplicam sem alteração:
+
+- O padrão mais específico vence. Um padrão é mais específico que outro quando corresponde a um subconjunto estrito das requisições daquele padrão, então `/users/admin` vence `/users/{id}`, e `/files/{name}` vence `/files/{path...}`.
+- Um padrão com método é mais específico que o mesmo caminho sem método, então um endpoint `GET` tem precedência sobre um endpoint `*` no mesmo caminho para requisições `GET`.
+- Um `{path...}` ou `/` final corresponde a uma subárvore inteira e perde para qualquer padrão que corresponda a um subconjunto dela.
+- A correspondência é feita sobre o caminho limpo e decodificado; a especificidade nunca depende da ordem de registro.
+
+Dois padrões também podem entrar em conflito direto: nenhum é mais específico que o outro, mas eles se sobrepõem, como em `/users/{id}/settings` e `/users/admin/{section}`. Isso é um erro de configuração. O roteador o expõe ao reconstruir, a reconstrução falha, e o conjunto de rotas anterior permanece em serviço.
 
 ## Funções Handler
 

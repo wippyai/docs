@@ -301,11 +301,14 @@ local policies = scope:policies()
 ### Flujo de Evaluación
 
 ```
-1. Verifica cada política en el scope
-2. Si ALGUNA política devuelve Deny → El resultado es Deny
-3. Si hay al menos un Allow y ningún Deny → El resultado es Allow
-4. Sin políticas aplicables → El resultado es Undefined
+1. Sin actor o sin scope en el contexto → decide el modo estricto (deniega por defecto)
+2. Verifica cada política en el scope
+3. Si ALGUNA política devuelve Deny → El resultado es Deny
+4. Si hay al menos un Allow y ningún Deny → El resultado es Allow
+5. Sin políticas aplicables → El resultado es Undefined
 ```
+
+Una verificación de acceso solo pasa con `Allow`. `Undefined` deniega el acceso, exactamente igual que `Deny` — el modo estricto no interviene una vez que hay tanto un actor como un scope.
 
 ### Resultados de Evaluación
 
@@ -325,7 +328,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 if result == "deny" then
     return nil, errors.new("FORBIDDEN", "Access denied")
 elseif result == "undefined" then
-    -- Ninguna política coincidió - depende del modo estricto
+    -- Ninguna política coincidió - las verificaciones de acceso lo tratan como denegado
 end
 ```
 
@@ -473,44 +476,84 @@ local result, err = funcs.new()
 | Scope | Sí - se pasa a llamadas hijas |
 | Modo estricto | No - es a nivel de aplicación |
 
-Las funciones heredan el contexto de seguridad del llamador. Los procesos generados comienzan sin contexto.
+Las funciones heredan el contexto de seguridad del llamador. Un proceso generado no: arranca sobre un frame nuevo, y su contexto proviene del bloque `security:` de su propia entrada. Cuando esa entrada no declara ningún bloque, el proceso se ejecuta sin actor y sin scope, lo que el modo estricto deniega. Un bloque declarado que omite `actor` hereda el actor de quien lo genera, y uno que omite tanto `policies` como `groups` hereda su scope — así que "comienza sin contexto" significa "sin herencia ambiental", no "no se le puede dar un contexto".
 
-## Seguridad a Nivel de Servicio
+## Declarar Seguridad en las Entradas
 
-Configure la seguridad predeterminada para servicios:
+Un bloque de seguridad tiene la misma forma en todos los lugares donde aparece:
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `actor.id` | string | Identidad del actor; reemplaza al actor heredado |
+| `actor.meta` | map | Atributos del actor que evalúan las políticas |
+| `policies` | list | Registry IDs de políticas, fusionados en el scope |
+| `groups` | list | Registry IDs de grupos de políticas, cuyas políticas se fusionan en el scope |
+
+`policies` y `groups` son **registry IDs en forma `namespace:name`**. Un nombre suelto no se resuelve — a diferencia del campo `groups:` de una entrada de política, que usa por defecto el namespace de la propia política, estas referencias no llevan namespace por defecto.
+
+La resolución es atómica y fail-closed. Cada política y grupo listado se resuelve antes de instalar nada; si alguno falta, está vacío o no contiene políticas, toda la configuración falla y no se aplica ningún actor ni ningún scope parcial. Por lo tanto, un llamador nunca cruza una frontera con medio contexto.
+
+### Entradas de Proceso
+
+Las entradas `process.lua`, `process.lua.bc`, `function.lua` y `function.lua.bc` aceptan un bloque `security:` de nivel superior que se aplica a cada ejecución de esa entrada:
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+El bloque se aplica cuando el proceso arranca, tanto en `process.host` como en `terminal.host`. Un fallo de resolución aborta el spawn en lugar de arrancar el proceso con un contexto más débil.
+
+### Ciclo de Vida del Servicio
+
+Los servicios supervisados aceptan el mismo bloque bajo `lifecycle`, resuelto una vez al crear el controlador del servicio y sellado durante toda la vida del servicio:
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
+
+### Comandos de la CLI
+
+Una entrada de comando declara `meta.command.security`, aplicado solo cuando la entrada se lanza como comando de la CLI — el operador que ejecuta `wippy run <name>` es el ancla de confianza de ese contexto. Nunca afecta a un spawn ordinario de la misma entrada. El bloque se valida estrictamente: los campos desconocidos se rechazan, un bloque vacío se rechaza, y `security` sin un `name` de comando se rechaza. Ver [Seguridad de comandos](guides/cli.md#command-security).
 
 ## Modo Estricto
 
-Active el modo estricto para denegar el acceso cuando falte el contexto de seguridad:
+El modo estricto decide qué ocurre cuando una solicitud no lleva actor ni scope. Está **activado por defecto**, así que un contexto incompleto se deniega. Desactivarlo es una decisión explícita, tomada en el archivo de configuración del runtime (`.wippy.yaml`), no en el manifiesto de módulo `wippy.yaml`:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 | Modo | Contexto Ausente | Comportamiento |
 |------|------------------|----------------|
-| Normal | Sin actor/scope | Permite (permisivo) |
-| Estricto | Sin actor/scope | Deniega (seguro por defecto) |
+| Estricto (por defecto) | Sin actor/scope | Deniega |
+| Permisivo (`strict_mode: false`) | Sin actor/scope | Permite |
+
+El modo estricto no cambia nada una vez que hay un actor y un scope: la evaluación deniega por defecto en cualquier caso. Solo rige el caso incompleto, y por eso un proceso que se ejecuta sin un contexto de seguridad declarado falla todas las verificaciones bajo el valor por defecto. Dele a ese proceso un bloque `security:`, o arránquelo por una ruta que le suministre uno.
 
 ## Flujo de Autenticación
 
@@ -557,6 +600,22 @@ local scope, _ = security.named_scope("app.security:" .. user.role)
 local store, _ = security.token_store("app.auth:tokens")
 local token, err = store:create(actor, scope, {expiration = "24h"})
 ```
+
+## Fronteras de Confianza del Runtime
+
+La evaluación de políticas rige lo que el código puede hacer. Tres mecanismos separados rigen qué código se admite y hasta dónde puede viajar un contexto.
+
+### Integridad de Módulos
+
+Cada módulo de `wippy.lock` lleva un digest de artefacto. Las descargas se hacen por etapas, se verifican contra el digest fijado en el bloqueo y contra el digest que sirvió el hub, y solo entonces se mueven a su lugar; los packs ya vendorizados se reverifican en el arranque. Una discrepancia es un fallo `PermissionDenied` que no se reintenta ni se rodea — el módulo no se carga. Los directorios de módulo extraídos llevan su propio digest registrado y digest de árbol y se comprueban de la misma forma, de modo que un árbol vendorizado modificado se detecta en lugar de confiarse en él. Ver [Gestión de Dependencias](guides/dependency-management.md#integrity-verification).
+
+### Identidad Internodo del Clúster
+
+Los nodos de un clúster se autentican entre sí. Cada nodo posee una clave de identidad ed25519 y el mapa de claves públicas de pares en las que confía; el handshake de la malla es mutuo y vincula un HMAC sobre el secreto de gossip compartido a una firma ed25519 sobre una transcripción que cubre ambos IDs de nodo y ambos nonces. Un par que no está en el mapa de confianza, o cuya clave anunciada por gossip discrepa de la entrada de confianza, se rechaza. No existe un modo sin autenticar: un nodo sin identidad no puede unirse a la malla. Ver [Identidad internodo](guides/cluster.md#internode-identity).
+
+### Propagación en Temporal
+
+Un contexto de seguridad que cruza hacia Temporal se transporta como un header firmado, no como entrada plana del workflow. El actor, sus metadatos y los IDs de políticas se serializan en un sobre `wippy-security` y se firman con la clave HMAC del cliente, con audiencia en el ID concreto del workflow o de la activity. El worker receptor verifica la firma y la audiencia y resuelve localmente cada política nombrada antes de que el workflow o la activity se ejecute; cualquier fallo hace fallar la ejecución. Un workflow que se ejecuta bajo un contexto de seguridad también rechaza señales sin firmar, de modo que un cliente externo de Temporal no puede operarlo. Ver [Workflows](temporal/workflows.md#security-context) y [Resumen de Temporal](temporal/overview.md#security-context-propagation).
 
 ## Mejores Prácticas
 

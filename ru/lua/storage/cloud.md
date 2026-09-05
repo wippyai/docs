@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Доступ к S3-совместимому объектному хранилищу. Загрузка, скачивание, перечисление и управление файлами с поддержкой presigned URL.
+Доступ к S3-совместимому объектному хранилищу. Загрузка, скачивание, перечисление и управление объектами, presigned URL для скачивания, загрузки и частей multipart, а также чтение объектов с произвольным доступом.
 
 Настройку хранилища см. в [Cloud Storage](system/cloudstorage.md).
 
@@ -249,6 +249,8 @@ storage:release()
 
 **Возвращает:** `boolean, error`
 
+Попытка выполняется для каждого ключа. Удаление несуществующего ключа ошибкой не является. Если провайдер сообщает о сбоях по отдельным ключам, вызов возвращает одну ошибку, перечисляющую каждый сбойный ключ и код ошибки провайдера.
+
 ## URL для скачивания
 
 Создать временный URL для скачивания объекта без учётных данных. Полезно для передачи файлов внешним пользователям или отдачи контента через приложение.
@@ -315,6 +317,143 @@ return {upload_url = url}
 
 **Возвращает:** `string, error`
 
+## Multipart-загрузки
+
+Одиночный presigned PUT ограничивает объект 5 ГиБ. Presigned multipart-загрузка разбивает более крупный объект на части, которые клиент загружает напрямую, а затем собирает их на стороне сервера. Multipart — это возможность провайдера: S3 её реализует, а провайдеры без неё возвращают `errors.UNAVAILABLE`.
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local mp, err = storage:create_multipart_upload("backups/huge.zip", {
+    content_type = "application/zip",
+    metadata = { source = "uploader" },
+})
+if err then return nil, err end
+
+local urls, err = storage:presigned_part_urls("backups/huge.zip", mp.upload_id, {
+    count = 3,
+    expiration = 900,
+})
+if err then
+    storage:abort_multipart_upload("backups/huge.zip", mp.upload_id)
+    return nil, err
+end
+
+-- Клиент выполняет PUT по каждому url и возвращает ETag из заголовков ответа.
+local done, err = storage:complete_multipart_upload("backups/huge.zip", mp.upload_id, {
+    { part_number = 1, etag = etag1 },
+    { part_number = 2, etag = etag2 },
+    { part_number = 3, etag = etag3 },
+})
+
+storage:release()
+```
+
+### create_multipart_upload
+
+Начинает multipart-загрузку для ключа.
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `key` | string | Ключ итогового объекта |
+| `options` | table | `content_type`, `cache_control`, `content_disposition`, `content_encoding`, `metadata`, `headers` — та же семантика, что и у `upload_object` |
+
+**Возвращает:** `table, error` — таблица несёт `upload_id`, идентифицирующий загрузку для всех последующих вызовов частей, завершения и отмены.
+
+Условные записи (`if_match`, `if_none_match`, `only_if_absent`) не входят в протокол multipart и здесь не принимаются.
+
+### presigned_part_urls
+
+Генерирует presigned PUT URL для частей выполняющейся загрузки. На каждый URL выполняется обычный HTTP PUT; загружающая сторона должна сохранить заголовок ответа `ETag` каждой части для `complete_multipart_upload`.
+
+| Параметр | Тип | По умолчанию | Описание |
+|----------|-----|--------------|----------|
+| `key` | string | обязательно | Ключ объекта |
+| `upload_id` | string | обязательно | Из `create_multipart_upload` |
+| `options.parts` | int[] | - | Явные номера частей (1–10000, без дубликатов) |
+| `options.count` | int | - | Подписать части `1..count` |
+| `options.headers` | table | - | Заголовки, обязательные для каждого запроса части; они подписываются и должны быть отправлены загружающей стороной |
+| `options.expiration` | int | 3600 | Секунд до истечения URL |
+
+Ровно один из `parts` или `count` обязателен, и один вызов подписывает не более 1000 URL — для очень крупных объектов подписывайте постранично.
+
+**Возвращает:** `table, error` — массив `{ part_number, url }`.
+
+Каждая часть, кроме последней, должна быть не меньше 5 МиБ; провайдер проверяет это при завершении.
+
+### complete_multipart_upload
+
+Собирает итоговый объект из загруженных частей. Части можно сообщать в любом порядке — перед завершением они сортируются по номеру.
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `key` | string | Ключ объекта |
+| `upload_id` | string | Из `create_multipart_upload` |
+| `parts` | table | Массив `{ part_number = int, etag = string }` |
+
+**Возвращает:** `table, error` — `etag`, а также `version_id` и `location`, если провайдер их сообщает. Неизвестный upload ID возвращает `errors.NOT_FOUND`.
+
+### abort_multipart_upload
+
+Отбрасывает выполняющуюся загрузку и освобождает её сохранённые части.
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `key` | string | Ключ объекта |
+| `upload_id` | string | Из `create_multipart_upload` |
+
+**Возвращает:** `boolean, error`
+
+Загрузка, которая так и не была завершена, хранит свои части — и тарифицируется — пока не будет отменена. Отменяйте её на каждом пути сбоя и настройте правило жизненного цикла бакета как подстраховку — см. [Cloud Storage](system/cloudstorage.md#multipart-uploads).
+
+## Чтение по диапазонам
+
+`open_reader` открывает произвольный доступ к объекту через ranged GET — без локального промежуточного хранения и без полной загрузки. Основной потребитель — [`archive.open`](lua/data/archive.md), который читает многогигабайтные архивы прямо из объектного хранилища с ограниченным потреблением памяти.
+
+```lua
+local archive = require("archive")
+local storage = cloudstorage.get("app.infra:files")
+
+local reader, err = storage:open_reader("uploads/huge.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4,
+})
+if err then return nil, err end
+
+local r = assert(archive.open(reader))
+for e in r:entries() do
+    print(e.name, e.size)
+end
+r:close()
+reader:close()
+
+storage:release()
+```
+
+| Параметр | Тип | По умолчанию | Описание |
+|----------|-----|--------------|----------|
+| `key` | string | обязательно | Ключ объекта |
+| `options.block_size` | int | 8388608 | Единица ranged GET в байтах (от 64 КиБ до 128 МиБ) |
+| `options.cache_blocks` | int | 4 | Число резидентных LRU-блоков (от 1 до 64) |
+
+`block_size * cache_blocks` не может превышать 256 МиБ. Отсутствующий объект возвращает `errors.NOT_FOUND`.
+
+**Возвращает:** `Reader, error`
+
+ETag объекта закрепляется при открытии reader'а и отправляется как `If-Match` при каждом чтении диапазона, поэтому объект, перезаписанный посреди чтения, приводит к `errors.CONFLICT` вместо выдачи смеси двух поколений объекта. Провайдер, не способный предоставить ETag, возвращает `errors.UNAVAILABLE`; reader никогда не отдаёт незакреплённый объект.
+
+Промахи кэша выполняют блокирующий сетевой ввод-вывод в вызывающей задаче и сериализуют параллельных читателей, поэтому последовательный доступ по записям — как в архиве — и есть предполагаемая форма использования.
+
+### Методы Reader
+
+| Метод | Возвращает | Описание |
+|-------|------------|----------|
+| `size()` | `integer` | Размер объекта в байтах, из stat при открытии |
+| `key()` | `string` | Ключ объекта, из которого читает reader |
+| `close()` | `boolean, error` | Освободить кэш блоков; идемпотентно |
+
+Reader закрывается автоматически в области задачи, если не закрыт явно.
+
 ## Методы Storage
 
 | Метод | Возвращает | Описание |
@@ -326,6 +465,11 @@ return {upload_url = url}
 | `delete_objects(keys)` | `boolean, error` | Удалить несколько объектов |
 | `presigned_get_url(key, opts?)` | `string, error` | Сгенерировать временный URL для скачивания |
 | `presigned_put_url(key, opts?)` | `string, error` | Сгенерировать временный URL для загрузки |
+| `create_multipart_upload(key, opts?)` | `table, error` | Начать presigned multipart-загрузку |
+| `presigned_part_urls(key, upload_id, opts)` | `table, error` | Подписать PUT URL для частей загрузки |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | Собрать объект из загруженных частей |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | Отбросить выполняющуюся multipart-загрузку |
+| `open_reader(key, opts?)` | `Reader, error` | Открыть reader произвольного доступа по диапазонам |
 | `release()` | `boolean` | Освободить ресурс хранилища |
 
 ## Разрешения
@@ -348,7 +492,11 @@ return {upload_url = url}
 | Содержимое nil | `errors.INVALID` | нет |
 | Writer некорректен | `errors.INVALID` | нет |
 | Объект не найден | `errors.NOT_FOUND` | нет |
+| Неизвестный upload ID | `errors.NOT_FOUND` | нет |
 | Условное предусловие не выполнено | `errors.CONFLICT` | нет |
+| Объект перезаписан во время чтения по диапазону | `errors.CONFLICT` | нет |
+| Провайдер не поддерживает multipart-загрузки | `errors.UNAVAILABLE` | нет |
+| Провайдер не предоставляет ETag для `open_reader` | `errors.UNAVAILABLE` | нет |
 | Доступ запрещён | `errors.PERMISSION_DENIED` | нет |
 | Операция не удалась | `errors.INTERNAL` | нет |
 

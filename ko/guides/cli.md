@@ -66,6 +66,10 @@ wippy run --exec app:worker                 # 런타임을 시작하고 단일 �
 
 허브 모듈 실행(`wippy run org/module`)은 모듈을 한 번 해결하여 `wippy.lock`에 기록하고 검증된 팩을 로컬에 벤더링합니다. 같은 참조의 후속 실행은 잠금에서 시작합니다 — 네트워크가 필요 없습니다. 더 이상 잠금과 일치하지 않는 버전 셀렉터는 `wippy update`를 실행하라는 힌트와 함께 거부됩니다.
 
+로컬 애플리케이션의 경우 `wippy run`은 런타임 서비스가 시작되기 전에 오래된 lock을 복구합니다. 소스의 의존성 선언을 로드하고, lock이 이미 그것을 충족하면 로컬 및 설치된 증거만으로(검증된 오프라인 접근, 네트워크 없음) 그래프를 재해결합니다. 이 오프라인 해결이 lock과 일치하면 부팅은 그대로 진행됩니다. 그렇지 않으면 허브에 접속해 후보 그래프를 다운로드하고 검증한 뒤에야 `wippy.lock`을 다시 씁니다. 배포 루트를 선택한 lock은 권위를 가지며 절대 재해결되지 않습니다.
+
+`--exec`는 시작된 프로세스가 결과를 낼 때까지 블록한 다음, 그 프로세스의 종료 코드를 CLI 종료 코드로 전파합니다. `--exec` 중의 Ctrl-C는 실행 중인 프로세스를 취소하며 런타임은 여전히 graceful하게 종료됩니다. 두 번째 시그널은 강제 종료합니다.
+
 `--set`은 명령줄에서 임의의 런타임 설정 값을 작성하며, `.wippy.yaml`에 리프 단위로 병합됩니다:
 
 ```bash
@@ -176,6 +180,25 @@ wippy update acme/http demo/sql   # 여러 모듈 업데이트
 | `--profile` | | | 병합된 런타임 설정의 워크스페이스 프로파일 적용 (반복 가능) |
 | `--set` | | | 병합된 런타임 설정 값 오버라이드 (`section.path=value`, 반복 가능) |
 
+## wippy artifacts
+
+빌드 타임 파일시스템 아티팩트를 다룹니다.
+
+### wippy artifacts materialize
+
+기존 팩에서 아티팩트 파일시스템 하나를 검증하고 구체화합니다.
+
+```bash
+wippy artifacts materialize snapshot.wapp app:package_fs
+wippy artifacts materialize snapshot.wapp app:package_fs --root build
+```
+
+| 플래그 | 기본값 | 설명 |
+|------|---------|-------------|
+| `--root` | `.wippy` | 구체화 루트 |
+
+리소스는 전체 `namespace:name`으로 지정하며, `meta.artifact.format`을 선언해야 하고 그 포맷이 CLI에 등록되어 있어야 합니다. 이 명령어는 모듈 의존성을 해결하지 않고, `wippy.lock`을 변경하지 않으며, 패키지 매니저를 호출하지 않고, 런타임 구성에 관여하지 않습니다. [빌드 타임 아티팩트](guides/artifacts.md#materializing-explicitly)를 참조하세요.
+
 ## wippy pack
 
 스냅샷 팩(.wapp 파일)을 생성합니다.
@@ -201,6 +224,12 @@ wippy pack app.wapp --embed app:assets --bytecode **
 | `--profile` | | 팩하기 전에 `.wippy.yaml`의 런타임 프로파일 적용 (반복 가능, 순서대로 적용) |
 
 `--embed`나 `--embed-all`이 없으면 임베드 패턴은 모듈 매니페스트 `wippy.yaml`의 `embed:` 섹션으로 폴백합니다. 애플리케이션을 팩할 때는 의존성 팩의 임베드된 리소스도 함께 포함되며, 결과 팩은 메인 모듈의 명령어만 노출합니다.
+
+출력 파일은 원자적으로 기록됩니다: 팩은 대상 디렉토리의 임시 파일로 빌드되어 sync되고 검증된 다음에야 대상 위로 rename되며, 기존 파일이 있으면 그 권한을 물려받습니다. 팩이 실패하면 이전 파일은 그대로 남습니다. 팩의 입력 중 하나이기도 한 출력 — 동일한 경로이거나, 같은 파일로 해석되는 하드 링크 또는 심볼릭 링크 — 을 지정하면 읽는 도중 입력을 잘라내는 대신 거부됩니다.
+
+`--meta`는 예약된 메타데이터를 작성할 수 없습니다. `registry` 키와 `wippy.` 또는 `system.` 접두사 아래의 모든 것은 팩 포맷이 소유하며 거부됩니다.
+
+`meta.artifact.format`을 선언한 리소스는 팩 과정에서 검증되므로, 잘못된 아티팩트는 소비자 쪽이 아니라 여기서 실패합니다. [빌드 타임 아티팩트](guides/artifacts.md)를 참조하세요.
 
 ## wippy publish
 
@@ -322,6 +351,7 @@ wippy registry list --meta "type=api" --meta "enabled=true"
 | `--meta` | | 메타데이터별 필터 (반복 가능) |
 | `--json` | | JSON으로 출력 |
 | `--yaml` | | YAML로 출력 |
+| `--registry-meta` | | JSON 또는 YAML 출력에 레지스트리 소유 메타데이터(`owner`, `root`) 포함. `--json` 또는 `--yaml` 필요 |
 | `--lock-file` | `-l` | Lock 파일 경로 |
 
 `--meta`의 메타데이터 연산자:
@@ -398,8 +428,52 @@ wippy run list
 | `short` | 아니오 | `wippy run list`에 표시되는 간단한 설명 |
 | `main` | 아니오 | 이 엔트리를 기본 명령어로 표시 (단일 명령어를 제공하는 팩과 허브 모듈에서 자동으로 선택됨) |
 | `use_case` | 아니오 | 엔트리포인트 카테고리, 기본값 `run`. `use_case: test`를 선언한 엔트리가 `wippy test`가 실행하는 대상 |
+| `security` | 아니오 | CLI에서 실행될 때 명령어가 사용하는 보안 컨텍스트 |
 
 모든 프로세스 엔트리 종류(`process.lua`, `process.wasm`)를 사용할 수 있습니다. 명령어 이름은 로드된 모든 엔트리에서 고유해야 합니다. 명령어 이름 뒤의 인수는 문자열 페이로드로 프로세스에 전달됩니다.
+
+### 명령어 보안
+
+명령어 엔트리는 CLI 실행이 어떤 액터와 정책 스코프로 동작할지 선언합니다:
+
+```yaml
+entries:
+  - name: migrate_runner
+    kind: process.lua
+    meta:
+      command:
+        name: migrate
+        short: Run database migrations
+        security:
+          actor:
+            id: system.migrations
+            meta:
+              role: operator
+          policies:
+            - app.security:migrations_policy
+          groups:
+            - app.security:operators
+    source: file://runner.lua
+    method: main
+```
+
+| 필드 | 설명 |
+|-------|-------------|
+| `actor.id` | 시작되는 프로세스의 액터 아이덴티티 |
+| `actor.meta` | 정책이 평가하는 액터 속성 |
+| `policies` | 스코프에 추가되는 개별 정책의 레지스트리 ID(`namespace:name`) |
+| `groups` | 정책이 스코프에 추가되는 정책 그룹의 레지스트리 ID |
+
+이 블록이 `meta.command` 안에 있는 이유는 CLI 실행 경로에만 적용되기 때문입니다 — 운영자가 자신의 배포에서 명령어를 시작했다는 것이 신뢰의 앵커입니다. 동일한 프로세스 엔트리의 일반적인 스폰에는 영향을 주지 않으며, 그런 경우는 엔트리 자체의 [`security:` 블록](guides/entry-kinds.md#process-security)을 따릅니다.
+
+선언은 fail-closed이며 프로세스가 시작되기 전에 검증됩니다:
+
+- `security` 안의 알 수 없는 필드는 거부됩니다.
+- 비어 있는 `security` 블록(액터도, 정책도, 그룹도 없음)은 거부됩니다.
+- `name` 없는 `security`는 거부됩니다 — 명령어는 시작될 수 있으려면 이름을 가져야 합니다.
+- 해석되지 않는 정책이나 그룹은 실행을 거부시킵니다. 해석은 원자적이므로 부분적인 스코프가 설치되는 일은 없습니다.
+
+블록이 `actor`를 생략하면 호출자의 액터가 상속됩니다. `policies`와 `groups`를 모두 생략하면 호출자의 스코프가 상속됩니다.
 
 ## 예제
 

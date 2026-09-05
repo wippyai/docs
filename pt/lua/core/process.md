@@ -212,8 +212,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
 | `network` | string | ID de registro de uma entrada `network.*` para as conexões de saída do processo filho |
+| `terminal` | string | Concessão de viewport que anexa um terminal virtual ao processo filho |
 
 **Permissão:** `process.context` em "context"; selecionar uma rede requer adicionalmente `network.select` nesse ID de rede.
+
+### Anexação de Terminal
+
+Uma concessão `terminal` vem de `viewport:grant()` e dá ao processo filho uma porta de terminal própria, de modo que ele pode usar o módulo [TTY](lua/system/tty.md) exatamente como faria em um terminal host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+A concessão é de uso único e é consumida na admissão: um start rejeitado a deixa não resolvida e reutilizável, um processo filho que resolve a porta a consome permanentemente, e um host que não suporta anexações de terminal rejeita o spawn em vez de descartar a opção. O processo que faz o spawn continua lendo os frames do filho através do viewport que criou. Veja [Terminal](system/terminal.md#composable-terminals).
 
 ### Métodos SpawnBuilder
 

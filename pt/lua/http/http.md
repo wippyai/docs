@@ -122,6 +122,23 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
+A busca não diferencia maiúsculas de minúsculas: `req:header("content-type")` e `req:header("Content-Type")` retornam o mesmo valor. Um header enviado mais de uma vez retorna seus valores unidos por `", "`. Um header ausente retorna `nil`.
+
+### headers
+
+Obtem todos os headers da requisição.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Retorna:** `table, error`
+
+As chaves são nomes canônicos de header (`Content-Type`, `X-Correlation-ID`), independentemente da capitalização enviada pelo cliente. Headers repetidos são unidos por `", "`, como em `req:header()`.
+
 ### content_type
 
 Obtem o header Content-Type.

@@ -49,14 +49,18 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # 인메모리는 :memory: 사용
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     options:
       cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+비공개 인메모리 SQLite 데이터베이스(<code>file: ":memory:"</code>)는 하나의 물리적 연결로 범위가 한정되므로 <code>max_open</code>과 <code>max_idle</code>이 <code>1</code>로 강제됩니다. 파일 기반 데이터베이스는 설정된 <code>pool</code> 값을 따르며, CDC 스냅샷 읽기 트랜잭션이 유일한 쓰기 연결을 점유하지 않으려면 이 설정이 필요합니다. 저널 모드는 항상 <code>WAL</code>입니다.
+</note>
 
 ## 연결 필드
 
@@ -75,12 +79,16 @@ entries:
 
 ### SQLite 필드
 
-| 필드 | 타입 | 설명 |
-|-------|------|-------------|
-| `file` | string | 데이터베이스 파일 경로 또는 `:memory:` |
-| `pool` | object | 연결 풀 설정 |
-| `options` | map | SQLite별 옵션 |
-| `lifecycle` | object | 라이프사이클 설정 |
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `file` | string | 필수 | 데이터베이스 파일 경로 또는 `:memory:` |
+| `pool` | object | - | 연결 풀 설정; `:memory:`에서는 `max_open`과 `max_idle`이 `1`로 강제됨 |
+| `max_mutation_changes` | int | 100000 | 커밋된 변경 관찰자에서 한 트랜잭션이 보유할 수 있는 행 수 |
+| `max_mutation_bytes` | int | 67108864 | 관찰자에서 한 트랜잭션이 보유할 수 있는 논리 바이트 수 (64 MiB) |
+| `options` | map | - | 허용되지만 무시됨 |
+| `lifecycle` | object | - | 라이프사이클 설정 |
+
+`max_mutation_changes`와 `max_mutation_bytes`는 [`db.cdc.sqlite`](system/cdc.md) 소스에 데이터를 공급하는 인메모리 커밋 변경 관찰자의 한계를 정합니다. 두 필드 중 하나가 0이면 기본값이 선택되고, 음수 값은 거부됩니다. 이 한계는 정확하기보다 보수적입니다: SQLite는 pre-update 훅에 완전한 행을 전달하므로, 한계가 후보를 거부하기 전에 행 하나가 구체화될 수 있습니다.
 
 ### 환경 변수 필드
 
@@ -136,8 +144,10 @@ pool:
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+포트를 제외한 모든 값은 작은따옴표로 묶이고, 내부의 `'`와 `\`는 백슬래시로 이스케이프되므로, 공백이나 따옴표를 포함한 호스트, 비밀번호, 옵션 값이 그대로 전달됩니다.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -194,7 +204,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -289,3 +299,4 @@ entries:
 - [SQL 모듈](lua/storage/sql.md) - Lua API 레퍼런스
 - [Store](system/store.md) - `database.sql` 기반의 키-값 저장소
 - [Queue](system/queue.md) - SQL 기반 큐 핸들러
+- [변경 데이터 캡처](system/cdc.md) - `db.sql.sqlite` 또는 Postgres 데이터베이스에서 행 수준 변경 스트리밍

@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | 의존성 추가 |
 | `wippy install` | 의존성 설치 |
 | `wippy update` | 의존성 업데이트 |
+| `wippy artifacts` | 빌드 타임 파일시스템 아티팩트 구체화 |
 | `wippy pack` | 스냅샷 생성 |
 | `wippy publish` | 허브에 퍼블리시 |
 | `wippy search` | 모듈 검색 |

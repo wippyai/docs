@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 Первой ноде не нужны `join_addrs` — она стартует как seed. Присоединения повторяются с отступом, и нода, оказавшаяся изолированной, периодически пытается переприсоединиться, поэтому нода, перезапущенная с новым IP (обычно в Kubernetes), быстро сходится.
 
-Gossip можно зашифровать общим ключом, встроенным или из файла:
+Gossip всегда зашифрован общим ключом. Задайте его встроенно как `membership.secret_key` или из файла как `membership.secret_file`; нода, запущенная без того и другого, не поднимает компонент кластера. Значение кодируется в base64 и одинаково на каждой ноде.
+
+Изменения membership (`NodeJoined`, `NodeLeft`, `NodeUpdated`) — это события, которые запускают Raft bootstrap, reconciliation voters, синхронизацию групп процессов и автоматическую очистку имён, принадлежащих ушедшей ноде.
+
+## Идентичность internode
+
+Каждая нода держит пару ключей ed25519, и каждая нода несёт карту публичных ключей, которым доверяет. И то, и другое обязательно при `cluster.enabled: true`.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-Изменения membership (`NodeJoined`, `NodeLeft`, `NodeUpdated`) — это события, которые запускают Raft bootstrap, reconciliation voters, синхронизацию групп процессов и автоматическую очистку имён, принадлежащих ушедшей ноде.
+| Ключ | Содержимое |
+|------|------------|
+| `internode.identity_key` | Приватный ключ ноды, встроенный |
+| `internode.identity_key_file` | Путь к файлу с этим ключом |
+| `internode.trusted_peer_keys` | Имя ноды → публичный ключ, для каждой ноды сети, включая эту |
+
+Формат ключа: base64, стандартная или raw (без паддинга) кодировка. Приватный ключ декодируется либо в 32-байтный seed ed25519, либо в полный 64-байтный приватный ключ ed25519; доверенный ключ пира декодируется в 32-байтный публичный ключ ed25519. Подкоманды генерации ключей нет — создавайте ключи любым инструментом ed25519 и кодируйте сырые байты в base64:
+
+```bash
+# 32-байтный seed и его публичный ключ в base64
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` и `identity_key_file` взаимоисключающи, и один из них обязателен. `trusted_peer_keys` должен содержать запись для локального `cluster.name` со значением собственного публичного ключа этой ноды; отсутствующая или несовпадающая запись о себе прерывает запуск. Благодаря этому доверенная карта остаётся единым артефактом, который можно без изменений раздать каждой ноде.
+
+Рукопожатие сети взаимное. Каждая сторона доказывает знание общего gossip-секрета через HMAC по транскрипту, связывающему оба ID нод и оба nonce, и подписывает этот транскрипт своим ключом идентичности; пир проверяет подпись по имеющемуся у него публичному ключу для этого ID ноды и по ключу, который пир анонсирует в gossip. Провал любой из проверок закрывает соединение.
+
+Последствия, которые нужно учитывать:
+
+- Сеть не взаимодействует с нодой без идентичности. Каждая нода кластера должна быть настроена с ней.
+- Пир, чей ID ноды отсутствует в `trusted_peer_keys`, отвергается, как и пир, чей анонсированный в gossip публичный ключ расходится с доверенной записью. Добавление ноды означает раздачу её публичного ключа существующим нодам.
+- ID ноды должен присутствовать в живом gossip-membership, прежде чем её ключ разрешится, поэтому пир, не вошедший в gossip, не может открыть соединение сети.
 
 ## Bootstrap
 
@@ -146,11 +187,17 @@ end
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Трёхнодовый voting-кластер:
+Трёхнодовый voting-кластер (`node-2` и `node-3` отличаются только полями `name`, `identity_key_file` и `join_addrs`):
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-Только gossip-клиент (присоединяется для именования/обмена, никогда не запускает Raft):
+Только gossip-клиент (присоединяется для именования/обмена, никогда не запускает Raft). Ему тоже нужна идентичность, а voters должны иметь его публичный ключ в своих картах:
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

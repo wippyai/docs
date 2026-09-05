@@ -122,6 +122,23 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
+查找不区分大小写：`req:header("content-type")` 与 `req:header("Content-Type")` 返回相同的值。多次发送的头部返回其各个值以 `", "` 连接后的结果。不存在的头部返回 `nil`。
+
+### headers
+
+获取所有请求头部。
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**返回：** `table, error`
+
+键为规范化的头部名称（`Content-Type`、`X-Correlation-ID`），与客户端发送时使用的大小写无关。重复的头部以 `", "` 连接，与 `req:header()` 相同。
+
 ### content_type
 
 获取 Content-Type 头部。

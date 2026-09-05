@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### セキュリティコンテキストの伝播
+
+Wippyは、呼び出し元のアクターとスコープを、署名されたTemporalヘッダーとしてワークフローとアクティビティに伝播します。署名はHMAC-SHA256で、鍵はクライアントエントリが保持します:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `security_hmac_key` | Base64エンコードされた署名鍵。デコード後に32バイト以上である必要がある |
+| `security_hmac_previous_keys` | ローテーションのため、検証時に引き続き受け入れるBase64エンコードされた鍵 |
+
+どちらのフィールドもバイト列フィールドであるため、YAMLではbase64で記述します。デコード後32バイト未満の鍵は設定検証時に拒否され、`security_hmac_key`なしで`security_hmac_previous_keys`を宣言した場合も同様です。新しいヘッダーは常に`security_hmac_key`で署名され、検証時には列挙されたすべての以前の鍵が試行されます。したがってローテーションの手順は、新しい鍵を`security_hmac_key`として追加し、古い鍵を`security_hmac_previous_keys`へ移し、その鍵を持つ実行中のものがなくなった時点で削除する、という流れになります。
+
+**アクターまたはスコープの下でワークフローを開始するには鍵が必要です。** 呼び出し元にセキュリティコンテキストがあり、クライアントに署名鍵がない場合、ヘッダーに署名できないため開始は失敗します。鍵を持たないクライアントは、アクターもスコープも持たないコンテキストからのみワークフローを開始できます。
+
+ワーカーは参照するクライアントエントリから鍵を取得するため、ワーカー自身は何も設定しなくても`client:`から署名と検証を継承します。[ワークフロー](temporal/workflows.md#security-context)と[アクティビティ](temporal/activities.md)を参照してください。
+
 ## ワーカー設定
 
 `temporal.worker`エントリ種別はワークフローとアクティビティを実行するワーカーを定義します。

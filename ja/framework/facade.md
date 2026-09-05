@@ -83,7 +83,7 @@ entries:
 | Parameter | スコープ | Default | 説明 |
 |-----------|----------|---------|------|
 | `custom_css` | global | Google Fonts import | あらゆるレベルに注入される CSS |
-| `css_variables` | global | `{}` | CSS カスタムプロパティの JSON マップ |
+| `css_variables` | global | `{}` | 任意の CSS カスタムプロパティの JSON マップ。Auto モードと強制モードの両方向けにコンパイルされ、コンポーネントの shadow root にもブリッジされます。 |
 | `icon_sets` | global | `[]` | Iconify アイコンセット URL |
 | `host_custom_css` | host | `""` | host クローム専用の CSS |
 | `host_css_variables` | host | `{}` | host 専用の CSS カスタムプロパティ |

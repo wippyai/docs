@@ -20,6 +20,8 @@ app:templates             → 템플릿 세트
 
 각 엔트리에는 `ID`(namespace:name 형식), 핸들러를 결정하는 `kind`, 임의의 `meta` 필드, kind별 `data`가 있습니다.
 
+작성된 콘텐츠와 별개로, 레지스트리는 각 엔트리에 대한 자체 출처 정보를 유지합니다: 엔트리가 유래한 배포 소스를 의미하는 `owner`, 그리고 배포가 선택한 의존성 선언을 표시하는 `root`입니다. 이 상태는 엔트리 작성자가 작성하는 것이 아니라 레지스트리가 할당하며, 둘을 혼동할 수 없도록 `meta`와 분리되어 유지됩니다. 일반 엔트리 API가 아니라 스냅샷 상태 API를 통해 읽습니다 — [Registry 모듈](lua/core/registry.md#snapshot-state)을 참조하세요.
+
 ## Kind 핸들러
 
 엔트리가 등록되면 `kind` 값에 따라 처리할 핸들러가 결정됩니다. 핸들러는 설정을 검증하고 런타임 리소스를 생성합니다. 예를 들어 `http.service` 엔트리는 HTTP 서버를 시작하고, `function.lua` 엔트리는 함수 풀을 생성하며, `sql.database` 엔트리는 연결 풀을 설정합니다. 사용 가능한 kind는 [엔트리 종류 가이드](guides/entry-kinds.md)를, 핸들러 구현은 [커스텀 엔트리 종류](internals/kinds.md)를 참조하세요.

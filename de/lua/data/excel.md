@@ -277,6 +277,37 @@ end
 
 **Gibt zurück:** `error`
 
+### In einen String serialisieren
+
+Rendert die Arbeitsmappe in einen `xlsx`-Byte-String, ohne Dateisystem und ohne Writer. Damit lässt sich eine Arbeitsmappe an eine HTTP-Antwort, einen Objektspeicher oder eine Queue-Nachricht übergeben.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Gibt zurück:** `string, error`
+
+Die gesamte Arbeitsmappe wird im Speicher materialisiert. Für große Arbeitsmappen ist `write_to` vorzuziehen, das stattdessen an den Writer streamt.
+
+Der Aufruf von `bytes()` auf einer geschlossenen Arbeitsmappe gibt einen `errors.INTERNAL`-Fehler zurück.
+
 ### Arbeitsmappe schließen
 
 Schließt Arbeitsmappe und gibt Ressourcen frei.

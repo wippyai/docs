@@ -6,7 +6,7 @@ description: "<secondary-label ref='external'/"
 # 클라우드 스토리지
 <secondary-label ref="external"/>
 
-사전 서명 URL이 있는 S3 호환 오브젝트 스토리지.
+사전 서명 URL, 멀티파트 업로드, 범위 읽기를 갖춘 S3 호환 오브젝트 스토리지.
 
 ## 엔트리 종류
 
@@ -75,9 +75,32 @@ MinIO 또는 기타 S3 호환 서비스의 경우 커스텀 엔드포인트를 �
 
 엔드포인트가 제공되면 경로 스타일 접근이 자동으로 활성화됩니다.
 
+## 멀티파트 업로드
+
+사전 서명 멀티파트 업로드는 런타임 기능이 아니라 제공자 기능입니다. `cloudstorage.s3` kind는 이를 구현하며; 멀티파트 프로토콜을 지원하지 않는 제공자는 `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload`, `abort_multipart_upload`를 `errors.UNAVAILABLE`로 실패시킵니다.
+
+완료도 중단도 되지 않은 업로드의 파트는 저장된 채로 남아 과금됩니다. 애플리케이션은 모든 실패 경로에서 중단하지만, 클라이언트가 크래시하면 그 중단을 실행할 주체가 남지 않습니다. 최후의 보루로 버킷에 `AbortIncompleteMultipartUpload` 수명 주기 규칙을 설정하세요:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## 범위 읽기
+
+`open_reader`는 범위 GET으로 오브젝트를 읽고 모든 읽기에서 `If-Match`로 오브젝트의 ETag를 고정합니다. 최초 stat에서 ETag를 반환하지 않는 제공자는 호출을 `errors.UNAVAILABLE`로 실패시키며, `If-Match`를 무시하는 제공자는 덮어쓰기 보호를 잃습니다 - 이 경우 읽기가 두 세대의 오브젝트를 섞었다는 사실을 감지할 수 없습니다.
+
 ## Lua API
 
-작업(list, upload, download, delete, 사전 서명 URL)은 [클라우드 스토리지 모듈](lua/storage/cloud.md)을 참조하세요.
+작업(list, upload, download, delete, 사전 서명 URL, 멀티파트 업로드, 범위 리더)은 [클라우드 스토리지 모듈](lua/storage/cloud.md)을 참조하세요.
 
 ## 참고
 

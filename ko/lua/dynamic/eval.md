@@ -101,6 +101,35 @@ local result, err = runner.run({
 | `context` | table | `ctx`로 사용 가능한 값 |
 | `allow_classes` | string[] | 추가 모듈 클래스 |
 | `custom_modules` | table | 모듈로 사용할 커스텀 테이블 |
+| `limits` | table | 이번 실행에 적용할 실행 제한 |
+
+### 스텝 제한
+
+`limits.max_steps`는 하나의 `runner.run`이 실행될 수 있는 길이를 제한합니다:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+스텝은 eval 스케줄러의 한 턴입니다: 프로그램은 yield하거나 종료할 때까지 진행되며, 각 재개가 스텝 하나를 소비합니다. yield 사이의 순수 연산은 아무리 오래 걸려도 스텝 하나로 계산되므로, 이 제한은 CPU 시간이 아니라 스케줄링 턴 수를 제한합니다.
+
+카운트가 제한을 초과하면 실행이 중단되고 `eval exceeded maximum step limit`과 함께 `errors.INTERNAL`이 반환됩니다.
+
+`max_steps = 0`은 무제한을 뜻합니다. `limits`를 생략하면 호스트 기본값을 상속합니다:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # limits.max_steps가 없는 실행에 적용되는 기본 예산
+                      # 0 = 무제한, 음수 값은 부팅을 실패시킴
+```
+
+`limits`는 `runner.run`에만 적용됩니다. `runner.compile`은 제한을 받지 않습니다. `limits`는 `max_steps`만 담은 테이블이어야 하고 `max_steps`는 음수가 아닌 정수여야 합니다 — 그 외의 값은 프로그램이 실행되기 전에 `errors.INVALID`를 반환합니다.
 
 ### 모듈 접근
 

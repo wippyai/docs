@@ -405,6 +405,36 @@ local tenant = ctx.get("tenant")         -- "tenant-1"
 local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
 ```
 
+### Contexto de Seguridad
+
+El actor y el ámbito del llamante viajan con el workflow, de forma separada de los valores de `ctx` y bajo reglas más estrictas. Se transportan en dos headers de Temporal:
+
+| Header | Contenido |
+|--------|-----------|
+| `wippy-security` | Sobre JSON: ID del actor, metadatos del actor, IDs de políticas y la audiencia |
+| `wippy-security-signature` | HMAC-SHA256 sobre ese sobre, con la clave `security_hmac_key` del cliente |
+
+La audiencia es el ID de la ejecución para la que se acuñó el header — el ID del workflow para un inicio o una señal, el ID de la activity para una activity. Un header reproducido contra otra ejecución falla la comprobación de audiencia, de modo que un header capturado no puede reutilizarse en otro lugar.
+
+La verificación ocurre antes de que se ejecute el cuerpo del workflow. La firma debe coincidir con una de las claves del cliente, la audiencia debe ser igual al ID de esta ejecución, y cada política nombrada en el sobre debe resolverse en el registro de seguridad local. **Si cualquiera de estas falla, la ejecución del workflow falla** — no es una advertencia y el workflow no se ejecuta con un contexto reducido. Lo mismo vale para un sobre internamente inconsistente, como un actor sin ámbito o políticas sin actor.
+
+Configure las claves en la entrada [`temporal.client`](temporal/overview.md#security-context-propagation). Iniciar un workflow desde un contexto que tiene un actor o un ámbito requiere una clave de firma; sin ella el inicio falla en lugar de continuar sin firmar.
+
+#### Los workflows asegurados rechazan señales sin firmar
+
+Un workflow que se ejecuta bajo un contexto de seguridad exige que toda señal entrante lleve un ticket de relay firmado — headers `wippy-relay-signal` y `wippy-relay-signal-signature` — vinculado a ese ID de workflow y a ese nombre de señal. Una señal sin firmar o mal dirigida se rechaza en lugar de entregarse. Las señales enviadas por procesos de Wippy mediante `process.send` se firman automáticamente. Las señales inyectadas desde fuera de Wippy — la CLI de Temporal, `tctl` u otro SDK — no llevan ticket y por lo tanto fallan contra un workflow asegurado. Opere un workflow asegurado solo desde Wippy.
+
+#### IDs deterministas de hijos y activities
+
+Bajo un contexto de seguridad, un workflow hijo o una activity que se inicia sin un ID explícito recibe uno derivado en lugar de uno aleatorio, porque el ID es la audiencia para la que se firma el header y debe ser reproducible en el replay:
+
+| Iniciado desde un workflow asegurado | ID generado |
+|--------------------------------------|-------------|
+| Workflow hijo | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` cuenta dentro de la ejecución del workflow. Un `temporal.workflow.id` o un ID de activity suministrado explícitamente se usa tal cual y se convierte en la audiencia. Sin contexto de seguridad, los IDs se dejan a Temporal como antes.
+
 ### Desde Handlers HTTP
 
 ```lua

@@ -116,7 +116,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）向
 |-----------|-----|-----------|------|
 | `config` | Registry ID | 必須 | リージョンと認証情報を提供する `config.aws` リソース |
 | `endpoint` | string | - | カスタムエンドポイント URL（LocalStack、ElasticMQ）；実 AWS では省略 |
-| `message_retention_period` | int | `345600`（4日）| キューレベル保持期間（秒）（60–1209600）|
+| `message_retention_period` | int | - | キューレベル保持期間（秒）（60–1209600）。作成時にキュー属性として設定される。省略するとAWSのデフォルトである345600（4日）のままになる。|
 | `default_delay_seconds` | int | `0` | CreateQueue で適用されるデフォルト配信遅延（0–900）|
 | `disable_message_checksum_validation` | bool | `false` | 送受信時の SQS メッセージチェックサム検証を無効化 |
 | `use_fips` | bool | `false` | FIPS 準拠エンドポイントを使用 |

@@ -212,8 +212,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | オプション | 型 | 説明 |
 |--------|------|-------------|
 | `network` | string | 子プロセスの送信接続に使用する`network.*`エントリのレジストリID |
+| `terminal` | string | 子プロセスに仮想ターミナルをアタッチするビューポートグラント |
 
 **権限:** "context"に対する`process.context`。ネットワークの選択にはさらに、そのネットワークIDに対する`network.select`が必要。
+
+### ターミナルのアタッチ
+
+`terminal`グラントは`viewport:grant()`から取得し、子プロセスに専用のターミナルポートを与えます。これにより子プロセスは、ターミナルホスト上と同じように[TTY](lua/system/tty.md)モジュールを使用できます:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+グラントはワンショットで、アドミッション時に消費されます。起動が拒否された場合はグラントは未解決のまま再利用でき、ポートを解決した子プロセスはグラントを恒久的に消費し、ターミナルのアタッチをサポートしないホストはオプションを黙って破棄するのではなくスポーンを拒否します。スポーン元のプロセスは、自身が作成したビューポートを通じて子プロセスのフレームを読み取り続けます。[ターミナル](system/terminal.md#composable-terminals)を参照してください。
 
 ### SpawnBuilderメソッド
 

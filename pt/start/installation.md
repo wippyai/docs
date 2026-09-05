@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | Adiciona uma dependência |
 | `wippy install` | Instala dependências |
 | `wippy update` | Atualiza dependências |
+| `wippy artifacts` | Materializa artefatos de sistema de arquivos em tempo de build |
 | `wippy pack` | Cria um snapshot |
 | `wippy publish` | Publica no hub |
 | `wippy search` | Busca por módulos |

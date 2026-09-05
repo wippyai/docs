@@ -66,6 +66,10 @@ wippy run --exec app:worker                 # 启动运行时并执行单个进�
 
 运行中心模块（`wippy run org/module`）会将其解析一次，记录到 `wippy.lock`，并在本地保存已验证的包。后续对同一引用的运行从锁文件启动 — 无需网络。不再匹配锁文件的版本选择器会被拒绝，并提示运行 `wippy update`。
 
+对于本地应用，`wippy run` 会在任何运行时服务启动之前修复过期的锁文件。它加载源码中的依赖声明，当锁文件已经满足这些声明时，仅根据本地和已安装的证据重新求解依赖图（已验证的离线访问，不使用网络）。如果离线求解结果与锁文件一致，启动过程不变。否则会联系 hub，下载并校验候选依赖图，然后才重写 `wippy.lock`。选中了部署根的锁文件具有权威性，绝不会被重新求解。
+
+`--exec` 会阻塞直到被启动的进程产生结果，然后将该进程的退出码作为 CLI 退出码传播。在 `--exec` 期间按 Ctrl-C 会取消运行中的进程，运行时仍会优雅关闭；第二次信号会强制退出。
+
 `--set` 从命令行写入任意运行时配置值，按叶子合并到 `.wippy.yaml` 之上：
 
 ```bash
@@ -176,6 +180,25 @@ wippy update acme/http demo/sql   # 更新多个模块
 | `--profile` | | | 应用合并后运行时配置中的工作区 profile（可重复） |
 | `--set` | | | 覆盖合并后运行时配置的值（`section.path=value`，可重复） |
 
+## wippy artifacts
+
+处理构建时文件系统构件。
+
+### wippy artifacts materialize
+
+从现有的包中校验并物化一个构件文件系统。
+
+```bash
+wippy artifacts materialize snapshot.wapp app:package_fs
+wippy artifacts materialize snapshot.wapp app:package_fs --root build
+```
+
+| 标志 | 默认值 | 描述 |
+|------|--------|------|
+| `--root` | `.wippy` | 物化根目录 |
+
+该资源通过完整的 `namespace:name` 寻址，必须声明 `meta.artifact.format`，且该格式必须已在 CLI 中注册。此命令不解析任何模块依赖，不修改 `wippy.lock`，不调用任何包管理器，也不参与运行时组合。参见[构建时构件](guides/artifacts.md#materializing-explicitly)。
+
 ## wippy pack
 
 创建快照包（.wapp 文件）。
@@ -201,6 +224,12 @@ wippy pack app.wapp --embed app:assets --bytecode **
 | `--profile` | | 打包前应用来自 `.wippy.yaml` 的运行时 profile（可重复，按顺序应用） |
 
 不带 `--embed` 或 `--embed-all` 时，嵌入模式回退到模块清单 `wippy.yaml` 的 `embed:` 部分。打包应用时还会携带其依赖包中嵌入的资源，且最终的包只暴露主模块的命令。
+
+输出文件以原子方式写入：包先构建到目标目录中的临时文件，同步、校验，然后才重命名覆盖目标文件，并在目标已存在时继承其权限。打包失败不会影响原有文件。将输出指定为该包的输入之一 — 相同路径，或解析到同一文件的硬链接或符号链接 — 会被拒绝，而不是在读取中途截断输入。
+
+`--meta` 无法写入保留的元数据。键 `registry` 以及 `wippy.` 或 `system.` 前缀下的任何内容都归包格式所有，会被拒绝。
+
+声明了 `meta.artifact.format` 的资源在打包时会被校验，因此格式错误的构件会在此处失败，而不是在消费方失败。参见[构建时构件](guides/artifacts.md)。
 
 ## wippy publish
 
@@ -322,6 +351,7 @@ wippy registry list --meta "type=api" --meta "enabled=true"
 | `--meta` | | 按元数据过滤（可重复） |
 | `--json` | | 以 JSON 格式输出 |
 | `--yaml` | | 以 YAML 格式输出 |
+| `--registry-meta` | | 在 JSON 或 YAML 输出中包含注册表所有的元数据（`owner`、`root`）；需要 `--json` 或 `--yaml` |
 | `--lock-file` | `-l` | 锁文件路径 |
 
 `--meta` 的元数据运算符：
@@ -398,8 +428,52 @@ wippy run list
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
 | `main` | 否 | 将此条目标记为默认命令（由仅提供单个命令的 pack 与中心模块自动选用） |
 | `use_case` | 否 | 入口点类别，默认 `run`。声明 `use_case: test` 的条目就是 `wippy test` 执行的对象 |
+| `security` | 否 | 从 CLI 启动时命令所运行的安全上下文 |
 
 任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会作为字符串负载传递给进程。
+
+### 命令安全
+
+命令条目声明其 CLI 启动所运行的角色身份和策略作用域：
+
+```yaml
+entries:
+  - name: migrate_runner
+    kind: process.lua
+    meta:
+      command:
+        name: migrate
+        short: Run database migrations
+        security:
+          actor:
+            id: system.migrations
+            meta:
+              role: operator
+          policies:
+            - app.security:migrations_policy
+          groups:
+            - app.security:operators
+    source: file://runner.lua
+    method: main
+```
+
+| 字段 | 说明 |
+|------|------|
+| `actor.id` | 被启动进程的角色身份 |
+| `actor.meta` | 由策略求值的角色属性 |
+| `policies` | 添加到作用域的单个策略的注册表 ID（`namespace:name`） |
+| `groups` | 其策略被添加到作用域的策略组的注册表 ID |
+
+该块位于 `meta.command` 内部，因为它只作用于 CLI 启动路径 — 操作员在自己的部署上启动了该命令，这就是信任锚点。它对同一进程条目的普通 spawn 没有影响；那些遵循条目自身的 [`security:` 块](guides/entry-kinds.md#process-security)。
+
+声明是失败即关闭的，并在进程启动前完成校验：
+
+- `security` 内的未知字段会被拒绝。
+- 空的 `security` 块（没有 actor、没有 policies、没有 groups）会被拒绝。
+- 没有 `name` 的 `security` 会被拒绝 — 命令必须可命名才能被启动。
+- 无法解析的策略或策略组会拒绝启动；解析是原子的，因此绝不会安装出部分作用域。
+
+当该块省略 `actor` 时，继承调用方的角色身份。当它同时省略 `policies` 和 `groups` 时，继承调用方的作用域。
 
 ## 示例
 

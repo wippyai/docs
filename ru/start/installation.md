@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | Добавить зависимость |
 | `wippy install` | Установить зависимости |
 | `wippy update` | Обновить зависимости |
+| `wippy artifacts` | Материализовать артефакты файловой системы времени сборки |
 | `wippy pack` | Собрать снапшот |
 | `wippy publish` | Опубликовать в hub |
 | `wippy search` | Найти модули |

@@ -277,6 +277,37 @@ end
 
 **Retorna:** `error`
 
+### Serializar para String
+
+Renderiza o workbook em uma string de bytes `xlsx`, sem sistema de arquivos nem writer. Use isso para entregar um workbook a uma resposta HTTP, a um object store ou a uma mensagem de fila.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Retorna:** `string, error`
+
+O workbook inteiro é materializado em memória. Prefira `write_to` para workbooks grandes, que faz streaming para o writer.
+
+Chamar `bytes()` em um workbook fechado retorna um erro `errors.INTERNAL`.
+
 ### Fechar Workbook
 
 Fecha workbook e libera recursos.

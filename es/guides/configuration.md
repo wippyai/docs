@@ -119,11 +119,11 @@ Comportamiento de seguridad global. Las políticas individuales se definen como 
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Denegar acceso cuando el contexto de seguridad está incompleto |
+| `strict_mode` | bool | true | Denegar acceso cuando el contexto de seguridad está incompleto |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 Ver: [Sistema de Seguridad](system/security.md), [Módulo de Seguridad](lua/security/security.md)
@@ -137,6 +137,12 @@ Almacenamiento de entradas e historial de versiones. El registro almacena todas 
 | `enable_history` | bool | true | Rastrear versiones de entradas |
 | `history_type` | string | memory | Almacenamiento: memory, sqlite, nil |
 | `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite |
+| `event_wait_timeout` | duration | 30s | Espera por operación a la confirmación de los listeners durante un apply del registro |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Tipos de entrada gestionados internamente en lugar de despacharse a los listeners de componentes |
+| `dependency_resolve_timeout` | duration | 0 (ninguno) | Límite para la resolución de dependencias |
+| `dependency_download_timeout` | duration | 0 (ninguno) | Límite para cada descarga de módulo y solicitud de URL de descarga |
+| `dependency_lock_path` | string | `wippy.lock` descubierto | Archivo de bloqueo que el handler de dependencias lee y escribe |
+| `dependency_vendor_dir` | string | `<dir del lock>/<directories.modules>/vendor` | Directorio que contiene los packs de módulos descargados |
 
 ```yaml
 registry:
@@ -145,6 +151,34 @@ registry:
 ```
 
 Ver: [Concepto de Registro](concepts/registry.md), [Módulo de Registro](lua/core/registry.md)
+
+## Artifact
+
+Raíz de salida para los [artefactos de tiempo de build](guides/artifacts.md) materializados.
+
+| Campo | Tipo | Por defecto | Descripción |
+|-------|------|---------|-------------|
+| `materialization_root` | string | padre del directorio vendor de dependencias | Raíz propiedad de la aplicación bajo la cual cada formato de artefacto escribe su propio subárbol |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+Ver: [Artefactos de tiempo de build](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Sustituciones de módulos locales, indexadas por `org/module`. Los valores son directorios; las rutas relativas se resuelven respecto al directorio del primer archivo `--config`, y `null` desactiva una sustitución heredada de una capa de configuración o perfil anterior.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Las sustituciones nunca se escriben en `wippy.lock`. Ver [Desarrollo local con sustituciones](guides/dependency-management.md#local-development-with-replacements).
 
 ## Relay
 
@@ -196,6 +230,10 @@ Caché de la VM de Lua y evaluación de expresiones.
 | `cache.mode` | string | `read_write` | Modo de caché: `read_write`, `read_only`, `write_only` |
 | `type_system.enabled` | bool | false | Habilitar verificación estática de tipos |
 | `type_system.strict` | bool | false | Tratar advertencias de tipos como errores |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Espera a que se confirme la invalidación de código tras cambiar una entrada |
+| `eval.max_steps` | int | 10000 | Presupuesto de pasos del scheduler por defecto para una ejecución `eval`; los valores negativos se rechazan |
+| `eval.cache_size` | int | 256 | Entradas de la caché de programas compilados para código evaluado |
+| `eval.cache_ttl` | duration | 0 (sin expiración) | Tiempo de vida de un programa compilado en caché |
 
 ```yaml
 lua:
@@ -345,6 +383,8 @@ Gossip SWIM via memberlist. Usado para descubrimiento de nodos, detección de fa
 | `membership.tcp_timeout` | duration | 1s | Timeout del sondeo TCP de respaldo |
 | `membership.suspicion_mult` | int | 3 | Multiplicador del timeout de sospecha |
 
+Se requiere un secreto de gossip. Establezca `membership.secret_key` o `membership.secret_file` (el archivo gana si se dan ambos); sin ninguno, el componente de cluster no arranca. El valor está codificado en base64.
+
 Las cuatro claves de sondeo heredan los valores por defecto de red local de memberlist cuando no están definidas; auméntalas para enlaces de alta latencia (ej. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internodo (transporte)
@@ -358,8 +398,13 @@ Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por
 | `internode.auto_port` | bool | true | Descubrir el puerto real en el arranque, fijarlo y anunciarlo en gossip |
 | `internode.advertise_addr` | string | | Endpoint de relay adicional (IP o nombre DNS) publicado para peers actualizados — para alcanzabilidad con NAT o balanceadores de carga |
 | `internode.advertise_port` | int | 0 | Puerto para `advertise_addr` (0 = puerto de enlace; requiere `advertise_addr`) |
+| `internode.identity_key` | string | | Clave privada ed25519 codificada en base64 que identifica a este nodo (en línea) |
+| `internode.identity_key_file` | string | | Ruta a un archivo que contiene esa clave |
+| `internode.trusted_peer_keys` | map | | Clave pública ed25519 codificada en base64 por nombre de nodo, incluido este nodo |
 
 `advertise_addr`/`advertise_port` publican un endpoint aditivo en los metadatos del nodo mientras el endpoint de enlace sigue anunciándose sin cambios, de modo que los clusters con versiones mixtas mantienen la conectividad durante una actualización progresiva.
+
+La identidad internodo es obligatoria siempre que el clustering esté habilitado. `identity_key` e `identity_key_file` son mutuamente excluyentes y una de las dos debe estar presente; el valor decodifica (base64 estándar o crudo) a una semilla ed25519 de 32 bytes o a una clave privada ed25519 de 64 bytes. `trusted_peer_keys` asigna a cada nombre de nodo la clave pública ed25519 de 32 bytes de ese nodo, y debe contener una entrada para el `cluster.name` local cuyo valor coincida con la identidad local — de lo contrario el arranque falla. Ver la [Guía de Cluster](guides/cluster.md#internode-identity).
 
 ### Raft (consenso)
 
@@ -394,11 +439,17 @@ Nodo único (desarrollo) — clustering activado, se bootstrapea inmediatamente:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Cluster de votación de tres nodos — cada nodo lista los otros como semillas y espera a los tres antes de formar quórum:
+Cluster de votación de tres nodos — cada nodo lista los otros como semillas y espera a los tres antes de formar quórum. Cada nodo lleva el mismo mapa `trusted_peer_keys` y su propia clave privada:
 
 ```yaml
 cluster:
@@ -409,12 +460,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Cliente solo-gossip — se une al cluster para naming/mensajería pero nunca ejecuta Raft:
+Cliente solo-gossip — se une al cluster para naming/mensajería pero nunca ejecuta Raft. Aún necesita su propia identidad y debe aparecer en el mapa de confianza de cada nodo:
 
 ```yaml
 cluster:
@@ -422,8 +479,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
-  raft:
-    role: client
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
 ```
 
 ## LSP

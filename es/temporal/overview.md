@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### Propagación del Contexto de Seguridad
+
+Wippy propaga el actor y el scope que hacen la llamada hacia workflows y activities como una cabecera de Temporal firmada. La firma es HMAC-SHA256 con una clave que mantiene la entrada del cliente:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `security_hmac_key` | Clave de firma codificada en base64; debe decodificar a al menos 32 bytes |
+| `security_hmac_previous_keys` | Claves codificadas en base64 aún aceptadas para verificación, para rotación |
+
+Ambos campos son base64 en YAML porque son campos de bytes. Una clave de menos de 32 bytes decodificados se rechaza en la validación de configuración, al igual que declarar `security_hmac_previous_keys` sin `security_hmac_key`. Las cabeceras nuevas siempre se firman con `security_hmac_key`; cada clave anterior de la lista se prueba al verificar, así que la rotación es: agregue la clave nueva como `security_hmac_key`, mueva la antigua a `security_hmac_previous_keys`, y elimínela una vez que ninguna ejecución en curso la lleve.
+
+**Iniciar un workflow bajo un actor o scope requiere la clave.** Si el llamador tiene un contexto de seguridad y el cliente no tiene clave de firma, la cabecera no puede firmarse y el inicio falla. Un cliente sin clave solo puede iniciar workflows desde un contexto que no lleve ni actor ni scope.
+
+El worker obtiene las claves de la entrada de cliente a la que hace referencia, por lo que un worker hereda la firma y la verificación de `client:` sin configurar nada por sí mismo. Consulte [Workflows](temporal/workflows.md#security-context) y [Activities](temporal/activities.md).
+
 ## Configuración del Worker
 
 El tipo de entrada `temporal.worker` define un worker que ejecuta workflows y activities.

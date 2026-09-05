@@ -67,6 +67,8 @@ WASM-Ausfuehrungen erben standardmaessig den Sicherheitskontext des Aufrufers:
 
 Host-Faehigkeiten sind Opt-in ueber explizite Imports. Jeder Eintrag deklariert genau, welche WASI-Schnittstellen er benoetigt (`wasi:cli`, `wasi:filesystem`, etc.), wodurch die Zugriffsoberflaeche des Moduls begrenzt wird.
 
+Ein Guest, der `funcs` importiert, kann in die Registry zurueckrufen. Jeder Aufruf wird als `funcs.call` gegen die Ziel-ID per Policy geprueft, sodass die erreichbare Menge genau dem entspricht, was der geerbte Scope ohnehin erlaubt. Socket-Verbindungen werden auf dieselbe Weise vom [Netzwerkdienst](system/network.md) gegen die `socket.*`-Berechtigungen autorisiert.
+
 ## Siehe auch
 
 - [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionseintraegen

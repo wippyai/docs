@@ -367,12 +367,25 @@ end
 
 ### SSRF-Schutz
 
-Private IP-Bereiche (10.x, 192.168.x, 172.16-31.x, localhost) sind standardmäßig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung.
+Nicht-öffentliche IP-Bereiche sind standardmäßig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung auf der Adresse:
+
+- Loopback, private Bereiche (10.x, 172.16-31.x, 192.168.x), Link-Local-Unicast und -Multicast sowie die unspezifizierte Adresse
+- Carrier-Grade-NAT `100.64.0.0/10`, `192.0.0.0/24`, Multicast `224.0.0.0/4`, reserviert `240.0.0.0/4`
+- Dokumentations- und Benchmarking-Bereiche `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- IPv6-Multicast `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+Die Prüfung läuft beim Verbindungsaufbau, nicht auf dem URL-String, und sie erfasst jede Adresse, auf die der Host auflöst. Ein Hostname, der auf mehrere Adressen auflöst, wird Adresse für Adresse geprüft: Eine verweigerte Adresse wird übersprungen und die nächste versucht, und die Anfrage schlägt erst fehl, wenn jeder Kandidat verweigert oder nicht erreichbar ist. Ein öffentlicher Hostname, der auf eine private Adresse auflöst, wird daher genau wie ein privates IP-Literal blockiert.
+
+### Redirects
+
+Redirects werden bis zu 10 Sprünge weit verfolgt; der elfte schlägt mit `stopped after 10 redirects` fehl.
+
+Jeder Sprung wird für sich autorisiert. Bevor der Client einem Redirect folgt, wertet er `http_client.request` gegen die Ziel-URL aus und wendet die Private-IP-Prüfung darauf an, sodass eine erlaubte URL nicht per Weiterleitung zu einer verweigerten führen kann. Ein Sprung, der eine der beiden Prüfungen nicht besteht, bricht die Anfrage ab.
 
 Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 

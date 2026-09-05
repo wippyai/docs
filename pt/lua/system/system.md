@@ -48,6 +48,40 @@ Cada tabela de módulo contém:
 | `description` | string | Descrição do módulo |
 | `class` | string[] | Tags de classificação do módulo |
 
+## Fontes de Deployment
+
+A sub-tabela `system.source` lê a baseline normalizada de deployment: o conjunto de entradas produzido pelas fontes a partir das quais a aplicação foi montada, antes de qualquer histórico do registry ser aplicado.
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**Retorna:** `table, error`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `owners` | string[] | Owners de fonte autoritativos sobre as entradas da baseline |
+| `entries` | table[] | Entradas da baseline com `id`, `kind`, `meta`, `data` |
+
+`owners` é ordenado com o owner da aplicação primeiro, depois os demais owners em ordem alfabética. O owner da aplicação é a string `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+A carga é feita a partir de uma geração de fonte estável, então entradas e owners sempre descrevem a mesma baseline. Os caminhos de sistema de arquivos por trás de cada fonte são privados ao runtime e não são expostos; uma carga que falha reporta um erro interno genérico em vez de vazar o caminho subjacente.
+
+**Permissão:** `system.read` em `sources`
+
 ## Estatísticas de Memória
 
 Obter estatísticas detalhadas de memória:
@@ -426,6 +460,7 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | `system.read` | `cwd` | Ler diretório de trabalho |
 | `system.read` | `hosts` | Listar hosts / processos de host |
 | `system.read` | `modules` | Listar módulos carregados |
+| `system.read` | `sources` | Carregar a baseline de fontes de deployment |
 | `system.read` | `supervisor` | Ler estado do supervisor |
 | `system.read` | `node` | Ler identidade deste nó |
 | `system.read` | `cluster` | Ler associação e leader do cluster |

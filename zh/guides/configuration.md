@@ -119,11 +119,11 @@ profiler:
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `strict_mode` | bool | false | 安全上下文不完整时拒绝访问 |
+| `strict_mode` | bool | true | 安全上下文不完整时拒绝访问 |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 参见：[安全系统](system/security.md)、[Security 模块](lua/security/security.md)
@@ -137,6 +137,12 @@ security:
 | `enable_history` | bool | true | 跟踪入口版本 |
 | `history_type` | string | memory | 存储类型：memory, sqlite, nil |
 | `history_path` | string | .wippy/registry.db | SQLite 文件路径 |
+| `event_wait_timeout` | duration | 30s | 注册表应用期间，每次操作等待监听器确认的时长 |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | 由内部处理而不派发给组件监听器的记录类型 |
+| `dependency_resolve_timeout` | duration | 0（无） | 依赖解析的时间上限 |
+| `dependency_download_timeout` | duration | 0（无） | 每次模块下载及下载 URL 请求的时间上限 |
+| `dependency_lock_path` | string | 自动发现的 `wippy.lock` | 依赖处理器读写的锁文件 |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | 存放已下载模块包的目录 |
 
 ```yaml
 registry:
@@ -145,6 +151,34 @@ registry:
 ```
 
 参见：[注册表概念](concepts/registry.md)、[Registry 模块](lua/core/registry.md)
+
+## 制品
+
+已物化的[构建期制品](guides/artifacts.md)的输出根目录。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `materialization_root` | string | 依赖 vendor 目录的上级目录 | 由应用拥有的根目录，每种制品格式在其下写入各自的子目录树 |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+参见：[构建期制品](guides/artifacts.md#where-output-lands)
+
+## 工作区
+
+本地模块替换，以 `org/module` 为键。取值为目录；相对路径相对于第一个 `--config` 文件所在目录解析，而 `null` 会禁用从更早的配置层或配置档继承来的替换。
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+替换项从不写入 `wippy.lock`。参见[使用替换进行本地开发](guides/dependency-management.md#local-development-with-replacements)。
 
 ## 中继
 
@@ -196,6 +230,10 @@ Lua 虚拟机缓存和表达式求值。
 | `cache.mode` | string | `read_write` | 缓存模式：`read_write`、`read_only`、`write_only` |
 | `type_system.enabled` | bool | false | 启用静态类型检查 |
 | `type_system.strict` | bool | false | 将类型警告视为错误 |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s） | 记录变更后等待代码失效被确认的时长 |
+| `eval.max_steps` | int | 10000 | 一次 `eval` 运行的默认调度器步数预算；负值会被拒绝 |
+| `eval.cache_size` | int | 256 | 被求值源码的已编译程序缓存条目数 |
+| `eval.cache_ttl` | duration | 0（不过期） | 已缓存的已编译程序的存活时长 |
 
 ```yaml
 lua:
@@ -345,6 +383,8 @@ prometheus:
 | `membership.tcp_timeout` | duration | 1s | TCP 回退探测超时 |
 | `membership.suspicion_mult` | int | 3 | 怀疑超时乘数 |
 
+必须提供 gossip 密钥。设置 `membership.secret_key` 或 `membership.secret_file`（两者都给出时以文件为准）；两者都未设置时，集群组件无法启动。该值经 base64 编码。
+
 四个探测键未设置时继承 memberlist 面向局域网的默认值；高延迟链路应调高它们（例如 `probe_interval: 2s`、`probe_timeout: 500ms`、`suspicion_mult: 5`）。
 
 ### 节点间（传输）
@@ -358,8 +398,13 @@ prometheus:
 | `internode.auto_port` | bool | true | 启动时发现实际端口，固定并在 gossip 中广播 |
 | `internode.advertise_addr` | string | | 为已升级的对等节点发布的额外中继端点（IP 或 DNS 名称）— 用于 NAT 或负载均衡场景的可达性 |
 | `internode.advertise_port` | int | 0 | `advertise_addr` 的端口（0 = 绑定端口；需要设置 `advertise_addr`） |
+| `internode.identity_key` | string | | 标识本节点的 base64 编码 ed25519 私钥（内联） |
+| `internode.identity_key_file` | string | | 存放该密钥的文件路径 |
+| `internode.trusted_peer_keys` | map | | 每个节点名对应的 base64 编码 ed25519 公钥，包括本节点 |
 
 `advertise_addr`/`advertise_port` 在节点元数据中发布一个附加端点，同时绑定端点保持原样继续广播，因此混合版本集群在滚动升级期间仍能保持连接。
+
+只要启用了集群，节点间身份就是必需的。`identity_key` 和 `identity_key_file` 互斥且必须提供其中之一；该值（标准或原始 base64）解码后为 32 字节的 ed25519 种子或 64 字节的 ed25519 私钥。`trusted_peer_keys` 把每个节点名映射到该节点的 32 字节 ed25519 公钥，并且必须包含与本地 `cluster.name` 对应的条目，其值与本地身份匹配——否则启动失败。参见[集群指南](guides/cluster.md#internode-identity)。
 
 ### Raft（共识）
 
@@ -394,11 +439,17 @@ prometheus:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-三节点投票集群——每个节点列出其他节点作为种子，等待三个节点全部就绪后组成 quorum：
+三节点投票集群——每个节点列出其他节点作为种子，等待三个节点全部就绪后组成 quorum。每个节点都携带相同的 `trusted_peer_keys` 映射和各自的私钥：
 
 ```yaml
 cluster:
@@ -409,12 +460,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-仅 gossip 客户端——加入集群用于命名/消息传递，但从不运行 Raft：
+仅 gossip 客户端——加入集群用于命名/消息传递，但从不运行 Raft。它同样需要自己的身份，并且必须出现在每个节点的信任映射中：
 
 ```yaml
 cluster:
@@ -422,8 +479,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
-  raft:
-    role: client
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
 ```
 
 ## LSP

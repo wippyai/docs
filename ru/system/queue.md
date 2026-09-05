@@ -116,7 +116,7 @@ flowchart LR
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ flowchart LR
 |------|-----|--------------|----------|
 | `config` | Registry ID | обязательно | Ресурс `config.aws` с регионом и учётными данными |
 | `endpoint` | string | - | Кастомный URL эндпойнта (LocalStack, ElasticMQ); опустить для реального AWS |
-| `message_retention_period` | int | `345600` (4д) | Срок хранения на уровне очереди в секундах (60–1209600) |
+| `message_retention_period` | int | - | Срок хранения на уровне очереди в секундах (60–1209600), задаётся атрибутом очереди при создании. Опустите, чтобы оставить значение AWS по умолчанию — 345600 (4 дня). |
 | `default_delay_seconds` | int | `0` | Задержка доставки по умолчанию при CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | Отключить проверку контрольных сумм SQS при отправке/приёме |
 | `use_fips` | bool | `false` | Использовать FIPS-совместимые эндпойнты |

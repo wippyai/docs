@@ -12,7 +12,7 @@ Layout do projeto, arquivos de definição YAML e convenções de nomenclatura.
 ```
 myapp/
 ├── .wippy.yaml          # Configuração do runtime
-├── wippy.lock           # Configuração de diretórios fonte
+├── wippy.lock           # Diretórios fonte e módulos travados
 ├── .wippy/              # Módulos instalados
 └── src/                 # Código fonte da aplicação
     ├── _index.yaml      # Definições de entradas
@@ -100,17 +100,35 @@ app.workers
 
 O ID completo da entrada combina namespace e nome: `app.api:get_user`
 
-### Diretórios Fonte
+### O Arquivo de Lock
 
-O arquivo `wippy.lock` define de onde o Wippy carrega as definições:
+O `wippy.lock` registra de onde o Wippy carrega as definições e quais versões de módulos estão selecionadas:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-O Wippy escaneia recursivamente esses diretórios em busca de arquivos YAML.
+| Campo | Descrição |
+|-------|-----------|
+| `directories.src` | Diretório fonte da aplicação, escaneado recursivamente em busca de arquivos YAML de definição |
+| `directories.modules` | Diretório base para módulos vendorizados; os packs ficam em `<modules>/vendor/` |
+| `options.unpack_modules` | Extrai cada `.wapp` em um diretório ao lado dele em vez de carregar o pack diretamente (padrão `false`) |
+| `modules[].name` | Identificador do módulo no formato `org/module` |
+| `modules[].version` | Versão selecionada |
+| `modules[].hash` | Digest do artefato que o pack vendorizado deve corresponder |
+| `modules[].root` | Marca o root de deployment selecionado; no máximo um módulo pode carregá-lo |
+
+Packs vendorizados são mantidos como arquivos `.wapp`. Com `unpack_modules: true`, cada módulo também é extraído em um diretório, e o `.wapp` verificado permanece ao lado dele — a instalação procura pelo pack, então um diretório cujo pack está ausente é baixado novamente.
+
+Uma seção `replacements:` em `wippy.lock` está obsoleta. Ela ainda carrega, com um aviso; declare sobrescritas de módulos locais em `workspace.replacements` em um arquivo de configuração de runtime. Veja [Gerenciamento de Dependências](guides/dependency-management.md#local-development-with-replacements).
 
 ## Definições de Entradas
 
@@ -203,13 +221,7 @@ Consulte o [Guia de Configuração](guides/configuration.md) para todas as opç�
 
 ### wippy.lock
 
-Define diretórios fonte:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+Diretórios fonte e o grafo de módulos selecionado — veja [O Arquivo de Lock](#o-arquivo-de-lock) acima.
 
 ## Referenciando Entradas
 

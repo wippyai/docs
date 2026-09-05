@@ -212,8 +212,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | 选项 | 类型 | 描述 |
 |------|------|------|
 | `network` | string | 用于子进程出站连接的 `network.*` 条目的注册表 ID |
+| `terminal` | string | 将虚拟终端附加到子进程的视口授权 |
 
 **权限:** "context" 上的 `process.context`；选择网络还需要在该网络 ID 上的 `network.select`。
+
+### 终端附加
+
+`terminal` 授权来自 `viewport:grant()`，它为子进程提供属于自己的终端端口，使其可以像在终端宿主上一样使用 [TTY](lua/system/tty.md) 模块：
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+该授权是一次性的，在准入时被消耗：启动被拒绝会使授权保持未解析且可重复使用，解析了端口的子进程会永久消耗它，而不支持终端附加的宿主会拒绝该 spawn，而不是丢弃此选项。发起 spawn 的进程通过它创建的视口继续读取子进程的帧。参见 [终端](system/terminal.md#composable-terminals)。
 
 ### SpawnBuilder 方法
 

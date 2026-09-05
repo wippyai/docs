@@ -10,7 +10,7 @@ description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Zugriff auf S3-kompatiblen Objektspeicher. Hochladen, Herunterladen, Auflisten und Verwalten von Dateien mit Unterstützung für vorsignierte URLs.
+Zugriff auf S3-kompatiblen Objektspeicher. Objekte hochladen, herunterladen, auflisten und verwalten, URLs für Download, Upload und Multipart-Teile vorsignieren sowie Objekte mit wahlfreiem Zugriff lesen.
 
 Für Speicherkonfiguration siehe [Cloud-Speicher](system/cloudstorage.md).
 
@@ -249,6 +249,8 @@ storage:release()
 
 **Gibt zurück:** `boolean, error`
 
+Jeder Schlüssel wird versucht. Das Löschen eines nicht existierenden Schlüssels ist kein Fehler. Meldet der Provider Fehler pro Schlüssel, gibt der Aufruf einen einzelnen Fehler zurück, der jeden fehlgeschlagenen Schlüssel und seinen Provider-Fehlercode nennt.
+
 ## Download-URLs
 
 Erstellen Sie eine temporäre URL, die das Herunterladen eines Objekts ohne Anmeldeinformationen ermöglicht. Nützlich zum Teilen von Dateien mit externen Benutzern oder zum Bereitstellen von Inhalten über Ihre Anwendung.
@@ -315,6 +317,143 @@ return {upload_url = url}
 
 **Gibt zurück:** `string, error`
 
+## Multipart-Uploads
+
+Ein einzelnes vorsigniertes PUT begrenzt ein Objekt auf 5 GiB. Ein vorsignierter Multipart-Upload teilt ein größeres Objekt in Teile, die ein Client direkt hochlädt und die dann serverseitig zusammengesetzt werden. Multipart ist eine Fähigkeit des Providers: S3 implementiert sie, Provider ohne sie geben `errors.UNAVAILABLE` zurück.
+
+```lua
+local storage = cloudstorage.get("app.infra:files")
+
+local mp, err = storage:create_multipart_upload("backups/huge.zip", {
+    content_type = "application/zip",
+    metadata = { source = "uploader" },
+})
+if err then return nil, err end
+
+local urls, err = storage:presigned_part_urls("backups/huge.zip", mp.upload_id, {
+    count = 3,
+    expiration = 900,
+})
+if err then
+    storage:abort_multipart_upload("backups/huge.zip", mp.upload_id)
+    return nil, err
+end
+
+-- Der Client sendet jede URL per PUT und liefert das ETag aus den Response-Headern zurück.
+local done, err = storage:complete_multipart_upload("backups/huge.zip", mp.upload_id, {
+    { part_number = 1, etag = etag1 },
+    { part_number = 2, etag = etag2 },
+    { part_number = 3, etag = etag3 },
+})
+
+storage:release()
+```
+
+### create_multipart_upload
+
+Startet einen Multipart-Upload für einen Schlüssel.
+
+| Parameter | Typ | Beschreibung |
+|-----------|-----|--------------|
+| `key` | string | Objektschlüssel des finalen Objekts |
+| `options` | table | `content_type`, `cache_control`, `content_disposition`, `content_encoding`, `metadata`, `headers` - dieselbe Semantik wie bei `upload_object` |
+
+**Gibt zurück:** `table, error` - die Tabelle enthält `upload_id`, das den Upload für jeden späteren Part-, Complete- und Abort-Aufruf identifiziert.
+
+Bedingte Schreibvorgänge (`if_match`, `if_none_match`, `only_if_absent`) sind nicht Teil des Multipart-Protokolls und werden hier nicht akzeptiert.
+
+### presigned_part_urls
+
+Erzeugt vorsignierte PUT-URLs für Teile eines laufenden Uploads. Jede URL wird mit einem einfachen HTTP-PUT beschrieben; der Uploader muss den `ETag`-Response-Header jedes Teils für `complete_multipart_upload` aufbewahren.
+
+| Parameter | Typ | Standard | Beschreibung |
+|-----------|-----|----------|--------------|
+| `key` | string | erforderlich | Objektschlüssel |
+| `upload_id` | string | erforderlich | Aus `create_multipart_upload` |
+| `options.parts` | int[] | - | Explizite Teilnummern (1-10000, keine Duplikate) |
+| `options.count` | int | - | Teile `1..count` vorsignieren |
+| `options.headers` | table | - | Header, die bei jeder Part-Anfrage erforderlich sind; sie werden signiert und müssen vom Uploader ebenfalls gesendet werden |
+| `options.expiration` | int | 3600 | Sekunden bis zum Ablauf der URLs |
+
+Genau eines von `parts` oder `count` ist erforderlich, und ein einzelner Aufruf signiert höchstens 1000 URLs vor - bei sehr großen Objekten seitenweise vorsignieren.
+
+**Gibt zurück:** `table, error` - ein Array von `{ part_number, url }`.
+
+Jeder Teil außer dem letzten muss mindestens 5 MiB groß sein; der Provider erzwingt dies beim Abschluss.
+
+### complete_multipart_upload
+
+Setzt das finale Objekt aus seinen hochgeladenen Teilen zusammen. Teile können in beliebiger Reihenfolge gemeldet werden und werden vor dem Abschluss nach Teilnummer sortiert.
+
+| Parameter | Typ | Beschreibung |
+|-----------|-----|--------------|
+| `key` | string | Objektschlüssel |
+| `upload_id` | string | Aus `create_multipart_upload` |
+| `parts` | table | Array von `{ part_number = int, etag = string }` |
+
+**Gibt zurück:** `table, error` - `etag`, dazu `version_id` und `location`, sofern der Provider sie meldet. Eine unbekannte Upload-ID gibt `errors.NOT_FOUND` zurück.
+
+### abort_multipart_upload
+
+Verwirft einen laufenden Upload und gibt seine gespeicherten Teile frei.
+
+| Parameter | Typ | Beschreibung |
+|-----------|-----|--------------|
+| `key` | string | Objektschlüssel |
+| `upload_id` | string | Aus `create_multipart_upload` |
+
+**Gibt zurück:** `boolean, error`
+
+Ein Upload, der nie abgeschlossen wird, hält seine Teile gespeichert - und abrechnungsrelevant -, bis er abgebrochen wird. Auf jedem Fehlerpfad abbrechen und als Absicherung eine Bucket-Lifecycle-Regel konfigurieren - siehe [Cloud-Speicher](system/cloudstorage.md#multipart-uploads).
+
+## Bereichs-Reader
+
+`open_reader` öffnet wahlfreien Zugriff auf ein Objekt über Ranged-GETs - ohne lokales Zwischenspeichern und ohne vollständigen Download. Der Hauptkonsument ist [`archive.open`](lua/data/archive.md), das mehrere GB große Archive mit begrenztem Speicher direkt aus dem Objektspeicher liest.
+
+```lua
+local archive = require("archive")
+local storage = cloudstorage.get("app.infra:files")
+
+local reader, err = storage:open_reader("uploads/huge.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4,
+})
+if err then return nil, err end
+
+local r = assert(archive.open(reader))
+for e in r:entries() do
+    print(e.name, e.size)
+end
+r:close()
+reader:close()
+
+storage:release()
+```
+
+| Parameter | Typ | Standard | Beschreibung |
+|-----------|-----|----------|--------------|
+| `key` | string | erforderlich | Objektschlüssel |
+| `options.block_size` | int | 8388608 | Einheit des Ranged-GET in Bytes (64 KiB bis 128 MiB) |
+| `options.cache_blocks` | int | 4 | Im Speicher gehaltene LRU-Blöcke (1 bis 64) |
+
+`block_size * cache_blocks` darf 256 MiB nicht überschreiten. Ein fehlendes Objekt gibt `errors.NOT_FOUND` zurück.
+
+**Gibt zurück:** `Reader, error`
+
+Das ETag des Objekts wird beim Öffnen des Readers fixiert und bei jedem Bereichs-Lesevorgang als `If-Match` gesendet, sodass ein während des Lesens überschriebenes Objekt mit `errors.CONFLICT` fehlschlägt, statt eine Mischung aus zwei Objektgenerationen zu liefern. Ein Provider, der kein ETag liefern kann, gibt `errors.UNAVAILABLE` zurück; der Reader liefert nie ein nicht fixiertes Objekt.
+
+Lesevorgänge mit Cache-Miss führen blockierende Netzwerk-IO in der aufrufenden Task aus und serialisieren gleichzeitige Reader, sodass sequenzieller Zugriff pro Eintrag - das Archiv-Muster - die vorgesehene Form ist.
+
+### Reader-Methoden
+
+| Methode | Gibt zurück | Beschreibung |
+|---------|-------------|--------------|
+| `size()` | `integer` | Objektgröße in Bytes, aus dem Stat beim Öffnen |
+| `key()` | `string` | Objektschlüssel, aus dem der Reader liest |
+| `close()` | `boolean, error` | Blockcache freigeben; idempotent |
+
+Der Reader wird am Ende des Task-Scopes automatisch geschlossen, wenn er nicht explizit geschlossen wird.
+
 ## Storage-Methoden
 
 | Methode | Gibt zurück | Beschreibung |
@@ -326,6 +465,11 @@ return {upload_url = url}
 | `delete_objects(keys)` | `boolean, error` | Mehrere Objekte löschen |
 | `presigned_get_url(key, opts?)` | `string, error` | Temporäre Download-URL generieren |
 | `presigned_put_url(key, opts?)` | `string, error` | Temporäre Upload-URL generieren |
+| `create_multipart_upload(key, opts?)` | `table, error` | Einen vorsignierten Multipart-Upload starten |
+| `presigned_part_urls(key, upload_id, opts)` | `table, error` | PUT-URLs für Upload-Teile vorsignieren |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | Das Objekt aus den hochgeladenen Teilen zusammensetzen |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | Einen laufenden Multipart-Upload verwerfen |
+| `open_reader(key, opts?)` | `Reader, error` | Einen Bereichs-Reader mit wahlfreiem Zugriff öffnen |
 | `release()` | `boolean` | Speicherressource freigeben |
 
 ## Berechtigungen
@@ -348,7 +492,11 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Inhalt nil | `errors.INVALID` | nein |
 | Writer nicht gültig | `errors.INVALID` | nein |
 | Objekt nicht gefunden | `errors.NOT_FOUND` | nein |
+| Unbekannte Upload-ID | `errors.NOT_FOUND` | nein |
 | Bedingte Vorbedingung fehlgeschlagen | `errors.CONFLICT` | nein |
+| Objekt während eines Bereichs-Lesevorgangs überschrieben | `errors.CONFLICT` | nein |
+| Provider unterstützt keine Multipart-Uploads | `errors.UNAVAILABLE` | nein |
+| Provider liefert kein ETag für `open_reader` | `errors.UNAVAILABLE` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
 | Operation fehlgeschlagen | `errors.INTERNAL` | nein |
 

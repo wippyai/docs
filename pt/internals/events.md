@@ -75,6 +75,12 @@ Quatro tipos de ação fluem pela fila:
 
 Subscribe e Unsubscribe bloqueiam até o dispatcher confirmar. Send é fire-and-forget.
 
+`Subscribe` falha imediatamente quando o contexto da inscrição já está cancelado, e novamente no dispatcher se for cancelado antes da decisão de posse ser tomada — o bus nunca assume um canal que não instalou.
+
+`Unsubscribe` é uma barreira de posse, não uma dica de melhor esforço. Ele retorna apenas depois que o dispatcher confirma, então o chamador pode liberar o canal sabendo que o bus não mantém nenhuma referência de envio em andamento. Quando chega depois de `Stop`, a confirmação aguarda o dispatcher terminar de entregar o lote que já havia drenado.
+
+`Stop` é igualmente terminal: um segundo `Stop` concorrente não retorna antecipadamente pela flag de já fechado, mas aguarda o dispatcher drenar e sair.
+
 ## Troca de Fila
 
 O dispatcher usa troca de slices para evitar alocações em estado estável:

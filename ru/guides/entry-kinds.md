@@ -98,6 +98,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite |
 | `db.sql.postgres` | PostgreSQL |
 | `db.sql.mysql` | MySQL |
+| `db.cdc.postgres` | Источник Change Data Capture для Postgres (см. [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | Источник Change Data Capture для SQLite (см. [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -303,6 +305,39 @@ local data = msg:body_json()
 
 Обновление живой записи `process.host` перемасштабирует `host.workers` на месте — работающие процессы, PID и очереди сохраняются. `host.queue_size`, `host.local_queue_size` и `lifecycle` фиксируются при создании: живое обновление, меняющее их, отклоняется, как и изменение числа воркеров у хоста, воркеры которого управляются аффинностью.
 
+### Безопасность процесса
+
+Записи `process.lua` и `process.lua.bc` принимают блок `security:` верхнего уровня. Он входит в состав записи, поэтому применяется к каждому запуску этого процесса — как на `process.host`, так и на `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Поле | Описание |
+|------|----------|
+| `actor.id` | Идентичность актора, под которой работает процесс; заменяет унаследованного актора |
+| `actor.meta` | Атрибуты актора, которые вычисляют политики |
+| `policies` | Registry ID (`namespace:name`) политик, объединяемых в область |
+| `groups` | Registry ID групп политик, чьи политики объединяются в область |
+
+Разрешение происходит при старте процесса и атомарно: если какую-либо из перечисленных политик или групп разрешить не удаётся, spawn завершается неудачей и частичный контекст не устанавливается. Опущенный `actor` наследует актора порождающей стороны; опущенные одновременно `policies` и `groups` наследуют её область. Блок принимают `function.lua`, `function.lua.bc`, `process.lua` и `process.lua.bc`.
+
+Запись-команда может дополнительно объявить `meta.command.security`, который применяется только при запуске записи как CLI-команды — см. [Безопасность команд](guides/cli.md#command-security). На обычные spawn он не влияет.
+
+См. [Безопасность](system/security.md).
+
 ## Temporal (Workflows)
 
 | Тип | Описание |
@@ -501,7 +536,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Группы политик образуются самими политиками: политика перечисляет под `groups:` ID групп, к которым принадлежит, а группа — это множество политик, назвавших её. Отдельного типа записи для группы нет. ID групп — это Registry ID: голое имя разрешается в пространстве имён объявляющей политики, поэтому `operators` выше становится `app.security:operators` при объявлении в пространстве имён `app.security`. Записи ссылаются на группы по полному `namespace:name`.
 
 **Lua API:** См. [Модуль Security](lua/security/security.md)
 
@@ -622,11 +661,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssembly-процесс |
 
 ```yaml
+# Текст WAT — это inline-исходник
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # или wasi-http
+
+# Бинарный WASM загружается из записи файловой системы и проверяется по хэшу
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # или wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` и `process.wasm` принимают `fs`, `path` и `hash` — поля `source` у бинарной записи нет; `source` относится только к `function.wat`. `hash` обязателен и должен иметь вид `sha256:<hex>`; модуль отклоняется, если байты не совпадают.
 
 См. [Обзор WASM](wasm/overview.md).
 

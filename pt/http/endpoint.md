@@ -24,7 +24,7 @@ Endpoints (`http.endpoint`) definem handlers de rota HTTP que executam funções
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
 | `meta.router` | registry.ID | Não | Roteador pai (padrão: o único roteador se exatamente um estiver registrado) |
-| `method` | string | Sim | Método HTTP |
+| `method` | string | Sim | Método HTTP, ou `"*"` para qualquer método |
 | `path` | string | Sim | Padrão de caminho URL |
 | `func` | registry.ID | Sim | Função a executar |
 
@@ -42,6 +42,23 @@ Métodos suportados:
 | `HEAD` | Apenas headers |
 | `OPTIONS` | Preflight CORS (tratado automaticamente) |
 | `TRACE` | Loopback de diagnóstico |
+| `*` | Qualquer método |
+
+Nomes de métodos são em maiúsculas; `method` é obrigatório, e qualquer valor fora desse conjunto é rejeitado como erro de configuração.
+
+### Endpoints Agnósticos de Método
+
+`method: "*"` registra o caminho para todos os métodos HTTP, e o handler lê o método real com `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+Para um endpoint normal, o roteador também registra um handler `OPTIONS` no mesmo caminho, para que o middleware de CORS possa responder a um preflight sem executar o endpoint. Um endpoint `*` não recebe esse handler: ele já corresponde a `OPTIONS`, então requisições de preflight chegam à própria função do endpoint, que deve respondê-las.
 
 ## Parâmetros de Caminho
 

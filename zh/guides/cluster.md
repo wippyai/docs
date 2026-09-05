@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 第一个节点无需 `join_addrs`——它作为种子启动。加入操作带退避重试，处于隔离状态的节点会定期尝试重新加入，因此以新 IP 重启的节点（Kubernetes 中常见）可快速重新收敛。
 
-Gossip 可通过共享密钥加密，密钥可内联提供或从文件读取：
+Gossip 始终使用共享密钥加密。可通过 `membership.secret_key` 内联提供，或通过 `membership.secret_file` 从文件读取；两者都未提供的节点无法启动集群组件。该值经 base64 编码，且在每个节点上都必须相同。
+
+成员变更事件（`NodeJoined`、`NodeLeft`、`NodeUpdated`）驱动 Raft 引导、选民协调、进程组同步，以及离开节点所拥有名称的自动清理。
+
+## 节点间身份
+
+每个节点都持有一对 ed25519 密钥，并且每个节点都携带它所信任的公钥映射。当 `cluster.enabled: true` 时，两者都是必需的。
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-成员变更事件（`NodeJoined`、`NodeLeft`、`NodeUpdated`）驱动 Raft 引导、选民协调、进程组同步，以及离开节点所拥有名称的自动清理。
+| 键 | 内容 |
+|-----|------|
+| `internode.identity_key` | 该节点的私钥，内联提供 |
+| `internode.identity_key_file` | 存放该密钥的文件路径 |
+| `internode.trusted_peer_keys` | 节点名到公钥的映射，覆盖网格中的每个节点，包括本节点 |
+
+密钥格式：base64，标准或原始（无填充）编码。私钥解码后为 32 字节的 ed25519 种子或完整的 64 字节 ed25519 私钥；受信任的对等密钥解码后为 32 字节的 ed25519 公钥。没有生成密钥的子命令——请用任意 ed25519 工具生成密钥，并把原始字节做 base64 编码：
+
+```bash
+# 32 字节种子及其公钥，base64 编码
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` 和 `identity_key_file` 互斥，且必须提供其中之一。`trusted_peer_keys` 必须包含与本地 `cluster.name` 对应的条目，其值为本节点自身的公钥；缺失或不匹配的自身条目会中止启动。这使得该信任映射成为可以原样分发到每个节点的单一制品。
+
+网格握手是双向的。每一方都用一段绑定了双方节点 ID 和双方 nonce 的记录上的 HMAC 证明自己掌握共享 gossip 密钥，并用自己的身份密钥对该记录签名；对端会用它为该节点 ID 所持有的公钥、以及该对端在 gossip 中通告的公钥来校验签名。任一校验失败都会关闭连接。
+
+需要预先考虑的影响：
+
+- 网格不与没有身份的节点互通。集群中的每个节点都必须配置身份。
+- 节点 ID 不在 `trusted_peer_keys` 中的对端会被拒绝，其 gossip 通告的公钥与受信任条目不一致的对端同样会被拒绝。新增节点意味着要把它的公钥分发到已有节点。
+- 节点 ID 必须先出现在活跃的 gossip 成员关系中，其密钥才能被解析，因此尚未加入 gossip 的对端无法建立网格连接。
 
 ## 引导
 
@@ -146,11 +187,17 @@ end
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-三节点投票集群：
+三节点投票集群（`node-2` 和 `node-3` 仅在 `name`、`identity_key_file` 和 `join_addrs` 上有差异）：
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-仅 gossip 客户端（加入集群用于命名/消息传递，从不运行 Raft）：
+仅 gossip 客户端（加入集群用于命名/消息传递，从不运行 Raft）。它同样需要身份，且各选民节点的映射中必须包含它的公钥：
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

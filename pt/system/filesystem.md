@@ -29,6 +29,13 @@ Acesso a diretórios e sistemas de arquivos embutidos.
 | `directory` | string | obrigatório | Caminho raiz |
 | `auto_init` | bool | false | Cria diretório se ausente |
 | `mode` | string | 0755 | Modo de permissão Unix (octal) |
+| `base` | string | - | Base para caminhos relativos: `project` (diretório de trabalho do processo) ou `module` (raiz de carregamento do módulo proprietário) |
+
+Caminhos absolutos são usados como fornecidos, independentemente do que `base` indicar.
+
+Para um caminho relativo, `base: project` o mantém relativo ao diretório de trabalho do processo. Tanto `base: module` quanto um `base` não definido o resolvem contra a raiz de carregamento do módulo que é dono da entrada, obtida através do proprietário da entrada no registry. Quando a entrada não tem módulo proprietário, ou esse módulo não tem uma raiz de recursos resolvível, o caminho permanece relativo ao diretório de trabalho do processo.
+
+Qualquer outro valor é rejeitado com `invalid directory base`.
 
 O modo restringe todas as operações de arquivo. Bits de execução são adicionados automaticamente quando bits de leitura estão presentes.
 

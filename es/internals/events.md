@@ -75,6 +75,12 @@ Cuatro tipos de acciones fluyen a través de la cola:
 
 Subscribe y Unsubscribe bloquean hasta que el dispatcher confirma. Send es fire-and-forget.
 
+`Subscribe` falla inmediatamente cuando el contexto de la suscripcion ya esta cancelado, y de nuevo en el dispatcher si se cancela antes de que se tome la decision de propiedad — el bus nunca toma un canal que no instalo.
+
+`Unsubscribe` es una barrera de propiedad, no una sugerencia de mejor esfuerzo. Retorna solo despues de que el dispatcher confirma, de modo que el llamador puede liberar el canal sabiendo que el bus no mantiene ninguna referencia de envio en vuelo. Cuando llega despues de `Stop`, la confirmacion espera a que el dispatcher termine de entregar el lote que ya dreno.
+
+`Stop` es igualmente terminal: un segundo `Stop` concurrente no retorna temprano por la bandera de ya-cerrado, sino que espera a que el dispatcher drene y salga.
+
 ## Intercambio de Cola
 
 El dispatcher usa intercambio de slices para evitar asignaciones en estado estable:

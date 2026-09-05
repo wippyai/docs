@@ -75,6 +75,12 @@ type Bus struct {
 
 Subscribe 和 Unsubscribe 阻塞直到 dispatcher 确认。Send 是即发即弃。
 
+当订阅上下文已被取消时，`Subscribe` 立即失败；如果在做出所有权决定之前被取消，则会在 dispatcher 处再次失败——总线绝不会接管一个它没有安装的通道。
+
+`Unsubscribe` 是所有权屏障，而非尽力而为的提示。它只在 dispatcher 确认后才返回，因此调用方可以确信总线不再持有任何进行中的发送引用，从而安全释放该通道。当它在 `Stop` 之后到达时，确认会等待 dispatcher 完成投递它已经取出的那批消息。
+
+`Stop` 同样是终止性的：第二个并发的 `Stop` 不会因已关闭标志而提前返回，而是等待 dispatcher 排空并退出。
+
 ## 队列交换
 
 Dispatcher 使用切片交换以避免稳态下的分配：

@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 O primeiro nó não precisa de `join_addrs` — ele inicia como seed. Joins são tentados com backoff, e um nó que se encontra isolado periodicamente tenta rejoinar, de modo que um nó reiniciado com um novo IP (comum no Kubernetes) converge rapidamente.
 
-O gossip pode ser criptografado com uma chave compartilhada, fornecida inline ou a partir de um arquivo:
+O gossip é sempre criptografado com uma chave compartilhada. Forneça-a inline como `membership.secret_key` ou a partir de um arquivo como `membership.secret_file`; um nó iniciado sem nenhuma das duas falha ao subir o componente de cluster. O valor é codificado em base64 e idêntico em todos os nós.
+
+Mudanças de associação (`NodeJoined`, `NodeLeft`, `NodeUpdated`) são os eventos que impulsionam o bootstrap do Raft, reconciliação de voters, sincronização de grupos de processos e limpeza automática de nomes pertencentes a um nó que partiu.
+
+## Identidade internode
+
+Cada nó detém um par de chaves ed25519, e cada nó carrega o mapa de chaves públicas em que confia. Ambos são obrigatórios quando `cluster.enabled: true`.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-Mudanças de associação (`NodeJoined`, `NodeLeft`, `NodeUpdated`) são os eventos que impulsionam o bootstrap do Raft, reconciliação de voters, sincronização de grupos de processos e limpeza automática de nomes pertencentes a um nó que partiu.
+| Chave | Conteúdo |
+|-------|----------|
+| `internode.identity_key` | A chave privada do nó, inline |
+| `internode.identity_key_file` | Caminho para um arquivo contendo essa chave |
+| `internode.trusted_peer_keys` | Nome do nó para chave pública, para cada nó da malha incluindo este |
+
+Formato da chave: base64, codificação padrão ou raw (sem padding). Uma chave privada decodifica para uma seed ed25519 de 32 bytes ou uma chave privada ed25519 completa de 64 bytes; uma chave de peer confiável decodifica para uma chave pública ed25519 de 32 bytes. Não há subcomando de geração de chaves — gere as chaves com qualquer ferramenta ed25519 e codifique os bytes raw em base64:
+
+```bash
+# Seed de 32 bytes e sua chave pública, codificadas em base64
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` e `identity_key_file` são mutuamente exclusivos, e um deles é obrigatório. `trusted_peer_keys` deve conter uma entrada para o `cluster.name` local cujo valor seja a chave pública deste próprio nó; uma entrada própria ausente ou divergente aborta a inicialização. Isso torna o mapa de confiança um único artefato que você pode distribuir sem alterações para todos os nós.
+
+O handshake da malha é mútuo. Cada lado prova conhecimento do segredo de gossip compartilhado com um HMAC sobre um transcript que vincula ambos os IDs de nó e ambos os nonces, e assina esse transcript com sua chave de identidade; o peer verifica a assinatura contra a chave pública que possui para aquele ID de nó e contra a chave que o peer anuncia no gossip. Qualquer verificação que falhe fecha a conexão.
+
+Consequências a planejar:
+
+- A malha não interopera com um nó que não tem identidade. Todo nó do cluster deve estar configurado com uma.
+- Um peer cujo ID de nó está ausente de `trusted_peer_keys` é rejeitado, assim como um cuja chave pública anunciada no gossip diverge da entrada confiável. Adicionar um nó significa distribuir sua chave pública para os nós existentes.
+- Um ID de nó deve estar presente na associação de gossip ativa antes que sua chave resolva, de modo que um peer que não entrou no gossip não pode abrir uma conexão de malha.
 
 ## Bootstrap
 
@@ -146,11 +187,17 @@ Nó único (desenvolvimento):
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Cluster de três voters:
+Cluster de três voters (`node-2` e `node-3` diferem apenas em `name`, `identity_key_file` e `join_addrs`):
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-Cliente apenas gossip (junta-se para nomeação/mensagens, nunca executa Raft):
+Cliente apenas gossip (junta-se para nomeação/mensagens, nunca executa Raft). Ele ainda precisa de uma identidade, e os voters precisam da chave pública dele em seus próprios mapas:
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

@@ -122,6 +122,23 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
+Поиск нечувствителен к регистру: `req:header("content-type")` и `req:header("Content-Type")` возвращают одно и то же значение. Заголовок, отправленный несколько раз, возвращает свои значения, объединённые через `", "`. Отсутствующий заголовок возвращает `nil`.
+
+### headers
+
+Получает все заголовки запроса.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Возвращает:** `table, error`
+
+Ключи — канонические имена заголовков (`Content-Type`, `X-Correlation-ID`) независимо от регистра, в котором их отправил клиент. Повторяющиеся заголовки объединяются через `", "`, как и в `req:header()`.
+
 ### content_type
 
 Получает заголовок Content-Type.

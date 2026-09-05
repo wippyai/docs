@@ -249,6 +249,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Contexto de Segurança
+
+Uma activity agendada sob um contexto de segurança recebe o header `wippy-security` assinado, com audience para o ID da activity. O worker verifica a assinatura e o audience, depois mescla os valores de `ctx` propagados e o payload de segurança em um frame novo antes que a função da activity execute.
+
+Essa mesclagem é tudo-ou-nada e **fatal para a activity se falhar**: a activity retorna um erro antes que seu código execute, portanto ela nunca roda com contexto parcial ou com um ator não verificado. A mesclagem falha quando a assinatura ou o audience não verificam, quando o envelope é inconsistente (um ator sem escopo, ou políticas sem ator), ou quando uma política nomeada no envelope não resolve no registro de segurança local — que é a causa operacional mais comum: falta ao deployment do worker uma entrada de política que o chamador tinha.
+
+O worker obtém suas chaves de assinatura e verificação da entrada `temporal.client` que referencia. Veja [Propagação de contexto de segurança](temporal/overview.md#security-context-propagation).
+
 ## Tratamento de Erros
 
 Retorne erros usando a convenção padrão de Lua:
@@ -292,9 +300,13 @@ end
 | Falha | Tipo de Erro | Permite Retry | Descrição |
 |-------|-------------|---------------|-----------|
 | Erro de aplicação | O que a activity retornou | Herdado do erro retornado | Erro retornado pelo código da activity via `return nil, err` |
-| Crash de runtime | `INTERNAL` | sim | Erro Lua não tratado na activity |
-| Activity ausente | `NOT_FOUND` | não | Activity não registrada no worker |
-| Timeout | `TIMEOUT` | sim | Activity excedeu o timeout configurado |
+| Crash de runtime | `Internal` | false | Erro Lua não tratado na activity |
+| Activity ausente | `NotFound` | false | Activity não registrada no worker |
+| Timeout | `Timeout` | false | Activity excedeu o timeout configurado |
+| Verificação de segurança | `Internal` | true | Falha na checagem de assinatura, audience ou envelope no header de segurança propagado |
+| Política de segurança ausente | `Internal` | true | Uma política nomeada no envelope de segurança não resolve neste worker |
+
+Ambas as falhas de segurança acontecem durante a mesclagem de contexto, antes da função da activity executar. Elas não são marcadas como não-retentáveis, então a política de retry da activity continua tentando novamente; retries não ajudam, porque nem uma assinatura inválida nem uma entrada de política ausente mudam entre tentativas. Limite `maximum_attempts` nas activities que você quer que falhem rápido, e leia uma falha `Internal` repetida sem saída de log da activity como uma falha de mesclagem de contexto, e não como um defeito na activity.
 
 ```lua
 local executor = funcs.new():with_options({

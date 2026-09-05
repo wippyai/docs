@@ -48,6 +48,40 @@ local mods, err = system.modules()
 | `description` | string | モジュール説明 |
 | `class` | string[] | モジュール分類タグ |
 
+## デプロイメントソース
+
+`system.source`サブテーブルは、正規化されたデプロイメントのベースラインを読み取ります。これは、レジストリの履歴が適用される前の、アプリケーションが組み立てられたソース群から生成されたエントリ集合です。
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**戻り値:** `table, error`
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `owners` | string[] | ベースラインのエントリに対して権限を持つソースオーナー |
+| `entries` | table[] | `id`、`kind`、`meta`、`data`を持つベースラインのエントリ |
+
+`owners`はアプリケーションオーナーを先頭に、残りのオーナーをアルファベット順に並べてソートされます。アプリケーションオーナーは文字列`"application"`です。
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+ロードは1つの安定したソース世代から取得されるため、エントリとオーナーは常に同じベースラインを表します。各ソースの背後にあるファイルシステムのパスはランタイム内部のものであり、公開されません。ロードに失敗した場合は、背後のパスを漏らさず汎用の内部エラーを報告します。
+
+**権限:** `sources`に対する`system.read`
+
 ## メモリ統計
 
 詳細なメモリ統計を取得:
@@ -426,6 +460,7 @@ end
 | `system.read` | `cwd` | 作業ディレクトリを読み取り |
 | `system.read` | `hosts` | ホスト / ホストプロセスを一覧 |
 | `system.read` | `modules` | ロード済みモジュールを一覧 |
+| `system.read` | `sources` | デプロイメントソースのベースラインをロード |
 | `system.read` | `supervisor` | スーパーバイザー状態を読み取り |
 | `system.read` | `node` | このノードのアイデンティティを読み取り |
 | `system.read` | `cluster` | クラスタメンバーシップとリーダーを読み取り |

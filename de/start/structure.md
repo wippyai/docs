@@ -12,7 +12,7 @@ Projektlayout, YAML-Definitionsdateien und Namenskonventionen.
 ```
 myapp/
 ├── .wippy.yaml          # Runtime-Konfiguration
-├── wippy.lock           # Quellverzeichnis-Konfiguration
+├── wippy.lock           # Quellverzeichnisse und gesperrte Module
 ├── .wippy/              # Installierte Module
 └── src/                 # Anwendungsquellcode
     ├── _index.yaml      # Entry-Definitionen
@@ -100,17 +100,35 @@ app.workers
 
 Die vollständige Entry-ID kombiniert Namespace und Name: `app.api:get_user`
 
-### Quellverzeichnisse
+### Die Lock-Datei
 
-Die `wippy.lock`-Datei definiert, woher Wippy Definitionen lädt:
+`wippy.lock` hält fest, woher Wippy Definitionen lädt und welche Modulversionen ausgewählt sind:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy scannt diese Verzeichnisse rekursiv nach YAML-Dateien.
+| Feld | Beschreibung |
+|------|--------------|
+| `directories.src` | Quellverzeichnis der Anwendung, wird rekursiv nach YAML-Definitionsdateien durchsucht |
+| `directories.modules` | Basisverzeichnis für eingebundene Module; Packs landen unter `<modules>/vendor/` |
+| `options.unpack_modules` | Jede `.wapp` in ein Verzeichnis daneben entpacken, statt das Pack direkt zu laden (Standard `false`) |
+| `modules[].name` | Modulkennung in der Form `org/module` |
+| `modules[].version` | Ausgewählte Version |
+| `modules[].hash` | Artefakt-Digest, dem das eingebundene Pack entsprechen muss |
+| `modules[].root` | Markiert die ausgewählte Deployment-Wurzel; höchstens ein Modul darf sie tragen |
+
+Eingebundene Packs werden als `.wapp`-Dateien aufbewahrt. Mit `unpack_modules: true` wird jedes Modul zusätzlich in ein Verzeichnis entpackt, und die verifizierte `.wapp` bleibt daneben liegen — die Installation sucht nach dem Pack, ein Verzeichnis ohne zugehöriges Pack wird also erneut heruntergeladen.
+
+Ein `replacements:`-Abschnitt in `wippy.lock` ist veraltet. Er wird weiterhin geladen, mit einer Warnung; lokale Modul-Überschreibungen stattdessen unter `workspace.replacements` in einer Runtime-Konfigurationsdatei deklarieren. Siehe [Abhängigkeitsverwaltung](guides/dependency-management.md#local-development-with-replacements).
 
 ## Entry-Definitionen
 
@@ -203,13 +221,7 @@ Siehe [Konfigurationsanleitung](guides/configuration.md) für alle Optionen.
 
 ### wippy.lock
 
-Definiert Quellverzeichnisse:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+Quellverzeichnisse und der ausgewählte Modulgraph — siehe [Die Lock-Datei](#the-lock-file) oben.
 
 ## Einträge referenzieren
 

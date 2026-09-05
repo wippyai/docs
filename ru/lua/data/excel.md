@@ -277,6 +277,37 @@ end
 
 **Возвращает:** `error`
 
+### Сериализация в строку
+
+Рендерит книгу в байтовую строку `xlsx` без файловой системы и writer'а. Используйте это, чтобы передать книгу в HTTP-ответ, объектное хранилище или сообщение очереди.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Возвращает:** `string, error`
+
+Книга целиком материализуется в памяти. Для больших книг предпочтительнее `write_to`, который вместо этого стримит данные в writer.
+
+Вызов `bytes()` на закрытой книге возвращает ошибку `errors.INTERNAL`.
+
 ### Закрытие книги
 
 Закрывает книгу и освобождает ресурсы.

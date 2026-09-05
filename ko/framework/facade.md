@@ -83,7 +83,7 @@ entries:
 | Parameter | 범위 | Default | Description |
 |-----------|---------|----------|--------------|
 | `custom_css` | global | Google Fonts import | 모든 범위에 주입되는 CSS |
-| `css_variables` | global | `{}` | CSS 커스텀 프로퍼티의 JSON 맵 |
+| `css_variables` | global | `{}` | 임의의 CSS 커스텀 프로퍼티의 JSON 맵. Auto 모드와 강제 모드용으로 컴파일되며 컴포넌트 shadow root로 브릿지됩니다 |
 | `icon_sets` | global | `[]` | Iconify 아이콘 세트 URL |
 | `host_custom_css` | host | `""` | 호스트 chrome 전용 CSS |
 | `host_css_variables` | host | `{}` | 호스트 전용 CSS 커스텀 프로퍼티 |

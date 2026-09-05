@@ -1,11 +1,11 @@
 ---
 title: "クラウドストレージ"
-description: "署名付きURL付きのS3互換オブジェクトストレージ。"
+description: "署名付きURL、マルチパートアップロード、範囲指定読み取りに対応したS3互換オブジェクトストレージ。"
 ---
 
 # クラウドストレージ
 
-署名付きURL付きのS3互換オブジェクトストレージ。
+署名付きURL、マルチパートアップロード、範囲指定読み取りに対応したS3互換オブジェクトストレージ。
 
 ## エントリ種別
 
@@ -74,9 +74,32 @@ MinIOまたは他のS3互換サービスの場合、カスタムエンドポイ�
 
 エンドポイントが提供されると、パススタイルアクセスが自動的に有効になります。
 
+## マルチパートアップロード
+
+署名付きマルチパートアップロードは、ランタイムの機能ではなくプロバイダーの機能です。`cloudstorage.s3`種別はこれを実装しています。マルチパートプロトコルをサポートしないプロバイダーでは、`create_multipart_upload`、`presigned_part_urls`、`complete_multipart_upload`、`abort_multipart_upload`が`errors.UNAVAILABLE`で失敗します。
+
+完了も中止もされなかったアップロードのパートは保存されたまま残り、課金対象になります。アプリケーションはすべての失敗経路で中止処理を行いますが、クライアントがクラッシュした場合はその中止処理を実行するものが残りません。バケットに`AbortIncompleteMultipartUpload`ライフサイクルルールを設定して、最後の防波堤としてください:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## 範囲指定読み取り
+
+`open_reader`は範囲指定GETでオブジェクトを読み取り、読み取りのたびに`If-Match`でオブジェクトのETagを固定します。最初のstatでETagを返さないプロバイダーでは、この呼び出しは`errors.UNAVAILABLE`で失敗します。`If-Match`を無視するプロバイダーでは上書き保護が失われ、読み取りが2つのオブジェクト世代を混在させたことを検出できなくなります。
+
 ## Lua API
 
-操作（list、upload、download、delete、署名付きURL）については[クラウドストレージモジュール](lua/storage/cloud.md)を参照してください。
+操作（list、upload、download、delete、署名付きURL、マルチパートアップロード、範囲指定リーダー）については[クラウドストレージモジュール](lua/storage/cloud.md)を参照してください。
 
 ## 関連項目
 

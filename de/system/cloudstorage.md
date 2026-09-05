@@ -6,7 +6,7 @@ description: "<secondary-label ref='external'/"
 # Cloud-Speicher
 <secondary-label ref="external"/>
 
-S3-kompatibler Objektspeicher mit vorsignierten URLs.
+S3-kompatibler Objektspeicher mit vorsignierten URLs, Multipart-Uploads und Bereichs-Lesevorgängen.
 
 ## Entry-Typen
 
@@ -75,9 +75,32 @@ Für MinIO oder andere S3-kompatible Dienste setzen Sie einen benutzerdefinierte
 
 Wenn ein Endpunkt angegeben wird, wird Pfadstil-Zugriff automatisch aktiviert.
 
+## Multipart-Uploads
+
+Vorsignierte Multipart-Uploads sind eine Fähigkeit des Providers, kein Feature der Runtime. Der `cloudstorage.s3`-Typ implementiert sie; ein Provider, der das Multipart-Protokoll nicht unterstützt, lässt `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` und `abort_multipart_upload` mit `errors.UNAVAILABLE` fehlschlagen.
+
+Teile eines Uploads, der nie abgeschlossen oder abgebrochen wird, bleiben gespeichert und werden berechnet. Anwendungen brechen auf jedem Fehlerpfad ab, aber bei einem abgestürzten Client läuft nichts mehr, was diesen Abbruch ausführen könnte. Als Absicherung eine `AbortIncompleteMultipartUpload`-Lifecycle-Regel auf dem Bucket konfigurieren:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Bereichs-Lesevorgänge
+
+`open_reader` liest ein Objekt über Ranged-GETs und fixiert das ETag des Objekts bei jedem Lesevorgang mit `If-Match`. Ein Provider, der beim initialen Stat kein ETag zurückgibt, lässt den Aufruf mit `errors.UNAVAILABLE` fehlschlagen, und ein Provider, der `If-Match` ignoriert, verliert den Überschreibschutz - der Lesevorgang kann dann nicht erkennen, dass er zwei Objektgenerationen vermischt hat.
+
 ## Lua-API
 
-Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs).
+Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs, Multipart-Uploads, Bereichs-Reader).
 
 ## Siehe auch
 

@@ -150,6 +150,21 @@ end
 Cuando no se configura contexto de seguridad, el servicio se ejecuta sin un actor. En modo estricto (por defecto), las verificaciones de seguridad fallan. Configure un contexto de seguridad para servicios que necesiten autorización.
 </note>
 
+## Reregistro y Reemplazo
+
+Un cambio en el registro puede volver a registrar un ID que ya tiene un controlador en ejecución. Si el registro lleva la misma instancia de servicio, nada se altera. Si lleva una instancia **distinta** — el manager reconstruyó el servicio porque su configuración cambió — el supervisor retira el controlador existente y adopta el reemplazo.
+
+El retiro abarca más que ese único servicio. Un dependiente en ejecución capturó la instancia sustituida, por lo que no puede seguir ejecutándose contra un servicio que se está reemplazando por debajo; la clausura de retiro es el servicio reemplazado más todos los servicios en ejecución que dependen de él, detenidos en orden de dependencia (dependientes primero). Los servicios ya detenidos no se detienen una segunda vez — un manager que detiene su propia instancia antes de volver a registrarla no recibe un `Stop` redundante.
+
+El traspaso es transaccional:
+
+1. El plan se calcula sin tocar nada, de modo que un fallo de planificación deja intacto el conjunto en ejecución.
+2. Se ejecuta el lote de detenciones. **Si alguna detención falla, el traspaso se rechaza**: los servicios que el lote ya detuvo se vuelven a levantar y se reporta el error. Un servicio que no pudo volver a levantarse se nombra en ese error. El supervisor termina siendo dueño del mismo conjunto en ejecución que tenía antes del commit, nunca de uno a medio retirar.
+3. Solo después de que el lote tiene éxito se descartan y cancelan los controladores retirados, liberando las instancias de servicio sustituidas.
+4. El reemplazo se crea e inicia a través del mismo secuenciador consciente de dependencias que cualquier otro inicio, y los dependientes que se detuvieron para el traspaso vuelven a levantarse contra la instancia adoptada.
+
+Un servicio que estaba en ejecución antes del reemplazo se reinicia después, incluso cuando el nuevo registro establece `auto_start: false` — reemplazar un servicio activo es una actualización, no una detención implícita. Reiniciar un dependiente detenido se rige por su propia política de reinicio y no condiciona el commit.
+
 ## Estados del Servicio
 
 ```mermaid
@@ -186,6 +201,14 @@ El supervisor transiciona servicios a través de estos estados:
 ```
 Inicio:  database -> cache -> handler -> http_server
 Apagado: http_server -> handler -> cache -> database
+```
+
+Con SIGINT o SIGTERM el runtime comienza un apagado graceful y toda la secuencia se ejecuta bajo un único presupuesto, `shutdown.timeout` en la configuración del runtime (30s por defecto). Ese presupuesto es un plazo nuevo que no hereda el contexto interrumpido, por lo que un Ctrl-C no corta el apagado de los componentes; el `stop_timeout` por servicio sigue acotando cada detención individual dentro de él. Una segunda señal omite la secuencia y sale inmediatamente.
+
+```yaml
+# .wippy.yaml
+shutdown:
+  timeout: 60s
 ```
 
 ## Ver También

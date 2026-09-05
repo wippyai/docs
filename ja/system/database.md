@@ -49,14 +49,18 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # インメモリには:memory:を使用
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     options:
       cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+プライベートなインメモリSQLiteデータベース（<code>file: ":memory:"</code>）は1本の物理接続にスコープされるため、<code>max_open</code>と<code>max_idle</code>は<code>1</code>に強制されます。ファイルベースのデータベースは設定された<code>pool</code>の値をそのまま使用します。CDCのスナップショット読み取りトランザクションが唯一のライター接続を占有しないために、これが必要です。ジャーナルモードは常に<code>WAL</code>です。
+</note>
 
 ## 接続フィールド
 
@@ -75,12 +79,16 @@ entries:
 
 ### SQLiteフィールド
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `file` | string | データベースファイルパスまたは`:memory:` |
-| `pool` | object | 接続プール設定 |
-| `options` | map | SQLite固有のオプション |
-| `lifecycle` | object | ライフサイクル設定 |
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|-----------|------|
+| `file` | string | 必須 | データベースファイルパスまたは`:memory:` |
+| `pool` | object | - | 接続プール設定。`:memory:`では`max_open`と`max_idle`は`1`に強制される |
+| `max_mutation_changes` | int | 100000 | コミット済みミューテーションオブザーバーで1トランザクションが保持できる行数 |
+| `max_mutation_bytes` | int | 67108864 | オブザーバーで1トランザクションが保持できる論理バイト数（64 MiB） |
+| `options` | map | - | 受け付けられるが無視される |
+| `lifecycle` | object | - | ライフサイクル設定 |
+
+`max_mutation_changes`と`max_mutation_bytes`は、[`db.cdc.sqlite`](system/cdc.md)ソースに供給するインメモリのコミット済みミューテーションオブザーバーの上限を定めます。いずれのフィールドも0を指定するとデフォルトが選択され、負の値は拒否されます。この上限は厳密ではなく保守的なものです。SQLiteはpre-updateフックに行全体を渡すため、上限が候補を拒否する前に1行が実体化することがあります。
 
 ### 環境変数フィールド
 
@@ -136,8 +144,10 @@ pool:
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+ポート以外のすべての値はシングルクォートで囲まれ、埋め込まれた`'`と`\`はバックスラッシュでエスケープされます。そのため、スペースやクォートを含むホスト、パスワード、オプション値もそのまま渡されます。
 
 ### MySQL {id="dsn-mysql"}
 
@@ -194,7 +204,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -289,3 +299,4 @@ entries:
 - [SQLモジュール](lua/storage/sql.md) - Lua APIリファレンス
 - [ストア](system/store.md) - `database.sql`に基づくキーバリューストア
 - [キュー](system/queue.md) - SQLバックエンドのキューハンドラ
+- [変更データキャプチャ](system/cdc.md) - `db.sql.sqlite`またはPostgresデータベースからの行レベル変更のストリーミング

@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### 보안 컨텍스트 전파
+
+Wippy는 호출하는 액터와 스코프를 서명된 Temporal 헤더로 워크플로우와 액티비티에 전파합니다. 서명은 클라이언트 엔트리가 보유한 키를 사용하는 HMAC-SHA256입니다:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| 필드 | 설명 |
+|-------|-------------|
+| `security_hmac_key` | base64로 인코딩된 서명 키; 최소 32바이트로 디코딩되어야 함 |
+| `security_hmac_previous_keys` | 로테이션을 위해 검증에는 여전히 허용되는 base64 인코딩 키 |
+
+두 필드는 바이트 필드이므로 YAML에서 base64입니다. 디코딩된 길이가 32바이트 미만인 키는 설정 검증 단계에서 거부되며, `security_hmac_key` 없이 `security_hmac_previous_keys`를 선언하는 것도 마찬가지입니다. 새 헤더는 항상 `security_hmac_key`로 서명되고, 검증 시에는 나열된 모든 이전 키를 시도합니다. 따라서 로테이션 절차는 다음과 같습니다: 새 키를 `security_hmac_key`로 추가하고, 이전 키를 `security_hmac_previous_keys`로 옮긴 뒤, 그 키를 지닌 진행 중인 실행이 없어지면 제거합니다.
+
+**액터나 스코프 하에서 워크플로우를 시작하려면 키가 필요합니다.** 호출자에게 보안 컨텍스트가 있는데 클라이언트에 서명 키가 없으면 헤더에 서명할 수 없어 시작이 실패합니다. 키가 없는 클라이언트는 액터도 스코프도 없는 컨텍스트에서만 워크플로우를 시작할 수 있습니다.
+
+워커는 자신이 참조하는 클라이언트 엔트리에서 키를 획득하므로, 워커는 자체 설정 없이 `client:`로부터 서명과 검증을 상속합니다. [워크플로우](temporal/workflows.md#security-context)와 [액티비티](temporal/activities.md)를 참조하세요.
+
 ## 워커 설정
 
 `temporal.worker` 엔트리 kind는 워크플로우와 액티비티를 실행하는 워커를 정의합니다.

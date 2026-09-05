@@ -101,6 +101,35 @@ local result, err = runner.run({
 | `context` | table | Als `ctx` verfügbare Werte |
 | `allow_classes` | string[] | Zusätzliche Modulklassen |
 | `custom_modules` | table | Benutzerdefinierte Tabellen als Module |
+| `limits` | table | Ausführungslimits für diesen Lauf |
+
+### Schritt-Limit
+
+`limits.max_steps` begrenzt, wie lange ein einzelnes `runner.run` laufen darf:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+Ein Schritt ist eine Runde des Eval-Schedulers: Das Programm läuft weiter, bis es yieldet oder fertig ist, und jedes Resume verbraucht einen Schritt. Reine Berechnung zwischen Yields zählt als ein Schritt, egal wie lange sie dauert, das Limit begrenzt also Scheduling-Runden, nicht CPU-Zeit.
+
+Übersteigt der Zähler das Limit, stoppt der Lauf und gibt `errors.INTERNAL` mit `eval exceeded maximum step limit` zurück.
+
+`max_steps = 0` bedeutet unbegrenzt. Wird `limits` weggelassen, gilt der Host-Standard:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # Standardbudget für Läufe ohne limits.max_steps
+                      # 0 = unbegrenzt; ein negativer Wert lässt den Boot fehlschlagen
+```
+
+`limits` gilt nur für `runner.run`; `runner.compile` akzeptiert keine Limits. `limits` muss eine Tabelle sein, die ausschließlich `max_steps` enthält, und `max_steps` muss eine nicht-negative Ganzzahl sein — alles andere gibt `errors.INVALID` zurück, bevor das Programm läuft.
 
 ### Modulzugriff
 

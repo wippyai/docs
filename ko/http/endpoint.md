@@ -24,7 +24,7 @@ description: "엔드포인트(http.endpoint)는 Lua 함수를 실행하는 HTTP 
 | 필드 | 타입 | 필수 | 설명 |
 |-------|------|------|-------------|
 | `meta.router` | registry.ID | 아니오 | 부모 라우터 (정확히 하나의 라우터가 등록된 경우 해당 라우터가 기본값) |
-| `method` | string | 예 | HTTP 메서드 |
+| `method` | string | 예 | HTTP 메서드, 또는 모든 메서드를 뜻하는 `"*"` |
 | `path` | string | 예 | URL 경로 패턴 |
 | `func` | registry.ID | 예 | 실행할 함수 |
 
@@ -42,6 +42,23 @@ description: "엔드포인트(http.endpoint)는 Lua 함수를 실행하는 HTTP 
 | `HEAD` | 헤더만 |
 | `OPTIONS` | CORS 프리플라이트 (자동 처리) |
 | `TRACE` | 진단 루프백 |
+| `*` | 모든 메서드 |
+
+메서드 이름은 대문자입니다. `method`는 필수이며, 이 집합에 없는 값은 설정 오류로 거부됩니다.
+
+### 메서드 무관 엔드포인트
+
+`method: "*"`는 경로를 모든 HTTP 메서드에 대해 등록하며, 핸들러는 `req:method()`로 실제 메서드를 읽습니다:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+일반 엔드포인트의 경우 라우터가 같은 경로에 `OPTIONS` 핸들러도 등록하므로, CORS 미들웨어가 엔드포인트를 실행하지 않고 프리플라이트에 응답할 수 있습니다. `*` 엔드포인트에는 그런 핸들러가 없습니다: 이미 `OPTIONS`에 매칭되므로 프리플라이트 요청이 엔드포인트 함수 자체에 도달하며, 함수가 직접 응답해야 합니다.
 
 ## 경로 파라미터
 

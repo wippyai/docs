@@ -122,6 +122,23 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
+조회는 대소문자를 구분하지 않습니다: `req:header("content-type")`와 `req:header("Content-Type")`는 같은 값을 반환합니다. 두 번 이상 전송된 헤더는 값들이 `", "`로 연결되어 반환됩니다. 존재하지 않는 헤더는 `nil`을 반환합니다.
+
+### headers
+
+모든 요청 헤더를 가져옵니다.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**반환:** `table, error`
+
+키는 클라이언트가 보낸 대소문자와 무관하게 정규 헤더 이름(`Content-Type`, `X-Correlation-ID`)입니다. 반복된 헤더는 `req:header()`와 마찬가지로 `", "`로 연결됩니다.
+
 ### content_type
 
 Content-Type 헤더를 가져옵니다.

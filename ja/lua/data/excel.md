@@ -277,6 +277,37 @@ end
 
 **戻り値:** `error`
 
+### 文字列へのシリアライズ
+
+ファイルシステムやライターを使わずに、ワークブックを`xlsx`のバイト文字列としてレンダリングします。HTTPレスポンス、オブジェクトストア、キューメッセージにワークブックを渡す場合に使用します。
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**戻り値:** `string, error`
+
+ワークブック全体がメモリ上に展開されます。大きなワークブックでは、ライターへストリーミングする`write_to`を優先してください。
+
+閉じられたワークブックに対して`bytes()`を呼び出すと、`errors.INTERNAL`エラーが返ります。
+
 ### ワークブックを閉じる
 
 ワークブックを閉じてリソースを解放。

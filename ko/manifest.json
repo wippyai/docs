@@ -16,6 +16,7 @@
       {"title": "Linter", "path": "guides/linter"},
       {"title": "Language Server", "path": "guides/lsp"},
       {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Build-time Artifacts", "path": "guides/artifacts"},
       {"title": "컴포넌트 구축", "path": "guides/components"},
       {"title": "Entry Kinds", "path": "guides/entry-kinds"},
       {"title": "Observability", "path": "guides/observability"},
@@ -30,6 +31,7 @@
       {"title": "Compute Units", "path": "concepts/compute-units"},
       {"title": "아키텍처", "path": "concepts/architecture"},
       {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Security Model", "path": "concepts/security-model"},
       {"title": "Process Model", "path": "concepts/process-model"},
       {"title": "클러스터", "path": "concepts/cluster"},
       {"title": "Functions", "path": "concepts/functions"},
@@ -40,6 +42,7 @@
     "title": "Lua Runtime",
     "children": [
       {"title": "Overview", "path": "lua/overview"},
+      {"title": "Why Lua", "path": "lua/why-lua"},
       {"title": "Types", "path": "lua/types"},
       {"title": "Entries", "path": "lua/entries"},
       {
@@ -67,6 +70,7 @@
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "Base64", "path": "lua/data/base64"},
           {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Archive", "path": "lua/data/archive"},
           {"title": "Payload", "path": "lua/data/payload"},
           {"title": "Excel", "path": "lua/data/excel"}
         ]
@@ -87,7 +91,8 @@
           {"title": "Store", "path": "lua/storage/store"},
           {"title": "Filesystem", "path": "lua/storage/filesystem"},
           {"title": "Cloud Storage", "path": "lua/storage/cloud"},
-          {"title": "Queue", "path": "lua/storage/queue"}
+          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
@@ -158,6 +163,63 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
+      {"title": "Platform Topology", "path": "frontend/platform-topology"},
+      {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
+      {"title": "The Design Layer", "path": "frontend/design-layer"},
+      {
+        "title": "Frontend Registry",
+        "children": [
+          {"title": "Registry Entries", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend Apps (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Components (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Dynamic Routing", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy Micro Frontends",
+        "children": [
+          {"title": "Overview", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Page Recipe", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind Contract", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "Theming: Web Components", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build and Dependency Contract", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuration and Casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom Composites", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Compliance Rule Index", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Unsupported Project-Bound Modules", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "Debugging", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Overview", "path": "temporal/overview"},
@@ -172,6 +234,7 @@
       {"title": "프로세스 그룹", "path": "system/process-groups"},
       {"title": "Terminal", "path": "system/terminal"},
       {"title": "Database", "path": "system/database"},
+      {"title": "Change Data Capture", "path": "system/cdc"},
       {"title": "Store", "path": "system/store"},
       {"title": "Queue", "path": "system/queue"},
       {"title": "Network", "path": "system/network"},
@@ -200,6 +263,7 @@
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Terminal UI", "path": "tutorials/tty"},
       {"title": "Echo Service", "path": "tutorials/echo-service"},
       {"title": "Channels", "path": "tutorials/channels"},
       {"title": "Processes", "path": "tutorials/processes"},
@@ -212,6 +276,7 @@
       {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
       {"title": "LLM Agent", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
+      {"title": "Keeper over MCP", "path": "tutorials/keeper-mcp"},
       {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
       {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]

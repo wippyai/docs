@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # :memory: für In-Memory verwenden
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+Eine private In-Memory-SQLite-Datenbank (<code>file: ":memory:"</code>) ist auf eine physische Verbindung beschränkt, daher werden <code>max_open</code> und <code>max_idle</code> auf <code>1</code> gesetzt. Eine dateibasierte Datenbank berücksichtigt die konfigurierten <code>pool</code>-Einstellungen, was eine CDC-Snapshot-Lesetransaktion benötigt, damit sie nicht die einzige Schreibverbindung belegt. Der Journal-Modus ist immer <code>WAL</code>.
+</note>
 
 ## Verbindungsfelder
 
@@ -75,12 +77,16 @@ entries:
 
 ### SQLite-Felder
 
-| Feld | Typ | Beschreibung |
-|------|-----|--------------|
-| `file` | string | Datenbankdateipfad oder `:memory:` |
-| `pool` | object | Connection-Pool-Einstellungen |
-| `options` | map | SQLite-spezifische Optionen |
-| `lifecycle` | object | Lebenszyklus-Konfiguration |
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `file` | string | erforderlich | Datenbankdateipfad oder `:memory:` |
+| `pool` | object | - | Connection-Pool-Einstellungen; `max_open` und `max_idle` werden für `:memory:` auf `1` gesetzt |
+| `max_mutation_changes` | int | 100000 | Zeilen, die eine Transaktion im Beobachter für committete Mutationen halten darf |
+| `max_mutation_bytes` | int | 67108864 | Logische Bytes, die eine Transaktion im Beobachter halten darf (64 MiB) |
+| `options` | map | - | Akzeptiert, aber ignoriert |
+| `lifecycle` | object | - | Lebenszyklus-Konfiguration |
+
+`max_mutation_changes` und `max_mutation_bytes` begrenzen den In-Memory-Beobachter für committete Mutationen, der eine [`db.cdc.sqlite`](system/cdc.md)-Quelle speist. Null bei einem der Felder wählt den Standardwert; negative Werte werden abgelehnt. Die Grenzen sind konservativ statt exakt: SQLite liefert eine vollständige Zeile an den Pre-Update-Hook, sodass eine Zeile materialisiert werden kann, bevor die Grenze den Kandidaten ablehnt.
 
 ### Umgebungsvariablen-Felder
 
@@ -136,8 +142,10 @@ Jeder Datenbanktyp konstruiert einen DSN aus der Konfiguration:
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Jeder Wert außer dem Port wird in einfache Anführungszeichen gesetzt, und eingebettete `'` und `\` werden mit Backslash escaped, sodass Hosts, Passwörter und Optionswerte mit Leerzeichen oder Anführungszeichen unverändert durchgereicht werden.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -194,7 +202,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -289,3 +297,4 @@ Siehe [SQL-Modul](lua/storage/sql.md) für die Datenbankoperationen-API.
 - [SQL-Modul](lua/storage/sql.md) - Lua-API-Referenz
 - [Store](system/store.md) - Key-Value-Store basierend auf `database.sql`
 - [Queue](system/queue.md) - SQL-gestützter Queue-Handler
+- [Change Data Capture](system/cdc.md) - Zeilenweise Änderungen aus einer `db.sql.sqlite`- oder Postgres-Datenbank streamen

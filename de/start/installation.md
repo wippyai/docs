@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | Abhängigkeit hinzufügen |
 | `wippy install` | Abhängigkeiten installieren |
 | `wippy update` | Abhängigkeiten aktualisieren |
+| `wippy artifacts` | Build-Zeit-Dateisystem-Artefakte materialisieren |
 | `wippy pack` | Snapshot erstellen |
 | `wippy publish` | Zum Hub veröffentlichen |
 | `wippy search` | Nach Modulen suchen |

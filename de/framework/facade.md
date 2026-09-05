@@ -83,7 +83,7 @@ Drei Bereiche gelten: **global** (ueberall), **host** (das Chrome um den iframe)
 | Parameter | Bereich | Standard | Beschreibung |
 |-----------|---------|----------|--------------|
 | `custom_css` | global | Google Fonts Import | CSS auf jeder Ebene injiziert |
-| `css_variables` | global | `{}` | JSON-Map von CSS-Custom-Properties |
+| `css_variables` | global | `{}` | JSON-Map beliebiger CSS-Custom-Properties; wird fuer Auto- und erzwungene Modi kompiliert und in die Shadow-Roots von Komponenten uebertragen |
 | `icon_sets` | global | `[]` | Iconify-Icon-Set-URLs |
 | `host_custom_css` | host | `""` | CSS nur fuer Host-Chrome |
 | `host_css_variables` | host | `{}` | CSS-Custom-Properties nur fuer Host |

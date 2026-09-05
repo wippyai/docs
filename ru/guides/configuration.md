@@ -119,11 +119,11 @@ profiler:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `strict_mode` | bool | false | Запрещать доступ при неполном контексте безопасности |
+| `strict_mode` | bool | true | Запрещать доступ при неполном контексте безопасности |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 См.: [Система безопасности](system/security.md), [Модуль Security](lua/security/security.md)
@@ -137,6 +137,12 @@ security:
 | `enable_history` | bool | true | Отслеживать версии записей |
 | `history_type` | string | memory | Хранилище: memory, sqlite, nil |
 | `history_path` | string | .wippy/registry.db | Путь к SQLite |
+| `event_wait_timeout` | duration | 30s | Ожидание подтверждения от слушателя на каждую операцию при применении изменений реестра |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Типы записей, обрабатываемые внутренне, а не рассылаемые слушателям компонентов |
+| `dependency_resolve_timeout` | duration | 0 (нет) | Ограничение на разрешение зависимостей |
+| `dependency_download_timeout` | duration | 0 (нет) | Ограничение на каждую загрузку модуля и запрос URL для загрузки |
+| `dependency_lock_path` | string | найденный `wippy.lock` | Файл блокировки, который читает и пишет обработчик зависимостей |
+| `dependency_vendor_dir` | string | `<каталог lock>/<directories.modules>/vendor` | Каталог со скачанными паками модулей |
 
 ```yaml
 registry:
@@ -145,6 +151,34 @@ registry:
 ```
 
 См.: [Концепция реестра](concepts/registry.md), [Модуль Registry](lua/core/registry.md)
+
+## Artifact
+
+Корень вывода для материализованных [артефактов времени сборки](guides/artifacts.md).
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `materialization_root` | string | родительский каталог vendor-каталога зависимостей | Принадлежащий приложению корень, под которым каждый формат артефакта пишет своё поддерево |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+См.: [Артефакты времени сборки](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Локальные замены модулей, ключом служит `org/module`. Значения — каталоги; относительные пути разрешаются относительно каталога первого файла `--config`, а `null` отключает замену, унаследованную из более раннего слоя конфигурации или профиля.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Замены никогда не записываются в `wippy.lock`. См. [Локальная разработка с заменами](guides/dependency-management.md#local-development-with-replacements).
 
 ## Relay
 
@@ -196,6 +230,10 @@ supervisor:
 | `cache.mode` | string | `read_write` | Режим кэша: `read_write`, `read_only`, `write_only` |
 | `type_system.enabled` | bool | false | Включить статическую проверку типов |
 | `type_system.strict` | bool | false | Считать предупреждения типов ошибками |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Ожидание подтверждения инвалидации кода после изменения записи |
+| `eval.max_steps` | int | 10000 | Бюджет шагов планировщика по умолчанию для запуска `eval`; отрицательные значения отклоняются |
+| `eval.cache_size` | int | 256 | Число записей кэша скомпилированных программ для вычисляемого исходника |
+| `eval.cache_ttl` | duration | 0 (без истечения) | Время жизни скомпилированной программы в кэше |
 
 ```yaml
 lua:
@@ -345,6 +383,8 @@ SWIM gossip через memberlist. Используется для обнару�
 | `membership.tcp_timeout` | duration | 1s | Таймаут резервной TCP-пробы |
 | `membership.suspicion_mult` | int | 3 | Множитель таймаута подозрения |
 
+Gossip-секрет обязателен. Задайте `membership.secret_key` или `membership.secret_file` (при обоих побеждает файл); без того и другого компонент кластера не стартует. Значение кодируется в base64.
+
 Четыре ключа проб наследуют значения memberlist по умолчанию для локальной сети, если не заданы; повышайте их для каналов с высокой задержкой (например, `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (транспорт)
@@ -358,8 +398,13 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 | `internode.auto_port` | bool | true | Определить фактический порт при запуске, зафиксировать и объявить через gossip |
 | `internode.advertise_addr` | string | | Дополнительный relay-эндпоинт (IP или DNS-имя), публикуемый для обновлённых пиров — для достижимости за NAT или балансировщиком |
 | `internode.advertise_port` | int | 0 | Порт для `advertise_addr` (0 = порт привязки; требует `advertise_addr`) |
+| `internode.identity_key` | string | | Приватный ключ ed25519 в base64, идентифицирующий эту ноду (встроенный) |
+| `internode.identity_key_file` | string | | Путь к файлу с этим ключом |
+| `internode.trusted_peer_keys` | map | | Публичный ключ ed25519 в base64 на каждое имя ноды, включая эту |
 
 `advertise_addr`/`advertise_port` публикуют дополнительный эндпоинт в метаданных ноды, при этом эндпоинт привязки продолжает объявляться без изменений — кластеры со смешанными версиями сохраняют связность во время rolling-обновления.
+
+Идентичность internode обязательна всегда, когда включена кластеризация. `identity_key` и `identity_key_file` взаимоисключающи, и один из них должен присутствовать; значение декодируется (стандартный или raw base64) либо в 32-байтный seed ed25519, либо в 64-байтный приватный ключ ed25519. `trusted_peer_keys` сопоставляет каждому имени ноды её 32-байтный публичный ключ ed25519 и должен содержать запись для локального `cluster.name`, значение которой совпадает с локальной идентичностью, — иначе запуск завершается ошибкой. См. [Руководство по кластеру](guides/cluster.md#internode-identity).
 
 ### Raft (консенсус)
 
@@ -394,11 +439,17 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Трёхнодовый voting-кластер — каждая нода перечисляет остальные как seed и ждёт все три перед формированием кворума:
+Трёхнодовый voting-кластер — каждая нода перечисляет остальные как seed и ждёт все три перед формированием кворума. Каждая нода несёт одну и ту же карту `trusted_peer_keys` и собственный приватный ключ:
 
 ```yaml
 cluster:
@@ -409,12 +460,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Только gossip-клиент — присоединяется к кластеру для именования/обмена сообщениями, но никогда не запускает Raft:
+Только gossip-клиент — присоединяется к кластеру для именования/обмена сообщениями, но никогда не запускает Raft. Ему тоже нужна собственная идентичность, и он должен присутствовать в доверенной карте каждой ноды:
 
 ```yaml
 cluster:
@@ -422,8 +479,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
-  raft:
-    role: client
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
 ```
 
 ## LSP

@@ -83,7 +83,7 @@ Tres escopos se aplicam: **global** (em todos os lugares), **host** (o chrome ao
 | Parametro | Escopo | Padrao | Descricao |
 |-----------|--------|--------|-----------|
 | `custom_css` | global | Import do Google Fonts | CSS injetado em todos os niveis |
-| `css_variables` | global | `{}` | Mapa JSON de CSS custom properties |
+| `css_variables` | global | `{}` | Mapa JSON de CSS custom properties arbitrarias; compilado para os modos Auto e forcado e repassado aos shadow roots dos componentes |
 | `icon_sets` | global | `[]` | URLs de conjuntos de icones Iconify |
 | `host_custom_css` | host | `""` | CSS apenas para o chrome do host |
 | `host_css_variables` | host | `{}` | CSS custom properties apenas para o host |

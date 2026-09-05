@@ -48,6 +48,40 @@ local mods, err = system.modules()
 | `description` | string | 模块描述 |
 | `class` | string[] | 模块分类标签 |
 
+## 部署来源
+
+`system.source` 子表读取规范化的部署基线：即应用组装所依据的来源产生的 entry 集合，尚未应用任何 registry 历史。
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**返回：** `table, error`
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `owners` | string[] | 对基线 entry 具有权威性的来源所有者 |
+| `entries` | table[] | 包含 `id`、`kind`、`meta`、`data` 的基线 entry |
+
+`owners` 排序时应用所有者在前，其余所有者按字母顺序排列。应用所有者是字符串 `"application"`。
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+加载取自同一个稳定的来源世代，因此 entry 和所有者始终描述同一份基线。每个来源背后的文件系统路径是运行时私有的，不会对外暴露；加载失败会报告通用的内部错误，而不会泄露底层路径。
+
+**权限：** 对 `sources` 的 `system.read`
+
 ## 内存统计
 
 获取详细的内存统计信息：
@@ -426,6 +460,7 @@ end
 | `system.read` | `cwd` | 读取工作目录 |
 | `system.read` | `hosts` | 列出主机 / 主机进程 |
 | `system.read` | `modules` | 列出已加载模块 |
+| `system.read` | `sources` | 加载部署来源基线 |
 | `system.read` | `supervisor` | 读取监督器状态 |
 | `system.read` | `node` | 读取此节点的标识 |
 | `system.read` | `cluster` | 读取集群成员资格和 leader |

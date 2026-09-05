@@ -68,7 +68,7 @@ Einträge referenzieren Eltern über Metadaten:
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `meta.router` | Registry-ID | Übergeordneter Router |
-| `method` | string | HTTP-Methode (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP-Methode: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` oder `*` für jede Methode |
 | `path` | string | URL-Pfadmuster (beginnt mit `/`) |
 | `func` | Registry-ID | Handler-Funktion |
 
@@ -114,12 +114,24 @@ Verbleibende Pfadsegmente mit `{param...}` erfassen:
   func: serve_file
 ```
 
+Der Wildcard passt auf die verbleibenden Segmente, sodass eine Anfrage wie `GET /api/v1/files/docs/guides/readme.md` an den Handler weitergereicht wird. Der erfasste Rest wird mit `req:param` unter dem Namen ohne die abschließenden Punkte gelesen:
+
 ```lua
--- Anfrage: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 Der Wildcard muss das letzte Segment im Pfad sein.
+
+## Routen-Vorrang
+
+Alle Router registrieren ihre Endpunkte in einer einzigen Mustermenge, mit dem `prefix` des Routers vorangestellt, und Gos `ServeMux` entscheidet, welches Muster eine Anfrage bedient. Seine Regeln gelten unverändert:
+
+- Das spezifischste Muster gewinnt. Ein Muster ist spezifischer als ein anderes, wenn es eine echte Teilmenge der Anfragen dieses Musters trifft, sodass `/users/admin` gegenüber `/users/{id}` gewinnt und `/files/{name}` gegenüber `/files/{path...}`.
+- Ein Muster mit Methode ist spezifischer als derselbe Pfad ohne Methode, sodass ein `GET`-Endpunkt bei `GET`-Anfragen Vorrang vor einem `*`-Endpunkt auf demselben Pfad hat.
+- Ein abschließendes `{path...}` oder `/` trifft einen ganzen Teilbaum und verliert gegen jedes Muster, das eine Teilmenge davon trifft.
+- Der Abgleich erfolgt auf dem bereinigten, dekodierten Pfad; die Spezifität hängt nie von der Registrierungsreihenfolge ab.
+
+Zwei Muster können auch unmittelbar in Konflikt geraten: Keines ist spezifischer als das andere, doch sie überschneiden sich, wie bei `/users/{id}/settings` und `/users/admin/{section}`. Das ist ein Konfigurationsfehler. Der Router meldet ihn beim Neuaufbau, der Neuaufbau schlägt fehl, und die vorherige Routenmenge bleibt im Betrieb.
 
 ## Handler-Funktionen
 

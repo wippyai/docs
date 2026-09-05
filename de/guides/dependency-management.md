@@ -32,7 +32,9 @@ modules:
 | `directories.src` | Speicherort Ihres Quellcodes (Standard: `./src`) |
 | `modules[].name` | Modulbezeichner im Format `org/module` |
 | `modules[].version` | Fixierte semantische Version |
-| `modules[].hash` | Inhalts-Hash zur Integritatsprufung |
+| `modules[].hash` | Artefakt-Digest, dem das heruntergeladene Pack entsprechen muss; ein reiner Hex-Wert wird als `sha256` gelesen |
+| `modules[].root` | Markiert die ausgewählte Deployment-Wurzel; höchstens ein Modul darf sie tragen |
+| `options.unpack_modules` | Packs in Verzeichnisse entpacken, statt sie als `.wapp`-Dateien zu laden (Standard: `false`) |
 
 ### wippy.yaml
 
@@ -96,10 +98,23 @@ entries:
 
 - Jedes Modul wird gegen die **Schnittmenge aller deklarierten Bereiche** im Abhangigkeitsgraphen aufgelost. Inkompatible Bereiche (Diamond-Konflikte) lassen die Auflosung mit einem expliziten Fehler fehlschlagen, statt stillschweigend eine Seite zu wahlen.
 - Abhangigkeiten werden aus ihren deklarierten Bereichen gelost, nicht aus zuvor aufgelosten Pins.
-- **Root-Deklarationen gewinnen gegen transitive**: Wenn Ihre App und eine Abhangigkeit dasselbe Modul oder dieselbe Anforderung einziehen, hat Ihre Deklaration Vorrang. Ein Abhangigkeits-Eintrag mit `meta.module` ist transitiv, sofern er nicht explizit als Root markiert ist — veroffentlichte Anwendungen behalten ihre im Quellcode deklarierten Abhangigkeiten als Roots.
+- **Root-Deklarationen gewinnen gegen transitive**: Wenn Ihre App und eine Abhangigkeit dasselbe Modul oder dieselbe Anforderung einziehen, hat Ihre Deklaration Vorrang.
 - Dieselbe Komponente darf nur einmal als Root-Abhangigkeit deklariert werden — eine doppelte Deklaration wird mit einem Konfliktfehler abgelehnt. Aktualisieren Sie stattdessen die bestehende Abhangigkeit.
 
+Zwei Auflösungsfehler werden unterschiedlich gemeldet. Ein Constraint-Ausdruck, den kein jemals veröffentlichtes Release erfüllen kann — die Schnittmenge der aktiven Bereiche ist leer — ist ein Konflikt, und der Fehler nennt das Modul und jeden Anforderer, der einen Bereich beigesteuert hat. Eine gültige Bereichsmenge, für die der Hub derzeit keine passende Version veröffentlicht, ist dagegen ein Verfügbarkeitsfehler: Ein späteres Release kann sie auflösbar machen, ohne dass sich an den Deklarationen etwas ändert.
+
 Die Runtime persistiert jeden aufgelosten Graphen in ihrer Registry-Historie und spielt ihn beim Start wieder ab, statt neu aufzulosen, sodass eine deployte Anwendung mit genau den Versionen bootet, die beim Anwenden der Abhangigkeitsanderung aufgelost wurden. `wippy.lock` bleibt der portable Snapshot fur Quellprojekte.
+
+### Herkunft von Eintragen
+
+Die Herkunft gehört der Registry, sie ist keine Eintrags-Metadaten. Beim Laden der Eintrage stempelt die Registry jedem die Deployment-Quelle auf, die ihn geliefert hat:
+
+| Feld | Beschreibung |
+|------|--------------|
+| `registry.owner` | Modulname (`org/module`), der den Eintrag geliefert hat; leer bei Anwendungsquellcode |
+| `registry.root` | Wird auf `ns.dependency`-Eintragen gesetzt, die von der Deployment-Wurzel geliefert wurden, und markiert sie als Root-Deklarationen |
+
+Autoren von Eintragen schreiben diese Felder nie; sie werden beim Laden vergeben und lassen sich aus einer `_index.yaml` nicht fälschen. Sie lassen sich mit `wippy registry list --registry-meta --json` einsehen.
 
 ## Arbeitsablauf
 
@@ -182,12 +197,17 @@ Mit aktiviertem Entpacken:
 .wippy/
   vendor/
     acme/
+      http-v1.2.0.wapp
       http/
         wippy.yaml
         src/
           _index.yaml
           ...
 ```
+
+Das Entpacken verwirft das Pack nie. Das kanonische verifizierte `.wapp` bleibt neben dem entpackten Verzeichnis liegen, weil es der einzige inhaltsadressierte Beleg fur das Modul ist und weil Artefakt-Materialisierung und Reparatur Ressourcen daraus zurücklesen. Auf das `.wapp` prüft die Installation: Ein Verzeichnis, dessen Pack fehlt, gilt als nicht installiert, und das Modul wird erneut heruntergeladen. Jede Installation entpackt das Verzeichnis frisch aus dem verifizierten Archiv, sodass manuelle Änderungen an einem vendorierten Verzeichnis nicht überleben.
+
+Module, die aus einer [Workspace-Ersetzung](#local-development-with-replacements) aufgelöst werden, werden nie heruntergeladen oder vendoriert; sie laden aus dem lokalen Pfad.
 
 ## Lokale Entwicklung mit Ersetzungen
 
@@ -206,7 +226,11 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Schlussel sind `org/module`, Werte sind Verzeichnisse (relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelost; der Pfad muss existieren und ein Verzeichnis sein). Das Setzen einer Ersetzung auf `null` deaktiviert eine aus einer fruheren Konfigurationsschicht oder einem Profil geerbte Ersetzung. Ersetzungen konnen auch in einem [Profil](guides/configuration.md#profiles) liegen, sodass sie nur mit `--profile workspace` aktiv werden.
+Schlussel sind `org/module`, Werte sind Verzeichnisse (relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelost). Das Setzen einer Ersetzung auf `null` deaktiviert eine aus einer fruheren Konfigurationsschicht oder einem Profil geerbte Ersetzung. Ersetzungen konnen auch in einem [Profil](guides/configuration.md#profiles) liegen, sodass sie nur mit `--profile workspace` aktiv werden.
+
+Der Pfad muss nur fur ein Modul existieren und ein Verzeichnis sein, das der Lock-Graph tatsächlich auswählt. Eine Ersetzung, die fur ein Modul deklariert ist, von dem nichts abhängt, ist eine Auflösungseingabe, keine Boot-Eingabe: Sie darf auf ein Verzeichnis zeigen, das auf dieser Maschine nicht ausgecheckt ist, ohne die Validierung scheitern zu lassen.
+
+Eine Ersetzung ändert, woher der Quellcode eines Moduls kommt, nicht welches Release gewählt wurde. Der Ladepfad behält die Version und den Digest, die der Lock fur dieses Modul ausgewählt hat, und wird als Ersetzung markiert; daraus geladene Eintrage überschatten die vendorierten mit derselben ID. Ist eine Ersetzung fur ein Modul deklariert, fur das der Lock keine Version fixiert, fragt die Auflösung den Hub nach einer Release-Version und hält bis zu einem stärkeren Beleg eine nur lokal gültige Null-Version.
 
 Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Anderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch fur Ersetzungsverzeichnisse, sowohl beim Laden von Eintragen als auch beim Hashen des Inhalts.
 
@@ -224,10 +248,25 @@ Module mit aktiven Ersetzungen uberspringen ihren Vendor-Pfad.
 
 ## Integritatsprufung
 
-Jedes Modul in der Lock-Datei hat einen Inhalts-Hash. Wahrend der Installation werden heruntergeladene Module anhand ihrer erwarteten Hashes uberpruft. Module mit abweichenden Hashes werden abgelehnt und erneut aus der Registry heruntergeladen.
+Jedes Modul in der Lock-Datei tragt einen Artefakt-Digest, und ein Modul ohne Digest kann uberhaupt nicht installiert werden.
+
+Downloads werden gestaged: Das Pack wird in eine temporäre Datei neben seinem endgültigen Ort geschrieben, gegen den in `wippy.lock` fixierten Digest und gegen den Digest verifiziert, den der Hub mit der Download-URL ausgeliefert hat (samt ausgelieferter Größe), und erst dann an seinen Platz umbenannt. Eine gestagte Datei, die die Prüfung nicht besteht, wird gelöscht.
+
+Ein abweichender Digest ist ein harter, nicht wiederholbarer Fehler — `PermissionDenied`, "module integrity verification failed" — und er wird bei der Installation und beim Start gleichermaßen ausgelöst, wo bereits vendorierte Packs erneut verifiziert werden, bevor Eintrage geladen werden. Nichts wiederholt den Versuch, lädt über die Abweichung hinweg erneut herunter oder fällt auf den ausgelieferten Inhalt zurück.
+
+Dieselbe Prüfung sichert die Auflösung ab. Liefert der Hub ein Manifest, dessen Digest von dem im Lock fixierten abweicht, wird der Manifest-Cache einmal aufgefrischt und erneut verglichen; stimmt er weiterhin nicht überein, scheitert die Auflösung und nennt beide Digests.
+
+Entpackte Verzeichnisse tragen ihren eigenen aufgezeichneten Digest, ihre Größe und ihren Baum-Digest und werden gegen die aufgezeichneten Werte erneut verifiziert, sodass ein veränderter vendorierter Baum erkannt statt geladen wird.
+
+Auch Ersetzungsquellen sind inhaltsadressiert. Die Runtime bildet den Digest des Ersetzungsbaums und lehnt ihn ab, wenn der aufgelöste Graph bereits einen anderen Digest oder eine andere Größe fur dieses Modul fixiert, sodass eine Ersetzung nicht stillschweigend fur Inhalt einstehen kann, dem sie nicht entspricht.
+
+## Build-Zeit-Artefakte
+
+Ein Modul kann eine mit `meta.artifact.format` markierte Dateisystem-Ressource ausliefern, die Konsumenten auf die Platte materialisieren, statt sie zur Laufzeit zu lesen. Vollständige und gezielte `wippy install`- und `wippy update`-Läufe, der Kaltstart und Laufzeit-Abhängigkeitsoperationen gleichen diese Ausgaben in derselben Transaktion ab, die den Modulgraphen ändert; `artifact.materialization_root` setzt die Ausgabe-Wurzel. Siehe [Build-Zeit-Artefakte](guides/artifacts.md).
 
 ## Siehe auch
 
+- [Build-Zeit-Artefakte](guides/artifacts.md) - Artefakt-Ressourcen deklarieren, materialisieren und abgleichen
 - [Komponenten bauen](guides/components.md) - Die Autorenseite: `ns.requirement` und Werte via `parameters` bereitstellen
 - [CLI](guides/cli.md) - Befehlsreferenz
 - [Veroffentlichung](guides/publishing.md) - Module im Hub veroffentlichen

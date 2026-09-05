@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | 添加依赖 |
 | `wippy install` | 安装依赖 |
 | `wippy update` | 更新依赖 |
+| `wippy artifacts` | 物化构建期文件系统制品 |
 | `wippy pack` | 创建快照包 |
 | `wippy publish` | 发布到 Hub |
 | `wippy search` | 搜索模块 |

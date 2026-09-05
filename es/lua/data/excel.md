@@ -277,6 +277,37 @@ end
 
 **Devuelve:** `error`
 
+### Serializar a una Cadena
+
+Renderiza el libro de trabajo en una cadena de bytes `xlsx`, sin sistema de archivos ni writer. Úselo para entregar un libro de trabajo a una respuesta HTTP, un almacén de objetos o un mensaje de cola.
+
+```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
+local data, err = wb:bytes()
+wb:close()
+if err then
+    return nil, err
+end
+
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
+```
+
+**Devuelve:** `string, error`
+
+Todo el libro de trabajo se materializa en memoria. Prefiera `write_to` para libros de trabajo grandes, que transmite al writer en su lugar.
+
+Llamar a `bytes()` sobre un libro de trabajo cerrado devuelve un error `errors.INTERNAL`.
+
 ### Cerrar Libro de Trabajo
 
 Cierra libro de trabajo y libera recursos.

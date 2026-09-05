@@ -13,14 +13,63 @@ Entry 以有序切片存储，配合哈希映射索引实现 O(1) 查找：
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // Entry 类型
-    Meta attrs.Bag       // 元数据
-    Data payload.Payload // 内容
+    ID       ID              // namespace:name
+    Kind     Kind            // Entry 类型
+    Meta     attrs.Bag       // 作者元数据
+    Data     payload.Payload // 内容
+    Registry EntryMetadata   // Registry 所有的来源信息
+}
+
+type EntryMetadata struct {
+    Owner string // 提供该 entry 的部署来源
+    Root  bool   // 由部署选中的依赖声明
 }
 ```
 
 Entry ID 使用 Go 的 `unique` 包进行字符串驻留——相同的 ID 共享内存。
+
+`Registry` 归 registry 所有，而非 entry 作者。`Owner` 根据部署来源赋值；`Root` 由 `ns.dependency` entry 上的写入侧字段 `dependency_root` 设置。普通的 entry API 只返回 `ID`、`Kind`、`Meta` 和 `Data`；来源信息通过快照状态 API 读取。
+
+## Snapshot
+
+`Registry.Snapshot()` 返回一个原子视图：版本、该版本下的 entry，以及同一版本的 registry 所有的状态元数据。
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+将版本、entry 和解析结果作为一个值读取，可以避免调用方把 entry 与另一个版本的解析结果配对。选定的模块图每个快照只存储一次，而不是在每个 entry 上重复。
+
+## Overlay
+
+`OverlayWriter` 是 registry 用于进程本地 entry 的可选能力：
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+Overlay entry 按逻辑所有者字符串分组。它们加入生效状态，并与持久 entry 一样经过相同的拓扑排序和 handler 转换，因此服务会正常为它们启动和停止，但它们从不产生历史版本。冷启动后它们为空，必须由其所属的控制服务重新协调。
+
+写入采用乐观并发：`GetOverlay` 返回所有者当前的世代，`ApplyOverlay` 仅在该世代仍然是最新时才提交，否则返回可重试的 `Conflict`。每次成功应用都会产生一个新的进程内唯一世代，并为发生过变更的所有者保留一个墓碑，使 ABA 序列不会被误认为未变更的 overlay。
+
+每次应用都会校验的组合规则：
+
+- 只有在没有持久 entry 也没有 overlay entry 占用某个 ID 时，才能创建该 entry。
+- 只有所属身份可以更新或删除自己的 overlay entry。
+- Overlay entry 不得携带 registry 所有的元数据，也不得使用被 registry 指令占用的类型。
+- 删除操作不得移除仍有存续 entry 依赖的 entry。
+- 依赖边不得跨越所有者边界，持久 entry 也不得依赖 overlay entry。
 
 ## 版本链
 
@@ -107,6 +156,18 @@ resolver.RegisterPattern(registry.DependencyPattern{
 ```
 
 依赖从 entry 的 Meta 和 Data 字段中提取，然后在状态转换期间用于拓扑排序。
+
+### 依赖访问策略
+
+外部依赖访问是请求作用域的上下文值，而不是全局标志：
+
+| 策略 | 效果 |
+|------|------|
+| `DependencyAccessUnspecified` | 由调用方决定；采用调用方自身的默认值 |
+| `DependencyAccessOnline` | 允许外部解析和构件下载 |
+| `DependencyAccessVerifiedOffline` | 禁止外部访问；解析使用锁定的清单和本地已存在的构件 |
+
+当上下文未指定时，`LoadState()` 默认为已验证离线，因此启动会重放已存储的依赖图而不访问网络。恢复部署基线会将上下文切换为在线，因为它必须获取该基线所指定的模块。在已验证离线模式下，仅提供锁定模块的清单 provider 会取代 hub provider，缺失的构件会作为缺失证据而失败，而不是触发下载。
 
 ## 版本历史
 

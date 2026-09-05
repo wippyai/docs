@@ -66,6 +66,10 @@ wippy run --exec app:worker                 # Iniciar runtime e executar um úni
 
 Executar um módulo do hub (`wippy run org/module`) o resolve uma vez, registra-o no `wippy.lock` e vendoriza localmente os packs verificados. Execuções subsequentes da mesma referência partem do lock — sem necessidade de rede. Um seletor de versão que não corresponde mais ao lock é rejeitado com uma dica para executar `wippy update`.
 
+Para uma aplicação local, `wippy run` repara um lock desatualizado antes de qualquer serviço do runtime iniciar. Ele carrega as declarações de dependência das fontes e, quando o lock já as satisfaz, re-resolve o grafo apenas a partir de evidências locais e instaladas (acesso verificado offline, sem rede). Se essa resolução offline corresponde ao lock, o boot continua inalterado. Caso contrário, o hub é contatado, o grafo candidato é baixado e verificado, e só então o `wippy.lock` é reescrito. Um lock que seleciona uma raiz de deployment é autoritativo e nunca é re-resolvido.
+
+`--exec` bloqueia até o processo lançado produzir seu resultado, e então propaga o código de saída do processo como código de saída da CLI. Ctrl-C durante `--exec` cancela o processo em execução e o runtime ainda encerra graciosamente; um segundo sinal força a saída.
+
 `--set` escreve qualquer valor de configuração do runtime pela linha de comando, mesclado sobre `.wippy.yaml` por folha:
 
 ```bash
@@ -176,6 +180,25 @@ wippy update acme/http demo/sql   # Atualizar múltiplos
 | `--profile` | | | Aplicar um profile de workspace da configuração de runtime mesclada (repetível) |
 | `--set` | | | Sobrescrever um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
+## wippy artifacts
+
+Trabalhar com artefatos de sistema de arquivos gerados em tempo de build.
+
+### wippy artifacts materialize
+
+Validar e materializar um sistema de arquivos de artefato a partir de um pack existente.
+
+```bash
+wippy artifacts materialize snapshot.wapp app:package_fs
+wippy artifacts materialize snapshot.wapp app:package_fs --root build
+```
+
+| Flag | Padrão | Descrição |
+|------|--------|-----------|
+| `--root` | `.wippy` | Raiz de materialização |
+
+O recurso é endereçado por seu `namespace:name` completo, deve declarar `meta.artifact.format`, e esse formato deve estar registrado na CLI. O comando não resolve dependências de módulos, não altera o `wippy.lock`, não invoca gerenciadores de pacotes e não participa da composição do runtime. Veja [Artefatos de build](guides/artifacts.md#materializing-explicitly).
+
 ## wippy pack
 
 Criar um pack de snapshot (arquivo .wapp).
@@ -201,6 +224,12 @@ wippy pack app.wapp --embed app:assets --bytecode **
 | `--profile` | | Aplicar um profile de runtime do `.wippy.yaml` antes de empacotar (repetível, aplicado em ordem) |
 
 Sem `--embed` nem `--embed-all`, os padrões de incorporação recorrem à seção `embed:` do manifesto de módulo `wippy.yaml`. Empacotar uma aplicação também carrega os recursos incorporados dos packs de suas dependências, e apenas os comandos do módulo principal são expostos pelo pack resultante.
+
+O arquivo de saída é escrito atomicamente: o pack é construído em um arquivo temporário no diretório de destino, sincronizado, verificado, e só então renomeado sobre o alvo, herdando as permissões do arquivo existente quando há um. Um pack que falha deixa o arquivo anterior intocado. Nomear uma saída que também é uma das entradas do pack — o mesmo caminho, ou um hard link ou symlink que resolve para o mesmo arquivo — é recusado em vez de truncar a entrada durante a leitura.
+
+`--meta` não pode escrever metadados reservados. A chave `registry`, e qualquer coisa sob os prefixos `wippy.` ou `system.`, pertence ao formato do pack e é rejeitada.
+
+Recursos que declaram `meta.artifact.format` são validados durante o empacotamento, então um artefato malformado falha aqui em vez de falhar em um consumidor. Veja [Artefatos de build](guides/artifacts.md).
 
 ## wippy publish
 
@@ -322,6 +351,7 @@ wippy registry list --meta "type=api" --meta "enabled=true"
 | `--meta` | | Filtrar por metadados (repetível) |
 | `--json` | | Saída em JSON |
 | `--yaml` | | Saída em YAML |
+| `--registry-meta` | | Incluir metadados de propriedade do registry (`owner`, `root`) na saída JSON ou YAML; requer `--json` ou `--yaml` |
 | `--lock-file` | `-l` | Caminho do arquivo de lock |
 
 Operadores de metadados para `--meta`:
@@ -398,8 +428,52 @@ wippy run list
 | `short` | Não | Descrição curta exibida em `wippy run list` |
 | `main` | Não | Marca esta entrada como comando padrão (selecionado automaticamente por packs e módulos do hub que entregam um único comando) |
 | `use_case` | Não | Categoria de entrypoint, padrão `run`. A entrada que declara `use_case: test` é a que `wippy test` executa |
+| `security` | Não | Contexto de segurança sob o qual o comando executa quando lançado pela CLI |
 
 Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo como payloads de string.
+
+### Segurança de comandos
+
+Uma entrada de comando declara o ator e o escopo de políticas sob os quais seu lançamento pela CLI executa:
+
+```yaml
+entries:
+  - name: migrate_runner
+    kind: process.lua
+    meta:
+      command:
+        name: migrate
+        short: Executar migrações de banco de dados
+        security:
+          actor:
+            id: system.migrations
+            meta:
+              role: operator
+          policies:
+            - app.security:migrations_policy
+          groups:
+            - app.security:operators
+    source: file://runner.lua
+    method: main
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `actor.id` | Identidade do ator para o processo lançado |
+| `actor.meta` | Atributos do ator avaliados pelas políticas |
+| `policies` | Registry IDs (`namespace:name`) de políticas individuais adicionadas ao escopo |
+| `groups` | Registry IDs de grupos de políticas cujas políticas são adicionadas ao escopo |
+
+O bloco fica dentro de `meta.command` porque se aplica apenas ao caminho de lançamento pela CLI — o operador iniciou o comando em seu próprio deployment, que é a âncora de confiança. Ele não tem efeito sobre spawns comuns da mesma entrada de processo; esses seguem o [bloco `security:`](guides/entry-kinds.md#process-security) da própria entrada.
+
+A declaração é fail-closed e validada antes de o processo iniciar:
+
+- Campos desconhecidos dentro de `security` são rejeitados.
+- Um bloco `security` vazio (sem ator, sem políticas, sem grupos) é rejeitado.
+- `security` sem um `name` é rejeitado — um comando precisa ser nomeável para ser lançado.
+- Uma política ou grupo que não pode ser resolvido recusa o lançamento; a resolução é atômica, então um escopo parcial nunca é instalado.
+
+Quando o bloco omite `actor`, o ator do chamador é herdado. Quando omite tanto `policies` quanto `groups`, o escopo do chamador é herdado.
 
 ## Exemplos
 

@@ -301,11 +301,14 @@ local policies = scope:policies()
 ### Evaluierungsablauf
 
 ```
-1. Jede Richtlinie im Scope prüfen
-2. Wenn IRGENDEINE Richtlinie Deny zurückgibt → Ergebnis ist Deny
-3. Wenn mindestens ein Allow und kein Deny → Ergebnis ist Allow
-4. Keine anwendbaren Richtlinien → Ergebnis ist Undefined
+1. Kein Actor oder kein Scope im Kontext → der strikte Modus entscheidet (standardmäßig verweigern)
+2. Jede Richtlinie im Scope prüfen
+3. Wenn IRGENDEINE Richtlinie Deny zurückgibt → Ergebnis ist Deny
+4. Wenn mindestens ein Allow und kein Deny → Ergebnis ist Allow
+5. Keine anwendbaren Richtlinien → Ergebnis ist Undefined
 ```
+
+Eine Zugriffsprüfung besteht nur bei `Allow`. `Undefined` verweigert den Zugriff, genau wie `Deny` — der strikte Modus spielt keine Rolle mehr, sobald Actor und Scope beide vorhanden sind.
 
 ### Evaluierungsergebnisse
 
@@ -325,7 +328,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 if result == "deny" then
     return nil, errors.new("FORBIDDEN", "Zugriff verweigert")
 elseif result == "undefined" then
-    -- Keine Richtlinie passte - hängt vom strikten Modus ab
+    -- Keine Richtlinie passte - Zugriffsprüfungen behandeln das als verweigert
 end
 ```
 
@@ -473,44 +476,84 @@ local result, err = funcs.new()
 | Scope | Ja - wird an Kindaufrufe weitergegeben |
 | Strikter Modus | Nein - anwendungsweit |
 
-Funktionen erben den Sicherheitskontext des Aufrufers. Gestartete Prozesse beginnen neu.
+Funktionen erben den Sicherheitskontext des Aufrufers. Ein gestarteter Prozess nicht: Er beginnt auf einem frischen Frame, und sein Kontext stammt aus dem `security:`-Block seines eigenen Entries. Deklariert dieser Entry keinen Block, läuft der Prozess ohne Actor und ohne Scope, was der strikte Modus verweigert. Ein deklarierter Block, der `actor` weglässt, erbt den Actor des Starters, und einer, der sowohl `policies` als auch `groups` weglässt, erbt dessen Scope — "neu beginnen" heißt also "keine ambiente Vererbung", nicht "kann keinen Kontext bekommen".
 
-## Dienst-Level-Sicherheit
+## Sicherheit an Entries deklarieren
 
-Standard-Sicherheit für Dienste konfigurieren:
+Ein Sicherheitsblock hat überall dieselbe Form:
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `actor.id` | string | Actor-Identität; ersetzt den geerbten Actor |
+| `actor.meta` | map | Actor-Attribute, die Richtlinien auswerten |
+| `policies` | list | Registry-IDs von Richtlinien, die in den Scope gemischt werden |
+| `groups` | list | Registry-IDs von Richtliniengruppen, deren Richtlinien in den Scope gemischt werden |
+
+`policies` und `groups` sind **Registry-IDs in der Form `namespace:name`**. Ein bloßer Name löst nicht auf — anders als das `groups:`-Feld an einem Richtlinien-Entry, das auf den Namespace der Richtlinie selbst zurückfällt, tragen diese Referenzen keinen Standard-Namespace.
+
+Die Auflösung ist atomar und fail-closed. Jede aufgeführte Richtlinie und Gruppe wird aufgelöst, bevor irgendetwas installiert wird; fehlt eine davon, ist sie leer oder enthält keine Richtlinien, scheitert die gesamte Konfiguration, und weder ein Actor noch ein unvollständiger Scope wird angewendet. Ein Aufrufer überschreitet daher nie eine Grenze mit einem halben Kontext.
+
+### Prozess-Entries
+
+`process.lua`-, `process.lua.bc`-, `function.lua`- und `function.lua.bc`-Entries nehmen einen `security:`-Block auf oberster Ebene, der für jede Ausführung dieses Entries gilt:
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+Der Block wird beim Start des Prozesses angewendet, sowohl auf `process.host` als auch auf `terminal.host`. Ein Auflösungsfehler bricht den Start ab, statt den Prozess mit einem schwächeren Kontext zu starten.
+
+### Dienst-Lebenszyklus
+
+Überwachte Dienste nehmen denselben Block unter `lifecycle` auf, einmal aufgelöst beim Erstellen des Dienst-Controllers und für die Lebensdauer des Dienstes versiegelt:
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
+
+### CLI-Befehle
+
+Ein Befehls-Entry deklariert `meta.command.security`, angewendet nur, wenn der Entry als CLI-Befehl gestartet wird — der Operator, der `wippy run <name>` ausführt, ist der Vertrauensanker für diesen Kontext. Auf einen gewöhnlichen Start desselben Entries wirkt es nie. Der Block wird strikt validiert: Unbekannte Felder werden abgelehnt, ein leerer Block wird abgelehnt, und `security` ohne Befehls-`name` wird abgelehnt. Siehe [Befehlssicherheit](guides/cli.md#command-security).
 
 ## Strikter Modus
 
-Strikten Modus aktivieren um Zugriff zu verweigern wenn Sicherheitskontext fehlt:
+Der strikte Modus entscheidet, was passiert, wenn eine Anfrage weder Actor noch Scope trägt. Er ist **standardmäßig an**, ein unvollständiger Kontext wird also verweigert. Ihn abzuschalten ist eine explizite Entscheidung, getroffen in der Runtime-Konfigurationsdatei (`.wippy.yaml`), nicht im Modul-Manifest `wippy.yaml`:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 | Modus | Fehlender Kontext | Verhalten |
 |-------|-------------------|-----------|
-| Normal | Kein Actor/Scope | Erlauben (permissiv) |
-| Strikt | Kein Actor/Scope | Verweigern (sichere Voreinstellung) |
+| Strikt (Standard) | Kein Actor/Scope | Verweigern |
+| Permissiv (`strict_mode: false`) | Kein Actor/Scope | Erlauben |
+
+Der strikte Modus ändert nichts, sobald Actor und Scope vorhanden sind: Die Evaluierung verweigert ohnehin im Zweifel. Er regelt nur den unvollständigen Fall, weshalb ein Prozess, der ohne deklarierten Sicherheitskontext läuft, unter der Voreinstellung jede Prüfung nicht besteht. Gib einem solchen Prozess einen `security:`-Block oder starte ihn über einen Pfad, der einen liefert.
 
 ## Authentifizierungsablauf
 
@@ -557,6 +600,22 @@ local scope, _ = security.named_scope("app.security:" .. user.role)
 local store, _ = security.token_store("app.auth:tokens")
 local token, err = store:create(actor, scope, {expiration = "24h"})
 ```
+
+## Vertrauensgrenzen der Runtime
+
+Die Richtlinien-Evaluierung regelt, was Code tun darf. Drei separate Mechanismen regeln, welcher Code zugelassen wird und wohin ein Kontext reisen darf.
+
+### Modul-Integrität
+
+Jedes Modul in `wippy.lock` trägt einen Artefakt-Digest. Downloads werden gestaged, gegen den im Lock fixierten Digest und den vom Hub ausgelieferten Digest verifiziert und erst dann an ihren Platz verschoben; bereits vendorierte Packs werden beim Boot erneut verifiziert. Eine Abweichung ist ein `PermissionDenied`-Fehler, der weder wiederholt noch umgangen wird — das Modul wird nicht geladen. Entpackte Modulverzeichnisse tragen ihren eigenen aufgezeichneten Digest und Baum-Digest und werden auf dieselbe Weise geprüft, sodass ein veränderter vendorierter Baum erkannt statt vertraut wird. Siehe [Abhängigkeitsverwaltung](guides/dependency-management.md#integrity-verification).
+
+### Internode-Identität im Cluster
+
+Knoten in einem Cluster authentifizieren einander. Jeder Knoten hält einen ed25519-Identitätsschlüssel und die Map der öffentlichen Schlüssel der Peers, denen er vertraut; der Mesh-Handshake ist gegenseitig und bindet ein HMAC über das gemeinsame Gossip-Secret an eine ed25519-Signatur über ein Transcript, das beide Knoten-IDs und beide Nonces umfasst. Ein Peer, der nicht in der vertrauten Map steht oder dessen per Gossip angekündigter Schlüssel dem vertrauten Eintrag widerspricht, wird abgelehnt. Es gibt keinen unauthentifizierten Modus: Ein Knoten ohne Identität kann dem Mesh nicht beitreten. Siehe [Internode-Identität](guides/cluster.md#internode-identity).
+
+### Temporal-Propagierung
+
+Ein Sicherheitskontext, der nach Temporal übergeht, wird als signierter Header getragen, nicht als einfache Workflow-Eingabe. Der Actor, seine Metadaten und die Richtlinien-IDs werden in einen `wippy-security`-Umschlag serialisiert und mit dem HMAC-Schlüssel des Clients signiert, adressiert an die konkrete Workflow- oder Activity-ID. Der empfangende Worker prüft Signatur und Adressat und löst jede benannte Richtlinie lokal auf, bevor der Workflow oder die Activity läuft; jeder Fehlschlag lässt die Ausführung scheitern. Ein Workflow, der unter einem Sicherheitskontext läuft, weist zudem unsignierte Signale ab, sodass ein externer Temporal-Client ihn nicht steuern kann. Siehe [Workflows](temporal/workflows.md#security-context) und [Temporal-Überblick](temporal/overview.md#security-context-propagation).
 
 ## Best Practices
 

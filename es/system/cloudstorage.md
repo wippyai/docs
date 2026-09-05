@@ -6,7 +6,7 @@ description: "<secondary-label ref='external'/"
 # Almacenamiento en la Nube
 <secondary-label ref="external"/>
 
-Almacenamiento de objetos compatible con S3 con URLs prefirmadas.
+Almacenamiento de objetos compatible con S3 con URLs prefirmadas, cargas multiparte y lecturas por rango.
 
 ## Tipos de Entrada
 
@@ -75,9 +75,32 @@ Para MinIO u otros servicios compatibles con S3, establezca un endpoint personal
 
 Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita automáticamente.
 
+## Cargas Multiparte
+
+Las cargas multiparte prefirmadas son una capacidad del proveedor, no una característica del runtime. El tipo `cloudstorage.s3` las implementa; un proveedor que no soporta el protocolo multiparte falla `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` y `abort_multipart_upload` con `errors.UNAVAILABLE`.
+
+Las partes de una carga que nunca se completa ni se aborta permanecen almacenadas y se facturan. Las aplicaciones abortan en cada ruta de fallo, pero un cliente que se cae no deja nada que ejecute ese abort. Configure una regla de ciclo de vida `AbortIncompleteMultipartUpload` en el bucket como respaldo:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Lecturas por Rango
+
+`open_reader` lee un objeto mediante GETs por rango y fija el ETag del objeto con `If-Match` en cada lectura. Un proveedor que no devuelve un ETag en el stat inicial falla la llamada con `errors.UNAVAILABLE`, y un proveedor que ignora `If-Match` pierde la protección contra sobrescritura - la lectura entonces no puede detectar que mezcló dos generaciones del objeto.
+
 ## API Lua
 
-Ver [Módulo Cloud Storage](lua/storage/cloud.md) para operaciones (list, upload, download, delete, URLs prefirmadas).
+Ver [Módulo Cloud Storage](lua/storage/cloud.md) para operaciones (list, upload, download, delete, URLs prefirmadas, cargas multiparte, lectores por rango).
 
 ## Ver También
 

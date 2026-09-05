@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### 安全上下文传播
+
+Wippy 以带签名的 Temporal 头部把调用方的主体和作用域传播给 workflow 和 activity。签名采用 HMAC-SHA256，密钥由 client 记录持有：
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `security_hmac_key` | Base64 编码的签名密钥；解码后至少需为 32 字节 |
+| `security_hmac_previous_keys` | 仍被接受用于校验的 Base64 编码密钥，用于轮换 |
+
+这两个字段在 YAML 中都是 base64，因为它们是字节字段。解码后短于 32 字节的密钥会在配置校验时被拒绝，声明了 `security_hmac_previous_keys` 却没有 `security_hmac_key` 同样会被拒绝。新的头部始终用 `security_hmac_key` 签名；校验时会逐一尝试所列的每个旧密钥，因此轮换流程是：把新密钥设为 `security_hmac_key`，把旧密钥移入 `security_hmac_previous_keys`，等到不再有执行中的实例携带它时再移除。
+
+**在某个主体或作用域下启动 workflow 需要该密钥。** 如果调用方带有安全上下文而 client 没有签名密钥，头部就无法签名，启动会失败。没有密钥的 client 只能从既不带主体也不带作用域的上下文启动 workflow。
+
+worker 从其引用的 client 记录获取这些密钥，因此 worker 无需自行配置任何内容即可从 `client:` 继承签名与校验。参见 [Workflows](temporal/workflows.md#security-context) 和 [Activities](temporal/activities.md)。
+
 ## Worker 配置
 
 `temporal.worker` 条目类型定义执行 workflow 和 activity 的 worker。

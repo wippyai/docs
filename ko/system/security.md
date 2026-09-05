@@ -301,11 +301,14 @@ local policies = scope:policies()
 ### 평가 흐름
 
 ```
-1. 스코프의 각 정책 확인
-2. 어떤 정책이라도 Deny 반환 → 결과는 Deny
-3. 최소 하나의 Allow이고 Deny 없음 → 결과는 Allow
-4. 해당 정책 없음 → 결과는 Undefined
+1. 컨텍스트에 액터가 없거나 스코프가 없음 → 엄격 모드가 결정 (기본값은 거부)
+2. 스코프의 각 정책 확인
+3. 어떤 정책이라도 Deny 반환 → 결과는 Deny
+4. 최소 하나의 Allow이고 Deny 없음 → 결과는 Allow
+5. 해당 정책 없음 → 결과는 Undefined
 ```
+
+접근 검사는 `Allow`일 때만 통과합니다. `Undefined`는 `Deny`와 정확히 동일하게 접근을 거부합니다 — 액터와 스코프가 모두 존재하면 엄격 모드는 아무 역할도 하지 않습니다.
 
 ### 평가 결과
 
@@ -325,7 +328,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 if result == "deny" then
     return nil, errors.new("FORBIDDEN", "Access denied")
 elseif result == "undefined" then
-    -- 일치하는 정책 없음 - 엄격 모드에 따라 다름
+    -- 일치하는 정책 없음 - 접근 검사는 이를 거부로 취급함
 end
 ```
 
@@ -473,44 +476,84 @@ local result, err = funcs.new()
 | 스코프 | 예 - 자식 호출로 전달 |
 | 엄격 모드 | 아니오 - 애플리케이션 전체 |
 
-함수는 호출자의 보안 컨텍스트를 상속합니다. 스폰된 프로세스는 새로 시작합니다.
+함수는 호출자의 보안 컨텍스트를 상속합니다. 스폰된 프로세스는 그렇지 않습니다: 새 프레임에서 시작하며, 그 컨텍스트는 자신의 엔트리에 있는 `security:` 블록에서 옵니다. 해당 엔트리가 블록을 선언하지 않으면 프로세스는 액터도 스코프도 없이 실행되며, 엄격 모드는 이를 거부합니다. `actor`를 생략한 선언 블록은 스포너의 액터를 상속하고, `policies`와 `groups`를 모두 생략한 블록은 스포너의 스코프를 상속합니다 — 즉 "새로 시작한다"는 것은 "컨텍스트를 줄 수 없다"가 아니라 "주변 컨텍스트를 암묵적으로 상속하지 않는다"는 뜻입니다.
 
-## 서비스 레벨 보안
+## 엔트리에 보안 선언하기
 
-서비스에 대한 기본 보안 설정:
+보안 블록은 어디에 나타나든 형태가 동일합니다:
+
+| 필드 | 타입 | 설명 |
+|-------|------|-------------|
+| `actor.id` | string | 액터 아이덴티티. 상속된 액터를 대체합니다 |
+| `actor.meta` | map | 정책이 평가하는 액터 속성 |
+| `policies` | list | 스코프에 병합되는 정책 레지스트리 ID |
+| `groups` | list | 그 정책들이 스코프에 병합되는 정책 그룹의 레지스트리 ID |
+
+`policies`와 `groups`는 **`namespace:name` 형식의 레지스트리 ID**입니다. 이름만 쓰면 해석되지 않습니다 — 정책 엔트리의 `groups:` 필드가 정책 자신의 네임스페이스를 기본값으로 삼는 것과 달리, 이 참조들에는 기본 네임스페이스가 없습니다.
+
+해석은 원자적이며 fail-closed입니다. 나열된 모든 정책과 그룹은 어떤 것이 설치되기 전에 해석됩니다. 그중 하나라도 없거나, 비어 있거나, 정책을 담고 있지 않으면 전체 설정이 실패하며 액터도 부분 스코프도 적용되지 않습니다. 따라서 호출자가 절반짜리 컨텍스트를 들고 경계를 넘는 일은 없습니다.
+
+### 프로세스 엔트리
+
+`process.lua`, `process.lua.bc`, `function.lua`, `function.lua.bc` 엔트리는 해당 엔트리의 모든 실행에 적용되는 최상위 `security:` 블록을 받습니다:
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+이 블록은 프로세스가 시작될 때 `process.host`와 `terminal.host` 양쪽에서 적용됩니다. 해석에 실패하면 더 약한 컨텍스트로 프로세스를 시작하는 대신 스폰이 중단됩니다.
+
+### 서비스 라이프사이클
+
+감독되는 서비스는 동일한 블록을 `lifecycle` 아래에 받으며, 서비스 컨트롤러가 생성될 때 한 번 해석되어 서비스의 수명 동안 고정됩니다:
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
+
+### CLI 명령어
+
+명령어 엔트리는 `meta.command.security`를 선언하며, 이는 엔트리가 CLI 명령어로 실행될 때만 적용됩니다 — `wippy run <name>`을 실행하는 운영자가 그 컨텍스트의 신뢰 앵커입니다. 동일한 엔트리의 일반적인 스폰에는 전혀 영향을 주지 않습니다. 블록은 엄격하게 검증됩니다: 알 수 없는 필드는 거부되고, 빈 블록은 거부되며, 명령어 `name` 없는 `security`도 거부됩니다. [명령어 보안](guides/cli.md#명령어-보안)을 참조하세요.
 
 ## 엄격 모드
 
-보안 컨텍스트가 없을 때 접근을 거부하려면 엄격 모드를 활성화하세요:
+엄격 모드는 요청에 액터도 스코프도 없을 때 어떻게 할지를 결정합니다. **기본적으로 켜져 있으므로** 불완전한 컨텍스트는 거부됩니다. 이를 끄는 것은 명시적인 선택이며, 모듈 매니페스트 `wippy.yaml`이 아니라 런타임 설정 파일(`.wippy.yaml`)에서 합니다:
 
 ```yaml
-# wippy.yaml
+# .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 | 모드 | 컨텍스트 없음 | 동작 |
 |------|-----------------|----------|
-| 일반 | 액터/스코프 없음 | 허용 (관대) |
-| 엄격 | 액터/스코프 없음 | 거부 (보안 기본값) |
+| 엄격 (기본값) | 액터/스코프 없음 | 거부 |
+| 관대 (`strict_mode: false`) | 액터/스코프 없음 | 허용 |
+
+액터와 스코프가 존재하면 엄격 모드는 아무것도 바꾸지 않습니다: 어느 쪽이든 평가는 기본 거부입니다. 엄격 모드는 불완전한 경우만 관장하며, 그래서 선언된 보안 컨텍스트 없이 실행되는 프로세스는 기본 설정에서 모든 검사에 실패합니다. 그런 프로세스에는 `security:` 블록을 주거나, 컨텍스트를 공급하는 경로로 시작하세요.
 
 ## 인증 흐름
 
@@ -557,6 +600,22 @@ local scope, _ = security.named_scope("app.security:" .. user.role)
 local store, _ = security.token_store("app.auth:tokens")
 local token, err = store:create(actor, scope, {expiration = "24h"})
 ```
+
+## 런타임 신뢰 경계
+
+정책 평가는 코드가 무엇을 할 수 있는지를 관장합니다. 어떤 코드가 받아들여지고 컨텍스트가 어디까지 이동할 수 있는지는 별개의 세 가지 메커니즘이 관장합니다.
+
+### 모듈 무결성
+
+`wippy.lock`의 모든 모듈은 아티팩트 다이제스트를 가집니다. 다운로드는 스테이징되어 lock에 고정된 다이제스트와 허브가 제공한 다이제스트 양쪽에 대해 검증된 뒤에야 제자리로 옮겨집니다. 이미 벤더링된 팩은 부팅 시 다시 검증됩니다. 불일치는 재시도되지도 우회되지도 않는 `PermissionDenied` 실패이며 — 해당 모듈은 로드되지 않습니다. 추출된 모듈 디렉토리는 자체적으로 기록된 다이제스트와 트리 다이제스트를 가지고 같은 방식으로 검사되므로, 변경된 벤더링 트리는 신뢰되지 않고 감지됩니다. [의존성 관리](guides/dependency-management.md#무결성-검증)를 참조하세요.
+
+### 클러스터 노드 간 아이덴티티
+
+클러스터의 노드들은 서로를 인증합니다. 각 노드는 ed25519 아이덴티티 키와 자신이 신뢰하는 피어 공개 키 맵을 가집니다. 메시 핸드셰이크는 상호적이며, 공유 gossip 시크릿에 대한 HMAC을 두 노드 ID와 두 nonce를 모두 포함하는 트랜스크립트에 대한 ed25519 서명에 묶습니다. 신뢰 맵에 없거나 gossip으로 광고한 키가 신뢰 항목과 불일치하는 피어는 거부됩니다. 인증 없는 모드는 존재하지 않습니다: 아이덴티티가 없는 노드는 메시에 합류할 수 없습니다. [노드 간 아이덴티티](guides/cluster.md#노드-간-아이덴티티)를 참조하세요.
+
+### Temporal 전파
+
+Temporal로 넘어가는 보안 컨텍스트는 일반 워크플로우 입력이 아니라 서명된 헤더로 운반됩니다. 액터, 그 메타데이터, 정책 ID가 `wippy-security` 엔벨로프로 직렬화되어 클라이언트의 HMAC 키로 서명되며, 특정 워크플로우 또는 액티비티 ID를 오디언스로 삼습니다. 수신 워커는 워크플로우나 액티비티가 실행되기 전에 서명과 오디언스를 검증하고 명시된 모든 정책을 로컬에서 해석합니다. 하나라도 실패하면 실행이 실패합니다. 보안 컨텍스트 아래에서 실행되는 워크플로우는 서명되지 않은 시그널도 거부하므로, 외부 Temporal 클라이언트가 이를 구동할 수 없습니다. [워크플로우](temporal/workflows.md#보안-컨텍스트)와 [Temporal 개요](temporal/overview.md#보안-컨텍스트-전파)를 참조하세요.
 
 ## 모범 사례
 

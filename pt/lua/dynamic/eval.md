@@ -101,6 +101,35 @@ local result, err = runner.run({
 | `context` | table | Valores disponíveis como `ctx` |
 | `allow_classes` | string[] | Classes de módulo adicionais |
 | `custom_modules` | table | Tabelas customizadas como modulos |
+| `limits` | table | Limites de execucao para esta execucao |
+
+### Limite de Passos
+
+`limits.max_steps` limita por quanto tempo um `runner.run` pode executar:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+Um passo e um turno do scheduler do eval: o programa avanca ate ceder (yield) ou terminar, e cada retomada consome um passo. A computacao pura entre yields conta como um passo, nao importa quanto tempo dure, entao o limite restringe turnos de agendamento, nao tempo de CPU.
+
+Quando a contagem excede o limite, a execucao para e retorna `errors.INTERNAL` com `eval exceeded maximum step limit`.
+
+`max_steps = 0` significa ilimitado. Omitir `limits` herda o padrao do host:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # orcamento padrao para execucoes sem limits.max_steps
+                      # 0 = ilimitado; um valor negativo falha o boot
+```
+
+`limits` aplica-se apenas a `runner.run`; `runner.compile` nao aceita limites. `limits` deve ser uma tabela contendo apenas `max_steps`, e `max_steps` deve ser um inteiro nao negativo — qualquer outra coisa retorna `errors.INVALID` antes de o programa executar.
 
 ### Acesso a Modulos
 

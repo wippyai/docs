@@ -83,7 +83,7 @@ entries:
 | Parameter | Область | Default | Описание |
 |-----------|---------|---------|----------|
 | `custom_css` | global | Google Fonts import | CSS, инжектируемый на каждом уровне |
-| `css_variables` | global | `{}` | JSON-карта CSS-кастомных свойств |
+| `css_variables` | global | `{}` | JSON-карта произвольных CSS-кастомных свойств; компилируется для режимов Auto и forced и пробрасывается в shadow root компонентов. |
 | `icon_sets` | global | `[]` | URL-адреса наборов иконок Iconify |
 | `host_custom_css` | host | `""` | CSS только для host-хрома |
 | `host_css_variables` | host | `{}` | CSS-кастомные свойства только для host |

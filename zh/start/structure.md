@@ -12,7 +12,7 @@ description: "项目布局、YAML 定义文件和命名规范。"
 ```
 myapp/
 ├── .wippy.yaml          # 运行时配置
-├── wippy.lock           # 源目录配置
+├── wippy.lock           # 源目录与锁定的模块
 ├── .wippy/              # 已安装的模块
 └── src/                 # 应用源代码
     ├── _index.yaml      # 记录定义
@@ -100,17 +100,35 @@ app.workers
 
 记录完整 ID 由命名空间和名称组成：`app.api:get_user`
 
-### 源目录
+### 锁文件
 
-`wippy.lock` 文件定义了 Wippy 从哪里加载定义：
+`wippy.lock` 记录 Wippy 从哪里加载定义，以及选定了哪些模块版本：
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy 递归扫描这些目录查找 YAML 文件。
+| 字段 | 说明 |
+|------|------|
+| `directories.src` | 应用源目录，递归扫描其中的 YAML 定义文件 |
+| `directories.modules` | vendored 模块的基准目录；包会放在 `<modules>/vendor/` 下 |
+| `options.unpack_modules` | 把每个 `.wapp` 解压到其旁边的目录中，而不是直接加载该包（默认 `false`） |
+| `modules[].name` | `org/module` 形式的模块标识符 |
+| `modules[].version` | 选定的版本 |
+| `modules[].hash` | vendored 包必须匹配的制品摘要 |
+| `modules[].root` | 标记选定的部署根；最多只能有一个模块带有它 |
+
+vendored 包以 `.wapp` 文件形式保存。当 `unpack_modules: true` 时，每个模块还会被解压到一个目录中，且经过校验的 `.wapp` 仍保留在其旁边——安装会去查找该包，因此包缺失的目录会被重新下载。
+
+`wippy.lock` 中的 `replacements:` 段已弃用。它仍可加载，但会发出警告；请改为在运行时配置文件中的 `workspace.replacements` 下声明本地模块覆盖。参见 [依赖管理](guides/dependency-management.md#local-development-with-replacements)。
 
 ## 记录定义
 
@@ -203,13 +221,7 @@ http:
 
 ### wippy.lock
 
-定义源目录：
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+源目录与选定的模块图——参见上文的 [锁文件](#the-lock-file)。
 
 ## 引用记录
 

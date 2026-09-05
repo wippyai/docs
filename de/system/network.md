@@ -128,6 +128,14 @@ network_service:
 | `state_dir` | `.wippy/net` | Verzeichnis fuer Treiber-State. Relative Pfade werden gegen das Boot-Config-Verzeichnis aufgeloest. |
 | `default_network` | — | Registry-ID eines Overlays, das auf jede Aufgabe oder jeden Prozess angewendet wird, der sein eigenes Netzwerk nicht ueber Optionen festlegt. |
 
+## Rohe Verbindungsaufbauten
+
+Die Overlay-Auswahl ist nicht auf Lua-Kanten beschraenkt. Verbindungsaufbauten ueber den Runtime-Netzwerkdienst — den WASM-[`socket`-Host](wasm/hosts.md#socket) und den `wasi:sockets`-Dispatcher — lesen das Overlay vom Frame und routen darueber, gleich ob es von `with_options`, von `meta.options.network` am Entry oder von `network_service.default_network` gesetzt wurde.
+
+Das Private-IP-Gate verhaelt sich auf diesem Pfad anders. Ein direkter Verbindungsaufbau loest das Ziel auf und prueft jede resultierende Adresse gegen `socket.private_ip`. Mit ausgewaehltem Overlay wird nur eine literale IP-Adresse im Ziel geprueft; Hostnamen werden dem Overlay zur Aufloesung uebergeben, der lokale Resolver wird also nie befragt und auf das, was er zurueckgegeben haette, findet keine Pruefung statt.
+
+Ist ein Overlay ausgewaehlt, der Kontext traegt aber keine Netzwerk-Registry, schlaegt der Verbindungsaufbau mit `network "<id>" selected without a network registry` fehl.
+
 ## Overlays aktualisieren
 
 Overlay-Einträge werden bei einer Registry-Aktualisierung im laufenden Betrieb ausgetauscht. Wenn sich die Konfiguration eines Overlays ändert, baut der Treiber zuerst den Ersatzdienst und tauscht ihn erst ein, sobald er erfolgreich erstellt wurde; schlägt die neue Konfiguration fehl, läuft das bestehende Overlay weiter. Gleichzeitige Aufrufer sehen entweder den alten oder den neuen Dienst, niemals eine Lücke.
@@ -138,11 +146,18 @@ Overlay-Einträge werden bei einer Registry-Aktualisierung im laufenden Betrieb 
 |--------|----------|-------------|
 | `network.select` | Netzwerk-Registry-ID | Explizite Overlay-Auswahl bei `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Netzwerk-Registry-ID | Binden eines `http.service`-Listeners über ein Overlay (das Feld `network:`) |
+| `socket.connect` | `host:port` | Jeder ausgehende Verbindungsaufbau über den Netzwerkdienst |
+| `socket.listen` | `host:port` | Binden eines TCP-Listeners oder eines UDP-Sockets über den Netzwerkdienst |
+| `socket.resolve` | Hostname | DNS-Auflösung über den Netzwerkdienst |
+| `socket.private_ip` | IP-Adresse | Erreichen einer Loopback-, privaten, Link-Local- oder unspezifizierten Adresse |
 
 Verweigere `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert. `network.bind` wird geprüft, wenn ein Server mit einem `network:`-Overlay seinen Listener startet.
+
+Die `socket.*`-Berechtigungen werden vom Netzwerkdienst selbst geprüft. `socket.connect`, `socket.listen` und `socket.resolve` werden vor jedem Overlay-Routing geprüft und gelten damit gleichermaßen für Clearnet- und Overlay-Verkehr; `socket.private_ip` verengt sich auf literale Adressen, sobald ein Overlay ausgewählt ist, wie unter [Rohe Verbindungsaufbauten](system/network.md#raw-dials) beschrieben.
 
 ## Siehe auch
 
 - [Sicherheit](system/security.md) - Richtlinien und Akteure
 - [HTTP-Service](http/server.md) - Server-Binding
 - [HTTP-Client](lua/http/client.md) - Overlay-Auswahl pro Aufruf
+- [Host-Funktionen](wasm/hosts.md) - WASM-Socket-Imports

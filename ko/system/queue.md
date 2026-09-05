@@ -116,7 +116,7 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 |------|------|--------|------|
 | `config` | Registry ID | 필수 | 리전 및 자격 증명을 제공하는 `config.aws` 리소스 |
 | `endpoint` | string | - | 사용자 지정 엔드포인트 URL (LocalStack, ElasticMQ); 실제 AWS의 경우 생략 |
-| `message_retention_period` | int | `345600` (4일) | 큐 수준 보존 시간(초) (60–1209600) |
+| `message_retention_period` | int | - | 큐 수준 보존 시간(초) (60–1209600), 생성 시 큐 속성으로 설정됩니다. 생략하면 AWS 기본값 345600(4일)이 유지됩니다. |
 | `default_delay_seconds` | int | `0` | CreateQueue 시 적용되는 기본 전달 지연 (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | 송수신 시 SQS 메시지 체크섬 검사 비활성화 |
 | `use_fips` | bool | `false` | FIPS 호환 엔드포인트 사용 |

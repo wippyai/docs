@@ -12,7 +12,7 @@ description: "プロジェクトレイアウト、YAML定義ファイル、命�
 ```
 myapp/
 ├── .wippy.yaml          # ランタイム設定
-├── wippy.lock           # ソースディレクトリ設定
+├── wippy.lock           # ソースディレクトリとロックされたモジュール
 ├── .wippy/              # インストール済みモジュール
 └── src/                 # アプリケーションソース
     ├── _index.yaml      # エントリ定義
@@ -100,17 +100,35 @@ app.workers
 
 エントリのフルIDは名前空間と名前を組み合わせます：`app.api:get_user`
 
-### ソースディレクトリ
+### ロックファイル
 
-`wippy.lock`ファイルはWippyが定義をロードする場所を定義します：
+`wippy.lock`は、Wippyが定義をロードする場所と、選択されたモジュールのバージョンを記録します：
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-WippyはこれらのディレクトリからYAMLファイルを再帰的にスキャンします。
+| フィールド | 説明 |
+|------------|------|
+| `directories.src` | アプリケーションのソースディレクトリ。YAML定義ファイルを再帰的にスキャンする |
+| `directories.modules` | ベンダリングされたモジュールのベースディレクトリ。パックは`<modules>/vendor/`配下に配置される |
+| `options.unpack_modules` | 各`.wapp`をパックのまま読み込むのではなく、その隣のディレクトリへ展開する（デフォルトは`false`）|
+| `modules[].name` | `org/module`形式のモジュール識別子 |
+| `modules[].version` | 選択されたバージョン |
+| `modules[].hash` | ベンダリングされたパックが一致しなければならないアーティファクトのダイジェスト |
+| `modules[].root` | 選択されたデプロイメントルートを示す。これを持てるモジュールは最大1つ |
+
+ベンダリングされたパックは`.wapp`ファイルとして保持されます。`unpack_modules: true`の場合、各モジュールはディレクトリへも展開され、検証済みの`.wapp`はその隣に残ります。インストール処理はパックを探すため、パックが失われたディレクトリは再度ダウンロードされます。
+
+`wippy.lock`内の`replacements:`セクションは非推奨です。警告付きで引き続きロードされますが、ローカルモジュールのオーバーライドはランタイム設定ファイルの`workspace.replacements`配下で宣言してください。[依存関係管理](guides/dependency-management.md#local-development-with-replacements)を参照してください。
 
 ## エントリ定義
 
@@ -203,13 +221,7 @@ http:
 
 ### wippy.lock
 
-ソースディレクトリを定義します：
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+ソースディレクトリと選択されたモジュールグラフ — 上記の[ロックファイル](#the-lock-file)を参照してください。
 
 ## エントリの参照
 

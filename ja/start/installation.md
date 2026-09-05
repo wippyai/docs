@@ -48,6 +48,7 @@ wippy install
 | `wippy add` | 依存関係を追加 |
 | `wippy install` | 依存関係をインストール |
 | `wippy update` | 依存関係を更新 |
+| `wippy artifacts` | ビルド時のファイルシステムアーティファクトを実体化 |
 | `wippy pack` | スナップショットを作成 |
 | `wippy publish` | ハブに公開 |
 | `wippy search` | モジュールを検索 |

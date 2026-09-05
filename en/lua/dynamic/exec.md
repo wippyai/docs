@@ -94,7 +94,7 @@ The process is created but not started.
 -- One argument containing a space, passed literally
 local proc = executor:exec("grep 'hello world' notes.txt")
 
--- $HOME is passed as the four characters $HOME, not expanded
+-- $HOME is passed as the five characters $HOME, not expanded
 local proc = executor:exec("echo $HOME")
 ```
 

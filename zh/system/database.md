@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+私有的内存 SQLite 数据库（<code>file: ":memory:"</code>）的作用域限定为单个物理连接，因此 <code>max_open</code> 和 <code>max_idle</code> 被强制为 <code>1</code>。基于文件的数据库会遵循配置的 <code>pool</code> 设置，CDC 快照读事务需要这一点，才不会占用唯一的写入连接。日志模式始终为 <code>WAL</code>。
+</note>
 
 ## 连接字段
 
@@ -75,12 +77,16 @@ entries:
 
 ### SQLite 字段
 
-| 字段 | 类型 | 描述 |
-|------|------|------|
-| `file` | string | 数据库文件路径或 `:memory:` |
-| `pool` | object | 连接池设置 |
-| `options` | map | SQLite 特定选项 |
-| `lifecycle` | object | 生命周期配置 |
+| 字段 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `file` | string | 必填 | 数据库文件路径或 `:memory:` |
+| `pool` | object | - | 连接池设置；对 `:memory:` 会把 `max_open` 和 `max_idle` 强制为 `1` |
+| `max_mutation_changes` | int | 100000 | 单个事务在已提交变更观察器中可保留的行数 |
+| `max_mutation_bytes` | int | 67108864 | 单个事务在观察器中可保留的逻辑字节数（64 MiB） |
+| `options` | map | - | 接受但忽略 |
+| `lifecycle` | object | - | 生命周期配置 |
+
+`max_mutation_changes` 和 `max_mutation_bytes` 限定为 [`db.cdc.sqlite`](system/cdc.md) 源供数的内存中已提交变更观察器的上限。任一字段为零表示选用默认值；负值会被拒绝。这些上限是保守的而非精确的：SQLite 会把完整的一行交给 pre-update 钩子，因此在上限拒绝该候选之前，可能已经物化了一行。
 
 ### 环境变量字段
 
@@ -136,8 +142,10 @@ pool:
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+除端口外的每个值都用单引号包裹，其中嵌入的 `'` 和 `\` 会用反斜杠转义，因此包含空格或引号的主机、密码和选项值都能原样传递。
 
 ### MySQL {id="dsn-mysql"}
 
@@ -194,7 +202,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -289,3 +297,4 @@ entries:
 - [SQL 模块](lua/storage/sql.md) - Lua API 参考
 - [Store](system/store.md) - 基于 `database.sql` 的键值存储
 - [Queue](system/queue.md) - SQL 支持的队列处理器
+- [变更数据捕获](system/cdc.md) - 从 `db.sql.sqlite` 或 Postgres 数据库流式获取行级变更

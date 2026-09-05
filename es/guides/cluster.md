@@ -56,19 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-2.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 El primer nodo no necesita `join_addrs` — arranca como semilla. Las uniones se reintentan con backoff, y un nodo que se encuentra aislado intenta periódicamente reintegrarse, por lo que un nodo reiniciado con una nueva IP (común en Kubernetes) reconverge rápidamente.
 
-El gossip puede cifrarse con una clave compartida, proporcionada en línea o desde un archivo:
+El gossip siempre se cifra con una clave compartida. Proporciónela en línea como `membership.secret_key` o desde un archivo como `membership.secret_file`; un nodo iniciado sin ninguna de las dos no consigue levantar el componente de cluster. El valor está codificado en base64 y es idéntico en cada nodo.
+
+Los cambios de membresía (`NodeJoined`, `NodeLeft`, `NodeUpdated`) son los eventos que impulsan el bootstrap de Raft, la reconciliación de voters, la sincronización de grupos de proceso y la limpieza automática de nombres pertenecientes a un nodo que se fue.
+
+## Identidad internodo
+
+Cada nodo posee un par de claves ed25519, y cada nodo lleva el mapa de claves públicas en las que confía. Ambos son obligatorios cuando `cluster.enabled: true`.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-Los cambios de membresía (`NodeJoined`, `NodeLeft`, `NodeUpdated`) son los eventos que impulsan el bootstrap de Raft, la reconciliación de voters, la sincronización de grupos de proceso y la limpieza automática de nombres pertenecientes a un nodo que se fue.
+| Clave | Contenido |
+|-------|-----------|
+| `internode.identity_key` | La clave privada del nodo, en línea |
+| `internode.identity_key_file` | Ruta a un archivo que contiene esa clave |
+| `internode.trusted_peer_keys` | Nombre de nodo a clave pública, para cada nodo de la malla incluido este |
+
+Formato de clave: base64, codificación estándar o cruda (sin relleno). Una clave privada decodifica a una semilla ed25519 de 32 bytes o a una clave privada ed25519 completa de 64 bytes; una clave de peer confiable decodifica a una clave pública ed25519 de 32 bytes. No hay subcomando de generación de claves — acuñe las claves con cualquier herramienta ed25519 y codifique los bytes crudos en base64:
+
+```bash
+# Semilla de 32 bytes y su clave pública, codificadas en base64
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` e `identity_key_file` son mutuamente excluyentes, y una de las dos es obligatoria. `trusted_peer_keys` debe contener una entrada para el `cluster.name` local cuyo valor sea la clave pública propia de este nodo; una entrada propia ausente o discordante aborta el arranque. Esto hace del mapa de confianza un único artefacto que puede distribuir sin cambios a cada nodo.
+
+El handshake de la malla es mutuo. Cada lado demuestra el conocimiento del secreto de gossip compartido con un HMAC sobre un transcript que enlaza ambos IDs de nodo y ambos nonces, y firma ese transcript con su clave de identidad; el peer verifica la firma contra la clave pública que tiene para ese ID de nodo y contra la clave que el peer anuncia en gossip. Si cualquiera de las comprobaciones falla, la conexión se cierra.
+
+Consecuencias a tener en cuenta:
+
+- La malla no interopera con un nodo que no tiene identidad. Cada nodo del cluster debe estar configurado con una.
+- Un peer cuyo ID de nodo esté ausente de `trusted_peer_keys` es rechazado, igual que uno cuya clave pública anunciada por gossip no coincide con la entrada de confianza. Añadir un nodo implica distribuir su clave pública a los nodos existentes.
+- Un ID de nodo debe estar presente en la membresía de gossip activa antes de que su clave se resuelva, por lo que un peer que no se ha unido al gossip no puede abrir una conexión de malla.
 
 ## Bootstrap
 
@@ -146,11 +187,17 @@ Nodo único (desarrollo):
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Cluster de votación de tres nodos:
+Cluster de votación de tres nodos (`node-2` y `node-3` difieren solo en `name`, `identity_key_file` y `join_addrs`):
 
 ```yaml
 cluster:
@@ -160,11 +207,17 @@ cluster:
   membership:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-Cliente solo-gossip (se une para naming/mensajería, nunca ejecuta Raft):
+Cliente solo-gossip (se une para naming/mensajería, nunca ejecuta Raft). Aún necesita una identidad, y los voters necesitan su clave pública en sus propios mapas:
 
 ```yaml
 cluster:
@@ -172,6 +225,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

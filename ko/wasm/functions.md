@@ -201,14 +201,26 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 실행 제한
 
-함수의 최대 실행 시간을 설정합니다:
+`limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-제한을 초과하면 실행이 취소되고 오류가 반환됩니다.
+| 필드 | 기본값 | 설명 |
+|-------|---------|-------------|
+| `max_execution_ms` | 무제한 | 한 번의 호출에 대한 실제 경과 시간 예산. 초과하면 실행이 취소되고 오류가 반환됩니다. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | 호출 후 재활용 트리거. 선형 메모리가 이 값을 초과한 웜 워커는 재사용되지 않고 호출 후 폐기됩니다. 명시적인 `0`은 유지 메모리 재활용을 비활성화합니다. |
+| `retained_memory_check_interval` | 기본 제한 사용 시 `16`, 명시적 제한 사용 시 매 호출 | 호출 후 메모리 검사 사이의 호출 횟수. |
+| `max_open_sockets` | `16` | `socket` 호스트에 대한 인스턴스당 동시 연결 수. |
+| `socket_timeout_ms` | `30000` | `socket` 다이얼 및 각 송수신에 대한 데드라인. |
+
+음수 값은 부팅 시 거부됩니다.
 
 ## WASI 설정
 

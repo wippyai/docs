@@ -49,14 +49,16 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: para en memoria
     pool:
-      max_open: 1
-      max_idle: 1
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
-    options:
-      cache: "shared"
     lifecycle:
       auto_start: true
 ```
+
+<note>
+Una base de datos SQLite privada en memoria (<code>file: ":memory:"</code>) está limitada a una sola conexión física, por lo que <code>max_open</code> y <code>max_idle</code> se fuerzan a <code>1</code>. Una base de datos respaldada por archivo respeta la configuración de <code>pool</code> establecida, que una transacción de lectura de snapshot CDC necesita para no consumir la única conexión de escritura. El modo de journal siempre es <code>WAL</code>.
+</note>
 
 ## Campos de Conexión
 
@@ -75,12 +77,16 @@ entries:
 
 ### Campos de SQLite
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `file` | string | Ruta del archivo de base de datos o `:memory:` |
-| `pool` | object | Configuración del pool de conexiones |
-| `options` | map | Opciones específicas de SQLite |
-| `lifecycle` | object | Configuración de ciclo de vida |
+| Campo | Tipo | Por Defecto | Descripción |
+|-------|------|-------------|-------------|
+| `file` | string | requerido | Ruta del archivo de base de datos o `:memory:` |
+| `pool` | object | - | Configuración del pool de conexiones; `max_open` y `max_idle` se fuerzan a `1` para `:memory:` |
+| `max_mutation_changes` | int | 100000 | Filas que una transacción puede retener en el observador de mutaciones confirmadas |
+| `max_mutation_bytes` | int | 67108864 | Bytes lógicos que una transacción puede retener en el observador (64 MiB) |
+| `options` | map | - | Aceptado pero ignorado |
+| `lifecycle` | object | - | Configuración de ciclo de vida |
+
+`max_mutation_changes` y `max_mutation_bytes` acotan el observador en memoria de mutaciones confirmadas que alimenta una fuente [`db.cdc.sqlite`](system/cdc.md). Cero en cualquiera de los campos selecciona el valor por defecto; los valores negativos se rechazan. Los límites son conservadores en lugar de exactos: SQLite entrega una fila completa al hook pre-update, por lo que una fila puede materializarse antes de que el límite rechace la candidata.
 
 ### Campos de Variables de Entorno
 
@@ -136,8 +142,10 @@ Cada tipo de base de datos construye un DSN desde la configuración:
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-postgres://username:password@host:port/database?sslmode=disable
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Todos los valores excepto el puerto van entre comillas simples, y los caracteres `'` y `\` incrustados se escapan con barra invertida, de modo que hosts, contraseñas y valores de opciones que contengan espacios o comillas se transmiten intactos.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -194,7 +202,7 @@ options:
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -289,3 +297,4 @@ Consulte el [Módulo SQL](lua/storage/sql.md) para la API de operaciones de base
 - [Módulo SQL](lua/storage/sql.md) - Referencia de la API Lua
 - [Store](system/store.md) - Almacén clave-valor respaldado por `database.sql`
 - [Queue](system/queue.md) - Handler de cola respaldado por SQL
+- [Change Data Capture](system/cdc.md) - Transmisión de cambios a nivel de fila desde una base de datos `db.sql.sqlite` o Postgres

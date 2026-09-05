@@ -119,11 +119,11 @@ profiler:
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | 보안 컨텍스트 불완전 시 접근 거부 |
+| `strict_mode` | bool | true | 보안 컨텍스트가 불완전할 때 접근 거부 |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 참조: [보안 시스템](system/security.md), [보안 모듈](lua/security/security.md)
@@ -137,6 +137,12 @@ security:
 | `enable_history` | bool | true | 엔트리 버전 추적 |
 | `history_type` | string | memory | 스토리지: memory, sqlite, nil |
 | `history_path` | string | .wippy/registry.db | SQLite 파일 경로 |
+| `event_wait_timeout` | duration | 30s | 레지스트리 적용 중 리스너 확인 응답에 대한 작업별 대기 시간 |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | 컴포넌트 리스너로 디스패치되지 않고 내부적으로 처리되는 엔트리 kind |
+| `dependency_resolve_timeout` | duration | 0 (없음) | 의존성 해석에 대한 제한 시간 |
+| `dependency_download_timeout` | duration | 0 (없음) | 각 모듈 다운로드 및 다운로드 URL 요청에 대한 제한 시간 |
+| `dependency_lock_path` | string | 탐색된 `wippy.lock` | 의존성 핸들러가 읽고 쓰는 잠금 파일 |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | 다운로드된 모듈 팩을 담는 디렉토리 |
 
 ```yaml
 registry:
@@ -145,6 +151,34 @@ registry:
 ```
 
 참조: [레지스트리 개념](concepts/registry.md), [레지스트리 모듈](lua/core/registry.md)
+
+## 아티팩트
+
+구체화된 [빌드 타임 아티팩트](guides/artifacts.md)의 출력 루트입니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `materialization_root` | string | 의존성 vendor 디렉토리의 상위 | 각 아티팩트 형식이 자체 하위 트리를 기록하는 애플리케이션 소유 루트 |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+참조: [빌드 타임 아티팩트](guides/artifacts.md#where-output-lands)
+
+## 워크스페이스
+
+`org/module`을 키로 하는 로컬 모듈 대체입니다. 값은 디렉토리이며, 상대 경로는 첫 번째 `--config` 파일의 디렉토리를 기준으로 해석되고, `null`은 이전 설정 레이어나 프로파일에서 상속된 대체를 비활성화합니다.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+대체는 `wippy.lock`에 절대 기록되지 않습니다. [대체를 사용한 로컬 개발](guides/dependency-management.md#local-development-with-replacements)을 참조하세요.
 
 ## 릴레이
 
@@ -196,6 +230,10 @@ Lua VM 캐싱 및 표현식 평가.
 | `cache.mode` | string | `read_write` | 캐시 모드: `read_write`, `read_only`, `write_only` |
 | `type_system.enabled` | bool | false | 정적 타입 검사 활성화 |
 | `type_system.strict` | bool | false | 타입 경고를 오류로 처리 |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | 엔트리 변경 후 코드 무효화 확인 응답 대기 시간 |
+| `eval.max_steps` | int | 10000 | `eval` 실행의 기본 스케줄러 스텝 예산; 음수 값은 거부됨 |
+| `eval.cache_size` | int | 256 | 평가된 소스의 컴파일된 프로그램 캐시 엔트리 수 |
+| `eval.cache_ttl` | duration | 0 (만료 없음) | 캐시된 컴파일 프로그램의 수명 |
 
 ```yaml
 lua:
@@ -345,6 +383,8 @@ memberlist를 통한 SWIM gossip. 노드 디스커버리, 장애 감지, 메타�
 | `membership.tcp_timeout` | duration | 1s | TCP 폴백 프로브 타임아웃 |
 | `membership.suspicion_mult` | int | 3 | Suspicion 타임아웃 배수 |
 
+Gossip 시크릿은 필수입니다. `membership.secret_key` 또는 `membership.secret_file`을 설정하세요(둘 다 주어지면 파일이 우선합니다); 둘 다 없으면 클러스터 컴포넌트가 시작에 실패합니다. 값은 base64로 인코딩됩니다.
+
 네 개의 프로브 키는 설정되지 않으면 memberlist의 로컬 네트워크 기본값을 상속합니다; 지연이 큰 링크에서는 값을 올리세요 (예: `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### 인터노드 (전송)
@@ -358,8 +398,13 @@ memberlist를 통한 SWIM gossip. 노드 디스커버리, 장애 감지, 메타�
 | `internode.auto_port` | bool | true | 부팅 시 실제 포트를 감지하여 고정하고 gossip에서 광고 |
 | `internode.advertise_addr` | string | | 업그레이드된 피어에게 게시되는 추가 릴레이 엔드포인트(IP 또는 DNS 이름) — NAT 또는 로드밸런서 뒤의 도달성용 |
 | `internode.advertise_port` | int | 0 | `advertise_addr`용 포트 (0 = 바인드 포트; `advertise_addr` 필요) |
+| `internode.identity_key` | string | | 이 노드를 식별하는 base64 인코딩 ed25519 개인 키 (인라인) |
+| `internode.identity_key_file` | string | | 해당 키를 담은 파일의 경로 |
+| `internode.trusted_peer_keys` | map | | 이 노드를 포함한 노드 이름별 base64 인코딩 ed25519 공개 키 |
 
 `advertise_addr`/`advertise_port`는 노드 메타데이터에 추가 엔드포인트를 게시하며 바인드 엔드포인트는 변경 없이 계속 광고되므로, 혼합 버전 클러스터가 롤링 업그레이드 중에도 계속 연결됩니다.
+
+클러스터링이 활성화되면 노드 간 아이덴티티는 필수입니다. `identity_key`와 `identity_key_file`은 상호 배타적이며 둘 중 하나는 반드시 있어야 합니다; 값은 (표준 또는 raw base64로) 32바이트 ed25519 시드 또는 64바이트 ed25519 개인 키로 디코딩됩니다. `trusted_peer_keys`는 각 노드 이름을 그 노드의 32바이트 ed25519 공개 키에 매핑하며, 로컬 `cluster.name`에 대한 엔트리가 로컬 아이덴티티와 일치하는 값으로 포함되어야 합니다 — 그렇지 않으면 시작에 실패합니다. [클러스터 가이드](guides/cluster.md#internode-identity)를 참조하세요.
 
 ### Raft (합의)
 
@@ -394,11 +439,17 @@ memberlist를 통한 SWIM gossip. 노드 디스커버리, 장애 감지, 메타�
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-3노드 voting 클러스터 — 각 노드가 다른 노드를 시드로 나열하고 쿼럼을 형성하기 전에 세 노드 모두를 기다림:
+3노드 voting 클러스터 — 각 노드가 다른 노드를 시드로 나열하고 쿼럼을 형성하기 전에 세 노드 모두를 기다림. 모든 노드가 동일한 `trusted_peer_keys` 맵과 자체 개인 키를 가집니다:
 
 ```yaml
 cluster:
@@ -409,12 +460,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Gossip 전용 클라이언트 — 명명/메시징을 위해 클러스터에 참여하지만 Raft를 실행하지 않음:
+Gossip 전용 클라이언트 — 명명/메시징을 위해 클러스터에 참여하지만 Raft를 실행하지 않음. 여전히 자체 아이덴티티가 필요하며 모든 노드의 신뢰 맵에 나타나야 합니다:
 
 ```yaml
 cluster:
@@ -422,8 +479,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
-  raft:
-    role: client
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
 ```
 
 ## LSP

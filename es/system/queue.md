@@ -116,7 +116,7 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
 |-------|------|-------------|-------------|
 | `config` | ID de Registro | requerido | Recurso `config.aws` que provee región y credenciales |
 | `endpoint` | string | - | URL de endpoint personalizado (LocalStack, ElasticMQ); omitir para AWS real |
-| `message_retention_period` | int | `345600` (4d) | Retención a nivel de cola en segundos (60–1209600) |
+| `message_retention_period` | int | - | Retención a nivel de cola en segundos (60–1209600), establecida como atributo de la cola al crearla. Omita para dejar el valor predeterminado de AWS de 345600 (4 días). |
 | `default_delay_seconds` | int | `0` | Retardo de entrega por defecto aplicado en CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | Desactiva verificación de checksum de mensajes SQS al enviar/recibir |
 | `use_fips` | bool | `false` | Usar endpoints conformes a FIPS |

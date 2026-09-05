@@ -212,8 +212,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
 | `network` | string | 자식의 아웃바운드 연결에 사용할 `network.*` 엔트리의 레지스트리 ID |
+| `terminal` | string | 자식에 가상 터미널을 붙이는 뷰포트 grant |
 
 **권한:** "context"에 대한 `process.context`; 네트워크를 선택하면 해당 네트워크 ID에 대한 `network.select`가 추가로 필요합니다.
+
+### 터미널 연결
+
+`terminal` grant는 `viewport:grant()`에서 얻으며 자식에게 자체 터미널 포트를 부여하므로, 자식은 터미널 호스트에서와 똑같이 [TTY](lua/system/tty.md) 모듈을 사용할 수 있습니다:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+grant는 일회성이며 승인 시점에 소비됩니다: 시작이 거부되면 grant는 해석되지 않은 채 남아 재사용할 수 있고, 포트를 해석한 자식은 이를 영구적으로 소비하며, 터미널 연결을 지원하지 않는 호스트는 옵션을 무시하는 대신 스폰을 거부합니다. 스폰하는 프로세스는 자신이 만든 뷰포트를 통해 자식의 프레임을 계속 읽습니다. [Terminal](system/terminal.md#composable-terminals)을 참조하세요.
 
 ### SpawnBuilder 메서드
 

@@ -67,6 +67,8 @@ Execucoes WASM herdam o contexto de seguranca do chamador por padrao:
 
 Capacidades do host sao opt-in atraves de imports explicitos. Cada entrada declara exatamente quais interfaces WASI precisa (`wasi:cli`, `wasi:filesystem`, etc.), limitando a superficie de acesso do modulo.
 
+Um guest que importa `funcs` pode chamar de volta o registry. Cada chamada e verificada pela politica como `funcs.call` contra o ID alvo, entao o conjunto alcancavel e exatamente o que o escopo herdado ja permite. Conexoes de socket sao autorizadas da mesma forma, pelo [servico de rede](system/network.md), contra as permissoes `socket.*`.
+
 ## Veja Tambem
 
 - [Funcoes](wasm/functions.md) - Configuracao de entradas de funcoes WASM

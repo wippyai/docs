@@ -48,6 +48,40 @@ Cada tabla de módulo contiene:
 | `description` | string | Descripción del módulo |
 | `class` | string[] | Etiquetas de clasificación del módulo |
 
+## Fuentes de Despliegue
+
+La sub-tabla `system.source` lee la línea base de despliegue normalizada: el conjunto de entradas producido por las fuentes con las que se ensambló la aplicación, antes de aplicar cualquier historial del registro.
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**Devuelve:** `table, error`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `owners` | string[] | Propietarios de fuente con autoridad sobre las entradas de la línea base |
+| `entries` | table[] | Entradas de la línea base con `id`, `kind`, `meta`, `data` |
+
+`owners` viene ordenado con el propietario de la aplicación primero y luego el resto alfabéticamente. El propietario de la aplicación es la cadena `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+La carga se toma de una única generación estable de fuentes, de modo que las entradas y los propietarios siempre describen la misma línea base. Las rutas del sistema de archivos detrás de cada fuente son privadas del runtime y no se exponen; una carga fallida reporta un error interno genérico en vez de filtrar la ruta subyacente.
+
+**Permiso:** `system.read` sobre `sources`
+
 ## Estadísticas de Memoria
 
 Obtener estadísticas detalladas de memoria:
@@ -426,6 +460,7 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 | `system.read` | `cwd` | Leer directorio de trabajo |
 | `system.read` | `hosts` | Listar hosts / procesos del host |
 | `system.read` | `modules` | Listar módulos cargados |
+| `system.read` | `sources` | Cargar la línea base de fuentes de despliegue |
 | `system.read` | `supervisor` | Leer estado del supervisor |
 | `system.read` | `node` | Leer identidad de este nodo |
 | `system.read` | `cluster` | Leer membresía del cluster y líder |

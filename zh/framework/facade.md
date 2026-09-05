@@ -83,7 +83,7 @@ entries:
 | Parameter | 范围 | Default | 说明 |
 |-----------|------|---------|------|
 | `custom_css` | global | Google Fonts import | 在每一层注入的 CSS |
-| `css_variables` | global | `{}` | CSS 自定义属性的 JSON 映射 |
+| `css_variables` | global | `{}` | 任意 CSS 自定义属性的 JSON 映射；为 Auto 和强制模式编译，并桥接到组件 shadow root 中。 |
 | `icon_sets` | global | `[]` | Iconify 图标集 URL |
 | `host_custom_css` | host | `""` | 仅用于 host 外壳的 CSS |
 | `host_css_variables` | host | `{}` | 仅用于 host 的 CSS 自定义属性 |

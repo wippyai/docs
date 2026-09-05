@@ -20,6 +20,8 @@ app:templates             → Conjunto de templates
 
 Cada entrada tem um `ID` (formato namespace:nome), um `kind` que determina seu handler, campos `meta` arbitrários, e `data` específico do kind.
 
+Além desse conteúdo autorado, o registry mantém sua própria proveniência para cada entrada: o `owner`, ou seja, a origem de deployment de onde a entrada veio, e `root`, que marca uma declaração de dependência selecionada pelo deployment. Esse estado é atribuído pelo registry, não escrito pelo autor da entrada, e é mantido separado de `meta` para que os dois nunca sejam confundidos. Ele é lido através da API de estado do snapshot, e não pelas APIs comuns de entrada — veja [Módulo Registry](lua/core/registry.md#snapshot-state).
+
 ## Handlers de Kind
 
 Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `sql.database` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guides/entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internals/kinds.md) para implementar handlers.

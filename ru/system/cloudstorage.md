@@ -6,7 +6,7 @@ description: "<secondary-label ref='external'/"
 # Облачное хранилище
 <secondary-label ref="external"/>
 
-S3-совместимое объектное хранилище с presigned URLs.
+S3-совместимое объектное хранилище с presigned URLs, multipart-загрузками и чтением по диапазонам.
 
 ## Типы записей
 
@@ -75,9 +75,32 @@ S3-совместимое объектное хранилище с presigned URL
 
 При указании endpoint автоматически включается path-style доступ.
 
+## Multipart-загрузки
+
+Presigned multipart-загрузки — это возможность провайдера, а не функция среды исполнения. Тип `cloudstorage.s3` их реализует; провайдер, не поддерживающий протокол multipart, завершает `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` и `abort_multipart_upload` ошибкой `errors.UNAVAILABLE`.
+
+Части загрузки, которая так и не была завершена или отменена, остаются в хранилище и тарифицируются. Приложения отменяют загрузку на каждом пути сбоя, но упавший клиент не оставляет никого, кто выполнит эту отмену. Настройте на бакете правило жизненного цикла `AbortIncompleteMultipartUpload` в качестве подстраховки:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Чтение по диапазонам
+
+`open_reader` читает объект через ranged GET и закрепляет ETag объекта заголовком `If-Match` при каждом чтении. Провайдер, не возвращающий ETag при первичном stat, завершает вызов ошибкой `errors.UNAVAILABLE`, а провайдер, игнорирующий `If-Match`, лишает защиты от перезаписи — тогда чтение не сможет обнаружить, что смешало два поколения объекта.
+
 ## Lua API
 
-См. [Модуль Cloud Storage](lua/storage/cloud.md) для операций (list, upload, download, delete, presigned URLs).
+См. [Модуль Cloud Storage](lua/storage/cloud.md) для операций (list, upload, download, delete, presigned URLs, multipart-загрузки, чтение по диапазонам).
 
 ## См. также
 

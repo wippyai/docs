@@ -32,7 +32,9 @@ modules:
 | `directories.src` | Donde reside tu codigo fuente (por defecto: `./src`) |
 | `modules[].name` | Identificador del modulo en formato `org/module` |
 | `modules[].version` | Version semantica fijada |
-| `modules[].hash` | Hash de contenido para verificacion de integridad |
+| `modules[].hash` | Digest del artefacto con el que debe coincidir el pack descargado; un valor hexadecimal sin prefijo se lee como `sha256` |
+| `modules[].root` | Marca la raiz de despliegue seleccionada; a lo sumo un modulo puede llevarlo |
+| `options.unpack_modules` | Extraer los packs en directorios en lugar de cargarlos como archivos `.wapp` (por defecto: `false`) |
 
 ### wippy.yaml
 
@@ -96,10 +98,23 @@ entries:
 
 - Cada modulo se resuelve contra la **interseccion de todos los rangos declarados** en el grafo de dependencias. Los rangos incompatibles (conflictos de diamante) hacen fallar la resolucion con un error explicito en lugar de elegir silenciosamente un lado.
 - Las dependencias se resuelven a partir de sus rangos declarados, no de pins resueltos previamente.
-- **Las declaraciones raiz ganan sobre las transitivas**: cuando tu app y una dependencia traen el mismo modulo o requirement, tu declaracion tiene prioridad. Una entrada de dependencia que lleva `meta.module` es transitiva salvo que se marque explicitamente como raiz — las aplicaciones publicadas conservan como raices las dependencias declaradas en su fuente.
+- **Las declaraciones raiz ganan sobre las transitivas**: cuando tu app y una dependencia traen el mismo modulo o requirement, tu declaracion tiene prioridad.
 - El mismo componente puede declararse como dependencia raiz solo una vez — una declaracion duplicada se rechaza con un error de conflicto. Actualiza la dependencia existente en su lugar.
 
+Dos fallos de resolucion se reportan de forma distinta. Una expresion de restriccion que ninguna release podria satisfacer jamas — la interseccion de los rangos vivos esta vacia — es un conflicto, y el error nombra el modulo y cada solicitante que aporto un rango. Un conjunto de rangos valido para el que el hub no publica actualmente ninguna version coincidente es en cambio un fallo de disponibilidad: una release posterior puede volverlo resoluble sin cambiar ninguna declaracion.
+
 El runtime persiste cada grafo resuelto en su historial del registro y lo reproduce en el arranque en lugar de volver a resolver, de modo que una aplicacion desplegada arranca exactamente con las versiones que se resolvieron cuando se aplico el cambio de dependencias. `wippy.lock` sigue siendo la instantanea portable para proyectos fuente.
+
+### Procedencia de las entradas
+
+La procedencia pertenece al registro, no a los metadatos de la entrada. Cuando se cargan las entradas, el registro estampa cada una con la fuente de despliegue que la suministro:
+
+| Campo | Descripcion |
+|-------|-------------|
+| `registry.owner` | Nombre del modulo (`org/module`) que suministro la entrada; vacio para el codigo fuente de la aplicacion |
+| `registry.root` | Se establece en las entradas `ns.dependency` suministradas por la raiz de despliegue, marcandolas como declaraciones raiz |
+
+Los autores de entradas nunca escriben estos campos; se asignan durante la carga y no pueden falsificarse desde un `_index.yaml`. Inspeccionalos con `wippy registry list --registry-meta --json`.
 
 ## Flujo de Trabajo
 
@@ -182,12 +197,17 @@ Con la extraccion habilitada:
 .wippy/
   vendor/
     acme/
+      http-v1.2.0.wapp
       http/
         wippy.yaml
         src/
           _index.yaml
           ...
 ```
+
+La extraccion nunca descarta el pack. El `.wapp` canonico verificado permanece junto al directorio extraido porque es la unica evidencia direccionada por contenido del modulo, y la materializacion y reparacion de artefactos leen los recursos desde el. El `.wapp` es lo que comprueba la instalacion: un directorio cuyo pack falta cuenta como no instalado, y el modulo se descarga de nuevo. Cada instalacion extrae el directorio de nuevo desde el archivo verificado, asi que las ediciones manuales sobre un directorio vendorizado no sobreviven.
+
+Los modulos resueltos desde un [reemplazo de workspace](#local-development-with-replacements) nunca se descargan ni se vendorizan; se cargan desde la ruta local.
 
 ## Desarrollo Local con Reemplazos
 
@@ -206,7 +226,11 @@ workspace:
 wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 ```
 
-Las claves son `org/module`, los valores son directorios (las rutas relativas se resuelven contra el directorio del primer archivo `--config`; la ruta debe existir y ser un directorio). Establecer un reemplazo en `null` desactiva uno heredado de una capa de configuracion anterior o de un perfil. Los reemplazos tambien pueden vivir dentro de un [perfil](guides/configuration.md#profiles) para que se activen solo con `--profile workspace`.
+Las claves son `org/module`, los valores son directorios (las rutas relativas se resuelven contra el directorio del primer archivo `--config`). Establecer un reemplazo en `null` desactiva uno heredado de una capa de configuracion anterior o de un perfil. Los reemplazos tambien pueden vivir dentro de un [perfil](guides/configuration.md#profiles) para que se activen solo con `--profile workspace`.
+
+Se exige que la ruta exista, y que sea un directorio, solo para un modulo que el grafo del lock realmente selecciona. Un reemplazo declarado para un modulo del que nada depende es una entrada de resolucion, no de arranque: puede apuntar a un directorio que no esta descargado en esta maquina sin hacer fallar la validacion.
+
+Un reemplazo cambia de donde proviene el codigo fuente de un modulo, no que release se eligio. La ruta de carga conserva la version y el digest que el lock selecciono para ese modulo y se marca como reemplazo; las entradas cargadas desde ella eclipsan a las vendorizadas con el mismo ID. Cuando se declara un reemplazo para un modulo del que el lock no fija version, la resolucion le pide al hub una version de release, y hasta que una evidencia mas fuerte seleccione una, mantiene una version cero solo local.
 
 Los reemplazos de workspace afectan el grafo de carga en el arranque y nunca se escriben en `wippy.lock`. Los cambios en el codigo fuente local se reconcilian directamente, sin contactar al hub. Los globs `exclude:` del `wippy.yaml` fuente del modulo tambien se aplican a los directorios de reemplazo, tanto al cargar entradas como al calcular el hash del contenido.
 
@@ -224,10 +248,25 @@ Los modulos con reemplazos activos omiten su ruta de vendor.
 
 ## Verificacion de Integridad
 
-Cada modulo en el archivo de bloqueo tiene un hash de contenido. Durante la instalacion, los modulos descargados se verifican contra sus hashes esperados. Los modulos con discrepancias se rechazan y se vuelven a descargar desde el registro.
+Cada modulo del archivo de bloqueo lleva un digest de artefacto, y un modulo sin el no puede instalarse en absoluto.
+
+Las descargas se hacen por etapas: el pack se escribe en un archivo temporal junto a su ubicacion final, se verifica contra el digest fijado en `wippy.lock` y contra el digest que el hub sirvio con la URL de descarga (mas el tamano servido), y solo entonces se renombra a su lugar. Un archivo en etapas que falla la verificacion se elimina.
+
+Una discrepancia de digest es un fallo duro y no reintentable — `PermissionDenied`, "module integrity verification failed" — y se lanza de la misma forma en la instalacion y en el arranque, donde los packs ya vendorizados se reverifican antes de cargar las entradas. Nada reintenta, vuelve a descargar sobre la discrepancia, ni recurre al contenido servido.
+
+La misma comprobacion protege la resolucion. Cuando el hub sirve un manifiesto cuyo digest difiere del que fija el lock, la cache de manifiestos se refresca una vez y se vuelve a comparar; si sigue en desacuerdo, la resolucion falla nombrando ambos digests.
+
+Los directorios extraidos llevan su propio digest, tamano y digest de arbol registrados, y se reverifican contra los valores registrados, de modo que un arbol vendorizado modificado se detecta en lugar de cargarse.
+
+Las fuentes de reemplazo tambien estan direccionadas por contenido. El runtime calcula el digest del arbol de reemplazo y lo rechaza cuando el grafo resuelto ya fija un digest o un tamano distinto para ese modulo, de modo que un reemplazo no puede sustituir silenciosamente contenido con el que no coincide.
+
+## Artefactos de Tiempo de Construccion
+
+Un modulo puede incluir un recurso de sistema de archivos marcado con `meta.artifact.format` que los consumidores materializan en disco en lugar de leerlo en tiempo de ejecucion. Las variantes completas y dirigidas de `wippy install` y `wippy update`, el arranque en frio y las operaciones de dependencias en runtime reconcilian esas salidas como parte de la misma transaccion que cambia el grafo de modulos; `artifact.materialization_root` establece la raiz de salida. Ver [Artefactos de tiempo de construccion](guides/artifacts.md).
 
 ## Ver Tambien
 
+- [Artefactos de tiempo de construccion](guides/artifacts.md) - Declaracion, materializacion y reconciliacion de recursos de artefactos
 - [Construccion de Componentes](guides/components.md) - El lado del autor: `ns.requirement` y el suministro de valores via `parameters`
 - [CLI](guides/cli.md) - Referencia de comandos
 - [Publicacion](guides/publishing.md) - Publicacion de modulos en el hub

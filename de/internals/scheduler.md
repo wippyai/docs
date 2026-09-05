@@ -120,9 +120,25 @@ Jeder Prozess hat eine MPSC (Multi-Producer, Single-Consumer) Event-Queue:
 - **Producer**: Command-Handler (`CompleteYield`), Nachrichtensender (`Send`)
 - **Consumer**: Worker draint Events in `Step()`
 
+Ein Generationszähler schützt die Queue. Jeder Producer bindet sich an die Generation, die er beobachtet hat; `Reset` erhöht sie, sodass ein Sender aus einer früheren Ausführung nicht in eine wiederverwendete Queue pushen kann.
+
+Gewöhnlicher Event-Verkehr ist unbegrenzt. Die Verrechnung ist pro Nachricht opt-in: Eine Nachricht, die `MaxItems` oder `MaxBytes` trägt, wird gegen ein Budget pro Topic zugelassen, und das strengste für ein Topic gesehene Limit gewinnt. Eine Nachricht hält ihre Reservierung, bis der konsumierende Prozess sie freigibt, und Terminals verbrauchen nie Backlog-Kapazität.
+
+Ist das Budget eines Topics erschöpft, hängt die Queue an der Stelle der überlaufenden Nachricht eine synthetische Nachricht an, die `message queue limit exceeded` gefolgt von einem Terminal-Payload trägt. Weiterer Verkehr auf diesem Topic wird verworfen, bis die Queue zurückgesetzt wird, sodass eine begrenzte Subscription mit einem Fehler-Terminal endet statt unbegrenzt zu wachsen.
+
 ## Nachrichtenrouting
 
-Der Scheduler implementiert `relay.Receiver` um Nachrichten an Prozesse zu routen. Wenn `Send()` aufgerufen wird, schlägt er die Ziel-PID in der `byPID`-Map nach, pusht die Nachricht als Event in die Prozess-Queue und weckt den Prozess wenn idle durch Pushen in die globale Queue.
+Der Scheduler implementiert `relay.Receiver` um Nachrichten an Prozesse zu routen. `Send` delegiert an `SendContext` mit einem Background-Kontext; `SendContext` prüft die Cancellation vor dem Nachschlagen des Ziels und vor der Zulassung, weil die Zulassung selbst nicht blockiert und nach Erfolg nicht rückgängig zu machen ist.
+
+Beide schlagen die Ziel-PID in der `byPID`-Map nach und pushen das Package unter der aktuellen Generation des Prozessors in die Prozess-Queue. Die Zulassung hat drei Ausgänge:
+
+| Ergebnis | Bedeutung | Package-Ownership |
+|----------|-----------|-------------------|
+| Accepted | Die Queue hat das Package übernommen | Queue, vom Scheduler nach der Verarbeitung freigegeben |
+| Dropped | Ein Budget pro Topic ist übergelaufen und die Queue hat nichts behalten außer ihrem eigenen Overflow-Terminal | Aufrufer, sofort freigegeben |
+| Rejected | Die Queue ist geschlossen oder die Generation ist veraltet | Aufrufer; `SendContext` gibt `ErrProcessClosed` zurück |
+
+Ein zugelassener oder verworfener Push weckt anschließend den Prozess, wenn er idle oder blockiert ist. Die Neueinreihung läuft über injectOrGlobal, das in die Worker-eigene Inject-Queue des letzten Workers pusht, wenn der Prozess eine bekannte Worker-Affinität hat, und sonst auf die globale Queue zurückfällt.
 
 ## Shutdown
 

@@ -116,7 +116,7 @@ TLS 块：
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,7 +126,7 @@ TLS 块：
 |------|------|--------|------|
 | `config` | Registry ID | 必需 | 提供区域和凭证的 `config.aws` 资源 |
 | `endpoint` | string | - | 自定义 endpoint URL（LocalStack、ElasticMQ）；真实 AWS 时省略 |
-| `message_retention_period` | int | `345600`（4天）| 队列级保留时间（秒）（60–1209600）|
+| `message_retention_period` | int | - | 队列级保留时间（秒）（60–1209600），在创建队列时作为队列属性设置。省略则保留 AWS 默认值 345600（4 天）。|
 | `default_delay_seconds` | int | `0` | CreateQueue 时应用的默认投递延迟（0–900）|
 | `disable_message_checksum_validation` | bool | `false` | 在发送/接收时禁用 SQS 消息校验和检查 |
 | `use_fips` | bool | `false` | 使用 FIPS 兼容的 endpoint |

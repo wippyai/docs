@@ -367,12 +367,25 @@ end
 
 ### Protecao SSRF
 
-Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip`.
+Faixas de IP nao publicas sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip` no endereço:
+
+- loopback, privadas (10.x, 172.16-31.x, 192.168.x), link-local unicast e multicast, e o endereço não especificado
+- NAT de operadora `100.64.0.0/10`, `192.0.0.0/24`, multicast `224.0.0.0/4`, reservadas `240.0.0.0/4`
+- faixas de documentação e benchmarking `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- multicast IPv6 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Erro: not allowed: private IP 192.168.1.1
 ```
+
+A verificação ocorre no momento da conexão, não sobre a string da URL, e cobre todos os endereços para os quais o host resolve. Um hostname que resolve para vários endereços é verificado endereço por endereço: um endereço negado é ignorado e o próximo é tentado, e a requisição só falha quando todos os candidatos são negados ou inalcançáveis. Um hostname público que resolve para um endereço privado é portanto bloqueado exatamente como um IP privado literal.
+
+### Redirecionamentos
+
+Redirecionamentos são seguidos por até 10 saltos; o décimo primeiro falha com `stopped after 10 redirects`.
+
+Cada salto é autorizado por conta própria. Antes de seguir um redirecionamento, o cliente avalia `http_client.request` contra a URL alvo e aplica a verificação de IP privado a ela, então uma URL permitida não pode ser usada para alcançar uma negada por redirecionamento. Um salto que falha em qualquer das verificações aborta a requisição.
 
 Veja [Security Model](system/security.md) para configuração de políticas.
 

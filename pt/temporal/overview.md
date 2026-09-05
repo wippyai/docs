@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### Propagação de Contexto de Segurança
+
+O Wippy propaga o ator e o escopo do chamador para workflows e atividades como um header Temporal assinado. A assinatura é HMAC-SHA256 com uma chave mantida pela entrada do cliente:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `security_hmac_key` | Chave de assinatura codificada em base64; deve decodificar para ao menos 32 bytes |
+| `security_hmac_previous_keys` | Chaves codificadas em base64 ainda aceitas para verificação, para rotação |
+
+Ambos os campos são base64 no YAML porque são campos de bytes. Uma chave com menos de 32 bytes decodificados é rejeitada na validação da configuração, assim como declarar `security_hmac_previous_keys` sem `security_hmac_key`. Novos headers são sempre assinados com `security_hmac_key`; toda chave anterior listada é tentada na verificação, então a rotação é: adicione a nova chave como `security_hmac_key`, mova a antiga para `security_hmac_previous_keys` e remova-a assim que nenhuma execução em andamento a carregue.
+
+**Iniciar um workflow sob um ator ou escopo requer a chave.** Se o chamador tem um contexto de segurança e o cliente não tem chave de assinatura, o header não pode ser assinado e o start falha. Um cliente sem chave só pode iniciar workflows a partir de um contexto que não carregue nem ator nem escopo.
+
+O worker obtém as chaves da entrada de cliente que referencia, portanto um worker herda assinatura e verificação de `client:` sem configurar nada por conta própria. Veja [Workflows](temporal/workflows.md#security-context) e [Atividades](temporal/activities.md).
+
 ## Configuração do Worker
 
 O tipo de entrada `temporal.worker` define um worker que executa workflows e atividades.

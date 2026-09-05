@@ -98,6 +98,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite-Datenbank |
 | `db.sql.postgres` | PostgreSQL-Datenbank |
 | `db.sql.mysql` | MySQL-Datenbank |
+| `db.cdc.postgres` | Postgres-Change-Data-Capture-Quelle (siehe [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | SQLite-Change-Data-Capture-Quelle (siehe [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -303,6 +305,39 @@ Verwenden Sie <code>process.service</code> wenn ein Prozess als überwachter Die
 
 Das Aktualisieren eines laufenden `process.host`-Eintrags skaliert `host.workers` im laufenden Betrieb — laufende Prozesse, PIDs und Queues bleiben erhalten. `host.queue_size`, `host.local_queue_size` und `lifecycle` sind bei der Konstruktion fixiert: Ein Live-Update, das sie ändert, wird abgelehnt, ebenso das Anpassen der Worker-Anzahl auf einem Host, dessen Worker affinitäts-verwaltet sind.
 
+### Prozess-Sicherheit
+
+`process.lua`- und `process.lua.bc`-Einträge akzeptieren einen `security:`-Block auf oberster Ebene. Er ist Teil des Eintrags und gilt daher für jeden Spawn dieses Prozesses, sowohl auf `process.host` als auch auf `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `actor.id` | Akteursidentität, unter der der Prozess läuft; ersetzt den geerbten Akteur |
+| `actor.meta` | Akteursattribute, die Policies auswerten |
+| `policies` | Registry-IDs (`namespace:name`) von Policies, die in den Scope eingefügt werden |
+| `groups` | Registry-IDs von Policy-Gruppen, deren Policies in den Scope eingefügt werden |
+
+Die Auflösung erfolgt beim Start des Prozesses und ist atomar: Lässt sich eine aufgeführte Policy oder Gruppe nicht auflösen, schlägt der Spawn fehl und es wird kein unvollständiger Kontext installiert. Wird `actor` weggelassen, wird der Akteur des spawnenden Prozesses geerbt; werden `policies` und `groups` beide weggelassen, wird dessen Scope geerbt. `function.lua`, `function.lua.bc`, `process.lua` und `process.lua.bc` akzeptieren den Block alle.
+
+Ein Kommando-Eintrag kann zusätzlich `meta.command.security` deklarieren, was nur gilt, wenn der Eintrag als CLI-Kommando gestartet wird — siehe [Kommando-Sicherheit](guides/cli.md#command-security). Auf gewöhnliche Spawns hat es keine Auswirkung.
+
+Siehe [Sicherheit](system/security.md).
+
 ## Temporal (Workflows)
 
 | Kind | Beschreibung |
@@ -501,7 +536,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Policy-Gruppen werden von den Policies selbst gebildet: Eine Policy führt unter `groups:` die Gruppen-IDs auf, zu denen sie gehört, und eine Gruppe ist die Menge der Policies, die sie nennen. Es gibt keinen eigenen Gruppen-Entry-Typ. Gruppen-IDs sind Registry-IDs — ein bloßer Name wird im Namespace der deklarierenden Policy aufgelöst, aus `operators` oben wird also `app.security:operators`, wenn es im Namespace `app.security` deklariert wird. Einträge referenzieren Gruppen über ihren vollständigen `namespace:name`.
 
 **Lua-API:** Siehe [Sicherheitsmodul](lua/security/security.md)
 
@@ -622,11 +661,24 @@ Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn
 | `process.wasm` | WebAssembly-Prozess |
 
 ```yaml
+# WAT-Text ist Inline-Quellcode
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # oder wasi-http
+
+# Binäres WASM wird aus einem Dateisystem-Eintrag geladen und per Hash verifiziert
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # oder wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` und `process.wasm` nehmen `fs`, `path` und `hash` — es gibt kein `source`-Feld auf einem Binäreintrag; `source` gehört ausschließlich zu `function.wat`. `hash` ist erforderlich und muss die Form `sha256:<hex>` haben; das Modul wird abgelehnt, wenn die Bytes nicht übereinstimmen.
 
 Siehe [WASM-Übersicht](wasm/overview.md).
 

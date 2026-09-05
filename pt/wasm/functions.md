@@ -201,14 +201,26 @@ O transporte `wasi-http` mapeia requisicoes HTTP para WASM e escreve os resultad
 
 ## Limites de Execucao
 
-Defina um tempo maximo de execucao para uma funcao:
+O bloco `limits` limita o tempo de execucao de uma funcao, a memoria de seus workers quentes e os sockets que ela pode abrir:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-Quando o limite e excedido, a execucao e cancelada e um erro e retornado.
+| Campo | Padrao | Descricao |
+|-------|--------|-----------|
+| `max_execution_ms` | ilimitado | Orcamento de tempo real para uma chamada. Quando excedido, a execucao e cancelada e um erro e retornado. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Gatilho de reciclagem pos-chamada. Um worker quente cuja memoria linear excede esse valor e aposentado apos a chamada em vez de reutilizado. Um `0` explicito desativa a reciclagem por memoria retida. |
+| `retained_memory_check_interval` | `16` com o limite embutido, a cada chamada com um limite explicito | Numero de chamadas entre inspecoes de memoria pos-chamada. |
+| `max_open_sockets` | `16` | Conexoes abertas simultaneamente por instancia para o host `socket`. |
+| `socket_timeout_ms` | `30000` | Prazo para uma conexao `socket` e para cada envio/recebimento. |
+
+Valores negativos sao rejeitados no boot.
 
 ## Configuracao WASI
 
