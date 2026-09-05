@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code>はログ出力をイベントバスとターミナルから遠ざけます。サーフェスを所有するプロセスは完全なフレームを発行するため、同じターミナルへ書き込む他のものはそれを壊してしまいます。
+<code>hide_logs: true</code>はログ出力をターミナルではなくイベントバスへリダイレクトします。サーフェスを所有するプロセスは完全なフレームを発行するため、同じターミナルへ書き込む他のものはそれを壊してしまいます。
 </note>
 
 ## ステップ2: 入力ループ

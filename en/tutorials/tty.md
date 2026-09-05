@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code> keeps log output off the event bus and out of the terminal. A process that owns a surface publishes complete frames, so anything else writing to the same terminal corrupts them.
+<code>hide_logs: true</code> redirects log output to the event bus instead of the terminal. A process that owns a surface publishes complete frames, so anything else writing to the same terminal corrupts them.
 </note>
 
 ## Step 2: The Input Loop

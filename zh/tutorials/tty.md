@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code> 让日志输出既不进入事件总线，也不进入终端。占有某个 surface 的进程发布的是完整帧，因此任何其他向同一终端写入的东西都会破坏它们。
+<code>hide_logs: true</code> 将日志输出重定向到事件总线而不是终端。占有某个 surface 的进程发布的是完整帧，因此任何其他向同一终端写入的东西都会破坏它们。
 </note>
 
 ## 步骤 2：输入循环

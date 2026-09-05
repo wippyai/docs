@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code> mantiene la salida de logs fuera del bus de eventos y fuera del terminal. Un proceso que posee una superficie publica marcos completos, así que cualquier otra cosa que escriba en el mismo terminal los corrompe.
+<code>hide_logs: true</code> redirige la salida de logs al bus de eventos en lugar del terminal. Un proceso que posee una superficie publica marcos completos, así que cualquier otra cosa que escriba en el mismo terminal los corrompe.
 </note>
 
 ## Paso 2: El Bucle de Entrada

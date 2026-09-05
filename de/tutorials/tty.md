@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code> hält Log-Ausgaben vom Ereignisbus und aus dem Terminal fern. Ein Prozess, der eine Surface besitzt, veröffentlicht vollständige Frames, sodass alles andere, was auf dasselbe Terminal schreibt, sie beschädigt.
+<code>hide_logs: true</code> leitet Log-Ausgaben auf den Ereignisbus um statt ins Terminal. Ein Prozess, der eine Surface besitzt, veröffentlicht vollständige Frames, sodass alles andere, was auf dasselbe Terminal schreibt, sie beschädigt.
 </note>
 
 ## Schritt 2: Die Eingabeschleife

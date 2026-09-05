@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code>는 로그 출력을 이벤트 버스와 터미널 밖으로 유지합니다. 서피스를 소유한 프로세스는 완전한 프레임을 발행하므로, 같은 터미널에 쓰는 다른 무언가가 있으면 프레임이 손상됩니다.
+<code>hide_logs: true</code>는 로그 출력을 터미널 대신 이벤트 버스로 리다이렉트합니다. 서피스를 소유한 프로세스는 완전한 프레임을 발행하므로, 같은 터미널에 쓰는 다른 무언가가 있으면 프레임이 손상됩니다.
 </note>
 
 ## 2단계: 입력 루프

@@ -60,7 +60,6 @@ entries:
   - name: workers
     kind: process.host
     host:
-      max_processes: 4
       workers: 2
     lifecycle:
       auto_start: true
@@ -98,7 +97,7 @@ entries:
 ```
 
 <note>
-<code>hide_logs: true</code> mantém a saída de log fora do barramento de eventos e fora do terminal. Um processo que é dono de uma surface publica frames completos, então qualquer outra coisa escrevendo no mesmo terminal os corrompe.
+<code>hide_logs: true</code> redireciona a saída de log para o barramento de eventos em vez do terminal. Um processo que é dono de uma surface publica frames completos, então qualquer outra coisa escrevendo no mesmo terminal os corrompe.
 </note>
 
 ## Passo 2: O Loop de Entrada
