@@ -248,11 +248,11 @@ Modules with active replacements skip their vendor path.
 
 ## Integrity Verification
 
-Every module in the lock file carries an artifact digest, and a module without one cannot be installed at all.
+Every module in the lock file carries an artifact digest. Boot refuses to load a module whose lock entry has none; `wippy install` accepts such an entry and records the digest the hub serves with the download.
 
-Downloads are staged: the pack is written to a temporary file next to its final location, verified against both the digest pinned in `wippy.lock` and the digest the hub served with the download URL (plus the served size), and only then renamed into place. A staged file that fails verification is deleted.
+At boot, downloads are staged: the pack is written to a temporary file next to its final location, verified against both the digest pinned in `wippy.lock` and the digest the hub served with the download URL (plus the served size), and only then renamed into place. A staged file that fails verification is deleted. `wippy install` renames the download into its vendor path before verifying it, checks it against the served digest and size only, deletes it on failure, and replaces a lock digest that differs from the served one rather than enforcing it.
 
-A digest mismatch is a hard, non-retryable failure — `PermissionDenied`, "module integrity verification failed" — and it is raised the same way at install time and at boot, where already-vendored packs are re-verified before entries are loaded. Nothing retries, re-downloads over the mismatch, or falls back to the served content.
+A digest mismatch is a hard, non-retryable failure. At boot it is `PermissionDenied`, "module integrity verification failed", raised for a fresh download and for an already-vendored pack, which is re-verified against the lock digest before entries are loaded. `wippy install` reports it as `Internal`: "failed to store module" wrapping "verify cached WAPP: digest mismatch" for a pack already in the vendor directory, and "failed to download module" wrapping "verify downloaded WAPP: digest mismatch" for a fresh download. Nothing retries, re-downloads over the mismatch, or falls back to the served content.
 
 The same check guards resolution. When the hub serves a manifest whose digest differs from the one the lock pins, the manifest cache is refreshed once and re-compared; if it still disagrees, resolution fails naming both digests.
 

@@ -190,20 +190,20 @@ return result
 Write data to process stdin.
 
 ```lua
-local proc = executor:exec("sort")
+local proc = executor:exec("head -n 3")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
 proc:write_stdin("banana\napple\ncherry\n")
 
-local sorted = stdout:read()
+local lines = stdout:read()
 
 proc:wait()
 stdout:close()
 ```
 
-Each call writes the given bytes and returns. Stdin stays open for the life of the process; a command that reads until end of input finishes when the process is signalled or closed.
+Each call writes the given bytes and returns. There is no method that closes stdin: it stays open for the life of the process, so a command that reads until end of input, such as `sort`, never sees EOF and finishes only when the process is signalled or closed. Pick a command that stops reading on its own, as `head -n 3` does, or run one that needs EOF behind a shell pipeline that supplies its input.
 
 ## signal / close
 

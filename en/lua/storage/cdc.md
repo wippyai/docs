@@ -122,7 +122,7 @@ Each message received on the channel is a change table:
 | `schema` | Table schema |
 | `table` | Table name |
 | `relation` | Qualified relation name |
-| `before` | Row state before the change (`update`, `delete`; requires the `before_images` capability) |
+| `before` | Row state before the change (`update`, `delete`). A full row image is guaranteed only when the source has the `before_images` capability; `db.cdc.postgres` fills it from whatever old tuple the WAL carries, which the table's `REPLICA IDENTITY` controls |
 | `after` | Row state after the change (`insert`, `update`, `snapshot`; absent for `delete`) |
 | `source` | Source entry ID |
 | `source_id` | Source entry ID, as a registry ID |
@@ -168,7 +168,7 @@ Branch on `capabilities` rather than on `kind`:
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- delete events carry no row image; keep your own last-known state
+    -- before is not a guaranteed full row image; keep your own last-known state
 end
 ```
 

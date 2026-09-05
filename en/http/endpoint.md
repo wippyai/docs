@@ -58,7 +58,7 @@ Method names are uppercase; `method` is required, and any value outside this set
   func: proxy_handler
 ```
 
-For a normal endpoint the router also registers an `OPTIONS` handler on the same path, so CORS middleware can answer a preflight without the endpoint running. A `*` endpoint gets no such handler: it already matches `OPTIONS`, so preflight requests reach the endpoint function itself, which must answer them.
+For a normal endpoint the router also registers an `OPTIONS` handler on the same path, so CORS middleware can answer a preflight without the endpoint running. A `*` endpoint gets no such handler: it already matches `OPTIONS`. Router middleware still wraps it, so configured CORS middleware answers an allowed preflight with `204` before the endpoint runs; any other `OPTIONS` request reaches the endpoint function itself, which must answer it.
 
 ## Path Parameters
 

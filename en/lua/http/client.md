@@ -384,7 +384,7 @@ The check runs at dial time, not on the URL string, and it covers every address 
 
 ### Redirects
 
-Redirects are followed up to 10 hops; the eleventh fails with `stopped after 10 redirects`.
+Up to nine redirects are followed; the tenth fails with `stopped after 10 redirects`, a count that includes the original request.
 
 Every hop is authorized on its own. Before following a redirect the client evaluates `http_client.request` against the target URL and applies the private-IP check to it, so a permitted URL cannot be used to reach a denied one by redirection. A hop that fails either check aborts the request.
 

@@ -475,7 +475,7 @@ local result, err = funcs.new()
 | Scope | Yes - passes to child calls |
 | Strict mode | No - application-wide |
 
-Functions inherit the caller's security context. A spawned process does not: it starts on a fresh frame, and its context comes from the `security:` block on its own entry. When that entry declares no block, the process runs with no actor and no scope, which strict mode denies. A declared block that omits `actor` inherits the spawner's actor, and one that omits both `policies` and `groups` inherits the spawner's scope — so "start fresh" means "no ambient inheritance", not "cannot be given a context".
+Functions and spawned processes both inherit the caller's security context. A spawned process starts on a frame forked from the spawner's, which carries the spawner's actor and scope, and the `security:` block on its own entry modifies that inherited context. When the entry declares no block, the process keeps the spawner's actor and scope unchanged; a spawner that has neither produces a child with neither, which strict mode denies. A declared block that names an `actor` replaces the inherited actor, and its `policies` and `groups` are merged into the inherited scope; a block that omits `actor` keeps the spawner's actor, and one that omits both `policies` and `groups` keeps the spawner's scope.
 
 ## Declaring Security on Entries
 
@@ -606,7 +606,7 @@ Policy evaluation governs what code may do. Three separate mechanisms govern wha
 
 ### Module Integrity
 
-Every module in `wippy.lock` carries an artifact digest. Downloads are staged, verified against both the digest pinned in the lock and the digest the hub served, and only then moved into place; already-vendored packs are re-verified at boot. A mismatch is a `PermissionDenied` failure that is not retried and not worked around — the module is not loaded. Extracted module directories carry their own recorded digest and tree digest and are checked the same way, so a modified vendored tree is detected rather than trusted. See [Dependency Management](guides/dependency-management.md#integrity-verification).
+Every module in `wippy.lock` carries an artifact digest. At boot, a download is verified against both the digest pinned in the lock and the digest the hub served, and already-vendored packs are re-verified against the lock before they are loaded; a mismatch is a non-retryable integrity failure that is not worked around — the module is not loaded. `wippy install` verifies a fresh download only against the digest and size the hub served, deletes the file and fails on mismatch, and then writes the served digest back into the lock, so a pinned digest is re-established by install rather than enforced by it; only packs already in the vendor directory are checked against the lock's digest. Extracted module directories carry their own recorded digest and tree digest and are checked the same way, so a modified vendored tree is detected rather than trusted. See [Dependency Management](guides/dependency-management.md#integrity-verification).
 
 ### Cluster Internode Identity
 

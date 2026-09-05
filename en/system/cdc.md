@@ -144,7 +144,7 @@ Every source publishes what it guarantees, so consumers branch on capabilities r
 | `capture_resume` | yes, unless `temporary` | no | Source progress survives a reconnect |
 | `replayable` | no | no | Individual subscribers can replay past events |
 | `captures_external_writes` | yes | no | Captures writes made outside this runtime |
-| `before_images` | no | yes | Delivers the pre-change row image |
+| `before_images` | no | yes | Guarantees a full pre-change row image on `update` and `delete` |
 | `coalesced` | no | yes | Repeated writes to a row within a transaction may arrive coalesced |
 
 Capability flags describe source progress, not durable delivery: no driver replays events for an individual subscriber that fell behind or disconnected.

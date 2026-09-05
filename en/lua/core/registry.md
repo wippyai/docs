@@ -264,13 +264,13 @@ return nil, last_err
 - The owner string is required and must not be blank.
 - A changeset must be non-empty and must not name the same entry twice.
 - `create` fails when the ID already exists in durable state or in any overlay.
-- `update` and `delete` only work on entries this owner created.
+- `update` and `delete` only work on entries this owner created; any other ID fails with `errors.NOT_FOUND`.
 - Overlay entries cannot set `dependency_root` or any other registry-owned metadata.
 - Overlay entries cannot use kinds owned by a registry directive, such as `ns.dependency`.
 - A delete that removes an entry a surviving entry depends on is rejected.
 - Dependencies cannot cross overlay owner boundaries, and durable entries cannot depend on overlay entries.
 
-All of these surface as `errors.CONFLICT` or `errors.INVALID`, and none are retryable: only the generation mismatch above is.
+The rest surface as `errors.CONFLICT` or `errors.INVALID`, and none are retryable: only the generation mismatch above is.
 
 **Permissions:** `registry.overlay.get` on the owner to open and read, `registry.overlay.apply` on the owner to write, and `registry.overlay.<create|update|delete>.<kind>` on each entry ID in the changeset.
 

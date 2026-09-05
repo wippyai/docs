@@ -306,13 +306,13 @@ The child publishes into the viewport; the shell learns about it through `update
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-Updates are coalesced watermarks, not an event log: a slow shell gets only the newest one and must call `snapshot()` for the actual rows. Passing the last revision makes `snapshot` return `nil` when nothing changed.
+Updates are coalesced watermarks, not an event log: a slow shell gets only the newest one and must call `snapshot()` for the actual rows. Passing the last revision makes `snapshot` return `nil` when nothing changed. A new revision does not mean the child has drawn: `viewport:resize` bumps it as well, and until the first frame the snapshot carries no rows. That is why `ready` keys on `rows` rather than on the revision.
 
 Input goes the other way through `viewport:send`. Key events pass through unchanged; mouse coordinates have to be moved into the child's one-based space, and events outside the region are dropped:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

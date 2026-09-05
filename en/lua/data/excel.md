@@ -304,7 +304,7 @@ storage:release()
 
 **Returns:** `string, error`
 
-The whole workbook is materialized in memory. Prefer `write_to` for large workbooks, which streams to the writer instead.
+The whole workbook is materialized in memory. `write_to` builds the same in-memory buffer and then copies it to the writer, so it saves the Lua string but does not stream a large workbook.
 
 Calling `bytes()` on a closed workbook returns an `errors.INTERNAL` error.
 
