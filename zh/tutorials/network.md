@@ -185,7 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-使用 `network = nil` 显式选择可清除该次调用的默认值。
 
 ## 权限
 

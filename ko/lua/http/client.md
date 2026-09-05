@@ -168,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | 아니오 | 원본 파일명 |
 | `content` | string | 예* | 파일 내용 |
 | `reader` | userdata | 예* | 대안: 내용용 io.Reader |
-| `content_type` | string | 아니오 | MIME 타입 (기본값: `application/octet-stream`) |
+| `content_type` | string | 아니오 | 현재 무시됨: 이 필드와 무관하게 업로드되는 각 파트는 항상 `Content-Type: application/octet-stream`으로 전송됨 |
 
 *`content` 또는 `reader` 중 하나가 필수입니다.
 
@@ -355,6 +355,7 @@ HTTP 요청은 보안 정책 평가 대상입니다.
 | `http_client.unix_socket` | 소켓 경로 | Unix 소켓 연결 허용/거부 |
 | `http_client.private_ip` | IP 주소 | 사설 IP 범위 접근 허용/거부 |
 | `http_client.insecure_tls` | URL | 안전하지 않은 TLS 허용/거부 (검증 건너뛰기) |
+| `network.select` | 네트워크 엔트리 ID | 요청에 지정된 `overlay_network`를 통한 라우팅 허용/거부 |
 
 ### 접근 확인
 

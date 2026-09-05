@@ -16,7 +16,7 @@ Wippy 是基于 Go 构建的分层系统。组件按依赖顺序初始化，通�
 | 层 | 组件 |
 |-----|------|
 | 应用层 | Lua 进程、函数、工作流 |
-| 运行时层 | Lua 引擎 (gopher-lua)、50+ 模块 |
+| 运行时层 | Lua 引擎 (gopher-lua)、40+ 模块 |
 | 服务层 | HTTP、队列、存储、Temporal |
 | 系统层 | 拓扑、工厂、函数、契约 |
 | 核心层 | 调度器、注册表、分发器、事件总线、中继 |
@@ -42,7 +42,7 @@ Wippy 是基于 Go 构建的分层系统。组件按依赖顺序初始化，通�
 
 ### 阶段 2：组件加载
 
-Loader 通过拓扑排序解析依赖关系，并逐级加载组件。同级组件并行加载。
+Loader 通过拓扑排序解析依赖关系，并逐级加载组件，每次加载一个组件。
 
 核心组件（PIDGen、Dispatcher、Registry、Finder、Supervisor）最先初始化，然后是系统组件（Topology、Lifecycle、Factory、Functions、Contracts）。具体级别在运行时从依赖图中计算，因此顺序会随着组件的添加或移除而自适应调整。
 
@@ -85,7 +85,7 @@ Loader 通过拓扑排序解析依赖关系，并逐级加载组件。同级组�
 |------|------|------|
 | PIDGen | 无 | 进程 ID 生成 |
 | Dispatcher | PIDGen | 命令处理器分发 |
-| Registry | Dispatcher | 条目存储和版本控制 |
+| Registry | Artifact | 条目存储和版本控制 |
 | Finder | Registry | 条目查找和搜索 |
 | Supervisor | Registry | 服务重启策略 |
 | Topology | Supervisor | 进程父/子树 |
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ### 常见主题
 
-主题格式为 `<system>:<kind>`。内置系统发布：
+每个事件都带有一个 `System` 和一个 `Kind`。内置系统发布：
 
 | 系统 | Kind | 用途 |
 |------|------|------|
@@ -137,7 +137,6 @@ sequenceDiagram
 
 - **版本化状态** - 每次变更创建新版本
 - **历史记录** - SQLite 支持的历史记录用于审计追踪
-- **观察** - 监视特定条目的变更
 - **事件驱动** - 在变更时发布事件
 
 ### 条目生命周期
@@ -174,14 +173,14 @@ flowchart LR
         Peer --> Inter[跨节点]
     end
 
-    Local -.- L[同一进程]
-    Peer -.- P[同一集群]
-    Inter -.- I[远程]
+    Local -.- L[本节点]
+    Peer -.- P[已注册的对等接收方]
+    Inter -.- I[集群中的其他节点]
 ```
 
 1. **本地** - 同一节点内的直接投递
-2. **对等** - 转发到集群中的对等节点
-3. **跨节点** - 通过网络路由到远程节点
+2. **对等** - 投递给为该节点 ID 注册的接收方（例如 Temporal worker 这样的外部对等方）
+3. **跨节点** - 回退到集群内节点传输，由集群组件在启动后安装
 
 ### 邮箱
 

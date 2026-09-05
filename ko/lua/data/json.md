@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- 에러 처리
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
     print(err:message())  -- 파싱 에러 상세
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- 이제 안전하게 디코딩
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | 테이블의 혼합 키 타입 | `errors.INTERNAL` | 아니오 |
 | 128 레벨 중첩 초과 | `errors.INTERNAL` | 아니오 |
 | 잘못된 JSON 구문 | `errors.INTERNAL` | 아니오 |
+| 입력이 문자열이 아니거나 빈 문자열 (decode) | `errors.INVALID` | 아니오 |
 | 스키마 컴파일 실패 | `errors.INVALID` | 아니오 |
 | 검증 실패 | `errors.INVALID` | 아니오 |
 

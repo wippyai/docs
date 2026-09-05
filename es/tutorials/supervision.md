@@ -489,6 +489,11 @@ entries:
     method: main
     modules:
       - time
+
+  - name: pool-service
+    kind: process.service
+    process: app.supervisor:pool
+    host: app:processes
     lifecycle:
       auto_start: true
 ```

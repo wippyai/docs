@@ -109,7 +109,7 @@ end
 | `target_pid` | string | erforderlich | Prozess-PID zum Empfangen von Nachrichten |
 | `message_topic` | string | `ws.message` | Topic für Client-Nachrichten |
 | `heartbeat_interval` | duration | - | Heartbeat-Frequenz (z.B. `30s`) |
-| `metadata` | object | - | An alle Nachrichten angehängt |
+| `metadata` | object | - | An Join-/Leave-/Heartbeat-Nachrichten angehängt |
 
 ## Nachrichten-Topics
 
@@ -157,14 +157,11 @@ end
 
 ## An Client senden
 
-Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird als `{topic, data}` JSON verpackt und an den WebSocket weitergeleitet. Der Frame-Typ wird durch das Payload-Format bestimmt: Strings werden zu Text-Frames, Bytes zu Binär-Frames (base64-kodiert innerhalb des JSON-Wrappers).
+Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird als `{topic, data}` JSON verpackt und an den WebSocket weitergeleitet. Jede Server-zu-Client-Nachricht wird als einzelner WebSocket-TEXT-Frame mit dem `{topic, data}` JSON-Wrapper gesendet. Binäre Payloads werden base64-kodiert im `data`-Feld übertragen; sie werden NICHT als separate Binär-Frames gesendet.
 
 ```lua
 -- Strukturierte Nachricht senden (beliebiger Topic-Name)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Binär senden
-process.send(client_pid, "data", binary_content)
 
 -- Verbindung schließen (Payload ist der Schließgrund-String)
 process.send(client_pid, "ws.close", "Sitzung beendet")

@@ -341,7 +341,7 @@ Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
 ## Primitivos de Cluster
 
-As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
+As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o store KV respaldado por Raft que o clustering fornece.
 
 Todas as chamadas de leitura são locais e baratas: reportam a visão deste nó do estado confirmado, sem bloquear na rede.
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- mapa de stats bruto (string 
 
 ### Locks distribuídos
 
-`system.lock` fornece exclusão mútua em todo o cluster. Um lock é um nome globalmente único de propriedade do processo chamador. É construído sobre o escopo Strong de nomes, portanto no máximo um detentor pode existir em todo o cluster, e o lock é liberado automaticamente quando o processo detentor sai ou seu nó parte — não há lock preso para limpar.
+`system.lock` fornece exclusão mútua em todo o cluster. Um lock é um nome globalmente único de propriedade do processo chamador. É construído sobre o store KV do sistema replicado por Raft, portanto no máximo um detentor pode existir em todo o cluster, e o lock é liberado automaticamente quando o processo detentor sai ou seu nó parte — não há lock preso para limpar.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Permissão negada | `errors.INVALID` | não |
+| Permissão negada (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | não |
+| Permissão negada (todas as demais chamadas) | `errors.INVALID` | não |
 | Argumento inválido | `errors.INVALID` | não |
 | Argumento obrigatório ausente | `errors.INVALID` | não |
 | Code manager indisponível | `errors.INTERNAL` | não |
@@ -482,5 +483,6 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | Raft não está em execução neste nó | `errors.INTERNAL` | não |
 | Associação indisponível | `errors.INTERNAL` | não |
 | Lock já mantido | `errors.ALREADY_EXISTS` | não |
+| Serviço de lock indisponível (sem Raft neste nó) | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

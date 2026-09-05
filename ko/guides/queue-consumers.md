@@ -27,7 +27,7 @@ flowchart LR
 | `func` | 필수 | - | 핸들러 함수 레지스트리 ID |
 | `concurrency` | 1 | 1000 | 워커 수 |
 | `prefetch` | 10 | 10000 | 메시지 버퍼 크기 |
-| `auto_ack` | false | - | 핸들러 실행 전 자동으로 Ack |
+| `auto_ack` | false | - | 드라이버 수준 자동 ack (AMQP `Consume` autoAck; 메모리 드라이버는 무시) |
 | `driver_options` | `{}` | - | 드라이버별 컨슈머 옵션 |
 
 ## 엔트리 정의
@@ -84,6 +84,8 @@ return handler
 |--------|--------|--------|
 | 성공 | Ack | 큐에서 메시지 제거 |
 | 에러 | Nack | 메시지 재큐잉(드라이버에 따라 다름) |
+
+핸들러는 `queue.message()`와 `msg:ack()` / `msg:nack()`으로 메시지를 직접 정리할 수 있습니다. 이 경우 컨슈머는 자체 ack/nack을 건너뜁니다.
 
 ## 워커 풀
 

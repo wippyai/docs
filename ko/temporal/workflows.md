@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | 부모 종료 시 자식 동작 |
 | `temporal.workflow.wait_for_cancellation` | boolean | 취소가 완료될 때까지 대기 |
 | `temporal.workflow.namespace` | string | Temporal 네임스페이스 오버라이드 |
+| `temporal.workflow.name` | string | 레지스트리 ID와 다를 때 시작할 워크플로우 타입 이름 |
+| `temporal.workflow.versioning_intent` | string | `compatible` (빌드 ID 상속) 또는 `default` (할당 규칙 사용) |
+| `temporal.workflow.priority` | table | 태스크 우선순위: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Temporal UI에 표시되는 사람이 읽을 수 있는 요약 |
+| `workflow.details` | string | Temporal UI에 표시되는 사람이 읽을 수 있는 상세 정보 |
+| `workflow.versioning_override` | table | 워커 버전 오버라이드: `mode`는 `auto_upgrade`, 또는 `deployment_name`과 `build_id`를 갖는 `pinned` |
+
+모든 옵션은 짧은 키(`workflow.id`, `workflow.task_queue`, ...)로도 허용됩니다. `temporal.workflow.` 접두사는 레거시 별칭입니다. `summary`와 `details`에는 `temporal.workflow.` 별칭이 없습니다.
 
 Duration 값은 문자열(`"5s"`, `"10m"`, `"1h"`) 또는 숫자(밀리초)를 허용합니다.
 

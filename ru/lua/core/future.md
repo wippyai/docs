@@ -87,6 +87,8 @@ end
 future:cancel()
 ```
 
+**Возвращает:** `boolean, error`
+
 Операция может всё равно завершиться, если уже выполняется.
 
 ## Паттерн таймаута
@@ -102,7 +104,7 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 return r.value:data()
@@ -134,4 +136,4 @@ return r.value:data()
 | Условие | Kind |
 |---------|------|
 | Операция отменена | `CANCELED` |
-| Асинхронная операция не удалась | varies |
+| Асинхронная операция не удалась | `result()` сохраняет kind операции; `error()` сообщает `INTERNAL` |

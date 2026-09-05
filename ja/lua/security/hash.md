@@ -167,12 +167,32 @@ local n = hash.fnv64("data")
 
 **戻り値:** `number, error`
 
+## 鍵導出
+
+### PBKDF2
+
+```lua
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `password` | string | パスワード/パスフレーズ（空でないこと） |
+| `salt` | string | ソルト値（空でないこと） |
+| `iterations` | integer | 反復回数（1〜10,000,000） |
+| `key_length` | integer | 生成する鍵の長さ（バイト） |
+| `hash` | string? | `sha256`または`sha512`（デフォルト: `sha256`） |
+
+**戻り値:** `string, error`（生の鍵バイト列）
+
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | 入力が文字列でない | `errors.INVALID` | no |
 | シークレットが文字列でない（HMAC） | `errors.INVALID` | no |
+| パスワード/ソルトが空、反復回数が0以下または過大、非対応のハッシュ（PBKDF2） | `errors.INVALID` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 

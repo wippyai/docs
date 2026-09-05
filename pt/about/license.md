@@ -25,4 +25,6 @@ Você deve disponibilizar o código-fonte de qualquer arquivo MPL modificado ao 
 
 ## Dependências
 
-O Wippy usa várias dependências open-source, cada uma com suas próprias licenças. Todas as dependências são compatíveis com uso comercial.
+O Wippy usa várias dependências, cada uma com suas próprias licenças. A maioria são bibliotecas open-source com licenças permissivas, compatíveis com uso comercial.
+
+Um componente incluído, o runtime WASM (`wippyai/wasm-runtime`), é licenciado sob a Business Source License 1.1. Você pode usá-lo em produção, exceto para oferecê-lo a terceiros em regime hospedado ou embarcado de forma que concorra com os produtos ou serviços da Wippy AI. Quatro anos após a publicação de cada versão, essa versão converte-se para a Apache License 2.0.

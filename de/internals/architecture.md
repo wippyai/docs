@@ -16,7 +16,7 @@ Wippy ist ein geschichtetes System, das auf Go aufgebaut ist. Komponenten initia
 | Schicht | Komponenten |
 |---------|-------------|
 | Anwendung | Lua-Prozesse, Funktionen, Workflows |
-| Runtime | Lua-Engine (gopher-lua), 50+ Module |
+| Runtime | Lua-Engine (gopher-lua), 40+ Module |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topologie, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -42,7 +42,7 @@ Erstellt Kerninfrastruktur bevor Komponenten geladen werden:
 
 ### Phase 2: Komponentenladung
 
-Der Loader löst Abhängigkeiten via topologischer Sortierung auf und lädt Komponenten Level für Level. Komponenten auf demselben Level laden parallel.
+Der Loader löst Abhängigkeiten via topologischer Sortierung auf und lädt Komponenten Level für Level, jeweils eine Komponente nach der anderen.
 
 Core-Komponenten (PIDGen, Dispatcher, Registry, Finder, Supervisor) initialisieren zuerst, gefolgt von Systemkomponenten (Topology, Lifecycle, Factory, Functions, Contracts). Konkrete Level werden zur Laufzeit aus dem Abhängigkeitsgraphen berechnet, sodass sich die Reihenfolge anpasst, wenn Komponenten hinzugefügt oder entfernt werden.
 
@@ -85,7 +85,7 @@ Komponenten deklarieren Abhängigkeiten. Der Loader baut einen gerichteten azykl
 |------------|----------------|-------|
 | PIDGen | keine | Prozess-ID-Generierung |
 | Dispatcher | PIDGen | Command-Handler-Dispatch |
-| Registry | Dispatcher | Entry-Speicherung und Versionierung |
+| Registry | Artifact | Entry-Speicherung und Versionierung |
 | Finder | Registry | Entry-Lookup und Suche |
 | Supervisor | Registry | Service-Neustartrichtlinien |
 | Topology | Supervisor | Prozess-Eltern/Kind-Baum |
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ### Gängige Topics
 
-Topics haben das Format `<system>:<kind>`. Die integrierten Systeme veröffentlichen:
+Jedes Event trägt ein `System` und ein `Kind`. Die integrierten Systeme veröffentlichen:
 
 | System | Kind | Zweck |
 |--------|------|-------|
@@ -137,7 +137,6 @@ Versionierte Speicherung für Entry-Definitionen.
 
 - **Versionierter Zustand** - Jede Mutation erstellt neue Version
 - **History** - SQLite-gestützte Historie für Audit-Trail
-- **Beobachtung** - Spezifische Einträge auf Änderungen beobachten
 - **Ereignisgesteuert** - Publiziert Events bei Mutationen
 
 ### Entry-Lebenszyklus
@@ -174,14 +173,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Selber Prozess]
-    Peer -.- P[Selber Cluster]
-    Inter -.- I[Remote]
+    Local -.- L[Dieser Node]
+    Peer -.- P[Registrierter Peer-Empfänger]
+    Inter -.- I[Andere Cluster-Nodes]
 ```
 
 1. **Local** - Direkte Zustellung innerhalb desselben Nodes
-2. **Peer** - Weiterleitung an Peer-Nodes im Cluster
-3. **Internode** - Routing zu Remote-Nodes via Netzwerk
+2. **Peer** - Zustellung an einen für diese Node-ID registrierten Empfänger (ein externer Peer wie ein Temporal-Worker)
+3. **Internode** - Rückfall auf den Internode-Transport des Clusters, der nach dem Boot von der Cluster-Komponente installiert wird
 
 ### Mailbox
 

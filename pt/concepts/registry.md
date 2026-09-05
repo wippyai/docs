@@ -24,7 +24,7 @@ Além desse conteúdo autorado, o registry mantém sua própria proveniência pa
 
 ## Handlers de Kind
 
-Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `sql.database` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guides/entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internals/kinds.md) para implementar handlers.
+Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `db.sql.postgres` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guides/entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internals/kinds.md) para implementar handlers.
 
 ## Atualizações ao Vivo
 

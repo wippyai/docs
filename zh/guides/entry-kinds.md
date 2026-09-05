@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-路由器按顺序尝试存储。读取时返回第一个匹配的结果；写入时使用第一个可写存储。
+路由器按顺序尝试存储。读取时返回第一个匹配的结果；写入时使用列表中的第一个存储。
 </note>
 
 ## 模板
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-策略按顺序评估。第一个匹配的策略决定访问权限。将更具体的策略放在通用策略之前。
+作用域内的每条策略都会被评估。任何匹配策略的 <code>deny</code> 都优先于所有 <code>allow</code>；若没有 deny，则匹配的 <code>allow</code> 授予访问权限。顺序无关紧要。
 </warning>
 
 ## 契约（依赖注入）
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API：** 参见 [Contract 模块](lua/core/contract.md)
 
 <tip>
-将一个绑定标记为 <code>default: true</code>，可在不指定绑定 ID 的情况下打开契约（仅在未设置 <code>context_required</code> 字段时有效）。
+将一个绑定标记为 <code>default: true</code>，可在不指定绑定 ID 的情况下打开契约。一个契约只能有一个默认绑定。
 </tip>
 
 ## 执行
@@ -704,12 +704,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | 类型 | 说明 |
 |------|-------------|
-| `registry.entry` | 入口描述符（内部） |
+| `registry.entry` | 背后没有服务的纯数据条目（应用特定配置） |
 | `ns.definition` | 命名空间定义 |
 | `ns.requirement` | 命名空间需求声明 |
 | `ns.dependency` | 命名空间依赖 |
 
-这些由注册表加载器从 `_index.yaml` 的 frontmatter 和依赖声明中生成。作者通常不直接定义它们——它们在 `version:`、`namespace:` 和依赖块解析后产生。
+`ns.*` 类型和其他条目一样由作者编写：组件声明 `ns.definition` 和 `ns.requirement`，宿主声明 `ns.dependency`。参见[构建组件](guides/components.md)。
 
 ## 生命周期配置
 
@@ -733,7 +733,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
 <note>
-使用 <code>depends_on</code> 确保入口按正确顺序启动。监督器会等待依赖项达到稳定状态后再启动依赖它们的入口。
+使用 <code>depends_on</code> 确保入口按正确顺序启动。只有在每个依赖项各自完成启动之后，监督器才会启动依赖它们的入口。
 </note>
 
 ## 入口引用格式

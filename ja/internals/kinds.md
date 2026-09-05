@@ -24,7 +24,7 @@ description: "エントリハンドラはkindごとにレジストリエント�
 |---------|------|
 | `http.service` | 完全一致のみ |
 | `http.*` | `http.service`、`http.router`、`http.endpoint` |
-| `function.*` | `function.lua`、`function.lua.bc` |
+| `function.**` | `function.lua`、`function.lua.bc` |
 
 ## EntryListenerインターフェース
 
@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## エントリデータのデコード
 
-`internal/entry`の`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャルします。このヘルパーは`internal/`配下に存在するため、ランタイムモジュール内からのみインポート可能です。ツリー外の拡張機能は、このパターンをコピーするか、トランスコーダを直接使用する必要があります：
+`system/entry`の`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャルします。`DecodeEntryConfigFromContext`は引数の代わりにコンテキストからトランスコーダを取得し、`DecodeEntryConfigRaw`はプレースホルダの解決をスキップします：
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 デコーダーは：
-1. `entry.Data`を設定構造体にアンマーシャル
-2. エントリから`ID`と`Meta`を設定
-3. 実装されていれば`InitDefaults()`を呼び出し
-4. 実装されていれば`Validate()`を呼び出し
+1. `${env:...}`プレースホルダと`*_env`の対応フィールドを環境レジストリに対して解決
+2. `entry.Data`を設定構造体にアンマーシャル
+3. 構造体が空のままの場合、エントリから`ID`と`Meta`を設定
+4. 実装されていれば`InitDefaults()`を呼び出し
+5. 実装されていれば`Validate()`を呼び出し
 
 ## Config構造体
 

@@ -196,7 +196,7 @@ local results, err = embeddings.search("how do I configure TLS?", {
 
 ## 운영 참고 사항
 
-- **청크 크기**: 500–1000 토큰이 좋은 기본값입니다. 문장이 경계를 넘어 잘리지 않도록 `chunk_overlap` (청크 크기의 ~10–20%) 을 사용하세요.
+- **청크 크기**: `chunk_size`와 `chunk_overlap`은 토큰이 아니라 문자를 셉니다. 2000–4000자가 좋은 기본값입니다. 문장이 경계를 넘어 잘리지 않도록 `chunk_overlap` (청크 크기의 ~10–20%) 을 사용하세요.
 - **차원**: 512차원의 `text-embedding-3-small`은 비용 효율적이며 `embeddings_512` 테이블과 일치합니다. 더 큰 벡터는 더 큰 저장 공간과 느린 검색을 의미합니다.
 - **로컬 대 공유**: SQLite (`vec0`) 는 전체 KB를 하나의 로컬 파일에 유지합니다 — 개발 및 단일 노드 앱에 이상적입니다. 공유된 프로덕션 스토어를 위해서는 `target_db`를 `pgvector`가 있는 `db.sql.postgres`로 가리키세요; 수집 코드는 변경되지 않습니다.
 

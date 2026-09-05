@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-ルーターはストレージを順番に試行します。読み取りは最初のマッチが勝ちます。書き込みは最初の書き込み可能なストレージに送られます。
+ルーターはストレージを順番に試行します。読み取りは最初のマッチが勝ちます。書き込みはリスト内の最初のストレージに送られます。
 </note>
 
 ## テンプレート
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-ポリシーは順番に評価されます。最初にマッチしたポリシーがアクセスを決定します。より具体的なポリシーを一般的なポリシーの前に配置してください。
+スコープ内のすべてのポリシーが評価されます。マッチしたいずれかのポリシーからの<code>deny</code>は、あらゆる<code>allow</code>に優先します。denyがない場合、マッチした<code>allow</code>がアクセスを許可します。順序は関係ありません。
 </warning>
 
 ## コントラクト（依存性注入）
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** [コントラクトモジュール](lua/core/contract.md)を参照
 
 <tip>
-1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます（<code>context_required</code>フィールドが設定されていない場合のみ動作）。
+1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます。コントラクトが持てるデフォルトバインディングは1つだけです。
 </tip>
 
 ## 実行
@@ -704,12 +704,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | 種別 | 説明 |
 |------|-------------|
-| `registry.entry` | エントリ記述子（内部） |
+| `registry.entry` | 背後にサービスを持たない純粋なデータエントリ（アプリ固有の設定）|
 | `ns.definition` | 名前空間定義 |
 | `ns.requirement` | 名前空間要件宣言 |
 | `ns.dependency` | 名前空間依存関係 |
 
-これらはレジストリローダーが`_index.yaml`のフロントマターと依存関係宣言から生成します。通常、作者が直接定義することはありません — `version:`、`namespace:`、依存ブロックが解決された結果として現れます。
+`ns.*`種別は他のエントリと同様に記述します。コンポーネントは`ns.definition`と`ns.requirement`を宣言し、ホストは`ns.dependency`を宣言します。[コンポーネントの構築](guides/components.md)を参照してください。
 
 ## ライフサイクル設定
 
@@ -733,7 +733,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
 <note>
-エントリが正しい順序で起動することを保証するには<code>depends_on</code>を使用します。スーパーバイザは依存先のエントリを起動する前に、依存関係が安定するのを待ちます。
+エントリが正しい順序で起動することを保証するには<code>depends_on</code>を使用します。スーパーバイザは、各依存関係が自身の起動を完了した後にのみ、依存側のエントリを起動します。
 </note>
 
 ## エントリ参照形式

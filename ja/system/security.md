@@ -48,7 +48,7 @@ local meta = actor:meta()    -- {role="admin", ...}
 -- コンテキストから現在のアクターを取得
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "No actor in context")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No actor in context" })
 end
 ```
 
@@ -326,7 +326,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 elseif result == "undefined" then
     -- ポリシーがマッチしなかった - アクセスチェックはこれを拒否として扱う
 end
@@ -341,7 +341,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Access denied")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 end
 ```
 
@@ -434,7 +434,7 @@ end
 -- トークンを検証
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Invalid token")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Invalid token" })
 end
 
 -- アクターとスコープは保存されたデータから再構築される

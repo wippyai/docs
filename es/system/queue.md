@@ -132,9 +132,9 @@ Para AWS SQS y endpoints compatibles con SQS (LocalStack, ElasticMQ). Las creden
 | `use_fips` | bool | `false` | Usar endpoints conformes a FIPS |
 | `use_dual_stack` | bool | `false` | Usar endpoints dual-stack (IPv4 + IPv6) |
 
-Las colas son creadas automáticamente por el driver en el primer uso. Use headers con prefijo SQS (`sqs.*`) para direccionar atributos específicos de SQS al publicar; las claves neutrales como `correlation_id` y `content_type` se traducen a atributos del sistema SQS cuando es posible.
+Las colas son creadas automáticamente por el driver en el primer uso. Use headers con prefijo SQS para direccionar campos específicos de SQS al publicar: `sqs.delay_seconds`, `sqs.message_group_id` y `sqs.message_deduplication_id` se mapean a campos tipados del mensaje SQS. Todos los demás headers (claves neutrales como `correlation_id` y `content_type`, más cualquier clave `sqs.message_attributes.*`) se transportan literalmente como atributos del mensaje SQS.
 
-## Configuración de Cola
+## Configuración de Cola {id="queue-configuration"}
 
 ```yaml
 - name: tasks
@@ -157,7 +157,7 @@ Las colas son creadas automáticamente por el driver en el primer uso. Use heade
 | `queue_name` | string | No | Nombre externo de cola (por defecto el nombre de entrada) |
 | `driver_options` | object | No | Sub-bag por driver, indexado por kind del driver |
 | `dead_letter.queue` | ID de Registro | No | ID de cola para mensajes fallidos |
-| `dead_letter.max_attempts` | int | No | Intentos antes de enrutar a la DLQ |
+| `dead_letter.max_attempts` | int | No | Intentos antes de enrutar a la DLQ (aceptado pero aún no aplicado por ningún driver incorporado) |
 
 ### Opciones de Driver
 
@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: reentrega segun el driver
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: eliminar de la cola
 end
 
 return { main = main }
@@ -286,15 +286,15 @@ El runtime hace settle automáticamente según el retorno del handler:
 
 | Resultado del Handler | Acción |
 |-----------------------|--------|
-| `true` o retorno no-`false` | Ack |
-| `false` | Nack (redelivery o dead-letter según el driver) |
+| Cualquier valor de retorno simple (incluido `false`) | Ack |
+| Retorno `nil, err` | Nack (reentrega o dead-letter según el driver) |
 | Error lanzado | Nack |
 
 Llame `msg:ack()` o `msg:nack()` explícitamente solo para hacer settle anticipado. El settlement es de un solo disparo: gana la primera llamada que llega.
 
 ### Enrutamiento Dead-Letter
 
-Cuando `dead_letter` está configurado en la cola, un mensaje que es nack más allá de `max_attempts` es enrutado a la DLQ con los headers `x_dead_letter_reason` y `x_original_queue` establecidos por el driver. Los publicadores no deben establecer ningún header `x_*` — estos están reservados para el registro de DLQ.
+El enrutamiento dead-letter aún no está implementado. El bloque `dead_letter` (ver [Configuración de Cola](#queue-configuration)) se acepta en la configuración, pero actualmente ningún driver incorporado cuenta intentos, enruta mensajes nack a la DLQ configurada ni establece headers `x_dead_letter_*`. Un mensaje nack se reentrega según la política propia del driver. El espacio de nombres de headers `x_*` está reservado para el futuro registro de DLQ, así que los publicadores deben evitar establecer headers `x_*`.
 
 ## Publicando Mensajes
 

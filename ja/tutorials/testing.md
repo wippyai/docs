@@ -118,12 +118,6 @@ entries:
 wippy test
 ```
 
-反復作業中はエントリ ID の部分文字列 (namespace:name) で絞り込みます：
-
-```bash
-wippy test calc_test
-```
-
 上記スイートの出力：
 
 ```

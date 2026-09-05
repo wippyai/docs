@@ -185,7 +185,6 @@ network_service:
   default_network: app:tor
 ```
 
-`network = nil`による明示的な選択で、その呼び出しのデフォルトをクリアできます。
 
 ## パーミッション
 

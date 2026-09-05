@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | 输出变化（时间、随机） |
 | `ClassIO` | 外部 I/O 操作 |
 | `ClassNetwork` | 网络操作 |
+| `ClassEncoding` | 序列化与编码 |
+| `ClassTime` | 时钟与定时器访问 |
+| `ClassProcess` | 进程控制 |
+| `ClassSecurity` | 安全上下文与令牌 |
 | `ClassStorage` | 数据持久化 |
 | `ClassWorkflow` | workflow 安全操作 |
 
-仅标记 `ClassDeterministic` 的模块是 workflow 安全的。添加 I/O 或网络类会将模块限制为 function 和 process。
+workflow 进程以 `ClassDeterministic` 和 `ClassWorkflow` 作为允许的类进行编译：模块只要带有其中至少一个类就可供 workflow 使用，否则只能限制在 function 和 process 中。
 
 ## 暴露函数
 

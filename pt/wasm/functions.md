@@ -193,6 +193,8 @@ O transporte `wasi-http` mapeia requisicoes HTTP para WASM e escreve os resultad
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### Sleep Assincrono com WASI Clocks
 
-Componentes WASM que importam `wasi:clocks` e `wasi:io` podem usar relogios e polling. O mecanismo de yield assincrono se integra com o dispatcher do Wippy:
+Componentes WASM que importam `wasi:clocks`, `wasi:io` e `wasi:poll` podem usar relogios e polling. O mecanismo de yield assincrono se integra com o dispatcher do Wippy:
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ Componentes WASM que importam `wasi:clocks` e `wasi:io` podem usar relogios e po
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

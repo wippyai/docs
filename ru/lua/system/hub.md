@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | Список файлов версии (`version` обязателен); возвращает `{items, total, page, page_size}` |
 
+## Кеш
+
+```lua
+local cached, err = hub.cache.list()
+-- каждая запись: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| Функция | Описание |
+|----------|-------------|
+| `hub.cache.list(opts?)` | Список закешированных артефактов в каталоге vendor; `pinned` равно `true`, когда артефакт упоминается в lock-файле |
+| `hub.cache.remove(module, version, opts?)` | Удалить один закешированный артефакт; отклоняет артефакт, закреплённый lock-файлом (kind `errors.CONFLICT`), если `opts.force` не равен `true`; возвращает `true` |
+| `hub.cache.prune(opts?)` | Удалить все закешированные артефакты, не упомянутые в lock-файле; при `opts.dry_run = true` ничего не удаляется; возвращает удалённые (или подлежащие удалению) записи |
+
+**Разрешения:** `hub.cache.list`, `hub.cache.remove` (ресурс: имя модуля), `hub.cache.prune`
+
 ## Аутентификация
 
 Установить токен реестра в работающий процесс — каждый потребитель hub подхватит его при следующем вызове, без перезапуска:

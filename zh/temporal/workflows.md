@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | 父关闭时子 workflow 的行为 |
 | `temporal.workflow.wait_for_cancellation` | boolean | 等待取消完成 |
 | `temporal.workflow.namespace` | string | Temporal 命名空间覆盖 |
+| `temporal.workflow.name` | string | 与注册表 ID 不同时，要启动的 workflow 类型名 |
+| `temporal.workflow.versioning_intent` | string | `compatible`（继承 build ID）或 `default`（使用分配规则） |
+| `temporal.workflow.priority` | table | 任务优先级：`priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `workflow.summary` | string | 在 Temporal UI 中显示的可读摘要 |
+| `workflow.details` | string | 在 Temporal UI 中显示的可读详情 |
+| `workflow.versioning_override` | table | Worker 版本化覆盖：`mode` 为 `auto_upgrade`，或为 `pinned` 并带 `deployment_name` 与 `build_id` |
+
+每个选项也可使用其短键（`workflow.id`、`workflow.task_queue`、...）；`temporal.workflow.` 前缀是遗留别名。`summary` 和 `details` 没有 `temporal.workflow.` 别名。
 
 Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单位的数字。
 

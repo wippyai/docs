@@ -31,9 +31,9 @@ Toda la configuración es opcional con valores por defecto sensatos:
 | `engine.development_mode` | bool | false | Deshabilitar caché de plantillas |
 | `engine.delimiters.left` | string | `{{` | Delimitador de apertura de variable |
 | `engine.delimiters.right` | string | `}}` | Delimitador de cierre de variable |
-| `engine.delimiters.comment_left` | string | `{*` | Delimitador de apertura de comentario |
-| `engine.delimiters.comment_right` | string | `*}` | Delimitador de cierre de comentario |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Extensiones de archivo de plantilla |
+| `engine.delimiters.comment_left` | string | `{*` | Solo se valida; los comentarios siempre usan el `{*` de Jet |
+| `engine.delimiters.comment_right` | string | `*}` | Solo se valida; los comentarios siempre usan el `*}` de Jet |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Solo se valida; la búsqueda por nombre siempre prueba los `.jet`, `.html.jet`, `.jet.html` integrados de Jet |
 | `engine.globals` | map | - | Variables disponibles para todas las plantillas |
 
 ## Plantillas

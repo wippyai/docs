@@ -341,7 +341,7 @@ Cada tabla de estado tiene el mismo formato que `system.supervisor.state()`.
 
 ## Primitivas del Cluster
 
-Las sub-tablas `system.node`, `system.cluster`, `system.raft` y `system.lock` exponen la capa de clustering. Son más útiles cuando el [clustering está habilitado](guides/cluster.md); en un nodo independiente degradan de forma predecible — `system.raft.*` reporta "raft not available", `system.cluster` reporta solo el nodo local, y `system.lock` requiere el registro global que proporciona el clustering.
+Las sub-tablas `system.node`, `system.cluster`, `system.raft` y `system.lock` exponen la capa de clustering. Son más útiles cuando el [clustering está habilitado](guides/cluster.md); en un nodo independiente degradan de forma predecible — `system.raft.*` reporta "raft not available", `system.cluster` reporta solo el nodo local, y `system.lock` requiere el almacén KV respaldado por Raft que proporciona el clustering.
 
 Todas las llamadas de lectura son locales y baratas: reportan la vista de este nodo del estado confirmado, sin bloquear nunca en la red.
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- mapa de estadísticas raw (s
 
 ### Bloqueos distribuidos
 
-`system.lock` proporciona exclusión mutua a nivel de cluster. Un bloqueo es un nombre globalmente único propiedad del proceso que llama. Está construido sobre el ámbito de nombre Strong, por lo que puede existir como máximo un titular en todo el cluster, y el bloqueo se libera automáticamente cuando el proceso titular sale o su nodo se va — no hay bloqueo atascado que limpiar.
+`system.lock` proporciona exclusión mutua a nivel de cluster. Un bloqueo es un nombre globalmente único propiedad del proceso que llama. Está construido sobre el almacén KV del sistema replicado por Raft, por lo que puede existir como máximo un titular en todo el cluster, y el bloqueo se libera automáticamente cuando el proceso titular sale o su nodo se va — no hay bloqueo atascado que limpiar.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Permiso denegado | `errors.INVALID` | no |
+| Permiso denegado (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado (todas las demás llamadas) | `errors.INVALID` | no |
 | Argumento inválido | `errors.INVALID` | no |
 | Argumento requerido faltante | `errors.INVALID` | no |
 | Gestor de código no disponible | `errors.INTERNAL` | no |
@@ -482,5 +483,6 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 | Raft no ejecutándose en este nodo | `errors.INTERNAL` | no |
 | Membresía no disponible | `errors.INTERNAL` | no |
 | Bloqueo ya tomado | `errors.ALREADY_EXISTS` | no |
+| Servicio de bloqueos no disponible (sin Raft en este nodo) | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

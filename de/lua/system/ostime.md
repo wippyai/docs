@@ -113,7 +113,8 @@ local t = os.date("*t", now)
 | `%b` | Monat kurz | Jun |
 | `%w` | Wochentag (0-6, Sonntag=0) | 6 |
 | `%j` | Tag des Jahres (001-366) | 167 |
-| `%U` | Wochennummer (00-53) | 24 |
+| `%U` | ISO-8601-Wochennummer (01-53, Woche beginnt Montag) | 24 |
+| `%W` | ISO-8601-Wochennummer (01-53, Woche beginnt Montag) | 24 |
 | `%z` | Zeitzonenoffset | -0700 |
 | `%Z` | Zeitzonenname | PDT |
 | `%c` | Volles Datum/Uhrzeit | Sat Jun 15 14:30:45 2024 |

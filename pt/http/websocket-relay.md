@@ -109,7 +109,7 @@ end
 | `target_pid` | string | obrigatório | PID do processo para receber mensagens |
 | `message_topic` | string | `ws.message` | Tópico para mensagens do cliente |
 | `heartbeat_interval` | duration | - | Frequência de heartbeat (ex: `30s`) |
-| `metadata` | object | - | Anexado a todas as mensagens |
+| `metadata` | object | - | Anexado a mensagens de join/leave/heartbeat |
 
 ## Tópicos de Mensagens
 
@@ -157,14 +157,11 @@ end
 
 ## Enviando para o Cliente
 
-Envia mensagens de volta usando o PID do cliente. Qualquer tópico que você escolher é encapsulado como JSON `{topic, data}` e encaminhado para o WebSocket. O tipo de frame é decidido pelo formato do payload: strings se tornam frames de texto, bytes se tornam frames binários (codificados em base64 dentro do envoltório JSON).
+Envia mensagens de volta usando o PID do cliente. Qualquer tópico que você escolher é encapsulado como JSON `{topic, data}` e encaminhado para o WebSocket. Toda mensagem servidor-para-cliente é enviada como um único frame WebSocket TEXT contendo o envoltório JSON `{topic, data}`. Payloads binários são codificados em base64 no campo `data`; eles NÃO são enviados como frames binários separados.
 
 ```lua
 -- Envia uma mensagem estruturada (qualquer nome de tópico)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Envia binário
-process.send(client_pid, "data", binary_content)
 
 -- Fecha conexão (payload é a string do motivo de fechamento)
 process.send(client_pid, "ws.close", "Sessão encerrada")

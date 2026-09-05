@@ -58,12 +58,12 @@ end
 ```lua
 -- 읽기 권한 확인
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- 쓰기 권한 확인
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- 메타데이터와 함께 확인
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", 또는 "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ local token, err = store:create(actor, scope, {
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ store:close()
 |------|--------|------|
 | `security.policy.get` | 정책 ID | 정책 정의 접근 |
 | `security.policy_group.get` | 그룹 ID | 명명된 스코프 접근 |
-| `security.scope.create` | `custom` | 커스텀 스코프 생성 |
+| `security.scope.create` | `custom`, `with`, `without` | 커스텀 스코프 생성(`new_scope`) 및 정책 추가/제거(`scope:with`, `scope:without`) |
 | `security.actor.create` | 액터 ID | 액터 생성 |
 | `security.token_store.get` | 스토어 ID | 토큰 스토어 접근 |
 | `security.token.validate` | 스토어 ID | 토큰 검증 |
@@ -349,7 +349,8 @@ store:close()
 |------|------|-------------|
 | 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
 | 빈 토큰 스토어 ID | `errors.INVALID` | 아니오 |
-| 권한 거부됨 | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (`policy`, `named_scope`, 토큰 `create`/`validate`/`revoke`) | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | Lua 에러로 발생 | 아니오 |
 | 정책을 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 토큰 스토어를 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 토큰 스토어 닫힘 | `errors.INTERNAL` | 아니오 |

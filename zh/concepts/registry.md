@@ -24,7 +24,7 @@ app:templates             → 模板集
 
 ## Kind 处理器
 
-当提交记录时，其 `kind` 决定哪个处理器处理它。处理器验证配置并创建运行时资源——`http.service` 记录启动 HTTP 服务器，`function.lua` 记录创建函数池，`sql.database` 记录建立连接池。参见 [记录类型指南](guides/entry-kinds.md) 了解可用类型，[自定义记录类型](internals/kinds.md) 了解如何实现处理器。
+当提交记录时，其 `kind` 决定哪个处理器处理它。处理器验证配置并创建运行时资源——`http.service` 记录启动 HTTP 服务器，`function.lua` 记录创建函数池，`db.sql.postgres` 记录建立连接池。参见 [记录类型指南](guides/entry-kinds.md) 了解可用类型，[自定义记录类型](internals/kinds.md) 了解如何实现处理器。
 
 ## 实时更新
 

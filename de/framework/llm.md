@@ -98,7 +98,7 @@ Das erste Argument von `generate()` kann ein String-Prompt, ein Prompt-Builder o
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `result` | string | Generierter Textinhalt |
-| `tokens` | table | Token-Nutzung: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens` |
+| `tokens` | table | Token-Nutzung: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, dazu optional `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Grund fuer das Ende der Generierung: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array von Tool-Aufrufen (wenn das Modell Tools aufgerufen hat) |
 | `metadata` | table | Anbieterspezifische Metadaten |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Assistenznachricht hinzufuegen |
 | `:add_developer(content, meta?)` | Entwicklernachricht hinzufuegen |
 | `:add_message(role, content_parts, name?, meta?)` | Nachricht mit Rolle und Inhaltsteilen hinzufuegen |
-| `:add_function_call(name, args, id?)` | Tool-Aufruf des Assistenten hinzufuegen |
+| `:add_function_call(name, arguments, id?, options?)` | Tool-Aufruf des Assistenten hinzufuegen (`arguments` ist der rohe JSON-String) |
 | `:add_function_result(name, result, id?)` | Tool-Ausfuehrungsergebnis hinzufuegen |
 | `:add_cache_marker(id?)` | Cache-Grenze markieren (Claude-Modelle) |
 | `:get_messages()` | Nachrichtenarray abrufen |

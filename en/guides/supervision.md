@@ -43,6 +43,7 @@ Services register with the supervisor using a `lifecycle` block. For processes, 
 | `stop_timeout` | `10s` | Maximum time for graceful shutdown |
 | `stable_threshold` | `5s` | Runtime before service is considered stable |
 | `requires` | `[]` | Services that must be running first (legacy alias: `depends_on`) |
+| `startup` | `required` | `required` reports a failed or blocked auto-start as a transaction error; `optional` lets the service keep retrying in the background without failing the batch |
 
 ## Dependency Resolution
 

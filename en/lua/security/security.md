@@ -58,12 +58,12 @@ Checks if the current context allows an action on a resource.
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot read user data")
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new("PERMISSION_DENIED", "Cannot modify order")
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -229,7 +229,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new("PERMISSION_DENIED", "Access denied")
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -298,7 +298,7 @@ Validate token and get actor/scope.
 ```lua
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHENTICATED", "Invalid token")
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -334,7 +334,7 @@ Security operations are subject to security policy evaluation.
 |--------|----------|-------------|
 | `security.policy.get` | Policy ID | Access policy definitions |
 | `security.policy_group.get` | Group ID | Access named scopes |
-| `security.scope.create` | `custom` | Create custom scopes |
+| `security.scope.create` | `custom`, `with`, `without` | Create custom scopes (`new_scope`) and add/remove policies (`scope:with`, `scope:without`) |
 | `security.actor.create` | Actor ID | Create actors |
 | `security.token_store.get` | Store ID | Access token stores |
 | `security.token.validate` | Store ID | Validate tokens |
@@ -349,7 +349,8 @@ See [Security Model](system/security.md) for policy configuration.
 |-----------|------|-----------|
 | No context | `errors.INTERNAL` | no |
 | Empty token store ID | `errors.INVALID` | no |
-| Permission denied | `errors.INVALID` | no |
+| Permission denied (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | no |
+| Permission denied (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | raised as a Lua error | no |
 | Policy not found | `errors.INTERNAL` | no |
 | Token store not found | `errors.INTERNAL` | no |
 | Token store closed | `errors.INTERNAL` | no |

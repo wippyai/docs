@@ -80,7 +80,7 @@ Nur verfügbar beim Verarbeiten von Queue-Nachrichten im Consumer-Kontext.
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `id()` | `string, error` | Eindeutiger Nachrichten-Identifikator |
-| `header(key)` | `any, error` | Einzelner Header-Wert (nil wenn fehlend) |
+| `header(key)` | `string, error` | Einzelner Header-Wert als String (nil wenn fehlend) |
 | `headers()` | `table, error` | Alle Nachrichten-Header |
 | `ack()` | `boolean, error` | Verarbeitung bestaetigen (single-shot) |
 | `nack()` | `boolean, error` | Fehlschlag fuer Redelivery oder Dead-Letter melden (single-shot) |
@@ -103,7 +103,7 @@ Ein `queue.consumer`-Entry bindet eine Queue an eine Handler-Funktion (referenzi
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

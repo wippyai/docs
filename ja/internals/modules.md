@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | 出力が変動（時間、乱数） |
 | `ClassIO` | 外部I/O操作 |
 | `ClassNetwork` | ネットワーク操作 |
+| `ClassEncoding` | シリアライズとエンコーディング |
+| `ClassTime` | クロックとタイマーへのアクセス |
+| `ClassProcess` | プロセス制御 |
+| `ClassSecurity` | セキュリティコンテキストとトークン |
 | `ClassStorage` | データ永続化 |
 | `ClassWorkflow` | ワークフロー安全な操作 |
 
-`ClassDeterministic`のみでタグ付けされたモジュールはワークフロー安全。I/Oやネットワーククラスを追加すると、モジュールは関数とプロセスに制限。
+ワークフロープロセスは許可クラスとして`ClassDeterministic`と`ClassWorkflow`を指定してコンパイルされる。モジュールはこれらのいずれかを持てばワークフローから利用でき、そうでなければ関数とプロセスに制限される。
 
 ## 関数の公開
 

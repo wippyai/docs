@@ -45,10 +45,14 @@ var Module = &luaapi.ModuleDef{
 | `ClassNondeterministic` | 출력이 다름 (시간, 랜덤) |
 | `ClassIO` | 외부 I/O 작업 |
 | `ClassNetwork` | 네트워크 작업 |
+| `ClassEncoding` | 직렬화 및 인코딩 |
+| `ClassTime` | 시계 및 타이머 접근 |
+| `ClassProcess` | 프로세스 제어 |
+| `ClassSecurity` | 보안 컨텍스트 및 토큰 |
 | `ClassStorage` | 데이터 지속성 |
 | `ClassWorkflow` | 워크플로우 안전 작업 |
 
-`ClassDeterministic`만 태그된 모듈은 워크플로우 안전합니다. I/O나 네트워크 클래스를 추가하면 모듈이 함수와 프로세스로 제한됩니다.
+워크플로우 프로세스는 허용 클래스로 `ClassDeterministic`과 `ClassWorkflow`를 두고 컴파일됩니다. 모듈은 둘 중 하나 이상을 가지면 워크플로우에서 사용할 수 있고, 그렇지 않으면 함수와 프로세스로 제한됩니다.
 
 ## 함수 노출
 

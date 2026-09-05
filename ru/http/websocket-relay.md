@@ -109,7 +109,7 @@ end
 | `target_pid` | string | обязательно | PID процесса для получения сообщений |
 | `message_topic` | string | `ws.message` | Топик для сообщений клиента |
 | `heartbeat_interval` | duration | - | Частота heartbeat (напр. `30s`) |
-| `metadata` | object | - | Прикрепляется ко всем сообщениям |
+| `metadata` | object | - | Прикрепляется к сообщениям join/leave/heartbeat |
 
 ## Топики сообщений
 
@@ -157,14 +157,11 @@ end
 
 ## Отправка клиенту
 
-Отправка сообщений обратно через PID клиента. Любой выбранный вами топик оборачивается в JSON `{topic, data}` и пересылается в WebSocket. Тип фрейма определяется форматом payload: строки становятся text-фреймами, bytes — binary-фреймами (закодированными в base64 внутри JSON-обёртки).
+Отправка сообщений обратно через PID клиента. Любой выбранный вами топик оборачивается в JSON `{topic, data}` и пересылается в WebSocket. Каждое сообщение от сервера к клиенту отправляется одним TEXT-фреймом WebSocket, содержащим JSON-обёртку `{topic, data}`. Бинарные payload кодируются в base64 в поле `data`; они НЕ отправляются отдельными бинарными фреймами.
 
 ```lua
 -- Отправка структурированного сообщения (любое имя топика)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- Отправка бинарных данных
-process.send(client_pid, "data", binary_content)
 
 -- Закрытие соединения (payload — строка с причиной закрытия)
 process.send(client_pid, "ws.close", "Session ended")

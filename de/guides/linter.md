@@ -26,7 +26,7 @@ Der Linter validiert alle Lua-Eintragsarten:
 - `process.lua` - Prozesse
 - `workflow.lua` - Workflows
 
-Ihre vorkompilierten `.bc`-Varianten (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) werden ebenfalls gelintet.
+Bytecode-Einträge enthalten kompilierten Bytecode (fs/path/hash), keinen Quelltext, und können daher weder geparst noch typgeprüft werden; der Linter prüft nur quelltextführende Lua-Einträge (ihre `.bc`-Varianten werden übersprungen, können aber weiterhin in der Gesamtzahl der Einträge erscheinen).
 
 Jeder Eintrag wird geparst, typgepruft und auf Korrektheitsprobleme analysiert.
 
@@ -242,6 +242,8 @@ Beispiel fur einen GitHub-Actions-Schritt:
 | `--rules` | | false | Lint-Regeln aktivieren (W-Serie Stil-/Qualitatsprufungen) |
 | `--cache-reset` | | false | Cache vor dem Linting leeren |
 | `--lock-file` | `-l` | wippy.lock | Pfad zur Lock-Datei |
+| `--profile` | | | Ein Workspace-Profil aus der zusammengeführten Laufzeitkonfiguration anwenden (wiederholbar, in Reihenfolge angewendet) |
+| `--set` | | | Einen zusammengeführten Laufzeitkonfigurationswert überschreiben (`section.path=value`, wiederholbar) |
 
 ## Siehe auch
 

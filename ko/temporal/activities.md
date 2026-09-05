@@ -31,6 +31,7 @@ description: "액티비티는 비결정론적 작업을 실행하는 함수입�
 |-------|----------|-------------|
 | `worker` | 예 | `temporal.worker` 엔트리 참조 |
 | `local` | 아니오 | 로컬 액티비티로 실행 (기본값: false) |
+| `name` | 아니오 | 커스텀 액티비티 타입 이름 (기본값: 엔트리 ID) |
 
 ## 구현
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | 액티비티 취소 대기 |
 | `activity.disable_eager_execution` | boolean | false | 즉시 실행 비활성화 |
 | `activity.retry_policy` | table | - | 재시도 설정 (아래 참조) |
+| `activity.name` | string | - | 레지스트리 ID와 다를 때 호출할 액티비티 타입 이름 |
+| `activity.summary` | string | - | Temporal UI에 표시되는 사람이 읽을 수 있는 요약 |
+| `activity.priority` | table | - | 태스크 우선순위: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (빌드 ID 상속) 또는 `default` (할당 규칙 사용) |
 
 duration 값은 문자열 (`"5s"`, `"10m"`, `"1h"`) 또는 밀리초 숫자를 허용합니다.
 
@@ -194,14 +199,7 @@ duration 값은 문자열 (`"5s"`, `"10m"`, `"1h"`) 또는 밀리초 숫자를 �
         local: true
 ```
 
-특징:
-- 워크플로우 워커 프로세스에서 실행
-- 낮은 지연 시간 (태스크 큐 왕복 없음)
-- 별도의 태스크 큐 오버헤드 없음
-- 짧은 실행 시간으로 제한 (`local_activity_options.schedule_to_close_timeout`에 의해 제한되며, 일반적으로 몇 초)
-- heartbeat 없음
-
-입력 검증, 데이터 변환, 캐시 조회와 같은 빠르고 짧은 작업에 로컬 액티비티를 사용하세요. 장기 실행 작업에는 일반 액티비티를 사용하세요.
+현재 `local: true`는 파싱되지만 일반 액티비티와 동일하게 동작합니다: 표준 액티비티 경로를 통해 등록되고 실행됩니다. 아직 별도의 로컬 액티비티 실행 경로가 없으므로 지연 시간, 태스크 큐 동작, heartbeat에 영향을 주지 않습니다.
 
 ## 액티비티 명명
 
@@ -300,9 +298,9 @@ end
 | 실패 | 에러 종류 | 재시도 가능 | 설명 |
 |---------|------------|-----------|-------------|
 | 애플리케이션 에러 | 액티비티가 반환한 것 | 반환된 에러에서 상속됨 | `return nil, err`로 액티비티 코드가 반환한 에러 |
-| 런타임 크래시 | `INTERNAL` | true | 액티비티의 처리되지 않은 Lua 에러 |
-| 누락된 액티비티 | `NOT_FOUND` | false | 워커에 등록되지 않은 액티비티 |
-| 타임아웃 | `TIMEOUT` | true | 설정된 타임아웃을 초과한 액티비티 |
+| 런타임 크래시 | `Internal` | false | 액티비티의 처리되지 않은 Lua 에러 |
+| 누락된 액티비티 | `NotFound` | false | 워커에 등록되지 않은 액티비티 |
+| 타임아웃 | `Timeout` | false | 설정된 타임아웃을 초과한 액티비티 |
 | 보안 검증 | `Internal` | true | 전파된 보안 헤더의 서명, 대상 또는 엔벨로프 검사 실패 |
 | 보안 정책 누락 | `Internal` | true | 보안 엔벨로프에 지명된 정책이 이 워커에서 해석되지 않음 |
 
@@ -315,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

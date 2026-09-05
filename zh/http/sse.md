@@ -152,7 +152,7 @@ res:set_header("X-SSE-Relay", json.encode({
 客户端收到 `ready` 事件：
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:gateway|0x0002a}", "message_topic": "sse.message"}
 ```
 
 ## 消息主题
@@ -163,7 +163,7 @@ res:set_header("X-SSE-Relay", json.encode({
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | 客户端连接 | `client_pid`、`metadata` |
 | `sse.message` | target → stream | 默认事件主题 | 作为 SSE 事件转发 |
-| `sse.heartbeat` | stream → target | 周期性（如已配置） | `client_pid`、`uptime`、`message_count` |
+| `sse.heartbeat` | stream → target | 周期性（默认每 30 秒） | `client_pid`、`uptime`、`message_count`、`metadata` |
 | `sse.leave` | stream → target | 客户端断开 | `client_pid`、`metadata` |
 | `sse.control` | any → stream | 控制命令 | 中继配置字段 |
 | `sse.close` | any → stream | 强制关闭 | 可选的原因字符串 |

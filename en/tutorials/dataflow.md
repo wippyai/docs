@@ -210,8 +210,9 @@ LLM for grounded answers.
 
 ## Operational Notes
 
-- **Chunk size**: 500–1000 tokens is a good default. Use `chunk_overlap` (~10–20% of
-  chunk size) so sentences aren't cut across boundaries.
+- **Chunk size**: `chunk_size` and `chunk_overlap` count characters, not tokens;
+  2000–4000 characters is a good default. Use `chunk_overlap` (~10–20% of chunk size) so
+  sentences aren't cut across boundaries.
 - **Dimensions**: `text-embedding-3-small` at 512 dimensions is cost-efficient and
   matches the `embeddings_512` table. Larger vectors mean larger storage and slower
   search.

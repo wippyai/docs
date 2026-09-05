@@ -45,7 +45,7 @@ Verbindungen werden automatisch an den Pool zurückgegeben, wenn die Funktion be
 </note>
 
 <note>
-Platzhalter werden unverändert an den Datenbanktreiber übergeben; die Laufzeit schreibt sie nicht um. SQLite und MySQL verwenden `?`, PostgreSQL verwendet `$1, $2` — schreiben Sie sie in der vom Treiber erwarteten Form. Die folgenden Beispiele verwenden `?` (SQLite/MySQL). Für Abfragen, die mehrere Engines unterstützen sollen, erstellen Sie sie mit dem [Query Builder](#query-builder) und setzen Sie das `placeholder_format` des jeweiligen Dialekts.
+Platzhalter werden unverändert an den Datenbanktreiber übergeben; die Laufzeit schreibt sie nicht um. SQLite und MySQL verwenden `?`, PostgreSQL verwendet `$1, $2` — schreiben Sie sie in der vom Treiber erwarteten Form. Die folgenden Beispiele verwenden `?` (SQLite/MySQL). Für Abfragen, die mehrere Engines unterstützen sollen, erstellen Sie sie mit dem [Query Builder](#query-builder): `run_with` schreibt Platzhalter zu `$1, $2` um, wenn das Handle PostgreSQL ist, und `to_sql` verwendet das `placeholder_format` des Builders.
 </note>
 
 ## Konstanten
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Array von Sqlizer- oder Table-Bedingungen |
 
 **Gibt zurück:** `Sqlizer`
+
+## sqlizer:to_sql
+
+Erzeugt das SQL-Fragment und die Bind-Argumente einer Bedingung.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Gibt zurück:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ Setzt mehrere Spalten aus Table.
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `map` | table | {spalte = wert}-Paare |
+| `map` | table | {spalte = wert}-Paare; Werte sind einfache Werte, `sql.NULL` oder `sql.as.*` (für Ausdrücke `set` verwenden) |
 
 **Gibt zurück:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ Datenbankzugriff unterliegt der Sicherheitsrichtlinienauswertung.
 | Ressource nicht gefunden | `errors.NOT_FOUND` | nein |
 | Ressource keine Datenbank | `errors.INVALID` | nein |
 | Ungültige Parameter | `errors.INVALID` | nein |
-| SQL-Syntaxfehler | `errors.INVALID` | nein |
+| SQL-Syntaxfehler | `errors.UNKNOWN` | nil |
 | Statement geschlossen | `errors.INVALID` | nein |
 | Transaktion nicht aktiv | `errors.INVALID` | nein |
 | Ungültiger Savepoint-Name | `errors.INVALID` | nein |
-| Abfrageausführungsfehler | variiert | variiert |
+| Abfrageausführungsfehler | `errors.UNKNOWN` | nil |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
 

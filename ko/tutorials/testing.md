@@ -118,12 +118,6 @@ entries:
 wippy test
 ```
 
-반복 작업 중에는 엔트리 id 부분 문자열(namespace:name)로 필터링합니다:
-
-```bash
-wippy test calc_test
-```
-
 위 스위트의 출력:
 
 ```

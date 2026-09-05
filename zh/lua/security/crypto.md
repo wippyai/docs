@@ -176,7 +176,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | 要验证的 JWT 令牌 |
 | `key` | string | 密钥（HMAC）或 PEM 公钥（RSA） |
 | `alg` | string? | 预期算法（默认：HS256） |
-| `require_exp` | boolean? | 验证过期时间（默认：true） |
+| `require_exp` | boolean? | 要求存在 `exp` 声明（默认：true）；存在的 `exp` 始终会被验证 |
 
 **返回值:** `table, error`
 

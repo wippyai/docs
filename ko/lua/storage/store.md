@@ -80,7 +80,7 @@ end
 
 **반환:** `any, error`
 
-키가 존재하지 않으면 `nil` 반환.
+키가 존재하지 않거나 만료된 경우 `nil`과 `errors.NOT_FOUND` 에러를 반환합니다.
 
 ## 존재 확인
 
@@ -88,7 +88,7 @@ end
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ end
 
 ## 에러
 
-`store.get()`과 스토어 핸들의 모든 메서드(`get`, `set`, `has`, `delete`)는 구조화된 오류를 반환합니다(`err:kind()` 사용).
+`store.get()`과 스토어 핸들의 모든 메서드(`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`)는 구조화된 오류를 반환합니다(`err:kind()` 사용). 단, `store.get`, `get`, `set`, `has`, `delete`에서의 권한 거부는 대신 Lua 에러로 발생합니다.
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
 | 빈 리소스 ID | `errors.INVALID` | 아니오 |
-| 리소스를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
+| 리소스를 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 스토어 해제됨 | `errors.INVALID` | 아니오 |
-| 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | 아니오 |
 | `only_if_absent`이고 키가 존재함 | `errors.ALREADY_EXISTS` | 아니오 |
 | `if_version` 불일치 | `errors.CONFLICT` | 예 |
 | 지원하지 않는 스토어에서 조건부 쓰기 | `errors.INVALID` | 아니오 |

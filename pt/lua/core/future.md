@@ -87,6 +87,8 @@ Cancelar operação assíncrona (best-effort):
 future:cancel()
 ```
 
+**Retorna:** `boolean, error`
+
 A operação ainda pode completar se ja estiver em andamento.
 
 ## Padrão de Timeout
@@ -102,7 +104,7 @@ local r = channel.select {
 
 if r.channel == timeout then
     future:cancel()
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 return r.value:data()
@@ -134,4 +136,4 @@ return r.value:data()
 | Condição | Tipo |
 |----------|------|
 | Operação cancelada | `CANCELED` |
-| Operação async falhou | varia |
+| Operação async falhou | `result()` preserva o kind da operação; `error()` reporta `INTERNAL` |

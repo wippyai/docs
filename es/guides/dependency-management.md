@@ -97,9 +97,9 @@ entries:
 ### Reglas de Resolucion
 
 - Cada modulo se resuelve contra la **interseccion de todos los rangos declarados** en el grafo de dependencias. Los rangos incompatibles (conflictos de diamante) hacen fallar la resolucion con un error explicito en lugar de elegir silenciosamente un lado.
-- Las dependencias se resuelven a partir de sus rangos declarados, no de pins resueltos previamente.
-- **Las declaraciones raiz ganan sobre las transitivas**: cuando tu app y una dependencia traen el mismo modulo o requirement, tu declaracion tiene prioridad.
-- El mismo componente puede declararse como dependencia raiz solo una vez — una declaracion duplicada se rechaza con un error de conflicto. Actualiza la dependencia existente en su lugar.
+- Un `wippy update` completo resuelve cada modulo a partir de sus rangos declarados; una actualizacion dirigida y la reparacion en el arranque conservan una version fijada que siga satisfaciendo todos los rangos vivos.
+- **Los parametros raiz ganan sobre los transitivos**: cuando tu app y una dependencia enlazan el mismo requirement, los parametros de tu `ns.dependency` tienen prioridad. Los rangos de version nunca se sobrescriben; cada declaracion se suma a la interseccion.
+- Un componente declarado por varias entradas `ns.dependency` raiz queda controlado por una de ellas — las declaraciones establecidas antes que las nuevas, las portadoras de parametros antes que las simples, y los empates por el ID de entrada mas bajo — y las demas se pliegan en referencias a ella. Un duplicado cuyos parametros no coinciden con la declaracion controladora se rechaza con un error de conflicto; actualiza la dependencia existente en su lugar.
 
 Dos fallos de resolucion se reportan de forma distinta. Una expresion de restriccion que ninguna release podria satisfacer jamas — la interseccion de los rangos vivos esta vacia — es un conflicto, y el error nombra el modulo y cada solicitante que aporto un rango. Un conjunto de rangos valido para el que el hub no publica actualmente ninguna version coincidente es en cambio un fallo de disponibilidad: una release posterior puede volverlo resoluble sin cambiar ninguna declaracion.
 

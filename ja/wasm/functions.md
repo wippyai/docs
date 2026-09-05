@@ -193,6 +193,8 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### WASI Clocksによる非同期スリープ
 
-`wasi:clocks`と`wasi:io`をインポートするWASMコンポーネントはクロックとポーリングを使用できます。非同期yieldメカニズムはWippyディスパッチャと統合されています:
+`wasi:clocks`、`wasi:io`、`wasi:poll`をインポートするWASMコンポーネントはクロックとポーリングを使用できます。非同期yieldメカニズムはWippyディスパッチャと統合されています:
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ local active, err = funcs.call("myns:filter_active", users)
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

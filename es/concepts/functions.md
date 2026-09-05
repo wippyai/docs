@@ -96,7 +96,7 @@ pool:
 ```
 
 <tip>
-Si no especifica un tipo de pool, el runtime selecciona uno basado en su configuración. Establezca `workers` para static, `max_size` para lazy, o establezca `type` explícitamente para control total.
+Si no especifica un tipo de pool, el runtime selecciona uno basado en su configuración. Establezca `workers` para static, `max_size` para lazy, o establezca `type` explícitamente para control total. Si no se establece ninguno, el pool es lazy con un máximo de 16 workers.
 </tip>
 
 ## Interceptores

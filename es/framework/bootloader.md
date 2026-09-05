@@ -78,7 +78,7 @@ Un bootloader es cualquier entrada `function.lua` con `meta.type: bootloader`:
 | Campo | Requerido | Descripcion |
 |-------|----------|-------------|
 | `meta.type` | Si | Debe ser `bootloader` |
-| `meta.order` | No | Orden de ejecucion (predeterminado `100`); el menor se ejecuta primero |
+| `meta.order` | No | Orden de ejecucion (predeterminado `999`); el menor se ejecuta primero |
 | `meta.description` | No | Resumen legible para humanos |
 | `meta.requires` | No | Pistas de dependencia mostradas en los logs |
 
@@ -129,9 +129,9 @@ Los valores de `order` mas bajos se ejecutan primero. Reserva ordenes bajos para
 | `10` | Secretos y claves de encriptacion (proporcionado por el modulo) |
 | `20` | Migraciones de esquema (proporcionado por `wippy/migration`) |
 | `50` | Sembrado de datos, calentamiento de indices de busqueda |
-| `100` | Predeterminado -- tareas a nivel de aplicacion |
+| `100` | Tareas a nivel de aplicacion (convencion) |
 
-Cuando dos bootloaders comparten un orden, el orden de ejecucion entre ellos no esta garantizado.
+Cuando dos bootloaders comparten un orden, se ejecutan en orden alfabetico por su ID de entrada completamente calificado.
 
 ## Bootloaders Integrados
 

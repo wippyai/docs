@@ -149,8 +149,8 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 마이그레이션은 `target_db`의 데이터베이스 드라이버에 적합한 스키마를 생성합니다:
 
-- **PostgreSQL** - `vector(512)` 컬럼과 IVFFlat 인덱스가 있는 `embeddings` 테이블. `pgvector` 확장이 필요합니다.
-- **SQLite** - 텍스트로 저장된 벡터와 KNN 검색을 위한 동반 `sqlite-vec` 가상 테이블이 있는 `embeddings` 테이블.
+- **PostgreSQL** - `vector(512)` 컬럼과 IVFFlat 인덱스가 있는 `embeddings_512` 테이블. `pgvector` 확장이 필요합니다.
+- **SQLite** - KNN 검색을 위해 메타데이터 및 콘텐츠 컬럼과 함께 `embedding float[512]` 벡터 컬럼을 담는 `embeddings_512` `vec0` 가상 테이블.
 
 벡터는 API 레이어에서 항상 일반 JSON 배열을 통해 왕복됩니다.
 

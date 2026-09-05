@@ -31,6 +31,7 @@ Activity 是执行非确定性操作的函数。任何 `function.lua` 或 `proce
 |-------|----------|-------------|
 | `worker` | 是 | 对 `temporal.worker` 条目的引用 |
 | `local` | 否 | 作为本地 activity 执行（默认: false） |
+| `name` | 否 | 自定义 activity 类型名（默认为条目 ID） |
 
 ## 实现
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | 等待 activity 取消完成 |
 | `activity.disable_eager_execution` | boolean | false | 禁用即时执行 |
 | `activity.retry_policy` | table | - | 重试配置（见下文） |
+| `activity.name` | string | - | 与注册表 ID 不同时，要调用的 activity 类型名 |
+| `activity.summary` | string | - | 在 Temporal UI 中显示的可读摘要 |
+| `activity.priority` | table | - | 任务优先级：`priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `activity.versioning_intent` | string | - | `compatible`（继承 build ID）或 `default`（使用分配规则） |
 
 Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单位的数字。
 
@@ -194,14 +199,7 @@ Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单�
         local: true
 ```
 
-特点：
-- 在 workflow worker 进程中执行
-- 延迟更低（无任务队列往返）
-- 无单独任务队列开销
-- 仅限短时执行（受 `local_activity_options.schedule_to_close_timeout` 限制，通常为几秒）
-- 无 heartbeat 机制
-
-适合快速、短时的操作，如输入验证、数据转换或缓存查找。对于长时间运行的工作，请改用常规 activity。
+目前 `local: true` 会被解析，但行为与普通 activity 完全相同：它通过标准 activity 路径注册和执行。尚不存在独立的 local activity 执行路径，因此它不会改变延迟、任务队列行为或 heartbeat。
 
 ## Activity 命名
 
@@ -300,9 +298,9 @@ end
 | 故障 | 错误类型 | 可重试 | 描述 |
 |---------|------------|-----------|-------------|
 | 应用错误 | activity 返回的内容 | 继承自返回的错误 | activity 代码通过 `return nil, err` 返回的错误 |
-| 运行时崩溃 | `INTERNAL` | 是 | activity 中未处理的 Lua 错误 |
-| 缺少 activity | `NOT_FOUND` | 否 | Activity 未注册到 worker |
-| 超时 | `TIMEOUT` | 是 | Activity 超过配置的超时时间 |
+| 运行时崩溃 | `Internal` | 否 | activity 中未处理的 Lua 错误 |
+| 缺少 activity | `NotFound` | 否 | Activity 未注册到 worker |
+| 超时 | `Timeout` | 否 | Activity 超过配置的超时时间 |
 | 安全校验 | `Internal` | 是 | 传播的安全头部的签名、受众或信封检查失败 |
 | 缺少安全策略 | `Internal` | 是 | 安全信封中指定的某个策略在该 worker 上无法解析 |
 
@@ -315,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

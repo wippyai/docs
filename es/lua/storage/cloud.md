@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | Clave del objeto |
 | `options.expiration` | integer | Segundos hasta que expire la URL (predeterminado: 3600) |
 | `options.content_type` | string | Tipo de contenido requerido para carga |
-| `options.content_length` | integer | Tamano maximo de carga en bytes |
+| `options.content_length` | integer | Tamano esperado de carga en bytes |
 
 **Devuelve:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **Devuelve:** `Reader, error`
 
-El ETag del objeto se fija cuando el reader se abre y se envía como `If-Match` en cada lectura por rango, de modo que un objeto sobrescrito a mitad de lectura falla con `errors.CONFLICT` en lugar de servir una mezcla de dos generaciones del objeto. Un proveedor que no puede suministrar un ETag devuelve `errors.UNAVAILABLE`; el reader nunca sirve un objeto sin fijar.
+El ETag del objeto se fija cuando el reader se abre y se envía como `If-Match` en cada lectura por rango, de modo que un objeto sobrescrito a mitad de lectura hace fallar la lectura con el error de precondición del proveedor en lugar de servir una mezcla de dos generaciones del objeto; `archive` lo expone como `errors.INTERNAL`. Un proveedor que no puede suministrar un ETag devuelve `errors.UNAVAILABLE`; el reader nunca sirve un objeto sin fijar.
 
 Las lecturas con fallo de caché realizan IO de red bloqueante en la tarea llamante y serializan a los lectores concurrentes, por lo que el acceso secuencial por entrada - el patrón de archive - es la forma prevista.
 
@@ -494,10 +494,10 @@ Las operaciones de almacenamiento en la nube estan sujetas a evaluacion de polit
 | Objeto no encontrado | `errors.NOT_FOUND` | no |
 | ID de carga desconocido | `errors.NOT_FOUND` | no |
 | Precondición condicional fallida | `errors.CONFLICT` | no |
-| Objeto sobrescrito durante una lectura por rango | `errors.CONFLICT` | no |
+| Objeto sobrescrito durante una lectura por rango (expuesto por `archive`) | `errors.INTERNAL` | no |
 | El proveedor no soporta cargas multiparte | `errors.UNAVAILABLE` | no |
 | El proveedor no suministra ETag para `open_reader` | `errors.UNAVAILABLE` | no |
-| Permiso denegado | `errors.PERMISSION_DENIED` | no |
-| Operación fallida | `errors.INTERNAL` | no |
+| Permiso denegado | lanzado como error de Lua, no retornado | - |
+| Operación del proveedor fallida | `errors.UNKNOWN` | sin definir |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

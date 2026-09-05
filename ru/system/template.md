@@ -31,9 +31,9 @@ description: "Рендеринг шаблонов с помощью CloudyKit Je
 | `engine.development_mode` | bool | false | Отключить кеширование шаблонов |
 | `engine.delimiters.left` | string | `{{` | Открывающий разделитель |
 | `engine.delimiters.right` | string | `}}` | Закрывающий разделитель |
-| `engine.delimiters.comment_left` | string | `{*` | Открывающий разделитель комментария |
-| `engine.delimiters.comment_right` | string | `*}` | Закрывающий разделитель комментария |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Расширения файлов шаблонов |
+| `engine.delimiters.comment_left` | string | `{*` | Только валидируется; комментарии всегда используют `{*` из Jet |
+| `engine.delimiters.comment_right` | string | `*}` | Только валидируется; комментарии всегда используют `*}` из Jet |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Только валидируется; поиск по имени всегда пробует встроенные в Jet `.jet`, `.html.jet`, `.jet.html` |
 | `engine.globals` | map | - | Переменные, доступные во всех шаблонах |
 
 ## Шаблоны

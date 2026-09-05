@@ -313,7 +313,7 @@ return {upload_url = url}
 | `key` | string | Object key |
 | `options.expiration` | integer | Seconds until URL expires (default: 3600) |
 | `options.content_type` | string | Required content type for upload |
-| `options.content_length` | integer | Maximum upload size in bytes |
+| `options.content_length` | integer | Expected upload size in bytes |
 
 **Returns:** `string, error`
 
@@ -440,7 +440,7 @@ storage:release()
 
 **Returns:** `Reader, error`
 
-The object's ETag is pinned when the reader opens and sent as `If-Match` on every ranged read, so an object overwritten mid-read fails with `errors.CONFLICT` instead of serving a mix of two object generations. A provider that cannot supply an ETag returns `errors.UNAVAILABLE`; the reader never serves an unpinned object.
+The object's ETag is pinned when the reader opens and sent as `If-Match` on every ranged read, so an object overwritten mid-read fails the read with the provider's precondition error instead of serving a mix of two object generations; `archive` surfaces it as `errors.INTERNAL`. A provider that cannot supply an ETag returns `errors.UNAVAILABLE`; the reader never serves an unpinned object.
 
 Cache-miss reads perform blocking network IO in the calling task and serialize concurrent readers, so sequential per-entry access - the archive pattern - is the intended shape.
 
@@ -494,10 +494,10 @@ Cloud storage operations are subject to security policy evaluation.
 | Object not found | `errors.NOT_FOUND` | no |
 | Unknown upload ID | `errors.NOT_FOUND` | no |
 | Conditional precondition failed | `errors.CONFLICT` | no |
-| Object overwritten during a ranged read | `errors.CONFLICT` | no |
+| Object overwritten during a ranged read (surfaced by `archive`) | `errors.INTERNAL` | no |
 | Provider does not support multipart uploads | `errors.UNAVAILABLE` | no |
 | Provider supplies no ETag for `open_reader` | `errors.UNAVAILABLE` | no |
-| Permission denied | `errors.PERMISSION_DENIED` | no |
-| Operation failed | `errors.INTERNAL` | no |
+| Permission denied | raised as a Lua error, not returned | - |
+| Provider operation failed | `errors.UNKNOWN` | unset |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

@@ -82,7 +82,7 @@ local function get_user(id)
     local db, err = sql.get("app:main_db")
     if err then return nil, err end
 
-    local rows, err = db:query("SELECT * FROM users WHERE id = $1", id)
+    local rows, err = db:query("SELECT * FROM users WHERE id = $1", {id})
     if err then return nil, err end
     if #rows == 0 then return nil, errors.new(errors.NOT_FOUND, "user not found") end
 
@@ -97,6 +97,7 @@ return get_user
 ```lua
 local http = require("http")
 local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
     local req = http.request()
@@ -133,7 +134,7 @@ local function worker(initial_config)
 
         if r.channel == events then
             local ev = r.value
-            if ev.type == process.event.CANCEL then
+            if ev.kind == process.event.CANCEL then
                 break
             end
         elseif r.channel == inbox then
@@ -263,8 +264,8 @@ end
 -- SQL
 local sql = require("sql")
 local db = sql.get("app:main_db")
-local rows, err = db:query("SELECT * FROM users WHERE active = $1", true)
-db:execute("INSERT INTO users (name) VALUES ($1)", name)
+local rows, err = db:query("SELECT * FROM users WHERE active = $1", {true})
+db:execute("INSERT INTO users (name) VALUES ($1)", {name})
 
 -- Key-value store
 local store = require("store")
@@ -318,7 +319,7 @@ local time = require("time")
 time.sleep("5s")
 local now = time.now()
 local timeout = time.after("30s")  -- channel that fires once
-local ticker = time.ticker("10s")  -- repeating channel
+local ticker = time.ticker("10s")  -- ticker:channel() fires every interval
 ```
 
 ### 注册表

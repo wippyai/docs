@@ -420,17 +420,19 @@ List all available commands:
 wippy run list
 ```
 
+`wippy run list` accepts `--profile` and `--set` so the listing reflects the same merged runtime config `wippy run` would use.
+
 ### Command Metadata Fields
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Command name used with `wippy run <name>` |
 | `short` | No | Short description shown in `wippy run list` |
-| `main` | No | Mark this entry as the default command (picked automatically by packs and hub modules that ship a single command) |
+| `main` | No | Mark this entry as the default entrypoint. When a pack or hub module is run without a command name, the single `main` entry of that use case is executed; a lone entrypoint is picked even without `main`, and several entrypoints with no `main` is an error |
 | `use_case` | No | Entrypoint category, default `run`. The entry declaring `use_case: test` is what `wippy test` executes |
 | `security` | No | Security context the command runs under when launched from the CLI |
 
-Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process as string payloads.
+Any process entry kind works (`process.lua`, `process.wasm`). Command names are not checked for uniqueness; when several loaded entries declare the same name, the first match in registry order runs. Arguments after the command name are passed to the process as string payloads.
 
 ### Command security
 
@@ -562,7 +564,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # debug
+  stream_to_events: true
 
 profiler:
   enabled: true

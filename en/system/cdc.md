@@ -53,9 +53,9 @@ Both kinds expose the same Lua API, the same source info record and the same cha
 | `streaming` | bool | false | Use the streaming `pgoutput` protocol version |
 | `temporary` | bool | false | Use a temporary replication slot (removed on disconnect) |
 | `failover` | bool | false | Enable failover slot mode (mutually exclusive with `temporary`) |
-| `standby_interval` | duration | - | Standby status message interval (e.g. `10s`) |
-| `status_interval` | duration | - | Status update interval to the server |
-| `snapshot_fetch_size` | int | - | Rows fetched per snapshot batch (must be >= 0) |
+| `standby_interval` | duration | `10s` | Standby status message interval (e.g. `10s`) |
+| `status_interval` | duration | `30s` | Status update interval to the server |
+| `snapshot_fetch_size` | int | 1000 | Rows fetched per snapshot batch (must be >= 0) |
 | `max_transaction_changes` | int | 1000000 | Maximum changes buffered while decoding one transaction |
 | `max_transaction_bytes` | int | 268435456 | Maximum logical bytes buffered while decoding one transaction (256 MiB) |
 | `max_inflight_changes` | int | 1000000 | Maximum changes held across all in-flight transactions |

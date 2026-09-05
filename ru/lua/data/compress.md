@@ -64,7 +64,7 @@ if content_encoding == "gzip" then
     local body = req:body()
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.new("Invalid gzip data"):kind(errors.INVALID)
     end
     body = decompressed
 end
@@ -72,7 +72,7 @@ end
 -- Распаковка с ограничением размера (защита от zip-бомб)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.new("Decompressed size exceeds 10MB limit"):kind(errors.INVALID)
 end
 ```
 
@@ -341,6 +341,6 @@ end
 | Пустой ввод | `errors.INVALID` | нет |
 | Уровень вне диапазона | `errors.INVALID` | нет |
 | Некорректные сжатые данные | `errors.INVALID` | нет |
-| Распакованный размер превышает лимит | `errors.INTERNAL` | нет |
+| Распакованный размер превышает лимит | `errors.INTERNAL` (gzip, zlib, zstd) / `errors.INVALID` (deflate, brotli) | нет |
 
 См. [Обработка ошибок](lua/core/errors.md) для работы с ошибками.

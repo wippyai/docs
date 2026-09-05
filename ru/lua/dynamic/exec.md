@@ -140,7 +140,7 @@ if err then
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", "Сборка завершилась с кодом: " .. exit_code)
+    return nil, errors.new({ kind = errors.INTERNAL, message = "Сборка завершилась с кодом: " .. exit_code })
 end
 ```
 
@@ -179,7 +179,7 @@ stdout:close()
 stderr:close()
 
 if exit_code ~= 0 then
-    return nil, errors.new("INTERNAL", table.concat(err_output))
+    return nil, errors.new({ kind = errors.INTERNAL, message = table.concat(err_output) })
 end
 
 return result

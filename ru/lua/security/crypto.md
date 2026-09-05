@@ -176,7 +176,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | JWT-токен для проверки |
 | `key` | string | Секрет (HMAC) или публичный ключ PEM (RSA) |
 | `alg` | string? | Ожидаемый алгоритм (по умолчанию HS256) |
-| `require_exp` | boolean? | Проверять срок действия (по умолчанию true) |
+| `require_exp` | boolean? | Требовать наличие claim `exp` (по умолчанию true); присутствующий `exp` проверяется всегда |
 
 **Возвращает:** `table, error`
 

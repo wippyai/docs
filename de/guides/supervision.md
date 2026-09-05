@@ -43,6 +43,7 @@ Dienste registrieren sich beim Supervisor mit einem `lifecycle`-Block. Für Proz
 | `stop_timeout` | `10s` | Maximale Zeit für Graceful Shutdown |
 | `stable_threshold` | `5s` | Laufzeit bevor Dienst als stabil gilt |
 | `requires` | `[]` | Dienste, die zuerst laufen müssen (Legacy-Alias: `depends_on`) |
+| `startup` | `required` | `required` meldet einen fehlgeschlagenen oder blockierten Auto-Start als Transaktionsfehler; `optional` lässt den Dienst im Hintergrund weiter versuchen, ohne den Batch scheitern zu lassen |
 
 ## Abhängigkeitsauflösung
 

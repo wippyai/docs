@@ -193,6 +193,8 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### Async Sleep with WASI Clocks
 
-WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
+WASM components that import `wasi:clocks`, `wasi:io` and `wasi:poll` can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ WASM components that import `wasi:clocks` and `wasi:io` can use clocks and polli
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

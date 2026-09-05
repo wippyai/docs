@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 알 수 없는 옵션 키는 `errors.INVALID`로 거부됩니다. 테이블 이름은 정규화된 릴레이션과 순수 테이블 이름 양쪽에 대해 대소문자를 구분하지 않고 매칭됩니다. 스냅샷 행은 `tables`로만 필터링되며, `ops`는 라이브 변경에 적용됩니다.
 
-`opts.snapshot`이 true이거나 소스 항목의 `snapshot` 필드가 설정된 경우 스트림은 스냅샷을 받습니다. 스냅샷 행이 `op = "snapshot"`으로 먼저 도착한 다음, 스트림은 빈틈 없이 라이브 변경으로 이어집니다. `opts.after`는 `capture_resume` 기능이 설정된 드라이버만 존중합니다. 현재 제공되는 모든 드라이버는 이에 대해 `errors.INVALID`("cdc operation is not supported by this source")를 반환합니다.
+`opts.snapshot`이 true이거나 소스 항목의 `snapshot` 필드가 설정된 경우 스트림은 스냅샷을 받습니다. 스냅샷 행이 `op = "snapshot"`으로 먼저 도착한 다음, 스트림은 빈틈 없이 라이브 변경으로 이어집니다. `opts.after`는 커서에서 재개하는 드라이버를 위해 예약되어 있습니다. 현재 제공되는 모든 드라이버는 이에 대해 `errors.INVALID`("cdc operation is not supported by this source")를 반환하며, `capture_resume`을 보고하는 `db.cdc.postgres`도 마찬가지입니다.
 
 필터는 전달 범위를 좁힐 뿐입니다. 소스에 대한 접근은 `cdc.subscribe` 권한이 부여하는 것이지, 필터가 부여하지 않습니다.
 
@@ -154,7 +154,7 @@ stream:close()
 | `slot` | 복제 슬롯 이름 (`db.cdc.postgres`) |
 | `publication` | 구성된 경우 Postgres publication |
 | `tables` | 구성된 경우 캡처 대상 테이블 |
-| `streaming` | 소스가 현재 실행 중인지 여부 |
+| `streaming` | `db.cdc.sqlite`: 소스가 실행 중인지 여부, `db.cdc.postgres`: 항목의 `streaming` 프로토콜 설정 |
 | `failover` | 페일오버 슬롯 모드 (`db.cdc.postgres`) |
 | `temporary` | 임시 슬롯 (`db.cdc.postgres`) |
 | `snapshot` | 항목 수준 스냅샷 기본값 |
@@ -187,7 +187,7 @@ end
 
 | 조건 | 종류 |
 |-----------|------|
-| 컨텍스트 없음 / 프로세스 PID 없음 | `errors.INTERNAL` |
+| 컨텍스트 없음 | `errors.INTERNAL` |
 | 소스 이름이 필요함 | `errors.INVALID` |
 | 유효하지 않거나 알 수 없는 스트림 옵션 | `errors.INVALID` |
 | `capture_resume`이 없는 소스에 `after` 사용 | `errors.INVALID` |

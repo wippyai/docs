@@ -149,8 +149,8 @@ local hits, err = embeddings.find_by_origin(query, origin_id, {
 
 Миграция создаёт схему, соответствующую драйверу базы данных в `target_db`:
 
-- **PostgreSQL** -- таблица `embeddings` со столбцом `vector(512)` и индексом IVFFlat. Требуется расширение `pgvector`.
-- **SQLite** -- таблица `embeddings` с вектором, хранящимся как текст, плюс сопутствующая виртуальная таблица `sqlite-vec` для KNN-поиска.
+- **PostgreSQL** -- таблица `embeddings_512` со столбцом `vector(512)` и индексом IVFFlat. Требуется расширение `pgvector`.
+- **SQLite** -- виртуальная таблица `embeddings_512` `vec0`, содержащая векторный столбец `embedding float[512]` рядом со столбцами метаданных и контента для KNN-поиска.
 
 Векторы на уровне API всегда передаются через обычный JSON-массив.
 

@@ -26,7 +26,7 @@ wippy lint --summary              # Group results by error code
 - `process.lua` - プロセス
 - `workflow.lua` - ワークフロー
 
-それらのプリコンパイル済み `.bc` バリアント（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）もリントされます。
+バイトコードエントリはソースではなくコンパイル済みバイトコード（fs/path/hash）を保持するため、パースも型チェックもできません。リンターはソースを持つ Lua エントリのみをチェックします（`.bc` バリアントはスキップされますが、エントリ総数には現れることがあります）。
 
 各エントリはパースされ、型チェックされ、正確性の問題が解析されます。
 
@@ -242,6 +242,8 @@ GitHub Actionsステップの例:
 | `--rules` | | false | リントルールを有効化（Wシリーズのスタイル/品質チェック） |
 | `--cache-reset` | | false | リント前にキャッシュをクリア |
 | `--lock-file` | `-l` | wippy.lock | ロックファイルのパス |
+| `--profile` | | | マージ済みランタイム設定からワークスペースプロファイルを適用（繰り返し指定可、指定順に適用）|
+| `--set` | | | マージ済みランタイム設定の値を上書き（`section.path=value`、繰り返し指定可）|
 
 ## 関連項目
 

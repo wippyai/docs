@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 Las claves de opción desconocidas se rechazan con `errors.INVALID`. Los nombres de tabla se comparan sin distinguir mayúsculas contra la relación cualificada y contra el nombre de tabla desnudo. Las filas del snapshot se filtran solo por `tables`; `ops` se aplica a los cambios en vivo.
 
-Un stream recibe un snapshot cuando `opts.snapshot` es true o cuando el campo `snapshot` de la entrada de la fuente está establecido; las filas del snapshot llegan primero con `op = "snapshot"`, y después el stream continúa hacia los cambios en vivo sin hueco. `opts.after` solo lo respetan los drivers cuya capacidad `capture_resume` está establecida — todos los drivers que se distribuyen hoy retornan `errors.INVALID` ("cdc operation is not supported by this source") para él.
+Un stream recibe un snapshot cuando `opts.snapshot` es true o cuando el campo `snapshot` de la entrada de la fuente está establecido; las filas del snapshot llegan primero con `op = "snapshot"`, y después el stream continúa hacia los cambios en vivo sin hueco. `opts.after` está reservado para los drivers que reanudan desde un cursor — todos los drivers que se distribuyen hoy retornan `errors.INVALID` ("cdc operation is not supported by this source") para él, incluido `db.cdc.postgres` cuando reporta `capture_resume`.
 
 Los filtros solo restringen la entrega. El acceso a una fuente lo concede el permiso `cdc.subscribe`, nunca un filtro.
 
@@ -154,7 +154,7 @@ Cada mensaje recibido en el canal es una tabla de cambio:
 | `slot` | Nombre del slot de replicación (`db.cdc.postgres`) |
 | `publication` | Publicación de Postgres, cuando está configurada |
 | `tables` | Tablas capturadas, cuando están configuradas |
-| `streaming` | Si la fuente está actualmente en ejecución |
+| `streaming` | `db.cdc.sqlite`: si la fuente está en ejecución; `db.cdc.postgres`: el ajuste de protocolo `streaming` de la entrada |
 | `failover` | Modo de slot de failover (`db.cdc.postgres`) |
 | `temporary` | Slot temporal (`db.cdc.postgres`) |
 | `snapshot` | Valor por defecto de snapshot a nivel de entrada |
@@ -187,7 +187,7 @@ Una acción denegada retorna `errors.PERMISSION_DENIED`.
 
 | Condición | Kind |
 |-----------|------|
-| Sin contexto / sin PID de proceso | `errors.INTERNAL` |
+| Sin contexto | `errors.INTERNAL` |
 | Se requiere el nombre de la fuente | `errors.INVALID` |
 | Opción de stream inválida o desconocida | `errors.INVALID` |
 | `after` sobre una fuente sin `capture_resume` | `errors.INVALID` |

@@ -80,6 +80,9 @@ table.remove(t [,pos])         -- Remove and return element at pos (default: las
 table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
 table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
 table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.create(narr, nhash)      -- Preallocate table with array and hash capacity
+table.freeze(t)                -- Make table immutable, returns t
+table.isfrozen(t)              -- true if table is immutable
 ```
 
 ```lua
@@ -131,6 +134,9 @@ string.reverse(s)          -- Reverse string
 
 ```lua
 string.format(fmt, ...)    -- Printf-style formatting
+string.pack(fmt, ...)      -- Pack values into a binary string
+string.unpack(fmt, s [,pos]) -- Unpack binary string, returns values and next position
+string.packsize(fmt)       -- Size in bytes of a packed format
 ```
 
 Format specifiers: `%d` (integer), `%f` (float), `%s` (string), `%q` (quoted), `%x` (hex), `%o` (octal), `%e` (scientific), `%%` (literal %)
@@ -184,7 +190,7 @@ Mathematical functions and constants:
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
+math.huge     -- Largest representable float
 math.mininteger  -- Minimum integer
 math.maxinteger  -- Maximum integer
 ```
@@ -209,6 +215,8 @@ math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
 math.log(x)           -- Natural log
 math.log10(x)         -- Base-10 log
+math.frexp(x)         -- Mantissa and exponent
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Trigonometry
@@ -228,7 +236,7 @@ math.rad(d)   -- Degrees to radians
 math.random()         -- Random float [0,1)
 math.random(n)        -- Random integer [1,n]
 math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Set random seed
+math.randomseed(x)    -- No effect; the generator is auto-seeded
 ```
 
 ### Type Conversion
@@ -338,8 +346,9 @@ The following standard Lua features are NOT available for security:
 | `load`, `loadstring`, `loadfile`, `dofile` | Use [Dynamic Evaluation](lua/dynamic/eval.md) module |
 | `collectgarbage` | Automatic GC |
 | `rawlen` | Use `#` operator |
-| `io.*` | Use [File System](lua/storage/filesystem.md) module |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
+| Standard `io.*` file library | Use [File System](lua/storage/filesystem.md) module; the `io` module in Wippy is [Terminal I/O](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Use [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) modules |
+| `string.dump` | Not available |
 | `debug.*` | Not available |
 | `utf8.*` | Not available |
 | `package.loadlib` | Native libraries not supported |

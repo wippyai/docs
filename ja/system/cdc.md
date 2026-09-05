@@ -53,9 +53,9 @@ description: "db.cdc.postgresとdb.cdc.sqliteを使って、Postgresの論理レ
 | `streaming` | bool | false | ストリーミング版の`pgoutput`プロトコルを使用する |
 | `temporary` | bool | false | 一時レプリケーションスロットを使用する（切断時に削除される） |
 | `failover` | bool | false | フェイルオーバースロットモードを有効にする（`temporary`と排他） |
-| `standby_interval` | duration | - | スタンバイステータスメッセージの間隔（例: `10s`） |
-| `status_interval` | duration | - | サーバーへのステータス更新の間隔 |
-| `snapshot_fetch_size` | int | - | スナップショットのバッチごとに取得する行数（0以上であること） |
+| `standby_interval` | duration | `10s` | スタンバイステータスメッセージの間隔（例: `10s`） |
+| `status_interval` | duration | `30s` | サーバーへのステータス更新の間隔 |
+| `snapshot_fetch_size` | int | 1000 | スナップショットのバッチごとに取得する行数（0以上であること） |
 | `max_transaction_changes` | int | 1000000 | 1つのトランザクションをデコードする間にバッファリングする変更の最大数 |
 | `max_transaction_bytes` | int | 268435456 | 1つのトランザクションをデコードする間にバッファリングする論理バイト数の最大値（256 MiB） |
 | `max_inflight_changes` | int | 1000000 | 処理中の全トランザクションにわたって保持する変更の最大数 |

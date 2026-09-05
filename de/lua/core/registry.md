@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Filterfelder werden gegen Entry-Metadaten abgeglichen.
+Schlüssel mit dem Präfix `.` treffen auf Entry-Felder (`.kind`, `.ns`, `.name`, `.id`) und akzeptieren `*`-Globs. Schlüssel mit dem Präfix `meta.` treffen auf Entry-Metadaten; ein führendes `~`, `*`, `^` oder `$` an einem `meta.`-Schlüssel wählt Regex-, Enthält-, Präfix- oder Suffix-Abgleich. Schlüssel ohne eines der Präfixe werden ignoriert.
 
 ## ID parsen
 

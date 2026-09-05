@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## Decoding Entry Data
 
-Use `entry.DecodeEntryConfig` from `internal/entry` to unmarshal entry data. This helper lives under `internal/`, so it is only importable from inside the runtime module; out-of-tree extensions must copy the pattern or use the transcoder directly:
+Use `entry.DecodeEntryConfig` from `system/entry` to unmarshal entry data. `DecodeEntryConfigFromContext` takes the transcoder from the context instead of an argument, and `DecodeEntryConfigRaw` skips placeholder resolution:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 The decoder:
-1. Unmarshals `entry.Data` into your config struct
-2. Populates `ID` and `Meta` from the entry
-3. Calls `InitDefaults()` if implemented
-4. Calls `Validate()` if implemented
+1. Resolves `${env:...}` placeholders and `*_env` companion fields against the environment registry
+2. Unmarshals `entry.Data` into your config struct
+3. Populates `ID` and `Meta` from the entry when the struct leaves them empty
+4. Calls `InitDefaults()` if implemented
+5. Calls `Validate()` if implemented
 
 ## Config Structure
 

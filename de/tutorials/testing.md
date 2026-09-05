@@ -126,12 +126,6 @@ Die `imports`-Map steuert, worauf `require(...)` innerhalb des Tests aufgelöst 
 wippy test
 ```
 
-Filtere während des Iterierens nach einem Teilstring der Entry-ID (namespace:name):
-
-```bash
-wippy test calc_test
-```
-
 Ausgabe für die obige Suite:
 
 ```

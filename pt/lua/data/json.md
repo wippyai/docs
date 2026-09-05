@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- Tratar erros
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
     print(err:message())  -- detalhes do erro de parse
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Agora seguro para decodificar
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | Tipos de chave mistos na tabela | `errors.INTERNAL` | não |
 | Aninhamento excede 128 niveis | `errors.INTERNAL` | não |
 | Sintaxe JSON invalida | `errors.INTERNAL` | não |
+| Entrada não é uma string ou é string vazia (decode) | `errors.INVALID` | não |
 | Compilação de schema falhou | `errors.INVALID` | não |
 | Validação falhou | `errors.INVALID` | não |
 

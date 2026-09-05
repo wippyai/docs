@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ LLM 模块需要两个基础设施条目：
 - `env.storage.os` 从环境变量提供 API 密钥
 - `process.host` 提供 LLM 模块内部使用的进程运行时
 
+`terminal.host` 是 `wippy run -x` 执行 `ask` 进程的地方，也是 `io.print` 写入的目标。
+
 ### 生成代码
 
 创建 `src/ask.lua`：
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### 模型定义
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-这会直接调用函数并打印结果。模型定义告诉 LLM 模块使用哪个提供商以及向 API 发送什么模型名称。
+这会在终端宿主上运行 `ask` 进程，将问题作为参数传入并打印结果。模型定义告诉 LLM 模块使用哪个提供商以及向 API 发送什么模型名称。
 
 ## 阶段 2：对话
 
-从单次调用升级到使用提示词构建器的多轮对话。将条目从函数更改为带有终端 I/O 的进程。
+从单次调用升级到使用提示词构建器的多轮对话。将该进程注册为命名命令。
 
 ### 更新条目定义
 

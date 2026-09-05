@@ -50,6 +50,7 @@ flowchart LR
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -74,6 +75,8 @@ type Bus struct {
 | Stop | サブスクライバーをクリア、キューをドレイン、ループを終了 |
 
 SubscribeとUnsubscribeはディスパッチャが確認するまでブロック。Sendはファイアアンドフォーゲット。
+
+バスが`DefaultMaxSubscribers`（4096）個のアクティブなサブスクリプションを保持すると、`Subscribe`は`ErrSubscribersCapReached`で拒否される。
 
 `Subscribe`は、サブスクリプションのコンテキストが既にキャンセルされている場合は即座に失敗し、所有権の判断が下される前にキャンセルされた場合はディスパッチャ側で再度失敗する。バスは自身がインストールしていないチャネルを決して受け取らない。
 

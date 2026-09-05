@@ -20,7 +20,7 @@ options:
   ratelimit.requests: "100"
 ```
 
-Opções usam notação de ponto: `nome_middleware.opcao.nome`. Formato legado com underscore é suportado para compatibilidade retroativa.
+Opções usam notação de ponto: `middleware_name.option.name`. Formato legado com underscore é suportado para compatibilidade retroativa.
 
 ## Pre-Match vs Pós-Match
 
@@ -101,7 +101,7 @@ options:
 
 **Estratégias de chave:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Retorna `429 Too Many Requests` com headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Retorna `429 Too Many Requests` com headers: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
@@ -143,7 +143,7 @@ options:
 
 | Opção | Padrão | Descrição |
 |-------|--------|-----------|
-| `real_ip.trusted.subnets` | Redes privadas | CIDRs de proxies confiáveis |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918, link-local, CGNAT e faixas locais IPv6 | CIDRs de proxies confiáveis |
 | `real_ip.trust_all` | `false` | Confia em todas as fontes (inseguro) |
 
 **Prioridade de header:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -294,7 +294,7 @@ post_options:
 
 <warning>Pre-match</warning>
 
-Registra spans e métricas OpenTelemetry para requisições recebidas. Registrado automaticamente quando OTel está habilitado; caso contrário atua como no-op.
+Registra spans de servidor OpenTelemetry para requisições recebidas. Sempre registrado; atua como no-op quando o OTel ou sua instrumentação HTTP está desabilitada.
 
 ```yaml
 middleware:

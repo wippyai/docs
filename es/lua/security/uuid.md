@@ -135,7 +135,7 @@ Campos de tabla devuelta:
 - `version` (integer): Versión UUID (1, 3, 4, 5, o 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, o Invalid
 - `timestamp` (integer): Marca de tiempo Unix (solo v1 y v7)
-- `node` (string): ID de nodo (solo v1)
+- `node` (string): 6 bytes crudos del ID de nodo (solo v1)
 
 ### Formatear
 

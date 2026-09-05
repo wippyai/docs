@@ -24,7 +24,7 @@ Handler subscriben mit Patterns:
 |---------|---------|
 | `http.service` | Nur exakter Match |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## EntryListener-Interface
 
@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## Entry-Daten dekodieren
 
-Verwenden Sie `entry.DecodeEntryConfig` aus `internal/entry`, um Entry-Daten zu unmarshallen. Dieser Helper befindet sich unter `internal/`, ist also nur innerhalb des Runtime-Moduls importierbar; Erweiterungen außerhalb des Baums müssen das Muster kopieren oder den Transcoder direkt verwenden:
+Verwenden Sie `entry.DecodeEntryConfig` aus `system/entry`, um Entry-Daten zu unmarshallen. `DecodeEntryConfigFromContext` nimmt den Transcoder aus dem Kontext statt als Argument, und `DecodeEntryConfigRaw` überspringt die Platzhalterauflösung:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 Der Decoder:
-1. Unmarshalled `entry.Data` in Ihre Config-Struct
-2. Befüllt `ID` und `Meta` aus dem Entry
-3. Ruft `InitDefaults()` auf wenn implementiert
-4. Ruft `Validate()` auf wenn implementiert
+1. Löst `${env:...}`-Platzhalter und `*_env`-Begleitfelder gegen die Environment-Registry auf
+2. Unmarshalled `entry.Data` in Ihre Config-Struct
+3. Befüllt `ID` und `Meta` aus dem Entry, wenn die Struct sie leer lässt
+4. Ruft `InitDefaults()` auf wenn implementiert
+5. Ruft `Validate()` auf wenn implementiert
 
 ## Config-Struktur
 

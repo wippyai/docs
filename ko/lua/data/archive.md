@@ -166,6 +166,12 @@ s:close()
 
 **권한:** `archive.read`
 
+워커도 랜덤 액세스 리더와 동일한 옵션을 받는 `extract_all`을 지원하며, 모든 항목을 한 번의 호출로 대상 파일 시스템에 스트리밍합니다:
+
+```lua
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
+```
+
 `tar`, `tar.gz`, `tar.zst`는 네이티브로 스트리밍됩니다. `zip`은 항목별 로컬 헤더로 파싱되며, 스트리밍 데이터 디스크립터(크기/CRC가 데이터 뒤에 오는)로 작성된 항목은 항목 경계까지 압축을 해제해 읽습니다. 큰 업로드의 견고한 zip 처리를 위해서는 업로드를 먼저 파일로 내려놓은 뒤(제한된 순차 복사) `archive.open`을 사용하십시오:
 
 ```lua
@@ -197,7 +203,7 @@ local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
 
 ```lua
 w:add("notes.txt", "hello")
-w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
 ### add_file
@@ -224,7 +230,7 @@ w:add_dir("empty/")
 w:close()
 ```
 
-`add*` 옵션: `{ method = "store"|"deflate", mode, modified }`. zip 라이터는 데이터 디스크립터를 사용해 탐색 불가능한 라이터로도 스트리밍하므로, 응답 스트림에 쓰는 것도 동작합니다.
+`add*` 옵션: `{ method = "store"|"deflate", mode, size }`. tar 포맷은 항목 크기를 미리 알아야 하므로, 스트림이나 리더에서 `tar*` 아카이브로 `add()`할 때는 `size`가 필요합니다(문자열과 `add_file`은 크기를 스스로 제공합니다). zip 라이터는 데이터 디스크립터를 사용해 탐색 불가능한 라이터로도 스트리밍하므로, 응답 스트림에 쓰는 것도 동작합니다.
 
 ## 오류
 

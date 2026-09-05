@@ -37,7 +37,7 @@ Para una ruta relativa, `base: project` la mantiene relativa al directorio de tr
 
 Cualquier otro valor se rechaza con `invalid directory base`.
 
-El modo restringe todas las operaciones de archivo. Los bits de ejecución se agregan automáticamente cuando los bits de lectura están presentes.
+El modo restringe todas las operaciones de archivo. Los bits de ejecución se agregan automáticamente cuando todos los bits de lectura están establecidos y ningún bit de ejecución lo está.
 
 <note>
 Las rutas se normalizan y validan. No es posible acceder a archivos fuera del directorio raíz configurado.
@@ -68,6 +68,7 @@ Ambos tipos de sistema de archivos implementan:
 | OpenFile (escribir) | Sí | No |
 | Remove | Sí | No |
 | Mkdir | Sí | No |
+| Rename | Sí | No |
 
 Las operaciones de escritura en sistemas de archivos embebidos retornan un error.
 

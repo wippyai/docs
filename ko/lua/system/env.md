@@ -26,7 +26,7 @@ local env = require("env")
 -- 데이터베이스 연결 문자열 가져오기
 local db_url = env.get("DATABASE_URL")
 if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 -- 기본값과 함께 가져오기
@@ -92,7 +92,7 @@ end
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```

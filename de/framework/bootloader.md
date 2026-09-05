@@ -78,7 +78,7 @@ Ein Bootloader ist ein beliebiger `function.lua`-Eintrag mit `meta.type: bootloa
 | Feld | Erforderlich | Beschreibung |
 |-------|----------|-------------|
 | `meta.type` | Ja | Muss `bootloader` sein |
-| `meta.order` | Nein | Ausfuehrungsreihenfolge (Standard `100`); niedrigere laufen zuerst |
+| `meta.order` | Nein | Ausfuehrungsreihenfolge (Standard `999`); niedrigere laufen zuerst |
 | `meta.description` | Nein | Menschenlesbare Zusammenfassung |
 | `meta.requires` | Nein | Abhaengigkeitshinweise, die in Logs angezeigt werden |
 

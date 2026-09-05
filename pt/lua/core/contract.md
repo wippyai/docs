@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |-------|------|-----------|
 | `name` | string | Nome do método |
 | `description` | string | Descrição do método |
-| `input_schemas` | table[] | Definições de schema de entrada |
-| `output_schemas` | table[] | Definições de schema de saída |
+| `input_schemas` | table[] | Definições de schema de entrada (ausente quando o método não declara nenhum) |
+| `output_schemas` | table[] | Definições de schema de saída (ausente quando o método não declara nenhum) |
 
 ## Encontrando Implementações
 
@@ -195,7 +195,12 @@ As opções aplicam-se a cada chamada de método na instância retornada. Apenas
 | Opção | Tipo | Descrição |
 |--------|------|-----------|
 | `retry.max_attempts` | int | Tentativas máximas incluindo a primeira (1 desativa retry) |
-| `retry.initial_delay` | int/duration | Atraso antes do primeiro retry (ms ou string de duração) |
+| `retry.initial_delay` | int/duration | Atraso antes do primeiro retry (ms ou string de duração), padrão `100` |
+| `retry.max_delay` | int/duration | Limite superior do atraso de backoff (ms ou string de duração), padrão `10s` |
+| `retry.backoff_factor` | number | Multiplicador aplicado ao atraso após cada tentativa, padrão `2.0` |
+| `retry.jitter` | number | Fração de jitter aleatório aplicada a cada atraso, padrão `0.1` |
+| `retry.retry_kinds` | string[] | Só repete erros destes kinds; por padrão todo kind exceto `Invalid`, `PermissionDenied` e `Internal` é repetido |
+| `retry.skip_kinds` | string[] | Nunca repete erros destes kinds |
 
 ## Contexto de Segurança
 
@@ -233,4 +238,4 @@ Sem `with_actor`/`with_scope` explícitos, um contract aberto herda o ator e o e
 | Método não encontrado | `errors.NOT_FOUND` |
 | Sem binding padrão | `errors.NOT_FOUND` |
 | Permissão negada | `errors.PERMISSION_DENIED` |
-| Chamada falhou | `errors.INTERNAL` |
+| Chamada falhou | kind do erro da implementação (preservado); `errors.INTERNAL` para falhas de dispatch |

@@ -59,7 +59,7 @@ wippy run --profile pg
 - La sección `disable` admite operaciones de lista dentro de perfiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — de modo que un perfil puede ajustar la lista base en lugar de reemplazarla.
 - Las referencias `${name}` se interpolan desde la sección `vars:` fusionada. Las referencias a variables de entorno del SO no están permitidas dentro de las vars de perfil; usa `${env:NAME}` en la configuración base, resuelta al cargar el archivo.
 
-`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` y `pack` aceptan `--profile`; `run list`, `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -82,13 +82,12 @@ Controla el enrutamiento de registros del runtime. La salida en consola se confi
 |-------|------|---------|-------------|
 | `propagate_downstream` | bool | true | Enviar registros a la salida de consola/archivo |
 | `stream_to_events` | bool | false | Publicar registros al bus de eventos para acceso programático |
-| `min_level` | int | -1 | Nivel mínimo: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-1` con `-v`) | Nivel mínimo: -1=debug, 0=info, 1=warn, 2=error. La CLI escribe esta clave a partir de sus flags después de leer el archivo, así que un valor del archivo se ignora; cámbialo con `--set logmanager.min_level=<n>` |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 Ver: [Módulo Logger](lua/system/logger.md)
@@ -232,13 +231,14 @@ Caché de la VM de Lua y evaluación de expresiones.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `proto_cache_size` | int | 60000 | Caché de prototipos compilados |
-| `main_cache_size` | int | 10000 | Caché del chunk principal |
-| `cache.enabled` | bool | false | Persistir caché de bytecode/verificación de tipos en disco |
+| `cache.enabled` | bool | `type_system.enabled` | Persistir caché de bytecode/verificación de tipos en disco; sigue a `type_system.enabled` salvo que se establezca explícitamente |
 | `cache.dir` | string | `.wippy/cache/lua` | Ruta del directorio de caché (relativa al directorio de configuración/trabajo) |
-| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (por defecto), `readonly`, `off` |
+| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (por defecto), `readonly`, `off`; los valores desconocidos recaen en `readwrite` |
 | `cache.compile.enabled` | bool | true | Persistir el bytecode compilado (cuando `cache.enabled`) |
 | `cache.typecheck.enabled` | bool | true | Persistir los resultados de verificación de tipos (cuando `cache.enabled`) |
+| `cache.max_bytes` | int | 1073741824 | Límite máximo del tamaño de la caché en disco, en bytes |
+| `cache.max_entries` | int | 20000 | Número máximo de entradas en caché |
+| `cache.prune_interval` | int | 256 | Escrituras entre pasadas de purga de la caché |
 | `type_system.enabled` | bool | false | Habilitar verificación estática de tipos |
 | `type_system.strict` | bool | false | Tratar advertencias de tipos como errores |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Espera a que se confirme la invalidación de código tras cambiar una entrada |
@@ -248,7 +248,6 @@ Caché de la VM de Lua y evaluación de expresiones.
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -257,6 +256,22 @@ lua:
 ```
 
 Ver: [Visión General de Lua](lua/overview.md)
+
+## Scheduler
+
+Particionado de núcleos para el runtime WASM. Cuando está habilitado, se reservan `reserved_cores` CPUs para la ejecución WASM y el resto sirve al scheduler de actores; una división inválida (por ejemplo, más núcleos reservados que disponibles) se registra y se ignora.
+
+| Campo | Tipo | Por defecto | Descripción |
+|-------|------|---------|-------------|
+| `wasm_isolation.enabled` | bool | false | Particionar núcleos entre trabajo WASM y de actores |
+| `wasm_isolation.reserved_cores` | int | 1 | Núcleos reservados para la ejecución WASM |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -307,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Las variables de entorno estándar de OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) sobrescriben los campos correspondientes.
+Las variables de entorno estándar de OTEL (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`) sobrescriben los campos correspondientes.
 
 Ver: [Guía de Observabilidad](guides/observability.md)
 
@@ -331,7 +346,7 @@ Buffer interno de recolección de métricas.
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `buffer.size` | int | 10000 | Capacidad del buffer de métricas |
-| `interceptor.enabled` | bool | false | Rastrear automáticamente llamadas a funciones |
+| `interceptor.enabled` | bool | true | Rastrear automáticamente llamadas a funciones |
 
 ```yaml
 metrics:
@@ -351,6 +366,7 @@ Endpoint de métricas de Prometheus.
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Iniciar servidor de métricas |
 | `address` | string | | Dirección de escucha; debe establecerse explícitamente cuando `enabled: true`, de lo contrario el servidor de métricas no arranca |
+| `max_cardinality` | int | 1024 | Conjuntos de etiquetas distintos retenidos por métrica (LRU); `0` o menos usa el valor por defecto |
 
 ```yaml
 prometheus:
@@ -358,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Expone el endpoint `/metrics` para el scraping de Prometheus.
+Expone el endpoint `/metrics` para el scraping de Prometheus, más `/livez`.
 
 Ver: [Guía de Observabilidad](guides/observability.md)
 
@@ -373,6 +389,8 @@ Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft ac
 | `enabled` | bool | false | Habilitar clustering |
 | `name` | string | hostname | Nombre del nodo; debe ser único en el cluster |
 | `failure_domain` | string | | Etiqueta de zona/rack; anunciada en gossip para que los votantes se distribuyan entre dominios |
+| `kv_crdt_tombstone_retention` | duration | 0 | Antigüedad tras la cual se reclaman las lápidas de borrado de `store.kv.crdt`; `0` deshabilita el GC por antigüedad |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | Usar la membresía viva actual como conjunto de confirmación de lápidas |
 
 ### Membresía (gossip)
 
@@ -443,6 +461,8 @@ Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo
 | `raft.max_append_entries` | int | 16 | Máximo de entradas por RPC AppendEntries |
 | `raft.leader_probe_interval` | duration | 3s | Cadencia de sonda de alcanzabilidad del líder del registro global |
 | `raft.leader_probe_grace` | int | 3 | Fallos consecutivos de sonda antes de declarar al líder inalcanzable |
+| `raft.registry_backend` | string | kv | Implementación del registro de nombres del clúster: `kv` (espacio de claves kv compartido) o `fsm` (FSM Raft dedicada) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | Cuánto tiempo conserva la caché de diseminación de nombres globales las lápidas de borrado |
 
 Nodo único (desarrollo) — clustering activado, se bootstrapea inmediatamente:
 

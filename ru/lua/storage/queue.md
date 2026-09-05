@@ -80,7 +80,7 @@ local all_headers = msg:headers()
 | Метод | Возвращает | Описание |
 |-------|------------|----------|
 | `id()` | `string, error` | Уникальный идентификатор сообщения |
-| `header(key)` | `any, error` | Одно значение заголовка (nil если отсутствует) |
+| `header(key)` | `string, error` | Одно значение заголовка строкой (nil если отсутствует) |
 | `headers()` | `table, error` | Все заголовки сообщения |
 | `ack()` | `boolean, error` | Подтвердить обработку (single-shot) |
 | `nack()` | `boolean, error` | Сообщить о сбое для повторной доставки или dead-letter (single-shot) |
@@ -103,7 +103,7 @@ local stats, err = queue.info("app:tasks")
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

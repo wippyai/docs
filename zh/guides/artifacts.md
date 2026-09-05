@@ -27,7 +27,7 @@ entries:
     directory: ./package
 ```
 
-其他什么都不变：该资源照常被打包进 WAPP。已声明的产物会**在模块发布和应用打包期间被验证**，因此格式错误的产物会在发布时失败，而不是在消费方那里失败。
+其他什么都不变：该资源像任何其他 `fs.directory` 一样被嵌入 WAPP——在 `wippy.yaml` 的 `embed:` 下列出它，或者给 `wippy publish` 和 `wippy pack` 传 `--embed`；未被嵌入的目录既不会被打包也不会被验证。已声明的产物会**在模块发布和应用打包期间被验证**，因此格式错误的产物会在发布时失败，而不是在消费方那里失败。
 
 ## 格式
 
@@ -150,10 +150,10 @@ platform/ui-kit/
 
 ```bash
 # 只验证不发布
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # 发布
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 已声明的产物会作为发布的一部分被验证，因此不符合该格式规则的 package.json 会在这里被拒绝，而不是在消费方的构建中。
@@ -164,7 +164,7 @@ wippy publish --create --module-type library --module-visibility public --versio
 
 ```bash
 # 在生产方模块中
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # 消费方从本地 pack 而不是已发布的 pack 物化
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -194,6 +194,9 @@ build:
 
 ```yaml
 # build-inputs/wippy.lock — 一个只为抓取而存在的项目
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

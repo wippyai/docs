@@ -341,7 +341,7 @@ Jede Status-Tabelle hat das gleiche Format wie `system.supervisor.state()`.
 
 ## Cluster-Primitive
 
-Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Sie sind am nützlichsten, wenn [Clustering aktiviert ist](guides/cluster.md); auf einem Einzelknoten degradieren sie vorhersagbar — `system.raft.*` meldet "raft not available", `system.cluster` meldet nur den lokalen Knoten, und `system.lock` erfordert die globale Registry, die Clustering bereitstellt.
+Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Sie sind am nützlichsten, wenn [Clustering aktiviert ist](guides/cluster.md); auf einem Einzelknoten degradieren sie vorhersagbar — `system.raft.*` meldet "raft not available", `system.cluster` meldet nur den lokalen Knoten, und `system.lock` erfordert den Raft-gestützten KV-Store, den Clustering bereitstellt.
 
 Alle Leseaufrufe sind lokal und günstig: sie melden die Sicht dieses Knotens auf den committierten Zustand, ohne je das Netzwerk zu blockieren.
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- rohe Stats-Map (string -> st
 
 ### Verteilte Sperren
 
-`system.lock` bietet clusterweiten gegenseitigen Ausschluss. Eine Sperre ist ein global eindeutiger Name, der dem aufrufenden Prozess gehört. Sie baut auf dem Strong-Namens-Scope auf, sodass höchstens ein Halter clusterweit existieren kann, und die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet — es gibt keine steckengebliebene Sperre zu bereinigen.
+`system.lock` bietet clusterweiten gegenseitigen Ausschluss. Eine Sperre ist ein global eindeutiger Name, der dem aufrufenden Prozess gehört. Sie baut auf dem Raft-replizierten System-KV-Store auf, sodass höchstens ein Halter clusterweit existieren kann, und die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet — es gibt keine steckengebliebene Sperre zu bereinigen.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|-----|--------------|
-| Berechtigung verweigert | `errors.INVALID` | nein |
+| Berechtigung verweigert (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert (alle anderen Aufrufe) | `errors.INVALID` | nein |
 | Ungültiges Argument | `errors.INVALID` | nein |
 | Fehlendes erforderliches Argument | `errors.INVALID` | nein |
 | Code-Manager nicht verfügbar | `errors.INTERNAL` | nein |
@@ -482,5 +483,6 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Raft läuft nicht auf diesem Knoten | `errors.INTERNAL` | nein |
 | Mitgliedschaft nicht verfügbar | `errors.INTERNAL` | nein |
 | Sperre bereits gehalten | `errors.ALREADY_EXISTS` | nein |
+| Sperrdienst nicht verfügbar (kein Raft auf diesem Knoten) | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

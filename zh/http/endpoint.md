@@ -150,6 +150,7 @@ return { handler = handler }
 | `req:query(name)` | string | 查询参数 |
 | `req:query_params()` | table | 所有查询参数 |
 | `req:header(name)` | string | 请求头 |
+| `req:headers()` | table | 所有请求头 |
 | `req:body()` | string | 请求体 |
 | `req:body_json()` | table, error | 解析 JSON 请求体 |
 | `req:has_body()` | boolean | 检查是否存在请求体 |

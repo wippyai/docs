@@ -109,7 +109,7 @@ end
 | `target_pid` | string | 필수 | 메시지를 받을 프로세스 PID |
 | `message_topic` | string | `ws.message` | 클라이언트 메시지의 토픽 |
 | `heartbeat_interval` | duration | - | 하트비트 빈도 (예: `30s`) |
-| `metadata` | object | - | 모든 메시지에 첨부 |
+| `metadata` | object | - | join/leave/heartbeat 메시지에 첨부 |
 
 ## 메시지 토픽
 
@@ -157,14 +157,11 @@ end
 
 ## 클라이언트로 전송
 
-클라이언트 PID를 사용하여 메시지 반환. 선택한 어떤 토픽이든 `{topic, data}` JSON으로 래핑되어 WebSocket으로 전달됩니다. 프레임 타입은 페이로드 형식에 따라 결정됩니다: 문자열은 텍스트 프레임이 되고, 바이트는 바이너리 프레임이 됩니다 (JSON 래퍼 내부에서 base64 인코딩).
+클라이언트 PID를 사용하여 메시지 반환. 선택한 어떤 토픽이든 `{topic, data}` JSON으로 래핑되어 WebSocket으로 전달됩니다. 서버에서 클라이언트로 가는 모든 메시지는 `{topic, data}` JSON 래퍼를 담은 단일 WebSocket TEXT 프레임으로 전송됩니다. 바이너리 페이로드는 `data` 필드에 base64로 인코딩됩니다; 별도의 바이너리 프레임으로 전송되지 않습니다.
 
 ```lua
 -- 구조화된 메시지 전송 (임의의 토픽 이름)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- 바이너리 전송
-process.send(client_pid, "data", binary_content)
 
 -- 연결 종료 (페이로드는 종료 사유 문자열)
 process.send(client_pid, "ws.close", "Session ended")

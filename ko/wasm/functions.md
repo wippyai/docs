@@ -193,6 +193,8 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### WASI Clocks를 사용한 비동기 슬립
 
-`wasi:clocks`와 `wasi:io`를 임포트하는 WASM 컴포넌트는 클럭과 폴링을 사용할 수 있습니다. 비동기 양보 메커니즘은 Wippy 디스패처와 통합됩니다:
+`wasi:clocks`, `wasi:io`, `wasi:poll`을 임포트하는 WASM 컴포넌트는 클럭과 폴링을 사용할 수 있습니다. 비동기 양보 메커니즘은 Wippy 디스패처와 통합됩니다:
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ local active, err = funcs.call("myns:filter_active", users)
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

@@ -57,8 +57,9 @@ Comandos de sistema (0-255) usam indexação de array. Comandos estendidos usam 
 | 130-139 | security | ValidateToken, CreateToken |
 | 140-149 | function | Call, AsyncStart, AsyncCancel |
 | 150-159 | exec | ProcessWait |
-| 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run |
+| 160-169, 173-174 | cloudstorage | Upload, Download, List, Presigned URLs, Multipart, OpenReader |
+| 170-171 | eval | Compile, Run |
+| 172 | cdc | Subscribe |
 | 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
 | 200-211 | pg (grupo de processos) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |

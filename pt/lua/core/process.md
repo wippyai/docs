@@ -134,7 +134,7 @@ local events = process.events()  -- Eventos de ciclo de vida do tópico @events
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
-| `from` | string | PID de origem |
+| `from` | string | PID de origem (ausente para OUTDATED) |
 | `result` | table | Para EXIT/LINK_DOWN: um registro {value, error}; o valor de retorno do processo está em `result.value` e qualquer erro em `result.error` |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
@@ -163,8 +163,8 @@ Ao receber do inbox ou com `{message = true}`:
 local msg = inbox:receive()
 
 msg:topic()            -- string: nome do tópico
-msg:from()             -- string|nil: PID do remetente
-msg:payload()          -- Payload: wrapper (chame :data() para extrair)
+msg:from()             -- string: PID do remetente (string vazia quando desconhecido)
+msg:payload()          -- Payload: wrapper (chame :data() para extrair); nil quando vazio, tabela de wrappers para vários valores
 msg:payload():data()   -- any: valor real do payload
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilder é imutável - cada método retorna uma nova instância:
 spawner:with_context(values)      -- Adicionar valores de contexto
 spawner:with_actor(actor)         -- Definir ator de segurança
 spawner:with_scope(scope)         -- Definir escopo de segurança
-spawner:with_name(name)           -- Definir nome do processo
+spawner:with_name(name)           -- Registrar nome no início; se já tomado, spawn retorna o PID existente e as mensagens enfileiradas vão para ele
 spawner:with_message(topic, ...)  -- Enfileirar mensagem para enviar após spawn
 spawner:with_options(options)     -- Mesclar opções de spawn (ex. network)
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | não | self | PID a registrar; padrão é o processo chamador |
 | `scope` | number | não | `LOCAL` | Um dos constantes de escopo acima |
 
-Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente sob um escopo de cluster) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
+Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
 
 Registrar em nome de um PID diferente requer adicionalmente a permissão `process.registry.foreign` no PID alvo.
 
@@ -346,7 +346,7 @@ Políticas podem permitir/negar baseado em:
 | `process.unmonitor` | `unmonitor()` | PID de destino |
 | `process.link` | `link()` | PID de destino |
 | `process.unlink` | `unlink()` | PID de destino |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | nome |
 | `process.registry.unregister` | `registry.unregister()` | nome |
@@ -371,11 +371,11 @@ Algumas operações requerem múltiplas permissões:
 
 | Condição | Tipo |
 |----------|------|
-| Contexto não encontrado | `errors.INVALID` |
-| Contexto de frame não encontrado | `errors.INVALID` |
+| Contexto não encontrado | `errors.INTERNAL` |
+| Contexto de frame não encontrado | `errors.INTERNAL` |
 | Argumentos requeridos ausentes | `errors.INVALID` |
 | Prefixo de tópico reservado (`@`) | `errors.INVALID` |
-| Formato de duração inválido | `errors.INVALID` |
+| Destino não é um PID nem um nome registrado | `errors.NOT_FOUND` |
 | Nome não registrado | `errors.NOT_FOUND` |
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Nome já registrado | `errors.ALREADY_EXISTS` |

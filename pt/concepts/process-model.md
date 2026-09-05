@@ -70,7 +70,7 @@ process.send(target_pid, "topic", payload)
 Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem intercalar. A entrega é dispara-e-esquece — use padrões de requisição-resposta quando precisar de confirmação.
 
 <note>
-Processos podem se registrar em um registro de nomes local e ser endereçados por nome ao invés de PID (ex: `session_manager`). Registro global para endereçamento entre nós está planejado.
+Processos podem se registrar em um registro de nomes local e ser endereçados por nome ao invés de PID (ex: `session_manager`). Nomes também podem ser registrados em todo o cluster para endereçamento entre nós via `process.registry`, usando os escopos EVENTUAL (baseado em gossip), CONSISTENT ou STRONG (ambos apoiados por Raft).
 </note>
 
 ## Supervisão

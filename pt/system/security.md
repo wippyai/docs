@@ -48,7 +48,7 @@ local meta = actor:meta()    -- {role="admin", ...}
 -- Obtém ator atual do contexto
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "Sem ator no contexto")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Sem ator no contexto" })
 end
 ```
 
@@ -326,7 +326,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Acesso negado")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Acesso negado" })
 elseif result == "undefined" then
     -- Nenhuma política correspondeu - verificações de acesso tratam isso como negado
 end
@@ -341,7 +341,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Acesso negado")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Acesso negado" })
 end
 ```
 
@@ -434,7 +434,7 @@ end
 -- Valida token
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Token inválido")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Token inválido" })
 end
 
 -- Ator e escopo são reconstruídos dos dados armazenados

@@ -120,7 +120,7 @@ end
 
 | Condição | Tipo |
 |----------|------|
-| Tipo whence/split inválido | `INVALID` |
+| Tipo whence/split inválido | levantado como erro Lua (não retornado) |
 | Stream fechado | `INTERNAL` |
 | Não legivel/gravavel | `INTERNAL` |
 | Falha de leitura/escrita | `INTERNAL` |

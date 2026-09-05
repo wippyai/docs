@@ -144,6 +144,8 @@ sequenceDiagram
 - `ns.dependency` - モジュール依存関係
 - `ns.definition` - モジュールメタデータ（readme、wiki、ライセンス、著者）
 
+これはデフォルトの集合であり、ランタイム設定の`registry.dispatch_internal_kinds`がこれを置き換える。
+
 ## 依存関係解決
 
 エントリは他のエントリへの依存関係を宣言可能。リゾルバは登録されたパターンを通じて依存関係を抽出：

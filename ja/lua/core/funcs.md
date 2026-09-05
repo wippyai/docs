@@ -111,7 +111,7 @@ local actor = security.actor()  -- 現在のユーザーのアクターを取得
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -140,20 +140,35 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-タイムアウトや優先度などの呼び出しオプションを設定。時間制限が必要な操作に使用。
+リトライポリシーやオーバーレイネットワークなどの呼び出しオプションを設定。オプションは対象の関数エントリのプリセットオプションに上書きマージされる。
 
 ```lua
--- 外部API呼び出しに5秒のタイムアウトを設定
-local exec = funcs.new():with_options({timeout = 5000})
+-- 一時的な失敗を指数バックオフで最大5回リトライ
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- タイムアウトまたは他のエラーを処理
+    -- すべての試行が失敗したか、エラーがリトライ不可だった
 end
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `options` | table | 実装固有のオプション |
+| `options` | table | 呼び出しオプション |
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `retry.max_attempts` | int | 最初の試行を含む最大試行回数（1でリトライ無効）|
+| `retry.initial_delay` | int/duration | 最初のリトライ前の遅延（ミリ秒または duration 文字列）、デフォルト `100` |
+| `retry.max_delay` | int/duration | バックオフ遅延の上限（ミリ秒または duration 文字列）、デフォルト `10s` |
+| `retry.backoff_factor` | number | 各試行後に遅延へ適用される乗数、デフォルト `2.0` |
+| `retry.jitter` | number | 各遅延に適用されるランダムジッターの割合、デフォルト `0.1` |
+| `retry.retry_kinds` | string[] | これらの kind のエラーのみリトライする。デフォルトでは `Invalid`、`PermissionDenied`、`Internal` を除くすべての kind がリトライされる |
+| `retry.skip_kinds` | string[] | これらの kind のエラーは決してリトライしない |
+| `network` | string | 呼び出しの送信トラフィックを経由させるオーバーレイネットワークのレジストリID。`network.select` 権限が必要 |
+
+リトライが発生するのはリトライ可能なエラーのみで、リトライ不可のエラーは即座に返される。Temporalのアクティビティオプションは[アクティビティ](temporal/activities.md)で説明する。
 
 **戻り値:** `Executor, error`
 
@@ -165,7 +180,7 @@ end
 -- コンテキスト付きの再利用可能なexecutorを構築
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+    :with_options({retry = {max_attempts = 3}})
 
 -- 同じコンテキストで複数の呼び出しを実行
 local users, _ = exec:call("app.api:list_users")
@@ -297,6 +312,7 @@ end
 | `funcs.call` | Function ID | 特定の関数を呼び出し |
 | `funcs.context` | `context` | `with_context()`を使用してカスタムコンテキストを設定 |
 | `funcs.security` | `security` | `with_actor()`または`with_scope()`を使用 |
+| `network.select` | ネットワークID | `with_options({network = ...})`でオーバーレイネットワークを選択 |
 
 ## エラー
 
@@ -306,6 +322,7 @@ end
 | Namespaceがない | `errors.INVALID` | no |
 | Nameがない | `errors.INVALID` | no |
 | 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| プロセス外での非同期呼び出し | `errors.INTERNAL` | no |
 | サブスクライブ失敗 | `errors.INTERNAL` | no |
 | 関数エラー | 様々 | 様々 |
 

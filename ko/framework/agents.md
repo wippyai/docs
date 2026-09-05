@@ -339,6 +339,8 @@ end
 <code>funcs.call(tc.registry_id, tc.arguments)</code>을 사용하여 도구를 실행합니다. <code>registry_id</code> 필드는 레지스트리의 도구 엔트리에 직접 매핑됩니다.
 </note>
 
+에이전트 도구 접근과 관측 가능성이 어떻게 보호되는지는 [보안 모델](concepts/security-model.md)을 참조하세요.
+
 ## 스트리밍
 
 `stream_target`을 사용하여 에이전트 응답을 실시간으로 스트리밍합니다:

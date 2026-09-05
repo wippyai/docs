@@ -261,7 +261,13 @@ end
 if node:is_missing() then
     -- 파서가 오류 복구를 위해 이 노드를 삽입함
 end
+
+if node:is_extra() then
+    -- 노드가 문법에서 요구하지 않는 "extra" (예: 주석)
+end
 ```
+
+그 외 노드 메서드: `descendant_count()`와 `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-표현식
 
@@ -298,7 +304,7 @@ local query, err = treesitter.query("go", [[
 -- 모든 캡처 가져오기 (평탄화됨)
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
+    print(capture.name)   -- "func_name"
     print(capture.text)   -- 실제 텍스트
     print(capture.index)  -- 캡처 인덱스
     -- capture.node는 Node 객체
@@ -344,6 +350,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+추가 조회 메서드: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
 
 ## 트리 커서
 

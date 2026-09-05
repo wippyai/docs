@@ -17,7 +17,7 @@ Configuración para entradas basadas en Lua: funciones, procesos, flujos de trab
 | `library.lua` | Código compartido importado por otras entradas |
 | `module.lua` | Superficie de módulo (biblioteca con múltiples métodos) |
 
-Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode`. Los autores escriben entradas `.lua`; los tipos de bytecode se emiten automáticamente al empaquetar.
+Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode '**'` (o un patrón como `--bytecode 'app:**'`). Los autores escriben entradas `.lua`; los tipos de bytecode se emiten al empaquetar con esa bandera.
 
 ## Campos Comunes
 
@@ -176,9 +176,9 @@ Configure el pool de ejecución para funciones:
 |-------|-------|-------------|
 | `type` | todos | Implementación del scheduler (ver tabla abajo) |
 | `workers` | static | Cantidad de hilos worker (recurre a `size`, y luego a 8) |
-| `size` | static | Cantidad de workers cuando `workers` no está definido; además orienta la auto-selección hacia un pool static |
+| `size` | static | Cantidad de workers cuando `workers` no está definido; con `type` omitido, `size` sin `max_size` selecciona un pool inline |
 | `buffer` | static | Capacidad de la cola de tareas (por defecto: `workers * 64`) |
-| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto: 16) |
+| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto: 16; 100 cuando se omite `type`) |
 
 | Tipo | Comportamiento |
 |------|----------------|
@@ -187,7 +187,7 @@ Configure el pool de ejecución para funciones:
 | `static` | Pool de tamaño fijo basado en canales. Predecible bajo carga estable. |
 | `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. |
 
-Cuando se omite `type`, el pool se auto-selecciona a partir de los demás campos: un pool lazy por defecto, o un pool static si `workers` está definido.
+Cuando se omite `type`, el pool se auto-selecciona a partir de los demás campos: un pool lazy por defecto, un pool static si `workers` está definido, un pool inline si solo `size` está definido.
 
 ## Metadatos
 

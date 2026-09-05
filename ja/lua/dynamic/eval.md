@@ -229,7 +229,7 @@ program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-コンパイル済みプログラムは情報提供用です。実行するには、ソースとメソッドを指定して `runner.run` を呼び出します。
+オプションテーブルは `runner.run` と同じ `modules` と `imports` フィールドを受け付け、同じ `eval.module` と `eval.import` の権限チェックが適用されます。コンパイル済みプログラムは情報提供用です。実行するには、ソースとメソッドを指定して `runner.run` を呼び出します。
 
 ## セキュリティモデル
 

@@ -341,7 +341,7 @@ local states, err = system.supervisor.states()
 
 ## クラスタプリミティブ
 
-`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効](guides/cluster.md)な場合に最も役立ちます。スタンドアロンノードでは予測可能な形で機能が制限されます — `system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告し、`system.lock` はクラスタリングが提供するグローバルレジストリを必要とします。
+`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効](guides/cluster.md)な場合に最も役立ちます。スタンドアロンノードでは予測可能な形で機能が制限されます — `system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告し、`system.lock` はクラスタリングが提供する Raft バックエンドの KV ストアを必要とします。
 
 すべての読み取り呼び出しはローカルかつ安価です: このノードのコミット済み状態のビューを報告し、ネットワークをブロックしません。
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- 生の統計マップ（文�
 
 ### 分散ロック
 
-`system.lock` はクラスタ全体の排他制御を提供します。ロックは呼び出しプロセスが所有するグローバルに一意な名前です。Strong 名前スコープ上に構築されているため、クラスタ全体で最大1つの保持者しか存在できません。保持者プロセスが終了またはそのノードが離脱するとロックは自動解放されます — スタックしたロックのクリーンアップは不要です。
+`system.lock` はクラスタ全体の排他制御を提供します。ロックは呼び出しプロセスが所有するグローバルに一意な名前です。Raft レプリケートされたシステム KV ストア上に構築されているため、クラスタ全体で最大1つの保持者しか存在できません。保持者プロセスが終了またはそのノードが離脱するとロックは自動解放されます — スタックしたロックのクリーンアップは不要です。
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 権限拒否 | `errors.INVALID` | no |
+| 権限拒否（`system.source.load`、`system.lock.*`） | `errors.PERMISSION_DENIED` | no |
+| 権限拒否（その他すべての呼び出し） | `errors.INVALID` | no |
 | 無効な引数 | `errors.INVALID` | no |
 | 必須引数がない | `errors.INVALID` | no |
 | コードマネージャが利用不可 | `errors.INTERNAL` | no |
@@ -482,5 +483,6 @@ end
 | このノードで Raft が実行されていない | `errors.INTERNAL` | no |
 | メンバーシップが利用不可 | `errors.INTERNAL` | no |
 | ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
+| ロックサービスが利用不可（このノードに Raft がない） | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。

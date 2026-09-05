@@ -64,7 +64,7 @@ if content_encoding == "gzip" then
     local body = req:body()
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.new("Invalid gzip data"):kind(errors.INVALID)
     end
     body = decompressed
 end
@@ -72,7 +72,7 @@ end
 -- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.new("Decompressed size exceeds 10MB limit"):kind(errors.INVALID)
 end
 ```
 
@@ -341,6 +341,6 @@ end
 | 空输入 | `errors.INVALID` | 否 |
 | 级别超出范围 | `errors.INVALID` | 否 |
 | 无效的压缩数据 | `errors.INVALID` | 否 |
-| 解压大小超过限制 | `errors.INTERNAL` | 否 |
+| 解压大小超过限制 | `errors.INTERNAL`（gzip、zlib、zstd）/ `errors.INVALID`（deflate、brotli） | 否 |
 
 参见 [错误处理](lua/core/errors.md) 了解错误处理方法。

@@ -420,17 +420,19 @@ Liste todos os comandos disponíveis:
 wippy run list
 ```
 
+`wippy run list` aceita `--profile` e `--set` para que a listagem reflita a mesma configuração de runtime mesclada que `wippy run` usaria.
+
 ### Campos de Metadados do Comando
 
 | Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
 | `name` | Sim | Nome do comando usado com `wippy run <name>` |
 | `short` | Não | Descrição curta exibida em `wippy run list` |
-| `main` | Não | Marca esta entrada como comando padrão (selecionado automaticamente por packs e módulos do hub que entregam um único comando) |
+| `main` | Não | Marca esta entrada como entrypoint padrão. Quando um pack ou módulo do hub é executado sem nome de comando, a única entrada `main` daquele caso de uso é executada; um entrypoint solitário é selecionado mesmo sem `main`, e vários entrypoints sem `main` é um erro |
 | `use_case` | Não | Categoria de entrypoint, padrão `run`. A entrada que declara `use_case: test` é a que `wippy test` executa |
 | `security` | Não | Contexto de segurança sob o qual o comando executa quando lançado pela CLI |
 
-Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). O nome do comando deve ser único entre todas as entradas carregadas. Argumentos após o nome do comando são passados para o processo como payloads de string.
+Qualquer tipo de entrada de processo funciona (`process.lua`, `process.wasm`). Nomes de comando não são verificados quanto à unicidade; quando várias entradas carregadas declaram o mesmo nome, a primeira correspondência na ordem do registry executa. Argumentos após o nome do comando são passados para o processo como payloads de string.
 
 ### Segurança de comandos
 
@@ -562,7 +564,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # depuração
+  stream_to_events: true
 
 profiler:
   enabled: true

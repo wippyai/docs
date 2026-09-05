@@ -11,7 +11,7 @@ Wippy Hub에서 재사용 가능한 코드를 공유합니다.
 
 1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정 생성
 2. 조직 생성 또는 가입
-3. 조직 아래에 모듈 이름 등록
+3. 해당 조직에서 모듈을 생성할 권한 보유 — 첫 `wippy publish`가 모듈을 자동으로 등록
 
 ## 모듈 구조
 
@@ -262,7 +262,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 정적 파일 임베딩
 
-`fs.directory` 엔트리(정적 자산, 템플릿, 공개 파일)가 있는 모듈은 게시된 패키지에 포함하려면 `--embed`를 사용해야 합니다. 그렇지 않으면 `fs.directory` 엔트리는 제외됩니다.
+`fs.directory` 엔트리(정적 자산, 템플릿, 공개 파일)가 있는 모듈은 게시된 패키지에 포함하려면 `--embed`를 사용해야 합니다. 그렇지 않으면 `fs.directory` 엔트리는 디렉터리 내용 없이 패킹됩니다.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

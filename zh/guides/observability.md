@@ -36,7 +36,7 @@ logger:
 logmanager:
   propagate_downstream: true   # 传播到子组件
   stream_to_events: false      # 转发日志到事件总线
-  min_level: -1                # -1=debug（默认）, 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error（wippy run 设为 0，带 -v 时为 -1）
 ```
 
 启用 `stream_to_events` 后，日志条目会成为事件，进程可通过事件总线订阅。
@@ -56,7 +56,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-指标在配置的地址上通过 `/metrics` 暴露。
+指标在配置的地址上通过 `/metrics` 暴露；同一个监听器也提供 `/livez`。`max_cardinality`（默认 1024）限制每个导出器保留的活动标签集数量；超出后最久未更新的时间序列会被淘汰。
 
 ### 抓取配置
 
@@ -95,7 +95,7 @@ otel:
 
 ### 追踪源
 
-为特定组件启用追踪：
+一旦 `otel.enabled` 为 true，所有追踪源默认开启；每一项都可以单独禁用：
 
 ```yaml
 otel:
@@ -150,10 +150,10 @@ otel:
 
 | 组件 | Span 名称 | 属性 |
 |------|-----------|------|
-| HTTP 请求 | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP 请求 | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | 函数调用 | 函数 ID | process.pid, frame.id |
 | 进程生命周期 | `{source}.started/terminated` | process.pid |
-| 队列消息 | 消息主题 | 头部中的追踪上下文 |
+| 队列消息 | `{queue}.publish` | messaging.operation, messaging.destination.name |
 | Temporal 工作流 | Workflow/Activity 名称 | workflow.id, run.id |
 
 ### 上下文传播
@@ -177,6 +177,8 @@ OTEL 可通过环境变量配置：
 | `OTEL_SERVICE_NAME` | 服务名称 |
 | `OTEL_SERVICE_VERSION` | 服务版本 |
 | `OTEL_TRACES_SAMPLER_ARG` | 采样率（0.0-1.0） |
+| `OTEL_TRACES_SAMPLER` | `always_on`、`always_off`、`traceidratio` 或 `parentbased_traceidratio`（比率取自 `OTEL_TRACES_SAMPLER_ARG`） |
+| `OTEL_EXPORTER_OTLP_INSECURE` | 设为 `true` 以允许非 TLS 连接 |
 | `OTEL_PROPAGATORS` | 传播器列表 |
 
 ## 运行时统计

@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` 区段在 profile 内支持列表操作 — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — 因此 profile 可以调整基础列表而不是整体替换。
 - `${name}` 引用从合并后的 `vars:` 区段插值。profile 的 vars 中不允许引用 OS 环境变量；请在基础配置中使用 `${env:NAME}`，在文件加载时解析。
 
-`wippy run`、`test` 和 `pack` 接受 `--profile`；`install`、`update`、`lint` 和 `registry` 同样接受它用于工作区 profile（连同 `--set`）。应用可以在包内附带 profile — 参见[发布 Profile](guides/publishing.md#publishing-profiles)。
+`wippy run`、`test` 和 `pack` 接受 `--profile`；`run list`、`install`、`update`、`lint` 和 `registry` 同样接受它用于工作区 profile（连同 `--set`）。应用可以在包内附带 profile — 参见[发布 Profile](guides/publishing.md#publishing-profiles)。
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------|------|--------|------|
 | `propagate_downstream` | bool | true | 发送日志到控制台/文件输出 |
 | `stream_to_events` | bool | false | 将日志发布到事件总线供程序访问 |
-| `min_level` | int | -1 | 最低级别：-1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0（带 `-v` 时为 `-1`） | 最低级别：-1=debug, 0=info, 1=warn, 2=error。CLI 在读取文件之后用自己的命令行标志写入该键，因此文件中的值会被忽略；请用 `--set logmanager.min_level=<n>` 修改 |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 参见：[Logger 模块](lua/system/logger.md)
@@ -232,13 +231,14 @@ Lua 虚拟机缓存和表达式求值。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `proto_cache_size` | int | 60000 | 编译原型缓存 |
-| `main_cache_size` | int | 10000 | 主块缓存 |
-| `cache.enabled` | bool | false | 将编译后的字节码/类型检查缓存持久化到磁盘 |
+| `cache.enabled` | bool | `type_system.enabled` | 将编译后的字节码/类型检查缓存持久化到磁盘；除非显式设置，否则跟随 `type_system.enabled` |
 | `cache.dir` | string | `.wippy/cache/lua` | 缓存目录路径（相对于配置/工作目录） |
-| `cache.mode` | string | `readwrite` | 缓存模式：`readwrite`（默认）、`readonly`、`off` |
+| `cache.mode` | string | `readwrite` | 缓存模式：`readwrite`（默认）、`readonly`、`off`；未知值回退为 `readwrite` |
 | `cache.compile.enabled` | bool | true | 持久化编译后的字节码（当 `cache.enabled` 时） |
 | `cache.typecheck.enabled` | bool | true | 持久化类型检查结果（当 `cache.enabled` 时） |
+| `cache.max_bytes` | int | 1073741824 | 磁盘缓存大小上限（字节） |
+| `cache.max_entries` | int | 20000 | 最大缓存条目数 |
+| `cache.prune_interval` | int | 256 | 两次缓存修剪之间的写入次数 |
 | `type_system.enabled` | bool | false | 启用静态类型检查 |
 | `type_system.strict` | bool | false | 将类型警告视为错误 |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s） | 记录变更后等待代码失效被确认的时长 |
@@ -248,7 +248,6 @@ Lua 虚拟机缓存和表达式求值。
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -257,6 +256,22 @@ lua:
 ```
 
 参见：[Lua 概览](lua/overview.md)
+
+## 调度器
+
+WASM 运行时的核心分区。启用后，会为 WASM 执行预留 `reserved_cores` 个 CPU，其余的服务于 actor 调度器；无效的划分（例如预留核心数超过可用核心数）会被记录日志并忽略。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `wasm_isolation.enabled` | bool | false | 在 WASM 与 actor 工作之间划分核心 |
+| `wasm_isolation.reserved_cores` | int | 1 | 为 WASM 执行预留的核心数 |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## 查找器
 
@@ -307,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-标准 OTEL 环境变量（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）会覆盖对应字段。
+标准 OTEL 环境变量（`OTEL_SDK_DISABLED`、`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_EXPORTER_OTLP_PROTOCOL`、`OTEL_EXPORTER_OTLP_INSECURE`、`OTEL_SERVICE_NAME`、`OTEL_SERVICE_VERSION`、`OTEL_TRACES_SAMPLER`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`）会覆盖对应字段。
 
 参见：[可观测性指南](guides/observability.md)
 
@@ -331,7 +346,7 @@ shutdown:
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `buffer.size` | int | 10000 | 指标缓冲区容量 |
-| `interceptor.enabled` | bool | false | 自动跟踪函数调用 |
+| `interceptor.enabled` | bool | true | 自动跟踪函数调用 |
 
 ```yaml
 metrics:
@@ -351,6 +366,7 @@ Prometheus 指标端点。
 |------|------|--------|------|
 | `enabled` | bool | false | 启动指标服务 |
 | `address` | string | | 监听地址；`enabled: true` 时必须显式设置，否则指标服务器不会启动 |
+| `max_cardinality` | int | 1024 | 每个指标保留的不同标签集数量（LRU）；`0` 或更小则使用默认值 |
 
 ```yaml
 prometheus:
@@ -358,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-暴露 `/metrics` 端点供 Prometheus 抓取。
+暴露 `/metrics` 端点供 Prometheus 抓取，同时还有 `/livez`。
 
 参见：[可观测性指南](guides/observability.md)
 
@@ -373,6 +389,8 @@ prometheus:
 | `enabled` | bool | false | 启用集群 |
 | `name` | string | hostname | 节点名称；在集群中必须唯一 |
 | `failure_domain` | string | | 可用区/机架标签；在 gossip 中广播，使选民分布在不同域 |
+| `kv_crdt_tombstone_retention` | duration | 0 | `store.kv.crdt` 删除墓碑被回收的年龄阈值；`0` 表示禁用基于年龄的 GC |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | 使用当前存活成员集合作为墓碑确认集合 |
 
 ### 成员（gossip）
 
@@ -443,6 +461,8 @@ prometheus:
 | `raft.max_append_entries` | int | 16 | 每次 AppendEntries RPC 的最大条目数 |
 | `raft.leader_probe_interval` | duration | 3s | 全局注册表 leader 可达性探测间隔 |
 | `raft.leader_probe_grace` | int | 3 | 声明 leader 不可达前允许的连续探测失败次数 |
+| `raft.registry_backend` | string | kv | 集群名称注册表实现：`kv`（共享 kv 键空间）或 `fsm`（专用 Raft FSM） |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | 全局名称传播缓存保留删除墓碑的时长 |
 
 单节点（开发环境）——集群开启，立即自举：
 

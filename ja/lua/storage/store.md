@@ -80,7 +80,7 @@ end
 
 **戻り値:** `any, error`
 
-キーが存在しない場合は`nil`を返す。
+キーが存在しないか期限切れの場合は`nil`と`errors.NOT_FOUND`エラーを返す。
 
 ## 存在確認
 
@@ -88,7 +88,7 @@ end
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ end
 
 ## エラー
 
-`store.get()` とストアハンドルのすべてのメソッド（`get`、`set`、`has`、`delete`）は構造化エラーを返します（`err:kind()` を使用）。
+`store.get()` とストアハンドルのすべてのメソッド（`get`、`entry`、`set`、`put`、`list`、`has`、`delete`、`info`）は構造化エラーを返します（`err:kind()` を使用）。ただし `store.get`、`get`、`set`、`has`、`delete` での権限拒否は、エラーを返す代わりに Lua エラーとして送出されます。
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | リソースIDが空 | `errors.INVALID` | no |
-| リソースが見つからない | `errors.NOT_FOUND` | no |
+| リソースが見つからない | `errors.INTERNAL` | no |
 | ストアが解放済み | `errors.INVALID` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| 権限拒否（`entry`、`put`、`list`、`info`） | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | no |
 | `if_version` 不一致 | `errors.CONFLICT` | yes |
 | サポートのないストアでの条件付き書き込み | `errors.INVALID` | no |

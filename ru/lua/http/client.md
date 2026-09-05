@@ -168,7 +168,7 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 | `filename` | string | нет | Исходное имя файла |
 | `content` | string | да* | Содержимое файла |
 | `reader` | userdata | да* | Альтернатива: io.Reader для содержимого |
-| `content_type` | string | нет | MIME-тип (по умолчанию: `application/octet-stream`) |
+| `content_type` | string | нет | Сейчас игнорируется: каждая загружаемая часть всегда отправляется с `Content-Type: application/octet-stream` независимо от этого поля |
 
 *Требуется либо `content`, либо `reader`.
 
@@ -355,6 +355,7 @@ HTTP-запросы подчиняются вычислению политики
 | `http_client.unix_socket` | Путь сокета | Разрешить/запретить подключения через Unix-сокет |
 | `http_client.private_ip` | IP-адрес | Разрешить/запретить доступ к приватным IP-диапазонам |
 | `http_client.insecure_tls` | URL | Разрешить/запретить небезопасный TLS (пропуск верификации) |
+| `network.select` | ID записи сети | Разрешить/запретить маршрутизацию через `overlay_network`, указанный в запросе |
 
 ### Проверка доступа
 

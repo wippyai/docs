@@ -329,10 +329,11 @@ wb:close()
 |----------|------|------------|
 | Sem contexto | `errors.INTERNAL` | não |
 | Workbook inválido | `errors.INVALID` | não |
-| Workbook fechado | `errors.INTERNAL` | não |
-| Não e reader/writer | `errors.INTERNAL` | não |
+| Workbook fechado | `errors.INTERNAL` (`errors.INVALID` vindo de `rows`) | não |
+| Não e writer (`write_to`) | `errors.INTERNAL` | não |
+| Não e reader (`open`) | levantado como erro de argumento | não |
 | Arquivo Excel inválido | `errors.INTERNAL` | não |
-| Planilha inexistente | `errors.INTERNAL` | não |
+| Planilha inexistente | `errors.INTERNAL` (`errors.INVALID` vindo de `rows`) | não |
 | Referência de celula invalida | `errors.INTERNAL` | não |
 | Escrita falhou | `errors.INTERNAL` | não |
 

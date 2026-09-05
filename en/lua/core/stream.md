@@ -120,7 +120,7 @@ end
 
 | Condition | Kind |
 |-----------|------|
-| Invalid whence/split type | `INVALID` |
+| Invalid whence/split type | raised as a Lua error (not returned) |
 | Stream closed | `INTERNAL` |
 | Not readable/writable | `INTERNAL` |
 | Read/write failure | `INTERNAL` |

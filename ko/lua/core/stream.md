@@ -120,7 +120,7 @@ end
 
 | 조건 | 종류 |
 |------|------|
-| 잘못된 whence/split 타입 | `INVALID` |
+| 잘못된 whence/split 타입 | Lua 에러로 발생 (반환되지 않음) |
 | 스트림 닫힘 | `INTERNAL` |
 | 읽기/쓰기 불가 | `INTERNAL` |
 | 읽기/쓰기 실패 | `INTERNAL` |

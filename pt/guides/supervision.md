@@ -42,13 +42,14 @@ Serviços se registram com o supervisor usando um bloco `lifecycle`. Para proces
 | `start_timeout` | `10s` | Tempo máximo permitido para inicialização |
 | `stop_timeout` | `10s` | Tempo máximo para encerramento gracioso |
 | `stable_threshold` | `5s` | Tempo de execução antes do serviço ser considerado estável |
-| `depends_on` | `[]` | Serviços que devem estar executando primeiro |
+| `requires` | `[]` | Serviços que devem estar executando primeiro (alias legado: `depends_on`) |
+| `startup` | `required` | `required` reporta um auto-start falho ou bloqueado como erro de transação; `optional` deixa o serviço continuar tentando em segundo plano sem falhar o lote |
 
 ## Resolução de Dependências
 
 O supervisor resolve dependências de duas fontes:
 
-1. **Dependências explícitas** declaradas em `depends_on`
+1. **Dependências explícitas** declaradas em `requires` (ou o legado `depends_on`)
 2. **Dependências extraídas do registro** de referências de entradas (ex: `database: app:db` na sua configuração)
 
 ```mermaid

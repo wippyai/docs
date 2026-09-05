@@ -178,12 +178,12 @@ Libera a instância imediatamente. Idempotente; após a liberação, cada métod
 | `pg.leave` | `leave()` | nome do grupo |
 | `pg.get_members` | `get_members()` | nome do grupo |
 | `pg.get_local_members` | `get_local_members()` | nome do grupo |
-| `pg.which_groups` | `which_groups()` | (escopo) |
-| `pg.which_local_groups` | `which_local_groups()` | (escopo) |
+| `pg.which_groups` | `which_groups()` | (nenhum) |
+| `pg.which_local_groups` | `which_local_groups()` | (nenhum) |
 | `pg.broadcast` | `broadcast()` | nome do grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nome do grupo |
 | `pg.monitor` | `monitor()` | nome do grupo |
-| `pg.events` | `events()` | (escopo) |
+| `pg.events` | `events()` | (nenhum) |
 
 ## Erros
 
@@ -191,8 +191,8 @@ Libera a instância imediatamente. Idempotente; após a liberação, cada métod
 |----------|------|
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Argumento ausente ou vazio | `errors.INVALID` |
-| Escopo não encontrado | `errors.NOT_FOUND` |
-| Sair de um grupo sem associação | `errors.INVALID` |
+| Escopo não encontrado | `errors.INTERNAL` |
+| Sair de um grupo sem associação | `errors.NOT_FOUND` |
 | Instância liberada | `errors.INVALID` |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

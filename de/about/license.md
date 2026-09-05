@@ -25,4 +25,6 @@ Sie müssen den Quellcode aller modifizierten MPL-lizenzierten Dateien bei der V
 
 ## Abhängigkeiten
 
-Wippy verwendet verschiedene Open-Source-Abhängigkeiten, jede mit ihrer eigenen Lizenz. Alle Abhängigkeiten sind mit kommerzieller Nutzung kompatibel.
+Wippy verwendet verschiedene Abhängigkeiten, jede mit ihrer eigenen Lizenz. Die meisten sind permissiv lizenzierte Open-Source-Bibliotheken, die mit kommerzieller Nutzung kompatibel sind.
+
+Eine mitgelieferte Komponente, die WASM-Laufzeitumgebung (`wippyai/wasm-runtime`), steht unter der Business Source License 1.1. Sie dürfen sie produktiv einsetzen, jedoch nicht Dritten gehostet oder eingebettet in einer Weise anbieten, die mit den Produkten oder Diensten von Wippy AI konkurriert. Vier Jahre nach Veröffentlichung einer Version wechselt diese Version zur Apache License 2.0.

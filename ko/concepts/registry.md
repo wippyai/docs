@@ -24,7 +24,7 @@ app:templates             → 템플릿 세트
 
 ## Kind 핸들러
 
-엔트리가 등록되면 `kind` 값에 따라 처리할 핸들러가 결정됩니다. 핸들러는 설정을 검증하고 런타임 리소스를 생성합니다. 예를 들어 `http.service` 엔트리는 HTTP 서버를 시작하고, `function.lua` 엔트리는 함수 풀을 생성하며, `sql.database` 엔트리는 연결 풀을 설정합니다. 사용 가능한 kind는 [엔트리 종류 가이드](guides/entry-kinds.md)를, 핸들러 구현은 [커스텀 엔트리 종류](internals/kinds.md)를 참조하세요.
+엔트리가 등록되면 `kind` 값에 따라 처리할 핸들러가 결정됩니다. 핸들러는 설정을 검증하고 런타임 리소스를 생성합니다. 예를 들어 `http.service` 엔트리는 HTTP 서버를 시작하고, `function.lua` 엔트리는 함수 풀을 생성하며, `db.sql.postgres` 엔트리는 연결 풀을 설정합니다. 사용 가능한 kind는 [엔트리 종류 가이드](guides/entry-kinds.md)를, 핸들러 구현은 [커스텀 엔트리 종류](internals/kinds.md)를 참조하세요.
 
 ## 라이브 업데이트
 

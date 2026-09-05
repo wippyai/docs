@@ -73,7 +73,7 @@ WASM 모듈은 호스트 함수 임포트를 통해 런타임 기능에 접근�
 
 ### wasi:cli
 
-**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 환경 변수, 프로세스 종료 코드, 표준 I/O 스트림에 대한 접근. 환경 변수는 WASI 설정을 통해 Wippy 환경 레지스트리에서 매핑됩니다.
 
@@ -99,7 +99,7 @@ wasi:
 
 ### wasi:sockets
 
-**Interfaces:** `wasi:sockets/network`, `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`
+**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
 DNS 확인 기능이 포함된 TCP 및 UDP 네트워킹. 소켓 연산은 게스트를 일시 중단하고 디스패처를 통해 실행되며, 디스패처는 모든 다이얼, 바인드, 조회를 [네트워크 서비스](system/network.md)에서 수행합니다.
 

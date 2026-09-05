@@ -111,7 +111,7 @@ local actor = security.actor()  -- 获取当前用户的 actor
 local exec = funcs.new():with_actor(actor)
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new("PERMISSION_DENIED", "User cannot delete records")
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -140,20 +140,35 @@ local exec = funcs.new():with_scope(scope)
 
 ### with_options
 
-设置调用选项如超时和优先级。用于需要时间限制的操作。
+设置调用选项，例如重试策略或叠加网络。这些选项会合并到目标函数条目的预设选项之上。
 
 ```lua
--- 为外部 API 调用设置 5 秒超时
-local exec = funcs.new():with_options({timeout = 5000})
+-- 以指数退避最多重试 5 次瞬时失败
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- 处理超时或其他错误
+    -- 所有尝试都失败了，或者该错误不可重试
 end
 ```
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
-| `options` | table | 实现特定选项 |
+| `options` | table | 调用选项 |
+
+| 选项 | 类型 | 描述 |
+|--------|------|-------------|
+| `retry.max_attempts` | int | 包含首次在内的最大尝试次数（设为 1 则禁用重试） |
+| `retry.initial_delay` | int/duration | 首次重试前的延迟（毫秒或 duration 字符串），默认 `100` |
+| `retry.max_delay` | int/duration | 退避延迟的上限（毫秒或 duration 字符串），默认 `10s` |
+| `retry.backoff_factor` | number | 每次尝试后应用于延迟的乘数，默认 `2.0` |
+| `retry.jitter` | number | 应用于每次延迟的随机抖动比例，默认 `0.1` |
+| `retry.retry_kinds` | string[] | 仅重试这些类型的错误；默认除 `Invalid`、`PermissionDenied` 和 `Internal` 之外的所有类型都会重试 |
+| `retry.skip_kinds` | string[] | 绝不重试这些类型的错误 |
+| `network` | string | 用于路由该调用出站流量的叠加网络的注册表 ID；需要 `network.select` 权限 |
+
+只有可重试的错误才会触发重试；不可重试的错误会立即返回。Temporal 活动选项在[活动](temporal/activities.md)中描述。
 
 **返回:** `Executor, error`
 
@@ -165,7 +180,7 @@ end
 -- 构建带上下文的可复用 executor
 local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
-    :with_options({timeout = 10000})
+    :with_options({retry = {max_attempts = 3}})
 
 -- 使用相同上下文进行多次调用
 local users, _ = exec:call("app.api:list_users")
@@ -297,6 +312,7 @@ end
 | `funcs.call` | 函数 ID | 调用特定函数 |
 | `funcs.context` | `context` | 使用 `with_context()` 设置自定义上下文 |
 | `funcs.security` | `security` | 使用 `with_actor()` 或 `with_scope()` |
+| `network.select` | 网络 ID | 使用 `with_options({network = ...})` 选择叠加网络 |
 
 ## 错误
 
@@ -306,6 +322,7 @@ end
 | 缺少命名空间 | `errors.INVALID` | 否 |
 | 缺少名称 | `errors.INVALID` | 否 |
 | 权限被拒绝 | `errors.PERMISSION_DENIED` | 否 |
+| 在进程之外使用 async | `errors.INTERNAL` | 否 |
 | 订阅失败 | `errors.INTERNAL` | 否 |
 | 函数错误 | 各异 | 各异 |
 

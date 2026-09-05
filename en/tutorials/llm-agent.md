@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ The LLM module needs two infrastructure entries:
 - `env.storage.os` provides API keys from environment variables
 - `process.host` provides the process runtime the LLM module uses internally
 
+`terminal.host` is what `wippy run -x` executes the `ask` process on and where `io.print` writes.
+
 ### Generation Code
 
 Create `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Model Definition
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-This calls the function directly and prints the result. The model definition tells the LLM module which provider to use and what model name to send to the API.
+This runs the `ask` process on the terminal host with the question as its argument and prints the result. The model definition tells the LLM module which provider to use and what model name to send to the API.
 
 ## Phase 2: Conversations
 
-Upgrade from a single call to a multi-turn conversation using the prompt builder. Change the entry from a function to a process with terminal I/O.
+Upgrade from a single call to a multi-turn conversation using the prompt builder. Register the process as a named command.
 
 ### Update Entry Definitions
 

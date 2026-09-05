@@ -110,7 +110,7 @@ Para extensiones personalizadas, consulte [Módulos](internals/modules.md) en la
 
 ## Manejo de Errores
 
-Las funciones devuelven pares `resultado, error`:
+Las funciones devuelven pares `result, error`:
 
 ```lua
 local data, err = json.decode(input)

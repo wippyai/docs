@@ -48,7 +48,7 @@ local meta = actor:meta()    -- {role="admin", ...}
 -- Aktuellen Actor aus Kontext abrufen
 local actor = security.actor()
 if not actor then
-    return nil, errors.new("UNAUTHORIZED", "Kein Actor im Kontext")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Kein Actor im Kontext" })
 end
 ```
 
@@ -326,7 +326,7 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new("FORBIDDEN", "Zugriff verweigert")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Zugriff verweigert" })
 elseif result == "undefined" then
     -- Keine Richtlinie passte - Zugriffsprüfungen behandeln das als verweigert
 end
@@ -341,7 +341,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new("FORBIDDEN", "Zugriff verweigert")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Zugriff verweigert" })
 end
 ```
 
@@ -434,7 +434,7 @@ end
 -- Token validieren
 local actor, scope, err = store:validate(token)
 if err then
-    return nil, errors.new("UNAUTHORIZED", "Ungültiges Token")
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Ungültiges Token" })
 end
 
 -- Actor und Scope werden aus gespeicherten Daten rekonstruiert

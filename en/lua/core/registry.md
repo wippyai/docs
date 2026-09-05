@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-Filter fields match against entry metadata.
+Keys prefixed with `.` match entry fields (`.kind`, `.ns`, `.name`, `.id`) and accept `*` globs. Keys prefixed with `meta.` match entry metadata; a leading `~`, `*`, `^` or `$` on a `meta.` key selects regex, contains, prefix or suffix matching. Keys with neither prefix are ignored.
 
 ## Parse ID
 

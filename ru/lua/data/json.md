@@ -105,7 +105,7 @@ print(response.data.users[1].name)  -- "Alice"
 -- Обработка ошибок
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
     print(err:message())  -- детали ошибки разбора
 end
 ```
@@ -182,7 +182,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new("INVALID", "Invalid request: " .. err:message())
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Теперь можно безопасно разбирать
@@ -205,6 +205,7 @@ local request = json.decode(body)
 | Смешанные типы ключей | `errors.INTERNAL` | нет |
 | Вложенность превышает 128 уровней | `errors.INTERNAL` | нет |
 | Неверный синтаксис JSON | `errors.INTERNAL` | нет |
+| Вход не строка или пустая строка (decode) | `errors.INVALID` | нет |
 | Ошибка компиляции схемы | `errors.INVALID` | нет |
 | Ошибка валидации | `errors.INVALID` | нет |
 

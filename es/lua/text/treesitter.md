@@ -261,7 +261,13 @@ end
 if node:is_missing() then
     -- El parser inserto esto para recuperarse del error
 end
+
+if node:is_extra() then
+    -- El nodo es un "extra" (por ejemplo, un comentario) no requerido por la gramatica
+end
 ```
+
+Otros metodos de nodo: `descendant_count()` y `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-Expression
 
@@ -298,7 +304,7 @@ local query, err = treesitter.query("go", [[
 -- Obtener todas las capturas (aplanadas)
 local captures = query:captures(root, source_code)
 for _, capture in ipairs(captures) do
-    print(capture.name)   -- "@func_name"
+    print(capture.name)   -- "func_name"
     print(capture.text)   -- texto real
     print(capture.index)  -- indice de captura
     -- capture.node es el objeto Node
@@ -344,6 +350,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+Metodos adicionales de inspeccion: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
 
 ## Cursor de Arbol
 

@@ -109,7 +109,7 @@ end
 | `target_pid` | string | 必須 | メッセージを受信するプロセスPID |
 | `message_topic` | string | `ws.message` | クライアントメッセージ用トピック |
 | `heartbeat_interval` | duration | - | ハートビート頻度（例：`30s`） |
-| `metadata` | object | - | すべてのメッセージに付与 |
+| `metadata` | object | - | join/leave/heartbeatメッセージに付与 |
 
 ## メッセージトピック
 
@@ -157,14 +157,11 @@ end
 
 ## クライアントへの送信
 
-クライアントPIDを使用してメッセージを送り返します。任意のトピックは `{topic, data}` JSONとしてラップされ、WebSocketに転送されます。フレームタイプはペイロード形式によって決まります: 文字列はテキストフレームに、バイトはバイナリフレームになります (JSONラッパー内ではbase64エンコード)。
+クライアントPIDを使用してメッセージを送り返します。任意のトピックは `{topic, data}` JSONとしてラップされ、WebSocketに転送されます。サーバーからクライアントへのメッセージはすべて、`{topic, data}` JSONラッパーを含む単一のWebSocket TEXTフレームとして送信されます。バイナリペイロードは `data` フィールドにbase64エンコードされます。個別のバイナリフレームとしては送信されません。
 
 ```lua
 -- 構造化メッセージを送信 (任意のトピック名)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- バイナリを送信
-process.send(client_pid, "data", binary_content)
 
 -- 接続を閉じる (ペイロードはクローズ理由文字列)
 process.send(client_pid, "ws.close", "Session ended")

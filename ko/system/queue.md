@@ -157,7 +157,7 @@ AWS SQS 및 SQS 호환 엔드포인트 (LocalStack, ElasticMQ)용. 자격 증명
 | `queue_name` | string | 아니오 | 외부 큐 이름 (기본값은 엔트리 이름) |
 | `driver_options` | object | 아니오 | 드라이버 kind로 키가 지정된 드라이버별 서브 백 |
 | `dead_letter.queue` | Registry ID | 아니오 | 실패한 메시지의 큐 ID |
-| `dead_letter.max_attempts` | int | 아니오 | DLQ로 라우팅하기 전 시도 횟수 |
+| `dead_letter.max_attempts` | int | 아니오 | DLQ로 라우팅하기 전 시도 횟수(설정에서 허용되지만 아직 어떤 내장 드라이버도 적용하지 않음) |
 
 ### 드라이버 옵션
 
@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery or DLQ
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,15 +286,15 @@ return { main = main }
 
 | 핸들러 결과 | 액션 |
 |----------------|--------|
-| `true` 또는 비 `false` 반환 | Ack |
-| `false` | Nack (드라이버에 따라 재배달 또는 dead-letter) |
+| 일반 반환값 (`false` 포함) | Ack |
+| `nil, err` 반환 | Nack (드라이버에 따라 재배달) |
 | 발생한 오류 | Nack |
 
 조기 settle을 위해서만 `msg:ack()` 또는 `msg:nack()`을 명시적으로 호출하세요. Settlement은 단일 샷입니다: 먼저 도착한 호출이 우선합니다.
 
 ### Dead-Letter 라우팅
 
-큐에 `dead_letter`가 설정된 경우, `max_attempts`를 초과하여 nack된 메시지는 드라이버가 설정한 `x_dead_letter_reason` 및 `x_original_queue` 헤더와 함께 DLQ로 라우팅됩니다. 발행자는 `x_*` 헤더를 설정하면 안 됩니다 — 이들은 DLQ 기록용으로 예약되어 있습니다.
+Dead-letter 라우팅은 아직 구현되지 않았습니다. `dead_letter` 블록([큐 설정](#queue-configuration) 참조)은 설정에서 허용되지만, 현재 어떤 내장 드라이버도 시도 횟수를 세거나, nack된 메시지를 설정된 DLQ로 라우팅하거나, `x_dead_letter_*` 헤더를 설정하지 않습니다. nack된 메시지는 드라이버 자체 정책에 따라 재전달됩니다. `x_*` 헤더 네임스페이스는 향후 DLQ 기록용으로 예약되어 있으므로, 발행자는 `x_*` 헤더를 설정하지 않아야 합니다.
 
 ## 메시지 발행
 

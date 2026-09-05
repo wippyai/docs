@@ -96,7 +96,7 @@ pool:
 ```
 
 <tip>
-If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for static, `max_size` for lazy, or explicitly set `type` for full control.
+If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for static, `max_size` for lazy, or explicitly set `type` for full control. With neither set, the pool is lazy with a maximum of 16 workers.
 </tip>
 
 ## Interceptors

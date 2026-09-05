@@ -135,7 +135,7 @@ local info, err = uuid.parse(id)
 - `version` (integer): UUID 버전 (1, 3, 4, 5, 또는 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, 또는 Invalid
 - `timestamp` (integer): Unix 타임스탬프 (v1 및 v7만)
-- `node` (string): 노드 ID (v1만)
+- `node` (string): 6바이트 원시 노드 ID (v1만)
 
 ### 포맷
 

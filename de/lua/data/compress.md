@@ -64,7 +64,7 @@ if content_encoding == "gzip" then
     local body = req:body()
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.new("INVALID", "Invalid gzip data")
+        return nil, errors.new("Invalid gzip data"):kind(errors.INVALID)
     end
     body = decompressed
 end
@@ -72,7 +72,7 @@ end
 -- Dekomprimieren mit Größenbegrenzung (Zip-Bomben verhindern)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.new("INVALID", "Decompressed size exceeds 10MB limit")
+    return nil, errors.new("Decompressed size exceeds 10MB limit"):kind(errors.INVALID)
 end
 ```
 
@@ -341,6 +341,6 @@ end
 | Leere Eingabe | `errors.INVALID` | nein |
 | Stufe außerhalb des Bereichs | `errors.INVALID` | nein |
 | Ungültige komprimierte Daten | `errors.INVALID` | nein |
-| Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` | nein |
+| Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` (gzip, zlib, zstd) / `errors.INVALID` (deflate, brotli) | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

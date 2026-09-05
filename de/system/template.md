@@ -31,9 +31,9 @@ Alle Konfiguration ist optional mit sinnvollen Standardwerten:
 | `engine.development_mode` | bool | false | Template-Caching deaktivieren |
 | `engine.delimiters.left` | string | `{{` | Variablen-Öffnungstrennzeichen |
 | `engine.delimiters.right` | string | `}}` | Variablen-Schließtrennzeichen |
-| `engine.delimiters.comment_left` | string | `{*` | Kommentar-Öffnungstrennzeichen |
-| `engine.delimiters.comment_right` | string | `*}` | Kommentar-Schließtrennzeichen |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Template-Dateiendungen |
+| `engine.delimiters.comment_left` | string | `{*` | Wird nur validiert; Kommentare verwenden immer Jets `{*` |
+| `engine.delimiters.comment_right` | string | `*}` | Wird nur validiert; Kommentare verwenden immer Jets `*}` |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Wird nur validiert; die Namensauflösung probiert immer Jets eingebaute `.jet`, `.html.jet`, `.jet.html` |
 | `engine.globals` | map | - | Variablen verfügbar für alle Templates |
 
 ## Templates

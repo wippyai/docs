@@ -79,8 +79,8 @@ local method, err = c:method("say_hello")
 |------|-----|----------|
 | `name` | string | Имя метода |
 | `description` | string | Описание метода |
-| `input_schemas` | table[] | Схемы входных данных |
-| `output_schemas` | table[] | Схемы выходных данных |
+| `input_schemas` | table[] | Схемы входных данных (отсутствуют, если метод их не объявляет) |
+| `output_schemas` | table[] | Схемы выходных данных (отсутствуют, если метод их не объявляет) |
 
 ## Поиск реализаций
 
@@ -195,7 +195,12 @@ local result, err = inst:call()
 | Опция | Тип | Описание |
 |-------|-----|----------|
 | `retry.max_attempts` | int | Максимум попыток включая первую (1 отключает retry) |
-| `retry.initial_delay` | int/duration | Задержка перед первым retry (ms или строка duration) |
+| `retry.initial_delay` | int/duration | Задержка перед первым retry (ms или строка duration), по умолчанию `100` |
+| `retry.max_delay` | int/duration | Верхняя граница задержки backoff (ms или строка duration), по умолчанию `10s` |
+| `retry.backoff_factor` | number | Множитель, применяемый к задержке после каждой попытки, по умолчанию `2.0` |
+| `retry.jitter` | number | Доля случайного джиттера, применяемая к каждой задержке, по умолчанию `0.1` |
+| `retry.retry_kinds` | string[] | Повторять только ошибки этих kind; по умолчанию повторяется любой kind, кроме `Invalid`, `PermissionDenied` и `Internal` |
+| `retry.skip_kinds` | string[] | Никогда не повторять ошибки этих kind |
 
 ## Контекст безопасности
 
@@ -233,4 +238,4 @@ local admin, err = secured:open()
 | Метод не найден | `errors.NOT_FOUND` |
 | Нет привязки по умолчанию | `errors.NOT_FOUND` |
 | Доступ запрещён | `errors.PERMISSION_DENIED` |
-| Ошибка вызова | `errors.INTERNAL` |
+| Ошибка вызова | kind ошибки реализации (сохраняется); `errors.INTERNAL` при сбоях диспетчеризации |

@@ -80,7 +80,7 @@ Only available when processing queue messages in consumer context.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `id()` | `string, error` | Unique message identifier |
-| `header(key)` | `any, error` | Single header value (nil if missing) |
+| `header(key)` | `string, error` | Single header value as a string (nil if missing) |
 | `headers()` | `table, error` | All message headers |
 | `ack()` | `boolean, error` | Acknowledge processing (single-shot) |
 | `nack()` | `boolean, error` | Signal failure for redelivery or dead-letter (single-shot) |
@@ -103,7 +103,7 @@ A `queue.consumer` entry binds a queue to a handler function (referenced by `fun
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

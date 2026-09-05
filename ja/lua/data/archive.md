@@ -166,6 +166,12 @@ s:close()
 
 **権限:** `archive.read`
 
+ウォーカーもランダムアクセスリーダーと同じオプションで`extract_all`をサポートし、すべてのエントリを1回の呼び出しで宛先ファイルシステムへストリーミングします:
+
+```lua
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
+```
+
 `tar`、`tar.gz`、`tar.zst`はネイティブにストリーミングされます。`zip`はエントリごとのローカルヘッダーで解析されます。ストリーミング用のデータディスクリプタ（サイズ/CRCがデータの後に続く）で書かれたエントリは、エントリ境界まで解凍することで読み取られます。大きなアップロードでzipを堅牢に扱うには、まずアップロードをファイルとして受け取り（有限の逐次コピー）、その後に`archive.open`を使ってください:
 
 ```lua
@@ -197,7 +203,7 @@ local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
 
 ```lua
 w:add("notes.txt", "hello")
-w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
 ### add_file
@@ -224,7 +230,7 @@ w:add_dir("empty/")
 w:close()
 ```
 
-`add*`のオプション: `{ method = "store"|"deflate", mode, modified }`。zipのライターはデータディスクリプタを用いてシーク不可能なライターへストリーミングするため、レスポンスストリームへの書き込みも動作します。
+`add*`のオプション: `{ method = "store"|"deflate", mode, size }`。tar系のフォーマットはエントリサイズを事前に必要とするため、ストリームやリーダーから`tar*`アーカイブへ`add()`する場合は`size`が必須です（文字列と`add_file`は自動的に供給します）。zipのライターはデータディスクリプタを用いてシーク不可能なライターへストリーミングするため、レスポンスストリームへの書き込みも動作します。
 
 ## エラー
 

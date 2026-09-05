@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lesen; Schreibvorgänge gehen an den ersten beschreibbaren Speicher.
+Der Router versucht Speicher der Reihe nach. Der erste Treffer gewinnt beim Lesen; Schreibvorgänge gehen an den ersten Speicher in der Liste.
 </note>
 
 ## Vorlagen
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Richtlinien werden der Reihe nach ausgewertet. Die erste passende Richtlinie bestimmt den Zugriff. Platzieren Sie spezifischere Richtlinien vor allgemeineren.
+Jede Richtlinie im Geltungsbereich wird ausgewertet. Ein <code>deny</code> aus einer beliebigen passenden Richtlinie gewinnt gegen jedes <code>allow</code>; ohne ein deny gewährt ein passendes <code>allow</code> den Zugriff. Die Reihenfolge spielt keine Rolle.
 </warning>
 
 ## Contracts (Dependency Injection)
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua-API:** Siehe [Contract-Modul](lua/core/contract.md)
 
 <tip>
-Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn ein Contract ohne Angabe einer Binding-ID geöffnet wird (funktioniert nur wenn keine <code>context_required</code>-Felder gesetzt sind).
+Markieren Sie ein Binding als <code>default: true</code> um es zu verwenden wenn ein Contract ohne Angabe einer Binding-ID geöffnet wird. Ein Contract darf nur ein Standard-Binding haben.
 </tip>
 
 ## Ausführung
@@ -704,12 +704,12 @@ Wird von `http.service` über `network:`, von `funcs`/`process` über die Option
 
 | Kind | Beschreibung |
 |------|-------------|
-| `registry.entry` | Eintragsdeskriptor (intern) |
+| `registry.entry` | Reiner Dateneintrag ohne dahinterliegenden Dienst (anwendungsspezifische Konfiguration) |
 | `ns.definition` | Namespace-Definition |
 | `ns.requirement` | Namespace-Anforderungsdeklaration |
 | `ns.dependency` | Namespace-Abhängigkeit |
 
-Diese werden vom Registry-Loader aus dem `_index.yaml`-Frontmatter und Abhängigkeitsdeklarationen erzeugt. Autoren definieren sie in der Regel nicht direkt — sie entstehen als Ergebnis der Auflösung von `version:`-, `namespace:`- und Abhängigkeitsblöcken.
+Die `ns.*`-Arten werden wie jeder andere Eintrag verfasst: Eine Komponente deklariert `ns.definition` und `ns.requirement`, ein Host deklariert `ns.dependency`. Siehe [Komponenten bauen](guides/components.md).
 
 ## Lebenszyklus-Konfiguration
 
@@ -733,7 +733,7 @@ Die meisten Einträge unterstützen Lebenszyklus-Konfiguration:
 ```
 
 <note>
-Verwenden Sie <code>depends_on</code> um sicherzustellen, dass Einträge in der richtigen Reihenfolge starten. Der Supervisor wartet auf Abhängigkeiten bis sie stabil sind, bevor abhängige Einträge gestartet werden.
+Verwenden Sie <code>depends_on</code> um sicherzustellen, dass Einträge in der richtigen Reihenfolge starten. Der Supervisor startet einen abhängigen Eintrag erst, nachdem jede seiner Abhängigkeiten ihren eigenen Start abgeschlossen hat.
 </note>
 
 ## Eintragsreferenz-Format

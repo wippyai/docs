@@ -53,9 +53,9 @@ description: "db.cdc.postgres와 db.cdc.sqlite로 Postgres 논리 복제 또는 
 | `streaming` | bool | false | 스트리밍 `pgoutput` 프로토콜 버전 사용 |
 | `temporary` | bool | false | 임시 복제 슬롯 사용 (연결 해제 시 제거됨) |
 | `failover` | bool | false | 페일오버 슬롯 모드 활성화 (`temporary`와 상호 배타적) |
-| `standby_interval` | duration | - | 스탠바이 상태 메시지 간격 (예: `10s`) |
-| `status_interval` | duration | - | 서버로의 상태 업데이트 간격 |
-| `snapshot_fetch_size` | int | - | 스냅샷 배치당 가져오는 행 수 (0 이상이어야 함) |
+| `standby_interval` | duration | `10s` | 스탠바이 상태 메시지 간격 (예: `10s`) |
+| `status_interval` | duration | `30s` | 서버로의 상태 업데이트 간격 |
+| `snapshot_fetch_size` | int | 1000 | 스냅샷 배치당 가져오는 행 수 (0 이상이어야 함) |
 | `max_transaction_changes` | int | 1000000 | 트랜잭션 하나를 디코딩하는 동안 버퍼링하는 최대 변경 수 |
 | `max_transaction_bytes` | int | 268435456 | 트랜잭션 하나를 디코딩하는 동안 버퍼링하는 최대 논리 바이트 (256 MiB) |
 | `max_inflight_changes` | int | 1000000 | 진행 중인 모든 트랜잭션에 걸쳐 보유하는 최대 변경 수 |

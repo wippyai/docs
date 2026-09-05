@@ -341,7 +341,7 @@ Each state table has the same format as `system.supervisor.state()`.
 
 ## Cluster primitives
 
-The `system.node`, `system.cluster`, `system.raft`, and `system.lock` sub-tables expose the clustering layer. They are most useful when [clustering is enabled](guides/cluster.md); on a standalone node they degrade predictably — `system.raft.*` reports "raft not available", `system.cluster` reports just the local node, and `system.lock` requires the global registry that clustering provides.
+The `system.node`, `system.cluster`, `system.raft`, and `system.lock` sub-tables expose the clustering layer. They are most useful when [clustering is enabled](guides/cluster.md); on a standalone node they degrade predictably — `system.raft.*` reports "raft not available", `system.cluster` reports just the local node, and `system.lock` requires the Raft-backed KV store that clustering provides.
 
 All read calls are local and cheap: they report this node's view of committed state, never blocking on the network.
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### Distributed locks
 
-`system.lock` provides cluster-wide mutual exclusion. A lock is a globally unique name owned by the calling process. It is built on the Strong name scope, so at most one holder can exist across the cluster, and the lock auto-releases when the holder process exits or its node leaves — there is no stuck lock to clean up.
+`system.lock` provides cluster-wide mutual exclusion. A lock is a globally unique name owned by the calling process. It is built on the Raft-replicated system KV store, so at most one holder can exist across the cluster, and the lock auto-releases when the holder process exits or its node leaves — there is no stuck lock to clean up.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ System operations are subject to security policy evaluation.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Permission denied | `errors.INVALID` | no |
+| Permission denied (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (all other calls) | `errors.INVALID` | no |
 | Invalid argument | `errors.INVALID` | no |
 | Missing required argument | `errors.INVALID` | no |
 | Code manager unavailable | `errors.INTERNAL` | no |
@@ -482,5 +483,6 @@ System operations are subject to security policy evaluation.
 | Raft not running on this node | `errors.INTERNAL` | no |
 | Membership unavailable | `errors.INTERNAL` | no |
 | Lock already held | `errors.ALREADY_EXISTS` | no |
+| Lock service unavailable (no Raft on this node) | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

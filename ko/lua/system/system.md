@@ -341,7 +341,7 @@ local states, err = system.supervisor.states()
 
 ## 클러스터 프리미티브
 
-`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 활성화된](guides/cluster.md) 경우에 가장 유용합니다; 독립 노드에서는 예측 가능하게 저하됩니다 — `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 클러스터링이 제공하는 글로벌 레지스트리가 필요합니다.
+`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 활성화된](guides/cluster.md) 경우에 가장 유용합니다; 독립 노드에서는 예측 가능하게 저하됩니다 — `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 클러스터링이 제공하는 Raft 기반 KV 스토어가 필요합니다.
 
 모든 읽기 호출은 로컬이고 저렴합니다: 커밋된 상태에 대한 이 노드의 뷰를 보고하며, 네트워크를 차단하지 않습니다.
 
@@ -416,7 +416,7 @@ local stats, err = system.raft.stats()           -- 원시 통계 맵 (string ->
 
 ### 분산 잠금
 
-`system.lock`은 클러스터 전체 상호 배제를 제공합니다. 잠금은 호출 프로세스가 소유한 전역 고유 이름입니다. Strong 이름 범위 위에 구축되어 클러스터 전체에 최대 하나의 보유자만 존재할 수 있으며, 보유자 프로세스가 종료되거나 해당 노드가 떠나면 잠금이 자동으로 해제됩니다 — 정리할 고착된 잠금이 없습니다.
+`system.lock`은 클러스터 전체 상호 배제를 제공합니다. 잠금은 호출 프로세스가 소유한 전역 고유 이름입니다. Raft로 복제되는 시스템 KV 스토어 위에 구축되어 클러스터 전체에 최대 하나의 보유자만 존재할 수 있으며, 보유자 프로세스가 종료되거나 해당 노드가 떠나면 잠금이 자동으로 해제됩니다 — 정리할 고착된 잠금이 없습니다.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -473,7 +473,8 @@ end
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
-| 권한 거부됨 | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 (그 외 모든 호출) | `errors.INVALID` | 아니오 |
 | 잘못된 인수 | `errors.INVALID` | 아니오 |
 | 필수 인수 누락 | `errors.INVALID` | 아니오 |
 | 코드 매니저 사용 불가 | `errors.INTERNAL` | 아니오 |
@@ -482,5 +483,6 @@ end
 | 이 노드에서 Raft 미실행 | `errors.INTERNAL` | 아니오 |
 | 멤버십 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 잠금 이미 보유됨 | `errors.ALREADY_EXISTS` | 아니오 |
+| 잠금 서비스 사용 불가 (이 노드에 Raft 없음) | `errors.INTERNAL` | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

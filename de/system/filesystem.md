@@ -37,7 +37,7 @@ Bei einem relativen Pfad hält `base: project` ihn relativ zum Arbeitsverzeichni
 
 Jeder andere Wert wird mit `invalid directory base` abgelehnt.
 
-Der Modus beschränkt alle Dateioperationen. Ausführungsbits werden automatisch hinzugefügt wenn Lesebits vorhanden sind.
+Der Modus beschränkt alle Dateioperationen. Ausführungsbits werden automatisch hinzugefügt, wenn alle Lesebits gesetzt sind und kein Ausführungsbit gesetzt ist.
 
 <note>
 Pfade werden normalisiert und validiert. Es ist nicht möglich, auf Dateien außerhalb des konfigurierten Wurzelverzeichnisses zuzugreifen.
@@ -68,6 +68,7 @@ Beide Dateisystemtypen implementieren:
 | OpenFile (write) | Ja | Nein |
 | Remove | Ja | Nein |
 | Mkdir | Ja | Nein |
+| Rename | Ja | Nein |
 
 Schreiboperationen auf eingebetteten Dateisystemen geben einen Fehler zurück.
 

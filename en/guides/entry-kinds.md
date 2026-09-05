@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-The router tries storages in order. First match wins for reads; writes go to the first writable storage.
+The router tries storages in order. First match wins for reads; writes go to the first storage in the list.
 </note>
 
 ## Templates
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Policies are evaluated in order. The first matching policy determines access. Place more specific policies before general ones.
+Every policy in scope is evaluated. A <code>deny</code> from any matching policy wins over every <code>allow</code>; with no deny, a matching <code>allow</code> grants access. Order does not matter.
 </warning>
 
 ## Contracts (Dependency Injection)
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** See [Contract Module](lua/core/contract.md)
 
 <tip>
-Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID (only works when no <code>context_required</code> fields are set).
+Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID. A contract may have only one default binding.
 </tip>
 
 ## Execution
@@ -704,12 +704,12 @@ Referenced by `http.service` via `network:`, by `funcs`/`process` via the `netwo
 
 | Kind | Description |
 |------|-------------|
-| `registry.entry` | Entry descriptor (internal) |
+| `registry.entry` | Plain data entry with no service behind it (app-specific config) |
 | `ns.definition` | Namespace definition |
 | `ns.requirement` | Namespace requirement declaration |
 | `ns.dependency` | Namespace dependency |
 
-These are produced by the registry loader from `_index.yaml` frontmatter and dependency declarations. Authors generally don't define them directly — they appear as a result of `version:`, `namespace:`, and dependency blocks being resolved.
+The `ns.*` kinds are authored like any other entry: a component declares `ns.definition` and `ns.requirement`, and a host declares `ns.dependency`. See [Building Components](guides/components.md).
 
 ## Lifecycle Configuration
 
@@ -733,7 +733,7 @@ Most entries support lifecycle configuration:
 ```
 
 <note>
-Use <code>depends_on</code> to ensure entries start in the correct order. The supervisor waits for dependencies to become stable before starting dependent entries.
+Use <code>depends_on</code> to ensure entries start in the correct order. The supervisor starts a dependent entry only after each of its dependencies has completed its own start.
 </note>
 
 ## Entry Reference Format

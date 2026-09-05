@@ -75,7 +75,7 @@ wippy run list
 | `name` | Yes | Befehlsname, verwendet mit `wippy run <name>` |
 | `short` | No | Kurzbeschreibung, angezeigt in `wippy run list` |
 
-Ein `terminal.host` und `process.host` muessen vorhanden sein, damit CLI-Befehle funktionieren.
+Ein `terminal.host` muss vorhanden sein, damit CLI-Befehle funktionieren; er ist der Prozess-Host, der den Befehl ausfuehrt.
 
 ## Prozesslebenszyklus
 

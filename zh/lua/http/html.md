@@ -270,7 +270,7 @@ policy:allow_attrs("href", "target"):on_elements("a")
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | 参数 | 类型 | 描述 |
@@ -324,7 +324,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### 允许表格
 
-允许表格元素：`table`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th`、`caption`。
+允许表格元素：`table`、`caption`、`col`、`colgroup`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th`。
 
 ```lua
 policy:allow_tables()
@@ -337,14 +337,14 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### 允许标准属性
 
-允许常见属性：`id`、`class`、`title`、`dir`、`lang`。
+允许常见属性：`id`、`title`、`dir`、`lang`。
 
 ```lua
 policy:allow_elements("p")
 policy:allow_standard_attributes()
 
 policy:sanitize('<p id="intro" class="text" title="Introduction">Hello</p>')
--- '<p id="intro" class="text" title="Introduction">Hello</p>'
+-- '<p id="intro" title="Introduction">Hello</p>'
 ```
 
 **返回:** `Policy`

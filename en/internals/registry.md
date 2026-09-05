@@ -144,6 +144,8 @@ Some kinds skip the event bus entirely:
 - `ns.dependency` - Module dependencies
 - `ns.definition` - Module metadata (readme, wiki, license, authors)
 
+This is the default set; `registry.dispatch_internal_kinds` in the runtime config replaces it.
+
 ## Dependency Resolution
 
 Entries can declare dependencies on other entries. The resolver extracts dependencies via registered patterns:

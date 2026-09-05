@@ -27,7 +27,7 @@ flowchart LR
 | `func` | Erforderlich | - | Handler-Funktions-Registry-ID |
 | `concurrency` | 1 | 1000 | Worker-Anzahl |
 | `prefetch` | 10 | 10000 | Nachrichtenpuffer-Größe |
-| `auto_ack` | false | - | Automatisch bestätigen, bevor der Handler ausgeführt wird |
+| `auto_ack` | false | - | Auto-Ack auf Treiberebene (AMQP `Consume` autoAck; vom Memory-Treiber ignoriert) |
 | `driver_options` | `{}` | - | Treiberspezifische Consumer-Optionen |
 
 ## Entry-Definition
@@ -84,6 +84,8 @@ return handler
 |----------|--------|--------|
 | Erfolg | Ack | Nachricht aus Queue entfernt |
 | Fehler | Nack | Nachricht erneut eingereiht (treiberabhängig) |
+
+Der Handler kann die Nachricht mit `queue.message()` und `msg:ack()` / `msg:nack()` selbst quittieren; der Consumer überspringt dann sein eigenes Ack/Nack.
 
 ## Worker-Pool
 

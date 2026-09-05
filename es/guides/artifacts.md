@@ -32,9 +32,12 @@ entries:
     directory: ./package
 ```
 
-Nada más cambia: el recurso se empaqueta en el WAPP como de costumbre. Los artefactos
-declarados se **validan durante la publicación del módulo y el empaquetado de la aplicación**, de modo que uno
-malformado falla en la publicación en lugar de en un consumidor.
+Nada más cambia: el recurso se incrusta en el WAPP como cualquier otro
+`fs.directory` — inclúyalo bajo `embed:` en `wippy.yaml` o pase `--embed` a
+`wippy publish` y `wippy pack`; un directorio que no se incrusta no se empaqueta
+ni se valida. Los artefactos declarados se **validan durante la publicación del módulo
+y el empaquetado de la aplicación**, de modo que uno malformado falla en la publicación en
+lugar de en un consumidor.
 
 ## Formatos
 
@@ -191,10 +194,10 @@ publicación del paquete, y viceversa.
 
 ```bash
 # validar sin publicar
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # publicar
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 Los artefactos declarados se validan como parte de la publicación, de modo que un package.json que
@@ -207,7 +210,7 @@ el paso de materialización del consumidor a ese archivo en su lugar:
 
 ```bash
 # desde el módulo productor
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # los consumidores materializan desde el pack local en lugar del publicado
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -250,6 +253,9 @@ fijarlo y descargarlo:
 
 ```yaml
 # build-inputs/wippy.lock — un proyecto que existe solo para descargar
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

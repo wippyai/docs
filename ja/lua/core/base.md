@@ -80,6 +80,9 @@ table.remove(t [,pos])         -- pos位置の要素を削除して返す（デ�
 table.concat(t [,sep [,i [,j]]]) -- 配列要素をセパレータで連結
 table.sort(t [,comp])          -- インプレースでソート、comp(a,b)はa < bならtrueを返す
 table.unpack(t [,i [,j]])      -- テーブル要素を複数の値としてアンパック
+table.create(narr, nhash)      -- 配列部とハッシュ部の容量を事前確保してテーブルを作成
+table.freeze(t)                -- テーブルをイミュータブルにする、tを返す
+table.isfrozen(t)              -- テーブルがイミュータブルならtrue
 ```
 
 ```lua
@@ -131,6 +134,9 @@ string.reverse(s)          -- 文字列を反転
 
 ```lua
 string.format(fmt, ...)    -- printfスタイルのフォーマット
+string.pack(fmt, ...)      -- 値をバイナリ文字列にパック
+string.unpack(fmt, s [,pos]) -- バイナリ文字列をアンパック、値と次の位置を返す
+string.packsize(fmt)       -- パックされたフォーマットのバイトサイズ
 ```
 
 フォーマット指定子：`%d`（整数）、`%f`（浮動小数点）、`%s`（文字列）、`%q`（クォート付き）、`%x`（16進数）、`%o`（8進数）、`%e`（科学的表記）、`%%`（リテラル%）
@@ -184,7 +190,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- 無限大
+math.huge     -- 表現可能な最大の浮動小数点数
 math.mininteger  -- 最小整数
 math.maxinteger  -- 最大整数
 ```
@@ -209,6 +215,8 @@ math.pow(x, y)        -- x^y（またはx^y演算子を使用）
 math.exp(x)           -- e^x
 math.log(x)           -- 自然対数
 math.log10(x)         -- 10を底とする対数
+math.frexp(x)         -- 仮数と指数
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### 三角関数
@@ -228,7 +236,7 @@ math.rad(d)   -- 度からラジアン
 math.random()         -- ランダム浮動小数点 [0,1)
 math.random(n)        -- ランダム整数 [1,n]
 math.random(m, n)     -- ランダム整数 [m,n]
-math.randomseed(x)    -- 乱数シードを設定
+math.randomseed(x)    -- 効果なし。ジェネレータは自動的にシードされる
 ```
 
 ### 型変換
@@ -338,8 +346,9 @@ err:stack()      -- スタックトレースを文字列として取得
 | `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](lua/dynamic/eval.md)モジュールを使用 |
 | `collectgarbage` | 自動GC |
 | `rawlen` | `#`演算子を使用 |
-| `io.*` | [ファイルシステム](lua/storage/filesystem.md)モジュールを使用 |
-| `os.execute`、`os.exit`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua/dynamic/exec.md)、[環境](lua/system/env.md)モジュールを使用 |
+| 標準の`io.*`ファイルライブラリ | [ファイルシステム](lua/storage/filesystem.md)モジュールを使用。Wippyの`io`モジュールは[ターミナルI/O](lua/system/io.md) |
+| `os.execute`、`os.exit`、`os.getenv`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua/dynamic/exec.md)、[環境](lua/system/env.md)モジュールを使用 |
+| `string.dump` | 利用不可 |
 | `debug.*` | 利用不可 |
 | `utf8.*` | 利用不可 |
 | `package.loadlib` | ネイティブライブラリはサポートされていない |

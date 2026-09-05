@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph "HTTP Layer"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "Public Router"
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph "Process Layer"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>per-connection]
         Ticker[ticker<br/>singleton]
     end
@@ -283,7 +283,7 @@ entries:
     func: app:ws_ticker
 ```
 
-For production, use `token_key_env` to read the HMAC key from an environment variable instead of hardcoding it. See [Environment System](system/env.md).
+For production, read the HMAC key from an environment variable with a placeholder (`token_key: ${env:TOKEN_KEY}`) instead of hardcoding it. See [Environment System](system/env.md).
 
 ## Token Exchange
 
@@ -432,7 +432,7 @@ return { handler = handler }
 
 The `websocket_relay` middleware automatically sends lifecycle messages to the handler process:
 - `ws.join` - Connection established, includes `client_pid` for sending responses
-- `ws.message` - Client sent a message
+- `ws.message` - Client sent a message; the payload is the raw frame (a string for text frames)
 - `ws.leave` - Connection closed (sent automatically on disconnect)
 
 `ws_handler.lua` - handles these lifecycle messages:
@@ -474,7 +474,7 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -484,7 +484,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- Relay sends this automatically on disconnect
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end

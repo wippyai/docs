@@ -24,7 +24,7 @@ description: "엔트리 핸들러는 종류별로 레지스트리 엔트리를 �
 |---------|---------|
 | `http.service` | 정확한 매칭만 |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## 엔트리 리스너 인터페이스
 
@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## 엔트리 데이터 디코딩
 
-엔트리 데이터를 언마샬하려면 `internal/entry`의 `entry.DecodeEntryConfig`를 사용합니다. 이 헬퍼는 `internal/` 아래에 있으므로 런타임 모듈 내부에서만 임포트할 수 있습니다. 트리 외부 확장은 패턴을 복사하거나 트랜스코더를 직접 사용해야 합니다:
+엔트리 데이터를 언마샬하려면 `system/entry`의 `entry.DecodeEntryConfig`를 사용합니다. `DecodeEntryConfigFromContext`는 트랜스코더를 인수 대신 컨텍스트에서 가져오고, `DecodeEntryConfigRaw`는 플레이스홀더 해석을 건너뜁니다:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 디코더는:
-1. `entry.Data`를 설정 구조체로 언마샬
-2. 엔트리에서 `ID`와 `Meta` 채움
-3. 구현되어 있으면 `InitDefaults()` 호출
-4. 구현되어 있으면 `Validate()` 호출
+1. `${env:...}` 플레이스홀더와 `*_env` 동반 필드를 환경 레지스트리에 대해 해석
+2. `entry.Data`를 설정 구조체로 언마샬
+3. 구조체가 비워둔 경우 엔트리에서 `ID`와 `Meta` 채움
+4. 구현되어 있으면 `InitDefaults()` 호출
+5. 구현되어 있으면 `Validate()` 호출
 
 ## 설정 구조
 

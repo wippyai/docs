@@ -302,8 +302,14 @@ if form.files.avatar then
 
     -- ファイル内容を読み取り
     local stream = file:stream()
-    local content = stream:read(0)
+    local parts = {}
+    while true do
+        local chunk, err = stream:read(65536)
+        if err or not chunk then break end
+        parts[#parts + 1] = chunk
+    end
     stream:close()
+    local content = table.concat(parts)
 
     -- ストレージに保存
     storage.write("avatars/" .. filename, content)

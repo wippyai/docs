@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ O módulo LLM precisa de duas entradas de infraestrutura:
 - `env.storage.os` fornece chaves de API a partir de variáveis de ambiente
 - `process.host` fornece o runtime de processos que o módulo LLM usa internamente
 
+`terminal.host` é onde o `wippy run -x` executa o processo `ask` e para onde `io.print` escreve.
+
 ### Código de Geração
 
 Crie `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Definição do Modelo
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Isso chama a função diretamente e imprime o resultado. A definição do modelo diz ao módulo LLM qual provedor usar e qual nome de modelo enviar para a API.
+Isso executa o processo `ask` no host de terminal com a pergunta como argumento e imprime o resultado. A definição do modelo diz ao módulo LLM qual provedor usar e qual nome de modelo enviar para a API.
 
 ## Fase 2: Conversas
 
-Evolua de uma única chamada para uma conversa com múltiplos turnos usando o construtor de prompt. Altere a entrada de uma função para um processo com I/O de terminal.
+Evolua de uma única chamada para uma conversa com múltiplos turnos usando o construtor de prompt. Registre o processo como um comando nomeado.
 
 ### Atualizar Definições de Entrada
 

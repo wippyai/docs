@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | Dateien einer Version auflisten (`version` erforderlich); gibt `{items, total, page, page_size}` zurück |
 
+## Cache
+
+```lua
+local cached, err = hub.cache.list()
+-- jeder Eintrag: { module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| Funktion | Beschreibung |
+|----------|-------------|
+| `hub.cache.list(opts?)` | Zwischengespeicherte Artefakte im Vendor-Verzeichnis auflisten; `pinned` ist `true`, wenn die Lock-Datei das Artefakt referenziert |
+| `hub.cache.remove(module, version, opts?)` | Ein zwischengespeichertes Artefakt entfernen; verweigert ein per Lock gepinntes Artefakt (Art `errors.CONFLICT`), sofern `opts.force` nicht `true` ist; gibt `true` zurück |
+| `hub.cache.prune(opts?)` | Jedes zwischengespeicherte Artefakt entfernen, das die Lock-Datei nicht referenziert; mit `opts.dry_run = true` wird nichts gelöscht; gibt die entfernten (bzw. zu entfernenden) Einträge zurück |
+
+**Berechtigungen:** `hub.cache.list`, `hub.cache.remove` (Ressource: Modulname), `hub.cache.prune`
+
 ## Authentifizierung
 
 Ein Registry-Token in den laufenden Prozess einspeisen — jeder Hub-Konsument übernimmt es beim nächsten Aufruf, ohne Neustart:

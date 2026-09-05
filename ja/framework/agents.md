@@ -339,6 +339,8 @@ end
 ツールの実行には <code>funcs.call(tc.registry_id, tc.arguments)</code> を使用します。<code>registry_id</code> フィールドは、レジストリ内のツールのエントリに直接対応します。
 </note>
 
+エージェントのツールアクセスと可観測性がどのように保護されるかについては、[セキュリティモデル](concepts/security-model.md)を参照してください。
+
 ## ストリーミング
 
 `stream_target` を使用してエージェントのレスポンスをリアルタイムでストリーミングします:

@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | 연결 타임아웃 (ms 또는 "5s") |
 | `read_timeout` | number/string | 읽기 타임아웃 |
 | `write_timeout` | number/string | 쓰기 타임아웃 |
-| `compression` | number | 압축 모드 (상수 참조) |
+| `compression` | number/string | 압축 모드 (상수 참조) 또는 `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
 | `compression_threshold` | number | 압축 최소 크기 (0-100MB) |
 | `read_limit` | number | 최대 메시지 크기 (0-128MB) |
 | `channel_capacity` | number | 수신 채널 버퍼 (1-10000) |
@@ -89,7 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | 메시지 내용 |
 | `type` | number | `websocket.TEXT` (1) 또는 `websocket.BINARY` (2) |
 
-**반환:** `boolean, error`
+메시지가 전송될 때까지 양보(yield)합니다. 반환값이 없습니다.
 
 ### Ping
 
@@ -97,7 +97,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-**반환:** `boolean, error`
+핑이 전송될 때까지 양보(yield)합니다. 반환값이 없습니다.
 
 ## 메시지 받기
 
@@ -180,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | 닫기 코드 (1000-4999), 기본값 1000 |
 | `reason` | string | 닫기 이유 (선택적) |
 
-**반환:** `boolean, error`
+닫기 프레임이 전송될 때까지 양보(yield)합니다.
 
 ## 상수
 

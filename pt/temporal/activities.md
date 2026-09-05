@@ -31,6 +31,7 @@ Adicione `meta.temporal.activity` para registrar uma função como activity:
 |-------|-------------|-----------|
 | `worker` | Sim | Referência à entrada `temporal.worker` |
 | `local` | Não | Executa como activity local (padrão: false) |
+| `name` | Não | Nome customizado do tipo de activity (padrão: ID da entrada) |
 
 ## Implementação
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Aguarda cancelamento da activity |
 | `activity.disable_eager_execution` | boolean | false | Desabilita execução eager |
 | `activity.retry_policy` | table | - | Configuração de retry (veja abaixo) |
+| `activity.name` | string | - | Nome do tipo de activity a chamar, quando difere do ID no registro |
+| `activity.summary` | string | - | Resumo legível exibido na UI do Temporal |
+| `activity.priority` | table | - | Prioridade da tarefa: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (herda o build ID) ou `default` (usa regras de atribuição) |
 
 Valores de duração aceitam strings (`"5s"`, `"10m"`, `"1h"`) ou milissegundos como números.
 
@@ -194,14 +199,7 @@ Atividades locais executam no processo do worker de workflow sem polling de task
         local: true
 ```
 
-Características:
-- Executam no processo do worker de workflow
-- Menor latência (sem roundtrip de task queue)
-- Sem overhead de task queue separado
-- Limitado a tempos de execução curtos (limitado por `local_activity_options.schedule_to_close_timeout`, tipicamente alguns segundos)
-- Sem heartbeating
-
-Use atividades locais para operações rápidas e curtas como validação de entrada, transformação de dados ou consultas em cache. Para trabalho de longa duração, use uma activity regular em vez disso.
+Atualmente `local: true` é interpretado, mas se comporta de forma idêntica a uma activity regular: é registrada e executada pelo caminho padrão de activity. Ainda não existe uma execução distinta de activity local, portanto isso não altera latência, comportamento de task queue nem heartbeating.
 
 ## Nomenclatura de Activity
 

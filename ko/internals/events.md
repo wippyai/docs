@@ -50,6 +50,7 @@ flowchart LR
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -74,6 +75,8 @@ type Bus struct {
 | Stop | 구독자 정리, 큐 드레인, 루프 종료 |
 
 Subscribe와 Unsubscribe는 디스패처가 확인할 때까지 블록합니다. Send는 fire-and-forget입니다.
+
+버스가 `DefaultMaxSubscribers`(4096)개의 활성 구독을 보유하면 `Subscribe`는 `ErrSubscribersCapReached`로 거부됩니다.
 
 `Subscribe`는 구독 컨텍스트가 이미 취소된 경우 즉시 실패하며, 소유권 결정이 내려지기 전에 취소되면 디스패처에서 다시 실패합니다 — 버스는 자신이 설치하지 않은 채널을 절대 넘겨받지 않습니다.
 

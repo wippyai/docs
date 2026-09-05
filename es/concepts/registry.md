@@ -24,7 +24,7 @@ Junto a ese contenido autorado, el registro mantiene su propia procedencia para 
 
 ## Manejadores de Kind
 
-Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `sql.database` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internals/kinds.md) para implementar manejadores.
+Cuando se envía una entrada, su `kind` determina qué manejador la procesa. El manejador valida la configuración y crea recursos del runtime: una entrada `http.service` inicia un servidor HTTP, una entrada `function.lua` crea un pool de funciones, una entrada `db.sql.postgres` establece un pool de conexiones. Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para kinds disponibles y [Tipos de Entrada Personalizados](internals/kinds.md) para implementar manejadores.
 
 ## Actualizaciones en Vivo
 

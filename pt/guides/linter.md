@@ -26,7 +26,7 @@ O linter valida todos os tipos de entradas Lua:
 - `process.lua` - Processos
 - `workflow.lua` - Workflows
 
-Suas variantes pre-compiladas `.bc` (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) tambem sao analisadas.
+Entradas de bytecode contem bytecode compilado (fs/path/hash), nao codigo-fonte, entao nao podem ser analisadas sintaticamente nem verificadas quanto a tipos; o linter verifica apenas entradas Lua que carregam codigo-fonte (suas variantes `.bc` sao ignoradas, embora ainda possam aparecer na contagem total de entradas).
 
 Cada entrada e analisada sintaticamente, verificada quanto a tipos e analisada para problemas de corretude.
 
@@ -242,6 +242,8 @@ Exemplo de step no GitHub Actions:
 | `--rules` | | false | Ativar regras de lint (verificacoes de estilo/qualidade serie W) |
 | `--cache-reset` | | false | Limpar cache antes de executar o lint |
 | `--lock-file` | `-l` | wippy.lock | Caminho para o arquivo de lock |
+| `--profile` | | | Aplica um profile de workspace da configuração de runtime mesclada (repetível, aplicado em ordem) |
+| `--set` | | | Sobrescreve um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
 ## Veja Tambem
 

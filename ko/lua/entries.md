@@ -17,7 +17,7 @@ Lua 기반 엔트리 설정: 함수, 프로세스, 워크플로우, 라이브러
 | `library.lua` | 다른 엔트리가 임포트하는 공유 코드 |
 | `module.lua` | 모듈 표면 (다중 메서드 라이브러리) |
 
-각 종류에는 `wippy pack --bytecode`로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 패킹 시 자동으로 생성됩니다.
+각 종류에는 `wippy pack --bytecode '**'`(또는 `--bytecode 'app:**'` 같은 패턴)로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 해당 플래그로 패킹할 때 생성됩니다.
 
 ## 공통 필드
 
@@ -176,9 +176,9 @@ imports:
 |------|----|------|
 | `type` | 모두 | 스케줄러 구현 (아래 표 참조) |
 | `workers` | static | 워커 스레드 수 (없으면 `size`, 그다음 8로 폴백) |
-| `size` | static | `workers`가 없을 때의 워커 수; 자동 선택을 static 풀 쪽으로 유도하기도 합니다 |
+| `size` | static | `workers`가 없을 때의 워커 수; `type`을 생략한 상태에서 `max_size` 없이 `size`만 주면 inline 풀이 선택됩니다 |
 | `buffer` | static | 작업 큐 용량 (기본값 `workers * 64`) |
-| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16) |
+| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16, `type`을 생략하면 100) |
 
 | 유형 | 동작 |
 |------|------|
@@ -187,7 +187,7 @@ imports:
 | `static` | 채널 기반 고정 크기 풀. 안정 부하에서 예측 가능. |
 | `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. |
 
-`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀입니다.
+`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀, `size`만 설정되어 있으면 inline 풀입니다.
 
 ## 메타데이터
 

@@ -165,7 +165,7 @@ Raft FSM 保存全局名称注册表：活跃的 `name -> PID` 绑定以及进�
 
 ## 分布式锁
 
-`system.lock` 是直接基于 Strong 名称作用域构建的集群范围互斥锁。获取锁会以 Strong 作用域注册其名称，归调用进程所有；释放时注销该名称。由于 Strong 要求所有存活节点确认，整个集群最多只能有一个持有者。
+`system.lock` 是基于共享键值存储中 raft 可线性化条件写入构建的集群范围互斥锁。获取锁会在 `_sys:lock:<name>` 处执行持有者 PID 的 set-if-absent；释放时，若该条目仍由调用方持有则将其删除。由于条件写入经过 Raft（非 leader 节点上的写入会转发给 leader），它是可线性化的，因此整个集群最多只能有一个持有者。
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

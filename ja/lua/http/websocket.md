@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | 接続タイムアウト（msまたは"5s"） |
 | `read_timeout` | number/string | 読み取りタイムアウト |
 | `write_timeout` | number/string | 書き込みタイムアウト |
-| `compression` | number | 圧縮モード（定数を参照） |
+| `compression` | number/string | 圧縮モード（定数を参照）、または`"disabled"`、`"context_takeover"`、`"no_context_takeover"` |
 | `compression_threshold` | number | 圧縮する最小サイズ（0-100MB） |
 | `read_limit` | number | 最大メッセージサイズ（0-128MB） |
 | `channel_capacity` | number | 受信チャネルバッファ（1-10000） |
@@ -89,9 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | メッセージ内容 |
 | `type` | number | `websocket.TEXT`（1）または`websocket.BINARY`（2） |
 
-メッセージが送信されるまでyieldします。
-
-**戻り値:** `boolean, error`
+メッセージが送信されるまでyieldします。値は返しません。
 
 ### Ping
 
@@ -99,9 +97,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-pingが送信されるまでyieldします。
-
-**戻り値:** `boolean, error`
+pingが送信されるまでyieldします。値は返しません。
 
 ## メッセージの受信
 

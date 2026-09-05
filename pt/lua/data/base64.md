@@ -29,7 +29,7 @@ local encoded = base64.encode("Hello, World!")
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
 -- Codificar dados binarios (ex: de arquivo)
-local image_data = fs.read_binary("photo.jpg")
+local image_data = fs.get("app:data"):readfile("photo.jpg")
 local image_b64 = base64.encode(image_data)
 
 -- Codificar JSON para transporte
@@ -62,7 +62,7 @@ print(decoded)  -- "Hello, World!"
 -- Decodificar com tratamento de erro
 local data, err = base64.decode(user_input)
 if err then
-    return nil, errors.new("INVALID", "Invalid base64 data")
+    return nil, errors.new("Invalid base64 data"):kind(errors.INVALID)
 end
 
 -- Decodificar dados binarios
@@ -71,12 +71,11 @@ local image_data, err = base64.decode(image_b64)
 if err then
     return nil, err
 end
-fs.write_binary("output.jpg", image_data)
+fs.get("app:data"):writefile("output.jpg", image_data)
 
--- Decodificar partes de JWT
-local parts = string.split(jwt_token, ".")
-local header = json.decode(base64.decode(parts[1]))
-local payload = json.decode(base64.decode(parts[2]))
+-- Decodificar um documento JSON envolvido em base64
+local json = require("json")
+local doc = json.decode(base64.decode(encoded_json))
 ```
 
 | Parâmetro | Tipo | Descrição |

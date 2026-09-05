@@ -134,7 +134,7 @@ local events = process.events()  -- Lebenszyklusereignisse vom @events-Topic
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
 | `kind` | string | Event-Typ-Konstante |
-| `from` | string | Quell-PID |
+| `from` | string | Quell-PID (fehlt bei OUTDATED) |
 | `result` | table | Für EXIT/LINK_DOWN: ein {value, error}-Datensatz; der Rückgabewert des Prozesses steht in `result.value` und ein etwaiger Fehler in `result.error` |
 | `reason` | string | Für CANCEL: Grund der Kanzellierung |
 | `sources` | string[] | Für OUTDATED: Registry-IDs, die sich geändert haben oder transitiv betroffen sind |
@@ -163,8 +163,8 @@ Beim Empfangen von inbox oder mit `{message = true}`:
 local msg = inbox:receive()
 
 msg:topic()            -- string: Topic-Name
-msg:from()             -- string|nil: Absender-PID
-msg:payload()          -- Payload: Wrapper (`:data()` aufrufen zum Extrahieren)
+msg:from()             -- string: Absender-PID (leerer String, wenn unbekannt)
+msg:payload()          -- Payload: Wrapper (`:data()` aufrufen zum Extrahieren); nil wenn leer, Tabelle von Wrappern bei mehreren Werten
 msg:payload():data()   -- any: tatsächlicher Payload-Wert
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilder ist unveränderlich - jede Methode gibt eine neue Instanz zurück:
 spawner:with_context(values)      -- Kontextwerte hinzufügen
 spawner:with_actor(actor)         -- Sicherheits-Actor setzen
 spawner:with_scope(scope)         -- Sicherheits-Scope setzen
-spawner:with_name(name)           -- Prozessname setzen
+spawner:with_name(name)           -- Namen beim Start registrieren; ist er vergeben, gibt spawn die bestehende PID zurück und wartende Nachrichten gehen an sie
 spawner:with_message(topic, ...)  -- Nachricht zum Senden nach Spawn einreihen
 spawner:with_options(options)     -- Spawn-Optionen zusammenführen (z. B. network)
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | nein | self | Zu registrierende PID; Standard ist der aufrufende Prozess |
 | `scope` | number | nein | `LOCAL` | Eine der obigen Scope-Konstanten |
 
-Gibt `true` bei Erfolg zurück, oder `nil, error` bei Fehler. Konflikte (Name bereits für eine andere PID unter einem Cluster-Scope registriert) geben `errors.ALREADY_EXISTS` zurück. Das Registrieren desselben Namens für dieselbe PID ist idempotent. Eine `STRONG`-Registrierung blockiert, bis jeder lebende Knoten bestätigt oder die Reservierungsdeadline abläuft; bei Timeout wird ein Fehler zurückgegeben.
+Gibt `true` bei Erfolg zurück, oder `nil, error` bei Fehler. Konflikte (Name bereits für eine andere PID registriert) geben `errors.ALREADY_EXISTS` zurück. Das Registrieren desselben Namens für dieselbe PID ist idempotent. Eine `STRONG`-Registrierung blockiert, bis jeder lebende Knoten bestätigt oder die Reservierungsdeadline abläuft; bei Timeout wird ein Fehler zurückgegeben.
 
 Das Registrieren im Namen einer anderen PID erfordert zusätzlich die Berechtigung `process.registry.foreign` auf der Ziel-PID.
 
@@ -346,7 +346,7 @@ Richtlinien können basierend auf Folgendem erlauben/ablehnen:
 | `process.unmonitor` | `unmonitor()` | Ziel-PID |
 | `process.link` | `link()` | Ziel-PID |
 | `process.unlink` | `unlink()` | Ziel-PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | Name |
 | `process.registry.unregister` | `registry.unregister()` | Name |
@@ -371,11 +371,11 @@ Einige Operationen erfordern mehrere Berechtigungen:
 
 | Bedingung | Art |
 |-----------|-----|
-| Kein Kontext gefunden | `errors.INVALID` |
-| Frame-Kontext nicht gefunden | `errors.INVALID` |
+| Kein Kontext gefunden | `errors.INTERNAL` |
+| Frame-Kontext nicht gefunden | `errors.INTERNAL` |
 | Fehlende erforderliche Argumente | `errors.INVALID` |
 | Reserviertes Topic-Präfix (`@`) | `errors.INVALID` |
-| Ungültiges Dauerformat | `errors.INVALID` |
+| Ziel ist weder eine PID noch ein registrierter Name | `errors.NOT_FOUND` |
 | Name nicht registriert | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Name bereits registriert | `errors.ALREADY_EXISTS` |

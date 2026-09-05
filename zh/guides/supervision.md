@@ -43,6 +43,7 @@ description: "监督器管理服务生命周期，处理启动顺序、自动重
 | `stop_timeout` | `10s` | 优雅关闭的最长时间 |
 | `stable_threshold` | `5s` | 视为稳定的运行时长 |
 | `requires` | `[]` | 必须先运行的服务（旧别名：`depends_on`） |
+| `startup` | `required` | `required` 会把失败或受阻的自动启动报告为事务错误；`optional` 则让服务在后台持续重试而不使批次失败 |
 
 ## 依赖解析
 

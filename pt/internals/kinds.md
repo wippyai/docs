@@ -24,7 +24,7 @@ Handlers se inscrevem usando padrões:
 |--------|-------------|
 | `http.service` | Apenas match exato |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
-| `function.*` | `function.lua`, `function.lua.bc` |
+| `function.**` | `function.lua`, `function.lua.bc` |
 
 ## Interface EntryListener
 
@@ -72,7 +72,7 @@ func MyService() boot.Component {
 
 ## Decodificando Dados de Entrada
 
-Use `entry.DecodeEntryConfig` de `internal/entry` para deserializar dados da entrada. Este helper reside em `internal/`, portanto só pode ser importado de dentro do módulo runtime; extensões fora da árvore devem copiar o padrão ou usar o transcoder diretamente:
+Use `entry.DecodeEntryConfig` de `system/entry` para deserializar dados da entrada. `DecodeEntryConfigFromContext` pega o transcoder do contexto em vez de recebê-lo como argumento, e `DecodeEntryConfigRaw` pula a resolução de placeholders:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -86,10 +86,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 O decoder:
-1. Deserializa `entry.Data` em sua struct de config
-2. Popula `ID` e `Meta` da entrada
-3. Chama `InitDefaults()` se implementado
-4. Chama `Validate()` se implementado
+1. Resolve placeholders `${env:...}` e campos companheiros `*_env` contra o registro de ambiente
+2. Deserializa `entry.Data` em sua struct de config
+3. Popula `ID` e `Meta` da entrada quando a struct os deixa vazios
+4. Chama `InitDefaults()` se implementado
+5. Chama `Validate()` se implementado
 
 ## Estrutura de Config
 

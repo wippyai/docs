@@ -134,7 +134,7 @@ local events = process.events()  -- @events 토픽의 라이프사이클 이벤�
 | 필드 | 타입 | 설명 |
 |-------|------|------|
 | `kind` | string | 이벤트 타입 상수 |
-| `from` | string | 소스 PID |
+| `from` | string | 소스 PID (OUTDATED에는 없음) |
 | `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`에, 오류는 `result.error`에 있습니다 |
 | `reason` | string | CANCEL의 경우: 프로세스가 취소되는 이유 |
 | `sources` | string[] | OUTDATED의 경우: 변경되었거나 전이적으로 영향을 받은 레지스트리 ID |
@@ -163,8 +163,8 @@ process.unlisten(ch)
 local msg = inbox:receive()
 
 msg:topic()            -- string: 토픽 이름
-msg:from()             -- string|nil: 발신자 PID
-msg:payload()          -- Payload: 래퍼 (:data() 호출로 추출)
+msg:from()             -- string: 발신자 PID (알 수 없으면 빈 문자열)
+msg:payload()          -- Payload: 래퍼 (:data() 호출로 추출); 비어 있으면 nil, 값이 여러 개면 래퍼 테이블
 msg:payload():data()   -- any: 실제 페이로드 값
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilder는 불변입니다 — 각 메서드는 새 인스턴스를 반환�
 spawner:with_context(values)      -- 컨텍스트 값 추가
 spawner:with_actor(actor)         -- 보안 액터 설정
 spawner:with_scope(scope)         -- 보안 범위 설정
-spawner:with_name(name)           -- 프로세스 이름 설정
+spawner:with_name(name)           -- 시작 시 이름 등록; 이미 사용 중이면 spawn이 기존 PID를 반환하고 대기 중인 메시지가 그 PID로 전달됨
 spawner:with_message(topic, ...)  -- 스폰 후 전송할 메시지 큐에 추가
 spawner:with_options(options)     -- 스폰 시 옵션 병합 (예: 네트워크)
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | 아니오 | 자신 | 등록할 PID; 기본값은 호출 프로세스 |
 | `scope` | number | 아니오 | `LOCAL` | 위의 범위 상수 중 하나 |
 
-성공 시 `true`를 반환하고, 실패 시 `nil, error`를 반환합니다. 충돌(다른 PID로 클러스터 범위에 이미 등록된 이름)은 `errors.ALREADY_EXISTS`를 반환합니다. 동일한 PID로 같은 이름을 등록하면 멱등합니다. `STRONG` 등록은 모든 살아있는 노드가 승인하거나 예약 데드라인이 만료될 때까지 차단됩니다; 타임아웃 시 오류를 반환합니다.
+성공 시 `true`를 반환하고, 실패 시 `nil, error`를 반환합니다. 충돌(다른 PID로 이미 등록된 이름)은 `errors.ALREADY_EXISTS`를 반환합니다. 동일한 PID로 같은 이름을 등록하면 멱등합니다. `STRONG` 등록은 모든 살아있는 노드가 승인하거나 예약 데드라인이 만료될 때까지 차단됩니다; 타임아웃 시 오류를 반환합니다.
 
 다른 PID를 대신하여 등록하면 대상 PID에 대한 `process.registry.foreign` 권한이 추가로 필요합니다.
 
@@ -346,7 +346,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | 대상 PID |
 | `process.link` | `link()` | 대상 PID |
 | `process.unlink` | `unlink()` | 대상 PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | 이름 |
 | `process.registry.unregister` | `registry.unregister()` | 이름 |
@@ -371,11 +371,11 @@ local ok, err = process.registry.unregister(name, scope)
 
 | 조건 | 종류 |
 |-----------|------|
-| 컨텍스트 없음 | `errors.INVALID` |
-| 프레임 컨텍스트 없음 | `errors.INVALID` |
+| 컨텍스트 없음 | `errors.INTERNAL` |
+| 프레임 컨텍스트 없음 | `errors.INTERNAL` |
 | 필수 인수 누락 | `errors.INVALID` |
 | 예약된 토픽 접두사 (`@`) | `errors.INVALID` |
-| 잘못된 duration 형식 | `errors.INVALID` |
+| 대상이 PID도 등록된 이름도 아님 | `errors.NOT_FOUND` |
 | 이름 미등록 | `errors.NOT_FOUND` |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 이름 이미 등록됨 | `errors.ALREADY_EXISTS` |

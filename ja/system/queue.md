@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: ドライバに応じて再配信
+        return nil, err  -- nack: ドライバに応じて再配信
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,8 +286,8 @@ return { main = main }
 
 | ハンドラ結果 | アクション |
 |-------------|----------|
-| `true` または非 `false` の戻り値 | Ack |
-| `false` | Nack（ドライバに応じて再配信）|
+| 任意のプレーンな戻り値（`false` を含む） | Ack |
+| `nil, err` の戻り値 | Nack（ドライバに応じて再配信）|
 | 投げられたエラー | Nack |
 
 早期 settle のためにのみ `msg:ack()` または `msg:nack()` を明示的に呼び出してください。Settlement はシングルショット：最初に到着した呼び出しが優先されます。

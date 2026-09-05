@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph "HTTP 레이어"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "Public Router"
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph "프로세스 레이어"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>연결당]
         Ticker[ticker<br/>싱글톤]
     end
@@ -283,7 +283,7 @@ entries:
     func: app:ws_ticker
 ```
 
-프로덕션에서는 HMAC 키를 하드코딩하는 대신 환경 변수에서 읽기 위해 `token_key_env`를 사용하세요. [환경 시스템](system/env.md)을 참조하세요.
+프로덕션에서는 HMAC 키를 하드코딩하는 대신 플레이스홀더(`token_key: ${env:TOKEN_KEY}`)로 환경 변수에서 읽으세요. [환경 시스템](system/env.md)을 참조하세요.
 
 ## 토큰 교환
 
@@ -432,7 +432,7 @@ return { handler = handler }
 
 `websocket_relay` 미들웨어가 핸들러 프로세스에 라이프사이클 메시지를 자동으로 보냅니다:
 - `ws.join` - 연결 설정됨, 응답 전송을 위한 `client_pid` 포함
-- `ws.message` - 클라이언트가 메시지를 보냄
+- `ws.message` - 클라이언트가 메시지를 보냄. 페이로드는 원시 프레임입니다(텍스트 프레임의 경우 문자열)
 - `ws.leave` - 연결 종료됨 (연결 해제 시 자동으로 전송)
 
 `ws_handler.lua` - 이러한 라이프사이클 메시지를 처리합니다:
@@ -474,7 +474,7 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -484,7 +484,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- 연결 해제 시 릴레이가 자동으로 전송
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end

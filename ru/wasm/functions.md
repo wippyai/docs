@@ -193,6 +193,8 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -303,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### Асинхронный sleep с WASI Clocks
 
-WASM-компоненты, импортирующие `wasi:clocks` и `wasi:io`, могут использовать часы и опрос (polling). Механизм асинхронной передачи управления интегрируется с диспетчером Wippy:
+WASM-компоненты, импортирующие `wasi:clocks`, `wasi:io` и `wasi:poll`, могут использовать часы и опрос (polling). Механизм асинхронной передачи управления интегрируется с диспетчером Wippy:
 
 ```yaml
   - name: sleep_ms
@@ -314,6 +316,7 @@ WASM-компоненты, импортирующие `wasi:clocks` и `wasi:io`
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

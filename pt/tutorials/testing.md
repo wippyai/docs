@@ -125,12 +125,6 @@ o framework, `calc` vincula a unidade sob teste.
 wippy test
 ```
 
-Filtre por substring do id da entrada (namespace:name) enquanto itera:
-
-```bash
-wippy test calc_test
-```
-
 Saída para a suíte acima:
 
 ```

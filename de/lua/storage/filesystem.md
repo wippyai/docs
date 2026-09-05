@@ -203,7 +203,7 @@ fs.seek.END       -- vom Ende
 | `isdir(path)` | `boolean, error` | Prüfen ob Verzeichnis |
 | `mkdir(path)` | `boolean, error` | Verzeichnis erstellen |
 | `remove(path)` | `boolean, error` | Datei/leeres Verzeichnis entfernen |
-| `readdir(path)` | `iterator` | Verzeichnis auflisten |
+| `readdir(path)` | `iterator, state` | Verzeichnis auflisten (in generischer `for`-Schleife verwenden) |
 | `open(path, mode)` | `File, error` | Datei-Handle öffnen |
 | `chdir(path)` | `boolean, error` | Arbeitsverzeichnis wechseln |
 | `pwd()` | `string, error` | Arbeitsverzeichnis abrufen |

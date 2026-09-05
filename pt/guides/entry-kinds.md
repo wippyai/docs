@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vão para o primeiro armazenamento gravável.
+O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vão para o primeiro armazenamento da lista.
 </note>
 
 ## Templates
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Políticas são avaliadas em ordem. A primeira política correspondente determina o acesso. Coloque políticas mais específicas antes das gerais.
+Toda política em escopo é avaliada. Um <code>deny</code> de qualquer política correspondente vence todo <code>allow</code>; sem nenhum deny, um <code>allow</code> correspondente concede o acesso. A ordem não importa.
 </warning>
 
 ## Contratos (Injeção de Dependência)
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **API Lua:** Veja [Módulo Contract](lua/core/contract.md)
 
 <tip>
-Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> está definido).
+Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding. Um contrato pode ter apenas um binding padrão.
 </tip>
 
 ## Execução
@@ -704,12 +704,12 @@ Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opca
 
 | Tipo | Descrição |
 |------|-------------|
-| `registry.entry` | Descritor de entrada (interno) |
+| `registry.entry` | Entrada de dados pura, sem serviço por trás (configuração específica da aplicação) |
 | `ns.definition` | Definição de namespace |
 | `ns.requirement` | Declaração de requisito de namespace |
 | `ns.dependency` | Dependência de namespace |
 
-São produzidas pelo carregador do registro a partir do frontmatter de `_index.yaml` e das declarações de dependências. Autores geralmente não as definem diretamente — aparecem como resultado da resolução dos blocos `version:`, `namespace:` e de dependências.
+Os tipos `ns.*` são declarados como qualquer outra entrada: um componente declara `ns.definition` e `ns.requirement`, e um host declara `ns.dependency`. Veja [Construindo Componentes](guides/components.md).
 
 ## Configuração de Ciclo de Vida
 
@@ -733,7 +733,7 @@ A maioria das entradas suporta configuração de ciclo de vida:
 ```
 
 <note>
-Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor aguarda dependências se tornarem estáveis antes de iniciar entradas dependentes.
+Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor inicia uma entrada dependente somente depois que cada uma de suas dependências concluiu o próprio início.
 </note>
 
 ## Formato de Referência de Entradas

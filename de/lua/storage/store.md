@@ -88,7 +88,7 @@ Prüfen Sie, ob ein Schlüssel existiert, ohne ihn abzurufen:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
-    return nil, errors.new("CONFLICT", "Resource is locked")
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -244,14 +244,14 @@ Store-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 ## Fehler
 
-`store.get()` und alle Methoden des Store-Handles (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`).
+`store.get()` und alle Methoden des Store-Handles (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`), außer dass eine Berechtigungsverweigerung in `store.get`, `get`, `set`, `has` und `delete` stattdessen einen Lua-Fehler auslöst.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leere Ressourcen-ID | `errors.INVALID` | nein |
-| Ressource nicht gefunden | `errors.NOT_FOUND` | nein |
+| Ressource nicht gefunden | `errors.INTERNAL` | nein |
 | Store freigegeben | `errors.INVALID` | nein |
-| Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | nein |
 | `only_if_absent` und Schlüssel existiert | `errors.ALREADY_EXISTS` | nein |
 | `if_version`-Abweichung | `errors.CONFLICT` | ja |
 | Bedingter Schreibvorgang auf einem Store ohne Unterstützung | `errors.INVALID` | nein |

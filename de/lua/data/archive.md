@@ -166,6 +166,12 @@ s:close()
 
 **Berechtigung:** `archive.read`
 
+Ein Walker unterstützt außerdem `extract_all` mit denselben Optionen wie der Reader mit wahlfreiem Zugriff und streamt in einem Aufruf jeden Eintrag in ein Ziel-Dateisystem:
+
+```lua
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
+```
+
 `tar`, `tar.gz` und `tar.zst` streamen nativ. `zip` wird über lokale Header pro Eintrag geparst; Einträge, die mit einem Streaming-Data-Descriptor geschrieben wurden (Größe/CRC folgen den Daten), werden gelesen, indem bis zur Eintragsgrenze dekomprimiert wird. Für robuste Zip-Verarbeitung großer Uploads legen Sie den Upload zuerst als Datei ab (eine begrenzte sequenzielle Kopie) und verwenden dann `archive.open`:
 
 ```lua
@@ -197,7 +203,7 @@ Einen Eintrag aus einem String, Bytes, einem Reader oder einem `stream.Stream` h
 
 ```lua
 w:add("notes.txt", "hello")
-w:add("from_upload", some_stream, { method = "deflate", mode = 0644 })
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
 ### add_file
@@ -224,7 +230,7 @@ Das Archiv finalisieren (schreibt bei zip das zentrale Verzeichnis). Idempotent;
 w:close()
 ```
 
-`add*`-Optionen: `{ method = "store"|"deflate", mode, modified }`. Der Zip-Writer streamt mittels Data Descriptors auch zu nicht suchbaren Writern, sodass das Schreiben in einen Antwort-Stream funktioniert.
+`add*`-Optionen: `{ method = "store"|"deflate", mode, size }`. Tar-Formate benötigen die Eintragsgröße vorab, daher erfordert `add()` aus einem Stream oder Reader in ein `tar*`-Archiv `size` (Strings und `add_file` liefern sie mit). Der Zip-Writer streamt mittels Data Descriptors auch zu nicht suchbaren Writern, sodass das Schreiben in einen Antwort-Stream funktioniert.
 
 ## Fehler
 

@@ -99,7 +99,10 @@ local result = channel.select(cases)
 | `cases` | table | selectケースの配列 |
 | `default` | boolean | trueなら、ケースが準備できていない場合即座に戻る |
 
-**戻り値:** フィールド付き`table`：`channel`、`value`、`ok`、`default`
+**戻り値:** `table`
+
+- チャネルケースの場合: `{channel, value, ok}` — `channel` はそのケースのチャネル、`value` は受信/送信された値、`ok` はクローズ済みチャネルからの受信で false になります。
+- デフォルト分岐の場合（準備できているケースがなく `default = true` のとき）: `{default = true, ok = true}`。
 
 ### タイムアウトパターン
 
@@ -117,7 +120,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -208,7 +211,7 @@ end
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
 | クローズされたチャネルへの送信 | runtime error | no |
-| selectで無効なケース | runtime error | no |
+| selectの`cases`引数がテーブルでない | runtime error | no |
 
 ## 関連項目
 

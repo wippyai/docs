@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph "HTTP Layer"
-        Server[http.server<br/>gateway :8081]
+        Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
         subgraph "Public Router"
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph "Process Layer"
-        Supervisor[process.supervisor<br/>processes]
+        Supervisor[process.host<br/>processes]
         WSHandler[ws_handler<br/>每连接]
         Ticker[ticker<br/>单例]
     end
@@ -283,7 +283,7 @@ entries:
     func: app:ws_ticker
 ```
 
-生产环境中，使用 `token_key_env` 从环境变量读取 HMAC 密钥，而不是硬编码。参见[环境系统](system/env.md)。
+生产环境中，使用占位符（`token_key: ${env:TOKEN_KEY}`）从环境变量读取 HMAC 密钥，而不是硬编码。参见[环境系统](system/env.md)。
 
 ## Token 交换
 
@@ -432,7 +432,7 @@ return { handler = handler }
 
 `websocket_relay` 中间件自动向处理器进程发送生命周期消息：
 - `ws.join` - 连接建立，包含用于发送响应的 `client_pid`
-- `ws.message` - 客户端发送了消息
+- `ws.message` - 客户端发送了消息；负载是原始帧（文本帧为字符串）
 - `ws.leave` - 连接关闭（断开时自动发送）
 
 `ws_handler.lua` - 处理这些生命周期消息：
@@ -474,7 +474,7 @@ local function main(user_id)
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            local content = json.decode(data.data)
+            local content = json.decode(data)
             if content and content.type == "ping" then
                 process.send(client_pid, "ws.send", {
                     type = "text",
@@ -484,7 +484,7 @@ local function main(user_id)
 
         elseif topic == "ws.leave" then
             -- Relay 在断开时自动发送此消息
-            logger:info("client left", {user_id = user_id, reason = data.reason})
+            logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
             end

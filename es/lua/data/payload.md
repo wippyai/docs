@@ -146,7 +146,7 @@ Forzar la decodificación de un payload a un valor Lua, independientemente del f
 local data, err = p:unmarshal()
 ```
 
-`unmarshal()` siempre transcodifica al formato Lua y devuelve el valor Lua resultante. A diferencia de `data()`, que devuelve el valor subyacente sin procesar (potencialmente un objeto Go para formatos no-Lua), `unmarshal()` garantiza un valor Lua completamente decodificado.
+`unmarshal()` se comporta como `data()`: ambos transcodifican los payloads no-Lua al formato Lua y devuelven el valor Lua resultante. La única diferencia es que `unmarshal()` devuelve un error cuando los datos transcodificados no son un valor Lua válido, mientras que `data()` devuelve `nil`.
 
 **Devuelve:** `any, error`
 

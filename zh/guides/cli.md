@@ -420,17 +420,19 @@ wippy run migrate
 wippy run list
 ```
 
+`wippy run list` 接受 `--profile` 和 `--set`，因此列表反映的是与 `wippy run` 相同的合并后运行时配置。
+
 ### 命令元数据字段
 
 | 字段 | 必填 | 描述 |
 |------|------|------|
 | `name` | 是 | 与 `wippy run <name>` 配合使用的命令名称 |
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
-| `main` | 否 | 将此条目标记为默认命令（由仅提供单个命令的 pack 与中心模块自动选用） |
+| `main` | 否 | 将此条目标记为默认入口点。当运行 pack 或中心模块时未给出命令名，会执行该用例中唯一的 `main` 条目；即使没有 `main`，唯一的入口点也会被选用，而存在多个入口点却没有 `main` 则是错误 |
 | `use_case` | 否 | 入口点类别，默认 `run`。声明 `use_case: test` 的条目就是 `wippy test` 执行的对象 |
 | `security` | 否 | 从 CLI 启动时命令所运行的安全上下文 |
 
-任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称在所有已加载的条目中必须唯一。命令名称之后的参数会作为字符串负载传递给进程。
+任何进程条目类型均可使用（`process.lua`、`process.wasm`）。命令名称不做唯一性检查；当多个已加载条目声明相同名称时，按注册表顺序第一个匹配的条目会运行。命令名称之后的参数会作为字符串负载传递给进程。
 
 ### 命令安全
 
@@ -562,7 +564,7 @@ logger:
   encoding: console
 
 logmanager:
-  min_level: -1  # debug
+  stream_to_events: true
 
 profiler:
   enabled: true

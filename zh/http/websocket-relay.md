@@ -109,7 +109,7 @@ end
 | `target_pid` | string | 必填 | 接收消息的进程 PID |
 | `message_topic` | string | `ws.message` | 客户端消息的主题 |
 | `heartbeat_interval` | duration | - | 心跳频率 (如 `30s`) |
-| `metadata` | object | - | 附加到所有消息 |
+| `metadata` | object | - | 附加到 join/leave/heartbeat 消息 |
 
 ## 消息主题
 
@@ -157,14 +157,11 @@ end
 
 ## 发送到客户端
 
-使用客户端 PID 发送回复消息。您选择的任何 topic 都会被包装为 `{topic, data}` JSON 并转发到 WebSocket。帧类型由负载格式决定: 字符串成为 text 帧, bytes 成为 binary 帧 (在 JSON 包装内 base64 编码)。
+使用客户端 PID 发送回复消息。您选择的任何 topic 都会被包装为 `{topic, data}` JSON 并转发到 WebSocket。每条服务器到客户端的消息都作为单个 WebSocket TEXT 帧发送，其中包含 `{topic, data}` JSON 包装。二进制负载会 base64 编码进 `data` 字段；它们不会作为独立的 binary 帧发送。
 
 ```lua
 -- 发送结构化消息 (任意 topic 名称)
 process.send(client_pid, "update", json.encode({event = "update", value = 42}))
-
--- 发送二进制
-process.send(client_pid, "data", binary_content)
 
 -- 关闭连接 (负载为关闭原因字符串)
 process.send(client_pid, "ws.close", "Session ended")

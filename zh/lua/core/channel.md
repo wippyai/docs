@@ -120,7 +120,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new("TIMEOUT", "Operation timed out")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -211,7 +211,7 @@ end
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 向已关闭通道发送 | 运行时错误 | 否 |
-| select 中无效 case | 运行时错误 | 否 |
+| 传给 select 的 `cases` 参数不是表 | 运行时错误 | 否 |
 
 ## 参见
 

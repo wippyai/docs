@@ -26,7 +26,7 @@ wippy lint --summary              # Group results by error code
 - `process.lua` - 프로세스
 - `workflow.lua` - 워크플로우
 
-이들의 사전 컴파일된 `.bc` 변형(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)도 린팅됩니다.
+바이트코드 엔트리는 소스가 아닌 컴파일된 바이트코드(fs/path/hash)를 담고 있어 파싱하거나 타입 검사를 할 수 없습니다; 린터는 소스를 가진 Lua 엔트리만 검사합니다(`.bc` 변형은 건너뛰지만 전체 엔트리 수에는 여전히 포함될 수 있습니다).
 
 각 엔트리는 파싱, 타입 검사, 정확성 분석을 거칩니다.
 
@@ -242,6 +242,8 @@ GitHub Actions 단계 예시:
 | `--rules` | | false | 린트 규칙 활성화 (W 시리즈 스타일/품질 검사) |
 | `--cache-reset` | | false | 린팅 전 캐시 지우기 |
 | `--lock-file` | `-l` | wippy.lock | 잠금 파일 경로 |
+| `--profile` | | | 병합된 런타임 설정에서 워크스페이스 프로파일 적용 (반복 가능, 순서대로 적용) |
+| `--set` | | | 병합된 런타임 설정 값 재정의 (`section.path=value`, 반복 가능) |
 
 ## 같이 보기
 

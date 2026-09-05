@@ -80,7 +80,7 @@ local all_headers = msg:headers()
 | 方法 | 返回 | 描述 |
 |--------|---------|-------------|
 | `id()` | `string, error` | 唯一消息标识符 |
-| `header(key)` | `any, error` | 单个头值（缺失时为 nil） |
+| `header(key)` | `string, error` | 以字符串返回的单个头值（缺失时为 nil） |
 | `headers()` | `table, error` | 所有消息头 |
 | `ack()` | `boolean, error` | 确认处理（single-shot） |
 | `nack()` | `boolean, error` | 发送失败信号以重新投递或死信（single-shot） |
@@ -103,7 +103,7 @@ local stats, err = queue.info("app:tasks")
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

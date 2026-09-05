@@ -146,7 +146,7 @@ Erzwingt die Dekodierung eines Payloads zu einem Lua-Wert, unabhängig vom Quell
 local data, err = p:unmarshal()
 ```
 
-`unmarshal()` transkodiert immer in das Lua-Format und gibt den resultierenden Lua-Wert zurück. Im Gegensatz zu `data()`, das den rohen zugrunde liegenden Wert zurückgibt (möglicherweise ein Go-Objekt für Nicht-Lua-Formate), garantiert `unmarshal()` einen vollständig dekodierten Lua-Wert.
+`unmarshal()` verhält sich wie `data()`: Beide transkodieren Nicht-Lua-Payloads in das Lua-Format und geben den resultierenden Lua-Wert zurück. Der einzige Unterschied ist, dass `unmarshal()` einen Fehler zurückgibt, wenn die transkodierten Daten kein gültiger Lua-Wert sind, während `data()` `nil` zurückgibt.
 
 **Gibt zurück:** `any, error`
 

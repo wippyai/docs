@@ -45,7 +45,7 @@ db:release()
 </note>
 
 <note>
-플레이스홀더는 데이터베이스 드라이버에 변경 없이 전달되며 런타임은 이를 재작성하지 않습니다. SQLite와 MySQL은 `?`, PostgreSQL은 `$1, $2`를 사용합니다. 드라이버가 기대하는 형식으로 작성하세요. 아래 예제는 `?`(SQLite/MySQL)를 사용합니다. 여러 엔진을 대상으로 하는 쿼리는 쿼리 빌더로 작성하고 방언에 맞는 `placeholder_format`을 설정하세요.
+플레이스홀더는 데이터베이스 드라이버에 변경 없이 전달되며 런타임은 이를 재작성하지 않습니다. SQLite와 MySQL은 `?`, PostgreSQL은 `$1, $2`를 사용합니다. 드라이버가 기대하는 형식으로 작성하세요. 아래 예제는 `?`(SQLite/MySQL)를 사용합니다. 여러 엔진을 대상으로 하는 쿼리는 [쿼리 빌더](#query-builder)로 작성하세요. 핸들이 PostgreSQL이면 `run_with`가 플레이스홀더를 `$1, $2`로 재작성하고, `to_sql`은 빌더의 `placeholder_format`을 사용합니다.
 </note>
 
 ## 상수
@@ -352,6 +352,16 @@ local cond = sql.builder.or_({
 | `conditions` | table | Sqlizer 또는 테이블 조건 배열 |
 
 **반환:** `Sqlizer`
+
+## sqlizer:to_sql
+
+조건의 SQL 조각과 바인드 인자를 생성합니다.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**반환:** `string, table`
 
 ## builder.question
 
@@ -1149,12 +1159,12 @@ local query = sql.builder.update("users")
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `map` | table | {column = value} 쌍 |
+| `map` | table | {column = value} 쌍, 값은 일반 값, `sql.NULL`, 또는 `sql.as.*` (표현식에는 `set` 사용) |
 
 **반환:** `UpdateBuilder`
 
@@ -1508,11 +1518,11 @@ local sql_str, args = executor:to_sql()
 | 리소스를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 리소스가 데이터베이스 아님 | `errors.INVALID` | 아니오 |
 | 잘못된 파라미터 | `errors.INVALID` | 아니오 |
-| SQL 구문 에러 | `errors.INVALID` | 아니오 |
+| SQL 구문 에러 | `errors.UNKNOWN` | nil |
 | Statement 닫힘 | `errors.INVALID` | 아니오 |
 | 트랜잭션 비활성 | `errors.INVALID` | 아니오 |
 | 잘못된 savepoint 이름 | `errors.INVALID` | 아니오 |
-| 쿼리 실행 에러 | 다양함 | 다양함 |
+| 쿼리 실행 에러 | `errors.UNKNOWN` | nil |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
 

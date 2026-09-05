@@ -43,6 +43,7 @@ Los servicios se registran con el supervisor usando un bloque `lifecycle`. Para 
 | `stop_timeout` | `10s` | Tiempo máximo para apagado graceful |
 | `stable_threshold` | `5s` | Tiempo de ejecución antes de considerarse estable |
 | `requires` | `[]` | Servicios que deben estar ejecutándose primero (alias heredado: `depends_on`) |
+| `startup` | `required` | `required` reporta un auto-arranque fallido o bloqueado como un error de transacción; `optional` deja que el servicio siga reintentando en segundo plano sin hacer fallar el lote |
 
 ## Resolución de Dependencias
 

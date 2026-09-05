@@ -26,7 +26,7 @@ wippy lint --summary              # Group results by error code
 - `process.lua` - 进程
 - `workflow.lua` - 工作流
 
-它们的预编译 `.bc` 变体（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）也会被检查。
+字节码条目保存的是编译后的字节码（fs/path/hash）而非源码，因此无法解析或类型检查；linter 只检查携带源码的 Lua 条目（其 `.bc` 变体会被跳过，尽管它们仍可能计入条目总数）。
 
 每个条目都会经过解析、类型检查和正确性分析。
 
@@ -242,6 +242,8 @@ GitHub Actions 步骤示例：
 | `--rules` | | false | 启用 lint 规则（W 系列风格/质量检查） |
 | `--cache-reset` | | false | 检查前清除缓存 |
 | `--lock-file` | `-l` | wippy.lock | 锁定文件路径 |
+| `--profile` | | | 应用合并后运行时配置中的工作区 profile（可重复，按顺序应用） |
+| `--set` | | | 覆盖合并后运行时配置中的值（`section.path=value`，可重复） |
 
 ## 另请参阅
 

@@ -34,9 +34,12 @@ entries:
     directory: ./package
 ```
 
-Больше ничего не меняется: ресурс упаковывается в WAPP как обычно. Объявленные
-артефакты **валидируются при публикации модуля и упаковке приложения**, так что
-некорректный артефакт отклоняется при публикации, а не у потребителя.
+Больше ничего не меняется: ресурс встраивается в WAPP как любой другой
+`fs.directory` — перечислите его в `embed:` в `wippy.yaml` или передайте
+`--embed` в `wippy publish` и `wippy pack`; невстроенный каталог не попадает ни
+в пакет, ни в валидацию. Объявленные артефакты **валидируются при публикации
+модуля и упаковке приложения**, так что некорректный артефакт отклоняется при
+публикации, а не у потребителя.
 
 ## Форматы
 
@@ -197,10 +200,10 @@ platform/ui-kit/
 
 ```bash
 # проверка без публикации
-wippy publish --dry-run --version 1.5.0
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
 # публикация
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
 Объявленные артефакты валидируются в рамках публикации, так что package.json,
@@ -213,7 +216,7 @@ wippy publish --create --module-type library --module-visibility public --versio
 
 ```bash
 # из модуля-производителя
-wippy pack /tmp/ui-kit-dev.wapp
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
 # потребители материализуют из локального пакета, а не из опубликованного
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
@@ -257,6 +260,9 @@ build:
 
 ```yaml
 # build-inputs/wippy.lock — проект, существующий только ради скачивания
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0

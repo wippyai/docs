@@ -27,7 +27,7 @@ flowchart LR
 | `func` | Requerido | - | ID de registro de la función handler |
 | `concurrency` | 1 | 1000 | Cantidad de workers |
 | `prefetch` | 10 | 10000 | Tamaño del buffer de mensajes |
-| `auto_ack` | false | - | Hacer Ack automáticamente antes de ejecutar el handler |
+| `auto_ack` | false | - | Auto-ack a nivel de driver (AMQP `Consume` autoAck; ignorado por el driver de memoria) |
 | `driver_options` | `{}` | - | Opciones de consumidor específicas del driver |
 
 ## Definición de Entrada
@@ -84,6 +84,8 @@ return handler
 |--------|--------|--------|
 | Éxito | Ack | Mensaje removido de la cola |
 | Error | Nack | Mensaje reencolado (dependiente del driver) |
+
+El handler puede resolver el mensaje él mismo con `queue.message()` y `msg:ack()` / `msg:nack()`; el consumidor omite entonces su propio ack/nack.
 
 ## Pool de Workers
 

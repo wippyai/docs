@@ -329,10 +329,11 @@ wb:close()
 |-----------|------|-----------|
 | コンテキストがない | `errors.INTERNAL` | no |
 | 無効なワークブック | `errors.INVALID` | no |
-| ワークブックがクローズ済み | `errors.INTERNAL` | no |
-| リーダー/ライターではない | `errors.INTERNAL` | no |
+| ワークブックがクローズ済み | `errors.INTERNAL`（`rows`からは`errors.INVALID`）| no |
+| ライターではない（`write_to`）| `errors.INTERNAL` | no |
+| リーダーではない（`open`）| 引数エラーとして送出される | no |
 | 無効なExcelファイル | `errors.INTERNAL` | no |
-| 存在しないシート | `errors.INTERNAL` | no |
+| 存在しないシート | `errors.INTERNAL`（`rows`からは`errors.INVALID`）| no |
 | 無効なセル参照 | `errors.INTERNAL` | no |
 | 書き込み失敗 | `errors.INTERNAL` | no |
 

@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-필터 필드는 엔트리 메타데이터와 매칭됩니다.
+`.` 접두사가 붙은 키는 엔트리 필드(`.kind`, `.ns`, `.name`, `.id`)와 매칭되며 `*` 글롭을 허용합니다. `meta.` 접두사가 붙은 키는 엔트리 메타데이터와 매칭되며, `meta.` 키 앞에 `~`, `*`, `^`, `$`를 붙이면 각각 정규식, 포함, 접두사, 접미사 매칭이 선택됩니다. 접두사가 없는 키는 무시됩니다.
 
 ## ID 파싱
 

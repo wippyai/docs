@@ -186,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -475,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-라우터는 순서대로 스토리지를 확인합니다. 읽기 시 첫 번째로 일치하는 값이 사용되고, 쓰기는 첫 번째 쓰기 가능한 스토리지에 저장됩니다.
+라우터는 순서대로 스토리지를 확인합니다. 읽기 시 첫 번째로 일치하는 값이 사용되고, 쓰기는 목록의 첫 번째 스토리지에 저장됩니다.
 </note>
 
 ## 템플릿
@@ -564,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-정책은 순서대로 평가됩니다. 첫 번째로 일치하는 정책이 접근 여부를 결정합니다. 구체적인 정책을 일반적인 정책보다 먼저 배치하세요.
+범위 안의 모든 정책이 평가됩니다. 일치하는 정책 중 하나라도 <code>deny</code>를 내면 모든 <code>allow</code>보다 우선합니다. deny가 없으면 일치하는 <code>allow</code>가 접근을 허용합니다. 순서는 중요하지 않습니다.
 </warning>
 
 ## 계약 (의존성 주입)
@@ -631,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** [계약 모듈](lua/core/contract.md) 참조
 
 <tip>
-바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요(<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).
+바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요. 계약은 기본 바인딩을 하나만 가질 수 있습니다.
 </tip>
 
 ## 실행
@@ -704,12 +704,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | Kind | 설명 |
 |------|-------------|
-| `registry.entry` | 엔트리 디스크립터 (내부) |
+| `registry.entry` | 뒤에 서비스가 없는 순수 데이터 엔트리 (앱 고유 설정) |
 | `ns.definition` | 네임스페이스 정의 |
 | `ns.requirement` | 네임스페이스 요구사항 선언 |
 | `ns.dependency` | 네임스페이스 의존성 |
 
-이들은 레지스트리 로더가 `_index.yaml` 프론트매터와 의존성 선언으로부터 생성합니다. 작성자가 직접 정의하는 경우는 거의 없으며, `version:`, `namespace:`, 의존성 블록이 해석된 결과로 나타납니다.
+`ns.*` 종류는 다른 엔트리와 마찬가지로 직접 작성합니다. 컴포넌트는 `ns.definition`과 `ns.requirement`를 선언하고, 호스트는 `ns.dependency`를 선언합니다. [컴포넌트 구축](guides/components.md)을 참조하세요.
 
 ## 라이프사이클 설정
 
@@ -733,7 +733,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
 <note>
-<code>depends_on</code>을 사용하면 엔트리가 올바른 순서로 시작됩니다. 슈퍼바이저는 의존성이 안정 상태가 될 때까지 기다린 후 해당 엔트리를 시작합니다.
+<code>depends_on</code>을 사용하면 엔트리가 올바른 순서로 시작됩니다. 슈퍼바이저는 각 의존성이 자신의 시작을 완료한 뒤에야 그에 의존하는 엔트리를 시작합니다.
 </note>
 
 ## 엔트리 참조 형식

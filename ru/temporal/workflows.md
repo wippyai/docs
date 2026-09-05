@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | Поведение дочернего при закрытии родителя |
 | `temporal.workflow.wait_for_cancellation` | boolean | Ожидание завершения отмены |
 | `temporal.workflow.namespace` | string | Переопределение пространства имён Temporal |
+| `temporal.workflow.name` | string | Имя типа workflow для запуска, когда оно отличается от ID в реестре |
+| `temporal.workflow.versioning_intent` | string | `compatible` (наследовать build ID) или `default` (использовать правила назначения) |
+| `temporal.workflow.priority` | table | Приоритет задачи: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Человекочитаемая сводка, показываемая в UI Temporal |
+| `workflow.details` | string | Человекочитаемые детали, показываемые в UI Temporal |
+| `workflow.versioning_override` | table | Переопределение версионирования воркера: `mode` — `auto_upgrade` либо `pinned` с `deployment_name` и `build_id` |
+
+Каждая опция также принимается под коротким ключом (`workflow.id`, `workflow.task_queue`, ...); префикс `temporal.workflow.` — устаревший алиас. У `summary` и `details` алиаса с `temporal.workflow.` нет.
 
 Значения длительности принимают строки (`"5s"`, `"10m"`, `"1h"`) или числа в миллисекундах.
 

@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ El módulo LLM necesita dos entradas de infraestructura:
 - `env.storage.os` proporciona claves API desde variables de entorno
 - `process.host` proporciona el runtime de procesos que el módulo LLM usa internamente
 
+`terminal.host` es donde `wippy run -x` ejecuta el proceso `ask` y donde escribe `io.print`.
+
 ### Código de Generación
 
 Crea `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Definición del Modelo
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Esto llama a la función directamente e imprime el resultado. La definición del modelo le indica al módulo LLM qué proveedor usar y qué nombre de modelo enviar a la API.
+Esto ejecuta el proceso `ask` en el host de terminal con la pregunta como argumento e imprime el resultado. La definición del modelo le indica al módulo LLM qué proveedor usar y qué nombre de modelo enviar a la API.
 
 ## Fase 2: Conversaciones
 
-Pasa de una sola llamada a una conversación multi-turno usando el constructor de prompts. Cambia la entrada de una función a un proceso con E/S de terminal.
+Pasa de una sola llamada a una conversación multi-turno usando el constructor de prompts. Registra el proceso como un comando con nombre.
 
 ### Actualizar Definiciones de Entradas
 

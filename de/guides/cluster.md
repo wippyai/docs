@@ -165,7 +165,7 @@ Siehe [Prozessgruppen](lua/core/pg.md) für die Lua-API und den [`pg.scope`-Eint
 
 ## Verteilte Sperren
 
-`system.lock` ist clusterweiter gegenseitiger Ausschluss, der direkt auf dem Strong-Namens-Scope aufbaut. Das Erwerben einer Sperre registriert ihren Namen unter Strong-Scope, der dem aufrufenden Prozess gehört; das Freigeben deregistriert ihn. Da Strong die Bestätigung aller lebenden Knoten erfordert, kann höchstens ein Halter clusterweit existieren.
+`system.lock` ist clusterweiter gegenseitiger Ausschluss, aufgebaut auf einem raft-linearisierbaren bedingten Schreibvorgang im gemeinsamen Key-Value-Store. Das Erwerben einer Sperre führt ein Set-If-Absent der Halter-PID unter `_sys:lock:<name>` aus; das Freigeben löscht diesen Eintrag, sofern er noch vom Aufrufer gehalten wird. Da der bedingte Schreibvorgang über Raft läuft (Schreibvorgänge außerhalb des Leaders werden an den Leader weitergeleitet), ist er linearisierbar, sodass höchstens ein Halter clusterweit existieren kann.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")

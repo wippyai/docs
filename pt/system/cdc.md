@@ -53,9 +53,9 @@ Ambos os tipos expõem a mesma API Lua, o mesmo registro de informações da fon
 | `streaming` | bool | false | Usa a versão de streaming do protocolo `pgoutput` |
 | `temporary` | bool | false | Usa um slot de replicação temporário (removido na desconexão) |
 | `failover` | bool | false | Habilita o modo de slot de failover (mutuamente exclusivo com `temporary`) |
-| `standby_interval` | duration | - | Intervalo das mensagens de status de standby (ex.: `10s`) |
-| `status_interval` | duration | - | Intervalo de atualização de status enviado ao servidor |
-| `snapshot_fetch_size` | int | - | Linhas buscadas por lote de snapshot (deve ser >= 0) |
+| `standby_interval` | duration | `10s` | Intervalo das mensagens de status de standby (ex.: `10s`) |
+| `status_interval` | duration | `30s` | Intervalo de atualização de status enviado ao servidor |
+| `snapshot_fetch_size` | int | 1000 | Linhas buscadas por lote de snapshot (deve ser >= 0) |
 | `max_transaction_changes` | int | 1000000 | Máximo de mudanças em buffer durante a decodificação de uma transação |
 | `max_transaction_bytes` | int | 268435456 | Máximo de bytes lógicos em buffer durante a decodificação de uma transação (256 MiB) |
 | `max_inflight_changes` | int | 1000000 | Máximo de mudanças mantidas em todas as transações em andamento |

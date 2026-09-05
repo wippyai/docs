@@ -150,6 +150,7 @@ return { handler = handler }
 | `req:query(name)` | string | Query-параметр |
 | `req:query_params()` | table | Все query-параметры |
 | `req:header(name)` | string | Заголовок запроса |
+| `req:headers()` | table | Все заголовки запроса |
 | `req:body()` | string | Тело запроса |
 | `req:body_json()` | table, error | Разбор JSON-тела |
 | `req:has_body()` | boolean | Проверка наличия тела |

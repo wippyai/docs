@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` 섹션은 프로파일 안에서 리스트 연산을 지원합니다 — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — 그래서 프로파일이 기본 리스트를 교체하는 대신 조정할 수 있습니다.
 - `${name}` 참조는 병합된 `vars:` 섹션에서 보간됩니다. 프로파일 vars 안에서는 OS 환경 참조가 허용되지 않습니다; 기본 설정에서 `${env:NAME}`을 사용하세요 (파일 로드 시 해석됨).
 
-`wippy run`, `test`, `pack`이 `--profile`을 받습니다; `install`, `update`, `lint`, `registry`도 워크스페이스 프로파일용으로 이를 받습니다 (`--set`과 함께). 애플리케이션은 팩 안에 프로파일을 실어 보낼 수 있습니다 — [프로파일 게시](guides/publishing.md#publishing-profiles)를 참조하세요.
+`wippy run`, `test`, `pack`이 `--profile`을 받습니다; `run list`, `install`, `update`, `lint`, `registry`도 워크스페이스 프로파일용으로 이를 받습니다 (`--set`과 함께). 애플리케이션은 팩 안에 프로파일을 실어 보낼 수 있습니다 — [프로파일 게시](guides/publishing.md#publishing-profiles)를 참조하세요.
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |-------|------|---------|-------------|
 | `propagate_downstream` | bool | true | 콘솔/파일 출력으로 로그 전송 |
 | `stream_to_events` | bool | false | 프로그래밍 접근을 위해 이벤트 버스에 로그 퍼블리시 |
-| `min_level` | int | -1 | 최소 레벨: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-v`일 때 `-1`) | 최소 레벨: -1=debug, 0=info, 1=warn, 2=error. CLI가 파일을 읽은 뒤 자신의 플래그로 이 키를 기록하므로 파일 값은 무시됩니다. `--set logmanager.min_level=<n>`으로 변경하십시오 |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 참조: [Logger 모듈](lua/system/logger.md)
@@ -195,7 +194,7 @@ workspace:
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `node_name` | string | local | 이 릴레이 노드의 식별자 |
+| `node_name` | string | 인스턴스별 파생 ID | 이 릴레이 노드의 식별자 (기본값: machine-id/hostname + 작업 디렉터리의 UUIDv5; `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`로 재정의 가능) |
 
 ```yaml
 relay:
@@ -232,13 +231,14 @@ Lua VM 캐싱 및 표현식 평가.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `proto_cache_size` | int | 60000 | 컴파일된 프로토타입 캐시 |
-| `main_cache_size` | int | 10000 | 메인 청크 캐시 |
-| `cache.enabled` | bool | false | 컴파일된 바이트코드/타입체크 캐시를 디스크에 영속화 |
+| `cache.enabled` | bool | `type_system.enabled` | 컴파일된 바이트코드/타입체크 캐시를 디스크에 영속화; 명시적으로 설정하지 않으면 `type_system.enabled`를 따름 |
 | `cache.dir` | string | `.wippy/cache/lua` | 캐시 디렉토리 경로 (설정/작업 디렉토리 기준 상대 경로) |
-| `cache.mode` | string | `readwrite` | 캐시 모드: `readwrite` (기본값), `readonly`, `off` |
+| `cache.mode` | string | `readwrite` | 캐시 모드: `readwrite` (기본값), `readonly`, `off`; 알 수 없는 값은 `readwrite`로 대체됨 |
 | `cache.compile.enabled` | bool | true | 컴파일된 바이트코드 영속화 (`cache.enabled`일 때) |
 | `cache.typecheck.enabled` | bool | true | 타입체크 결과 영속화 (`cache.enabled`일 때) |
+| `cache.max_bytes` | int | 1073741824 | 디스크 캐시 크기 상한 (바이트) |
+| `cache.max_entries` | int | 20000 | 최대 캐시 엔트리 수 |
+| `cache.prune_interval` | int | 256 | 캐시 정리 패스 사이의 쓰기 횟수 |
 | `type_system.enabled` | bool | false | 정적 타입 검사 활성화 |
 | `type_system.strict` | bool | false | 타입 경고를 오류로 처리 |
 | `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | 엔트리 변경 후 코드 무효화 확인 응답 대기 시간 |
@@ -248,7 +248,6 @@ Lua VM 캐싱 및 표현식 평가.
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -257,6 +256,22 @@ lua:
 ```
 
 참조: [Lua 개요](lua/overview.md)
+
+## 스케줄러
+
+WASM 런타임을 위한 코어 파티셔닝. 활성화하면 `reserved_cores`개의 CPU가 WASM 실행용으로 예약되고 나머지가 액터 스케줄러를 담당합니다. 잘못된 분할(예: 사용 가능한 것보다 많은 예약 코어)은 로그에 남고 무시됩니다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `wasm_isolation.enabled` | bool | false | WASM 작업과 액터 작업 사이에 코어를 분할 |
+| `wasm_isolation.reserved_cores` | int | 1 | WASM 실행용으로 예약된 코어 수 |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -307,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-표준 OTEL 환경 변수(`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`)는 해당 필드를 재정의합니다.
+표준 OTEL 환경 변수(`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`)는 해당 필드를 재정의합니다.
 
 참조: [관측성 가이드](guides/observability.md)
 
@@ -331,7 +346,7 @@ shutdown:
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `buffer.size` | int | 10000 | 메트릭 버퍼 용량 |
-| `interceptor.enabled` | bool | false | 함수 호출 자동 추적 |
+| `interceptor.enabled` | bool | true | 함수 호출 자동 추적 |
 
 ```yaml
 metrics:
@@ -350,7 +365,8 @@ Prometheus 메트릭 엔드포인트.
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | 메트릭 서버 시작 |
-| `address` | string | localhost:9090 | 리슨 주소 |
+| `address` | string | | 리슨 주소; `enabled: true`일 때 명시적으로 설정해야 하며, 그렇지 않으면 메트릭 서버가 시작되지 않습니다 |
+| `max_cardinality` | int | 1024 | 메트릭당 유지되는 고유 레이블 세트 수 (LRU); `0` 이하이면 기본값 사용 |
 
 ```yaml
 prometheus:
@@ -358,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트 노출.
+Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트와 함께 `/livez`를 노출합니다.
 
 참조: [관측성 가이드](guides/observability.md)
 
@@ -373,6 +389,8 @@ Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트 노출.
 | `enabled` | bool | false | 클러스터링 활성화 |
 | `name` | string | hostname | 노드 이름; 클러스터 전체에서 고유해야 함 |
 | `failure_domain` | string | | 가용 영역/랙 레이블; gossip에서 광고되어 voter가 도메인 간에 분산됨 |
+| `kv_crdt_tombstone_retention` | duration | 0 | `store.kv.crdt` 삭제 툼스톤이 회수되는 경과 시간; `0`이면 수명 기반 GC 비활성화 |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | 현재 살아 있는 멤버십을 툼스톤 확인 응답 집합으로 사용 |
 
 ### 멤버십 (gossip)
 
@@ -443,6 +461,8 @@ Gossip 시크릿은 필수입니다. `membership.secret_key` 또는 `membership.
 | `raft.max_append_entries` | int | 16 | AppendEntries RPC당 최대 항목 수 |
 | `raft.leader_probe_interval` | duration | 3s | 글로벌 레지스트리 리더 도달 가능성 프로브 주기 |
 | `raft.leader_probe_grace` | int | 3 | 리더를 도달 불가능으로 선언하기 전 연속 프로브 실패 횟수 |
+| `raft.registry_backend` | string | kv | 클러스터 이름 레지스트리 구현: `kv` (공유 kv 키스페이스) 또는 `fsm` (전용 Raft FSM) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | 글로벌 이름 전파 캐시가 삭제 툼스톤을 유지하는 기간 |
 
 단일 노드 (개발) — 클러스터링 활성화, 즉시 자체 부트스트랩:
 

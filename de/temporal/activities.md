@@ -31,6 +31,7 @@ Activities sind Funktionen, die nicht-deterministische Operationen ausführen. J
 |------|--------------|--------------|
 | `worker` | Ja | Referenz auf `temporal.worker`-Eintrag |
 | `local` | Nein | Als lokale Activity ausführen (Standard: false) |
+| `name` | Nein | Benutzerdefinierter Activity-Typname (Standard: Eintrags-ID) |
 
 ## Implementierung
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Auf Activity-Stornierung warten |
 | `activity.disable_eager_execution` | boolean | false | Sofortige Ausführung deaktivieren |
 | `activity.retry_policy` | table | - | Retry-Konfiguration (siehe unten) |
+| `activity.name` | string | - | Aufzurufender Activity-Typname, wenn er von der Registry-ID abweicht |
+| `activity.summary` | string | - | Menschenlesbare Zusammenfassung, die in der Temporal-UI angezeigt wird |
+| `activity.priority` | table | - | Task-Priorität: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (Build-ID erben) oder `default` (Zuweisungsregeln verwenden) |
 
 Duration-Werte akzeptieren Strings (`"5s"`, `"10m"`, `"1h"`) oder Millisekunden als Zahlen.
 
@@ -194,14 +199,7 @@ Lokale Activities werden im Workflow-Worker-Prozess ohne separates Task-Queue-Po
         local: true
 ```
 
-Eigenschaften:
-- Werden im Workflow-Worker-Prozess ausgeführt
-- Geringere Latenz (kein Task-Queue-Roundtrip)
-- Kein separater Task-Queue-Overhead
-- Beschränkt auf kurze Ausführungszeiten (begrenzt durch `local_activity_options.schedule_to_close_timeout`, typischerweise wenige Sekunden)
-- Kein Heartbeating
-
-Lokale Activities eignen sich für schnelle, kurze Operationen wie Eingabevalidierung, Datentransformation oder Cache-Abfragen. Für langlaufende Arbeiten verwenden Sie stattdessen eine reguläre Activity.
+Derzeit wird `local: true` zwar geparst, verhält sich aber identisch zu einer regulären Activity: sie wird über den Standard-Activity-Pfad registriert und ausgeführt. Es gibt noch keine eigene Local-Activity-Ausführung, daher ändert sich weder Latenz noch Task-Queue-Verhalten oder Heartbeating.
 
 ## Activity-Benennung
 
@@ -300,9 +298,9 @@ end
 | Fehler | Fehlerart | Wiederholbar | Beschreibung |
 |--------|-----------|--------------|--------------|
 | Anwendungsfehler | Was die Activity zurückgegeben hat | Wird vom zurückgegebenen Fehler übernommen | Von Activity-Code via `return nil, err` zurückgegebener Fehler |
-| Laufzeitabsturz | `INTERNAL` | ja | Unbehandelter Lua-Fehler in Activity |
-| Fehlende Activity | `NOT_FOUND` | nein | Activity nicht beim Worker registriert |
-| Timeout | `TIMEOUT` | ja | Activity hat konfiguriertes Timeout überschritten |
+| Laufzeitabsturz | `Internal` | nein | Unbehandelter Lua-Fehler in Activity |
+| Fehlende Activity | `NotFound` | nein | Activity nicht beim Worker registriert |
+| Timeout | `Timeout` | nein | Activity hat konfiguriertes Timeout überschritten |
 | Sicherheitsverifizierung | `Internal` | ja | Signatur-, Audience- oder Envelope-Prüfung des propagierten Sicherheits-Headers fehlgeschlagen |
 | Fehlende Sicherheits-Policy | `Internal` | ja | Eine im Sicherheits-Envelope genannte Policy wird auf diesem Worker nicht aufgelöst |
 
@@ -315,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

@@ -31,9 +31,9 @@ description: "CloudyKit Jetを使用したテンプレートレンダリング�
 | `engine.development_mode` | bool | false | テンプレートキャッシュを無効化 |
 | `engine.delimiters.left` | string | `{{` | 変数開始デリミタ |
 | `engine.delimiters.right` | string | `}}` | 変数終了デリミタ |
-| `engine.delimiters.comment_left` | string | `{*` | コメント開始デリミタ |
-| `engine.delimiters.comment_right` | string | `*}` | コメント終了デリミタ |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | テンプレートファイルの拡張子 |
+| `engine.delimiters.comment_left` | string | `{*` | 検証のみ。コメントは常にJetの`{*`を使用 |
+| `engine.delimiters.comment_right` | string | `*}` | 検証のみ。コメントは常にJetの`*}`を使用 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 検証のみ。名前解決は常にJet組み込みの`.jet`、`.html.jet`、`.jet.html`を試行 |
 | `engine.globals` | map | - | すべてのテンプレートで利用可能な変数 |
 
 ## テンプレート

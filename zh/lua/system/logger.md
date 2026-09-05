@@ -6,7 +6,6 @@ description: "支持 debug、info、warn 和 error 级别的结构化日志。"
 # 日志
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 支持 debug、info、warn 和 error 级别的结构化日志。
@@ -97,8 +96,6 @@ named:info("message")
 
 ## 错误
 
-| 条件 | 类型 | 可重试 |
-|-----------|------|-----------|
-| 名称字符串为空 | `errors.INVALID` | 否 |
+`logger:named("")` 会抛出 Lua 参数错误（`name cannot be empty`），而不是返回错误值。日志方法不返回任何内容。
 
 错误处理请参阅 [错误处理](lua/core/errors.md)。

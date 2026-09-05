@@ -97,9 +97,9 @@ entries:
 ### Auflosungsregeln
 
 - Jedes Modul wird gegen die **Schnittmenge aller deklarierten Bereiche** im Abhangigkeitsgraphen aufgelost. Inkompatible Bereiche (Diamond-Konflikte) lassen die Auflosung mit einem expliziten Fehler fehlschlagen, statt stillschweigend eine Seite zu wahlen.
-- Abhangigkeiten werden aus ihren deklarierten Bereichen gelost, nicht aus zuvor aufgelosten Pins.
-- **Root-Deklarationen gewinnen gegen transitive**: Wenn Ihre App und eine Abhangigkeit dasselbe Modul oder dieselbe Anforderung einziehen, hat Ihre Deklaration Vorrang.
-- Dieselbe Komponente darf nur einmal als Root-Abhangigkeit deklariert werden — eine doppelte Deklaration wird mit einem Konfliktfehler abgelehnt. Aktualisieren Sie stattdessen die bestehende Abhangigkeit.
+- Ein vollständiges `wippy update` löst jedes Modul aus seinen deklarierten Bereichen auf; ein gezieltes Update und die Reparatur beim Start behalten eine gepinnte Version, die weiterhin jeden aktiven Bereich erfüllt.
+- **Root-Parameter gewinnen gegen transitive**: Wenn Ihre App und eine Abhängigkeit dieselbe Anforderung binden, haben die Parameter Ihrer `ns.dependency` Vorrang. Versionsbereiche werden nie überschrieben; jede Deklaration geht in die Schnittmenge ein.
+- Eine von mehreren Root-`ns.dependency`-Einträgen deklarierte Komponente wird von einem davon kontrolliert — etablierte Deklarationen vor neuen, Parameterträger vor einfachen, bei Gleichstand die niedrigste Eintrags-ID — und die übrigen werden zu Referenzen darauf zusammengefaltet. Ein Duplikat, dessen Parameter der kontrollierenden Deklaration widersprechen, wird mit einem Konfliktfehler abgelehnt; aktualisieren Sie stattdessen die bestehende Abhängigkeit.
 
 Zwei Auflösungsfehler werden unterschiedlich gemeldet. Ein Constraint-Ausdruck, den kein jemals veröffentlichtes Release erfüllen kann — die Schnittmenge der aktiven Bereiche ist leer — ist ein Konflikt, und der Fehler nennt das Modul und jeden Anforderer, der einen Bereich beigesteuert hat. Eine gültige Bereichsmenge, für die der Hub derzeit keine passende Version veröffentlicht, ist dagegen ein Verfügbarkeitsfehler: Ein späteres Release kann sie auflösbar machen, ohne dass sich an den Deklarationen etwas ändert.
 

@@ -59,6 +59,11 @@ entries:
     lifecycle:
       auto_start: true
 
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
   - name: dep.llm
     kind: ns.dependency
     component: wippy/llm
@@ -70,9 +75,11 @@ entries:
         value: app:processes
 
   - name: ask
-    kind: function.lua
+    kind: process.lua
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +88,17 @@ entries:
 - `env.storage.os` предоставляет API-ключи из переменных окружения
 - `process.host` предоставляет среду выполнения процессов, используемую модулем LLM
 
+`terminal.host` — это то, на чём `wippy run -x` выполняет процесс `ask` и куда пишет `io.print`.
+
 ### Код генерации
 
 Создайте `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +106,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Определение модели
@@ -141,11 +153,11 @@ wippy init
 wippy run -x app:ask "What is the capital of France?"
 ```
 
-Это вызывает функцию напрямую и выводит результат. Определение модели указывает модулю LLM, какой провайдер использовать и какое имя модели отправлять в API.
+Это запускает процесс `ask` на терминальном хосте с вопросом в качестве аргумента и выводит результат. Определение модели указывает модулю LLM, какой провайдер использовать и какое имя модели отправлять в API.
 
 ## Фаза 2: Диалоги
 
-Переход от одиночного вызова к многоходовому диалогу с использованием построителя промптов. Запись меняется с функции на процесс с терминальным вводом-выводом.
+Переход от одиночного вызова к многоходовому диалогу с использованием построителя промптов. Процесс регистрируется как именованная команда.
 
 ### Обновление определений записей
 

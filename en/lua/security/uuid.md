@@ -135,7 +135,7 @@ Returned table fields:
 - `version` (integer): UUID version (1, 3, 4, 5, or 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, or Invalid
 - `timestamp` (integer): Unix timestamp (v1 and v7 only)
-- `node` (string): Node ID (v1 only)
+- `node` (string): 6 raw node ID bytes (v1 only)
 
 ### Format
 

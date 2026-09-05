@@ -46,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-过滤字段与条目元数据匹配。
+以 `.` 为前缀的键匹配条目字段（`.kind`、`.ns`、`.name`、`.id`），并接受 `*` 通配符。以 `meta.` 为前缀的键匹配条目元数据；`meta.` 键前再加上 `~`、`*`、`^` 或 `$` 分别选择正则、包含、前缀或后缀匹配。两种前缀都没有的键会被忽略。
 
 ## 解析 ID
 

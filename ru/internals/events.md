@@ -50,6 +50,7 @@ flowchart LR
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -74,6 +75,8 @@ type Bus struct {
 | Stop | Очищает подписчиков, сливает очередь, выходит из цикла |
 
 Subscribe и Unsubscribe блокируются до подтверждения диспатчером. Send — fire-and-forget.
+
+`Subscribe` отклоняется с `ErrSubscribersCapReached`, как только шина держит `DefaultMaxSubscribers` (4096) активных подписок.
 
 `Subscribe` падает сразу, если контекст подписки уже отменён, и ещё раз — у диспатчера, если он отменён до принятия решения о владении: шина никогда не берёт канал, который не установила.
 

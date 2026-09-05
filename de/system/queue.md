@@ -132,7 +132,7 @@ Für AWS SQS und SQS-kompatible Endpoints (LocalStack, ElasticMQ). Anmeldedaten,
 | `use_fips` | bool | `false` | FIPS-konforme Endpoints verwenden |
 | `use_dual_stack` | bool | `false` | Dual-Stack-Endpoints (IPv4 + IPv6) verwenden |
 
-Queues werden vom Driver bei der ersten Verwendung automatisch erstellt. Verwenden Sie SQS-präfixierte Header (`sqs.*`), um SQS-spezifische Attribute beim Publish zu adressieren; neutrale Schlüssel wie `correlation_id` und `content_type` werden, wo möglich, in SQS-Systemattribute übersetzt.
+Queues werden vom Driver bei der ersten Verwendung automatisch erstellt. Verwenden Sie SQS-präfixierte Header, um SQS-spezifische Felder beim Publish zu adressieren: `sqs.delay_seconds`, `sqs.message_group_id` und `sqs.message_deduplication_id` werden auf typisierte SQS-Nachrichtenfelder abgebildet. Alle anderen Header (neutrale Schlüssel wie `correlation_id` und `content_type` sowie beliebige `sqs.message_attributes.*`-Schlüssel) werden unverändert als SQS-Nachrichtenattribute übertragen.
 
 ## Queue-Konfiguration
 
@@ -157,7 +157,7 @@ Queues werden vom Driver bei der ersten Verwendung automatisch erstellt. Verwend
 | `queue_name` | string | Nein | Externer Queue-Name (Standard: Entry-Name) |
 | `driver_options` | object | Nein | Per-Driver-Sub-Bag, indiziert nach Driver-Kind |
 | `dead_letter.queue` | Registry-ID | Nein | Queue-ID für fehlgeschlagene Nachrichten |
-| `dead_letter.max_attempts` | int | Nein | Versuche vor Routing zur DLQ |
+| `dead_letter.max_attempts` | int | Nein | Versuche vor Routing zur DLQ (wird akzeptiert, aber von keinem eingebauten Driver durchgesetzt) |
 
 ### Driver-Optionen
 
@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery per driver
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,15 +286,15 @@ Die Runtime settled basierend auf der Handler-Rückgabe automatisch:
 
 | Handler-Ergebnis | Aktion |
 |------------------|--------|
-| `true` oder Nicht-`false`-Rückgabe | Ack |
-| `false` | Nack (Redelivery oder Dead-Letter je nach Driver) |
+| Jeder einfache Rückgabewert (auch `false`) | Ack |
+| Rückgabe `nil, err` | Nack (Redelivery je nach Driver) |
 | Geworfener Fehler | Nack |
 
 Rufen Sie `msg:ack()` oder `msg:nack()` explizit nur auf, um vorzeitig zu settlen. Settlement ist Single-Shot: der zuerst eintreffende Aufruf gewinnt.
 
 ### Dead-Letter-Routing
 
-Wenn `dead_letter` auf der Queue konfiguriert ist, wird eine Nachricht, die über `max_attempts` hinaus nack'd wird, mit den vom Driver gesetzten Headern `x_dead_letter_reason` und `x_original_queue` an die DLQ geleitet. Publisher dürfen keinen `x_*`-Header setzen — diese sind für DLQ-Buchhaltung reserviert.
+Dead-Letter-Routing ist noch nicht implementiert. Der `dead_letter`-Block (siehe [Queue-Konfiguration](#queue-configuration)) wird in der Konfiguration akzeptiert, aber derzeit zählt kein eingebauter Driver Versuche, leitet nack'd Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine nack'd Nachricht wird gemäß der Policy des Drivers erneut zugestellt. Der Header-Namensraum `x_*` ist für künftige DLQ-Buchhaltung reserviert, daher sollten Publisher keine `x_*`-Header setzen.
 
 ## Nachrichten veröffentlichen
 

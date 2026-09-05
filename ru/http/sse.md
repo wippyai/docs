@@ -152,7 +152,7 @@ res:set_header("X-SSE-Relay", json.encode({
 Клиент получает событие `ready`:
 
 ```json
-{"stream_pid": "sse@node/abc123", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:gateway|0x0002a}", "message_topic": "sse.message"}
 ```
 
 ## Топики сообщений
@@ -163,7 +163,7 @@ res:set_header("X-SSE-Relay", json.encode({
 |-------|-----------|------|---------|
 | `sse.join` | stream → target | Клиент подключается | `client_pid`, `metadata` |
 | `sse.message` | target → stream | Топик событий по умолчанию | Пересылается как SSE-событие |
-| `sse.heartbeat` | stream → target | Периодически (если настроено) | `client_pid`, `uptime`, `message_count` |
+| `sse.heartbeat` | stream → target | Периодически (по умолчанию каждые 30s) | `client_pid`, `uptime`, `message_count`, `metadata` |
 | `sse.leave` | stream → target | Клиент отключается | `client_pid`, `metadata` |
 | `sse.control` | any → stream | Управляющая команда | Поля конфигурации Relay |
 | `sse.close` | any → stream | Принудительное закрытие | Опциональная строка причины |

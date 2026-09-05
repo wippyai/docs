@@ -68,7 +68,7 @@ local stream, err = cdc.stream("app:pg_cdc", {
 
 未知のオプションキーは`errors.INVALID`で拒否されます。テーブル名は、修飾されたリレーション名と裸のテーブル名の両方に対して大文字小文字を区別せずに照合されます。スナップショットの行は`tables`のみでフィルタされ、`ops`はライブの変更に適用されます。
 
-ストリームは、`opts.snapshot`がtrueであるか、ソースエントリの`snapshot`フィールドが設定されている場合にスナップショットを受け取ります。スナップショットの行が`op = "snapshot"`で最初に到着し、その後ストリームは切れ目なくライブの変更へ続きます。`opts.after`は`capture_resume`ケイパビリティが設定されたドライバーでのみ受け付けられます。現在提供されているすべてのドライバーは、これに対して`errors.INVALID`（"cdc operation is not supported by this source"）を返します。
+ストリームは、`opts.snapshot`がtrueであるか、ソースエントリの`snapshot`フィールドが設定されている場合にスナップショットを受け取ります。スナップショットの行が`op = "snapshot"`で最初に到着し、その後ストリームは切れ目なくライブの変更へ続きます。`opts.after`はカーソルから再開するドライバー向けに予約されています。現在提供されているすべてのドライバーは、`capture_resume`を報告する`db.cdc.postgres`を含め、これに対して`errors.INVALID`（"cdc operation is not supported by this source"）を返します。
 
 フィルタは配信を絞り込むだけです。ソースへのアクセスは`cdc.subscribe`権限によって付与されるのであり、フィルタによって付与されることはありません。
 
@@ -154,7 +154,7 @@ stream:close()
 | `slot` | レプリケーションスロット名（`db.cdc.postgres`） |
 | `publication` | 設定されている場合のPostgresのパブリケーション |
 | `tables` | 設定されている場合のキャプチャ対象テーブル |
-| `streaming` | ソースが現在稼働中かどうか |
+| `streaming` | `db.cdc.sqlite`: ソースが稼働中かどうか。`db.cdc.postgres`: エントリの`streaming`プロトコル設定 |
 | `failover` | フェイルオーバースロットのモード（`db.cdc.postgres`） |
 | `temporary` | 一時スロット（`db.cdc.postgres`） |
 | `snapshot` | エントリレベルのスナップショットのデフォルト |
@@ -187,7 +187,7 @@ end
 
 | 条件 | 種別 |
 |-----------|------|
-| コンテキストなし / プロセスPIDなし | `errors.INTERNAL` |
+| コンテキストなし | `errors.INTERNAL` |
 | ソース名が必須 | `errors.INVALID` |
 | 無効または未知のストリームオプション | `errors.INVALID` |
 | `capture_resume`を持たないソースでの`after` | `errors.INVALID` |

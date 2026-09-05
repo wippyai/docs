@@ -36,7 +36,7 @@ logger:
 logmanager:
   propagate_downstream: true   # 자식 컴포넌트로 전파
   stream_to_events: false      # 이벤트 버스로 로그 전달
-  min_level: -1                # -1=debug(기본값), 0=info, 1=warn, 2=error
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run이 0으로, -v와 함께면 -1로 설정)
 ```
 
 `stream_to_events`를 활성화하면 로그 항목이 이벤트로 변환되어 프로세스가 이벤트 버스를 통해 구독할 수 있습니다.
@@ -56,7 +56,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-메트릭은 설정된 주소의 `/metrics`에서 노출됩니다.
+메트릭은 설정된 주소의 `/metrics`에서 노출되며, 같은 리스너가 `/livez`도 제공합니다. `max_cardinality`(기본값 1024)는 익스포터당 유지되는 활성 레이블 세트 수를 제한하며, 그 이상은 가장 오래 갱신되지 않은 시계열부터 제거됩니다.
 
 ### 스크레이프 설정
 
@@ -95,7 +95,7 @@ otel:
 
 ### 트레이스 소스
 
-특정 컴포넌트에 대한 트레이싱 활성화:
+`otel.enabled`가 true가 되면 모든 트레이스 소스가 기본적으로 켜집니다. 각각은 개별적으로 비활성화할 수 있습니다:
 
 ```yaml
 otel:
@@ -150,10 +150,10 @@ otel:
 
 | 컴포넌트 | 스팬 이름 | 속성 |
 |-----------|-----------|------------|
-| HTTP 요청 | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP 요청 | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | 함수 호출 | 함수 ID | process.pid, frame.id |
 | 프로세스 라이프사이클 | `{source}.started/terminated` | process.pid |
-| 큐 메시지 | 메시지 토픽 | 헤더의 트레이스 컨텍스트 |
+| 큐 메시지 | `{queue}.publish` | messaging.operation, messaging.destination.name |
 | Temporal 워크플로우 | 워크플로우/액티비티 이름 | workflow.id, run.id |
 
 ### 컨텍스트 전파
@@ -177,6 +177,8 @@ OTEL은 환경 변수로 설정 가능합니다:
 | `OTEL_SERVICE_NAME` | 서비스 이름 |
 | `OTEL_SERVICE_VERSION` | 서비스 버전 |
 | `OTEL_TRACES_SAMPLER_ARG` | 샘플 레이트 (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio`, 또는 `parentbased_traceidratio` (비율은 `OTEL_TRACES_SAMPLER_ARG`에서) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | 비TLS 연결을 허용하려면 `true`로 설정 |
 | `OTEL_PROPAGATORS` | 프로파게이터 목록 |
 
 ## 런타임 통계

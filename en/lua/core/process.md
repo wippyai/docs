@@ -134,7 +134,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | Field | Type | Description |
 |-------|------|-------------|
 | `kind` | string | Event type constant |
-| `from` | string | Source PID |
+| `from` | string | Source PID (absent for OUTDATED) |
 | `result` | table | For EXIT/LINK_DOWN: a {value, error} record; the process return value is at `result.value` and any error at `result.error` |
 | `reason` | string | For CANCEL: why the process is being cancelled |
 | `sources` | string[] | For OUTDATED: registry IDs that changed or were transitively affected |
@@ -163,8 +163,8 @@ When receiving from inbox or with `{message = true}`:
 local msg = inbox:receive()
 
 msg:topic()            -- string: topic name
-msg:from()             -- string|nil: sender PID
-msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:from()             -- string: sender PID (empty string when unknown)
+msg:payload()          -- Payload: wrapper (call :data() to extract); nil when empty, table of wrappers for several values
 msg:payload():data()   -- any: actual payload value
 ```
 
@@ -235,7 +235,7 @@ SpawnBuilder is immutable - each method returns a new instance:
 spawner:with_context(values)      -- Add context values
 spawner:with_actor(actor)         -- Set security actor
 spawner:with_scope(scope)         -- Set security scope
-spawner:with_name(name)           -- Set process name
+spawner:with_name(name)           -- Register name at start; if taken, spawn returns the existing PID and queued messages go to it
 spawner:with_message(topic, ...)  -- Queue message to send after spawn
 spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
@@ -298,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | no | self | PID to register; defaults to the calling process |
 | `scope` | number | no | `LOCAL` | One of the scope constants above |
 
-Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID under a cluster scope) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
+Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
 
 Registering on behalf of a different PID additionally requires the `process.registry.foreign` permission on the target PID.
 
@@ -346,7 +346,7 @@ Policies can allow/deny based on:
 | `process.unmonitor` | `unmonitor()` | target PID |
 | `process.link` | `link()` | target PID |
 | `process.unlink` | `unlink()` | target PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | name |
 | `process.registry.unregister` | `registry.unregister()` | name |
@@ -371,11 +371,11 @@ Some operations require multiple permissions:
 
 | Condition | Kind |
 |-----------|------|
-| No context found | `errors.INVALID` |
-| Frame context not found | `errors.INVALID` |
+| No context found | `errors.INTERNAL` |
+| Frame context not found | `errors.INTERNAL` |
 | Missing required arguments | `errors.INVALID` |
 | Reserved topic prefix (`@`) | `errors.INVALID` |
-| Invalid duration format | `errors.INVALID` |
+| Destination is neither a PID nor a registered name | `errors.NOT_FOUND` |
 | Name not registered | `errors.NOT_FOUND` |
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |

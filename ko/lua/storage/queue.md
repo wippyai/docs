@@ -80,7 +80,7 @@ local all_headers = msg:headers()
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
 | `id()` | `string, error` | 고유 메시지 식별자 |
-| `header(key)` | `any, error` | 단일 헤더 값 (없으면 nil) |
+| `header(key)` | `string, error` | 단일 헤더 값을 문자열로 반환 (없으면 nil) |
 | `headers()` | `table, error` | 모든 메시지 헤더 |
 | `ack()` | `boolean, error` | 처리 확인 (single-shot) |
 | `nack()` | `boolean, error` | 재전송 또는 dead-letter를 위한 실패 신호 (single-shot) |
@@ -103,7 +103,7 @@ local stats, err = queue.info("app:tasks")
 ```yaml
 entries:
   - kind: queue.consumer
-    id: email_worker
+    name: email_worker
     queue: app:emails
     func: app:email_handler
 ```

@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | 连接超时（毫秒或 "5s"） |
 | `read_timeout` | number/string | 读取超时 |
 | `write_timeout` | number/string | 写入超时 |
-| `compression` | number | 压缩模式（见常量） |
+| `compression` | number/string | 压缩模式（见常量），或 `"disabled"`、`"context_takeover"`、`"no_context_takeover"` |
 | `compression_threshold` | number | 压缩的最小大小（0-100MB） |
 | `read_limit` | number | 最大消息大小（0-128MB） |
 | `channel_capacity` | number | 接收通道缓冲区（1-10000） |
@@ -89,9 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | 消息内容 |
 | `type` | number | `websocket.TEXT` (1) 或 `websocket.BINARY` (2) |
 
-在消息发送前会让出。
-
-**返回:** `boolean, error`
+在消息发送前会让出。不返回任何值。
 
 ### Ping
 
@@ -99,9 +97,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-在 ping 发送前会让出。
-
-**返回:** `boolean, error`
+在 ping 发送前会让出。不返回任何值。
 
 ## 接收消息
 
@@ -184,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | 关闭码（1000-4999），默认 1000 |
 | `reason` | string | 关闭原因（可选） |
 
-**返回:** `boolean, error`
+在关闭帧发送完成前会让出执行。
 
 ## 常量
 
