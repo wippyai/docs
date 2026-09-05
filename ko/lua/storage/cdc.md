@@ -122,7 +122,7 @@ stream:close()
 | `schema` | 테이블 스키마 |
 | `table` | 테이블 이름 |
 | `relation` | 정규화된 릴레이션 이름 |
-| `before` | 변경 이전 행 상태 (`update`, `delete`, `before_images` 기능 필요) |
+| `before` | 변경 이전 행 상태 (`update`, `delete`). 전체 행 이미지는 소스가 `before_images` 기능을 가질 때만 보장됩니다. `db.cdc.postgres`는 WAL이 실어 나르는 이전 튜플로 이를 채우며, 그 내용은 테이블의 `REPLICA IDENTITY`가 제어합니다 |
 | `after` | 변경 이후 행 상태 (`insert`, `update`, `snapshot`, `delete`에는 없음) |
 | `source` | 소스 항목 ID |
 | `source_id` | 레지스트리 ID 형태의 소스 항목 ID |
@@ -168,7 +168,7 @@ stream:close()
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- delete 이벤트에는 행 이미지가 없으므로 마지막으로 알려진 상태를 직접 유지
+    -- before가 전체 행 이미지로 보장되지 않으므로 마지막으로 알려진 상태를 직접 유지
 end
 ```
 

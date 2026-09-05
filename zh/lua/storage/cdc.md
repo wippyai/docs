@@ -122,7 +122,7 @@ stream:close()
 | `schema` | 表 schema |
 | `table` | 表名 |
 | `relation` | 限定关系名 |
-| `before` | 变更之前的行状态（`update`、`delete`；需要 `before_images` 能力） |
+| `before` | 变更之前的行状态（`update`、`delete`）。只有当源具备 `before_images` 能力时才保证是完整的行镜像；`db.cdc.postgres` 用 WAL 中携带的旧元组来填充它，而这由表的 `REPLICA IDENTITY` 控制 |
 | `after` | 变更之后的行状态（`insert`、`update`、`snapshot`；`delete` 时不存在） |
 | `source` | 源条目 ID |
 | `source_id` | 源条目 ID，作为注册表 ID |
@@ -168,7 +168,7 @@ stream:close()
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- delete 事件不携带行镜像；请自行保留最后已知状态
+    -- before 不保证是完整的行镜像；请自行保留最后已知状态
 end
 ```
 

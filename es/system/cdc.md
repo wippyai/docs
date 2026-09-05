@@ -144,7 +144,7 @@ Cada fuente publica lo que garantiza, de modo que los consumidores ramifican seg
 | `capture_resume` | sí, salvo con `temporary` | no | El progreso de la fuente sobrevive a una reconexión |
 | `replayable` | no | no | Los suscriptores individuales pueden reproducir eventos pasados |
 | `captures_external_writes` | sí | no | Captura escrituras hechas fuera de este runtime |
-| `before_images` | no | sí | Entrega la imagen de la fila anterior al cambio |
+| `before_images` | no | sí | Garantiza una imagen completa de la fila anterior al cambio en `update` y `delete` |
 | `coalesced` | no | sí | Las escrituras repetidas a una fila dentro de una transacción pueden llegar fusionadas |
 
 Los indicadores de capacidad describen el progreso de la fuente, no la entrega duradera: ningún driver reproduce eventos para un suscriptor individual que se quedó atrás o se desconectó.

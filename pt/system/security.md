@@ -475,7 +475,7 @@ local result, err = funcs.new()
 | Escopo | Sim - passa para chamadas filhas |
 | Modo estrito | Não - aplicação-wide |
 
-Funções herdam o contexto de segurança do chamador. Um processo criado não: ele inicia em um frame novo, e seu contexto vem do bloco `security:` de sua própria entrada. Quando essa entrada não declara bloco algum, o processo executa sem ator e sem escopo, o que o modo estrito nega. Um bloco declarado que omite `actor` herda o ator de quem o criou, e um que omite tanto `policies` quanto `groups` herda o escopo de quem o criou — então "iniciar do zero" significa "sem herança ambiente", não "não pode receber um contexto".
+Funções e processos criados herdam ambos o contexto de segurança do chamador. Um processo criado inicia em um frame bifurcado a partir do frame de quem o criou, que carrega o ator e o escopo de quem o criou, e o bloco `security:` de sua própria entrada modifica esse contexto herdado. Quando a entrada não declara bloco algum, o processo mantém inalterados o ator e o escopo de quem o criou; um criador que não tem nenhum dos dois produz um filho sem nenhum dos dois, o que o modo estrito nega. Um bloco declarado que nomeia um `actor` substitui o ator herdado, e seus `policies` e `groups` são mesclados ao escopo herdado; um bloco que omite `actor` mantém o ator de quem o criou, e um que omite tanto `policies` quanto `groups` mantém o escopo de quem o criou.
 
 ## Declarando Segurança em Entradas
 
@@ -606,7 +606,7 @@ A avaliação de políticas governa o que o código pode fazer. Três mecanismos
 
 ### Integridade de Módulos
 
-Todo módulo no `wippy.lock` carrega um digest de artefato. Downloads são preparados em etapas, verificados contra o digest fixado no lock e contra o digest servido pelo hub, e só então movidos para o lugar; packs já vendorizados são reverificados no boot. Uma divergência é uma falha `PermissionDenied` que não é retentada nem contornada — o módulo não é carregado. Diretórios de módulo extraídos carregam seu próprio digest e digest de árvore registrados e são verificados da mesma forma, então uma árvore vendorizada modificada é detectada em vez de considerada confiável. Veja [Gerenciamento de Dependências](guides/dependency-management.md#integrity-verification).
+Todo módulo no `wippy.lock` carrega um digest de artefato. No boot, um download é verificado contra o digest fixado no lock e contra o digest servido pelo hub, e packs já vendorizados são reverificados contra o lock antes de serem carregados; uma divergência é uma falha de integridade não retentável que não é contornada — o módulo não é carregado. `wippy install` verifica um download novo apenas contra o digest e o tamanho servidos pelo hub, apaga o arquivo e falha em caso de divergência, e então grava o digest servido de volta no lock, de modo que um digest fixado é restabelecido pelo install em vez de imposto por ele; apenas packs já presentes no diretório de vendor são conferidos contra o digest do lock. Diretórios de módulo extraídos carregam seu próprio digest e digest de árvore registrados e são verificados da mesma forma, então uma árvore vendorizada modificada é detectada em vez de considerada confiável. Veja [Gerenciamento de Dependências](guides/dependency-management.md#integrity-verification).
 
 ### Identidade Internodal do Cluster
 

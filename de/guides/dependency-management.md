@@ -248,11 +248,11 @@ Module mit aktiven Ersetzungen uberspringen ihren Vendor-Pfad.
 
 ## Integritatsprufung
 
-Jedes Modul in der Lock-Datei tragt einen Artefakt-Digest, und ein Modul ohne Digest kann uberhaupt nicht installiert werden.
+Jedes Modul in der Lock-Datei tragt einen Artefakt-Digest. Der Boot weigert sich, ein Modul zu laden, dessen Lock-Eintrag keinen hat; `wippy install` akzeptiert einen solchen Eintrag und zeichnet den Digest auf, den der Hub mit dem Download ausliefert.
 
-Downloads werden gestaged: Das Pack wird in eine temporäre Datei neben seinem endgültigen Ort geschrieben, gegen den in `wippy.lock` fixierten Digest und gegen den Digest verifiziert, den der Hub mit der Download-URL ausgeliefert hat (samt ausgelieferter Größe), und erst dann an seinen Platz umbenannt. Eine gestagte Datei, die die Prüfung nicht besteht, wird gelöscht.
+Beim Boot werden Downloads gestaged: Das Pack wird in eine temporäre Datei neben seinem endgültigen Ort geschrieben, gegen den in `wippy.lock` fixierten Digest und gegen den Digest verifiziert, den der Hub mit der Download-URL ausgeliefert hat (samt ausgelieferter Größe), und erst dann an seinen Platz umbenannt. Eine gestagte Datei, die die Prüfung nicht besteht, wird gelöscht. `wippy install` benennt den Download in seinen Vendor-Pfad um, bevor es ihn verifiziert, prüft ihn nur gegen den ausgelieferten Digest und die ausgelieferte Größe, löscht ihn bei Fehlschlag und ersetzt einen Lock-Digest, der vom ausgelieferten abweicht, statt ihn durchzusetzen.
 
-Ein abweichender Digest ist ein harter, nicht wiederholbarer Fehler — `PermissionDenied`, "module integrity verification failed" — und er wird bei der Installation und beim Start gleichermaßen ausgelöst, wo bereits vendorierte Packs erneut verifiziert werden, bevor Eintrage geladen werden. Nichts wiederholt den Versuch, lädt über die Abweichung hinweg erneut herunter oder fällt auf den ausgelieferten Inhalt zurück.
+Ein abweichender Digest ist ein harter, nicht wiederholbarer Fehler. Beim Boot ist er `PermissionDenied`, "module integrity verification failed", ausgelöst für einen frischen Download ebenso wie für ein bereits vendoriertes Pack, das gegen den Lock-Digest erneut verifiziert wird, bevor Eintrage geladen werden. `wippy install` meldet ihn als `Internal`: "failed to store module" um "verify cached WAPP: digest mismatch" für ein Pack, das bereits im Vendor-Verzeichnis liegt, und "failed to download module" um "verify downloaded WAPP: digest mismatch" für einen frischen Download. Nichts wiederholt den Versuch, lädt über die Abweichung hinweg erneut herunter oder fällt auf den ausgelieferten Inhalt zurück.
 
 Dieselbe Prüfung sichert die Auflösung ab. Liefert der Hub ein Manifest, dessen Digest von dem im Lock fixierten abweicht, wird der Manifest-Cache einmal aufgefrischt und erneut verglichen; stimmt er weiterhin nicht überein, scheitert die Auflösung und nennt beide Digests.
 

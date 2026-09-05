@@ -264,13 +264,13 @@ return nil, last_err
 - A string de owner e obrigatoria e nao pode estar em branco.
 - Um changeset deve ser nao vazio e nao pode nomear a mesma entrada duas vezes.
 - `create` falha quando o ID ja existe no estado duravel ou em qualquer overlay.
-- `update` e `delete` so funcionam em entradas que este owner criou.
+- `update` e `delete` so funcionam em entradas que este owner criou; qualquer outro ID falha com `errors.NOT_FOUND`.
 - Entradas de overlay nao podem definir `dependency_root` nem qualquer outro metadado de propriedade do registry.
 - Entradas de overlay nao podem usar kinds pertencentes a uma diretiva do registry, como `ns.dependency`.
 - Um delete que remove uma entrada da qual uma entrada sobrevivente depende e rejeitado.
 - Dependencias nao podem cruzar fronteiras de owner de overlay, e entradas duraveis nao podem depender de entradas de overlay.
 
-Todas essas se manifestam como `errors.CONFLICT` ou `errors.INVALID`, e nenhuma e retentavel: apenas a divergencia de geracao acima e.
+As demais se manifestam como `errors.CONFLICT` ou `errors.INVALID`, e nenhuma e retentavel: apenas a divergencia de geracao acima e.
 
 **Permissões:** `registry.overlay.get` no owner para abrir e ler, `registry.overlay.apply` no owner para escrever, e `registry.overlay.<create|update|delete>.<kind>` em cada ID de entrada no changeset.
 

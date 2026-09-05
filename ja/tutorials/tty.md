@@ -306,13 +306,13 @@ local hint_style = tty.style():faint()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-更新はまとめられたウォーターマークであり、イベントログではありません。遅いシェルは最新の1つだけを受け取り、実際の行を得るには`snapshot()`を呼ばなければなりません。直前のリビジョンを渡すと、何も変化していない場合`snapshot`は`nil`を返します。
+更新はまとめられたウォーターマークであり、イベントログではありません。遅いシェルは最新の1つだけを受け取り、実際の行を得るには`snapshot()`を呼ばなければなりません。直前のリビジョンを渡すと、何も変化していない場合`snapshot`は`nil`を返します。新しいリビジョンは子が描画したことを意味しません。`viewport:resize`もリビジョンを進めますし、最初のフレームまでスナップショットは行を持ちません。そのため`ready`はリビジョンではなく`rows`を基準にしています。
 
 入力は`viewport:send`を通じて逆方向へ流れます。キーイベントはそのまま渡されます。マウスの座標は子の1始まりの空間へ移す必要があり、領域外のイベントは破棄されます:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

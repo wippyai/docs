@@ -248,11 +248,11 @@ Modulos com substituicoes ativas ignoram seu caminho de vendor.
 
 ## Verificacao de Integridade
 
-Todo modulo no arquivo de lock carrega um digest de artefato, e um modulo sem ele nao pode ser instalado de forma alguma.
+Todo modulo no arquivo de lock carrega um digest de artefato. O boot se recusa a carregar um modulo cuja entrada no lock nao tem nenhum; `wippy install` aceita tal entrada e registra o digest que o hub serve com o download.
 
-Downloads sao preparados em etapas: o pack e escrito em um arquivo temporario ao lado de seu local final, verificado contra o digest fixado no `wippy.lock` e contra o digest que o hub serviu com a URL de download (mais o tamanho servido), e so entao renomeado para o lugar. Um arquivo preparado que falha na verificacao e apagado.
+No boot, os downloads sao preparados em etapas: o pack e escrito em um arquivo temporario ao lado de seu local final, verificado contra o digest fixado no `wippy.lock` e contra o digest que o hub serviu com a URL de download (mais o tamanho servido), e so entao renomeado para o lugar. Um arquivo preparado que falha na verificacao e apagado. `wippy install` renomeia o download para seu caminho de vendor antes de verifica-lo, confere-o apenas contra o digest e o tamanho servidos, apaga-o em caso de falha, e substitui um digest do lock que difere do servido em vez de impo-lo.
 
-Uma divergencia de digest e uma falha dura e nao retentavel — `PermissionDenied`, "module integrity verification failed" — e e levantada da mesma forma no momento da instalacao e no boot, onde packs ja vendorizados sao reverificados antes de as entradas serem carregadas. Nada tenta de novo, rebaixa por cima da divergencia, nem recorre ao conteudo servido.
+Uma divergencia de digest e uma falha dura e nao retentavel. No boot ela e `PermissionDenied`, "module integrity verification failed", levantada para um download novo e para um pack ja vendorizado, que e reverificado contra o digest do lock antes de as entradas serem carregadas. `wippy install` a reporta como `Internal`: "failed to store module" envolvendo "verify cached WAPP: digest mismatch" para um pack ja presente no diretorio de vendor, e "failed to download module" envolvendo "verify downloaded WAPP: digest mismatch" para um download novo. Nada tenta de novo, rebaixa por cima da divergencia, nem recorre ao conteudo servido.
 
 A mesma verificacao protege a resolucao. Quando o hub serve um manifesto cujo digest difere daquele fixado no lock, o cache de manifestos e atualizado uma vez e recomparado; se ainda divergir, a resolucao falha nomeando ambos os digests.
 

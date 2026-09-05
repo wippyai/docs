@@ -144,7 +144,7 @@ Toda fonte publica o que ela garante, de modo que os consumidores ramificam sobr
 | `capture_resume` | sim, exceto com `temporary` | não | O progresso da fonte sobrevive a uma reconexão |
 | `replayable` | não | não | Assinantes individuais podem reproduzir eventos passados |
 | `captures_external_writes` | sim | não | Captura escritas feitas fora deste runtime |
-| `before_images` | não | sim | Entrega a imagem da linha antes da mudança |
+| `before_images` | não | sim | Garante uma imagem completa da linha antes da mudança em `update` e `delete` |
 | `coalesced` | não | sim | Escritas repetidas em uma linha dentro de uma transação podem chegar agrupadas |
 
 As flags de capacidade descrevem o progresso da fonte, não a entrega durável: nenhum driver reproduz eventos para um assinante individual que ficou para trás ou se desconectou.

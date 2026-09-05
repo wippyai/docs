@@ -475,7 +475,7 @@ local result, err = funcs.new()
 | Scope | Ja - wird an Kindaufrufe weitergegeben |
 | Strikter Modus | Nein - anwendungsweit |
 
-Funktionen erben den Sicherheitskontext des Aufrufers. Ein gestarteter Prozess nicht: Er beginnt auf einem frischen Frame, und sein Kontext stammt aus dem `security:`-Block seines eigenen Entries. Deklariert dieser Entry keinen Block, läuft der Prozess ohne Actor und ohne Scope, was der strikte Modus verweigert. Ein deklarierter Block, der `actor` weglässt, erbt den Actor des Starters, und einer, der sowohl `policies` als auch `groups` weglässt, erbt dessen Scope — "neu beginnen" heißt also "keine ambiente Vererbung", nicht "kann keinen Kontext bekommen".
+Funktionen und gestartete Prozesse erben beide den Sicherheitskontext des Aufrufers. Ein gestarteter Prozess beginnt auf einem Frame, der vom Frame des Starters abgezweigt ist und dessen Actor und Scope trägt, und der `security:`-Block seines eigenen Entries modifiziert diesen geerbten Kontext. Deklariert der Entry keinen Block, behält der Prozess Actor und Scope des Starters unverändert; ein Starter, der keines von beiden hat, erzeugt ein Kind ohne beides, was der strikte Modus verweigert. Ein deklarierter Block, der einen `actor` benennt, ersetzt den geerbten Actor, und seine `policies` und `groups` werden in den geerbten Scope gemergt; ein Block, der `actor` weglässt, behält den Actor des Starters, und einer, der sowohl `policies` als auch `groups` weglässt, behält dessen Scope.
 
 ## Sicherheit an Entries deklarieren
 
@@ -606,7 +606,7 @@ Die Richtlinien-Evaluierung regelt, was Code tun darf. Drei separate Mechanismen
 
 ### Modul-Integrität
 
-Jedes Modul in `wippy.lock` trägt einen Artefakt-Digest. Downloads werden gestaged, gegen den im Lock fixierten Digest und den vom Hub ausgelieferten Digest verifiziert und erst dann an ihren Platz verschoben; bereits vendorierte Packs werden beim Boot erneut verifiziert. Eine Abweichung ist ein `PermissionDenied`-Fehler, der weder wiederholt noch umgangen wird — das Modul wird nicht geladen. Entpackte Modulverzeichnisse tragen ihren eigenen aufgezeichneten Digest und Baum-Digest und werden auf dieselbe Weise geprüft, sodass ein veränderter vendorierter Baum erkannt statt vertraut wird. Siehe [Abhängigkeitsverwaltung](guides/dependency-management.md#integrity-verification).
+Jedes Modul in `wippy.lock` trägt einen Artefakt-Digest. Beim Boot wird ein Download gegen den im Lock fixierten Digest und den vom Hub ausgelieferten Digest verifiziert, und bereits vendorierte Packs werden gegen den Lock erneut verifiziert, bevor sie geladen werden; eine Abweichung ist ein nicht wiederholbarer Integritätsfehler, der nicht umgangen wird — das Modul wird nicht geladen. `wippy install` verifiziert einen frischen Download nur gegen den Digest und die Größe, die der Hub ausgeliefert hat, löscht die Datei und scheitert bei Abweichung und schreibt anschließend den ausgelieferten Digest in den Lock zurück; ein fixierter Digest wird von install also neu etabliert, nicht durchgesetzt. Nur Packs, die bereits im Vendor-Verzeichnis liegen, werden gegen den Digest des Locks geprüft. Entpackte Modulverzeichnisse tragen ihren eigenen aufgezeichneten Digest und Baum-Digest und werden auf dieselbe Weise geprüft, sodass ein veränderter vendorierter Baum erkannt statt vertraut wird. Siehe [Abhängigkeitsverwaltung](guides/dependency-management.md#integrity-verification).
 
 ### Internode-Identität im Cluster
 

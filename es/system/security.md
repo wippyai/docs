@@ -475,7 +475,7 @@ local result, err = funcs.new()
 | Scope | Sí - se pasa a llamadas hijas |
 | Modo estricto | No - es a nivel de aplicación |
 
-Las funciones heredan el contexto de seguridad del llamador. Un proceso generado no: arranca sobre un frame nuevo, y su contexto proviene del bloque `security:` de su propia entrada. Cuando esa entrada no declara ningún bloque, el proceso se ejecuta sin actor y sin scope, lo que el modo estricto deniega. Un bloque declarado que omite `actor` hereda el actor de quien lo genera, y uno que omite tanto `policies` como `groups` hereda su scope — así que "comienza sin contexto" significa "sin herencia ambiental", no "no se le puede dar un contexto".
+Tanto las funciones como los procesos generados heredan el contexto de seguridad del llamador. Un proceso generado arranca sobre un frame bifurcado del de quien lo genera, que lleva el actor y el scope de este, y el bloque `security:` de su propia entrada modifica ese contexto heredado. Cuando la entrada no declara ningún bloque, el proceso conserva sin cambios el actor y el scope de quien lo genera; un generador que no tiene ninguno de los dos produce un hijo sin ninguno de los dos, lo que el modo estricto deniega. Un bloque declarado que nombra un `actor` reemplaza al actor heredado, y sus `policies` y `groups` se fusionan en el scope heredado; un bloque que omite `actor` conserva el actor de quien lo genera, y uno que omite tanto `policies` como `groups` conserva su scope.
 
 ## Declarar Seguridad en las Entradas
 
@@ -606,7 +606,7 @@ La evaluación de políticas rige lo que el código puede hacer. Tres mecanismos
 
 ### Integridad de Módulos
 
-Cada módulo de `wippy.lock` lleva un digest de artefacto. Las descargas se hacen por etapas, se verifican contra el digest fijado en el bloqueo y contra el digest que sirvió el hub, y solo entonces se mueven a su lugar; los packs ya vendorizados se reverifican en el arranque. Una discrepancia es un fallo `PermissionDenied` que no se reintenta ni se rodea — el módulo no se carga. Los directorios de módulo extraídos llevan su propio digest registrado y digest de árbol y se comprueban de la misma forma, de modo que un árbol vendorizado modificado se detecta en lugar de confiarse en él. Ver [Gestión de Dependencias](guides/dependency-management.md#integrity-verification).
+Cada módulo de `wippy.lock` lleva un digest de artefacto. En el arranque, una descarga se verifica contra el digest fijado en el bloqueo y contra el digest que sirvió el hub, y los packs ya vendorizados se reverifican contra el bloqueo antes de cargarse; una discrepancia es un fallo de integridad no reintentable que no se rodea — el módulo no se carga. `wippy install` verifica una descarga nueva solo contra el digest y el tamaño que sirvió el hub, elimina el archivo y falla ante una discrepancia, y luego escribe el digest servido de vuelta en el bloqueo, de modo que un digest fijado se restablece con install en lugar de exigirse; solo los packs que ya están en el directorio de vendor se comprueban contra el digest del bloqueo. Los directorios de módulo extraídos llevan su propio digest registrado y digest de árbol y se comprueban de la misma forma, de modo que un árbol vendorizado modificado se detecta en lugar de confiarse en él. Ver [Gestión de Dependencias](guides/dependency-management.md#integrity-verification).
 
 ### Identidad Internodo del Clúster
 

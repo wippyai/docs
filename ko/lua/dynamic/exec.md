@@ -190,20 +190,20 @@ return result
 프로세스 stdin에 데이터를 씁니다.
 
 ```lua
-local proc = executor:exec("sort")
+local proc = executor:exec("head -n 3")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
 proc:write_stdin("banana\napple\ncherry\n")
 
-local sorted = stdout:read()
+local lines = stdout:read()
 
 proc:wait()
 stdout:close()
 ```
 
-각 호출은 주어진 바이트를 쓰고 반환합니다. stdin은 프로세스 수명 동안 열려 있으며, 입력 끝까지 읽는 명령은 프로세스에 시그널이 전달되거나 프로세스가 닫힐 때 종료됩니다.
+각 호출은 주어진 바이트를 쓰고 반환합니다. stdin을 닫는 메서드는 없습니다. stdin은 프로세스 수명 동안 열려 있으므로, `sort`처럼 입력 끝까지 읽는 명령은 EOF를 받지 못하고 프로세스에 시그널이 전달되거나 프로세스가 닫힐 때에만 종료됩니다. `head -n 3`처럼 스스로 읽기를 멈추는 명령을 선택하거나, EOF가 필요한 명령은 입력을 공급하는 셸 파이프라인 뒤에서 실행하세요.
 
 ## signal / close
 

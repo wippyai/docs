@@ -190,20 +190,20 @@ return result
 Escrever dados para stdin do processo.
 
 ```lua
-local proc = executor:exec("sort")
+local proc = executor:exec("head -n 3")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
 proc:write_stdin("banana\napple\ncherry\n")
 
-local sorted = stdout:read()
+local lines = stdout:read()
 
 proc:wait()
 stdout:close()
 ```
 
-Cada chamada escreve os bytes fornecidos e retorna. O stdin permanece aberto durante toda a vida do processo; um comando que lê até o fim da entrada termina quando o processo é sinalizado ou fechado.
+Cada chamada escreve os bytes fornecidos e retorna. Não há método que feche o stdin: ele permanece aberto durante toda a vida do processo, então um comando que lê até o fim da entrada, como `sort`, nunca vê EOF e termina apenas quando o processo é sinalizado ou fechado. Escolha um comando que pare de ler por conta própria, como faz `head -n 3`, ou execute um que precise de EOF por trás de um pipeline de shell que forneça sua entrada.
 
 ## signal / close
 

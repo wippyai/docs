@@ -264,13 +264,13 @@ return nil, last_err
 - Der Owner-String ist erforderlich und darf nicht leer sein.
 - Ein Changeset muss nicht-leer sein und darf denselben Entry nicht zweimal nennen.
 - `create` schlägt fehl, wenn die ID bereits im dauerhaften Zustand oder in irgendeinem Overlay existiert.
-- `update` und `delete` funktionieren nur auf Entries, die dieser Owner erstellt hat.
+- `update` und `delete` funktionieren nur auf Entries, die dieser Owner erstellt hat; jede andere ID schlägt mit `errors.NOT_FOUND` fehl.
 - Overlay-Entries können `dependency_root` oder andere Registry-eigene Metadaten nicht setzen.
 - Overlay-Entries können keine Kinds verwenden, die einer Registry-Direktive gehören, etwa `ns.dependency`.
 - Ein Delete, das einen Entry entfernt, von dem ein überlebender Entry abhängt, wird abgelehnt.
 - Abhängigkeiten können keine Overlay-Owner-Grenzen überschreiten, und dauerhafte Entries können nicht von Overlay-Entries abhängen.
 
-All das erscheint als `errors.CONFLICT` oder `errors.INVALID`, und keines davon ist wiederholbar: nur die Generations-Abweichung oben ist es.
+Die übrigen erscheinen als `errors.CONFLICT` oder `errors.INVALID`, und keines davon ist wiederholbar: nur die Generations-Abweichung oben ist es.
 
 **Berechtigungen:** `registry.overlay.get` auf dem Owner zum Öffnen und Lesen, `registry.overlay.apply` auf dem Owner zum Schreiben, und `registry.overlay.<create|update|delete>.<kind>` auf jeder Entry-ID im Changeset.
 

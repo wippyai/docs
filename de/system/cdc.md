@@ -144,7 +144,7 @@ Jede Quelle veröffentlicht, was sie garantiert, sodass Konsumenten über Capabi
 | `capture_resume` | ja, außer bei `temporary` | nein | Der Fortschritt der Quelle übersteht ein erneutes Verbinden |
 | `replayable` | nein | nein | Einzelne Abonnenten können vergangene Ereignisse erneut abspielen |
 | `captures_external_writes` | ja | nein | Erfasst Schreibvorgänge außerhalb dieser Laufzeit |
-| `before_images` | nein | ja | Liefert das Zeilenabbild vor der Änderung |
+| `before_images` | nein | ja | Garantiert ein vollständiges Zeilenabbild vor der Änderung bei `update` und `delete` |
 | `coalesced` | nein | ja | Wiederholte Schreibvorgänge auf eine Zeile innerhalb einer Transaktion können zusammengefasst eintreffen |
 
 Capability-Flags beschreiben den Fortschritt der Quelle, nicht dauerhafte Zustellung: Kein Treiber spielt Ereignisse für einen einzelnen Abonnenten erneut ab, der zurückgefallen ist oder die Verbindung verloren hat.

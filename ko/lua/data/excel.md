@@ -304,7 +304,7 @@ storage:release()
 
 **반환:** `string, error`
 
-워크북 전체가 메모리에 구체화됩니다. 큰 워크북에는 writer로 스트리밍하는 `write_to`를 사용하세요.
+워크북 전체가 메모리에 구체화됩니다. `write_to`도 같은 메모리 내 버퍼를 만든 다음 writer로 복사하므로, Lua 문자열은 절약하지만 큰 워크북을 스트리밍하지는 않습니다.
 
 닫힌 워크북에서 `bytes()`를 호출하면 `errors.INTERNAL` 에러를 반환합니다.
 

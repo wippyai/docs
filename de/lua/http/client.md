@@ -384,7 +384,7 @@ Die Prüfung läuft beim Verbindungsaufbau, nicht auf dem URL-String, und sie er
 
 ### Redirects
 
-Redirects werden bis zu 10 Sprünge weit verfolgt; der elfte schlägt mit `stopped after 10 redirects` fehl.
+Bis zu neun Redirects werden verfolgt; der zehnte schlägt mit `stopped after 10 redirects` fehl, wobei diese Zählung die ursprüngliche Anfrage einschließt.
 
 Jeder Sprung wird für sich autorisiert. Bevor der Client einem Redirect folgt, wertet er `http_client.request` gegen die Ziel-URL aus und wendet die Private-IP-Prüfung darauf an, sodass eine erlaubte URL nicht per Weiterleitung zu einer verweigerten führen kann. Ein Sprung, der eine der beiden Prüfungen nicht besteht, bricht die Anfrage ab.
 

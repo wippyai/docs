@@ -304,7 +304,7 @@ storage:release()
 
 **Gibt zurück:** `string, error`
 
-Die gesamte Arbeitsmappe wird im Speicher materialisiert. Für große Arbeitsmappen ist `write_to` vorzuziehen, das stattdessen an den Writer streamt.
+Die gesamte Arbeitsmappe wird im Speicher materialisiert. `write_to` baut denselben In-Memory-Puffer auf und kopiert ihn dann an den Writer; es spart also den Lua-String, streamt eine große Arbeitsmappe aber nicht.
 
 Der Aufruf von `bytes()` auf einer geschlossenen Arbeitsmappe gibt einen `errors.INTERNAL`-Fehler zurück.
 

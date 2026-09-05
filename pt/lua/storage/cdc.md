@@ -122,7 +122,7 @@ Cada mensagem recebida no channel é uma tabela de mudança:
 | `schema` | Schema da tabela |
 | `table` | Nome da tabela |
 | `relation` | Nome qualificado da relação |
-| `before` | Estado da linha antes da mudança (`update`, `delete`; requer a capacidade `before_images`) |
+| `before` | Estado da linha antes da mudança (`update`, `delete`). Uma imagem completa da linha só é garantida quando a fonte tem a capacidade `before_images`; `db.cdc.postgres` a preenche com a tupla antiga que o WAL carregar, o que é controlado pelo `REPLICA IDENTITY` da tabela |
 | `after` | Estado da linha após a mudança (`insert`, `update`, `snapshot`; ausente em `delete`) |
 | `source` | ID de entrada da fonte |
 | `source_id` | ID de entrada da fonte, como um ID de registro |
@@ -168,7 +168,7 @@ Ramifique sobre `capabilities` em vez de `kind`:
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- eventos de delete não carregam imagem da linha; mantenha seu próprio último estado conhecido
+    -- before não é uma imagem completa garantida da linha; mantenha seu próprio último estado conhecido
 end
 ```
 

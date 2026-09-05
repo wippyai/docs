@@ -58,7 +58,7 @@ Nomes de métodos são em maiúsculas; `method` é obrigatório, e qualquer valo
   func: proxy_handler
 ```
 
-Para um endpoint normal, o roteador também registra um handler `OPTIONS` no mesmo caminho, para que o middleware de CORS possa responder a um preflight sem executar o endpoint. Um endpoint `*` não recebe esse handler: ele já corresponde a `OPTIONS`, então requisições de preflight chegam à própria função do endpoint, que deve respondê-las.
+Para um endpoint normal, o roteador também registra um handler `OPTIONS` no mesmo caminho, para que o middleware de CORS possa responder a um preflight sem executar o endpoint. Um endpoint `*` não recebe esse handler: ele já corresponde a `OPTIONS`. O middleware do roteador ainda o envolve, então um middleware de CORS configurado responde a um preflight permitido com `204` antes de o endpoint executar; qualquer outra requisição `OPTIONS` chega à própria função do endpoint, que deve respondê-la.
 
 ## Parâmetros de Caminho
 

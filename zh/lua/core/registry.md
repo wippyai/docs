@@ -264,13 +264,13 @@ return nil, last_err
 - 所有者字符串为必填项，且不能为空白。
 - 变更集必须非空，且不得两次指定同一条目。
 - 当 ID 已存在于持久状态或任何 overlay 中时，`create` 会失败。
-- `update` 和 `delete` 只能作用于该所有者创建的条目。
+- `update` 和 `delete` 只能作用于该所有者创建的条目；任何其他 ID 都会以 `errors.NOT_FOUND` 失败。
 - Overlay 条目不能设置 `dependency_root` 或任何其他 registry 所有的元数据。
 - Overlay 条目不能使用被 registry 指令占用的类型，例如 `ns.dependency`。
 - 移除仍有存续条目依赖的条目的删除操作会被拒绝。
 - 依赖不能跨越 overlay 所有者边界，持久条目也不能依赖 overlay 条目。
 
-以上都表现为 `errors.CONFLICT` 或 `errors.INVALID`，且都不可重试：只有上面的世代不匹配可以重试。
+其余的都表现为 `errors.CONFLICT` 或 `errors.INVALID`，且都不可重试：只有上面的世代不匹配可以重试。
 
 **权限：** 打开和读取需要该所有者上的 `registry.overlay.get`，写入需要该所有者上的 `registry.overlay.apply`，以及变更集中每个条目 ID 上的 `registry.overlay.<create|update|delete>.<kind>`。
 

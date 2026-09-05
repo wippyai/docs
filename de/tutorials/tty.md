@@ -306,13 +306,13 @@ Das Kind veröffentlicht in den Viewport; die Shell erfährt davon über `update
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-Aktualisierungen sind zusammengefasste Wasserzeichen, kein Ereignisprotokoll: Eine langsame Shell erhält nur das neueste und muss `snapshot()` für die tatsächlichen Zeilen aufrufen. Die Übergabe der letzten Revision lässt `snapshot` `nil` zurückgeben, wenn sich nichts geändert hat.
+Aktualisierungen sind zusammengefasste Wasserzeichen, kein Ereignisprotokoll: Eine langsame Shell erhält nur das neueste und muss `snapshot()` für die tatsächlichen Zeilen aufrufen. Die Übergabe der letzten Revision lässt `snapshot` `nil` zurückgeben, wenn sich nichts geändert hat. Eine neue Revision bedeutet nicht, dass das Kind gezeichnet hat: Auch `viewport:resize` erhöht sie, und bis zum ersten Frame trägt der Snapshot keine Zeilen. Deshalb hängt `ready` an `rows` und nicht an der Revision.
 
 Eingaben gehen den umgekehrten Weg über `viewport:send`. Tastenereignisse werden unverändert durchgereicht; Mauskoordinaten müssen in den einsbasierten Raum des Kindes verschoben werden, und Ereignisse außerhalb des Bereichs werden verworfen:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

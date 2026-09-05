@@ -190,20 +190,20 @@ return result
 向进程 stdin 写入数据。
 
 ```lua
-local proc = executor:exec("sort")
+local proc = executor:exec("head -n 3")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
 proc:write_stdin("banana\napple\ncherry\n")
 
-local sorted = stdout:read()
+local lines = stdout:read()
 
 proc:wait()
 stdout:close()
 ```
 
-每次调用写入给定的字节后返回。stdin 在进程的整个生命周期内保持打开；读取直到输入结束的命令会在进程被发送信号或被关闭时结束。
+每次调用写入给定的字节后返回。没有关闭 stdin 的方法：它在进程的整个生命周期内保持打开，因此像 `sort` 这样读取直到输入结束的命令永远不会看到 EOF，只有在进程被发送信号或被关闭时才会结束。请选择会自行停止读取的命令，如 `head -n 3`；或者把需要 EOF 的命令放在一个为其提供输入的 shell 管道之后运行。
 
 ## signal / close
 

@@ -248,11 +248,11 @@ wippy run --config .wippy.yaml --config .wippy.workspace.yaml
 
 ## 完整性验证
 
-锁定文件中的每个模块都携带一个构件摘要，没有摘要的模块根本无法安装。
+锁定文件中的每个模块都携带一个构件摘要。启动时会拒绝加载锁定条目中没有摘要的模块；`wippy install` 则接受这样的条目，并记录 hub 随下载提供的摘要。
 
-下载采用暂存方式：包先写入其最终位置旁边的临时文件，针对 `wippy.lock` 中固定的摘要以及 hub 随下载 URL 提供的摘要（外加所提供的大小）进行校验，然后才重命名到位。校验失败的暂存文件会被删除。
+启动时，下载采用暂存方式：包先写入其最终位置旁边的临时文件，针对 `wippy.lock` 中固定的摘要以及 hub 随下载 URL 提供的摘要（外加所提供的大小）进行校验，然后才重命名到位。校验失败的暂存文件会被删除。`wippy install` 则在校验之前就把下载内容重命名到其供应商路径，仅针对所提供的摘要和大小进行检查，失败时删除该文件，并且对于与所提供摘要不同的锁定摘要，它会将其替换而不是强制执行。
 
-摘要不匹配是硬性的、不可重试的失败 — `PermissionDenied`，"module integrity verification failed" — 并且在安装时和启动时以同样方式抛出，启动时会在加载条目之前重新校验已供应商化的包。不会有任何重试、覆盖不匹配项重新下载，或回退到所提供内容的行为。
+摘要不匹配是硬性的、不可重试的失败。启动时它表现为 `PermissionDenied`，"module integrity verification failed"，对新下载的包和已供应商化的包都会抛出，后者会在加载条目之前针对锁定摘要重新校验。`wippy install` 将其报告为 `Internal`：对于已在供应商目录中的包，是 "failed to store module" 包裹 "verify cached WAPP: digest mismatch"；对于新下载的包，是 "failed to download module" 包裹 "verify downloaded WAPP: digest mismatch"。不会有任何重试、覆盖不匹配项重新下载，或回退到所提供内容的行为。
 
 同样的检查也保护解析过程。当 hub 提供的清单摘要与锁定文件固定的摘要不同时，清单缓存会刷新一次并重新比对；如果仍然不一致，解析会失败并点名两个摘要。
 

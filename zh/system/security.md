@@ -475,7 +475,7 @@ local result, err = funcs.new()
 | Scope | 是 - 传递给子调用 |
 | Strict mode | 否 - 应用全局 |
 
-函数继承调用者的安全上下文。新生成的进程则不会：它从一个全新的帧开始，其上下文来自它自己条目上的 `security:` 块。当该条目没有声明这个块时，进程在没有 actor 也没有 scope 的情况下运行，strict 模式会拒绝它。声明了该块但省略 `actor` 会继承 spawn 方的 actor，同时省略 `policies` 和 `groups` 则会继承 spawn 方的 scope — 因此“从头开始”意味着“没有环境继承”，而不是“无法被赋予上下文”。
+函数和新生成的进程都继承调用者的安全上下文。新生成的进程从一个由 spawn 方的帧分叉而来的帧开始，该帧携带 spawn 方的 actor 和 scope，而它自己条目上的 `security:` 块会修改这个继承来的上下文。当该条目没有声明这个块时，进程原样保留 spawn 方的 actor 和 scope；两者都没有的 spawn 方会产生一个两者都没有的子进程，strict 模式会拒绝它。声明了该块并指定 `actor` 会替换继承的 actor，其 `policies` 和 `groups` 会合并进继承的 scope；省略 `actor` 的块保留 spawn 方的 actor，同时省略 `policies` 和 `groups` 的块则保留 spawn 方的 scope。
 
 ## 在条目上声明安全设置
 
@@ -606,7 +606,7 @@ local token, err = store:create(actor, scope, {expiration = "24h"})
 
 ### 模块完整性
 
-`wippy.lock` 中的每个模块都携带一个构件摘要。下载采用暂存方式，针对锁文件中固定的摘要以及 hub 提供的摘要进行校验，然后才移动到位；已供应商化的包会在启动时重新校验。不匹配属于 `PermissionDenied` 失败，不会重试，也不会被绕过 — 该模块不会被加载。解压出的模块目录携带各自记录的摘要和树摘要，并以同样方式检查，因此被修改的供应商目录树会被检测出来而不是被信任。参见[依赖管理](guides/dependency-management.md#integrity-verification)。
+`wippy.lock` 中的每个模块都携带一个构件摘要。启动时，下载内容会针对锁文件中固定的摘要以及 hub 提供的摘要进行校验，已供应商化的包会在加载之前针对锁文件重新校验；不匹配属于不可重试的完整性失败，不会被绕过 — 该模块不会被加载。`wippy install` 仅针对 hub 提供的摘要和大小校验新下载的包，不匹配时删除该文件并失败，然后把所提供的摘要写回锁文件，因此固定的摘要是由 install 重新建立而不是由它强制执行的；只有已在供应商目录中的包才会针对锁文件的摘要进行检查。解压出的模块目录携带各自记录的摘要和树摘要，并以同样方式检查，因此被修改的供应商目录树会被检测出来而不是被信任。参见[依赖管理](guides/dependency-management.md#integrity-verification)。
 
 ### 集群节点间身份
 

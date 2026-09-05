@@ -264,13 +264,13 @@ return nil, last_err
 - La cadena de propietario es obligatoria y no puede estar en blanco.
 - Un conjunto de cambios debe ser no vacío y no puede nombrar la misma entrada dos veces.
 - `create` falla cuando el ID ya existe en el estado durable o en cualquier overlay.
-- `update` y `delete` solo funcionan sobre entradas creadas por este propietario.
+- `update` y `delete` solo funcionan sobre entradas creadas por este propietario; cualquier otro ID falla con `errors.NOT_FOUND`.
 - Las entradas de overlay no pueden establecer `dependency_root` ni ningún otro metadato propiedad del registro.
 - Las entradas de overlay no pueden usar kinds propiedad de una directiva del registro, como `ns.dependency`.
 - Una eliminación que quite una entrada de la que dependa una entrada superviviente se rechaza.
 - Las dependencias no pueden cruzar fronteras de propietario de overlay, y las entradas durables no pueden depender de entradas de overlay.
 
-Todas estas se manifiestan como `errors.CONFLICT` o `errors.INVALID`, y ninguna es reintentable: solo lo es la discrepancia de generación anterior.
+El resto se manifiesta como `errors.CONFLICT` o `errors.INVALID`, y ninguna es reintentable: solo lo es la discrepancia de generación anterior.
 
 **Permisos:** `registry.overlay.get` sobre el propietario para abrir y leer, `registry.overlay.apply` sobre el propietario para escribir, y `registry.overlay.<create|update|delete>.<kind>` sobre cada ID de entrada del conjunto de cambios.
 

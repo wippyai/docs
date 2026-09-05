@@ -264,13 +264,13 @@ return nil, last_err
 - 소유자 문자열은 필수이며 비어 있을 수 없습니다.
 - 변경 세트는 비어 있지 않아야 하며 같은 엔트리를 두 번 지정할 수 없습니다.
 - ID가 이미 지속 상태나 다른 오버레이에 존재하면 `create`가 실패합니다.
-- `update`와 `delete`는 이 소유자가 만든 엔트리에만 동작합니다.
+- `update`와 `delete`는 이 소유자가 만든 엔트리에만 동작합니다. 그 밖의 ID는 `errors.NOT_FOUND`로 실패합니다.
 - 오버레이 엔트리는 `dependency_root`나 그 밖의 레지스트리 소유 메타데이터를 설정할 수 없습니다.
 - 오버레이 엔트리는 `ns.dependency`처럼 레지스트리 디렉티브가 소유한 종류를 사용할 수 없습니다.
 - 살아남는 엔트리가 의존하는 엔트리를 제거하는 삭제는 거부됩니다.
 - 의존성은 오버레이 소유자 경계를 넘을 수 없으며, 지속 엔트리는 오버레이 엔트리에 의존할 수 없습니다.
 
-이들은 모두 `errors.CONFLICT` 또는 `errors.INVALID`로 나타나며 재시도할 수 없습니다. 재시도 가능한 것은 위의 세대 불일치뿐입니다.
+나머지는 `errors.CONFLICT` 또는 `errors.INVALID`로 나타나며 재시도할 수 없습니다. 재시도 가능한 것은 위의 세대 불일치뿐입니다.
 
 **권한:** 열고 읽으려면 소유자에 대한 `registry.overlay.get`, 쓰려면 소유자에 대한 `registry.overlay.apply`, 그리고 변경 세트의 각 엔트리 ID에 대한 `registry.overlay.<create|update|delete>.<kind>`.
 

@@ -122,7 +122,7 @@ Cada mensaje recibido en el canal es una tabla de cambio:
 | `schema` | Esquema de la tabla |
 | `table` | Nombre de la tabla |
 | `relation` | Nombre cualificado de la relación |
-| `before` | Estado de la fila antes del cambio (`update`, `delete`; requiere la capacidad `before_images`) |
+| `before` | Estado de la fila antes del cambio (`update`, `delete`). Una imagen completa de la fila solo se garantiza cuando la fuente tiene la capacidad `before_images`; `db.cdc.postgres` lo rellena con la tupla anterior que lleve el WAL, lo que controla el `REPLICA IDENTITY` de la tabla |
 | `after` | Estado de la fila después del cambio (`insert`, `update`, `snapshot`; ausente para `delete`) |
 | `source` | ID de entrada de la fuente |
 | `source_id` | ID de entrada de la fuente, como ID de registry |
@@ -168,7 +168,7 @@ Ramifique según `capabilities` en lugar de según `kind`:
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- los eventos delete no llevan imagen de fila; mantenga su propio último estado conocido
+    -- before no es una imagen completa de fila garantizada; mantenga su propio último estado conocido
 end
 ```
 

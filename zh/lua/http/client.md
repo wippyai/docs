@@ -384,7 +384,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 
 ### 重定向
 
-重定向最多跟随 10 跳；第 11 跳会以 `stopped after 10 redirects` 失败。
+最多跟随九次重定向；第十次会以 `stopped after 10 redirects` 失败，这个计数包含原始请求。
 
 每一跳都单独授权。在跟随重定向之前，客户端会针对目标 URL 评估 `http_client.request` 并对其应用私有 IP 检查，因此无法借助重定向从一个被允许的 URL 到达一个被拒绝的 URL。任一检查未通过的跳转都会中止该请求。
 

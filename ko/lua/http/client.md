@@ -384,7 +384,7 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 
 ### 리다이렉트
 
-리다이렉트는 최대 10홉까지 따라가며, 열한 번째는 `stopped after 10 redirects`로 실패합니다.
+리다이렉트는 최대 아홉 번까지 따라가며, 열 번째는 `stopped after 10 redirects`로 실패합니다. 이 횟수에는 원래 요청이 포함됩니다.
 
 모든 홉은 개별적으로 인가됩니다. 리다이렉트를 따라가기 전에 클라이언트는 대상 URL에 대해 `http_client.request`를 평가하고 사설 IP 검사를 적용하므로, 허용된 URL을 리다이렉트로 이용해 거부된 URL에 도달할 수 없습니다. 둘 중 하나라도 실패하는 홉은 요청을 중단시킵니다.
 

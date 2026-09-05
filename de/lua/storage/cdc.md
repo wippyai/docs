@@ -122,7 +122,7 @@ Jede auf dem Channel empfangene Nachricht ist eine Änderungstabelle:
 | `schema` | Tabellenschema |
 | `table` | Tabellenname |
 | `relation` | Qualifizierter Relationsname |
-| `before` | Zeilenzustand vor der Änderung (`update`, `delete`; erfordert die Capability `before_images`) |
+| `before` | Zeilenzustand vor der Änderung (`update`, `delete`). Ein vollständiges Zeilenabbild ist nur garantiert, wenn die Quelle die Capability `before_images` hat; `db.cdc.postgres` füllt es aus dem alten Tupel, das das WAL gerade mitführt, was die `REPLICA IDENTITY` der Tabelle steuert |
 | `after` | Zeilenzustand nach der Änderung (`insert`, `update`, `snapshot`; fehlt bei `delete`) |
 | `source` | Entry-ID der Quelle |
 | `source_id` | Entry-ID der Quelle als Registry-ID |
@@ -168,7 +168,7 @@ Verzweigen Sie über `capabilities`, nicht über `kind`:
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- Delete-Ereignisse tragen kein Zeilenabbild; halten Sie Ihren eigenen zuletzt bekannten Zustand
+    -- before ist kein garantiert vollständiges Zeilenabbild; halten Sie Ihren eigenen zuletzt bekannten Zustand
 end
 ```
 

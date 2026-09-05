@@ -144,7 +144,7 @@ subscriptions:
 | `capture_resume` | 是，除非 `temporary` | 否 | 源进度在重新连接后仍然保留 |
 | `replayable` | 否 | 否 | 单个订阅者可以重放过去的事件 |
 | `captures_external_writes` | 是 | 否 | 捕获在本运行时之外所做的写入 |
-| `before_images` | 否 | 是 | 投递变更前的行镜像 |
+| `before_images` | 否 | 是 | 保证在 `update` 和 `delete` 时提供完整的变更前行镜像 |
 | `coalesced` | 否 | 是 | 一个事务内对同一行的重复写入可能合并后到达 |
 
 能力标志描述的是源的进度，而不是持久投递：没有任何驱动会为落后或断开连接的单个订阅者重放事件。

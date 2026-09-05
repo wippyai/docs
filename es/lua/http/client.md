@@ -384,7 +384,7 @@ La comprobacion ocurre al momento del dial, no sobre la cadena de la URL, y cubr
 
 ### Redirecciones
 
-Las redirecciones se siguen hasta 10 saltos; el undecimo falla con `stopped after 10 redirects`.
+Se siguen hasta nueve redirecciones; la decima falla con `stopped after 10 redirects`, un conteo que incluye la solicitud original.
 
 Cada salto se autoriza por separado. Antes de seguir una redireccion, el cliente evalua `http_client.request` contra la URL destino y le aplica la comprobacion de IP privada, de modo que una URL permitida no puede usarse para alcanzar una denegada por redireccion. Un salto que falla cualquiera de las dos comprobaciones aborta la solicitud.
 

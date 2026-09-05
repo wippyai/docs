@@ -306,13 +306,13 @@ local hint_style = tty.style():faint()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-更新是被合并的水位标记，而不是事件日志：慢速的 shell 只会拿到最新的那一个，并且必须调用 `snapshot()` 才能取得实际的行。传入上一次的修订号会让 `snapshot` 在没有变化时返回 `nil`。
+更新是被合并的水位标记，而不是事件日志：慢速的 shell 只会拿到最新的那一个，并且必须调用 `snapshot()` 才能取得实际的行。传入上一次的修订号会让 `snapshot` 在没有变化时返回 `nil`。新的修订号并不意味着子进程已经绘制：`viewport:resize` 同样会递增它，而在第一帧到来之前，快照中没有任何行。这就是 `ready` 以 `rows` 而不是修订号作为判断依据的原因。
 
 输入则通过 `viewport:send` 走相反方向。按键事件原样传递；鼠标坐标必须移动到子进程从 1 开始的空间中，区域之外的事件会被丢弃：
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

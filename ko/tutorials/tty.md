@@ -306,13 +306,13 @@ local hint_style = tty.style():faint()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-업데이트는 이벤트 로그가 아니라 병합된 워터마크입니다. 느린 셸은 가장 최신 것 하나만 받으며, 실제 행을 얻으려면 `snapshot()`을 호출해야 합니다. 마지막 리비전을 전달하면 변경이 없을 때 `snapshot`이 `nil`을 반환합니다.
+업데이트는 이벤트 로그가 아니라 병합된 워터마크입니다. 느린 셸은 가장 최신 것 하나만 받으며, 실제 행을 얻으려면 `snapshot()`을 호출해야 합니다. 마지막 리비전을 전달하면 변경이 없을 때 `snapshot`이 `nil`을 반환합니다. 새 리비전이 자식이 그렸다는 뜻은 아닙니다. `viewport:resize`도 리비전을 올리며, 첫 프레임 전까지 스냅샷에는 행이 없습니다. 그래서 `ready`는 리비전이 아니라 `rows`를 기준으로 합니다.
 
 입력은 반대 방향으로 `viewport:send`를 통해 갑니다. 키 이벤트는 그대로 통과합니다. 마우스 좌표는 자식의 1부터 시작하는 공간으로 옮겨야 하며, 영역 밖의 이벤트는 버려집니다:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

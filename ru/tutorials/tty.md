@@ -306,13 +306,13 @@ local hint_style = tty.style():faint()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-Обновления — это объединённые отметки, а не журнал событий: медленная оболочка получает только самую свежую и должна вызвать `snapshot()`, чтобы получить сами строки. Передача последней ревизии заставляет `snapshot` вернуть `nil`, когда ничего не изменилось.
+Обновления — это объединённые отметки, а не журнал событий: медленная оболочка получает только самую свежую и должна вызвать `snapshot()`, чтобы получить сами строки. Передача последней ревизии заставляет `snapshot` вернуть `nil`, когда ничего не изменилось. Новая ревизия не означает, что потомок отрисовался: `viewport:resize` тоже её увеличивает, а до первого кадра снимок не несёт строк. Поэтому `ready` завязан на `rows`, а не на ревизию.
 
 Ввод идёт в обратную сторону через `viewport:send`. События клавиш проходят без изменений; координаты мыши нужно перевести в пространство дочернего процесса, начинающееся с единицы, а события за пределами области отбрасываются:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

@@ -304,7 +304,7 @@ storage:release()
 
 **Retorna:** `string, error`
 
-O workbook inteiro é materializado em memória. Prefira `write_to` para workbooks grandes, que faz streaming para o writer.
+O workbook inteiro é materializado em memória. `write_to` constrói o mesmo buffer em memória e depois o copia para o writer, então economiza a string Lua mas não faz streaming de um workbook grande.
 
 Chamar `bytes()` em um workbook fechado retorna um erro `errors.INTERNAL`.
 

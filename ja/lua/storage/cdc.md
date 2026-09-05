@@ -122,7 +122,7 @@ stream:close()
 | `schema` | テーブルのスキーマ |
 | `table` | テーブル名 |
 | `relation` | 修飾されたリレーション名 |
-| `before` | 変更前の行の状態（`update`、`delete`。`before_images`ケイパビリティが必要） |
+| `before` | 変更前の行の状態（`update`、`delete`）。完全な行イメージが保証されるのは、ソースが`before_images`ケイパビリティを持つ場合のみ。`db.cdc.postgres`はWALが運ぶ古いタプルからこれを埋め、その内容はテーブルの`REPLICA IDENTITY`が制御する |
 | `after` | 変更後の行の状態（`insert`、`update`、`snapshot`。`delete`では存在しない） |
 | `source` | ソースのエントリID |
 | `source_id` | ソースのエントリID（レジストリIDとして） |
@@ -168,7 +168,7 @@ stream:close()
 ```lua
 local info = cdc.source("app:changes")
 if not info.capabilities.before_images then
-    -- deleteイベントは行イメージを持たない。自前で最後に判明した状態を保持すること
+    -- beforeは完全な行イメージとして保証されない。自前で最後に判明した状態を保持すること
 end
 ```
 

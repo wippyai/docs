@@ -306,13 +306,13 @@ El hijo publica en el viewport; el shell se entera a través de `updates` y lueg
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 draw()
             end
         end
 ```
 
-Las actualizaciones son marcas de agua fusionadas, no un registro de eventos: un shell lento recibe solo la más reciente y debe llamar a `snapshot()` para obtener las filas reales. Pasar la última revisión hace que `snapshot` retorne `nil` cuando nada cambió.
+Las actualizaciones son marcas de agua fusionadas, no un registro de eventos: un shell lento recibe solo la más reciente y debe llamar a `snapshot()` para obtener las filas reales. Pasar la última revisión hace que `snapshot` retorne `nil` cuando nada cambió. Una revisión nueva no significa que el hijo haya dibujado: `viewport:resize` también la incrementa, y hasta el primer frame la instantánea no lleva filas. Por eso `ready` depende de `rows` y no de la revisión.
 
 La entrada va en sentido contrario mediante `viewport:send`. Los eventos de teclado pasan sin cambios; las coordenadas del ratón tienen que trasladarse al espacio del hijo, que empieza en uno, y los eventos fuera de la región se descartan:
 
@@ -546,7 +546,7 @@ local function main()
             local next_frame = viewport:snapshot(revision)
             if next_frame then
                 frame, revision = next_frame, next_frame.revision
-                ready = true
+                if #frame.rows > 0 then ready = true end
                 if not closing then
                     status = "child running"
                 end

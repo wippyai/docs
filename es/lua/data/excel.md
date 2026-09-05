@@ -304,7 +304,7 @@ storage:release()
 
 **Devuelve:** `string, error`
 
-Todo el libro de trabajo se materializa en memoria. Prefiera `write_to` para libros de trabajo grandes, que transmite al writer en su lugar.
+Todo el libro de trabajo se materializa en memoria. `write_to` construye el mismo búfer en memoria y luego lo copia al writer, así que ahorra la cadena Lua pero no transmite en streaming un libro de trabajo grande.
 
 Llamar a `bytes()` sobre un libro de trabajo cerrado devuelve un error `errors.INTERNAL`.
 

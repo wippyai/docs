@@ -58,7 +58,7 @@ Methodennamen werden großgeschrieben; `method` ist erforderlich, und jeder Wert
   func: proxy_handler
 ```
 
-Für einen normalen Endpunkt registriert der Router zusätzlich einen `OPTIONS`-Handler auf demselben Pfad, sodass CORS-Middleware einen Preflight beantworten kann, ohne dass der Endpunkt läuft. Ein `*`-Endpunkt erhält keinen solchen Handler: Er trifft `OPTIONS` bereits selbst, also erreichen Preflight-Anfragen die Endpunkt-Funktion, die sie beantworten muss.
+Für einen normalen Endpunkt registriert der Router zusätzlich einen `OPTIONS`-Handler auf demselben Pfad, sodass CORS-Middleware einen Preflight beantworten kann, ohne dass der Endpunkt läuft. Ein `*`-Endpunkt erhält keinen solchen Handler: Er trifft `OPTIONS` bereits selbst. Router-Middleware umhüllt ihn dennoch, sodass konfigurierte CORS-Middleware einen erlaubten Preflight mit `204` beantwortet, bevor der Endpunkt läuft; jede andere `OPTIONS`-Anfrage erreicht die Endpunkt-Funktion selbst, die sie beantworten muss.
 
 ## Pfadparameter
 

@@ -248,11 +248,11 @@ Los modulos con reemplazos activos omiten su ruta de vendor.
 
 ## Verificacion de Integridad
 
-Cada modulo del archivo de bloqueo lleva un digest de artefacto, y un modulo sin el no puede instalarse en absoluto.
+Cada modulo del archivo de bloqueo lleva un digest de artefacto. El arranque se niega a cargar un modulo cuya entrada del lock no tiene ninguno; `wippy install` acepta esa entrada y registra el digest que el hub sirve con la descarga.
 
-Las descargas se hacen por etapas: el pack se escribe en un archivo temporal junto a su ubicacion final, se verifica contra el digest fijado en `wippy.lock` y contra el digest que el hub sirvio con la URL de descarga (mas el tamano servido), y solo entonces se renombra a su lugar. Un archivo en etapas que falla la verificacion se elimina.
+En el arranque, las descargas se hacen por etapas: el pack se escribe en un archivo temporal junto a su ubicacion final, se verifica contra el digest fijado en `wippy.lock` y contra el digest que el hub sirvio con la URL de descarga (mas el tamano servido), y solo entonces se renombra a su lugar. Un archivo en etapas que falla la verificacion se elimina. `wippy install` renombra la descarga a su ruta de vendor antes de verificarla, la comprueba solo contra el digest y el tamano servidos, la elimina si falla, y reemplaza un digest del lock que difiera del servido en lugar de exigirlo.
 
-Una discrepancia de digest es un fallo duro y no reintentable — `PermissionDenied`, "module integrity verification failed" — y se lanza de la misma forma en la instalacion y en el arranque, donde los packs ya vendorizados se reverifican antes de cargar las entradas. Nada reintenta, vuelve a descargar sobre la discrepancia, ni recurre al contenido servido.
+Una discrepancia de digest es un fallo duro y no reintentable. En el arranque es `PermissionDenied`, "module integrity verification failed", lanzado tanto para una descarga nueva como para un pack ya vendorizado, que se reverifica contra el digest del lock antes de cargar las entradas. `wippy install` lo reporta como `Internal`: "failed to store module" envolviendo "verify cached WAPP: digest mismatch" para un pack que ya esta en el directorio de vendor, y "failed to download module" envolviendo "verify downloaded WAPP: digest mismatch" para una descarga nueva. Nada reintenta, vuelve a descargar sobre la discrepancia, ni recurre al contenido servido.
 
 La misma comprobacion protege la resolucion. Cuando el hub sirve un manifiesto cuyo digest difiere del que fija el lock, la cache de manifiestos se refresca una vez y se vuelve a comparar; si sigue en desacuerdo, la resolucion falla nombrando ambos digests.
 

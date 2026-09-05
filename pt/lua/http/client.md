@@ -384,7 +384,7 @@ A verificação ocorre no momento da conexão, não sobre a string da URL, e cob
 
 ### Redirecionamentos
 
-Redirecionamentos são seguidos por até 10 saltos; o décimo primeiro falha com `stopped after 10 redirects`.
+Até nove redirecionamentos são seguidos; o décimo falha com `stopped after 10 redirects`, uma contagem que inclui a requisição original.
 
 Cada salto é autorizado por conta própria. Antes de seguir um redirecionamento, o cliente avalia `http_client.request` contra a URL alvo e aplica a verificação de IP privado a ela, então uma URL permitida não pode ser usada para alcançar uma negada por redirecionamento. Um salto que falha em qualquer das verificações aborta a requisição.
 
