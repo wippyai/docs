@@ -66,6 +66,10 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 
 Running a hub module (`wippy run org/module`) resolves it once, records it in `wippy.lock`, and vendors the verified packs locally. Subsequent runs of the same reference start from the lock — no network needed. A version selector that no longer matches the lock is rejected with a hint to run `wippy update`.
 
+For a local application, `wippy run` repairs a stale lock before any runtime service starts. It loads the source dependency declarations, and when the lock already satisfies them it re-resolves the graph from local and installed evidence only (verified-offline access, no network). If that offline resolution matches the lock, boot continues unchanged. Otherwise the hub is contacted, the candidate graph is downloaded and verified, and only then is `wippy.lock` rewritten. A lock that selects a deployment root is authoritative and is never re-resolved.
+
+`--exec` blocks until the launched process produces its result, then propagates the process exit code as the CLI exit code. Ctrl-C during `--exec` cancels the running process and the runtime still shuts down gracefully; a second signal forces exit.
+
 `--set` writes any runtime configuration value from the command line, merged over `.wippy.yaml` per leaf:
 
 ```bash
@@ -176,6 +180,25 @@ wippy update acme/http demo/sql   # Update multiple
 | `--profile` | | | Apply a workspace profile from the merged runtime config (repeatable) |
 | `--set` | | | Override a merged runtime config value (`section.path=value`, repeatable) |
 
+## wippy artifacts
+
+Work with build-time filesystem artifacts.
+
+### wippy artifacts materialize
+
+Validate and materialize one artifact filesystem out of an existing pack.
+
+```bash
+wippy artifacts materialize snapshot.wapp app:package_fs
+wippy artifacts materialize snapshot.wapp app:package_fs --root build
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--root` | `.wippy` | Materialization root |
+
+The resource is addressed by its full `namespace:name`, must declare `meta.artifact.format`, and that format must be registered in the CLI. The command resolves no module dependencies, does not mutate `wippy.lock`, invokes no package managers, and takes no part in runtime composition. See [Build-time artifacts](guides/artifacts.md#materializing-explicitly).
+
 ## wippy pack
 
 Create a snapshot pack (.wapp file).
@@ -201,6 +224,12 @@ wippy pack app.wapp --embed app:assets --bytecode **
 | `--profile` | | Apply a runtime profile from `.wippy.yaml` before packing (repeatable, applied in order) |
 
 Without `--embed` or `--embed-all`, embed patterns fall back to the `embed:` section of the module manifest `wippy.yaml`. Packing an application also carries embedded resources from its dependency packs, and only the main module's commands are exposed by the resulting pack.
+
+The output file is written atomically: the pack is built into a temporary file in the destination directory, synced, verified, and only then renamed over the target, inheriting the existing file's permissions when one is present. A failed pack leaves the previous file untouched. Naming an output that is also one of the pack's inputs — the same path, or a hard link or symlink resolving to the same file — is refused rather than truncating the input mid-read.
+
+`--meta` cannot write reserved metadata. The key `registry`, and anything under the `wippy.` or `system.` prefixes, is owned by the pack format and rejected.
+
+Resources declaring `meta.artifact.format` are validated while packing, so a malformed artifact fails here rather than in a consumer. See [Build-time artifacts](guides/artifacts.md).
 
 ## wippy publish
 
@@ -322,6 +351,7 @@ wippy registry list --meta "type=api" --meta "enabled=true"
 | `--meta` | | Filter by metadata (repeatable) |
 | `--json` | | Output as JSON |
 | `--yaml` | | Output as YAML |
+| `--registry-meta` | | Include registry-owned metadata (`owner`, `root`) in JSON or YAML output; requires `--json` or `--yaml` |
 | `--lock-file` | `-l` | Lock file path |
 
 Metadata operators for `--meta`:
@@ -398,8 +428,52 @@ wippy run list
 | `short` | No | Short description shown in `wippy run list` |
 | `main` | No | Mark this entry as the default command (picked automatically by packs and hub modules that ship a single command) |
 | `use_case` | No | Entrypoint category, default `run`. The entry declaring `use_case: test` is what `wippy test` executes |
+| `security` | No | Security context the command runs under when launched from the CLI |
 
 Any process entry kind works (`process.lua`, `process.wasm`). The command name must be unique across all loaded entries. Arguments after the command name are passed to the process as string payloads.
+
+### Command security
+
+A command entry declares the actor and policy scope its CLI launch runs under:
+
+```yaml
+entries:
+  - name: migrate_runner
+    kind: process.lua
+    meta:
+      command:
+        name: migrate
+        short: Run database migrations
+        security:
+          actor:
+            id: system.migrations
+            meta:
+              role: operator
+          policies:
+            - app.security:migrations_policy
+          groups:
+            - app.security:operators
+    source: file://runner.lua
+    method: main
+```
+
+| Field | Description |
+|-------|-------------|
+| `actor.id` | Actor identity for the launched process |
+| `actor.meta` | Actor attributes evaluated by policies |
+| `policies` | Registry IDs (`namespace:name`) of individual policies added to the scope |
+| `groups` | Registry IDs of policy groups whose policies are added to the scope |
+
+The block lives inside `meta.command` because it applies only to the CLI launch path — the operator started the command on their own deployment, which is the trust anchor. It has no effect on ordinary spawns of the same process entry; those follow the entry's own [`security:` block](guides/entry-kinds.md#process-security).
+
+Declaration is fail-closed and validated before the process starts:
+
+- Unknown fields inside `security` are rejected.
+- An empty `security` block (no actor, no policies, no groups) is rejected.
+- `security` without a `name` is rejected — a command must be nameable to be launched.
+- A policy or group that cannot be resolved refuses the launch; resolution is atomic, so a partial scope is never installed.
+
+When the block omits `actor`, the caller's actor is inherited. When it omits both `policies` and `groups`, the caller's scope is inherited.
 
 ## Examples
 

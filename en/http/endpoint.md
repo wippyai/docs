@@ -24,7 +24,7 @@ Endpoints (`http.endpoint`) define HTTP route handlers that execute Lua function
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `meta.router` | registry.ID | Yes | Parent router (referenced by registry ID). |
-| `method` | string | Yes | HTTP method |
+| `method` | string | Yes | HTTP method, or `"*"` for any method |
 | `path` | string | Yes | URL path pattern |
 | `func` | registry.ID | Yes | Function to execute |
 
@@ -42,6 +42,23 @@ Supported methods:
 | `HEAD` | Headers only |
 | `OPTIONS` | CORS preflight (auto-handled) |
 | `TRACE` | Diagnostic loopback |
+| `*` | Any method |
+
+Method names are uppercase; `method` is required, and any value outside this set is rejected as a configuration error.
+
+### Method-agnostic Endpoints
+
+`method: "*"` registers the path for every HTTP method, and the handler reads the actual method with `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+For a normal endpoint the router also registers an `OPTIONS` handler on the same path, so CORS middleware can answer a preflight without the endpoint running. A `*` endpoint gets no such handler: it already matches `OPTIONS`, so preflight requests reach the endpoint function itself, which must answer them.
 
 ## Path Parameters
 
@@ -85,7 +102,12 @@ Use `{path...}` to match any remaining path segments:
   func: serve_file
 ```
 
-This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is not currently exposed to Lua: `req:param("path")` returns `nil` for the wildcard value. Read `req:path()` if you need the full request path.
+This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is read like any other parameter, under the name without the trailing dots:
+
+```lua
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
+```
 
 ## Handler Function
 

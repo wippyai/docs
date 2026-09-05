@@ -102,6 +102,35 @@ local result, err = runner.run({
 | `context` | table | Values available as `ctx` |
 | `allow_classes` | string[] | Additional module classes |
 | `custom_modules` | table | Custom tables as modules |
+| `limits` | table | Execution limits for this run |
+
+### Step Limit
+
+`limits.max_steps` bounds how long one `runner.run` may execute:
+
+```lua
+local result, err = runner.run({
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
+})
+```
+
+A step is one turn of the eval scheduler: the program advances until it yields or finishes, and each resume consumes one step. Pure computation between yields counts as one step no matter how long it runs, so the limit bounds scheduling turns, not CPU time.
+
+When the count exceeds the limit the run stops and returns `errors.INTERNAL` with `eval exceeded maximum step limit`.
+
+`max_steps = 0` means unlimited. Omitting `limits` inherits the host default:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # default budget for runs without limits.max_steps
+                      # 0 = unlimited; a negative value fails boot
+```
+
+`limits` applies to `runner.run` only; `runner.compile` accepts no limits. `limits` must be a table containing only `max_steps`, and `max_steps` must be a non-negative integer — anything else returns `errors.INVALID` before the program runs.
 
 ### Module Access
 

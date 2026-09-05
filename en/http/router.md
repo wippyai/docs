@@ -68,7 +68,7 @@ Entries reference parents via metadata:
 | Field | Type | Description |
 |-------|------|-------------|
 | `meta.router` | Registry ID | Parent router |
-| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` |
+| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, or `*` for any method |
 | `path` | string | URL path pattern (starts with `/`) |
 | `func` | Registry ID | Handler function |
 
@@ -114,9 +114,24 @@ Capture remaining path segments with `{param...}`:
   func: serve_file
 ```
 
-The wildcard matches the remaining segments for routing purposes, so a request like `GET /api/v1/files/docs/guides/readme.md` is matched and dispatched to the handler. The captured tail itself is not currently retrievable via `req:param`.
+The wildcard matches the remaining segments, so a request like `GET /api/v1/files/docs/guides/readme.md` is dispatched to the handler. The captured tail is read with `req:param` under the name without the trailing dots:
+
+```lua
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
+```
 
 The wildcard must be the last segment in the path.
+
+## Route Precedence
+
+All routers register their endpoints into a single pattern set, prefixed by the router's `prefix`, and Go's `ServeMux` decides which pattern serves a request. Its rules apply unchanged:
+
+- The most specific pattern wins. A pattern is more specific than another when it matches a strict subset of that pattern's requests, so `/users/admin` beats `/users/{id}`, and `/files/{name}` beats `/files/{path...}`.
+- A pattern with a method is more specific than the same path without one, so a `GET` endpoint takes precedence over a `*` endpoint on the same path for `GET` requests.
+- A trailing `{path...}` or `/` matches an entire subtree and loses to any pattern that matches a subset of it.
+- Matching is on the cleaned, decoded path; specificity never depends on registration order.
+
+Two patterns can also conflict outright: neither is more specific than the other, yet they overlap, as with `/users/{id}/settings` and `/users/admin/{section}`. This is a configuration error. The router surfaces it when it rebuilds, the rebuild fails, and the previous route set stays in service.
 
 ## Handler Functions
 

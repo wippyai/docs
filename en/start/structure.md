@@ -12,7 +12,7 @@ Project layout, YAML definition files, and naming conventions.
 ```
 myapp/
 ├── .wippy.yaml          # Runtime configuration
-├── wippy.lock           # Source directories config
+├── wippy.lock           # Source directories and locked modules
 ├── .wippy/              # Installed modules
 └── src/                 # Application source
     ├── _index.yaml      # Entry definitions
@@ -100,17 +100,35 @@ app.workers
 
 Entry full ID combines namespace and name: `app.api:get_user`
 
-### Source Directories
+### The Lock File
 
-The `wippy.lock` file defines where Wippy loads definitions from:
+`wippy.lock` records where Wippy loads definitions from and which module versions are selected:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy recursively scans these directories for YAML files.
+| Field | Description |
+|-------|-------------|
+| `directories.src` | Application source directory, scanned recursively for YAML definition files |
+| `directories.modules` | Base directory for vendored modules; packs land under `<modules>/vendor/` |
+| `options.unpack_modules` | Extract each `.wapp` into a directory beside it instead of loading the pack directly (default `false`) |
+| `modules[].name` | Module identifier in `org/module` form |
+| `modules[].version` | Selected version |
+| `modules[].hash` | Artifact digest the vendored pack must match |
+| `modules[].root` | Marks the selected deployment root; at most one module may carry it |
+
+Vendored packs are kept as `.wapp` files. With `unpack_modules: true`, each module is also extracted into a directory, and the verified `.wapp` stays beside it — installation looks for the pack, so a directory whose pack is missing is downloaded again.
+
+A `replacements:` section in `wippy.lock` is deprecated. It still loads, with a warning; declare local module overrides under `workspace.replacements` in a runtime config file instead. See [Dependency Management](guides/dependency-management.md#local-development-with-replacements).
 
 ## Entry Definitions
 
@@ -206,13 +224,7 @@ See [Configuration Guide](guides/configuration.md) for all options.
 
 ### wippy.lock
 
-Defines source directories:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+Source directories and the selected module graph — see [The Lock File](#the-lock-file) above.
 
 ## Referencing Entries
 

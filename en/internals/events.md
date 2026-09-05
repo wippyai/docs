@@ -75,6 +75,12 @@ Four action types flow through the queue:
 
 Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget.
 
+`Subscribe` fails immediately when the subscription context is already canceled, and again at the dispatcher if it is canceled before the ownership decision is made — the bus never takes a channel it did not install.
+
+`Unsubscribe` is an ownership barrier, not a best-effort hint. It returns only after the dispatcher acknowledges, so the caller can release the channel knowing the bus holds no in-flight send reference. When it arrives after `Stop`, the acknowledgement waits for the dispatcher to finish delivering the batch it already drained.
+
+`Stop` is likewise terminal: a second concurrent `Stop` does not return early on the already-closed flag but waits for the dispatcher to drain and exit.
+
 ## Queue Swapping
 
 The dispatcher uses slice swapping to avoid allocations in steady state:

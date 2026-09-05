@@ -49,13 +49,15 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     lifecycle:
       auto_start: true
 ```
 
 <note>
-SQLite always runs with a single connection (<code>max_open</code> and <code>max_idle</code> are forced to <code>1</code>) and <code>WAL</code> journal mode. Only <code>max_lifetime</code> from <code>pool</code> is applied.
+A private in-memory SQLite database (<code>file: ":memory:"</code>) is scoped to one physical connection, so <code>max_open</code> and <code>max_idle</code> are forced to <code>1</code>. A file-backed database honors the configured <code>pool</code> settings, which a CDC snapshot read transaction needs so it does not consume the only writer connection. Journal mode is always <code>WAL</code>.
 </note>
 
 ## Connection Fields
@@ -75,12 +77,16 @@ SQLite always runs with a single connection (<code>max_open</code> and <code>max
 
 ### SQLite Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file` | string | Database file path or `:memory:` |
-| `pool` | object | Only `max_lifetime` is applied (connections are fixed at 1) |
-| `options` | map | Accepted but ignored |
-| `lifecycle` | object | Lifecycle configuration |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file` | string | required | Database file path or `:memory:` |
+| `pool` | object | - | Connection pool settings; `max_open` and `max_idle` are forced to `1` for `:memory:` |
+| `max_mutation_changes` | int | 100000 | Rows one transaction may hold in the committed-mutation observer |
+| `max_mutation_bytes` | int | 67108864 | Logical bytes one transaction may hold in the observer (64 MiB) |
+| `options` | map | - | Accepted but ignored |
+| `lifecycle` | object | - | Lifecycle configuration |
+
+`max_mutation_changes` and `max_mutation_bytes` bound the in-memory committed-mutation observer that feeds a [`db.cdc.sqlite`](system/cdc.md) source. Zero on either field selects the default; negative values are rejected. The bounds are conservative rather than exact: SQLite delivers a complete row to the pre-update hook, so one row can materialize before the bound rejects the candidate.
 
 ### Secret and Environment Values
 
@@ -132,8 +138,10 @@ Each database type constructs a DSN from configuration. Any `options` are append
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-host=host port=port user=username password=password dbname=database [option=value ...]
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Every value except the port is single-quoted, and embedded `'` and `\` are backslash-escaped, so hosts, passwords and option values containing spaces or quotes are passed through intact.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -185,7 +193,7 @@ SQLite does not apply the `options` map to its DSN. File databases always open w
   port: 5432
   database: "production"
   username: "app_user"
-  password: "${DB_PASSWORD}"
+  password: ${env:app.secrets:db_password}
   pool:
     max_open: 50
     max_idle: 10
@@ -274,3 +282,4 @@ See [SQL Module](lua/storage/sql.md) for database operations API.
 - [SQL Module](lua/storage/sql.md) - Lua API reference
 - [Store](system/store.md) - Key-value store backed by a `db.sql.*` database
 - [Queue](system/queue.md) - SQL-backed queue handler
+- [Change Data Capture](system/cdc.md) - Streaming row-level changes from a `db.sql.sqlite` or Postgres database

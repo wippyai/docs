@@ -50,7 +50,9 @@ All entrypoints accept an optional `opts` table:
 
 ## Reading — Random Access
 
-`archive.open(source, ...)` opens a **seekable** source for full random access (zip central directory is read up front; entries decompress on demand). The source may be an `fs.FS` handle plus a path, an open `fs.File`, or raw bytes (bytes hold the whole archive in RAM — small archives only).
+`archive.open(source, ...)` opens a **seekable** source for full random access (zip central directory is read up front; entries decompress on demand). The source may be an `fs.FS` handle plus a path, an open `fs.File`, raw bytes (bytes hold the whole archive in RAM — small archives only), or any random-access reader handed over by another module.
+
+A reader from another module qualifies when it implements `io.ReaderAt` and reports its `Size`; an optional `Name` is used for extension sniffing when `opts.format` is omitted. [`cloudstorage`](lua/storage/cloud.md) `open_reader` is one, which reads a multi-GB archive directly out of object storage. The archive opens nothing in that case and never closes the reader — its owner does.
 
 ```lua
 local fs = require("fs")
@@ -62,6 +64,9 @@ local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
 -- local r = archive.open(fs:get("app:uploads"):open("x.zip"))
 -- Or from raw bytes (small archives only)
 -- local r = archive.open(zip_bytes, { format = "zip" })
+-- Or from a random-access reader owned by another module
+-- local reader = cloudstorage.get("app:files"):open_reader("incoming.zip")
+-- local r = archive.open(reader)
 ```
 
 **Returns:** `Reader, error`
@@ -225,6 +230,7 @@ w:close()
 
 | Condition | Kind |
 |-----------|------|
+| Source is not an fs handle, an fs file, bytes or a random-access reader | `errors.INVALID` |
 | Unknown / mismatched format | `errors.INVALID` |
 | Corrupt or truncated archive | `errors.INVALID` |
 | Limit exceeded (entries / total / file / inline) | `errors.INVALID` |
@@ -240,3 +246,4 @@ See [Error Handling](lua/core/errors.md) for working with errors.
 - [Filesystem](lua/storage/filesystem.md) - Source and destination filesystems
 - [Stream](lua/core/stream.md) - Stream objects handed to and from archives
 - [Compression](lua/data/compress.md) - In-memory gzip/deflate/zstd
+- [Cloud Storage](lua/storage/cloud.md) - `open_reader` as a random-access archive source

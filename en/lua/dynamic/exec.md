@@ -77,11 +77,50 @@ local proc = executor:exec("./deploy.sh production", {
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `cmd` | string | Command to execute |
+| `cmd` | string | Executable and literal arguments |
 | `options.work_dir` | string | Working directory |
 | `options.env` | table | Environment variables |
+| `options.pty` | table | Allocate a pseudo-terminal for the child |
 
 **Returns:** `Process, error`
+
+The process is created but not started.
+
+### Command Parsing
+
+`cmd` is split into an executable and literal arguments using shell-like quoting: single and double quotes group a word, and a backslash escapes the following character. There is no shell, so no variable expansion, globbing, pipes, or redirection happens. An unclosed quote returns `errors.INVALID`.
+
+```lua
+-- One argument containing a space, passed literally
+local proc = executor:exec("grep 'hello world' notes.txt")
+
+-- $HOME is passed as the four characters $HOME, not expanded
+local proc = executor:exec("echo $HOME")
+```
+
+To use shell features, invoke a shell explicitly:
+
+```lua
+local proc = executor:exec("/bin/sh -c 'ls *.log | wc -l'")
+```
+
+### PTY Options
+
+Allocating a PTY gives the child a real terminal: line editing, job control, and full-screen programs work as they do in a shell.
+
+```lua
+local proc = executor:exec("/bin/bash --noprofile --norc", {
+    pty = {width = 100, height = 30, term = "xterm-256color"},
+})
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `width` | number | 80 | Initial PTY columns, 1 to 65535 |
+| `height` | number | 24 | Initial PTY rows, 1 to 65535 |
+| `term` | string | none | Child `TERM` value |
+
+Width times height may not exceed 262,144 cells. A PTY-backed process merges the child's output into a single terminal stream; drive it with [resize](#resize) and [attach_terminal](#attach_terminal) rather than the stdin/stdout pipe methods.
 
 ## start / wait
 
@@ -151,27 +190,24 @@ return result
 Write data to process stdin.
 
 ```lua
--- Pipe data to command
 local proc = executor:exec("sort")
 local stdout = proc:stdout_stream()
 
 proc:start()
 
--- Write input
 proc:write_stdin("banana\napple\ncherry\n")
-proc:write_stdin("")  -- Signal EOF
 
--- Read sorted output
 local sorted = stdout:read()
-print(sorted)  -- "apple\nbanana\ncherry\n"
 
 proc:wait()
 stdout:close()
 ```
 
+Each call writes the given bytes and returns. Stdin stays open for the life of the process; a command that reads until end of input finishes when the process is signalled or closed.
+
 ## signal / close
 
-Send signals or close the process.
+Send signals or release the process.
 
 ```lua
 local proc = executor:exec("./long-running-server.sh")
@@ -179,15 +215,86 @@ proc:start()
 
 -- ... later, need to stop it ...
 
--- Graceful shutdown (SIGTERM)
+-- Send SIGTERM and release the handle
 proc:close()
 
--- Or force kill (SIGKILL)
+-- Send SIGKILL and release the handle
 proc:close(true)
 
--- Or send specific signal
+-- Or send a specific signal and keep the handle
 local SIGINT = 2
 proc:signal(SIGINT)
+```
+
+`close(force?)` signals a started child with `SIGTERM`, or `SIGKILL` when `force` is true, then reaps it in the background so the call does not block. A child still running after a grace period is killed so the reap always completes. An unstarted handle is simply invalidated, and closing twice is not an error.
+
+Reaping closes the child's stdout and stderr pipes, so read any output you need before calling `close()`. After it every method on the process, `wait()` included, reports `process closed` — use `signal()` and `wait()` instead when the exit code matters.
+
+## resize
+
+Resize the PTY of a PTY-backed process. A pipe-backed process returns an error.
+
+```lua
+local ok, err = proc:resize(120, 40)
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `width` | number | Columns, 1 to 65535 |
+| `height` | number | Rows, 1 to 65535 |
+
+**Returns:** `boolean, error`
+
+Use it to set the initial geometry before handing the process to a terminal session. Once a session owns the process, send it a `resize` event instead.
+
+## attach_terminal
+
+Attach an unstarted PTY-backed process to the calling process's terminal and return a `TerminalSession`.
+
+```lua
+local exec = require("exec")
+local tty = require("tty")
+
+local executor = assert(exec.get("app:exec"))
+local proc = assert(executor:exec("/bin/bash --noprofile --norc", {
+    pty = {term = "xterm-256color"},
+}))
+local session = assert(proc:attach_terminal())
+```
+
+**Returns:** `TerminalSession, error`
+
+The call consumes the process: the session becomes its sole lifecycle owner and the original handle can no longer be used. The session opens a surface on the current terminal port and owns PTY emulation, input encoding, resize, graceful and forced termination, and reaping. It needs a terminal port — a [terminal host](system/terminal.md) process, or a process spawned with a [viewport grant](lua/system/tty.md#viewport) — and fails when the port has no input controller or already has an open surface.
+
+### TerminalSession
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `send(event)` | `boolean, error` | Forward one canonical TTY event to the child |
+| `done()` | channel | Channel that fires once when the child finishes |
+| `status()` | `string, error` | `"running"` or `"done"`, with the failure error when it failed |
+| `close()` | `boolean, error` | Request termination of a running child |
+
+`send` accepts the key, mouse, resize, focus, and paste records described in [TTY](lua/system/tty.md#event-types). Sending after the child has finished returns an error.
+
+```lua
+local channel = require("channel")
+
+local events = assert(tty.events())
+assert(tty.start())
+local done = session:done()
+
+while true do
+    local selected = channel.select({
+        events:case_receive(),
+        done:case_receive(),
+    })
+    if not selected.ok or selected.channel == done then break end
+    if selected.value.type == "close" then break end
+    assert(session:send(selected.value))
+end
+
+assert(session:close())
 ```
 
 ## Permissions
@@ -199,6 +306,19 @@ Exec operations are subject to security policy evaluation.
 | `exec.get` | Executor ID | Acquire an executor resource |
 | `exec.run` | Command | Execute a specific command |
 
+`exec.run` is evaluated against the raw command string, with the requested options as metadata:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `work_dir` | string | Requested working directory, empty when unset |
+| `env_names` | string[] | Names of the environment variables passed, sorted; values are not exposed |
+| `pty.requested` | boolean | Whether a PTY was requested |
+| `pty.width` | number | Resolved PTY columns, present when requested |
+| `pty.height` | number | Resolved PTY rows, present when requested |
+| `pty.term` | string | Requested `TERM` value, present when requested |
+
+A policy can therefore allow plain commands while restricting the ones that ask for a terminal or a particular working directory.
+
 ## Errors
 
 | Condition | Kind | Retryable |
@@ -208,6 +328,15 @@ Exec operations are subject to security policy evaluation.
 | Process closed | `errors.INVALID` | no |
 | Process not started | `errors.INVALID` | no |
 | Already started | `errors.INVALID` | no |
+| Unclosed quote in command | `errors.INVALID` | no |
+| No PTY on the process | `errors.INVALID` | no |
+| Terminal port unavailable | `errors.UNAVAILABLE` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
+
+## See Also
+
+- [Executor](system/exec.md) — executor configuration
+- [TTY](lua/system/tty.md) — terminal events, surfaces, and viewports
+- [Terminal UI](tutorials/tty.md) — a shell that hosts a PTY child in a viewport
 

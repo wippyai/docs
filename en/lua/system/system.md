@@ -48,6 +48,40 @@ Each module table contains:
 | `description` | string | Module description |
 | `class` | string[] | Module classification tags |
 
+## Deployment Sources
+
+The `system.source` sub-table reads the normalized deployment baseline: the entry set produced by the sources the application was assembled from, before any registry history is applied.
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**Returns:** `table, error`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `owners` | string[] | Source owners authoritative over the baseline entries |
+| `entries` | table[] | Baseline entries with `id`, `kind`, `meta`, `data` |
+
+`owners` is sorted with the application owner first, then the remaining owners alphabetically. The application owner is the string `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+The load is taken from one stable source generation, so entries and owners always describe the same baseline. Filesystem paths behind each source are runtime-private and are not exposed; a failed load reports a generic internal error rather than leaking the backing path.
+
+**Permission:** `system.read` on `sources`
+
 ## Memory Statistics
 
 Get detailed memory statistics:
@@ -426,6 +460,7 @@ System operations are subject to security policy evaluation.
 | `system.read` | `cwd` | Read working directory |
 | `system.read` | `hosts` | List hosts / host processes |
 | `system.read` | `modules` | List loaded modules |
+| `system.read` | `sources` | Load the deployment source baseline |
 | `system.read` | `supervisor` | Read supervisor state |
 | `system.read` | `node` | Read this node's identity |
 | `system.read` | `cluster` | Read cluster membership and leader |

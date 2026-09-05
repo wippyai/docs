@@ -100,6 +100,7 @@ resp:write_json({users = get_users()})
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
 | `db.cdc.postgres` | Postgres Change Data Capture source (see [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | SQLite Change Data Capture source (see [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -311,6 +312,39 @@ Use <code>process.service</code> when you need a process to run as a supervised 
 
 Updating a live `process.host` entry rescales `host.workers` in place — running processes, PIDs, and queues are preserved. `host.queue_size`, `host.local_queue_size`, and `lifecycle` are fixed at construction: a live update changing them is rejected, as is resizing workers on a host whose workers are affinity-managed.
 
+### Process security
+
+`process.lua` and `process.lua.bc` entries accept a top-level `security:` block. It is part of the entry, so it applies to every spawn of that process, on both `process.host` and `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Field | Description |
+|-------|-------------|
+| `actor.id` | Actor identity the process runs as; replaces the inherited actor |
+| `actor.meta` | Actor attributes policies evaluate |
+| `policies` | Registry IDs (`namespace:name`) of policies merged into the scope |
+| `groups` | Registry IDs of policy groups whose policies are merged into the scope |
+
+Resolution happens as the process starts and is atomic: if any listed policy or group cannot be resolved, the spawn fails and no partial context is installed. Omitting `actor` inherits the spawner's actor; omitting both `policies` and `groups` inherits the spawner's scope. `function.lua`, `function.lua.bc`, `process.lua`, and `process.lua.bc` all accept the block.
+
+A command entry can additionally declare `meta.command.security`, which applies only when the entry is launched as a CLI command — see [Command security](guides/cli.md#command-security). It does not affect ordinary spawns.
+
+See [Security](system/security.md).
+
 ## Temporal (Workflows)
 
 | Kind | Description |
@@ -509,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Policy groups are formed by the policies themselves: a policy lists the group IDs it belongs to under `groups:`, and a group is the set of policies naming it. There is no separate group entry kind. Group IDs are registry IDs — a bare name resolves in the declaring policy's namespace, so `operators` above becomes `app.security:operators` when declared in namespace `app.security`. Entries reference groups by their full `namespace:name`.
 
 **Lua API:** See [Security Module](lua/security/security.md)
 
@@ -630,11 +668,24 @@ Mark one binding as <code>default: true</code> to use it when opening a contract
 | `process.wasm` | WebAssembly process |
 
 ```yaml
+# WAT text is inline source
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # or wasi-http
+
+# Binary WASM is loaded from a filesystem entry and verified by hash
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # or wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` and `process.wasm` take `fs`, `path`, and `hash` — there is no `source` field on a binary entry; `source` belongs to `function.wat` only. `hash` is required and must be `sha256:<hex>`; the module is rejected if the bytes do not match.
 
 See [WASM Overview](wasm/overview.md).
 

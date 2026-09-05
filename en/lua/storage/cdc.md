@@ -8,7 +8,7 @@ description: "<secondary-label ref='storage'/ <secondary-label ref='stream'/ <se
 <secondary-label ref="stream"/>
 <secondary-label ref="nondeterministic"/>
 
-Subscribe to Postgres Change Data Capture streams from [`db.cdc.postgres`](system/cdc.md) sources. List configured sources, open a stream, and receive row-level change events over a channel.
+Subscribe to Change Data Capture streams from [`db.cdc.postgres`](system/cdc.md) and [`db.cdc.sqlite`](system/cdc.md) sources. List configured sources, open a stream, and receive row-level change events over a channel. The API is driver-neutral: both kinds return the same source info and the same change events, and differ only in the [capabilities](system/cdc.md#capabilities) they publish.
 
 ## Loading
 
@@ -18,16 +18,16 @@ local cdc = require("cdc")
 
 ## list_sources
 
-List all configured CDC sources:
+List the configured CDC sources the caller is allowed to see:
 
 ```lua
 local sources, err = cdc.list_sources()
 for _, s in ipairs(sources) do
-    print(s.name, s.slot, s.streaming)
+    print(s.id, s.kind, s.state, s.capabilities.before_images)
 end
 ```
 
-Each source is a table: `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary`, `snapshot`. See [CDC sources](system/cdc.md#source-info).
+Sources the caller lacks `cdc.source` on are omitted rather than reported as an error.
 
 **Returns:** `table, error`
 
@@ -56,12 +56,21 @@ local stream, err = cdc.stream("app:pg_cdc", {
 })
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Source name (entry ID) |
-| `opts.tables` | []string | Filter to these tables (omit for all configured tables) |
-| `opts.ops` | []string | Filter to these operations: `insert`, `update`, `delete`, `truncate` |
-| `opts.buffer` | int | Channel buffer size (1-65536) |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | string | required | Source name (entry ID) |
+| `opts.tables` | []string | - | Filter to these tables (omit for all captured tables) |
+| `opts.ops` | []string | - | Filter to these operations: `insert`, `update`, `delete`, `truncate` |
+| `opts.buffer` | int | 64 | Backlog item capacity (1-65536) |
+| `opts.max_bytes` | int | 1048576 | Backlog byte budget for this subscriber (1 MiB) |
+| `opts.snapshot` | bool | entry default | Request the snapshot/live handoff for this stream |
+| `opts.after` | string | - | Opaque resume cursor from a previous event's `cursor` |
+
+Unknown option keys are rejected with `errors.INVALID`. Table names are matched case-insensitively against both the qualified relation and the bare table name. Snapshot rows are filtered by `tables` only; `ops` applies to live changes.
+
+A stream receives a snapshot when either `opts.snapshot` is true or the source entry's `snapshot` field is set; snapshot rows arrive first with `op = "snapshot"`, then the stream continues into live changes with no gap. `opts.after` is only honored by drivers whose `capture_resume` capability is set — every driver shipped today returns `errors.INVALID` ("cdc operation is not supported by this source") for it.
+
+Filters narrow delivery only. Access to a source is granted by the `cdc.subscribe` permission, never by a filter.
 
 **Returns:** `Stream, error`
 
@@ -79,7 +88,9 @@ while true do
     local change = ch:receive()
     if change == nil then break end   -- stream closed
 
-    if change.op == "insert" then
+    if change.op == "snapshot" then
+        seed_row(change.table, change.after)
+    elseif change.op == "insert" then
         handle_new_user(change.table, change.after)
     elseif change.op == "update" then
         handle_update(change.table, change.before, change.after)
@@ -89,7 +100,9 @@ while true do
 end
 ```
 
-`receive` is an alias for `channel`.
+The stream is lazy: construct it, then call `channel()` before generating the writes it should observe. This is live observation, not replay of changes made before the subscription.
+
+When a source terminates a stream with a failure, the channel delivers an error value before it closes. `receive` is an alias for `channel`.
 
 ### close
 
@@ -105,18 +118,70 @@ Each message received on the channel is a change table:
 
 | Field | Description |
 |-------|-------------|
-| `op` | Operation: `insert`, `update`, `delete`, `truncate`, or `r` (snapshot read) |
+| `op` | Operation: `insert`, `update`, `delete`, `snapshot` or `truncate` |
 | `schema` | Table schema |
 | `table` | Table name |
-| `relation` | `schema.table` |
-| `before` | Row state before the change (`update`, `delete`; absent for `insert`) |
-| `after` | Row state after the change (`insert`, `update`, `r`; absent for `delete`) |
-| `source` | Source name |
-| `lsn` | Log sequence number of the change |
+| `relation` | Qualified relation name |
+| `before` | Row state before the change (`update`, `delete`; requires the `before_images` capability) |
+| `after` | Row state after the change (`insert`, `update`, `snapshot`; absent for `delete`) |
+| `source` | Source entry ID |
+| `source_id` | Source entry ID, as a registry ID |
+| `generation` | Source generation that produced the event |
+| `cursor` | Opaque per-event position within the source |
+| `transaction` | Transaction identifier, when the driver reports one |
+| `lsn` | Log sequence number of the change (`db.cdc.postgres`) |
 | `commit_lsn` | LSN of the committing transaction (when applicable) |
 | `xid` | Transaction ID (when applicable) |
+| `unchanged` | Columns whose value was not transmitted (unchanged TOAST values) |
+| `error` | Driver-reported error description carried on the event |
 
 `before` and `after` are row maps keyed by column name.
+
+## Source Info
+
+`cdc.source` and each entry of `cdc.list_sources` return the same record:
+
+| Field | Description |
+|-------|-------------|
+| `id` | Entry ID |
+| `kind` | `db.cdc.postgres` or `db.cdc.sqlite` |
+| `name` | Source name (the entry ID) |
+| `state` | `unknown`, `starting`, `running`, `faulted` or `stopped` |
+| `generation` | Current source generation |
+| `epoch` | Same value as `generation` |
+| `engine` | Engine name, when the driver reports one |
+| `db_resource` | Observed SQL resource entry ID (`db.cdc.sqlite`) |
+| `slot` | Replication slot name (`db.cdc.postgres`) |
+| `publication` | Postgres publication, when configured |
+| `tables` | Captured tables, when configured |
+| `streaming` | Whether the source is currently running |
+| `failover` | Failover slot mode (`db.cdc.postgres`) |
+| `temporary` | Temporary slot (`db.cdc.postgres`) |
+| `snapshot` | Entry-level snapshot default |
+| `faulted` | Whether the source is in the `faulted` state |
+| `error` | Last source error, when one is recorded |
+| `admission` | `active`, `snapshots`, `reserved_bytes`, `rejected` |
+| `capabilities` | `snapshot`, `capture_resume`, `replayable`, `captures_external_writes`, `before_images`, `coalesced` |
+
+Branch on `capabilities` rather than on `kind`:
+
+```lua
+local info = cdc.source("app:changes")
+if not info.capabilities.before_images then
+    -- delete events carry no row image; keep your own last-known state
+end
+```
+
+See [CDC sources](system/cdc.md#source-info) for field semantics.
+
+## Permissions
+
+| Action | Resource | Description |
+|--------|----------|-------------|
+| `cdc.source` | Source entry ID | `cdc.source`; also filters `cdc.list_sources` |
+| `cdc.subscribe` | Source entry ID | `cdc.stream`, checked again when the subscription is established |
+
+A denied action returns `errors.PERMISSION_DENIED`.
 
 ## Errors
 
@@ -124,13 +189,17 @@ Each message received on the channel is a change table:
 |-----------|------|
 | No context / no process PID | `errors.INTERNAL` |
 | Source name required | `errors.INVALID` |
-| Invalid buffer size | `errors.INVALID` |
-| Source not found | `errors.INTERNAL` |
+| Invalid or unknown stream option | `errors.INVALID` |
+| `after` on a source without `capture_resume` | `errors.INVALID` |
+| Source not registered | `errors.NOT_FOUND` |
+| Source not started or replacing | `errors.UNAVAILABLE` |
+| Subscription capacity exhausted | `errors.UNAVAILABLE` |
+| Permission denied | `errors.PERMISSION_DENIED` |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 
 ## See Also
 
-- [Change Data Capture](system/cdc.md) - `db.cdc.postgres` source configuration
+- [Change Data Capture](system/cdc.md) - Source configuration and capabilities
 - [Channel](lua/core/channel.md) - Channel semantics
 - [Database](system/database.md) - SQL database services

@@ -20,6 +20,8 @@ app:templates             → Template set
 
 Each entry has an `ID` (namespace:name format), a `kind` that determines its handler, arbitrary `meta` fields, and kind-specific `data`.
 
+Alongside that authored content the registry keeps its own provenance for each entry: the `owner`, meaning the deployment source the entry came from, and `root`, marking a dependency declaration the deployment selected. This state is assigned by the registry, not written by the entry author, and it is kept separate from `meta` so the two can never be confused. It is read through the snapshot state API rather than the ordinary entry APIs—see [Registry module](lua/core/registry.md#snapshot-state).
+
 For how the registry functions as an authorization layer, see the [Security Model](concepts/security-model.md).
 
 ## Kind Handlers

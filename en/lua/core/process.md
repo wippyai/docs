@@ -211,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Option | Type | Description |
 |--------|------|-------------|
 | `network` | string | Registry ID of a `network.*` entry to use for the child's outbound connections |
+| `terminal` | string | Viewport grant that attaches a virtual terminal to the child |
 
 **Permission:** `process.context` on "context"; selecting a network additionally requires `network.select` on that network ID.
+
+### Terminal Attachment
+
+A `terminal` grant comes from `viewport:grant()` and gives the child a terminal port of its own, so it can use the [TTY](lua/system/tty.md) module exactly as it would on a terminal host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+The grant is one-shot and is consumed at admission: a rejected start leaves it unresolved and reusable, a child that resolves the port consumes it permanently, and a host that does not support terminal attachments rejects the spawn rather than dropping the option. The spawning process keeps reading the child's frames through the viewport it created. See [Terminal](system/terminal.md#composable-terminals).
 
 ### SpawnBuilder Methods
 

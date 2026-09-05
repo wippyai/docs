@@ -129,6 +129,30 @@ health_check:
   interval: "30s"
 ```
 
+### Security Context Propagation
+
+Wippy propagates the calling actor and scope to workflows and activities as a signed Temporal header. Signing is HMAC-SHA256 with a key held by the client entry:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Field | Description |
+|-------|-------------|
+| `security_hmac_key` | Base64-encoded signing key; must decode to at least 32 bytes |
+| `security_hmac_previous_keys` | Base64-encoded keys still accepted for verification, for rotation |
+
+Both fields are base64 in YAML because they are byte fields. A key shorter than 32 decoded bytes is rejected at config validation, as is declaring `security_hmac_previous_keys` without `security_hmac_key`. New headers are always signed with `security_hmac_key`; every listed previous key is tried when verifying, so rotation is: add the new key as `security_hmac_key`, move the old one into `security_hmac_previous_keys`, then drop it once no in-flight execution carries it.
+
+**Starting a workflow under an actor or scope requires the key.** If the caller has a security context and the client has no signing key, the header cannot be signed and the start fails. A client with no key can only start workflows from a context that carries neither an actor nor a scope.
+
+The worker acquires the keys from the client entry it references, so a worker inherits signing and verification from `client:` without configuring anything itself. See [Workflows](temporal/workflows.md#security-context) and [Activities](temporal/activities.md).
+
 ## Worker Configuration
 
 The `temporal.worker` entry kind defines a worker that executes workflows and activities.

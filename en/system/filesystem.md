@@ -29,7 +29,13 @@ Directory and embedded filesystem access.
 | `directory` | string | required | Root path |
 | `auto_init` | bool | false | Create directory if missing |
 | `mode` | string | 0755 | Unix permission mode (octal) |
-| `base` | string | `project` | Relative-path base: `project` (process working directory) or `module` (owning module load root) |
+| `base` | string | - | Relative-path base: `project` (process working directory) or `module` (owning module load root) |
+
+Absolute paths are used as given, whatever `base` says.
+
+For a relative path, `base: project` keeps it relative to the process working directory. Both `base: module` and an unset `base` resolve it against the load root of the module that owns the entry, looked up through the entry's registry owner. When the entry has no owning module, or that module has no resolvable resource root, the path stays relative to the process working directory.
+
+Any other value is rejected with `invalid directory base`.
 
 The mode restricts all file operations. Execute bits are added automatically when read bits are present.
 

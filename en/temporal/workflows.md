@@ -405,6 +405,36 @@ local tenant = ctx.get("tenant")         -- "tenant-1"
 local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
 ```
 
+### Security Context
+
+The actor and scope of the caller travel with the workflow, separately from `ctx` values and under stronger rules. They are carried in two Temporal headers:
+
+| Header | Content |
+|--------|---------|
+| `wippy-security` | JSON envelope: actor ID, actor metadata, policy IDs, and the audience |
+| `wippy-security-signature` | HMAC-SHA256 over that envelope, keyed by the client's `security_hmac_key` |
+
+The audience is the ID of the execution the header was minted for — the workflow ID for a start or a signal, the activity ID for an activity. A header replayed against a different execution fails the audience check, so a captured header cannot be reused elsewhere.
+
+Verification happens before the workflow body runs. The signature must match one of the client's keys, the audience must equal this execution's ID, and every policy named in the envelope must resolve in the local security registry. **Any of those failing fails the workflow execution** — it is not a warning and the workflow does not run with a reduced context. The same is true of an envelope that is internally inconsistent, such as an actor without a scope or policies without an actor.
+
+Configure the keys on the [`temporal.client`](temporal/overview.md#security-context-propagation) entry. Starting a workflow from a context that has an actor or a scope requires a signing key; without one the start fails rather than proceeding unsigned.
+
+#### Secured workflows reject unsigned signals
+
+A workflow running under a security context requires every incoming signal to carry a signed relay ticket — headers `wippy-relay-signal` and `wippy-relay-signal-signature` — bound to that workflow ID and that signal name. An unsigned or mis-addressed signal is rejected instead of delivered. Signals sent by Wippy processes through `process.send` are signed automatically. Signals injected from outside Wippy — the Temporal CLI, `tctl`, or another SDK — carry no ticket and therefore fail against a secured workflow. Drive a secured workflow only from Wippy.
+
+#### Deterministic child and activity IDs
+
+Under a security context, a child workflow or activity started without an explicit ID gets a derived one instead of a random one, because the ID is the audience the header is signed for and must be reproducible on replay:
+
+| Started from a secured workflow | Generated ID |
+|---------------------------------|--------------|
+| Child workflow | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` counts within the workflow execution. An explicitly supplied `temporal.workflow.id` or activity ID is used as-is and becomes the audience. Without a security context, IDs are left to Temporal as before.
+
 ### From HTTP Handlers
 
 ```lua

@@ -122,6 +122,23 @@ local user_agent = req:header("User-Agent")
 local correlation_id = req:header("X-Correlation-ID") or uuid.v4()
 ```
 
+Lookup is case-insensitive: `req:header("content-type")` and `req:header("Content-Type")` return the same value. A header sent more than once returns its values joined with `", "`. A header that is not present returns `nil`.
+
+### headers
+
+Gets every request header.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Returns:** `table, error`
+
+Keys are canonical header names (`Content-Type`, `X-Correlation-ID`), regardless of the casing the client sent. Repeated headers are joined with `", "`, as in `req:header()`.
+
 ### content_type
 
 Gets the Content-Type header.

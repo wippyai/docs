@@ -13,14 +13,63 @@ Entries are stored as an ordered slice with a hash map index for O(1) lookups:
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // Entry type
-    Meta attrs.Bag       // Metadata
-    Data payload.Payload // Content
+    ID       ID              // namespace:name
+    Kind     Kind            // Entry type
+    Meta     attrs.Bag       // Author metadata
+    Data     payload.Payload // Content
+    Registry EntryMetadata   // Registry-owned provenance
+}
+
+type EntryMetadata struct {
+    Owner string // Deployment source that supplied the entry
+    Root  bool   // Dependency declaration selected by the deployment
 }
 ```
 
 Entry IDs use Go's `unique` package for interning—identical IDs share memory.
+
+`Registry` is owned by the registry, not the entry author. `Owner` is assigned from the deployment source; `Root` is set from the `dependency_root` write-side field on an `ns.dependency` entry. The ordinary entry APIs return only `ID`, `Kind`, `Meta` and `Data`; provenance is read through the snapshot state API.
+
+## Snapshot
+
+`Registry.Snapshot()` returns one atomic view: the version, the entries at that version, and the registry-owned state metadata for that same version.
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+Reading version, entries and resolution as one value prevents a caller from pairing entries with a resolution from a different version. The selected module graph is stored once per snapshot rather than repeated on every entry.
+
+## Overlays
+
+`OverlayWriter` is an optional registry capability for process-local entries:
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+Overlay entries are grouped under a logical owner string. They join effective state and pass through the same topology sort and handler transitions as durable entries, so services start and stop for them normally, but they never produce a history version. They are empty after a cold boot and must be reconciled by their owning control service.
+
+Writes are optimistically concurrent: `GetOverlay` returns the owner's current generation, and `ApplyOverlay` commits only if that generation is still current, otherwise it returns a retryable `Conflict`. Each successful apply issues a new process-unique generation, and a tombstone is retained for owners that mutated so an ABA sequence cannot be mistaken for an unchanged overlay.
+
+The composition rules validated on every apply:
+
+- An entry may be created only if no durable entry and no overlay entry holds its ID.
+- Only the owning identity may update or delete its overlay entries.
+- Overlay entries may not carry registry-owned metadata, and may not use kinds claimed by registry directives.
+- A delete may not remove an entry that a surviving entry depends on.
+- Dependency edges may not cross owner boundaries, and durable entries may not depend on overlay entries.
 
 ## Version Chain
 
@@ -107,6 +156,18 @@ resolver.RegisterPattern(registry.DependencyPattern{
 ```
 
 Dependencies are extracted from entry Meta and Data fields, then used for topological sorting during state transitions.
+
+### Dependency Access Policy
+
+External dependency access is a request-scoped context value, not a global flag:
+
+| Policy | Effect |
+|--------|--------|
+| `DependencyAccessUnspecified` | Callers choose; the caller's own default applies |
+| `DependencyAccessOnline` | External resolution and artifact download are permitted |
+| `DependencyAccessVerifiedOffline` | External access is forbidden; resolution uses locked manifests and locally present artifacts |
+
+`LoadState()` defaults to verified-offline when the context specifies nothing, so boot replays a stored graph without reaching the network. Restoring a deployment baseline switches the context to online because it must fetch the modules that baseline names. Under verified-offline a manifest provider serving only locked modules replaces the hub provider, and a missing artifact fails as missing evidence rather than triggering a download.
 
 ## Version History
 
