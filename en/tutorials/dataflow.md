@@ -31,6 +31,7 @@ Install the dependencies:
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -41,6 +42,7 @@ The KB lives in a local SQLite database. `wippy/embeddings` ships a migration th
 creates the vector table; the bootloader runs it at startup. Wire the pieces together:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -59,6 +61,7 @@ entries:
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -66,6 +69,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -73,6 +77,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -80,7 +85,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+The bootloader and the provider services run under the `wippy.security:process`
+policy group, so `wippy/security` and a policy in that group are part of the wiring.
 
 The bootloader needs an environment store; add the standard one in its own namespace:
 

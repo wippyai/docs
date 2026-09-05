@@ -20,6 +20,41 @@ Key concepts:
 - Monitor process lifecycle with events
 - Link processes for coordinated failure handling
 
+## Permissions
+
+Process operations are permission-checked against the calling entry's security policy. Declare a `security.policy` entry granting the actions used below, and attach it to every entry that spawns, sends, monitors, links, or registers names:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Without the grant these calls return errors such as `not allowed to spawn process: app.test.process:echo_worker`. The full action list is in the [Permission Reference](lua/core/process.md).
+
 ## Spawning Processes
 
 Spawn a new process from an entry reference.
@@ -109,6 +144,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Message Mode for Sender Info

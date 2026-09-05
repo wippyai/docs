@@ -41,6 +41,7 @@ here explicitly for clarity:
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
@@ -72,7 +73,7 @@ Tokens are issued by an admin user, scoped, and shown exactly once. Create one v
 token API (or the MCP page in the Keeper UI):
 
 ```bash
-curl -X POST http://localhost:8085/api/v1/keeper/mcp/tokens \
+curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
   -d '{"label": "claude-dev", "preset": "developer"}'
@@ -95,14 +96,14 @@ Codex, an `.mcp.json` in the project root:
   "mcpServers": {
     "keeper": {
       "type": "http",
-      "url": "http://localhost:8085/keeper-mcp/",
+      "url": "http://localhost:8080/keeper-mcp/",
       "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-Use the app's public base URL in place of `http://localhost:8085` in a deployed
+Use the app's public base URL in place of `http://localhost:8080` in a deployed
 environment.
 
 ## How the MCP Surface Works
@@ -115,7 +116,9 @@ opt into a capability:
 - `list_traits` / `describe_trait` — discover what's available.
 - `use_trait` / `drop_trait` (and `set_traits`) — activate or remove a trait; this emits
   an MCP `notifications/tools/list_changed`, so the visible tools change live.
-- `list_tools` / `call_tool` — enumerate and invoke the tools a trait materialized.
+- `list_tools` — enumerate the tools a trait materialized, with their schemas.
+- `call_tool` — invoke any registry tool by id; visible only to a token holding
+  `mcp.root`.
 
 What a token can activate is bounded by its **scopes** — roughly `registry.*`,
 `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,

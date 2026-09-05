@@ -133,7 +133,7 @@ end
 return {main = main}
 ```
 
-Events are records discriminated by `type`. For a printable key, `key_type` is `"runes"` and `key` holds the text; for a named key, both `key_type` and `key` hold the name (`"enter"`, `"backspace"`, `"up"`). Coordinates in mouse events are one-based.
+Events are records discriminated by `type`. For a printable key, `key_type` is `"runes"` and `key` holds the text; for a named key, both `key_type` and `key` hold the name (`"enter"`, `"backspace"`, `"space"`, `"up"`). Coordinates in mouse events are one-based.
 
 ## Step 3: Drawing Frames
 
@@ -217,6 +217,8 @@ local function main()
                 input, scroll = "", 0
             elseif ev.key == "backspace" then
                 input = input:sub(1, -2)
+            elseif ev.key == "space" and not ev.ctrl and not ev.alt then
+                input = input .. " "
             elseif ev.key_type == "runes" and not ev.ctrl and not ev.alt then
                 input = input .. ev.key
             end

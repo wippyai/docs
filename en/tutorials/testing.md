@@ -21,16 +21,15 @@ A small library and a test suite that covers it:
 
 - A Wippy project (clone [app-template](https://github.com/wippyai/app-template), or
   `wippy init` in an empty directory).
-- The test framework and a terminal host installed:
+- The test framework installed:
 
   ```bash
   wippy add wippy/test
-  wippy add wippy/terminal
   wippy install
   ```
 
-  The runner renders a live terminal UI, so `wippy/terminal` is required alongside
-  `wippy/test`.
+  The runner renders a live terminal UI on `wippy/terminal`, which `wippy/test`
+  pulls in for you.
 
 ## The Code Under Test
 
@@ -95,10 +94,16 @@ Register both entries. Discovery keys off `meta.type: test`; `meta.suite` groups
 results in the output:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -116,8 +121,10 @@ entries:
       calc: app:calc
 ```
 
-The `imports` map controls what `require(...)` resolves to inside the test: `test`
-binds the framework, `calc` binds the unit under test.
+The `ns.dependency` entry is what mounts `wippy/test` into the application; without
+it the framework namespace never reaches the registry and `wippy.test:test` fails to
+resolve. The `imports` map controls what `require(...)` resolves to inside the test:
+`test` binds the framework, `calc` binds the unit under test.
 
 ## Run It
 
@@ -128,13 +135,19 @@ wippy test
 Output for the suite above:
 
 ```
-  calculator (4)  3/4  1 skipped  1ms
-    o setup ran
-    o adds numbers
-    o returns error on divide by zero
-    - not implemented yet (skipped)
+  Running Tests
 
-  PASSED   3 tests   1 skipped   1ms
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
+    - not implemented yet (skipped)
+  o calculator (4) 3/4 1 skipped 21ms
+
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
 `wippy test` exits `0` when every case passes and `1` on any failure, so it drops
