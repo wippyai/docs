@@ -1,6 +1,6 @@
 ---
 title: "Переменные окружения"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "Доступ к переменным окружения для конфигурации, секретов и настроек среды выполнения."
 ---
 
 # Переменные окружения
@@ -26,7 +26,7 @@ local env = require("env")
 -- Получить строку подключения к БД
 local db_url = env.get("DATABASE_URL")
 if not db_url then
-    return nil, errors.new("INVALID", "DATABASE_URL not configured")
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 -- Получить со значением по умолчанию
@@ -92,7 +92,7 @@ end
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new("INVALID", "Missing required env var: " .. key)
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -109,7 +109,8 @@ end
 |----------|--------|----------|
 | `env.get` | Имя переменной | Чтение переменной окружения |
 | `env.set` | Имя переменной | Запись переменной окружения |
-| `env.get_all` | `*` | Список всех переменных |
+
+`get_all` не имеет отдельного действия безопасности: он возвращает только те переменные, для которых разрешено действие `env.get`, пропуская имя каждой переменной через `env.get`.
 
 ### Проверка доступа
 

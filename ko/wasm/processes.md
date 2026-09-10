@@ -80,7 +80,7 @@ wippy run list
 | `use_case` | 아니요 | entrypoint category; 기본값 `run` |
 | `security` | 아니요 | 신뢰된 terminal launcher가 이 명령을 시작할 때만 적용되는 보안 컨텍스트 |
 
-CLI 명령에는 `terminal.host`가 있어야 합니다. terminal host가 명령 프로세스에 사용되는 scheduler를 소유하므로 별도 `process.host`는 필요하지 않습니다. terminal host가 여러 개이면 `--host`로 하나를 선택하십시오.
+CLI 명령이 동작하려면 `terminal.host`가 있어야 합니다. 이것이 명령을 실행하는 프로세스 호스트입니다.
 
 ## 프로세스 생명주기
 

@@ -1,6 +1,6 @@
 ---
 title: "프로세스 관리"
-description: "Wippy 프로세스를 스폰, 모니터링, 링크, 메시징, 명명 및 업그레이드합니다."
+description: "자식 프로세스를 스폰하고 모니터링하며 통신합니다. 메시지 전달, 슈퍼비전, 라이프사이클 관리를 갖춘 액터 모델 패턴을 구현합니다."
 ---
 
 # 프로세스 관리
@@ -135,8 +135,8 @@ local events = process.events()  -- Lifecycle events from @events topic
 | 필드 | 타입 | 설명 |
 |-------|------|------|
 | `kind` | string | 이벤트 타입 상수 |
-| `from` | string | 소스 PID |
-| `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`, 오류는 `result.error`에 있음 |
+| `from` | string | 소스 PID (OUTDATED에는 없음) |
+| `result` | table | EXIT/LINK_DOWN의 경우: {value, error} 레코드. 프로세스 반환 값은 `result.value`에, 오류는 `result.error`에 있습니다 |
 | `reason` | string | CANCEL의 경우: 프로세스가 취소되는 이유 |
 | `sources` | string[] | OUTDATED의 경우: 변경되었거나 전이적으로 영향을 받은 레지스트리 ID |
 
@@ -166,10 +166,10 @@ if err then return nil, err end
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: topic name
-msg:from()             -- string|nil: sender PID
-msg:payload()          -- Payload: wrapper (call :data() to extract)
-msg:payload():data()   -- any: actual payload value
+msg:topic()            -- string: 토픽 이름
+msg:from()             -- string: 발신자 PID (알 수 없으면 빈 문자열)
+msg:payload()          -- Payload: 래퍼 (:data() 호출로 추출); 비어 있으면 nil, 값이 여러 개면 래퍼 테이블
+msg:payload():data()   -- any: 실제 페이로드 값
 ```
 
 ## 동기 호출
@@ -221,20 +221,33 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
 | `network` | string | 자식의 아웃바운드 연결에 사용할 `network.*` 엔트리의 레지스트리 ID |
+| `terminal` | string | 자식에 가상 터미널을 붙이는 뷰포트 grant |
 
 **권한:** "context"에 대한 `process.context`; 네트워크를 선택하면 해당 네트워크 ID에 대한 `network.select`가 추가로 필요합니다.
+
+### 터미널 연결
+
+`terminal` grant는 `viewport:grant()`에서 얻으며 자식에게 자체 터미널 포트를 부여하므로, 자식은 터미널 호스트에서와 똑같이 [TTY](lua/system/tty.md) 모듈을 사용할 수 있습니다:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+grant는 일회성이며 승인 시점에 소비됩니다: 시작이 거부되면 grant는 해석되지 않은 채 남아 재사용할 수 있고, 포트를 해석한 자식은 이를 영구적으로 소비하며, 터미널 연결을 지원하지 않는 호스트는 옵션을 무시하는 대신 스폰을 거부합니다. 스폰하는 프로세스는 자신이 만든 뷰포트를 통해 자식의 프레임을 계속 읽습니다. [Terminal](system/terminal.md#composable-terminals)을 참조하세요.
 
 ### SpawnBuilder 메서드
 
 `SpawnBuilder`는 불변입니다. 각 구성 메서드는 새 인스턴스를 반환합니다.
 
 ```lua
-spawner:with_context(values)      -- Add context values
-spawner:with_actor(actor)         -- Set security actor
-spawner:with_scope(scope)         -- Set security scope
-spawner:with_name(name)           -- Set process name
-spawner:with_message(topic, ...)  -- Queue message to send after spawn
-spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
+spawner:with_context(values)      -- 컨텍스트 값 추가
+spawner:with_actor(actor)         -- 보안 액터 설정
+spawner:with_scope(scope)         -- 보안 범위 설정
+spawner:with_name(name)           -- 시작 시 이름 등록; 이미 사용 중이면 spawn이 기존 PID를 반환하고 대기 중인 메시지가 그 PID로 전달됨
+spawner:with_message(topic, ...)  -- 스폰 후 전송할 메시지 큐에 추가
+spawner:with_options(options)     -- 스폰 시 옵션 병합 (예: 네트워크)
 ```
 
 **권한:** `:with_actor()`와 `:with_scope()`에 대해 "security"에 대한 `process.security`
@@ -295,7 +308,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | 아니오 | 자신 | 등록할 PID; 기본값은 호출 프로세스 |
 | `scope` | number | 아니오 | `LOCAL` | 위의 범위 상수 중 하나 |
 
-성공 시 `true`를 반환하고, 실패 시 `nil, error`를 반환합니다. 충돌(다른 PID로 클러스터 범위에 이미 등록된 이름)은 `errors.ALREADY_EXISTS`를 반환합니다. 동일한 PID로 같은 이름을 등록하면 멱등합니다. `STRONG` 등록은 모든 살아있는 노드가 승인하거나 예약 데드라인이 만료될 때까지 차단됩니다; 타임아웃 시 오류를 반환합니다.
+성공 시 `true`를 반환하고, 실패 시 `nil, error`를 반환합니다. 충돌(다른 PID로 이미 등록된 이름)은 `errors.ALREADY_EXISTS`를 반환합니다. 동일한 PID로 같은 이름을 등록하면 멱등합니다. `STRONG` 등록은 모든 살아있는 노드가 승인하거나 예약 데드라인이 만료될 때까지 차단됩니다; 타임아웃 시 오류를 반환합니다.
 
 다른 PID를 대신하여 등록하면 대상 PID에 대한 `process.registry.foreign` 권한이 추가로 필요합니다.
 
@@ -343,7 +356,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | 대상 PID |
 | `process.link` | `link()` | 대상 PID |
 | `process.unlink` | `unlink()` | 대상 PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | 이름 |
 | `process.registry.unregister` | `registry.unregister()` | 이름 |
@@ -376,6 +389,7 @@ local ok, err = process.registry.unregister(name, scope)
 | 프레임 컨텍스트 없음 | `errors.INTERNAL` |
 | 필수 인수 누락 | `errors.INVALID` |
 | 예약된 토픽 접두사 (`@`) | `errors.INVALID` |
+| 대상이 PID도 등록된 이름도 아님 | `errors.NOT_FOUND` |
 | 이름 미등록 | `errors.NOT_FOUND` |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
 | 이름 이미 등록됨 | `errors.ALREADY_EXISTS` |

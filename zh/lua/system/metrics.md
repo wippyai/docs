@@ -1,6 +1,6 @@
 ---
 title: "指标与遥测"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/"
+description: "使用计数器、仪表和直方图记录应用程序指标。"
 ---
 
 # 指标与遥测

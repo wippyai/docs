@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "Leia requisições HTTP no servidor e construa respostas de status, headers, JSON, streaming e event stream."
+description: "Trate requisicoes HTTP e construa respostas. Acesse dados da requisição, parametros de rota, headers e conteudo do corpo. Construa respostas com…"
 ---
 
 # HTTP
@@ -147,7 +147,24 @@ if not correlation_id then
 end
 ```
 
-### `content_type`
+A busca não diferencia maiúsculas de minúsculas: `req:header("content-type")` e `req:header("Content-Type")` retornam o mesmo valor. Um header enviado mais de uma vez retorna seus valores unidos por `", "`. Um header ausente retorna `nil`.
+
+### headers
+
+Obtem todos os headers da requisição.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**Retorna:** `table, error`
+
+As chaves são nomes canônicos de header (`Content-Type`, `X-Correlation-ID`), independentemente da capitalização enviada pelo cliente. Headers repetidos são unidos por `", "`, como em `req:header()`.
+
+### content_type
 
 Retorna o header `Content-Type`.
 
@@ -375,12 +392,16 @@ if form.files.avatar then
     local content_type, header_err = file:header("Content-Type")  -- "image/jpeg"
     if header_err then return nil, header_err end
 
-    -- Stream the upload to a configured filesystem volume
-    local fs = require("fs")
-    local uploads, fs_err = fs.get("app:avatars")
-    if fs_err then
-        return nil, fs_err
+    -- Ler conteudo do arquivo
+    local stream = file:stream()
+    local parts = {}
+    while true do
+        local chunk, err = stream:read(65536)
+        if err or not chunk then break end
+        parts[#parts + 1] = chunk
     end
+    stream:close()
+    local content = table.concat(parts)
 
     local stream, stream_err = file:stream()
     if stream_err then return nil, stream_err end

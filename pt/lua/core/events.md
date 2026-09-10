@@ -1,6 +1,6 @@
 ---
-title: "Barramento de eventos"
-description: "Publique e observe eventos best-effort do runtime e da aplicação."
+title: "Event Bus"
+description: "Publique e inscreva-se em eventos para observabilidade — monitoramento de atividade do runtime e da aplicação e reação a ela."
 ---
 
 # Barramento de eventos :id=event-bus

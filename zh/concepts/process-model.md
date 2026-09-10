@@ -70,7 +70,7 @@ process.send(target_pid, "topic", payload)
 来自同一发送者的消息按顺序到达。来自不同发送者的消息可能交错。投递是发后即忘的——当你需要确认时使用请求-响应模式。
 
 <note>
-进程可以在本地名称注册表中注册，并通过名称而不是 PID 来寻址（例如 <code>session_manager</code>）。用于跨节点寻址的全局注册表已在计划中。
+进程可以在本地名称注册表中注册，并通过名称而不是 PID 来寻址（例如 <code>session_manager</code>）。名称也可以通过 <code>process.registry</code> 在集群范围内注册以实现跨节点寻址，可使用 EVENTUAL（基于 gossip）、CONSISTENT 或 STRONG（后两者由 Raft 支持）作用域。
 </note>
 
 ## 监管
@@ -97,7 +97,9 @@ end
     auto_start: true
     restart:
       max_attempts: 5
-      delay: 1s
+      initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 服务自动启动，在崩溃时带退避重启，并与运行时的生命周期管理集成。

@@ -1,6 +1,6 @@
 ---
 title: "UUID-Generierung"
-description: "UUIDs erzeugen, validieren, untersuchen, parsen und formatieren."
+description: "Generieren Sie universell eindeutige Identifikatoren. Angepasst für Workflows - zufällige UUIDs geben bei Replay konsistente Werte zurück."
 ---
 
 # UUID-Generierung
@@ -142,7 +142,7 @@ Zurückgegebene Tabellenfelder:
 - `version` (integer): UUID-Version (1, 3, 4, 5 oder 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS oder Invalid
 - `timestamp` (integer): Unix-Zeitstempel (nur v1 und v7)
-- `node` (string): rohe sechs Byte lange Knotenkennung (nur v1); vor Anzeige oder Textspeicherung kodieren
+- `node` (string): 6 rohe Knoten-ID-Bytes (nur v1)
 
 ### Formatieren
 

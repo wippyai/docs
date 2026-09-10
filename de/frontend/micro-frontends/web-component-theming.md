@@ -1,57 +1,46 @@
 ---
 title: "Theming: Web Components"
-description: "Wie Wippy-Web-Components Theme-Variablen erben und regelbasiertes CSS in Shadow Roots laden."
+description: "Die Theming-Referenz behandelt den vollständigen Katalog der CSS-Variablen. Dieses Dokument behandelt, wie eine Web Component das Theme durch das Shadow DOM erhält."
 ---
 
 # Theming: Web Components
 
-**Klassifizierung: Konfigurationsreferenz mit Teilrezepten.** Die Ausschnitte
-setzen eine vorhandene Wippy-Web-Component, ihren Shadow Root sowie die
-öffentlichen Proxy- und Web-Component-Pakete der fixierten Releasefamilie voraus.
-
-Web Components erben Theme-Variablen über die Shadow-Grenze und laden
-regelbasierte Assets in ihre Shadow Roots. Siehe [Theme-Erstellung](./theming.md).
+Die [Theming-Referenz](./theming.md) behandelt den vollständigen Katalog der CSS-Variablen. Dieses Dokument behandelt, wie eine Web Component das Theme durch das Shadow DOM erhält.
 
 ---
 
-## Wie das Theme die Komponente erreicht
+## Wie das Theme Ihre Komponente erreicht
 
-Shadow DOM sperrt die CSS-Kaskade, nicht aber CSS Custom Properties:
+Das Shadow DOM blockiert die CSS-Kaskade — Stylesheets, die außerhalb Ihrer Komponente geschrieben wurden, gelten nicht darin. CSS-Custom-Properties (Variablen) überschreiten die Shadow-Grenze jedoch **sehr wohl**. Das bedeutet:
 
-- Variablen werden vererbt. WippyElement überbrückt zusätzlich jeden konfigurierten Variablennamen durch den Forced-Theme-Inner-Root, damit lokales `theme-config.css` die Werte nicht zurücksetzt.
-- PrimeVue-Styles, Tailwind-Utilities und andere Regelstylesheets kaskadieren nicht hinein. Ohne `hostCssKeys` lädt die Runtime alle vier unterstützten Hostassets; eine ausdrückliche Liste begrenzt sie.
+- Custom Properties werden über die Shadow-Grenze hinweg vererbt. WippyElement überbrückt außerdem jeden konfigurierten Variablennamen durch seinen inneren Root mit erzwungenem Theme, sodass lokal geladene `theme-config.css`-Standardwerte konfigurierte Werte nicht zurücksetzen können.
+- PrimeVue-Komponenten-Styles, Tailwind-Utilities und andere regelbasierte Stylesheets kaskadieren **nicht** hinein — Sie müssen sie explizit über `hostCssKeys` laden.
+
+---
 
 ## Anpassungsebenen
 
-**L1 — Global:** Custom Properties überschreiten die Shadow-Grenze.
-WippyElement ermittelt effektive globale, Children- und Seitenvariablen samt
-`@light` / `@dark` und installiert vor Custom CSS eine Vererbungsbridge.
+**L1 — Global:** CSS-Custom-Properties überschreiten die Shadow-Grenze. WippyElement zählt die effektiven Variablen-Maps für global/children/page auf, einschließlich `@light` / `@dark`, und installiert eine generische Vererbungsbrücke vor der Schicht des injizierten Custom-CSS.
 
-**L2 — Scoped:** Für Variablen wie L1. Regelbasiertes CSS kaskadiert nicht;
-`hostCssKeys` wählt Hostassets im Shadow Root.
+**L2 — Scoped:** Wie L1 für Custom Properties. Stylesheet-basiertes CSS (PrimeVue, Tailwind) kaskadiert nicht — verwenden Sie `hostCssKeys`, um es explizit in den Shadow Root zu laden.
 
-**L3 — `config_overrides` je Seite:** Betreiberseitige Variablen erreichen
-WC-Host und Inner-Theme-Root über dieselbe Bridge.
+**L3 — `config_overrides` pro Seite:** CSS-Variablen, die über `config_overrides` des Betreibers gesetzt werden, erreichen den WC-Host und den inneren Theme-Root über dieselbe generische Brücke.
 
-**Facade-`custom_css` erreicht seit Web Host 1.0.43 den Shadow Root
-(Opt-out).** Da Selektoren nicht kaskadieren, injiziert die Runtime globales +
-Children-CSS. Die Variablenbridge bleibt unabhängig vom `customCss`-Opt-out
-aktiv. Reihenfolge: Plattformstandards → Vererbungsbridge → Custom CSS.
+**Facade-`custom_css` erreicht den Shadow Root (Web Host 1.0.43+, abwählbar).** Selektorregeln kaskadieren nicht über die Grenze, daher injiziert die Laufzeit das komponierte Custom-CSS aus global + children.
 
-> Vor Web Host 1.0.43 gelangten nur Custom Properties in den Shadow Root. Auf
-> älteren Hosts muss eine Regel in den WC-Styles wiederholt oder als `--p-*`-
-> Token ausgedrückt werden.
+Die Brücke für konfigurierte Variablen ist unabhängig vom Frontend-Opt-out `customCss` und bleibt aktiv. Die Reihenfolge lautet: Plattform-Theme-Standardwerte → Vererbungsbrücke für konfigurierte Variablen → injiziertes Custom-CSS.
+
+> **Vor Web Host 1.0.43** erreichten Facade-`custom_css`-Regeln den Shadow Root einer Komponente nicht — nur Custom Properties wurden vererbt. Auf älteren Hosts wiederholen Sie die Regel in den eigenen Styles der WC oder heben sie in eine `--p-*`-Token-Form.
+
+---
 
 ## Theme-CSS empfangen
 
-JavaScript-Externalisierung folgt der vollständigen fixierten Import Map,
-einschließlich `@wippy-fe/theme`. CSS-Bereitstellung ist separat.
+Die JavaScript-Externalisierung folgt der vollständigen gepinnten `import-map.json` des Web Host, auch für `@wippy-fe/theme`. Die CSS-Auslieferung ist davon getrennt: Ein Shadow Root erhält regelbasierte Theme-Assets nur über `hostCssKeys` oder gebündeltes/inline eingebettetes CSS.
 
-### `hostCssKeys` — CSS zur Laufzeit laden
+### `hostCssKeys` — CSS-Laden zur Laufzeit
 
-Ohne `hostCssKeys` lädt die Runtime `themeConfigUrl`, `primeVueCssUrl`,
-`markdownCssUrl` und `iframeCssUrl`; eine leere Liste verzichtet. Deklarieren
-Sie bevorzugt nur benötigte Assets:
+Deklarieren Sie, welche vom Host ausgelieferten CSS-Assets die WC-Laufzeit in Ihren Shadow Root injizieren soll. Ergänzen Sie `wippyConfig.hostCssKeys`:
 
 ```typescript
 static get wippyConfig(): WippyElementConfig<ComponentProps> {
@@ -63,39 +52,35 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 }
 ```
 
-| Schlüssel | Inhalt | Kosten | Wann nötig |
+| Schlüssel | Was geladen wird | Größe | Wann einbinden |
 |---|---|---|---|
-| `themeConfigUrl` | `theme-config.css`, vollständiges `--p-*`-System | Klein | Hosttokens, Dark Mode oder thematisierte Chrome; neutrale Canvas-/SVG-/Chartdarstellung darf verzichten |
-| `primeVueCssUrl` | PrimeVue-CSS im Unstyled-Modus plus Tailwind-Utilities | Groß | PrimeVue-Komponenten oder Tailwind-Klassen im Shadow Root |
-| `markdownCssUrl` | `.data-body`-Markdown-Styles | Klein | Markdown-Inhalt |
-| `iframeCssUrl` | Standard-Scrollbar-Theming | Klein | Jeder scrollbare WC-Inhalt |
+| `themeConfigUrl` | `theme-config.css` — das vollständige System der `--p-*`-CSS-Variablen | ~8 KB | Wenn die WC semantische Host-Tokens, den Dunkelmodus oder thematisiertes Chrome nutzt. Ein darstellungsneutrales Canvas/SVG/Diagramm kann darauf verzichten. |
+| `primeVueCssUrl` | Sämtliches CSS der PrimeVue-Komponenten (Unstyled-Modus) | ~455 KB | Nur wenn die WC PrimeVue-Komponenten (`<Button>`, `<Dialog>` usw.) in ihrem Shadow Root rendert. |
+| `markdownCssUrl` | `.data-body`-Markdown-Styles | ~5 KB | Nur wenn die WC Markdown-Inhalte rendert. |
+| `iframeCssUrl` | Standardmäßiges themengerechtes Scrollbar-Styling; der Name ist historisch | ~1 KB | Erforderlich für jede WC, die scrollen kann, wegen der Scrollbar-Konsistenz. |
 
-`preflightCssUrl` gehört nicht zum Union-Typ `HostCssKey`. Falls Tailwind-v3-
-Preflight im Shadow Root wirklich nötig ist, laden und injizieren Sie ihn:
+`preflightCssUrl` gehört nicht zur `HostCssKey`-Union. Wenn Sie tatsächlich Tailwind-v3-Preflight im Shadow Root benötigen, rufen Sie `hostCss.preflightCssUrl` + `loadCss()` imperativ auf. In der Praxis ist das selten nötig.
 
-```typescript
-import { hostCss, loadCss } from '@wippy-fe/proxy'
-import { injectInlineCss } from '@wippy-fe/webcomponent-core'
+#### Orientierung zur Bundle-Größe
 
-const css = await loadCss(hostCss.preflightCssUrl)
-injectInlineCss(shadow, css)
-```
+| `hostCssKeys` | Insgesamt geladenes CSS |
+|---|---|
+| `['themeConfigUrl']` | ~8 KB |
+| `['themeConfigUrl', 'iframeCssUrl']` | ~9 KB |
+| `['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl']` | ~14 KB |
+| `['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl']` | ~464 KB |
 
-`shadow` ist der vorhandene `ShadowRoot`. Ein fehlgeschlagener Abruf ist ein
-Initialisierungsfehler. Preflight ist selten nötig.
+Entscheiden Sie unabhängig voneinander:
 
-Assets werden unabhängig gewählt:
+- Ein darstellungsneutrales Canvas/SVG/Diagramm ohne Standard-Produktsteuerelemente, semantische Host-Tokens oder Utility-Klassen kann auf PrimeVue, das Theme-Asset und Tailwind verzichten.
+- Jede Schaltfläche, jedes Eingabefeld, Formular, jede Tabelle, jeder Dialog, jedes Menü, jedes Tag, jeder Tooltip oder jedes Feedback-Steuerelement erfordert sein PrimeVue-Pendant, `PrimeVuePlugin` und `primeVueCssUrl`.
+- Semantische Host-Tokens, Dunkelmodus oder thematisiertes Chrome erfordern `themeConfigUrl`.
+- Tailwind ist erforderlich, wenn der Quellcode Tailwind-Utility-Klassen schreibt.
+- Scrollbarer Inhalt erfordert `iframeCssUrl`.
 
-- Präsentationsneutrale Canvas-/SVG-/Chart-WC ohne Controls, Hosttokens, Utilities oder Scrollen darf PrimeVue, Themeasset und Tailwind weglassen.
-- Button, Eingabe, Formular, Tabelle, Dialog, Menü, Tag, Tooltip oder Feedback verlangt PrimeVue-Äquivalent, `PrimeVuePlugin` und `primeVueCssUrl`.
-- Hosttokens, Dark Mode oder thematisierte Chrome verlangen `themeConfigUrl`.
-- Tailwind ist nötig, wenn der Quellcode Tailwind-Utilities verfasst.
-- Scrollbarer Inhalt verlangt `iframeCssUrl`.
+### `inlineCss` — CSS zur Build-Zeit
 
-### `inlineCss` — CSS zur Buildzeit
-
-Kompilieren Sie Tailwind/SCSS und injizieren Sie es per `inlineCss` über Vites
-`?inline`-Import:
+Kompilieren Sie Ihr Tailwind/SCSS zur Build-Zeit und injizieren Sie es über `inlineCss` in den Shadow Root. Verwenden Sie den `?inline`-Import von Vite:
 
 ```typescript
 import stylesText from './styles.css?inline'
@@ -108,9 +93,9 @@ static get wippyConfig() {
 }
 ```
 
-### Lokaler Entwicklungsfallback
+### Fallback für die lokale Entwicklung
 
-Ohne Host kann `styles.css` `theme-config.css` für Fallbackwerte importieren:
+Für die lokale Entwicklung ohne Host importieren Sie `theme-config.css` direkt in Ihrer `styles.css`, um Fallback-Werte für die Variablen zu erhalten:
 
 ```css
 /* src/styles.css */
@@ -122,14 +107,13 @@ Ohne Host kann `styles.css` `theme-config.css` für Fallbackwerte importieren:
 }
 ```
 
-Zur Laufzeit gewinnt das über `hostCssKeys: ['themeConfigUrl']` gelieferte Host-Theme.
+Das liefert die Standardwerte für `--p-*`, sodass Ihre Komponente im Host-losen Modus korrekt rendert. Zur Laufzeit wird das echte Theme über `hostCssKeys: ['themeConfigUrl']` ausgeliefert und hat Vorrang.
 
 ---
 
 ## Komponenten-CSS schreiben
 
-Fordern Sie `themeConfigUrl` an, verwenden Sie semantische Variablen und
-deklarieren Sie geerbte Palettenstandards nicht neu:
+Fordern Sie `themeConfigUrl` an, konsumieren Sie semantische Variablen und deklarieren Sie geerbte Paletten-Standardwerte nicht erneut. Semantische Aliase wechseln mit den Auto- und erzwungenen Modi:
 
 ```css
 :host {
@@ -143,62 +127,66 @@ deklarieren Sie geerbte Palettenstandards nicht neu:
 }
 ```
 
-Für themeabhängige Farben sind `--p-surface-N` ungeeignet, weil die nummerierte
-Skala im Dark Mode nicht kippt. Nutzen Sie semantische Aliasse wie
-`--p-text-color`, `--p-content-background`, `--p-text-muted-color` und
-`--p-content-border-color`. Abgeleitete Farbe:
-`color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)`.
+Verwenden Sie `var(--p-surface-N)` nicht für themenabhängige Farben — die nummerierte Surface-Skala kippt nicht mit dem Dunkelmodus. Verwenden Sie stattdessen semantische Aliase (`--p-text-color`, `--p-content-background`, `--p-text-muted-color`, `--p-content-border-color`).
+
+Für abgeleitete Abstufungen: `color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)`.
 
 ### Defensive Fallbacks
 
-Für Host-less-Vorschau ist ein Fallback erlaubt:
+WCs können im Host-losen Dev-Modus laufen (keine Parent-Seite), daher ist ein Fallback vertretbar:
 
 ```css
-/* OK in WCs — dev preview fallback only */
+/* In WCs OK — nur Fallback für die Dev-Vorschau */
 color: var(--p-text-color, #404040);
 ```
 
-Beschränken Sie ihn auf einen je logischer Farbe, dokumentieren Sie „nur
-Dev-Vorschau“ und verwenden Sie ihn nie in Micro-Frontend-Apps.
+Beschränken Sie Fallbacks auf einen pro logischer Farbe, dokumentieren Sie sie als "nur Dev-Vorschau" und verwenden Sie sie nie in Micro-Frontend-Apps (wo der Host die Variablen immer liefert).
 
-### Variablen in JavaScript lesen
+### Variablen in JS lesen
+
+Wenn Sie Theme-Werte an Nicht-CSS-Kontexte übergeben (D3, Canvas, mermaid):
 
 ```typescript
 const styles = getComputedStyle(this.$el)
 const primaryColor = styles.getPropertyValue('--p-primary-500').trim()
 const background = styles.getPropertyValue('--p-content-background').trim()
-// pass to mermaid.init or D3.scaleOrdinal
+// an mermaid.init oder D3.scaleOrdinal übergeben
 ```
 
-## Häufige Muster
+---
+
+## Gängige Muster
 
 ```typescript
-// Presentation-neutral chart-only WC: no controls, host tokens, utilities, or scroll:
+// Darstellungsneutrale, reine Diagramm-WC: keine Steuerelemente, Host-Tokens, Utilities oder Scrollen:
 hostCssKeys: [] as const
 
-// WC that renders PrimeVue components inside Shadow DOM:
+// WC, die PrimeVue-Komponenten im Shadow DOM rendert:
 hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl'] as const
 
-// WC that renders markdown:
+// WC, die Markdown rendert:
 hostCssKeys: ['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl'] as const
 
-// Reference: mermaid WC — renders SVG directly, only needs --p-* vars:
+// Referenz: mermaid-WC — rendert SVG direkt, braucht nur --p-*-Variablen:
 hostCssKeys: ['themeConfigUrl'] as const
 ```
 
-## WC-spezifische Anti-Patterns
+---
 
-- Hexwerte in `:host`; stattdessen `var(--p-*)`.
-- Harte Dark-Mode-Farben unter `prefers-color-scheme`; Themevariablen passen sich bereits an.
-- `primeVueCssUrl` ohne PrimeVue-Verwendung.
-- PrimeVue-Overlays routinemäßig mit `appendTo: 'self'`; `PrimeVuePlugin` leitet standardmäßig in die feste Overlay-Ebene des Shadow Roots. `self` kann in scrollenden Overlays clippen.
-- `CustomEvent` ohne `bubbles: true, composed: true`; es verlässt den Shadow DOM nicht.
-- Externalisierung von `@wippy-fe/theme` aus CSS-Annahmen statt aus der vollständigen Import Map.
+## Anti-Patterns speziell für WCs
 
-## Prüfen
+- Hex-Werte fest in `:host { … }` schreiben — verwenden Sie stattdessen `var(--p-*)`.
+- `<style>`-Blöcke mit `@media (prefers-color-scheme: dark)`, die Farben für den Dunkelmodus fest kodieren — die Variablen in `theme-config.css` stimmen sich für Dunkel selbst neu ab; wenn Sie `var(--p-*)` korrekt referenzieren, gibt es den Dunkelmodus gratis.
+- `primeVueCssUrl` anfordern, wenn die WC kein PrimeVue rendert — fügt ein großes Stylesheet ohne jeden Nutzen hinzu.
+- PrimeVue-Overlays routinemäßig auf `appendTo: 'self'` setzen. Installieren Sie `PrimeVuePlugin` und behalten Sie das Standardziel; es leitet auf eine fest verankerte Overlay-Ebene im zugehörigen Shadow Root um. Ein explizites `self` ist Inline-Platzierung und kann in scrollenden Overlays abgeschnitten werden.
+- `bubbles: true, composed: true` beim Auslösen von `CustomEvent` vergessen — die Events entkommen dem Shadow DOM dann nicht.
+- Die Externalisierung von `@wippy-fe/theme` aus CSS-Annahmen ableiten statt aus der vollständigen gepinnten Import-Map des Web Host.
 
-Vergleichen Sie exakte Werte am Elementhost und Inner Root sowie die vom
-Browser aufgelöste Farbe des Steuerelements:
+---
+
+## Verifizieren
+
+Bleiben Sie nicht bei einem nicht leeren Token stehen. Vergleichen Sie den exakten konfigurierten Wert am Element-Host und am inneren Theme-Root und prüfen Sie dann die vom Browser aufgelöste Farbe, die das gerenderte Steuerelement verwendet:
 
 ```js
 const el = document.querySelector('your-element')
@@ -207,15 +195,16 @@ getComputedStyle(el).getPropertyValue('--p-primary-color')
 getComputedStyle(inner).getPropertyValue('--p-primary-color')
 ```
 
-Wiederholen Sie jede konfigurierte Familie in Auto-Hell/Dunkel und erzwungen
-Hell/Dunkel. Eine WC fordert `themeConfigUrl` an und verwendet semantische
-Tokens; sie deklariert geerbte Palette nicht neu. Vollständiger Ablauf:
-[Debugging](./debugging.md).
+Wiederholen Sie das für jede konfigurierte Familie in Auto-hell, Auto-dunkel, erzwungen Hell und erzwungen Dunkel. Eine WC fordert `themeConfigUrl` an und konsumiert semantische Tokens; sie deklariert geerbte Paletten-Standardwerte nicht erneut.
 
-## Verwandte Dokumentation
+Vollständiger Debugging-Ablauf: [Debugging](./debugging.md).
 
-- [Theme-Erstellung](./theming.md)
-- [Theming für Micro-Frontend-Apps](./micro-frontend-app-theming.md)
-- [Web-Component-Rezept](./web-component.md)
-- [Host-less-Modus](./host-less-mode.md)
-- [Compliance-Regeln](./compliance-checklist.md)
+---
+
+## Verwandte Dokumente
+
+- [theming.md](./theming.md) — Katalog der CSS-Variablen und Anti-Patterns
+- [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) — Theming für Micro-Frontend-Apps (iframe-Injektion)
+- [web-component.md](./web-component.md) — vollständige Anleitung zur Entwicklung von Web Components
+- [host-less-mode.md](./host-less-mode.md) — Dev-Overlay und Host-loser Modus
+- [compliance-checklist.md](./compliance-checklist.md) — vollständige REJECT/WARN-Regeln für Theming

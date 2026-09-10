@@ -80,7 +80,7 @@ Un bootloader es cualquier entrada `function.*` con `meta.type: bootloader`. La 
 | Campo | Requerido | Descripcion |
 |-------|----------|-------------|
 | `meta.type` | Si | Debe ser `bootloader` |
-| `meta.order` | No | Orden de ejecución (predeterminado `999`); el menor se ejecuta primero |
+| `meta.order` | No | Orden de ejecucion (predeterminado `999`); el menor se ejecuta primero |
 | `meta.description` | No | Resumen legible para humanos |
 | `meta.requires` | No | Un ID o array de IDs de bootloader/servicio. Los bootloaders anteriores deben haber devuelto `success` o `skipped`; los servicios deben existir en el registro. Un requisito incumplido detiene la secuencia restante. |
 
@@ -135,9 +135,9 @@ Los valores de `order` mas bajos se ejecutan primero. Reserva ordenes bajos para
 | `10` | Secretos y claves de encriptacion (proporcionado por el modulo) |
 | `20` | Migraciones de esquema (proporcionado por `wippy/migration`) |
 | `50` | Sembrado de datos, calentamiento de indices de busqueda |
-| `100` | Tareas a nivel de aplicación (convención) |
+| `100` | Tareas a nivel de aplicacion (convencion) |
 
-Cuando dos bootloaders comparten un orden, se ejecutan alfabéticamente por su ID de entrada totalmente calificado.
+Cuando dos bootloaders comparten un orden, se ejecutan en orden alfabetico por su ID de entrada completamente calificado.
 
 ## Bootloaders Integrados
 

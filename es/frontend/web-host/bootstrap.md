@@ -1,117 +1,115 @@
 ---
-title: "Secuencia de bootstrap"
-description: "Cómo Web Host recibe AppConfig e inicializa stores, routing, temas, renderizado y servicios en tiempo real."
+title: "Secuencia de Arranque"
+description: "Después de que el Web Host recibe su configuración, ejecuta una secuencia de inicialización fija antes de renderizar cualquier UI. La secuencia difiere ligeramente según…"
 ---
 
-# Secuencia de bootstrap
+# Secuencia de Arranque
 
-Esta página es una referencia de ciclo de vida y configuración. Los diagramas describen la inicialización del Host; no son código de bootstrap que deba copiarse.
+Después de que el Web Host recibe su configuración, ejecuta una secuencia de inicialización fija antes de renderizar cualquier UI. La secuencia difiere ligeramente según si el Web Host se carga como un módulo JS que toma el control de la página (la ruta estándar del facade) o si se ejecuta dentro de un iframe (la ruta manual, sin facade), pero los pasos internos posteriores a que la configuración esté disponible son idénticos.
 
-Después de recibir la configuración, Web Host ejecuta una secuencia fija antes de renderizar la interfaz completa. La configuración llega mediante un módulo JavaScript que toma la página o mediante un iframe integrado manualmente. Los pasos internos son iguales una vez disponible.
+## Ruta A: módulo JS (estándar, ruta del facade)
 
-## Ruta A: módulo JavaScript (estándar, fachada)
+Esta es la ruta que usa el `wippy/facade` actual. El facade sirve una página que carga un punto de entrada de módulo JS del Web Host (`module.js` para el modo **compat** o `managed-layout.js` para el modo **managed**), y el módulo toma el control de toda la página y de su historial del navegador.
 
-La versión actual de `wippy/facade` usa esta ruta. Sirve una página que carga `module.js` en modo **compat** o `managed-layout.js` en modo **managed**. El módulo controla la página y el historial.
+1. **La página carga el módulo.** El script registra `window.initWippyApp` en el `window` de la página.
 
-1. **La página carga el módulo.** El script registra `window.initWippyApp`.
-2. **La página construye `AppConfig` y llama a `initWippyApp(appConfig, rootContainer?)`.** El shell obtiene `/facade/config`, lee el bearer de `@wippy_token_info` en localStorage, añade `$schema`, `auth` y `context`, y reenvía los campos compatibles. No hay handshake PostMessage.
-
+2. **La página llama a `initWippyApp(config, rootContainer?)`.** La página ya ha obtenido `/facade/config` y pasa el payload directamente como argumento de función. No hay handshake de PostMessage.
    ```javascript
-   const events = window.initWippyApp(appConfig, '#app')
+   const events = window.initWippyApp(config, '#app')
    events.on('ready', () => console.log('App ready'))
    ```
 
-3. **Continúa la inicialización**, descrita en [Secuencia interna](#secuencia-interna).
+3. **La inicialización continúa**: vea [Secuencia interna de inicialización](#internal-init-sequence) más abajo.
 
-## Ruta B: iframe (manual, sin fachada)
+## Ruta B: iframe (manual, sin facade)
 
-Use esta ruta para integrar el host completo en un iframe con aislamiento más fuerte. Carga `iframe.html?waitForCustomConfig` y recibe configuración mediante `SetConfig` por PostMessage. La fachada actual no produce esta integración.
+Esta es la ruta que se toma cuando usted mismo incrusta el host completo dentro de un iframe, para una incrustación parcial de página con mayor aislamiento. Carga `iframe.html?waitForCustomConfig` y recibe la configuración mediante un PostMessage `SetConfig`. El facade actual no produce esto; existe para inserciones manuales.
 
-1. **Carga el iframe.** Como la URL incluye `?waitForCustomConfig`, monta un esqueleto mínimo y espera; aún no lee tokens ni llama a API.
-2. **El padre envía `SetConfig`.** Debe proporcionar una `AppConfig` completa. `/facade/config` puede aportar ajustes, pero el padre debe añadir `$schema`, `auth` y `context`:
+1. **El iframe carga.** El Web Host se carga en el navegador. Como `?waitForCustomConfig` está presente en la URL, la app monta un esqueleto mínimo y se suspende: todavía no intenta leer tokens de autenticación ni llamar a ningún endpoint de la API.
 
+2. **El padre envía `SetConfig`.** El padre ha obtenido `/facade/config` (o suministra un payload equivalente) y lo reenvía mediante PostMessage:
    ```javascript
    iframe.contentWindow.postMessage(
-     JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
-     cfg.iframe_origin
+     { type: '@gen2-chat', action: 'set-config', ...configPayload },
+     config.iframe_origin
    )
    ```
 
-3. **Web Host recibe `AppConfig`.** El handler valida tipo y acción y extrae la configuración. En Web Host 1.0.56 no autentica `event.origin` ni `event.source`, y un `SetConfig` posterior puede sustituirla. El padre debe restringir quién puede enviar mensajes y considerar confiable todo ese entorno. El aislamiento de DOM y estilos del iframe no aísla la autoridad de configuración.
-4. **Continúa la inicialización**, idéntica a la ruta A.
+3. **El Web Host recibe `AppConfig`.** El manejador de mensajes valida el tipo y la acción del envelope, y después extrae el objeto de configuración completo.
 
-## Secuencia interna
+4. **La inicialización continúa**: la ruta interna es idéntica a la Ruta A a partir de este punto.
 
-**1. Resolver y normalizar la configuración.** `resolveConfig()` fusiona lo recibido, aplica migraciones del esquema, normaliza la política de sesión y rellena el estado de configuración, autenticación y entorno.
+## Secuencia interna de inicialización
 
-**2. Obtener rutas de páginas.** Antes de crear o montar Vue, el Host espera `GET /api/public/pages/routes`. Un error de sintaxis o duplicado aborta el arranque mediante la ruta de errores; no es una instalación posterior al montaje.
+Una vez que `AppConfig` está disponible (por cualquiera de las dos rutas), el Web Host ejecuta los siguientes pasos en orden:
 
-**3. Crear aplicación y router.** Se crea Vue. El router usa el modo de `AppConfig.hostConfig.history` y registra rutas estáticas y backend antes del montaje.
+**1. Inicialización del store de Pinia.**
+Se crea la instancia raíz de Pinia y se registran todos los módulos de store. El estado de autenticación se carga desde `AppConfig.auth`: el token se guarda en memoria (o en una cookie si `hostConfig.session.type = 'cookie'`). Las URLs de entorno de `AppConfig.env` se escriben en el store para su uso por Axios y por el cliente WebSocket.
 
-**4. Instalar providers.** `setupApp()` instala Pinia, configura Axios y autenticación, instala PrimeVue y providers de tema, y conecta los demás servicios. Las aplicaciones hijas reciben la API mediante el proxy.
+**2. Configuración de Axios.**
+La instancia de Axios se configura con `APP_API_URL` como `baseURL` y con el token de autenticación inyectado como cabecera por defecto. Cualquier `axiosDefaults` de la configuración se fusiona. Esta instancia es la que reciben los iframes hijos mediante la API del proxy.
 
-**5. Montar y resolver la URL.** Solo después de los pasos anteriores se monta `App.vue`; el router resuelve entonces la URL actual con la tabla completa.
+**3. Inicialización de Vue Router.**
+El router se crea con el modo de historial especificado en `AppConfig.hostConfig.history` (`"hash"` o `"browser"`). Se registran las rutas de sistema (`/c/:id`, `/chat/:id`, `/keeper/:id`, etc.). Este es un conjunto estático: las rutas de montaje dinámicas se añaden en un paso posterior.
 
-**6. Crear clientes WebSocket bajo demanda.** No es un último paso fijo. `useWsClientRaw()` crea el cliente cuando un consumidor lo solicita. La conexión comienza inmediatamente salvo que `hostConfig.lazyWS` sea `true`; en ese caso comienza al necesitar una suscripción.
+**4. Inyección de PrimeVue y del tema.**
+PrimeVue se instala en la app de Vue. Las propiedades personalizadas CSS de `AppConfig.theming.global` y `AppConfig.theming.host` se inyectan como overrides `:root { --key: value; }` para los ámbitos correspondientes. Las cadenas `customCSS` de `theming.global` y `theming.host` se inyectan como etiquetas `<style>`, y los iconos de `theming.global` / `theming.host` se registran con Iconify. Este paso se aplica antes de que la app se monte, para que el primer render tenga el tema correcto.
+
+**5. Montaje de la app de Vue.**
+El componente raíz `App.vue` se monta en el DOM. Los usuarios ven el chrome (barra lateral, panel de chat, esqueleto del layout) en este punto, aunque el contenido de la página aún puede estar cargándose.
+
+**6. Registro de rutas dinámicas.**
+La app llama a `GET /api/public/pages/routes` para obtener la lista de páginas de vista registradas. Para cada página cuya entrada de registry declara `mountRoute`, se llama a `router.addRoute('app', ...)` para añadir la ruta al router en vivo. La ruta con nombre `app` es la ruta de layout padre que envuelve todo el contenido.
+
+Cualquier conflicto en las rutas de montaje (rutas duplicadas, segmentos reservados, sintaxis malformada) en esta etapa establece un error fatal en el store de páginas. `App.vue` lo detecta y renderiza un `<wippy-error>` a pantalla completa con un mensaje descriptivo en lugar de la UI normal.
+
+**7. Resolución de la URL.**
+El router resuelve la URL actual (de `window.location` en modo de historial de navegador o del hash en modo hash). Si la URL coincide con una ruta de sistema o con una ruta de montaje registrada, se renderiza la página correspondiente. Si no coincide con ninguna ruta, el router recurre a la vista de inicio del chat.
+
+**8. Conexión WebSocket.**
+El cliente WebSocket se conecta a `APP_WEBSOCKET_URL` usando el token de autenticación. Los eventos en tiempo real (mensajes entrantes, actualizaciones de sesión, cambios de estado de artefactos) empiezan a fluir. La conexión se mantiene durante toda la vida de la página.
 
 ## Interfaz TypeScript de AppConfig
 
-La declaración abreviada muestra los campos principales aceptados por `initWippyApp` y `SetConfig`. Los tipos auxiliares y campos menos comunes de `app-config/types.ts` siguen siendo autoritativos. No hay campos `feature` ni `fe_mode` en AppConfig: `fe_mode` selecciona la entrada de módulo en la fachada y managed se expresa mediante `hostConfig.layout`.
+El tipo de configuración completo aceptado tanto por `initWippyApp` como por `SetConfig`. Tenga en cuenta que no hay campo `feature` ni campo `fe_mode` en `AppConfig`: `fe_mode` es un parámetro de requisito del facade que selecciona el punto de entrada del módulo, y el modo managed se transmite al host mediante `hostConfig.layout`:
 
 ```typescript
 interface AppConfig {
-  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.0.xsd
+  $schema: 'wippy-context-2.0'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: ApiRoutesOverride
-  tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
-  themeMode?: 'auto' | 'light' | 'dark'
+  tanstack?: TanstackConfig    // Valores por defecto de TanStack Query (globales + por categoria basada en rol)
   theming: AppTheming
   hostConfig: HostConfig
   context: AppContext
 }
 
 interface AppAuthConfig {
-  token: string            // Bearer token
-  expiresAt: string        // ISO 8601 expiry timestamp
+  token: string            // Token Bearer
+  expiresAt: string        // Marca de expiracion ISO 8601
 }
 
 interface AppEnv {
   APP_API_URL: string
   APP_AUTH_API_URL: string
   APP_WEBSOCKET_URL: string
+  [key: string]: string | undefined
 }
 
 interface AppTheming {
   global?: ThemingScope
-  host?: HostThemingScope
-  children?: ChildrenThemingScope
-}
-
-interface CssVariablesMap {
-  [key: string]: string | Record<string, string> | undefined
-  '@dark'?: Record<string, string>
-  '@light'?: Record<string, string>
+  host?: ThemingScope
+  children?: ThemingScope
 }
 
 interface ThemingScope {
   customCSS?: string
-  cssVariables?: CssVariablesMap
-  fonts?: FontConfig[]
+  cssVariables?: Record<string, string>
   icons?: Record<string, unknown>
   iconSets?: Record<string, Record<string, unknown>>
-}
-
-interface HostThemingScope extends ThemingScope {
-  i18n?: Partial<I18NTextTypes>
-}
-
-interface ChildrenThemingScope {
-  customCSS?: string
-  cssVariables?: CssVariablesMap
-  fonts?: FontConfig[]
 }
 
 interface HostConfig {
@@ -123,11 +121,9 @@ interface HostConfig {
   hideNavBar?: boolean
   disableRightPanel?: boolean
   hideSessionSelector?: boolean
-  renderEngine?: 'iframe' | 'fragment'
-  lazyWS?: boolean
   additionalNavItems?: PageApi.Page[]
   stateCache?: { maxPages?: number; maxSizePerPage?: number }
-  allowAdditionalTags?: Record<string, string[]>   // tag → allowed attributes
+  allowAdditionalTags?: Record<string, string[]>   // etiqueta -> atributos permitidos
   chat?: {
     convertPasteToFile?: {
       enabled: boolean
@@ -138,16 +134,18 @@ interface HostConfig {
   layout?: HostLayoutDeclaration
 }
 
-// TanStack Query defaults. A top-level field (shared by host + children, like
-// apiRoutes). Default behavior (no config) is refetchOnWindowFocus: false so
-// alt-tabbing back doesn't reload in-flight content.
+// Valores por defecto de TanStack Query. Un campo de nivel superior (compartido
+// por host + hijos, como apiRoutes). El comportamiento por defecto (sin config)
+// es refetchOnWindowFocus: false, para que volver con alt-tab no recargue el
+// contenido en vuelo.
 interface TanstackConfig {
-  default?: TanstackQueryOptions   // overrides the global query defaults
-  content?: TanstackQueryOptions   // single-resource renders (page/artifact/session/entry/model/upload)
-  lists?: TanstackQueryOptions     // navigation / index / list queries
+  default?: TanstackQueryOptions   // sobrescribe los valores por defecto globales de consulta
+  content?: TanstackQueryOptions   // renders de recurso unico (page/artifact/session/entry/model/upload)
+  lists?: TanstackQueryOptions     // consultas de navegacion / indice / lista
 }
 
-// JSON-safe subset of TanStack query options (no functions — config is JSON).
+// Subconjunto seguro en JSON de las opciones de consulta de TanStack (sin
+// funciones: la configuracion es JSON).
 interface TanstackQueryOptions {
   refetchOnWindowFocus?: boolean
   refetchOnReconnect?: boolean
@@ -162,50 +160,46 @@ interface AppContext {
   resourceId: string
   resourceType: 'page' | 'artifact'
   route?: string
-  parentResourceId?: string
-  nestingDepth?: number
-  isNavOwner?: boolean
-  layoutPanelId?: string
-  layoutId?: string
-  layout?: unknown
-  extensions?: Record<string, unknown>
+  [key: string]: unknown
 }
 ```
 
-> **Limitación actual de la fachada.** Web Host acepta `AppConfig.tanstack` y el endpoint devuelve el objeto configurado. El shell estándar no lo copia actualmente a la AppConfig de `initWippyApp`. No dependa del parámetro `tanstack` en esa ruta hasta que se implemente. Un integrador manual puede incluirlo.
+## Fuentes de configuración y prioridad
 
-## Fuentes y prioridad de configuración
+El Web Host resuelve la configuración a partir de múltiples fuentes, en orden de prioridad de menor a mayor:
 
-De menor a mayor prioridad:
+1. **Valores por defecto incorporados**: definidos en el propio bundle del Web Host.
+2. **Parámetros de consulta de la URL**: `?token=<token>`, `?expiresAt=<timestamp>`, `?persist` para sesiones con cookie. Útiles para acceso directo en desarrollo sin una página padre.
+3. **Argumento de `initWippyApp()`**: la ruta estándar del facade (módulo JS); tiene precedencia sobre los parámetros de la URL.
+4. **PostMessage `SetConfig`**: la ruta manual de iframe sin facade, usada cuando `?waitForCustomConfig` está presente.
 
-1. **Valores integrados** del bundle.
-2. **Parámetros URL**: `?token=<token>`, `?expiresAt=<timestamp>`, `?persist` para sesiones cookie; útiles en desarrollo.
-3. **Argumento de `initWippyApp()`**, construido por el shell; prevalece sobre la URL.
-4. **PostMessage `SetConfig`**, para el iframe manual con `?waitForCustomConfig`.
+En la práctica, los despliegues de producción usan siempre `initWippyApp()` (la ruta del facade) o PostMessage (incrustación manual en iframe). Los parámetros de URL son una comodidad de desarrollo para cargar el host directamente en el navegador con un token.
 
-En producción se usa `initWippyApp()` o PostMessage. Los parámetros URL son una comodidad de desarrollo.
+## Diagrama de arranque
 
-## Diagrama de bootstrap
+La ruta estándar del facade (módulo JS):
 
 ```
 module.js / managed-layout.js loaded on the page
   │
-  ├─ shell assembles AppConfig from /facade/config + local auth
-  ├─ window.initWippyApp(appConfig, '#app')
-  │     appConfig = { $schema, auth, env, theming, hostConfig, context, ... }
+  ├─ window.initWippyApp(config, '#app')
+  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
   │
-  ├─ resolveConfig() → migrate, normalize, and populate config/auth/env state
-  ├─ await GET /api/public/pages/routes
-  ├─ create Vue app + router
-  │     static system routes + validated backend mount routes
-  ├─ setupApp() → Pinia, Axios, PrimeVue, theming, and other providers
-  ├─ mount App.vue → resolve the current URL
-  └─ consuming components request WebSocket clients
-        eager connection unless hostConfig.lazyWS is true
+  ├─ Init Pinia (auth store, config store)
+  ├─ Configure Axios (baseURL, auth header)
+  ├─ Create Vue Router (history mode, system routes)
+  ├─ Install PrimeVue, inject theme CSS
+  ├─ Mount App.vue
+  │
+  ├─ GET /api/public/pages/routes
+  │     router.addRoute('app', ...) for each backend mountRoute
+  │
+  ├─ Resolve current URL → render matching view
+  └─ Connect WebSocket
 ```
 
-## Véase también
+## Vea también
 
-- [Punto de entrada de la fachada](./entry-point.md) — Construcción y entrega de AppConfig
-- [Layout multipanel](./multi-panel-layout.md) — Ruta managed de `managed-layout.js`
-- [Motores de renderizado](./render-engines.md) — Renderizado de páginas una vez cargadas
+- [Punto de Entrada del Facade](./entry-point.md): cómo `wippy/facade` construye y entrega `AppConfig`
+- [Layout Multipanel](./multi-panel-layout.md): la ruta de arranque de managed-layout servida por `managed-layout.js`
+- [Motores de Renderizado](./render-engines.md): cómo se renderiza una página una vez cargada (iframe srcdoc frente a Web Fragment)

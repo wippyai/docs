@@ -1,28 +1,28 @@
 ---
 title: "Dynamisches Routing"
-description: "Wie der Web Host Backend-Mount-Routen registriert, Kindnavigation synchronisiert und Links zur Laufzeit klassifiziert."
+description: "Der Router des Web Hosts ist nicht statisch konfiguriert. Beim Start holt er die aktuelle Menge der Page-Mount-Routen vom Backend und fügt sie dem…"
 ---
 
 # Dynamisches Routing
 
-Der Web Host kombiniert statisch definierte Systemrouten mit Page-Mount-Routen, die er beim Start vom Backend abruft. Ein neuer `view.page`-Eintrag mit einer `mountRoute`-Angabe wird daher ohne Änderung des Web-Host-Bundles wirksam.
+Der Router des Web Hosts ist nicht statisch konfiguriert. Beim Start holt er die aktuelle Menge der Page-Mount-Routen vom Backend und fügt sie der Vue-Router-Instanz hinzu. Das bedeutet, dass ein neuer `view.page`-Eintrag mit einem `mountRoute`-Anspruch wirksam wird, ohne dass sich das Web-Host-Bundle selbst ändert.
 
 ![Mount route sync](../diagrams/mountroute-sync.svg)
 
-## Synchronisierung der Mount-Routen beim Start
+## Mount-Route-Sync beim Start
 
-Wenn die Web-Host-Anwendung initialisiert wird, ruft sie vor dem Rendern der Navigation Folgendes auf:
+Wenn die Web-Host-Anwendung initialisiert wird, ruft sie auf, bevor sie irgendeine Navigation rendert:
 
 ```
 GET /api/public/pages/routes
 ```
 
-Die Antwort ist ein Envelope `{ success, count, routes }`, wobei `routes` eine Map aus Mount-Routenmuster → Seiten-ID ist. Sie enthält auch verborgene beziehungsweise nicht angekündigte Seiten, die dennoch eine URL beanspruchen. Für jeden Eintrag registriert der Host eine Vue-Router-Route, die den deklarierten Pfad auf die Page-Loader-Komponente abbildet und als Kind der Elternroute `'app'` hinzufügt.
+Die Antwort ist ein Envelope `{ success, count, routes }`, wobei `routes` eine Map von Mount-Route-Muster → Page-ID ist (sie enthält auch versteckte/nicht angekündigte Pages, die dennoch eine URL beanspruchen). Für jeden Eintrag registriert der Host eine Vue-Router-Route, die den deklarierten Pfad auf die Page-Loader-Komponente abbildet, und fügt sie als Child der Parent-Route `'app'` hinzu.
 
 ```typescript
-// Simplified from the Web Host bootstrap
-const { data } = await api.get('/api/public/pages/routes')
-for (const [mountRoute, pageId] of Object.entries(data.routes)) {
+// Vereinfacht aus dem Web-Host-Bootstrap
+const { routes } = await api.get('/api/public/pages/routes')
+for (const [mountRoute, pageId] of Object.entries(routes)) {
   router.addRoute('app', {
     path: mountRoute,
     component: MountRoutePage,
@@ -31,11 +31,11 @@ for (const [mountRoute, pageId] of Object.entries(data.routes)) {
 }
 ```
 
-Danach rendert eine Navigation zu `/home/anything` die Seite `main` über ihre ausgewählte Engine; `/demo/anything` verhält sich für `iframe-demo` ebenso — ohne fest codiertes Wissen über diese Pfade im Host-Bundle.
+Ab diesem Punkt führt die Navigation zu `/home/anything` dazu, dass der Router den iframe der Page `main` rendert, und die Navigation zu `/demo/anything` dazu, dass er den iframe der Page `iframe-demo` rendert — ohne dass das Host-Bundle diese Pfade fest verdrahtet kennt.
 
 ## Einen Pfad mit `mountRoute` beanspruchen
 
-Ein `view.page`-Eintrag beansprucht einen Host-Router-Pfad, indem er `mountRoute` im Block `meta` seiner `_index.yaml` setzt:
+Ein `view.page`-Eintrag beansprucht einen Router-Pfad des Hosts, indem er `mountRoute` in seinem `meta`-Block in `_index.yaml` setzt:
 
 ```yaml
 - name: main
@@ -43,61 +43,63 @@ Ein `view.page`-Eintrag beansprucht einen Host-Router-Pfad, indem er `mountRoute
   meta:
     type: view.page
     mountRoute: /home/:part(.*)*
+    ...
 ```
 
-Das aktuelle Registry-Schema liest das erstellte Feld als `mountRoute`, speichert es intern in der Registry als `mount_route` und gibt in der API `mountRoute` aus. Verwenden Sie die oben gezeigte Lower-Camel-Case-Schreibweise.
+`mountRoute` ist die aktuelle Kompatibilitätsschreibweise für einen
+Groß-/Kleinschreibungsfehler im Backend. Der beabsichtigte Backend-Key ist
+`mount_route`; schreiben Sie weiterhin `mountRoute`, bis die Backend-Korrektur
+ausgeliefert wird.
 
-`mountRoute` akzeptiert ausschließlich die Catch-all-Formen `/:part(.*)*` für den Root oder `/<literal-prefix>/:part(.*)*`. Das Präfix besteht aus mindestens einem literalen Segment aus Kleinbuchstaben, Ziffern und Bindestrichen und endet mit dem erforderlichen Wildcard-Segment `:part(.*)*`. Beliebige Vue-Router-Muster — benannte Parameter, benutzerdefinierte reguläre Ausdrücke oder andere Parameternamen wie `/home/:id` oder `/users/:userId(\d+)` — werden abgewiesen. Bei Backend-Einträgen vom Typ `view.page` führt `validate_mount_route_syntax` dazu, dass `GET /api/public/pages/routes` HTTP 500 zurückgibt; der Hoststart stoppt, bevor diese Einträge seinen Router erreichen. Nach einer erfolgreichen Antwort und dem Zusammenführen der Konfiguration validiert der Host die resultierende Routenmenge nochmals, einschließlich Syntax und Konflikten mit Systemrouten. Das Wildcard-Segment `:part(.*)*` erlaubt der Kindanwendung, eigene Unterrouten wie `/settings` oder `/profile/edit` zu verwalten, während der Host das Präfix `/home` besitzt.
+`mountRoute` akzeptiert nur die Catch-all-Formen `/:part(.*)*` (Root) oder `/<literal-prefix>/:part(.*)*`, wobei der Präfix aus einem oder mehreren literalen Segmenten aus Kleinbuchstaben, Ziffern und Bindestrichen besteht und mit dem erforderlichen Platzhalter `:part(.*)*` endet. Beliebige Vue-Router-Muster — benannte Parameter, eigene reguläre Ausdrücke oder abweichende Parameternamen (z. B. `/home/:id`, `/users/:userId(\d+)`) — werden zurückgewiesen: Der Host meldet einen `syntax`-Mount-Route-Konflikt, das `validate_mount_route_syntax` des Backends schlägt fehl und `GET /api/public/pages/routes` liefert HTTP 500 (dargestellt als fataler Vollbildfehler). Das Platzhaltersegment `:part(.*)*` erlaubt es der Child-Anwendung, ihre eigenen Unterrouten zu verwalten (z. B. `/home/settings`, `/home/profile/edit`), während der Host den Präfix `/home` besitzt.
 
-Zwei Einträge dürfen nicht dieselbe Route beanspruchen. Beanspruchen zwei `view.page`-Einträge dieselbe `mountRoute`, trägt der Backend-Validator `validate_mount_routes` in `page_registry.lua` einen Konflikt durch eine doppelte Route in dieselbe Problemliste wie Syntaxfehler ein. `GET /api/public/pages/routes` gibt dann HTTP 500 zurück, der Hoststart stoppt und der Fehler wird über den Host-Error-Handler weitergegeben. Das Duplikat wird **nicht** stillschweigend ignoriert.
+Zwei Einträge dürfen nicht dieselbe Route beanspruchen. Wenn zwei `view.page`-Einträge **dieselbe** `mountRoute` beanspruchen, trägt der Backend-Validator (`validate_mount_routes` in `page_registry.lua`) einen Duplicate-Route-Konflikt in dieselbe Issues-Liste ein wie Syntaxfehler, sodass `GET /api/public/pages/routes` HTTP 500 liefert und der Web Host ein fatales Vollbild-`<wippy-error>` rendert — genau wie bei einer fehlerhaften `mountRoute`. Es wird **nicht** stillschweigend ignoriert.
 
-Zwischen einem Root-Catch-all (`/:part(.*)*`) und einer spezifischeren Systemroute (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) oder einem längeren Mount mit literalem Präfix gilt weiterhin die Auflösungspriorität von Vue Router: Die spezifischere Route trifft zu. Diese Priorität ist keine Behandlung doppelter Routen.
+Das einzige First-wins-Verhalten ist die Laufzeitpriorität des Vue Routers zwischen einem Root-Catch-all (`/:part(.*)*`) und einer spezifischeren Systemroute (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) oder einem längeren Mount mit literalem Präfix — die spezifischere Route greift zuerst. Das ist Vorrang bei der Routenauflösung, keine Behandlung doppelter Routen.
 
-## URL-Synchronisierungsschleife
+## Die URL-Sync-Schleife
 
-Nach dem Laden einer Seite in ihrem Laufzeitkontext navigiert die Kindanwendung intern mit ihrem eigenen Router. Der Host spiegelt diese Navigationen in seiner URL-Leiste, damit Zurück-Schaltfläche, Lesezeichen und kopierte URLs korrekt funktionieren. Die Proxy-Bridge synchronisiert beide Router für beide Page Engines.
+Sobald eine Page in ihrem iframe geladen ist, navigiert die Child-Anwendung intern mit ihrem eigenen Router. Diese internen Navigationen müssen sich in der URL-Leiste des Hosts widerspiegeln, damit der Zurück-Button des Browsers, Lesezeichen und das Kopieren der URL korrekt funktionieren. Das geschieht über ein PostMessage-Paar.
 
 ![Frontend Registry](../diagrams/frontend-registry.svg)
 
-### Kind → Host: `CmdRouteChanged`
+### Child → Host: `CmdRouteChanged`
 
-Wenn der Router der Kindanwendung eine Navigation bestätigt, etwa von `/settings` nach `/profile` unter dem Mount `/home`, meldet er die interne Route über die Proxy-Bridge. Der iframe-Adapter postet an `window.parent`; der Fragment-Adapter leitet dasselbe Protokoll an sein erfasstes Hostfenster:
+Wenn der Router der Child-Anwendung eine Navigation abschließt (z. B. der Benutzer wechselt von `/home/settings` zu `/home/profile`), sendet das Child eine Nachricht an sein Parent-Window:
 
 ```typescript
-// In the child application, on internal route change.
-// App code must never post these messages directly — use the proxy API:
+// In der Child-Anwendung, bei internem Routenwechsel.
+// App-Code darf diese Nachrichten nie direkt senden — nutzen Sie die Proxy-API:
 import { host } from '@wippy-fe/proxy'
 
-host.onRouteChanged('/profile', navId)   // internal route only; the host prepends the mount prefix. navId is an optional number
+host.onRouteChanged('/profile', navId)   // nur interne Route; der Host stellt den Mount-Präfix voran. navId ist eine optionale Zahl
 ```
 
-Der Proxy serialisiert dies in einem internen Wire-Envelope. Dieses Protokoll ist keine Anwendungs-API: Kopieren Sie es nicht und rufen Sie `window.parent.postMessage` nicht direkt auf.
+Der Proxy serialisiert das über einen internen Wire-Envelope. Dieses Protokoll ist keine Anwendungs-API: Kopieren Sie es nicht und rufen Sie `window.parent.postMessage` nicht direkt auf.
 
-Der Message-Handler des Hosts fängt die Nachricht ab, ruft `router.push(path)` auf, um die URL-Leiste durch einen SPA-Routenwechsel ohne vollständiges Neuladen der Seite zu aktualisieren und dabei einen Eintrag im Browserverlauf hinzuzufügen, und sendet anschließend zurück:
+Der Message-Handler des Hosts fängt das ab, ruft `router.push(path)` auf, um die URL-Leiste über einen SPA-Routenwechsel zu aktualisieren (mit einem Eintrag in der Browser-History), ohne ein vollständiges Neuladen der Seite auszulösen, und sendet dann zurück:
 
-### Host → Kind: `UrlWasUpdatedInParent`
+### Host → Child: `UrlWasUpdatedInParent`
 
-Nachdem der Host seine URL-Leiste aktualisiert hat, gibt der Proxy `@history` an das Kind aus. `@wippy-fe/router` konsumiert dieses Ereignis und gleicht den Memory Router ab.
+Nachdem der Host seine URL-Leiste aktualisiert hat, gibt der Proxy `@history` an das Child aus. `@wippy-fe/router` konsumiert dieses Event und gleicht den Memory-Router ab.
 
-Der Host sendet die **interne** Route des Kinds zurück, also den Unterpfad hinter dem Mount-Präfix, nicht den vollständigen Hostpfad. Der Roundtrip ist dadurch symmetrisch: Das Kind sendet `internalRoute: '/profile'`, der Host setzt seine URL-Leiste auf `/home/profile` und gibt `path: '/profile'` zurück, das der Memory Router des Kinds unverändert übernimmt. Das Kind hört über den Ereigniskanal `@history` und behandelt dies als Bestätigung, dass die Host-URL mit seinem internen Zustand übereinstimmt.
+Der Host sendet die **interne** Route des Childs zurück (den Unterpfad nach dem Mount-Präfix), nicht den vollen Host-Pfad — der Rundlauf ist also symmetrisch: Das Child sendet `internalRoute: '/profile'`, der Host setzt seine URL-Leiste auf `/home/profile` und schickt `path: '/profile'` zurück, was der Memory-Router des Childs wortgetreu pusht. Das Child hört über den Event-Kanal `@history` mit und behandelt es als Bestätigung, dass die URL des Hosts nun mit seinem internen Zustand übereinstimmt.
 
-Der Roundtrip hält Host-URL-Leiste, Kindrouter und Browserverlauf synchron, ohne dass der Host die interne Routingstruktur des Kinds kennen muss.
+Der Rundlauf hält die URL-Leiste des Hosts, den Child-Router und den Browser-History-Eintrag synchron, ohne dass der Host irgendetwas über die interne Routing-Struktur des Childs wissen muss.
 
 ## `classifyLink`
 
-In der iframe-Engine installiert `preventLinkClicks: true` einen Hook auf Dokumentebene, der rohe `<a>`-Klicks abfängt, bevor der Browser sie verarbeitet; siehe [view.page](./view-page.md). Der Web-Fragment-Adapter in Web Host 1.0.56 installiert diesen Hook für rohe Klicks nicht. Verwenden Sie für portable Vue-Navigation `AutoRouterLink` aus `@wippy-fe/router`; es ruft in beiden Engines dieselbe API `classifyLink` auf.
-
-Der Klassifizierer gibt eines von vier Ergebnissen zurück:
+Wenn eine Page `preventLinkClicks: true` in ihren Proxy-Injections hat (siehe [view.page](./view-page.md)), fängt der Host Klicks auf `<a>` innerhalb des iframes ab, bevor der Browser sie behandelt. Jeder abgefangene Link wird an `classifyLink` übergeben, das entscheidet, wie damit umzugehen ist:
 
 | `LinkKind` | Bedingung | Aktion |
-|------------|-----------|--------|
-| `host-nav` | Oberstes Pfadsegment entspricht einem bekannten literalen `mountRoute`, einer integrierten Systemroute (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) oder einem Root-Mount-Catch-all | `preventDefault` + `host.navigate(normalizedPath)` |
-| `child-nav` | Der Kindrouter löst den Pfad zu einer echten Route auf, die kein Catch-all ist, oder nichts anderes hat ihn beansprucht | Der Router der Unteranwendung entscheidet intern; der Host ruft **nicht** `preventDefault` auf und lädt den Seitenkontext nicht neu |
-| `external` | Andere Origin oder ein Schema, das nicht `http` ist (`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`) | Browserverhalten (zum Beispiel Öffnen in einem neuen Tab) |
+|---|---|---|
+| `host-nav` | Das oberste Pfadsegment passt zu einem bekannten `mountRoute`-Literal, zu einer eingebauten Systemroute (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) oder zu einem Root-Mount-Catch-all | `preventDefault` + `host.navigate(normalizedPath)` |
+| `child-nav` | Der eigene Router des iframes löst den Pfad zu einer echten (Nicht-Catch-all-)Route auf, oder nichts anderes hat ihn beansprucht | Der `RouterLink` der Subapp entscheidet in-app; der Host ruft NICHT `preventDefault` auf und lädt den iframe NICHT neu |
+| `external` | Anderer Origin oder ein Nicht-`http`-Schema (`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`) | Browser-Standardverhalten (öffnet z. B. in einem neuen Tab) |
 | `ignore` | Leeres `href` oder reiner Hash (`#…`) | `preventDefault` |
 
-Der Klassifizierer prüft zuerst den lokalen Router der Seite; ein Link, den das Kind selbst auflösen kann, bleibt dadurch anwendungsintern.
+Der Klassifizierer prüft zuerst den lokalen Router des iframes, damit ein Link, den das Child selbst auflösen kann, in der App bleibt.
 
-`classifyLink` verwendet dieselbe beim Start geladene Routenliste. Wenn der Kindrouter `/demo/step-2` nicht beansprucht, wird der Link als `host-nav` klassifiziert, weil `/demo/:part(.*)*` eine registrierte Mount-Route ist. Der Host navigiert zur Seite `iframe-demo`, statt die Seite vollständig neu zu laden.
+`classifyLink` zieht dieselbe Routenliste heran, die beim Start geholt wurde. Ein Link auf `/demo/step-2` wird als `host-nav` klassifiziert, weil `/demo/:part(.*)*` eine registrierte Mount-Route ist — der Host navigiert zur Page `iframe-demo`, statt die Seite vollständig neu zu laden.
 
-Eine Kindanwendung muss andere Seiten des Systems daher nicht kennen. In einem iframe mit `preventLinkClicks: true` wird ein gewöhnliches `<a href="/demo/step-2">` abgefangen und klassifiziert. Verwenden Sie `AutoRouterLink`, wenn dieselbe Navigation in beiden Page Engines funktionieren muss.
+Das bedeutet, dass eine Child-Anwendung nichts über andere Pages im System wissen muss. Sie kann gewöhnliche `<a href="/demo/step-2">`-Links rendern, und der Link-Klassifizierer des Hosts behandelt die Navigation korrekt.

@@ -1,6 +1,6 @@
 ---
-title: "Seguridad y control de acceso"
-description: "Inspecciona el actor y el alcance actuales, evalúa políticas y gestiona tokens de autenticación."
+title: "Seguridad y Control de Acceso"
+description: "Gestionar actores de autenticación, alcances de autorizacion y politicas de acceso."
 ---
 
 # Seguridad y control de acceso
@@ -59,18 +59,12 @@ Verifica si el contexto actual permite una accion sobre un recurso.
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new({
-        message = "Cannot read user data",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new({
-        message = "Cannot modify order",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -256,10 +250,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new({
-        message = "Access denied",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -343,7 +334,7 @@ Validar token y obtener actor/alcance.
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, err
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -385,9 +376,7 @@ Las operaciones de seguridad estan sujetas a evaluacion de politica de seguridad
 |--------|---------|-------------|
 | `security.policy.get` | ID de Policy | Acceder a definiciones de políticas |
 | `security.policy_group.get` | ID de Group | Acceder a alcances nombrados |
-| `security.scope.create` | `custom` | Crear un alcance personalizado con `new_scope` |
-| `security.scope.create` | `with` | Añadir una política con `scope:with` |
-| `security.scope.create` | `without` | Eliminar una política con `scope:without` |
+| `security.scope.create` | `custom`, `with`, `without` | Crear alcances personalizados (`new_scope`) y agregar/quitar politicas (`scope:with`, `scope:without`) |
 | `security.actor.create` | ID de Actor | Crear actores |
 | `security.token_store.get` | ID de Store | Acceder a almacenes de tokens |
 | `security.token.validate` | ID de Store | Validar tokens |
@@ -402,8 +391,8 @@ Consulta [Modelo de seguridad](system/security.md) para configurar políticas.
 |-----------|------|--------------|
 | Sin contexto | `errors.INTERNAL` | no |
 | ID de almacen de tokens vacio | `errors.INVALID` | no |
-| Permiso denegado para una política, un alcance nombrado o una operación con tokens | `errors.INVALID` | no |
-| Construcción de actor o alcance, cambio de alcance o adquisición del almacén de tokens denegados | genera un error Lua | no |
+| Permiso denegado (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | no |
+| Permiso denegado (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | lanzado como error de Lua | no |
 | Politica no encontrada | `errors.INTERNAL` | no |
 | Almacen de tokens no encontrado | `errors.INTERNAL` | no |
 | Almacen de tokens cerrado | `errors.INTERNAL` | no |

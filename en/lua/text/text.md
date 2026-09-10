@@ -1,6 +1,6 @@
 ---
 title: "Text Processing"
-description: "Compile regular expressions, compare text, create patches, and split documents into chunks."
+description: "Regular expressions, text diffing, and semantic text splitting."
 ---
 
 # Text Processing
@@ -394,19 +394,8 @@ if err then
     return nil, err
 end
 
-local fs = require("fs")
-local docs, docs_err = fs.get("app:docs")
-if docs_err then
-    return nil, docs_err
-end
-local readme, read_err = docs:readfile("README.md")
-if read_err then
-    return nil, read_err
-end
-local chunks, split_err = splitter:split_text(readme)
-if split_err then
-    return nil, split_err
-end
+local readme = fs.get("app:docs"):readfile("README.md")
+local chunks, err = splitter:split_text(readme)
 ```
 
 This partial recipe requires the entry to enable both `text` and `fs`, a configured `app:docs` filesystem resource, and a readable `README.md` within that resource.
@@ -423,6 +412,7 @@ This partial recipe requires the entry to enable both `text` and `fs`, a configu
 | `reference_links` | boolean | false | Preserve reference links |
 | `heading_hierarchy` | boolean | false | Respect heading levels |
 | `join_table_rows` | boolean | false | Keep table rows together |
+| `separators` | string[] | nil | Custom separator list |
 
 ### `splitter:split_text`
 

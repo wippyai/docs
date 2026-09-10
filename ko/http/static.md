@@ -61,7 +61,7 @@ entries:
 
 `/static/css/style.css` 요청은 `./public/css/style.css`를 서빙합니다.
 
-subdirectory를 제공하려면 해당 위치를 root로 하는 filesystem entry를 `fs` reference로 지정합니다. 예를 들어 `fs.directory`의 `directory:`를 subdirectory로 설정합니다.
+하위 디렉토리를 서빙하려면 그 위치를 루트로 하는 파일시스템 엔트리를 `fs`로 참조하세요—예를 들어 `directory:`를 해당 하위 디렉토리로 설정한 `fs.directory`입니다:
 
 ```yaml
 entries:

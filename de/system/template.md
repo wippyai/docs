@@ -1,6 +1,6 @@
 ---
 title: "Template-Engine"
-description: "Konfigurieren Sie Jet-Template-Sets, Quellen, Namen, Vererbung und gemeinsame Engine-Einstellungen."
+description: "Template-Rendering mit CloudyKit Jet."
 ---
 
 # Template-Engine
@@ -33,9 +33,9 @@ Die gesamte Konfiguration eines Template-Sets ist optional:
 | `engine.development_mode` | bool | false | Template-Caching deaktivieren |
 | `engine.delimiters.left` | string | `{{` | Variablen-Öffnungstrennzeichen |
 | `engine.delimiters.right` | string | `}}` | Variablen-Schließtrennzeichen |
-| `engine.delimiters.comment_left` | string | `{*` | Validiertes öffnendes Kommentartrennzeichen; wird vom aktuellen Loader nicht angewendet |
-| `engine.delimiters.comment_right` | string | `*}` | Validiertes schließendes Kommentartrennzeichen; wird vom aktuellen Loader nicht angewendet |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Validierte Erweiterungsliste; wird vom aktuellen Loader nicht zur Erkennung verwendet |
+| `engine.delimiters.comment_left` | string | `{*` | Wird nur validiert; Kommentare verwenden immer Jets `{*` |
+| `engine.delimiters.comment_right` | string | `*}` | Wird nur validiert; Kommentare verwenden immer Jets `*}` |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Wird nur validiert; die Namensauflösung probiert immer Jets eingebaute `.jet`, `.html.jet`, `.jet.html` |
 | `engine.globals` | map | - | Variablen verfügbar für alle Templates |
 
 Zur Laufzeit konfigurieren `development_mode`, die linken und rechten Ausdruckstrennzeichen sowie `globals` das Jet-Set. Die Felder für Kommentartrennzeichen und Erweiterungen werden in dieser Version akzeptiert und validiert, aber vom In-Memory-Jet-Loader nicht angewendet. Änderungen daran beeinflussen weder das Parsing noch die Template-Erkennung.

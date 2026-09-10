@@ -1,6 +1,6 @@
 ---
 title: "Event Bus"
-description: "Publish and observe best-effort runtime and application events."
+description: "Publish and subscribe to events for observability — monitoring runtime and application activity and reacting to it."
 ---
 
 # Event Bus

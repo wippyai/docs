@@ -199,6 +199,8 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -206,22 +208,26 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-Limit execution time and recycle warm instances that retain too much linear memory:
+The `limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
 
 ```yaml
 limits:
   max_execution_ms: 5000
-  max_retained_memory_bytes: 67108864
-  retained_memory_check_interval: 16
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `max_execution_ms` | `0` | Maximum call duration in milliseconds; `0` disables the timeout |
-| `max_retained_memory_bytes` | 64 MiB | Recycle a warm worker instance after a call when retained memory exceeds this value; an explicit `0` disables recycling |
-| `retained_memory_check_interval` | See below | Number of completed calls between retained-memory checks |
+| `max_execution_ms` | unlimited | Wall-clock budget for one call. When exceeded, the execution is cancelled and an error is returned. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Post-call recycling trigger. A warm worker whose linear memory exceeds this is retired after the call instead of being reused. An explicit `0` disables retained-memory recycling. |
+| `retained_memory_check_interval` | `16` with the built-in limit, every call with an explicit limit | Number of calls between post-call memory inspections. |
+| `max_open_sockets` | `16` | Concurrently open connections per instance for the `socket` host. |
+| `socket_timeout_ms` | `30000` | Deadline for a `socket` dial and for each send/receive. |
 
-When the execution-time limit is exceeded, the call is cancelled and returns an error. The default 64 MiB retained-memory limit is checked every 16 calls. When `max_retained_memory_bytes` is set explicitly to a positive value and the interval is omitted, the runtime checks after every call. Set a positive interval to amortize those checks.
+Negative values are rejected at boot.
 
 ## WASI Configuration
 
@@ -307,7 +313,7 @@ if filter_err then return nil, filter_err end
 
 ### Async Sleep with WASI Clocks
 
-WASM components that import `wasi:clocks`, `wasi:io`, and the separate `wasi:poll` profile can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
+WASM components that import `wasi:clocks`, `wasi:io` and `wasi:poll` can use clocks and polling. The async yield mechanism integrates with the Wippy dispatcher:
 
 ```yaml
   - name: sleep_ms

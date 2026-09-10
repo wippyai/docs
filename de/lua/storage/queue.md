@@ -1,6 +1,6 @@
 ---
 title: "Nachrichten-Queue"
-description: "Nachrichten veröffentlichen und Zustellungen aus konfigurierten Queues verarbeiten."
+description: "Veröffentlichen und Konsumieren von Nachrichten aus verteilten Queues. Unterstützt mehrere Backends einschließlich RabbitMQ und andere…"
 ---
 
 # Nachrichten-Queue
@@ -88,10 +88,10 @@ Diese Funktion ist nur verfügbar, während ein Queue-Consumer eine Nachricht ve
 | Methode | Gibt zurück | Beschreibung |
 |--------|---------|-------------|
 | `id()` | `string, error` | Eindeutiger Nachrichten-Identifikator |
-| `header(key)` | `string?, error` | Normalisierter Zeichenkettenwert oder `nil`, wenn er fehlt |
-| `headers()` | `{[string]: string}, error` | Alle Header mit normalisierten Zeichenkettenwerten |
-| `ack()` | `boolean, error` | Verarbeitung bestätigen (einmalig) |
-| `nack()` | `boolean, error` | Fehler für erneute Zustellung oder Dead Letter melden (einmalig) |
+| `header(key)` | `string, error` | Einzelner Header-Wert als String (nil wenn fehlend) |
+| `headers()` | `table, error` | Alle Nachrichten-Header |
+| `ack()` | `boolean, error` | Verarbeitung bestaetigen (single-shot) |
+| `nack()` | `boolean, error` | Fehlschlag fuer Redelivery oder Dead-Letter melden (single-shot) |
 
 Die Runtime bestätigt die Zustellung bei erfolgreichem Handler automatisch und weist sie bei einem Handler-Fehler automatisch zurück. Rufen Sie `ack` oder `nack` nur auf, um die Zustellung vorzeitig abzuschließen. Die Zustellung kann nur einmal abgeschlossen werden; nach der Rückkehr des Consumer-Handlers ist das `Message`-Objekt ungültig.
 
@@ -107,27 +107,22 @@ if err then return nil, err end
 
 ## Consumer-Muster
 
-Ein Eintrag vom Typ `queue.consumer` bindet eine Queue an den unter `func` referenzierten Handler. Der Handler erhält den Nachrichten-Payload direkt:
+Ein `queue.consumer`-Entry bindet eine Queue an eine Handler-Funktion (referenziert über `func`). Der Handler empfängt den Nachrichten-Payload direkt:
 
 ```yaml
-- name: email_worker
-  kind: queue.consumer
-  queue: app:emails
-  func: app:email_handler
+entries:
+  - kind: queue.consumer
+    name: email_worker
+    queue: app:emails
+    func: app:email_handler
 ```
 
 Dieses Fragment setzt voraus, dass `app:emails` und der Funktionseintrag `app:email_handler` bereits vorhanden sind. Der folgende Funktionsquelltext setzt voraus, dass die Anwendung `deliver_email(payload)` bereitstellt und alle dafür benötigten Berechtigungen erteilt.
 
 ```lua
-local queue = require("queue")
-local logger = require("logger")
-
-local function main(payload)
-    local msg, msg_err = queue.message()
-    if msg_err then return nil, msg_err end
-
-    local message_id, id_err = msg:id()
-    if id_err then return nil, id_err end
+-- app:email_handler
+function handle_email(payload)
+    local msg = queue.message()
 
     logger:info("Processing", {
         message_id = message_id,

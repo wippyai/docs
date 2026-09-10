@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "サーバー側 HTTP リクエストを読み取り、ステータス、ヘッダー、JSON、ストリーム、イベントストリームのレスポンスを構築します。"
+description: "HTTPリクエストを処理しレスポンスを構築。リクエストデータ、ルートパラメータ、ヘッダー、ボディ内容にアクセス。ステータスコード、ヘッダー、ストリーミングサポート付きでレスポンスを構築。"
 ---
 
 # HTTP
@@ -138,6 +138,23 @@ if not correlation_id then
     if correlation_err then return nil, correlation_err end
 end
 ```
+
+ルックアップは大文字小文字を区別しません。`req:header("content-type")`と`req:header("Content-Type")`は同じ値を返します。複数回送信されたヘッダーは、値が`", "`で連結されて返されます。存在しないヘッダーは`nil`を返します。
+
+### headers
+
+リクエストのすべてのヘッダーを取得します。
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**戻り値:** `table, error`
+
+キーはクライアントが送信した表記に関係なく、正規化されたヘッダー名（`Content-Type`、`X-Correlation-ID`）になります。重複するヘッダーは`req:header()`と同様に`", "`で連結されます。
 
 ### content_type
 
@@ -357,12 +374,16 @@ if form.files.avatar then
     local content_type, header_err = file:header("Content-Type")  -- "image/jpeg"
     if header_err then return nil, header_err end
 
-    -- Stream the upload to a configured filesystem volume
-    local fs = require("fs")
-    local uploads, fs_err = fs.get("app:avatars")
-    if fs_err then
-        return nil, fs_err
+    -- ファイル内容を読み取り
+    local stream = file:stream()
+    local parts = {}
+    while true do
+        local chunk, err = stream:read(65536)
+        if err or not chunk then break end
+        parts[#parts + 1] = chunk
     end
+    stream:close()
+    local content = table.concat(parts)
 
     local stream, stream_err = file:stream()
     if stream_err then return nil, stream_err end

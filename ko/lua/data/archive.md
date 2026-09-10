@@ -1,16 +1,14 @@
 ---
 title: "Archive"
-description: "ZIP, TAR, gzip-compressed TAR, Zstandard-compressed TAR archive를 읽고 scan, extract, 생성합니다."
+description: "제한된 메모리로 zip/tar 아카이브를 읽고 씁니다. 아카이브는 RAM으로 로드되지도, 디스크로 추출되지도 않습니다. 최대 메모리는 아카이브와 항목 크기와 무관하므로, 수 GB 아카이브도 RAM이 적은 서버에서 처리됩니다."
 ---
 
-# 아카이브
+# Archive
 <secondary-label ref="function"/>
 <secondary-label ref="io"/>
 <secondary-label ref="encoding"/>
 
-`archive` 모듈은 random-access reader, sequential stream, 파일 시스템 destination을 통해 ZIP 및 TAR 계열 archive를 읽고 씁니다.
-
-이 페이지는 부분 I/O recipe를 포함하는 API 참조입니다. streaming 작업은 entry copy buffer에 bound를 두지만 metadata, codec state, raw-byte source, `read()` 결과는 여전히 메모리를 사용합니다. 큰 random-access archive에는 seekable file 또는 ranged reader를 사용하고, forward-only input에는 `scan()`을 사용하며, 애플리케이션에 맞는 명시적 limit을 설정하십시오.
+제한된 메모리로 zip/tar 아카이브를 읽고 씁니다. 아카이브는 RAM으로 로드되지도, 디스크로 추출되지도 않습니다. 최대 메모리는 아카이브와 항목 크기와 무관하므로, 수 GB 아카이브도 RAM이 적은 서버에서 처리됩니다.
 
 ## 로딩
 
@@ -18,20 +16,18 @@ description: "ZIP, TAR, gzip-compressed TAR, Zstandard-compressed TAR archive를
 local archive = require("archive")
 ```
 
-require하기 전에 실행 가능 엔트리의 `modules:` 목록에 `archive`를 추가하십시오. 파일 시스템, cloud reader, HTTP stream을 사용하는 recipe에는 해당 기능과 security policy도 필요합니다.
+## 포맷
 
-## 형식
+내장 포맷은 매직 바이트로 감지되거나 `opts.format`으로 강제됩니다:
 
-모듈은 magic byte에서 built-in format을 감지하거나 `opts.format`으로 지정한 format을 사용합니다.
-
-| 형식 | 임의 읽기 | 순차 스캔 | 쓰기 |
+| 포맷 | 랜덤 읽기 | 순차 스캔 | 쓰기 |
 |--------|:-----------:|:---------------:|:-----:|
-| `zip` | 예 | 예 (local headers) | 예 |
+| `zip` | 예 | 예 (로컬 헤더) | 예 |
 | `tar` | 예 | 예 | 예 |
-| `tar.gz` | 아니요 | 예 | 예 |
-| `tar.zst` | 아니요 | 예 | 예 |
+| `tar.gz` | 아니오 | 예 | 예 |
+| `tar.zst` | 아니오 | 예 | 예 |
 
-`archive.formats()`는 등록된 format 이름 목록을 반환합니다.
+`archive.formats()`는 등록된 포맷 이름 목록을 반환합니다.
 
 ```lua
 local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
@@ -39,75 +35,47 @@ local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 
 ## 옵션
 
-모든 entry point는 optional `opts` table을 받습니다.
+모든 진입점은 선택적 `opts` 테이블을 받습니다:
 
 | 키 | 기본값 | 의미 |
 |-----|---------|---------|
-| `format` | auto | `"zip"`, `"tar"`, `"tar.gz"`, `"tar.zst"`; auto는 magic을 sniff하고 없으면 extension 사용 |
-| `max_entries` | 100000 | 더 많은 entry를 가진 archive 거부(decompression bomb 방어) |
-| `max_total_bytes` | 2 GiB | `extract_all()`의 누적 uncompressed output cap |
-| `max_file_bytes` | 1 GiB | 단일 entry의 uncompressed 크기 cap |
-| `max_inline_bytes` | 16 MiB | RAM에 materialize하는 `read()` call의 hard cap. 더 크면 `stream()`/`extract()` 사용 |
-| `buffer_bytes` | 64 KiB | streaming extract/add 경로의 copy buffer. `read()` allocation은 제한하지 않음 |
+| `format` | 자동 | `"zip"`, `"tar"`, `"tar.gz"`, `"tar.zst"`, 자동 = 매직 감지, 실패 시 확장자 |
+| `max_entries` | 100000 | 항목 수가 더 많은 아카이브를 거부 (압축 폭탄 방어) |
+| `max_total_bytes` | 2 GiB | 읽기/추출 중 누적 비압축 출력 상한 |
+| `max_file_bytes` | 1 GiB | 단일 항목의 비압축 크기 상한 |
+| `max_inline_bytes` | 16 MiB | RAM에 실체화하는 `read()` 호출의 절대 상한, 그 이상은 `stream()`/`extract()` 사용 |
+| `buffer_bytes` | 64 KiB | 읽기/추출/추가를 위한 스트리밍 복사 버퍼 |
 
-`max_file_bytes`는 각 entry를 제한하고 `max_total_bytes`는 reader 및 walker의 `extract_all()`에서만 적용됩니다. `read()`, `stream()`, 단일 entry `extract()`, manual walking을 사용하는 애플리케이션은 자체 누적 budget을 적용해야 합니다. `max_inline_bytes`는 `read()`가 materialize하는 entry data를 제한하며 `buffer_bytes`는 제한하지 않습니다. 이 limit에는 모든 metadata와 codec allocation이 포함되지는 않습니다.
+`max_total_bytes`/`max_file_bytes`는 작업량 상한이지 RAM 상한이 아닙니다. 항목을 스트리밍할 때는 `buffer_bytes`에 코덱의 압축 해제 윈도를 더한 것 이상을 절대 보유하지 않습니다. RAM 크기를 조정하는 유일한 손잡이는 `max_inline_bytes`입니다.
 
-## 읽기 — 임의 접근
+## 읽기 — 랜덤 액세스
 
-`archive.open(source, ...)`은 완전한 random access를 위해 **seekable** source를 엽니다. zip central directory는 먼저 읽고 entry는 요청할 때 decompress합니다. source는 `fs.FS` handle과 path, 열린 `fs.File`, cloud storage reader 또는 raw byte가 될 수 있습니다. byte는 archive 전체를 RAM에 보관하므로 작은 archive에만 사용하십시오.
+`archive.open(source, ...)`은 완전한 랜덤 액세스를 위해 **탐색 가능한(seekable)** 소스를 엽니다(zip 중앙 디렉터리는 미리 읽고, 항목은 필요할 때 압축을 해제합니다). 소스는 `fs.FS` 핸들과 경로, 열린 `fs.File`, 원시 바이트(바이트는 아카이브 전체를 RAM에 보유하므로 작은 아카이브만), 또는 다른 모듈이 넘겨준 임의의 랜덤 액세스 리더일 수 있습니다.
+
+다른 모듈의 리더는 `io.ReaderAt`을 구현하고 `Size`를 보고할 때 자격을 갖춥니다. 선택적 `Name`은 `opts.format`이 생략되었을 때 확장자 감지에 사용됩니다. [`cloudstorage`](lua/storage/cloud.md)의 `open_reader`가 그런 예로, 수 GB 아카이브를 오브젝트 스토리지에서 직접 읽습니다. 이 경우 아카이브는 아무것도 열지 않고 리더를 절대 닫지 않습니다. 리더의 소유자가 닫습니다.
 
 ```lua
 local fs = require("fs")
 local archive = require("archive")
 
--- Open by fs handle + path (the module opens the file and owns its lifecycle)
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then return nil, fs_err end
-local r, err = archive.open(uploads, "incoming.zip")
-if err then return nil, err end
--- Or from an already-open seekable fs.File
--- local r, err = archive.open(open_file)
--- Or from raw bytes (small archives only)
--- local r, err = archive.open(zip_bytes, { format = "zip" })
+-- fs 핸들 + 경로로 열기 (모듈이 파일을 열고 라이프사이클을 소유)
+local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
+-- 또는 이미 열린 탐색 가능한 fs.File에서
+-- local r = archive.open(fs:get("app:uploads"):open("x.zip"))
+-- 또는 원시 바이트에서 (작은 아카이브만)
+-- local r = archive.open(zip_bytes, { format = "zip" })
+-- 또는 다른 모듈이 소유한 랜덤 액세스 리더에서
+-- local reader = cloudstorage.get("app:files"):open_reader("incoming.zip")
+-- local r = archive.open(reader)
 ```
 
-cloud storage의 큰 archive에는 `open_reader`가 반환한 ranged reader를 전달합니다.
-
-```lua
-local cloudstorage = require("cloudstorage")
-
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
-local source, source_err = storage:open_reader("uploads/large.zip")
-if source_err then
-    storage:release()
-    return nil, source_err
-end
-local r, archive_err = archive.open(source)
-if archive_err then
-    source:close()
-    storage:release()
-    return nil, archive_err
-end
-
--- Read archive entries here.
-
-local _, reader_close_err = r:close()
-local _, source_close_err = source:close()
-storage:release()
-if reader_close_err then return nil, reader_close_err end
-if source_close_err then return nil, source_close_err end
-```
-
-archive reader는 `fs.FS` handle과 path로 직접 연 file을 소유합니다. 외부에서 전달한 `fs.File` 또는 ranged reader는 소유하지 않습니다. archive reader를 먼저 닫은 다음 caller-owned input과 handle을 닫으십시오.
-
-**반환값:** `Reader, error`
+**반환:** `Reader, error`
 
 **권한:** `archive.read`
 
-### `entries`
+### entries
 
-entry content를 decompress하지 않고 metadata를 iterate합니다.
+디렉터리를 순회합니다(메타데이터만, 압축 해제 없음):
 
 ```lua
 for e in r:entries() do
@@ -116,240 +84,172 @@ for e in r:entries() do
 end
 ```
 
-### `stat`
+### stat
 
-content를 decompress하지 않고 이름으로 entry metadata를 읽습니다.
+이름으로 항목 메타데이터를 가져옵니다(압축 해제 없음):
 
 ```lua
 local info, err = r:stat("docs/readme.md")
-if err then return nil, err end
 ```
 
-### `read`
+### read
 
-단일 entry를 Lua string으로 materialize합니다. `max_inline_bytes`를 넘으면 `kind = Invalid` 오류가 발생합니다. 큰 데이터에는 `stream()` 또는 `extract()`를 사용하십시오.
+단일 항목을 Lua 문자열로 실체화합니다. `max_inline_bytes`를 초과하면 오류(`kind = Invalid`)가 발생합니다. 큰 것에는 `stream()`이나 `extract()`를 사용하십시오:
 
 ```lua
-local data, err = r:read("docs/readme.md")  -- small entries only
-if err then return nil, err end
+local data, err = r:read("docs/readme.md")  -- 작은 항목만
 ```
 
-### `stream`
+### stream
 
-요청 시 decompress하는 `stream.Stream`으로 entry를 반환합니다. 결과를 scan하거나 `fs:writefile()`에 전달하거나 다른 stream consumer에 제공할 수 있습니다.
+항목을 필요할 때 압축을 해제하는 `stream.Stream`으로 반환합니다. 스트림이 쓰이는 모든 곳에 조합됩니다 — `:scanner()`, `fs:writefile()`, 또는 다른 모듈에 전달:
 
 ```lua
 local es, err = r:stream("big.csv")
-if err then return nil, err end
 while true do
-    local chunk, read_err = es:read(65536)
-    if read_err then
-        es:close()
-        return nil, read_err
-    end
+    local chunk = es:read(65536)
     if not chunk then break end
     process(chunk)
 end
-local _, close_err = es:close()
-if close_err then return nil, close_err end
+es:close()
 ```
 
-### `extract`
+### extract
 
-entry 하나를 destination 파일 시스템으로 stream합니다.
+항목 하나를 대상 파일 시스템으로 스트리밍합니다:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local ok, err = r:extract("docs/readme.md", out)
-if err then return nil, err end
--- optional destination path:
--- r:extract("docs/readme.md", out, "readme.md")
+local ok, err = r:extract("docs/readme.md", fs.get("app:out"))
+-- 선택적 대상 경로:
+-- r:extract("docs/readme.md", fs.get("app:out"), "readme.md")
 ```
 
-### `extract_all`
+### extract_all
 
-모든 entry를 destination 파일 시스템으로 stream합니다.
+모든 항목을 대상 파일 시스템으로 스트리밍합니다:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local count, err = r:extract_all(out, {
-    prefix = "job123/",          -- prepend to each destination path
-    strip  = 1,                  -- drop N leading path components
+local count, err = r:extract_all(fs.get("app:out"), {
+    prefix = "job123/",          -- 각 대상 경로 앞에 붙임
+    strip  = 1,                  -- 앞쪽 경로 구성요소 N개 제거
     filter = function(e) return not e.is_dir end,
 })
-if err then return nil, err end
 ```
 
-애플리케이션 코드에서 destination 파일 시스템을 별도로 resolve하여 `fs.get` 오류를 처리하십시오. 단일 entry `extract`에서는 안전하지 않은 destination 이름이 오류를 반환합니다. `extract_all`은 결과 path에 `..`이 있거나 absolute이거나 Windows drive 또는 UNC prefix가 있는 entry를 건너뜁니다.
+항목 이름은 추출 시 정리됩니다. `..` 세그먼트, 절대 경로, Windows 드라이브/UNC 접두사는 거부됩니다(zip-slip 방어).
 
-### `close`
+### close
 
-reader를 닫습니다. 작업은 idempotent하며 task scope에서도 자동으로 닫힙니다.
+리더를 닫습니다. 멱등하며, 태스크 스코프에서 자동으로도 닫힙니다.
 
 ```lua
-local ok, err = r:close()
-if err then return nil, err end
+r:close()
 ```
 
 ## 읽기 — 순차 스캔
 
-`archive.scan(source, opts?)`은 HTTP upload body나 multipart file stream 같은 **forward-only** source를 엽니다. entry는 archive 순서대로 방문하며 각 entry reader는 walk가 다음으로 진행될 때까지만 유효합니다. random `read(name)` access는 사용할 수 없습니다.
+`archive.scan(source, opts?)`은 **전진 전용** 스트림(HTTP 업로드 본문, multipart 파일 스트림)을 엽니다. 항목은 아카이브 순서대로 방문되며, 각 항목의 리더는 다음으로 진행하기 전까지만 유효합니다. 랜덤 `read(name)`은 없습니다.
 
 ```lua
-local up, stream_err = form.files.upload[1]:stream()        -- stream.Stream
-if stream_err then return nil, stream_err end
+local up = form.files.upload[1]:stream()        -- stream.Stream
 local s, err = archive.scan(up, { format = "zip" })
-if err then
-    up:close()
-    return nil, err
-end
 
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then
-    s:close()
-    up:close()
-    return nil, fs_err
+for e, entry in s:walk() do                      -- entry는 stream.Stream
+    if not e.is_dir then
+        fs.get("app:uploads"):writefile("job123/" .. e.name, entry)
+    end
 end
-
-local count, extract_err = s:extract_all(uploads, {prefix = "job123/"})
-if extract_err then
-    s:close()
-    up:close()
-    return nil, extract_err
-end
-local _, close_err = s:close()
-local _, upload_close_err = up:close()
-if close_err then return nil, close_err end
-if upload_close_err then return nil, upload_close_err end
+s:close()
 ```
 
-**반환값:** `Walker, error`
+**반환:** `Walker, error`
 
 **권한:** `archive.read`
 
-`extract_all`은 위에서 설명한 destination-path sanitization과 total-size bound를 적용합니다. 애플리케이션이 대신 `s:walk()`를 직접 진행하면 iterator error는 Lua error로 raise되고 각 entry stream은 다음 iteration까지만 유효합니다. task-scope cleanup은 walker와 현재 entry stream을 release하지만, 제어가 애플리케이션에 남아 있으면 caller-owned input stream을 명시적으로 닫으십시오.
-
-`tar`, `tar.gz`, `tar.zst`는 native stream을 사용합니다. `zip`은 entry별 local header로 parse하며 streaming data descriptor를 사용해 작성된 entry는 entry boundary까지 decompress해 읽습니다. 큰 upload의 robust한 zip 처리에는 bounded sequential copy로 upload를 file에 기록한 다음 `archive.open`을 사용하십시오.
+워커도 랜덤 액세스 리더와 동일한 옵션을 받는 `extract_all`을 지원하며, 모든 항목을 한 번의 호출로 대상 파일 시스템에 스트리밍합니다:
 
 ```lua
-local uuid = require("uuid")
-
-local dst, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local upload, stream_err = req:stream()
-if stream_err then return nil, stream_err end
-local stage_id, id_err = uuid.v7()
-if id_err then
-    upload:close()
-    return nil, id_err
-end
-local stage_path = stage_id .. ".zip"
-local copied, copy_err = dst:writefile(stage_path, upload, "wx")
-local _, upload_close_err = upload:close()
-if copy_err or upload_close_err then
-    dst:remove(stage_path)
-    return nil, copy_err or upload_close_err
-end
-local r, open_err = archive.open(dst, stage_path)   -- robust random access
-if open_err then
-    dst:remove(stage_path)
-    return nil, open_err
-end
-
--- Replace this operation with the random-access work the handler needs.
-local info, operation_err = r:stat("manifest.json")
-local _, close_err = r:close()
-local removed, remove_err = dst:remove(stage_path)
-if operation_err then return nil, operation_err end
-if close_err then return nil, close_err end
-if remove_err then return nil, remove_err end
-return info
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
 ```
 
-각 요청은 예측할 수 없는 stage 이름을 만들고 exclusive하게 생성하므로 concurrent handler가 서로의 file을 truncate할 수 없습니다. staged file 제거를 시도한 뒤 주요 copy, upload-close, open 또는 archive-operation error를 반환합니다. primary error가 이미 있으면 production handler는 cleanup failure를 별도로 log할 수 있습니다. 이 recipe를 사용하려면 실행 가능 엔트리의 module allowlist에 `uuid`를 추가하십시오.
+`tar`, `tar.gz`, `tar.zst`는 네이티브로 스트리밍됩니다. `zip`은 항목별 로컬 헤더로 파싱되며, 스트리밍 데이터 디스크립터(크기/CRC가 데이터 뒤에 오는)로 작성된 항목은 항목 경계까지 압축을 해제해 읽습니다. 큰 업로드의 견고한 zip 처리를 위해서는 업로드를 먼저 파일로 내려놓은 뒤(제한된 순차 복사) `archive.open`을 사용하십시오:
+
+```lua
+local dst = fs.get("app:tmp")
+dst:writefile("u.zip", req:stream())   -- 업로드 → fs 파일 스트리밍 복사
+local r = archive.open(dst, "u.zip")   -- 견고한 랜덤 액세스
+-- ... entries / extract_all ...
+r:close()
+dst:remove("u.zip")
+```
 
 ## 쓰기
 
-`archive.create(dest, ...)`는 entry를 파일 시스템 path, 열린 writable file 또는 writable `stream.Stream`에 stream합니다.
+`archive.create(dest, ...)`은 항목을 대상으로 스트리밍해 아카이브를 만듭니다. 대상은 fs 안의 파일(경로와 함께)이거나 쓰기 가능한 `stream.Stream`(예: HTTP 응답)이므로, 다운로드용 `.zip`이 제한된 메모리로 곧장 전송선까지 생성됩니다.
 
 ```lua
-local tmp, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local w, err = archive.create(tmp, "out.zip", { format = "zip" })
-if err then return nil, err end
+local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
+-- 또는 응답으로 스트리밍:
+-- local w = archive.create(res:stream(), { format = "zip" })
 ```
 
-**반환값:** `Writer, error`
+**반환:** `Writer, error`
 
 **권한:** `archive.write`
 
-### `add`
+### add
 
-text 또는 byte를 포함하는 Lua string, 열린 `fs.File`, `stream.Stream`에서 entry를 추가합니다.
-
-```lua
-local ok, err = w:add("notes.txt", "hello")
-if err then return nil, err end
-local added, add_err = w:add("from_upload", some_stream, { method = "deflate", mode = 420 }) -- 0644
-if add_err then return nil, add_err end
-```
-
-### `add_file`
-
-파일 시스템의 file에서 entry를 stream합니다.
+문자열, 바이트, 리더, 또는 `stream.Stream`에서 항목을 추가합니다:
 
 ```lua
-local data_fs, fs_err = fs.get("app:data")
-if fs_err then return nil, fs_err end
-local ok, err = w:add_file("data/big.bin", data_fs, "big.bin")
-if err then return nil, err end
+w:add("notes.txt", "hello")
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
-### `add_dir`
+### add_file
 
-directory entry를 추가합니다.
+파일 시스템의 파일에서 항목을 스트리밍합니다:
 
 ```lua
-local ok, err = w:add_dir("empty/")
-if err then return nil, err end
+w:add_file("data/big.bin", fs.get("app:data"), "big.bin")
 ```
 
-### `close`
+### add_dir
 
-ZIP central directory를 포함해 archive를 finalize합니다. 작업은 idempotent하며 writer는 task scope에서도 자동으로 닫힙니다.
+디렉터리 항목을 추가합니다:
 
 ```lua
-local ok, err = w:close()
-if err then return nil, err end
+w:add_dir("empty/")
 ```
 
-`add` option은 `{method = "store"|"deflate", mode, size}`입니다. TAR 계열 archive에 stream을 추가할 때는 `size`가 필요합니다. string 값과 `add_file`은 size를 자동으로 제공합니다. `add_file`은 `method`와 `mode`를 받고 `add_dir`에는 option이 없습니다. ZIP writer는 destination이 non-seekable writable stream이면 data descriptor를 사용합니다.
+### close
 
-Lua 숫자 literal은 decimal입니다. 일반적으로 octal `0644`로 쓰는 Unix permission bit에는 `420`을 사용하십시오.
+아카이브를 마무리합니다(zip의 경우 중앙 디렉터리를 씁니다). 멱등하며, 태스크 스코프에서 자동으로도 닫힙니다.
 
-writer는 entry source 또는 archive destination으로 외부에서 전달한 file이나 stream을 닫지 않습니다. `w:close()` 뒤 caller-owned resource를 닫으십시오.
+```lua
+w:close()
+```
+
+`add*` 옵션: `{ method = "store"|"deflate", mode, size }`. tar 포맷은 항목 크기를 미리 알아야 하므로, 스트림이나 리더에서 `tar*` 아카이브로 `add()`할 때는 `size`가 필요합니다(문자열과 `add_file`은 크기를 스스로 제공합니다). zip 라이터는 데이터 디스크립터를 사용해 탐색 불가능한 라이터로도 스트리밍하므로, 응답 스트림에 쓰는 것도 동작합니다.
 
 ## 오류
 
 | 조건 | 종류 |
 |-----------|------|
-| 알 수 없거나 일치하지 않는 format | `errors.INVALID` |
-| 현재 Lua wrapper가 보고한 corrupt 또는 truncated archive | `errors.INTERNAL` |
-| inline `read()` 또는 `extract_all` total limit 초과 | `errors.INVALID` |
-| 현재 Lua wrapper에서 open/read 중 드러난 entry/archive limit | `errors.INTERNAL` |
-| stream-only format에 random access(`scan` 사용) | `errors.UNAVAILABLE` |
-| entry 이름을 찾지 못함 | `errors.NOT_FOUND` |
-| archive policy 거부 | `errors.PERMISSION_DENIED` |
-| source 또는 destination I/O 실패 | `errors.INTERNAL` |
-| walk가 진행된 뒤 stale streamed entry 읽기 | `errors.INTERNAL` |
+| 소스가 fs 핸들, fs 파일, 바이트, 랜덤 액세스 리더 중 어느 것도 아님 | `errors.INVALID` |
+| 알 수 없거나 일치하지 않는 포맷 | `errors.INVALID` |
+| 손상되었거나 잘린 아카이브 | `errors.INVALID` |
+| 한도 초과 (항목 수 / 전체 / 파일 / 인라인) | `errors.INVALID` |
+| 스트림 전용 포맷에 대한 랜덤 액세스 (`scan` 사용) | `errors.UNAVAILABLE` |
+| 항목 이름을 찾을 수 없음 | `errors.NOT_FOUND` |
+| 소스를 읽을 수 없거나 대상에 쓸 수 없음 | `errors.PERMISSION_DENIED` |
+| 순회가 진행된 뒤 오래된 스트리밍 항목을 읽음 | `errors.INTERNAL` |
 
-오류 사용법은 [오류 처리](../core/errors.md)를 확인하십시오.
+오류를 다루는 방법은 [오류 처리](lua/core/errors.md)를 참조하십시오.
 
-## 관련 문서
+## 참고
 
-- [파일 시스템](../storage/filesystem.md) - Source 및 destination 파일 시스템
-- [Cloud Storage](../storage/cloud.md) - cloud-hosted archive용 ranged reader
-- [Stream](../core/stream.md) - archive에 전달하고 받는 stream object
-- [압축](./compress.md) - in-memory gzip/deflate/zstd
+- [파일 시스템](lua/storage/filesystem.md) - 소스 및 대상 파일 시스템
+- [스트림](lua/core/stream.md) - 아카이브에 주고받는 스트림 객체
+- [압축](lua/data/compress.md) - 인메모리 gzip/deflate/zstd
+- [클라우드 스토리지](lua/storage/cloud.md) - 랜덤 액세스 아카이브 소스로서의 `open_reader`

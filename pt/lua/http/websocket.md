@@ -1,6 +1,6 @@
 ---
 title: "Cliente WebSocket"
-description: "Conecte-se a servidores WebSocket, envie e receba mensagens, use compressão e feche conexões."
+description: "Cliente WebSocket para comunicação bidirecional em tempo real com servidores."
 ---
 
 # Cliente WebSocket
@@ -61,15 +61,15 @@ end
 
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
-| `headers` | table | Headers HTTP string-para-string do handshake; outras entradas são ignoradas |
-| `protocols` | table | Strings de subprotocolos WebSocket; entradas que não são strings são ignoradas |
-| `dial_timeout` | number/string | Timeout da conexão; `0` não aplica um prazo global do runtime, mas os padrões do transporte HTTP subjacente continuam valendo |
-| `read_timeout` | number/string | Timeout por mensagem; `0` o desativa |
-| `write_timeout` | number/string | Aceito pela API Lua, mas não aplicado pelo runtime `v0.3.32a` |
-| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"` ou `2`/`"no_context_takeover"`; desativado por padrão |
-| `compression_threshold` | number | Tamanho mínimo para comprimir, em bytes (0-104857600); `0` usa 128 bytes com context takeover ou 512 sem context takeover |
-| `read_limit` | number | Tamanho máximo de mensagem recebida, em bytes (0-134217728); `0` usa 16 MiB |
-| `channel_capacity` | number | Buffer de mensagens recebidas no serviço (1-10000); padrão 16 |
+| `headers` | table | Headers HTTP para handshake |
+| `protocols` | table | Subprotocolos WebSocket |
+| `dial_timeout` | number/string | Timeout de conexão (ms ou "5s") |
+| `read_timeout` | number/string | Timeout de leitura |
+| `write_timeout` | number/string | Timeout de escrita |
+| `compression` | number/string | Modo de compressao (veja Constantes), ou `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
+| `compression_threshold` | number | Tamanho minimo para comprimir (0-100MB) |
+| `read_limit` | number | Tamanho maximo de mensagem (0-128MB) |
+| `channel_capacity` | number | Buffer do channel de recepcao (1-10000) |
 
 **Formato de timeout:** números representam milissegundos. Strings usam a sintaxe de duração Go, como `"5s"` ou `"1m"`.
 
@@ -79,7 +79,8 @@ Strings de timeout inválidas e valores de opções fora dos limites ou não ace
 
 ### Mensagens de Texto
 
-Envia uma mensagem de texto.
+```lua
+client:send("Hello, Server!")
 
 ```lua
 local json = require("json")
@@ -108,7 +109,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Conteudo da mensagem |
 | `type` | number | `websocket.TEXT` (1) ou `websocket.BINARY` (2) |
 
-Se `type` estiver ausente ou não for `websocket.TEXT` nem `websocket.BINARY`, o runtime envia uma mensagem de texto. A chamada cede a execução até o envio terminar e não retorna valores. No runtime `v0.3.32a`, falhas de transporte durante o envio não são retornadas ao Lua.
+Cede (yield) até a mensagem ser enviada. Não retorna valores.
 
 ### Ping
 
@@ -118,7 +119,7 @@ Envia um frame de ping.
 client:ping()
 ```
 
-A chamada cede a execução até o comando de ping terminar e não retorna valores. No runtime `v0.3.32a`, falhas de transporte no ping não são retornadas ao Lua.
+Cede (yield) até o ping ser enviado. Não retorna valores.
 
 ## Recebendo Mensagens
 
@@ -245,9 +246,7 @@ if close_err then return nil, close_err end
 | `code` | number | Código de fechamento (1000-4999), padrão 1000 |
 | `reason` | string | Motivo do fechamento (opcional) |
 
-A chamada cede a execução até o comando de fechamento terminar. Em caso de sucesso, não retorna valores; uma falha retorna `nil, error`. Capture dois resultados ao verificar a chamada, pois o erro é o segundo. Valores fora do intervalo numérico aceito são ignorados e o código padrão `1000` é usado.
-
-O channel de recebimento pertence ao cliente; não o feche diretamente. Um evento terminal remoto fecha o channel. Chamar `client:close()` cancela a assinatura do channel de recebimento e interrompe o produtor no cliente; faça isso prontamente, em vez de depender da limpeza no encerramento do processo.
+Suspende até que o frame de close seja enviado.
 
 ## Constantes
 

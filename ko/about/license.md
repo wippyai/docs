@@ -19,4 +19,6 @@ MPL-2.0은 상업적 사용, 수정 및 배포를 허용합니다. 수정된 MPL
 
 ## 의존성
 
-의존성은 각각의 라이선스를 유지합니다. 예를 들어 현재 공개된 [`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE) 저장소는 MPL-2.0이 아닌 MIT 라이선스를 사용합니다.
+Wippy는 다양한 의존성을 사용하며, 각각 자체 라이선스가 있습니다. 대부분은 상용 사용과 호환되는 관대한 라이선스의 오픈소스 라이브러리입니다.
+
+번들로 포함된 구성 요소 중 하나인 WASM 런타임(`wippyai/wasm-runtime`)은 Business Source License 1.1로 라이선스됩니다. 프로덕션에서 사용할 수 있지만, Wippy AI의 제품이나 서비스와 경쟁하는 방식으로 호스팅 또는 임베디드 형태로 제3자에게 제공하는 것은 예외입니다. 각 버전이 게시된 지 4년 후 해당 버전은 Apache License 2.0으로 전환됩니다.

@@ -1,15 +1,13 @@
 ---
 title: "마이그레이션"
-description: "SQLite, PostgreSQL, MySQL용 순차 데이터베이스 마이그레이션을 정의하고 적용하며 검사하고 롤백합니다."
+description: "wippy/migration 모듈은 스키마 변경을 정의하기 위한 작은 DSL, 이를 탐색하고 실행하는 러너, 그리고 프로젝트에 등록된 모든 targetdb에 대해 대기 중인 마이그레이션을 실행하는 부트로더를 포함하는 데이터베이스 마이그레이션 프레임워크를 제공합니다."
 ---
 
 # 마이그레이션
 
-`wippy/migration` 모듈은 스키마 변경을 위한 DSL, 마이그레이션을 탐색하고 실행하는 러너, 등록된 모든 `target_db`에 대기 중인 마이그레이션을 적용하는 부트로더를 제공합니다.
+`wippy/migration` 모듈은 스키마 변경을 정의하기 위한 작은 DSL, 이를 탐색하고 실행하는 러너, 그리고 프로젝트에 등록된 모든 `target_db`에 대해 대기 중인 마이그레이션을 실행하는 부트로더를 포함하는 데이터베이스 마이그레이션 프레임워크를 제공합니다.
 
-마이그레이션은 SQLite, PostgreSQL, MySQL을 지원합니다. 한 마이그레이션에 드라이버별 `up` 및 `down` 구현을 함께 정의할 수 있습니다.
-
-이 페이지는 일부 마이그레이션 작성법과 러너 레퍼런스를 제공하며 완전한 애플리케이션 예제는 아닙니다. 아래 정의는 모듈과 데이터베이스를 연결한 뒤 적용할 수 있고, 이후의 러너 호출 및 결과 테이블은 참고용 코드 조각입니다. 보존해야 할 데이터에 마이그레이션을 적용하기 전에 백업을 만들고, 먼저 일회용 데이터베이스에서 `up`과 `down`을 모두 테스트하세요.
+마이그레이션은 SQLite, PostgreSQL, MySQL을 지원하며, 드라이버별 `up`/`down` 구현이 나란히 정의됩니다.
 
 ## 설정
 
@@ -29,7 +27,7 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    file: ./data/app.db
+    path: ./data/app.db
 
   - name: dep.migration
     kind: ns.dependency
@@ -38,8 +36,6 @@ entries:
 ```
 
 마이그레이션 부트로더는 `wippy/bootloader`에 순서 `20`으로 등록됩니다. 애플리케이션이 시작되면 레지스트리에서 모든 마이그레이션 엔트리를 탐색하고, `meta.target_db`별로 그룹화한 다음, 각 데이터베이스에 대해 대기 중인 마이그레이션을 실행합니다.
-
-위와 같은 상대 SQLite 경로를 사용한다면 애플리케이션을 시작하기 전에 `data` 디렉터리를 만드세요. 결과는 `runner:status()`로 확인하고, 테스트 데이터에 대해 마이그레이션의 `down` 구현이 안전할 때만 `runner:rollback()`을 사용하세요.
 
 ## 마이그레이션 정의
 
@@ -63,7 +59,7 @@ return require("migration").define(function()
     migration("Create users table", function()
         database("sqlite", function()
             up(function(db)
-                local _, err = db:execute([[
+                local ok, err = db:execute([[
                     CREATE TABLE users (
                         id    INTEGER PRIMARY KEY,
                         name  TEXT NOT NULL,
@@ -74,26 +70,23 @@ return require("migration").define(function()
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
 
         database("postgres", function()
             up(function(db)
-                local _, err = db:execute([[
+                db:execute([[
                     CREATE TABLE users (
                         id    SERIAL PRIMARY KEY,
                         name  TEXT NOT NULL,
                         email TEXT NOT NULL UNIQUE
                     )
                 ]])
-                if err then error(err) end
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
     end)
@@ -109,11 +102,11 @@ end)
 | `meta.timestamp` | 아니오 | 동일한 데이터베이스를 대상으로 하는 여러 마이그레이션이 있을 때 순서를 정하는 데 사용되는 ISO-8601 타임스탬프 |
 | `meta.tags` | 아니오 | 태그 배열; 러너는 태그로 마이그레이션을 필터링할 수 있습니다 |
 
-데이터베이스의 마이그레이션은 `meta.timestamp` 오름차순으로 실행됩니다. `meta.timestamp`는 선택 사항입니다. 전체 엔트리 ID가 동률을 해소하므로, 타임스탬프가 같거나 없어도 마이그레이션은 안정적이고 결정적인 순서로 실행됩니다.
+데이터베이스에 대한 마이그레이션은 `meta.timestamp` 오름차순으로 실행됩니다.
 
 ## DSL
 
-`migration.define`에 전달하는 함수 안에서는 다음 중첩 함수를 사용할 수 있습니다:
+`migration.define`에 전달되는 함수 내에서 세 개의 중첩된 함수를 사용할 수 있습니다:
 
 | 함수 | 설명 |
 |----------|-------------|
@@ -192,7 +185,7 @@ local status = runner:status()   -- list applied + pending migrations
 
 ### `runner:rollback(options)`
 
-적용된 마이그레이션을 적용 순서의 역순으로 롤백합니다. 옵션을 지정하지 않으면 가장 최근에 적용된 마이그레이션 하나를 되돌립니다:
+적용된 마이그레이션을 적용 역순으로 롤백합니다. 옵션이 없으면 가장 최근에 적용된 마이그레이션 하나만 되돌립니다:
 
 ```lua
 runner:rollback()                                            -- roll back the last migration
@@ -204,8 +197,8 @@ runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict t
 
 | 옵션 | 설명 |
 |--------|-------------|
-| `count` | 롤백할 마이그레이션 수. 기본값은 `1`입니다 |
-| `allowed_ids` | 마이그레이션 ID 배열. 이 ID만 롤백 대상이 됩니다 |
+| `count` | 롤백할 마이그레이션 개수; 기본값은 `1` |
+| `allowed_ids` | 마이그레이션 id 배열; 이들만 롤백 대상이 됩니다 |
 
 ### `runner:status(options)`
 
@@ -226,7 +219,7 @@ runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict t
 }
 ```
 
-적용된 마이그레이션이 먼저 `applied_at` 순서로 나오고, 대기 중인 마이그레이션이 `meta.timestamp`, ID 순서로 이어집니다.
+적용된 마이그레이션이 먼저(`applied_at` 순), 이어서 대기 중인 마이그레이션이(`meta.timestamp`, 그다음 id 순) 나열됩니다.
 
 ## 레지스트리 API
 
@@ -243,18 +236,18 @@ runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict t
 
 ## 마이그레이션 추적
 
-러너는 첫 실행 시 각 대상 데이터베이스에 `_migrations` 테이블을 생성합니다. 적용된 마이그레이션은 ID로 기록되어 이후 실행에서 건너뜁니다. 추적 테이블은 자동으로 생성되므로, 이를 생성하기 위한 마이그레이션을 직접 작성하지 마세요.
+러너는 첫 실행 시 각 대상 데이터베이스에 `_migrations` 테이블을 생성합니다. 적용된 마이그레이션은 id로 기록되어 이후 실행에서 건너뜁니다. 추적 테이블은 자동으로 생성되므로, 이를 생성하기 위한 마이그레이션을 직접 작성하지 마세요.
 
 ## 모범 사례
 
 - **마이그레이션당 하나의 논리적 변경** - 하나의 테이블 생성, 하나의 컬럼 추가, 하나의 인덱스 생성.
-- **실제 `down` 작성** - 롤백으로 데이터가 손실되거나 그 밖의 이유로 불가능하다면 그 제한을 문서화하고 성공으로 보고하는 대신 오류를 발생시키세요.
+- **실제 `down` 작성** - 롤백이 불가능한 경우(데이터 손실), 이를 문서화하고 묵시적으로 성공하는 대신 오류를 발생시키세요.
 - **멱등성 선호** - `CREATE TABLE IF NOT EXISTS` 및 `DROP TABLE IF EXISTS`는 특별한 처리 없이 재실행에서 살아남습니다.
-- **DDL과 DML 분리** - 테이블을 만드는 마이그레이션에서 데이터를 함께 시드하지 마세요.
+- **DDL과 DML 분리** - 피할 수 있다면 테이블을 생성하는 동일한 마이그레이션에서 데이터를 시드하지 마세요.
 - **양방향 테스트** - 마이그레이션을 적용하고, 롤백한 다음, 스키마가 시작 상태와 일치하는지 확인하세요.
 
 ## 참고 항목
 
-- [SQL 드라이버](system/database.md) — 데이터베이스 리소스 구성
-- [부트로더](framework/bootloader.md) — 부트로더 순서 지정 및 훅
-- [프레임워크 개요](framework/overview.md) — 프레임워크 모듈 사용법
+- [SQL 드라이버](system/database.md) - 데이터베이스 리소스 구성
+- [부트로더](framework/bootloader.md) - 부트로더 순서 지정 및 훅
+- [프레임워크 개요](framework/overview.md) - 프레임워크 모듈 사용법

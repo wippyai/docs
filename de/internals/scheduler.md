@@ -42,20 +42,20 @@ type Event struct {
 
 ## Struktur
 
-Der Scheduler startet standardmäßig `GOMAXPROCS` Worker. Jeder Worker besitzt eine lokale Deque für cachefreundlichen LIFO-Zugriff und eine eigene MPSC-Inject-Queue für erneut eingereihte Arbeit mit Worker-Affinität, einschließlich Yield-Abschlüssen und Nachrichten-Wakeups. Eine globale FIFO-Queue verarbeitet neue Submissions und erneut eingereihte Arbeit ohne Affinität. Für das Nachrichtenrouting werden Prozesse anhand ihrer PID verfolgt.
+Der Scheduler startet standardmäßig `GOMAXPROCS` Worker. Jeder Worker hat eine lokale Deque für cache-freundlichen LIFO-Zugriff und eine Worker-eigene MPSC-Inject-Queue für asynchrone Completions mit Affinität zu diesem Worker. Eine globale FIFO-Queue behandelt neue Submissions und affinitätslose Neueinreihungen. Prozesse werden per PID für Nachrichtenrouting verfolgt.
 
 ## Arbeit finden
 
 ```mermaid
 flowchart TD
-    W[Worker needs work] --> L{Local deque?}
-    L -->|has items| LP[Pop from bottom LIFO]
-    L -->|empty| I{Inject queue?}
-    I -->|has items| IP[Pop + drain up to 16 to local]
-    I -->|empty| G{Global queue?}
-    G -->|has items| GP[Pop + batch transfer up to 16]
-    G -->|empty| S[Scan other workers from rotating start]
-    S --> SH[Steal up to half, capped at 32]
+    W[Worker braucht Arbeit] --> L{Lokale Deque?}
+    L -->|hat Items| LP[Von unten LIFO poppen]
+    L -->|leer| I{Inject-Queue?}
+    I -->|hat Items| IP[Poppen + bis zu 16 lokal draint]
+    I -->|leer| G{Globale Queue?}
+    G -->|hat Items| GP[Poppen + Batch-Transfer bis zu 16]
+    G -->|leer| S[Von zufälligem Opfer stehlen]
+    S --> SH[StealHalfInto Opfer-Deque]
 ```
 
 Worker prüfen Quellen in Prioritätsreihenfolge:
@@ -63,11 +63,11 @@ Worker prüfen Quellen in Prioritätsreihenfolge:
 | Priorität | Quelle | Muster |
 |-----------|--------|--------|
 | 1 | Lokale Deque | LIFO Pop, lock-frei, cache-freundlich |
-| 2 | Inject-Queue | MPSC-Pop für affine Requeues und Events; bis zu 16 weitere lokal übernehmen |
-| 3 | Globale Queue | FIFO-Pop mit Batch-Transfer |
-| 4 | Andere Worker | Ab einem rotierenden Startindex suchen und pro Versuch höchstens 32 Elemente, maximal die Hälfte, stehlen |
+| 2 | Inject-Queue | MPSC-Pop affiner asynchroner Completions, bis zu 16 lokal draint |
+| 3 | Globale Queue | FIFO Pop mit Batch-Transfer |
+| 4 | Andere Worker | Hälfte von Opfer-Deque stehlen |
 
-Beim Poppen aus der Inject- oder globalen Queue übernehmen Worker ein Element und verschieben bis zu 16 weitere in ihre lokale Deque.
+Beim Poppen aus der Inject- oder globalen Queue nehmen Worker ein Item und verschieben bis zu 16 weitere in ihre lokale Deque.
 
 ## Chase-Lev-Deque
 
@@ -125,9 +125,25 @@ Jeder Prozess hat eine MPSC (Multi-Producer, Single-Consumer) Event-Queue:
 - **Producer**: Command-Handler (`CompleteYield`), Nachrichtensender (`Send`)
 - **Consumer**: Worker draint Events in `Step()`
 
+Ein Generationszähler schützt die Queue. Jeder Producer bindet sich an die Generation, die er beobachtet hat; `Reset` erhöht sie, sodass ein Sender aus einer früheren Ausführung nicht in eine wiederverwendete Queue pushen kann.
+
+Gewöhnlicher Event-Verkehr ist unbegrenzt. Die Verrechnung ist pro Nachricht opt-in: Eine Nachricht, die `MaxItems` oder `MaxBytes` trägt, wird gegen ein Budget pro Topic zugelassen, und das strengste für ein Topic gesehene Limit gewinnt. Eine Nachricht hält ihre Reservierung, bis der konsumierende Prozess sie freigibt, und Terminals verbrauchen nie Backlog-Kapazität.
+
+Ist das Budget eines Topics erschöpft, hängt die Queue an der Stelle der überlaufenden Nachricht eine synthetische Nachricht an, die `message queue limit exceeded` gefolgt von einem Terminal-Payload trägt. Weiterer Verkehr auf diesem Topic wird verworfen, bis die Queue zurückgesetzt wird, sodass eine begrenzte Subscription mit einem Fehler-Terminal endet statt unbegrenzt zu wachsen.
+
 ## Nachrichtenrouting
 
-Der Scheduler implementiert `relay.Receiver`, um Nachrichten an Prozesse zu leiten. Bei `Send()` sucht er die Ziel-PID in der Map `byPID`, legt die Nachricht als Event in die Prozess-Queue und weckt den Prozess, wenn er idle oder blockiert ist. Die Wiedereinreihung erfolgt über `injectOrGlobal`: Bei bekannter Worker-Affinität landet der Prozess in der Inject-Queue seines letzten Workers, andernfalls in der globalen Queue.
+Der Scheduler implementiert `relay.Receiver` um Nachrichten an Prozesse zu routen. `Send` delegiert an `SendContext` mit einem Background-Kontext; `SendContext` prüft die Cancellation vor dem Nachschlagen des Ziels und vor der Zulassung, weil die Zulassung selbst nicht blockiert und nach Erfolg nicht rückgängig zu machen ist.
+
+Beide schlagen die Ziel-PID in der `byPID`-Map nach und pushen das Package unter der aktuellen Generation des Prozessors in die Prozess-Queue. Die Zulassung hat drei Ausgänge:
+
+| Ergebnis | Bedeutung | Package-Ownership |
+|----------|-----------|-------------------|
+| Accepted | Die Queue hat das Package übernommen | Queue, vom Scheduler nach der Verarbeitung freigegeben |
+| Dropped | Ein Budget pro Topic ist übergelaufen und die Queue hat nichts behalten außer ihrem eigenen Overflow-Terminal | Aufrufer, sofort freigegeben |
+| Rejected | Die Queue ist geschlossen oder die Generation ist veraltet | Aufrufer; `SendContext` gibt `ErrProcessClosed` zurück |
+
+Ein zugelassener oder verworfener Push weckt anschließend den Prozess, wenn er idle oder blockiert ist. Die Neueinreihung läuft über injectOrGlobal, das in die Worker-eigene Inject-Queue des letzten Workers pusht, wenn der Prozess eine bekannte Worker-Affinität hat, und sonst auf die globale Queue zurückfällt.
 
 ## Herunterfahren :id=shutdown
 

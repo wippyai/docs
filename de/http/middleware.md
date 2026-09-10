@@ -104,7 +104,7 @@ options:
 
 **Schlüssel-Strategien:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Gibt `429 Too Many Requests` mit den Headern `X-RateLimit-Limit` und `X-RateLimit-Window` zurück.
+Gibt `429 Too Many Requests` mit Headern zurück: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
@@ -146,7 +146,7 @@ options:
 
 | Option | Standard | Beschreibung |
 |--------|----------|--------------|
-| `real_ip.trusted.subnets` | Loopback-, private RFC-1918-, IPv4-Link-Local-, CGNAT-, IPv6-ULA- und IPv6-Link-Local-Bereiche | Vertrauenswürdige Proxy-CIDRs |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918, Link-Local, CGNAT und lokale IPv6-Bereiche | Vertrauenswürdige Proxy-CIDRs |
 | `real_ip.trust_all` | `false` | Allen Quellen vertrauen (unsicher) |
 
 **Header-Priorität:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -297,7 +297,7 @@ post_options:
 
 <note>Pre-Handler</note>
 
-Zeichnet OpenTelemetry-Spans und -Metriken für eingehende Anfragen auf. Wird automatisch registriert, wenn OTel aktiviert ist; andernfalls ist sie wirkungslos.
+Zeichnet OpenTelemetry-Server-Spans fuer eingehende Anfragen auf. Wird immer registriert; wirkt als No-Op, wenn OTel oder dessen HTTP-Instrumentierung deaktiviert ist.
 
 ```yaml
 middleware:

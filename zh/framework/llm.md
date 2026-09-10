@@ -98,7 +98,7 @@ return { handler = handler }
 | 字段 | 类型 | 说明 |
 |-------|------|-------------|
 | `result` | string | 生成的文本内容 |
-| `tokens` | table | 令牌用量：`prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens` |
+| `tokens` | table | 令牌用量：`prompt_tokens`、`completion_tokens`、`thinking_tokens`、`total_tokens`，以及可选的 `cache_read_input_tokens`、`cache_read_tokens`、`cache_creation_input_tokens`、`cache_write_tokens` |
 | `finish_reason` | string | 生成停止原因：`"stop"`、`"length"`、`"tool_call"`、`"filtered"`、`"error"` |
 | `tool_calls` | table? | 工具调用数组（如果模型调用了工具） |
 | `metadata` | table | 提供商特定的元数据 |
@@ -140,7 +140,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | 添加助手消息 |
 | `:add_developer(content, meta?)` | 添加开发者消息 |
 | `:add_message(role, content_parts, name?, meta?)` | 添加指定角色和内容部分的消息 |
-| `:add_function_call(name, args, id?)` | 添加助手的工具调用 |
+| `:add_function_call(name, arguments, id?, options?)` | 添加助手的工具调用（`arguments` 为原始 JSON 字符串） |
 | `:add_function_result(name, result, id?)` | 添加工具执行结果 |
 | `:add_cache_marker(id?)` | 标记缓存边界（Claude 模型） |
 | `:get_messages()` | 获取消息数组 |

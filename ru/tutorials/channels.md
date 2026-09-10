@@ -7,6 +7,8 @@ description: "Каналы в стиле Go для конкурентного п
 
 Каналы в стиле Go для конкурентного программирования внутри процессов.
 
+Эта страница -- вводная: каждый фрагмент показывает один API по отдельности. Чтобы запустить их, вставьте фрагменты в функцию `main` записи `process.lua`, как описано в руководстве [Приложения CLI](tutorials/cli.md).
+
 ## Создание каналов
 
 Каналы -- это коммуникационные трубы для корутин. Создаются с помощью `channel.new(capacity)`:
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### Select с отправкой
 
-Используйте `case_send` для неблокирующей отправки:
+Используйте `case_send`, чтобы предложить отправку внутри select. Ветка выбирается, как только канал сможет принять значение:
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true (send succeeded)
 
 local v = ch:receive()  -- "sent"
+```
+
+Select блокируется, пока одна из веток не будет готова. Добавьте `default = true` в таблицу веток, чтобы вместо этого вернуться немедленно: тогда `result.default` равно true, если ничего не было готово:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer full, nothing sent)
 ```
 
 ## Паттерн "производитель-потребитель"

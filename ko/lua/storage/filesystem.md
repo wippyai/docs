@@ -1,6 +1,6 @@
 ---
 title: "파일시스템"
-description: "구성된 파일시스템 볼륨에서 파일을 읽고, 쓰고, 관리합니다."
+description: "샌드박스된 파일시스템 볼륨 내에서 파일을 읽고, 쓰고, 관리합니다."
 ---
 
 # 파일시스템
@@ -296,7 +296,7 @@ fs.seek.END       -- from end
 | `isdir(path)` | `boolean, error` | 디렉토리인지 확인 |
 | `mkdir(path)` | `boolean, error` | 디렉토리 생성 |
 | `remove(path)` | `boolean, error` | 파일/빈 디렉토리 제거 |
-| `readdir(path)` | `iterator, state` | 디렉터리 목록(일반 `for` 루프에서 사용) |
+| `readdir(path)` | `iterator, state` | 디렉토리 목록 (제네릭 `for` 루프에서 사용) |
 | `open(path, mode)` | `File, error` | 파일 핸들 열기 |
 | `chdir(path)` | `boolean, error` | 작업 디렉토리 변경 |
 | `pwd()` | `string, error` | 작업 디렉토리 가져오기 |

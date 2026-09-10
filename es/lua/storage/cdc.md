@@ -1,6 +1,6 @@
 ---
 title: "CDC"
-description: "Suscríbase a flujos de captura de cambios de PostgreSQL y reciba eventos por fila."
+description: "Suscríbase a streams de Change Data Capture desde fuentes db.cdc.postgres y db.cdc.sqlite. Liste las fuentes configuradas, abra un stream y reciba…"
 ---
 
 # CDC
@@ -8,9 +8,7 @@ description: "Suscríbase a flujos de captura de cambios de PostgreSQL y reciba 
 <secondary-label ref="stream"/>
 <secondary-label ref="nondeterministic"/>
 
-El módulo `cdc` se suscribe a flujos de captura de cambios de PostgreSQL procedentes de fuentes [`db.cdc.postgres`](../../system/cdc.md). Enumera las fuentes configuradas, abre flujos y entrega eventos de cambio por fila mediante canales.
-
-Esta página es una referencia de API con una receta parcial de suscripción. Sus fragmentos requieren una fuente CDC configurada y en ejecución; abrir el canal de entrega requiere además un contexto de proceso en ejecución. Los callbacks de aplicación como `handle_new_user` son marcadores que debe proporcionar quien llama.
+Suscríbase a streams de Change Data Capture desde fuentes [`db.cdc.postgres`](system/cdc.md) y [`db.cdc.sqlite`](system/cdc.md). Liste las fuentes configuradas, abra un stream y reciba eventos de cambio a nivel de fila a través de un canal. La API es neutral respecto al driver: ambos kinds retornan la misma información de fuente y los mismos eventos de cambio, y difieren solo en las [capacidades](system/cdc.md#capabilities) que publican.
 
 ## Carga
 
@@ -18,39 +16,37 @@ Esta página es una referencia de API con una receta parcial de suscripción. Su
 local cdc = require("cdc")
 ```
 
-## `list_sources`
+## list_sources
 
-Enumera las fuentes CDC configuradas:
+Liste las fuentes CDC configuradas que el llamante tiene permitido ver:
 
 ```lua
 local sources, err = cdc.list_sources()
-if err then return nil, err end
 for _, s in ipairs(sources) do
-    print(s.name, s.slot, s.streaming)
+    print(s.id, s.kind, s.state, s.capabilities.before_images)
 end
 ```
 
-Cada fuente es una tabla con `name`, `slot`, `publication`, `tables`, `streaming`, `failover`, `temporary` y `snapshot`. Consulte [Fuentes CDC](../../system/cdc.md#información-de-la-fuente).
+Las fuentes sobre las que el llamante no tiene `cdc.source` se omiten en lugar de reportarse como error.
 
-**Devuelve:** `table, error`
+**Retorna:** `table, error`
 
-## `source`
+## source
 
-Obtiene una fuente por su ID de entrada del registro o por el nombre del slot de replicación:
+Obtenga una sola fuente por nombre (su ID de entrada):
 
 ```lua
 local info, err = cdc.source("app:pg_cdc")
-if err then return nil, err end
 if info == nil then
-    -- no such source
+    -- no existe tal fuente
 end
 ```
 
-**Devuelve:** `table, error` (información de la fuente o `nil` si no se encuentra)
+**Retorna:** `table, error` (información de la fuente, o `nil` si no se encuentra)
 
-## `stream`
+## stream
 
-Abre un flujo de cambios de una fuente. El `cdc.Stream` devuelto expone un canal que entrega eventos de cambio:
+Abra un stream de cambios sobre una fuente. Retorna un `cdc.Stream` cuyo canal entrega eventos de cambio:
 
 ```lua
 local stream, err = cdc.stream("app:pg_cdc", {
@@ -58,42 +54,43 @@ local stream, err = cdc.stream("app:pg_cdc", {
     ops    = { "insert", "update" },
     buffer = 128,
 })
-if err then return nil, err end
-
--- The caller owns stream until close(), release(), or task cleanup.
 ```
 
-| Parámetro | Tipo | Descripción |
-|-----------|------|-------------|
-| `name` | string | ID de la fuente en el registro o nombre del slot de replicación |
-| `opts.tables` | []string | Limita el flujo a estas tablas (omítalo para todas las tablas configuradas) |
-| `opts.ops` | []string | Limita el flujo a estas operaciones: `insert`, `update`, `delete`, `truncate`, `snapshot` |
-| `opts.buffer` | int | Tamaño del búfer de suscripción de la fuente (1-65536; predeterminado: 128) |
+| Parámetro | Tipo | Por defecto | Descripción |
+|-----------|------|---------|-------------|
+| `name` | string | requerido | Nombre de la fuente (ID de entrada) |
+| `opts.tables` | []string | - | Filtrar a estas tablas (omitir para todas las tablas capturadas) |
+| `opts.ops` | []string | - | Filtrar a estas operaciones: `insert`, `update`, `delete`, `truncate` |
+| `opts.buffer` | int | 64 | Capacidad de elementos del backlog (1-65536) |
+| `opts.max_bytes` | int | 1048576 | Presupuesto de bytes del backlog para este suscriptor (1 MiB) |
+| `opts.snapshot` | bool | por defecto de la entrada | Solicitar el traspaso snapshot/live para este stream |
+| `opts.after` | string | - | Cursor opaco de reanudación tomado del `cursor` de un evento anterior |
 
-**Devuelve:** `Stream, error`
+Las claves de opción desconocidas se rechazan con `errors.INVALID`. Los nombres de tabla se comparan sin distinguir mayúsculas contra la relación cualificada y contra el nombre de tabla desnudo. Las filas del snapshot se filtran solo por `tables`; `ops` se aplica a los cambios en vivo.
 
-El canal de entrega de Lua tiene una capacidad fija independiente de 64. La opción `buffer` controla la suscripción a la fuente PostgreSQL, no ese canal.
+Un stream recibe un snapshot cuando `opts.snapshot` es true o cuando el campo `snapshot` de la entrada de la fuente está establecido; las filas del snapshot llegan primero con `op = "snapshot"`, y después el stream continúa hacia los cambios en vivo sin hueco. `opts.after` está reservado para los drivers que reanudan desde un cursor — todos los drivers que se distribuyen hoy retornan `errors.INVALID` ("cdc operation is not supported by this source") para él, incluido `db.cdc.postgres` cuando reporta `capture_resume`.
+
+Los filtros solo restringen la entrega. El acceso a una fuente lo concede el permiso `cdc.subscribe`, nunca un filtro.
+
+**Retorna:** `Stream, error`
 
 ## Métodos de Stream
 
-### `channel`
+### channel
 
-Devuelve el canal que recibe los eventos de cambio. La primera llamada se suscribe a la fuente y cede la ejecución; las siguientes devuelven el mismo canal. La primera llamada puede devolver un error de suscripción. `:receive()` del canal devuelve `value, true` para un cambio o `nil, false` cuando termina el flujo:
+Retorna el canal que recibe los eventos de cambio. La primera llamada se suscribe a la fuente (cede el control); las llamadas siguientes retornan el mismo canal. `:receive()` bloquea hasta que llega el siguiente cambio, o retorna `nil` cuando el stream termina:
 
 ```lua
-local stream, stream_err = cdc.stream("app:pg_cdc")
-if stream_err then return nil, stream_err end
-local ch, subscribe_err = stream:channel()
-if subscribe_err then
-    stream:close()
-    return nil, subscribe_err
-end
+local stream = cdc.stream("app:pg_cdc")
+local ch = stream:channel()
 
 while true do
-    local change, ok = ch:receive()
-    if not ok then break end
+    local change = ch:receive()
+    if change == nil then break end   -- stream cerrado
 
-    if change.op == "insert" then
+    if change.op == "snapshot" then
+        seed_row(change.table, change.after)
+    elseif change.op == "insert" then
         handle_new_user(change.table, change.after)
     elseif change.op == "update" then
         handle_update(change.table, change.before, change.after)
@@ -101,58 +98,108 @@ while true do
         handle_delete(change.table, change.before)
     end
 end
-
-local _, close_err = stream:close()
-if close_err then return nil, close_err end
 ```
 
-`receive` es un alias de `channel`.
+El stream es perezoso: constrúyalo y luego llame a `channel()` antes de generar las escrituras que debe observar. Esto es observación en vivo, no reproducción de cambios hechos antes de la suscripción.
 
-### `close`
+Cuando una fuente termina un stream con un fallo, el canal entrega un valor de error antes de cerrarse. `receive` es un alias de `channel`.
 
-Detiene la suscripción y libera el flujo. El método es idempotente y el runtime también cierra el flujo al terminar el ámbito de la tarea. `release` es un alias de `close`.
+### close
+
+Detiene la suscripción y libera el stream. Idempotente; también se cierra automáticamente al alcance de la tarea. `release` es un alias de `close`.
 
 ```lua
-local _, err = stream:close()
-if err then return nil, err end
+stream:close()
 ```
 
-## Evento de cambio
+## Evento de Cambio
 
 Cada mensaje recibido en el canal es una tabla de cambio:
 
 | Campo | Descripción |
 |-------|-------------|
-| `op` | Operación: `insert`, `update`, `delete`, `truncate` o `snapshot` |
+| `op` | Operación: `insert`, `update`, `delete`, `snapshot` o `truncate` |
 | `schema` | Esquema de la tabla |
 | `table` | Nombre de la tabla |
-| `relation` | `schema.table` |
-| `before` | Estado de la fila antes del cambio (`update`, `delete`; ausente para `insert`) |
+| `relation` | Nombre cualificado de la relación |
+| `before` | Estado de la fila antes del cambio (`update`, `delete`). Una imagen completa de la fila solo se garantiza cuando la fuente tiene la capacidad `before_images`; `db.cdc.postgres` lo rellena con la tupla anterior que lleve el WAL, lo que controla el `REPLICA IDENTITY` de la tabla |
 | `after` | Estado de la fila después del cambio (`insert`, `update`, `snapshot`; ausente para `delete`) |
-| `source` | Nombre de la fuente |
-| `lsn` | Log sequence number del cambio |
-| `commit_lsn` | LSN de la transacción que hace commit (cuando corresponda) |
-| `xid` | ID de la transacción (cuando corresponda) |
+| `source` | ID de entrada de la fuente |
+| `source_id` | ID de entrada de la fuente, como ID de registry |
+| `generation` | Generación de la fuente que produjo el evento |
+| `cursor` | Posición opaca por evento dentro de la fuente |
+| `transaction` | Identificador de transacción, cuando el driver reporta uno |
+| `lsn` | Número de secuencia de log del cambio (`db.cdc.postgres`) |
+| `commit_lsn` | LSN de la transacción que confirma (cuando aplica) |
+| `xid` | ID de transacción (cuando aplica) |
+| `unchanged` | Columnas cuyo valor no fue transmitido (valores TOAST sin cambios) |
+| `error` | Descripción de error reportada por el driver que viaja en el evento |
 
-`before` y `after` son mapas de fila cuyas claves son nombres de columnas.
+`before` y `after` son mapas de fila indexados por nombre de columna.
+
+## Información de la Fuente
+
+`cdc.source` y cada entrada de `cdc.list_sources` retornan el mismo registro:
+
+| Campo | Descripción |
+|-------|-------------|
+| `id` | ID de entrada |
+| `kind` | `db.cdc.postgres` o `db.cdc.sqlite` |
+| `name` | Nombre de la fuente (el ID de entrada) |
+| `state` | `unknown`, `starting`, `running`, `faulted` o `stopped` |
+| `generation` | Generación actual de la fuente |
+| `epoch` | Mismo valor que `generation` |
+| `engine` | Nombre del motor, cuando el driver reporta uno |
+| `db_resource` | ID de entrada del recurso SQL observado (`db.cdc.sqlite`) |
+| `slot` | Nombre del slot de replicación (`db.cdc.postgres`) |
+| `publication` | Publicación de Postgres, cuando está configurada |
+| `tables` | Tablas capturadas, cuando están configuradas |
+| `streaming` | `db.cdc.sqlite`: si la fuente está en ejecución; `db.cdc.postgres`: el ajuste de protocolo `streaming` de la entrada |
+| `failover` | Modo de slot de failover (`db.cdc.postgres`) |
+| `temporary` | Slot temporal (`db.cdc.postgres`) |
+| `snapshot` | Valor por defecto de snapshot a nivel de entrada |
+| `faulted` | Si la fuente está en estado `faulted` |
+| `error` | Último error de la fuente, cuando hay uno registrado |
+| `admission` | `active`, `snapshots`, `reserved_bytes`, `rejected` |
+| `capabilities` | `snapshot`, `capture_resume`, `replayable`, `captures_external_writes`, `before_images`, `coalesced` |
+
+Ramifique según `capabilities` en lugar de según `kind`:
+
+```lua
+local info = cdc.source("app:changes")
+if not info.capabilities.before_images then
+    -- before no es una imagen completa de fila garantizada; mantenga su propio último estado conocido
+end
+```
+
+Consulte [Fuentes CDC](system/cdc.md#source-info) para la semántica de los campos.
+
+## Permisos
+
+| Acción | Recurso | Descripción |
+|--------|----------|-------------|
+| `cdc.source` | ID de entrada de la fuente | `cdc.source`; también filtra `cdc.list_sources` |
+| `cdc.subscribe` | ID de entrada de la fuente | `cdc.stream`, comprobado de nuevo cuando se establece la suscripción |
+
+Una acción denegada retorna `errors.PERMISSION_DENIED`.
 
 ## Errores
 
-| Condición | Tipo |
+| Condición | Kind |
 |-----------|------|
-| No hay contexto Lua al crear un flujo | `errors.INTERNAL` |
-| No hay PID de proceso al suscribirse por primera vez | error Lua lanzado |
+| Sin contexto | `errors.INTERNAL` |
 | Se requiere el nombre de la fuente | `errors.INVALID` |
-| Tamaño de búfer no válido | `errors.INVALID` |
-| No se encuentra la fuente en la primera llamada a `channel()` / `receive()` | `errors.NOT_FOUND` |
-| El inspector de fuentes no está disponible para `list_sources()` / `source()` | `errors.INTERNAL` |
-| El enlace con el proceso deja de estar disponible después de la suscripción | `errors.INTERNAL` |
-| La suscripción falla en la primera llamada a `channel()` / `receive()` | error estructurado dependiente de la fuente |
+| Opción de stream inválida o desconocida | `errors.INVALID` |
+| `after` sobre una fuente sin `capture_resume` | `errors.INVALID` |
+| Fuente no registrada | `errors.NOT_FOUND` |
+| Fuente no iniciada o siendo reemplazada | `errors.UNAVAILABLE` |
+| Capacidad de suscripción agotada | `errors.UNAVAILABLE` |
+| Permiso denegado | `errors.PERMISSION_DENIED` |
 
-Consulte [Gestión de errores](../core/errors.md) para trabajar con errores.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
-## Véase también
+## Vea También
 
-- [Captura de cambios de datos](../../system/cdc.md) - Configuración de una fuente `db.cdc.postgres`
-- [Canal](../core/channel.md) - Semántica de los canales
-- [Base de datos](../../system/database.md) - Servicios de bases de datos SQL
+- [Change Data Capture](system/cdc.md) - Configuración y capacidades de las fuentes
+- [Canal](lua/core/channel.md) - Semántica de los canales
+- [Base de Datos](system/database.md) - Servicios de bases de datos SQL

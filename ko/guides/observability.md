@@ -34,9 +34,9 @@ logger:
 
 ```yaml
 logmanager:
-  propagate_downstream: true   # Propagate to child components
-  stream_to_events: false      # Forward logs to event bus
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  propagate_downstream: true   # 자식 컴포넌트로 전파
+  stream_to_events: false      # 이벤트 버스로 로그 전달
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run이 0으로, -v와 함께면 -1로 설정)
 ```
 
 `stream_to_events`를 활성화하면 로그 항목이 이벤트로 변환되어 프로세스가 이벤트 버스를 통해 구독할 수 있습니다.
@@ -58,7 +58,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Prometheus 서버는 `enabled`가 `true`이고 `address`가 비어 있지 않을 때만 시작합니다. 해당 주소에서 메트릭은 `/metrics`, 런타임 라이브니스 핸들러는 `/livez`로 노출됩니다.
+메트릭은 설정된 주소의 `/metrics`에서 노출되며, 같은 리스너가 `/livez`도 제공합니다. `max_cardinality`(기본값 1024)는 익스포터당 유지되는 활성 레이블 세트 수를 제한하며, 그 이상은 가장 오래 갱신되지 않은 시계열부터 제거됩니다.
 
 ### 스크레이프 설정
 
@@ -97,7 +97,7 @@ otel:
 
 ### 트레이스 소스
 
-특정 컴포넌트에 대한 트레이싱 활성화:
+`otel.enabled`가 true가 되면 모든 트레이스 소스가 기본적으로 켜집니다. 각각은 개별적으로 비활성화할 수 있습니다:
 
 ```yaml
 otel:
@@ -123,6 +123,7 @@ otel:
   # Function call tracing
   interceptor:
     enabled: true
+    order: 100                 # 인터셉터 실행 순서
 ```
 
 OTEL을 활성화하면 HTTP 트레이싱과 전파, 프로세스 트레이싱과 라이프사이클 스팬, 함수 인터셉션, 큐 트레이싱, 트레이스 내보내기가 기본으로 활성화됩니다. Temporal 트레이싱과 메트릭 내보내기는 기본으로 비활성화됩니다. 고정된 런타임은 함수 인터셉터를 순서 100으로 등록합니다. 설정에서 `interceptor.order` 값을 디코딩할 수는 있지만 등록 순서는 바뀌지 않습니다.
@@ -154,12 +155,11 @@ otel:
 
 | 컴포넌트 | 스팬 이름 | 속성 |
 |-----------|-----------|------------|
-| HTTP 요청 | `{METHOD} {route}` | http.method, http.url, http.host |
+| HTTP 요청 | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | 함수 호출 | 함수 ID | process.pid, frame.id |
-| 프로세스 라이프사이클 | `<source-id>.started/terminated`, 소스 프레임이 없으면 `process.started/terminated` | process.pid, lifecycle.event |
-| 큐 발행 | `<queue-id>.publish` | 메시징 속성과 헤더의 트레이스 컨텍스트 |
-| 큐 소비 | 핸들러 함수 ID | 함수 스팬이 상속한 메시징 속성 |
-| Temporal 워크플로우 | Temporal SDK 작업 이름 | Temporal SDK 워크플로우 및 실행 메타데이터 |
+| 프로세스 라이프사이클 | `{source}.started/terminated` | process.pid |
+| 큐 메시지 | `{queue}.publish` | messaging.operation, messaging.destination.name |
+| Temporal 워크플로우 | 워크플로우/액티비티 이름 | workflow.id, run.id |
 
 ### 컨텍스트 전파
 
@@ -184,6 +184,8 @@ OTEL은 환경 변수로 설정 가능합니다:
 | `OTEL_SERVICE_VERSION` | 서비스 버전 |
 | `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio`, `parentbased_traceidratio` 중 하나 |
 | `OTEL_TRACES_SAMPLER_ARG` | 샘플 레이트 (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio`, 또는 `parentbased_traceidratio` (비율은 `OTEL_TRACES_SAMPLER_ARG`에서) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | 비TLS 연결을 허용하려면 `true`로 설정 |
 | `OTEL_PROPAGATORS` | 프로파게이터 목록 |
 
 ## 런타임 통계

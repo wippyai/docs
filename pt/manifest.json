@@ -19,100 +19,41 @@
   {
     "title": "Guias",
     "children": [
-      {
-        "title": "Referência da CLI",
-        "path": "guides/cli"
-      },
-      {
-        "title": "Referência de Configuração",
-        "path": "guides/configuration"
-      },
-      {
-        "title": "Cluster",
-        "path": "guides/cluster"
-      },
-      {
-        "title": "Linter",
-        "path": "guides/linter"
-      },
-      {
-        "title": "Servidor de Linguagem",
-        "path": "guides/lsp"
-      },
-      {
-        "title": "Gerenciamento de Dependências",
-        "path": "guides/dependency-management"
-      },
-      {
-        "title": "Artefatos de build",
-        "path": "guides/artifacts"
-      },
-      {
-        "title": "Construindo Componentes",
-        "path": "guides/components"
-      },
-      {
-        "title": "Referência de Tipos de Entradas",
-        "path": "guides/entry-kinds"
-      },
-      {
-        "title": "Observabilidade",
-        "path": "guides/observability"
-      },
-      {
-        "title": "Consumidores de Filas",
-        "path": "guides/queue-consumers"
-      },
-      {
-        "title": "Supervisão",
-        "path": "guides/supervision"
-      },
-      {
-        "title": "Publicando Módulos",
-        "path": "guides/publishing"
-      }
+      {"title": "CLI", "path": "guides/cli"},
+      {"title": "Configuration", "path": "guides/configuration"},
+      {"title": "Cluster", "path": "guides/cluster"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Build-time Artifacts", "path": "guides/artifacts"},
+      {"title": "Construindo Componentes", "path": "guides/components"},
+      {"title": "Entry Kinds", "path": "guides/entry-kinds"},
+      {"title": "Observability", "path": "guides/observability"},
+      {"title": "Queue Consumers", "path": "guides/queue-consumers"},
+      {"title": "Supervision", "path": "guides/supervision"},
+      {"title": "Publishing", "path": "guides/publishing"}
     ]
   },
   {
     "title": "Conceitos centrais",
     "children": [
-      {
-        "title": "Unidades de Computação",
-        "path": "concepts/compute-units"
-      },
-      {
-        "title": "Arquitetura de Aplicações",
-        "path": "concepts/architecture"
-      },
-      {
-        "title": "Registro",
-        "path": "concepts/registry"
-      },
-      {
-        "title": "Modelo de segurança",
-        "path": "concepts/security-model"
-      },
-      {
-        "title": "Modelo de Processos",
-        "path": "concepts/process-model"
-      },
-      {
-        "title": "Cluster",
-        "path": "concepts/cluster"
-      },
-      {
-        "title": "Funções",
-        "path": "concepts/functions"
-      },
-      {
-        "title": "Workflows",
-        "path": "concepts/workflows"
-      }
+      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "Arquitetura", "path": "concepts/architecture"},
+      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Security Model", "path": "concepts/security-model"},
+      {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "Cluster", "path": "concepts/cluster"},
+      {"title": "Functions", "path": "concepts/functions"},
+      {"title": "Workflows", "path": "concepts/workflows"}
     ]
   },
   {
     "title": "Runtime Lua",
     "children": [
+      {"title": "Overview", "path": "lua/overview"},
+      {"title": "Why Lua", "path": "lua/why-lua"},
+      {"title": "Types", "path": "lua/types"},
+      {"title": "Entries", "path": "lua/entries"},
       {
         "title": "Lua Runtime",
         "path": "lua/overview"
@@ -189,34 +130,13 @@
       {
         "title": "Formatos de dados",
         "children": [
-          {
-            "title": "Codificação JSON",
-            "path": "lua/data/json"
-          },
-          {
-            "title": "Codificação YAML",
-            "path": "lua/data/yaml"
-          },
-          {
-            "title": "Codificação Base64",
-            "path": "lua/data/base64"
-          },
-          {
-            "title": "Compressão",
-            "path": "lua/data/compress"
-          },
-          {
-            "title": "Archives",
-            "path": "lua/data/archive"
-          },
-          {
-            "title": "Codificação de Payload",
-            "path": "lua/data/payload"
-          },
-          {
-            "title": "Planilhas Excel",
-            "path": "lua/data/excel"
-          }
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Archive", "path": "lua/data/archive"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
       {
@@ -243,30 +163,12 @@
       {
         "title": "Armazenamento",
         "children": [
-          {
-            "title": "Banco de Dados SQL",
-            "path": "lua/storage/sql"
-          },
-          {
-            "title": "Key-Value Store",
-            "path": "lua/storage/store"
-          },
-          {
-            "title": "Filesystem",
-            "path": "lua/storage/filesystem"
-          },
-          {
-            "title": "Cloud Storage",
-            "path": "lua/storage/cloud"
-          },
-          {
-            "title": "Message Queue",
-            "path": "lua/storage/queue"
-          },
-          {
-            "title": "CDC",
-            "path": "lua/storage/cdc"
-          }
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Filesystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
+          {"title": "Queue", "path": "lua/storage/queue"},
+          {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
       {
@@ -608,6 +510,63 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
+      {"title": "Platform Topology", "path": "frontend/platform-topology"},
+      {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
+      {"title": "The Design Layer", "path": "frontend/design-layer"},
+      {
+        "title": "Frontend Registry",
+        "children": [
+          {"title": "Registry Entries", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend Apps (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Components (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Dynamic Routing", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy Micro Frontends",
+        "children": [
+          {"title": "Overview", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Page Recipe", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind Contract", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "Theming: Web Components", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build and Dependency Contract", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuration and Casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom Composites", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Compliance Rule Index", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Unsupported Project-Bound Modules", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "Debugging", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {
@@ -627,62 +586,20 @@
   {
     "title": "Componentes do sistema",
     "children": [
-      {
-        "title": "Host de Processos",
-        "path": "system/process-host"
-      },
-      {
-        "title": "Grupos de Processos",
-        "path": "system/process-groups"
-      },
-      {
-        "title": "Terminal",
-        "path": "system/terminal"
-      },
-      {
-        "title": "Sistema de Banco de Dados",
-        "path": "system/database"
-      },
-      {
-        "title": "Change Data Capture",
-        "path": "system/cdc"
-      },
-      {
-        "title": "Store (Chave-Valor)",
-        "path": "system/store"
-      },
-      {
-        "title": "Fila",
-        "path": "system/queue"
-      },
-      {
-        "title": "Sobreposições de rede",
-        "path": "system/network"
-      },
-      {
-        "title": "Sistema de Arquivos",
-        "path": "system/filesystem"
-      },
-      {
-        "title": "Armazenamento em Nuvem",
-        "path": "system/cloudstorage"
-      },
-      {
-        "title": "Sistema de Ambiente",
-        "path": "system/env"
-      },
-      {
-        "title": "Motor de Templates",
-        "path": "system/template"
-      },
-      {
-        "title": "Modelo de Segurança",
-        "path": "system/security"
-      },
-      {
-        "title": "Executor",
-        "path": "system/exec"
-      }
+      {"title": "Process Host", "path": "system/process-host"},
+      {"title": "Grupos de Processos", "path": "system/process-groups"},
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Database", "path": "system/database"},
+      {"title": "Change Data Capture", "path": "system/cdc"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Network", "path": "system/network"},
+      {"title": "Filesystem", "path": "system/filesystem"},
+      {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Environment", "path": "system/env"},
+      {"title": "Template", "path": "system/template"},
+      {"title": "Security", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
     ]
   },
   {
@@ -721,74 +638,24 @@
   {
     "title": "Tutoriais",
     "children": [
-      {
-        "title": "Hello World",
-        "path": "tutorials/hello-world"
-      },
-      {
-        "title": "Aplicações CLI",
-        "path": "tutorials/cli"
-      },
-      {
-        "title": "Serviço de Eco",
-        "path": "tutorials/echo-service"
-      },
-      {
-        "title": "Introdução a Canais e Concorrência",
-        "path": "tutorials/channels"
-      },
-      {
-        "title": "Introdução a Processos e Mensageria",
-        "path": "tutorials/processes"
-      },
-      {
-        "title": "Supervisão de Processos",
-        "path": "tutorials/supervision"
-      },
-      {
-        "title": "Fila de Tarefas",
-        "path": "tutorials/task-queue"
-      },
-      {
-        "title": "Testes",
-        "path": "tutorials/testing"
-      },
-      {
-        "title": "Ticker de Criptomoedas",
-        "path": "tutorials/auth"
-      },
-      {
-        "title": "Facade Frontend",
-        "path": "tutorials/facade"
-      },
-      {
-        "title": "Redes de Sobreposição",
-        "path": "tutorials/network"
-      },
-      {
-        "title": "Executando Rust no Wippy",
-        "path": "tutorials/rust-wasm"
-      },
-      {
-        "title": "Agente LLM",
-        "path": "tutorials/llm-agent"
-      },
-      {
-        "title": "Micro AGI",
-        "path": "tutorials/micro-agi"
-      },
-      {
-        "title": "Keeper via MCP",
-        "path": "tutorials/keeper-mcp"
-      },
-      {
-        "title": "Dataflow: Execute um DAG Durável",
-        "path": "tutorials/dataflow"
-      },
-      {
-        "title": "Geração Aumentada por Recuperação (RAG)",
-        "path": "tutorials/rag"
-      }
+      {"title": "Hello World", "path": "tutorials/hello-world"},
+      {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Terminal UI", "path": "tutorials/tty"},
+      {"title": "Echo Service", "path": "tutorials/echo-service"},
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Processes", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Testing", "path": "tutorials/testing"},
+      {"title": "Authentication", "path": "tutorials/auth"},
+      {"title": "Frontend Facade", "path": "tutorials/facade"},
+      {"title": "Network Overlays", "path": "tutorials/network"},
+      {"title": "Rust WASM", "path": "tutorials/rust-wasm"},
+      {"title": "LLM Agent", "path": "tutorials/llm-agent"},
+      {"title": "Micro AGI", "path": "tutorials/micro-agi"},
+      {"title": "Keeper over MCP", "path": "tutorials/keeper-mcp"},
+      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
+      {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },
   {

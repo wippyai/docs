@@ -1,13 +1,11 @@
 ---
 title: "Dataflow"
-description: "Compose and run DAG workflows with Wippy Dataflow nodes, routing, persistence, signals, templates, and client APIs."
+description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
 ---
 
 # Dataflow
 
-The `wippy/dataflow` module orchestrates directed acyclic graph (DAG) workflows. Functions, agents, cycles, parallel processors, and other nodes exchange data through named, discriminator-keyed routes, while the orchestrator manages execution, persisted state, and recovery.
-
-This page is an API primer with conceptual and reference snippets, not a standalone tutorial. Values such as `task`, `config`, and `file_list`, and IDs such as `app:tokenize` or `app:worker`, stand for data and registry entries supplied by the application. The snippets also assume the persistence database and process host described in [Setup](#setup). For a complete runnable project, follow [Build a Dataflow Workflow](../tutorials/dataflow.md).
+The `wippy/dataflow` module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes — functions, agents, cycles, and parallel processors — connected by typed data routes. The orchestrator manages execution, state persistence, and recovery.
 
 ## Setup
 
@@ -31,13 +29,13 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, `wippy/session`, `wippy/test`, and `wippy/migration`; `wippy install` resolves them. By default, the module uses `app:db` for workflow persistence and `app:processes` for its wake service. Provide those entries or override the `target_db` and `process_host` requirements. Dataflow migrations run through `wippy/migration`.
+The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
 
 The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
 
 ## Flow Builder
 
-The flow builder provides a fluent interface for composing workflows. Import it into the entry that defines the flow:
+The flow builder provides a fluent interface for composing workflows. Import it into your entry:
 
 ```yaml
 imports:
@@ -70,7 +68,7 @@ flow.template()
 
 ### Linear Pipeline
 
-Without explicit routes, nodes form a linear chain and each node's output becomes the next node's input:
+Nodes chain automatically when no explicit routing is defined. Output of each node flows to the next:
 
 ```lua
 local result, err = flow.create()
@@ -83,7 +81,7 @@ local result, err = flow.create()
 
 ### Named Routing
 
-Use `:as()` to name a node and `:to()` to route data to another node. A node needs a name when another route references it:
+Use `:as()` to name nodes and `:to()` to route data between them. Only use `:as()` when the node needs to be referenced:
 
 ```lua
 local result, err = flow.create()
@@ -131,7 +129,7 @@ flow.create()
     :run()
 ```
 
-Use `:with_input()` for external workflow data and `:with_data()` for configuration, constants, and reference data shared by multiple nodes. Static data uses reference optimization: the first route creates the data, and later routes create references.
+Use `:with_input()` for external data entering the workflow. Use `:with_data()` for config, constants, and reference data shared across multiple nodes. Static data uses reference optimization — the first route creates actual data, subsequent routes create lightweight references.
 
 ### Conditional Routing
 
@@ -187,11 +185,11 @@ Use `:error_to()` to route node errors to a handler. Errors can be routed as nor
 }):as("consolidator")
 ```
 
-In this graph, both planners can run in parallel. A planner error follows the same route to the consolidator as its successful output.
+This pattern runs both planners in parallel — if one fails, its error becomes the input for the consolidator, which proceeds with whatever results are available.
 
 ## Input Merging
 
-Input shape depends on route discriminators and whether the node defines `args`.
+How nodes receive inputs depends on discriminators and whether `args` is configured.
 
 **Without args — single default input:**
 
@@ -226,7 +224,7 @@ Input shape depends on route discriminators and whether the node defines `args`.
 ```
 
 <note>
-Nodes with <code>args</code> or string-form <code>input_transform</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
+Nodes with <code>args</code> cannot receive inputs with the <code>"default"</code> discriminator. Use named discriminators with <code>:to(target, "input_key")</code> instead.
 </note>
 
 ## Input Transforms
@@ -264,7 +262,7 @@ The third parameter to `:to()` is an inline transform expression:
 
 ### Function Node
 
-Executes a registered `function.lua` entry.
+Executes a registered `function.lua` entry:
 
 ```lua
 :func("app:my_function", {
@@ -288,7 +286,7 @@ If the function returns `{ _control = { commands = [...] } }`, the orchestrator 
 
 ### Agent Node
 
-Executes an agent with tool calling and an optional structured exit.
+Executes an agent with tool calling and optional structured exit:
 
 ```lua
 :agent("app:content_writer", {
@@ -324,8 +322,6 @@ Executes an agent with tool calling and an optional structured exit.
 | `arena.exit_func_id` | string | Function to validate exit output |
 | `arena.context` | table | Additional context |
 | `inputs` | table | Input requirements |
-| `active_traits` | array | Override the selected agent's active traits; an empty array disables them for this node |
-| `active_tools` | array | Override the selected agent's active tools; an empty array disables them for this node |
 | `show_tool_calls` | boolean | Include tool calls in output |
 | `input_transform` | string/table | Transform inputs |
 | `metadata` | table | Node metadata |
@@ -350,7 +346,7 @@ Executes an agent with tool calling and an optional structured exit.
 
 ### Cycle Node
 
-Repeats a function or template while carrying state between iterations.
+Iterates a function or template repeatedly with persistent state:
 
 ```lua
 :cycle({
@@ -359,7 +355,6 @@ Repeats a function or template while carrying state between iterations.
     initial_state = {
         entry_id = entry_id,
         content_prompt = prompt,
-        task = task,
         min_score = 8.0,
         feedback_history = {}
     }
@@ -406,13 +401,9 @@ end
 |--------|------|-------------|
 | `func_id` | string | Iteration function (mutually exclusive with `template`) |
 | `template` | FlowBuilder | Template for each iteration (mutually exclusive with `func_id`) |
-| `max_iterations` | number | Maximum iterations (default: 100) |
-| `initial_state` | table | Starting state (default: `{}`) |
+| `max_iterations` | number | Maximum iterations |
+| `initial_state` | table | Starting state |
 | `continue_condition` | string | Expression: continue while true |
-| `inputs` | table | Input requirements |
-| `context` | table | Execution context passed to the cycle function |
-| `input_transform` | string/table | Transform inputs before the cycle receives them |
-| `metadata` | table | Node metadata |
 
 **Template-based cycle:**
 
@@ -427,7 +418,7 @@ end
 
 ### Parallel Node
 
-Processes array items through a reusable template.
+Map-reduce pattern over arrays:
 
 ```lua
 :parallel({
@@ -436,8 +427,7 @@ Processes array items through a reusable template.
     iteration_input_key = "spec",
     passthrough_keys = { "task" },
     batch_size = 10,
-    scheduling = "rolling",
-    on_error = "continue",
+    on_error = "collect_errors",
     filter = "successes",
     unwrap = true,
     template = flow.template()
@@ -459,18 +449,14 @@ Processes array items through a reusable template.
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `source_array_key` | string | Input key containing a non-empty array (required) |
+| `source_array_key` | string | Input key containing the array (required) |
 | `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
 | `iteration_input_key` | string | Input key for current item (default: `"default"`) |
-| `batch_size` | number | Positive integer up to 1000; maximum in-flight items (default: 1) |
-| `scheduling` | string | `"batch"` (default) waits for a whole wave; `"rolling"` refills completed slots and requires `on_error = "continue"` |
-| `on_error` | string | `"continue"` (default) or `"fail_fast"`; `"collect_errors"` is a compatibility alias for `"continue"` |
+| `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
+| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
 | `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
 | `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
 | `passthrough_keys` | array | Input keys forwarded to every iteration |
-| `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before parallel processing |
-| `metadata` | table | Node metadata |
 
 **Passthrough keys** provide shared context (config, task description) to every iteration without duplicating data in the source array:
 
@@ -493,7 +479,7 @@ Processes array items through a reusable template.
 
 ### Signal Node
 
-Pauses a node until an external signal arrives. This supports human approvals, external events, and staged workflows:
+Pauses execution until an external signal arrives. Use for human approvals, external events, or staged workflows:
 
 ```lua
 :signal({
@@ -506,7 +492,6 @@ Pauses a node until an external signal arrives. This supports human approvals, e
 | Option | Type | Description |
 |--------|------|-------------|
 | `signal_id` | string | Signal name matched against `client:signal()`. If empty or omitted, a UUID v7 is generated at runtime |
-| `timeout` | string/number | Positive duration string or positive finite milliseconds; expiry emits `{ timeout = true, code = "SIGNAL_TIMEOUT" }` |
 | `inputs` | table | Input requirements |
 | `input_transform` | string/table | Transform inputs before the node receives them |
 | `metadata` | table | Node metadata |
@@ -517,12 +502,12 @@ Send the signal from outside the workflow using the client API (see `client:sign
 
 The node yields with `wait_for_signal = true` and persists that yield in the workflow state. The orchestrator resumes the node when a matching `NODE_SIGNAL` commit arrives.
 
-- `client:signal()` stores omitted, `nil`, or `false` data as `{}`. That empty object, as well as preserved values such as `0` and `""`, satisfies the yield.
+- The signal is satisfied by any non-`nil` payload. `false`, `0`, `""`, and `{}` all satisfy the yield; only `nil` keeps it pending.
 - A signal yield blocks `COMPLETE_WORKFLOW` but does not block other pending nodes — parallel branches continue to execute while one branch waits.
-- `client:signal()` durably queues the signal and requests workflow activation. If the signal arrives before the node reaches its yield, it is delivered when that yield is tracked; a separate `:start()` call is not required.
+- Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
 - Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
-- When multiple active yields share a `signal_id`, one matching yield receives the data; which one is not defined. Use unique IDs when the recipient matters.
-- Omitting `signal_id` generates a UUID v7 that the builder does not return. Set an explicit, stable ID for signals delivered through the client API.
+- When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
+- If the `signal_id` field is absent, matching falls back to the node's discriminator.
 - Delivered signal data is passed to the node's output as the signal payload.
 
 #### Durability and recovery
@@ -537,32 +522,18 @@ Orphaned signal yields (yields whose parent process exited without completion) a
 
 #### Pipeline patterns
 
-Signal nodes participate in any topology. Add the client binding alongside the `flow` import shown above:
-
-```yaml
-imports:
-  client: userspace.dataflow:client
-```
+Signal nodes participate in any topology:
 
 ```lua
-local client = require("client")
-local c, client_err = client.new()
-if client_err then return nil, client_err end
-
 -- Human-in-the-loop approval between two functions
-local approval_id, start_err = flow.create()
-    :with_input({ draft_id = "draft-123" })
+flow.create()
     :func("app:draft")
     :signal({ signal_id = "approve_draft" })
     :func("app:publish")
-    :start()
-if start_err then return nil, start_err end
-
-local _, signal_err = c:signal(approval_id, "approve_draft", { approved = true })
-if signal_err then return nil, signal_err end
+    :run()
 
 -- Two parallel approvals that must both arrive before release
-local release_id, release_err = flow.create()
+flow.create()
     :with_input({ doc = "release-notes" })
         :as("trigger")
         :to("legal", "doc")
@@ -581,17 +552,10 @@ local release_id, release_err = flow.create()
         :to("release")
 
     :func("app:release"):as("release"):to("@success")
-    :start()
-if release_err then return nil, release_err end
-
-local _, legal_err = c:signal(release_id, "legal_ok", { approved_by = "legal" })
-if legal_err then return nil, legal_err end
-
-local _, finance_err = c:signal(release_id, "finance_ok", { approved_by = "finance" })
-if finance_err then return nil, finance_err end
+    :run()
 ```
 
-Stored signal data is exposed as the node output. Downstream nodes receive the submitted payload, except that omitted, `nil`, or `false` data is normalized to `{}`.
+Signal data is exposed as the node output, so downstream nodes receive whatever was passed to `client:signal()`.
 
 ### Join Node
 
@@ -610,12 +574,10 @@ Collects multiple inputs before proceeding:
 | `output_mode` | string | `"object"` (default) or `"array"` (arrival order) |
 | `ignored_keys` | array | Input keys excluded from output |
 | `inputs` | table | Input requirements |
-| `input_transform` | string/table | Transform inputs before joining |
-| `metadata` | table | Node metadata |
 
 ## Templates
 
-Templates define reusable sub-workflows. Create one with `flow.template()` and inline it with `:use()`:
+Templates define reusable sub-workflows. Use `flow.template()` to create, `:use()` to inline:
 
 ```lua
 local preprocessor = flow.template()
@@ -648,12 +610,12 @@ end
 When `:run()` executes inside an existing dataflow context, it returns `{ _control = { commands = [...] } }` instead of executing directly. The orchestrator handles the child workflow through the yield mechanism.
 
 <note>
-A function that needs to spawn a child workflow must return <code>flow.create():run()</code>. Other dataflow functions can return ordinary results.
+Functions that participate in dataflow composition <strong>must</strong> return <code>flow.create():run()</code>. Functions returning anything else cannot spawn child workflows.
 </note>
 
 ## Synchronous vs Asynchronous
 
-`:run()` executes synchronously. It normally returns terminal workflow output, but a durable wait can passivate execution first; in that case the returned result has `pending = true` and `passivated = true` together with the workflow ID.
+`:run()` blocks until the workflow completes and returns output:
 
 ```lua
 local result, err = flow.create()
@@ -675,7 +637,7 @@ local dataflow_id, err = flow.create()
 
 ## Client API
 
-Use the client API for programmatic workflow management:
+For programmatic workflow management:
 
 ```yaml
 imports:
@@ -690,7 +652,7 @@ local c, err = client.new()
 
 | Method | Description |
 |--------|-------------|
-| `client.new()` | Create client (requires the current security actor and scope) |
+| `client.new()` | Create client (requires security actor) |
 | `:create_workflow(commands, options?)` | Create workflow, returns `dataflow_id` |
 | `:execute(dataflow_id, options?)` | Run synchronously, returns result |
 | `:start(dataflow_id, options?)` | Run asynchronously, returns `dataflow_id` |
@@ -699,21 +661,21 @@ local c, err = client.new()
 | `:cancel(dataflow_id, timeout?)` | Gracefully cancel (default: 30s) |
 | `:terminate(dataflow_id)` | Force terminate |
 | `:signal(dataflow_id, signal_id, data?)` | Deliver an external signal to a waiting signal node |
-| `:revive(dataflow_id)` | Request activation for a non-terminal workflow |
 
 ## Workflow Status
 
 | Status | Description |
 |--------|-------------|
-| `pending` | Created but not yet executing |
-| `running` | Workflow execution is active |
-| `waiting` | Passivated while awaiting a durable event such as a signal |
+| `template` | Node is a template instance |
+| `pending` | Waiting for inputs |
+| `ready` | Inputs collected, ready to execute |
+| `running` | Actively executing |
+| `paused` | Yielded, waiting for child workflow |
 | `completed` | Finished successfully |
 | `failed` | Failed |
 | `cancelled` | User cancelled |
+| `skipped` | Conditional branch not taken |
 | `terminated` | Force terminated |
-
-Nodes have a separate lifecycle. Current node transitions use `template`, `pending`, `running`, `waiting`, `completed`, `failed`, and `cancelled`. `ready` is accepted as a loaded workflow activation status; `paused`, `skipped`, and node-level `terminated` remain recognized compatibility values but are not written as current node transitions.
 
 ## Metadata
 
@@ -721,7 +683,6 @@ Nodes have a separate lifecycle. Current node transitions use `template`, `pendi
 flow.create()
     :with_title("Document Processing Pipeline")
     :with_metadata({ source = "api", priority = "high" })
-    :with_input({ document_id = "doc-123" })
     :func("app:process", { metadata = { title = "Process Document" } })
     :run()
 ```
@@ -730,7 +691,7 @@ Title defaults to "Flow Builder Workflow" if not provided.
 
 ## Validation Rules
 
-The compiler validates the workflow graph before execution:
+The compiler validates workflows at compile time:
 
 - All `:as(name)` names must be unique
 - All `:to()` and `:error_to()` targets must reference existing names (except `@success`, `@fail`)
@@ -740,13 +701,13 @@ The compiler validates the workflow graph before execution:
 - `:parallel()` requires `source_array_key` and `template`
 - At least one path must lead to `@success` or have auto-output
 - `:when()` only follows `:to()` or `:error_to()` from nodes (not static data)
-- Nodes with `args` or string-form `input_transform` cannot receive inputs with the `"default"` discriminator
+- Nodes with `args` cannot receive inputs with `"default"` discriminator
 
 ## Expression Reference
 
 Expressions use the `expr` module syntax, available in `:when()` conditions and `input_transform` values.
 
-**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `&`, `|`, `^`, `<<`, `>>`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `in`, `contains`, `startsWith`, `endsWith`
+**Operators:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
 
 **Array functions:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
 
@@ -773,6 +734,6 @@ Error categories: compilation errors, client errors, workflow creation errors, e
 
 ## See Also
 
-- [Agents](framework/agents.md) — Agent framework used by agent nodes
-- [LLM](framework/llm.md) — Model interface used by agents
-- [Framework Overview](framework/overview.md) — Install and import framework modules
+- [Agents](framework/agents.md) - Agent framework used by agent nodes
+- [LLM](framework/llm.md) - LLM module
+- [Framework Overview](framework/overview.md) - Framework module usage

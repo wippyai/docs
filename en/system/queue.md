@@ -118,7 +118,7 @@ For AWS SQS and SQS-compatible endpoints (LocalStack, ElasticMQ). Credentials, r
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -128,7 +128,7 @@ For AWS SQS and SQS-compatible endpoints (LocalStack, ElasticMQ). Credentials, r
 |-------|------|---------|-------------|
 | `config` | Registry ID | required | `config.aws` resource providing region and credentials |
 | `endpoint` | string | - | Custom endpoint URL (LocalStack, ElasticMQ); omit for real AWS |
-| `message_retention_period` | int | `345600` (4d) | Queue-level retention in seconds (60–1209600) |
+| `message_retention_period` | int | - | Queue-level retention in seconds (60–1209600), set as a queue attribute on create. Omit to leave the AWS default of 345600 (4 days). |
 | `default_delay_seconds` | int | `0` | Default delivery delay applied on CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | Disable SQS message checksum checks on send/receive |
 | `use_fips` | bool | `false` | Use FIPS-compliant endpoints |
@@ -268,9 +268,11 @@ local function main(body)
         correlation_id = correlation_id
     })
 
-    local _, task_err = process_task(body)
-    if task_err then return nil, task_err end
-    return true
+    local ok, err = process_task(body)
+    if err then
+        return nil, err  -- nack: redelivery per driver
+    end
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -290,10 +292,11 @@ return { main = main }
 
 Unless the handler settles explicitly, the consumer settles from the function invocation result:
 
-| Handler Outcome | Action |
-|-----------------|--------|
-| Completes without an invocation error | Ack |
-| Returns or raises an invocation error | Nack (redeliver per driver) |
+| Handler Result | Action |
+|----------------|--------|
+| Any plain return value (including `false`) | Ack |
+| `nil, err` return | Nack (redeliver per driver) |
+| Raised error | Nack |
 
 Ordinary return values, including `false`, do not select acknowledgment behavior. Call `msg:ack()` or `msg:nack()` to settle explicitly. Settlement is single-shot: whichever call lands first wins.
 

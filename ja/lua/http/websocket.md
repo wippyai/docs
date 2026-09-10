@@ -1,6 +1,6 @@
 ---
-title: "WebSocket クライアント"
-description: "WebSocket サーバーへ接続し、メッセージの送受信、圧縮、タイムアウト、クローズコードを使用します。"
+title: "WebSocketクライアント"
+description: "サーバーとのリアルタイム双方向通信用WebSocketクライアント。"
 ---
 
 # WebSocket クライアント
@@ -61,15 +61,15 @@ end
 
 | オプション | 型 | 説明 |
 |--------|------|-------------|
-| `headers` | table | 文字列から文字列への HTTP ハンドシェイクヘッダー。その他のエントリは無視 |
-| `protocols` | table | WebSocket サブプロトコル文字列。文字列以外のエントリは無視 |
-| `dial_timeout` | number/string | 接続タイムアウト。`0` はランタイム全体の接続期限を設定しないが、基盤 HTTP トランスポートの既定値は適用 |
-| `read_timeout` | number/string | メッセージごとの読み取りタイムアウト。`0` で無効化 |
-| `write_timeout` | number/string | Lua API は受け付けるが、ランタイム `v0.3.32a` では適用されない |
-| `compression` | number/string | `0`/`"disabled"`、`1`/`"context_takeover"`、`2`/`"no_context_takeover"`。既定は無効 |
-| `compression_threshold` | number | 圧縮する最小バイト数（0-104857600）。`0` は context takeover で 128 バイト、no-context-takeover で 512 バイト |
-| `read_limit` | number | 受信メッセージの最大バイト数（0-134217728）。`0` は 16 MiB |
-| `channel_capacity` | number | サービス側の受信メッセージバッファ（1-10000）。既定 16 |
+| `headers` | table | ハンドシェイク用HTTPヘッダー |
+| `protocols` | table | WebSocketサブプロトコル |
+| `dial_timeout` | number/string | 接続タイムアウト（msまたは"5s"） |
+| `read_timeout` | number/string | 読み取りタイムアウト |
+| `write_timeout` | number/string | 書き込みタイムアウト |
+| `compression` | number/string | 圧縮モード（定数を参照）、または`"disabled"`、`"context_takeover"`、`"no_context_takeover"` |
+| `compression_threshold` | number | 圧縮する最小サイズ（0-100MB） |
+| `read_limit` | number | 最大メッセージサイズ（0-128MB） |
+| `channel_capacity` | number | 受信チャネルバッファ（1-10000） |
 
 **タイムアウト形式:** 数値はミリ秒、文字列はGo duration形式（"5s"、"1m"）。
 
@@ -79,7 +79,8 @@ end
 
 ### テキストメッセージ
 
-テキストメッセージを送信します。
+```lua
+client:send("Hello, Server!")
 
 ```lua
 local json = require("json")
@@ -108,7 +109,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | メッセージ内容 |
 | `type` | number | `websocket.TEXT`（1）または`websocket.BINARY`（2） |
 
-`type` が省略されるか `websocket.TEXT`/`websocket.BINARY` 以外なら、ランタイムはテキストメッセージとして送信します。送信コマンドが完了するまで yield し、戻り値はありません。ランタイム `v0.3.32a` では、トランスポートの送信失敗は Lua に返されません。
+メッセージが送信されるまでyieldします。値は返しません。
 
 ### Ping
 
@@ -118,7 +119,7 @@ ping フレームを送信します。
 client:ping()
 ```
 
-ping コマンドが完了するまで yield し、戻り値はありません。ランタイム `v0.3.32a` では、トランスポートの ping 失敗は Lua に返されません。
+pingが送信されるまでyieldします。値は返しません。
 
 ## メッセージの受信
 
@@ -245,9 +246,7 @@ if close_err then return nil, close_err end
 | `code` | number | クローズコード（1000-4999）、デフォルト1000 |
 | `reason` | string | クローズ理由（オプション） |
 
-クローズコマンドが完了するまで yield します。成功時は戻り値なし、失敗時は `nil, error` です。検査する場合は 2 つの結果を受け取ってください。エラーは第 2 戻り値です。受け付ける数値範囲外の値は無視され、既定コード `1000` が使われます。
-
-受信チャネルはクライアントが所有するため、直接閉じないでください。リモートの終端イベントがチャネルを閉じます。`client:close()` は受信チャネルの購読を解除してクライアント側プロデューサーを停止するため、プロセス終了時のクリーンアップに頼らず速やかに呼び出してください。
+クローズフレームが送信されるまでyieldします。
 
 ## 定数
 

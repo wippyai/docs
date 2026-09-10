@@ -54,6 +54,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -72,11 +79,6 @@ entries:
       - name: process_host
         value: app:processes
 
-  - name: dep.security
-    kind: ns.dependency
-    component: wippy/security
-    version: "*"
-
   - name: dep.terminal
     kind: ns.dependency
     component: wippy/terminal
@@ -87,7 +89,12 @@ entries:
     meta:
       command:
         name: ask
-        short: Ask one question
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -101,6 +108,10 @@ Das LLM-Modul benötigt zwei Infrastruktur-Einträge:
 - `env.storage.os` stellt API-Keys aus Umgebungsvariablen bereit.
 - `process.host` stellt die Prozess-Runtime bereit, die das LLM-Modul intern verwendet.
 
+Die Abhängigkeit `wippy/terminal` stellt den `terminal.host` bereit, auf dem Befehle ausgeführt werden und wohin `io.print` schreibt.
+
+`meta.command` gibt dem Prozess einen Namen, sodass `wippy run ask` ihn mit den restlichen Argumenten als String-Payloads startet. Sein `security`-Block installiert den Actor und den Policy-Scope für diesen Start: Das LLM-Modul löst Modelle aus der Registry auf, und ein ohne Scope gestarteter Befehl liest nichts aus ihr.
+
 ### Generierungscode
 
 Erstellen Sie `src/ask.lua`:
@@ -109,17 +120,9 @@ Erstellen Sie `src/ask.lua`:
 local io = require("io")
 local llm = require("llm")
 
-local function main()
-    io.write("Question: ")
-    io.flush()
-    local question = io.readline()
-    if not question or question == "" then
-        io.print("A question is required")
-        return 1
-    end
-
-    local response, err = llm.generate(question, {
-        model = "gpt-4o-mini",
+local function main(input)
+    local response, err = llm.generate(input, {
+        model = "gpt-4.1-nano",
         temperature = 0.7,
         max_tokens = 512,
     })
@@ -169,22 +172,18 @@ Das LLM-Modul löst Modelle aus der Registry auf. Fügen Sie einen Modelleintrag
 
 ```bash
 wippy init
-wippy update
-wippy install
-wippy run ask
+wippy run ask "What is the capital of France?"
 ```
 
-Geben Sie am Prompt `What is the capital of France?` ein. Die Modelldefinition legt
-den Provider und den Modellnamen fest, die an dessen API gesendet werden.
+Dies führt den `ask`-Prozess auf dem Terminal-Host mit der Frage als Argument aus und gibt das Ergebnis aus. Die Modelldefinition teilt dem LLM-Modul mit, welchen Anbieter es verwenden und welchen Modellnamen es an die API senden soll.
 
 ## Phase 2: Konversationen
 
-Wechseln Sie von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgängen mithilfe des Prompt-Builders. Ändern Sie den Eintrag von einer Funktion zu einem Prozess mit Terminal-I/O.
+Wechsle von einem einzelnen Aufruf zu einer Konversation mit mehreren Durchgängen mithilfe des Prompt-Builders. Registriere den Prozess als benannten Befehl.
 
 ### Eintragsdefinitionen aktualisieren
 
-Ersetzen Sie den `ask`-Eintrag durch einen `chat`-Prozess. Behalten Sie den Eintrag
-`dep.terminal` aus Phase 1 bei:
+Ersetze den `ask`-Eintrag durch einen `chat`-Prozess:
 
 ```yaml
   - name: chat
@@ -193,6 +192,11 @@ Ersetzen Sie den `ask`-Eintrag durch einen `chat`-Prozess. Behalten Sie den Eint
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -314,6 +318,11 @@ Wechseln Sie zum Agent-Framework und aktualisieren Sie die Imports des Eintrags:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -821,11 +830,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

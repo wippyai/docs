@@ -65,7 +65,7 @@ version: "1.0"
 namespace: app
 
 entries:
-  - name: probe_policy
+  - name: net_policy
     kind: security.policy
     policy:
       actions:
@@ -99,9 +99,9 @@ entries:
         short: Check outbound IP through overlays
         security:
           actor:
-            id: app:probe
+            id: system.probe
           policies:
-            - app:probe_policy
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -111,6 +111,8 @@ entries:
 ```
 
 With `isolate_streams: true`, the SOCKS5 driver creates random credentials for each connection so Tor can open a fresh circuit for each dial.
+
+Security is strict by default, so the command carries the actor and policy its launch runs under. `http_client.request` covers the outbound call and `network.select` covers the explicit overlay choice; without them every check fails closed.
 
 ## Step 2: Route Outbound Calls
 
@@ -206,6 +208,13 @@ Tailscale can also accept HTTP listeners. Attach the overlay to the `http.servic
 instead of the client:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
@@ -218,9 +227,16 @@ instead of the client:
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-The server binds on the tailnet interface; clients reach it via the Tailscale address. SOCKS5 is outbound-only — assigning it to `http.service` is rejected.
+`auth_key` resolves through the [env registry](system/env.md), so `TS_AUTHKEY` is a registered variable — an OS value needs an `env.variable` backed by `env.storage.os`.
+
+Binding through an overlay is gated by `network.bind`, checked when the listener starts, so the service declares a scope that allows it. The server binds on the tailnet interface; clients reach it via the Tailscale address. SOCKS5 is outbound-only — assigning it to `http.service` fails the listener with `inbound listeners are not exposed over SOCKS5`.
 
 ## App-wide Default
 

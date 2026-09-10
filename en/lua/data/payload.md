@@ -1,6 +1,6 @@
 ---
 title: "Payload Encoding"
-description: "Create typed payloads, inspect their format, extract values, and transcode between supported representations."
+description: "Convert data between formats including JSON, MessagePack, and binary. Handle typed payloads for inter-service communication and workflow data passing."
 ---
 
 # Payload Encoding
@@ -154,7 +154,7 @@ if err then
 end
 ```
 
-Both `data()` and `unmarshal()` return the existing Lua value or transcode a non-Lua payload to the Lua format. `unmarshal()` is stricter when a transcoder produces an invalid result: it returns an `errors.INTERNAL` error, while `data()` returns `nil`.
+`unmarshal()` behaves like `data()`: both transcode non-Lua payloads to the Lua format and return the resulting Lua value. The only difference is that `unmarshal()` returns an error when the transcoded data is not a valid Lua value, whereas `data()` returns `nil`.
 
 **Returns:** `any, error`
 

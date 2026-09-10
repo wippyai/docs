@@ -1,163 +1,167 @@
 ---
-title: "Proxy と分離"
-description: "page application と web component が設定を受け取り、Proxy API 経由で Web Host と通信する仕組み。"
+title: "プロキシと分離"
+description: "Web Hostは各子マイクロフロントエンドをサンドボックス化されたコンテキストで実行し、Proxy APIを通じてホストに橋渡しします。マイクロフロントエンドアプリとWeb…"
 ---
 
-# Proxy と分離
+# プロキシと分離
 
-このページは API と internal transport の reference です。snippet は既存の hosted page または component を前提にした部分的 integration で、完全な application ではありません。
+Web Hostは各子マイクロフロントエンドをサンドボックス化されたコンテキストで実行し、**Proxy API**を通じてホストに橋渡しします。マイクロフロントエンドアプリもWebコンポーネントも、**`@wippy-fe/proxy`** からimportすることでホストに到達します。
 
-Web Host は **Proxy API** を通して page application と web component を host service に接続します。packaged page は `hostConfig.renderEngine` に従い sandboxed `srcdoc` iframe または Web Fragment realm で動き、web component は host page の DOM で動きます。3 context とも API を **`@wippy-fe/proxy`** から import します。
-
-![Proxy API injection and nesting](../diagrams/proxy-layers.svg)
+![Proxy APIの注入とネスト](../diagrams/proxy-layers.svg)
 
 ## Proxy API
 
-engine 固有 runtime が page context に API と現在の child configuration を置き、**`@wippy-fe/proxy`** から公開します。
+Proxy APIはホストへの入口です。ランタイムである `proxy.js` がこれを配信します。APIと現在の `AppConfig` をページ上に置き、**`@wippy-fe/proxy`** モジュールを通じて公開します。
 
-- **iframe engine** の `view.page`: host が `proxy.js` を page の `srcdoc` に注入。
-- **Web Fragment engine** の `view.page`: fragment gateway が reframed realm で `proxy-fragment.js` を読み込む。
-- **web component**（`view.component`）: host page の DOM に mount するため runtime はすでに存在。
+- **マイクロフロントエンドアプリ**（`view.page`）の場合、ホストはページの `srcdoc` に `proxy.js` を注入します。
+- **Webコンポーネント**（`view.component`）の場合、ランタイムは既にホストページ内に存在します。コンポーネントは別のiframeではなく、ホストのDOMにマウントされます。
 
-code は `@wippy-fe/proxy` の sync getter を使います。
+コードは `@wippy-fe/proxy` がエクスポートする同期ゲッターを通じてこれを消費します:
 
 ```ts
 import { host, api, on, config } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
-const data = await api.get('/api/v1/agents')   // api is an axios instance; the await is the HTTP call
-on('@visibility', (visible) => { /* pause or resume work */ })
+const data = await api.get('/api/v1/agents')   // api は axios インスタンス。await は HTTP 呼び出し
+on('@visibility', (visible) => { /* 処理を一時停止または再開する */ })
 ```
 
-portable Vue routing は例外で、`@wippy-fe/router` が `@history` を受け取り local navigation を報告します。その周囲に manual routing subscription を追加しないでください。
+ポータブルなVueのルーティングは例外です。`@wippy-fe/router` が `@history` を消費し、ローカルの遷移を代わりに報告します。その周りに手動のルーティング購読を追加してはいけません。
 
-application code 実行時には getter は**同期的**で、`host`、`api`、`on`、`config` などに application-managed handshake は不要です。iframe は pre-injected config から開始し、fragment runtime は API 構築前に host から config を解決します。Vite build では `@wippy-fe/proxy` を `external` にしてください。host が import map で提供します。全 surface は [Proxy API](../micro-frontends/proxy-api.md)を参照してください。
+これらのゲッターは**同期的**です。`host`、`api`、`on`、`config` などは、コードが実行される時点で既に利用可能です。設定はランタイムの初期化前に配置されるため（後述）、待つべきハンドシェイクはありません。Viteのビルドでは `@wippy-fe/proxy` を `external` としてマークしてください。ホストがimport mapを通じて提供します。全体の面については[プロキシAPI](../micro-frontends/proxy-api.md)を参照してください。
 
-## Page application への config delivery
+## 設定がアプリのiframeに届くまで
 
-### iframe エンジン :id=iframe-engine
-
-host は `view.page` 読込時に `srcdoc` を作り、**app script より前に順番どおり**次を注入します。
+ホストが `view.page` を読み込むとき、`srcdoc` を構築し、**アプリのスクリプトの前に、この順序で**注入します:
 
 ```html
-<!-- 1. The child AppConfig — set synchronously, before the runtime loads -->
-<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, context */ }</script>
-<!-- 2. The CSS-injection flags for this page -->
+<!-- 1. 子の AppConfig — ランタイムの読み込み前に同期的に設定される -->
+<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, hostConfig, context */ }</script>
+<!-- 2. このページ向けの CSS 注入フラグ -->
 <script>window.__WIPPY_PROXY_CONFIG__ = { injections: { css: { themeConfig: true, primevue: true /* … */ } } }</script>
-<!-- 3. The runtime (preceded by loading.js) -->
+<!-- 3. ランタイム (先行して loading.js) -->
 <script src="/.../loading.js"></script>
 <script src="/.../proxy.js"></script>
 ```
 
-config global が `proxy.js` より先に設定されるため runtime は同期的に初期化され、getter は即時利用できます。page がこれらの script を直接参照することはなく、`<script data-role="@wippy/scripts">` placeholder を host が正しい順序の tag に置換します。page 単位 override は `window.__WIPPY_CONFIG_OVERRIDES__` として届きます（[Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)参照）。
+設定のグローバルが `proxy.js` の実行**前**に設定されるため、ランタイムは同期的に初期化され、`@wippy-fe/proxy` のゲッターは即座に機能します。ハンドシェイクはありません。ページがこれらのスクリプトを直接参照することはありません。`<script data-role="@wippy/scripts">` のプレースホルダーが、ホストによって正しい順序のタグに置き換えられます。ページごとのオーバーライドは `window.__WIPPY_CONFIG_OVERRIDES__` として届きます（[プロキシAPI — 設定のオーバーライド](../micro-frontends/proxy-api.md#config-overrides)を参照）。
 
-### Web Fragment エンジン :id=web-fragment-engine
+Webコンポーネントも同じグローバルを見ます。ホストページ内で動作し、そこではコンポーネントの `connectedCallback` が発火する前にランタイムが既にそれらを設定しているからです。
 
-fragment gateway は Web Host import map、`loading.js`、`proxy-fragment.js` を含む reframed realm stub を配信します。server は client-held auth token を注入できないため、fragment runtime は same-origin channel 上の `GetConfig`/`SetConfig` handshake で host から child config を得て、`@wippy-fe/proxy` が使う同じ authenticated API と config global を構築します。
+## アプリとWebコンポーネントの違い
 
-web component は別 page realm ではなく host page で動くため、host page の既存 API/config global を参照します。
+どちらも `@wippy-fe/proxy` から同じAPIをimportします。異なるのは実行コンテキストとスタイルの配信方法です:
 
-## App と web component の違い
+| | マイクロフロントエンドアプリ (`view.page`) | Webコンポーネント (`view.component`) |
+|---|---|---|
+| 実行場所 | 自身の `srcdoc` iframe | ホストページのDOM（Shadow DOM） |
+| ランタイムの配信 | iframeに注入される `proxy.js` | ランタイムは既にホストページ内に存在 |
+| CSS | 完全な注入パイプライン（`themeConfig`、`primevue` など） — [CSS注入](./css-injection.md)を参照 | Shadow DOMへの `hostCssKeys` — [テーマ: Webコンポーネント](../micro-frontends/web-component-theming.md)を参照 |
 
-| | ページ: iframe エンジン | ページ: Web Fragment エンジン | Web コンポーネント |
-|---|---|---|---|
-| 実行場所 | sandboxed `srcdoc` iframe | shadow root に反映された reframed same-origin realm | host page DOM（Shadow DOM） |
-| Runtime delivery | `srcdoc` に `proxy.js` を注入 | fragment gateway が `proxy-fragment.js` を読み込む | host page に runtime が存在 |
-| Config delivery | synchronous global と non-blocking handshake update | fragment runtime 所有の blocking host handshake | host page global |
-| CSS | client injection pipeline — [CSS Injection](./css-injection.md) | gateway と fragment-realm injection — [CSS Injection](./css-injection.md) | Shadow DOM への `hostCssKeys` — [Theming: Web Components](../micro-frontends/web-component-theming.md) |
+## 合成とネスト
 
-## Composition と nesting
+子は合成できます。マイクロフロントエンドアプリやWebコンポーネントは、それ自体が子（同じくマイクロフロントエンドアプリやWebコンポーネント）をホストでき、その子もまた自身の子をホストできます。深さに制限はありません。どの階層も同じ `@wippy-fe/proxy` APIを使用します。
 
-child は任意の深さまで compose できます。micro frontend app または web component が同種の child を host し、全 level が同じ API を使います。
+ノードが子をホストする方法は、子の種類によって異なります:
 
-- **page / HTML child** は `<w-iframe>`、`<w-artifact>`、`html.inject` を使用。iframe mode では base URL、import map、runtime、config を含む `srcdoc` を作る。fragment mode では nested registered `view.page` は Web Fragment、それ以外の inline HTML は `srcdoc` のまま。proxy は parent 経由で host へ bridge する。
-- **web component child** は tag を render するか `loadWebComponent` / `loadByTagName` で読み込み、同じ DOM で Proxy API を直接 import する。
+- **iframeの子**（マイクロフロントエンドアプリ、アーティファクト、任意のWippy HTML）は、`<w-iframe>`、`<w-artifact>`、`html.inject` を経由します。これらは子の `srcdoc` にランタイム（ベースURL、import map、`loading.js`、`proxy.js`、設定）を注入するため、トップレベルのアプリとまったく同じようにProxy APIを得ます。そのプロキシは親を経由してホストへ橋渡しします。
+- **Webコンポーネントの子**にはそれらは一切不要です。そのタグをレンダリングするか、`loadWebComponent` / `loadByTagName` で読み込むだけで、同じDOM内で動作し、Proxy APIを直接importします。
 
-top-level でも深い nested child でも code は同一です。以下の [`<w-iframe>`](#w-iframe-custom-element)、[`<w-artifact>`](#w-artifact-custom-element)、[Advanced HTML Injection](#advanced-html-injection)を参照してください。
+子自身のコードは、トップレベルで動作しても何段もネストされていても同一です。`@wippy-fe/proxy` からimportして使うだけです。ネスト固有の特別なルールはありません。
 
-## 内部要素 — 読み取り・上書き禁止 :id=internals-do-not-read-or-override
+仕組みについては、以下の[`<w-iframe>`](#w-iframe-custom-element)、[`<w-artifact>`](#w-artifact-custom-element)、[高度なHTML注入](#advanced-html-injection)を参照してください。
 
-`proxy.js` / `proxy-fragment.js` が内部用に次を導入します。application/component code は読み取りも代入もせず `@wippy-fe/proxy` を使ってください。
+## 内部 — 読み取りもオーバーライドもしないこと
+
+`proxy.js` は自身の用途のために以下のグローバルをインストールします。**アプリケーションやコンポーネントのコードがこれらを読んだり代入したりしてはいけません。** 代わりに `@wippy-fe/proxy` を使用してください。誤って上書きしないよう、ここに記載しています:
 
 | グローバル | 内容 |
 |---|---|
-| `window.$W` | async accessor object。internal |
-| `window.getWippyApi` / `window.initWippyApi` | async instance resolver。internal（`initWippyApi` は deprecated） |
-| `window.__WIPPY_APP_API__` | resolved proxy instance |
-| `window.__WIPPY_APP_CONFIG__` | child `AppConfig` snapshot |
-| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS-injection flag と per-page override |
-| `window.__WIPPY_WEB_COMPONENT_CACHE__` | loaded-component cache |
+| `window.$W` | 非同期のアクセサオブジェクト（`$W.host()`、`$W.api()` など）。内部用。サポートされる面は `@wippy-fe/proxy` です。 |
+| `window.getWippyApi` / `window.initWippyApi` | 非同期の「インスタンスを解決する」関数。内部用（`initWippyApi` は非推奨）。 |
+| `window.__WIPPY_APP_API__` | 解決済みのプロキシインスタンス。 |
+| `window.__WIPPY_APP_CONFIG__` | 子の `AppConfig` のスナップショット。 |
+| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS注入のフラグとページごとのオーバーライド。 |
+| `window.__WIPPY_WEB_COMPONENT_CACHE__` | 読み込み済みコンポーネントのキャッシュ。 |
 
-public JavaScript API は、Web Host 全体を mount する `initWippyApp(config, rootContainer?)` と、child app/component 用 sync API **`@wippy-fe/proxy`** の 2 entry point です。表の global はすべて internal です。
+公開のJavaScript APIは2つのエントリポイントで構成されます。`initWippyApp(config, rootContainer?)` はWeb Host全体をマウントし（ファサードが使うモジュール埋め込みのエントリ。[ファサードのエントリポイント](./entry-point.md)を参照）、**`@wippy-fe/proxy`** は子アプリとコンポーネントのための同期APIです。上の表にあるものはすべて内部用です。
 
-## PostMessage Protocol（`IFrameMessageType`）— internal transport
+## PostMessageプロトコル（`IFrameMessageType`） — 内部トランスポート
 
-runtime が内部で使う wire protocol で、application code は message を直接送受信しません。`srcdoc` page では config は `proxy.js` より前に同期的に存在し、その後の `get-config` は non-blocking re-sync/live-update channel です。Web Fragment では handshake が初期 config source です。manual whole-host iframe（`iframe.html?waitForCustomConfig`）でも blocking で、parent が最初の request に答えます。
+これはランタイムが内部的に使うワイヤープロトコルです。**アプリケーションコードがこれらのメッセージを送受信することはありません。** `@wippy-fe/proxy` が代わりに処理します。
 
-message は `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` 形状の JSON envelope です。`type` は `APP_CONFIG_IFRAME_EVENT_TYPE` で変更できますがデフォルトは `'@gen2-chat'`。次は public behavior の説明に必要な transport member で、internal enum の全件ではありません。
+ホストが注入する標準の経路では、起動にハンドシェイクは不要です。設定は `proxy.js` の実行前に `window.__WIPPY_APP_CONFIG__` として既に同期的に存在するため、ランタイムは即座にインスタンスを構築します。この経路でも `get-config`/`set-config` のやり取りは行われますが、それは**ブロックしない再同期およびライブ更新のチャネル**としてのみです。同期的にインスタンスが構築された後、iframeのランタイムは常に `get-config` を送り、ホストは `set-config` で応答し、以降の設定更新のたびに `set-config` を再送します。ネストされた `<w-iframe>` の子も同じように振る舞います。コードがこれらを待つことはありません。同期ゲッターは既に有効です。
 
-| 列挙メンバー | ワイヤー値 | 方向 | 説明 |
+ハンドシェイクが**唯一のブロックする設定ソース**になるのは、ただ1つのシナリオ、すなわち手動のファサードなしiframe埋め込み（`iframe.html?waitForCustomConfig`）の場合だけです。そこでは事前注入された `window.__WIPPY_APP_CONFIG__` が存在しないため、初期化が最初の `set-config` でブロックし、親が `get-config` の要求に応答しなければなりません（[ファサードのエントリポイント § 手動のiframe埋め込み](./entry-point.md#manual-facade-less-iframe-embedding)を参照）。
+
+すべてのメッセージは `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }` という形のJSONエンベロープです。`type` フィールドは `APP_CONFIG_IFRAME_EVENT_TYPE` で設定可能ですが、デフォルトは `'@gen2-chat'` です。
+
+すべてのメッセージ型は `IFrameMessageType` の列挙で定義されています:
+
+| 列挙メンバー | ワイヤー上の値 | 方向 | 説明 |
 |-------------|------------|-----------|-------------|
-| `GetConfig` | `get-config` | Child → Host | Initial handshake: child requests its `AppConfig` |
-| `SetConfig` | `set-config` | Host → Child | Host delivers `AppConfig` in response to `GetConfig` |
-| `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Child | Host URL changed; fires child's `@history` event |
-| `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Child | Iframe visibility changed; fires child's `@visibility` event |
-| `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Child | Delivers a WebSocket topic event to subscribed children |
-| `CmdRouteChanged` | `cmd-route-changed` | Child → Host | Child's internal route changed; host updates browser URL |
-| `CmdTitleChanged` | `cmd-title-changed` | Child → Host | Child's `document.title` changed; host updates page title |
-| `CmdStartChat` | `cmd-start-chat` | Child → Host | Open a new chat session |
-| `CmdOpenSession` | `cmd-open-session` | Child → Host | Navigate to an existing chat session |
-| `CmdOpenArtifact` | `cmd-open-artifact` | Child → Host | Open an artifact in sidebar or modal |
-| `CmdNavigate` | `cmd-navigate` | Child → Host | SPA navigation request |
-| `CmdShowToast` | `cmd-show-toast` | 子 → ホスト | トースト通知を表示 |
-| `CmdShowConfirm` | `cmd-show-confirm` | 子 → ホスト | 確認ダイアログを表示 |
-| `OnConfirmResult` | `on-confirm-result` | Host → Child | Delivers confirm dialog result |
-| `CmdSetContext` | `cmd-set-context` | Child → Host | Send context to a chat session |
-| `CmdHandleError` | `cmd-handle-error` | Child → Host | Report an error to the host |
-| `CmdLogout` | `cmd-logout` | Child → Host | Trigger logout |
-| `CmdSubscribe` | `cmd-subscribe` | Child → Host | Subscribe to a WebSocket topic |
-| `CmdUnSubscribe` | `cmd-unsubscribe` | Child → Host | Unsubscribe from a topic |
-| `OnSubscription` | `on-subscription` | Host → Child | Deliver subscription event data |
-| `CmdStateGet` | `cmd-state-get` | Child → Host | Read a persisted state key |
-| `CmdStateSet` | `cmd-state-set` | Child → Host | Write a persisted state key |
-| `CmdStateRemove` | `cmd-state-remove` | Child → Host | Delete a persisted state key |
-| `CmdStateClear` | `cmd-state-clear` | Child → Host | Clear all state for this page |
-| `CmdStateGetAll` | `cmd-state-get-all` | Child → Host | Read all persisted state |
-| `OnStateResult` | `on-state-result` | Host → Child | Delivers state read result |
-| `OnStateError` | `on-state-error` | Host → Child | Reports state operation failure |
-| `CmdWsSend` | `cmd-ws-send` | Child → Host | ホスト接続を介して WebSocket コマンドを転送 |
-| `CmdBodySize` | `cmd-body-size` | Child → Host | `auto-height` 用に本体サイズを報告 |
-| `CmdBridgePost` | `cmd-bridge-post` | Child ↔ Parent | `host.bridge` を介して応答を待たずにチャンネルメッセージを送信 |
-| `CmdBridgeRequest` | `cmd-bridge-request` | Child ↔ Parent | `host.bridge` を介して要求・応答チャンネルメッセージを送信 |
-| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Child → Host | ナビゲーションの所有権を取得（ナビゲーション所有者モード） |
-| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Child → Host | ナビゲーションの所有権を解放 |
-| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Child → Host | 管理レイアウトの更新を購読 |
-| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Child → Host | パネル定義にパッチを適用 |
-| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Child ↔ Host | タブ内レイアウトバスのメッセージ |
-| `OnLayoutChange` | `on-layout-change` | Host → Child | Full layout snapshot update |
-| `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Child | Per-panel live state delta |
-| `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Child | Layout bus broadcast delivery |
+| `GetConfig` | `get-config` | 子 → ホスト | 初回のハンドシェイク。子が自身の `AppConfig` を要求する |
+| `SetConfig` | `set-config` | ホスト → 子 | `GetConfig` への応答としてホストが `AppConfig` を配信する |
+| `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | ホスト → 子 | ホストのURLが変わった。子の `@history` イベントを発火する |
+| `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | ホスト → 子 | iframeの可視性が変わった。子の `@visibility` イベントを発火する |
+| `TopicWasReceivedInParent` | `topic-was-received-in-parent` | ホスト → 子 | 購読中の子にWebSocketのトピックイベントを配信する |
+| `CmdRouteChanged` | `cmd-route-changed` | 子 → ホスト | 子の内部ルートが変わった。ホストがブラウザのURLを更新する |
+| `CmdTitleChanged` | `cmd-title-changed` | 子 → ホスト | 子の `document.title` が変わった。ホストがページタイトルを更新する |
+| `CmdStartChat` | `cmd-start-chat` | 子 → ホスト | 新しいチャットセッションを開く |
+| `CmdOpenSession` | `cmd-open-session` | 子 → ホスト | 既存のチャットセッションへ遷移する |
+| `CmdOpenArtifact` | `cmd-open-artifact` | 子 → ホスト | サイドバーまたはモーダルでアーティファクトを開く |
+| `CmdNavigate` | `cmd-navigate` | 子 → ホスト | SPAの遷移要求 |
+| `CmdShowToast` | `cmd-show-toast` | 子 → ホスト | トースト通知を表示する |
+| `CmdShowConfirm` | `cmd-show-confirm` | 子 → ホスト | 確認ダイアログを表示する |
+| `OnConfirmResult` | `on-confirm-result` | ホスト → 子 | 確認ダイアログの結果を配信する |
+| `CmdSetContext` | `cmd-set-context` | 子 → ホスト | チャットセッションにコンテキストを送る |
+| `CmdHandleError` | `cmd-handle-error` | 子 → ホスト | ホストにエラーを報告する |
+| `CmdLogout` | `cmd-logout` | 子 → ホスト | ログアウトを起動する |
+| `CmdSubscribe` | `cmd-subscribe` | 子 → ホスト | WebSocketのトピックを購読する |
+| `CmdUnSubscribe` | `cmd-unsubscribe` | 子 → ホスト | トピックの購読を解除する |
+| `OnSubscription` | `on-subscription` | ホスト → 子 | 購読イベントのデータを配信する |
+| `CmdStateGet` | `cmd-state-get` | 子 → ホスト | 永続化された状態のキーを読む |
+| `CmdStateSet` | `cmd-state-set` | 子 → ホスト | 永続化された状態のキーを書く |
+| `CmdStateRemove` | `cmd-state-remove` | 子 → ホスト | 永続化された状態のキーを削除する |
+| `CmdStateClear` | `cmd-state-clear` | 子 → ホスト | このページのすべての状態をクリアする |
+| `CmdStateGetAll` | `cmd-state-get-all` | 子 → ホスト | 永続化されたすべての状態を読む |
+| `OnStateResult` | `on-state-result` | ホスト → 子 | 状態の読み取り結果を配信する |
+| `OnStateError` | `on-state-error` | ホスト → 子 | 状態操作の失敗を報告する |
+| `CmdWsSend` | `cmd-ws-send` | 子 → ホスト | ホストの接続を通じてWebSocketコマンドを転送する |
+| `CmdBodySize` | `cmd-body-size` | 子 → ホスト | `auto-height` のためにbodyのサイズを報告する |
+| `CmdBridgePost` | `cmd-bridge-post` | 子 ↔ 親 | `host.bridge` 経由の一方向チャネルメッセージ |
+| `CmdBridgeRequest` | `cmd-bridge-request` | 子 ↔ 親 | `host.bridge` 経由のリクエスト/レスポンス型チャネルメッセージ |
+| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | 子 → ホスト | ナビゲーションの所有権を主張する（nav-ownerモード） |
+| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | 子 → ホスト | ナビゲーションの所有権を解放する |
+| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | 子 → ホスト | マネージドレイアウトの更新を購読する |
+| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | 子 → ホスト | パネル定義にパッチを当てる |
+| `CmdLayoutBroadcast` | `cmd-layout-broadcast` | 子 ↔ ホスト | タブ内のレイアウトバスのメッセージ |
+| `OnLayoutChange` | `on-layout-change` | ホスト → 子 | レイアウトのスナップショット全体の更新 |
+| `OnLayoutPanelChanged` | `on-layout-panel-changed` | ホスト → 子 | パネルごとのライブ状態の差分 |
+| `OnLayoutBroadcast` | `on-layout-broadcast` | ホスト → 子 | レイアウトバスのブロードキャスト配信 |
 
-## `<w-iframe>` カスタム要素 :id=w-iframe-custom-element :id=w-iframe-custom-element
+アプリケーションコードがこれらのメッセージを直接送受信することはありません。プロキシがプロトコルを透過的に処理し、`@wippy-fe/proxy` のAPI面だけを公開します。
 
-`<w-iframe>` は proxy runtime 組み込みの low-level child-page primitive です。raw source HTML を受け取り、通常の iframe path では full Wippy runtime（base URL、import map、`loading.js`、`proxy.js`、child config）を sandboxed `srcdoc` iframe に注入します。fragment-rendered page 内では nested registered `view.page` が nested Web Fragment を使い、それ以外は `srcdoc` のままです。
+## `<w-iframe>` カスタム要素
 
-source HTML に対して authenticated API、state/WebSocket relay、nav-owner routing、parent-child bridge を含む Wippy micro frontend app と同じ runtime behavior が必要な場合に使います。
+`<w-iframe>` は `proxy.js` に組み込まれた低レベルのiframeプリミティブです。生のソースHTMLを受け取り、Wippyランタイム一式（ベースURL、import map、`loading.js`、`proxy.js`、子の設定）を注入し、その結果をサンドボックス化された `srcdoc` iframeとしてレンダリングします。
 
-### Attribute と property
+ソースHTMLを持っていて、Wippyのマイクロフロントエンドアプリが自動的に得るのと同じランタイムの挙動（認証付きAPI、状態の中継、WebSocketの中継、nav-ownerルーティング、親子間のブリッジメッセージング）が欲しい場合に `<w-iframe>` を使用します。
+
+### 属性とプロパティ
 
 | 属性 / プロパティ | 必須 | デフォルト | 説明 |
-|---|---|---|---|
-| `src` | いいえ | — | proxy `api` で raw source HTML として取得する URL |
-| `srcdoc` | いいえ | — | Raw source HTML。大きな string は `element.srcdoc = html` でも設定可能 |
-| `base-url` | いいえ | `src` または `document.baseURI` から導出 | relative asset 解決用に注入する `<base href>` |
-| `resource-id` | いいえ | element `id`、次に `src` | child context id。default state/log scope を設定 |
-| `resource-type` | いいえ | `page` | child context type: `page` / `artifact` |
-| `sub-path` | いいえ | parent route | initial child route。`GetConfig` handshake で `config.context.route` として転送 |
-| `auto-height` | いいえ | `false` | child の `CmdBodySize` report に合わせ iframe height を変更 |
-| `nav-owner` | いいえ | `false` | `CmdRouteChanged` を intercept し host URL を変えず `nav-owner-route` DOM event を dispatch |
+|----------------------|----------|---------|-------------|
+| `src` | いいえ | — | プロキシの `api` を通じて生のソースHTMLとして取得するURL。 |
+| `srcdoc` | いいえ | — | 生のソースHTML。大きな文字列には `element.srcdoc = html` としても設定できます。 |
+| `base-url` | いいえ | `src` または `document.baseURI` から導出 | 相対アセットの解決のために注入される `<base href>`。 |
+| `resource-id` | いいえ | 要素の `id`、次に `src` | 子のコンテキスト識別子。デフォルトの状態とログのスコープを設定します。 |
+| `resource-type` | いいえ | `page` | 子のコンテキスト型: `page` または `artifact`。 |
+| `sub-path` | いいえ | 親のルート | 子の初期ルート。`GetConfig` のハンドシェイクで `config.context.route` として転送されます。 |
+| `auto-height` | いいえ | `false` | 子の `CmdBodySize` の報告に合わせてiframeの高さをリサイズします。 |
+| `nav-owner` | いいえ | `false` | 子の `CmdRouteChanged` を傍受し、ホストのURLを変更する代わりに `nav-owner-route` DOMイベントをディスパッチします。 |
 
-JS property:
+要素が受け付けるJSのプロパティ:
 
 ```typescript
 const frame = document.querySelector('w-iframe')
@@ -166,22 +170,24 @@ frame.configOverrides = { customization: { customCSS: ':root { --brand: red }' }
 frame.srcdoc = sourceHtml
 ```
 
-### Event と method
+### イベントとメソッド
 
-| イベント | 詳細 | 説明 |
-|---|---|---|
-| `loading` | — | fetch/process/render 開始前 |
-| `load` | — | sandbox iframe load 後 |
-| `error` | original error | fetch/injection/load failure |
-| `nav-owner-route` | `{ path: string, navId?: number }` | `nav-owner` 時の child route change。bubble し `composed` |
-| `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | child からの bridge message |
+| イベント | detail | 説明 |
+|-------|--------|-------------|
+| `loading` | — | 取得/処理/レンダリングの開始前に発火。 |
+| `load` | — | サンドボックスのiframeが読み込まれた後に発火。 |
+| `error` | 元のエラー | 取得、注入、読み込みが失敗したときに発火。 |
+| `nav-owner-route` | `{ path: string, navId?: number }` | `nav-owner` が設定されている場合の子のルート変更。イベントはバブルし、`composed` です。 |
+| `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | 子からのブリッジメッセージ。 |
 
 | メソッド | 説明 |
-|---|---|
-| `post(channel, payload?)` | child への fire-and-forget bridge message |
-| `request<T>(channel, payload?, { timeoutMs }?)` | request/response bridge。handler return value で resolve |
+|--------|-------------|
+| `post(channel, payload?)` | 子への一方向のブリッジメッセージ。 |
+| `request<T>(channel, payload?, { timeoutMs }?)` | リクエスト/レスポンス型のブリッジメッセージ。ハンドラの戻り値で解決します。 |
 
-Shadow part は `loader`、`error`、`frame`。`nav-owner` では default route-sync round-trip を完全に抑止し、event detail の `path` は mount-prefix なしの raw internal route です。parent が prefix/router mapping を担当します。
+Shadow parts: `loader`、`error`、`frame`。
+
+`nav-owner` が設定されている場合、デフォルトのルート同期の往復は完全に抑制されます。ホストは自身のURLバーを更新**せず**、子に `UrlWasUpdatedInParent` を返送**しません**。ナビゲーションの所有権は、`nav-owner-route` を待ち受ける親のコードに完全に委譲されます。イベントのdetailにある `path` は、子が `host.onRouteChanged(internalRoute, navId?)` に渡したままの**生の内部ルート**であり、マウントプレフィックスは付いて**いません**（ホストがページのマウントプレフィックスを前置するデフォルトの `CmdRouteChanged` の経路とは異なります）。プレフィックスの付与やルーターへのマッピングは、埋め込み側の親の責任です:
 
 ```typescript
 const frame = document.querySelector('w-iframe')
@@ -191,11 +197,11 @@ frame.addEventListener('nav-owner-route', (event) => {
 })
 ```
 
-### 親子ブリッジ :id=parent-child-bridge
+### 親子間のブリッジ
 
-named channel を使うため raw `postMessage` envelope は不要です。
+ブリッジは名前付きチャネルを使うため、どちらの側も生の `postMessage` エンベロープを扱う必要がありません。
 
-Parent side:
+親側:
 ```typescript
 const frame = document.querySelector('w-iframe')
 
@@ -215,7 +221,7 @@ frame.post('refresh', { reason: 'parent-click' })
 const result = await frame.request('get-selection', undefined, { timeoutMs: 5000 })
 ```
 
-Child side:
+子側:
 ```typescript
 import { host } from '@wippy-fe/proxy'
 
@@ -226,41 +232,40 @@ const off = host.bridge.on('refresh', async (payload) => {
   console.log('refresh requested', payload)
   return { ok: true }
 })
-
-// Later, dispose this listener when the owning component or page scope is torn down:
-// off()
 ```
 
-`host.bridge.on()` は unsubscribe function を返します。**1 channel = 1 active handler** で、同じ channel の最新 handler が `post()` と `request()` をすべて処理します。重複時は `console.warn`、最新 handler を unsubscribe すると前の handler が再び active になります。複数 listener には別 channel 名を使います。timeout 省略時は 10 秒（`10000` ms）。timeout は `Bridge request <id> timed out after <ms>ms`、handler 不在は待たずに `No handler registered for channel "<channel>"` で reject します。
+`host.bridge.on()` は購読解除関数（`() => void`）を返します。**1チャネルにつきアクティブなハンドラは1つです。** 同じチャネルに複数のハンドラが登録された場合、最後に登録されたものが優先され、そのチャネルの**すべての**受信メッセージ（一方向の `post()` と `request()` の両方）を処理します。`on()` は加算的ではありません。以前のハンドラは（削除されるのではなく）隠され、新しいハンドラが存在する間は実行されません。プロキシは重複登録時に `console.warn` を出力します。最新のハンドラが購読を解除すると、そのチャネルの以前のハンドラが再びアクティブになります。独立した複数のリスナーが必要な場合は、別々のチャネル名を使用してください。
 
-## `<w-artifact>` カスタム要素 :id=w-artifact-custom-element :id=w-artifact-custom-element
+`options.timeoutMs` を省略した場合、`host.bridge.request()`（および親側の `frame.request()`）は10秒（`10000` ミリ秒）の期限をデフォルトとします。タイムアウト時、返されるPromiseは `Bridge request <id> timed out after <ms>ms` というメッセージの `Error` で拒否されます。相手側にハンドラが登録されていないチャネルへの要求は、期限を待たずに `No handler registered for channel "<channel>"` で即座に拒否されます。
 
-`<w-artifact>` は artifact/page metadata と content を解決し、iframe-backed type を内部の `<w-iframe>` へ委譲します。HTML、Markdown、web page package、ESM package、direct-tag component を判別します。
+## `<w-artifact>` カスタム要素
 
-### Attribute
+`<w-artifact>` はアーティファクトまたはページのメタデータとコンテンツを解決し、iframeを背景に持つ型については内部的に `<w-iframe>` に委譲します。コンテンツ型の検出（HTML、Markdown、Webページのパッケージ、ESMのパッケージ、直接タグのコンポーネント）を処理し、生の `<w-iframe>` より高レベルなAPIを提供します。
+
+### 属性
 
 | 属性 | 必須 | 値 | デフォルト | 説明 |
-|---|---|---|---|---|
-| `id` | はい | Artifact / Page UUID | — | Content identifier |
-| `type` | いいえ | `artifact` \| `page` | `artifact` | REST endpoint を決定 |
-| `auto-height` | いいえ | boolean flag | `false` | inner `<w-iframe>` へ転送 |
-| `url` | いいえ | Any URL | — | URL から直接取得し `id`/`type` を無視 |
-| `sub-path` | いいえ | Path string | — | initial child route として転送 |
-| `nav-owner` | いいえ | boolean flag | `false` | 転送し route change で `nav-owner-route` |
+|-----------|----------|--------|---------|-------------|
+| `id` | はい | アーティファクト / ページのUUID | — | コンテンツの識別子。 |
+| `type` | いいえ | `artifact` \| `page` | `artifact` | 呼び出すRESTエンドポイントを決定します: `/api/v1/artifact/<id>/content` または `/api/public/pages/content/<id>`。 |
+| `auto-height` | いいえ | boolean フラグ | `false` | `CmdBodySize` による高さの同期のため、内側の `<w-iframe>` に転送されます。 |
+| `url` | いいえ | 任意のURL | — | このURLから直接コンテンツを取得します。`id`/`type` は無視されます。 |
+| `sub-path` | いいえ | パス文字列 | — | 子の初期ルートとして内側の `<w-iframe>` に転送されます。 |
+| `nav-owner` | いいえ | boolean フラグ | `false` | 内側の `<w-iframe>` に転送されます。子のルート変更は `nav-owner-route` をディスパッチします。 |
 
-### Event
+### イベント
 
-| イベント | 発生時 | 詳細 |
-|---|---|---|
-| `loading` | fetch 前 | — |
-| `load` | iframe load 後 | — |
-| `error` | fetch/render failure | original error |
-| `nav-owner-route` | nav-owner child route change | `{ path: string, navId?: number }` |
-| `wippy-message` | nested iframe から | `{ channel, payload, requestId?, respond?, reject? }` |
+| イベント | 発生タイミング | detail |
+|-------|------|--------|
+| `loading` | 取得の開始前 | — |
+| `load` | iframeの読み込み後 | — |
+| `error` | 取得またはレンダリングの失敗時 | 元のエラー |
+| `nav-owner-route` | nav-ownerの子のルート変更時 | `{ path: string, navId?: number }` |
+| `wippy-message` | ネストされたiframeからのブリッジメッセージ | `{ channel, payload, requestId?, respond?, reject? }` |
 
-### CSS status と part
+### CSSのstatusとparts
 
-`status` attribute（`loading`、`ready`、`error`）と shadow part を公開します。
+この要素は `status` 属性（`loading`、`ready`、`error`）を設定し、shadow partsを公開します:
 
 ```css
 w-artifact[status="loading"] { opacity: 0.5; }
@@ -270,26 +275,26 @@ w-artifact::part(loader) { font-size: 1rem; }
 w-artifact::part(frame)  { border: 0; }
 ```
 
-## `<w-iframe>` / `<w-artifact>` / raw `<iframe>`
+## `<w-iframe>` と `<w-artifact>` と生の `<iframe>` の比較
 
 | 機能 | `<w-iframe>` | `<w-artifact>` | 生の `<iframe>` |
-|---|---|---|---|
-| Wippy runtime 注入 | はい | はい（`<w-iframe>` 経由） | いいえ |
-| metadata 解決 | いいえ | はい | いいえ |
-| authenticated fetch | はい（raw HTML） | はい | いいえ |
-| state relay | はい | はい | いいえ |
-| WebSocket relay | はい | はい | いいえ |
-| parent-child bridge | はい | はい（転送） | いいえ |
-| nav-owner support | はい | はい | いいえ |
-| content-type detection | いいえ | はい | いいえ |
-| shadow parts | `loader`, `error`, `frame` | 同左 | — |
-| `status` attribute | はい | はい | いいえ |
+|---------|-------------|----------------|----------------|
+| Wippyランタイムを注入 | はい | はい（`<w-iframe>` 経由） | いいえ |
+| アーティファクト/ページのメタデータを解決 | いいえ | はい | いいえ |
+| 認証付きのコンテンツ取得 | はい（生のHTML） | はい（完全なリゾルバ） | いいえ |
+| 状態の中継 | はい | はい | いいえ |
+| WebSocketの中継 | はい | はい | いいえ |
+| 親子間のブリッジ | はい | はい（転送） | いいえ |
+| nav-ownerのサポート | はい | はい | いいえ |
+| コンテンツ型の検出 | いいえ | はい | いいえ |
+| CSSのshadow parts | `loader`, `error`, `frame` | `loader`, `error`, `frame` | — |
+| `status` 属性 | はい | はい | いいえ |
 
-Wippy artifact UUID/page ID には `<w-artifact>`、source HTML がある場合は `<w-iframe>`、Wippy API 不要の完全な external content だけに raw `<iframe>` を使います。
+WippyのアーティファクトUUIDやページIDを持っていて、プラットフォームにすべての解決を任せたい場合は `<w-artifact>` を使用します。既にソースHTMLを持っていて、直接ランタイムを注入したい場合は `<w-iframe>` を使用します。生の `<iframe>` は、Wippy APIを必要としない完全に外部のコンテンツにのみ使用します。
 
-## 高度な HTML 注入 :id=advanced-html-injection
+## 高度なHTML注入
 
-element を mount せず source-HTML-to-srcdoc transform が必要なら `html.inject(...)` を使います。
+要素をマウントせずにソースHTMLからsrcdocへの変換だけが必要な場合のために、プロキシは `html.inject(...)` を公開しています:
 
 ```typescript
 import { html } from '@wippy-fe/proxy'
@@ -302,4 +307,4 @@ const processed = await html.inject(sourceHtml, {
 })
 ```
 
-同じ関数は `instance.html.inject`、`$W.html`、`import { html } from '@wippy-fe/proxy'` から利用できます。通常の mount には `<w-iframe>`、custom hosting infrastructure だけに `html.inject(...)` を使います。
+同じ関数は `instance.html.inject`、`$W.html`、`import { html } from '@wippy-fe/proxy'` としてもアクセスできます。通常のマウントには `<w-iframe>` を優先し、`html.inject(...)` はカスタムのホスティング基盤を構築する場合にのみ使用してください。

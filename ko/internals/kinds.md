@@ -76,7 +76,7 @@ func MyService() boot.Component {
 
 ## 엔트리 데이터 디코딩
 
-entry data를 unmarshal하려면 `github.com/wippyai/runtime/system/entry`의 `entry.DecodeEntryConfig`를 사용합니다. 이 package는 out-of-tree extension에서도 import할 수 있습니다.
+엔트리 데이터를 언마샬하려면 `system/entry`의 `entry.DecodeEntryConfig`를 사용합니다. `DecodeEntryConfigFromContext`는 트랜스코더를 인수 대신 컨텍스트에서 가져오고, `DecodeEntryConfigRaw`는 플레이스홀더 해석을 건너뜁니다:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -90,12 +90,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 디코더는:
-1. entry data의 modern `${env:...}` placeholder를 resolve합니다.
-2. resolve된 data를 config struct로 unmarshal합니다.
-3. decode된 field가 zero 또는 nil일 때 entry의 `ID`와 `Meta`를 채웁니다.
-4. 구현되어 있으면 `InitDefaults()`를 호출합니다.
-5. environment registry를 통해 legacy `*_env` field를 resolve합니다.
-6. 구현되어 있으면 `Validate()`를 호출합니다.
+1. `${env:...}` 플레이스홀더와 `*_env` 동반 필드를 환경 레지스트리에 대해 해석
+2. `entry.Data`를 설정 구조체로 언마샬
+3. 구조체가 비워둔 경우 엔트리에서 `ID`와 `Meta` 채움
+4. 구현되어 있으면 `InitDefaults()` 호출
+5. 구현되어 있으면 `Validate()` 호출
 
 ## 설정 구조
 

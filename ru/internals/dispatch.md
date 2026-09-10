@@ -23,7 +23,7 @@ sequenceDiagram
     H-->>H: async work
     H->>W: CompleteYield(tag, result)
     W->>P: queue event, wake
-    P->>P: продолжить с результатом
+    P->>P: resume with result
 ```
 
 ## Реестр команд
@@ -57,10 +57,12 @@ type Registry struct {
 | 130-139 | security | ValidateToken, CreateToken |
 | 140-149 | function | Call, AsyncStart, AsyncCancel |
 | 150-159 | exec | ProcessWait |
-| 160-169 | cloudstorage | Upload, Download, List, Presigned URLs |
-| 170-179 | eval | Compile, Run |
+| 160-169, 173-174 | cloudstorage | Upload, Download, List, Presigned URLs, Multipart, OpenReader |
+| 170-171 | eval | Compile, Run |
+| 172 | cdc | Subscribe |
 | 180-189 | workflow | SideEffect, Call, Version, UpsertAttrs |
 | 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (группа процессов) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Пользовательские сервисы |
 
 Регистрация происходит при загрузке через `MustRegisterCommands()`. Коллизии вызывают panic при старте.
@@ -70,7 +72,7 @@ type Registry struct {
 Команды — это структуры данных с уникальным `CommandID`:
 
 ```go
-const MyCommand dispatcher.CommandID = 200
+const MyCommand dispatcher.CommandID = 256
 
 type MyCmd struct {
     Input  string

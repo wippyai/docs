@@ -53,14 +53,12 @@ Esta página é uma referência de configuração. Os blocos YAML são fragmento
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
 | `hostname` | string | Nome do nó tsnet (usado no diretório de estado por nó) |
-| `auth_key` | string | Chave do tailnet inline ou `${env:NAME}`, resolvida pelo [registro de ambiente](./env.md) |
+| `auth_key` | string | Chave de autenticação tailnet — inline ou `${env:NAME}` resolvida via o [registro env](system/env.md) |
 | `state_dir` | string | Sobrescrita do diretório de estado tsnet |
 | `control_url` | string | Servidor de coordenação alternativo |
 | `ephemeral` | bool | Registrar como nó tailnet efêmero |
 
-`auth_key` é obrigatório, fornecido diretamente ou por `${env:NAME}`. A diretiva legada `auth_key_env` resolve da mesma forma, mas está obsoleta; prefira `auth_key: ${env:NAME}`.
-
-O hostname do tsnet usa `wippy` por padrão. Sem `state_dir`, o runtime usa `<network_service.state_dir>/tailscale/<node>`, onde `<node>` é o hostname configurado ou, na ausência dele, o nome da entrada no registro.
+`auth_key` é obrigatório (forneça-o diretamente ou via `${env:NAME}`). A diretiva legada `auth_key_env` resolve da mesma forma, mas está obsoleta; prefira `auth_key: ${env:NAME}`.
 
 ## I2P
 
@@ -134,14 +132,22 @@ Drivers de overlay leem configuracoes a nivel de app a partir de um bloco `netwo
 
 ```yaml
 network_service:
-  state_dir: .wippy/net          # base dir for driver state (Tailscale keys, etc.)
-  default_network: app.net:tailnet  # overlay applied when no call sets one
+  state_dir: .wippy/net          # Diretorio base para o estado do driver (chaves do Tailscale, etc.)
+  default_network: app.net:tailnet  # Overlay aplicado quando nenhuma chamada define um
 ```
 
 | Campo | Padrao | Descricao |
 |-------|--------|-----------|
 | `state_dir` | `.wippy/net` | Diretorio para o estado do driver. Caminhos relativos sao resolvidos contra o diretorio de config de boot. |
 | `default_network` | — | Registry ID de um overlay aplicado a cada tarefa ou processo que nao define sua propria rede via opcoes. |
+
+## Conexoes Diretas
+
+A seleção de sobreposição não se limita a bordas Lua. Conexões feitas através do serviço de rede do runtime — o [host `socket`](wasm/hosts.md#socket) do WASM e o dispatcher `wasi:sockets` — leem a sobreposição do frame e roteiam por ela, tenha ela sido definida por `with_options`, por `meta.options.network` na entrada, ou por `network_service.default_network`.
+
+O controle de IP privado se comporta de forma diferente nesse caminho. Uma conexão direta resolve o alvo e verifica cada endereço resultante contra `socket.private_ip`. Com uma sobreposição selecionada, apenas um endereço IP literal no alvo é verificado; nomes de host são entregues à sobreposição para resolução, então o resolver local nunca é consultado e nenhuma verificação é feita sobre o que ele teria retornado.
+
+Quando uma sobreposição é selecionada mas o contexto não carrega um registro de rede, a conexão falha com `network "<id>" selected without a network registry`.
 
 ## Atualizando Overlays
 
@@ -153,12 +159,18 @@ Entradas de overlay são substituídas em atualizações do registro. O driver c
 |--------|----------|-------------|
 | `network.select` | Registry ID de rede | Seleção explícita de sobreposição em `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Registry ID de rede | Vinculação de um listener `http.service` através de um overlay (o campo `network:`) |
-| `process.context` | `context` | Construção de um spawner com `process.with_options(...)` |
+| `socket.connect` | `host:port` | Qualquer conexão de saída através do serviço de rede |
+| `socket.listen` | `host:port` | Vinculação de um listener TCP ou de um socket UDP através do serviço de rede |
+| `socket.resolve` | Nome de host | Resolução DNS através do serviço de rede |
+| `socket.private_ip` | Endereço IP | Alcançar um endereço de loopback, privado, link-local ou não especificado |
 
 Negue `network.select` em um escopo para impedir que o código dentro dele escolha explicitamente uma sobreposição. As sobreposições herdadas não são afetadas — elas foram autorizadas no chamador. `network.bind` é verificado quando um servidor com um overlay `network:` inicia seu listener.
+
+As permissões `socket.*` são verificadas pelo próprio serviço de rede. `socket.connect`, `socket.listen` e `socket.resolve` são verificadas antes de qualquer roteamento por sobreposição, então se aplicam igualmente ao tráfego de clearnet e de sobreposição; `socket.private_ip` se restringe a endereços literais assim que uma sobreposição é selecionada, como descrito em [Conexoes Diretas](system/network.md#raw-dials).
 
 ## Veja também
 
 - [Segurança](system/security.md) - Políticas e atores
 - [Serviço HTTP](http/server.md) - Vinculação do servidor
-- [Cliente HTTP](lua/http/client.md) - Seleção de overlay por chamada
+- [Cliente HTTP](lua/http/client.md) - Seleção de sobreposição por chamada
+- [Funções de Host](wasm/hosts.md) - Imports de socket do WASM

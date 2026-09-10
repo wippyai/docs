@@ -81,7 +81,7 @@ return ok
 Nachrichten desselben Absenders kommen in Reihenfolge an. Nachrichten verschiedener Absender können sich überlagern. Die Zustellung erfolgt ohne Bestätigung; verwenden Sie Anfrage-Antwort-Muster, wenn Sie eine Bestätigung benötigen.
 
 <note>
-Prozesse können sich in einer lokalen Namensregistry registrieren und statt über eine PID über einen Namen wie <code>session_manager</code> angesprochen werden. Über <code>process.registry</code> lassen sich Namen außerdem clusterweit für die knotenübergreifende Adressierung in den Scopes EVENTUAL auf Gossip-Basis sowie CONSISTENT und STRONG auf Raft-Basis registrieren.
+Prozesse können sich in einem lokalen Namensverzeichnis registrieren und anstelle der PID über den Namen adressiert werden (z. B. `session_manager`). Namen können über `process.registry` auch clusterweit für knotenübergreifende Adressierung registriert werden, mit den Scopes EVENTUAL (gossip-basiert), CONSISTENT oder STRONG (beide Raft-gestützt).
 </note>
 
 ## Supervision
@@ -114,9 +114,11 @@ Auf Runtime-Ebene können Services lang laufende Prozesse starten und überwache
     restart:
       max_attempts: 5
       initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
-Der Service startet automatisch und ist in die Lebenszyklusverwaltung der Runtime eingebunden. In der festgelegten Runtime zählt der erste fehlgeschlagene Start zu `max_attempts`; der Wert `5` erlaubt also höchstens vier weitere Starts. Jeder Retry wartet mit Jitter um `initial_delay`; die Verzögerung wächst zwischen den Versuchen nicht an.
+Der Dienst startet automatisch, startet bei Abstürzen mit Backoff neu und integriert sich in die Lebenszyklus-Verwaltung der Laufzeitumgebung.
 
 ## Prozess-Upgrades
 

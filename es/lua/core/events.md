@@ -1,6 +1,6 @@
 ---
-title: "Bus de eventos"
-description: "Publica y observa eventos de mejor esfuerzo del runtime y la aplicación."
+title: "Bus de Eventos"
+description: "Publicar y suscribirse a eventos para observabilidad — monitorear la actividad del runtime y de la aplicación y reaccionar a ella."
 ---
 
 # Bus de eventos

@@ -63,6 +63,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+        - process.registry.register
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -81,6 +92,8 @@ entries:
       - io
       - process
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay
     kind: process.lua
@@ -90,6 +103,8 @@ entries:
       - process
       - logger
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay-service
     kind: process.service
@@ -105,7 +120,11 @@ entries:
     modules:
       - process
       - time
+    security:
+      policies: [app:policy]
 ```
+
+安全默认拒绝一切，因此每个进程都带有一个 `security:` 块，指明授予其所执行动作的策略：注册名称、发送消息以及生成受监控的 worker。
 
 ## Relay 进程
 
@@ -149,7 +168,10 @@ local function main()
 
         if r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                logger:info("relay stopping", stats)
+                return
+            elseif event.kind == process.event.EXIT then
                 logger:info("worker exited", {
                     from = event.from,
                     result = event.result
@@ -200,7 +222,7 @@ local r = channel.select {
 }
 ```
 
-等待多个通道。`r.channel` 标识触发的通道，`r.value` 包含数据。
+等待多个通道。`r.channel` 标识触发的通道，`r.value` 包含数据。当运行时关闭该服务时，`CANCEL` 事件会到达同一个 events 通道；在那里从 `main` 返回可以让宿主干净地停止，而不必等到停止超时。
 
 **Payload 提取**
 
@@ -352,7 +374,7 @@ Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
-  from worker: {app:processes|0x00004}
+  from worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
 ## 下一步

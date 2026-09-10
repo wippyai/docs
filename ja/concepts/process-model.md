@@ -78,7 +78,7 @@ return ok
 同じ送信者からのメッセージは順序どおりに到着します。異なる送信者からのメッセージはインターリーブする可能性があります。配信はfire-and-forgetです。確認が必要な場合はリクエスト-レスポンスパターンを使用してください。
 
 <note>
-process は local name registry に登録し、PID の代わりに name で address 指定できます（例: `session_manager`）。`process.registry` の EVENTUAL（gossip-based）、CONSISTENT、STRONG（いずれも Raft-backed）scope を使い、cross-node address 指定用の cluster-wide name も登録できます。
+プロセスはローカル名前レジストリに登録でき、PIDの代わりに名前でアドレス指定できます（例：`session_manager`）。名前は `process.registry` を介して EVENTUAL（ゴシップベース）、CONSISTENT、STRONG（いずれも Raft バック）のスコープでクラスタ全体に登録することもでき、ノード間アドレス指定に使用できます。
 </note>
 
 ## スーパービジョン
@@ -111,6 +111,8 @@ runtime level では、service が長時間実行される process を開始し�
     restart:
       max_attempts: 5
       initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 service は自動起動し、runtime の lifecycle management と統合されます。pinned runtime では最初の失敗した start が `max_attempts` に含まれるため、`5` で許可される follow-up start は最大 4 回です。各 retry は jitter を加えた `initial_delay` の間待ちます。試行間で delay は増加しません。

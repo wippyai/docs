@@ -1,6 +1,6 @@
 ---
 title: "Errors"
-description: "Create, wrap, inspect, and classify structured errors in Lua entries."
+description: "Structured error handling with categorization and retry metadata. Global errors table available without require."
 ---
 
 # Errors

@@ -1,6 +1,6 @@
 ---
 title: "Umgebungsvariablen"
-description: "Vom konfigurierten Umgebungssystem bereitgestellte Umgebungsvariablen lesen und aktualisieren."
+description: "Zugriff auf Umgebungsvariablen für Konfigurationswerte, Secrets und Laufzeiteinstellungen."
 ---
 
 # Umgebungsvariablen
@@ -25,17 +25,10 @@ local env = require("env")
 Holt einen Umgebungsvariablenwert.
 
 ```lua
--- Get database connection string
-local db_url, db_err = env.get("DATABASE_URL")
-if db_err then return nil, db_err end
-
--- Apply a fallback only to a missing variable. Permission and backend errors
--- still propagate to the caller.
-local function get_or(key, fallback)
-    local value, err = env.get(key)
-    if not err then return value end
-    if errors.is(err, errors.NOT_FOUND) then return fallback end
-    return nil, err
+-- Datenbankverbindungsstring holen
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 local port, port_err = get_or("PORT", "8080")
@@ -88,10 +81,7 @@ logger:debug("accessible environment variables", {keys = accessible_keys})
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new({
-            message = "Missing required env var: " .. key,
-            kind = errors.INVALID
-        })
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -108,7 +98,8 @@ Umgebungszugriff unterliegt der Sicherheitsrichtlinienauswertung.
 |--------|----------|-------------|
 | `env.get` | Variablenname | Umgebungsvariable lesen |
 | `env.set` | Variablenname | Umgebungsvariable schreiben |
-`get_all` besitzt keine eigene Sicherheitsaktion. Es liefert nur Variablen, für die `env.get` erlaubt ist, und filtert jeden Variablennamen über `env.get`.
+
+`get_all` hat keine eigene Sicherheitsaktion: Es gibt nur die Variablen zurück, für die die Aktion `env.get` erlaubt ist, und filtert jeden Variablennamen durch `env.get`.
 
 ### Zugriff prüfen
 

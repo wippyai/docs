@@ -1,6 +1,6 @@
 ---
 title: "Canales y Corrutinas"
-description: "Crea canales con y sin búfer, intercambia valores, selecciona entre operaciones y coordina trabajo concurrente."
+description: "Canales estilo Go para comunicación entre corrutinas. Crear canales con o sin buffer, enviar y recibir valores, y coordinar entre procesos…"
 ---
 
 # Canales y Corrutinas
@@ -107,6 +107,9 @@ local result = channel.select(cases)
 
 **Devuelve:** `table`
 
+- Para un caso de canal: `{channel, value, ok}` — `channel` es el canal del caso, `value` es el valor recibido/enviado, `ok` es false para una recepción de canal cerrado.
+- Para la rama por defecto (cuando ningún caso está listo y `default = true`): `{default = true, ok = true}`.
+
 - Para un caso de canal: `{channel, value, ok}` — `channel` es el canal del caso, `value` es el valor recibido o enviado y `ok` es false para una recepción de un canal cerrado.
 - Para la rama predeterminada (cuando ningún caso está listo y `default = true`): `{default = true, ok = true}`.
 
@@ -129,13 +132,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
-end
-if not r.ok then
-    return nil, errors.new("Response channel closed")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -252,7 +249,8 @@ Después del bucle, `processed` contiene `2`, `4`, `6` y `8`; el orden de los re
 
 | Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| Envío a un canal cerrado | error de runtime | n/a |
+| Enviar en canal cerrado | error de runtime | no |
+| El argumento `cases` de select no es una tabla | error de runtime | no |
 
 ## Véase también
 

@@ -1,6 +1,6 @@
 ---
-title: "Procesamiento de texto"
-description: "Compila expresiones regulares, compara texto, crea parches y divide documentos en fragmentos."
+title: "Procesamiento de Texto"
+description: "Expresiones regulares, comparacion de texto y division semantica de texto."
 ---
 
 # Procesamiento de texto
@@ -394,19 +394,8 @@ if err then
     return nil, err
 end
 
-local fs = require("fs")
-local docs, docs_err = fs.get("app:docs")
-if docs_err then
-    return nil, docs_err
-end
-local readme, read_err = docs:readfile("README.md")
-if read_err then
-    return nil, read_err
-end
-local chunks, split_err = splitter:split_text(readme)
-if split_err then
-    return nil, split_err
-end
+local readme = fs.get("app:docs"):readfile("README.md")
+local chunks, err = splitter:split_text(readme)
 ```
 
 Esta receta parcial requiere que la entrada habilite tanto `text` como `fs`, un recurso de sistema de archivos `app:docs` configurado y un archivo `README.md` legible dentro de ese recurso.
@@ -423,6 +412,7 @@ Esta receta parcial requiere que la entrada habilite tanto `text` como `fs`, un 
 | `reference_links` | boolean | false | Preservar enlaces de referencia |
 | `heading_hierarchy` | boolean | false | Respetar niveles de encabezado |
 | `join_table_rows` | boolean | false | Mantener filas de tabla juntas |
+| `separators` | string[] | nil | Lista de separadores personalizada |
 
 ### `splitter:split_text`
 

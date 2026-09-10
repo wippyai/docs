@@ -1,6 +1,6 @@
 ---
 title: "Tiempo de OS"
-description: "Lee el tiempo del entorno de ejecución, formatea fechas y calcula diferencias temporales con la tabla global os de Lua."
+description: "Funciones de tiempo os estandar de Lua. Proporciona tiempo de reloj de pared real para marcas de tiempo, formato de fechas y calculos de tiempo."
 ---
 
 # Tiempo de OS
@@ -115,7 +115,7 @@ local t = os.date("*t", now)
 | `%b` | Mes corto | Jun |
 | `%w` | Dia de semana (0-6, Domingo=0) | 6 |
 | `%j` | Dia del ano (001-366) | 167 |
-| `%U` | Número de semana (00-53) | 24 |
+| `%U` | Número de semana ISO 8601 (01-53, la semana empieza el lunes) | 24 |
 | `%W` | Número de semana ISO 8601 (01-53, la semana empieza el lunes) | 24 |
 | `%z` | Offset de zona horaria | -0700 |
 | `%Z` | Nombre de zona horaria | PDT |

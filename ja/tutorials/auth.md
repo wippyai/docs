@@ -65,7 +65,7 @@ flowchart TB
         API[API Client]
     end
 
-    subgraph "HTTP Layer"
+    subgraph "HTTPレイヤー"
         Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
@@ -85,6 +85,7 @@ flowchart TB
     subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
+        SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
@@ -92,13 +93,12 @@ flowchart TB
         DB[db.sql.sqlite<br/>auth.db]
     end
 
-    subgraph "Process Layer"
+    subgraph "プロセスレイヤー"
         Supervisor[process.host<br/>processes]
-        WSHandler[ws_handler<br/>per-connection]
-        Ticker[ticker<br/>singleton]
+        WSHandler[ws_handler<br/>接続ごと]
+        Ticker[ticker<br/>シングルトン]
     end
 
-    %% Client connections
     Browser -->|"GET /"| Static
     API -->|"POST /auth/token"| CORS1
     Browser -->|"WS /ws/ticker"| CORS2
@@ -119,16 +119,16 @@ flowchart TB
 
     %% Token store deps
     MemStore --> TokenStore
-    Policy -->|attached to token| TokenStore
+    Policy -->|トークンに付与| TokenStore
+    SysPolicy -->|"アクター＋スコープ"| AuthEndpoint
+    SysPolicy -->|"アクター＋スコープ"| Ticker
 
     %% Auth uses DB for API keys
     AuthEndpoint -->|lookup API key| DB
 
-    %% Process communication
-    WSHandler -->|subscribe| Ticker
-    Ticker -->|broadcast| WSHandler
-    WSRelay <-->|"ws frames"| Browser
-
+    WSHandler -->|購読| Ticker
+    Ticker -->|ブロードキャスト| WSHandler
+    WSRelay <-->|"wsフレーム"| Browser
 ```
 
 ## セキュリティフロー
@@ -181,16 +181,8 @@ entries:
     groups:
       - user
 
-  # Capabilities for trusted background services
-  - name: service_policy
-    kind: security.policy
-    policy:
-      actions: "*"
-      resources: "*"
-      effect: allow
-
-  # Capabilities for the public token-exchange handler
-  - name: token_issuer_policy
+  # エンドユーザーのアクターなしで実行される内部コード用のポリシー
+  - name: system_policy
     kind: security.policy
     policy:
       actions:
@@ -200,10 +192,13 @@ entries:
         - security.scope.create
         - security.token_store.get
         - security.token.create
+        - process.registry.register
+        - process.send
+        - process.monitor
       resources: "*"
       effect: allow
 
-  # Process host
+  # プロセスホスト
   - name: processes
     kind: process.host
     lifecycle:
@@ -223,21 +218,21 @@ entries:
     modules: [sql, logger, crypto]
     security:
       actor:
-        id: app:migrate
+        id: "service:migrate"
       policies:
-        - app:service_policy
+        - app:system_policy
 
   # Ticker broadcaster
   - name: ticker
     kind: process.lua
     source: file://ticker.lua
     method: main
-    modules: [logger, time, json, crypto]
+    modules: [logger, time, crypto]
     security:
       actor:
-        id: app:ticker
+        id: "service:ticker"
       policies:
-        - app:service_policy
+        - app:system_policy
 
   - name: ticker-service
     kind: process.service
@@ -312,9 +307,9 @@ entries:
     modules: [http, sql, crypto, security, json]
     security:
       actor:
-        id: app:token-issuer
+        id: "service:auth"
       policies:
-        - app:token_issuer_policy
+        - app:system_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -340,9 +335,9 @@ entries:
     func: app:ws_ticker
 ```
 
-署名キー、ワイルドカードのユーザーポリシー、生のAPIキー保存、メモリトークンストアは、このループバックデモ専用です。
-本番環境では`token_key_env`を使用し、APIキーをハッシュ化して保存し、ポリシーのactionとresourceを限定し、
-許可オリジンを制限して永続トークンストアを使用してください。[環境システム](system/env.md)を参照してください。
+`user_policy`は発行されるすべてのトークンに同梱され、認証済み接続が行う操作をカバーします。`system_policy`はトークンが存在する前に実行されるコード、つまりマイグレーション、ティッカー、そしてトークン交換そのものをカバーします。アクターとスコープなしで行われたゲート付き呼び出しは拒否されるためです。
+
+本番環境では、HMACキーをハードコードする代わりにプレースホルダ（`token_key: ${env:TOKEN_KEY}`）で環境変数から読み取ります。[環境システム](system/env.md)を参照。
 
 ## トークン交換
 
@@ -491,8 +486,10 @@ return { handler = handler }
 
 `websocket_relay`ミドルウェアはライフサイクルメッセージを自動的にハンドラプロセスに送信：
 - `ws.join` - 接続確立、レスポンス送信用の`client_pid`を含む
-- `ws.message` - クライアントがメッセージを送信
-- `ws.leave` - 接続終了。`ws.join`と同じ`client_pid`とメタデータを含む
+- `ws.message` - クライアントがメッセージを送信。ペイロードは生のフレーム（テキストフレームの場合は文字列）
+- `ws.leave` - 接続終了（切断時に自動送信）
+
+逆方向、つまりクライアントPIDに送信されたメッセージは、`{topic, data}`という形の単一のJSONテキストフレームとしてブラウザに届きます。トピックは自由に選べ、ペイロードは`data`として到着します。
 
 `ws_handler.lua` - これらのライフサイクルメッセージを処理：
 
@@ -527,26 +524,19 @@ local function main(user_id)
             end
             subscribed = true
 
-            -- Send welcome
-            process.send(client_pid, "ws.send", {
-                type = "text",
-                data = json.encode({type = "welcome", user_id = user_id})
-            })
+            -- ウェルカムメッセージを送信
+            process.send(client_pid, "welcome", {user_id = user_id})
 
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            -- Text WebSocket frames arrive as string payloads.
             local content = json.decode(data)
             if content and content.type == "ping" then
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "pong"})
-                })
+                process.send(client_pid, "pong", {})
             end
 
         elseif topic == "ws.leave" then
-            -- Relay sends this automatically on disconnect
+            -- リレーは切断時にこれを自動送信
             logger:info("client left", {user_id = user_id, client_pid = data.client_pid})
             if subscribed then
                 process.send("ticker", "unsubscribe", {handler_pid = process.pid()})
@@ -569,7 +559,6 @@ return { main = main }
 ```lua
 local logger = require("logger")
 local time = require("time")
-local json = require("json")
 local crypto = require("crypto")
 
 -- handler_pid -> client_pid mapping
@@ -581,10 +570,9 @@ local prices = {
     ["SOL-USD"] = 95.00
 }
 
-local function broadcast(message)
-    local data = json.encode(message)
+local function broadcast(updates)
     for _, client_pid in pairs(subscriptions) do
-        process.send(client_pid, "ws.send", {type = "text", data = data})
+        process.send(client_pid, "ticker", updates)
     end
 end
 
@@ -636,13 +624,17 @@ local function main()
         if r.channel == tick_ch then
             update_prices()
             if next(subscriptions) then
-                broadcast({type = "ticker", data = get_updates()})
+                broadcast(get_updates())
             end
 
         elseif r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
-                -- Handler exited, remove subscription
+            if event.kind == process.event.CANCEL then
+                ticker:stop()
+                logger:info("ticker stopping")
+                return 0
+            elseif event.kind == process.event.EXIT then
+                -- ハンドラが終了、購読を削除
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
                     subscriptions[event.from] = nil
@@ -663,10 +655,7 @@ local function main()
 
                 logger:info("subscribed", {handler_pid = handler_pid, client_pid = client_pid})
 
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "ticker", data = get_updates()})
-                })
+                process.send(client_pid, "ticker", get_updates())
 
             elseif topic == "unsubscribe" then
                 subscriptions[data.handler_pid] = nil
@@ -748,92 +737,66 @@ end
 return { main = main }
 ```
 
-生のデモキーがログに出るのは、最初に生成されたときだけです。ブラウザ手順用に保存してください。
-紛失した場合はアプリを停止し、`data/auth.db`を削除してマイグレーションを再実行します。
-本番用の認証情報をこのデモデータベースへ貼り付けないでください。
-
 ## ブラウザクライアント
 
-`src/public/index.html`を作成します。ブラウザはAPIキーを短期トークンへ交換してメモリ内だけに保持し、
-ブラウザのWebSocket APIでは`Authorization`ヘッダーを設定できないため、ミドルウェアの
-`x-auth-token`クエリパラメータで送信します。
+`public/index.html` - APIキーをトークンに交換し、価格をストリーミングします。ブラウザはWebSocketハンドシェイクでヘッダーを設定できないため、トークンは`token_auth`も読み取る`x-auth-token`クエリパラメータで渡します：
 
 ```html
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Wippy Crypto Ticker</title>
+  <title>Crypto Ticker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+    #status { color: #666; }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>Crypto Ticker</h1>
-    <form id="connect-form">
-      <label for="api-key">Demo API key</label>
-      <input id="api-key" name="api-key" autocomplete="off" required>
-      <button type="submit">Connect</button>
-    </form>
-    <p id="status">Disconnected</p>
-    <ul id="prices"></ul>
-  </main>
+  <h1>Crypto Ticker</h1>
+  <input id="key" placeholder="demo API key" size="40">
+  <button id="connect">Connect</button>
+  <p id="status">disconnected</p>
+  <table><thead><tr><th>Symbol</th><th>Price</th></tr></thead><tbody id="rows"></tbody></table>
 
   <script>
-    const form = document.querySelector('#connect-form');
-    const input = document.querySelector('#api-key');
-    const status = document.querySelector('#status');
-    const prices = document.querySelector('#prices');
-    let socket;
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
 
-    function setStatus(message) {
-      status.textContent = message;
-    }
+    document.getElementById("connect").onclick = async () => {
+      const res = await fetch("/auth/token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({api_key: document.getElementById("key").value})
+      });
+      if (!res.ok) { status.textContent = "auth failed"; return; }
+      const {token} = await res.json();
 
-    function renderPrices(items) {
-      prices.replaceChildren(...items.map((item) => {
-        const row = document.createElement('li');
-        row.textContent = `${item.symbol}: $${Number(item.price).toFixed(2)}`;
-        return row;
-      }));
-    }
+      const url = `ws://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(url);
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (socket) socket.close();
-      setStatus('Authenticating...');
+      ws.onopen = () => {
+        status.textContent = "connected";
+        ws.send(JSON.stringify({type: "ping"}));
+      };
+      ws.onclose = () => { status.textContent = "disconnected"; };
 
-      try {
-        const response = await fetch('/auth/token', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({api_key: input.value}),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
-
-        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${scheme}://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(result.token)}`;
-        socket = new WebSocket(url);
-
-        socket.addEventListener('open', () => setStatus(`Connected as ${result.user_id}`));
-        socket.addEventListener('close', () => setStatus('Disconnected'));
-        socket.addEventListener('error', () => setStatus('WebSocket error'));
-        socket.addEventListener('message', (message) => {
-          const event = JSON.parse(message.data);
-          if (event.type === 'ticker') renderPrices(event.data);
-        });
-      } catch (error) {
-        setStatus(error.message);
-      }
-    });
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.topic !== "ticker") return;
+        rows.innerHTML = "";
+        for (const quote of msg.data) {
+          rows.insertAdjacentHTML("beforeend",
+            `<tr><td>${quote.symbol}</td><td>${quote.price.toFixed(2)}</td></tr>`);
+        }
+      };
+    };
   </script>
 </body>
 </html>
 ```
-
-クエリ文字列のBearerトークンはアクセスログやブラウザ履歴に残る場合があります。このデモはループバック上で
-有効期間1時間のトークンを使います。本番のブラウザ認証では、secureかつHttpOnlyのcookieか、
-WebSocket専用の使い捨てチケットを使用してください。
 
 ## 実行
 
@@ -841,6 +804,7 @@ WebSocket専用の使い捨てチケットを使用してください。
 マイグレーションを別コマンドにすると、トークンエンドポイントとテーブル作成の競合を防げます。
 
 ```bash
+mkdir -p data
 wippy init
 wippy run -x app:migrate
 wippy run

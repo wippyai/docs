@@ -11,9 +11,9 @@ description: "Wippy Hubを通じてモジュールを準備、検証、公開、
 
 ## 前提条件
 
-1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成します。
-2. 組織を作成するか、既存の組織に参加します。
-3. モジュール名を選択します。アカウントに権限があれば、初回公開時に存在しない名前を登録できます。アップロード前に登録してプロパティを明示的に設定するには `--create` を使用します。
+1. [hub.wippy.ai](https://hub.wippy.ai) でアカウントを作成する
+2. 組織を作成するか、既存の組織に参加する
+3. その組織でモジュールを作成する権限を持つ — 最初の `wippy publish` がモジュールを自動的に登録する
 
 ## モジュール構造
 
@@ -41,6 +41,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | フィールド | 必須 | 説明 |
@@ -53,6 +66,16 @@ keywords:
 | `repository` | いいえ | ソースリポジトリ URL |
 | `homepage` | いいえ | プロジェクトホームページ |
 | `keywords` | いいえ | 検索キーワード |
+| `authors` | いいえ | 作者一覧 |
+| `version` | いいえ | セマンティックバージョン。`--version` が上書きします |
+| `exclude` | いいえ | 除外するパターン: `:` を含む値はエントリ ID、それ以外はソースファイルのグロブ |
+| `embed` | いいえ | `--embed` を指定しない場合のデフォルトの `fs.directory` 埋め込みパターン |
+| `exclude_meta` | いいえ | メタデータフィールドと値のマップ。メタデータが一致するエントリは除外されます |
+| `metadata` | いいえ | 公開されるモジュールに付随する任意のキー/値メタデータ |
+| `publish.profiles` | いいえ | パックに同梱する設定プロファイル（[公開プロファイル](#publishing-profiles)を参照） |
+| `publish.runtime` | いいえ | パックのデフォルトとして同梱するランタイム設定セクション。`type: application` のみ |
+
+`exclude` は個別のフィールドではなく値の形で振り分けられます。`_old/**`、`test/**`、`*.test.lua` は収集時にソースファイルをフィルタします。`acme.http:debug_handler` はエントリのデコード後にレジストリエントリを無効化します。`**` セグメントは任意の数のディレクトリセグメントにまたがります。
 
 `type` はHubでのモジュール分類を制御し、後から公開する際に変更できます。`--module-type` フラグは、1回の公開に限りこの値を上書きします。省略した場合、新しく作成されるモジュールは非推奨の警告とともにデフォルトで `application` になります。
 
@@ -206,6 +229,15 @@ wippy lint
 wippy publish --dry-run
 ```
 
+公開処理は `--dry-run` の有無にかかわらず同じ方法でパックをビルドするため、検証は実際の公開が生成するすべてを対象とします:
+
+- `organization` と `module` は小文字の英数字と内部のハイフンで構成されなければならず、`version` は semver、`type` は4つのモジュールタイプのいずれかでなければなりません。
+- `publish.runtime` はアプリケーション所有です。`type: application` なしにその下で `source`、`sections`、`vars` を宣言すると失敗します。
+- `meta.artifact.format` を宣言するすべてのリソースは、そのフォーマットによって検査されます。不正なアーティファクトは消費側ではなくここで失敗し、出力先ディレクトリが重複する2つのアーティファクトは拒否されます。
+- `node-package` フォーマットはさらに、`package.json` が**公開されるモジュールのバージョンと等しい**セマンティックな `version` と、有効なパッケージ `name` を持ち、`preinstall`、`install`、`postinstall`、`prepare` のライフサイクルスクリプトを持たないことを要求します。
+
+リリース時に問題になりやすいのは最後の規則です。`wippy.yaml` とアーティファクトの `package.json` の `version` を揃えて上げないと、公開は中断します。
+
 ### 4. 公開
 
 ```bash
@@ -233,14 +265,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 静的ファイルの埋め込み
 
-埋め込み対象の `fs.directory` エントリは、`--embed` またはプロジェクトマニフェストの永続的な `embed:` リストで選択します。選択されたエントリは `fs.embed` リソースへ変換されます。選択されていない `fs.directory` エントリはパックに残りますが、参照先ディレクトリの内容は含まれません。
-
-```yaml
-# wippy.yaml
-embed:
-  - app:public_files
-  - app:assets
-```
+`fs.directory` エントリ（静的アセット、テンプレート、公開ファイル）を含むモジュールは、それらを公開パッケージに含めるために `--embed` を使用する必要があります。これがない場合、`fs.directory` エントリはディレクトリの内容を伴わずにパックされます。
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

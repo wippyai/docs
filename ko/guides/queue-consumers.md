@@ -26,8 +26,8 @@ flowchart LR
 | `queue` | 필수 | - | 큐 레지스트리 ID |
 | `func` | 필수 | - | 핸들러 함수 레지스트리 ID |
 | `concurrency` | 1 | 1000 | 워커 수 |
-| `prefetch` | 10 | 10000 | shared delivery-buffer 크기. AMQP에서는 channel QoS prefetch count에도 적용 |
-| `auto_ack` | false | - | backend별 auto-ack option. AMQP에서 `true`이면 broker가 delivery 시 acknowledge |
+| `prefetch` | 10 | 10000 | 메시지 버퍼 크기 |
+| `auto_ack` | false | - | 드라이버 수준 자동 ack (AMQP `Consume` autoAck; 메모리 드라이버는 무시) |
 | `driver_options` | `{}` | - | 드라이버별 컨슈머 옵션 |
 
 ## 엔트리 정의
@@ -91,6 +91,8 @@ handler가 delivery를 명시적으로 settle하지 않으면 consumer는 functi
 | invocation error를 return 또는 raise | Nack | redelivery는 driver별 동작 |
 
 `false`를 포함한 일반 return value는 acknowledgment behavior를 선택하지 않습니다. 명시적으로 settle하려면 `msg:ack()` 또는 `msg:nack()`를 호출하십시오. settlement는 single-shot이며 첫 settlement가 적용됩니다. AMQP `auto_ack: true`에서는 broker가 delivery 시 acknowledge하므로 이후 handler failure가 broker redelivery를 유발할 수 없습니다.
+
+핸들러는 `queue.message()`와 `msg:ack()` / `msg:nack()`으로 메시지를 직접 정리할 수 있습니다. 이 경우 컨슈머는 자체 ack/nack을 건너뜁니다.
 
 ## 워커 풀
 

@@ -30,10 +30,10 @@ local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
 local s: string = a          -- ERROR: any is not assignable to string
 
--- unknown: safe unknown, must narrow before use as a concrete type
+-- unknown: 안전한 unknown, 구체적 타입으로 사용하기 전에 좁혀야 함
 local u: unknown = get_data()
-u.foo                        -- no error: member access on unknown behaves like any
-local n: number = u          -- ERROR: unknown not assignable to number, narrow first
+u.foo                        -- 오류 없음: unknown의 멤버 접근은 any처럼 동작
+local n: number = u          -- 오류: unknown은 number에 할당할 수 없음, 먼저 좁혀야 함
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -236,10 +236,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = (user!).name            -- assert user is non-nil
+local name = (user!).name            -- user가 nil이 아님을 단언
 ```
 
-`!`는 타입 검사기 전용 단언입니다. 타입을 non-nil로 좁히지만 런타임 검사를 내보내지 않습니다. 실제 값이 nil이면 뒤따르는 작업은 nil 인덱싱 같은 일반적인 오류로 실패합니다. 값이 nil일 수 없음을 알지만 타입 검사기가 증명할 수 없을 때 사용하세요.
+`!`는 타입 검사기 전용 단언입니다 - 타입을 nil이 아닌 것으로 좁히지만 런타임 검사는 생성하지 않습니다. 값이 실제로 nil이면 이어지는 연산이 평소의 오류(예: nil 인덱싱)로 실패합니다. 값이 nil이 될 수 없다는 것을 알지만 타입 검사기가 증명할 수 없을 때 사용합니다.
 
 ## 타입 캐스트
 
@@ -310,8 +310,9 @@ local user = data as User            -- same as ::
 ### 종류와 이름
 
 ```lua
-type NumberType = number
-print(NumberType:kind())             -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -340,20 +341,20 @@ print(nameType:kind())               -- "string"
 ### 컬렉션 타입
 
 ```lua
-type NumberArray = {number}
-print(NumberArray:elem():kind())     -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-type NumberMap = {[string]: number}
-print(NumberMap:key():kind())        -- "string"
-print(NumberMap:val():kind())        -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### 선택적 타입
 
 ```lua
-type OptionalNumber = number?
-print(OptionalNumber:kind())         -- "optional"
-print(OptionalNumber:inner():kind()) -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### 유니온 타입
@@ -370,6 +371,7 @@ end
 
 ```lua
 type Predicate = (number, string) -> boolean
+
 for param in Predicate:params() do
     print(param:kind())
 end
@@ -381,25 +383,25 @@ print(Predicate:ret():kind())        -- "boolean"
 ### 타입 비교
 
 ```lua
-type NumberType = number
-type IntegerType = integer
+type Num = number
+type Int = integer
 
-print(NumberType == NumberType)      -- true
-print(IntegerType <= NumberType)     -- true (subtype)
-print(IntegerType < NumberType)      -- true (strict subtype)
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (서브타입)
+print(Int < Num)                     -- true (엄격한 서브타입)
 ```
 
 ### 테이블 키로서의 타입
 
 ```lua
-type NumberType = number
-type StringType = string
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
 local handlers = {}
-handlers[NumberType] = function() return "number handler" end
-handlers[StringType] = function() return "string handler" end
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
 
-local h = handlers[NumberType]
+local h = handlers[Point]
 if h then h() end
 ```
 
@@ -430,9 +432,11 @@ type NonNegative = number @min(0)
 type Percentage = number @min(0) @max(100)
 type Email = string @pattern("^.+@.+$")
 
-local x = NonNegative(1)
-local percent, err = Percentage:is(50)
-local email = Email("test@example.com")
+-- 여러 검증자
+local x: number @min(0) @max(100) = 50
+
+-- 문자열 패턴
+local email: string @pattern("^.+@.+$") = "test@example.com"
 ```
 
 로컬 변수의 어노테이션은 린터가 정적으로 검사합니다. 할당 시 자동 런타임 검사를 삽입하지 않으며, 타입 값이 값을 검증할 때 런타임 적용이 이루어집니다.

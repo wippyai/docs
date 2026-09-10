@@ -68,7 +68,7 @@ flowchart TB
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `meta.router` | Registry ID | Родительский роутер |
-| `method` | string | HTTP-метод (GET, POST, PUT, DELETE, PATCH, HEAD) |
+| `method` | string | HTTP-метод: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` или `*` для любого метода |
 | `path` | string | Шаблон URL-пути (начинается с `/`) |
 | `func` | Registry ID | Функция-обработчик |
 
@@ -114,12 +114,24 @@ end
   func: serve_file
 ```
 
+Wildcard соответствует оставшимся сегментам, поэтому запрос вида `GET /api/v1/files/docs/guides/readme.md` попадает в обработчик. Захваченный хвост читается через `req:param` по имени без завершающих точек:
+
 ```lua
--- Запрос: GET /api/v1/files/docs/guides/readme.md
-local file_path = req:param("filepath")  -- "docs/guides/readme.md"
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
 Wildcard должен быть последним сегментом пути.
+
+## Приоритет маршрутов
+
+Все роутеры регистрируют свои эндпойнты в едином наборе шаблонов с префиксом роутера `prefix`, и то, какой шаблон обслуживает запрос, решает `ServeMux` из Go. Его правила действуют без изменений:
+
+- Побеждает наиболее специфичный шаблон. Шаблон специфичнее другого, если он соответствует строгому подмножеству запросов того шаблона, поэтому `/users/admin` выигрывает у `/users/{id}`, а `/files/{name}` — у `/files/{path...}`.
+- Шаблон с методом специфичнее того же пути без метода, поэтому для `GET`-запросов эндпойнт `GET` имеет приоритет над эндпойнтом `*` на том же пути.
+- Завершающий `{path...}` или `/` соответствует целому поддереву и проигрывает любому шаблону, который соответствует его подмножеству.
+- Сопоставление выполняется по очищенному и декодированному пути; специфичность никогда не зависит от порядка регистрации.
+
+Два шаблона могут и прямо конфликтовать: ни один не специфичнее другого, но они пересекаются — как `/users/{id}/settings` и `/users/admin/{section}`. Это ошибка конфигурации. Роутер обнаруживает её при перестроении, перестроение завершается неудачей, а в работе остаётся предыдущий набор маршрутов.
 
 ## Функции-обработчики
 
@@ -127,7 +139,6 @@ Wildcard должен быть последним сегментом пути.
 
 ```lua
 local http = require("http")
-local json = require("json")
 
 local function handler()
     local req = http.request()
@@ -136,8 +147,8 @@ local function handler()
     local user_id = req:param("id")
     local user = get_user(user_id)
 
-    res:status(200)
-    res:write(json.encode(user))
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }
@@ -167,7 +178,7 @@ Post-match middleware используют `post_options`:
 post_middleware:
   - endpoint_firewall
 post_options:
-  endpoint_firewall.default_policy: "deny"
+  endpoint_firewall.action: "access"
 ```
 
 ## Pre-Match vs Post-Match Middleware
@@ -288,7 +299,7 @@ entries:
       - cors
       - token_auth
     options:
-      token_store: app:tokens
+      token_auth.store: app:tokens
     post_middleware:
       - endpoint_firewall
 ```

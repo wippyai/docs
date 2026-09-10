@@ -1,6 +1,6 @@
 ---
 title: "Future"
-description: "asynchronous function 및 contract call의 result를 receive, inspect 및 cancel합니다."
+description: "비동기 작업 결과. Future는 funcs.async() 및 계약 비동기 호출에서 반환됩니다."
 ---
 
 # Future
@@ -101,6 +101,8 @@ asynchronous operation의 cancellation을 best-effort로 요청합니다.
 local canceled, err = future:cancel()
 ```
 
+**반환:** `boolean, error`
+
 이미 진행 중이면 작업이 여전히 완료될 수 있습니다.
 
 **반환:** `boolean, error`
@@ -130,11 +132,8 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- The operation may still complete; this caller ignores the late result.
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
+    future:cancel()
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 local payload, result_err = future:result()
@@ -185,9 +184,7 @@ return value
 
 ## 에러
 
-| 조건 | 종류 | 재시도 가능 |
-|------|------|-------------|
-| `result()`를 통한 operation cancel | `errors.CANCELED` | 아니오 |
-| `result()`가 반환한 operation failure | varies | function error에서 보존 |
-| `error()`가 반환한 operation failure | `errors.INTERNAL` | 아니오 |
-| cancellation dispatch failure | `errors.INTERNAL` | 아니오 |
+| 조건 | 종류 |
+|------|------|
+| 작업 취소됨 | `CANCELED` |
+| 비동기 작업 실패 | `result()`는 작업의 종류를 보존; `error()`는 `INTERNAL`을 보고 |

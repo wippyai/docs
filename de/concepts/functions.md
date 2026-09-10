@@ -119,7 +119,7 @@ pool:
 ```
 
 <tip>
-Bevorzugen Sie einen expliziten Pool-<code>type</code>. Setzen Sie bei <code>type: static</code> den Wert <code>size</code>. Ist zusätzlich <code>workers</code> vorhanden, liefert er die Worker-Anzahl und erfordert weiterhin ein positives <code>size</code>. Im älteren impliziten Modus wählen <code>workers &gt; 0</code> zusammen mit <code>size &gt; 0</code> einen statischen Pool, <code>max_size &gt; 0</code> ohne Worker einen Lazy-Pool; <code>size</code> allein fällt auf Inline-Ausführung zurück.
+Wenn Sie keinen Pool-Typ angeben, wählt die Laufzeitumgebung einen basierend auf Ihrer Konfiguration. Setzen Sie <code>workers</code> für static, <code>max_size</code> für lazy, oder setzen Sie explizit <code>type</code> für volle Kontrolle. Ist keines von beiden gesetzt, ist der Pool lazy mit maximal 16 Workern.
 </tip>
 
 ## Interceptors
@@ -149,15 +149,9 @@ Funktionen können ihre Ein- und Ausgabeschemas als Contracts bereitstellen. Con
 
 ```lua
 local contract = require("contract")
-local sender, err = contract.get("app.email:sender")
-if err then return nil, err end
-
-local email, err = sender:open("app.email:sender_impl")
-if err then return nil, err end
-
-local result, err = email:send({to = "user@example.com", subject = "Hello"})
-if err then return nil, err end
-return result
+local sender = contract.get("app.email:sender")
+local email = sender:open("app.email:sender_impl")
+email:send({to = "user@example.com", subject = "Hello"})
 ```
 
 Contracts erlauben Aufrufern, eine Schnittstelle zu verwenden und die Implementierung getrennt auszuwählen. Das unterstützt Tests, mandantenfähige Bereitstellungen und schrittweise Migrationen.

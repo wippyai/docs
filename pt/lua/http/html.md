@@ -1,6 +1,6 @@
 ---
 title: "Sanitização HTML"
-description: "Sanitize HTML não confiável com políticas predefinidas ou personalizadas de elementos, atributos e URLs."
+description: "Sanitize HTML não confiavel para prevenir ataques XSS. Baseado em bluemonday."
 ---
 
 # Sanitização HTML
@@ -284,7 +284,7 @@ policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -341,7 +341,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Permitir Tabelas
 
-Permite `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td` e `th`. Também permite dimensões, alinhamento, spans, headers, scope e atributos de apresentação relacionados, todos validados pelo helper.
+Permitir elementos de tabela: `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`.
 
 ```lua
 policy:allow_tables()
@@ -354,7 +354,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Permitir Atributos Padrão
 
-Permite globalmente os atributos padrão `dir`, `id`, `lang` e `title`. Os valores são restritos: `dir` deve ser `ltr` ou `rtl`, `lang` deve ter de 2 a 20 letras ASCII e `id` e `title` devem corresponder aos padrões de caracteres seguros do sanitizador. Este helper não permite `class`.
+Permitir atributos comuns: `id`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")

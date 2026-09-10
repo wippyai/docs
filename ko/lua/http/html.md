@@ -1,6 +1,6 @@
 ---
 title: "HTML 새니타이제이션"
-description: "프리셋 또는 사용자 지정 요소, 속성 및 URL 정책으로 신뢰할 수 없는 HTML을 정제합니다."
+description: "XSS 공격을 방지하기 위해 신뢰할 수 없는 HTML을 새니타이즈합니다. bluemonday 기반."
 ---
 
 # HTML 새니타이제이션
@@ -286,7 +286,7 @@ policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -343,7 +343,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### 테이블 허용
 
-테이블 요소 `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`를 허용하며 검증된 크기, 정렬, span, header 및 scope 속성도 허용합니다.
+테이블 요소를 허용합니다: `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`.
 
 ```lua
 policy:allow_tables()
@@ -356,7 +356,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### 표준 속성 허용
 
-표준 속성 `dir`, `id`, `lang`, `title`을 전역으로 허용합니다. `dir`은 `ltr` 또는 `rtl`이어야 하며 이 helper는 `class`를 허용하지 않습니다.
+일반 속성을 허용합니다: `id`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")

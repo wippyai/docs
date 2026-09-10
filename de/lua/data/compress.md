@@ -1,6 +1,6 @@
 ---
 title: "Komprimierung"
-description: "Strings mit gzip, Brotli, Zstandard, rohem DEFLATE und zlib komprimieren und dekomprimieren."
+description: "Komprimieren und dekomprimieren Sie Daten mit gzip, deflate, zlib, brotli und zstd-Algorithmen."
 ---
 
 # Komprimierung
@@ -75,7 +75,7 @@ if content_encoding == "gzip" then
     if body_err then return nil, body_err end
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.wrap(err, "gzip request body could not be decoded")
+        return nil, errors.new("Invalid gzip data"):kind(errors.INVALID)
     end
     body = decompressed
 end
@@ -83,7 +83,7 @@ end
 -- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.wrap(err, "gzip decode failed")
+    return nil, errors.new("Decompressed size exceeds 10MB limit"):kind(errors.INVALID)
 end
 ```
 
@@ -423,6 +423,6 @@ Dieser partielle Handler parst exakte Coding-Tokens und RFC-q-Werte, berücksich
 | Leere Eingabe | `errors.INVALID` | nein |
 | Stufe außerhalb des Bereichs | `errors.INVALID` | nein |
 | Ungültige komprimierte Daten | `errors.INVALID` | nein |
-| Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` | nein |
+| Dekomprimierte Größe überschreitet Limit | `errors.INTERNAL` (gzip, zlib, zstd) / `errors.INVALID` (deflate, brotli) | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

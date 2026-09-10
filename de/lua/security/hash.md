@@ -1,6 +1,6 @@
 ---
 title: "Hash-Funktionen"
-description: "Kryptografische Hashes, HMAC-Werte, PBKDF2-Schlüssel und FNV-1-Hashes berechnen."
+description: "Kryptografische Hash-Funktionen und HMAC-Nachrichtenauthentifizierung."
 ---
 
 # Hash-Funktionen
@@ -177,36 +177,24 @@ local n = hash.fnv64("data")
 
 **Gibt zurück:** `number, error`
 
-Lua-Zahlen können nicht jede vorzeichenlose 64-Bit-Ganzzahl exakt darstellen. Verwenden Sie `fnv64` nicht, wenn der exakte 64-Bit-Wert Lua unverändert durchlaufen muss; verwenden Sie stattdessen eine Byte- oder Zeichenkettendarstellung, die von einer geeigneten Protokollimplementierung bereitgestellt wird.
-
 ## Schlüsselableitung
 
-### PBKDF2-HMAC
-
-Leiten Sie mit PBKDF2-HMAC-SHA256 oder PBKDF2-HMAC-SHA512 rohe Schlüsselbytes ab:
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
 
-Hier wird `password` über die Geheimnisgrenze der Anwendung bereitgestellt; `salt` besteht aus neuen zufälligen Bytes, die zusammen mit dem Prüfwert gespeichert werden. Die zurückgegebenen Werte sind rohe Schlüsselbytes und kein druckbarer Text.
-
 | Parameter | Typ | Beschreibung |
-|-----------|-----|--------------|
-| `password` | string | Nicht leeres Passwort oder geheime Eingabe |
-| `salt` | string | Nicht leere Salt-Bytes |
-| `iterations` | integer | Positive Iterationszahl, höchstens 10.000.000 |
-| `key_length` | integer | Positive Ausgabelänge in Bytes |
-| `algo` | string? | `sha256` (Standard) oder `sha512` |
+|-----------|------|-------------|
+| `password` | string | Passwort/Passphrase (nicht leer) |
+| `salt` | string | Salt-Wert (nicht leer) |
+| `iterations` | integer | Anzahl der Iterationen (1 bis 10.000.000) |
+| `key_length` | integer | Gewünschte Schlüssellänge in Bytes |
+| `hash` | string? | `sha256` oder `sha512` (Standard: `sha256`) |
 
-**Gibt zurück:** `string, error` (rohe abgeleitete Schlüsselbytes)
+**Gibt zurück:** `string, error` (rohe Schlüsselbytes)
 
 ## Fehler
 
@@ -214,6 +202,6 @@ Hier wird `password` über die Geheimnisgrenze der Anwendung bereitgestellt; `sa
 |-----------|------|-----------|
 | Eingabe ist kein String | `errors.INVALID` | nein |
 | Secret ist kein String (HMAC) | `errors.INVALID` | nein |
-| PBKDF2-Passwort oder -Salt leer, Grenzwerte ungültig oder Algorithmus nicht unterstützt | `errors.INVALID` | nein |
+| Leeres Passwort/Salt, nicht positive oder zu hohe Iterationszahl, nicht unterstützter Hash (PBKDF2) | `errors.INVALID` | nein |
 
 Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

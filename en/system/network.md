@@ -158,6 +158,14 @@ network_service:
 | `state_dir` | `.wippy/net` | Driver state directory. Relative paths resolve against the boot config dir. |
 | `default_network` | — | Registry ID of an overlay applied to any task or process that does not pin its own network via options. |
 
+## Raw Dials
+
+Overlay selection is not limited to Lua edges. Dials made through the runtime network service — the WASM [`socket` host](wasm/hosts.md#socket) and the `wasi:sockets` dispatcher — read the overlay off the frame and route through it, whether it was set by `with_options`, by `meta.options.network` on the entry, or by `network_service.default_network`.
+
+The private-IP gate behaves differently on that path. A direct dial resolves the target and checks every resulting address against `socket.private_ip`. With an overlay selected, only a literal IP address in the target is checked; host names are handed to the overlay to resolve, so the local resolver is never consulted and no check is made on what it would have returned.
+
+When an overlay is selected but the context carries no network registry, the dial fails with `network "<id>" selected without a network registry`.
+
 ## Updating Overlays
 
 Overlay entries are replaced on registry update. The driver builds the replacement before switching to it; if creation fails, the existing overlay continues running. A successful swap is atomic for new lookups, then the previous service is closed. Work already using the previous service can therefore observe that closure.
@@ -168,12 +176,18 @@ Overlay entries are replaced on registry update. The driver builds the replaceme
 |--------|----------|-------------|
 | `network.select` | Network registry ID | Explicit overlay selection at `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Network registry ID | Binding an `http.service` listener through an overlay (the `network:` field) |
-| `process.context` | `context` | Constructing a process spawner with `process.with_options(...)` |
+| `socket.connect` | `host:port` | Any outbound dial through the network service |
+| `socket.listen` | `host:port` | Binding a TCP listener or a UDP socket through the network service |
+| `socket.resolve` | Host name | DNS resolution through the network service |
+| `socket.private_ip` | IP address | Reaching a loopback, private, link-local or unspecified address |
 
 Deny `network.select` on a scope to stop code inside it from choosing an overlay explicitly. Inherited overlays are unaffected — they were authorized at the caller. `network.bind` is checked when a server with a `network:` overlay starts its listener.
+
+The `socket.*` permissions are checked by the network service itself. `socket.connect`, `socket.listen` and `socket.resolve` are checked before any overlay routing, so they apply equally to clearnet and overlay traffic; `socket.private_ip` narrows to literal addresses once an overlay is selected, as described under [Raw Dials](system/network.md#raw-dials).
 
 ## See Also
 
 - [Security](system/security.md) - Policies and actors
 - [HTTP Service](http/server.md) - Server binding
 - [HTTP Client](lua/http/client.md) - Per-call overlay selection
+- [Host Functions](wasm/hosts.md) - WASM socket imports

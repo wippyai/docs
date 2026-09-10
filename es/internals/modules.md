@@ -1,13 +1,13 @@
 ---
 title: "Módulos Lua"
-description: "Define módulos de runtime Lua tipados con funciones síncronas, userdata, yields, errores, controles de seguridad y pruebas."
+description: "Los módulos de runtime extienden el entorno Lua con nueva funcionalidad. Los módulos pueden proveer utilidades determinísticas, operaciones I/O o…"
 ---
 
 # Módulos Lua
 
-Los módulos de runtime añaden al entorno Lua utilidades determinísticas, operaciones de E/S o comandos asíncronos.
+Los módulos de runtime extienden el entorno Lua con nueva funcionalidad. Los módulos pueden proveer utilidades determinísticas, operaciones I/O o comandos asíncronos que hacen yield a sistemas externos.
 
-Esta página es una referencia de extensión de Go. Sus fragmentos son ejemplos parciales a nivel de paquete y presuponen las importaciones, la API de comandos, el despachador, los recursos de seguridad y los datos de prueba indicados en cada sección.
+> La implementación del runtime Lua puede cambiar en futuras versiones.
 
 ## Definición de Módulo
 
@@ -45,14 +45,14 @@ El campo `Class` determina dónde se puede usar el módulo:
 | `ClassNondeterministic` | La salida varía (tiempo, aleatoriedad) |
 | `ClassIO` | Operaciones de I/O externas |
 | `ClassNetwork` | Operaciones de red |
-| `ClassEncoding` | Operaciones de codificación y decodificación |
-| `ClassTime` | Operaciones relacionadas con el tiempo |
-| `ClassProcess` | Operaciones relacionadas con procesos |
-| `ClassSecurity` | Operaciones relacionadas con seguridad |
+| `ClassEncoding` | Serialización y codificación |
+| `ClassTime` | Acceso a reloj y temporizadores |
+| `ClassProcess` | Control de procesos |
+| `ClassSecurity` | Contexto de seguridad y tokens |
 | `ClassStorage` | Persistencia de datos |
 | `ClassWorkflow` | Operaciones seguras para workflows |
 
-La compilación de workflows permite módulos que tengan al menos una de las clases `ClassDeterministic` o `ClassWorkflow`. El filtrado de clases es inclusivo: un módulo pasa cuando cualquiera de sus clases está permitida.
+Los procesos de workflow se compilan con `ClassDeterministic` y `ClassWorkflow` como clases permitidas: un módulo está disponible para workflows si lleva al menos una de ellas; en caso contrario queda restringido a funciones y procesos.
 
 ## Exponer Funciones
 
@@ -102,7 +102,7 @@ Los módulos usan dos mecanismos de tipado separados pero complementarios.
 
 ### Definiciones de Tipos (Herramientas)
 
-El campo `Types` proporciona firmas de tipo para compatibilidad con el IDE y la documentación. Los tipos se construyen con los constructores fluidos del paquete `typ`:
+El campo `Types` proporciona firmas de tipo para soporte en IDE y documentación. Los tipos se construyen con los constructores fluidos del paquete `typ`:
 
 ```go
 import (
@@ -126,7 +126,7 @@ func ModuleTypes() *io.Manifest {
 }
 ```
 
-**Constructos de tipo disponibles:**
+**Constructores de tipo disponibles:**
 
 | Tipo | Descripción |
 |------|-------------|
@@ -135,16 +135,16 @@ func ModuleTypes() *io.Manifest {
 | `typ.Integer` | Valor entero |
 | `typ.Boolean` | Valor booleano |
 | `typ.Any` | Cualquier valor Lua |
-| `typ.Self` | Tipo receptor de los métodos |
+| `typ.Self` | Tipo receptor para métodos |
 | `typ.LuaError` | Tipo error |
 | `typ.NewOptional(t)` | Valor opcional de tipo t |
 | `typ.NewInterface(name, methods)` | Objeto con métodos |
-| `typ.Func()` | Constructor de firma de función |
-| `typ.NewRecord()` | Constructor de tipo similar a una estructura (campos mediante `.Field`/`.OptField`) |
+| `typ.Func()` | Constructor de firmas de función |
+| `typ.NewRecord()` | Constructor de tipos tipo struct (campos vía `.Field`/`.OptField`) |
 | `typ.NewArray(t)` | Array de elementos de tipo t |
-| `typ.NewMap(k, v)` | Mapa con tipos de clave y valor |
+| `typ.NewMap(k, v)` | Mapa con tipos de clave/valor |
 
-Los constructores de funciones encadenan `Param`, `OptParam`, `Variadic` y `Returns`:
+Los constructores de función encadenan `Param`, `OptParam`, `Variadic` y `Returns`:
 
 ```go
 // (string, ...any) -> (string, error?)
@@ -165,7 +165,7 @@ typ.NewRecord().
     Build()
 ```
 
-Consulte el paquete `typ` en go-lua para ver constructores y definiciones de tipo adicionales.
+Consulte el paquete `typ` en go-lua para el sistema de tipos completo.
 
 ### Bindings UserData (Runtime)
 
@@ -194,7 +194,7 @@ Las metatablas son inmutables y se cachean globalmente para una reutilización s
 
 ## Operaciones Asíncronas
 
-Para operaciones que esperan en sistemas externos, devuelva una cesión en lugar de un resultado. La cesión se despacha a un controlador de Go y el proceso se reanuda cuando el controlador termina.
+Para operaciones que esperan en sistemas externos, devuelva un yield en lugar de un resultado. El yield se despacha a un handler Go y el proceso se reanuda cuando el handler termina.
 
 ### Definir Yields
 
@@ -232,7 +232,7 @@ func fetchFunc(l *lua.LState) int {
 
 ### Implementación del Yield
 
-Las cesiones conectan los valores de Lua con los comandos del despachador:
+Los yields conectan los valores Lua con los comandos del dispatcher:
 
 ```go
 type FetchYield struct {
@@ -254,7 +254,7 @@ func (y *FetchYield) HandleResult(l *lua.LState, data any, err error) []lua.LVal
 }
 ```
 
-El despachador enruta el comando a un controlador. Consulte [Despacho de comandos](internals/dispatch.md) para implementar controladores.
+El dispatcher enruta el comando a un handler. Consulte [Despacho de Comandos](internals/dispatch.md) para implementar handlers.
 
 ## Manejo de Errores
 
@@ -320,13 +320,12 @@ func TestModule(t *testing.T) {
 
 ### Probar Módulos con Yields
 
-Para probar código Lua que usa funciones con cesión, cree un planificador mínimo con los despachadores requeridos:
+Para probar código Lua que usa funciones con yield, cree un planificador mínimo con los dispatchers requeridos:
 
 ```go
 type testScheduler struct {
     *actor.Scheduler
     clock   *clock.Dispatcher
-    node    *sysrelay.Node
     mu      sync.Mutex
     pending map[string]chan *runtime.Result
 }
@@ -343,22 +342,15 @@ func newTestScheduler() *testScheduler {
     ts.clock = clockSvc
 
     ts.Scheduler = actor.NewScheduler(reg, actor.WithWorkers(4), actor.WithLifecycle(ts))
-
-    // Clock events return through the relay to the process host named by PID.Host.
-    ts.node = sysrelay.NewNode("module-test-node")
-    if err := ts.node.RegisterHost("module.test", ts.Scheduler); err != nil {
-        panic(err)
-    }
     return ts
 }
 
-// Stop wraps Scheduler.Stop, which requires a context.
+// Stop envuelve Scheduler.Stop, que requiere un context.
 func (ts *testScheduler) Stop() {
     ts.Scheduler.Stop(context.Background())
-    _ = ts.clock.Stop(context.Background())
 }
 
-// OnStart satisfies process.Lifecycle alongside OnComplete.
+// OnStart satisface process.Lifecycle junto con OnComplete.
 func (ts *testScheduler) OnStart(context.Context, pid.PID, process.Process) error { return nil }
 
 func (ts *testScheduler) OnComplete(_ context.Context, p pid.PID, result *runtime.Result) {
@@ -378,18 +370,8 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     ts.pending[p.UniqID] = resultCh
     ts.mu.Unlock()
 
-    // relay.WithNode requires an application context. Preserve the caller's
-    // frame context while attaching the relay used by the clock dispatcher.
-    if ctxapi.AppFromContext(ctx) == nil {
-        ctx = ctxapi.WithAppContext(ctx, ctxapi.NewAppContext())
-    }
-    ctx = relayapi.WithNode(ctx, ts.node)
-
     _, err := ts.Scheduler.Submit(ctx, p, proc, method, input)
     if err != nil {
-        ts.mu.Lock()
-        delete(ts.pending, p.UniqID)
-        ts.mu.Unlock()
         return nil, err
     }
 
@@ -397,90 +379,51 @@ func (ts *testScheduler) Execute(ctx context.Context, p pid.PID, proc process.Pr
     case result := <-resultCh:
         return result, nil
     case <-ctx.Done():
-        ts.mu.Lock()
-        delete(ts.pending, p.UniqID)
-        ts.mu.Unlock()
         return nil, ctx.Err()
     }
 }
-
-func testPID() pid.PID {
-    return pid.PID{Host: "module.test", UniqID: "test"}.Precomputed()
-}
 ```
 
-Cree un proceso con el módulo que usa el script. Este ejemplo emplea el módulo de tiempo para que el despachador de reloj registrado anteriormente gestione una cesión real:
+Cree procesos desde scripts Lua con los módulos que esté probando:
 
 ```go
-func bindTimeModule(l *lua.LState) error {
-    tbl, _ := timemod.Module.Build()
-    l.SetGlobal(timemod.Module.Name, tbl)
+func bindMyModule(l *lua.LState) error {
+    tbl, _ := mymodule.Module.Build()
+    l.SetGlobal(mymodule.Module.Name, tbl)
     return nil
 }
 
-func newLuaProcessWithChannels(script string) (*engine.Process, error) {
-    proto, err := lua.CompileString(script, "test.lua")
-    if err != nil {
-        return nil, err
-    }
-    proc, err := engine.NewProcess(
+func newLuaProcess(script string) *engine.Process {
+    proto, _ := lua.CompileString(script, "test.lua")
+    proc, _ := engine.NewProcess(
         engine.WithProto(proto),
-        engine.WithModuleBinder(func(l *lua.LState) error {
-            engine.LoadModuleDef(l, engine.ChannelModule)
-            return nil
-        }),
-        engine.WithModuleBinder(bindTimeModule),
+        engine.WithModuleBinder(bindMyModule),
     )
-    if err != nil {
-        return nil, err
-    }
-    return proc, nil
+    return proc
 }
 
-func TestYieldDispatcher(t *testing.T) {
+func TestMyModuleYields(t *testing.T) {
     sched := newTestScheduler()
     sched.Start()
     defer sched.Stop()
 
     script := `
-        local ticker, ticker_err = time.ticker(10 * time.MILLISECOND)
-        if ticker_err then error(ticker_err) end
-
-        local _, open = ticker:response():receive()
-        local stopped = ticker:stop()
-        if not stopped then error("ticker did not stop") end
-        if not open then error("ticker channel closed before the first tick") end
-        return "tick"
+        local result = mymodule.fetch("http://example.com")
+        return result.status
     `
 
     ctx, _ := ctxapi.OpenFrameContext(context.Background())
-    if err := runtime.SetFramePID(ctx, testPID()); err != nil {
-        t.Fatal(err)
-    }
+    proc := newLuaProcess(script)
 
-    proc, err := newLuaProcessWithChannels(script)
+    result, err := sched.Execute(ctx, pid.PID{UniqID: "test"}, proc, "", nil)
     if err != nil {
         t.Fatal(err)
     }
-
-    started := time.Now()
-    result, err := sched.Execute(ctx, testPID(), proc, "", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
-    if result == nil {
-        t.Fatal("nil result")
-    }
-    if result.Error != nil {
-        t.Fatalf("script failed: %v", result.Error)
-    }
-    if elapsed := time.Since(started); elapsed < 5*time.Millisecond {
-        t.Fatalf("yield completed before the clock fired: %v", elapsed)
-    }
+    // Assert on result
 }
 ```
 
-Consulte `runtime/lua/modules/time/integration_test.go` para ver un ejemplo de prueba de integración.
+Consulte `runtime/lua/modules/time/integration_test.go` para un ejemplo completo.
 
 ## Véase También
 

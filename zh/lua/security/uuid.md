@@ -1,6 +1,6 @@
 ---
 title: "UUID 生成"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "生成通用唯一标识符。适配工作流使用 - 随机 UUID 在重放时返回一致的值。"
 ---
 
 # UUID 生成
@@ -135,7 +135,7 @@ local info, err = uuid.parse(id)
 - `version` (integer): UUID 版本（1、3、4、5 或 7）
 - `variant` (string): RFC4122、Reserved、Microsoft、Future、NCS 或 Invalid
 - `timestamp` (integer): Unix 时间戳（仅 v1 和 v7）
-- `node` (string): 节点 ID（仅 v1）
+- `node` (string): 6 个原始节点 ID 字节（仅 v1）
 
 ### 格式化
 

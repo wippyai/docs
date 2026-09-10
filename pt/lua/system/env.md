@@ -1,6 +1,6 @@
 ---
-title: "Variáveis de Ambiente"
-description: "Leia e atualize variáveis de ambiente expostas pelo sistema de ambiente configurado."
+title: "Variaveis de Ambiente"
+description: "Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime."
 ---
 
 # Variáveis de Ambiente
@@ -25,17 +25,10 @@ local env = require("env")
 Obtém uma variável de ambiente.
 
 ```lua
--- Get database connection string
-local db_url, db_err = env.get("DATABASE_URL")
-if db_err then return nil, db_err end
-
--- Apply a fallback only to a missing variable. Permission and backend errors
--- still propagate to the caller.
-local function get_or(key, fallback)
-    local value, err = env.get(key)
-    if not err then return value end
-    if errors.is(err, errors.NOT_FOUND) then return fallback end
-    return nil, err
+-- Obter string de conexão do banco
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 local port, port_err = get_or("PORT", "8080")
@@ -88,10 +81,7 @@ logger:debug("accessible environment variables", {keys = accessible_keys})
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new({
-            message = "Missing required env var: " .. key,
-            kind = errors.INVALID
-        })
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -106,10 +96,10 @@ O acesso ao ambiente está sujeito à avaliação de políticas de segurança.
 
 | Ação | Recurso | Descrição |
 |------|---------|-----------|
-| `env.get` | Nome da variável | Ler variável de ambiente |
-| `env.set` | Nome da variável | Escrever variável de ambiente |
+| `env.get` | Nome da variavel | Ler variavel de ambiente |
+| `env.set` | Nome da variavel | Escrever variavel de ambiente |
 
-`get_all` não tem uma ação de segurança dedicada: ele retorna apenas as variáveis para as quais a ação `env.get` é permitida, filtrando cada nome de variável por meio de `env.get`.
+`get_all` não tem ação de segurança dedicada: retorna apenas as variaveis para as quais a ação `env.get` é permitida, filtrando cada nome de variavel através de `env.get`.
 
 ### Verificando Acesso
 

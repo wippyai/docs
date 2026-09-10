@@ -1,6 +1,6 @@
 ---
 title: "JSONエンコーディング"
-description: "Luaの値をJSONとしてエンコードし、JSON文字列をデコードして、値や文字列をJSON Schemaで検証します。"
+description: "LuaテーブルをJSONにエンコードし、JSON文字列をLua値にデコード。データ検証とAPIコントラクト強制のためのJSON Schema検証を含む。"
 ---
 
 # JSONエンコーディング
@@ -112,8 +112,8 @@ print(response.data.users[1].name)  -- "Alice"
 -- Handle errors
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- parse error details
+    print(err:kind())     -- "Internal"（errors.INTERNAL）
+    print(err:message())  -- パースエラーの詳細
 end
 ```
 
@@ -191,10 +191,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new({
-        message = "Invalid request: " .. err:message(),
-        kind = errors.INVALID
-    })
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Now safe to decode
@@ -213,12 +210,15 @@ if decode_err then return nil, decode_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 再帰的なテーブル参照 | `errors.INTERNAL` | いいえ |
-| 疎な配列（インデックスにギャップ） | `errors.INTERNAL` | いいえ |
-| テーブル内のキー型混在 | `errors.INTERNAL` | いいえ |
-| ネストが128レベルを超過 | `errors.INTERNAL` | いいえ |
-| 無効なJSON構文 | `errors.INTERNAL` | いいえ |
-| スキーマコンパイル失敗 | `errors.INVALID` | いいえ |
-| 検証失敗 | `errors.INVALID` | いいえ |
+| 再帰的なテーブル参照 | `errors.INTERNAL` | no |
+| 疎な配列（インデックスにギャップ） | `errors.INTERNAL` | no |
+| テーブル内のキー型混在 | `errors.INTERNAL` | no |
+| ネストが128レベルを超過 | `errors.INTERNAL` | no |
+| 無効なJSON構文 | `errors.INTERNAL` | no |
+| 入力が文字列でない、または空文字列（decode）| `errors.INVALID` | no |
+| スキーマコンパイル失敗 | `errors.INVALID` | no |
+| 検証失敗 | `errors.INVALID` | no |
+
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

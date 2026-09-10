@@ -1,92 +1,81 @@
 ---
-title: "Theme authoring"
-description: "facade が PrimeVue theme を author し、module が portable であり続ける仕組み。"
+title: "テーマの記述"
+description: "ファサードがPrimeVueテーマをどう記述し、モジュールがどうポータブルであり続けるか。"
 ---
 
-# Theme authoring
+# テーマの記述
 
-**分類: theme ownership と runtime contract reference。** mode switching block は 1 つの public API flow を示し、running Host を前提とします。単体で facade を設定したり module を build したりしません。
+ファサードがPrimeVueテーマを記述します。モジュールはそのテーマを消費するのであって、並行するミニデザインシステムを作るわけではありません。
 
-facade が PrimeVue theme を author し、module は独立した design system を定義せずそれを利用します。
+Wippyは現在、PrimeVueを `theme: 'none'` で実行しています。コンポーネントの見た目は、WippyのTailwindで記述されたPrimeVue CSS、公開ランタイム変数、ファサードのカスタマイズによって供給されます。
 
-Wippy は現在 PrimeVue を `theme: 'none'` で動かします。component appearance は Wippy の Tailwind-authored PrimeVue CSS、public runtime variable、facade customization が供給します。
+## スタイリングの所属先
 
-## Style の配置先
-
-| スタイリング対象 | 管理元 |
+| スタイリングの関心事 | 所有者 |
 |---|---|
-| product 全体で共有する PrimeVue component appearance | `custom_css` と public theme variable 内の Facade PrimeVue theme |
-| Host shell chrome のみ | `.wippy-host-app` に scope した Facade CSS |
-| host/child root 向け共有 `.p-*` rule | global facade `custom_css`。host scope 不要 |
-| page-only theme override | supported frontend casing を使う page configuration |
-| domain layout または新規 structure | module CSS または Tailwind |
-| 必要な non-PrimeVue custom part | public token/documented invariant utility を再利用する module CSS |
-| 複数の自作 module が使う同じ non-PrimeVue part | shared package — [Design Layer](../design-layer.md)参照 |
-| 1 facade の任意 class への期待 | portable ではなく FE-STYLE-001 で禁止 |
+| 製品全体で共有されるPrimeVueコンポーネントの見た目 | `custom_css` 内のファサードPrimeVueテーマと公開テーマ変数 |
+| ホストシェルのクロームのみ | `.wippy-host-app` にスコープされたファサードCSS |
+| ホストと子のrootの両方に意図された共有の `.p-*` ルール | グローバルなファサード `custom_css`。ホストスコープは不要 |
+| ページ限定のテーマオーバーライド | サポートされたフロントエンドのケーシングを使うページ設定 |
+| ドメイン固有のレイアウトや新規の構造 | モジュールのCSSまたはTailwind |
+| 必要なPrimeVue以外のカスタム部品 | モジュールのCSS。公開トークンとドキュメント化された不変ユーティリティを再利用する |
+| 自分の複数モジュールが必要とする同じPrimeVue以外の部品 | 共有パッケージ — [デザインレイヤー](../design-layer.md)を参照 |
+| 1つのファサードから期待される任意のクラス | ポータブルではない。FE-STYLE-001により禁止 |
 
-global `.p-drawer-content` rule は host/child の全 Drawer 向けなら有効な theme implementation です。`.wippy-host-app .p-drawer-content` は host 固有の場合だけ適切です。
+グローバルな `.p-drawer-content` ルールは、ホストと子のrootにあるすべてのDrawerに意図されている場合、正当なテーマ実装です。`.wippy-host-app .p-drawer-content` が適切なのは、そのルールがホスト固有である場合だけです。
 
-重複 module CSS を facade に移しても dependency は消えません。selector が shared PrimeVue theme vocabulary に属さないなら private facade contract を作ります。自作 module 間の共有 vocabulary は published package に置きます。
+重複したモジュールCSSをファサードCSSに移しても、依存は解消されません。そのセレクタが共有PrimeVueテーマの語彙の一部でないなら、それは非公開のファサード契約を生みます。自分のモジュール間で共有されるがテーマには存在しない語彙の置き場所は、公開されたパッケージです。[デザインレイヤー](../design-layer.md)を参照してください。
 
-## セマンティックな等価性 :id=semantic-equality
+## セマンティックな同一性
 
-semantically equivalent な control は同等に見えるべきです。PrimeVue component を直接使います。本当に custom control が必要なら PrimeVue visual sibling を特定し、color、border、focus、state と theme-variable に分類された geometry に同じ public runtime property を使います。
+セマンティックに等価なコントロールは、等価に見えるべきです。PrimeVueコンポーネントを直接使うことを優先してください。本当にカスタムなコントロールが必要な場合は、そのPrimeVueにおける視覚的な兄弟を特定し、色、ボーダー、フォーカス、状態、およびテーマ変数に分類されるジオメトリについて、同じ公開ランタイムプロパティを使用してください。
 
-custom part が所有できるのは sibling にない新規 structure だけです。documented theme padding、dimension、typography、radius、shadow、focus、motion contract を再利用します。generated component CSS から copy した literal は将来の theme change を継承しません。
+カスタム部品が所有してよいのは、その兄弟が提供しない新規の構造だけです。ドキュメント化されたテーマのパディング、寸法、タイポグラフィ、角丸、シャドウ、フォーカス、モーションの契約が存在する場合は、それらを再利用してください。生成されたコンポーネントCSSから現在のリテラル値をコピーして、それを継承と呼んではいけません。
 
-## Runtime property と invariant property
+## ランタイムプロパティと不変プロパティ
 
-- `theme-variable`: documented public runtime variable で解決する。
-- `platform-invariant`: shared compiled Tailwind value が全 compliant theme で意図的に固定される。
+共有される見た目のプロパティには、それぞれ1つのポリシーがあります:
 
-理論的 flexibility のためだけに runtime token を追加しません。real runtime gap、exact supported path、real consumer、mutation evidence が文書化された場合だけ採用します。
+- `theme-variable`: ドキュメント化された公開ランタイム変数を通じて解決されなければならない。
+- `platform-invariant`: 共有のコンパイル済みTailwind値が、準拠するすべてのテーマにわたって意図的に安定している。
 
-## CSS transport は permission ではない
+理論上の柔軟性のためにランタイムトークンを追加してはいけません。トークンを追加または採用するのは、実効契約の台帳が、実際のランタイム上のギャップ、正確なサポート経路、実在する消費者、そして変化の証拠を示した後だけです。
 
-page style transport は engine に従います。iframe は proxy injection、Web Fragment は gateway platform CSS と reflected head の page override、web component は shadow root 内へ delivery できます。これは CSS が効く場所の説明であり、任意 facade selector への依存を許可するものではありません。
+## CSSの輸送は許可ではない
 
-## ランタイムモードの切り替え :id=runtime-mode-switching
+ページはiframe内でスタイルを受け取ります。Webコンポーネントはshadow root内でスタイルを受け取ることがあります。これはCSSがどこで効果を持てるかを説明するものであり、モジュールが任意のファサードセレクタに依存することを許可するものではありません。
 
-public theme-mode contract は AppConfig + `@wippy-fe/proxy` です。
+## ランタイムのモード切り替え
+
+公開されたテーマモードの契約は、AppConfigと `@wippy-fe/proxy` です:
 
 ```typescript
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
-  if (host.getThemeMode() === mode) return
-
   await new Promise<void>((resolve, reject) => {
-    let settled = false
-    let stop = () => {}
-    const finish = (error?: unknown) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timeout)
-      stop()
-      if (error) reject(error)
-      else resolve()
-    }
-    const timeout = window.setTimeout(
-      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
-      5_000,
-    )
-
-    stop = on('@theme', (appliedMode) => {
+    const stop = on('@theme', (appliedMode) => {
       if (appliedMode !== mode) return
-      finish()
+      stop()
+      const currentMode = host.getThemeMode()
+      if (currentMode !== mode) {
+        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
+        return
+      }
+      resolve()
     })
-
-    try {
-      host.setThemeMode(mode)
-    } catch (error) {
-      finish(error)
-    }
+    host.setThemeMode(mode)
   })
 }
 
 await setThemeMode('dark')
 ```
 
-使用できるのは `auto`、`light`、`dark` だけです。application と recursive child への propagation は host、persistence は facade/embedder が所有します。`w-theme-dark` / `w-theme-light` の直接編集、internal theme helper、AppConfig global の書込、host message の直接送信は contract を迂回し non-compliant です。visual evidence は public API が propagated mode を報告した後だけ有効です。
+使用できるのは `auto`、`light`、`dark` だけです。適用と子への再帰的な伝播は
+ホストが所有し、永続化はファサード/埋め込み側が所有します。
+`w-theme-dark` / `w-theme-light` を直接編集すること、内部のテーマヘルパーを
+呼ぶこと、AppConfigのグローバルに書き込むこと、ホストにメッセージを送ることは、
+いずれもこの契約を迂回するものであり、非準拠です。視覚的な証拠が有効なのは、
+公開APIが伝播後のモードを報告した後だけです。
 
-[Tailwind Contract](./tailwind-contract.md)、[Token Catalogue](./token-catalogue.md)、[Portable UI Contract](../portable-ui-contract.md)も参照してください。
+[Tailwind契約](./tailwind-contract.md)、[トークンカタログ](./token-catalogue.md)、[ポータブルUI契約](../portable-ui-contract.md)を参照してください。

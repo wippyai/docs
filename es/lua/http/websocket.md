@@ -1,6 +1,6 @@
 ---
 title: "Cliente WebSocket"
-description: "Conecta con servidores WebSocket, envía y recibe mensajes, usa compresión y cierra conexiones."
+description: "Cliente WebSocket para comunicación bidireccional en tiempo real con servidores."
 ---
 
 # Cliente WebSocket
@@ -63,15 +63,15 @@ end
 
 | Opcion | Tipo | Descripción |
 |--------|------|-------------|
-| `headers` | table | Cabeceras HTTP de cadena a cadena; se ignoran otras entradas |
-| `protocols` | table | Subprotocolos string; se ignoran entradas no string |
-| `dial_timeout` | number/string | Timeout; `0` no impone deadline global, pero siguen los defaults del transporte |
-| `read_timeout` | number/string | Timeout por mensaje; `0` lo desactiva |
-| `write_timeout` | number/string | Aceptado por Lua pero no aplicado en `v0.3.32a` |
-| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"` o `2`/`"no_context_takeover"` |
-| `compression_threshold` | number | Tamaño mínimo (0-104857600); `0` usa 128 o 512 bytes según el modo |
-| `read_limit` | number | Máximo entrante (0-134217728); `0` usa 16 MiB |
-| `channel_capacity` | number | Buffer entrante del servicio (1-10000); default 16 |
+| `headers` | table | Cabeceras HTTP para handshake |
+| `protocols` | table | Subprotocolos WebSocket |
+| `dial_timeout` | number/string | Timeout de conexión (ms o "5s") |
+| `read_timeout` | number/string | Timeout de lectura |
+| `write_timeout` | number/string | Timeout de escritura |
+| `compression` | number/string | Modo de compresion (ver Constantes), o `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
+| `compression_threshold` | number | Tamano minimo para comprimir (0-100MB) |
+| `read_limit` | number | Tamano maximo de mensaje (0-128MB) |
+| `channel_capacity` | number | Buffer de canal de recepcion (1-10000) |
 
 **Formato de timeout:** Los números son milisegundos; los strings usan duración Go, como `"5s"` o `"1m"`.
 Los strings no válidos y valores no compatibles se ignoran y conservan el default.
@@ -81,7 +81,7 @@ Los strings no válidos y valores no compatibles se ignoran y conservan el defau
 ### Mensajes de texto
 
 ```lua
-local json = require("json")
+client:send("Hello, Server!")
 
 client:send("Hello, Server!")
 
@@ -107,9 +107,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Contenido del mensaje |
 | `type` | number | `websocket.TEXT` (1) o `websocket.BINARY` (2) |
 
-Si `type` falta o no es `websocket.TEXT` ni `websocket.BINARY`, se envía texto. La
-llamada hace yield hasta completar y no devuelve valores. El entorno de ejecución `v0.3.32a` no expone a Lua
-los fallos de transporte del envío.
+Cede hasta que el mensaje se envía. No devuelve valores.
 
 ### Ping
 
@@ -117,8 +115,7 @@ los fallos de transporte del envío.
 client:ping()
 ```
 
-La llamada hace yield hasta completar y no devuelve valores. El entorno de ejecución `v0.3.32a` no expone a Lua
-los fallos de transporte del ping.
+Cede hasta que el ping se envía. No devuelve valores.
 
 ## Recibir Mensajes
 
@@ -245,13 +242,7 @@ if close_err then return nil, close_err end
 | `code` | number | Código de cierre (1000-4999), predeterminado 1000 |
 | `reason` | string | Razon de cierre (opcional) |
 
-La llamada hace yield. Un éxito no devuelve valores y un fallo devuelve `nil, error`;
-captura dos resultados porque el error es el segundo. Códigos fuera del rango se
-ignoran y se usa `1000`.
-
-El cliente es propietario del canal; no lo cierres directamente. Un evento terminal
-remoto lo cierra. `client:close()` cancela la suscripción y detiene el productor, así
-que úsalo pronto en vez de depender de la limpieza al terminar el proceso.
+Cede hasta que se envía el frame de cierre.
 
 ## Constantes
 

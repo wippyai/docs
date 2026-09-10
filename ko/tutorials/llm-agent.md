@@ -48,6 +48,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -66,11 +73,6 @@ entries:
       - name: process_host
         value: app:processes
 
-  - name: dep.security
-    kind: ns.dependency
-    component: wippy/security
-    version: "*"
-
   - name: dep.terminal
     kind: ns.dependency
     component: wippy/terminal
@@ -81,7 +83,12 @@ entries:
     meta:
       command:
         name: ask
-        short: Ask one question
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -95,6 +102,10 @@ LLM 모듈에는 두 인프라 엔트리가 필요합니다.
 - `env.storage.os`는 환경 변수에서 API 키를 제공합니다.
 - `process.host`는 LLM 모듈이 내부적으로 사용하는 프로세스 런타임을 제공합니다.
 
+`wippy/terminal` 의존성은 명령이 실행되는 곳이자 `io.print`가 출력하는 `terminal.host`를 제공합니다.
+
+`meta.command`는 프로세스에 이름을 부여하여 `wippy run ask`가 나머지 인자를 문자열 페이로드로 전달하며 실행하도록 합니다. 그 `security` 블록은 해당 실행에 대한 액터와 정책 스코프를 설치합니다: LLM 모듈은 레지스트리에서 모델을 해석하는데, 스코프 없이 실행된 명령은 레지스트리에서 아무것도 읽지 못합니다.
+
 ### 생성 코드
 
 `src/ask.lua`를 만듭니다.
@@ -103,17 +114,9 @@ LLM 모듈에는 두 인프라 엔트리가 필요합니다.
 local io = require("io")
 local llm = require("llm")
 
-local function main()
-    io.write("Question: ")
-    io.flush()
-    local question = io.readline()
-    if not question or question == "" then
-        io.print("A question is required")
-        return 1
-    end
-
-    local response, err = llm.generate(question, {
-        model = "gpt-4o-mini",
+local function main(input)
+    local response, err = llm.generate(input, {
+        model = "gpt-4.1-nano",
         temperature = 0.7,
         max_tokens = 512,
     })
@@ -163,20 +166,18 @@ LLM 모듈은 레지스트리에서 모델을 해석합니다. `_index.yaml`에 
 
 ```bash
 wippy init
-wippy update
-wippy install
-wippy run ask
+wippy run ask "What is the capital of France?"
 ```
 
-프롬프트에 `What is the capital of France?`를 입력합니다. 모델 정의가 제공자와 해당 API로 보낼 모델 이름을 선택합니다.
+이는 `ask` 프로세스를 터미널 호스트에서 질문을 인자로 하여 실행하고 결과를 출력합니다. 모델 정의는 LLM 모듈에 어떤 제공자를 사용하고 API에 어떤 모델 이름을 전송할지 알려줍니다.
 
 ## 2단계: 대화
 
-프롬프트 빌더를 사용해 단일 호출에서 여러 턴의 대화로 확장합니다. 엔트리를 함수에서 터미널 I/O를 사용하는 프로세스로 바꿉니다.
+단일 호출에서 프롬프트 빌더를 사용한 다중 턴 대화로 업그레이드합니다. 프로세스를 이름 있는 명령으로 등록합니다.
 
 ### 엔트리 정의 업데이트
 
-`ask` 엔트리를 `chat` 프로세스로 교체합니다. 1단계의 `dep.terminal` 엔트리는 유지하세요.
+`ask` 엔트리를 `chat` 프로세스로 교체합니다:
 
 ```yaml
   - name: chat
@@ -185,6 +186,11 @@ wippy run ask
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -305,6 +311,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -812,11 +823,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

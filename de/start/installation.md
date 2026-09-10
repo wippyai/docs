@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Installieren Sie die Wippy-Runtime und prüfen Sie, ob der Befehl verfügbar ist."
+description: "Die Wippy-Runtime installieren"
 ---
 
 # Installation
@@ -52,11 +52,12 @@ wippy install
 | `wippy add` | Abhängigkeit hinzufügen |
 | `wippy install` | Abhängigkeiten installieren |
 | `wippy update` | Abhängigkeiten aktualisieren |
+| `wippy artifacts` | Build-Zeit-Dateisystem-Artefakte materialisieren |
 | `wippy pack` | Snapshot erstellen |
 | `wippy publish` | Im Hub veröffentlichen |
 | `wippy search` | Nach Modulen suchen |
 | `wippy readme` | README eines Moduls aus dem Hub abrufen |
-| `wippy registry` | Geladene Registry-Einträge untersuchen |
+| `wippy registry` | Geladene Registry-Einträge inspizieren |
 | `wippy auth` | Authentifizierung verwalten |
 | `wippy version` | Versionsinformationen ausgeben |
 
@@ -65,6 +66,10 @@ Die vollständige Dokumentation finden Sie in der [CLI-Referenz](guides/cli.md).
 ## Fehlerbehebung
 
 Wenn die Shell `wippy` nach der Installation nicht findet, öffnen Sie sie erneut und prüfen Sie, ob das Installationsverzeichnis im `PATH` liegt.
+
+## Fehlerbehebung
+
+Wird `wippy version` nach der Installation nicht gefunden, öffnen Sie Ihre Shell erneut oder prüfen Sie, ob das Installationsverzeichnis in Ihrem `PATH` liegt.
 
 ## Nächste Schritte
 

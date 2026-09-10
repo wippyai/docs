@@ -1,6 +1,6 @@
 ---
 title: "Sistema"
-description: "Inspecciona el estado del runtime, proceso, host, supervisor y clúster, y controla ajustes seleccionados del runtime."
+description: "Consultar información del sistema en tiempo de ejecución incluyendo uso de memoria, estadísticas de recolección de basura, detalles de CPU y…"
 ---
 
 # Sistema
@@ -50,33 +50,39 @@ Cada tabla de módulo contiene:
 | `description` | string | Descripción del módulo |
 | `class` | string[] | Etiquetas de clasificación del módulo |
 
-## Cargar fuentes de despliegue
+## Fuentes de Despliegue
 
-`system.source.load()` reconstruye la línea base normalizada del registro a partir de la generación actual de fuentes de despliegue. Los owners y las entradas proceden de la misma generación, incluso durante instalación, actualización, desinstalación, reemplazo y rollback dinámicos.
+La sub-tabla `system.source` lee la línea base de despliegue normalizada: el conjunto de entradas producido por las fuentes con las que se ensambló la aplicación, antes de aplicar cualquier historial del registro.
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **Devuelve:** `table, error`
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `owners` | string[] | Identificadores estables de owners de fuentes; el owner de la aplicación es `application` |
-| `entries` | table[] | Entradas del registro decodificadas de la línea base normalizada de fuentes |
+| `owners` | string[] | Propietarios de fuente con autoridad sobre las entradas de la línea base |
+| `entries` | table[] | Entradas de la línea base con `id`, `kind`, `meta`, `data` |
 
-Las entradas de normalización de módulos empaquetados no reclaman ownership y no se exponen rutas del sistema de archivos. La carga requiere `system.read` sobre `sources`. Los fallos del registro de fuentes, carga o conversión devuelven un `errors.INTERNAL` no reintentable; la denegación de permisos devuelve `errors.PERMISSION_DENIED`.
+`owners` viene ordenado con el propietario de la aplicación primero y luego el resto alfabéticamente. El propietario de la aplicación es la cadena `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+La carga se toma de una única generación estable de fuentes, de modo que las entradas y los propietarios siempre describen la misma línea base. Las rutas del sistema de archivos detrás de cada fuente son privadas del runtime y no se exponen; una carga fallida reporta un error interno genérico en vez de filtrar la ruta subyacente.
+
+**Permiso:** `system.read` sobre `sources`
 
 ## Estadísticas de Memoria
 
@@ -337,7 +343,7 @@ Cada tabla de estado tiene el mismo formato que `system.supervisor.state()`.
 
 ## Primitivas del clúster
 
-Las subtablas `system.node`, `system.cluster`, `system.raft` y `system.lock` exponen la capa de clustering. Cuando el [clustering no está habilitado](guides/cluster.md), `system.raft.*` informa de "raft not available", `system.cluster` solo informa del nodo local y `system.lock` no está disponible porque requiere el registro global.
+Las sub-tablas `system.node`, `system.cluster`, `system.raft` y `system.lock` exponen la capa de clustering. Son más útiles cuando el [clustering está habilitado](guides/cluster.md); en un nodo independiente degradan de forma predecible — `system.raft.*` reporta "raft not available", `system.cluster` reporta solo el nodo local, y `system.lock` requiere el almacén KV respaldado por Raft que proporciona el clustering.
 
 Las llamadas de lectura informan de la vista local del estado confirmado de este nodo y no bloquean en la red.
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### Bloqueos distribuidos
 
-`system.lock` proporciona exclusión mutua en todo el clúster. Un lock tiene un nombre globalmente único y pertenece al proceso que llama. Usa el ámbito de nombres Strong, por lo que solo puede existir un holder en todo el clúster. El lock se libera automáticamente cuando el proceso holder termina o su nodo abandona el clúster.
+`system.lock` proporciona exclusión mutua a nivel de cluster. Un bloqueo es un nombre globalmente único propiedad del proceso que llama. Está construido sobre el almacén KV del sistema replicado por Raft, por lo que puede existir como máximo un titular en todo el cluster, y el bloqueo se libera automáticamente cuando el proceso titular sale o su nodo se va — no hay bloqueo atascado que limpiar.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 | `system.read` | `cwd` | Leer directorio de trabajo |
 | `system.read` | `hosts` | Listar hosts / procesos del host |
 | `system.read` | `modules` | Listar módulos cargados |
-| `system.read` | `sources` | Cargar fuentes de despliegue normalizadas |
+| `system.read` | `sources` | Cargar la línea base de fuentes de despliegue |
 | `system.read` | `supervisor` | Leer estado del supervisor |
 | `system.read` | `node` | Leer identidad de este nodo |
 | `system.read` | `cluster` | Leer membresía del cluster y líder |
@@ -477,9 +483,8 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 
 | Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| Permiso denegado (carga de fuentes de despliegue) | `errors.PERMISSION_DENIED` | no |
-| Permiso denegado (operaciones distintas de fuentes, salvo locks distribuidos) | `errors.INVALID` | no |
-| Permiso denegado (adquirir/liberar lock distribuido) | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | no |
+| Permiso denegado (todas las demás llamadas) | `errors.INVALID` | no |
 | Argumento inválido | `errors.INVALID` | no |
 | Argumento requerido faltante | `errors.INVALID` | no |
 | Gestor de código no disponible | `errors.INTERNAL` | no |
@@ -488,5 +493,6 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 | Raft no ejecutándose en este nodo | `errors.INTERNAL` | no |
 | Membresía no disponible | `errors.INTERNAL` | no |
 | Bloqueo ya tomado | `errors.ALREADY_EXISTS` | no |
+| Servicio de bloqueos no disponible (sin Raft en este nodo) | `errors.INTERNAL` | no |
 
 Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

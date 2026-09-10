@@ -194,12 +194,11 @@ return { main = main }
 
 ## Systeminformationen
 
-Systemabfragen sind geschützte Operationen. Fügen Sie diese Policy hinzu und ersetzen
-Sie den Eintrag `app:cli`, damit der Befehl einen Actor, die Policy und das Modul
-`system` erhält:
+Zugriff auf Runtime-Statistiken mit dem `system`-Modul. Jeder Lesezugriff ist durch die Aktion `system.read` abgesichert, der Prozess braucht also zusätzlich eine Policy, die sie erlaubt:
 
 ```yaml
-  - name: cli-system-read
+  # Zu den Entries hinzufügen
+  - name: system_read
     kind: security.policy
     policy:
       actions:
@@ -207,18 +206,17 @@ Sie den Eintrag `app:cli`, damit der Befehl einen Actor, die Policy und das Modu
       resources: "*"
       effect: allow
 
+  # Den CLI-Eintrag aktualisieren
   - name: cli
     kind: process.lua
     source: file://cli.lua
     method: main
+    security:
+      policies:
+        - app:system_read
     modules:
       - io
       - system
-    security:
-      actor:
-        id: app:cli
-      policies:
-        - app:cli-system-read
 ```
 
 Ersetzen Sie anschließend `src/cli.lua`:

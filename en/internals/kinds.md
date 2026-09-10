@@ -76,7 +76,7 @@ func MyService() boot.Component {
 
 ## Decoding Entry Data
 
-Use `entry.DecodeEntryConfig` from `github.com/wippyai/runtime/system/entry` to unmarshal entry data. The package is importable by out-of-tree extensions:
+Use `entry.DecodeEntryConfig` from `system/entry` to unmarshal entry data. `DecodeEntryConfigFromContext` takes the transcoder from the context instead of an argument, and `DecodeEntryConfigRaw` skips placeholder resolution:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -90,12 +90,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 The decoder:
-1. Resolves modern `${env:...}` placeholders in the entry data
-2. Unmarshals the resolved data into your config struct
-3. Fills `ID` and `Meta` from the entry when the decoded fields are zero or nil
+1. Resolves `${env:...}` placeholders and `*_env` companion fields against the environment registry
+2. Unmarshals `entry.Data` into your config struct
+3. Populates `ID` and `Meta` from the entry when the struct leaves them empty
 4. Calls `InitDefaults()` if implemented
-5. Resolves legacy `*_env` fields through the environment registry
-6. Calls `Validate()` if implemented
+5. Calls `Validate()` if implemented
 
 ## Config Structure
 

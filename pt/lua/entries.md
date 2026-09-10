@@ -18,9 +18,7 @@ Esta página é uma referência de configuração. Os blocos YAML são definiç�
 | `workflow.lua` | Workflow durável (Temporal) |
 | `library.lua` | Código compartilhado importado por outras entradas |
 
-Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode '**'` ou por um padrão como `--bytecode 'app:**'`. Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos ao empacotar com essa opção.
-
-`module.lua` é reservado para definições de módulos integrados criadas pelo runtime. Não é uma entrada de código-fonte que possa ser criada pelo autor e não tem contraparte de bytecode.
+Cada tipo tem uma contraparte de bytecode pré-compilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) gerada por `wippy pack --bytecode '**'` (ou um padrão como `--bytecode 'app:**'`). Os autores escrevem entradas `.lua`; os tipos de bytecode são emitidos ao empacotar com essa flag.
 
 ## Campos Comuns
 
@@ -168,33 +166,26 @@ Use `pool` para configurar como uma entrada de função é executada:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # explicit; omit to use auto-select (lazy)
-    max_size: 16      # cap for elastic growth
+    type: adaptive    # explícito; omita para usar a seleção automática (lazy)
+    max_size: 16      # limite para crescimento elástico
 ```
 
 | Campo | Pools | Descrição |
 |-------|-------|-----------|
 | `type` | todos | Implementação do scheduler (ver tabela abaixo) |
-| `workers` | static | Quantidade de workers; quando definido, `size` também deve ser positivo durante a validação da configuração |
-| `size` | static | Quantidade de workers quando `workers` não é definido; sem `type`, apenas um `size` positivo seleciona `inline` |
+| `workers` | static | Quantidade de threads worker (recorre a `size`, depois 8) |
+| `size` | static | Quantidade de workers quando `workers` não está definido; com `type` omitido, `size` sem `max_size` seleciona um pool inline |
 | `buffer` | static | Capacidade da fila de tarefas (padrão: `workers * 64`) |
-| `max_size` | lazy, adaptive | Limite superior do crescimento elástico (padrão: 16 para um tipo explícito) |
-| `warm_start` | todos | Flag de configuração aceita; não tem efeito nesta versão do runtime |
+| `max_size` | lazy, adaptive | Limite superior para crescimento elástico (padrão: 16; 100 quando `type` é omitido) |
 
 | Tipo | Comportamento |
 |------|---------------|
 | `inline` | Execução síncrona na goroutine do chamador. Latência mínima, sem isolamento entre chamadas. |
 | `lazy` | Sem workers ociosos, criados sob demanda, removidos quando ociosos. |
 | `static` | Pool de tamanho fixo baseado em canais. Previsível sob carga estável. |
-| `adaptive` | Pool com autoescala — cresce sob carga e encolhe quando ocioso. |
+| `adaptive` | Pool com auto-escala — cresce sob carga, encolhe quando ocioso. |
 
-Quando `type` é omitido, o runtime seleciona:
-
-- `static` quando `workers` é positivo;
-- `lazy` quando `workers` é zero e `size` é zero ou `max_size` é positivo; ou
-- `inline` quando `size` é positivo e `max_size` é zero.
-
-O pool lazy selecionado automaticamente usa `max_size` quando positivo e, caso contrário, usa 100. Um pool `lazy` ou `adaptive` explícito usa 16 como padrão de `max_size`. Um pool `static` explícito usa `workers`, depois `size` e depois 8; o buffer padrão é o número selecionado de workers multiplicado por 64.
+Quando `type` é omitido, o pool é selecionado automaticamente a partir dos demais campos: um pool lazy por padrão, um pool static se `workers` estiver definido, um pool inline se apenas `size` estiver definido.
 
 ## Metadados
 
@@ -219,10 +210,7 @@ Metadados são pesquisáveis via registro:
 
 ```lua
 local registry = require("registry")
-local handlers, err = registry.find({["meta.type"] = "handler"})
-if err then
-    return nil, err
-end
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 A consulta retorna todas as entradas correspondentes no registro. O código Lua pertence a uma entrada executável cuja lista `modules` inclui `registry`, como a entrada `api_handler` acima.

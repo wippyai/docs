@@ -1,86 +1,79 @@
----
-title: "レンダリングエンジン"
-description: "view.page application が srcdoc iframe または Web Fragment で動作する仕組み、選択ルール、互換性の制約。"
----
-
 # レンダリングエンジン
 
-このページは render-engine の選択と互換性に関する reference です。operator と package の設定を説明するもので、standalone deployment recipe ではありません。
+Wippy Web Hostは、マイクロフロントエンドアプリ（`view.page`）を**2つのページレンダリングエンジン**のいずれかでレンダリングします。エンジンは配信上の関心事であり、運用者のスイッチで選択し、ページごとのオーバーライドも可能です。ポータブルなアプリはWippyのプロキシAPIとルーターAPIを使うため、その挙動は特定のエンジンに依存しません。
 
-Wippy Web Host は 2 種類の **page-render engine** のいずれかで micro frontend app（`view.page`）を render します。engine は operator switch で選ぶ delivery 上の関心事であり、page 単位の任意 override もあります。portable app は Wippy proxy と router API を使用し、特定の engine に依存しない behavior を実現します。
-
-| エンジン | ページの描画方法 | 分離 | ルーティング |
+| エンジン | ページのレンダリング方法 | 分離 | ルーティング |
 |--------|--------------------|-----------|---------|
-| **Iframe**（デフォルト） | `proxy.js` を注入した srcdoc `<iframe>` | 完全な document isolation | memory-history のみ（srcdoc に実 URL はない） |
-| **Web Fragment** | [`reframed`](https://web-fragments.dev) の same-origin realm を `<web-fragment>` shadow root に反映し、`proxy-fragment.js` を使用 | realm isolation、共有 DOM tree | 実際の `window.history`（URL router が動作する） |
+| **Iframe**（デフォルト） | `proxy.js` を注入したsrcdoc `<iframe>` | 完全なドキュメント分離 | メモリ履歴のみ（srcdocには実URLがない） |
+| **Web Fragment** | `<web-fragment>` のshadow rootに反映された[`reframed`](https://web-fragments.dev)同一オリジンレルム。`proxy-fragment.js` を使用 | レルム分離、DOMツリーは共有 | 実際の `window.history`（URLルーターが動作する） |
 
-どちらの engine も portable app が使う Wippy application service をサポートします。authenticated API、WebSocket、host-mediated state、confirm/bridge dialog、`@history`/`@visibility` event、title propagation、error capture、platform CSS と theme delivery、content-mode auto-height、nested `<w-artifact>` embed です。delivery と control は engine 固有です。iframe CSS と error capture は proxy injection flag に従いますが、Fragment gateway は platform CSS と error capture を常に導入します。[CSS Injection](./css-injection.md)を参照してください。browser-history capability も表のとおり異なります。
+どちらのエンジンも同じWippyアプリケーションサービスを提供します: 認証付きAPI、WebSocket、ホスト仲介の状態、confirm/bridgeダイアログ、`@history`/`@visibility` イベント、タイトル伝播、グローバルエラーキャプチャ、ホストCSS + テーマ注入（shadow内のダークモードを含む）、コンテンツモードの自動高さ、ネストされた `<w-artifact>` 埋め込み。ブラウザ履歴の機能は表のとおり意図的に異なります。
 
-どちらの engine でも動く app には、`@wippy-fe/router` の `createAppRouter()` を使います。現在の factory は memory history を使用し、初期 route を `AppConfig.context.route` から受け取り、host と `@history` で同期します。`createWebHistory()` を直接使う router は Fragment 専用であり、iframe や iframe に fallback し得る `auto` deployment には portable ではありません。
+どちらのエンジンでも動作するアプリには、`@wippy-fe/router` の `createAppRouter()` を使用してください。現在のファクトリはメモリ履歴を使い、初期ルートを `AppConfig.context.route` から受け取り、`@history` を通じてホストと同期します。`createWebHistory()` を直接使うルーターはFragment専用であり、iframeにフォールバックし得る `auto` デプロイやiframeデプロイにはポータブルではありません。
 
-## Fragment の render 方法
+## フラグメントのレンダリング方法
 
-fragment engine が選ばれた `view.page` は `<web-fragment src="/@fragment/{id}/">` として mount されます。`wippy/views` の [`/@fragment` gateway](../../framework/views.md) が reframing contract を配信します。`reframed` client は hidden same-origin realm iframe（`wf:<id>`）を作り、gateway が変換した HTML を fragment の shadow root へ stream し、realm 内で `proxy-fragment.js`（`@wippy-fe/proxy` adapter）を実行して `$W` proxy API を提供します。adapter は realm の patched `window.parent` に依存せず、共有 `postMessage` protocol を捕捉済み same-origin Host window へ route します。
+フラグメントエンジンが選択された `view.page` は、`<web-fragment src="/@fragment/{id}/">` としてマウントされます。`wippy/views` 内の [`/@fragment` ゲートウェイ](../../framework/views.md#web-fragments-gateway)がreframing契約を提供します。`reframed` クライアントは隠された同一オリジンのレルムiframe（`wf:<id>`）を作成し、ゲートウェイが変換したHTMLをフラグメントのshadow rootにストリームし、レルム内で `proxy-fragment.js`（`@wippy-fe/proxy` のアダプタ）を実行して `$W` プロキシAPIを提供します。レルムはホストと同一オリジンであるため、プロキシは `postMessage` を経由せず直接ホストと通信します。
 
-iframe engine で同じ page を動かす場合は、`proxy.js` を注入した srcdoc `<iframe>` になります。[Proxy と分離](./proxy-isolation.md)を参照してください。
+iframeエンジンでの同じページは、`proxy.js` を注入したsrcdoc `<iframe>` です。[プロキシと分離](./proxy-isolation.md)を参照してください。
 
-## Engine の選択
+## エンジンの選択
 
-### Global switch（operator）
+### グローバルスイッチ（運用者）
 
-deployment 全体の engine は、facade の `render_engine` requirement → `hostConfig.renderEngine` で決まります。デフォルトは `iframe` で、exact string `fragment` だけが fragment engine を有効にします（typo を含むほかの値は `iframe` として扱われます）。
+デプロイ全体のエンジンは、ファサードの `render_engine` requirement → `hostConfig.renderEngine` です。デフォルトは `iframe` で、正確に `fragment` という文字列の場合にのみデプロイがフラグメントエンジンになります（誤字を含む他のあらゆる値は `iframe` として扱われます）。
 
 ```bash
 wippy run -c -o wippy.facade:render_engine:default=fragment
 ```
 
-parameter は [Facade → Render engine](../../framework/facade.md)を参照してください。
+パラメータについては[ファサード → レンダリングエンジン](../../framework/facade.md#render-engine)を参照してください。
 
-### Page 単位の override（app author）
+### ページごとのオーバーライド（アプリ作者）
 
-page は `package.json` の `wippy` block にある `wippy.renderEngine` で opt in / opt out します。
+ページは `package.json` の `wippy` ブロックにある `wippy.renderEngine` で参加または離脱を指定します:
 
-| 値 | 動作 |
+| 値 | 挙動 |
 |-------|----------|
-| `"auto"`（デフォルト） | global switch に従う |
-| `"iframe"` | switch にかかわらず常に srcdoc iframe で render し、fragment を opt out する |
-| `"fragment"` | fragment エンジンを優先する。全体が `fragment` の配置では常に使用。全体が `iframe` の配置では実行時の**機能検査**（`GET /@fragment/{id}/`、セッション単位でキャッシュ）がゲートウェイとプロキシの存在を確認した場合のみ使用し、それ以外は安全に iframe へフォールバック |
+| `"auto"`（デフォルト） | グローバルスイッチに従う。 |
+| `"iframe"` | 常にsrcdoc iframeとしてレンダリングする。スイッチに関わらずフラグメントから離脱する。 |
+| `"fragment"` | フラグメントエンジンを優先する。グローバルが `fragment` のデプロイでは常に使用。グローバルが `iframe` のデプロイでは、ランタイムの**ケーパビリティプローブ**（`GET /@fragment/{id}/`、セッションごとにキャッシュ）がゲートウェイとプロキシの存在を確認した場合のみ使用し、それ以外はiframeにフォールバックする（フェイルセーフ）。 |
 
-[Micro Frontend App → Render engine](../frontend-registry/view-page.md#render-engine)も参照してください。
+[マイクロフロントエンドアプリ → レンダリングエンジン](../frontend-registry/view-page.md#render-engine)を参照してください。
 
-## Fragment の制約
+## フラグメントの制限
 
-一部の browser API は reframed realm 内で、**誤った動作をしても何も通知しません**。次のいずれかに依存する page は `wippy.renderEngine: "iframe"` に固定してください。
+一部のブラウザAPIは、reframedレルム内で**誤って、しかも無言で**動作します。これらに依存するページは `wippy.renderEngine: "iframe"` を固定すべきです。
 
-| API / 機能 | レルム内の動作 | 影響 |
+| API / 機能 | レルム内での挙動 | 影響 |
 |---------------|---------------------|--------|
-| `document.elementFromPoint` | panel size に**かかわらず** `null` を返す | drag & drop、sortable list、Popper/floating-ui、virtual scroller の pointer hit-testing が壊れる |
-| `matchMedia`、`vh`/`vw` unit、`position: fixed` | fragment panel ではなく **host** viewport に対して解決する | full-size panel では約 1px のずれ。小さい panel（sidebar/modal）では重大な誤差 |
-| `window.scrollX/Y`、`scrollTo` | hidden realm window（常に `0`）を対象とする | scroll-driven UI が誤った geometry を読む |
-| Web Workers、Canvas、WebGL、WASM | **正常に動作する** | — |
+| `document.elementFromPoint` | **パネルサイズに関わらず** `null` を返す | ポインタのヒットテストが壊れる: ドラッグ＆ドロップ、ソート可能リスト、Popper/floating-ui、仮想スクローラ |
+| `matchMedia`、`vh`/`vw` 単位、`position: fixed` | フラグメントのパネルではなく**ホスト**のビューポートに対して解決される | フルサイズのパネルでは約1pxのずれ。小さいパネル（サイドバー/モーダル）では実質的に誤り |
+| `window.scrollX/Y`、`scrollTo` | 隠されたレルムのウィンドウを対象にする（常に `0`） | スクロール駆動のUIが誤ったジオメトリを読む |
+| Web Worker、Canvas、WebGL、WASM | **正常に動作する** | — |
 
-`vh`/`vw` と `matchMedia` がここに挙がるのは、**window** を基準にするためです。割り当てられた *surface*、つまり `wippy-surface` の container query と `--wippy-surface-*` variable を基準に size を決める app は、どちらの engine でも同じ結果になり pin は不要です。[Surface Portability](../micro-frontends/surface-portability.md)と、既存 app を変換する [Surface Migration](../micro-frontends/surface-migration.md)を参照してください。`position: fixed` と `elementFromPoint` に portable form はなく、pin が本当に必要です。
+`vh`/`vw` と `matchMedia` がここに挙がっているのは、これらが**ウィンドウ**について問い合わせるからです。代わりに割り当てられた*サーフェス*に対して自身のサイズを決めるアプリ（`wippy-surface` に対するコンテナクエリと `--wippy-surface-*` 変数）は、どちらのエンジンでも同一に解決され、固定は不要です。[サーフェスのポータビリティ](../micro-frontends/surface-portability.md)と、既存アプリを変換するための[サーフェスの移行](../micro-frontends/surface-migration.md)を参照してください。`position: fixed` と `elementFromPoint` にはポータブルな形がなく、固定する正当な理由として残ります。
 
-authoring 時に 2 種類の detector がこれらを表面化します（検出するのは *app-code incompatibility* であり deployment mistake ではありません）。
+2つの検出器が、これらを記述時に表面化します（これらは*アプリコードの非互換性*を検出するものであり、デプロイのミスではありません）:
 
-- **Build-time**（`@wippy-fe/vite-plugin`）: page source を scan し、API 名と `wippy.renderEngine: "iframe"` の提案を含む build **warning** を出す。
-- **Dev-runtime**（fragment proxy、DEV のみ）: 対象 API を patch し、実際の call 時に一度だけ `console.warn` する。
+- **ビルド時**（`@wippy-fe/vite-plugin`）: ページのソースをスキャンし、該当するAPIを名指しして `wippy.renderEngine: "iframe"` を提案するビルド**警告**を出します。
+- **開発時ランタイム**（フラグメントプロキシ、DEVのみ）: それらのAPIにパッチを当て、実際の呼び出し時に一度だけ `console.warn` します。
 
-## Fragment を有効にする — setup 概要
+## フラグメントの有効化 — セットアップの要約
 
-consumer application で fragment engine を有効にするには、互換性のある framework module と operator switch が必要です。追加の router や parameter wiring は不要です。
+消費側アプリでフラグメントエンジンを有効にするには、最新のフレームワークモジュールと運用者スイッチが必要です。ルーターやパラメータの配線は不要です:
 
-1. **Framework module** — `render_engine` switch と self-mounting fragment gateway を公開する、現在互換性のある `wippy/facade` と `wippy/views` の組み合わせを使います。exact release は現在の Wippy module documentation で確認してください。
-2. **Switch** — facade の `render_engine` を `fragment` に設定（global）するか、page 単位に `wippy.renderEngine` で opt in します。
+1. **フレームワークモジュール** — `render_engine` スイッチと自己マウント型のフラグメントゲートウェイを公開する、互換性のある現行の `wippy/facade` と `wippy/views` の組み合わせを使用します。正確なリリースは現行のWippyモジュールドキュメントで確認してください。
+2. **スイッチ** — ファサードの `render_engine` を `fragment` に設定する（グローバル）か、`wippy.renderEngine` でページごとに参加させます。
 
-> `/@fragment` ゲートウェイは現在の `wippy/views` が直接提供します。モジュールがトップレベルルーターを宣言し、デフォルトで `app:gateway` を指す `server` 要件にバインドします。利用側で fragment の接続設定を追加する必要はなく、fragment が有効かどうかにかかわらず通常どおり iframe エンジンで起動します。`http.service` ID が `app:gateway` でない場合だけ `server` パラメータを上書きしてください。通常、全体が iframe の配置でページが個別に fragment を選ぶと、実行時の機能検査がゲートウェイと `proxy-fragment.js` を確認してから切り替え、確認できなければ iframe を維持します。全体の `render_engine: fragment` 切り替えは運用者を信頼し、検査しません。[Views → Web Fragment ゲートウェイ](../../framework/views.md)を参照してください。
+> `/@fragment` ゲートウェイは現行の `wippy/views` が自ら提供します。モジュールは自身のトップレベルルーターを宣言し、それを `app:gateway` をデフォルトとする `server` requirementにバインドします。消費側にフラグメントの配線は不要で、フラグメントが有効かどうかに関わらずiframeエンジンで正常に起動します。`http.service` のidが `app:gateway` と異なる場合のみ `server` パラメータをオーバーライドしてください。iframeデプロイ上でページがページ単位でフラグメントに参加する場合、ランタイムのケーパビリティプローブがゲートウェイと `proxy-fragment.js` を確認してから切り替え、確認できなければiframeエンジンのままになります。グローバルな `render_engine: fragment` スイッチは運用者を信頼し、プローブを行いません。[Views → Web Fragmentsゲートウェイ](../../framework/views.md#web-fragments-gateway)を参照してください。
 
-frontend app 自体に fragment 固有 code は不要です。`proxy-fragment.js` は CDN から配信される host artifact であり、app が bundle するものではありません。
+フロントエンドアプリ自体にフラグメント固有のコードは不要です。`proxy-fragment.js` はCDNから配信されるホストのアーティファクトであり、アプリがバンドルするものではありません。
 
 ## 関連項目
 
-- [Facade](../../framework/facade.md) — `render_engine` operator switch と `hostConfig.renderEngine`
-- [Views](../../framework/views.md) — self-mounting `/@fragment` gateway と `server` binding
-- [Micro Frontend App（view.page）](../frontend-registry/view-page.md) — page 単位の `wippy.renderEngine` field
-- [Proxy と分離](./proxy-isolation.md) — shared proxy API（両 engine）と iframe engine
-- [Web Host 概要](./overview.md) — Host が page を読み込み render する仕組み
+- [ファサード](../../framework/facade.md) — `render_engine` 運用者スイッチと `hostConfig.renderEngine`
+- [Views](../../framework/views.md) — 自己マウント型の `/@fragment` ゲートウェイとその `server` バインディング
+- [マイクロフロントエンドアプリ (view.page)](../frontend-registry/view-page.md) — ページごとの `wippy.renderEngine` フィールド
+- [プロキシと分離](./proxy-isolation.md) — 共有プロキシAPI（両エンジン）とiframeエンジン
+- [Web Host概要](./overview.md) — ホストがページを読み込みレンダリングする方法

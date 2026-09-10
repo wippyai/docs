@@ -75,6 +75,8 @@ WASM executions inherit the caller's security context by default:
 
 Host capabilities are opt-in through explicit imports. Each entry declares the host profiles it needs, such as `funcs`, `wasi1`, `wasi:cli`, or `wasi:filesystem`, limiting the module's access surface. Enabling a profile does not bypass runtime security checks on operations such as function calls, sockets, or outgoing HTTP.
 
+A guest that imports `funcs` can call back into the registry. Each call is policy-checked as `funcs.call` against the target ID, so the reachable set is exactly what the inherited scope already permits. Socket dials are authorized the same way, by the [network service](system/network.md), against the `socket.*` permissions.
+
 ## See Also
 
 - [Functions](wasm/functions.md) - WASM function entry configuration

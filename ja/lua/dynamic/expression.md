@@ -1,6 +1,6 @@
 ---
 title: "式言語"
-description: "Lua から expr-lang 式をコンパイルして評価します。"
+description: "expr-lang構文を使用して動的式を評価します。完全なLua実行なしで、フィルタリング、検証、ルール評価のための安全な式をコンパイルして実行できます。"
 ---
 
 # 式言語
@@ -8,7 +8,11 @@ description: "Lua から expr-lang 式をコンパイルして評価します。
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-`expr` モジュールは、[expr-lang](https://expr-lang.org/) の式をコンパイルして評価し、Lua ソースを実行せずにフィルタリング、検証、計算、ルール評価を行います。このページが正規の Lua API リファレンスです。例は `expr` モジュールを宣言したエントリを持つ既存の Wippy Lua プロセス内で実行しますが、単独で動く Wippy アプリケーションではありません。式と能力を制限した Lua のどちらを使うかは、[動的評価](./eval.md)を参照してください。
+[expr-lang](https://expr-lang.org/)構文を使用して動的式を評価します。完全なLua実行なしで、フィルタリング、検証、ルール評価のための安全な式をコンパイルして実行できます。
+
+## キャッシュ
+
+`expr.eval`はコンパイル済み式の内部LRUキャッシュを保持します（デフォルト容量は1000）。このキャッシュはモジュールに組み込まれており、設定は不要です。
 
 ## ロード
 
@@ -143,10 +147,12 @@ if max_err then
     return nil, max_err
 end
 
-local uppercase, upper_err = expr.eval('upper("hello")')
-if upper_err then
-    return nil, upper_err
-end
+-- 文字列関数
+expr.eval('len("hello")')        -- 5
+expr.eval('upper("hello")')      -- "HELLO"
+expr.eval('lower("HELLO")')      -- "hello"
+expr.eval('trim("  hi  ")')      -- "hi"
+expr.eval('"hello" contains "ell"')  -- true
 
 local total, sum_err = expr.eval("sum(values)", {values = {1, 2, 3, 4}})
 if sum_err then

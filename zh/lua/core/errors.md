@@ -1,6 +1,6 @@
 ---
 title: "错误处理"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "带分类和重试元数据的结构化错误处理。全局 errors 表无需 require 即可使用。"
 ---
 
 # 错误处理

@@ -59,7 +59,7 @@ wippy run --profile pg
 - Секция `disable` поддерживает операции над списками внутри профилей — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — так что профиль может корректировать базовый список вместо его замены.
 - Ссылки `${name}` интерполируются из объединённой секции `vars:`. Ссылки на переменные окружения ОС внутри vars профилей не допускаются; используйте `${env:NAME}` в базовой конфигурации, разрешаемый при загрузке файла.
 
-`wippy run`, `test` и `pack` принимают `--profile`; `install`, `update`, `lint` и `registry` также принимают его для профилей рабочего пространства (вместе с `--set`). Приложения могут поставлять профили внутри pack-файлов — см. [Публикация профилей](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` и `pack` принимают `--profile`; `run list`, `install`, `update`, `lint` и `registry` также принимают его для профилей рабочего пространства (вместе с `--set`). Приложения могут поставлять профили внутри pack-файлов — см. [Публикация профилей](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------|-----|--------------|----------|
 | `propagate_downstream` | bool | true | Передавать логи в консоль/файл |
 | `stream_to_events` | bool | false | Публиковать логи в шину событий для программного доступа |
-| `min_level` | int | -1 | Минимальный уровень: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-1` при `-v`) | Минимальный уровень: -1=debug, 0=info, 1=warn, 2=error. CLI записывает этот ключ из своих флагов после чтения файла, поэтому значение из файла игнорируется; меняйте его через `--set logmanager.min_level=<n>` |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 См.: [Модуль Logger](lua/system/logger.md)
@@ -119,11 +118,11 @@ profiler:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `strict_mode` | bool | false | Запрещать доступ при неполном контексте безопасности |
+| `strict_mode` | bool | true | Запрещать доступ при неполном контексте безопасности |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 См.: [Система безопасности](system/security.md), [Модуль Security](lua/security/security.md)
@@ -135,8 +134,16 @@ security:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `enable_history` | bool | true | Отслеживать версии записей |
-| `history_type` | string | memory | Хранилище: memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | Путь к SQLite |
+| `history_type` | string | memory | Хранилище: `memory`, `sqlite`, `postgres`, `nil` |
+| `history_path` | string | .wippy/registry.db | Путь к файлу SQLite (используется при `history_type: sqlite`) |
+| `history_dsn` | string | | DSN Postgres (используется при `history_type: postgres`) |
+| `history_schema` | string | | Имя схемы Postgres (используется при `history_type: postgres`) |
+| `event_wait_timeout` | duration | 30s | Ожидание подтверждения от слушателя на каждую операцию при применении изменений реестра |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Типы записей, обрабатываемые внутренне, а не рассылаемые слушателям компонентов |
+| `dependency_resolve_timeout` | duration | 0 (нет) | Ограничение на разрешение зависимостей |
+| `dependency_download_timeout` | duration | 0 (нет) | Ограничение на каждую загрузку модуля и запрос URL для загрузки |
+| `dependency_lock_path` | string | найденный `wippy.lock` | Файл блокировки, который читает и пишет обработчик зависимостей |
+| `dependency_vendor_dir` | string | `<каталог lock>/<directories.modules>/vendor` | Каталог со скачанными паками модулей |
 
 ```yaml
 registry:
@@ -144,7 +151,42 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
 См.: [Концепция реестра](concepts/registry.md), [Модуль Registry](lua/core/registry.md)
+
+## Artifact
+
+Корень вывода для материализованных [артефактов времени сборки](guides/artifacts.md).
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `materialization_root` | string | родительский каталог vendor-каталога зависимостей | Принадлежащий приложению корень, под которым каждый формат артефакта пишет своё поддерево |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+См.: [Артефакты времени сборки](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Локальные замены модулей, ключом служит `org/module`. Значения — каталоги; относительные пути разрешаются относительно каталога первого файла `--config`, а `null` отключает замену, унаследованную из более раннего слоя конфигурации или профиля.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Замены никогда не записываются в `wippy.lock`. См. [Локальная разработка с заменами](guides/dependency-management.md#local-development-with-replacements).
 
 ## Relay
 
@@ -152,7 +194,7 @@ registry:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `node_name` | string | local | Идентификатор ноды этого реле |
+| `node_name` | string | производный ID для экземпляра | Идентификатор ноды этого реле (по умолчанию: UUIDv5 от machine-id/hostname + рабочий каталог; переопределяется через `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -189,17 +231,23 @@ supervisor:
 
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
-| `proto_cache_size` | int | 60000 | Кэш скомпилированных прототипов |
-| `main_cache_size` | int | 10000 | Кэш main-чанков |
-| `cache.enabled` | bool | false | Сохранять скомпилированный байткод/typecheck-кэш на диск |
-| `cache.dir` | string | (системный каталог кэша) | Путь к каталогу кэша |
-| `cache.mode` | string | `read_write` | Режим кэша: `read_write`, `read_only`, `write_only` |
+| `cache.enabled` | bool | `type_system.enabled` | Сохранять скомпилированный байткод/typecheck-кэш на диск; следует за `type_system.enabled`, если не задано явно |
+| `cache.dir` | string | `.wippy/cache/lua` | Путь к каталогу кэша (относительно каталога конфигурации/рабочего каталога) |
+| `cache.mode` | string | `readwrite` | Режим кэша: `readwrite` (по умолчанию), `readonly`, `off`; неизвестные значения трактуются как `readwrite` |
+| `cache.compile.enabled` | bool | true | Сохранять скомпилированный байткод (при `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Сохранять результаты проверки типов (при `cache.enabled`) |
+| `cache.max_bytes` | int | 1073741824 | Верхняя граница размера дискового кэша в байтах |
+| `cache.max_entries` | int | 20000 | Максимальное число записей в кэше |
+| `cache.prune_interval` | int | 256 | Число записей между проходами очистки кэша |
 | `type_system.enabled` | bool | false | Включить статическую проверку типов |
 | `type_system.strict` | bool | false | Считать предупреждения типов ошибками |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Ожидание подтверждения инвалидации кода после изменения записи |
+| `eval.max_steps` | int | 10000 | Бюджет шагов планировщика по умолчанию для запуска `eval`; отрицательные значения отклоняются |
+| `eval.cache_size` | int | 256 | Число записей кэша скомпилированных программ для вычисляемого исходника |
+| `eval.cache_ttl` | duration | 0 (без истечения) | Время жизни скомпилированной программы в кэше |
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -208,6 +256,22 @@ lua:
 ```
 
 См.: [Обзор Lua](lua/overview.md)
+
+## Scheduler
+
+Разделение ядер для среды исполнения WASM. Когда включено, `reserved_cores` CPU отводятся под выполнение WASM, а остальные обслуживают планировщик акторов; некорректное разделение (например, зарезервированных ядер больше, чем доступно) логируется и игнорируется.
+
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|--------------|----------|
+| `wasm_isolation.enabled` | bool | false | Разделять ядра между WASM и работой акторов |
+| `wasm_isolation.reserved_cores` | int | 1 | Ядер, зарезервированных под выполнение WASM |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -258,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Стандартные переменные окружения OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) переопределяют соответствующие поля.
+Стандартные переменные окружения OTEL (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`) переопределяют соответствующие поля.
 
 См.: [Наблюдаемость](guides/observability.md)
 
@@ -282,7 +346,7 @@ shutdown:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `buffer.size` | int | 10000 | Размер буфера метрик |
-| `interceptor.enabled` | bool | false | Автоматически отслеживать вызовы функций |
+| `interceptor.enabled` | bool | true | Автоматически отслеживать вызовы функций |
 
 ```yaml
 metrics:
@@ -301,7 +365,8 @@ metrics:
 | Поле | Тип | По умолчанию | Описание |
 |------|-----|--------------|----------|
 | `enabled` | bool | false | Запустить сервер метрик |
-| `address` | string | localhost:9090 | Адрес прослушивания |
+| `address` | string | | Адрес прослушивания; должен быть задан явно при `enabled: true`, иначе сервер метрик не запускается |
+| `max_cardinality` | int | 1024 | Число различных наборов меток, удерживаемых для метрики (LRU); `0` или меньше означает значение по умолчанию |
 
 ```yaml
 prometheus:
@@ -309,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Открывает эндпоинт `/metrics` для Prometheus.
+Открывает эндпоинт `/metrics` для Prometheus, а также `/livez`.
 
 См.: [Наблюдаемость](guides/observability.md)
 
@@ -324,6 +389,8 @@ prometheus:
 | `enabled` | bool | false | Включить кластеризацию |
 | `name` | string | hostname | Имя ноды; должно быть уникальным в кластере |
 | `failure_domain` | string | | Метка зоны/стойки; рекламируется через gossip, чтобы voters распределялись по доменам |
+| `kv_crdt_tombstone_retention` | duration | 0 | Возраст, после которого tombstone-записи удалений `store.kv.crdt` утилизируются; `0` отключает сборку по возрасту |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | Использовать текущий состав живых участников как множество подтверждений tombstone |
 
 ### Membership (gossip)
 
@@ -345,6 +412,8 @@ SWIM gossip через memberlist. Используется для обнару�
 | `membership.tcp_timeout` | duration | 1s | Таймаут резервной TCP-пробы |
 | `membership.suspicion_mult` | int | 3 | Множитель таймаута подозрения |
 
+Gossip-секрет обязателен. Задайте `membership.secret_key` или `membership.secret_file` (при обоих побеждает файл); без того и другого компонент кластера не стартует. Значение кодируется в base64.
+
 Четыре ключа проб наследуют значения memberlist по умолчанию для локальной сети, если не заданы; повышайте их для каналов с высокой задержкой (например, `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (транспорт)
@@ -358,8 +427,13 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 | `internode.auto_port` | bool | true | Определить фактический порт при запуске, зафиксировать и объявить через gossip |
 | `internode.advertise_addr` | string | | Дополнительный relay-эндпоинт (IP или DNS-имя), публикуемый для обновлённых пиров — для достижимости за NAT или балансировщиком |
 | `internode.advertise_port` | int | 0 | Порт для `advertise_addr` (0 = порт привязки; требует `advertise_addr`) |
+| `internode.identity_key` | string | | Приватный ключ ed25519 в base64, идентифицирующий эту ноду (встроенный) |
+| `internode.identity_key_file` | string | | Путь к файлу с этим ключом |
+| `internode.trusted_peer_keys` | map | | Публичный ключ ed25519 в base64 на каждое имя ноды, включая эту |
 
 `advertise_addr`/`advertise_port` публикуют дополнительный эндпоинт в метаданных ноды, при этом эндпоинт привязки продолжает объявляться без изменений — кластеры со смешанными версиями сохраняют связность во время rolling-обновления.
+
+Идентичность internode обязательна всегда, когда включена кластеризация. `identity_key` и `identity_key_file` взаимоисключающи, и один из них должен присутствовать; значение декодируется (стандартный или raw base64) либо в 32-байтный seed ed25519, либо в 64-байтный приватный ключ ed25519. `trusted_peer_keys` сопоставляет каждому имени ноды её 32-байтный публичный ключ ed25519 и должен содержать запись для локального `cluster.name`, значение которой совпадает с локальной идентичностью, — иначе запуск завершается ошибкой. См. [Руководство по кластеру](guides/cluster.md#internode-identity).
 
 ### Raft (консенсус)
 
@@ -387,6 +461,8 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 | `raft.max_append_entries` | int | 16 | Максимум записей в одном AppendEntries RPC |
 | `raft.leader_probe_interval` | duration | 3s | Период проверки доступности лидера глобального реестра |
 | `raft.leader_probe_grace` | int | 3 | Последовательных неудач проверки до признания лидера недоступным |
+| `raft.registry_backend` | string | kv | Реализация кластерного реестра имён: `kv` (общее пространство ключей kv) или `fsm` (выделенный Raft FSM) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | Как долго кэш распространения глобальных имён хранит tombstone-записи удалений |
 
 Одна нода (разработка) — кластеризация включена, нода сразу bootstrap-ит себя:
 
@@ -394,11 +470,17 @@ TCP-меш, переносящий relay- и Raft-трафик между нод
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Трёхнодовый voting-кластер — каждая нода перечисляет остальные как seed и ждёт все три перед формированием кворума:
+Трёхнодовый voting-кластер — каждая нода перечисляет остальные как seed и ждёт все три перед формированием кворума. Каждая нода несёт одну и ту же карту `trusted_peer_keys` и собственный приватный ключ:
 
 ```yaml
 cluster:
@@ -409,12 +491,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Только gossip-клиент — присоединяется к кластеру для именования/обмена сообщениями, но никогда не запускает Raft:
+Только gossip-клиент — присоединяется к кластеру для именования/обмена сообщениями, но никогда не запускает Raft. Ему тоже нужна собственная идентичность, и он должен присутствовать в доверенной карте каждой ноды:
 
 ```yaml
 cluster:
@@ -422,6 +510,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

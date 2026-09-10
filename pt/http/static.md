@@ -61,7 +61,7 @@ entries:
 
 Requisição `/static/css/style.css` serve `./public/css/style.css`.
 
-Para servir um subdiretório, faça a referência `fs` apontar para uma entrada de sistema de arquivos cuja raiz seja esse diretório; por exemplo, um `fs.directory` com `directory:` definido para o subdiretório:
+Para servir um subdiretório, aponte a referência `fs` para uma entrada de sistema de arquivos com raiz nele - por exemplo, um `fs.directory` com `directory:` definido para o subdiretório:
 
 ```yaml
 entries:

@@ -24,9 +24,9 @@ description: "エンドポイント（http.endpoint）は、Lua関数を実行�
 ## 設定
 
 | フィールド | 型 | 必須 | 説明 |
-|-------|------|----------|-------------|
-| `meta.router` | registry.ID | はい | 親ルーター（レジストリIDで参照） |
-| `method` | string | はい | HTTPメソッド |
+|------------|-----|------|------|
+| `meta.router` | registry.ID | いいえ | 親ルーター（ルーターが1つだけ登録されている場合はそれがデフォルト） |
+| `method` | string | はい | HTTPメソッド、または任意のメソッドを表す`"*"` |
 | `path` | string | はい | URLパスパターン |
 | `func` | registry.ID | はい | 実行する関数 |
 
@@ -44,7 +44,23 @@ description: "エンドポイント（http.endpoint）は、Lua関数を実行�
 | `HEAD` | ヘッダーのみ |
 | `OPTIONS` | CORSプリフライト（自動処理） |
 | `TRACE` | 診断ループバック |
-| `*` | すべてのHTTPメソッドに一致 |
+| `*` | 任意のメソッド |
+
+メソッド名は大文字です。`method`は必須で、この集合に含まれない値は設定エラーとして拒否されます。
+
+### メソッド非依存のエンドポイント
+
+`method: "*"`はそのパスをすべてのHTTPメソッドに対して登録し、ハンドラは`req:method()`で実際のメソッドを読み取ります：
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+通常のエンドポイントでは、ルーターは同じパスに`OPTIONS`ハンドラも登録するため、CORSミドルウェアはエンドポイントを実行せずにプリフライトへ応答できます。`*`エンドポイントにはそのハンドラは登録されません。すでに`OPTIONS`にマッチするためです。それでもルーターミドルウェアはこれをラップするため、設定されたCORSミドルウェアは、エンドポイントが実行される前に許可されたプリフライトへ`204`で応答します。それ以外の`OPTIONS`リクエストはエンドポイント関数自身に到達し、そこで応答する必要があります。
 
 ## パスパラメータ
 
@@ -96,7 +112,12 @@ end
   func: serve_file
 ```
 
-このキャッチオールセグメントにより、ルートは`/files/docs/readme.md`のようなリクエストに一致します。このリクエストでは、`req:param("path")`は`docs/readme.md`を返します。
+このキャッチオールセグメントにより、ルートは`/files/docs/readme.md`のようなリクエストにマッチします。キャプチャされた末尾は、末尾のドットを除いた名前で、他のパラメータと同じように読み取れます：
+
+```lua
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
+```
 
 ## ハンドラ関数
 
@@ -133,24 +154,25 @@ return { handler = handler }
 ### リクエストオブジェクト
 
 | メソッド | 戻り値 | 説明 |
-|--------|---------|-------------|
-| `req:method()` | string, error | HTTPメソッド |
-| `req:path()` | string, error | リクエストパス |
-| `req:param(name)` | string or nil, error | URLパラメータ |
-| `req:params()` | table, error | すべてのパスパラメータ |
-| `req:query(name)` | string or nil, error | クエリパラメータ |
-| `req:query_params()` | table, error | すべてのクエリパラメータ |
-| `req:header(name)` | string or nil, error | リクエストヘッダー |
-| `req:body()` | string, error | リクエストボディ |
-| `req:body_json()` | value, error | JSONボディをパース |
-| `req:has_body()` | boolean, error | ボディが存在するか確認 |
-| `req:content_type()` | string or nil, error | コンテンツタイプ |
-| `req:content_length()` | number, error | ボディサイズ（バイト） |
-| `req:host()` | string, error | Hostヘッダー |
-| `req:remote_addr()` | string, error | ミドルウェアによって書き換えられない限り、`IP:port`形式のクライアントアドレス |
-| `req:accepts(type)` | boolean, error | コンテンツネゴシエーション |
-| `req:is_content_type(type)` | boolean, error | コンテンツタイプを確認 |
-| `req:stream()` | Stream, error | 大きなファイル向けにボディをストリームとして取得 |
+|---------|--------|------|
+| `req:method()` | string | HTTPメソッド |
+| `req:path()` | string | リクエストパス |
+| `req:param(name)` | string | URLパラメータ |
+| `req:params()` | table | すべてのパスパラメータ |
+| `req:query(name)` | string | クエリパラメータ |
+| `req:query_params()` | table | すべてのクエリパラメータ |
+| `req:header(name)` | string | リクエストヘッダー |
+| `req:headers()` | table | すべてのリクエストヘッダー |
+| `req:body()` | string | リクエストボディ |
+| `req:body_json()` | table, error | JSONボディをパース |
+| `req:has_body()` | boolean | ボディの有無を確認 |
+| `req:content_type()` | string | コンテンツタイプ |
+| `req:content_length()` | number | ボディサイズ（バイト） |
+| `req:host()` | string | ホスト名 |
+| `req:remote_addr()` | string | クライアントIPアドレス |
+| `req:accepts(type)` | boolean | コンテンツネゴシエーション |
+| `req:is_content_type(type)` | boolean | コンテンツタイプを確認 |
+| `req:stream()` | Stream | 大きなファイル用のストリームとしてボディを取得 |
 | `req:parse_multipart(max?)` | table, error | マルチパートフォームをパース |
 
 ### レスポンスオブジェクト
@@ -306,7 +328,7 @@ entries:
 
 ### 保護されたエンドポイント
 
-認可ミドルウェアはエンドポイントではなく、親ルーターに設定します。マッチ後ミドルウェア（`endpoint_firewall`など）はルートの照合後に実行され、ルーター配下のすべてのエンドポイントに適用されます：
+認可ミドルウェアはエンドポイントではなく親ルーターに設定します。ポストマッチミドルウェア（`endpoint_firewall`など）はルートマッチング後に実行され、ルーター配下のすべてのエンドポイントに適用されます：
 
 ```yaml
 - name: admin_router

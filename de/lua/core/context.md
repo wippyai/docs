@@ -1,6 +1,6 @@
 ---
 title: "Request-Kontext"
-description: "Anfragebezogene Werte lesen, die über Funktions- und Prozessaufrufe weitergegeben werden."
+description: "Zugriff auf anfragespezifische Kontextwerte. Der Kontext wird über Funcs oder Process gesetzt."
 ---
 
 # Request-Kontext

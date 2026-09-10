@@ -1,6 +1,6 @@
 ---
 title: "Befehlsausführung"
-description: "Externe Prozesse starten, Stream-Daten austauschen, auf den Abschluss warten und Signale senden."
+description: "Führen Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus."
 ---
 
 # Befehlsausführung
@@ -9,11 +9,9 @@ description: "Externe Prozesse starten, Stream-Daten austauschen, auf den Abschl
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Das Modul `exec` startet externe Programme und stellt deren Ein- und Ausgabe, Lebenszyklus und Signale bereit. Diese Seite ist eine API-Referenz mit Teilrezepten: Executor-IDs, Befehle, Pfade, Umgebungswerte und Sicherheitsrichtlinien stammen aus der umgebenden Anwendung.
+Führen Sie externe Befehle und Shell-Skripte mit voller Kontrolle über I/O-Streams aus.
 
-Der Executor zerlegt eine Befehlszeichenkette in Programm und Argumente; er startet keine Shell. Shell-Operatoren wie Pipes, Umleitungen, Variablenexpansion und Command-Substitution werden nicht interpretiert. Ein ausführbares Skript kann nur direkt gestartet werden, wenn Backend und Betriebssystem dies unterstützen.
-
-Konfigurieren Sie vor diesen Beispielen eine Executor-Ressource und deren Befehls-Allowlist wie unter [Executor](system/exec.md) beschrieben. Gewähren Sie `exec.get` und `exec.run` für die tatsächlich verwendeten Ressourcen. Die Beispiele verwenden Unix-Befehle und -Pfade; ersetzen Sie sie durch auf dem Executor-Host verfügbare Befehle.
+Für Executor-Konfiguration siehe [Executor](system/exec.md).
 
 ## Laden
 
@@ -23,29 +21,43 @@ local exec = require("exec")
 
 ## Einen Executor beschaffen
 
-Beziehen Sie einen Prozess-Executor über seine Registry-ID:
+Holen Sie eine Prozess-Executor-Ressource nach ID:
 
 ```lua
 local executor, err = exec.get("app:exec")
 if err then
     return nil, err
 end
+
+-- Executor verwenden
+local proc = executor:exec("ls -la")
+-- ...
+
+-- Freigeben wenn fertig
+executor:release()
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `id` | string | Ressourcen-ID |
 
-Halten Sie den Executor, solange Sie seine Prozesse erzeugen und ausführen. Rufen Sie nach dem letzten erzeugten Prozess auf jedem Rückkehrpfad `executor:release()` auf; die Freigabe ist idempotent.
-
 **Gibt zurück:** `Executor, error`
 
 ## Einen Prozess erstellen
 
-Erstellen Sie einen Prozess für den angegebenen Befehl:
+Erstellen Sie einen neuen Prozess mit dem angegebenen Befehl:
 
 ```lua
-local proc, err = executor:exec("python script.py", {
+-- Einfacher Befehl
+local proc, err = executor:exec("echo 'Hello, World!'")
+
+-- Mit Arbeitsverzeichnis
+local proc = executor:exec("npm install", {
+    work_dir = "/app/project"
+})
+
+-- Mit Umgebungsvariablen
+local proc = executor:exec("python script.py", {
     work_dir = "/scripts",
     env = {
         PYTHONPATH = "/app/lib",
@@ -53,229 +65,237 @@ local proc, err = executor:exec("python script.py", {
         API_KEY = api_key
     }
 })
-if err then
-    executor:release() -- release is specified to return true, nil
-    return nil, err
-end
+
+-- Shell-Skript ausführen
+local proc = executor:exec("./deploy.sh production", {
+    work_dir = "/app/scripts",
+    env = {
+        DEPLOY_ENV = "production"
+    }
+})
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `cmd` | string | Auszuführender Befehl |
+| `cmd` | string | Ausführbare Datei und literale Argumente |
 | `options.work_dir` | string | Arbeitsverzeichnis |
 | `options.env` | table | Umgebungsvariablen |
-
-In Anführungszeichen gesetzte Argumente werden vom Parser des nativen Executors gruppiert und ohne Shell-Auswertung direkt an das Programm übergeben. Beim nativen Executor gleichen Einträge in `command_whitelist` und die Richtlinienressource `exec.run` die vollständige Befehlszeichenkette ab, nicht nur den Programmnamen.
+| `options.pty` | table | Ein Pseudoterminal für den Kindprozess allokieren |
 
 **Gibt zurück:** `Process, error`
 
-## `start` / `wait`
+Der Prozess wird erstellt, aber nicht gestartet.
+
+### Befehlszerlegung
+
+`cmd` wird mit shell-ähnlichem Quoting in eine ausführbare Datei und literale Argumente zerlegt: Einfache und doppelte Anführungszeichen gruppieren ein Wort, und ein Backslash escaped das folgende Zeichen. Es gibt keine Shell, also finden weder Variablenexpansion noch Globbing, Pipes oder Umleitungen statt. Ein nicht geschlossenes Anführungszeichen gibt `errors.INVALID` zurück.
+
+```lua
+-- Ein Argument mit Leerzeichen, literal übergeben
+local proc = executor:exec("grep 'hello world' notes.txt")
+
+-- $HOME wird als die fünf Zeichen $HOME übergeben, nicht expandiert
+local proc = executor:exec("echo $HOME")
+```
+
+Um Shell-Funktionen zu nutzen, wird eine Shell explizit aufgerufen:
+
+```lua
+local proc = executor:exec("/bin/sh -c 'ls *.log | wc -l'")
+```
+
+### PTY-Optionen
+
+Das Allokieren eines PTY gibt dem Kindprozess ein echtes Terminal: Zeileneditierung, Job Control und Vollbildprogramme funktionieren wie in einer Shell.
+
+```lua
+local proc = executor:exec("/bin/bash --noprofile --norc", {
+    pty = {width = 100, height = 30, term = "xterm-256color"},
+})
+```
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `width` | number | 80 | Anfängliche PTY-Spalten, 1 bis 65535 |
+| `height` | number | 24 | Anfängliche PTY-Zeilen, 1 bis 65535 |
+| `term` | string | keiner | `TERM`-Wert des Kindprozesses |
+
+Breite mal Höhe darf 262.144 Zellen nicht überschreiten. Ein PTY-gestützter Prozess führt die Ausgabe des Kindprozesses zu einem einzigen Terminal-Stream zusammen; er wird über [resize](#resize) und [attach_terminal](#attach_terminal) gesteuert statt über die stdin/stdout-Pipe-Methoden.
+
+## start / wait
 
 Starten Sie den Prozess und warten Sie auf Abschluss.
 
 ```lua
-local executor, get_err = exec.get("app:exec")
-if get_err then
-    return nil, get_err
+local proc = executor:exec("./build.sh")
+
+local ok, err = proc:start()
+if err then
+    return nil, err
 end
 
-local proc, create_err = executor:exec("./build.sh")
-if create_err then
-    executor:release()
-    return nil, create_err
-end
-
-local ok, start_err = proc:start()
-if start_err then
-    proc:close(true)
-    executor:release()
-    return nil, start_err
-end
-
-local exit_code, wait_err = proc:wait()
-local _, release_err = executor:release()
-if wait_err then
-    return nil, wait_err
-end
-if release_err then
-    return nil, release_err
+local exit_code, err = proc:wait()
+if err then
+    return nil, err
 end
 
 if exit_code ~= 0 then
-    return nil, errors.new({
-        message = "Build failed with exit code: " .. exit_code,
-        kind = errors.INTERNAL
-    })
+    return nil, errors.new({ kind = errors.INTERNAL, message = "Build failed with exit code: " .. exit_code })
 end
 ```
 
-`wait()` yieldet bis zum Ende des Kindprozesses, liefert dessen Exit-Code, räumt ihn ab und schließt den Prozess-Handle. Nach `wait()` melden andere Prozessmethoden `errors.INVALID`, weil der Prozess geschlossen ist.
+## stdout_stream / stderr_stream
 
-## `stdout_stream` / `stderr_stream`
-
-Öffnen Sie nach `start()` Streams zum Lesen der Prozessausgabe. Bei Docker-Prozessen sind sie vor dem Containerstart nicht verfügbar. Können sowohl stdout als auch stderr Daten enthalten, lesen Sie beide parallel: Das vollständige Lesen von stdout vor stderr kann blockieren, sobald der Kindprozess die ungelesene stderr-Pipe füllt.
+Holen Sie Streams zum Lesen der Prozessausgabe.
 
 ```lua
-local function fail(err)
-    proc:close(true)   -- close is specified to return true, nil
-    executor:release()
-    return nil, err
-end
+local proc = executor:exec("./process-data.sh")
 
-local function drain(stream, done)
-    coroutine.spawn(function()
-        local chunks = {}
-        while true do
-            local chunk, read_err = stream:read(4096)
-            if read_err then
-                done:send({err = read_err})
-                return
-            end
-            if not chunk then
-                done:send({data = table.concat(chunks)})
-                return
-            end
-            table.insert(chunks, chunk)
-        end
-    end)
-end
+local stdout = proc:stdout_stream()
+local stderr = proc:stderr_stream()
 
-local _, start_err = proc:start()
-if start_err then return fail(start_err) end
+proc:start()
 
-local stdout, stdout_err = proc:stdout_stream()
-if stdout_err then return fail(stdout_err) end
-local stderr, stderr_err = proc:stderr_stream()
-if stderr_err then return fail(stderr_err) end
-
-local stdout_done = channel.new(1)
-local stderr_done = channel.new(1)
-drain(stdout, stdout_done)
-drain(stderr, stderr_done)
-
-local stdout_result
-local stderr_result
-while not stdout_result or not stderr_result do
-    local cases = {}
-    if not stdout_result then table.insert(cases, stdout_done:case_receive()) end
-    if not stderr_result then table.insert(cases, stderr_done:case_receive()) end
-
-    local selected = channel.select(cases)
-    if not selected.ok then
-        return fail(errors.new("output drain channel closed"))
-    end
-    if selected.value.err then return fail(selected.value.err) end
-
-    if selected.channel == stdout_done then
-        stdout_result = selected.value
-    else
-        stderr_result = selected.value
-    end
-end
-
-local _, stdout_close_err = stdout:close()
-if stdout_close_err then return fail(stdout_close_err) end
-local _, stderr_close_err = stderr:close()
-if stderr_close_err then return fail(stderr_close_err) end
-
-local exit_code, wait_err = proc:wait()
-if wait_err then return fail(wait_err) end
-
-local _, release_err = executor:release()
-if release_err then return nil, release_err end
-
-return {
-    exit_code = exit_code,
-    stdout = stdout_result.data,
-    stderr = stderr_result.data
-}
-```
-
-Dieses Teilrezept setzt voraus, dass `proc` vom noch gültigen `executor` erzeugt wurde. Die Globals `channel` und `coroutine` koordinieren beide Reader im selben Lua-Prozess.
-
-## `write_stdin`
-
-Schreiben Sie Daten nach stdin. `write_stdin` schließt stdin nicht; verwenden Sie deshalb einen Befehl mit begrenztem Eingabevertrag, wenn sein Abschluss vom Eingabestrom abhängt.
-
-```lua
--- This command exits after reading three lines; it does not require an EOF signal
-local proc, create_err = executor:exec("head -n 3")
-if create_err then
-    executor:release()
-    return nil, create_err
-end
-
-local function fail(err)
-    proc:close(true)
-    executor:release()
-    return nil, err
-end
-
-local _, start_err = proc:start()
-if start_err then
-    return fail(start_err)
-end
-
-local stdout, stream_err = proc:stdout_stream()
-if stream_err then
-    return fail(stream_err)
-end
-
-for _, line in ipairs({"banana\n", "apple\n", "cherry\n"}) do
-    local _, write_err = proc:write_stdin(line)
-    if write_err then
-        return fail(write_err)
-    end
-end
-
--- Read until the bounded command exits and closes stdout
-local chunks = {}
+-- Alle stdout lesen
+local output = {}
 while true do
-    local chunk, read_err = stdout:read(4096)
-    if read_err then
-        return fail(read_err)
-    end
+    local chunk = stdout:read(4096)
     if not chunk then break end
-    table.insert(chunks, chunk)
+    table.insert(output, chunk)
 end
-print(table.concat(chunks))  -- "banana\napple\ncherry\n"
+local result = table.concat(output)
 
-local _, close_err = stdout:close()
-if close_err then
-    return fail(close_err)
+-- Auf Fehler prüfen
+local err_output = {}
+while true do
+    local chunk = stderr:read(4096)
+    if not chunk then break end
+    table.insert(err_output, chunk)
 end
 
-local exit_code, wait_err = proc:wait()
-if wait_err then return fail(wait_err) end
-local _, release_err = executor:release()
-if release_err then return nil, release_err end
+local exit_code = proc:wait()
+
+stdout:close()
+stderr:close()
+
 if exit_code ~= 0 then
-    return nil, errors.new("head exited with code " .. exit_code)
+    return nil, errors.new({ kind = errors.INTERNAL, message = table.concat(err_output) })
 end
+
+return result
 ```
 
-Dieses Teilrezept setzt voraus, dass `executor` zu Beginn des Blocks gültig ist.
+## write_stdin
 
-## `signal` / `close`
-
-Wählen Sie für einen gestarteten Prozess genau einen Beendigungspfad.
+Schreiben Sie Daten an Prozess-stdin.
 
 ```lua
--- Stop and discard the handle. close() sends SIGTERM, reaps in the
--- background, and returns true even if signaling fails.
-local _, close_err = proc:close()
-if close_err then return nil, close_err end
+local proc = executor:exec("head -n 3")
+local stdout = proc:stdout_stream()
 
--- For immediate forced shutdown, use this instead:
--- local _, close_err = proc:close(true) -- SIGKILL
+proc:start()
 
--- When the exit code matters, signal and then wait instead of closing:
--- local _, signal_err = proc:signal(2) -- SIGINT on Unix
--- if signal_err then return nil, signal_err end
--- local exit_code, wait_err = proc:wait()
+proc:write_stdin("banana\napple\ncherry\n")
+
+local lines = stdout:read()
+
+proc:wait()
+stdout:close()
 ```
 
-`close()` ist idempotent. Nachdem `close()` oder `wait()` den Handle geschlossen hat, liefern weitere Aufrufe von `signal()`, `start()`, `wait()` und Stream-Zugriffe `errors.INVALID`. Signalnummern und Verhalten hängen von Backend und Betriebssystem ab.
+Jeder Aufruf schreibt die angegebenen Bytes und kehrt zurück. Es gibt keine Methode, die stdin schließt: Es bleibt für die Lebensdauer des Prozesses offen, sodass ein Befehl, der bis zum Eingabeende liest, wie etwa `sort`, nie ein EOF sieht und erst endet, wenn der Prozess ein Signal erhält oder geschlossen wird. Wählen Sie einen Befehl, der von sich aus aufhört zu lesen, wie es `head -n 3` tut, oder führen Sie einen Befehl, der EOF braucht, hinter einer Shell-Pipeline aus, die seine Eingabe liefert.
+
+## signal / close
+
+Senden Sie Signale oder geben Sie den Prozess frei.
+
+```lua
+local proc = executor:exec("./long-running-server.sh")
+proc:start()
+
+-- ... später, muss gestoppt werden ...
+
+-- SIGTERM senden und das Handle freigeben
+proc:close()
+
+-- SIGKILL senden und das Handle freigeben
+proc:close(true)
+
+-- Oder ein bestimmtes Signal senden und das Handle behalten
+local SIGINT = 2
+proc:signal(SIGINT)
+```
+
+`close(force?)` sendet einem gestarteten Kindprozess `SIGTERM`, oder `SIGKILL`, wenn `force` wahr ist, und reapt ihn dann im Hintergrund, sodass der Aufruf nicht blockiert. Ein Kindprozess, der nach einer Gnadenfrist noch läuft, wird gekillt, damit das Reaping immer abschließt. Ein nicht gestartetes Handle wird einfach ungültig gemacht, und zweimaliges Schließen ist kein Fehler.
+
+Das Reaping schließt die stdout- und stderr-Pipes des Kindprozesses, also sollte jede benötigte Ausgabe vor dem Aufruf von `close()` gelesen werden. Danach meldet jede Methode des Prozesses, `wait()` eingeschlossen, `process closed` — wenn der Exit-Code wichtig ist, stattdessen `signal()` und `wait()` verwenden.
+
+## resize
+
+Ändert die Größe des PTY eines PTY-gestützten Prozesses. Ein Pipe-gestützter Prozess gibt einen Fehler zurück.
+
+```lua
+local ok, err = proc:resize(120, 40)
+```
+
+| Parameter | Typ | Beschreibung |
+|-----------|-----|--------------|
+| `width` | number | Spalten, 1 bis 65535 |
+| `height` | number | Zeilen, 1 bis 65535 |
+
+**Gibt zurück:** `boolean, error`
+
+Damit wird die anfängliche Geometrie gesetzt, bevor der Prozess an eine Terminal-Session übergeben wird. Sobald eine Session den Prozess besitzt, wird ihr stattdessen ein `resize`-Ereignis gesendet.
+
+## attach_terminal
+
+Hängt einen nicht gestarteten PTY-gestützten Prozess an das Terminal des aufrufenden Prozesses an und gibt eine `TerminalSession` zurück.
+
+```lua
+local exec = require("exec")
+local tty = require("tty")
+
+local executor = assert(exec.get("app:exec"))
+local proc = assert(executor:exec("/bin/bash --noprofile --norc", {
+    pty = {term = "xterm-256color"},
+}))
+local session = assert(proc:attach_terminal())
+```
+
+**Gibt zurück:** `TerminalSession, error`
+
+Der Aufruf verbraucht den Prozess: Die Session wird sein alleiniger Lebenszyklus-Eigentümer, und das ursprüngliche Handle kann nicht mehr verwendet werden. Die Session öffnet eine Surface auf dem aktuellen Terminal-Port und übernimmt PTY-Emulation, Eingabekodierung, Größenänderung, geordnete und erzwungene Beendigung sowie das Reaping. Sie benötigt einen Terminal-Port — einen Prozess auf einem [Terminal-Host](system/terminal.md) oder einen mit einem [Viewport-Grant](lua/system/tty.md#viewport) gespawnten Prozess — und schlägt fehl, wenn der Port keinen Eingabecontroller hat oder bereits eine offene Surface besitzt.
+
+### TerminalSession
+
+| Methode | Gibt zurück | Beschreibung |
+|---------|-------------|--------------|
+| `send(event)` | `boolean, error` | Ein kanonisches TTY-Ereignis an den Kindprozess weiterleiten |
+| `done()` | channel | Kanal, der einmal auslöst, wenn der Kindprozess endet |
+| `status()` | `string, error` | `"running"` oder `"done"`, mit dem Fehler, falls er fehlgeschlagen ist |
+| `close()` | `boolean, error` | Beendigung eines laufenden Kindprozesses anfordern |
+
+`send` akzeptiert die in [TTY](lua/system/tty.md#event-types) beschriebenen Key-, Mouse-, Resize-, Focus- und Paste-Datensätze. Ein Senden, nachdem der Kindprozess beendet ist, gibt einen Fehler zurück.
+
+```lua
+local channel = require("channel")
+
+local events = assert(tty.events())
+assert(tty.start())
+local done = session:done()
+
+while true do
+    local selected = channel.select({
+        events:case_receive(),
+        done:case_receive(),
+    })
+    if not selected.ok or selected.channel == done then break end
+    if selected.value.type == "close" then break end
+    assert(session:send(selected.value))
+end
+
+assert(session:close())
+```
 
 ## Berechtigungen
 
@@ -286,18 +306,36 @@ Exec-Operationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `exec.get` | Executor-ID | Executor-Ressource beschaffen |
 | `exec.run` | Befehl | Einen bestimmten Befehl ausführen |
 
+`exec.run` wird gegen die rohe Befehlszeichenkette ausgewertet, mit den angeforderten Optionen als Metadaten:
+
+| Schlüssel | Typ | Beschreibung |
+|-----------|-----|--------------|
+| `work_dir` | string | Angefordertes Arbeitsverzeichnis, leer wenn nicht gesetzt |
+| `env_names` | string[] | Namen der übergebenen Umgebungsvariablen, sortiert; Werte werden nicht offengelegt |
+| `pty.requested` | boolean | Ob ein PTY angefordert wurde |
+| `pty.width` | number | Aufgelöste PTY-Spalten, vorhanden wenn angefordert |
+| `pty.height` | number | Aufgelöste PTY-Zeilen, vorhanden wenn angefordert |
+| `pty.term` | string | Angeforderter `TERM`-Wert, vorhanden wenn angefordert |
+
+Eine Policy kann damit einfache Befehle erlauben und zugleich diejenigen einschränken, die ein Terminal oder ein bestimmtes Arbeitsverzeichnis anfordern.
+
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
-| Leere Executor-ID | `errors.INVALID` | nein |
+| Ungültige ID | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.INVALID` | nein |
 | Prozess geschlossen | `errors.INVALID` | nein |
 | Prozess nicht gestartet | `errors.INVALID` | nein |
 | Bereits gestartet | `errors.INVALID` | nein |
-| Bezug des Executors oder Prozesserzeugung schlägt fehl | `errors.INTERNAL` | nein |
-| Start-, Wait-, Signal-, stdin- oder Stream-Operation schlägt fehl | `errors.INTERNAL` | nein |
-
-In Runtime v0.3.32a verwenden verweigerte Richtlinien für `exec.get` und `exec.run` den Fehler `errors.INVALID`, nicht `errors.PERMISSION_DENIED`.
+| Nicht geschlossenes Anführungszeichen im Befehl | `errors.INVALID` | nein |
+| Kein PTY am Prozess | `errors.INVALID` | nein |
+| Terminal-Port nicht verfügbar | `errors.UNAVAILABLE` | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+
+## Siehe auch
+
+- [Executor](system/exec.md) — Executor-Konfiguration
+- [TTY](lua/system/tty.md) — Terminal-Ereignisse, Surfaces und Viewports
+- [Terminal-UI](tutorials/tty.md) — eine Shell, die einen PTY-Kindprozess in einem Viewport hostet

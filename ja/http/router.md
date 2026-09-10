@@ -71,8 +71,8 @@ flowchart TB
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `meta.router` | Registry ID | 親ルーター |
-| `method` | string | HTTPメソッド：`GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS`、`TRACE`、またはすべてのメソッドを表す`*` |
-| `path` | string | URLパスパターン（`/`で始まる） |
+| `method` | string | HTTPメソッド: `GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS`、`TRACE`、または任意のメソッドを表す`*` |
+| `path` | string | URLパスパターン（`/`で開始） |
 | `func` | Registry ID | ハンドラ関数 |
 
 ## パスパラメータ
@@ -120,9 +120,24 @@ end
   func: serve_file
 ```
 
-ワイルドカードは残りのセグメントに一致します。そのため、`GET /api/v1/files/docs/guides/readme.md`のようなリクエストは、`req:param("filepath")`が`docs/guides/readme.md`に設定された状態でディスパッチされます。
+ワイルドカードは残りのセグメントにマッチするため、`GET /api/v1/files/docs/guides/readme.md` のようなリクエストはハンドラにディスパッチされます。キャプチャされた末尾部分は、末尾のドットを除いた名前で`req:param`から読み取ります:
+
+```lua
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
+```
 
 ワイルドカードはパスの最後のセグメントでなければなりません。
+
+## ルートの優先順位
+
+すべてのルーターは、ルーターの`prefix`を前置した形で自身のエンドポイントを単一のパターンセットに登録し、どのパターンがリクエストを処理するかはGoの`ServeMux`が決定します。そのルールがそのまま適用されます:
+
+- 最も具体的なパターンが優先されます。あるパターンが別のパターンのリクエストの真部分集合にマッチする場合、前者のほうが具体的です。したがって`/users/admin`は`/users/{id}`に優先し、`/files/{name}`は`/files/{path...}`に優先します。
+- メソッドを指定したパターンは、同じパスでメソッドを指定しないパターンより具体的です。したがって`GET`リクエストでは、同じパス上の`*`エンドポイントより`GET`エンドポイントが優先されます。
+- 末尾の`{path...}`または`/`はサブツリー全体にマッチし、その部分集合にマッチするパターンには負けます。
+- マッチングは正規化・デコード済みのパスに対して行われ、具体性が登録順に依存することはありません。
+
+2つのパターンが正面から衝突することもあります。どちらも他方より具体的ではないのに重なり合う場合で、`/users/{id}/settings`と`/users/admin/{section}`がその例です。これは設定エラーです。ルーターは再構築時にこれを検出し、再構築は失敗し、以前のルートセットがそのまま稼働し続けます。
 
 ## ハンドラ関数
 
@@ -130,7 +145,6 @@ end
 
 ```lua
 local http = require("http")
-local funcs = require("funcs")
 
 local function handler()
     local req, req_err = http.request()
@@ -143,11 +157,8 @@ local function handler()
     local user, call_err = funcs.call("app.users:get_user", user_id)
     if call_err then return nil, call_err end
 
-    local status_err = res:set_status(http.STATUS.OK)
-    if status_err then return nil, status_err end
-    local write_err = res:write_json(user)
-    if write_err then return nil, write_err end
-    return true
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }

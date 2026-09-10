@@ -18,9 +18,7 @@ Luaエントリ種別は、ソースコードを関数、プロセス、ワー�
 | `workflow.lua` | 耐久性のあるワークフロー（Temporal） |
 | `library.lua` | 他のエントリにインポートされる共有コード |
 
-各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode '**'`（または `--bytecode 'app:**'` のようなパターン）によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はこのフラグを指定してパックすると出力されます。
-
-`module.lua` は、ランタイムが作成する組み込みモジュール定義の予約種別です。ソースエントリとして作成することはできず、対応するバイトコード種別もありません。
+各種別には事前コンパイル済みのバイトコード対応版（`function.lua.bc`、`library.lua.bc`、`process.lua.bc`、`workflow.lua.bc`）があり、`wippy pack --bytecode '**'`（または `--bytecode 'app:**'` のようなパターン）によって生成されます。作成者は `.lua` エントリを書き、バイトコード種別はそのフラグ付きでパックしたときに出力されます。
 
 ## 共通フィールド
 
@@ -168,33 +166,26 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # explicit; omit to use auto-select (lazy)
-    max_size: 16      # cap for elastic growth
+    type: adaptive    # 明示指定。省略すると自動選択（lazy）
+    max_size: 16      # エラスティック拡張の上限
 ```
 
 | フィールド | プール | 説明 |
 |-----------|--------|------|
 | `type` | すべて | スケジューラ実装（下表参照） |
-| `workers` | static | ワーカー数。設定した場合、設定検証時に `size` も正の値である必要があります |
-| `size` | static | `workers` が未設定の場合のワーカー数。`type` を省略した場合、正の `size` だけを指定すると `inline` が選択されます |
-| `buffer` | static | タスクキュー容量（デフォルト：`workers * 64`） |
-| `max_size` | lazy, adaptive | 弾力的な拡張の上限（明示的な種別ではデフォルト16） |
-| `warm_start` | すべて | 受け付けられる設定フラグ。このランタイムリリースでは効果がありません |
+| `workers` | static | ワーカースレッド数（`size`、次に8にフォールバック） |
+| `size` | static | `workers`が未設定の場合のワーカー数。`type`を省略した場合、`max_size`なしの`size`はinlineプールを選択します |
+| `buffer` | static | タスクキュー容量（デフォルト: `workers * 64`） |
+| `max_size` | lazy, adaptive | エラスティック拡張の上限（デフォルト: 16、`type`を省略した場合は100） |
 
 | タイプ | 動作 |
 |--------|------|
 | `inline` | 呼び出し元のゴルーチンで同期実行。呼び出し間の分離はありません。 |
 | `lazy` | アイドル時はワーカーなし、オンデマンドで生成、アイドルで破棄。 |
 | `static` | チャンネルベースの固定サイズプール。安定負荷で予測可能。 |
-| `adaptive` | 自動スケーリングプール — 負荷時に拡大し、アイドル時に縮小します。 |
+| `adaptive` | 自動スケーリングプール — 負荷時に拡大、アイドル時に縮小。 |
 
-`type` を省略すると、ランタイムは次の規則で選択します。
-
-- `workers` が正なら `static`
-- `workers` が0で、`size` が0または `max_size` が正なら `lazy`
-- `size` が正で `max_size` が0なら `inline`
-
-自動選択されたlazyプールは、`max_size` が正ならその値を使用し、それ以外はデフォルトで100になります。明示的な `lazy` または `adaptive` プールでは、`max_size` のデフォルトは16です。明示的な `static` プールでは、`workers`、`size`、8の順でワーカー数を決定し、デフォルトのバッファは選択されたワーカー数の64倍です。
+`type`を省略すると、プールは他のフィールドから自動選択されます: デフォルトではlazyプール、`workers`が設定されている場合はstaticプール、`size`のみが設定されている場合はinlineプールになります。
 
 ## メタデータ
 
@@ -219,10 +210,7 @@ imports:
 
 ```lua
 local registry = require("registry")
-local handlers, err = registry.find({["meta.type"] = "handler"})
-if err then
-    return nil, err
-end
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 このクエリは、一致するすべてのレジストリエントリを返します。Luaコードは、上記の `api_handler` のように、`modules` リストに `registry` を含む実行可能エントリに属します。

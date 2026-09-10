@@ -30,15 +30,13 @@ description: "Jet のテンプレートセット、ソース、名前、継承�
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `engine.development_mode` | bool | false | テンプレートのキャッシュを無効化 |
-| `engine.delimiters.left` | string | `{{` | 変数の開始デリミター |
-| `engine.delimiters.right` | string | `}}` | 変数の終了デリミター |
-| `engine.delimiters.comment_left` | string | `{*` | 検証されるコメント開始デリミター。現在のローダーでは適用されない |
-| `engine.delimiters.comment_right` | string | `*}` | 検証されるコメント終了デリミター。現在のローダーでは適用されない |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 検証される拡張子リスト。現在のローダーでは検出に使用されない |
-| `engine.globals` | map | - | すべてのテンプレートで利用できる変数 |
-
-実行時には、`development_mode`、左右の式デリミター、`globals` が Jet セットを設定します。コメントデリミターと拡張子のフィールドは、このリリースでは受け付けられ検証されますが、インメモリ Jet ローダーには適用されません。変更しても、解析方法やテンプレートの検出方法は変わりません。
+| `engine.development_mode` | bool | false | テンプレートキャッシュを無効化 |
+| `engine.delimiters.left` | string | `{{` | 変数開始デリミタ |
+| `engine.delimiters.right` | string | `}}` | 変数終了デリミタ |
+| `engine.delimiters.comment_left` | string | `{*` | 検証のみ。コメントは常にJetの`{*`を使用 |
+| `engine.delimiters.comment_right` | string | `*}` | 検証のみ。コメントは常にJetの`*}`を使用 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 検証のみ。名前解決は常にJet組み込みの`.jet`、`.html.jet`、`.jet.html`を試行 |
+| `engine.globals` | map | - | すべてのテンプレートで利用可能な変数 |
 
 ## テンプレート
 

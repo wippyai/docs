@@ -86,7 +86,7 @@ die wortwörtlich kopiert werden können. Die vollständigen Registry-Definition
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -153,7 +153,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` stellt die Richtliniengruppe `wippy.security:process` bereit, unter der die Hintergrunddienste des LLM-Moduls laufen; ohne sie starten sie nicht.
 
 ### Sicherheitsrichtlinien
 
@@ -187,7 +194,18 @@ jedoch als zulässig. Dies ist keine Wippy-Runtime-Autorisierung: Geschützte Op
 benötigen ein explizites `allow` aus dem Ausführungskontext. Dazu gehören die unten
 gezeigten Operationen des Sicherheitsmoduls und `registry.apply` innerhalb von `changes:apply()`.
 
-Siehe [Sicherheitsmodell](system/security.md) für Einzelheiten zur Policy-Auswertung.
+Eine dritte Richtlinie gewährt dem Prozess selbst Zugriff auf die Registry. Einem Prozess, der ohne Sicherheitskontext gestartet wird, wird jeder Registry-Lesevorgang verweigert, daher trägt der Befehl `agent` diese Richtlinie als eigenen Scope:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
+
+Siehe [Sicherheitsmodell](system/security.md) für Details zur Richtlinien-Auswertung.
 
 ### Modelle
 
@@ -281,6 +299,11 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -290,9 +313,7 @@ Der Prompt ist absichtlich knapp gehalten. Wichtige Regeln:
       compress: wippy.llm.util:compress
 ```
 
-Der Prozess läuft als Terminalbefehl. `create_tool` wendet vor dem Schreiben die
-Denylist des Pakets an; dieser Filter stellt jedoch nicht den Runtime-Sicherheitskontext
-des Befehls bereit.
+Der Prozess läuft als Terminalbefehl. `meta.command.security` gibt ihm den Actor und den Scope, unter dem er läuft — ohne das schlägt `registry.get` mit `not allowed to access entry` fehl und der Agent lädt nie. Die Sicherheitsdurchsetzung für Schreibvorgänge erfolgt innerhalb von `create_tool`, das die Richtliniengruppe `agent_security` lädt und vor dem Schreiben auswertet.
 
 Imports:
 - `prompt` — Konversations-Builder

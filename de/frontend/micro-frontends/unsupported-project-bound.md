@@ -1,39 +1,27 @@
 ---
 title: "Nicht unterstützte projektgebundene Module"
-description: "Hinweis für fortgeschrittene Module, die Wippys Frontend-Portabilität absichtlich aufgeben."
+description: "Warnung für Fortgeschrittene zu Modulen, die die Portabilität des Wippy-Frontends absichtlich aufgeben."
 ---
 
 # Nicht unterstützte projektgebundene Module
 
-**Klassifizierung: normative Richtlinienreferenz.** Sie definiert Marker und
-Pflichtergebnis eines projektgewählten Compliance-Ablaufs. Die öffentliche
-Paketfamilie stellt diesen Ablauf nicht als ausführbare CLI bereit.
+Der unterstützte Frontend-Vertrag von Wippy ist portabel. Ein Modul, das absichtlich projektprivates Facade-CSS, private Klassen oder eine andere deploymentspezifische Frontend-Annahme voraussetzt, ist `UNSUPPORTED`.
 
-Wippys unterstützter Frontendvertrag ist portabel. Ein Modul, das absichtlich
-privates Facade-CSS, private Klassen oder eine andere deploymentspezifische
-Frontendannahme benötigt, ist `UNSUPPORTED`.
+Das ist keine normale Ausnahme:
 
-Dies ist keine normale Ausnahme. Der projektseitige Compliance-Ablauf muss
-folgende Ergebnisse durchsetzen:
-
-- Standard-Compliance gibt exakt `UNSUPPORTED` zurück.
-- Standard-CI schlägt fehl.
+- Die Standard-Compliance liefert exakt `UNSUPPORTED`.
+- Die Standard-CI schlägt fehl.
 - Wiederverwendung, Theme-Portabilität, Upgrades und Support sind nicht garantiert.
-- Der Moduleigentümer trägt die Verantwortung für jede verwendende Facade und Migration.
+- Der Moduleigentümer verantwortet jede konsumierende Facade und jede Migration.
 
-Nennen Sie diesen Modus nicht „abgeraten“, „teilweise compliant“ oder
-„nicht compliant, aber akzeptiert“. Der kanonische Status lautet `UNSUPPORTED`.
+Bezeichnen Sie diesen Modus nicht als „unerwünscht“, „teilweise konform“ oder „nicht konform, aber akzeptiert“. Der kanonische Status ist `UNSUPPORTED`.
 
-Der projektgebundene Modus ist nur für Fortgeschrittene und erscheint weder im
-Schnellstart noch in Standardrezepten. Er kann Barrierefreiheit, HTML-Gültigkeit,
-Sicherheit oder Backend-Schemaanforderungen nicht außer Kraft setzen.
+Der projektgebundene Modus ist ausschließlich für Fortgeschrittene und wird weder im Quickstart noch in Standardrezepten gezeigt. Er kann Anforderungen an Barrierefreiheit, HTML-Gültigkeit, Sicherheit oder Backend-Schemata nicht erlassen.
 
-Auch ein nur für ein Deployment bestimmtes Gesamtprojekt lockert den Vertrag
-nicht stillschweigend. Projektpolicy und Modulmetadaten müssen den Status
-ausdrücklich nennen; das Standard-CI-Fehlschlagen wird bewusst außerhalb von
-Wippys unterstütztem Compliance-Ablauf behandelt.
+Dass ein gesamtes Projekt für ein einziges Deployment gedacht ist, lockert den Vertrag nicht stillschweigend. Der nicht unterstützte Status muss in der Projektrichtlinie und in den Modul-Metadaten explizit sein, wobei das Fehlschlagen der Standard-CI bewusst außerhalb des unterstützten Compliance-Workflows von Wippy behandelt wird.
 
-Deklarieren Sie den Status in `wippy-fe.contract.json` im Modul-Root mit exakt diesem Feld und Wert:
+Deklarieren Sie den Status in `wippy-fe.contract.json` im Modul-Root mit exakt
+dem folgenden Feld und Wert:
 
 ```json
 {
@@ -41,7 +29,6 @@ Deklarieren Sie den Status in `wippy-fe.contract.json` im Modul-Root mit exakt d
 }
 ```
 
-`mode` und andere Aliasse sind ungültig. Der Compliance-Ablauf muss für den
-Marker `UNSUPPORTED` zurückgeben und erfolglos enden; er gewährt keine Ausnahme.
-Die öffentliche Paketfamilie `@wippy-fe/*` 0.0.56 enthält keine Anwendungs-
-Compliance-CLI. Das Projekt muss dieses Gate im gewählten Ablauf selbst umsetzen.
+`mode` und andere Aliasse werden nicht akzeptiert. Dieser Marker bewirkt, dass
+das Standard-Compliance-Kommando `UNSUPPORTED` liefert und erfolglos beendet
+wird; er gewährt keine Ausnahmegenehmigung.

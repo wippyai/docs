@@ -1,43 +1,74 @@
 ---
 title: "Retrieval-Augmented Generation (RAG)"
-description: "Ingest documents, retrieve relevant chunks with vector search, and generate answers grounded in that context."
+description: "Build a knowledge base that answers questions from your own documents. This tutorial uses the wippy/embeddings module for vector search and the LLM…"
 ---
 
 # Retrieval-Augmented Generation (RAG)
 
-Build a retrieval-augmented generation pipeline over your own documents. The example uses `wippy/embeddings` for vector search and the LLM framework for answer generation.
-
-**Classification: partial application recipe.** The retrieval code is complete, but
-it is an integration for the Wippy application template rather than a standalone app.
-The template owns authentication, security policy, provider/model configuration,
-bootloader, and migration wiring.
+Build a knowledge base that answers questions from your own documents. This tutorial uses the `wippy/embeddings` module for vector search and the LLM framework for generation.
 
 ## What You'll Build
 
 A minimal RAG pipeline:
 
-1. Ingest Markdown documents by splitting, embedding, and persisting chunks.
-2. Retrieve the most relevant chunks for a query with vector search.
-3. Generate an answer using the retrieved chunks as context.
+1. Ingest markdown documents — split into chunks, embed, persist.
+2. Retrieve — vector search returns the most relevant chunks for a query.
+3. Generate — an LLM call uses the retrieved chunks as grounding context.
 
 ## Prerequisites
 
-- An app based on the [Wippy application template](https://github.com/wippyai/app),
-  with `app:db`, `app:processes`, `app.env:store`, and the bootloader/migration
-  dependencies already present.
-- SQLite from the runtime (including `vec0`) or PostgreSQL with the `pgvector`
-  extension enabled before startup.
-- `OPENAI_API_KEY` available through the app's configured LLM environment storage.
-- Registry model entries named `text-embedding-3-small` (capability `embed`, OpenAI
-  provider) and `gpt-4o-mini` (capability `generate`, OpenAI provider). The embeddings
-  package calls the first name directly and requests 512 dimensions.
+- A database: `db.sql.sqlite` (includes `vec0` support) or `db.sql.postgres` with the `pgvector` extension.
+- `OPENAI_API_KEY` in the environment — the embedding and generation calls go through it.
+
+Create the project and install the modules:
+
+```bash
+mkdir rag && cd rag
+mkdir -p src/app data
+wippy init
+wippy add wippy/embeddings
+wippy add wippy/migration
+wippy add wippy/bootloader
+wippy add wippy/security
+wippy install
+```
+
+```
+rag/
+├── wippy.lock
+├── data/
+└── src/
+    ├── _index.yaml
+    ├── env/
+    │   └── _index.yaml
+    └── app/
+        ├── ingest.lua
+        ├── answer.lua
+        ├── answer_http.lua
+        └── seed.lua
+```
 
 ## Dependencies
 
-Add the `wippy/embeddings` dependency to `src/app/deps/_index.yaml` and bind its
-target database:
+Declare the `wippy/embeddings` dependency and point it at your database. The `target_db` parameter is the registry ID of the database entry the embeddings table will live in. `wippy/embeddings` pulls in `wippy/llm` and the migration that creates the `embeddings_512` table, so `wippy/migration` and `wippy/bootloader` need wiring too — the bootloader runs the migration at startup, and both it and the LLM module run processes under the `wippy.security:process` policy group shipped by `wippy/security`:
 
 ```yaml
+# src/_index.yaml
+version: "1.0"
+namespace: app
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    file: ./data/app.db
+    lifecycle:
+      auto_start: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
@@ -46,35 +77,111 @@ target database:
       - name: target_db
         value: app:db
 
+  - name: migration
+    kind: ns.dependency
+    component: wippy/migration
+    version: "*"
+    parameters:
+      - name: app_db
+        value: app:db
+
+  - name: bootloader
+    kind: ns.dependency
+    component: wippy/bootloader
+    version: "*"
+    parameters:
+      - name: application_host
+        value: app:processes
+      - name: env_storage
+        value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
 
-Do not redeclare dependencies already supplied by the application template. Verify
-that its existing `wippy/migration` dependency binds `app_db` to `app:db`, and that
-its existing `wippy/bootloader` dependency binds `application_host` to
-`app:processes` and `env_storage` to `app.env:store`.
+The bootloader persists a generated `ENCRYPTION_KEY`, so it needs a writable environment store:
 
-`wippy/embeddings` supplies the migration that creates `embeddings_512`
-(PostgreSQL `pgvector` or SQLite `vec0`). `wippy/migration` discovers it, and the
-auto-started bootloader applies it during `wippy run -c`; there is no separate
-schema command in this recipe.
+```yaml
+# src/env/_index.yaml
+version: "1.0"
+namespace: app.env
 
-After editing the dependency entries, resolve and install the graph:
+entries:
+  - name: file
+    kind: env.storage.file
+    auto_create: true
+    file_path: .env
+    lifecycle:
+      auto_start: true
 
-```bash
-wippy update
-wippy install
+  - name: os
+    kind: env.storage.os
+    lifecycle:
+      auto_start: true
+
+  - name: store
+    kind: env.storage.router
+    lifecycle:
+      auto_start: true
+    storages:
+      - app.env:file
+      - app.env:os
 ```
+
+## Models
+
+`wippy/embeddings` calls `llm.embed` with `text-embedding-3-small`, and generation below uses `gpt-4o-mini`. Both are resolved from the registry, so declare them in `src/_index.yaml` as well:
+
+```yaml
+  - name: text-embedding-3-small
+    kind: registry.entry
+    meta:
+      name: text-embedding-3-small
+      type: llm.model
+      title: Text Embedding 3 Small
+      capabilities:
+        - embed
+    dimensions: 512
+    max_tokens: 8191
+    pricing:
+      input: 0.02
+      output: 0
+    providers:
+      - id: wippy.llm.openai:provider
+        provider_model: text-embedding-3-small
+
+  - name: gpt-4o-mini
+    kind: registry.entry
+    meta:
+      name: gpt-4o-mini
+      type: llm.model
+      title: GPT-4o mini
+      capabilities:
+        - generate
+    max_tokens: 128000
+    output_tokens: 16384
+    pricing:
+      input: 0.15
+      output: 0.6
+    providers:
+      - id: wippy.llm.openai:provider
+        provider_model: gpt-4o-mini
+```
+
+The OpenAI provider reads `OPENAI_API_KEY` from the OS environment by default. See [LLM Framework](framework/llm.md) for other providers and model fields.
 
 ## Ingest Documents
 
-The `text` module splits documents, while the `embeddings` library generates and persists their vectors.
+Splitting is handled by the `text` module; embedding and persistence by the `embeddings` library.
 
 ```lua
 -- src/app/ingest.lua
 local text = require("text")
 local embeddings = require("embeddings")
 
-local function ingest(doc_id, title, markdown)
+local function ingest(doc_id: string, title: string, markdown: string)
     local splitter, err = text.splitter.markdown({
         chunk_size = 800,
         chunk_overlap = 100,
@@ -103,12 +210,12 @@ end
 return { ingest = ingest }
 ```
 
-Register the function and its imports in `src/app/_index.yaml`:
+Register the function and its imports:
 
 ```yaml
 - name: ingest
   kind: function.lua
-  source: file://ingest.lua
+  source: file://app/ingest.lua
   method: ingest
   modules:
     - text
@@ -116,11 +223,9 @@ Register the function and its imports in `src/app/_index.yaml`:
     embeddings: wippy.embeddings:embeddings
 ```
 
-The ingestion fields control grouping and retrieval:
+Key points:
 
-- `origin_id` groups chunks that belong to the same source document. PostgreSQL
-  stores this field as `UUID`, so use UUID values when the tutorial must work on
-  both PostgreSQL and SQLite.
+- `origin_id` groups chunks that belong to the same source document.
 - `context_id` is an optional sub-key (section, page, chunk index).
 - `add_batch` auto-splits if total tokens exceed the 8000-token request limit.
 
@@ -142,11 +247,7 @@ local results, err = embeddings.search("how do I configure TLS?", {
 Filter by origin when you want to ground the answer in a specific document:
 
 ```lua
-local hits = embeddings.find_by_origin(
-    "refund policy",
-    "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
-    { limit = 3 }
-)
+local hits = embeddings.find_by_origin("refund policy", "doc-42", { limit = 3 })
 ```
 
 ## Generate an Answer
@@ -174,7 +275,7 @@ local function format_context(hits)
     return table.concat(parts, "\n\n")
 end
 
-local function answer(question)
+local function answer(question: string)
     local hits, err = embeddings.search(question, { limit = 4 })
     if err then return nil, err end
 
@@ -195,12 +296,10 @@ end
 return { answer = answer }
 ```
 
-Register the answer function in the same `src/app/_index.yaml`:
-
 ```yaml
 - name: answer
   kind: function.lua
-  source: file://answer.lua
+  source: file://app/answer.lua
   method: answer
   imports:
     embeddings: wippy.embeddings:embeddings
@@ -208,13 +307,61 @@ Register the answer function in the same `src/app/_index.yaml`:
     prompt: wippy.llm:prompt
 ```
 
-## HTTP Endpoint Example
+## End-to-End Example
 
-Append the following entries to `src/app/_index.yaml`. The `ingest` and `answer`
-entries were already added above; do not duplicate them or the template's database,
-gateway, and router:
+Putting it together behind an HTTP endpoint. Append these entries to `src/_index.yaml`:
 
 ```yaml
+  - name: ingest
+    kind: function.lua
+    source: file://app/ingest.lua
+    method: ingest
+    modules:
+      - text
+    imports:
+      embeddings: wippy.embeddings:embeddings
+
+  - name: answer
+    kind: function.lua
+    source: file://app/answer.lua
+    method: answer
+    imports:
+      embeddings: wippy.embeddings:embeddings
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+
+  - name: seed
+    kind: process.lua
+    meta:
+      command:
+        name: seed
+        short: Ingest the sample document
+        security:
+          groups:
+            - wippy.security:process
+    source: file://app/seed.lua
+    method: main
+    modules:
+      - funcs
+      - io
+
+  - name: gateway
+    kind: http.service
+    addr: ":8080"
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: gateway
+        groups:
+          - wippy.security:process
+
+  - name: api
+    kind: http.router
+    meta:
+      server: app:gateway
+    prefix: /api
+
   - name: ask
     kind: http.endpoint
     meta:
@@ -225,13 +372,15 @@ gateway, and router:
 
   - name: answer_http
     kind: function.lua
-    source: file://answer_http.lua
+    source: file://app/answer_http.lua
     method: handler
     modules:
       - http
     imports:
       answer: app:answer
 ```
+
+The server declares a security context because retrieval resolves the embedding model from the registry, and a request without an actor and scope reads no entries at all — model resolution then fails with `Model or class not found`.
 
 ```lua
 -- src/app/answer_http.lua
@@ -249,7 +398,7 @@ local function handler()
         return
     end
 
-    local result, ans_err = answer.answer(body.question)
+    local result, ans_err = answer.answer(tostring(body.question))
     if ans_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({ error = ans_err })
@@ -262,39 +411,63 @@ end
 return { handler = handler }
 ```
 
-Start the app so the migration bootloader creates the vector table:
+Seed the index from a CLI command. `meta.command` makes the process runnable as `wippy run seed`, and its `security` block gives it the scope needed to call `app:ingest`:
 
-```bash
-wippy run -c
+```lua
+-- src/app/seed.lua
+local funcs = require("funcs")
+local io = require("io")
+
+local DOC = [[
+# TLS Configuration
+
+Wippy servers terminate TLS when the `tls` block is present on the
+`http.service` entry. Set `cert_file` and `key_file` to PEM paths.
+
+## Refund Policy
+
+Refunds are issued within 14 days of purchase.
+]]
+
+local function main()
+    local res, err = funcs.call("app:ingest", "doc-42", "Handbook", DOC)
+    if err then
+        io.print("ingest failed: " .. tostring(err))
+        return
+    end
+    io.print("ingested " .. tostring(res.count) .. " chunks")
+end
+
+return { main = main }
 ```
 
-Seed the index by calling `app:ingest` from an authenticated setup function or a
-named process in your application. The exact seed surface is application-owned so
-this partial recipe does not expose an unauthenticated write endpoint. After at
-least one document has been ingested, query the template's token-protected API with
-an application session bearer:
+The first `wippy run` creates `data/app.db` and applies the embeddings migration. Seed the index, then start the server and query it:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/ask \
-    -H 'Authorization: Bearer <app-session-token>' \
+wippy run seed
+# ingested 2 chunks
+
+wippy run
+```
+
+```bash
+curl -X POST http://localhost:8080/api/ask \
     -H 'Content-Type: application/json' \
     -d '{"question":"how do I configure TLS?"}'
 ```
 
-A successful response has this shape; answer text, similarity values, and hit order
-depend on the provider and indexed content:
-
 ```json
 {
-  "answer": "...",
+  "answer": "You can configure TLS by adding a `tls` block to the `http.service` entry. Set `cert_file` and `key_file` to the paths of your PEM files. (See: Handbook, TLS Configuration)",
   "sources": [
     {
-      "content": "...",
-      "content_type": "doc_chunk",
-      "origin_id": "91e6f640-2d18-4eb9-a868-1ec4a894ddf6",
+      "entry_id": "52fafcc0-2d18-40d9-8a6e-7662ef9d9bea",
+      "origin_id": "doc-42",
       "context_id": "1",
-      "similarity": 0.82,
-      "meta": { "title": "TLS guide", "chunk": 1 }
+      "content_type": "doc_chunk",
+      "content": "# TLS Configuration\nWippy servers terminate TLS when the `tls` block is present on the\n`http.service` entry. Set `cert_file` and `key_file` to PEM paths.",
+      "meta": { "title": "Handbook", "chunk": 1 },
+      "similarity": 0.0736
     }
   ]
 }
@@ -302,15 +475,15 @@ depend on the provider and indexed content:
 
 ## Operational Notes
 
-- **Chunk size** — `chunk_size` and `chunk_overlap` count characters, not tokens (the splitter measures length with `utf8.RuneCountInString`). Roughly 2000–4000 characters is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
-- **Content types** — Use distinct `content_type` values (`doc_chunk`, `faq`, `code_snippet`) so search can filter by type.
-- **Re-indexing** — Delete and re-ingest per document via `embedding_repo.delete_by_origin(doc_id)` before adding new chunks.
-- **Hybrid search** — For exact-term recall (names, IDs), combine vector search with full-text search over your source table and re-rank.
-- **Model choice** — `wippy/embeddings` is fixed to `text-embedding-3-small` at 512 dimensions, and the `embeddings_512` table stores `vector(512)`/`float[512]`. A different model or vector size means changing the library constants and the migration table.
+- **Chunk size**: `chunk_size` and `chunk_overlap` count characters, not tokens (the splitter measures length with `utf8.RuneCountInString`). Roughly 2000–4000 characters is a good starting point. Too small loses local context; too large dilutes similarity scores. Use `chunk_overlap` (~10–20% of chunk size) to preserve sentences across boundaries.
+- **Content types**: Use distinct `content_type` values (`doc_chunk`, `faq`, `code_snippet`) so search can filter by type.
+- **Re-indexing**: Delete and re-ingest per document via `embedding_repo.delete_by_origin(doc_id)` before adding new chunks. The repository is a separate library — import it as `embedding_repo: wippy.embeddings:embedding_repo`.
+- **Hybrid search**: For exact-term recall (names, IDs), combine vector search with full-text search over your source table and re-rank.
+- **Model choice**: `wippy/embeddings` is fixed to `text-embedding-3-small` at 512 dimensions, and the `embeddings_512` table stores `vector(512)`/`float[512]`. A different model or vector size means changing the library constants and the migration table.
 
 ## Next Steps
 
-- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, and prompt construction
-- [Agents](framework/agents.md) — Wrap the retriever as an agent tool
-- [SQL Module](lua/storage/sql.md) — Underlying database access
-- [Text Module](lua/text/text.md) — Character-based text splitters
+- [LLM Framework](framework/llm.md) — `llm.generate`, `llm.embed`, prompt construction
+- [Agents](framework/agents.md) — wrap the retriever as an agent tool
+- [SQL Module](lua/storage/sql.md) — underlying database access
+- [Text Module](lua/text/text.md) — splitters and tokenization

@@ -1,6 +1,6 @@
 ---
 title: "Ausdruckssprache"
-description: "Expr-lang-Ausdrücke aus Lua kompilieren und auswerten."
+description: "Werten Sie dynamische Ausdrücke mit expr-lang-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung…"
 ---
 
 # Ausdruckssprache
@@ -8,7 +8,11 @@ description: "Expr-lang-Ausdrücke aus Lua kompilieren und auswerten."
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Das Modul `expr` kompiliert und wertet [expr-lang](https://expr-lang.org/)-Ausdrücke für Filterung, Validierung, Berechnungen und Regeln aus, ohne Lua-Quellcode auszuführen. Diese Seite ist die kanonische Lua-API-Referenz. Die Beispiele laufen in einem vorhandenen Wippy-Lua-Prozess, dessen Eintrag das Modul `expr` deklariert; sie sind keine eigenständigen Wippy-Anwendungen. Zur Wahl zwischen Ausdrücken und Lua mit eingeschränkten Fähigkeiten siehe [Dynamische Auswertung](./eval.md).
+Werten Sie dynamische Ausdrücke mit [expr-lang](https://expr-lang.org/)-Syntax aus. Kompilieren und führen Sie sichere Ausdrücke für Filterung, Validierung und Regelauswertung ohne vollständige Lua-Ausführung aus.
+
+## Caching
+
+`expr.eval` hält einen internen LRU-Cache kompilierter Ausdrücke (Standardkapazität 1000). Der Cache ist im Modul eingebaut und erfordert keine Konfiguration.
 
 ## Laden
 
@@ -143,10 +147,12 @@ if max_err then
     return nil, max_err
 end
 
-local uppercase, upper_err = expr.eval('upper("hello")')
-if upper_err then
-    return nil, upper_err
-end
+-- String-Funktionen
+expr.eval('len("hello")')        -- 5
+expr.eval('upper("hello")')      -- "HELLO"
+expr.eval('lower("HELLO")')      -- "hello"
+expr.eval('trim("  hi  ")')      -- "hi"
+expr.eval('"hello" contains "ell"')  -- true
 
 local total, sum_err = expr.eval("sum(values)", {values = {1, 2, 3, 4}})
 if sum_err then

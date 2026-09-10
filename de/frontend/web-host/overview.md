@@ -1,84 +1,80 @@
 ---
-title: "Web-Host-Übersicht"
-description: "Wie der CDN-gehostete Web Host, die Facade-Seite und untergeordnete Micro Frontends in einer Wippy-Anwendung zusammenspielen."
+title: "Web-Host-Überblick"
+description: "Der Wippy Web Host ist eine Vue-3-Single-Page-Anwendung, gebaut nach der Feature-Sliced-Design-Methodik und ausgeliefert von einem CDN unter…"
 ---
 
-# Web-Host-Übersicht
+# Web-Host-Überblick
 
-Diese Seite ist eine Architekturreferenz. Sie erklärt Deployment-Grenzen und Einstiegspunkte; die Einrichtung wird in den verlinkten Facade- und Micro-Frontend-Leitfäden beschrieben.
-
-Der Wippy Web Host ist eine mit der Methodik Feature-Sliced Design erstellte Vue-3-Single-Page-Anwendung, die über `https://web-host.wippy.ai` ausgeliefert wird. Er hostet die benutzersichtbaren Seiten und UI-Komponenten einer Wippy-Anwendung. Konfigurieren Sie ihn über das Backend-Modul `wippy/facade`; Sie bauen oder deployen ihn nicht zusammen mit der Anwendung.
+Der Wippy Web Host ist eine Vue-3-Single-Page-Anwendung, gebaut nach der Feature-Sliced-Design-Methodik und ausgeliefert von einem CDN unter `https://web-host.wippy.ai`. Er hostet alle benutzerseitigen Pages und UI-Komponenten einer Wippy-Anwendung. Sie bauen oder deployen ihn nicht — Sie konfigurieren ihn über das Backend-Modul `wippy/facade`, und er lädt automatisch.
 
 ![Wippy FE architecture](../diagrams/fe-arch-overview.svg)
 
 ## Drei-Schichten-Modell
 
-Eine laufende Wippy-Anwendung besteht aus drei verschachtelten Schichten:
+Eine laufende Wippy-Anwendung besteht aus drei ineinandergeschachtelten Schichten:
 
-**Schicht 1 — von `wippy/facade` ausgelieferte Seite.** Dies ist Ihre vom Backend gerenderte HTML-Seite. Das Modul `wippy/facade` registriert einen statischen Dateiserver und einen Endpunkt `/facade/config` an Ihrem Wippy-Gateway. Beim Aufruf der Anwendung liefert `wippy/facade` eine schlanke HTML-Seite aus, die den JS-Modul-Entry des Web Hosts vom CDN lädt (`module.js` für Compat, `managed-layout.js` für Managed) und ihn mit der Konfiguration aus `/facade/config` initialisiert. Die Seite selbst enthält weder Vue noch React und ist bewusst schlank.
+**Schicht 1 — Seite, ausgeliefert von `wippy/facade`.** Das ist Ihre backend-gerenderte HTML-Seite. Das Modul `wippy/facade` registriert einen statischen Dateiserver und einen `/facade/config`-Endpoint an Ihrem Wippy-Gateway. Wenn ein Nutzer zu Ihrer Anwendung navigiert, liefert `wippy/facade` eine dünne HTML-Seite aus, die den Web-Host-JS-Modul-Einstieg vom CDN lädt (`module.js` für Compat, `managed-layout.js` für Managed) und ihn mit der Konfiguration von `/facade/config` initialisiert. Die Seite selbst enthält weder Vue noch React — sie ist absichtlich dünn.
 
-**Schicht 2 — Web Host.** Das Web-Host-Bundle wird als JS-Modul geladen und übernimmt die gesamte Seite sowie ihren Browserverlauf. Es verwaltet Wippys Chrome: Navigation, Chat, Sitzungsverwaltung und die Renderoberfläche für Seiten. Seine vollständige Konfiguration erhält es vom Initialisierungsaufruf der Seite; es enthält keine Deployment-spezifischen URLs oder Tokens. Dasselbe CDN-Bundle kann dadurch verschiedene Deployments bedienen. Für manuelle Einbettungen ohne Facade kann der Host über den unten beschriebenen Entry `iframe.html` in einem iframe laufen.
+**Schicht 2 — Web Host.** Das Web-Host-Bundle lädt als JS-Modul, das die gesamte Seite und ihre Browser-History übernimmt. Ihm gehört die Wippy-Chrome: Navigations-Seitenleiste, Chat-Panel, Session-Verwaltung und die Rendering-Fläche für Pages. Er erhält seine vollständige Konfiguration aus dem Init-Aufruf der Seite und enthält im Bundle selbst niemals deploymentspezifische URLs oder Tokens. Das macht das CDN-gehostete Bundle über Deployments hinweg portabel. (Für manuelle Einbettungen ohne Facade kann derselbe Host stattdessen über den `iframe.html`-Einstieg in einem iframe laufen — siehe die Einstiegspunkt-Tabelle unten.)
 
-**Schicht 3 — untergeordnete Micro Frontends.** Der Web Host rendert `view.page`-Module über die konfigurierte Page Engine: einen älteren srcdoc-iframe oder ein Web Fragment. `view.component`-Module mountet er als Custom Elements. Die iframe-Engine bietet einen getrennten Browsing Context. Ein Web Fragment verwendet einen Reframed-Realm, der in das Host-Dokument gespiegelt wird, und stellt keine Isolationsgrenze dar; der Shadow Root einer Komponente isoliert Selektoren, nicht Autorität. Jede Oberfläche erhält den passenden Proxy-Adapter für Wippy-API-Zugriff, Authentifizierungskontext, Theme-Auslieferung und Kommunikation, ohne Deployment-spezifische URLs zu benötigen.
+**Schicht 3 — Child-Micro-Frontends.** Der Web Host bettet seinerseits benutzerdefinierte Views entweder als verschachtelte iframes (`view.page`-Module) oder als Web Components (`view.component`-Module) ein. Jedes Child läuft isoliert. Der Web Host injiziert ein Proxy-Skript, das Children Zugriff auf die Wippy-API, den Authentifizierungskontext, Theme-CSS und Kommunikationskanäle gibt — ohne dass das Child wissen muss, wo es deployed ist.
 
 ```
-Page (wippy/facade HTML — loads module.js / managed-layout.js)
-  └─ Web Host (takes over the page + browser history)
-       ├─ Chat UI, navigation, sidebar
-       └─ Child micro-frontends
-            ├─ view.page → srcdoc iframe or Web Fragment + proxy adapter
-            └─ view.component → custom element + @wippy-fe/proxy ESM
+Seite (wippy/facade-HTML — lädt module.js / managed-layout.js)
+  └─ Web Host (übernimmt die Seite + Browser-History)
+       ├─ Chat-UI, Navigation, Seitenleiste
+       └─ Child-Micro-Frontends
+            ├─ view.page  → srcdoc-iframe + proxy.js
+            └─ view.component → Custom Element + @wippy-fe/proxy ESM
 ```
 
 ## Einstiegspunkte
 
-Das Web-Host-CDN liefert mehrere Entries aus demselben versionierten Verzeichnis. Wählen Sie den zur Integration passenden Entry. Jeder ist unter `<release-tag>/<entry>` verfügbar, etwa `/<release-tag>/module.js`.
+Das Web-Host-CDN liefert mehrere Einstiegspunkte aus demselben versionierten Verzeichnis. Welcher der richtige ist, hängt von Ihrer Integration ab:
 
-| Entry | Anwendungsfall |
-|-------|----------------|
-| `module.js` | Vollständige Anwendung im **Compat**-Modus — die Standard-Shell aus Navigationsseitenleiste, Seitenbereich und rechtem Chatpanel. Wird über `window.initWippyApp()` direkt in die Seite gemountet und übernimmt gesamte Seite sowie Browserverlauf. Diesen Entry liefert die aktuelle `wippy/facade` standardmäßig aus. |
-| `managed-layout.js` | Vollständige Anwendung im **Managed**-Modus — das deklarative Multi-Panel-Layout. Wird von der Facade bei `fe_mode = managed` ausgeliefert. Early Access; siehe [Multi-Panel-Layout](./multi-panel-layout.md). |
-| `iframe.html` | Vollständige Anwendung **innerhalb eines iframe** zur Isolation oder Einbettung in einen Teil der Seite. Für manuelle Einbettungen ohne Facade, bei denen Sie die Konfiguration per `SetConfig`-PostMessage-Handshake bereitstellen. Die Facade selbst lädt die obigen JS-Modul-Entries, nicht diesen. |
-| `chat-iframe.html` | Minimale Chatoberfläche ohne Seitenleiste oder Seiten. Für einen fokussierten eingebetteten Chat-Widget. |
-| `chat.js` | Headless-ESM-Modul mit Chat-Stores und WebSocket-Client. Für vollständig benutzerdefinierte Oberflächen. |
-| `ws.js` | Eigenständiger WebSocket-Dienst ohne Vue- oder Pinia-Abhängigkeit. Für Low-Level-Echtzeitintegrationen. |
+Jeder Einstieg wird vom CDN unter `<release-tag>/<entry>` ausgeliefert (z. B. `/<release-tag>/module.js`).
 
-Bei normalen Deployments mit `wippy/facade` referenzieren Sie diese Pfade nie direkt. Die Facade liest `fe_facade_url` aus ihrer Konfiguration, wählt den zu `fe_mode` passenden JS-Modul-Entry (`module.js` für Compat, `managed-layout.js` für Managed) und konstruiert automatisch die richtige URL.
+| Einstieg | Anwendungsfall |
+|-------|----------|
+| `module.js` | Vollständige App im **Compat**-Modus — die Standard-Shell aus Navigations-Seitenleiste + Page-Bereich + rechtem Chat-Panel. Wird über `window.initWippyApp()` direkt in die Seite gemountet; übernimmt die gesamte Seite und ihre Browser-History. Diesen Einstieg liefert das aktuelle `wippy/facade` standardmäßig aus. |
+| `managed-layout.js` | Vollständige App im **Managed**-Modus — das deklarative Multi-Panel-Layout. Von der Facade ausgeliefert, wenn `fe_mode = managed`. Early Access (siehe [Multi-Panel Layout](./multi-panel-layout.md)). |
+| `iframe.html` | Vollständige App **innerhalb eines iframes** für Isolation oder teilweise Seiteneinbettung. Verwenden Sie sie für manuelle Einbettungen ohne Facade, bei denen Sie die Konfiguration über einen `SetConfig`-PostMessage-Handshake liefern. Die Facade selbst lädt die obigen JS-Modul-Einstiege, nicht diesen. |
+| `chat-iframe.html` | Minimale Chat-Oberfläche ohne Seitenleiste oder Pages. Nützlich, um ein fokussiertes Chat-Widget einzubetten. |
+| `chat.js` | Headless-ESM-Modul, das Chat-Stores und WebSocket-Client bereitstellt. Für vollständig eigene UIs. |
+| `ws.js` | Eigenständiger WebSocket-Dienst ohne Vue- oder Pinia-Abhängigkeit. Für Low-Level-Echtzeit-Integrationen. |
+
+Bei Standard-Deployments auf `wippy/facade`-Basis referenzieren Sie diese Pfade nie direkt. Die Facade liest `fe_facade_url` aus ihrer Konfiguration, wählt den JS-Modul-Einstieg, der zu `fe_mode` passt (`module.js` für Compat, `managed-layout.js` für Managed), und baut die korrekte URL automatisch.
 
 ## CDN-Versionierung
 
-Der Web Host wird nach Git-Tag versioniert. Das kanonische Muster der Produktions-URL lautet:
+Der Web Host wird per Git-Tag versioniert. Das kanonische Produktions-URL-Muster lautet:
 
 ```
 https://web-host.wippy.ai/<release-tag>/
 ```
 
-`<release-tag>` ist der Git-Release-Tag des Web Hosts — entweder ein stabiles Release oder ein Preview-Deployment eines Feature-Branches. Das Staging-CDN liegt unter `https://web-host.staging.wippy.ai/<release-tag>/`.
+Dabei ist `<release-tag>` das Git-Release-Tag des Web Hosts — entweder ein stabiles Release oder ein Vorschau-Deploy eines Feature-Branches. Das Staging-CDN liegt unter `https://web-host.staging.wippy.ai/<release-tag>/`.
 
-Normalerweise wählt `wippy/facade` die Version über seinen Standardwert `fe_facade_url`, der auf einen passenden Web-Host-Build zeigt. Eine Aktualisierung von `wippy/facade` verschiebt das Deployment daher auf die entsprechende Web-Host-Version. Kindanwendungen, die Bibliotheken über die Import Map teilen, erhalten die von diesem Build bereitgestellten Versionen.
+Normalerweise setzen Sie die Version gar nicht. Das Modul `wippy/facade` wird mit einer Standard-`fe_facade_url` ausgeliefert, die auf einen passenden Web-Host-Build zeigt, sodass **die Web-Host-Version mit dem Facade-Modul wandert** — ein Update von `wippy/facade` ist der Weg zu einem neueren Web Host. Child-Apps, die Vendor-Bibliotheken über die Import Map teilen, erhalten genau die Versionen, die dieser Build liefert.
 
-Um eine bestimmte Web-Host-Version festzulegen — für einen bekanntermaßen funktionierenden Build oder einen Feature-Branch-/Early-Access-Tag — überschreiben Sie `fe_facade_url`:
+Um eine bestimmte Web-Host-Version zu pinnen — um auf einem als gut bekannten Build zu bleiben oder ein Feature-Branch-/Early-Access-Tag zu wählen —, überschreiben Sie den Parameter `fe_facade_url`:
 
 ```yaml
 - name: fe_facade_url
   value: https://web-host.wippy.ai/<release-tag>
 ```
 
-Dies fixiert das gesamte Deployment auf diesen Build. Die Syntax `-o` / `--override` zur Laufzeit beschreibt [CLI-Überschreibungen](../../guides/cli.md).
+Das pinnt das gesamte Deployment auf diesen Build. Siehe [CLI overrides](../../guides/cli.md) für die `-o`- / `--override`-Syntax, um ihn stattdessen zur Laufzeit zu setzen.
 
-## Technologie-Stack
+## Tech-Stack
 
-Der Web Host verwendet Vue 3 mit Composition API, PrimeVue + Tailwind CSS 3 für UI-Komponenten, Pinia für Zustandsverwaltung, Vue Router für Navigation und Axios für HTTP.
-
-### Externalisierung von Kindabhängigkeiten
-
-Rufen Sie während der Entwicklung `<fe_facade_url>/import-map.json` ab und nehmen Sie jeden Schlüssel aus dessen Objekt `imports` in die Rollup-Externals auf, auch wenn das aktuelle Artefakt ihn nicht importiert. Bündeln Sie eine importierte Abhängigkeit nur, wenn ihr genauer Specifier fehlt. Rufen Sie die Datei erneut ab, wenn sich der Web-Host-Tag ändert oder eine neue Abhängigkeit hinzukommt.
+Der Web Host ist mit Vue 3 (Composition API), PrimeVue + Tailwind CSS 3 für UI-Komponenten, Pinia für State Management, Vue Router für Navigation und Axios für HTTP gebaut. Holen Sie während der Entwicklung `<fe_facade_url>/import-map.json` und setzen Sie jeden Key aus dessen `imports`-Objekt in die Rollup-Externals, auch wenn das aktuelle Artefakt diesen Key nicht importiert. Bundeln Sie eine importierte Abhängigkeit nur, wenn ihr exakter Specifier fehlt. Holen Sie sie erneut, wenn sich das Web-Host-Tag ändert oder eine neue Abhängigkeit hinzukommt.
 
 ## Siehe auch
 
-- [Facade-Einstiegspunkt](./entry-point.md) — Auslieferung des Web Hosts durch die Facade und Konfigurationsfluss
-- [Bootstrap-Ablauf](./bootstrap.md) — Vorgänge im Web Host nach Empfang der Konfiguration
-- [Multi-Panel-Layout](./multi-panel-layout.md) — Managed-Layout-Modus für benutzerdefinierte Multi-Panel-Shells
-- [Pakete](./packages.md) — für Kindanwendungen verfügbare npm-Pakete `@wippy-fe/*`
-- [Facade-Modul](../../framework/facade.md) — Backend-Einrichtung für `wippy/facade`
-- [Render Engines](./render-engines.md) — srcdoc-iframe und Web Fragment
+- [Facade Entry Point](./entry-point.md) — wie die Facade den Web Host an Nutzer ausliefert und wie der Konfigurationsfluss aussieht
+- [Bootstrap Sequence](./bootstrap.md) — was im Web Host passiert, nachdem er die Konfiguration erhalten hat
+- [Multi-Panel Layout](./multi-panel-layout.md) — Managed-Layout-Modus für eigene Multi-Panel-Shells
+- [Packages](./packages.md) — die `@wippy-fe/*`-npm-Packages, die Entwicklern von Child-Apps zur Verfügung stehen
+- [Facade module](../../framework/facade.md) — Backend-Einrichtung für `wippy/facade`
+- [Render Engines](./render-engines.md) — die beiden Page-Render-Engines (srcdoc-iframe vs. Web Fragment)

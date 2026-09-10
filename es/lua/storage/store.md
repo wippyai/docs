@@ -1,6 +1,6 @@
 ---
-title: "Almacén clave-valor"
-description: "Almacena y recupera valores con expiración opcional y escrituras condicionales."
+title: "Almacen Clave-Valor"
+description: "Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal."
 ---
 
 # Almacén clave-valor
@@ -96,22 +96,15 @@ return user
 
 **Devuelve:** `any, error`
 
-El método devuelve `nil` y un error `errors.NOT_FOUND` cuando la clave no existe o ha expirado.
+Devuelve `nil` y un error `errors.NOT_FOUND` si la clave no existe o ha expirado.
 
 ## Comprobación de existencia
 
 Comprueba si una clave existe sin recuperar su valor:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -194,9 +187,7 @@ local errors = require("errors")
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
-    -- someone else holds it
-elseif err then
-    return nil, err
+    -- otro la tiene
 end
 
 -- compare-and-set: write only if the version still matches
@@ -204,9 +195,7 @@ local cur, read_err = cache:entry("config")
 if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
-    -- a concurrent writer changed it; re-read and retry
-elseif err2 then
-    return nil, err2
+    -- un escritor concurrente la cambió; volver a leer y reintentar
 end
 ```
 
@@ -273,28 +262,24 @@ La evaluación de políticas de seguridad se aplica a las operaciones del almac�
 
 | Acción | Recurso | Atributos | Descripción |
 |--------|---------|-----------|-------------|
-| `store.get` | ID de Store | - | Adquirir un recurso de almacén |
-| `store.info` | ID de Store | - | Inspeccionar las capacidades del almacén |
-| `store.key.get` | ID de Store | `key` | Leer el valor de una clave (también `entry`) |
-| `store.key.set` | ID de Store | `key` | Escribir el valor de una clave (también `put`) |
+| `store.get` | ID de Store | - | Adquirir un recurso de almacen |
+| `store.info` | ID de Store | - | Inspeccionar las capacidades del almacen |
+| `store.key.get` | ID de Store | `key` | Leer valor de una clave (tambien `entry`) |
+| `store.key.set` | ID de Store | `key` | Escribir valor de una clave (tambien `put`) |
 | `store.key.delete` | ID de Store | `key` | Eliminar una clave |
 | `store.key.has` | ID de Store | `key` | Verificar existencia de clave |
 | `store.key.list` | ID de Store | `prefix` | Listar entradas |
 
-Las denegaciones de permisos de `store.get`, `get`, `set`, `delete` y `has` generan un error Lua. Los métodos `info`, `entry`, `list` y `put`, en cambio, devuelven un error `errors.PERMISSION_DENIED`. Concede las acciones necesarias antes de llamar a código que no pueda tolerar una denegación generada.
-
 ## Errores
 
-Los fallos de entrada, búsqueda, backend y capacidades se devuelven como errores estructurados (usa `err:kind()`). Las denegaciones de permisos siguen el comportamiento dividido descrito arriba.
+`store.get()` y todos los métodos del manejador de store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) devuelven errores estructurados (usa `err:kind()`), salvo que una denegación de permiso en `store.get`, `get`, `set`, `has` y `delete` lanza un error de Lua en su lugar.
 
 | Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| ID de recurso vacío | `errors.INVALID` | no |
-| Registro de recursos no disponible | `errors.NOT_FOUND` | no |
-| Fallo al adquirir el recurso, incluido un recurso inexistente | `errors.INTERNAL` | no |
-| Almacén liberado | `errors.INVALID` | no |
-| Permiso denegado por `info`, `entry`, `list` o `put` | `errors.PERMISSION_DENIED` | no |
-| Permiso denegado por `store.get`, `get`, `set`, `delete` o `has` | error Lua generado | no aplicable |
+| ID de recurso vacio | `errors.INVALID` | no |
+| Recurso no encontrado | `errors.INTERNAL` | no |
+| Almacen liberado | `errors.INVALID` | no |
+| Permiso denegado (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` y la clave existe | `errors.ALREADY_EXISTS` | no |
 | Discrepancia de `if_version` | `errors.CONFLICT` | sí |
 | Escritura condicional en un almacén sin soporte | `errors.INVALID` | no |

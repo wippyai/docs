@@ -1,6 +1,6 @@
 ---
-title: "Bibliotecas estándar de Lua"
-description: "Funciones globales integradas y API de tablas, cadenas, matemáticas, corrutinas y errores estructurados disponibles para las entradas de Wippy."
+title: "Bibliotecas Estandar de Lua"
+description: "Bibliotecas principales de Lua disponibles automaticamente en todos los procesos de Wippy. No se necesita require()."
 ---
 
 # Bibliotecas estándar de Lua
@@ -77,11 +77,14 @@ _VERSION  -- Lua version string
 La biblioteca `table` proporciona operaciones de arrays in situ, ordenación, concatenación y desempaquetado:
 
 ```lua
-table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
-table.remove(t [,pos])         -- Remove and return element at pos (default: last)
-table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
-table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.insert(t, [pos,] value)  -- Insertar valor en pos (por defecto: final)
+table.remove(t [,pos])         -- Remover y devolver elemento en pos (por defecto: ultimo)
+table.concat(t [,sep [,i [,j]]]) -- Concatenar elementos de array con separador
+table.sort(t [,comp])          -- Ordenar in place, comp(a,b) devuelve true si a < b
+table.unpack(t [,i [,j]])      -- Desempacar elementos de tabla como multiples valores
+table.create(narr, nhash)      -- Preasignar tabla con capacidad de arreglo y hash
+table.freeze(t)                -- Hacer la tabla inmutable, devuelve t
+table.isfrozen(t)              -- true si la tabla es inmutable
 ```
 
 ```lua
@@ -121,18 +124,21 @@ string.lower(s)   -- Convert to lowercase
 ### Subcadenas y caracteres
 
 ```lua
-string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
-string.len(s)              -- String length (or use #s)
-string.byte(s [,i [,j]])   -- Numeric codes of characters
-string.char(...)           -- Create string from character codes
-string.rep(s, n)           -- Repeat string n times
-string.reverse(s)          -- Reverse string
+string.sub(s, i [,j])      -- Subcadena de i a j (indices negativos desde el final)
+string.len(s)              -- Longitud de string (o usar #s)
+string.byte(s [,i [,j]])   -- Codigos numericos de caracteres
+string.char(...)           -- Crear string desde codigos de caracter
+string.rep(s, n)           -- Repetir string n veces
+string.reverse(s)          -- Invertir string
 ```
 
 ### Formateo
 
 ```lua
-string.format(fmt, ...)    -- Printf-style formatting
+string.format(fmt, ...)    -- Formateo estilo printf
+string.pack(fmt, ...)      -- Empaquetar valores en una cadena binaria
+string.unpack(fmt, s [,pos]) -- Desempaquetar cadena binaria, devuelve los valores y la siguiente posicion
+string.packsize(fmt)       -- Tamano en bytes de un formato empaquetado
 ```
 
 Especificadores de formato: `%d` (entero), `%f` (flotante), `%s` (cadena), `%q` (entrecomillado), `%x` (hexadecimal), `%o` (octal), `%e` (científico), `%%` (% literal)
@@ -186,9 +192,9 @@ La biblioteca `math` proporciona constantes numéricas y operaciones matemática
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
-math.mininteger  -- Minimum integer
-math.maxinteger  -- Maximum integer
+math.huge     -- Mayor float representable
+math.mininteger  -- Entero minimo
+math.maxinteger  -- Entero maximo
 ```
 
 ### Operaciones básicas
@@ -209,28 +215,30 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x)           -- Natural log
-math.log10(x)         -- Base-10 log
+math.log(x)           -- Log natural
+math.log10(x)         -- Log base 10
+math.frexp(x)         -- Mantisa y exponente
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Trigonometría
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radianes
 math.asin(x)  math.acos(x)  math.atan(x)
-math.atan2(y, x)                            -- Arc tangent of y/x
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
-math.deg(r)   -- Radians to degrees
-math.rad(d)   -- Degrees to radians
+math.atan2(y, x)                            -- Arco tangente de y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hiperbolicas
+math.deg(r)   -- Radianes a grados
+math.rad(d)   -- Grados a radianes
 ```
 
 ### Números aleatorios
 
 ```lua
-math.random()         -- Random float [0,1)
-math.random(n)        -- Random integer [1,n]
-math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Compatibility no-op; does not seed math.random
+math.random()         -- Flotante aleatorio [0,1)
+math.random(n)        -- Entero aleatorio [1,n]
+math.random(m, n)     -- Entero aleatorio [m,n]
+math.randomseed(x)    -- Sin efecto; el generador se auto-siembra
 ```
 
 `math.random` no es determinista. No debe usarse para decisiones que tengan que reproducirse de forma idéntica en un workflow; `math.randomseed` no puede hacerlo determinista.
@@ -337,23 +345,21 @@ err:details()    -- Get details table or nil
 err:stack()      -- Get stack trace as string
 ```
 
-## Funciones restringidas
+## Caracteristicas Restringidas
 
-Las siguientes funciones estándar de Lua no están disponibles en los procesos de Wippy:
+Las siguientes caracteristicas estandar de Lua NO estan disponibles por seguridad:
 
-| Función | Alternativa |
+| Caracteristica | Alternativa |
 |----------------|-------------|
-| `load`, `loadstring`, `loadfile`, `dofile` | Usa el módulo [Evaluación dinámica](lua/dynamic/eval.md) |
-| `collectgarbage` | Recolección de basura automática |
-| `rawlen` | Usa el operador `#` |
-| `string.dump` | No compatible |
-| `io.*` | Usa [Sistema de archivos](lua/storage/filesystem.md) para archivos o [E/S de terminal](../system/io.md) para flujos de terminal |
-| `os.execute` | Usa [Ejecución de comandos](lua/dynamic/exec.md) |
-| `os.remove`, `os.rename` | Usa [Sistema de archivos](../storage/filesystem.md) |
-| `os.exit`, `os.tmpname` | Sin equivalente directo en la biblioteca estándar |
+| `load`, `loadstring`, `loadfile`, `dofile` | Usar módulo [Evaluacion Dinamica](lua/dynamic/eval.md) |
+| `collectgarbage` | GC automatico |
+| `rawlen` | Usar operador `#` |
+| Biblioteca de archivos estándar `io.*` | Usar módulo [Sistema de Archivos](lua/storage/filesystem.md); el módulo `io` en Wippy es [Terminal I/O](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Usar modulos [Ejecución de Comandos](lua/dynamic/exec.md), [Entorno](lua/system/env.md) |
+| `string.dump` | No disponible |
 | `debug.*` | No disponible |
 | `utf8.*` | No disponible |
-| `package.loadlib` | Las bibliotecas nativas no son compatibles |
+| `package.loadlib` | Bibliotecas nativas no soportadas |
 
 ## Véase también
 

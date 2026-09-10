@@ -125,7 +125,7 @@ pool:
   max_size: 16       # Upper scaling bound
 ```
 
-100 ワーカーというデフォルト値は、`type` を設定せず暗黙に選択されるプールだけに適用されます。`type: lazy` または `type: adaptive` を明示し、`max_size` を省略した場合、デフォルトの最大数は 16 ワーカーです。
+100ワーカーのデフォルトは、暗黙的に選択されたプール（`type`が設定されていない場合）にのみ適用されます。`max_size`なしで明示的に`type: lazy`または`type: adaptive`を設定した場合、デフォルトの最大値は16ワーカーです。
 
 ### ワーカークラスとコアアフィニティ
 
@@ -196,6 +196,8 @@ if err then return nil, err end
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -203,20 +205,26 @@ if err then return nil, err end
 
 ## 実行制限
 
-実行時間を制限し、リニアメモリを過剰に保持するウォームインスタンスをリサイクルします。
+`limits`ブロックは、関数の実行時間、ウォームワーカーのメモリ、および開けるソケット数を制限します:
 
 ```yaml
 limits:
   max_execution_ms: 5000
-  max_retained_memory_bytes: 67108864
-  retained_memory_check_interval: 16
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
 | フィールド | デフォルト | 説明 |
 |-------|---------|-------------|
-| `max_execution_ms` | `0` | 最大呼び出し時間（ミリ秒）。`0` でタイムアウトを無効化 |
-| `max_retained_memory_bytes` | 64 MiB | 呼び出し後、保持メモリがこの値を超えた場合にウォームワーカーインスタンスをリサイクル。明示的な `0` でリサイクルを無効化 |
-| `retained_memory_check_interval` | 以下を参照 | 保持メモリを確認する、完了済み呼び出しの間隔 |
+| `max_execution_ms` | 無制限 | 1回の呼び出しに対する実時間の予算。超過すると実行がキャンセルされエラーが返されます。 |
+| `max_retained_memory_bytes` | `67108864`（64 MiB） | 呼び出し後のリサイクルのトリガー。リニアメモリがこれを超えたウォームワーカーは、再利用されずに呼び出し後に退役します。明示的に`0`を指定すると保持メモリによるリサイクルが無効になります。 |
+| `retained_memory_check_interval` | 組み込みの制限では`16`、明示的な制限では毎回の呼び出し | 呼び出し後のメモリ検査の間隔（呼び出し回数）。 |
+| `max_open_sockets` | `16` | `socket`ホストにおけるインスタンスあたりの同時オープン接続数。 |
+| `socket_timeout_ms` | `30000` | `socket`のダイヤルおよび各送受信のデッドライン。 |
+
+負の値は起動時に拒否されます。
 
 実行時間の上限を超えると、呼び出しはキャンセルされ、エラーを返します。デフォルトの 64 MiB の保持メモリ上限は 16 回の呼び出しごとに確認されます。`max_retained_memory_bytes` を正の値に明示設定し、間隔を省略した場合、ランタイムは呼び出しごとに確認します。確認のコストを分散するには、正の間隔を設定してください。
 
@@ -304,7 +312,7 @@ if filter_err then return nil, filter_err end
 
 ### WASI クロックによる非同期スリープ
 
-`wasi:clocks`、`wasi:io`、および独立した `wasi:poll` プロファイルをインポートする WASM コンポーネントは、クロックとポーリングを使用できます。非同期 yield メカニズムは Wippy ディスパッチャーと統合されます。
+`wasi:clocks`、`wasi:io`、`wasi:poll`をインポートするWASMコンポーネントはクロックとポーリングを使用できます。非同期yieldメカニズムはWippyディスパッチャと統合されています:
 
 ```yaml
   - name: sleep_ms

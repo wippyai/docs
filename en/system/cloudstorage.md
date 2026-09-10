@@ -1,12 +1,12 @@
 ---
 title: "Cloud Storage"
-description: "Configure AWS credentials and S3-compatible object storage."
+description: "S3-compatible object storage with presigned URLs, multipart uploads and ranged reads."
 ---
 
 # Cloud Storage
 <secondary-label ref="external"/>
 
-Cloud storage entries configure AWS credentials and S3-compatible buckets used by the Lua storage API. This page is a configuration reference; the snippets assume the named bucket and credentials or SDK credential chain already exist.
+S3-compatible object storage with presigned URLs, multipart uploads and ranged reads.
 
 ## Entry Kinds
 
@@ -17,8 +17,6 @@ Cloud storage entries configure AWS credentials and S3-compatible buckets used b
 
 ## AWS Configuration
 
-Static credentials registered through the environment system:
-
 ```yaml
 - name: aws_config
   kind: config.aws
@@ -27,26 +25,18 @@ Static credentials registered through the environment system:
   secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
-AWS SDK default credential chain (for example, IAM roles or instance profiles):
-
-```yaml
-- name: aws_config
-  kind: config.aws
-  region: ${env:AWS_REGION}
-```
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `region` | string | Yes | AWS region. Supply via `${env:NAME}` when it differs per deployment |
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credential fields resolve from the [environment registry](system/env.md) at decode time. A modern `${env:NAME}` placeholder without a default fails decoding when its variable is missing, so omit `access_key_id` and `secret_access_key` to use the AWS SDK default credential chain. Static credentials apply only when both fields resolve to non-empty values.
+Credentials resolve from the [environment registry](system/env.md) at decode time. Both `access_key_id` and `secret_access_key` must resolve to non-empty values for static credentials to apply; otherwise the AWS SDK default credential chain is used (IAM roles, instance profiles, etc.).
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
 <note>
-Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that also looks up the environment registry. Unlike a modern placeholder without a default, an unregistered or empty legacy lookup preserves the inline or zero value. The legacy form is <b>deprecated</b> — migrate it deliberately, adding placeholder defaults where equivalent fallback behavior is required.
+Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder shown above.
 </note>
 
 <note>
@@ -64,13 +54,13 @@ A single <code>config.aws</code> entry can be reused across AWS-backed services.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `bucket` | string | Yes | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
+| `bucket` | string | Conditional | S3 bucket name. Supply via `${env:NAME}` when it differs per deployment |
 | `config` | reference | Yes | AWS config entry reference |
 | `endpoint` | string | No | Custom endpoint for S3-compatible services (inline or `${env:NAME}`) |
 
 ### S3-Compatible Services
 
-Set a custom endpoint for MinIO or another S3-compatible service:
+For MinIO or other S3-compatible services, set a custom endpoint:
 
 ```yaml
 - name: local_storage
@@ -82,9 +72,32 @@ Set a custom endpoint for MinIO or another S3-compatible service:
 
 When an endpoint is provided, path-style access is enabled automatically.
 
+## Multipart Uploads
+
+Presigned multipart uploads are a provider capability, not a runtime feature. The `cloudstorage.s3` kind implements them; a provider that does not support the multipart protocol fails `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` and `abort_multipart_upload` with `errors.UNAVAILABLE`.
+
+Parts of an upload that is never completed or aborted stay stored and billed. Applications abort on every failure path, but a crashed client leaves nothing to run that abort. Configure an `AbortIncompleteMultipartUpload` lifecycle rule on the bucket as the backstop:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Ranged Reads
+
+`open_reader` reads an object through ranged GETs and pins the object's ETag with `If-Match` on every read. A provider that does not return an ETag on the initial stat fails the call with `errors.UNAVAILABLE`, and a provider that ignores `If-Match` loses the overwrite protection - the read then cannot detect that it mixed two object generations.
+
 ## Lua API
 
-See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs).
+See [Cloud Storage Module](lua/storage/cloud.md) for operations (list, upload, download, delete, presigned URLs, multipart uploads, ranged readers).
 
 ## See Also
 

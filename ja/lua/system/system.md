@@ -1,6 +1,6 @@
 ---
 title: "システム"
-description: "ランタイム、プロセス、ホスト、スーパーバイザー、クラスターの状態を検査し、選択されたランタイム制御を実行します。"
+description: "メモリ使用量、ガベージコレクション統計、CPU詳細、プロセスメタデータを含むランタイムシステム情報のクエリ。"
 ---
 
 # システム
@@ -50,33 +50,39 @@ local mods, err = system.modules()
 | `description` | string | モジュール説明 |
 | `class` | string[] | モジュール分類タグ |
 
-## デプロイメントソースの読み込み
+## デプロイメントソース
 
-`system.source.load()` は、現在のデプロイメントソース世代から正規化されたレジストリベースラインを再構築します。動的なインストール、更新、アンインストール、置換、ロールバックの間も、オーナーとエントリは同じ世代から取得されます。
+`system.source`サブテーブルは、正規化されたデプロイメントのベースラインを読み取ります。これは、レジストリの履歴が適用される前の、アプリケーションが組み立てられたソース群から生成されたエントリ集合です。
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **戻り値:** `table, error`
 
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `owners` | string[] | 安定したソースオーナー識別子。アプリケーションのオーナーは `application` |
-| `entries` | table[] | 正規化されたソースベースラインからデコードされたレジストリエントリ |
+| `owners` | string[] | ベースラインのエントリに対して権限を持つソースオーナー |
+| `entries` | table[] | `id`、`kind`、`meta`、`data`を持つベースラインのエントリ |
 
-パック済みモジュールの正規化入力は所有権を主張せず、ファイルシステムパスも公開されません。読み込みには `sources` に対する `system.read` が必要です。ソースレジストリ、読み込み、変換の失敗は再試行不可の `errors.INTERNAL` を返し、権限拒否は `errors.PERMISSION_DENIED` を返します。
+`owners`はアプリケーションオーナーを先頭に、残りのオーナーをアルファベット順に並べてソートされます。アプリケーションオーナーは文字列`"application"`です。
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+ロードは1つの安定したソース世代から取得されるため、エントリとオーナーは常に同じベースラインを表します。各ソースの背後にあるファイルシステムのパスはランタイム内部のものであり、公開されません。ロードに失敗した場合は、背後のパスを漏らさず汎用の内部エラーを報告します。
+
+**権限:** `sources`に対する`system.read`
 
 ## メモリ統計
 
@@ -337,7 +343,7 @@ local states, err = system.supervisor.states()
 
 ## クラスタプリミティブ
 
-`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効でない](guides/cluster.md)場合、`system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告します。`system.lock` はグローバルレジストリを必要とするため利用できません。
+`system.node`、`system.cluster`、`system.raft`、`system.lock` サブテーブルはクラスタリング層を公開します。[クラスタリングが有効](guides/cluster.md)な場合に最も役立ちます。スタンドアロンノードでは予測可能な形で機能が制限されます — `system.raft.*` は "raft not available" を報告し、`system.cluster` はローカルノードのみを報告し、`system.lock` はクラスタリングが提供する Raft バックエンドの KV ストアを必要とします。
 
 すべての読み取り呼び出しはローカルかつ安価です: このノードのコミット済み状態のビューを報告し、ネットワークをブロックしません。
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### 分散ロック
 
-`system.lock` はクラスタ全体の排他制御を提供します。ロックは呼び出しプロセスが所有するグローバルに一意な名前です。Strong 名前スコープ上に構築されているため、クラスタ全体で最大1つの保持者しか存在できません。保持者プロセスが終了またはそのノードが離脱するとロックは自動解放されます — スタックしたロックのクリーンアップは不要です。
+`system.lock` はクラスタ全体の排他制御を提供します。ロックは呼び出しプロセスが所有するグローバルに一意な名前です。Raft レプリケートされたシステム KV ストア上に構築されているため、クラスタ全体で最大1つの保持者しか存在できません。保持者プロセスが終了またはそのノードが離脱するとロックは自動解放されます — スタックしたロックのクリーンアップは不要です。
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ return released
 | `system.read` | `cwd` | 作業ディレクトリを読み取り |
 | `system.read` | `hosts` | ホスト / ホストプロセスを一覧 |
 | `system.read` | `modules` | ロード済みモジュールを一覧 |
-| `system.read` | `sources` | 正規化されたデプロイメントソースを読み込み |
+| `system.read` | `sources` | デプロイメントソースのベースラインをロード |
 | `system.read` | `supervisor` | スーパーバイザー状態を読み取り |
 | `system.read` | `node` | このノードのアイデンティティを読み取り |
 | `system.read` | `cluster` | クラスタメンバーシップとリーダーを読み取り |
@@ -477,16 +483,16 @@ return released
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 権限拒否（デプロイメントソースの読み込み） | `errors.PERMISSION_DENIED` | いいえ |
-| 権限拒否（ソース以外の操作、分散ロックを除く） | `errors.INVALID` | いいえ |
-| 権限拒否（分散ロックの取得/解放） | `errors.PERMISSION_DENIED` | いいえ |
-| 無効な引数 | `errors.INVALID` | いいえ |
-| 必須引数がない | `errors.INVALID` | いいえ |
-| コードマネージャが利用不可 | `errors.INTERNAL` | いいえ |
-| サービス情報が利用不可 | `errors.INTERNAL` | いいえ |
-| OSエラー (hostname, cwd) | `errors.INTERNAL` | いいえ |
-| このノードで Raft が実行されていない | `errors.INTERNAL` | いいえ |
-| メンバーシップが利用不可 | `errors.INTERNAL` | いいえ |
-| ロックが既に保持中 | `errors.ALREADY_EXISTS` | いいえ |
+| 権限拒否（`system.source.load`、`system.lock.*`） | `errors.PERMISSION_DENIED` | no |
+| 権限拒否（その他すべての呼び出し） | `errors.INVALID` | no |
+| 無効な引数 | `errors.INVALID` | no |
+| 必須引数がない | `errors.INVALID` | no |
+| コードマネージャが利用不可 | `errors.INTERNAL` | no |
+| サービス情報が利用不可 | `errors.INTERNAL` | no |
+| OSエラー (hostname, cwd) | `errors.INTERNAL` | no |
+| このノードで Raft が実行されていない | `errors.INTERNAL` | no |
+| メンバーシップが利用不可 | `errors.INTERNAL` | no |
+| ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
+| ロックサービスが利用不可（このノードに Raft がない） | `errors.INTERNAL` | no |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

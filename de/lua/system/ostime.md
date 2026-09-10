@@ -1,6 +1,6 @@
 ---
 title: "OS-Zeit"
-description: "Runtime-Zeit lesen, Datumswerte formatieren und Zeitdifferenzen über die globale Lua-Tabelle os berechnen."
+description: "Standard-Lua-os-Zeitfunktionen. Liefert echte Wanduhrzeit für Zeitstempel, Datumsformatierung und Zeitberechnungen."
 ---
 
 # OS-Zeit

@@ -35,6 +35,7 @@ Temporal 액티비티는 비결정론적 작업을 실행합니다. `function.lu
 |-------|----------|-------------|
 | `worker` | 예 | `temporal.worker` 엔트리 참조 |
 | `local` | 아니오 | 로컬 액티비티로 실행 (기본값: false) |
+| `name` | 아니오 | 커스텀 액티비티 타입 이름 (기본값: 엔트리 ID) |
 
 ## 구현
 
@@ -169,10 +170,10 @@ end
 | `activity.wait_for_cancellation` | boolean | false | 액티비티 취소 대기 |
 | `activity.disable_eager_execution` | boolean | false | 즉시 실행 비활성화 |
 | `activity.retry_policy` | table | - | 재시도 설정 (아래 참조) |
-| `activity.versioning_intent` | string or number | - | 액티비티에 적용할 워커 버전 관리 의도 |
-| `activity.summary` | string | - | Temporal 액티비티 메타데이터에 표시되는 요약 |
-| `activity.priority` | table | - | 우선순위 키와 선택적 공정성 설정 |
-| `activity.name` | string | - | 액티비티 타입 오버라이드 |
+| `activity.name` | string | - | 레지스트리 ID와 다를 때 호출할 액티비티 타입 이름 |
+| `activity.summary` | string | - | Temporal UI에 표시되는 사람이 읽을 수 있는 요약 |
+| `activity.priority` | table | - | 태스크 우선순위: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (빌드 ID 상속) 또는 `default` (할당 규칙 사용) |
 
 duration 값은 문자열 (`"5s"`, `"10m"`, `"1h"`) 또는 밀리초 숫자를 허용합니다.
 
@@ -247,7 +248,7 @@ local executor = funcs.new():with_options({
         local: true
 ```
 
-현재 `local: true`는 파싱되지만 일반 액티비티와 똑같이 동작합니다. 표준 액티비티 경로를 통해 등록되고 실행됩니다. 아직 별도의 로컬 액티비티 실행 기능이 없으므로 지연 시간, 태스크 큐 동작, heartbeat 방식은 달라지지 않습니다.
+현재 `local: true`는 파싱되지만 일반 액티비티와 동일하게 동작합니다: 표준 액티비티 경로를 통해 등록되고 실행됩니다. 아직 별도의 로컬 액티비티 실행 경로가 없으므로 지연 시간, 태스크 큐 동작, heartbeat에 영향을 주지 않습니다.
 
 ## 액티비티 명명
 
@@ -300,6 +301,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### 보안 컨텍스트
+
+보안 컨텍스트 하에서 스케줄된 액티비티는 액티비티 ID를 대상(audience)으로 하는 서명된 `wippy-security` 헤더를 받습니다. 워커는 서명과 대상을 검증한 뒤, 액티비티 함수가 실행되기 전에 전파된 `ctx` 값과 보안 페이로드를 새 프레임에 병합합니다.
+
+이 병합은 전부 아니면 전무이며 **실패하면 액티비티에 치명적입니다**: 액티비티는 코드가 실행되기 전에 에러를 반환하므로, 부분적인 컨텍스트나 검증되지 않은 액터로는 절대 실행되지 않습니다. 병합은 서명이나 대상이 검증되지 않을 때, 엔벨로프가 일관되지 않을 때(스코프 없는 액터, 또는 액터 없는 정책), 또는 엔벨로프에 지명된 정책이 로컬 보안 레지스트리에서 해석되지 않을 때 실패합니다 — 마지막이 운영상 흔한 원인입니다: 워커의 배포에 호출자가 가진 정책 엔트리가 없는 경우입니다.
+
+워커는 자신이 참조하는 `temporal.client` 엔트리에서 서명 및 검증 키를 가져옵니다. [보안 컨텍스트 전파](temporal/overview.md#security-context-propagation)를 참조하세요.
+
 ## 에러 처리
 
 표준 Lua 패턴으로 에러를 반환합니다:
@@ -329,8 +338,8 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response.status_code >= 400 then
-        return nil, payment_error(response.status_code)
+    if response:status() >= 400 then
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response.body)
@@ -358,6 +367,10 @@ end
 | 런타임 크래시 | `Internal` | false | 액티비티의 처리되지 않은 Lua 에러 |
 | 누락된 액티비티 | `NotFound` | false | 워커에 등록되지 않은 액티비티 |
 | 타임아웃 | `Timeout` | false | 설정된 타임아웃을 초과한 액티비티 |
+| 보안 검증 | `Internal` | true | 전파된 보안 헤더의 서명, 대상 또는 엔벨로프 검사 실패 |
+| 보안 정책 누락 | `Internal` | true | 보안 엔벨로프에 지명된 정책이 이 워커에서 해석되지 않음 |
+
+두 보안 실패 모두 액티비티 함수가 실행되기 전 컨텍스트 병합 중에 발생합니다. 재시도 불가로 표시되지 않으므로 액티비티 재시도 정책이 계속 재시도하지만, 잘못된 서명이나 누락된 정책 엔트리는 시도마다 달라지지 않으므로 재시도는 도움이 되지 않습니다. 빠르게 실패시키려는 액티비티에는 `maximum_attempts`에 상한을 두고, 액티비티 로그 출력 없이 반복되는 `Internal` 실패는 액티비티 자체의 결함이 아니라 컨텍스트 병합 실패로 읽으세요.
 
 ```lua
 local executor = funcs.new():with_options({

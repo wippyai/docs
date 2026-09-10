@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "Inspecione estado do runtime, processo, host, supervisor e cluster e controle configurações selecionadas do runtime."
+description: "Consulte informações do sistema de runtime incluindo uso de memória, estatísticas de garbage collection, detalhes de CPU e metadados de processo."
 ---
 
 # System
@@ -50,33 +50,39 @@ Cada tabela de módulo contém:
 | `description` | string | Descrição do módulo |
 | `class` | string[] | Tags de classificação do módulo |
 
-## Carregando Fontes de Deployment
+## Fontes de Deployment
 
-`system.source.load()` reconstrói o baseline normalizado do registro a partir da geração atual das fontes de deployment. Proprietários e entradas vêm da mesma geração, inclusive durante instalação dinâmica, atualização, desinstalação, substituição e rollback.
+A sub-tabela `system.source` lê a baseline normalizada de deployment: o conjunto de entradas produzido pelas fontes a partir das quais a aplicação foi montada, antes de qualquer histórico do registry ser aplicado.
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **Retorna:** `table, error`
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `owners` | string[] | Identificadores estáveis dos proprietários das fontes; o proprietário da aplicação é `application` |
-| `entries` | table[] | Entradas do registro decodificadas a partir do baseline normalizado das fontes |
+| `owners` | string[] | Owners de fonte autoritativos sobre as entradas da baseline |
+| `entries` | table[] | Entradas da baseline com `id`, `kind`, `meta`, `data` |
 
-Entradas de normalização de módulos empacotados não reivindicam propriedade, e caminhos do filesystem não são expostos. O carregamento exige `system.read` em `sources`. Falhas de registro, carregamento ou conversão das fontes retornam `errors.INTERNAL` não retentável; negação de permissão retorna `errors.PERMISSION_DENIED`.
+`owners` é ordenado com o owner da aplicação primeiro, depois os demais owners em ordem alfabética. O owner da aplicação é a string `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+A carga é feita a partir de uma geração de fonte estável, então entradas e owners sempre descrevem a mesma baseline. Os caminhos de sistema de arquivos por trás de cada fonte são privados ao runtime e não são expostos; uma carga que falha reporta um erro interno genérico em vez de vazar o caminho subjacente.
+
+**Permissão:** `system.read` em `sources`
 
 ## Estatísticas de Memória
 
@@ -337,7 +343,7 @@ Cada tabela de estado tem o mesmo formato que `system.supervisor.state()`.
 
 ## Primitivos de Cluster
 
-As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o registro global que o clustering fornece.
+As sub-tabelas `system.node`, `system.cluster`, `system.raft` e `system.lock` expõem a camada de clustering. São mais úteis quando o [clustering está habilitado](guides/cluster.md); em um nó standalone elas degradam de forma previsível — `system.raft.*` reporta "raft not available", `system.cluster` reporta apenas o nó local e `system.lock` requer o store KV respaldado por Raft que o clustering fornece.
 
 Todas as chamadas de leitura são locais e baratas: reportam a visão deste nó do estado confirmado, sem bloquear na rede.
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### Locks distribuídos
 
-`system.lock` fornece exclusão mútua em todo o cluster. Um lock é um nome globalmente único de propriedade do processo chamador. É construído sobre o escopo Strong de nomes, portanto no máximo um detentor pode existir em todo o cluster, e o lock é liberado automaticamente quando o processo detentor sai ou seu nó parte — não há lock preso para limpar.
+`system.lock` fornece exclusão mútua em todo o cluster. Um lock é um nome globalmente único de propriedade do processo chamador. É construído sobre o store KV do sistema replicado por Raft, portanto no máximo um detentor pode existir em todo o cluster, e o lock é liberado automaticamente quando o processo detentor sai ou seu nó parte — não há lock preso para limpar.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | `system.read` | `cwd` | Ler diretório de trabalho |
 | `system.read` | `hosts` | Listar hosts / processos de host |
 | `system.read` | `modules` | Listar módulos carregados |
-| `system.read` | `sources` | Carregar fontes de deployment normalizadas |
+| `system.read` | `sources` | Carregar a baseline de fontes de deployment |
 | `system.read` | `supervisor` | Ler estado do supervisor |
 | `system.read` | `node` | Ler identidade deste nó |
 | `system.read` | `cluster` | Ler associação e leader do cluster |
@@ -477,9 +483,8 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Permissão negada (carregamento de fontes de deployment) | `errors.PERMISSION_DENIED` | não |
-| Permissão negada (operações sem fontes, exceto locks distribuídos) | `errors.INVALID` | não |
-| Permissão negada (acquire/release de lock distribuído) | `errors.PERMISSION_DENIED` | não |
+| Permissão negada (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | não |
+| Permissão negada (todas as demais chamadas) | `errors.INVALID` | não |
 | Argumento inválido | `errors.INVALID` | não |
 | Argumento obrigatório ausente | `errors.INVALID` | não |
 | Code manager indisponível | `errors.INTERNAL` | não |
@@ -488,5 +493,6 @@ Operações de sistema estão sujeitas a avaliação de política de segurança.
 | Raft não está em execução neste nó | `errors.INTERNAL` | não |
 | Associação indisponível | `errors.INTERNAL` | não |
 | Lock já mantido | `errors.ALREADY_EXISTS` | não |
+| Serviço de lock indisponível (sem Raft neste nó) | `errors.INTERNAL` | não |
 
 Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` セクションはプロファイル内でのリスト操作をサポートします — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — これにより、プロファイルはベースのリストを置き換えるのではなく調整できます。
 - `${name}` 参照はマージ後の `vars:` セクションから補間されます。プロファイルの vars 内で OS 環境変数を参照することはできません。ベース設定で `${env:NAME}` を使用してください。これはファイルのロード時に解決されます。
 
-`wippy run`、`test`、`pack` は `--profile` を受け付けます。`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます。[プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
+`wippy run`、`test`、`pack` は `--profile` を受け付けます。`run list`、`install`、`update`、`lint`、`registry` もワークスペースプロファイル用にこれを受け付けます（`--set` と併せて）。アプリケーションはプロファイルをパック内に同梱できます — [プロファイルの公開](guides/publishing.md#publishing-profiles)を参照してください。
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------------|-----|------------|------|
 | `propagate_downstream` | bool | true | ログをコンソール/ファイル出力に送信 |
 | `stream_to_events` | bool | false | プログラムアクセス用にログをイベントバスに公開 |
-| `min_level` | int | -1 | 最小レベル: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0（`-v` 指定時は `-1`）| 最小レベル: -1=debug, 0=info, 1=warn, 2=error。CLI はファイル読み込み後に自身のフラグからこのキーを書き込むため、ファイルの値は無視されます。変更するには `--set logmanager.min_level=<n>` を使用してください |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 参照: [ロガーモジュール](lua/system/logger.md)
@@ -123,7 +122,7 @@ profiler:
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 参照: [セキュリティシステム](system/security.md), [セキュリティモジュール](lua/security/security.md)
@@ -136,9 +135,15 @@ security:
 |------------|-----|------------|------|
 | `enable_history` | bool | true | エントリバージョンを追跡 |
 | `history_type` | string | memory | ストレージ: `memory`、`sqlite`、`postgres`、`nil` |
-| `history_path` | string | .wippy/registry.db | SQLite ファイルパス（`history_type: sqlite` の場合に使用） |
-| `history_dsn` | string | | Postgres DSN（`history_type: postgres` の場合に使用） |
-| `history_schema` | string | | Postgres スキーマ名（`history_type: postgres` の場合に使用） |
+| `history_path` | string | .wippy/registry.db | SQLiteファイルパス（`history_type: sqlite` の場合に使用）|
+| `history_dsn` | string | | Postgres DSN（`history_type: postgres` の場合に使用）|
+| `history_schema` | string | | Postgres スキーマ名（`history_type: postgres` の場合に使用）|
+| `event_wait_timeout` | duration | 30s | レジストリ適用中のリスナー確認応答を待つ、操作ごとの待機時間 |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | コンポーネントリスナーにディスパッチせず内部で処理されるエントリ種別 |
+| `dependency_resolve_timeout` | duration | 0（なし）| 依存関係解決の上限 |
+| `dependency_download_timeout` | duration | 0（なし）| 各モジュールのダウンロードおよびダウンロードURL要求の上限 |
+| `dependency_lock_path` | string | 検出された `wippy.lock` | 依存関係ハンドラが読み書きするロックファイル |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | ダウンロードされたモジュールパックを格納するディレクトリ |
 
 ```yaml
 registry:
@@ -155,13 +160,41 @@ registry:
 
 参照: [レジストリコンセプト](concepts/registry.md), [レジストリモジュール](lua/core/registry.md)
 
+## アーティファクト
+
+実体化された[ビルド時アーティファクト](guides/artifacts.md)の出力ルート。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `materialization_root` | string | 依存関係の vendor ディレクトリの親 | 各アーティファクト形式が自身のサブツリーを書き込む、アプリケーション所有のルート |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+参照: [ビルド時アーティファクト](guides/artifacts.md#where-output-lands)
+
+## ワークスペース
+
+`org/module` をキーとするローカルモジュールの置き換え。値はディレクトリで、相対パスは最初の `--config` ファイルのディレクトリを基準に解決されます。`null` は、以前の設定レイヤーやプロファイルから継承した置き換えを無効化します。
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+置き換えが `wippy.lock` に書き込まれることはありません。[置き換えによるローカル開発](guides/dependency-management.md#local-development-with-replacements)を参照してください。
+
 ## リレー
 
 ノード間のプロセス間メッセージルーティング。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `node_name` | string | インスタンスごとに導出された ID | このリレーノードの識別子（デフォルトは machine-id/hostname + 作業ディレクトリの UUIDv5。`WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` で上書き可能） |
+| `node_name` | string | インスタンスごとに導出される ID | このリレーノードの識別子（デフォルト: machine-id/ホスト名 + 作業ディレクトリの UUIDv5。`WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` で上書き可能）|
 
 ```yaml
 relay:
@@ -198,19 +231,23 @@ Lua VMキャッシュと式評価。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `proto_cache_size` | int | 60000 | コンパイル済みプロトタイプキャッシュ |
-| `main_cache_size` | int | 10000 | メインチャンクキャッシュ |
-| `cache.enabled` | bool | false | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化 |
-| `cache.dir` | string | `.wippy/cache/lua` | キャッシュディレクトリのパス（設定または作業ディレクトリからの相対パス） |
-| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off` |
-| `cache.compile.enabled` | bool | true | コンパイル済みバイトコードを永続化（`cache.enabled` の場合） |
-| `cache.typecheck.enabled` | bool | true | 型チェック結果を永続化（`cache.enabled` の場合） |
+| `cache.enabled` | bool | `type_system.enabled` | コンパイル済みバイトコード/型チェックキャッシュをディスクに永続化。明示的に設定しない限り `type_system.enabled` に従う |
+| `cache.dir` | string | `.wippy/cache/lua` | キャッシュディレクトリパス（設定/作業ディレクトリからの相対）|
+| `cache.mode` | string | `readwrite` | キャッシュモード: `readwrite`（デフォルト）、`readonly`、`off`。未知の値は `readwrite` にフォールバックする |
+| `cache.compile.enabled` | bool | true | コンパイル済みバイトコードを永続化（`cache.enabled` の場合）|
+| `cache.typecheck.enabled` | bool | true | 型チェック結果を永続化（`cache.enabled` の場合）|
+| `cache.max_bytes` | int | 1073741824 | ディスク上のキャッシュサイズ上限（バイト）|
+| `cache.max_entries` | int | 20000 | キャッシュエントリの最大数 |
+| `cache.prune_interval` | int | 256 | キャッシュの整理パス間の書き込み回数 |
 | `type_system.enabled` | bool | false | 静的型チェックを有効化 |
 | `type_system.strict` | bool | false | 型警告をエラーとして扱う |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s）| エントリ変更後、コードの無効化が確認応答されるまでの待機時間 |
+| `eval.max_steps` | int | 10000 | `eval` 実行のデフォルトのスケジューラステップ予算。負の値は拒否される |
+| `eval.cache_size` | int | 256 | 評価されたソースのコンパイル済みプログラムキャッシュのエントリ数 |
+| `eval.cache_ttl` | duration | 0（期限なし）| キャッシュされたコンパイル済みプログラムの寿命 |
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -219,6 +256,22 @@ lua:
 ```
 
 参照: [Lua概要](lua/overview.md)
+
+## スケジューラ
+
+WASM ランタイム向けのコア分割。有効にすると `reserved_cores` 個の CPU が WASM 実行のために確保され、残りがアクターのスケジューラに割り当てられます。不正な分割（たとえば利用可能な数より多いコアの予約）はログに記録され、無視されます。
+
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|------------|------|
+| `wasm_isolation.enabled` | bool | false | WASM とアクターの作業でコアを分割 |
+| `wasm_isolation.reserved_cores` | int | 1 | WASM 実行のために確保するコア数 |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## ファインダー
 
@@ -269,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-標準 OTEL 環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）は一致するフィールドを上書きします。
+標準 OTEL 環境変数（`OTEL_SDK_DISABLED`、`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_EXPORTER_OTLP_PROTOCOL`、`OTEL_EXPORTER_OTLP_INSECURE`、`OTEL_SERVICE_NAME`、`OTEL_SERVICE_VERSION`、`OTEL_TRACES_SAMPLER`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`）は一致するフィールドを上書きします。
 
 参照: [可観測性ガイド](guides/observability.md)
 
@@ -293,7 +346,7 @@ shutdown:
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `buffer.size` | int | 10000 | メトリクスバッファ容量 |
-| `interceptor.enabled` | bool | false | 関数呼び出しを自動追跡 |
+| `interceptor.enabled` | bool | true | 関数呼び出しを自動追跡 |
 
 ```yaml
 metrics:
@@ -312,7 +365,8 @@ Prometheusメトリクスエンドポイント。
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `enabled` | bool | false | メトリクスサーバーを起動 |
-| `address` | string | | リッスンアドレス。`enabled: true` の場合は明示的な設定が必要で、設定しなければメトリクスサーバーは起動しない |
+| `address` | string | | リッスンアドレス。`enabled: true` の場合は明示的に設定する必要があります。設定しないとメトリクスサーバーは起動しません |
+| `max_cardinality` | int | 1024 | メトリクスごとに保持される個別のラベルセット数（LRU）。`0` 以下はデフォルトを使用 |
 
 ```yaml
 prometheus:
@@ -320,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Prometheusスクレイピング用の`/metrics`エンドポイントを公開します。
+Prometheusスクレイピング用の`/metrics`エンドポイントに加え、`/livez`を公開します。
 
 参照: [可観測性ガイド](guides/observability.md)
 
@@ -335,6 +389,8 @@ Prometheusスクレイピング用の`/metrics`エンドポイントを公開し
 | `enabled` | bool | false | クラスタリングを有効化 |
 | `name` | string | hostname | ノード名。クラスタ全体で一意でなければならない |
 | `failure_domain` | string | | ゾーン/ラックラベル。ゴシップで通知され、投票ノードがドメインをまたぐように分散される |
+| `kv_crdt_tombstone_retention` | duration | 0 | `store.kv.crdt` の削除トゥームストーンが回収されるまでの経過時間。`0` は経過時間による GC を無効化 |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | 現在の alive メンバーシップをトゥームストーンの確認応答集合として使用 |
 
 ### メンバーシップ（ゴシップ）
 
@@ -356,6 +412,8 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 | `membership.tcp_timeout` | duration | 1s | TCP フォールバックプローブのタイムアウト |
 | `membership.suspicion_mult` | int | 3 | サスピションタイムアウトの乗数 |
 
+ゴシップシークレットは必須です。`membership.secret_key` または `membership.secret_file` を設定してください（両方を指定した場合はファイルが優先されます）。どちらも指定しないと、クラスタコンポーネントは起動に失敗します。値は base64 エンコードされます。
+
 4つのプローブキーは、未設定の場合 memberlist のローカルネットワーク向けデフォルトを継承します。レイテンシの高いリンクでは値を引き上げてください（例: `probe_interval: 2s`、`probe_timeout: 500ms`、`suspicion_mult: 5`）。
 
 ### ノード間（トランスポート）
@@ -369,13 +427,13 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 | `internode.auto_port` | bool | true | 起動時に実際のポートを探索して固定し、ゴシップで通知する |
 | `internode.advertise_addr` | string | | アップグレード済みピア向けに公開される追加のリレーエンドポイント（IP または DNS 名）— NAT やロードバランサ経由の到達性のため |
 | `internode.advertise_port` | int | 0 | `advertise_addr` 用のポート（0 = バインドポート。`advertise_addr` が必要） |
-| `internode.identity_key` | string | | Base64 エンコードされた Ed25519 秘密シードまたは鍵。`identity_key_file` を設定しない場合は必須 |
-| `internode.identity_key_file` | string | | Base64 エンコードされた Ed25519 秘密シードまたは鍵を含むファイル。`identity_key` を設定しない場合は必須 |
-| `internode.trusted_peer_keys` | map | | ノード名から Base64 公開鍵へのマップ。ローカルノードと信頼するすべてのピアを含める必要がある |
+| `internode.identity_key` | string | | このノードを識別する base64 エンコードされた ed25519 秘密鍵（インライン）|
+| `internode.identity_key_file` | string | | その鍵を保持するファイルのパス |
+| `internode.trusted_peer_keys` | map | | 自ノードを含む各ノード名ごとの、base64 エンコードされた ed25519 公開鍵 |
 
 `advertise_addr`/`advertise_port` はノードメタデータに追加のエンドポイントを公開し、バインドエンドポイントは変わらず通知され続けるため、バージョンが混在するクラスタでもローリングアップグレード中に接続が維持されます。
 
-クラスタ化する各ノードには、固有のノード間通信の秘密 ID と、信頼する公開鍵のマップが必要です。秘密鍵のソースは 1 つだけ設定します。インライン値と鍵ファイルのどちらも、Base64 エンコードされた 32 バイトのシードまたは 64 バイトの鍵を含める必要があります。信頼する値は Base64 エンコードされた公開鍵です。
+クラスタリングが有効な場合、ノード間アイデンティティは必須です。`identity_key` と `identity_key_file` は排他的で、いずれか一方が必要です。値は（標準または raw の base64 で）32 バイトの ed25519 シードまたは 64 バイトの ed25519 秘密鍵にデコードされます。`trusted_peer_keys` は各ノード名をそのノードの 32 バイト ed25519 公開鍵にマッピングし、ローカルの `cluster.name` に対応するエントリを含み、その値はローカルのアイデンティティと一致していなければなりません。一致しない場合は起動に失敗します。[クラスタガイド](guides/cluster.md#internode-identity)を参照してください。
 
 ### Raft（コンセンサス）
 
@@ -403,6 +461,8 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 | `raft.max_append_entries` | int | 16 | AppendEntries RPC あたりの最大エントリ数 |
 | `raft.leader_probe_interval` | duration | 3s | グローバルレジストリのリーダー到達可能性プローブ間隔 |
 | `raft.leader_probe_grace` | int | 3 | リーダーが到達不能と宣言されるまでの連続プローブ失敗回数 |
+| `raft.registry_backend` | string | kv | クラスタ名前レジストリの実装: `kv`（共有 kv キースペース）または `fsm`（専用の Raft FSM）|
+| `raft.global_dissem_tombstone_retention` | duration | 0 | グローバル名の伝播キャッシュが削除トゥームストーンを保持する期間 |
 
 単一ノード（開発用）— クラスタリング有効、即座にブートストラップ:
 
@@ -410,15 +470,17 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
   internode:
-    identity_key: "${env:DEV_PRIVATE_KEY}"
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
     trusted_peer_keys:
-      dev: "${env:DEV_PUBLIC_KEY}"
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-3ノード投票クラスタ — 各ノードが他のノードをシードとして指定し、3つ全てが揃うのを待ってからクォーラムを形成:
+3ノード投票クラスタ — 各ノードが他のノードをシードとして指定し、3つ全てが揃うのを待ってからクォーラムを形成。すべてのノードが同一の `trusted_peer_keys` マップと自身の秘密鍵を持ちます:
 
 ```yaml
 cluster:
@@ -430,17 +492,17 @@ cluster:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-1.identity
+    identity_key_file: /etc/wippy/node-1.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      node-3: "${env:NODE_3_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-ゴシップのみのクライアント — 名前付けやメッセージングのためにクラスタに参加するが、Raft は実行しない:
+ゴシップのみのクライアント — 名前付けやメッセージングのためにクラスタに参加するが、Raft は実行しない。これにも自身のアイデンティティが必要で、すべてのノードの信頼マップに含まれている必要があります:
 
 ```yaml
 cluster:
@@ -448,12 +510,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/edge-7.identity
+    identity_key_file: /etc/wippy/edge-7.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

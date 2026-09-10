@@ -175,11 +175,10 @@ Use `pool` to configure how a function entry executes:
 | Field | Pools | Description |
 |-------|-------|-------------|
 | `type` | all | Scheduler implementation (see table below) |
-| `workers` | static | Worker count; when set, `size` must also be positive during configuration validation |
-| `size` | static | Worker count when `workers` is unset; with omitted `type`, a positive `size` alone selects `inline` |
+| `workers` | static | Worker thread count (falls back to `size`, then 8) |
+| `size` | static | Worker count when `workers` is unset; with `type` omitted, `size` without `max_size` selects an inline pool |
 | `buffer` | static | Task queue capacity (default: `workers * 64`) |
-| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16 for an explicit type) |
-| `warm_start` | all | Accepted configuration flag; it has no effect in this runtime release |
+| `max_size` | lazy, adaptive | Upper bound for elastic growth (default: 16; 100 when `type` is omitted) |
 
 | Type | Behavior |
 |------|----------|
@@ -188,13 +187,7 @@ Use `pool` to configure how a function entry executes:
 | `static` | Fixed-size channel-based pool. Predictable under steady load. |
 | `adaptive` | Auto-scaling pool — grows under load, shrinks when idle. |
 
-When `type` is omitted, the runtime selects:
-
-- `static` when `workers` is positive;
-- `lazy` when `workers` is zero and either `size` is zero or `max_size` is positive; or
-- `inline` when `size` is positive and `max_size` is zero.
-
-The auto-selected lazy pool uses `max_size` when positive and otherwise defaults to 100. An explicit `lazy` or `adaptive` pool defaults `max_size` to 16. An explicit `static` pool uses `workers`, then `size`, then 8; its default buffer is the selected worker count multiplied by 64.
+When `type` is omitted, the pool is auto-selected from the other fields: a lazy pool by default, a static pool if `workers` is set, an inline pool if only `size` is set.
 
 ## Metadata
 

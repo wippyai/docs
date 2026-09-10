@@ -148,13 +148,29 @@ return { main = main }
 
 ## 系统信息
 
-使用 `system` 模块访问运行时统计信息：
+使用 `system` 模块访问运行时统计信息。每次读取都受 `system.read` 动作保护，因此该进程还需要一个允许该动作的策略：
 
 ```yaml
-# 添加到入口定义
-modules:
-  - io
-  - system
+  # 添加到 entries
+  - name: system_read
+    kind: security.policy
+    policy:
+      actions:
+        - system.read
+      resources: "*"
+      effect: allow
+
+  # 更新 CLI 条目
+  - name: cli
+    kind: process.lua
+    source: file://cli.lua
+    method: main
+    security:
+      policies:
+        - app:system_read
+    modules:
+      - io
+      - system
 ```
 
 ```lua
@@ -206,7 +222,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## 退出码

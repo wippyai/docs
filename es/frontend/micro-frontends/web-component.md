@@ -1,31 +1,31 @@
 ---
-title: "Receta de componente web"
-description: "Recetas portables de view.component para elementos personalizados solo de contenido o con controles."
+title: "Receta de Web Component"
+description: "Recetas portables de view.component para elementos personalizados de solo contenido y con controles."
 ---
 
-# Receta de componente web
+# Receta de Web Component
 
-Un componente web se registra como `view.component` y normalmente se renderiza en una raíz shadow. Elija la configuración válida más pequeña.
-
-Estas son recetas de integración para un proyecto Vue/Vite existente. Muestran el elemento, los metadatos y la configuración de compilación específicos de Wippy, no una estructura de proyecto independiente.
+Un web component se registra como `view.component` y normalmente se renderiza en un shadow root. Elija la configuración válida más pequeña.
 
 ## Variante A: solo contenido
 
-Un gráfico, diagrama, renderer o visualización puede omitir PrimeVue y Tailwind si no renderiza ningún control ni escribe utilidades Tailwind compartidas.
+Un gráfico, diagrama, renderizador o visualización puede omitir PrimeVue y Tailwind cuando no renderiza ningún control ni escribe ninguna utilidad compartida de Tailwind.
 
-Aun así, debe:
+Aun así debe:
 
-- Publicar una etiqueta válida de elemento personalizado.
-- Conservar la accesibilidad del contenido renderizado.
-- Usar la configuración y entrega CSS admitidas de Wippy.
-- Evitar clases privadas de la fachada del proyecto.
-- Compilar mediante el target canónico de Make del repositorio del módulo Wippy.
+- Publicar una etiqueta de elemento personalizado válida.
+- Preservar la accesibilidad del contenido renderizado.
+- Usar la configuración y la entrega de CSS soportadas por Wippy.
+- Evitar las clases privadas del facade del proyecto.
+- Compilar a través del target canónico de Make del repositorio del módulo Wippy.
 
-Si posteriormente se añade un botón, input, formulario, menú u otro control similar a PrimeVue, esta exención deja de aplicarse.
+Si más adelante se añade un botón, input, formulario, menú u otro control similar a PrimeVue, esta exención termina.
 
 ## Variante B: con controles
 
-Un componente con controles debe instalar PrimeVue mediante el plugin PrimeVue de Wippy y recibir el CSS de tema y PrimeVue del host. El paquete de componentes web carga de forma predeterminada todas las claves CSS del host; la lista explícita siguiente limita ese valor predeterminado a los assets usados por el ejemplo, más el CSS compartido de iframe y barras de desplazamiento:
+Un componente con controles debe instalar PrimeVue mediante el plugin de PrimeVue
+de Wippy y configurar las claves de entrega de CSS requeridas. La siguiente
+entrada es la ruta Vue actualmente soportada por el paquete:
 
 ```ts
 import { defineComponent, h } from 'vue'
@@ -68,8 +68,6 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
-### Contrato de metadatos del paquete
-
 Los metadatos del paquete deben identificar el mismo elemento personalizado:
 
 ```json
@@ -78,7 +76,6 @@ Los metadatos del paquete deben identificar el mismo elemento personalizado:
   "version": "0.1.0",
   "type": "module",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
   "wippy": {
     "type": "component",
     "tagName": "example-controls",
@@ -91,9 +88,8 @@ Los metadatos del paquete deben identificar el mismo elemento personalizado:
 }
 ```
 
-Los valores válidos de `wippy.type` del paquete son `"component"` y `"widget"`. No use el tipo de registro `view.component` como valor de `wippy.type` del paquete.
-
-La compilación del componente usa el plugin estricto de componentes Wippy y la instantánea completa y fijada del mapa de importación del host objetivo:
+El build del componente usa el plugin estricto de componentes de Wippy y el
+snapshot completo y fijado del import map del host de destino:
 
 ```ts
 import { defineConfig } from 'vite'
@@ -111,32 +107,32 @@ export default defineConfig({
     },
     rollupOptions: {
       external: Object.keys(hostImportMap.imports),
-      preserveEntrySignatures: 'strict',
     },
   },
 })
 ```
 
-Conserve `preserveEntrySignatures: 'strict'`. Ningún otro valor de Rollup satisface el contrato de compilación de componentes Wippy documentado aquí.
+Use el preset compartido de Tailwind de Wippy cuando este componente escriba
+utilidades de Tailwind. PrimeVue en sí no exige que un módulo invente utilidades
+de Tailwind.
 
-Use el preset compartido de Tailwind de Wippy cuando el componente escriba utilidades Tailwind. PrimeVue por sí mismo no requiere que un módulo invente utilidades Tailwind.
+## Reglas del shadow root
 
-## Reglas de la raíz shadow
+- Las variables CSS públicas pueden heredarse dentro del shadow root.
+- Las reglas de selector surten efecto solo si el host las entrega dentro de la raíz.
+- El CSS compartido del tema de PrimeVue es una dependencia soportada.
+- Las clases arbitrarias del facade no son APIs portables.
+- La colocación de overlays debe verificarse en el runtime real; no fuerce una receta genérica de colocación.
 
-- Las variables CSS públicas pueden heredarse dentro de la raíz shadow.
-- Las reglas de selectores solo surten efecto si el host las entrega dentro de la raíz.
-- El CSS compartido del tema PrimeVue es una dependencia admitida.
-- Las clases arbitrarias de la fachada no son API portables.
-- La colocación de overlays debe verificarse en el runtime real; no imponga una receta de colocación genérica.
+## Metadatos y build
 
-## Metadatos y compilación
-
-Documente props y eventos en los metadatos del paquete. Una entrada de registro puede repetirlos como overrides de despliegue `meta.props` y `meta.events`; si están presentes, estos overrides tienen prioridad sobre los metadatos incluidos. Invoque el target de Make del repositorio del módulo; su receta usa:
+Documente las props y los eventos tanto en los metadatos del paquete como en la entrada de registry, según requiera el esquema seleccionado. Invoque el target de Make del repositorio del módulo; su receta usa:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-No invoque directamente ese comando subyacente. En Windows, invoque `make.bat`; este delega en `make.ps1`.
+No invoque ese comando subyacente directamente. En Windows, invoque
+`make.bat`; delega en `make.ps1`.
 
-Consulte [Creación de temas](./theming.md), [Contrato de Tailwind](./tailwind-contract.md) y [Contrato de compilación y dependencias](./build-system.md).
+Vea [Autoría de Temas](./theming.md), [Contrato de Tailwind](./tailwind-contract.md) y [Contrato de Build y Dependencias](./build-system.md).

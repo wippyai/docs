@@ -187,10 +187,11 @@ return { main = main }
 
 ## 시스템 정보
 
-시스템 읽기는 보호되는 연산입니다. 다음 정책을 추가하고 `app:cli` 엔트리를 교체하여 명령에 액터, 정책, `system` 모듈을 부여합니다.
+`system` 모듈로 런타임 통계에 접근합니다. 모든 읽기는 `system.read` 액션으로 보호되므로, 프로세스에는 이를 허용하는 정책도 필요합니다:
 
 ```yaml
-  - name: cli-system-read
+  # 엔트리에 추가
+  - name: system_read
     kind: security.policy
     policy:
       actions:
@@ -198,18 +199,17 @@ return { main = main }
       resources: "*"
       effect: allow
 
+  # cli 엔트리 업데이트
   - name: cli
     kind: process.lua
     source: file://cli.lua
     method: main
+    security:
+      policies:
+        - app:system_read
     modules:
       - io
       - system
-    security:
-      actor:
-        id: app:cli
-      policies:
-        - app:cli-system-read
 ```
 
 그런 다음 `src/cli.lua`를 교체합니다.

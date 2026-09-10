@@ -1,6 +1,6 @@
 ---
 title: "Process Groups"
-description: "Manage cluster-wide process groups, membership, broadcasts, and membership subscriptions."
+description: "Join processes into named groups and broadcast to every member across the cluster. Modeled on Erlang/OTP pg: groups are dynamic, a process can belong…"
 ---
 
 # Process Groups
@@ -211,12 +211,12 @@ group:release()
 | `pg.leave` | `leave()` | group name |
 | `pg.get_members` | `get_members()` | group name |
 | `pg.get_local_members` | `get_local_members()` | group name |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (none) |
+| `pg.which_local_groups` | `which_local_groups()` | (none) |
 | `pg.broadcast` | `broadcast()` | group name |
 | `pg.broadcast_local` | `broadcast_local()` | group name |
 | `pg.monitor` | `monitor()` | group name |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (none) |
 
 ## Errors
 

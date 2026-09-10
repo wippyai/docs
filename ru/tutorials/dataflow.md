@@ -31,6 +31,7 @@ description: "Постройте базу знаний на собственно
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -42,6 +43,7 @@ wippy install
 Свяжите части вместе:
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -55,12 +57,12 @@ entries:
   - name: processes
     kind: process.host
     host:
-      max_processes: 1000
       workers: 8
 
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -68,6 +70,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -75,6 +78,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -82,7 +86,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+Bootloader и сервисы провайдеров работают под группой политик
+`wippy.security:process`, поэтому `wippy/security` и политика в этой группе входят в обвязку.
 
 Bootloader-у нужно хранилище окружения; добавьте стандартное в его собственном пространстве имён:
 
@@ -212,8 +233,9 @@ LLM для обоснованных ответов.
 
 ## Эксплуатационные заметки
 
-- **Размер чанка**: 500–1000 токенов — хорошая отправная точка. Используйте
-  `chunk_overlap` (~10–20 % размера чанка), чтобы предложения не разрезались на границах.
+- **Размер чанка**: `chunk_size` и `chunk_overlap` считают символы, а не токены;
+  2000–4000 символов — хорошая отправная точка. Используйте `chunk_overlap` (~10–20 %
+  размера чанка), чтобы предложения не разрезались на границах.
 - **Размерности**: `text-embedding-3-small` при 512 измерениях экономична по стоимости и
   соответствует таблице `embeddings_512`. Бо́льшие векторы означают больший объём
   хранилища и более медленный поиск.

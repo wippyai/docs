@@ -1,31 +1,29 @@
 ---
-title: "Composiciones personalizadas"
-description: "Excepciones basadas en contratos para controles cuya affordance necesaria no puede ofrecer PrimeVue."
+title: "Composites Personalizados"
+description: "Excepciones basadas en contrato para controles cuya affordance requerida no puede proporcionar PrimeVue."
 ---
 
-# Composiciones personalizadas
-
-**Clasificación: referencia normativa del contrato de excepciones.** El bloque JSON es un ejemplo de esquema con placeholders, no un contrato ni un paquete de pruebas válidos.
+# Composites Personalizados
 
 Los controles personalizados son excepciones, no una biblioteca de componentes alternativa.
 
 ## Prueba de admisión
 
-Un control personalizado solo se acepta cuando:
+Un control personalizado se acepta solo cuando:
 
-1. PrimeVue no puede proporcionar ni componer la semántica, interacción y affordance buscadas.
-2. La excepción registra las composiciones PrimeVue rechazadas.
-3. Indica un contrato equivalente visual de PrimeVue generado y exacto, así como su hash.
-4. Cada propiedad que ese contrato equivalente clasifica como `shared-runtime` tiene una asignación de origen exacta.
-5. Solo se acepta una utilidad fija si el contrato equivalente clasifica esa propiedad exacta como `platform-invariant`.
-6. La geometría y el comportamiento novedosos quedan aislados y documentados.
-7. Se superan las pruebas visuales y de accesibilidad.
+1. PrimeVue no puede proporcionar ni componer la semántica, la interacción y la affordance previstas.
+2. La excepción registra las composiciones de PrimeVue rechazadas.
+3. Nombra un contrato exacto de componente hermano de PrimeVue generado y su hash de contrato.
+4. Toda propiedad que ese contrato hermano clasifica como `shared-runtime` tiene un mapeo de origen exacto.
+5. Una utilidad fija se acepta solo cuando el contrato hermano clasifica esa propiedad exacta como `platform-invariant`.
+6. La geometría y el comportamiento novedosos están aislados y documentados.
+7. La evidencia de accesibilidad y la visual pasan.
 
-La equivalencia de forma de datos no equivale a la equivalencia de affordance. Un `SelectButton` de varias opciones puede representar tres valores, pero no tiene la apariencia ni el comportamiento de un interruptor deslizante de tres posiciones. Del mismo modo, no invente una prop `positions` para `ToggleSwitch`. Cree un equivalente personalizado revisado solo cuando la affordance sea un requisito real.
+La equivalencia de forma de datos no es equivalencia de affordance. Un `SelectButton` multiopción puede representar tres valores, pero no se ve ni se comporta como un interruptor deslizante de tres posiciones. A la inversa, no invente una prop `positions` para `ToggleSwitch`. Construya un hermano personalizado revisado solo cuando el requisito de affordance sea real.
 
 ## Contrato del módulo
 
-Guarde una excepción revisada en `wippy-fe.contract.json`, en la raíz del módulo:
+Guarde una excepción revisada en el `wippy-fe.contract.json` de la raíz del módulo:
 
 ```json
 {
@@ -84,20 +82,56 @@ Guarde una excepción revisada en `wippy-fe.contract.json`, en la raíz del mód
 }
 ```
 
-Los valores mostrados son placeholders del esquema, no pruebas válidas. La asignación completa se genera desde el contrato equivalente seleccionado; el extracto de una sola fila no constituye por sí mismo una excepción válida. Las herramientas generan los hashes del código fuente y del contrato. Un cambio en el hash del código o del contrato equivalente invalida la revisión.
+Los valores mostrados son marcadores de esquema, no evidencia válida. El mapeo
+completo se genera a partir del contrato hermano seleccionado; el extracto de una
+sola fila no es por sí mismo una excepción válida. Las herramientas generan los
+hashes de origen y de contrato. Un hash de origen o de contrato hermano cambiado
+invalida la revisión.
 
-Esta página define los campos normativos; no es un JSON Schema y el comprobador de documentación solo demuestra que el ejemplo conserva la forma exigida. Una implementación de conformidad del módulo debe validar un contrato real contra el manifiesto de tema seleccionado, verificar los hashes y el conjunto completo de propiedades, y comprobar que cada referencia de prueba resuelve al resultado o captura aprobado con nombre de la misma compilación candidata. La familia de paquetes públicos `@wippy-fe/*` 0.0.56 no proporciona una CLI de conformidad de módulos. Las pruebas de accesibilidad vinculan el `sourceSha256` del componente, los archivos con hash, la ausencia de errores de consola inesperados y un resultado aprobado. Las pruebas visuales vinculan los archivos canónicos de antes, después y diff, sus hashes, las métricas y disposición recalculadas y la compilación candidata correspondiente. Una cadena, un archivo ausente, un escenario, resultado o captura ausente, un hash de compilación obsoleto, `pending` o un resultado sin revisar no satisface el requisito de pruebas.
+Esta página define los campos normativos; no es un JSON Schema y el verificador
+de documentación solo demuestra que este ejemplo conserva la forma requerida.
+`wippy-fe-compliance` valida un contrato de módulo real contra el manifiesto del
+tema seleccionado, verifica los hashes y el conjunto completo de propiedades, y
+comprueba que cada referencia de evidencia resuelve al resultado o captura
+nombrados y aprobados del mismo build candidato. La evidencia de accesibilidad
+liga el `sourceSha256` del componente, los archivos hasheados, cero errores
+inesperados de consola y un resultado aprobado. La evidencia visual liga los
+archivos canónicos de antes/después/diff, los hashes, las métricas y la
+disposición recalculadas, y el build candidato correspondiente. Una cadena, un
+archivo faltante, un escenario/resultado/captura faltante, un hash de build
+obsoleto, `pending` o un resultado no revisado no satisfacen el requisito de
+evidencia.
 
-`platformInvariantUtilities` y `moduleLocalProperties` pueden estar vacíos. Nunca invente `gap-2`, `w-10`, `rounded-md` u otra utilidad fija solo para que un campo del contrato no quede vacío. En particular, un equivalente de ToggleSwitch no puede reclasificar anchura, altura, radio, geometría de foco o movimiento como invariantes cuando su contrato equivalente seleccionado clasifica esas propiedades como `shared-runtime`.
+`platformInvariantUtilities` y `moduleLocalProperties` pueden estar vacíos. Nunca
+invente `gap-2`, `w-10`, `rounded-md` u otra utilidad fija solo para que un campo
+del contrato no quede vacío. En particular, un hermano de ToggleSwitch no puede
+reetiquetar el ancho, el alto, el radio, la geometría de foco o el movimiento como
+invariantes cuando su contrato hermano seleccionado clasifica esas propiedades
+como `shared-runtime`.
 
-El manifiesto del equivalente clasifica las propiedades así:
+El manifiesto del hermano clasifica las propiedades como:
 
-- `shared-runtime`: cada equivalente personalizado asigna y consume el token publicado o la utilidad semántica respaldada en runtime.
-- `platform-invariant`: solo se permite un valor fijo para esta propiedad exacta.
-- `implementation-private`: los mecanismos internos de PrimeVue no se convierten en requisitos para un equivalente personalizado.
+- `shared-runtime`: todo hermano personalizado mapea y consume el token publicado
+  o la utilidad semántica respaldada en runtime.
+- `platform-invariant`: se permite un valor fijo solo para esta propiedad exacta.
+- `implementation-private`: la mecánica interna de PrimeVue no se convierte en
+  requisito para un hermano personalizado.
 
-Si no existe la semántica de runtime necesaria, corrija primero el contrato de tema compartido. Nunca copie las dimensiones actuales del equivalente ni invente un nombre de token.
+Si la semántica de runtime requerida no existe, corrija primero el contrato del tema compartido. Nunca copie las dimensiones actuales del hermano ni invente un nombre de token.
 
-`sharedAppearanceMappings` es exhaustivo, no ilustrativo: contiene exactamente una asignación por cada propiedad `shared-runtime` del contrato equivalente seleccionado, ningún id de propiedad adicional, la parte del contrato, un selector estable del módulo y el tipo y nombre exactos del origen publicado. La implementación de conformidad seleccionada debe usar el selector, la parte, la propiedad CSS y el origen publicado para demostrar estructuralmente la asignación con PostCSS; un nombre de token en un comentario o selector no relacionado no cuenta. Una asignación respaldada por Tailwind también registra `utilityClasses` únicos y exactos; tras la normalización, ese conjunto debe ser igual al conjunto de orígenes del contrato equivalente seleccionado. `platformInvariantUtilities` contiene registros `{ "contractProperty": "...", "utility": "..." }` cuya utilidad coincide con el origen del contrato equivalente seleccionado. Cuando no está vacío, `moduleLocalProperties` contiene ids de propiedades estructurados y motivos de revisión, no una bolsa de CSS libre.
+`sharedAppearanceMappings` es exhaustivo, no ilustrativo: contiene exactamente un
+mapeo por cada propiedad `shared-runtime` del contrato hermano seleccionado,
+ningún ID de propiedad adicional, la parte del contrato, un selector de módulo
+estable y la clase y el nombre exactos de la fuente publicada. Las herramientas de
+conformidad usan el selector, la parte, la propiedad CSS y la fuente publicada
+para demostrar el mapeo estructuralmente con PostCSS; un nombre de token en un
+comentario o en un selector no relacionado no cuenta. Un mapeo respaldado por
+Tailwind también registra `utilityClasses` únicas y exactas; tras la
+normalización, ese conjunto debe ser igual al conjunto de fuentes del contrato
+hermano seleccionado. `platformInvariantUtilities` contiene registros
+`{ "contractProperty": "...", "utility": "..." }` cuya utilidad es igual a la
+fuente del contrato hermano seleccionado. `moduleLocalProperties`, cuando no está
+vacío, contiene IDs de propiedad estructurados y razones de revisión, no un saco
+de CSS de forma libre.
 
-No se crea un paquete compartido `@wippy-fe/ui` para una sola excepción. La promoción solo es elegible después de que un segundo consumidor independiente demuestre los mismos requisitos de comportamiento y portabilidad.
+No se crea un paquete `@wippy-fe/ui` compartido para una sola excepción. La promoción solo se vuelve elegible después de que un segundo consumidor independiente demuestre los mismos requisitos de comportamiento y portabilidad.

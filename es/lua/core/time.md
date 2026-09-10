@@ -1,6 +1,6 @@
 ---
 title: "Tiempo y Duración"
-description: "Crea, compara, analiza y formatea valores de tiempo; trabaja con duraciones y zonas horarias; y programa esperas y temporizadores."
+description: "Trabajar con valores de tiempo, duraciones, zonas horarias y programacion. Crear temporizadores, dormir por periodos especificados, parsear y…"
 ---
 
 # Tiempo y Duración
@@ -285,7 +285,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -569,10 +569,10 @@ time.SATURDAY   -- 6
 
 | Condición | Clase | Reintentable |
 |-----------|------|--------------|
-| Formato de duración no válido | `errors.INVALID` | no |
-| Error de análisis | `errors.INVALID` | no |
-| Nombre de ubicación vacío | `errors.INVALID` | no |
-| Ubicación no encontrada | `errors.NOT_FOUND` | no |
+| Formato de duración invalido | `errors.INVALID` | no |
+| Parseo fallido | `errors.INVALID` | no |
+| Nombre de ubicacion vacio | `errors.INVALID` | no |
+| Ubicacion no encontrada | `errors.NOT_FOUND` | no |
 | Duración <= 0 (timer/ticker) | `errors.INVALID` | no |
 
 ```lua

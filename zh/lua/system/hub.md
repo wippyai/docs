@@ -135,6 +135,24 @@ local files, err = hub.files.list("wippy/terminal", "1.0.0")
 |----------|-------------|
 | `hub.files.list(module, version, opts?)` | 列出某个版本的文件（`version` 必填）；返回 `{items, total, page, page_size}` |
 
+## 缓存
+
+```lua
+local cached, err = hub.cache.list()
+-- 每个条目：{ module, version, size, pinned }
+
+local ok, err = hub.cache.remove("wippy/terminal", "1.2.3", { force = true })
+local pruned, err = hub.cache.prune({ dry_run = true })
+```
+
+| 函数 | 说明 |
+|----------|-------------|
+| `hub.cache.list(opts?)` | 列出 vendor 目录下缓存的构件；当锁文件引用了该构件时 `pinned` 为 `true` |
+| `hub.cache.remove(module, version, opts?)` | 移除一个缓存构件；除非 `opts.force` 为 `true`，否则拒绝移除被锁文件固定的构件（类型 `errors.CONFLICT`）；返回 `true` |
+| `hub.cache.prune(opts?)` | 移除锁文件未引用的所有缓存构件；当 `opts.dry_run = true` 时不删除任何内容；返回被清理（或将被清理）的条目 |
+
+**权限：** `hub.cache.list`、`hub.cache.remove`（资源：模块名）、`hub.cache.prune`
+
 ## 认证
 
 将 Registry token 推送到运行中的进程 — 每个 hub 使用方在下一次调用时即可获取，无需重启：

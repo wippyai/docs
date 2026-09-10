@@ -1,6 +1,6 @@
 ---
 title: "Geração de UUID"
-description: "Gere, valide, inspecione, analise e formate UUIDs."
+description: "Gere identificadores unicos universais. Adaptado para workflows - UUIDs aleatorios retornam valores consistentes em replay."
 ---
 
 # Geração de UUID
@@ -142,7 +142,7 @@ Campos da tabela retornada:
 - `version` (integer): Versão do UUID (1, 3, 4, 5 ou 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS ou Invalid
 - `timestamp` (integer): Timestamp Unix (apenas v1 e v7)
-- `node` (string): identificador de nó bruto com seis bytes (apenas v1); codifique-o antes de exibir ou armazenar como texto
+- `node` (string): 6 bytes brutos do node ID (apenas v1)
 
 ### `format`
 

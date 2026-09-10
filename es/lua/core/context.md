@@ -1,6 +1,6 @@
 ---
-title: "Contexto de solicitud"
-description: "Lee valores vinculados a la solicitud y propagados mediante llamadas a funciones y procesos."
+title: "Contexto de Solicitud"
+description: "Acceder a valores de contexto con alcance de solicitud. El contexto se establece via Funcs o Process."
 ---
 
 # Contexto de solicitud

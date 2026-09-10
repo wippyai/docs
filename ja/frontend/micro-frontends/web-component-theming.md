@@ -1,48 +1,46 @@
 ---
-title: "テーマ設定: Web Component"
-description: "Wippy Web Component が theme variable を継承し、rule-based CSS を Shadow Root 内に読み込む仕組み。"
+title: "テーマ: Webコンポーネント"
+description: "テーマのリファレンスはCSS変数の完全なカタログを扱います。このドキュメントは、Webコンポーネントがshadow DOMを通じてどのようにテーマを受け取るかを扱います。"
 ---
 
-# テーマ設定: Web Component
+# テーマ: Webコンポーネント
 
-**分類: 部分的な component recipe を含む設定リファレンス。** スニペットは、既存の Wippy Web Component とその Shadow Root、および pin された release family の public proxy/Web Component package を前提にしています。
-
-Web Component は Shadow boundary を越えて theme variable を継承し、rule-based theme asset を Shadow Root 内に読み込みます。共通の作成契約は [Theme Authoring](./theming.md) を参照してください。
-
----
-
-## テーマが component に届く仕組み
-
-Shadow DOM は CSS cascade を遮断するため、component 外に書かれた stylesheet は内部に適用されません。ただし CSS custom property（variable）は Shadow boundary を**越えます**。したがって:
-
-- custom property は Shadow boundary を越えて継承されます。WippyElement は forced-theme inner root を通して設定済み variable name をすべて bridge するため、local に読み込んだ `theme-config.css` default が設定値を reset することはありません。
-- PrimeVue component style、Tailwind utility、その他の rule-based stylesheet は cascade しません。`hostCssKeys` を省略すると runtime は対応する Host CSS asset を四つすべて読み込みます。対象を制限するには list を明示してください。
+[テーマのリファレンス](./theming.md)はCSS変数の完全なカタログを扱います。このドキュメントは、Webコンポーネントがshadow DOMを通じてどのようにテーマを受け取るかを扱います。
 
 ---
 
-## Customization level
+## テーマがコンポーネントに届くまで
 
-**L1 — Global:** CSS custom property は Shadow boundary を越えます。WippyElement は `@light` / `@dark` を含む有効な global/children/page variable map を列挙し、injected custom CSS layer より前に generic inheritance bridge を install します。
+shadow DOMはCSSのカスケードを遮断します。コンポーネントの外側で書かれたスタイルシートは、その内側には適用されません。ただし、CSSカスタムプロパティ（変数）はshadow境界を**越えます**。つまり:
 
-**L2 — Scoped:** custom property については L1 と同じです。stylesheet-based CSS（PrimeVue、Tailwind）は cascade しないため、Shadow Root に読み込む Host asset を `hostCssKeys` で制御します。
-
-**L3 — ページ単位の config_overrides:** operator の `config_overrides` で設定した CSS variable は、同じ generic bridge を通じて WC host と inner theme root に届きます。
-
-**facade の `custom_css` は Shadow Root に届きます（Web Host 1.0.43+、opt-out）。** selector rule は boundary を越えて cascade しないため、runtime が構成済み global + children custom CSS を注入します。
-
-configured-variable bridge は frontend の `customCss` opt-out から独立しており、常に有効です。順序は platform theme default → configured-variable inheritance bridge → injected custom CSS です。
-
-> **Web Host 1.0.43 より前**では、facade の `custom_css` rule は component の Shadow Root に届かず、custom property だけが継承されました。古い Host では WC 自身の style 内で rule を再現するか、`--p-*` token 形式へ引き上げてください。
+- カスタムプロパティはshadow境界を越えて継承されます。WippyElementはさらに、設定されたすべての変数名を強制テーマの内側rootを通じてブリッジするため、ローカルに読み込まれた `theme-config.css` のデフォルトが設定値をリセットすることはありません。
+- PrimeVueコンポーネントのスタイル、Tailwindのユーティリティ、その他のルールベースのスタイルシートはカスケード**しません**。`hostCssKeys` を介して明示的に読み込む必要があります。
 
 ---
 
-## Theme CSS の受信
+## カスタマイズのレベル
 
-JavaScript externalization は `@wippy-fe/theme` を含む、pin された Web Host の完全な `import-map.json` に従います。CSS 配信は別です。Shadow Root が rule-based theme asset を受け取るのは、`hostCssKeys` または bundled/inline CSS を通じてだけです。
+**L1 — グローバル:** CSSカスタムプロパティはshadow境界を越えます。WippyElementは、`@light` / `@dark` を含む実効的なglobal/children/pageの変数マップを列挙し、注入されるカスタムCSSレイヤーの前に汎用の継承ブリッジをインストールします。
 
-### `hostCssKeys` — runtime CSS loading
+**L2 — スコープ付き:** カスタムプロパティについてはL1と同じです。スタイルシートベースのCSS（PrimeVue、Tailwind）はカスケードしません。`hostCssKeys` を使ってshadow rootに明示的に読み込んでください。
 
-WC runtime が Shadow Root に注入する host-served CSS asset を宣言します。`hostCssKeys` を省略すると、runtime は `themeConfigUrl`、`primeVueCssUrl`、`markdownCssUrl`、`iframeCssUrl` を読み込みます。空の list は opt-out です。component が使うものだけを読み込むため、明示的な list を推奨します。
+**L3 — ページごとの config_overrides:** 運用者の `config_overrides` で設定されたCSS変数は、同じ汎用ブリッジを通じてWCホストと内側のテーマrootに届きます。
+
+**ファサードの `custom_css` はshadow rootに届きます（Web Host 1.0.43+、オプトアウト可能）。** セレクタのルールは境界を越えてカスケードしないため、ランタイムが合成済みのglobal + childrenカスタムCSSを注入します。
+
+設定変数のブリッジはフロントエンドの `customCss` のオプトアウトとは独立しており、常に有効です。順序は、プラットフォームのテーマデフォルト → 設定変数の継承ブリッジ → 注入されるカスタムCSSです。
+
+> **Web Host 1.0.43より前**は、ファサードの `custom_css` のルールはコンポーネントのshadow rootに届かず、カスタムプロパティのみが継承されていました。古いホストでは、そのルールをWC自身のスタイル内で再現するか、`--p-*` トークンの形に引き上げてください。
+
+---
+
+## テーマCSSの受け取り
+
+JavaScriptのexternal化は、`@wippy-fe/theme` を含め、ピン留めされたWeb Hostの `import-map.json` 全体に従います。CSSの配信はこれとは別で、shadow rootがルールベースのテーマアセットを受け取るのは、`hostCssKeys` またはバンドル済み/インラインのCSSを通じてのみです。
+
+### `hostCssKeys` — ランタイムでのCSS読み込み
+
+WCランタイムがshadow rootに注入すべき、ホスト配信のCSSアセットを宣言します。`wippyConfig.hostCssKeys` に追加します:
 
 ```typescript
 static get wippyConfig(): WippyElementConfig<ComponentProps> {
@@ -54,36 +52,35 @@ static get wippyConfig(): WippyElementConfig<ComponentProps> {
 }
 ```
 
-| キー | 読み込むもの | 相対コスト | 含める場合 |
+| キー | 読み込む内容 | サイズ | 含めるべき場合 |
 |---|---|---|---|
-| `themeConfigUrl` | `theme-config.css` — 完全な `--p-*` CSS variable system | 小 | WC が Host semantic token、dark mode、themed chrome を使う場合。presentation-neutral な canvas/SVG/chart では省略できます。 |
-| `primeVueCssUrl` | PrimeVue component CSS（unstyled mode）全体と Tailwind utility | 大 | WC が PrimeVue component（`<Button>`、`<Dialog>` など）を描画するか、Shadow Root 内で Tailwind utility class を作成する場合だけ。 |
-| `markdownCssUrl` | `.data-body` markdown style | 小 | WC が markdown content を描画する場合だけ。 |
-| `iframeCssUrl` | 既定の themed scrollbar style。名前は歴史的なもの | 小 | scroll 可能な WC では scrollbar の一貫性のために必須。 |
+| `themeConfigUrl` | `theme-config.css` — `--p-*` CSS変数システム一式 | 約8 KB | WCがホストのセマンティックトークン、ダークモード、テーマ付きクロームを消費する場合。表現的に中立なcanvas/SVG/チャートでは省略できます。 |
+| `primeVueCssUrl` | すべてのPrimeVueコンポーネントCSS（unstyledモード） | 約455 KB | WCがshadow root内でPrimeVueコンポーネント（`<Button>`、`<Dialog>` など）をレンダリングする場合のみ。 |
+| `markdownCssUrl` | `.data-body` のmarkdownスタイル | 約5 KB | WCがmarkdownコンテンツをレンダリングする場合のみ。 |
+| `iframeCssUrl` | デフォルトのテーマ付きスクロールバースタイル。名前は歴史的なもの | 約1 KB | スクロールし得るすべてのWCで、スクロールバーの一貫性のために必要。 |
 
-`preflightCssUrl` は `HostCssKey` union に含まれません。Shadow Root 内で Tailwind v3 preflight が本当に必要なら、明示的に fetch して挿入します。
+`preflightCssUrl` は `HostCssKey` のユニオンに含まれていません。shadow root内でTailwind v3のpreflightが本当に必要な場合は、`hostCss.preflightCssUrl` と `loadCss()` を命令的に呼び出してください。実際にはこれが必要になることはめったにありません。
 
-```typescript
-import { hostCss, loadCss } from '@wippy-fe/proxy'
-import { injectInlineCss } from '@wippy-fe/webcomponent-core'
+#### バンドルサイズの指針
 
-const css = await loadCss(hostCss.preflightCssUrl)
-injectInlineCss(shadow, css)
-```
+| `hostCssKeys` | 取り込まれるCSSの合計 |
+|---|---|
+| `['themeConfigUrl']` | 約8 KB |
+| `['themeConfigUrl', 'iframeCssUrl']` | 約9 KB |
+| `['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl']` | 約14 KB |
+| `['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl']` | 約464 KB |
 
-ここで `shadow` は component の既存 `ShadowRoot` です。CSS fetch の reject は component initialization failure として処理してください。実際には preflight が必要になることはまれです。
+それぞれ独立して選択してください:
 
-asset は個別に選びます。
+- 標準的な製品コントロール、ホストのセマンティックトークン、ユーティリティクラスを使わない、表現的に中立なcanvas/SVG/チャートは、PrimeVue、テーマアセット、Tailwindを省略できます。
+- ボタン、入力、フォーム、テーブル、ダイアログ、メニュー、タグ、ツールチップ、フィードバック系のコントロールには、対応するPrimeVue、`PrimeVuePlugin`、`primeVueCssUrl` が必要です。
+- ホストのセマンティックトークン、ダークモード、テーマ付きクロームには `themeConfigUrl` が必要です。
+- ソースがTailwindのユーティリティクラスを記述する場合はTailwindが必要です。
+- スクロールするコンテンツには `iframeCssUrl` が必要です。
 
-- 標準 product control、Host semantic token、utility class、scroll を使わない presentation-neutral な canvas/SVG/chart は、PrimeVue、theme asset、Tailwind を省略できます。
-- button、input、form、table、dialog、menu、tag、tooltip、feedback control には、対応する PrimeVue component、`PrimeVuePlugin`、`primeVueCssUrl` が必要です。
-- Host semantic token、dark mode、themed chrome には `themeConfigUrl` が必要です。
-- source が Tailwind utility class を使う場合は Tailwind が必要です。
-- scroll 可能な content には `iframeCssUrl` が必要です。
+### `inlineCss` — ビルド時のCSS
 
-### `inlineCss` — build-time CSS
-
-build 時に Tailwind/SCSS を compile し、`inlineCss` で Shadow Root に注入します。Vite の `?inline` import を使います。
+Tailwind/SCSSをビルド時にコンパイルし、`inlineCss` を介してshadow rootに注入します。Viteの `?inline` importを使用します:
 
 ```typescript
 import stylesText from './styles.css?inline'
@@ -96,9 +93,9 @@ static get wippyConfig() {
 }
 ```
 
-### ローカル開発用フォールバック :id=local-dev-fallback
+### ローカル開発時のフォールバック
 
-Host のない local development では、fallback variable value を得るため `styles.css` に `theme-config.css` を直接 import します。
+ホストなしのローカル開発では、`styles.css` で `theme-config.css` を直接importして、変数のフォールバック値を得ます:
 
 ```css
 /* src/styles.css */
@@ -110,13 +107,13 @@ Host のない local development では、fallback variable value を得るた�
 }
 ```
 
-これは host-less mode で既定の `--p-*` value を提供します。runtime では Host theme が `hostCssKeys: ['themeConfigUrl']` を通じて配信され、そちらが優先されます。
+これによりデフォルトの `--p-*` の値が提供され、ホストなしモードでもコンポーネントが正しくレンダリングされます。ランタイムでは、実際のテーマが `hostCssKeys: ['themeConfigUrl']` を介して配信され、そちらが優先されます。
 
 ---
 
-## Component CSS の記述
+## コンポーネントCSSの書き方
 
-`themeConfigUrl` を要求し、semantic variable を使い、継承した palette default を再宣言しないでください。semantic alias は Auto mode と forced mode に合わせて切り替わります。
+`themeConfigUrl` を要求し、セマンティック変数を消費し、継承されたパレットのデフォルトを再宣言しないでください。セマンティックエイリアスはAutoモードと強制モードで切り替わります:
 
 ```css
 :host {
@@ -130,66 +127,66 @@ Host のない local development では、fallback variable value を得るた�
 }
 ```
 
-theme に依存する色に `var(--p-surface-N)` を使わないでください。番号付き surface scale は dark mode で反転しません。代わりに semantic alias（`--p-text-color`、`--p-content-background`、`--p-text-muted-color`、`--p-content-border-color`）を使います。
+テーマ依存の色に `var(--p-surface-N)` を使ってはいけません。番号付きのsurfaceスケールはダークモードで反転しません。代わりにセマンティックエイリアス（`--p-text-color`、`--p-content-background`、`--p-text-muted-color`、`--p-content-border-color`）を使用してください。
 
-派生 shade には `color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)` を使えます。
+派生したシェードには: `color-mix(in srgb, var(--p-content-background) 85%, var(--p-text-color) 15%)`。
 
-### 防御的なフォールバック :id=defensive-fallback
+### 防御的なフォールバック
 
-WC は host-less dev mode（parent page なし）で動作する場合があるため、fallback を使えます。
+WCはホストなしの開発モード（親ページなし）で動作することがあるため、フォールバックは許容されます:
 
 ```css
-/* OK in WCs — dev preview fallback only */
+/* WCではOK — 開発プレビュー用のフォールバックのみ */
 color: var(--p-text-color, #404040);
 ```
 
-fallback は logical color ごとに一つまでにし、「dev preview only」と記述します。Micro Frontend App では Host が常に variable を提供するため、fallback を使わないでください。
+フォールバックは論理的な色ごとに1つに限り、「開発プレビュー専用」と記載し、マイクロフロントエンドアプリでは決して使わないでください（そちらではホストが常に変数を提供します）。
 
-### JS から variable を読む
+### 変数をJSで読み取る
 
-theme value を CSS 以外の context（D3、Canvas、mermaid）へ渡す場合:
+テーマの値をCSS以外のコンテキスト（D3、Canvas、mermaid）に渡す場合:
 
 ```typescript
 const styles = getComputedStyle(this.$el)
 const primaryColor = styles.getPropertyValue('--p-primary-500').trim()
 const background = styles.getPropertyValue('--p-content-background').trim()
-// pass to mermaid.init or D3.scaleOrdinal
+// mermaid.init や D3.scaleOrdinal に渡す
 ```
 
 ---
 
-## よく使う pattern
+## よくあるパターン
 
 ```typescript
-// Presentation-neutral chart-only WC: no controls, host tokens, utilities, or scroll:
+// 表現的に中立なチャート専用WC: コントロール、ホストトークン、ユーティリティ、スクロールなし:
 hostCssKeys: [] as const
 
-// WC that renders PrimeVue components inside Shadow DOM:
+// Shadow DOM内でPrimeVueコンポーネントをレンダリングするWC:
 hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl', 'iframeCssUrl'] as const
 
-// WC that renders markdown:
+// markdownをレンダリングするWC:
 hostCssKeys: ['themeConfigUrl', 'markdownCssUrl', 'iframeCssUrl'] as const
 
-// Reference: mermaid WC — renders SVG directly, only needs --p-* vars:
+// 参考: mermaid WC — SVGを直接レンダリングし、--p-* 変数だけが必要:
 hostCssKeys: ['themeConfigUrl'] as const
 ```
 
 ---
 
-## WC 固有の anti-pattern
+## WC固有のアンチパターン
 
-- `:host { … }` 内に hex を hardcode する — 代わりに `var(--p-*)` を使います。
-- dark-mode color を hardcode する `<style>` block の `@media (prefers-color-scheme: dark)` — `theme-config.css` の variable は dark mode に合わせて調整されるため、`var(--p-*)` の参照に別の hardcoded palette は不要です。
-- WC が PrimeVue を描画しないのに `primeVueCssUrl` を要求する — 大きな未使用 stylesheet が追加されます。
-- routine fix として PrimeVue overlay の `appendTo: 'self'` を設定する。`PrimeVuePlugin` を install して既定 target を維持してください。既定 target は owning Shadow Root 内の固定 overlay layer へ redirect されます。明示的な `self` は inline placement であり、scrolling overlay 内で clip されることがあります。
-- `CustomEvent` dispatch で `bubbles: true, composed: true` を忘れる — event が Shadow DOM の外へ出ません。
-- 完全な pin 済み Web Host import map ではなく CSS の仮定から `@wippy-fe/theme` の externalization を選ぶ。
+- `:host { … }` 内で16進数の色をハードコードすること。代わりに `var(--p-*)` を使用します。
+- `@media (prefers-color-scheme: dark)` を含む `<style>` ブロックでダークモードの色をハードコードすること。`theme-config.css` の変数はダーク向けに自ら再調整されます。`var(--p-*)` を正しく参照していれば、ダークモードは自動で得られます。
+- WCがPrimeVueをレンダリングしないのに `primeVueCssUrl` を要求すること。何の利益もなく大きなスタイルシートを追加することになります。
+- PrimeVueのオーバーレイに `appendTo: 'self'` を常用の対処として設定すること。`PrimeVuePlugin` をインストールしてデフォルトのターゲットのままにしてください。所有するshadow root内の固定オーバーレイレイヤーへリダイレクトされます。明示的な `self` はインライン配置であり、スクロールするオーバーレイ内でクリップされることがあります。
+- `CustomEvent` のディスパッチで `bubbles: true, composed: true` を忘れること。イベントがshadow DOMから出られません。
+- ピン留めされたWeb Hostのimport map全体ではなく、CSSに関する思い込みから `@wippy-fe/theme` のexternal化を決めること。
 
 ---
 
 ## 検証
 
-空でない token だけで終えないでください。element host と inner theme root で正確な configured value を比較し、描画された control が使う browser-resolved color を検証します。
+空でないトークンで止めてはいけません。設定した正確な値を、要素のホストと内側のテーマrootで比較し、その後、レンダリングされたコントロールが使うブラウザ解決後の色を検証します:
 
 ```js
 const el = document.querySelector('your-element')
@@ -198,16 +195,16 @@ getComputedStyle(el).getPropertyValue('--p-primary-color')
 getComputedStyle(inner).getPropertyValue('--p-primary-color')
 ```
 
-設定した各 family について Auto-light、Auto-dark、forced Light、forced Dark で繰り返します。WC は `themeConfigUrl` を要求して semantic token を使い、継承した palette default を再宣言しません。
+Autoライト、Autoダーク、強制ライト、強制ダークで、設定したすべてのファミリーについて繰り返します。WCは `themeConfigUrl` を要求してセマンティックトークンを消費します。継承されたパレットのデフォルトを再宣言することはありません。
 
-完全な debugging workflow は [Debugging](./debugging.md) を参照してください。
+完全なデバッグのワークフロー: [デバッグ](./debugging.md)。
 
 ---
 
 ## 関連ドキュメント
 
-- [theming.md](./theming.md) — CSS variable catalogue と anti-pattern
-- [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) — Micro Frontend App（iframe injection）のテーマ設定
-- [web-component.md](./web-component.md) — Web Component 開発 guide
-- [host-less-mode.md](./host-less-mode.md) — dev overlay と host-less mode
-- [compliance-checklist.md](./compliance-checklist.md) — テーマ設定に関する完全な REJECT/WARN rule
+- [theming.md](./theming.md) — CSS変数のカタログとアンチパターン
+- [micro-frontend-app-theming.md](./micro-frontend-app-theming.md) — マイクロフロントエンドアプリのテーマ（iframe注入）
+- [web-component.md](./web-component.md) — Webコンポーネント開発の完全ガイド
+- [host-less-mode.md](./host-less-mode.md) — 開発オーバーレイとホストなしモード
+- [compliance-checklist.md](./compliance-checklist.md) — テーマに関するREJECT/WARNルール一式

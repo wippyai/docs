@@ -1,44 +1,30 @@
 ---
 title: "Web Components (view.component)"
-description: "Referência para declarar, servir e registrar um elemento personalizado view.component reutilizável no Web Host."
+description: "Uma entrada view.component descreve um custom element reutilizável (web component) que o Web Host pode descobrir, injetar e registrar automaticamente. Diferente de uma…"
 ---
 
 # Web Components (view.component)
 
-Uma entrada `view.component` descreve um elemento personalizado reutilizável
-que o Web Host pode descobrir, injetar e registrar automaticamente. Ao
-contrário de uma página, o componente não tem iframe próprio: ele é uma tag
-HTML personalizada que pode aparecer onde uma página ou um template do host a
-posicionar.
+Uma entrada `view.component` descreve um custom element reutilizável (web component) que o Web Host pode descobrir, injetar e registrar automaticamente. Diferente de uma página, um componente não tem iframe próprio — ele é uma tag HTML customizada que pode aparecer em qualquer lugar onde o template de uma página ou do host o coloque.
 
-Para orientações sobre a implementação, consulte
-[Web Component](../micro-frontends/web-component.md).
+Para orientações sobre como escrever a implementação do componente, veja [Web Component](../micro-frontends/web-component.md).
 
-## Campos do frontend (bloco wippy de package.json)
+## Campos de Frontend (bloco wippy do package.json)
 
-O desenvolvedor frontend define estes campos no bloco `wippy` de
-`package.json`. O plugin do Vite os incorpora em `wippy-meta.json` durante o
-build, e `wippy/views` os lê dali como valores padrão.
+Esses campos são escritos pelo desenvolvedor de FE no bloco `wippy` do `package.json`. O plugin do vite os embute em `wippy-meta.json` em tempo de build, e o `wippy/views` os lê de lá como padrões.
 
-> **O YAML pode substituir `tagName`, `props` e `events` por meio de
-> `meta.tag_name`, `meta.props` e `meta.events`.** A configuração de build
-> seleciona `wippyComponentPlugin()`. O `type` opcional do pacote é metadado
-> validado pelo plugin selecionado quando presente; ele não tem override YAML
-> separado.
+> **Todos os campos desta seção podem ser sobrescritos pelo operador no `_index.yaml`. O YAML sempre tem precedência.**
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
-| `type` | string | `"widget"` no descriptor de runtime | Opcional; quando presente, deve ser `"component"` ou `"widget"`. A configuração de build, e não este campo, escolhe o plugin do Vite |
-| `tagName` | string | — | Nome do elemento personalizado. O plugin 0.0.56 exige um nome ASCII em minúsculas que comece por letra, contenha hífen, use apenas letras, dígitos e hífens e não seja um nome reservado de custom element HTML |
-| `props` | object | — | JSON Schema dos atributos aceitos pelo componente |
-| `events` | object | — | JSON Schema dos eventos DOM personalizados emitidos pelo componente |
+| `type` | string | — | Deve ser `"component"` ou `"widget"`; `"widget"` é a convenção do template |
+| `tagName` | string | — | Nome do custom element; deve conter um hífen conforme a especificação HTML |
+| `props` | object | — | JSON Schema descrevendo os atributos aceitos pelo componente |
+| `events` | object | — | JSON Schema descrevendo os eventos DOM customizados que o componente emite |
 
-### `wippy.type` em `package.json`
+### `wippy.type` no `package.json`
 
-Pacotes de web component podem definir `"type": "widget"` ou
-`"type": "component"` — nunca `"page"` — no bloco `wippy`. O template de
-app usa `"widget"`; o plugin de componente aceita qualquer uma dessas opções
-ou a ausência do campo e rejeita metadados de página.
+Pacotes de web component definem `"type": "widget"` ou `"type": "component"` (não `"page"`) dentro do seu bloco `wippy`. O app-template usa atualmente `"widget"`, e o plugin do vite aceita ambos os nomes de componente para este contrato de runtime.
 
 ```json
 {
@@ -46,30 +32,17 @@ ou a ausência do campo e rejeita metadados de página.
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
-    "props": {
-      "type": "object",
-      "properties": {}
-    },
-    "events": {
-      "type": "object",
-      "properties": {}
-    }
+    "props": { ... },
+    "events": { ... }
   }
 }
 ```
-Na implantação, `meta.tag_name` no YAML do operador é autoritativo e
-substitui o valor empacotado. `wippy.tagName`, gravado em `wippy-meta.json`
-a partir de `package.json`, é o fallback quando a entrada YAML omite
-`tag_name` (ordem: `meta.tag_name` do YAML → `wippy.tagName` empacotado).
-Mantenha os valores sincronizados; em caso de diferença, o YAML vence.
 
-### Schema de props
+Em tempo de deploy, o `meta.tag_name` do YAML do operador é autoritativo e sobrescreve o valor empacotado; `wippy.tagName` (embutido em `wippy-meta.json` a partir do `package.json`) é apenas o fallback que o `wippy/views` usa quando a entrada YAML omite `tag_name` (ordem de resolução: `meta.tag_name` do YAML → `wippy.tagName` empacotado). Mantenha os dois em sincronia para evitar surpresas, mas o YAML vence se divergirem.
 
-A chave `wippy.props` de `package.json` contém um objeto JSON Schema que
-descreve os atributos aceitos. O plugin do Vite o inclui em
-`wippy-meta.json`, e o Web Host o usa ao expor metadados a consumidores como o
-renderer de artefatos do chat e o sanitizador de tags. Este último precisa
-conhecer os atributos legítimos para não removê-los.
+### Schema de Props
+
+A chave `wippy.props` no `package.json` é um objeto JSON Schema descrevendo os atributos aceitos pelo componente. O plugin do vite o inclui em `wippy-meta.json`, e o Web Host o usa ao expor metadados do componente para consumidores como o renderizador de artefatos do chat e o sanitizador de tags (que precisa saber quais atributos são legítimos para não removê-los).
 
 ```json
 {
@@ -93,15 +66,12 @@ conhecer os atributos legítimos para não removê-los.
   }
 }
 ```
-Os nomes em `properties` seguem a convenção de atributos HTML (kebab-case).
-Os valores `default` do schema também são aplicados em runtime pelo parser de
-props do web component quando um atributo está ausente.
 
-### Schema de eventos
+Nomes de atributos em `properties` seguem a convenção de atributos HTML (kebab-case). Os valores `default` do schema também são aplicados em tempo de execução pelo parser de props do web component quando um atributo está ausente.
 
-A chave `wippy.events` segue a mesma forma de props, mas descreve os eventos
-DOM personalizados emitidos pelo componente via `useEvents()`. Cada chave é o
-nome de um evento, e o valor é um JSON Schema do payload em `detail`.
+### Schema de Eventos
+
+A chave `wippy.events` espelha o formato de props, mas descreve os eventos DOM customizados que o componente emite via `useEvents()`. Cada chave é um nome de evento; o valor é um JSON Schema para o payload de detail do evento.
 
 ```json
 {
@@ -123,33 +93,26 @@ nome de um evento, e o valor é um JSON Schema do payload em `detail`.
   }
 }
 ```
-O sanitizador de mensagens do chat no Web Host inclui na allowlist os atributos
-presentes em `wippy.props.properties` do descriptor projetado. Antes de esse
-descriptor chegar ao Host, `meta.props` do registry substitui o valor
-`wippy.props` empacotado. Os schemas de eventos documentam eventos
-personalizados para ferramentas e consumidores; eles não autorizam atributos
-de listener DOM em conteúdo de chat sanitizado.
 
-## Configuração do operador (_index.yaml)
+O sanitizador de mensagens de chat do Web Host coloca em allowlist os atributos de componente vindos de `props.properties` no `wippy-meta.json`. Schemas de eventos documentam os eventos customizados emitidos para ferramentas e consumidores; eles não são usados para permitir atributos de listener de evento DOM através do conteúdo de chat sanitizado.
 
-Estes campos ficam no bloco `meta` da entrada de registry em `_index.yaml`.
-A maioria expressa política de implantação — roteamento, acesso e entrega — e
-não tem superfície correspondente em `package.json` (`announced`, `secure`,
-`url`, `auto_register`). `tag_name` e `entry_point` são diferentes:
-nascem no frontend em `package.json`, entram em `wippy-meta.json` e as chaves
-YAML são apenas overrides opcionais por implantação.
+## Configuração do Operador (_index.yaml)
+
+Esses campos são definidos pelo operador no bloco `meta` da entrada de registry `_index.yaml`. A maioria representa política pura de deploy — roteamento, controle de acesso e servir arquivos — que só faz sentido em tempo de deploy e não tem superfície de autoria no `package.json` (`announced`, `secure`, `url`, `auto_register`). Dois campos, `tag_name` e `entry_point`, são diferentes: eles são **escritos pelo FE** no `package.json` (embutidos em `wippy-meta.json`) e as chaves YAML são apenas **sobrescritas opcionais por deploy** desses valores empacotados.
+
+> **`announced`, `secure`, `url` e `auto_register` são política pura de deploy e não podem ser definidos no package.json — eles são definidos pelo operador para cada ambiente. `tag_name` e `entry_point` são padrões escritos pelo FE que o operador pode sobrescrever no YAML.**
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
-| `tag_name` | string | `wippy.tagName` | Definido como `wippy.tagName` em `package.json` e obrigatório para o plugin; a chave YAML substitui o valor empacotado. Mantenha o override válido no navegador e sincronizado com o nome aceito pelo plugin |
-| `announced` | boolean | `false` | Deve ser `true` para aparecer em `/api/public/components/list`; usa `meta.public` como fallback quando definido |
-| `auto_register` | boolean | `false` | Com `true`, o Web Host carrega e registra o componente na inicialização |
+| `tag_name` | string | `wippy.tagName` | Escrito pelo FE como `wippy.tagName` no `package.json` (obrigatório pelo plugin do vite); a chave YAML sobrescreve o valor empacotado. Nome do custom element; deve conter um hífen conforme a especificação HTML |
+| `announced` | boolean | `false` | Deve ser `true` para o componente aparecer em `/api/public/components/list`. Recorre a `meta.public` se este estiver definido. |
+| `auto_register` | boolean | `false` | `true` → o Web Host carrega e registra o componente automaticamente na inicialização |
 | `secure` | boolean | `false` | Exige autenticação |
-| `url` | string | — | Caminho de montagem estática do bundle compilado |
-| `base_path` | string | `""` | Subcaminho opcional acrescentado a `url` para formar a raiz do projeto; a URL do bundle é `<url>/<base_path>/<entry_point>`. Tem o mesmo comportamento de páginas, embora os templates atuais omitam esse campo |
-| `entry_point` | string | `wippy.browser` → `index.js` | Definido pelo campo `browser` de nível superior em `package.json` e incorporado em `wippy-meta.json`; a chave YAML substitui o valor empacotado, com fallback em `index.js`. O host injeta este módulo como `<script type="module">` |
+| `url` | string | — | Caminho de mount estático para o bundle compilado do componente |
+| `base_path` | string | `""` | Subcaminho opcional anexado a `url` para formar a raiz do projeto; a URL resolvida do bundle é composta como `<url>/<base_path>/<entry_point>`. Respeitado de forma idêntica às páginas, embora as entradas de componente atuais do app-template o omitam |
+| `entry_point` | string | `wippy.browser` → `index.js` | Escrito pelo FE como o campo `browser` de nível superior no `package.json` (embutido em `wippy-meta.json`); a chave YAML sobrescreve o valor empacotado, recorrendo a `index.js`. Arquivo do módulo de entrada; o host o injeta como um `<script type="module">` |
 
-Uma entrada mínima:
+Uma entrada mínima se parece com isto:
 
 ```yaml
 - name: reaction-bar
@@ -164,71 +127,49 @@ Uma entrada mínima:
     url: /app/wc/reaction-bar
     entry_point: index.js
 ```
-## Os três gates do carregamento automático
 
-Para o Web Host carregar um componente automaticamente, as três condições
-precisam ser verdadeiras ao mesmo tempo:
+## Os Três Portões para o Autoload
 
-1. **`announced: true`** — `wippy/views` filtra por esta flag no servidor em
-   `list_components.lua`. Não existe parâmetro de query que contorne o filtro.
-   Com `announced: false`, o componente nunca aparece em
-   `/api/public/components/list`.
+Para que o Web Host carregue automaticamente um componente, as três condições precisam valer simultaneamente:
 
-2. **`auto_register: true`** — `loadGlobalAutoloadWidgets` consulta o endpoint
-   com `?auto_register=true`. Componentes sem a flag ficam fora da resposta.
+1. **`announced: true`** — o `wippy/views` filtra por essa flag no lado do servidor em `list_components.lua`. Não existe parâmetro de query para contorná-la. Um componente com `announced: false` nunca aparece em `/api/public/components/list`, independentemente de qualquer outra configuração.
 
-3. **A tag ainda não está registrada** — antes de injetar o script, o host
-   verifica `customElements.get(tagName)`. Se a tag já existe, por exemplo
-   depois de uma navegação, a injeção é ignorada para evitar uma segunda
-   definição.
+2. **`auto_register: true`** — a função `loadGlobalAutoloadWidgets` do host consulta o endpoint de listagem com `?auto_register=true`. Componentes sem essa flag são excluídos dessa resposta filtrada.
 
-Se algum gate faltar, o componente fica ausente sem erro visível. Para
-verificar, consulte
-`/api/public/components/list?auto_register=true`; a tag precisa estar na
-resposta.
+3. **A tag ainda não está registrada** — antes de injetar o script, o host verifica `customElements.get(tagName)`. Se a tag já estiver definida (por exemplo, de uma navegação anterior), o host pula a injeção para evitar definição dupla.
 
-## Sequência de carregamento automático
+Se qualquer portão faltar, o componente fica silenciosamente ausente. Para verificar: `curl /api/public/components/list?auto_register=true` — sua tag precisa aparecer na resposta.
 
-Durante a inicialização do Web Host, cada contexto responsável pelo autoload
-global executa a sequência abaixo. Ela não se repete a cada montagem de página:
+## A Sequência de Autoload
 
-1. `GET /api/public/components/list?auto_register=true` busca todos os
-   componentes anunciados e configurados para registro automático.
+Quando uma página dentro do Web Host termina de montar, o host executa a seguinte sequência:
 
-2. Para cada componente cujo `customElements.get(tagName)` é `undefined`, o
-   host acrescenta ao `document.head`:
+1. `GET /api/public/components/list?auto_register=true` — busca todos os componentes anunciados que se auto-registram.
+
+2. Para cada componente cujo `customElements.get(tagName)` é `undefined`, o host adiciona a `document.head`:
 
    ```html
    <script type="module" src="/app/wc/reaction-bar/index.js?declare-tag=example-reaction-bar"></script>
    ```
-3. O chunk de entrada chama `define(import.meta.url, ElementClass)`. Os autores
-   importam `define` de `@wippy-fe/webcomponent-vue` ou
-   `@wippy-fe/webcomponent-core`, que reexportam a função da proxy. Em runtime,
-   o import map resolve tudo para a única instância de `@wippy-fe/proxy`.
-   `define` lê
-   `new URL(import.meta.url).searchParams.get('declare-tag')` e chama
-   `customElements.define(tagName, ElementClass)`.
 
-4. Vue — ou outro framework — renderiza `<example-reaction-bar>`. O navegador
-   faz o upgrade do elemento, `connectedCallback` é acionado e
-   `WippyVueElement` monta o app Vue dentro de um shadow root.
+   O parâmetro de query `?declare-tag=` é o canal que diz ao chunk de entrada sob qual nome de custom element se registrar.
 
-## Quando usar `auto_register: false`
+3. O chunk de entrada chama `define(import.meta.url, ElementClass)`. Autores de componentes importam `define` de `@wippy-fe/webcomponent-vue` (ou `@wippy-fe/webcomponent-core`), que reexportam o `define` do proxy; em tempo de execução o import map o resolve para a única instância de `@wippy-fe/proxy`. O helper `define` lê `new URL(import.meta.url).searchParams.get('declare-tag')` e chama `customElements.define(tagName, ElementClass)`.
 
-`auto_register: false` exclui o componente da varredura global. Use-o quando:
+4. O Vue (ou qualquer framework) renderiza um elemento `<example-reaction-bar>`. O navegador faz o upgrade do elemento, `connectedCallback` dispara, e `WippyVueElement` monta seu app Vue dentro de um shadow root.
 
-- o componente é grande e só deve carregar em páginas que o solicitam;
-- o registro ocorre no ponto de uso por
-  `loadByTagName('example-heavy-chart')`, importado de `@wippy-fe/proxy`;
-- o componente é uma peça interna de outro bundle e não uma custom element
-  independente.
+## Por Que `auto_register: false` É Útil
+
+Definir `auto_register: false` exclui o componente da varredura global de autoload. Isso é apropriado quando:
+
+- O componente é grande e deve carregar apenas nas páginas que explicitamente precisam dele.
+- O componente é registrado programaticamente via `loadByTagName('example-heavy-chart')` (importado de `@wippy-fe/proxy`) no ponto de chamada.
+- O componente é um bloco de construção interno usado apenas dentro de outro bundle, não como um custom element autônomo.
 
 ```ts
 import { loadByTagName } from '@wippy-fe/proxy'
 
 await loadByTagName('example-heavy-chart')
 ```
-O registro lazy reduz o peso da carga inicial. Ainda assim, o componente
-precisa de `announced: true` para que `loadByTagName()` o resolva pela API:
-o endpoint `GET /components/by-tag/{tag}` devolve
-`404 "Component is not announced"` quando a flag é `false`.
+
+O registro tardio mantém o carregamento inicial da página leve. O componente ainda precisa de `announced: true` para que `loadByTagName()` o resolva através da API — o endpoint `GET /components/by-tag/{tag}` retorna `404 "Component is not announced"` quando a flag é `false`.

@@ -48,9 +48,9 @@ Konfigurieren Sie Timeouts, um Ressourcenerschöpfung zu verhindern:
 
 ```yaml
 timeouts:
-  read: "10s"    # Max time to read the entire request (headers + body)
-  write: "60s"   # Max time to write response
-  idle: "120s"   # Keep-alive timeout
+  read: "10s"    # Max Zeit zum Lesen der gesamten Anfrage (Header + Body)
+  write: "60s"   # Max Zeit zum Schreiben der Response
+  idle: "120s"   # Keep-Alive-Timeout
 ```
 
 - `read` — Für APIs kurz (5–10 Sekunden), für Uploads länger
@@ -165,15 +165,15 @@ entries:
 
 Der Server kann TLS direkt terminieren. Setzen Sie `tls.mode` auf `manual` (eigenes Zertifikat bereitstellen) oder `auto` (Zertifikat wird von einem Overlay-Netzwerktreiber bereitgestellt, z. B. `network.tailscale`). Reine Clearnet-Listener unterstützen `auto` nicht. Lassen Sie `tls` weg oder den Modus leer, um reines HTTP auszuführen.
 
-Im Modus `auto` darf der Server weder `cert` noch `key` angeben — der Netzwerktreiber stellt sie bereit.
+Im `auto`-Modus darf der Server `cert`/`key` nicht angeben — der Netzwerktreiber stellt sie bereit.
 
 ### Manuelles Zertifikat
 
-Unter `mode: manual` enthalten `cert` und `key` PEM-Inhalt. Stellen Sie diesen Inhalt auf genau eine der folgenden Arten pro Feld bereit und mischen Sie die Formen nicht:
+Unter `mode: manual` tragen `cert` und `key` PEM-Inhalt. Stelle diesen Inhalt auf eine von drei Arten bereit (pro Feld genau eine Variante, niemals gemischt):
 
-1. **Inline-PEM** — Die wörtliche PEM-Zeichenkette.
-2. **`file://`-Referenz** — Ein manifestrelativer Pfad, der beim Laden traversal-sicher aufgelöst und eingebettet wird.
-3. **Referenz auf die Umgebungs-Registry** — Den PEM-Inhalt beim Dekodieren über einen `${env:NAME}`-Platzhalter aus einer registrierten [Umgebungsvariablen](system/env.md) abrufen.
+1. **Inline-PEM** — der wörtliche PEM-String.
+2. **`file://`-Referenz** — manifest-relativer Pfad, der beim Laden aufgelöst und inline eingefügt wird (traversal-sicher).
+3. **Referenz auf die Env-Registry** — hole das PEM beim Dekodieren aus einer registrierten [Umgebungsvariable](system/env.md) über einen `${env:NAME}`-Platzhalter.
 
 ```yaml
 - name: api
@@ -195,16 +195,16 @@ Unter `mode: manual` enthalten `cert` und `key` PEM-Inhalt. Stellen Sie diesen I
     key:  ${env:app.env:tls_key}
 ```
 
-Der Platzhalter `${env:NAME}` löst `NAME` über die [Umgebungs-Registry](../system/env.md) auf — entweder den öffentlichen Namen einer registrierten Variablen oder ihre Eintrags-ID, beispielsweise `app.env:tls_cert`. Er bezeichnet keine rohe Betriebssystem-Umgebungsvariable; ein Betriebssystemwert ist nur erreichbar, wenn unter diesem Namen eine auf `env.storage.os` basierende Variable registriert ist. Mit `${env:NAME|default}` kann ein Standardwert angegeben werden.
+Der Platzhalter `${env:NAME}` löst `NAME` über die [Umgebungs-Registry](system/env.md) auf — den öffentlichen Namen einer registrierten Variable oder deren Entry-ID (z. B. `app.env:tls_cert`). Es handelt sich nicht um eine rohe Betriebssystem-Umgebungsvariable; ein Betriebssystemwert ist nur erreichbar, wenn unter diesem Namen eine von `env.storage.os` gestützte Variable registriert ist. Ein Standardwert lässt sich mit `${env:NAME|default}` angeben.
 
 <note>
-Die veralteten Begleitfelder <code>cert_env</code> und <code>key_env</code> werden weiterhin auf dieselbe Weise über die Umgebungs-Registry aufgelöst. Bevorzugen Sie den oben gezeigten Platzhalter <code>${env:NAME}</code>.
+Die alten Begleitfelder <code>cert_env</code> / <code>key_env</code> werden weiterhin auf dieselbe Weise über die Umgebungs-Registry aufgelöst, sind aber <b>veraltet</b> — bevorzuge den oben gezeigten Platzhalter <code>${env:NAME}</code>.
 </note>
 
 | Feld | Beschreibung |
 |------|--------------|
 | `mode` | `""` (aus), `auto` oder `manual` |
-| `cert` / `key` | PEM-Inhalt — inline, als `file://`-Referenz oder als `${env:NAME}`-Platzhalter |
+| `cert` / `key` | PEM-Inhalt — inline, `file://`-Referenz oder `${env:NAME}`-Platzhalter |
 
 ### Mutual TLS (mTLS)
 
@@ -219,12 +219,12 @@ tls:
   client_auth: require_and_verify
 ```
 
-`client_ca` akzeptiert dieselben drei Formen wie `cert` und `key`: Inline-PEM, `file://` oder `${env:NAME}`. Das veraltete Begleitfeld `client_ca_env` sollte ebenfalls durch `client_ca: ${env:NAME}` ersetzt werden.
+`client_ca` akzeptiert dieselben drei Formen wie `cert`/`key` (Inline-PEM, `file://` oder `${env:NAME}`). Das alte Begleitfeld `client_ca_env` ist ebenfalls veraltet zugunsten von `client_ca: ${env:NAME}`.
 
 | Feld | Beschreibung |
 |------|--------------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | PEM-Bundle vertrauenswürdiger Client-CAs — inline, als `file://`-Referenz oder als `${env:NAME}`-Platzhalter |
+| `client_ca` | PEM-Bundle vertrauenswürdiger Client-CAs (inline, `file://` oder `${env:NAME}`) |
 
 `verify_if_given` und `require_and_verify` benötigen eine CA. `request` und `require_any` akzeptieren jedes Client-Zertifikat ohne CA-Verifizierung.
 

@@ -18,13 +18,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-### 필수 모델 및 제공자
-
-임베딩 API를 호출하기 전에 `meta.name`이 `text-embedding-3-small`이고 기능에 `embed`가 포함되며 제공자 매핑이 임베딩 제공자로 해석되는 `llm.model`을 등록하세요. `OPENAI_API_KEY` 같은 제공자 자격 증명은 `wippy/llm`이 사용하는 환경 저장소를 통해 구성합니다. [LLM 모델 구성](./llm.md#모델-설정)을 참고하세요.
-
-### 데이터베이스 의존성
-
-의존성을 선언하고 `target_db` 매개변수를 애플리케이션 데이터베이스로 설정합니다:
+의존성을 선언하고, 의존성의 `parameters`를 통해 `target_db` 요구사항을 애플리케이션 데이터베이스에 연결합니다:
 
 ```yaml
 version: "1.0"
@@ -44,7 +38,7 @@ entries:
         value: app:app_db
 ```
 
-시작 시 `wippy/migration`이 `01_create_embeddings_table` 마이그레이션을 찾아 구성된 데이터베이스 드라이버에 맞는 `embeddings_512` 테이블을 생성합니다.
+시작 시 `wippy/migration`이 `01_create_embeddings_table` 마이그레이션을 수행하여 데이터베이스 드라이버에 적합한 벡터 인덱스를 갖춘 `embeddings_512` 테이블을 생성합니다.
 
 위와 같은 상대 SQLite 경로를 사용한다면 애플리케이션을 시작하기 전에 `data` 디렉터리를 만드세요.
 
@@ -173,8 +167,10 @@ local hits, err = embeddings.find_by_origin("how do migrations work?", "doc-1", 
 
 마이그레이션은 `target_db`의 데이터베이스 드라이버에 맞는 스키마를 생성합니다:
 
-- **PostgreSQL** — `vector(512)` 열과 IVFFlat 코사인 인덱스를 갖춘 `embeddings_512` 테이블. 마이그레이션은 `vector` 확장 설치를 시도하므로 데이터베이스 역할에 생성 권한이 있거나 확장이 이미 설치되어 있어야 합니다. PostgreSQL은 `origin_id`를 `UUID`로 저장합니다.
-- **SQLite** — KNN 검색을 위해 메타데이터 및 콘텐츠 열과 함께 `embedding float[512]` 벡터 열을 보관하는 `embeddings_512` `vec0` 가상 테이블.
+- **PostgreSQL** - `vector(512)` 컬럼과 IVFFlat 인덱스가 있는 `embeddings_512` 테이블. `pgvector` 확장이 필요합니다.
+- **SQLite** - KNN 검색을 위해 메타데이터 및 콘텐츠 컬럼과 함께 `embedding float[512]` 벡터 컬럼을 담는 `embeddings_512` `vec0` 가상 테이블.
+
+벡터는 API 레이어에서 항상 일반 JSON 배열을 통해 왕복됩니다.
 
 ## 참고 항목
 

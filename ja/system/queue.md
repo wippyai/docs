@@ -101,7 +101,7 @@ RabbitMQ および AMQP 0-9-1 互換ブローカー用です。
     insecure_skip_verify: false
 ```
 
-`cert`／`key`／`ca` には PEM コンテンツを指定します。インライン、`file://`、または[環境変数レジストリ](./env.md)を通じて解決される `${env:NAME}` プレースホルダーを使用できます。`insecure_skip_verify` は証明書検証を無効にします（開発時のみ）。従来の `cert_env`／`key_env`／`ca_env` ディレクティブも環境変数レジストリを読み取りますが、検索結果が見つからないか空の場合は、インライン値またはゼロ値を保持します。デフォルトのない最新のプレースホルダーは、変数が見つからない場合に失敗します。従来のディレクティブは非推奨です。
+`cert`/`key`/`ca` は PEM コンテンツを保持します。インライン、`file://` 経由、または [env レジストリ](system/env.md)で解決される `${env:NAME}` プレースホルダ経由で指定できます。`insecure_skip_verify` は証明書検証を無効化します（開発用のみ）。従来の `cert_env`/`key_env`/`ca_env` ディレクティブも同じように解決されますが非推奨です。`${env:NAME}` を使用してください。
 
 ### SQS ドライバー
 
@@ -118,7 +118,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）用
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -127,14 +127,14 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）用
 | フィールド | 型 | デフォルト | 説明 |
 |-----------|-----|-----------|------|
 | `config` | Registry ID | 必須 | リージョンと認証情報を提供する `config.aws` リソース |
-| `endpoint` | string | - | カスタムエンドポイント URL（LocalStack、ElasticMQ）。実際の AWS では省略 |
-| `message_retention_period` | int | `345600`（4 日） | キューレベルの保持期間（秒、60–1209600） |
-| `default_delay_seconds` | int | `0` | CreateQueue で適用されるデフォルトの配信遅延（0–900） |
+| `endpoint` | string | - | カスタムエンドポイント URL（LocalStack、ElasticMQ）；実 AWS では省略 |
+| `message_retention_period` | int | - | キューレベル保持期間（秒）（60–1209600）。作成時にキュー属性として設定される。省略するとAWSのデフォルトである345600（4日）のままになる。|
+| `default_delay_seconds` | int | `0` | CreateQueue で適用されるデフォルト配信遅延（0–900）|
 | `disable_message_checksum_validation` | bool | `false` | 送受信時の SQS メッセージチェックサム検証を無効化 |
 | `use_fips` | bool | `false` | FIPS 準拠のエンドポイントを使用 |
 | `use_dual_stack` | bool | `false` | デュアルスタック（IPv4 + IPv6）エンドポイントを使用 |
 
-キューは初回使用時にドライバーによって自動作成されます。発行時に SQS 固有のフィールドを指定するには、SQS プレフィックス付きヘッダーを使用します。`sqs.delay_seconds`、`sqs.message_group_id`、`sqs.message_deduplication_id` は、型付きの SQS メッセージフィールドにマッピングされます。他のすべてのヘッダー（`correlation_id` や `content_type` のような中立的なキー、および `sqs.message_attributes.*` キー）は、そのまま SQS メッセージ属性として引き渡されます。
+キューは初回使用時にドライバによって自動作成されます。発行時に SQS 固有のフィールドを指定するには SQS プレフィックス付きヘッダを使用してください。`sqs.delay_seconds`、`sqs.message_group_id`、`sqs.message_deduplication_id` は型付きの SQS メッセージフィールドにマッピングされます。それ以外のヘッダ（`correlation_id` や `content_type` のような中立的なキー、および任意の `sqs.message_attributes.*` キー）は SQS メッセージ属性としてそのまま運ばれます。
 
 ## キュー設定 {id="queue-configuration"}
 
@@ -154,12 +154,12 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）用
 
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
-| `driver` | Registry ID | はい | キュードライバー |
-| `codec` | string | いいえ | メッセージ本文のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照） |
-| `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名） |
-| `driver_options` | object | いいえ | ドライバー種別をキーとする、ドライバーごとのサブバッグ |
-| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージ用のキュー ID（受け付けられるが、組み込みドライバーではまだ適用されない） |
-| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数（受け付けられるが、組み込みドライバーではまだ適用されない） |
+| `driver` | Registry ID | はい | キュードライバ |
+| `codec` | string | いいえ | メッセージ本体のワイヤエンコーディング。デフォルトは `json/plain`（[コーデック](#codecs)を参照）|
+| `queue_name` | string | いいえ | 外部キュー名（デフォルトはエントリ名）|
+| `driver_options` | object | いいえ | ドライバ kind でキー付けされたドライバごとのサブバッグ |
+| `dead_letter.queue` | Registry ID | いいえ | 失敗メッセージのキュー ID（受け付けられるが、組み込みドライバではまだ適用されない）|
+| `dead_letter.max_attempts` | int | いいえ | DLQ にルーティングするまでの試行回数（受け付けられるが、組み込みドライバではまだ適用されない）|
 
 ### ドライバーオプション
 
@@ -169,7 +169,7 @@ AWS SQS および SQS 互換エンドポイント（LocalStack、ElasticMQ）用
 
 | キー | 説明 |
 |------|------|
-| `max_length` | 境界付きバッファーのサイズ（0 または未設定 = デフォルトの 1000） |
+| `max_length` | 境界バッファサイズ（0 または未設定 = デフォルト 1000）|
 
 **amqp:**
 
@@ -217,9 +217,9 @@ AMQP ドライバーは、発行するメッセージに対応する `content-ty
 | `queue` | 必須 | キューのレジストリ ID |
 | `func` | 必須 | ハンドラー関数のレジストリ ID |
 | `concurrency` | 1 | 並列ワーカー数 |
-| `prefetch` | 10 | 共有配信バッファーのサイズ。AMQP ではチャネルの QoS プリフェッチ数にも適用 |
-| `auto_ack` | false | バックエンド固有の自動確認応答オプション。AMQP では `true` にすると、配信時の確認応答をブローカーに要求 |
-| `driver_options` | - | ドライバーごとのサブバッグ（キューと同じ構造） |
+| `prefetch` | 10 | 配信バッファの合計 / ワーカー間で共有される最大処理中メッセージ数 |
+| `auto_ack` | false | true の場合、ランタイムはブローカー ack を呼び出さない；ハンドラの成功/失敗が唯一の settle シグナル |
+| `driver_options` | - | ドライバごとのサブバッグ（キューと同じ構造）|
 
 **amqp コンシューマーオプション:**
 
@@ -268,9 +268,11 @@ local function main(body)
         correlation_id = correlation_id
     })
 
-    local _, task_err = process_task(body)
-    if task_err then return nil, task_err end
-    return true
+    local ok, err = process_task(body)
+    if err then
+        return nil, err  -- nack: ドライバに応じて再配信
+    end
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -290,16 +292,17 @@ return { main = main }
 
 ハンドラーが明示的に確定しない限り、コンシューマーは関数の呼び出し結果に基づいて確定します。
 
-| ハンドラーの結果 | アクション |
-|-----------------|------------|
-| 呼び出しエラーなしで完了 | Ack |
-| 呼び出しエラーを返す、または発生させる | Nack（ドライバーに従って再配信） |
+| ハンドラ結果 | アクション |
+|-------------|----------|
+| 任意のプレーンな戻り値（`false` を含む） | Ack |
+| `nil, err` の戻り値 | Nack（ドライバに応じて再配信）|
+| 投げられたエラー | Nack |
 
 `false` を含む通常の戻り値では、確認応答の動作は選択されません。明示的に確定するには `msg:ack()` または `msg:nack()` を呼び出します。確定は一度だけ行われ、最初に到達した呼び出しが優先されます。
 
 ### Dead-Letter ルーティング
 
-Dead-letter ルーティングはまだ実装されていません。`dead_letter` ブロック（[キュー設定](#queue-configuration)を参照）は設定として受け付けられますが、現在、試行回数をカウントしたり、nack されたメッセージを設定済みの DLQ にルーティングしたり、`x_dead_letter_*` ヘッダーを設定したりする組み込みドライバーはありません。nack されたメッセージは、ドライバー自身のポリシーに従って再配信されます。`x_*` ヘッダー名前空間は将来の DLQ 管理用に予約されているため、パブリッシャーは `x_*` ヘッダーを設定しないでください。
+Dead-letter ルーティングはまだ実装されていません。`dead_letter` ブロック（[キュー設定](#queue-configuration)を参照）は設定として受け付けられますが、現時点で試行回数を数え、nack されたメッセージを設定済みの DLQ にルーティングし、`x_dead_letter_*` ヘッダを設定する組み込みドライバはありません。nack されたメッセージはドライバ自身のポリシーに従って再配信されます。`x_*` ヘッダ名前空間は将来の DLQ 記録用に予約されているため、発行者は `x_*` ヘッダを設定しないでください。
 
 ## メッセージの発行
 

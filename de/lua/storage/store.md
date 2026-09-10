@@ -1,6 +1,6 @@
 ---
 title: "Key-Value-Speicher"
-description: "Werte mit optionaler Ablaufzeit und bedingten Schreibvorgängen speichern und abrufen."
+description: "Schneller Key-Value-Speicher mit TTL-Unterstützung. Ideal für Caching, Sessions und temporäre Zustände."
 ---
 
 # Key-Value-Speicher
@@ -96,22 +96,15 @@ return user
 
 **Gibt zurück:** `any, error`
 
-Wenn der Schlüssel nicht existiert oder abgelaufen ist, gibt die Methode `nil` und einen Fehler vom Typ `errors.NOT_FOUND` zurück.
+Gibt `nil` und einen `errors.NOT_FOUND`-Fehler zurück, wenn der Schlüssel nicht existiert oder abgelaufen ist.
 
 ## Existenz prüfen
 
 Prüfen Sie, ob ein Schlüssel existiert, ohne ihn abzurufen:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -194,9 +187,7 @@ local errors = require("errors")
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
-    -- someone else holds it
-elseif err then
-    return nil, err
+    -- jemand anderes hält ihn
 end
 
 -- compare-and-set: write only if the version still matches
@@ -204,9 +195,7 @@ local cur, read_err = cache:entry("config")
 if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
-    -- a concurrent writer changed it; re-read and retry
-elseif err2 then
-    return nil, err2
+    -- ein gleichzeitiger Schreiber hat ihn geändert; erneut lesen und wiederholen
 end
 ```
 
@@ -274,27 +263,23 @@ Store-Operationen unterliegen der Auswertung der Sicherheitsrichtlinien.
 | Aktion | Ressource | Attribute | Beschreibung |
 |--------|----------|------------|-------------|
 | `store.get` | Store-ID | - | Store-Ressource abrufen |
-| `store.info` | Store-ID | - | Store-Fähigkeiten abfragen |
-| `store.key.get` | Store-ID | `key` | Schlüsselwert lesen (gilt auch für `entry`) |
-| `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben (gilt auch für `put`) |
+| `store.info` | Store-ID | - | Store-Fähigkeiten inspizieren |
+| `store.key.get` | Store-ID | `key` | Schlüsselwert lesen (auch `entry`) |
+| `store.key.set` | Store-ID | `key` | Schlüsselwert schreiben (auch `put`) |
 | `store.key.delete` | Store-ID | `key` | Schlüssel löschen |
 | `store.key.has` | Store-ID | `key` | Schlüsselexistenz prüfen |
 | `store.key.list` | Store-ID | `prefix` | Einträge auflisten |
 
-Berechtigungsverweigerungen durch `store.get`, `get`, `set`, `delete` und `has` lösen einen Lua-Fehler aus. Die Methoden `info`, `entry`, `list` und `put` geben dagegen einen Fehler vom Typ `errors.PERMISSION_DENIED` zurück. Erteilen Sie die erforderlichen Aktionen, bevor Sie Code aufrufen, der einen ausgelösten Berechtigungsfehler nicht verarbeiten kann.
-
 ## Fehler
 
-Fehler bei Eingaben, Suche, Backend und Fähigkeiten werden als strukturierte Fehler zurückgegeben (verwenden Sie `err:kind()`). Für Berechtigungsverweigerungen gilt das oben beschriebene geteilte Verhalten.
+`store.get()` und alle Methoden des Store-Handles (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) geben strukturierte Fehler zurück (verwenden Sie `err:kind()`), außer dass eine Berechtigungsverweigerung in `store.get`, `get`, `set`, `has` und `delete` stattdessen einen Lua-Fehler auslöst.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|------|-----------|
 | Leere Ressourcen-ID | `errors.INVALID` | nein |
-| Ressourcen-Registry nicht verfügbar | `errors.NOT_FOUND` | nein |
-| Abruf der Store-Ressource fehlgeschlagen, einschließlich einer fehlenden Ressource | `errors.INTERNAL` | nein |
+| Ressource nicht gefunden | `errors.INTERNAL` | nein |
 | Store freigegeben | `errors.INVALID` | nein |
-| Berechtigung durch `info`, `entry`, `list` oder `put` verweigert | `errors.PERMISSION_DENIED` | nein |
-| Berechtigung durch `store.get`, `get`, `set`, `delete` oder `has` verweigert | ausgelöster Lua-Fehler | nicht anwendbar |
+| Berechtigung verweigert (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | nein |
 | `only_if_absent` und Schlüssel existiert | `errors.ALREADY_EXISTS` | nein |
 | `if_version`-Abweichung | `errors.CONFLICT` | ja |
 | Bedingter Schreibvorgang auf einem Store ohne Unterstützung | `errors.INVALID` | nein |

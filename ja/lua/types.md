@@ -32,8 +32,8 @@ local s: string = a          -- ERROR: any is not assignable to string
 
 -- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
-u.foo                        -- no error: member access on unknown behaves like any
-local n: number = u          -- ERROR: unknown not assignable to number, narrow first
+u.foo                        -- エラーなし: unknown へのメンバーアクセスは any と同様に振る舞う
+local n: number = u          -- エラー: unknown は number に代入できない。先にナローイングする
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -236,10 +236,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = (user!).name            -- assert user is non-nil
+local name = (user!).name            -- user が非 nil であることをアサート
 ```
 
-`!` は型チェッカーだけに作用するアサーションです。型を非nilに絞り込みますが、ランタイムチェックは生成しません。実際の値がnilの場合、その後の操作は通常のエラー（nilへのインデックスアクセスなど）で失敗します。値がnilにならないと分かっていても、型チェッカーが証明できない場合に使用してください。
+`!` は型チェッカー上のアサーションにすぎません。型を非 nil にナローイングしますが、ランタイムチェックは生成しません。値が実際に nil であれば、後続の操作は通常のエラー（nil のインデックス参照など）で失敗します。値が nil でないことが分かっているが、型チェッカーがそれを証明できない場合に使用します。
 
 ## 型キャスト
 
@@ -310,8 +310,9 @@ local user = data as User            -- same as ::
 ### 種別と名前
 
 ```lua
-type NumberType = number
-print(NumberType:kind())             -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -340,20 +341,20 @@ print(nameType:kind())               -- "string"
 ### コレクション型
 
 ```lua
-type NumberArray = {number}
-print(NumberArray:elem():kind())     -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-type NumberMap = {[string]: number}
-print(NumberMap:key():kind())        -- "string"
-print(NumberMap:val():kind())        -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### オプション型
 
 ```lua
-type OptionalNumber = number?
-print(OptionalNumber:kind())         -- "optional"
-print(OptionalNumber:inner():kind()) -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### ユニオン型
@@ -370,6 +371,7 @@ end
 
 ```lua
 type Predicate = (number, string) -> boolean
+
 for param in Predicate:params() do
     print(param:kind())
 end
@@ -381,25 +383,25 @@ print(Predicate:ret():kind())        -- "boolean"
 ### 型の比較
 
 ```lua
-type NumberType = number
-type IntegerType = integer
+type Num = number
+type Int = integer
 
-print(NumberType == NumberType)      -- true
-print(IntegerType <= NumberType)     -- true (subtype)
-print(IntegerType < NumberType)      -- true (strict subtype)
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (サブタイプ)
+print(Int < Num)                     -- true (厳密なサブタイプ)
 ```
 
 ### テーブルキーとしての型
 
 ```lua
-type NumberType = number
-type StringType = string
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
 local handlers = {}
-handlers[NumberType] = function() return "number handler" end
-handlers[StringType] = function() return "string handler" end
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
 
-local h = handlers[NumberType]
+local h = handlers[Point]
 if h then h() end
 ```
 
@@ -430,9 +432,11 @@ type NonNegative = number @min(0)
 type Percentage = number @min(0) @max(100)
 type Email = string @pattern("^.+@.+$")
 
-local x = NonNegative(1)
-local percent, err = Percentage:is(50)
-local email = Email("test@example.com")
+-- 複数バリデータ
+local x: number @min(0) @max(100) = 50
+
+-- 文字列パターン
+local email: string @pattern("^.+@.+$") = "test@example.com"
 ```
 
 ローカル変数の注釈はリンターによって静的に検査されます。代入時に自動的なランタイムチェックが挿入されるわけではありません。ランタイムでの適用は、型値が値を検証するときに行われます。

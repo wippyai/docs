@@ -84,7 +84,7 @@ be copied verbatim. The complete registry definitions for `registry_list` and
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -152,7 +152,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` provides the `wippy.security:process` policy group that the LLM module's background services run under; without it they fail to start.
 
 ### Security Policies
 
@@ -185,6 +192,17 @@ the unmatched `undefined` result for `app.generated:*` as passing its bespoke
 filter. This is not Wippy runtime authorization: guarded operations require an
 explicit `allow` from the execution context, including the security-module
 operations shown below and `registry.apply` inside `changes:apply()`.
+
+A third policy grants the process itself access to the registry. A process launched without a security context is denied every registry read, so the `agent` command carries this policy as its own scope:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 See [Security Model](system/security.md) for details on policy evaluation.
 
@@ -281,6 +299,11 @@ The prompt gives the agent three operating rules:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -290,9 +313,7 @@ The prompt gives the agent three operating rules:
       compress: wippy.llm.util:compress
 ```
 
-The process runs as a terminal command. `create_tool` applies the package's
-denylist before writing, but that filter does not supply the command's runtime
-security context.
+The process runs as a terminal command. `meta.command.security` gives it the actor and scope it runs under — without it `registry.get` fails with `not allowed to access entry` and the agent never loads. Security enforcement for writes happens inside `create_tool`, which loads the `agent_security` policy group and evaluates it before writing.
 
 Imports:
 

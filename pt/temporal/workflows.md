@@ -342,29 +342,31 @@ local spawner = process.with_options({
 
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
-| `workflow.id` | string | ID explícito da execução do workflow |
-| `workflow.task_queue` | string | Substitui a task queue |
-| `workflow.execution_timeout` | duration | Timeout total de execução do workflow |
-| `workflow.run_timeout` | duration | Timeout de uma execução |
-| `workflow.task_timeout` | duration | Timeout de processamento da tarefa do workflow |
-| `workflow.id_conflict_policy` | string | `use_existing`, `fail` ou `terminate_existing` |
-| `workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only` ou `reject_duplicate` |
-| `workflow.execution_error_when_already_started` | boolean | Retorna erro se o workflow já estiver em execução |
-| `workflow.retry_policy` | table | Política de retry |
-| `workflow.cron_schedule` | string | Expressão cron para workflows recorrentes |
-| `workflow.memo` | table | Metadados não indexados do workflow |
-| `workflow.search_attributes` | table | Atributos indexados e consultáveis |
-| `workflow.enable_eager_start` | boolean | Inicia a execução imediatamente |
-| `workflow.start_delay` | duration | Atraso antes do início do workflow |
-| `workflow.summary` | string | Resumo exibido nos metadados do workflow Temporal |
-| `workflow.details` | string | Detalhes exibidos nos metadados do workflow Temporal |
-| `workflow.versioning_override` | string ou table | Modo de upgrade automático ou versão de deployment/build fixada |
-| `workflow.priority` | table | Chave de prioridade e configurações opcionais de fairness |
-| `workflow.parent_close_policy` | string | Comportamento do filho quando o pai encerra |
-| `workflow.wait_for_cancellation` | boolean | Aguarda o término do cancelamento |
-| `workflow.namespace` | string | Substituição do namespace Temporal |
-| `workflow.versioning_intent` | string ou number | Intenção de versionamento do worker do workflow filho |
-| `workflow.name` | string | Substituição do tipo do workflow filho |
+| `temporal.workflow.id` | string | ID explícito de execução do workflow |
+| `temporal.workflow.task_queue` | string | Sobrescreve a task queue |
+| `temporal.workflow.execution_timeout` | duration | Timeout total de execução do workflow |
+| `temporal.workflow.run_timeout` | duration | Timeout de execução única |
+| `temporal.workflow.task_timeout` | duration | Timeout de processamento da tarefa de workflow |
+| `temporal.workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
+| `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
+| `temporal.workflow.execution_error_when_already_started` | boolean | Erro se o workflow já está em execução |
+| `temporal.workflow.retry_policy` | table | Política de retry (veja abaixo) |
+| `temporal.workflow.cron_schedule` | string | Expressão cron para workflows recorrentes |
+| `temporal.workflow.memo` | table | Metadados não indexados do workflow |
+| `temporal.workflow.search_attributes` | table | Atributos indexados consultáveis |
+| `temporal.workflow.enable_eager_start` | boolean | Inicia execução imediatamente |
+| `temporal.workflow.start_delay` | duration | Atraso antes do workflow iniciar |
+| `temporal.workflow.parent_close_policy` | string | Comportamento do filho quando o pai é encerrado |
+| `temporal.workflow.wait_for_cancellation` | boolean | Aguarda conclusão do cancelamento |
+| `temporal.workflow.namespace` | string | Sobrescrita de namespace Temporal |
+| `temporal.workflow.name` | string | Nome do tipo de workflow a iniciar, quando difere do ID no registro |
+| `temporal.workflow.versioning_intent` | string | `compatible` (herda o build ID) ou `default` (usa regras de atribuição) |
+| `temporal.workflow.priority` | table | Prioridade da tarefa: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Resumo legível exibido na UI do Temporal |
+| `workflow.details` | string | Detalhes legíveis exibidos na UI do Temporal |
+| `workflow.versioning_override` | table | Sobrescrita de versionamento do worker: `mode` é `auto_upgrade`, ou `pinned` com `deployment_name` e `build_id` |
+
+Toda opção também é aceita sob sua chave curta (`workflow.id`, `workflow.task_queue`, ...); o prefixo `temporal.workflow.` é um alias legado. `summary` e `details` não têm alias `temporal.workflow.`.
 
 Valores de duração aceitam strings, como `"5s"`, `"10m"` e `"1h"`, ou números em milissegundos.
 
@@ -472,7 +474,37 @@ if err then
 end
 ```
 
-### A partir de handlers HTTP
+### Contexto de Segurança
+
+O ator e o escopo do chamador viajam com o workflow, separadamente dos valores de `ctx` e sob regras mais rígidas. Eles são carregados em dois headers do Temporal:
+
+| Header | Conteúdo |
+|--------|---------|
+| `wippy-security` | Envelope JSON: ID do ator, metadados do ator, IDs de política e a audiência |
+| `wippy-security-signature` | HMAC-SHA256 sobre esse envelope, com a chave `security_hmac_key` do cliente |
+
+A audiência é o ID da execução para a qual o header foi emitido — o ID do workflow para um start ou um signal, o ID da activity para uma activity. Um header reproduzido contra uma execução diferente falha na verificação de audiência, então um header capturado não pode ser reutilizado em outro lugar.
+
+A verificação ocorre antes de o corpo do workflow executar. A assinatura deve corresponder a uma das chaves do cliente, a audiência deve ser igual ao ID desta execução, e toda política nomeada no envelope deve resolver no registry de segurança local. **Qualquer uma dessas falhas faz a execução do workflow falhar** — não é um aviso e o workflow não executa com um contexto reduzido. O mesmo vale para um envelope internamente inconsistente, como um ator sem escopo ou políticas sem ator.
+
+Configure as chaves na entrada [`temporal.client`](temporal/overview.md#security-context-propagation). Iniciar um workflow a partir de um contexto que tem um ator ou um escopo exige uma chave de assinatura; sem ela, o start falha em vez de prosseguir sem assinatura.
+
+#### Workflows protegidos rejeitam signals não assinados
+
+Um workflow executando sob um contexto de segurança exige que todo signal recebido carregue um ticket de relay assinado — headers `wippy-relay-signal` e `wippy-relay-signal-signature` — vinculado a esse ID de workflow e a esse nome de signal. Um signal não assinado ou mal endereçado é rejeitado em vez de entregue. Signals enviados por processos Wippy através de `process.send` são assinados automaticamente. Signals injetados de fora do Wippy — a CLI do Temporal, `tctl`, ou outro SDK — não carregam ticket e portanto falham contra um workflow protegido. Conduza um workflow protegido apenas a partir do Wippy.
+
+#### IDs determinísticos de filhos e activities
+
+Sob um contexto de segurança, um workflow filho ou uma activity iniciada sem um ID explícito recebe um ID derivado em vez de aleatório, porque o ID é a audiência para a qual o header é assinado e deve ser reproduzível no replay:
+
+| Iniciado a partir de um workflow protegido | ID gerado |
+|---------------------------------|--------------|
+| Workflow filho | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` conta dentro da execução do workflow. Um `temporal.workflow.id` ou ID de activity fornecido explicitamente é usado como está e se torna a audiência. Sem um contexto de segurança, os IDs ficam a cargo do Temporal como antes.
+
+### A Partir de Handlers HTTP
 
 ```lua
 local function handler()

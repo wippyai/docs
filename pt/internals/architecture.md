@@ -1,6 +1,6 @@
 ---
 title: "Arquitetura"
-description: "Como o Wippy inicializa a infraestrutura, carrega componentes e entradas, agenda trabalho, roteia mensagens e encerra a aplicação."
+description: "Wippy é um sistema em camadas construído em Go. Componentes inicializam em ordem de dependência, comunicam-se através de um barramento de eventos e…"
 ---
 
 # Arquitetura
@@ -14,7 +14,7 @@ Esta é uma referência de implementação. Os diagramas e tipos Go descrevem in
 | Camada | Componentes |
 |--------|-------------|
 | Aplicação | Processos Lua, funções, workflows |
-| Runtime | Motor Lua (wippyai/go-lua) e módulos do runtime |
+| Runtime | Motor Lua (gopher-lua), 40+ módulos |
 | Serviços | HTTP, Queue, Storage, Temporal |
 | Sistema | Topology, Factory, Functions, Contracts |
 | Núcleo | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -40,7 +40,7 @@ Cria infraestrutura central antes de qualquer componente carregar:
 
 ### Fase 2: Carregamento de Componentes
 
-O Loader resolve as dependências por ordenação topológica e carrega os componentes sequencialmente, nível por nível. Mesmo os componentes de um mesmo nível são carregados um de cada vez.
+O Loader resolve dependências via ordenação topológica e carrega componentes nível por nível, um componente por vez.
 
 As arestas de dependência determinam os níveis; grupos de pacotes como Core e System não impõem uma ordem global separada. Portanto, componentes sem uma aresta de dependência podem ficar no mesmo nível, independentemente do grupo de pacotes.
 
@@ -83,7 +83,7 @@ Os componentes declaram dependências. O carregador constrói um grafo acíclico
 | Componente | Dependências | Propósito |
 |------------|--------------|-----------|
 | PIDGen | nenhuma | Geração de ID de processo |
-| Dispatcher | nenhuma | Despacho de handlers de comando |
+| Dispatcher | PIDGen | Despacho de handlers de comando |
 | Registry | Artifact | Armazenamento e versionamento de entradas |
 | Finder | Registry | Lookup e busca de entradas |
 | Supervisor | Registry | Políticas de reinício de serviço |
@@ -119,7 +119,7 @@ sequenceDiagram
 
 ### Tópicos Comuns
 
-Os eventos têm campos `System` e `Kind` separados. Os sistemas integrados publicam:
+Cada evento carrega um `System` e um `Kind`. Os sistemas integrados publicam:
 
 | Sistema | Tipo | Propósito |
 |---------|------|-----------|
@@ -135,8 +135,7 @@ Armazenamento versionado para definições de entradas.
 ### Recursos
 
 - **Estado Versionado** - Cada mutação cria nova versão
-- **Histórico** - Histórico em memória por padrão; histórico opcional em SQLite para uma trilha de auditoria durável (history_type: sqlite)
-- **Observação** - Observar entradas específicas para mudanças
+- **Histórico** - Histórico em SQLite para trilha de auditoria
 - **Orientado a Eventos** - Publica eventos em mutações
 
 ### Ciclo de Vida de Entrada
@@ -173,14 +172,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same-node hosts and processes]
-    Peer -.- P[External receivers, such as Temporal]
-    Inter -.- I[Other cluster nodes]
+    Local -.- L[Este nó]
+    Peer -.- P[Receptor peer registrado]
+    Inter -.- I[Outros nós do cluster]
 ```
 
-1. **Local** — Entrega direta entre hosts e processos no mesmo nó
-2. **Peer** — Encaminha para um receiver externo registrado, como o Temporal
-3. **Internode** — Recorre ao roteamento de rede para outro nó do cluster
+1. **Local** - Entrega direta dentro do mesmo nó
+2. **Peer** - Entregar a um receptor registrado para aquele ID de nó (um peer externo, como um worker do Temporal)
+3. **Internode** - Recorrer ao transporte internode do cluster, instalado pelo componente de cluster após o boot
 
 ### Mailbox
 

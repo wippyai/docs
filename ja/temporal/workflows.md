@@ -341,29 +341,31 @@ local spawner = process.with_options({
 
 | オプション | 型 | 説明 |
 |-----------|-----|------|
-| `workflow.id` | string | 明示的なワークフロー実行ID |
-| `workflow.task_queue` | string | タスクキューのオーバーライド |
-| `workflow.execution_timeout` | duration | ワークフロー実行全体のタイムアウト |
-| `workflow.run_timeout` | duration | 単一実行のタイムアウト |
-| `workflow.task_timeout` | duration | ワークフロータスク処理のタイムアウト |
-| `workflow.id_conflict_policy` | string | `use_existing`、`fail`、`terminate_existing` |
-| `workflow.id_reuse_policy` | string | `allow_duplicate`、`allow_duplicate_failed_only`、`reject_duplicate` |
-| `workflow.execution_error_when_already_started` | boolean | ワークフローが既に実行中の場合にエラー |
-| `workflow.retry_policy` | table | リトライポリシー（下記参照） |
-| `workflow.cron_schedule` | string | 定期ワークフローのcron式 |
-| `workflow.memo` | table | 非インデックスのワークフローメタデータ |
-| `workflow.search_attributes` | table | インデックス化されたクエリ可能な属性 |
-| `workflow.enable_eager_start` | boolean | 即時実行を開始 |
-| `workflow.start_delay` | duration | ワークフロー開始前の遅延 |
-| `workflow.summary` | string | Temporalワークフローのメタデータに表示される概要 |
-| `workflow.details` | string | Temporalワークフローのメタデータに表示される詳細 |
-| `workflow.versioning_override` | string or table | 自動アップグレードモード、または固定されたデプロイ／ビルドバージョン |
-| `workflow.priority` | table | 優先度キーと任意の公平性設定 |
-| `workflow.parent_close_policy` | string | 親クローズ時の子の動作 |
-| `workflow.wait_for_cancellation` | boolean | キャンセル完了を待機 |
-| `workflow.namespace` | string | Temporal名前空間のオーバーライド |
-| `workflow.versioning_intent` | string or number | 子ワークフローに対するワーカーのバージョニング意図 |
-| `workflow.name` | string | 子ワークフロー種別名の上書き |
+| `temporal.workflow.id` | string | 明示的なワークフロー実行ID |
+| `temporal.workflow.task_queue` | string | タスクキューのオーバーライド |
+| `temporal.workflow.execution_timeout` | duration | ワークフロー実行全体のタイムアウト |
+| `temporal.workflow.run_timeout` | duration | 単一実行のタイムアウト |
+| `temporal.workflow.task_timeout` | duration | ワークフロータスク処理のタイムアウト |
+| `temporal.workflow.id_conflict_policy` | string | `use_existing`、`fail`、`terminate_existing` |
+| `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`、`allow_duplicate_failed_only`、`reject_duplicate` |
+| `temporal.workflow.execution_error_when_already_started` | boolean | ワークフローが既に実行中の場合にエラー |
+| `temporal.workflow.retry_policy` | table | リトライポリシー（下記参照） |
+| `temporal.workflow.cron_schedule` | string | 定期ワークフローのcron式 |
+| `temporal.workflow.memo` | table | 非インデックスのワークフローメタデータ |
+| `temporal.workflow.search_attributes` | table | インデックス化されたクエリ可能な属性 |
+| `temporal.workflow.enable_eager_start` | boolean | 即時実行を開始 |
+| `temporal.workflow.start_delay` | duration | ワークフロー開始前の遅延 |
+| `temporal.workflow.parent_close_policy` | string | 親クローズ時の子の動作 |
+| `temporal.workflow.wait_for_cancellation` | boolean | キャンセル完了を待機 |
+| `temporal.workflow.namespace` | string | Temporal名前空間のオーバーライド |
+| `temporal.workflow.name` | string | 開始するワークフロー型名。レジストリIDと異なる場合に指定 |
+| `temporal.workflow.versioning_intent` | string | `compatible`（ビルドIDを継承）または`default`（割り当てルールを使用） |
+| `temporal.workflow.priority` | table | タスク優先度: `priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `workflow.summary` | string | Temporal UIに表示される人間可読なサマリ |
+| `workflow.details` | string | Temporal UIに表示される人間可読な詳細 |
+| `workflow.versioning_override` | table | ワーカーバージョニングのオーバーライド: `mode`は`auto_upgrade`、または`deployment_name`と`build_id`を伴う`pinned` |
+
+すべてのオプションは短縮キー（`workflow.id`、`workflow.task_queue`、...）でも受け付けられます。`temporal.workflow.`プレフィックスはレガシーのエイリアスです。`summary`と`details`に`temporal.workflow.`のエイリアスはありません。
 
 duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数値を受け付けます。
 
@@ -470,6 +472,36 @@ if err then
     return nil, err
 end
 ```
+
+### セキュリティコンテキスト
+
+呼び出し元のアクターとスコープは、`ctx`の値とは別に、より強い規則の下でワークフローとともに伝播します。これらは2つのTemporalヘッダーで運ばれます：
+
+| ヘッダー | 内容 |
+|--------|---------|
+| `wippy-security` | JSONエンベロープ: アクターID、アクターのメタデータ、ポリシーID、オーディエンス |
+| `wippy-security-signature` | クライアントの`security_hmac_key`を鍵とする、そのエンベロープに対するHMAC-SHA256 |
+
+オーディエンスは、そのヘッダーが発行された対象の実行のIDです。開始とシグナルではワークフローID、アクティビティではアクティビティIDになります。別の実行に対して再生されたヘッダーはオーディエンス検査に失敗するため、傍受されたヘッダーを他所で再利用することはできません。
+
+検証はワークフロー本体の実行前に行われます。署名はクライアントの鍵のいずれかと一致しなければならず、オーディエンスはこの実行のIDと等しくなければならず、エンベロープで指定されたすべてのポリシーがローカルのセキュリティレジストリで解決されなければなりません。**いずれかが失敗するとワークフロー実行は失敗します**。これは警告ではなく、ワークフローが縮小されたコンテキストで実行されることもありません。スコープを持たないアクターやアクターを持たないポリシーのように、エンベロープ自体が内部的に矛盾している場合も同様です。
+
+鍵は[`temporal.client`](temporal/overview.md#security-context-propagation)エントリで設定します。アクターまたはスコープを持つコンテキストからワークフローを開始するには署名鍵が必要です。鍵がない場合、署名なしで続行するのではなく開始が失敗します。
+
+#### セキュアなワークフローは署名のないシグナルを拒否する
+
+セキュリティコンテキストの下で実行されるワークフローは、受信するすべてのシグナルが、そのワークフローIDとそのシグナル名に紐付けられた署名済みリレーチケット（ヘッダー`wippy-relay-signal`と`wippy-relay-signal-signature`）を運ぶことを要求します。署名がない、または宛先が誤っているシグナルは配信されずに拒否されます。Wippyプロセスが`process.send`で送信するシグナルは自動的に署名されます。Wippyの外部から注入されるシグナル（Temporal CLI、`tctl`、別のSDK）はチケットを持たないため、セキュアなワークフローに対しては失敗します。セキュアなワークフローはWippyからのみ駆動してください。
+
+#### 決定論的な子ワークフローIDとアクティビティID
+
+セキュリティコンテキストの下では、明示的なIDなしで開始された子ワークフローやアクティビティにはランダムなIDではなく導出されたIDが与えられます。IDはヘッダーが署名される対象のオーディエンスであり、リプレイ時に再現可能でなければならないためです：
+
+| セキュアなワークフローからの開始 | 生成されるID |
+|---------------------------------|-------------|
+| 子ワークフロー | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| アクティビティ | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N`はワークフロー実行内でカウントされます。明示的に指定された`temporal.workflow.id`やアクティビティIDはそのまま使用され、それがオーディエンスになります。セキュリティコンテキストがない場合、IDは従来どおりTemporalに委ねられます。
 
 ### HTTPハンドラから
 

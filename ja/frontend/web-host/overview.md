@@ -1,84 +1,80 @@
 ---
-title: "Web Host 概要"
-description: "CDN-hosted Web Host、facade page、child micro frontend が Wippy application 内でどう連携するか。"
+title: "Web ホストの概要"
+description: "Wippy Web ホストは Feature-Sliced Design の方法論で構築された Vue 3 のシングルページアプリケーションで、CDN から配信されます…"
 ---
 
-# Web Host 概要
+# Web ホストの概要
 
-このページは architecture reference です。deployment boundary と entry point を説明します。setup はリンク先の facade と micro-frontend guide を参照してください。
-
-Wippy Web Host は Feature-Sliced Design methodology で構築された Vue 3 single-page application で、`https://web-host.wippy.ai` から配信されます。Wippy application の user-facing page と UI component を host します。設定は backend module `wippy/facade` から行い、application と一緒に build や deploy はしません。
+Wippy Web ホストは Feature-Sliced Design の方法論で構築された Vue 3 のシングルページアプリケーションで、`https://web-host.wippy.ai` の CDN から配信されます。Wippy アプリケーションのユーザー向けページと UI コンポーネントをすべてホストします。ビルドもデプロイも不要です — `wippy/facade` バックエンドモジュールを通じて設定すれば、自動的に読み込まれます。
 
 ![Wippy FE architecture](../diagrams/fe-arch-overview.svg)
 
-## 3 レイヤーモデル
+## 3層モデル
 
-実行中の Wippy application は、入れ子になった 3 つのレイヤーで構成されます。
+動作している Wippy アプリケーションは、入れ子になった3つの層で構成されます。
 
-**Layer 1 — `wippy/facade` が配信するページ。** backend-rendered HTML page です。`wippy/facade` module は Wippy gateway に static file server と `/facade/config` endpoint を登録します。user が application を開くと、`wippy/facade` は CDN から Web Host JS-module entry（compat は `module.js`、managed は `managed-layout.js`）を読み込む薄い HTML page を配信し、`/facade/config` の設定で初期化します。page 自体に Vue や React はなく、意図的に最小限です。
+**層1 — `wippy/facade` が配信するページ。** これはバックエンドが描画する HTML ページです。`wippy/facade` モジュールは、Wippy のゲートウェイに静的ファイルサーバーと `/facade/config` エンドポイントを登録します。ユーザーがアプリケーションへアクセスすると、`wippy/facade` は CDN から Web ホストの JS モジュールエントリ（compat なら `module.js`、managed なら `managed-layout.js`）を読み込み、`/facade/config` の設定で初期化する薄い HTML ページを配信します。ページ自体は Vue も React も持ちません — 意図的に薄く保たれています。
 
-**Layer 2 — Web Host。** Web Host bundle は JS module として読み込まれ、page 全体と browser history を引き継ぎます。navigation、chat、session management、page rendering surface といった Wippy chrome を所有します。全設定を page の init call から受け取り、deployment 固有の URL や token は内包しません。そのため同じ CDN bundle を異なる deployment で利用できます。facade を使わない manual embedding では、後述の `iframe.html` entry により host を iframe 内で実行できます。
+**層2 — Web ホスト。** Web ホストのバンドルは、ページ全体とブラウザー履歴を引き継ぐ JS モジュールとして読み込まれます。Wippy のクローム、すなわちナビゲーションサイドバー、チャットパネル、セッション管理、ページ描画のサーフェスを所有します。設定一式はページの init 呼び出しから受け取り、バンドル自体にデプロイ固有の URL やトークンを一切含みません。これが、CDN でホストされるバンドルをデプロイ間で可搬にしています。（手動でファサードなしに埋め込む場合、同じホストを `iframe.html` エントリ経由で iframe の内側で動かすこともできます — 下のエントリーポイントの表を参照してください。）
 
-**Layer 3 — Child micro-frontend。** Web Host は、設定済み page engine（legacy srcdoc iframe または Web Fragment）を通して `view.page` module を render します。`view.component` module は custom element として mount します。iframe engine は独立した browsing context を提供します。Web Fragment は host document に反映される reframed realm を使い、isolation boundary ではありません。component の shadow root が分離するのは selector であり authority ではありません。各 surface は、deployment 固有 URL を必要とせずに Wippy API access、authentication context、theme delivery、communication を利用できる適切な proxy adapter を受け取ります。
+**層3 — 子のマイクロフロントエンド。** Web ホストはさらに、ユーザーが定義したビューを入れ子の iframe（`view.page` モジュール）または Web コンポーネント（`view.component` モジュール）として埋め込みます。各子は分離された状態で動作します。Web ホストはプロキシスクリプトを注入し、子が自分のデプロイ先を知らなくても Wippy の API、認証コンテキスト、テーマ CSS、通信チャネルへアクセスできるようにします。
 
 ```
 Page (wippy/facade HTML — loads module.js / managed-layout.js)
   └─ Web Host (takes over the page + browser history)
        ├─ Chat UI, navigation, sidebar
        └─ Child micro-frontends
-            ├─ view.page → srcdoc iframe or Web Fragment + proxy adapter
+            ├─ view.page  → srcdoc iframe + proxy.js
             └─ view.component → custom element + @wippy-fe/proxy ESM
 ```
 
-## Entry Point
+## エントリーポイント
 
-Web Host CDN は、同じ versioned directory から複数の entry point を配信します。integration に応じて選びます。各 entry は `/<release-tag>/module.js` のように `<release-tag>/<entry>` で利用できます。
+Web ホストの CDN は、同じバージョン付きディレクトリからいくつかのエントリーポイントを配信します。どれが適切かは、統合の仕方によります。
+
+各エントリは CDN の `<release-tag>/<entry>`（例: `/<release-tag>/module.js`）から配信されます。
 
 | エントリ | ユースケース |
 |-------|----------|
-| `module.js` | **compat** mode の full app。標準的な nav-sidebar + page-area + chat-right-panel shell。`window.initWippyApp()` により page へ直接 mount し、page 全体と browser history を引き継ぐ。現在の `wippy/facade` がデフォルトで配信する entry |
-| `managed-layout.js` | **managed** mode の full app。宣言的な multi-panel layout。`fe_mode = managed` の場合に facade が配信する。early access（[Multi-Panel Layout](./multi-panel-layout.md)参照） |
-| `iframe.html` | isolation または partial-page embedding のため、**iframe 内**で動く full app。`SetConfig` PostMessage handshake で設定を渡す、facade を使わない manual embedding 向け。facade 自身はこれではなく上記 JS-module entry を読み込む |
-| `chat-iframe.html` | sidebar や page のない最小 chat interface。focused chat widget の embedding 向け |
-| `chat.js` | chat store と WebSocket client を公開する headless ESM module。完全に custom な UI の構築向け |
-| `ws.js` | Vue や Pinia に依存しない standalone WebSocket service。low-level real-time integration 向け |
+| `module.js` | **compat** モードのフルアプリ — 標準のナビサイドバー + ページ領域 + チャット右パネルのシェル。`window.initWippyApp()` によりページへ直接マウントされ、ページ全体とブラウザー履歴を引き継ぎます。現在の `wippy/facade` がデフォルトで配信するエントリです。 |
+| `managed-layout.js` | **managed** モードのフルアプリ — 宣言的なマルチパネルレイアウト。`fe_mode = managed` のときにファサードが配信します。早期アクセスです（[マルチパネルレイアウト](./multi-panel-layout.md) を参照）。 |
+| `iframe.html` | 分離や部分埋め込みのために **iframe の内側**で動かすフルアプリ。`SetConfig` の PostMessage ハンドシェイクで設定を渡す、手動のファサードなし埋め込みで使います。ファサード自体は、これではなく上記の JS モジュールエントリを読み込みます。 |
+| `chat-iframe.html` | サイドバーやページのない最小限のチャットインターフェース。チャットに絞ったウィジェットの埋め込みに便利です。 |
+| `chat.js` | チャットのストアと WebSocket クライアントを公開するヘッドレスの ESM モジュール。完全にカスタムな UI を作る場合に使います。 |
+| `ws.js` | Vue も Pinia も依存しないスタンドアロンの WebSocket サービス。低レベルのリアルタイム統合に使います。 |
 
-標準的な `wippy/facade` deployment では、これらの path を直接参照しません。facade が設定から `fe_facade_url` を読み、`fe_mode` に合う JS-module entry（compat は `module.js`、managed は `managed-layout.js`）を選択し、正しい URL を自動的に構成します。
+標準の `wippy/facade` ベースのデプロイでは、これらのパスを直接参照することはありません。ファサードは設定から `fe_facade_url` を読み、`fe_mode` に合った JS モジュールエントリ（compat なら `module.js`、managed なら `managed-layout.js`）を選び、正しい URL を自動的に組み立てます。
 
-## CDN バージョン管理 :id=cdn-versioning
+## CDN のバージョニング
 
-Web Host は git tag で versioning されます。production URL の canonical pattern は次のとおりです。
+Web ホストは git タグでバージョン管理されます。正典の本番 URL パターンは次のとおりです。
 
 ```
 https://web-host.wippy.ai/<release-tag>/
 ```
 
-`<release-tag>` は Web Host の git release tag で、stable release または feature-branch preview deploy です。staging CDN は `https://web-host.staging.wippy.ai/<release-tag>/` にあります。
+ここで `<release-tag>` は Web ホストの git リリースタグで、安定版リリースかフィーチャーブランチのプレビューデプロイのいずれかです。ステージングの CDN は `https://web-host.staging.wippy.ai/<release-tag>/` です。
 
-通常、`wippy/facade` module は default の `fe_facade_url` を通して version を選択します。これは対応する Web Host build を指します。そのため `wippy/facade` を更新すると deployment も対応する Web Host version に移ります。import map 経由で vendor library を共有する child app は、その build が提供する version を受け取ります。
+通常はバージョンをまったく設定しません。`wippy/facade` モジュールは、対応する Web ホストのビルドを指すデフォルトの `fe_facade_url` を同梱しているため、**Web ホストのバージョンはファサードモジュールとともに動きます** — 新しい Web ホストへ移るには `wippy/facade` を更新します。インポートマップ経由でベンダーライブラリを共有する子アプリは、そのビルドが提供するバージョンをそのまま受け取ります。
 
-既知の安定版に留める、または feature-branch / early-access tag を利用するために特定の Web Host version を pin する場合は、`fe_facade_url` parameter を上書きします。
+特定の Web ホストのバージョンにピン留めするには — 既知の良好なビルドに留まる、あるいはフィーチャーブランチ／早期アクセスのタグを選ぶには — `fe_facade_url` パラメーターをオーバーライドします。
 
 ```yaml
 - name: fe_facade_url
   value: https://web-host.wippy.ai/<release-tag>
 ```
 
-これにより deployment 全体がその build に固定されます。runtime で設定する `-o` / `--override` syntax は [CLI override](../../guides/cli.md)を参照してください。
+これによりデプロイ全体がそのビルドにピン留めされます。実行時に設定するための `-o` / `--override` 構文については [CLI のオーバーライド](../../guides/cli.md) を参照してください。
 
-## 技術スタック :id=tech-stack
+## 技術スタック
 
-Web Host は Vue 3（Composition API）、UI component に PrimeVue + Tailwind CSS 3、state management に Pinia、navigation に Vue Router、HTTP に Axios を使用します。
-
-### Child dependency の externalization
-
-開発時は `<fe_facade_url>/import-map.json` を取得し、現在の artifact がその key を import しているかにかかわらず、`imports` object の全 key を Rollup externals に指定します。import する dependency の exact specifier がない場合だけ bundle に含めます。Web Host tag が変わったとき、または新しい dependency を追加したときは再取得してください。
+Web ホストは Vue 3（Composition API）、UI コンポーネントに PrimeVue + Tailwind CSS 3、状態管理に Pinia、ナビゲーションに Vue Router、HTTP に Axios を使って構築されています。開発中は `<fe_facade_url>/import-map.json` を取得し、その `imports` オブジェクトのすべてのキーを、現在のアーティファクトがそのキーを import していなくても Rollup の externals に入れてください。import した依存関係をバンドルするのは、その正確な指定子が存在しない場合だけです。Web ホストのタグが変わったとき、または新しい依存関係を追加したときは再取得してください。
 
 ## 関連項目
 
-- [Facade Entry Point](./entry-point.md) — facade が Web Host を user に配信する仕組みと config flow
-- [Bootstrap Sequence](./bootstrap.md) — Web Host が設定を受け取った後に内部で起きること
-- [Multi-Panel Layout](./multi-panel-layout.md) — custom multi-panel shell 向けの managed layout mode
-- [Packages](./packages.md) — child app developer が利用できる `@wippy-fe/*` npm package
-- [Facade module](../../framework/facade.md) — `wippy/facade` の backend setup
-- [Render Engines](./render-engines.md) — 2 つの page-render engine（srcdoc iframe と Web Fragment）
+- [ファサードのエントリーポイント](./entry-point.md) — ファサードが Web ホストをユーザーへどう届けるか、設定のフローはどうなっているか
+- [ブートストラップのシーケンス](./bootstrap.md) — Web ホストが設定を受け取った後、内部で何が起きるか
+- [マルチパネルレイアウト](./multi-panel-layout.md) — カスタムのマルチパネルシェル向けのマネージドレイアウトモード
+- [パッケージ](./packages.md) — 子アプリの開発者が利用できる `@wippy-fe/*` npm パッケージ
+- [ファサードモジュール](../../framework/facade.md) — `wippy/facade` のバックエンド設定
+- [レンダリングエンジン](./render-engines.md) — 2つのページ描画エンジン（srcdoc iframe と Web Fragment）

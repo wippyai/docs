@@ -101,7 +101,7 @@ Konfigurieren Sie TLS unter `tls`:
     insecure_skip_verify: false
 ```
 
-`cert`, `key` und `ca` enthalten PEM-Inhalt — inline, über `file://` oder als `${env:NAME}`-Platzhalter, der durch die [Env-Registry](./env.md) aufgelöst wird. `insecure_skip_verify` deaktiviert die Zertifikatsprüfung und ist nur für die Entwicklung gedacht. Die veralteten Direktiven `cert_env`, `key_env` und `ca_env` lesen ebenfalls aus der Env-Registry, behalten aber einen Inline- oder Nullwert bei, wenn die Auflösung fehlt oder leer ist; moderne Platzhalter ohne Standardwert schlagen bei fehlenden Variablen fehl.
+`cert`/`key`/`ca` enthalten PEM-Inhalt — inline, über `file://` oder über einen `${env:NAME}`-Platzhalter, der über die [Env-Registry](system/env.md) aufgelöst wird. `insecure_skip_verify` deaktiviert die Zertifikatsprüfung (nur für Entwicklung). Die Legacy-Direktiven `cert_env`/`key_env`/`ca_env` werden auf dieselbe Weise aufgelöst, sind aber veraltet; bevorzugen Sie `${env:NAME}`.
 
 ### SQS-Driver
 
@@ -118,7 +118,7 @@ Für AWS SQS und SQS-kompatible Endpoints (LocalStack, ElasticMQ). Anmeldedaten,
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -128,13 +128,13 @@ Für AWS SQS und SQS-kompatible Endpoints (LocalStack, ElasticMQ). Anmeldedaten,
 |------|-----|----------|--------------|
 | `config` | Registry-ID | erforderlich | `config.aws`-Ressource mit Region und Anmeldedaten |
 | `endpoint` | string | - | Eigene Endpoint-URL (LocalStack, ElasticMQ); für echtes AWS weglassen |
-| `message_retention_period` | int | `345600` (4d) | Queue-weite Aufbewahrung in Sekunden (60–1209600) |
+| `message_retention_period` | int | - | Queue-weite Aufbewahrung in Sekunden (60–1209600), wird beim Erstellen als Queue-Attribut gesetzt. Weglassen, um den AWS-Standard von 345600 (4 Tage) beizubehalten. |
 | `default_delay_seconds` | int | `0` | Standard-Delivery-Verzögerung bei CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | SQS-Nachrichten-Prüfsummen beim Senden/Empfangen deaktivieren |
 | `use_fips` | bool | `false` | FIPS-konforme Endpoints verwenden |
 | `use_dual_stack` | bool | `false` | Dual-Stack-Endpoints (IPv4 + IPv6) verwenden |
 
-Queues werden vom Treiber bei der ersten Verwendung automatisch erstellt. Verwenden Sie SQS-präfixierte Header für SQS-spezifische Felder beim Publishing: `sqs.delay_seconds`, `sqs.message_group_id` und `sqs.message_deduplication_id` werden typisierten SQS-Nachrichtenfeldern zugeordnet. Alle anderen Header — neutrale Schlüssel wie `correlation_id` und `content_type` sowie alle Schlüssel unter `sqs.message_attributes.*` — werden unverändert als SQS-Nachrichtenattribute übertragen.
+Queues werden vom Driver bei der ersten Verwendung automatisch erstellt. Verwenden Sie SQS-präfixierte Header, um SQS-spezifische Felder beim Publish zu adressieren: `sqs.delay_seconds`, `sqs.message_group_id` und `sqs.message_deduplication_id` werden auf typisierte SQS-Nachrichtenfelder abgebildet. Alle anderen Header (neutrale Schlüssel wie `correlation_id` und `content_type` sowie beliebige `sqs.message_attributes.*`-Schlüssel) werden unverändert als SQS-Nachrichtenattribute übertragen.
 
 ## Queue-Konfiguration
 
@@ -158,8 +158,8 @@ Queues werden vom Treiber bei der ersten Verwendung automatisch erstellt. Verwen
 | `codec` | string | Nein | Wire-Kodierung für Nachrichten-Bodies. Standard ist `json/plain` (siehe [Codecs](#codecs)) |
 | `queue_name` | string | Nein | Externer Queue-Name (Standard: Entry-Name) |
 | `driver_options` | object | Nein | Per-Driver-Sub-Bag, indiziert nach Driver-Kind |
-| `dead_letter.queue` | Registry-ID | Nein | Queue-ID für fehlgeschlagene Nachrichten; akzeptiert, aber von keinem integrierten Treiber durchgesetzt |
-| `dead_letter.max_attempts` | int | Nein | Versuche vor dem Routing zur DLQ; akzeptiert, aber von keinem integrierten Treiber durchgesetzt |
+| `dead_letter.queue` | Registry-ID | Nein | Queue-ID für fehlgeschlagene Nachrichten |
+| `dead_letter.max_attempts` | int | Nein | Versuche vor Routing zur DLQ (wird akzeptiert, aber von keinem eingebauten Driver durchgesetzt) |
 
 ### Driver-Optionen
 
@@ -268,9 +268,11 @@ local function main(body)
         correlation_id = correlation_id
     })
 
-    local _, task_err = process_task(body)
-    if task_err then return nil, task_err end
-    return true
+    local ok, err = process_task(body)
+    if err then
+        return nil, err  -- nack: redelivery per driver
+    end
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -292,16 +294,15 @@ Sofern der Handler die Nachricht nicht ausdrücklich bestätigt oder ablehnt, en
 
 | Handler-Ergebnis | Aktion |
 |------------------|--------|
-| Abschluss ohne Aufruffehler | Ack |
-| Zurückgegebener oder ausgelöster Aufruffehler | Nack (erneute Zustellung gemäß Treiber) |
+| Jeder einfache Rückgabewert (auch `false`) | Ack |
+| Rückgabe `nil, err` | Nack (Redelivery je nach Driver) |
+| Geworfener Fehler | Nack |
 
 Gewöhnliche Rückgabewerte, einschließlich `false`, wählen das Bestätigungsverhalten nicht aus. Rufen Sie `msg:ack()` oder `msg:nack()` auf, um ausdrücklich zu bestätigen oder abzulehnen. Settlement ist einmalig: Der erste eintreffende Aufruf gewinnt.
 
 ### Dead-Letter-Routing
 
-Dead-Letter-Routing ist noch nicht implementiert. Der Block `dead_letter` (siehe [Queue-Konfiguration](#queue-konfiguration)) wird in der Konfiguration akzeptiert, aber kein integrierter Treiber zählt derzeit Versuche, leitet negativ bestätigte Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine negativ bestätigte Nachricht wird nach der eigenen Richtlinie des Treibers erneut zugestellt. Der Header-Namensraum `x_*` ist für künftige DLQ-Buchführung reserviert; Publisher sollten daher keine `x_*`-Header setzen.
-
-Dead-Letter-Routing ist noch nicht implementiert. Der Block `dead_letter` wird in der Konfiguration akzeptiert, aber derzeit zählt kein integrierter Treiber Versuche, leitet abgelehnte Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine abgelehnte Nachricht wird gemäß der eigenen Richtlinie des Treibers erneut zugestellt. Der Header-Namespace `x_*` ist für zukünftige DLQ-Buchhaltung reserviert; Publisher sollten daher keine `x_*`-Header setzen.
+Dead-Letter-Routing ist noch nicht implementiert. Der `dead_letter`-Block (siehe [Queue-Konfiguration](#queue-configuration)) wird in der Konfiguration akzeptiert, aber derzeit zählt kein eingebauter Driver Versuche, leitet nack'd Nachrichten an die konfigurierte DLQ weiter oder setzt `x_dead_letter_*`-Header. Eine nack'd Nachricht wird gemäß der Policy des Drivers erneut zugestellt. Der Header-Namensraum `x_*` ist für künftige DLQ-Buchhaltung reserviert, daher sollten Publisher keine `x_*`-Header setzen.
 
 ## Nachrichten veröffentlichen
 

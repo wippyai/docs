@@ -1,6 +1,6 @@
 ---
 title: "Генерация UUID"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Генерация универсальных уникальных идентификаторов. Адаптировано для workflow — случайные UUID возвращают одинаковые значения при повторном…"
 ---
 
 # Генерация UUID
@@ -135,7 +135,7 @@ local info, err = uuid.parse(id)
 - `version` (integer): версия UUID (1, 3, 4, 5 или 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS или Invalid
 - `timestamp` (integer): Unix-время (только для v1 и v7)
-- `node` (string): идентификатор узла (только для v1)
+- `node` (string): 6 сырых байт идентификатора узла (только для v1)
 
 ### Форматирование
 

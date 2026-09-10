@@ -1,6 +1,6 @@
 ---
-title: "Sistema de archivos"
-description: "Lee, escribe y administra archivos en un volumen de sistema de archivos configurado."
+title: "Sistema de Archivos"
+description: "Leer, escribir y gestionar archivos dentro de volumenes de sistema de archivos aislados."
 ---
 
 # Sistema de archivos
@@ -295,8 +295,8 @@ fs.seek.END       -- from end
 | `stat(path)` | `table, error` | Obtener información de archivo |
 | `isdir(path)` | `boolean, error` | Verificar si es directorio |
 | `mkdir(path)` | `boolean, error` | Crear directorio |
-| `remove(path)` | `boolean, error` | Eliminar un archivo o directorio vacío |
-| `readdir(path)` | `iterator, state` | Listar un directorio (usar en un bucle `for` genérico) |
+| `remove(path)` | `boolean, error` | Eliminar archivo/directorio vacio |
+| `readdir(path)` | `iterator, state` | Listar directorio (usar en bucle `for` genérico) |
 | `open(path, mode)` | `File, error` | Abrir handle de archivo |
 | `chdir(path)` | `boolean, error` | Cambiar directorio de trabajo |
 | `pwd()` | `string, error` | Obtener directorio de trabajo |

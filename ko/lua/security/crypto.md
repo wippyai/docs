@@ -1,6 +1,6 @@
 ---
 title: "암호화 및 서명"
-description: "난수 생성, HMAC, 암복호화, JWT, 키 파생을 위한 암호화 API입니다."
+description: "암호화, HMAC, JWT, 키 파생을 포함한 암호화 작업을 제공합니다. 워크플로우에 맞게 조정되었습니다."
 ---
 
 # 암호화 및 서명
@@ -182,7 +182,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | 검증할 JWT 토큰 |
 | `key` | string | 비밀 (HMAC) 또는 PEM 공개 키 (RSA) |
 | `alg` | string? | 예상 알고리즘 (기본값: HS256) |
-| `require_exp` | boolean? | `exp` 클레임 필수 (기본값: true) |
+| `require_exp` | boolean? | `exp` 클레임이 반드시 존재해야 함 (기본값: true), 존재하는 `exp`는 항상 검증됩니다 |
 
 **반환:** `table, error`
 

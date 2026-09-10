@@ -1,6 +1,6 @@
 ---
 title: "환경 변수"
-description: "구성된 environment system이 노출하는 environment variable을 읽고 업데이트합니다."
+description: "설정 값, 비밀, 런타임 설정을 위한 환경 변수에 접근합니다."
 ---
 
 # 환경 변수
@@ -25,17 +25,10 @@ local env = require("env")
 환경 변수 값을 가져옵니다.
 
 ```lua
--- Get database connection string
-local db_url, db_err = env.get("DATABASE_URL")
-if db_err then return nil, db_err end
-
--- Apply a fallback only to a missing variable. Permission and backend errors
--- still propagate to the caller.
-local function get_or(key, fallback)
-    local value, err = env.get(key)
-    if not err then return value end
-    if errors.is(err, errors.NOT_FOUND) then return fallback end
-    return nil, err
+-- 데이터베이스 연결 문자열 가져오기
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 local port, port_err = get_or("PORT", "8080")
@@ -88,10 +81,7 @@ logger:debug("accessible environment variables", {keys = accessible_keys})
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new({
-            message = "Missing required env var: " .. key,
-            kind = errors.INVALID
-        })
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -109,7 +99,7 @@ end
 | `env.get` | 변수 이름 | 환경 변수 읽기 |
 | `env.set` | 변수 이름 | 환경 변수 쓰기 |
 
-`get_all`에는 전용 security action이 없습니다. 각 variable name을 `env.get`으로 filter하고 caller에게 `env.get` action이 허용된 variable만 반환합니다.
+`get_all`에는 전용 보안 액션이 없습니다. 각 변수 이름을 `env.get`으로 필터링하여 `env.get` 액션이 허용된 변수만 반환합니다.
 
 ### 접근 확인
 

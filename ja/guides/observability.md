@@ -34,9 +34,9 @@ logger:
 
 ```yaml
 logmanager:
-  propagate_downstream: true   # Propagate to child components
-  stream_to_events: false      # Forward logs to event bus
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  propagate_downstream: true   # 子コンポーネントに伝播
+  stream_to_events: false      # ログをイベントバスに転送
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error（wippy run は 0、-v 指定時は -1 を設定）
 ```
 
 `stream_to_events`が有効な場合、ログエントリはイベントになり、プロセスはイベントバス経由でサブスクライブできます。
@@ -58,7 +58,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-Prometheus サーバーは、`enabled` が `true` で `address` が空でない場合にのみ起動します。そのアドレスでメトリクスを `/metrics`、ランタイムの liveness ハンドラを `/livez` として公開します。
+メトリクスは設定されたアドレスの`/metrics`で公開されます。同じリスナーが`/livez`も提供します。`max_cardinality`（デフォルト1024）はエクスポーターごとに保持されるラベルセット数の上限です。これを超えると、最後に更新された時刻が最も古い系列から削除されます。
 
 ### スクレイプ設定
 
@@ -97,7 +97,7 @@ otel:
 
 ### トレースソース
 
-特定のコンポーネントのトレーシングを有効化：
+`otel.enabled`が true になると、すべてのトレースソースがデフォルトで有効になります。各ソースは個別に無効化できます：
 
 ```yaml
 otel:
@@ -123,6 +123,7 @@ otel:
   # Function call tracing
   interceptor:
     enabled: true
+    order: 100                 # インターセプター実行順序
 ```
 
 OTEL が有効な場合、HTTP のトレーシングと伝播、プロセスのトレーシングとライフサイクルスパン、関数インターセプト、キュートレーシング、トレースエクスポートはデフォルトで有効です。Temporal トレーシングとメトリクスエクスポートはデフォルトで無効です。固定されたランタイムは関数インターセプターを order 100 で登録します。設定から `interceptor.order` の値をデコードできても、その登録順序は変わりません。
@@ -154,12 +155,11 @@ otel:
 
 | コンポーネント | スパン名 | 属性 |
 |---------------|----------|------|
-| HTTP リクエスト | `{METHOD} {route}` | http.method, http.url, http.host |
-| 関数呼び出し | 関数 ID | process.pid, frame.id |
-| プロセスライフサイクル | `<source-id>.started/terminated`、ソースフレームがない場合は `process.started/terminated` | process.pid, lifecycle.event |
-| キューへの publish | `<queue-id>.publish` | メッセージング属性とヘッダー内のトレースコンテキスト |
-| キューの consume | ハンドラ関数 ID | 関数スパンに継承されるメッセージング属性 |
-| Temporal ワークフロー | Temporal SDK の操作名 | Temporal SDK のワークフローと実行メタデータ |
+| HTTPリクエスト | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
+| 関数呼び出し | 関数ID | process.pid, frame.id |
+| プロセスライフサイクル | `{source}.started/terminated` | process.pid |
+| キューメッセージ | `{queue}.publish` | messaging.operation, messaging.destination.name |
+| Temporalワークフロー | ワークフロー/アクティビティ名 | workflow.id, run.id |
 
 ### コンテキスト伝播
 
@@ -184,6 +184,8 @@ OTELは環境変数で設定できます：
 | `OTEL_SERVICE_VERSION` | サービスバージョン |
 | `OTEL_TRACES_SAMPLER` | `always_on`、`always_off`、`traceidratio`、`parentbased_traceidratio` |
 | `OTEL_TRACES_SAMPLER_ARG` | サンプルレート（0.0-1.0） |
+| `OTEL_TRACES_SAMPLER` | `always_on`、`always_off`、`traceidratio`、`parentbased_traceidratio`（比率は`OTEL_TRACES_SAMPLER_ARG`から）|
+| `OTEL_EXPORTER_OTLP_INSECURE` | 非TLS接続を許可するには`true`に設定 |
 | `OTEL_PROPAGATORS` | プロパゲーターリスト |
 
 ## ランタイム統計

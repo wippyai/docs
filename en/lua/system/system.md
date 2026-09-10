@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "Inspect runtime, process, host, supervisor, and cluster state, and control selected runtime settings."
+description: "Query runtime system information including memory usage, garbage collection stats, CPU details, and process metadata."
 ---
 
 # System
@@ -50,33 +50,39 @@ Each module table contains:
 | `description` | string | Module description |
 | `class` | string[] | Module classification tags |
 
-## Loading Deployment Sources
+## Deployment Sources
 
-`system.source.load()` rebuilds the normalized registry baseline from the current deployment source generation. Owners and entries come from the same generation, including during dynamic install, update, uninstall, replacement, and rollback.
+The `system.source` sub-table reads the normalized deployment baseline: the entry set produced by the sources the application was assembled from, before any registry history is applied.
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **Returns:** `table, error`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `owners` | string[] | Stable source-owner identifiers; the application owner is `application` |
-| `entries` | table[] | Decoded registry entries from the normalized source baseline |
+| `owners` | string[] | Source owners authoritative over the baseline entries |
+| `entries` | table[] | Baseline entries with `id`, `kind`, `meta`, `data` |
 
-Packed module normalization inputs do not claim ownership, and filesystem paths are not exposed. Loading requires `system.read` on `sources`. Source registry, load, or conversion failures return a non-retryable `errors.INTERNAL`; permission denial returns `errors.PERMISSION_DENIED`.
+`owners` is sorted with the application owner first, then the remaining owners alphabetically. The application owner is the string `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+The load is taken from one stable source generation, so entries and owners always describe the same baseline. Filesystem paths behind each source are runtime-private and are not exposed; a failed load reports a generic internal error rather than leaking the backing path.
+
+**Permission:** `system.read` on `sources`
 
 ## Memory Statistics
 
@@ -337,7 +343,7 @@ Each state table has the same format as `system.supervisor.state()`.
 
 ## Cluster Primitives
 
-The `system.node`, `system.cluster`, `system.raft`, and `system.lock` subtables expose the clustering layer. When [clustering is not enabled](guides/cluster.md), `system.raft.*` reports "raft not available," `system.cluster` reports only the local node, and `system.lock` is unavailable because it requires the global registry.
+The `system.node`, `system.cluster`, `system.raft`, and `system.lock` sub-tables expose the clustering layer. They are most useful when [clustering is enabled](guides/cluster.md); on a standalone node they degrade predictably — `system.raft.*` reports "raft not available", `system.cluster` reports just the local node, and `system.lock` requires the Raft-backed KV store that clustering provides.
 
 Read calls report this node's local view of committed state and do not block on the network.
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### Distributed Locks
 
-`system.lock` provides cluster-wide mutual exclusion. A lock has a globally unique name and belongs to the calling process. It uses the Strong name scope, so at most one holder can exist across the cluster. The lock is released automatically when the holder process exits or its node leaves.
+`system.lock` provides cluster-wide mutual exclusion. A lock is a globally unique name owned by the calling process. It is built on the Raft-replicated system KV store, so at most one holder can exist across the cluster, and the lock auto-releases when the holder process exits or its node leaves — there is no stuck lock to clean up.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ Security policy evaluation applies to system operations.
 | `system.read` | `cwd` | Read working directory |
 | `system.read` | `hosts` | List hosts / host processes |
 | `system.read` | `modules` | List loaded modules |
-| `system.read` | `sources` | Load normalized deployment sources |
+| `system.read` | `sources` | Load the deployment source baseline |
 | `system.read` | `supervisor` | Read supervisor state |
 | `system.read` | `node` | Read this node's identity |
 | `system.read` | `cluster` | Read cluster membership and leader |
@@ -477,9 +483,8 @@ Security policy evaluation applies to system operations.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Permission denied (deployment source loading) | `errors.PERMISSION_DENIED` | no |
-| Permission denied (non-source operations except distributed locks) | `errors.INVALID` | no |
-| Permission denied (distributed lock acquire/release) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (all other calls) | `errors.INVALID` | no |
 | Invalid argument | `errors.INVALID` | no |
 | Missing required argument | `errors.INVALID` | no |
 | Code manager unavailable | `errors.INTERNAL` | no |
@@ -488,5 +493,6 @@ Security policy evaluation applies to system operations.
 | Raft not running on this node | `errors.INTERNAL` | no |
 | Membership unavailable | `errors.INTERNAL` | no |
 | Lock already held | `errors.ALREADY_EXISTS` | no |
+| Lock service unavailable (no Raft on this node) | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

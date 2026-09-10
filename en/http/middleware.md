@@ -148,7 +148,7 @@ options:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `real_ip.trusted.subnets` | Loopback, RFC 1918 private, IPv4 link-local, CGNAT, IPv6 ULA, and IPv6 link-local ranges | Trusted proxy CIDRs |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918, link-local, CGNAT and IPv6 local ranges | Trusted proxy CIDRs |
 | `real_ip.trust_all` | `false` | Trust all sources (insecure) |
 
 **Header priority:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -299,7 +299,7 @@ post_options:
 
 <note>Pre-handler</note>
 
-Records OpenTelemetry spans and metrics for incoming requests. Registered automatically when OTel is enabled; acts as a no-op otherwise.
+Records OpenTelemetry server spans for incoming requests. Always registered; acts as a no-op when OTel or its HTTP instrumentation is disabled.
 
 ```yaml
 middleware:

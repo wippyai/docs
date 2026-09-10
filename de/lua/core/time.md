@@ -1,6 +1,6 @@
 ---
 title: "Zeit & Dauer"
-description: "Zeitwerte erstellen, vergleichen, parsen und formatieren; Dauern und Zeitzonen verwenden sowie Sleeps und Timer planen."
+description: "Arbeiten Sie mit Zeitwerten, Dauern, Zeitzonen und Scheduling. Erstellen Sie Timer, pausieren Sie für bestimmte Zeiträume, parsen und formatieren Sie…"
 ---
 
 # Zeit & Dauer
@@ -285,7 +285,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -400,7 +400,7 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | Wartezeit |
 
-**Rückgabewerte:** `Channel, error`
+**Gibt zurück:** `Channel, error`
 
 ### `timer`
 

@@ -1,6 +1,6 @@
 ---
 title: "HTML-Bereinigung"
-description: "Nicht vertrauenswürdiges HTML mit vordefinierten oder eigenen Element-, Attribut- und URL-Richtlinien bereinigen."
+description: "Bereinigen Sie nicht vertrauenswürdiges HTML, um XSS-Angriffe zu verhindern. Basiert auf bluemonday."
 ---
 
 # HTML-Bereinigung
@@ -282,7 +282,7 @@ policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -339,7 +339,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### Tabellen erlauben
 
-Erlaubt `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td` und `th` sowie die vom Helper validierten Attribute für Dimensionen, Ausrichtung, Spans, Header, Scope und verwandte Präsentationseigenschaften.
+Tabellenelemente erlauben: `table`, `caption`, `col`, `colgroup`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`.
 
 ```lua
 policy:allow_tables()
@@ -352,7 +352,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### Standardattribute erlauben
 
-Erlaubt global die Standardattribute `dir`, `id`, `lang` und `title`. Werte sind eingeschränkt: `dir` ist `ltr` oder `rtl`, `lang` umfasst 2 bis 20 ASCII-Buchstaben, und `id` sowie `title` müssen den sicheren Zeichenmustern des Sanitizers entsprechen. Dieser Helper erlaubt `class` nicht.
+Gängige Attribute erlauben: `id`, `title`, `dir`, `lang`.
 
 ```lua
 policy:allow_elements("p")

@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "Read, write, seek, inspect, scan, and close stream objects returned by I/O modules."
+description: "Stream read/write operations for handling data efficiently. Stream objects are obtained from other modules (HTTP, filesystem, etc.)."
 ---
 
 # Streams
@@ -133,12 +133,7 @@ do not appear in `scan()`'s second return value.
 
 | Condition | Kind |
 |-----------|------|
-| Stream closed | `errors.INTERNAL` |
-| Not readable/writable | `errors.INTERNAL` |
-| Read/write/seek failure | `errors.INTERNAL` |
-| Seek on a non-seekable stream | `errors.INTERNAL` |
-| Close, flush, or stat failure | `errors.INTERNAL` |
-| Scanner creation or scan dispatch failure | `errors.INTERNAL` |
-| Scanner tokenization or underlying read failure | Unstructured string from `scanner:err()` |
-
-An unsupported `whence` or scanner split value raises a Lua argument error instead of returning a structured error value.
+| Invalid whence/split type | raised as a Lua error (not returned) |
+| Stream closed | `INTERNAL` |
+| Not readable/writable | `INTERNAL` |
+| Read/write failure | `INTERNAL` |

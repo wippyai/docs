@@ -1,6 +1,6 @@
 ---
 title: "Banco de Dados SQL"
-description: "Execute queries SQL parametrizadas, transações e prepared statements em bancos de dados configurados."
+description: "Execute queries SQL em bancos de dados PostgreSQL, MySQL e SQLite. Recursos incluem queries parametrizadas, transacoes, prepared statements e um…"
 ---
 
 # Banco de Dados SQL
@@ -55,7 +55,7 @@ Conexoes sao automaticamente retornadas ao pool quando a função termina, mas c
 </note>
 
 <note>
-Queries diretas do `db` e de transações passam placeholders ao driver sem alteração. SQLite e MySQL usam `?`; PostgreSQL usa `$1`, `$2` e assim por diante. Chamadas `run_with` do builder selecionam placeholders dollar automaticamente para PostgreSQL. Outros bancos mantêm o formato escolhido pelo builder, cujo padrão é `?`. Defina `placeholder_format` ao gerar SQL com `to_sql` ou quando outro formato for necessário.
+Os marcadores de posição são passados ao driver do banco de dados sem alteração; o runtime não os reescreve. SQLite e MySQL usam `?`, PostgreSQL usa `$1, $2` — escreva-os no formato que seu driver espera. Os exemplos a seguir usam `?` (SQLite/MySQL). Para consultas que visam mais de um mecanismo, construa-as com o [Query Builder](#query-builder): `run_with` reescreve os marcadores para `$1, $2` quando o handle é PostgreSQL, e `to_sql` usa o `placeholder_format` do builder.
 </note>
 
 ## Constantes
@@ -365,7 +365,17 @@ local cond = sql.builder.or_({
 
 **Retorna:** `Sqlizer`
 
-### `sql.builder.question`
+## sqlizer:to_sql
+
+Gera o fragmento SQL e os argumentos de bind de uma condicao.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Retorna:** `string, table`
+
+## builder.question
 
 Formato de placeholder para placeholders ? (padrão). Disponível como alias `sql.builder.default_placeholder`.
 
@@ -1167,12 +1177,12 @@ Define multiplas colunas de tabela.
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `map` | table | Pares {coluna = valor} |
+| `map` | table | Pares {coluna = valor}; os valores são valores simples, `sql.NULL` ou `sql.as.*` (use `set` para expressões) |
 
 **Retorna:** `UpdateBuilder`
 
@@ -1532,10 +1542,11 @@ Acesso a banco de dados está sujeito a avaliação de política de segurança.
 | Recurso não encontrado | `errors.NOT_FOUND` | não |
 | Recurso não e database | `errors.INVALID` | não |
 | Parametros inválidos | `errors.INVALID` | não |
+| Erro de sintaxe SQL | `errors.UNKNOWN` | nil |
 | Statement fechado | `errors.INVALID` | não |
 | Transação não ativa | `errors.INVALID` | não |
 | Nome de savepoint inválido | `errors.INVALID` | não |
-| Erro do driver ou da execução da query | preservado do driver quando disponível; caso contrário, não especificado | varia |
+| Erro de execução de query | `errors.UNKNOWN` | nil |
 
 Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 

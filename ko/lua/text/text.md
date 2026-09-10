@@ -1,6 +1,6 @@
 ---
 title: "텍스트 처리"
-description: "정규식을 컴파일하고 텍스트를 비교하며 패치를 만들고 문서를 청크로 분할합니다."
+description: "정규 표현식, 텍스트 비교, 의미론적 텍스트 분할을 제공합니다."
 ---
 
 # 텍스트 처리
@@ -368,19 +368,8 @@ if err then
     return nil, err
 end
 
-local fs = require("fs")
-local docs, docs_err = fs.get("app:docs")
-if docs_err then
-    return nil, docs_err
-end
-local readme, read_err = docs:readfile("README.md")
-if read_err then
-    return nil, read_err
-end
-local chunks, split_err = splitter:split_text(readme)
-if split_err then
-    return nil, split_err
-end
+local readme = fs.get("app:docs"):readfile("README.md")
+local chunks, err = splitter:split_text(readme)
 ```
 
 **반환:** `Splitter, error`
@@ -395,6 +384,7 @@ end
 | `reference_links` | boolean | false | 참조 링크 보존 |
 | `heading_hierarchy` | boolean | false | 헤딩 레벨 존중 |
 | `join_table_rows` | boolean | false | 테이블 행을 함께 유지 |
+| `separators` | string[] | nil | 커스텀 구분자 목록 |
 
 ### `splitter:split_text`
 

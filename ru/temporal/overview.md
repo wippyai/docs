@@ -69,7 +69,7 @@ API-ключ можно указать несколькими способами
   namespace: "your-namespace"
   auth:
     type: api_key
-    api_key_env: "TEMPORAL_API_KEY"
+    api_key: ${env:TEMPORAL_API_KEY}
 
 # Из файла
 - name: temporal_client
@@ -81,7 +81,7 @@ API-ключ можно указать несколькими способами
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Поля с суффиксом `_env` ссылаются на переменные окружения, которые должны быть определены в системе. См. [Система окружения](system/env.md) для настройки хранилищ и переменных окружения.
+Поля аутентификации и учётных данных разрешают плейсхолдеры `${env:NAME}` через [реестр окружения](system/env.md) при декодировании. Устаревшие директивы `api_key_env` / `key_pem_env` разрешаются так же, но не рекомендуются; предпочитайте `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -108,7 +108,7 @@ auth:
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
-  key_pem_env: "TEMPORAL_CLIENT_KEY"
+  key_pem: ${env:TEMPORAL_CLIENT_KEY}
 ```
 
 ### Настройка TLS
@@ -128,6 +128,30 @@ health_check:
   enabled: true
   interval: "30s"
 ```
+
+### Передача контекста безопасности
+
+Wippy передаёт вызывающего актора и область в workflow и activity через подписанный заголовок Temporal. Подпись — HMAC-SHA256 с ключом, который хранит запись клиента:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Поле | Описание |
+|------|----------|
+| `security_hmac_key` | Ключ подписи в base64; после декодирования должен быть не короче 32 байт |
+| `security_hmac_previous_keys` | Ключи в base64, всё ещё принимаемые при проверке, для ротации |
+
+Оба поля записываются в YAML в base64, поскольку это байтовые поля. Ключ короче 32 декодированных байт отклоняется при валидации конфигурации, как и объявление `security_hmac_previous_keys` без `security_hmac_key`. Новые заголовки всегда подписываются ключом `security_hmac_key`; при проверке перебирается каждый перечисленный прежний ключ, поэтому ротация выглядит так: добавьте новый ключ как `security_hmac_key`, переместите старый в `security_hmac_previous_keys`, затем удалите его, когда ни одно выполняющееся исполнение его больше не несёт.
+
+**Запуск workflow под актором или областью требует ключа.** Если у вызывающей стороны есть контекст безопасности, а у клиента нет ключа подписи, заголовок невозможно подписать и запуск завершается неудачей. Клиент без ключа может запускать workflow только из контекста, в котором нет ни актора, ни области.
+
+Ключи воркер получает из записи клиента, на которую ссылается, поэтому подпись и проверку он наследует из `client:`, ничего не настраивая сам. См. [Workflow](temporal/workflows.md#security-context) и [Activity](temporal/activities.md).
 
 ## Настройка воркера
 
@@ -161,11 +185,15 @@ health_check:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
+    # Идентичность
+    identity: ""                          # Идентичность воркера (отображается в UI Temporal)
+
     # Параллелизм
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
     max_concurrent_session_execution_size: 1000
+    max_concurrent_eager_activity_execution_size: 0
 
     # Поллеры
     max_concurrent_activity_task_pollers: 20
@@ -180,6 +208,8 @@ health_check:
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
+    max_heartbeat_throttle_interval: "0s"
+    default_heartbeat_throttle_interval: "0s"
 
     # Флаги
     enable_logging_in_replay: false
@@ -187,16 +217,17 @@ health_check:
     disable_workflow_worker: false
     local_activity_worker_only: false
     disable_eager_activities: false
+    disable_registration_aliasing: false
 
     # Версионирование
     deployment_name: ""
     build_id: ""
-    build_id_env: "BUILD_ID"              # Чтение из переменной окружения
+    build_id: ${env:BUILD_ID}              # Чтение из реестра окружения
     use_versioning: false
     default_versioning_behavior: "pinned" # или "auto_upgrade"
 ```
 
-Поля с суффиксом `_env` ссылаются на переменные окружения, определённые через записи [Системы окружения](system/env.md).
+Поля учётных данных и идентификаторов разрешают плейсхолдеры `${env:NAME}` через [реестр окружения](system/env.md) при декодировании. Устаревшая директива `build_id_env` разрешается так же, но не рекомендуется; предпочитайте `build_id: ${env:NAME}`.
 
 ### Поведение версионирования
 
@@ -207,7 +238,7 @@ health_check:
 | `pinned` | Workflow остаётся на том build ID, с которым был запущен, на всё время выполнения |
 | `auto_upgrade` | Workflow может возобновляться на последнем совместимом build ID после каждой задачи |
 
-`build_id_env` читает build ID из указанной переменной окружения, когда `build_id` пуст.
+`build_id: ${env:NAME}` читает build ID из реестра окружения, когда литеральный `build_id` не задан.
 
 ### Session Worker
 

@@ -47,26 +47,25 @@ type Registry struct {
 | 범위 | 모듈 | 예제 |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
-| 10, 14, 16, 18-23 | clock | Sleep, ticker, and timer operations |
-| 30-34 | socket | Connect, Listen, Accept, Bind, Resolve |
-| 50-57 | stream | Read, Write, Close, Seek, Flush, Stat, Scanner operations |
-| 60-61 | http | Request, RequestBatch |
-| 70-78 | tty | Terminal I/O |
-| 80-85 | websocket | Connect, Send, Receive, Close, Ping, Subscribe |
-| 90-91 | event | Subscribe, Send |
-| 100-111 | sql | Query, Execute, Prepare, statement and transaction operations |
-| 120-126 | store | Get, Set, Delete, Has, Entry, List, Put |
-| 130-132 | security | ValidateToken, CreateToken, RevokeToken |
-| 140-142 | function | Call, AsyncStart, AsyncCancel |
-| 150 | exec | ProcessWait |
-| 160-169 | cloudstorage | Object and multipart operations |
+| 10-29 | clock | Sleep, Ticker, Timer |
+| 30-39 | socket | Connect, Listen, Accept, Bind, Resolve |
+| 50-59 | stream | Read, Write, Close, Seek |
+| 60-69 | http | Request, RequestBatch |
+| 70-79 | tty | 터미널 I/O |
+| 80-89 | websocket | Connect, Send, Receive |
+| 90-99 | event | Subscribe, Send |
+| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
+| 120-129 | store | Get, Set, Delete, Has |
+| 130-139 | security | ValidateToken, CreateToken |
+| 140-149 | function | Call, AsyncStart, AsyncCancel |
+| 150-159 | exec | ProcessWait |
+| 160-169, 173-174 | cloudstorage | Upload, Download, List, Presigned URLs, Multipart, OpenReader |
 | 170-171 | eval | Compile, Run |
 | 172 | cdc | Subscribe |
-| 173-174 | cloudstorage | AbortMultipartUpload, OpenReader |
-| 180-183 | workflow | SideEffect, Exec, Version, UpsertAttrs |
-| 190-193 | contract | Open, Call, AsyncCall, AsyncCancel |
-| 200-211 | pg (process group) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
-| 256+ | custom | user-defined service |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
+| 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (프로세스 그룹) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
+| 256+ | custom | 사용자 정의 서비스 |
 
 package는 `init()`에서 `MustRegisterCommands()`로 command-ID ownership을 reserve합니다. ownership collision은 package initialization 중 panic합니다. component load 중 각 service는 `Registrar.Register`를 통해 handler를 bind합니다. dispatcher는 handler가 설치된 뒤에만 freeze됩니다.
 

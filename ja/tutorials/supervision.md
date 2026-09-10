@@ -443,11 +443,8 @@ end
 
 ```lua
 local function linker_child_main()
-    -- Enable trap_links to receive LINK_DOWN events
-    local _, options_err = process.set_options({ trap_links = true })
-    if options_err then
-        return nil, "set_options failed: " .. tostring(options_err)
-    end
+    -- LINK_DOWNイベントを受信するためにtrap_linksを有効化
+    process.set_options({ trap_links = true })
 
     local events_ch = process.events()
     local inbox_ch = process.inbox()
@@ -565,21 +562,44 @@ entries:
     method: main
     modules:
       - time
-    security:
-      actor:
-        id: app.supervisor:pool
-      policies:
-        - app:supervision-policy
 
   - name: pool-service
     kind: process.service
     process: app.supervisor:pool
     host: app:processes
-    input:
-      - 4
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+ストリクトモードはデフォルトで有効なため、セキュリティコンテキストを宣言しないサービスは`process.spawn`を含むすべてのチェックで拒否されます。プールとそのワーカーが使用するアクションを許可します:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+ワーカーはスポーン元のプールのアクターとスコープを継承するため、独自のブロックは不要です。
 
 ### スーパーバイザー実装
 
@@ -638,6 +658,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -688,6 +712,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- 他のプロセスからこのワーカーに到達できるよう名前で登録する
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -768,12 +795,57 @@ wippy init
 wippy run
 ```
 
-スーパーバイザーは自動起動して4つのワーカーを生成します。再起動動作を検証するには、ワーカーPIDを検出し、
-そのPIDへの`process.terminate`権限を持ち、ワーカーを終了して代替ワーカーの起動を確認する信頼済み制御エントリを追加してください。
+スーパーバイザーが自動起動し、4つのワーカーをスポーンし、それぞれについて`Worker N started`をログに記録します。`LINK_DOWN`はリンクされたプロセスがエラーで終了した場合にのみ配信されるため、ワーカーを強制終了して再起動をトリガーします。終了させるコードは同じランタイム内で実行される必要があるため、アドホックなサービスとして追加します:
 
-ワーカーが異常終了するとプールは`LINK_DOWN`を受信し、100ミリ秒待ってから同じIDでワーカーを再生成します。
-正常な`process.cancel()`ではワーカーが正常終了するため`LINK_DOWN`は発生せず、再起動も行われません。
-検証が完了したらCtrl+Cでアプリケーションを停止してください。
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
+```
+
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+新しいエントリを取り込むために`wippy init`を再実行し、`wippy run`を実行します。2秒後、プールが`LINK_DOWN`を受信し、100ms待機後にワーカーを同じidで再スポーンします:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+グレースフルな`process.cancel()`はワーカーを正常終了させるため`LINK_DOWN`は発生せず、したがって再起動もトリガーされません。だからこそ監視ループはシャットダウンをワーカーの障害として扱わず、`CANCEL`で戻ります。
 
 ## 次のステップ
 

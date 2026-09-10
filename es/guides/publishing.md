@@ -11,9 +11,9 @@ Este documento es un flujo de publicación y una referencia. Los módulos `acme/
 
 ## Requisitos Previos
 
-1. Crea una cuenta en [hub.wippy.ai](https://hub.wippy.ai).
-2. Crea una organización o únete a una.
-3. Elige un nombre de módulo. La primera publicación puede registrar un nombre ausente si tu cuenta tiene permiso; usa `--create` para registrarlo antes de la carga y definir sus propiedades explícitamente.
+1. Cree una cuenta en [hub.wippy.ai](https://hub.wippy.ai)
+2. Cree una organización o únase a una
+3. Tenga permiso para crear módulos en esa organización — el primer `wippy publish` registra el módulo automáticamente
 
 ## Estructura del Módulo
 
@@ -41,6 +41,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | Campo | Requerido | Descripción |
@@ -53,6 +66,16 @@ keywords:
 | `repository` | No | URL del repositorio fuente |
 | `homepage` | No | Página principal del proyecto |
 | `keywords` | No | Palabras clave de búsqueda |
+| `authors` | No | Lista de autores |
+| `version` | No | Versión semántica; `--version` la sobrescribe |
+| `exclude` | No | Patrones a descartar: los valores que contienen `:` son IDs de entradas, todo lo demás es un glob de archivos fuente |
+| `embed` | No | Patrones de empaquetado `fs.directory` por defecto cuando no se pasa `--embed` |
+| `exclude_meta` | No | Mapa de campo de metadatos a valores; las entradas cuyos metadatos coinciden se descartan |
+| `metadata` | No | Metadatos arbitrarios de clave/valor que acompañan al módulo publicado |
+| `publish.profiles` | No | Qué perfiles de configuración incluir en el paquete (ver [Publicar Perfiles](#publishing-profiles)) |
+| `publish.runtime` | No | Qué secciones de configuración del runtime incluir como valores por defecto del paquete; solo `type: application` |
+
+`exclude` se divide por forma en vez de por un campo aparte. `_old/**`, `test/**` y `*.test.lua` filtran archivos fuente a medida que se recolectan; `acme.http:debug_handler` deshabilita una entrada del registro después de que las entradas se decodifican. Un segmento `**` abarca cualquier número de segmentos de directorio.
 
 `type` es la fuente de verdad de cómo el hub clasifica el módulo y puede cambiarse en una publicación posterior; `--module-type` lo sobrescribe para una única publicación. Cuando se omite, los módulos recién creados usan `application` por defecto con una advertencia de deprecación.
 
@@ -205,6 +228,15 @@ wippy lint
 wippy publish --dry-run
 ```
 
+Publish construye el paquete de la misma forma con o sin `--dry-run`, de modo que la validación cubre todo lo que produciría la publicación real:
+
+- `organization` y `module` deben ser alfanuméricos en minúsculas con guiones interiores, `version` debe ser semver, y `type` debe ser uno de los cuatro tipos de módulo.
+- `publish.runtime` pertenece a las aplicaciones: declarar `source`, `sections` o `vars` bajo él sin `type: application` falla.
+- Cada recurso que declara `meta.artifact.format` es inspeccionado por ese formato. Un artefacto mal formado falla aquí en lugar de en un consumidor, y dos artefactos cuyas salidas caerían en directorios solapados se rechazan.
+- El formato `node-package` requiere además que `package.json` lleve una `version` semántica que **sea igual a la versión del módulo que se publica**, un `name` de paquete válido, y ningún script de ciclo de vida `preinstall`, `install`, `postinstall` o `prepare`.
+
+La última regla es la que muerde durante una release: suba `version` en `wippy.yaml` y en el `package.json` del artefacto a la vez, o la publicación se detiene.
+
 ### 4. Publicar
 
 ```bash
@@ -232,14 +264,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Empaquetado de Archivos Estáticos
 
-Selecciona una entrada `fs.directory` para incrustarla mediante `--embed` o mediante la lista persistente `embed:` del manifiesto del proyecto. Las entradas seleccionadas se transforman en recursos `fs.embed`. Una entrada `fs.directory` no seleccionada permanece en el pack, pero no se incluye el contenido del directorio al que hace referencia.
-
-```yaml
-# wippy.yaml
-embed:
-  - app:public_files
-  - app:assets
-```
+Los módulos con entradas `fs.directory` (assets estáticos, plantillas, archivos públicos) deben usar `--embed` para incluirlos en el paquete publicado. Sin él, una entrada `fs.directory` se empaqueta sin el contenido de su directorio.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

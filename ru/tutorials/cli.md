@@ -148,13 +148,29 @@ return { main = main }
 
 ## Системная информация
 
-Доступ к статистике рантайма через модуль `system`:
+Доступ к статистике рантайма через модуль `system`. Каждое чтение защищено действием `system.read`, поэтому процессу также нужна политика, которая его разрешает:
 
 ```yaml
-# Добавьте к определению записи
-modules:
-  - io
-  - system
+  # Добавьте к записям
+  - name: system_read
+    kind: security.policy
+    policy:
+      actions:
+        - system.read
+      resources: "*"
+      effect: allow
+
+  # Обновите запись CLI
+  - name: cli
+    kind: process.lua
+    source: file://cli.lua
+    method: main
+    security:
+      policies:
+        - app:system_read
+    modules:
+      - io
+      - system
 ```
 
 ```lua
@@ -206,7 +222,10 @@ wippy run list
 
 ```
 Available commands:
-  greet    Greet the user
+
+  greet  Greet the user  (app:cli)
+
+Run with: wippy run <command>
 ```
 
 ## Коды завершения

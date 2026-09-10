@@ -114,7 +114,7 @@ pool:
 ```
 
 <tip>
-Prefira um `type` de pool explícito. Para `type: static`, defina `size`; se `workers` também estiver presente, ele fornece a quantidade de workers e ainda exige um `size` positivo. No modo implícito legado, `workers > 0` junto com `size > 0` seleciona um pool static, `max_size > 0` sem workers seleciona um pool lazy, e apenas `size` resulta em execução inline.
+Se você não especificar um tipo de pool, o runtime seleciona um baseado na sua configuração. Defina `workers` para static, `max_size` para lazy, ou defina `type` explicitamente para controle total. Se nenhum dos dois for definido, o pool é lazy com no máximo 16 workers.
 </tip>
 
 ## Interceptadores
@@ -144,15 +144,9 @@ Funções podem expor seus schemas de entrada e saída como contratos. Contratos
 
 ```lua
 local contract = require("contract")
-local sender, err = contract.get("app.email:sender")
-if err then return nil, err end
-
-local email, err = sender:open("app.email:sender_impl")
-if err then return nil, err end
-
-local result, err = email:send({to = "user@example.com", subject = "Hello"})
-if err then return nil, err end
-return result
+local sender = contract.get("app.email:sender")
+local email = sender:open("app.email:sender_impl")
+email:send({to = "user@example.com", subject = "Hello"})
 ```
 
 Contratos permitem que os chamadores usem uma interface e escolham sua implementação separadamente. Isso favorece testes, implantações multi-tenant e migrações graduais.

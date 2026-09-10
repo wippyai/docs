@@ -1,34 +1,24 @@
 ---
-title: "Migrationen"
-description: "Geordnete Datenbankmigrationen für SQLite, PostgreSQL und MySQL definieren, anwenden, prüfen und zurückrollen."
+title: "Migrations"
+description: "Das Modul wippy/migration stellt ein Datenbankmigrations-Framework bereit mit einer kleinen DSL zur Definition von Schema-Änderungen, einem Runner,…"
 ---
 
-# Migrationen
+# Migrations
 
-Das Modul `wippy/migration` stellt eine DSL für Schemaänderungen, einen Runner zum
-Entdecken und Ausführen von Migrationen sowie einen Bootloader bereit, der ausstehende
-Migrationen auf jede registrierte `target_db` anwendet.
+Das Modul `wippy/migration` stellt ein Datenbankmigrations-Framework bereit mit einer kleinen DSL zur Definition von Schema-Änderungen, einem Runner, der sie entdeckt und ausführt, sowie einem Bootloader, der ausstehende Migrationen für jede im Projekt registrierte `target_db` ausführt.
 
-Migrationen unterstützen SQLite, PostgreSQL und MySQL. Treiberspezifische
-`up`- und `down`-Implementierungen können gemeinsam definiert werden.
-
-Diese Seite ist ein Teilrezept für Migrationen und eine Runner-Referenz, keine
-vollständige Anwendung. Die Definition lässt sich anpassen, nachdem Modul und
-Datenbank verbunden wurden; spätere Runner-Aufrufe und Ergebnistabellen sind
-Referenz-Snippets. Erstellen Sie vor Migrationen schützenswerter Daten ein Backup und
-testen Sie `up` und `down` zunächst gegen eine temporäre Datenbank.
+Migrationen unterstützen SQLite, PostgreSQL und MySQL mit treiberspezifischen `up`/`down`-Implementierungen, die nebeneinander definiert werden.
 
 ## Einrichtung
 
-Fügen Sie das Modul zum Projekt hinzu:
+Füge das Modul deinem Projekt hinzu:
 
 ```bash
 wippy add wippy/migration
 wippy install
 ```
 
-Deklarieren Sie die Abhängigkeit und die Anwendungsdatenbank, auf die sich die
-Migrationen beziehen:
+Deklariere die Abhängigkeit und die Anwendungsdatenbank, auf die die Migrationen abzielen:
 
 ```yaml
 version: "1.0"
@@ -37,7 +27,7 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    file: ./data/app.db
+    path: ./data/app.db
 
   - name: dep.migration
     kind: ns.dependency
@@ -45,19 +35,11 @@ entries:
     version: "*"
 ```
 
-Der Migrations-Bootloader registriert sich bei `wippy/bootloader` mit der Reihenfolge
-`20`. Beim Anwendungsstart entdeckt er alle Migrationseinträge in der Registry,
-gruppiert sie nach `meta.target_db` und führt die ausstehenden Migrationen auf jeder
-Datenbank aus.
-
-Wenn Sie den gezeigten relativen SQLite-Pfad verwenden, erstellen Sie vor dem Start
-das Verzeichnis `data`. Prüfen Sie das Ergebnis mit `runner:status()` und verwenden
-Sie `runner:rollback()` nur, wenn die `down`-Implementierung für die Testdaten sicher ist.
+Der Migrations-Bootloader registriert sich bei `wippy/bootloader` mit Order `20`. Wenn die Anwendung startet, entdeckt er jeden Migrationseintrag in der Registry, gruppiert sie nach `meta.target_db` und führt ausstehende Migrationen gegen jede Datenbank aus.
 
 ## Eine Migration definieren
 
-Eine Migration ist ein `function.lua`-Eintrag mit `meta.type: migration`. Der Eintrag
-gibt eine von `migration.define(...)` erzeugte Funktion zurück.
+Eine Migration ist ein `function.lua`-Eintrag mit `meta.type: migration`. Der Eintrag gibt eine von `migration.define(...)` erzeugte Funktion zurück.
 
 ```yaml
 entries:
@@ -77,7 +59,7 @@ return require("migration").define(function()
     migration("Create users table", function()
         database("sqlite", function()
             up(function(db)
-                local _, err = db:execute([[
+                local ok, err = db:execute([[
                     CREATE TABLE users (
                         id    INTEGER PRIMARY KEY,
                         name  TEXT NOT NULL,
@@ -88,26 +70,23 @@ return require("migration").define(function()
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
 
         database("postgres", function()
             up(function(db)
-                local _, err = db:execute([[
+                db:execute([[
                     CREATE TABLE users (
                         id    SERIAL PRIMARY KEY,
                         name  TEXT NOT NULL,
                         email TEXT NOT NULL UNIQUE
                     )
                 ]])
-                if err then error(err) end
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
     end)
@@ -123,15 +102,11 @@ end)
 | `meta.timestamp` | nein | ISO-8601-Zeitstempel zur Sortierung, wenn mehrere Migrationen dieselbe Datenbank betreffen |
 | `meta.tags` | nein | Array von Tags; der Runner kann Migrationen nach Tag filtern |
 
-Migrationen für eine Datenbank laufen in aufsteigender Reihenfolge von
-`meta.timestamp`. Das Feld ist optional; bei gleichem oder fehlendem Zeitstempel dient
-die vollständige Eintrags-ID als Tie-Breaker und sorgt für eine stabile,
-deterministische Reihenfolge.
+Migrationen für eine Datenbank laufen in aufsteigender `meta.timestamp`-Reihenfolge. `meta.timestamp` ist optional; die vollständige Entry-ID entscheidet bei Gleichstand, sodass Migrationen mit gleichem oder fehlendem Zeitstempel dennoch in stabiler, deterministischer Reihenfolge laufen.
 
 ## DSL
 
-Innerhalb der an `migration.define` übergebenen Funktion stehen die folgenden
-verschachtelten Funktionen bereit:
+Innerhalb der an `migration.define` übergebenen Funktion stehen die folgenden verschachtelten Funktionen zur Verfügung:
 
 | Funktion | Beschreibung |
 |----------|--------------|
@@ -140,19 +115,17 @@ verschachtelten Funktionen bereit:
 | `up(fn)` / `down(fn)` | Vorwärts- und Rollback-Funktionen definieren |
 | `after(fn)` | Optionaler Post-Migration-Hook (gleiche Transaktion) |
 
-Jede `up`-, `down`- und `after`-Funktion erhält ein Transaktionsobjekt statt einer
-Rohverbindung. Alle drei Operationen laufen in einer gemeinsamen Transaktion, die bei
-einem Fehler zurückgerollt wird.
+Jede `up`/`down`/`after`-Funktion erhält ein Transaktionsobjekt, keine Rohverbindung. Alle drei Operationen laufen in einer einzigen Transaktion, die bei Fehlern zurückgerollt wird.
 
 ### Transaktionsmethoden
 
 ```lua
-local rows, err  = db:query(sql, params)    -- SELECT, returns array of rows
-local result, err = db:execute(sql, params) -- INSERT/UPDATE/DDL, returns { rows_affected, last_insert_id }
-local stmt, err  = db:prepare(sql)          -- prepared statement
+local rows, err  = db:query(sql, params)    -- SELECT, gibt ein Array von Zeilen zurück
+local result, err = db:execute(sql, params) -- INSERT/UPDATE/DDL, gibt { rows_affected, last_insert_id } zurück
+local stmt, err  = db:prepare(sql)          -- Prepared Statement
 ```
 
-Verwenden Sie stets parametrisierte Abfragen:
+Verwende stets parametrisierte Abfragen:
 
 ```lua
 db:execute("INSERT INTO users (name, email) VALUES (?, ?)", { "Alice", "alice@example.com" })
@@ -160,8 +133,7 @@ db:execute("INSERT INTO users (name, email) VALUES (?, ?)", { "Alice", "alice@ex
 
 ### Fehlerbehandlung
 
-Ein Aufruf von `error(...)` bricht die Migration ab und rollt die Transaktion zurück.
-Prüfen Sie jede Anweisung, die fehlschlagen kann:
+Ein Aufruf von `error(...)` bricht die Migration ab und rollt die Transaktion zurück. Umhülle jedes Statement, das fehlschlagen kann:
 
 ```lua
 up(function(db)
@@ -172,7 +144,7 @@ end)
 
 ## Runner-API
 
-Der Runner steht als Bibliothek für die programmatische Verwendung bereit:
+Der Runner wird als Bibliothek für die programmatische Nutzung bereitgestellt:
 
 ```yaml
 imports:
@@ -182,26 +154,25 @@ imports:
 ```lua
 local runner = require("runner").setup("app:app_db")
 
-local result = runner:run()      -- apply all pending migrations
-local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback() -- roll back the most recently applied migration
-local status = runner:status()   -- list applied + pending migrations
+local result = runner:run()      -- alle ausstehenden Migrationen anwenden
+local result = runner:run_next() -- die nächste ausstehende Migration anwenden
+local result = runner:rollback() -- die zuletzt angewendete Migration zurückrollen
+local status = runner:status()   -- angewendete und ausstehende Migrationen auflisten
 ```
 
 ### `runner:run(options)`
 
-Wendet alle ausstehenden Migrationen der konfigurierten Datenbank an und gibt eine
-Zusammenfassung zurück:
+Wendet jede ausstehende Migration für die konfigurierte Datenbank an. Gibt eine Zusammenfassung zurück:
 
 ```lua
 {
-    status = "complete",            -- "complete" or "error"
+    status = "complete",            -- "complete" oder "error"
     migrations_found = 3,
     migrations_applied = 2,
     migrations_skipped = 1,
     migrations_failed = 0,
     duration = 0.123,
-    migrations = { ... },           -- per-migration status
+    migrations = { ... },           -- Status je Migration
     skipped_details = { ... },
 }
 ```
@@ -210,29 +181,28 @@ Optionen:
 
 | Option | Beschreibung |
 |--------|--------------|
-| `tags` | Array von Tags; berücksichtigt werden nur Migrationen, deren `meta.tags` eine Schnittmenge bilden |
+| `tags` | Array von Tags; nur Migrationen, deren `meta.tags` sich schneiden, werden berücksichtigt |
 
 ### `runner:rollback(options)`
 
-Rollt angewendete Migrationen in umgekehrter Ausführungsreihenfolge zurück. Ohne
-Optionen wird nur die zuletzt angewendete Migration zurückgerollt:
+Rollt angewendete Migrationen in umgekehrter Reihenfolge ihrer Anwendung zurück. Ohne Optionen wird genau die zuletzt angewendete Migration rückgängig gemacht:
 
 ```lua
-runner:rollback()                                            -- roll back the last migration
-runner:rollback({ count = 3 })                               -- roll back the last 3
-runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
+runner:rollback()                                            -- die letzte Migration zurückrollen
+runner:rollback({ count = 3 })                               -- die letzten 3 zurückrollen
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- auf bestimmte IDs beschränken
 ```
 
 Optionen:
 
 | Option | Beschreibung |
 |--------|--------------|
-| `count` | Anzahl zurückzurollender Migrationen; Standard ist `1` |
-| `allowed_ids` | Array von Migrations-IDs; nur diese können zurückgerollt werden |
+| `count` | Anzahl der zurückzurollenden Migrationen; Standardwert ist `1` |
+| `allowed_ids` | Array von Migrations-IDs; nur diese kommen für ein Rollback in Frage |
 
 ### `runner:status(options)`
 
-Gibt einen Statusbericht für alle Migrationen der Datenbank zurück.
+Gibt einen Statusbericht zurück, der jede Migration der Datenbank beschreibt:
 
 ```lua
 {
@@ -249,8 +219,7 @@ Gibt einen Statusbericht für alle Migrationen der Datenbank zurück.
 }
 ```
 
-Angewendete Migrationen erscheinen zuerst nach `applied_at`; ausstehende folgen nach
-`meta.timestamp` und anschließend nach ID sortiert.
+Angewendete Migrationen werden zuerst aufgelistet (sortiert nach `applied_at`), gefolgt von den ausstehenden (sortiert nach `meta.timestamp`, dann nach ID).
 
 ## Registry-API
 
@@ -260,28 +229,25 @@ Angewendete Migrationen erscheinen zuerst nach `applied_at`; ausstehende folgen 
 |----------|--------------|
 | `registry.find({ target_db, tags })` | Alle Migrationseinträge zurückgeben, die den Kriterien entsprechen |
 | `registry.get(id)` | Einen einzelnen Migrationseintrag per ID zurückgeben |
-| `registry.get_target_dbs()` | Jede eindeutige `meta.target_db` aus Migrationen zurückgeben |
-| `registry.get_tags()` | Jeden eindeutigen Tag aus Migrationen zurückgeben |
+| `registry.get_target_dbs()` | Jede eindeutige `meta.target_db` zurückgeben, die in Migrationen vorkommt |
+| `registry.get_tags()` | Jeden eindeutigen Tag zurückgeben, der in Migrationen vorkommt |
 
-Der Bootloader verwendet diese Abfragen, um beim Start alle Zieldatenbanken zu entdecken.
+Der Bootloader verwendet diese, um beim Start die vollständige Menge an Zieldatenbanken zu entdecken.
 
 ## Migrations-Tracking
 
-Der Runner erstellt beim ersten Lauf in jeder Zieldatenbank die Tabelle `_migrations`.
-Angewendete Migrationen werden nach ID aufgezeichnet, sodass spätere Läufe sie
-überspringen. Die Tracking-Tabelle entsteht automatisch; legen Sie dafür keine eigene
-Migration an.
+Der Runner erzeugt bei der ersten Ausführung in jeder Zieldatenbank eine Tabelle `_migrations`. Angewendete Migrationen werden per ID aufgezeichnet, sodass nachfolgende Läufe sie überspringen. Die Tracking-Tabelle wird automatisch erzeugt; schreibe keine eigene Migration, um sie anzulegen.
 
 ## Best Practices
 
-- **Eine logische Änderung pro Migration** — erstellen Sie eine Tabelle, eine Spalte oder einen Index pro Migration.
-- **Ein echtes `down` schreiben** — würde ein Rollback Daten verlieren oder ist er unmöglich, dokumentieren Sie diese Einschränkung und lösen einen Fehler aus, statt Erfolg zu melden.
-- **Idempotenz bevorzugen** — `CREATE TABLE IF NOT EXISTS` und `DROP TABLE IF EXISTS` tolerieren erneute Ausführungen.
-- **DDL und DML trennen** — vermeiden Sie Daten-Seeding in derselben Migration, die eine Tabelle erstellt.
-- **Beide Richtungen testen** — wenden Sie die Migration an, rollen Sie sie zurück und prüfen Sie, ob das Schema dem Ausgangszustand entspricht.
+- **Eine logische Änderung pro Migration** - eine Tabelle anlegen, eine Spalte hinzufügen, einen Index erstellen.
+- **Ein echtes `down` schreiben** - wenn ein Rollback unmöglich ist (Datenverlust), dokumentiere das und wirf einen Fehler, anstatt stillschweigend Erfolg zurückzumelden.
+- **Idempotenz bevorzugen** - `CREATE TABLE IF NOT EXISTS` und `DROP TABLE IF EXISTS` überstehen wiederholte Ausführungen ohne besondere Behandlung.
+- **DDL und DML trennen** - vermeide es nach Möglichkeit, Daten in derselben Migration zu seeden, die eine Tabelle anlegt.
+- **Beide Richtungen testen** - wende die Migration an, rolle sie zurück und verifiziere, dass das Schema dem Ausgangszustand entspricht.
 
 ## Siehe auch
 
-- [SQL-Treiber](system/database.md) — Konfiguration der Datenbankressource
-- [Bootloader](framework/bootloader.md) — Bootloader-Reihenfolge und Hooks
-- [Framework-Übersicht](framework/overview.md) — Verwendung von Framework-Modulen
+- [SQL-Treiber](system/database.md) - Konfiguration der Datenbank-Ressource
+- [Bootloader](framework/bootloader.md) - Bootloader-Reihenfolge und Hooks
+- [Framework-Übersicht](framework/overview.md) - Nutzung der Framework-Module

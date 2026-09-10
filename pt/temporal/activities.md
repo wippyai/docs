@@ -34,7 +34,8 @@ Adicione `meta.temporal.activity` para registrar uma função como atividade:
 | Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
 | `worker` | Sim | Referência à entrada `temporal.worker` |
-| `local` | Não | Executa como atividade local; o padrão é false |
+| `local` | Não | Executa como activity local (padrão: false) |
+| `name` | Não | Nome customizado do tipo de activity (padrão: ID da entrada) |
 
 ## Implementação
 
@@ -164,15 +165,15 @@ end
 | `activity.schedule_to_close_timeout` | duration | - | Tempo máximo do agendamento à conclusão |
 | `activity.schedule_to_start_timeout` | duration | - | Tempo máximo antes de a atividade iniciar |
 | `activity.heartbeat_timeout` | duration | - | Tempo máximo entre heartbeats |
-| `activity.id` | string | - | ID personalizado da execução da atividade |
-| `activity.task_queue` | string | - | Substitui a task queue desta chamada |
-| `activity.wait_for_cancellation` | boolean | false | Aguarda o cancelamento da atividade |
-| `activity.disable_eager_execution` | boolean | false | Desativa a execução eager |
-| `activity.retry_policy` | table | - | Configuração de retry, descrita abaixo |
-| `activity.versioning_intent` | string ou number | - | Intenção de versionamento do worker para a atividade |
-| `activity.summary` | string | - | Resumo exibido nos metadados da atividade Temporal |
-| `activity.priority` | table | - | Chave de prioridade e configurações opcionais de fairness |
-| `activity.name` | string | - | Substituição do tipo da atividade |
+| `activity.id` | string | - | ID personalizado de execução da activity |
+| `activity.task_queue` | string | - | Sobrescreve a task queue para esta chamada |
+| `activity.wait_for_cancellation` | boolean | false | Aguarda cancelamento da activity |
+| `activity.disable_eager_execution` | boolean | false | Desabilita execução eager |
+| `activity.retry_policy` | table | - | Configuração de retry (veja abaixo) |
+| `activity.name` | string | - | Nome do tipo de activity a chamar, quando difere do ID no registro |
+| `activity.summary` | string | - | Resumo legível exibido na UI do Temporal |
+| `activity.priority` | table | - | Prioridade da tarefa: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (herda o build ID) ou `default` (usa regras de atribuição) |
 
 Valores de duração aceitam strings, como `"5s"`, `"10m"` e `"1h"`, ou números em milissegundos.
 
@@ -247,9 +248,7 @@ O campo `local` é aceito em uma atividade:
         local: true
 ```
 
-Atualmente, `local: true` é analisado, mas se comporta de forma idêntica a uma atividade comum: a atividade é registrada e executada pelo caminho padrão. Ainda não existe uma execução distinta de atividade local, portanto o campo não altera latência, comportamento da task queue nem heartbeats.
-
-## Nome das atividades
+Atualmente `local: true` é interpretado, mas se comporta de forma idêntica a uma activity regular: é registrada e executada pelo caminho padrão de activity. Ainda não existe uma execução distinta de activity local, portanto isso não altera latência, comportamento de task queue nem heartbeating.
 
 As atividades são registradas usando como nome o ID completo da entrada:
 
@@ -300,7 +299,15 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
-## Tratamento de erros
+### Contexto de Segurança
+
+Uma activity agendada sob um contexto de segurança recebe o header `wippy-security` assinado, com audience para o ID da activity. O worker verifica a assinatura e o audience, depois mescla os valores de `ctx` propagados e o payload de segurança em um frame novo antes que a função da activity execute.
+
+Essa mesclagem é tudo-ou-nada e **fatal para a activity se falhar**: a activity retorna um erro antes que seu código execute, portanto ela nunca roda com contexto parcial ou com um ator não verificado. A mesclagem falha quando a assinatura ou o audience não verificam, quando o envelope é inconsistente (um ator sem escopo, ou políticas sem ator), ou quando uma política nomeada no envelope não resolve no registro de segurança local — que é a causa operacional mais comum: falta ao deployment do worker uma entrada de política que o chamador tinha.
+
+O worker obtém suas chaves de assinatura e verificação da entrada `temporal.client` que referencia. Veja [Propagação de contexto de segurança](temporal/overview.md#security-context-propagation).
+
+## Tratamento de Erros
 
 Retorne erros pelo padrão Lua:
 
@@ -329,8 +336,8 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response.status_code >= 400 then
-        return nil, payment_error(response.status_code)
+    if response:status() >= 400 then
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response.body)
@@ -352,12 +359,16 @@ end
 
 ### Modos de falha
 
-| Falha | Tipo de erro | Permite retry | Descrição |
-|-------|--------------|---------------|-----------|
-| Erro da aplicação | O que a atividade retornou | Herdado do erro retornado | Erro retornado pelo código da atividade com `return nil, err` |
-| Crash do runtime | `Internal` | não | Erro Lua não tratado na atividade |
-| Atividade ausente | `NotFound` | não | Atividade não registrada no worker |
-| Timeout | `Timeout` | não | A atividade excedeu o timeout configurado |
+| Falha | Tipo de Erro | Permite Retry | Descrição |
+|-------|-------------|---------------|-----------|
+| Erro de aplicação | O que a activity retornou | Herdado do erro retornado | Erro retornado pelo código da activity via `return nil, err` |
+| Crash de runtime | `Internal` | false | Erro Lua não tratado na activity |
+| Activity ausente | `NotFound` | false | Activity não registrada no worker |
+| Timeout | `Timeout` | false | Activity excedeu o timeout configurado |
+| Verificação de segurança | `Internal` | true | Falha na checagem de assinatura, audience ou envelope no header de segurança propagado |
+| Política de segurança ausente | `Internal` | true | Uma política nomeada no envelope de segurança não resolve neste worker |
+
+Ambas as falhas de segurança acontecem durante a mesclagem de contexto, antes da função da activity executar. Elas não são marcadas como não-retentáveis, então a política de retry da activity continua tentando novamente; retries não ajudam, porque nem uma assinatura inválida nem uma entrada de política ausente mudam entre tentativas. Limite `maximum_attempts` nas activities que você quer que falhem rápido, e leia uma falha `Internal` repetida sem saída de log da activity como uma falha de mesclagem de contexto, e não como um defeito na activity.
 
 ```lua
 local executor = funcs.new():with_options({

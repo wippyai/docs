@@ -59,7 +59,7 @@ version: "1.0"
 namespace: app
 
 entries:
-  - name: probe_policy
+  - name: net_policy
     kind: security.policy
     policy:
       actions:
@@ -93,9 +93,9 @@ entries:
         short: Check outbound IP through overlays
         security:
           actor:
-            id: app:probe
+            id: system.probe
           policies:
-            - app:probe_policy
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -105,6 +105,8 @@ entries:
 ```
 
 `isolate_streams: true` faz o driver SOCKS5 gerar credenciais aleatórias por conexão, de modo que o Tor abre um circuito novo para cada dial.
+
+A segurança é estrita por padrão, então o comando carrega o ator e a política sob os quais sua execução ocorre. `http_client.request` cobre a chamada de saída e `network.select` cobre a escolha explícita da sobreposição; sem elas toda verificação falha fechada.
 
 ## Passo 2: Rotear Chamadas de Saída
 
@@ -198,10 +200,17 @@ A função aninhada ou processo criado verá a sobreposição em todo dial de sa
 O Tailscale também pode aceitar listeners HTTP. Anexe o overlay ao `http.service` em vez do cliente:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
-    auth_key_env: TS_AUTHKEY
+    auth_key: ${env:TS_AUTHKEY}
     ephemeral: true
 
   - name: gateway
@@ -210,9 +219,16 @@ O Tailscale também pode aceitar listeners HTTP. Anexe o overlay ao `http.servic
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-O servidor vincula na interface tailnet; os clientes o acessam via endereço Tailscale. SOCKS5 é apenas de saída — atribuí-lo a um `http.service` é rejeitado.
+`auth_key` é resolvido através do [registro env](system/env.md), portanto `TS_AUTHKEY` é uma variável registrada — um valor do SO precisa de uma `env.variable` respaldada por `env.storage.os`.
+
+A vinculação através de uma sobreposição é controlada por `network.bind`, verificada quando o listener inicia, então o serviço declara um escopo que a permite. O servidor vincula na interface tailnet; os clientes o acessam via endereço Tailscale. SOCKS5 é apenas de saída — atribuí-lo a um `http.service` faz o listener falhar com `inbound listeners are not exposed over SOCKS5`.
 
 ## Padrão para a Aplicação Inteira
 
@@ -223,6 +239,7 @@ network_service:
   state_dir: .wippy/net
   default_network: app:tor
 ```
+
 
 ## Permissões
 

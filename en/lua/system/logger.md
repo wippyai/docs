@@ -1,12 +1,11 @@
 ---
 title: "Logging"
-description: "Write structured log messages and create child loggers with persistent context."
+description: "Structured logging with debug, info, warn, and error levels."
 ---
 
 # Logging
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 The `logger` module writes structured messages at debug, info, warn, and error levels.
@@ -105,4 +104,6 @@ named:info("message")
 
 An empty name raises a Lua argument error. It is not returned as a structured `errors.INVALID` value.
 
-The logging methods do not return structured errors. Invalid argument types raise Lua argument errors. If no logger is attached to the execution context, the module uses a no-op logger and discards the message.
+`logger:named("")` raises a Lua argument error (`name cannot be empty`) instead of returning an error value. Logging methods return nothing.
+
+See [Error Handling](lua/core/errors.md) for working with errors.

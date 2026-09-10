@@ -77,7 +77,7 @@ Los comandos Docker también se analizan directamente como un ejecutable y sus a
 | `default_work_dir` | string | - | Directorio de trabajo dentro del contenedor |
 | `default_env` | map | - | Variables de entorno |
 | `command_whitelist` | string[] | - | Comandos permitidos (coincidencia exacta) |
-| `network_mode` | string | Predeterminado de Docker | Modo de red de Docker, como `host`, `bridge` o `none` |
+| `network_mode` | string | bridge | Modo de red: `host`, `bridge`, `none` |
 | `volumes` | string[] | - | Montajes de volumen: `host:container[:ro]` |
 | `user` | string | - | Usuario para ejecutar dentro del contenedor |
 | `memory_limit` | int | 0 | Límite de memoria en bytes (0 = ilimitado) |

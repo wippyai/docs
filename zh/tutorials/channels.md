@@ -7,6 +7,8 @@ description: "进程内并发编程的 Go 风格通道。"
 
 进程内并发编程的 Go 风格通道。
 
+本页是入门介绍：每个代码片段单独演示一个 API。将它们粘贴到 `process.lua` 条目的 `main` 函数中即可运行，具体设置见 [CLI 应用程序](tutorials/cli.md) 教程。
+
 ## 创建通道
 
 通道是协程的通信管道。使用 `channel.new(capacity)` 创建：
@@ -73,7 +75,7 @@ result.ok              -- true
 
 ### 带发送的 Select
 
-使用 `case_send` 尝试非阻塞发送：
+使用 `case_send` 在 select 中提供一个发送操作。一旦通道能够接受该值，该分支即被选中：
 
 ```lua
 local ch = channel.new(1)
@@ -85,6 +87,20 @@ local result = channel.select{
 result.ok  -- true（发送成功）
 
 local v = ch:receive()  -- "sent"
+```
+
+Select 会阻塞直到其中一个分支就绪。在分支表中加入 `default = true` 可以立即返回，此时若没有任何分支就绪，`result.default` 为 true：
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true（缓冲区已满，未发送）
 ```
 
 ## 生产者-消费者模式

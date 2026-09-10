@@ -1,6 +1,6 @@
 ---
 title: "チャネルとコルーチン"
-description: "バッファ付き／なしのチャネルを作成し、値を交換し、複数操作をselectして並行処理を調整する方法。"
+description: "コルーチン間通信のためのGo形式チャネルを提供します。バッファ付きまたはアンバッファードチャネルを作成し、値を送受信し、select文を使用して並行プロセス間で調整できます。"
 ---
 
 # チャネルとコルーチン
@@ -108,8 +108,8 @@ local result = channel.select(cases)
 
 **戻り値:** `table`
 
-- チャネルケースの場合：`{channel, value, ok}` — `channel` はケースのチャネル、`value` は送信または受信した値です。クローズ済みチャネルからの受信では `ok` がfalseになります。
-- どのケースも準備できておらず `default = true` の場合：`{default = true, ok = true}`
+- チャネルケースの場合: `{channel, value, ok}` — `channel` はそのケースのチャネル、`value` は受信/送信された値、`ok` はクローズ済みチャネルからの受信で false になります。
+- デフォルト分岐の場合（準備できているケースがなく `default = true` のとき）: `{default = true, ok = true}`。
 
 ### タイムアウトパターン
 
@@ -130,13 +130,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
-end
-if not r.ok then
-    return nil, errors.new("Response channel closed")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -253,7 +247,8 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| クローズされたチャネルへの送信 | runtime error | n/a |
+| クローズされたチャネルへの送信 | runtime error | no |
+| selectの`cases`引数がテーブルでない | runtime error | no |
 
 ## 関連項目
 

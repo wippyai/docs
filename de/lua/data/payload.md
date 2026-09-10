@@ -1,6 +1,6 @@
 ---
 title: "Payload-Kodierung"
-description: "Typisierte Payloads erstellen, ihr Format untersuchen, Werte extrahieren und zwischen unterstützten Darstellungen transkodieren."
+description: "Konvertieren Sie Daten zwischen Formaten einschließlich JSON, MessagePack und Binär. Behandeln Sie typisierte Payloads für…"
 ---
 
 # Payload-Kodierung
@@ -154,7 +154,7 @@ if err then
 end
 ```
 
-Sowohl `data()` als auch `unmarshal()` geben den vorhandenen Lua-Wert zurück oder transkodieren eine Nicht-Lua-Payload in das Lua-Format. `unmarshal()` ist strenger, wenn ein Transcoder ein ungültiges Ergebnis erzeugt: Die Methode gibt dann einen Fehler `errors.INTERNAL` zurück, während `data()` `nil` zurückgibt.
+`unmarshal()` verhält sich wie `data()`: Beide transkodieren Nicht-Lua-Payloads in das Lua-Format und geben den resultierenden Lua-Wert zurück. Der einzige Unterschied ist, dass `unmarshal()` einen Fehler zurückgibt, wenn die transkodierten Daten kein gültiger Lua-Wert sind, während `data()` `nil` zurückgibt.
 
 **Gibt zurück:** `any, error`
 

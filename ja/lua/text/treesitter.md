@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitterパース"
-description: "ソースコードのパース、具象構文木の検査、Tree-sitterクエリの実行を行います。"
+description: "Tree-sitterを使用してソースコードを具象構文木にパースします。go-tree-sitterバインディングベースです。"
 ---
 
 # Tree-sitterパース
@@ -352,7 +352,13 @@ end
 if node:is_missing() then
     -- Parser inserted this to recover from error
 end
+
+if node:is_extra() then
+    -- 文法上必須ではない「extra」ノード（コメントなど）
+end
 ```
+
+その他のノードメソッド: `descendant_count()`、`named_descendant_for_point_range(start_pt, end_pt)`。
 
 ### S式
 
@@ -399,9 +405,9 @@ if captures_err then
 end
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "func_name"
-    print(capture.text)   -- actual text
-    print(capture.index)  -- capture index
-    -- capture.node is the Node object
+    print(capture.text)   -- 実際のテキスト
+    print(capture.index)  -- キャプチャインデックス
+    -- capture.nodeはNodeオブジェクト
 end
 
 -- Get matches (grouped by pattern)
@@ -460,6 +466,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+さらなる検査メソッド: `string_count()`、`start_byte_for_pattern(i)`、`end_byte_for_pattern(i)`、`get_match_limit()`、`get_timeout()`、`is_pattern_rooted(i)`、`is_pattern_non_local(i)`、`is_pattern_guaranteed(i)`、`capture_quantifier(pattern, capture)`、`set_max_start_depth(n)`、`get_property_predicates(i)`、`get_property_settings(i)`、`get_text_predicates(i)`。
 
 ## ツリーカーソル
 

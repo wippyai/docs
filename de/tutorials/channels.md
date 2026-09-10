@@ -13,6 +13,8 @@ Diese Seite führt Channels zur Koordination von Coroutinen innerhalb eines Proz
 
 Führen Sie diese Snippets in einer exportierten Funktion eines ausführbaren Lua-Eintrags wie `process.lua` aus. Die APIs `channel` und `coroutine` sind in diesem Ausführungskontext Umgebungs-Globals; sie benötigen weder `require()`-Aufrufe noch `modules`-Deklarationen. Jedes Snippet erstellt seine eigenen Channels und sollte separat ausgeführt werden.
 
+Diese Seite ist eine Einführung: Jedes Snippet zeigt eine API für sich allein. Fügen Sie sie in die `main`-Funktion eines `process.lua`-Eintrags ein, um sie auszuführen, wie im Tutorial [CLI-Anwendungen](tutorials/cli.md) eingerichtet.
+
 ## Channels erstellen
 
 Channels übertragen Werte zwischen Coroutinen. Erstellen Sie einen Channel mit `channel.new(capacity)`:
@@ -79,7 +81,7 @@ result.ok              -- true
 
 ### Select mit Send
 
-Verwenden Sie `case_send`, um eine Send-Operation in ein Select aufzunehmen. Ohne Default-Case wartet `channel.select`, bis einer seiner Cases bereit ist. Mit `default = true` wird der Versuch nicht blockierend:
+Verwenden Sie `case_send`, um innerhalb eines Select einen Send anzubieten. Der Case wird gewählt, sobald der Channel den Wert annehmen kann:
 
 ```lua
 local ch = channel.new(1)
@@ -94,6 +96,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+Select blockiert, bis einer seiner Cases bereit ist. Fügen Sie `default = true` zur Case-Tabelle hinzu, um stattdessen sofort zurückzukehren; `result.default` ist dann true, wenn nichts bereit war:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (Puffer voll, nichts gesendet)
 ```
 
 ## Producer-Consumer-Muster

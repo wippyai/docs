@@ -76,7 +76,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -143,7 +143,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security`는 LLM 모듈의 백그라운드 서비스가 실행되는 정책 그룹 `wippy.security:process`를 제공합니다. 이것이 없으면 해당 서비스는 시작되지 않습니다.
 
 ### 보안 정책
 
@@ -170,6 +177,17 @@ entries:
 ```
 
 `create_tool`은 이 정책들을 명명된 범위(`app:agent_security`)로 로드합니다. 헬퍼는 `app:*`(핵심 엔트리, 모델, 에이전트 정의) 또는 `app.tools:*`(기본 제공 도구)에 대한 명시적 `deny`를 거부하지만, 일치하지 않는 `app.generated:*`의 `undefined` 결과는 자체 필터에서 통과시킵니다. 이것은 Wippy 런타임 권한 부여가 아닙니다. 보호되는 연산에는 아래 보안 모듈 연산과 `changes:apply()` 내부의 `registry.apply`를 포함하여 실행 컨텍스트의 명시적 `allow`가 필요합니다.
+
+세 번째 정책은 프로세스 자체에 레지스트리 접근 권한을 부여합니다. 보안 컨텍스트 없이 시작된 프로세스는 모든 레지스트리 읽기가 거부되므로, `agent` 명령은 이 정책을 자체 스코프로 지닙니다:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 정책 평가에 대한 자세한 내용은 [보안 모델](system/security.md)을 참조하세요.
 
@@ -266,6 +284,11 @@ GPT-5.1은 추론과 도구 사용을 처리하고 GPT-4.1 Nano는 컨텍스트 
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -275,9 +298,7 @@ GPT-5.1은 추론과 도구 사용을 처리하고 GPT-4.1 Nano는 컨텍스트 
       compress: wippy.llm.util:compress
 ```
 
-프로세스는 터미널 명령으로 실행됩니다. `create_tool`은 쓰기 전에 패키지 거부 목록을 적용하지만 그 필터는 명령의 런타임 보안 컨텍스트를 제공하지 않습니다.
-
-가져오기:
+프로세스는 터미널 명령으로 실행됩니다. `meta.command.security`는 프로세스가 실행되는 액터와 스코프를 부여합니다 — 이것이 없으면 `registry.get`이 `not allowed to access entry`로 실패하고 에이전트가 로드되지 않습니다. 쓰기에 대한 보안 강제 적용은 `agent_security` 정책 그룹을 로드하고 쓰기 전에 평가하는 `create_tool` 내부에서 발생합니다.
 
 - `prompt` — 대화 빌더
 - `agent_context` — 에이전트 로딩과 동적 도구 관리

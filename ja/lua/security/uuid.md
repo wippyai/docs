@@ -1,6 +1,6 @@
 ---
 title: "UUID生成"
-description: "UUIDの生成、検証、情報取得、パース、フォーマットを行います。"
+description: "ユニバーサル一意識別子を生成します。ワークフロー向けに適応されており、ランダムUUIDはリプレイ時に一貫した値を返します。"
 ---
 
 # UUID生成
@@ -142,7 +142,7 @@ local info, err = uuid.parse(id)
 - `version`（integer）: UUIDバージョン（1、3、4、5、または7）
 - `variant`（string）: RFC4122、Reserved、Microsoft、Future、NCS、またはInvalid
 - `timestamp`（integer）: Unixタイムスタンプ（v1とv7のみ）
-- `node`（string）: 生の6バイトのノード識別子（v1のみ）。表示またはテキスト保存の前にエンコードしてください
+- `node`（string）: 6バイトの生のノードID（v1のみ）
 
 ### `format`
 

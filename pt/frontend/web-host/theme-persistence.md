@@ -1,96 +1,117 @@
 ---
-title: "Persistência do tema"
-description: "Configure a facade para persistir o modo claro, escuro ou automático em cookie ou localStorage."
+title: "Persistência de Tema"
+description: "Por padrão, o Web Host resolve claro/escuro a partir de thememode (o padrão da facade) e o mantém em memória — então a escolha explícita de um usuário se perde no…"
 ---
 
-# Persistência do tema
+# Persistência de Tema
 
-Esta página é um guia de configuração da facade. O bloco HTML de página externa é um exemplo parcial de integração e pressupõe que os endpoints da facade já existam.
+Por padrão, o Web Host resolve claro/escuro a partir de `theme_mode` (o padrão da facade) e o mantém
+em memória — então a escolha explícita de um usuário se perde no próximo recarregamento. A persistência de tema faz essa
+escolha sobreviver a recarregamentos armazenando-a em um **cookie** ou no **localStorage**, e a carrega o mais cedo
+possível para que não haja um flash do tema errado.
 
-Por padrão, o Web Host resolve o modo claro ou escuro por `theme_mode` (o padrão da facade) e mantém a escolha em memória; uma escolha explícita do usuário é perdida ao recarregar. A persistência armazena a escolha em **cookie** ou **localStorage** e a carrega cedo para evitar um flash do tema incorreto.
+A persistência vive inteiramente na facade. O Web Host permanece agnóstico quanto ao armazenamento: ele apenas emite um
+evento `themeChanged` que a facade (ou qualquer embedder) usa para persistir a escolha.
 
-A persistência fica inteiramente na facade. O Web Host não conhece o armazenamento: apenas emite um evento `themeChanged`, usado pela facade ou por outro embedder para persistir a escolha.
-
-> **Opt-in.** O padrão de `theme_persist` é **`none`**: a persistência fica desativada, salvo se a implantação definir explicitamente `cookie` ou `localStorage`. Com o padrão, o tema vem de `theme_mode` e não é lembrado após recargas. Nada é armazenado, nenhum cookie é gravado e o script gerado não faz nada.
+> **Adesão opcional.** `theme_persist` tem como padrão **`none`** — a persistência fica **desligada**, a menos que um deployment
+> a defina explicitamente como `cookie` ou `localStorage`. Com o padrão, o comportamento é exatamente o mesmo de antes
+> (o tema sempre vem de `theme_mode` e não é lembrado entre recarregamentos). Nada é armazenado,
+> nenhum cookie é escrito, e o script gerado é um no-op até você aderir.
 
 ## Configuração
 
-Dois parâmetros da facade controlam o comportamento; consulte [Facade frontend](../../framework/facade.md):
+Dois parâmetros da facade o controlam (veja [Facade de Frontend](../../framework/facade.md)):
 
 | Parâmetro | Padrão | Valores | Descrição |
 |-----------|---------|--------|-------------|
-| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | Onde o modo escolhido é armazenado. `none` mantém o comportamento atual. |
-| `theme_storage_key` | `@wippy-theme-mode` | string | Chave do cookie/localStorage. |
+| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | Onde o modo escolhido é armazenado. `none` = comportamento atual. |
+| `theme_storage_key` | `@wippy-theme-mode` | string | Chave de cookie / localStorage. |
 
-Ambos são retornados pelo endpoint público de configuração como `themePersist` e `themeStorageKey`, permitindo também sua leitura por páginas servidas fora do Web Host.
+Ambos são retornados pelo endpoint público de configuração como `themePersist` e `themeStorageKey`, de modo que páginas
+servidas fora do Web Host também possam lê-los.
 
 ```yaml
-# in your facade dependency parameters
+# nos parâmetros da sua dependência de facade
 - name: theme_persist
   value: cookie
 - name: theme_storage_key
   value: "@wippy-theme-mode"
 ```
 
-### Cookie ou localStorage
+### cookie vs localStorage
 
-- **`cookie`** — o shell do host renderizado por Jet lê o cookie **no servidor** e grava a classe `w-theme-*` em `<html>` antes de enviar a resposta. O primeiro paint já recebe o tema; é a opção preferida quando a consistência inicial importa.
-- **`localStorage`** — o servidor não consegue ler localStorage, então o shell distribuído carrega `theme-persist.js` sincronamente como o primeiro script de `<head>`. Ele aplica a classe armazenada antes do stylesheet da marca, da interface de loading ou do bundle do Web Host.
+- **`cookie`** — o shell do host renderizado por Jet lê o cookie **no servidor** e escreve a
+  classe `w-theme-*` no `<html>` antes de a resposta ser enviada, de modo que a primeira pintura já vem
+  tematizada. **Sem flash.** Melhor padrão.
+- **`localStorage`** — o servidor não consegue ler o localStorage, então o valor armazenado é aplicado por um
+  script inline síncrono o mais cedo possível. Um breve flash é tecnicamente possível, mas minimizado.
 
-## Script gerado
+## O script gerado
 
-Quando a persistência está ativa, a facade **gera e serve** um pequeno script em:
+Quando a persistência está habilitada, a facade **gera e serve** um pequeno script em:
 
 ```
 GET /api/public/facade/theme-persist.js
 ```
 
-A chave e o modo configurados são incorporados; não há configuração na página. Inclua-o uma vez, o mais cedo possível em `<head>`:
+A chave e o modo configurados já vêm embutidos — não há nada a configurar na página. Inclua-o
+uma vez, o mais cedo possível no `<head>`:
 
 ```html
 <script src="/api/public/facade/theme-persist.js"></script>
 ```
 
-Ao carregar, ele lê o valor armazenado, aplica a classe `w-theme-*` e expõe uma API pequena:
+Ao carregar, ele lê o valor armazenado e aplica a classe `w-theme-*`, depois expõe uma pequena API:
 
 ```js
 window.wippyThemePersist = {
   mode,            // 'none' | 'cookie' | 'localStorage'
-  key,             // the storage key
+  key,             // a chave de armazenamento
   read(),          // -> 'auto' | 'light' | 'dark' | null
-  write(mode),     // persist a mode (no-op when mode === 'none')
-  apply(mode),     // toggle the w-theme-* class on <html>
+  write(mode),     // persiste um modo (no-op quando mode === 'none')
+  apply(mode),     // alterna a classe w-theme-* no <html>
 }
 ```
 
-O shell do host (`index.html`/Jet `index.jet`) já inclui esse script, fornece o valor armazenado à aplicação e persiste mudanças. As seções seguintes destinam-se a **outras** páginas.
+O shell do host (`index.html` / o `index.jet` do Jet) já inclui esse script, injeta o valor
+armazenado no app e persiste as mudanças — você não precisa mexer nele. As seções abaixo são para
+**outras** páginas.
 
-## Integração no shell do host
+## Como tudo se encaixa (shell do host)
 
-1. **Primeiro paint** — em cookie, o servidor define `<html class="w-theme-dark">`; em localStorage, o script antecipado define a classe. A página recebe o tema antes do bundle.
-2. **Bootstrap** — o shell fornece o valor persistido ao host: `themeMode: window.wippyThemePersist.read() ?? cfg.themeMode`.
-3. **Mudança** — o host emite `themeChanged(mode)` e o shell o persiste: `events.on('themeChanged', window.wippyThemePersist.write)`.
+1. **Primeira pintura** — modo cookie: o servidor definiu `<html class="w-theme-dark">`. Modo localStorage:
+   o script de aplicação antecipada a definiu. De qualquer forma, a página está tematizada antes de o bundle carregar.
+2. **Bootstrap** — o shell injeta o valor persistido no host:
+   `themeMode: window.wippyThemePersist.read() ?? cfg.themeMode`, de modo que o host aplique o mesmo modo.
+3. **Na mudança** — o host emite `themeChanged(mode)`; o shell o persiste:
+   `events.on('themeChanged', window.wippyThemePersist.write)`.
 
-### Evento `themeChanged` do host
+### O evento de host `themeChanged`
 
-`globalEvents`, o emitter retornado por `window.initWippyApp(...)`, dispara `themeChanged(mode)` (`'auto' | 'light' | 'dark'`) na inicialização e em toda mudança. Ele não conhece a persistência: o host nunca acessa storage; o embedder decide o que fazer.
+`globalEvents` — o emissor retornado por `window.initWippyApp(...)` — dispara `themeChanged(mode)`
+(`'auto' | 'light' | 'dark'`) na inicialização e a cada mudança de tema. Ele é agnóstico quanto à persistência: o host
+nunca toca no armazenamento; os embedders decidem o que fazer com isso.
 
 ```js
 const events = window.initWippyApp(config, '#app')
 events.on('themeChanged', (mode) => {
-  // e.g. persist, or notify a parent window
+  // por exemplo, persistir, ou notificar uma janela pai
 })
 ```
 
 ## Páginas não hospedadas pelo Wippy
 
-Um documento fora do contrato de módulo portável do Wippy pode respeitar e persistir o mesmo tema. Os botões nativos abaixo servem somente a esse tipo de documento estático externo. Uma página ou componente Wippy com esses controles deve usar PrimeVue segundo o [Contrato de UI portável](../portable-ui-contract.md). Inclua o script gerado e chame `write()` em seu seletor:
+Um documento fora do contrato de módulos portáveis do Wippy pode respeitar e persistir
+o mesmo tema. Os botões nativos abaixo são apropriados apenas para esse tipo de
+documento estático externo. Uma página ou componente do Wippy com esses controles deve
+usar PrimeVue sob o [Contrato de UI Portável](../portable-ui-contract.md).
+Inclua o script gerado e chame `write()` a partir do seu próprio seletor:
 
 ```html
 <head>
-  <!-- as early as possible: applies the stored theme + exposes window.wippyThemePersist -->
+  <!-- o mais cedo possível: aplica o tema armazenado + expõe window.wippyThemePersist -->
   <script src="/api/public/facade/theme-persist.js"></script>
-  <!-- optional: reuse the facade brand theme too -->
+  <!-- opcional: reutilize também o tema de marca da facade -->
   <link rel="stylesheet" href="/api/public/facade/variables.css">
 </head>
 <body>
@@ -102,24 +123,31 @@ Um documento fora do contrato de módulo portável do Wippy pode respeitar e per
     document.querySelectorAll('[data-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const mode = btn.dataset.mode
-        window.wippyThemePersist.apply(mode)   // update <html> now
-        window.wippyThemePersist.write(mode)   // persist for next load / the host
+        window.wippyThemePersist.apply(mode)   // atualiza o <html> agora
+        window.wippyThemePersist.write(mode)   // persiste para o próximo carregamento / o host
       })
     })
   </script>
 </body>
 ```
 
-Como chave e modo de storage são compartilhados, uma escolha feita na página de login chega ao Web Host, e vice-versa. O script recebe ambos da mesma configuração da facade.
+Como a chave e o modo de armazenamento são compartilhados (o script é gerado a partir da mesma configuração da facade),
+uma escolha feita na página de login é levada diretamente para o Web Host, e vice-versa.
 
-> Como alternativa, busque `/api/public/facade/config`, leia `themePersist` e `themeStorageKey` e implemente o armazenamento diretamente. O script gerado mantém essa lógica em um único lugar.
+> Se você preferir não carregar o script, pode buscar `/api/public/facade/config`, ler
+> `themePersist` / `themeStorageKey` e implementar leitura/escrita por conta própria — mas o script gerado
+> mantém a lógica de armazenamento em um só lugar.
 
-## Renderização de cookie no servidor sem flash
+## Renderização de cookie no servidor (zero flash)
 
-Em uma página personalizada renderizada pelo servidor, como um template Jet de login, você pode aplicar o tema no servidor exatamente como o shell: leia da requisição o cookie nomeado por `theme_storage_key` e emita a classe correspondente em `<html>`:
+Para uma página customizada renderizada no servidor (por exemplo, um template Jet de login), você pode aplicar o tema no servidor,
+exatamente como o shell do host faz: leia da requisição o cookie nomeado por `theme_storage_key` e
+emita a classe correspondente no `<html>`:
 
 ```html
 <html lang="en"{{ if hasTheme }} class="{{ themeClass }}" style="color-scheme: {{ colorScheme }};"{{ end }}>
 ```
 
-O handler define `themeClass` como `w-theme-dark`/`w-theme-light` e `colorScheme` como `dark`/`light` com base no cookie. Continue incluindo `theme-persist.js` para que a página grave as mudanças.
+onde o handler definiu `themeClass` como `w-theme-dark` / `w-theme-light` (e `colorScheme` como
+`dark` / `light`) com base no cookie. Ainda assim, inclua `theme-persist.js` para que a página possa escrever
+as mudanças de volta.

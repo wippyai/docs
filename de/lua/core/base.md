@@ -1,6 +1,6 @@
 ---
 title: "Standard-Lua-Bibliotheken"
-description: "Integrierte Lua-Globals sowie APIs für Tabellen, Strings, Mathematik, Coroutinen und strukturierte Fehler in Wippy-Einträgen."
+description: "Kern-Lua-Bibliotheken, die automatisch in allen Wippy-Prozessen verfügbar sind. Kein require() erforderlich."
 ---
 
 # Standard-Lua-Bibliotheken
@@ -77,11 +77,14 @@ _VERSION  -- Lua version string
 Die Bibliothek `table` stellt direkte Array-Operationen, Sortierung, Verkettung und Entpacken bereit:
 
 ```lua
-table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
-table.remove(t [,pos])         -- Remove and return element at pos (default: last)
-table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
-table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.insert(t, [pos,] value)  -- Fügt Wert an Position ein (Standard: Ende)
+table.remove(t [,pos])         -- Entfernt und gibt Element an Position zurück (Standard: letztes)
+table.concat(t [,sep [,i [,j]]]) -- Verkettet Array-Elemente mit Trennzeichen
+table.sort(t [,comp])          -- Sortiert in-place, comp(a,b) gibt true zurück wenn a < b
+table.unpack(t [,i [,j]])      -- Entpackt Tabellen-Elemente als mehrere Werte
+table.create(narr, nhash)      -- Tabelle mit Array- und Hash-Kapazität vorab allozieren
+table.freeze(t)                -- Tabelle unveränderlich machen, gibt t zurück
+table.isfrozen(t)              -- true wenn Tabelle unveränderlich ist
 ```
 
 ```lua
@@ -121,18 +124,21 @@ string.lower(s)   -- Convert to lowercase
 ### Substrings und Zeichen
 
 ```lua
-string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
-string.len(s)              -- String length (or use #s)
-string.byte(s [,i [,j]])   -- Numeric codes of characters
-string.char(...)           -- Create string from character codes
-string.rep(s, n)           -- Repeat string n times
-string.reverse(s)          -- Reverse string
+string.sub(s, i [,j])      -- Substring von i bis j (negative Indizes vom Ende)
+string.len(s)              -- String-Länge (oder #s verwenden)
+string.byte(s [,i [,j]])   -- Numerische Codes der Zeichen
+string.char(...)           -- Erstellt String aus Zeichencodes
+string.rep(s, n)           -- Wiederholt String n-mal
+string.reverse(s)          -- Kehrt String um
 ```
 
 ### Formatierung
 
 ```lua
-string.format(fmt, ...)    -- Printf-style formatting
+string.format(fmt, ...)    -- Printf-artige Formatierung
+string.pack(fmt, ...)      -- Werte in einen Binärstring packen
+string.unpack(fmt, s [,pos]) -- Binärstring entpacken, gibt Werte und nächste Position zurück
+string.packsize(fmt)       -- Größe eines gepackten Formats in Bytes
 ```
 
 Format-Spezifizierer: `%d` (Integer), `%f` (Gleitkommazahl), `%s` (String), `%q` (in Anführungszeichen), `%x` (hexadezimal), `%o` (oktal), `%e` (wissenschaftlich), `%%` (literales %)
@@ -186,9 +192,9 @@ Die Bibliothek `math` stellt numerische Konstanten und übliche mathematische Op
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
-math.mininteger  -- Minimum integer
-math.maxinteger  -- Maximum integer
+math.huge     -- Größter darstellbarer Float
+math.mininteger  -- Minimaler Integer
+math.maxinteger  -- Maximaler Integer
 ```
 
 ### Grundoperationen
@@ -209,28 +215,30 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x)           -- Natural log
-math.log10(x)         -- Base-10 log
+math.log(x)           -- Natürlicher Log
+math.log10(x)         -- Log zur Basis 10
+math.frexp(x)         -- Mantisse und Exponent
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Trigonometrie
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radiant
 math.asin(x)  math.acos(x)  math.atan(x)
-math.atan2(y, x)                            -- Arc tangent of y/x
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
-math.deg(r)   -- Radians to degrees
-math.rad(d)   -- Degrees to radians
+math.atan2(y, x)                            -- Arkustangens von y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolisch
+math.deg(r)   -- Radiant zu Grad
+math.rad(d)   -- Grad zu Radiant
 ```
 
 ### Zufallszahlen
 
 ```lua
-math.random()         -- Random float [0,1)
-math.random(n)        -- Random integer [1,n]
-math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Compatibility no-op; does not seed math.random
+math.random()         -- Zufälliger Float [0,1)
+math.random(n)        -- Zufälliger Integer [1,n]
+math.random(m, n)     -- Zufälliger Integer [m,n]
+math.randomseed(x)    -- Ohne Wirkung; der Generator wird automatisch geseedet
 ```
 
 `math.random` ist nichtdeterministisch. Verwenden Sie es nicht für Entscheidungen, die ein Workflow beim Replay identisch ausführen muss; `math.randomseed` kann es nicht deterministisch machen.
@@ -330,11 +338,11 @@ local stack = errors.call_stack(err)
 ### Fehlermethoden
 
 ```lua
-err:message()    -- Get error message string
-err:kind()       -- Get error kind (e.g., "NOT_FOUND")
-err:retryable()  -- true, false, or nil (unknown)
-err:details()    -- Get details table or nil
-err:stack()      -- Get stack trace as string
+err:message()    -- Fehlermeldungsstring holen
+err:kind()       -- Fehlerart holen (z.B. "NOT_FOUND")
+err:retryable()  -- true, false, oder nil (unbekannt)
+err:details()    -- Details-Tabelle holen oder nil
+err:stack()      -- Stack-Trace als String holen
 ```
 
 ## Eingeschränkte Features
@@ -346,11 +354,9 @@ Die folgenden Standard-Lua-Features sind in Wippy-Prozessen nicht verfügbar:
 | `load`, `loadstring`, `loadfile`, `dofile` | Modul [Dynamische Auswertung](lua/dynamic/eval.md) verwenden |
 | `collectgarbage` | Automatische GC |
 | `rawlen` | `#`-Operator verwenden |
-| `string.dump` | Nicht unterstützt |
-| `io.*` | [Dateisystem](lua/storage/filesystem.md) für Dateien oder [Terminal-E/A](../system/io.md) für Terminal-Streams verwenden |
-| `os.execute` | [Befehlsausführung](lua/dynamic/exec.md) verwenden |
-| `os.remove`, `os.rename` | [Dateisystem](../storage/filesystem.md) verwenden |
-| `os.exit`, `os.tmpname` | Kein direktes Standardbibliotheksäquivalent |
+| Standard-`io.*`-Dateibibliothek | [Dateisystem](lua/storage/filesystem.md)-Modul verwenden; das `io`-Modul in Wippy ist [Terminal-E/A](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | [Befehlsausführung](lua/dynamic/exec.md), [Umgebung](lua/system/env.md)-Module verwenden |
+| `string.dump` | Nicht verfügbar |
 | `debug.*` | Nicht verfügbar |
 | `utf8.*` | Nicht verfügbar |
 | `package.loadlib` | Native Bibliotheken nicht unterstützt |

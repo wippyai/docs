@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "Renderize templates Jet a partir de conjuntos de templates configurados."
+description: "Renderize conteudo dinamico usando o Jet template engine. Construa paginas HTML, emails e documentos com heranca de templates e includes."
 ---
 
 # Template Engine

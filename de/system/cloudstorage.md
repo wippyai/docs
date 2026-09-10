@@ -1,23 +1,21 @@
 ---
 title: "Cloud-Speicher"
-description: "Konfigurieren Sie AWS-Zugangsdaten und S3-kompatiblen Objektspeicher."
+description: "S3-kompatibler Objektspeicher mit vorsignierten URLs, Multipart-Uploads und Bereichs-Lesevorgängen."
 ---
 
 # Cloud-Speicher
 <secondary-label ref="external"/>
 
-Cloud-Storage-Einträge konfigurieren AWS-Zugangsdaten und S3-kompatible Buckets für die Lua-Storage-API. Diese Seite ist eine Konfigurationsreferenz; die Ausschnitte setzen voraus, dass der benannte Bucket und die Zugangsdaten beziehungsweise die SDK-Zugangsdatenkette bereits vorhanden sind.
+S3-kompatibler Objektspeicher mit vorsignierten URLs, Multipart-Uploads und Bereichs-Lesevorgängen.
 
 ## Entry-Typen
 
-| Art | Beschreibung |
+| Kind | Beschreibung |
 |------|--------------|
 | `config.aws` | AWS-Anmeldedaten und Regionskonfiguration |
 | `cloudstorage.s3` | S3-Bucket-Verbindung |
 
 ## AWS-Konfiguration
-
-Statische, über das Umgebungssystem registrierte Zugangsdaten:
 
 ```yaml
 - name: aws_config
@@ -27,30 +25,22 @@ Statische, über das Umgebungssystem registrierte Zugangsdaten:
   secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
-Standardmäßige AWS-SDK-Zugangsdatenkette, etwa für IAM-Rollen oder Instanzprofile:
-
-```yaml
-- name: aws_config
-  kind: config.aws
-  region: ${env:AWS_REGION}
-```
-
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
-| `region` | string | Ja | AWS-Region. Verwenden Sie `${env:NAME}`, wenn sie je Deployment variiert |
-| `access_key_id` | string | Nein | AWS-Access-Key-ID, inline oder als `${env:NAME}` |
-| `secret_access_key` | string | Nein | Geheimer AWS-Zugriffsschlüssel, inline oder als `${env:NAME}` |
+| `region` | string | Ja | AWS-Region. Über `${env:NAME}` bereitstellen, wenn sie sich je Deployment unterscheidet |
+| `access_key_id` | string | Nein | AWS Access Key ID (inline oder `${env:NAME}`) |
+| `secret_access_key` | string | Nein | AWS Secret Access Key (inline oder `${env:NAME}`) |
 
-Zugangsdatenfelder werden beim Dekodieren aus der [Umgebungs-Registry](./env.md) aufgelöst. Ein moderner `${env:NAME}`-Platzhalter ohne Standardwert lässt die Dekodierung bei einer fehlenden Variable fehlschlagen. Lassen Sie daher `access_key_id` und `secret_access_key` weg, um die standardmäßige AWS-SDK-Zugangsdatenkette zu verwenden. Statische Zugangsdaten werden nur angewendet, wenn beide Felder nicht leere Werte ergeben.
+Anmeldedaten werden zur Dekodierzeit aus der [Umgebungs-Registry](system/env.md) aufgelöst. Sowohl `access_key_id` als auch `secret_access_key` müssen sich zu nicht-leeren Werten auflösen, damit statische Anmeldedaten greifen; andernfalls wird die AWS SDK Standard-Anmeldekette verwendet (IAM-Rollen, Instanzprofile, etc.).
 
-Anfragen werden vom AWS SDK mit AWS Signature Version 4 unter Verwendung der aufgelösten Anmeldedaten signiert. Es ist keine Signierungskonfiguration erforderlich.
+Requests werden vom AWS SDK mit AWS Signature Version 4 unter Verwendung der aufgelösten Anmeldedaten signiert. Es ist keine Signierungskonfiguration erforderlich.
 
 <note>
-Ältere Konfigurationen verwenden eine benachbarte <code>&lt;field&gt;_env</code>-Direktive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>), die ebenfalls in der Umgebungs-Registry nachschlägt. Anders als ein moderner Platzhalter ohne Standardwert behält eine nicht registrierte oder leere Legacy-Auflösung den Inline- oder Nullwert bei. Die Legacy-Form ist <b>veraltet</b> — migrieren Sie sie bewusst und ergänzen Sie Platzhalter-Standardwerte, wenn ein gleichwertiges Fallback-Verhalten erforderlich ist.
+Ältere Konfigurationen verwenden eine benachbarte <code>&lt;feld&gt;_env</code>-Direktive (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>), die sich genauso auflöst. Diese Form ist <b>veraltet</b> — migrieren Sie sie auf den oben gezeigten <code>${env:NAME}</code>-Platzhalter.
 </note>
 
 <note>
-Ein einzelner <code>config.aws</code>-Eintrag kann von mehreren AWS-basierten Diensten wiederverwendet werden. <code>queue.driver.sqs</code> referenziert denselben Eintrag über sein Feld <code>config:</code>.
+Ein einzelner <code>config.aws</code>-Eintrag kann über AWS-gestützte Dienste hinweg wiederverwendet werden. <code>queue.driver.sqs</code> referenziert denselben Eintrag über sein <code>config:</code>-Feld.
 </note>
 
 ## S3-Speicher
@@ -64,9 +54,9 @@ Ein einzelner <code>config.aws</code>-Eintrag kann von mehreren AWS-basierten Di
 
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
-| `bucket` | string | Ja | S3-Bucket-Name. Verwenden Sie `${env:NAME}`, wenn er je Deployment variiert |
+| `bucket` | string | Bedingt | S3-Bucket-Name. Über `${env:NAME}` bereitstellen, wenn er sich je Deployment unterscheidet |
 | `config` | reference | Ja | AWS-Konfigurations-Entry-Referenz |
-| `endpoint` | string | Nein | Benutzerdefinierter Endpunkt für S3-kompatible Dienste, inline oder als `${env:NAME}` |
+| `endpoint` | string | Nein | Benutzerdefinierter Endpunkt für S3-kompatible Dienste (inline oder `${env:NAME}`) |
 
 ### S3-kompatible Dienste
 
@@ -82,9 +72,32 @@ Für MinIO oder andere S3-kompatible Dienste setzen Sie einen benutzerdefinierte
 
 Wenn ein Endpunkt angegeben wird, wird Pfadstil-Zugriff automatisch aktiviert.
 
+## Multipart-Uploads
+
+Vorsignierte Multipart-Uploads sind eine Fähigkeit des Providers, kein Feature der Runtime. Der `cloudstorage.s3`-Typ implementiert sie; ein Provider, der das Multipart-Protokoll nicht unterstützt, lässt `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` und `abort_multipart_upload` mit `errors.UNAVAILABLE` fehlschlagen.
+
+Teile eines Uploads, der nie abgeschlossen oder abgebrochen wird, bleiben gespeichert und werden berechnet. Anwendungen brechen auf jedem Fehlerpfad ab, aber bei einem abgestürzten Client läuft nichts mehr, was diesen Abbruch ausführen könnte. Als Absicherung eine `AbortIncompleteMultipartUpload`-Lifecycle-Regel auf dem Bucket konfigurieren:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Bereichs-Lesevorgänge
+
+`open_reader` liest ein Objekt über Ranged-GETs und fixiert das ETag des Objekts bei jedem Lesevorgang mit `If-Match`. Ein Provider, der beim initialen Stat kein ETag zurückgibt, lässt den Aufruf mit `errors.UNAVAILABLE` fehlschlagen, und ein Provider, der `If-Match` ignoriert, verliert den Überschreibschutz - der Lesevorgang kann dann nicht erkennen, dass er zwei Objektgenerationen vermischt hat.
+
 ## Lua-API
 
-Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs).
+Siehe [Cloud-Storage-Modul](lua/storage/cloud.md) für Operationen (list, upload, download, delete, vorsignierte URLs, Multipart-Uploads, Bereichs-Reader).
 
 ## Siehe auch
 

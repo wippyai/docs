@@ -1,6 +1,6 @@
 ---
-title: "Generación de UUID"
-description: "Genera, valida, inspecciona, analiza y formatea UUID."
+title: "Generacion de UUID"
+description: "Generar identificadores unicos universales. Adaptado para workflows - los UUIDs aleatorios devuelven valores consistentes en replay."
 ---
 
 # Generación de UUID
@@ -139,10 +139,10 @@ local info, err = uuid.parse(id)
 **Devuelve:** `table, error`
 
 Campos de tabla devuelta:
-- `version` (integer): versión del UUID (1, 3, 4, 5 o 7)
+- `version` (integer): Versión UUID (1, 3, 4, 5, o 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, o Invalid
-- `timestamp` (integer): marca de tiempo Unix (solo v1 y v7)
-- `node` (string): identificador de nodo sin procesar de seis bytes (solo v1); codifícalo antes de mostrarlo o almacenarlo como texto
+- `timestamp` (integer): Marca de tiempo Unix (solo v1 y v7)
+- `node` (string): 6 bytes crudos del ID de nodo (solo v1)
 
 ### `format`
 

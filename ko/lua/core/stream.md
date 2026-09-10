@@ -1,6 +1,6 @@
 ---
 title: "스트림"
-description: "I/O module이 반환한 stream object를 read, write, seek, inspect, scan 및 close합니다."
+description: "효율적인 데이터 처리를 위한 스트림 읽기/쓰기 작업. 스트림 객체는 다른 모듈(HTTP, 파일시스템 등)에서 얻습니다."
 ---
 
 # 스트림
@@ -33,9 +33,9 @@ local chunk, err = stream:read(size)
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `size` | integer | 읽을 byte 수(0 = default 32KB chunk) |
+| `size` | integer | 읽을 바이트 (0 = 기본 32KB 청크) |
 
-**반환:** `string, error` - EOF에서 `nil, nil`
+**반환:** `string, error` — EOF에서 `nil, nil`
 
 ## 쓰기
 
@@ -109,20 +109,16 @@ local scanner, err = stream:scanner(split)
 ### 스캐너 메서드
 
 ```lua
-local has_more, err = scanner:scan()  -- advance to next token
-local token = scanner:text()           -- current token
-local err_msg = scanner:err()          -- scanner error if any
+local has_more, err = scanner:scan()  -- 다음 토큰으로 진행
+local token = scanner:text()           -- 현재 토큰
+local err_msg = scanner:err()          -- 스캐너 에러(있는 경우)
 ```
 
 ```lua
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then
-        local scan_err = scanner:err()
-        if scan_err then return nil, scan_err end  -- raw scanner error string
-        break  -- clean EOF
-    end
+    if not has_token then break end  -- EOF
     process(scanner:text())
 end
 ```
@@ -133,12 +129,7 @@ end
 
 | 조건 | 종류 |
 |------|------|
-| stream closed | `errors.INTERNAL` |
-| readable/writable 아님 | `errors.INTERNAL` |
-| read/write/seek failure | `errors.INTERNAL` |
-| non-seekable stream에서 seek | `errors.INTERNAL` |
-| close, flush 또는 stat failure | `errors.INTERNAL` |
-| scanner creation 또는 scan dispatch failure | `errors.INTERNAL` |
-| scanner tokenization 또는 underlying read failure | `scanner:err()`의 unstructured string |
-
-지원하지 않는 `whence` 또는 scanner split value는 structured error value를 반환하는 대신 Lua argument error를 raise합니다.
+| 잘못된 whence/split 타입 | Lua 에러로 발생 (반환되지 않음) |
+| 스트림 닫힘 | `INTERNAL` |
+| 읽기/쓰기 불가 | `INTERNAL` |
+| 읽기/쓰기 실패 | `INTERNAL` |

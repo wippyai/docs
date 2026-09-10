@@ -1,56 +1,63 @@
 ---
 title: "プラットフォームトポロジー"
-description: "Wippy のフロントエンドソースが routed page または Web Component となり、ランタイムコンテキストと CSS を受け取る仕組み。"
+description: "WippyのフロントエンドソースがどのようにルーティングされたページやWebコンポーネントになり、ランタイムコンテキストとCSSを受け取るか。"
 ---
 
 # プラットフォームトポロジー
 
-このページはアーキテクチャおよび診断リファレンスです。配信チェーンと図はシステム境界を説明するもので、実行可能なプロジェクトは提供しません。
-
 ## 配信チェーン
 
-| 段階 | 所有者 | 検証 |
-|------|--------|------|
-| ソースと package build | フロントエンドモジュール | package build が期待する entry file を出力する。 |
-| アーティファクトの場所 | デプロイ用 build target | build command が `--outDir` を受け取る。Vite にハードコードしない。 |
-| レジストリエントリ | バックエンドモジュール | `view.page` または `view.component` が出力済み entry を指す。 |
-| Served URL | ファイルシステムおよび HTTP のレジストリエントリ | asset への直接リクエストがビルド済み JavaScript または HTML を返す。 |
-| ランタイムコンテナ | Web Host | ページは設定済みページエンジン（従来の `about:srcdoc` iframe または Web Fragment）を使用する。コンポーネントは通常 shadow DOM を持つ custom element を使用する。 |
-| コンテキスト | AppConfig と Wippy package | routing、API access、theme data がサポート対象 package を通じて届く。 |
+| ステージ | 所有者 | 検証 |
+|---|---|---|
+| ソースとパッケージビルド | フロントエンドモジュール | パッケージビルドが期待されるエントリファイルを出力する。 |
+| アーティファクトの場所 | デプロイのビルドターゲット | ビルドコマンドが `--outDir` を受け取る。Viteはこれをハードコードしない。 |
+| レジストリエントリ | バックエンドモジュール | `view.page` または `view.component` が出力されたエントリを指している。 |
+| 配信URL | ファイルシステムとHTTPのレジストリエントリ | アセットへの直接リクエストが、ビルドされたJavaScriptまたはHTMLを返す。 |
+| ランタイムコンテナ | Web Host | ページは `about:srcdoc` を使い、コンポーネントはカスタム要素（通常はshadow DOM付き）を使う。 |
+| コンテキスト | AppConfigとWippyパッケージ | ルーティング、APIアクセス、テーマデータが、サポートされたパッケージ経由で届く。 |
 
-ソースが存在すること、ビルドが成功すること、レジストリエントリが有効であることだけでは、次の段階を証明できません。境界を 1 つずつ検証してください。
+ソースが存在すること、ビルドが成功すること、レジストリエントリが有効であることは、いずれも次のステージを保証しません。各境界を検証してください。
 
 ## ページ
 
-`view.page` は、従来の `about:srcdoc` iframe または Web Fragment という 2 つのエンジンのいずれかで動作します。global の `hostConfig.renderEngine` 設定が baseline を選択し、ページの `wippy.renderEngine` はそれに従うか、`iframe` へ opt out するか、デプロイが対応していれば `fragment` を要求できます。アプリケーションコードはエンジンに依存しません。どちらのエンジンでも browser location はサポート対象の child-route 契約ではありません。AppConfig と `@wippy-fe/router` を使用してください。この package が Wippy route 統合を処理します。
+`view.page` は `about:srcdoc` iframe内で動作します。iframeのURLはホストのルートではありません。ホストの状態を知るために `window.location`、`window.parent.location`、クエリパラメータを調べてはいけません。AppConfigと `@wippy-fe/router` を使用してください。パッケージがWippyのルート統合を処理します。
 
-`iframe` CSS injection は現在、テーマ対応 scrollbar のデフォルト styling を提供します。この名前は歴史的なもので、現在の目的より広い意味を持ちます。scrollbar の一貫性のため有効に保ち、layout reset と説明しないでください。
+`iframe` CSS注入は、現在のところデフォルトのテーマ付きスクロールバースタイルを提供します。その名前は歴史的なもので、現在の目的よりも広いものです。スクロールバーの一貫性のために有効なままにし、レイアウトのリセットとして説明しないでください。
 
-## Web Component
+## Webコンポーネント
 
-`view.component` はホストドキュメント内で動作し、通常は shadow root を所有します。CSS selector は shadow boundary を越えて cascade しません。Web Host は component configuration に従って、承認済み stylesheet と facade CSS をその root へ配信できます。
+`view.component` はホストドキュメント内で動作し、通常はshadow rootを所有します。CSSセレクタはshadow境界を越えてカスケードしません。Web Hostは、コンポーネントの設定に応じて、承認されたスタイルシートとファサードCSSをそのroot内に配信することがあります。
 
-CSS variable の継承と stylesheet injection は別の仕組みです。
+CSS変数の継承とスタイルシートの注入は異なるメカニズムです:
 
-- public な継承 variable は host-to-shadow boundary を越えられます。
-- selector rule が shadow root に作用するのは、その root へ配信された場合だけです。
-- 配信しても、任意の selector が portable API になるわけではありません。
+- 公開された継承変数は、ホストからshadowへの境界を越えられます。
+- セレクタルールは、そのshadow root内に配信された場合にのみ影響します。
+- 配信されたからといって、任意のセレクタがポータブルなAPIになるわけではありません。
 
-## テーマと overlay
+## テーマとオーバーレイ
 
-facade が PrimeVue theme を提供します。facade の `custom_css` にある共有 `.p-*` rule は有効な theme implementation であり、意図していれば host と child に対して global にできます。`.wippy-host-app` は host 固有 chrome にだけ使用してください。
+ファサードがPrimeVueテーマを供給します。ファサードの `custom_css` にある共有の `.p-*` ルールは正当なテーマ実装であり、ホストと子の両方に意図されている場合はグローバルであって構いません。`.wippy-host-app` はホスト固有のクロームにのみ使用してください。
 
-theme mode は AppConfig state であり、CSS class API ではありません。application、component、fixture、browser test は、`@wippy-fe/proxy` の `host.setThemeMode('auto' | 'light' | 'dark')` で mode を切り替え、`@theme` を待って `host.getThemeMode()` を検証します。AppConfig が host-to-child transport を通じて変更を伝えます。host は自身の document を更新し、稼働中の iframe および Web Fragment page realm へ AppConfig を再配信し、web-component root に mode を反映します。
-`w-theme-dark` または `w-theme-light` class を直接強制しないでください。
+テーマモードはAppConfigの状態であり、CSSクラスのAPIではありません。アプリケーション、
+コンポーネント、フィクスチャ、ブラウザテストは、`@wippy-fe/proxy` の
+`host.setThemeMode('auto' | 'light' | 'dark')` でモードを切り替え、その後
+`@theme` を待って `host.getThemeMode()` を検証します。AppConfigがその変更を
+ホストから子へのトランスポートを通じて伝えます。ホストは自身のドキュメントを更新し、
+稼働中の `about:srcdoc` iframeにAppConfigを再ブロードキャストし、そのモードを
+Webコンポーネントのrootへミラーリングします。`w-theme-dark` や `w-theme-light` クラスを
+直接強制してはいけません。
 
-PrimeVue overlay は teleport される場合があります。top document、iframe document、再帰的に検出した shadow root で実際の overlay root を確認してください。一般的な PrimeVue の配置を想定しないでください。
+`w-theme-dark` や `w-theme-light` クラスを直接強制してはいけません。
 
-## ランタイムのデバッグ順序
+PrimeVueのオーバーレイはテレポートされることがあります。実際のオーバーレイrootを、トップドキュメント、iframeドキュメント、再帰的に発見されたshadow rootの中で検証してください。PrimeVueの一般的な配置を前提にしてはいけません。
 
-1. バックエンドが listen していることを確認する。
-2. 予期しない 5xx response がないかバックエンドログを確認する。
-3. registry owner と served asset URL を確認する。
-4. 正確な package build がその asset を出力したことを確認する。
-5. direct deep link がサポートされていない場合、SPA navigation より先に host root を読み込む。
-6. navigation と interaction の後で console および network error を確認する。
-7. theme scenario では public proxy theme method を呼び出し、`@theme` を観測し、screenshot を受け入れる前に `host.getThemeMode()` を検証する。
+## ランタイムデバッグの順序
+
+1. バックエンドがリッスンしていることを確認する。
+2. 予期しない5xxレスポンスがないか、バックエンドのログを確認する。
+3. レジストリの所有者と配信アセットURLを確認する。
+4. そのアセットを出力したのが正確にどのパッケージビルドかを確認する。
+5. 直接のディープリンクがサポートされていない場合は、SPA内を遷移する前にホストのルートを読み込む。
+6. 遷移および操作の後に、コンソールとネットワークのエラーを確認する。
+7. テーマのシナリオでは、公開のプロキシテーマメソッドを呼び出し、`@theme` を観測し、
+   スクリーンショットを受け入れる前に `host.getThemeMode()` を検証する。

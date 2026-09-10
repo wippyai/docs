@@ -26,8 +26,8 @@ flowchart LR
 | `queue` | Obrigatório | - | ID do registro da fila |
 | `func` | Obrigatório | - | ID do registro da função handler |
 | `concurrency` | 1 | 1000 | Quantidade de workers |
-| `prefetch` | 10 | 10000 | Tamanho do buffer compartilhado de entregas; o AMQP também o aplica como contagem de prefetch da QoS do canal |
-| `auto_ack` | false | - | Opção de auto-ack específica do backend; no AMQP, `true` solicita que o broker confirme no momento da entrega |
+| `prefetch` | 10 | 10000 | Tamanho do buffer de mensagens |
+| `auto_ack` | false | - | Auto-ack no nível do driver (AMQP `Consume` autoAck; ignorado pelo driver de memória) |
 | `driver_options` | `{}` | - | Opções de consumidor específicas do driver |
 
 ## Definição de Entrada
@@ -91,6 +91,8 @@ A menos que o handler conclua explicitamente a entrega, o consumidor usa o resul
 | Retorna ou gera um erro de invocação | Nack | A reentrega depende do driver |
 
 Valores comuns de retorno, inclusive `false`, não determinam o comportamento de confirmação. Chame `msg:ack()` ou `msg:nack()` para concluir explicitamente. A conclusão acontece uma única vez: a primeira vence. Com `auto_ack: true` no AMQP, o broker confirma no momento da entrega; portanto, uma falha posterior do handler não pode causar reentrega pelo broker.
+
+O handler pode resolver a mensagem por conta própria com `queue.message()` e `msg:ack()` / `msg:nack()`; o consumer então pula seu próprio ack/nack.
 
 ## Pool de Workers
 

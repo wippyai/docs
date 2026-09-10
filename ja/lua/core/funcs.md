@@ -1,6 +1,6 @@
 ---
 title: "関数呼び出し"
-description: "登録済み関数を同期または非同期に呼び出し、リクエスト、セキュリティ、呼び出しオプションを伝播します。"
+description: "Wippyで他の関数を呼び出すプライマリな方法。コンテキスト伝播、セキュリティ資格情報、タイムアウトをフルサポートして、登録された関数をプロセス間で同期または非同期に実行。このモジュールは、コンポーネントが通信する必要のある分散アプリケーションを構築する上で中心的な役割を果たします。"
 ---
 
 # 関数呼び出し
@@ -126,10 +126,7 @@ local exec, err = funcs.new():with_actor(actor)
 if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new({
-        message = "User cannot delete records",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -159,21 +156,35 @@ if err then return nil, err end
 
 ### with_options
 
-呼び出しオプションを設定します。実装は独自のオプションを定義でき、ランタイムも送信ネットワークを選択する `network` を認識します。
+リトライポリシーやオーバーレイネットワークなどの呼び出しオプションを設定。オプションは対象の関数エントリのプリセットオプションに上書きマージされる。
 
 ```lua
--- Set a 5 second timeout for external API call
-local exec, err = funcs.new():with_options({timeout = 5000})
-if err then return nil, err end
+-- 一時的な失敗を指数バックオフで最大5回リトライ
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Handle timeout or other error
+    -- すべての試行が失敗したか、エラーがリトライ不可だった
 end
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `options` | table | 実装固有のオプション |
+| `options` | table | 呼び出しオプション |
+
+| オプション | 型 | 説明 |
+|--------|------|-------------|
+| `retry.max_attempts` | int | 最初の試行を含む最大試行回数（1でリトライ無効）|
+| `retry.initial_delay` | int/duration | 最初のリトライ前の遅延（ミリ秒または duration 文字列）、デフォルト `100` |
+| `retry.max_delay` | int/duration | バックオフ遅延の上限（ミリ秒または duration 文字列）、デフォルト `10s` |
+| `retry.backoff_factor` | number | 各試行後に遅延へ適用される乗数、デフォルト `2.0` |
+| `retry.jitter` | number | 各遅延に適用されるランダムジッターの割合、デフォルト `0.1` |
+| `retry.retry_kinds` | string[] | これらの kind のエラーのみリトライする。デフォルトでは `Invalid`、`PermissionDenied`、`Internal` を除くすべての kind がリトライされる |
+| `retry.skip_kinds` | string[] | これらの kind のエラーは決してリトライしない |
+| `network` | string | 呼び出しの送信トラフィックを経由させるオーバーレイネットワークのレジストリID。`network.select` 権限が必要 |
+
+リトライが発生するのはリトライ可能なエラーのみで、リトライ不可のエラーは即座に返される。Temporalのアクティビティオプションは[アクティビティ](temporal/activities.md)で説明する。
 
 ランタイム定義のオプションは次のとおりです。
 
@@ -190,11 +201,10 @@ end
 設定されたコンテキストを使用するExecutor版のcallとasync。
 
 ```lua
--- Build reusable executor with context
-local exec, err = funcs.new():with_context({trace_id = "abc-123"})
-if err then return nil, err end
-exec, err = exec:with_options({timeout = 10000})
-if err then return nil, err end
+-- コンテキスト付きの再利用可能なexecutorを構築
+local exec = funcs.new()
+    :with_context({trace_id = "abc-123"})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Make multiple calls with same context
 local users, users_err = exec:call("app.api:list_users")
@@ -360,18 +370,18 @@ end
 | `funcs.call` | Function ID | 特定の関数を呼び出し |
 | `funcs.context` | `context` | `with_context()`を使用してカスタムコンテキストを設定 |
 | `funcs.security` | `security` | `with_actor()`または`with_scope()`を使用 |
-| `network.select` | Network ID | `with_options()` で outbound network を選択 |
+| `network.select` | ネットワークID | `with_options({network = ...})`でオーバーレイネットワークを選択 |
 
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| Targetが空 | `errors.INVALID` | いいえ |
-| Namespaceがない | `errors.INVALID` | いいえ |
-| Nameがない | `errors.INVALID` | いいえ |
-| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
-| サブスクライブ失敗 | `errors.INTERNAL` | いいえ |
-| async start の dispatch 失敗 | `errors.INTERNAL` | いいえ |
+| Targetが空 | `errors.INVALID` | no |
+| Namespaceがない | `errors.INVALID` | no |
+| Nameがない | `errors.INVALID` | no |
+| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| プロセス外での非同期呼び出し | `errors.INTERNAL` | no |
+| サブスクライブ失敗 | `errors.INTERNAL` | no |
 | 関数エラー | 様々 | 様々 |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

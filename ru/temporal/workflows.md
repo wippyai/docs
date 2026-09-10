@@ -323,6 +323,14 @@ local spawner = process.with_options({
 | `temporal.workflow.parent_close_policy` | string | Поведение дочернего при закрытии родителя |
 | `temporal.workflow.wait_for_cancellation` | boolean | Ожидание завершения отмены |
 | `temporal.workflow.namespace` | string | Переопределение пространства имён Temporal |
+| `temporal.workflow.name` | string | Имя типа workflow для запуска, когда оно отличается от ID в реестре |
+| `temporal.workflow.versioning_intent` | string | `compatible` (наследовать build ID) или `default` (использовать правила назначения) |
+| `temporal.workflow.priority` | table | Приоритет задачи: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Человекочитаемая сводка, показываемая в UI Temporal |
+| `workflow.details` | string | Человекочитаемые детали, показываемые в UI Temporal |
+| `workflow.versioning_override` | table | Переопределение версионирования воркера: `mode` — `auto_upgrade` либо `pinned` с `deployment_name` и `build_id` |
+
+Каждая опция также принимается под коротким ключом (`workflow.id`, `workflow.task_queue`, ...); префикс `temporal.workflow.` — устаревший алиас. У `summary` и `details` алиаса с `temporal.workflow.` нет.
 
 Значения длительности принимают строки (`"5s"`, `"10m"`, `"1h"`) или числа в миллисекундах.
 
@@ -404,6 +412,36 @@ local user_id = ctx.get("user_id")       -- "user-1"
 local tenant = ctx.get("tenant")         -- "tenant-1"
 local all = ctx.all()                    -- {user_id="user-1", tenant="tenant-1", request_id="req-abc"}
 ```
+
+### Контекст безопасности
+
+Актор и область вызывающего путешествуют вместе с workflow, отдельно от значений `ctx` и по более строгим правилам. Они переносятся в двух заголовках Temporal:
+
+| Заголовок | Содержимое |
+|-----------|------------|
+| `wippy-security` | JSON-конверт: ID актора, метаданные актора, ID политик и аудитория |
+| `wippy-security-signature` | HMAC-SHA256 над этим конвертом на ключе клиента `security_hmac_key` |
+
+Аудитория — это ID выполнения, для которого заголовок был выпущен: ID workflow для запуска или сигнала, ID activity для activity. Заголовок, воспроизведённый против другого выполнения, не проходит проверку аудитории, поэтому перехваченный заголовок нельзя использовать где-то ещё.
+
+Проверка происходит до запуска тела workflow. Подпись должна совпасть с одним из ключей клиента, аудитория должна равняться ID этого выполнения, а каждая названная в конверте политика должна разрешиться в локальном реестре безопасности. **Сбой любого из этих условий обрушивает выполнение workflow** — это не предупреждение, и workflow не запускается с урезанным контекстом. То же верно для внутренне противоречивого конверта, например актора без области или политик без актора.
+
+Ключи настраиваются на записи [`temporal.client`](temporal/overview.md#security-context-propagation). Запуск workflow из контекста, у которого есть актор или область, требует ключа подписи; без него запуск падает, а не продолжается без подписи.
+
+#### Защищённые workflow отклоняют неподписанные сигналы
+
+Workflow, работающий под контекстом безопасности, требует, чтобы каждый входящий сигнал нёс подписанный relay-тикет — заголовки `wippy-relay-signal` и `wippy-relay-signal-signature` — привязанный к этому ID workflow и этому имени сигнала. Неподписанный или неверно адресованный сигнал отклоняется, а не доставляется. Сигналы, отправляемые процессами Wippy через `process.send`, подписываются автоматически. Сигналы, вброшенные извне Wippy — из Temporal CLI, `tctl` или другого SDK, — тикета не несут и потому не проходят против защищённого workflow. Управляйте защищённым workflow только из Wippy.
+
+#### Детерминированные ID дочерних workflow и activity
+
+Под контекстом безопасности дочерний workflow или activity, запущенный без явного ID, получает производный ID вместо случайного, потому что ID — это аудитория, для которой подписан заголовок, и он должен воспроизводиться при replay:
+
+| Запущен из защищённого workflow | Сгенерированный ID |
+|---------------------------------|--------------------|
+| Дочерний workflow | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| Activity | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N` считается в пределах выполнения workflow. Явно указанный `temporal.workflow.id` или ID activity используется как есть и становится аудиторией. Без контекста безопасности ID по-прежнему оставляются на усмотрение Temporal.
 
 ### Из HTTP-обработчиков
 
@@ -853,7 +891,7 @@ local now = time.now()
 local id = uuid.v4()
 
 -- Crypto operations
-local bytes = crypto.random_bytes(32)
+local bytes = crypto.random.bytes(32)
 
 -- Child workflows
 local result = workflow.exec("app:child", input)

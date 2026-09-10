@@ -1,21 +1,21 @@
 ---
 title: "レジストリエントリ"
-description: "registry YAML、package metadata、wippy-meta.json がフロントエンドページと Web Component を Web Host に宣言する仕組み。"
+description: "レジストリエントリは、Wippyバックエンドがフロントエンドのアーティファクト（マイクロフロントエンドアプリまたは再利用可能なWebコンポーネント）を宣言し、Web Hostが…"
 ---
 
 # レジストリエントリ
 
-レジストリエントリはフロントエンドアーティファクトを Wippy backend に宣言し、Web Host が検出して配信できるようにします。アーティファクトは micro frontend app または再利用可能な Web Component です。宣言はモジュールの `_index.yaml`、`package.json` の `wippy` block、生成された `wippy-meta.json` にまたがります。
+レジストリエントリは、Wippyバックエンドがフロントエンドのアーティファクト（マイクロフロントエンドアプリまたは再利用可能なWebコンポーネント）を宣言し、Web Hostがそれを発見して配信できるようにする仕組みです。このドキュメントでは、モジュールの `_index.yaml`、その `package.json` の `wippy` ブロック、そしてそれらをつなぐ `wippy-meta.json` ファイルの間の契約を説明します。
 
-これらのエントリを runtime で処理する `wippy/views` module の設定は、[Views](../../framework/views.md)を参照してください。
+これらのエントリをランタイムで処理する `wippy/views` モジュールのセットアップについては、[Views](../../framework/views.md)を参照してください。
 
 ## レジストリエントリとは
 
-各フロントエンドアーティファクトは、モジュールの `_index.yaml` で `registry.entry` として宣言します。`kind: registry.entry` marker は、Lua component を直接定義するのではなく、他のモジュールが利用する metadata をこのエントリが持つことを Wippy registry に伝えます。
+すべてのフロントエンドアーティファクトは、モジュールの `_index.yaml` で `registry.entry` として宣言されます。`kind: registry.entry` というマーカーは、このエントリがLuaコンポーネントを直接定義するのではなく、他のモジュールが消費するメタデータを運ぶことをWippyレジストリに伝えます。
 
-> **よくある間違い：** `view.page` と `view.component` は `kind` の値では **ありません**。必ず `kind: registry.entry` と記述し、フロントエンドアーティファクトの type を `meta.type` に置きます。`kind: view.page` と `kind: view.component` は不正な形です。
+> **よくある罠:** `view.page` と `view.component` は `kind` の値では**ありません**。常に `kind: registry.entry` と書き、フロントエンドアーティファクトの種別は `meta.type` に置いてください。`kind: view.page` や `kind: view.component` は不正な形です。
 
-最小限の正しい形：
+最小の正しい形:
 
 ```yaml
 - name: main
@@ -45,89 +45,85 @@ entries:
       mountRoute: /home/:part(.*)*
 ```
 
-`wippy/views` が読み取るのは `meta` block です。`meta.type` field が、サポートされる 2 種類のアーティファクトを区別します。
+`meta` ブロックが `wippy/views` の読み取る対象です。`meta.type` フィールドが、サポートされる2種類のアーティファクトを区別します。
 
-## `meta.type` 識別子 :id=metatype-discriminator
+## `meta.type` による判別
 
 | 値 | 意味 |
 |---|---|
-| `view.page` | full SPA の micro frontend app。ページで選択した iframe または Web Fragment engine で描画 |
-| `view.component` | ページ内の任意の場所に埋め込める Web Component（custom element） |
+| `view.page` | マイクロフロントエンドアプリ（フルSPA）。Web Host内のiframeでレンダリングされる |
+| `view.component` | Webコンポーネント（カスタム要素）。ページ内のどこにでも埋め込める |
 
-`meta` の他の各 field は、この type の文脈で解釈されます。一方の type だけに適用される field は、type 別 reference page（[view.page](./view-page.md)、[view.component](./view-component.md)）で説明します。
+`meta` 内の他のすべてのフィールドは、この型のコンテキストで解釈されます。片方の型にのみ適用されるフィールドは、型ごとのリファレンスページ（[view.page](./view-page.md)、[view.component](./view-component.md)）で説明されています。
 
-## `specification` marker
+## `specification` マーカー
 
-frontend package は `package.json` の top level に `"specification": "wippy-component-1.0"` を宣言する必要があります。この marker は package metadata と API response の形を識別します。値が存在する場合、`@wippy-fe/vite-plugin` が検証します。
+レジストリに参加するすべてのフロントエンドパッケージは、`package.json` のトップレベルで `"specification": "wippy-component-1.0"` を宣言します。この文字列は、このパッケージがwippy-component契約に従っていること、すなわち既知の形の `wippy` ブロックを持ち、`@wippy-fe/vite-plugin` でビルドされたことをWippy（およびツール）に伝えるハンドシェイクです。
 
 ```json
 {
-  "name": "@wippy/example-widget",
+  "name": "@wippy/app-main",
   "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
-  "wippy": {
-    "type": "component",
-    "tagName": "example-widget"
-  }
+  "wippy": { ... }
 }
 ```
 
-marker は rendering behavior を変更しません。`wippy/views` は bundled value を page/component descriptor へ引き継ぎ、省略した legacy bundle には `wippy-component-1.0` を補います。registry YAML validation はこの field に依存しません。
+`specification` の有無はランタイムの挙動を変えませんが、`wippy/views` はレジストリから読み込んだエントリを検証する際にこれを使用します。
 
-## `wippy-meta.json` 契約
+## `wippy-meta.json` の契約
 
-`@wippy-fe/vite-plugin` は built bundle と同じ場所に `wippy-meta.json` を出力します。これは artifact author が定義する runtime metadata（props schema、events schema、title、icon、proxy injection setting）の正規 source です。
+`@wippy-fe/vite-plugin` は、ビルドされたバンドルと並んで `wippy-meta.json` ファイルを出力します。このファイルは、アーティファクトのランタイムメタデータ（propsスキーマ、eventsスキーマ、title、icon、プロキシ注入設定）の正式な真実の源です。
 
-metadata の責務：
+エージェントとツール向けの短い答え:
 
-- **出力元：** `view.page` app は `wippyPagePlugin()`、`view.component` Web Component は `wippyComponentPlugin()`。
-- **生成元：** `package.json`。`wippy-meta.json` を手書きしない。
-- **利用者：** `wippy/views`。page/component descriptor と API response を構築するとき、served bundle root から読み取る。
-- **override：** `_index.yaml`。deployment policy および明示的に宣言するすべての field について常に優先される。
+- **出力するのは誰か:** `view.page` アプリには `wippyPagePlugin()`、`view.component` Webコンポーネントには `wippyComponentPlugin()`。
+- **記述するのは誰か:** `wippy-meta.json` を手で書く人はいません。viteプラグインが `package.json` から生成します。
+- **消費するのは誰か:** `wippy/views` が、ページ/コンポーネントのディスクリプタとAPIレスポンスを構築する際に、配信されるバンドルのルートから読み取ります。
+- **YAMLの役割:** `_index.yaml` は、デプロイポリシーおよび明示的にオーバーライドするあらゆるフィールドについて、引き続き権威を持ちます。
 
-`wippy/views` は `registry.entry` を読み込むとき、page と component の両方について artifact の served bundle root（`url + base_path`）から `wippy-meta.json` を読み取ります。YAML が常に優先されます。`_index.yaml` で宣言した各 field は `wippy-meta.json` より優先されます。YAML override がない field については、`wippy-meta.json` が `wippy/views` の default を提供します。deployment-policy field の `announced`、`secure`、`url`、`mountRoute`、`base_path` は operator の判断を表すため、`_index.yaml` に設定する必要があります。`package.json` / `wippy-meta.json` から記述する surface はありません（`base_path` は page と component の両方で利用できます。現在の app-template component entry は単に省略しています）。
+`wippy/views` が `registry.entry` を読み込むとき、アーティファクトの配信バンドルルートから `wippy-meta.json` を読み取ります。ページの場合、そのルートはページの `url + base_path` です。Webコンポーネントの場合、現在のエントリはコンポーネントを `url` から直接配信します。YAMLが常に優先されます。`_index.yaml` は、宣言するすべてのフィールドについて優先されます。`wippy-meta.json` は、あるフィールドにYAMLのオーバーライドがない場合に `wippy/views` が読み取るデフォルトを提供します。デプロイポリシーのフィールド（`announced`、`secure`、`url`、`mountRoute`、`base_path`）は `_index.yaml` で設定しなければなりません。これらはコンポーネントの作者性ではなく運用者の判断を表すためであり、`package.json`/`wippy-meta.json` には記述面が存在しません。（`base_path` はページとコンポーネントの両方で尊重されますが、現在のapp-templateのコンポーネントエントリは単に省略しています。）
 
-一方、`entry_point` は FE author が定義し、YAML でも override できます。page では `wippy.path` から取得します（`@wippy-fe/vite-plugin` では **必須** で、省略すると `wippy.path is required for a page package` を throw します）。component では top-level の `browser` field から取得し、custom-element name は別に `wippy.tagName` で宣言します。`_index.yaml` の `meta.entry_point` は、author default に対する deployment ごとの任意 override であり、YAML-only field ではありません。
+対照的に、`entry_point` はFE側で記述され、*かつ* YAMLでオーバーライド可能です。これはパッケージの `wippy` ブロックから `wippy-meta.json` に焼き込まれます。ページの場合は `wippy.path`（`@wippy-fe/vite-plugin` はこれを**必須**とし、省略するとプラグインが `wippy.path is required for a page package` をスローします）、コンポーネントの場合は `wippy.tagName`/`browser` です。`_index.yaml` の `meta.entry_point` フィールドは、その記述済みデフォルトの上に載るデプロイごとの任意のオーバーライドであり、YAML専用フィールドではありません。
 
-component author は display metadata を `package.json` の `wippy` block に一度記述し、vite plugin が author default として `wippy-meta.json` に記録します。operator は YAML で routing と access policy を設定し、display field も override できます。
+この分離により、コンポーネントの作者は表示メタデータを `package.json` の `wippy` ブロックに一度だけ書き、viteプラグインがビルド時にそれを作者デフォルトとして `wippy-meta.json` に焼き込みます。コンポーネントをデプロイする運用者は、ルーティングとアクセスポリシーをYAMLで設定し、そこで表示レベルのフィールドをオーバーライドすることもできます。
 
 ## 共通フィールド
 
-これらの field は、`view.page` と `view.component` の両方の `meta` block に現れます。
+以下のフィールドは、`view.page` と `view.component` の両方のエントリの `meta` ブロックに現れます。
 
 | フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|
 | `type` | string | — | `view.page` または `view.component`（必須） |
-| `name` | string | entry name | API response で使う identifier |
-| `title` | string | — | 人が読める表示名 |
-| `icon` | string | — | Iconify reference（例：`tabler:layout-dashboard`） |
-| `announced` | boolean | — | 一覧 API への表示を制御。意味は `type` ごとに異なる（下記参照） |
-| `secure` | boolean | `false` | access に authentication が必要 |
-| `url` | string | — | static file serving の base URL prefix（CDN origin または local mount path） |
-| `entry_point` | string | `index.html` / `index.js` | static directory 内の entry file name |
+| `name` | string | エントリ名 | APIレスポンスで使われる識別子 |
+| `title` | string | — | 人間が読める表示名 |
+| `icon` | string | — | Iconify参照。例: `tabler:layout-dashboard` |
+| `announced` | boolean | — | 一覧APIでの可視性を制御。意味は型により異なる（下記参照） |
+| `secure` | boolean | `false` | アクセスに認証を必要とする |
+| `url` | string | — | 静的ファイル配信のベースURLプレフィックス（CDNオリジンまたはローカルのマウントパス） |
+| `entry_point` | string | `index.html` / `index.js` | 静的ディレクトリ内のエントリファイル名 |
 
-### 型ごとの `announced` の挙動
+### 型ごとの `announced` の意味
 
-`announced` flag の結果は `meta.type` によって異なります。
+`announced` フラグは `meta.type` に応じて異なる結果をもたらします:
 
-- **`view.page`**：navigation sidebar（`GET /api/public/pages/list`）へ page を表示するかを制御します。`announced: false` にすると navigation から隠れますが、直接 access すれば page は読み込まれます。embedded page や auxiliary page では正当なパターンです。
+- **`view.page`**: ページがナビゲーションサイドバー（`GET /api/public/pages/list`）に現れるかどうかを制御します。`announced: false` にするとナビゲーションからは隠れますが、直接アクセスすればページは読み込まれます。これは埋め込み用や補助的なページにとって正当なパターンです。
 
-- **`view.component`**：`GET /api/public/components/list` への包含を制御します。`announced: false` の場合は endpoint から完全に除外されるため、Web Host は script tag を inject せず、`customElements.get(tagName)` は undefined のままです。autoload が必要な component では `announced: true` が必須です。詳しくは [view.component](./view-component.md)を参照してください。
+- **`view.component`**: `GET /api/public/components/list` への含有を制御します。`announced: false` の場合、コンポーネントはそのエンドポイントから完全に除外され、Web Hostはそのスクリプトタグを一切注入せず、`customElements.get(tagName)` は未定義のままになります。自動読み込みが必要なコンポーネントには `announced: true` が必須です。詳細は [view.component](./view-component.md) を参照してください。
 
-## 配信用フィールドの組み合わせ
+## 配信フィールドの組み合わせ方
 
-micro frontend app では、3 つの field を組み合わせて Web Host が読み込む HTML URL を作ります。
+マイクロフロントエンドアプリでは、3つのフィールドが組み合わさって、Web Hostが読み込むHTMLのURLを生成します:
 
 ```
 <url>/<base_path>/<entry_point>
 ```
 
-たとえば `url: /app`、`base_path: app/main`、`entry_point: app.html` の場合、host は `/app/app/main/app.html` を取得します。
+例えば `url: /app`、`base_path: app/main`、`entry_point: app.html` の場合、ホストは `/app/app/main/app.html` を取得します。
 
-`base_path` と `entry_point` の分離は意図的です。Web Host は読み込んだ page に `<url>/<base_path>/` を HTML `<base>` tag として inject し、browser が page 内のすべての relative URL を解決する方法を決めます。entry file が base の subdirectory にあっても構いません。重要なのは、すべての resource へ相対的に到達できる共通 root を base が指すことです。
+`base_path` と `entry_point` の分離は意図的なものです。Web Hostは `<url>/<base_path>/` をHTMLの `<base>` タグとして読み込んだページに注入し、これがそのページ内のすべての相対URLの解決方法を決めます。エントリファイルはベースのサブディレクトリにあっても構いません。重要なのは、ベースが、すべてのリソースに相対的に到達できる共通のルートを指していることです。
 
-たとえば bundle が次の layout の場合：
+例えば、バンドルが次のレイアウトを持つとします:
 
 ```
 static/
@@ -138,14 +134,14 @@ static/
     app.js
 ```
 
-`index.html` が `../shared/vendor.js` を参照するなら、`base_path` は `app/` ではなく `static/`（`app/` と `shared/` の両方を含む directory）を指す必要があります。`base_path: app` にすると、`../shared/vendor.js` は served directory の外へ解決されて 404 になります。
+そして `index.html` が `../shared/vendor.js` を参照している場合、`base_path` は `app/` ではなく `static/`（`app/` と `shared/` の両方を含むディレクトリ）を指す必要があります。`base_path: app` にすると、`../shared/vendor.js` は配信ディレクトリの外側に解決され、404になります。
 
-すべての asset が entry file と同じ場所にある一般的な場合、`base_path` と `entry_point` を含む directory は同じ階層なので違いは見えません。bundle が sibling directory 間で resource を共有するときだけ重要です。
+すべてのアセットがエントリファイルと同じ場所にある一般的なケースでは、`base_path` と `entry_point` を含むディレクトリは同じ階層になるため、この区別は見えません。区別が問題になるのは、バンドルが兄弟ディレクトリ間でリソースを共有する場合だけです。
 
-Web Component でも、host は同じ方法で served URL を構成します。
+Webコンポーネントの場合も、ホストは同じ方法で配信URLを組み立てます:
 
 ```
 <url>/<base_path>/<entry_point>
 ```
 
-現在の app-template component entry は `base_path` を省略していますが、サポートされ、同様に `<url>/<base_path>/<entry_point>` として構成されます。そのため、それらの entry では URL が `<url>/<entry_point>` になります。page との違いは、独自の HTML `<base>` tag を inject されるのではなく、component が `<script type="module">` として inject されることです。
+現在のapp-templateのコンポーネントエントリは `base_path` を省略していますが、サポートされており同じように組み合わされる（`<url>/<base_path>/<entry_point>`）ため、それらのエントリではURLは `<url>/<entry_point>` に縮まります。ページとの違いは、コンポーネントは独自のHTML `<base>` タグを注入されるのではなく、`<script type="module">` として注入される点です。

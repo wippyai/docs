@@ -31,6 +31,7 @@ Activity — это функции, выполняющие недетермин�
 |------|-------------|----------|
 | `worker` | Да | Ссылка на запись `temporal.worker` |
 | `local` | Нет | Выполнять как локальную activity (по умолчанию: false) |
+| `name` | Нет | Собственное имя типа activity (по умолчанию — ID записи) |
 
 ## Реализация
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | Ожидание завершения отмены activity |
 | `activity.disable_eager_execution` | boolean | false | Отключение немедленного выполнения |
 | `activity.retry_policy` | table | - | Конфигурация повторных попыток (см. ниже) |
+| `activity.name` | string | - | Имя типа activity для вызова, когда оно отличается от ID в реестре |
+| `activity.summary` | string | - | Человекочитаемая сводка, показываемая в UI Temporal |
+| `activity.priority` | table | - | Приоритет задачи: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (наследовать build ID) или `default` (использовать правила назначения) |
 
 Значения длительности принимают строки (`"5s"`, `"10m"`, `"1h"`) или числа в миллисекундах.
 
@@ -194,14 +199,7 @@ local b, err = reliable:call("app:step_two", a)
         local: true
 ```
 
-Особенности:
-- Выполняются в процессе воркера workflow
-- Меньшая задержка (без обращения к очереди задач)
-- Нет накладных расходов на отдельную очередь
-- Ограничены коротким временем выполнения (ограничено `local_activity_options.schedule_to_close_timeout`, обычно несколько секунд)
-- Нет heartbeat
-
-Используйте локальные activity для быстрых и коротких операций: валидация входных данных, преобразование данных, обращения к кешу. Для длительной работы используйте обычную activity.
+Сейчас `local: true` разбирается, но ведёт себя идентично обычной activity: она регистрируется и выполняется по стандартному пути activity. Отдельного выполнения локальной activity пока нет, поэтому этот флаг не меняет задержку, поведение очереди задач или heartbeat.
 
 ## Именование activity
 
@@ -249,6 +247,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Контекст безопасности
+
+Activity, запланированная в контексте безопасности, получает подписанный заголовок `wippy-security`, аудиторией которого является ID activity. Воркер проверяет подпись и аудиторию, затем сливает переданные значения `ctx` и полезную нагрузку безопасности в новый фрейм до запуска функции activity.
+
+Это слияние происходит по принципу «всё или ничего» и **фатально для activity при неудаче**: activity возвращает ошибку до выполнения своего кода, поэтому она никогда не работает с частичным контекстом или непроверенным актором. Слияние не удаётся, если подпись или аудитория не проходят проверку, если конверт несогласован (актор без области или политики без актора) либо если названная в конверте политика не разрешается в локальном реестре безопасности — это и есть частая эксплуатационная причина: в развёртывании воркера отсутствует запись политики, которая была у вызывающей стороны.
+
+Ключи подписи и проверки воркер берёт из записи `temporal.client`, на которую ссылается. См. [Передача контекста безопасности](temporal/overview.md#security-context-propagation).
+
 ## Обработка ошибок
 
 Возвращайте ошибки стандартным способом Lua:
@@ -258,7 +264,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -267,7 +273,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -292,9 +298,13 @@ end
 | Сбой | Тип ошибки | Повторяемая | Описание |
 |------|------------|-------------|----------|
 | Ошибка приложения | То, что вернула activity | Наследуется от возвращённой ошибки | Ошибка, возвращённая кодом activity через `return nil, err` |
-| Падение среды выполнения | `INTERNAL` | да | Необработанная ошибка Lua в activity |
-| Отсутствующая activity | `NOT_FOUND` | нет | Activity не зарегистрирована в воркере |
-| Тайм-аут | `TIMEOUT` | да | Activity превысила настроенный тайм-аут |
+| Падение среды выполнения | `Internal` | нет | Необработанная ошибка Lua в activity |
+| Отсутствующая activity | `NotFound` | нет | Activity не зарегистрирована в воркере |
+| Тайм-аут | `Timeout` | нет | Activity превысила настроенный тайм-аут |
+| Проверка безопасности | `Internal` | да | Проверка подписи, аудитории или конверта переданного заголовка безопасности не прошла |
+| Отсутствующая политика безопасности | `Internal` | да | Названная в конверте безопасности политика не разрешается на этом воркере |
+
+Оба сбоя безопасности происходят во время слияния контекста, до запуска функции activity. Они не помечены как неповторяемые, поэтому политика повторных попыток activity продолжает перезапускать их; повторы не помогают, поскольку ни неверная подпись, ни отсутствующая запись политики не меняются между попытками. Ограничивайте `maximum_attempts` у activity, которые должны падать быстро, и читайте повторяющийся сбой `Internal` без вывода в лог activity как сбой слияния контекста, а не как неисправность самой activity.
 
 ```lua
 local executor = funcs.new():with_options({
@@ -303,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

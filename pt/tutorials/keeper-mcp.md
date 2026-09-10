@@ -1,96 +1,95 @@
 ---
-title: "Keeper via MCP"
-description: "Adicione o Wippy Keeper a uma aplicação, emita um token com escopo e conecte um cliente MCP às ferramentas de operação."
+title: "Keeper sobre MCP"
+description: "O Wippy Keeper é o plano de controle de uma aplicação Wippy em execução — uma bancada de trabalho do registro, governança sistema de arquivos↔registro, orquestração de agentes/tarefas, instalação do Hub, base de conhecimento…"
 ---
 
-# Keeper via MCP
+# Keeper sobre MCP
 
-O Wippy Keeper oferece uma interface para operações no registry, governança entre sistema de arquivos e registry, orquestração de tarefas e agentes, instalação pelo Hub, gerenciamento da base de conhecimento, inspeção da runtime e fluxos Git. Ele também expõe capacidades operacionais a clientes compatíveis por meio do Model Context Protocol (MCP). Esta página adiciona o Keeper a uma aplicação e configura uma conexão MCP.
+O Wippy Keeper é o plano de controle de uma aplicação Wippy em execução — uma bancada de
+trabalho do registro, governança sistema de arquivos↔registro, orquestração de agentes/tarefas,
+instalação do Hub, base de conhecimento, logs e inspeção de processos, e um fluxo de revisão/push
+com Git, tudo por trás de uma UI integrada. Sua característica definidora é expor essas
+capacidades de operador a clientes de IA (Claude, Codex, …) sobre **MCP (Model Context
+Protocol)**. Esta página adiciona o Keeper a uma aplicação e conecta um cliente MCP a ele.
 
-**Classificação: tutorial de integração executável.** A aplicação e o transporte do Keeper são executados localmente. A etapa final exige um cliente MCP compatível com servidores HTTP remotos e headers bearer.
+## O Que Você Vai Construir
 
-## O que você vai criar
-
-1. O Keeper adicionado a uma aplicação criada com o template de aplicação Wippy.
-2. A interface do Keeper em `/c/keeper:main` e o endpoint MCP em `/keeper-mcp/`.
-3. Um token MCP com escopo e um cliente MCP configurado para operar a aplicação pelo Keeper.
+1. Keeper adicionado a uma aplicação criada a partir do `app-template`.
+2. A UI do Keeper em `/app/keeper` e o endpoint MCP em `/keeper-mcp/`.
+3. Um token MCP com escopo, e um cliente MCP configurado para conduzir a aplicação através do Keeper.
 
 ## Pré-requisitos
 
-- Uma aplicação criada com o [template de aplicação Wippy](https://github.com/wippyai/app). Ele já fornece tudo a que o Keeper se conecta: `app:gateway`, `app:api`, `app:db`, `app:processes`, `app.security:admin` e `app.env:store`.
-- Uma conta de administrador ativa nessa aplicação. A emissão de tokens pelo Keeper é vinculada à identidade do administrador autenticado; uma API key genérica não pode emitir um token MCP.
+- Uma aplicação a partir do [app-template](https://github.com/wippyai/app-template). Ela já
+  fornece tudo a que o Keeper se vincula: `app:gateway`, `app:api`, `app:db`,
+  `app:processes`, `app.security:admin` e `app.env:store`.
+- O módulo Keeper instalado:
+
+  ```bash
+  wippy add keeper/keeper
+  wippy install
+  ```
 
 ## Adicionar o Keeper
 
-Declare a dependência e conecte-a aos recursos da aplicação. `admin_scope` é obrigatório e não tem padrão. Os outros parâmetros usam por padrão os nomes de entries do template da aplicação, mas o exemplo os informa explicitamente:
+Declare a dependência e vincule-a aos recursos da aplicação. Apenas `admin_scope` é
+obrigatório (sem padrão); os demais assumem por padrão os nomes que o `app-template` já usa, mostrados
+aqui explicitamente para maior clareza:
 
 ```yaml
 # src/app/deps/_index.yaml
 - name: keeper
   kind: ns.dependency
   component: keeper/keeper
-  version: "*"
+  version: '>=v0.5.18'
   parameters:
     - { name: app_db,         value: app:db }
     - { name: admin_scope,    value: app.security:admin }
     - { name: env_storage,    value: app.env:store }
-    - { name: public_gateway, value: app:gateway }   # hosts /keeper-mcp/
+    - { name: public_gateway, value: app:gateway }   # hospeda /keeper-mcp/
     - { name: mcp_route,      value: /keeper-mcp/ }
     - { name: ui_server,      value: app:gateway }
     - { name: process_host,   value: app:processes }
 ```
 
-Resolva a dependência de origem e seu grafo transitivo e inicie a aplicação:
+Inicie a aplicação:
 
 ```bash
-wippy update
-wippy run -c
+wippy run
 ```
 
-`wippy update` examina os entries de origem, atualiza o lock, resolve dependências transitivas e as instala. `wippy add keeper/keeper` sozinho atualiza apenas o módulo nomeado no lock; ele não resolve esse grafo de dependências declarado na origem.
+O Keeper monta automaticamente três superfícies:
 
-O Keeper monta três superfícies:
-
-- **Interface** — `/c/keeper:main`
+- **UI** — `/app/keeper`
 - **Transporte MCP** — `/keeper-mcp/` no gateway público
 - **API de tokens** — em `app:api` (`/keeper/mcp/tokens`, `/keeper/mcp/scopes`)
 
-O transporte MCP é controlado pela variável de ambiente `MCP_ENABLED`, cujo padrão é `true`; defina-a como `false` para fechar o endpoint.
+O transporte MCP é controlado pela variável de ambiente `MCP_ENABLED` (padrão `true`);
+defina-a como `false` para fechar o endpoint.
 
-## Emitir um token MCP
+## Emitir um Token MCP
 
-Os tokens são emitidos por um administrador ativo, têm escopo e são exibidos apenas uma vez.
-
-1. Entre na aplicação como administrador.
-2. Abra `/c/keeper:main`, selecione **MCP** e escolha **Create Scoped Token**.
-3. Informe um rótulo e escolha um preset. `observer` é a opção inicial mais segura; use `developer` ou `wippy_operator` somente se o cliente precisar executar escritas.
-4. Crie o token e copie imediatamente o valor `wkmcp_...` exibido. A interface não poderá mostrar o valor bruto novamente.
-
-A interface também mostra a URL MCP efetiva e trechos de configuração copiáveis. Esse é o fluxo recomendado, pois reutiliza a sessão atual do administrador autenticado.
-
-Para automação, chame a API com o **bearer da sessão de administrador** da mesma aplicação:
+Tokens são emitidos por um usuário admin, têm escopo e são exibidos exatamente uma vez. Crie um via a
+API de tokens (ou pela página MCP na UI do Keeper):
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/keeper/mcp/tokens \
   -H 'Authorization: Bearer <admin-session-token>' \
   -H 'Content-Type: application/json' \
-  -d '{"label": "local-observer", "preset": "observer"}'
+  -d '{"label": "claude-dev", "preset": "developer"}'
 # -> { "success": true, "token": { "token": "wkmcp_<64 hex>", ... } }
 ```
 
-`<admin-session-token>` é o bearer emitido pelo fluxo normal de login da aplicação, não o novo token MCP do Keeper. O endpoint rejeita usuários não autenticados, inativos ou que não sejam administradores. `GET /api/v1/keeper/mcp/scopes` retorna o catálogo atual de presets e escopos antes da emissão.
+`preset` agrupa um conjunto de escopos. Presets disponíveis: `root`, `developer`,
+`wippy_operator`, `observer`, `knowledge_manager`, `explorer_tools_only`. Para
+controle mais fino, passe um array `scopes` explícito em vez disso (por exemplo, `registry.read`,
+`state.write`, `git.pr`, `tasks.run`, `knowledge.read`). O token bruto `wkmcp_...` é
+retornado uma única vez e armazenado apenas como hash — copie-o imediatamente.
 
-`preset` agrupa um conjunto de escopos. Os presets disponíveis são `root`, `developer`, `wippy_operator`, `observer`, `knowledge_manager` e `explorer_tools_only`. Para controle mais fino, informe um array `scopes`, por exemplo `registry.read`, `state.write`, `git.pr`, `tasks.run` e `knowledge.read`. O token bruto `wkmcp_...` é retornado uma única vez e armazenado somente como hash; copie-o imediatamente.
+## Conectar um Cliente
 
-## Conectar um cliente
-
-Aponte um cliente MCP para o endpoint e envie o token como bearer. Para manter o token fora de configurações versionadas, exporte-o primeiro:
-
-```bash
-export KEEPER_MCP_TOKEN='wkmcp_<token>'
-```
-
-No Claude Code, use um `.mcp.json` no escopo do projeto:
+Aponte um cliente MCP para o endpoint com o token como header bearer. Para Claude Code /
+Codex, um `.mcp.json` na raiz do projeto:
 
 ```json
 {
@@ -98,52 +97,48 @@ No Claude Code, use um `.mcp.json` no escopo do projeto:
     "keeper": {
       "type": "http",
       "url": "http://localhost:8080/keeper-mcp/",
-      "headers": { "Authorization": "Bearer ${KEEPER_MCP_TOKEN}" }
+      "headers": { "Authorization": "Bearer wkmcp_<token>" }
     }
   }
 }
 ```
 
-O Claude Code expande `${KEEPER_MCP_TOKEN}` a partir do ambiente ao carregar a configuração do projeto. Reinicie ou reconecte o servidor MCP depois de alterar a variável.
+Use a URL base pública da aplicação no lugar de `http://localhost:8080` em um ambiente
+implantado.
 
-No Codex, use `~/.codex/config.toml` no nível do usuário ou `.codex/config.toml` no escopo de um projeto confiável:
+## Como Funciona a Superfície MCP
 
-```toml
-[mcp_servers.keeper]
-url = "http://localhost:8080/keeper-mcp/"
-bearer_token_env_var = "KEEPER_MCP_TOKEN"
-```
+O Keeper não expõe uma lista de ferramentas plana e fixa. Ele apresenta algumas **meta-ferramentas** mais
+**traits** que ativam ferramentas concretas sob demanda, de modo que a superfície permanece pequena até você
+optar por uma capacidade:
 
-Em um ambiente implantado, substitua `http://localhost:8080` pela URL pública base da aplicação.
+- `session_info` — sempre disponível; informa os escopos da sessão e as traits ativas.
+- `list_traits` / `describe_trait` — descubra o que está disponível.
+- `use_trait` / `drop_trait` (e `set_traits`) — ative ou remova uma trait; isso emite
+  uma `notifications/tools/list_changed` do MCP, de modo que as ferramentas visíveis mudam ao vivo.
+- `list_tools` — enumere as ferramentas que uma trait materializou, com seus schemas.
+- `call_tool` — invoque qualquer ferramenta do registry pelo id; visível apenas para um token
+  que possua `mcp.root`.
 
-Conecte com o cliente configurado e confirme que ele conclui o ciclo de vida MCP:
+O que um token pode ativar é limitado pelos seus **escopos** — grosso modo `registry.*`,
+`state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`,
+`tests.run`, `logger.*`, `env.*`, `functions.call`, `app.ui` (mais `mcp.root` para bypass
+total de admin). O `access_mode` do token (`any` / `traits` / `tools_only`) restringe ainda mais
+como ele pode chamar ferramentas.
 
-1. O cliente envia `initialize` e recebe as capacidades do servidor.
-2. Ele envia `notifications/initialized`.
-3. Ele solicita `tools/list`; um token `observer` deve expor as ferramentas de descoberta e sessão permitidas pelo preset.
-4. Chame `session_info` e confirme que os escopos retornados correspondem ao token.
+## Notas
 
-Um cliente Streamable HTTP personalizado precisa enviar `Accept: application/json, text/event-stream` nessas requisições e preservar qualquer ID de sessão retornado durante a inicialização. Enviar `tools/list` como primeira requisição não é uma sondagem válida do ciclo de vida MCP. Um bearer ausente ou inválido falha antes que o Keeper exponha o catálogo de ferramentas permitido pelo escopo.
+- **Escopo de governança** — defina `GOV_MANAGED_NAMESPACES=app` para que a sincronização
+  sistema de arquivos↔registro do Keeper governe apenas o namespace da sua aplicação. Não adicione `keeper`,
+  `wippy` ou `userspace` a menos que você esteja desenvolvendo esses módulos.
+- **Segurança** — tokens são vinculados à identidade admin emissora e a um conjunto de escopos, armazenados
+  como SHA-256 e revogáveis via `POST /keeper/mcp/tokens/revoke`. A rota `/keeper-mcp/`
+  não executa middleware de autenticação; o próprio handler impõe o token bearer.
+- **Aplicação de referência** — `app-keeper` é o exemplo prático que integra o Keeper a um
+  shell de aplicação; copie o bloco `src/app/deps/_index.yaml` dele se quiser uma configuração comprovadamente boa.
 
-## Como a superfície MCP funciona
+## Próximos Passos
 
-O Keeper expõe um pequeno conjunto de **meta-tools** e usa **traits** para ativar ferramentas específicas de cada capacidade sob demanda:
-
-- `session_info` — sempre disponível; informa os escopos da sessão e traits ativos.
-- `list_traits` / `describe_trait` — descobrem o que está disponível.
-- `use_trait` / `drop_trait`, além de `set_traits` — ativam ou removem um trait; isso emite `notifications/tools/list_changed` do MCP, alterando a lista visível ao vivo.
-- `list_tools` / `call_tool` — enumeram e chamam as ferramentas materializadas por um trait.
-
-O que um token pode ativar é limitado por seus **escopos** — aproximadamente `registry.*`, `state.*`, `hub.*`, `knowledge.*`, `git.*`, `components.*`, `tasks.*`, `agents.*`, `tests.run`, `logger.*`, `env.*`, `functions.call` e `app.ui`, além de `mcp.root` para bypass administrativo completo. O `access_mode` do token (`any`, `traits` ou `tools_only`) restringe ainda mais como ele pode chamar ferramentas.
-
-## Notas operacionais e de segurança
-
-- **Escopo de governança** — defina `GOV_MANAGED_NAMESPACES=app` para que a sincronização sistema de arquivos↔registry do Keeper administre apenas o namespace da sua aplicação. Não adicione `keeper`, `wippy` ou `userspace`, a menos que esteja desenvolvendo esses módulos.
-- **Segurança** — tokens são vinculados à identidade do administrador emissor e a um conjunto de escopos, armazenados como SHA-256 e revogáveis na página MCP do Keeper. A API de revogação aceita o identificador de token com hash retornado pela API de listagem em `POST /api/v1/keeper/mcp/tokens/revoke`; ela não aceita o bearer bruto exibido uma única vez. A rota `/keeper-mcp/` não executa middleware de autenticação; o handler valida o bearer.
-- **Aplicação de referência** — o template de aplicação Wippy é o exemplo completo que conecta o Keeper ao shell da aplicação; seu `src/app/deps/_index.yaml` contém um binding conhecido e válido.
-
-## Próximas etapas
-
-- [Hello World](./hello-world.md) — Estrutura mínima do projeto
-- [Autenticação](./auth.md) — Conceitos de identidade administrativa e tokens
-- [Agentes](../framework/agents.md) — Agentes e ferramentas expostos por traits do Keeper
+- [Hello World](tutorials/hello-world.md) — o layout mínimo de projeto
+- [Autenticação](tutorials/auth.md) — a identidade admin que emite tokens
+- [Agentes](framework/agents.md) — os agentes e ferramentas que as traits do Keeper expõem

@@ -1,6 +1,6 @@
 ---
-title: "Cifrado y firma"
-description: "Genera valores aleatorios, autentica datos, cifra contenido, verifica JWT y deriva claves."
+title: "Cifrado y Firma"
+description: "Operaciones criptograficas incluyendo cifrado, HMAC, JWT y derivacion de claves. Adaptado para workflows."
 ---
 
 # Cifrado y firma
@@ -184,7 +184,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | Token JWT a verificar |
 | `key` | string | Secreto (HMAC) o clave pública PEM (RSA) |
 | `alg` | string? | Algoritmo esperado (predeterminado: HS256) |
-| `require_exp` | boolean? | Exigir una claim `exp` (predeterminado: true) |
+| `require_exp` | boolean? | Exigir que el claim `exp` esté presente (predeterminado: true); un `exp` presente siempre se valida |
 
 **Devuelve:** `table, error`
 

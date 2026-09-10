@@ -1,6 +1,6 @@
 ---
 title: "OS Time"
-description: "Read runtime time, format dates, and calculate time differences with Lua's global os table."
+description: "Standard Lua os time functions. Provides real wall-clock time for timestamps, date formatting, and time calculations."
 ---
 
 # OS Time

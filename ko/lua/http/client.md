@@ -1,6 +1,6 @@
 ---
 title: "HTTP 클라이언트"
-description: "헤더, 인증, 폼, 업로드, TLS 옵션, 스트리밍 및 배치로 HTTP 요청을 전송합니다."
+description: "외부 서비스에 HTTP 요청을 보냅니다. 모든 HTTP 메서드, 헤더, 쿼리 파라미터, 폼 데이터, 파일 업로드, 스트리밍 응답, 동시 배치 요청을 지원합니다."
 ---
 
 # HTTP 클라이언트
@@ -133,10 +133,8 @@ if err then return nil, err end
 | `stream` | boolean | 버퍼링 대신 응답 본문 스트리밍 |
 | `max_response_body` | number | 최대 응답 크기 바이트 (0 = 기본값) |
 | `unix_socket` | string | Unix 소켓 경로로 연결 |
-| `tls` | table | 요청별 TLS 설정 ([TLS 옵션](#tls-options) 참조) |
-| `overlay_network` | string | [네트워크 오버레이](../../system/network.md)를 통해 라우팅할 `network.socks5`, `network.tailscale` 또는 `network.i2p` 엔트리의 레지스트리 ID |
-
-`overlay_network`를 선택하려면 해당 네트워크 ID에 대한 `network.select` 권한이 필요합니다.
+| `tls` | table | 요청별 TLS 설정 ([TLS 옵션](#tls-옵션) 참조) |
+| `overlay_network` | string | [네트워크 오버레이](system/network.md)를 통해 라우팅 — `network.socks5` / `network.tailscale` / `network.i2p` 엔트리의 레지스트리 ID |
 
 ### 쿼리 파라미터
 
@@ -206,7 +204,7 @@ if err then return nil, err end
 | `filename` | string | 아니오 | 원본 파일명 |
 | `content` | string | 예* | 파일 내용 |
 | `reader` | userdata | 예* | 대안: 내용용 io.Reader |
-| `content_type` | string | 아니오 | 현재 무시됨: 이 필드와 관계없이 각 업로드 파트는 항상 `Content-Type: application/octet-stream`으로 전송됨 |
+| `content_type` | string | 아니오 | 현재 무시됨: 이 필드와 무관하게 업로드되는 각 파트는 항상 `Content-Type: application/octet-stream`으로 전송됨 |
 
 *`content` 또는 `reader` 중 하나가 필수입니다.
 
@@ -424,7 +422,7 @@ HTTP 요청은 보안 정책 평가 대상입니다.
 | `http_client.unix_socket` | 소켓 경로 | Unix 소켓 연결 허용/거부 |
 | `http_client.private_ip` | IP 주소 | 사설 IP 범위 접근 허용/거부 |
 | `http_client.insecure_tls` | URL | 안전하지 않은 TLS 허용/거부 (검증 건너뛰기) |
-| `network.select` | 네트워크 ID | 명시적인 `overlay_network` 선택 허용/거부 |
+| `network.select` | 네트워크 엔트리 ID | 요청에 지정된 `overlay_network`를 통한 라우팅 허용/거부 |
 
 ### 접근 확인
 
@@ -439,12 +437,25 @@ end
 
 ### SSRF 보호
 
-사설 IP 범위(10.x, 192.168.x, 172.16-31.x, localhost)는 기본적으로 차단됩니다. 접근하려면 `http_client.private_ip` 권한이 필요합니다.
+공인 IP가 아닌 범위는 기본적으로 차단됩니다. 접근하려면 해당 주소에 대한 `http_client.private_ip` 권한이 필요합니다:
+
+- 루프백, 사설(10.x, 172.16-31.x, 192.168.x), 링크 로컬 유니캐스트 및 멀티캐스트, unspecified 주소
+- 캐리어 그레이드 NAT `100.64.0.0/10`, `192.0.0.0/24`, 멀티캐스트 `224.0.0.0/4`, 예약 `240.0.0.0/4`
+- 문서화 및 벤치마킹 범위 `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- IPv6 멀티캐스트 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+검사는 URL 문자열이 아니라 다이얼 시점에 수행되며, 호스트가 해석되는 모든 주소를 대상으로 합니다. 여러 주소로 해석되는 호스트 이름은 주소별로 검사됩니다: 거부된 주소는 건너뛰고 다음 주소를 시도하며, 모든 후보가 거부되거나 도달 불가능할 때만 요청이 실패합니다. 따라서 사설 주소로 해석되는 공개 호스트 이름은 사설 IP 리터럴과 정확히 동일하게 차단됩니다.
+
+### 리다이렉트
+
+리다이렉트는 최대 아홉 번까지 따라가며, 열 번째는 `stopped after 10 redirects`로 실패합니다. 이 횟수에는 원래 요청이 포함됩니다.
+
+모든 홉은 개별적으로 인가됩니다. 리다이렉트를 따라가기 전에 클라이언트는 대상 URL에 대해 `http_client.request`를 평가하고 사설 IP 검사를 적용하므로, 허용된 URL을 리다이렉트로 이용해 거부된 URL에 도달할 수 없습니다. 둘 중 하나라도 실패하는 홉은 요청을 중단시킵니다.
 
 정책 설정은 [보안 모델](system/security.md)을 참조하세요.
 

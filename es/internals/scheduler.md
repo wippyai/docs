@@ -42,20 +42,20 @@ type Event struct {
 
 ## Estructura
 
-El scheduler genera `GOMAXPROCS` workers por defecto. Cada worker tiene un deque local para acceso LIFO amigable con la caché y una cola de inyección MPSC por worker para trabajo reencolado con afinidad a ese worker, incluidas las finalizaciones de yield y los despertares por mensajes. Una cola FIFO global maneja nuevos envíos y reencolados sin afinidad. Los procesos se rastrean por PID para routing de mensajes.
+El scheduler genera `GOMAXPROCS` workers por defecto. Cada worker tiene un deque local para acceso LIFO amigable con cache y una cola de inyección MPSC por worker para completaciones asíncronas que tienen afinidad con ese worker. Una cola FIFO global maneja nuevos envíos y re-encolados sin afinidad. Los procesos se rastrean por PID para routing de mensajes.
 
 ## Búsqueda de Trabajo
 
 ```mermaid
 flowchart TD
-    W[Worker needs work] --> L{Local deque?}
-    L -->|has items| LP[Pop from bottom LIFO]
-    L -->|empty| I{Inject queue?}
-    I -->|has items| IP[Pop + drain up to 16 to local]
-    I -->|empty| G{Global queue?}
-    G -->|has items| GP[Pop + batch transfer up to 16]
-    G -->|empty| S[Scan other workers from rotating start]
-    S --> SH[Steal up to half, capped at 32]
+    W[Worker necesita trabajo] --> L{Deque local?}
+    L -->|tiene items| LP[Pop desde fondo LIFO]
+    L -->|vacío| I{Cola de inyección?}
+    I -->|tiene items| IP[Pop + drenar hasta 16 al local]
+    I -->|vacía| G{Cola global?}
+    G -->|tiene items| GP[Pop + transferencia batch hasta 16]
+    G -->|vacía| S[Robar de víctima aleatoria]
+    S --> SH[StealHalfInto deque de víctima]
 ```
 
 Workers verifican fuentes en orden de prioridad:
@@ -63,11 +63,11 @@ Workers verifican fuentes en orden de prioridad:
 | Prioridad | Fuente | Patrón |
 |-----------|--------|--------|
 | 1 | Deque local | Pop LIFO, sin lock, amigable con cache |
-| 2 | Cola de inyección | Pop MPSC de reencolados/eventos afines; drena hasta 16 al deque local |
+| 2 | Cola de inyección | Pop MPSC de completaciones asíncronas afines, drenar hasta 16 al local |
 | 3 | Cola global | Pop FIFO con transferencia batch |
-| 4 | Otros workers | Escanea desde un índice inicial rotatorio y roba hasta la mitad, con un máximo de 32 elementos por intento |
+| 4 | Otros workers | Robar mitad del deque de víctima |
 
-Al hacer pop de la cola de inyección o global, los workers toman un elemento y transfieren hasta 16 más a su deque local.
+Al hacer pop de la cola de inyección o de la global, los workers toman un item y mueven hasta 16 más a su deque local.
 
 ## Deque Chase-Lev
 
@@ -125,9 +125,25 @@ Cada proceso tiene una cola de eventos MPSC (multi-producer, single-consumer):
 - **Productores**: Handlers de comandos (`CompleteYield`), remitentes de mensajes (`Send`)
 - **Consumidor**: Worker drena eventos en `Step()`
 
+Un contador de generación protege la cola. Cada productor se vincula a la generación que observó; `Reset` la incrementa, de modo que un remitente sobrante de una ejecución previa no puede pushear a una cola reutilizada.
+
+El tráfico ordinario de eventos es ilimitado. La contabilidad es opt-in por mensaje: un mensaje que lleva `MaxItems` o `MaxBytes` se admite contra un presupuesto por topic, y gana el límite más estricto visto para ese topic. Un mensaje mantiene su reserva hasta que el proceso consumidor la libera, y los terminales nunca consumen capacidad de backlog.
+
+Cuando se agota el presupuesto de un topic, la cola agrega un mensaje sintético en lugar del mensaje que desborda, con `message queue limit exceeded` seguido de un payload terminal. El tráfico posterior de ese topic se descarta hasta que se resetea la cola, de modo que una suscripción acotada termina con un terminal de error en vez de crecer sin límite.
+
 ## Routing de Mensajes
 
-El scheduler implementa `relay.Receiver` para enrutar mensajes a procesos. Cuando `Send()` es llamado, busca el PID destino en el mapa `byPID`, pushea el mensaje como evento a la cola del proceso, y despierta el proceso si está idle pusheándolo a la cola global.
+El scheduler implementa `relay.Receiver` para enrutar mensajes a procesos. `Send` delega en `SendContext` con un contexto de fondo; `SendContext` comprueba la cancelación antes de la búsqueda del destino y antes de la admisión, porque la admisión en sí no bloquea y es irreversible una vez que tiene éxito.
+
+Ambos buscan el PID destino en el mapa `byPID` y pushean el paquete a la cola del proceso bajo la generación actual del procesador. La admisión tiene tres resultados:
+
+| Resultado | Significado | Propiedad del paquete |
+|-----------|-------------|-----------------------|
+| Aceptado | La cola tomó el paquete | Cola, liberado por el scheduler tras el procesamiento |
+| Descartado | Un presupuesto por topic desbordó y la cola no retuvo nada salvo su propio terminal de desbordamiento | Llamante, liberado inmediatamente |
+| Rechazado | La cola está cerrada o la generación es obsoleta | Llamante; `SendContext` retorna `ErrProcessClosed` |
+
+Un push aceptado o descartado despierta luego el proceso si está idle o bloqueado. Se re-encola mediante injectOrGlobal, que pushea a la cola de inyección del último worker cuando el proceso tiene afinidad de worker conocida, y recurre a la cola global en caso contrario.
 
 ## Apagado :id=shutdown
 

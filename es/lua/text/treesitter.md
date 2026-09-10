@@ -1,6 +1,6 @@
 ---
-title: "Análisis con Tree-sitter"
-description: "Analiza código fuente, inspecciona árboles de sintaxis concretos y ejecuta consultas de Tree-sitter."
+title: "Parsing Tree-sitter"
+description: "Parsear código fuente en arboles de sintaxis concretos usando Tree-sitter. Basado en bindings de go-tree-sitter."
 ---
 
 # Análisis con Tree-sitter
@@ -352,7 +352,13 @@ end
 if node:is_missing() then
     -- Parser inserted this to recover from error
 end
+
+if node:is_extra() then
+    -- El nodo es un "extra" (por ejemplo, un comentario) no requerido por la gramatica
+end
 ```
+
+Otros metodos de nodo: `descendant_count()` y `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-Expression
 
@@ -399,9 +405,9 @@ if captures_err then
 end
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "func_name"
-    print(capture.text)   -- actual text
-    print(capture.index)  -- capture index
-    -- capture.node is the Node object
+    print(capture.text)   -- texto real
+    print(capture.index)  -- indice de captura
+    -- capture.node es el objeto Node
 end
 
 -- Get matches (grouped by pattern)
@@ -461,7 +467,9 @@ local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
 
-## Cursor de árbol
+Metodos adicionales de inspeccion: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
+
+## Cursor de Arbol
 
 Recorrido eficiente sin crear objetos nodo en cada paso.
 
@@ -522,10 +530,10 @@ if err then
     return nil, err
 end
 
-print(lang:version())           -- ABI version
-print(lang:node_kind_count())   -- number of node types
-print(lang:field_count())       -- number of fields
-print(lang:parse_state_count()) -- number of parse states
+print(lang:version())           -- versión ABI
+print(lang:node_kind_count())   -- número de tipos de nodo
+print(lang:field_count())       -- número de campos
+print(lang:parse_state_count()) -- número de estados de análisis
 
 -- Node kind lookup
 local kind = lang:node_kind_for_id(1)

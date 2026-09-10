@@ -38,10 +38,10 @@ Una app de backend que sirve la UI de Wippy:
 
 ## Cómo funciona
 
-1. El shell del facade se renderiza en `/` desde tu servidor HTTP.
-2. Al cargar, solicita `GET /api/public/facade/config`.
-3. Lee `@wippy_token_info` de `localStorage` y redirige a `login_path` solo si el
-   elemento no existe o no se puede interpretar como JSON.
+1. El shell se renderiza desde la plantilla del facade y se sirve en `/` por tu servidor
+   HTTP; sus assets y el fallback de deep-link provienen de un montaje estático en el mismo servidor.
+2. Al cargar, hace fetch de `GET /api/public/facade/config`.
+3. Comprueba `localStorage` en busca de un token de autenticación, redirigiendo a `login_path` si falta.
 4. Importa el bundle de Web Host desde la CDN (`facade_url + '/module.js'`) y llama a
    `initWippyApp(...)` con la configuración.
 
@@ -73,6 +73,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -82,9 +83,8 @@ entries:
         value: Verify App
 ```
 
-El shell distribuido con el facade solicita `/api/public/facade/config`, por lo que el
-prefijo del router público debe ser `/api/public` para que el shell predeterminado
-encuentre su configuración.
+El shell solicita su configuración, script de tema y variables CSS bajo
+`/api/public/facade/`, por lo que el prefijo del router público debe ser `/api/public`.
 
 ## Ejecutarlo
 
@@ -103,12 +103,15 @@ Abajo se muestran algunos campos de la respuesta:
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
-  "login_path": "/login.html",
-  "mode": "compat",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
+  "mode": "compat",
+  "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
@@ -118,9 +121,8 @@ Abajo se muestran algunos campos de la respuesta:
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "startNavOpen": false, "disableRightPanel": false, "hideSessionSelector": false,
-    "renderEngine": "iframe",
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -172,9 +174,10 @@ cadenas codificadas en JSON). Los más comunes:
 | `css_variables` | Cadena JSON de propiedades CSS personalizadas, p. ej. `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | URL del bundle de la CDN (fijada por release del facade; deja el valor por defecto salvo que la sobrescribas) |
 
-Dos valores se derivan en tiempo de ejecución de la variable de entorno `PUBLIC_API_URL` en lugar
-de parámetros: la URL base de la API y la URL de WebSocket (`http`→`ws`, `https`→`wss`). Si
-no está definida, el navegador recurre a `window.location.origin`.
+Dos valores se derivan en tiempo de ejecución de `PUBLIC_API_URL` en lugar de parámetros: la URL
+base de la API y la URL de WebSocket (`http`→`ws`, `https`→`wss`). El facade la lee a través
+del registro de entorno, así que decláralo como una `env.variable` en tu app. Si no está
+definida, el navegador recurre a `window.location.origin`.
 
 ## Limitaciones
 

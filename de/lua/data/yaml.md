@@ -1,6 +1,6 @@
 ---
 title: "YAML-Kodierung"
-description: "Lua-Tabellen als YAML kodieren und YAML-Dokumente in Lua-Werte dekodieren."
+description: "Parsen Sie YAML-Dokumente in Lua-Tabellen und serialisieren Sie Lua-Werte zu YAML-Strings."
 ---
 
 # YAML-Kodierung
@@ -126,10 +126,8 @@ print(config.server.host)     -- "localhost"
 print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
--- Parse from file content
-local fs = require("fs")
-local config_fs = assert(fs.get("app:config"))
-local content = assert(config_fs:readfile("config.yaml"))
+-- Aus Dateiinhalt parsen
+local content = fs.get("app:config"):readfile("config.yaml")
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")

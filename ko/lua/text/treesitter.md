@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter 파싱"
-description: "소스 코드를 파싱하고 구체적 구문 트리를 검사하며 Tree-sitter 쿼리를 실행합니다."
+description: "Tree-sitter를 사용하여 소스 코드를 구체적 구문 트리로 파싱합니다. go-tree-sitter 바인딩 기반입니다."
 ---
 
 # Tree-sitter 파싱
@@ -352,7 +352,13 @@ end
 if node:is_missing() then
     -- Parser inserted this to recover from error
 end
+
+if node:is_extra() then
+    -- 노드가 문법에서 요구하지 않는 "extra" (예: 주석)
+end
 ```
+
+그 외 노드 메서드: `descendant_count()`와 `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-표현식
 
@@ -399,9 +405,9 @@ if captures_err then
 end
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "func_name"
-    print(capture.text)   -- actual text
-    print(capture.index)  -- capture index
-    -- capture.node is the Node object
+    print(capture.text)   -- 실제 텍스트
+    print(capture.index)  -- 캡처 인덱스
+    -- capture.node는 Node 객체
 end
 
 -- Get matches (grouped by pattern)
@@ -460,6 +466,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+추가 조회 메서드: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
 
 ## 트리 커서
 

@@ -19,4 +19,6 @@ Wenn Sie geänderte, von der MPL abgedeckte Dateien verteilen, müssen Sie deren
 
 ## Abhängigkeiten
 
-Abhängigkeiten behalten ihre eigenen Lizenzen. Das öffentliche Repository [`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE) steht beispielsweise unter MIT statt MPL-2.0.
+Wippy verwendet verschiedene Abhängigkeiten, jede mit ihrer eigenen Lizenz. Die meisten sind permissiv lizenzierte Open-Source-Bibliotheken, die mit kommerzieller Nutzung kompatibel sind.
+
+Eine mitgelieferte Komponente, die WASM-Laufzeitumgebung (`wippyai/wasm-runtime`), steht unter der Business Source License 1.1. Sie dürfen sie produktiv einsetzen, jedoch nicht Dritten gehostet oder eingebettet in einer Weise anbieten, die mit den Produkten oder Diensten von Wippy AI konkurriert. Vier Jahre nach Veröffentlichung einer Version wechselt diese Version zur Apache License 2.0.

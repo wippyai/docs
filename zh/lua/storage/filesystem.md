@@ -1,6 +1,6 @@
 ---
 title: "文件系统"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "在沙箱化的文件系统卷中读取、写入和管理文件。"
 ---
 
 # 文件系统
@@ -203,7 +203,7 @@ fs.seek.END       -- 从末尾
 | `isdir(path)` | `boolean, error` | 检查是否为目录 |
 | `mkdir(path)` | `boolean, error` | 创建目录 |
 | `remove(path)` | `boolean, error` | 删除文件/空目录 |
-| `readdir(path)` | `iterator` | 列出目录 |
+| `readdir(path)` | `iterator, state` | 列出目录（在通用 `for` 循环中使用） |
 | `open(path, mode)` | `File, error` | 打开文件句柄 |
 | `chdir(path)` | `boolean, error` | 更改工作目录 |
 | `pwd()` | `string, error` | 获取工作目录 |

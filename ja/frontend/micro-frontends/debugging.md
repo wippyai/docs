@@ -1,78 +1,77 @@
 ---
-title: "Wippy FE のデバッグ"
-description: "Wippy frontend の起動、component、API、theme、routing、hosted runtime に関する一般的な障害を調べる DevTools check。"
+title: "Wippy FEのデバッグ"
+description: "何かが壊れているときは、ここから始めます。各セクションでは、最も一般的な原因を可能性の高い順に挙げ、それぞれに対応する具体的なDevToolsでの確認方法を示します。"
 ---
 
-# Wippy FE のデバッグ
+# Wippy FEのデバッグ
 
-application code を変更する前に、次の check で一般的な Wippy frontend failure を切り分けてください。
+何かが壊れているときは、ここから始めます。各セクションでは、最も一般的な原因を可能性の高い順に挙げ、それぞれに対応する具体的なDevToolsでの確認方法を示します。
 
-## 読込時に画面が空白になる
+## 読み込み時に画面が真っ白
 
-**1. 最初に Console を確認します。**
-- `Failed to resolve module specifier 'vue'` — page が externalize した specifier を、active import map が提供していません。hosted mode では target Web Host release が実際に配信する import map を、host-less mode では `app.html` 内の map を調べます。標準的な package list や merge precedence を仮定せず、すべての Rollup external をその正確な map と比較してください。
-- `Proxy globals not found`（または `@wippy-fe/proxy` import が undefined を返す）— app script より前に `proxy.js` / `dev-proxy.js` が読み込まれなかったため、runtime が internal global を install していません。`app.html` で `dev-proxy.js` が `data-role="@wippy/scripts"` を付けて参照されているか確認します。
-- error のない silent hang（error も app もない）— host-less mode では dev overlay が **Accept** の click を待っている可能性があります。FAB（floating button）が表示されたか確認してください。表示されない場合は `proxy.js` / `dev-proxy.js` の読込または global の install に失敗しています。上記の `Proxy globals not found` を調べます。
+**1. まずConsoleを確認します:**
+- `Failed to resolve module specifier 'vue'` — ページが、アクティブなimport mapが提供していない指定子をexternal化しています。ホストされたモードでは、対象のWeb Hostリリースが実際に配信しているimport mapを調べ、ホストなしモードでは `app.html` 内のマップを調べてください。正典のパッケージ一覧やマージの優先順位を仮定せず、すべてのRollup externalをその正確なマップと突き合わせます。
+- `Proxy globals not found`（または `@wippy-fe/proxy` のimportがundefinedで返る）— アプリのスクリプトが実行される前に `proxy.js` / `dev-proxy.js` が読み込まれず、ランタイムが内部グローバルをインストールしませんでした。`app.html` で `dev-proxy.js` が `data-role="@wippy/scripts"` 付きで参照されているか確認してください。
+- 無言のハング（エラーもアプリもなし）— 設定は `proxy.js` の実行前に `window.__WIPPY_APP_CONFIG__` として同期的に注入されるため、`@wippy-fe/proxy` のゲッターは即座に解決します（または `Proxy globals not found` をスローします）。`SetConfig` を待つことはありません。本当のハングは、ランタイムがマウントされなかったことを意味します。`proxy.js` / `dev-proxy.js` の読み込みとグローバルのインストールが失敗したか（上記の `Proxy globals not found` の項を参照）、ホストなしモードで**Accept**をクリックしていないため開発オーバーレイが「waiting」のままかのいずれかです。開発オーバーレイのFAB（フローティングボタン）が現れたか確認してください。現れていなければ、プロキシスクリプトが読み込まれていません。（`SetConfig` / `GetConfig` のハンドシェイクは、ホストレベルの手動 `iframe.html?waitForCustomConfig` 埋め込みにのみ適用され、ホストされた／ホストなしのマイクロフロントエンドには適用されません。）
 
-hosted iframe page と host-less page は、proxy の起動前に config を同期的に受け取ります。Web Fragment page は fragment adapter の `GetConfig` / `SetConfig` handshake を使い、host-level の手動 `iframe.html?waitForCustomConfig` embedding も同様です。
+**2. Networkタブを確認します:**
+- `dev-proxy.js`（ホストなし）または `proxy.js`（ホストあり）がステータス200で読み込まれたことを確認します。
+- 404の場合: `<script data-role="@wippy/scripts">` タグの `src` が誤ったURLを指しています。
 
-**2. Network tab を確認します。**
-- `dev-proxy.js`（host-less）または `proxy.js`（hosted）が status 200 で読み込まれたか確認します。
-- 404 の場合は `<script data-role="@wippy/scripts">` tag の `src` が誤った URL を指しています。
-
-**3. runtime が global を install したか確認します（internal diagnostic）。**
+**3. ランタイムがグローバルをインストールしたか確認します（内部診断）:**
 ```javascript
-// Internal globals — app code never reads these; this is only a console smoke test
-// that the proxy runtime mounted. App/WC code uses `import { ... } from '@wippy-fe/proxy'`.
-window.$W              // should be an object, not undefined
-window.__WIPPY_APP_API__ // the resolved proxy instance — present once the runtime installed
+// 内部グローバル。アプリコードはこれらを読み取らない。プロキシランタイムが
+// マウントされたことを確認するコンソール上のスモークテストにすぎない。
+// アプリ/WCのコードは `import { ... } from '@wippy-fe/proxy'` を使う。
+window.$W              // undefinedではなくオブジェクトであるはず
+window.__WIPPY_APP_API__ // 解決済みのプロキシインスタンス。ランタイムがインストールされていれば存在する
 ```
-`@wippy-fe/proxy` getter はこれらの global を読みます（`window.__WIPPY_APP_API__` は live Host instance です）。これは module URL の解決方法とは別です。global が存在するのに import が失敗する場合は、active import map と正確な `@wippy-fe/proxy` specifier の network response を調べます。page を配信する environment の map または externalization decision を修正してください。host-less boot の成功から hosted behavior を推測してはいけません。
+`@wippy-fe/proxy` のゲッターはこれらのグローバルを読み取ります（`window.__WIPPY_APP_API__` は稼働中のホストインスタンスです）。これはモジュールURLの解決方法とは別の話です。グローバルは存在するのにimportが失敗する場合は、アクティブなimport mapと、`@wippy-fe/proxy` の正確な指定子に対するネットワークレスポンスを調べてください。ページを配信する環境でマップまたはexternal化の判断を修正します。ホストなしでの起動が成功したことから、ホストされたときの挙動を推測してはいけません。
 
-## Web Component が表示されない
+## Webコンポーネントがまったく現れない
 
-**1. 三つの gate を確認します。**
+**1. 3つのゲートを検証します:**
 
-backend から実行します。
+バックエンドから実行します:
 ```bash
 curl /api/public/components/list?auto_register=true
 ```
-response に component の `tag_name` が含まれていなければなりません。含まれない場合:
-- `_index.yaml` に `announced: true` がない → 追加します
-- `auto_register: true` がない → 追加します
-- component が `wippy/views` に登録されていない → module dependency を確認します
+コンポーネントの `tag_name` がレスポンスに現れなければなりません。現れない場合:
+- `_index.yaml` に `announced: true` がない → 追加する
+- `auto_register: true` がない → 追加する
+- コンポーネントが `wippy/views` に登録されていない → モジュールの依存関係を確認する
 
-**2. Console を確認します。**
+**2. Consoleを確認します:**
 ```javascript
-customElements.get('your-tag-name')  // undefined means the element was not registered
+customElements.get('your-tag-name')  // undefinedは要素が登録されていないことを意味する
 ```
 
-**3. Network tab を確認します。**
-- component の `index.js` URL で filter します
-- URL に `?declare-tag=your-tag-name` が含まれる必要があります。element はこれによって自身を登録します
-- URL に `?declare-tag=` query がない場合、entry chunk に `define(import.meta.url, MyElement)` が保持されていません。`build.rollupOptions.preserveEntrySignatures` を `'strict'` に設定します。`false` では registration side effect が entry の外へ移動することがあります。[Build System](./build-system.md) を参照してください
+**3. Networkタブを確認します:**
+- コンポーネントの `index.js` のURLでフィルタします
+- URLには `?declare-tag=your-tag-name` が含まれているはずです。これが要素が自身を登録する仕組みです
+- URLに `?declare-tag=` クエリがない場合: エントリチャンクに `define(import.meta.url, MyElement)` が含まれていません。これは `preserveEntrySignatures: false` の問題です。[ビルドシステム](./build-system.md)を参照してください
 
-## API call の失敗 / 401
+## API呼び出しが失敗する / 401
 
-**1. host-less mode の場合:**
-- proxy config の `dev-token` stub は実際の credential ではなく、認証済み backend を呼ぶ前に通常は置換が必要です
-- dev overlay を開き、JSON config の `auth.token` field に実際の bearer token を貼り付けます
-- overlay config の `APP_API_URL` が実行中の backend を指すことを確認します（backend が別の場所なら localhost ではありません）
+**1. ホストなしモードの場合:**
+- プロキシ設定内の `dev-token` スタブは実際の資格情報ではありません。実際のバックエンドからは常に401が返ります
+- 開発オーバーレイを開く → JSON設定内の `auth.token` フィールドを探す → 実際のbearerトークンを貼り付ける
+- オーバーレイ設定の `APP_API_URL` が稼働中のバックエンドを指していることを確認します（バックエンドが別の場所にあるならlocalhostではありません）
 
-**2. hosted mode の場合:**
-- proxy の `api` client を使います。対象となる same-origin 401 response に対して、client は single-flight を行い、自動的に `host.handleError('auth-expired', error)` を呼びます。
-- すべての API call が 401 の場合、Host config と session-token injection を確認します。標準 proxy client を意図的に迂回し、自動処理を受けられない request path でだけ `host.handleError` を手動で呼んでください。
+**2. ホストされたモードの場合:**
+- 401は `host.handleError('auth-expired', error)` を呼んで処理します。これはホストの再認証フローを起動します
+- すべてのAPI呼び出しが401になる場合: ホストのセッショントークンが正しく注入されているか確認します（プロキシは `api.get(...)` を通じてこれを自動的に処理します）
 
-## Theme が正しく見えない
+## テーマの見た目がおかしい
 
-**1. host-less mode の場合:**
-dev overlay は `themeConfig`、`primevue`、`markdown`、`iframe` injection を**既定で無効**にして開始します。そのため有効化するまで base theme、PrimeVue、Markdown、scrollbar sheet はありません。`customCss` と `customVariables` は既定で有効です。
+**1. ホストなしモードの場合:**
+開発オーバーレイは、`themeConfig`、`primevue`、`markdown`、`iframe` の注入が**デフォルトで無効**の状態から始まります。これらを有効にするまで、アプリはプラットフォームのCSSなしでレンダリングされます。
 
-dev overlay FAB を開き、必要な CSS injection を toggle して、「Auto-accept on reload」を選びます。
+開発オーバーレイのFABを開く → 必要なCSS注入をトグルする → 「Auto-accept on reload」をチェックします。
 
-**2. 完全な effective chain を比較します。**
+**2. 実効的な連鎖全体を比較します:**
 
-空でない token だけでは不十分です。stock palette への reset や誤った family alias が明確になるよう、異なる値を使います。
+空でないトークンだけでは不十分です。既定パレットへのリセットや、意図しないファミリーのエイリアスが明らかになるよう、それぞれ異なる値を使ってください:
 
 ```yaml
 css_variables:
@@ -87,28 +86,28 @@ css_variables:
   "--theme-diagnostic-sentinel": "#123456"
 ```
 
-次の順序で比較します。
+そして、この順序で比較します:
 
-1. **有効な configured map:** `config.theming.global.cssVariables` を調べ、base と active な `@light` / `@dark` replacement を確認します。
-2. **Page root:** `getComputedStyle(document.documentElement).getPropertyValue(name).trim()` で正確な token を読みます。
-3. **WC host:** `getComputedStyle(customElement)` から同じ token を読みます。
-4. **WC inner root:** `getComputedStyle(customElement.shadowRoot.querySelector('[data-wippy-theme-root]'))` から読みます。
-5. **描画された semantic color:** probe に `background-color: var(--p-<family>-color)` を設定し、computed `backgroundColor` を比較します。これにより browser で `color-mix()` が解決されます。
+1. **実効的な設定マップ:** `config.theming.global.cssVariables` を調べ、ベースと、有効な `@light` / `@dark` の置き換えを確認します。
+2. **ページのルート:** `getComputedStyle(document.documentElement).getPropertyValue(name).trim()` で正確なトークンを読み取ります。
+3. **WCホスト:** 同じトークンを `getComputedStyle(customElement)` から読み取ります。
+4. **WCの内側のroot:** `getComputedStyle(customElement.shadowRoot.querySelector('[data-wippy-theme-root]'))` から読み取ります。
+5. **レンダリングされたセマンティックカラー:** プローブ要素に `background-color: var(--p-<family>-color)` を設定し、その計算された `backgroundColor` を比較します。これにより `color-mix()` が物理的に解決されます。
 
-Auto-light、Auto-dark、forced Light、forced Dark で繰り返します。設定した各 family について base、50–950 の全 shade、`color`、`contrast-color`、`hover-color`、`active-color` を検証し、direct shade/alias override、surface token、sentinel も検証します。page、host、inner の値は一致しなければなりません。
+Autoライト、Autoダーク、強制ライト、強制ダークで繰り返します。設定した各ファミリーについて、ベース、50〜950のすべてのシェード、`color`、`contrast-color`、`hover-color`、`active-color` を検証します。あわせて、シェード/エイリアスの直接オーバーライド、サーフェストークン、センチネルも検証します。ページ、ホスト、内側の値は一致していなければなりません。
 
-最初に分岐する箇所を解釈します。effective map が違えば configuration/merge、page root が違えば variable compilation/injection、page は正しく WC host が違えば host propagation、WC host は正しく inner root が違えば forced-theme bridge または local default、token が等しく rendered color が違えば consuming selector または semantic alias の問題です。
+最初に食い違った箇所を解釈します: 実効マップが誤っていれば設定/マージの問題、ページのルートが誤っていれば変数のコンパイル/注入の問題、ページは正しいがWCホストが誤っていればホストの伝播の問題、WCホストは正しいが内側のrootが誤っていれば強制テーマのブリッジまたはローカルのデフォルトの問題、トークンは一致しているがレンダリングされた色が誤っていれば消費側のセレクタまたはセマンティックエイリアスの問題です。
 
-**3. Web Component 固有:**
-- platform default がない場合、`hostCssKeys` に `'themeConfigUrl'` が含まれるか確認します。
-- host は正しいのに inner root が stock value に reset される場合、現在の `@wippy-fe/webcomponent-core` を確認します。component CSS に palette を copy してはいけません。
-- PrimeVue component が style なしで描画される場合、`hostCssKeys` に `'primeVueCssUrl'` を追加します。
+**3. Webコンポーネント固有:**
+- プラットフォームのデフォルトが存在しない場合は、`hostCssKeys` に `'themeConfigUrl'` が含まれているか確認します。
+- ホストは正しいのに内側のrootが既定値にリセットされる場合は、現行の `@wippy-fe/webcomponent-core` を検証してください。パレットをコンポーネントのCSSにコピーしてはいけません。
+- PrimeVueコンポーネントがスタイルなしでレンダリングされる場合は、`hostCssKeys` に `'primeVueCssUrl'` を追加します。
 
-完全な injection pipeline は [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) または [Theming: Web Components](./web-component-theming.md) を参照してください。
+注入パイプライン全体については、[テーマ: マイクロフロントエンドアプリ](./micro-frontend-app-theming.md)または[テーマ: Webコンポーネント](./web-component-theming.md)を参照してください。
 
-## Host の URL bar が更新されない
+## ホストのURLバーが更新されない
 
-portable Micro Frontend App は `@wippy-fe/router` の `createAppRouter()` factory を使う必要があります。package が Host synchronization の両方向を所有するため、application code で `router.afterEach` と `@history` wiring を再実装してはいけません。
+ポータブルなマイクロフロントエンドアプリは、`@wippy-fe/router` の `createAppRouter()` ファクトリを使用しなければなりません。このパッケージがホスト同期の双方向を所有します。アプリケーションコードが `router.afterEach` と `@history` の配線を再現してはいけません。
 
 **確認:**
 ```typescript
@@ -121,37 +120,35 @@ const router = createAppRouter(routes, {
 })
 ```
 
-Host URL が更新されない場合、現在の `@wippy-fe/router` family が整合して install されていること、および local wrapper が factory を置換していないことを確認します。host-less mode では dev overlay の Monitor tab に package が報告した route が表示されます。
+それでもホストのURLが更新されない場合は、現行の `@wippy-fe/router` ファミリーが整合的にインストールされていること、およびローカルのラッパーがファクトリを置き換えていないことを確認してください。ホストなしモードでは、開発オーバーレイのMonitorタブに、パッケージが報告するルートが表示されます。
 
-## ローカルでは動作するが hosted では壊れる
+## ローカルでは動くのにホストされると壊れる
 
-**1. 選択された engine の relative asset resolution を確認します。**
-
-iframe 配信では次を調べます。
-
+**1. `document.baseURI` を確認します:**
 ```javascript
-document.baseURI  // should be <url>/<base_path>/ from your registry entry
+document.baseURI  // レジストリエントリの <url>/<base_path>/ であるはず
 ```
+空または誤っている場合: `<base>` タグが注入されていません。`_index.yaml` の `base_path` が、ビルド出力の実際のディレクトリ構造と一致しているか確認してください。
 
-誤っている場合、`<base>` tag が正しく注入されていません。`_index.yaml` の `base_path` が build output の実際の directory structure と一致するか確認します。
-
-Web Fragment 配信は意図的に `<base>` element を注入しません。代わりに reflected head と body を調べます。relative な `href="./…"` と `src="./…"` attribute は fragment gateway の asset URL に書き換えられている必要があります。
-
-**2. proxy global を確認します（internal diagnostic）。**
+**2. プロキシのグローバルを確認します（内部診断）:**
 ```javascript
-window.__WIPPY_PROXY_CONFIG__  // internal — must exist in iframe-hosted mode
+window.__WIPPY_PROXY_CONFIG__  // 内部。iframeホストモードでは存在しなければならない
 ```
-undefined なら app の実行前に proxy が注入されていません。app code はこれを直接読みません。[Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals-do-not-read-or-override) を参照してください。
+undefinedは、アプリの実行前にプロキシが注入されなかったことを意味します。アプリコードがこれを直接読むことはありません。[プロキシと分離 § 内部](../web-host/proxy-isolation.md#internals--do-not-read-or-override)を参照してください。
 
-**3. `vite.config.ts` の `base: ''` を確認します。**
-これがないと Vite は absolute asset path を出力します。local dev server（`/` から配信）では読み込めても、CDN subdirectory から配信すると 404 になります。
+**3. vite.config.ts の `base: ''` を確認します:**
+`base: ''` がないと、Viteは絶対パスのアセットパスを出力します。（`/` から配信される）ローカルの開発サーバーではアプリは問題なく読み込まれますが、CDNのサブディレクトリから配信されると404になります。
 
-**4. Import map mismatch:**
-`fe_facade_url` で pin された Web Host release から `<version-tag>/import-map.json` を再取得します。host-less `app.html` の完全な `imports` object を置換し、その全 key から Vite external を再生成します。host-less map を削除したり、個別 entry だけを patch してはいけません。新たに import した exact specifier が取得した map にない場合だけ bundle します。
+**4. import mapの不一致:**
+`fe_facade_url` がピン留めしているWeb Hostリリースから
+`<version-tag>/import-map.json` を再取得します。ホストなしの `app.html` にある
+`imports` オブジェクト全体を置き換え、そのすべてのキーからViteのexternalsを再生成します。
+ホストなしのマップを削除したり、個別のエントリにパッチを当てたりしてはいけません。
+新たにimportした正確な指定子をバンドルするのは、取得したマップにそれが存在しない場合だけです。
 
-## logger を debugging tool として使う
+## ロガーをデバッグツールとして使う
 
-`logger.debug()` と `logger.info()` の出力は、production transport だけでなく development 時の browser Console にも表示されます。boot sequence の trace に使えます。
+`logger.debug()` と `logger.info()` の出力は、本番のトランスポートだけでなく、開発中のブラウザのConsoleにも現れます。起動シーケンスを追跡するために使用してください:
 
 ```typescript
 import { logger, config, host, api } from '@wippy-fe/proxy'
@@ -159,8 +156,8 @@ import { logger, config, host, api } from '@wippy-fe/proxy'
 export function createMainApp() {
   logger.debug('App bootstrap started')
   logger.debug('Host services resolved', { hasConfig: !!config })
-  // ... use config, host, api directly
+  // ... config、host、api を直接使う
 }
 ```
 
-`logger.captureException(error)` も dev mode では Console に記録され、production では Host の error capture system に捕捉されます。
+`logger.captureException(error)` も開発モードではConsoleに出力し、本番ではホストのエラーキャプチャシステムに捕捉されます。

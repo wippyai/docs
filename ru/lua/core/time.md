@@ -1,6 +1,6 @@
 ---
 title: "Время и длительности"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Работа со значениями времени, длительностями, часовыми поясами и планированием. Создание таймеров, паузы на заданные периоды, парсинг и…"
 ---
 
 # Время и длительности
@@ -278,7 +278,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -391,7 +391,7 @@ end
 |----------|-----|----------|
 | `duration` | number/string/Duration | Время ожидания |
 
-**Возвращает:** `Channel`
+**Возвращает:** `Channel, error`
 
 ### timer
 
@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | Условие | Kind | Повторяемо |
 |---------|------|------------|
 | Неверный формат длительности | `errors.INVALID` | нет |
-| Парсинг не удался | `errors.INTERNAL` | нет |
+| Парсинг не удался | `errors.INVALID` | нет |
 | Пустое имя location | `errors.INVALID` | нет |
-| Location не найден | `errors.INTERNAL` | нет |
+| Location не найден | `errors.NOT_FOUND` | нет |
 | Duration <= 0 (timer/ticker) | `errors.INVALID` | нет |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("Location не найден:", err:message())
     end
     return nil, err

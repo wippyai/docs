@@ -1,22 +1,18 @@
 ---
 title: "Konfiguration und Schreibweise"
-description: "Regeln für die Schreibweise an den Grenzen von Backend-Facade, Registry und Frontendkonfiguration."
+description: "Schreibweisenregeln an den Grenzen von Backend-Facade, Registry und Frontend-Konfiguration."
 ---
 
 # Konfiguration und Schreibweise
 
-**Klassifizierung: Referenz für Schemengrenzen.** Der YAML-Block ist ein
-Formausschnitt, kein vollständiger Registry-Eintrag.
-
-Die Schreibweise folgt der Schemengrenze. Konvertieren Sie ein
-Konfigurationsobjekt nie rekursiv.
+Die Schreibweise folgt der Schemagrenze. Wandeln Sie ein Konfigurationsobjekt niemals rekursiv um.
 
 | Grenze | Regel | Beispiele |
 |---|---|---|
 | Namen von Backend-Facade-Requirements | oberste Ebene `lower_case_with_underscore` | `custom_css`, `css_variables` |
 | Registry-Felder | jedes Feld folgt seinem dokumentierten Registry-Schema | `base_path`, `entry_point`, `tag_name` |
-| Verschachtelte Frontendkonfiguration in Backend-YAML | lower camelCase beibehalten | `customCSS`, `themeConfig`, `iconifyIcons` |
-| Frontend-AppConfig und Paketmetadaten | lower camelCase | `configOverrides`, `hostCssKeys` |
+| Verschachtelte Frontend-Konfiguration, die im Backend-YAML transportiert wird | lower camelCase beibehalten | `customCSS`, `themeConfig`, `iconifyIcons` |
+| Frontend-AppConfig und Paket-Metadaten | lower camelCase | `configOverrides`, `hostCssKeys` |
 
 ```yaml
 config_overrides:
@@ -33,12 +29,10 @@ proxy:
       iframe: true
 ```
 
-Nur die Backend-Wrapper-Schlüssel verwenden hier snake_case. Verschachtelte
-Frontendobjekte werden unverändert durchgereicht.
+Nur die Wrapper-Schlüssel des Backends sind in diesem Beispiel snake case. Verschachtelte Frontend-Objekte werden durchgereicht und behalten ihre definierte Schreibweise.
 
-## Ausnahme für `mountRoute`
+## Vorübergehende Ausnahme mountRoute
 
-Das aktuelle View-Registry-Schema liest `meta.mountRoute`, speichert es intern
-als `mount_route` und gibt es in der API wieder als `mountRoute` aus. Behandeln
-Sie das verfasste lower-camel-case-Feld als dokumentierte Ausnahme, nicht als
-Beleg dafür, dass Registry- oder Backendfelder allgemein camelCase verwenden.
+`meta.mountRoute` ist ein aktueller Kompatibilitäts-Bug im Backend. Das vorgesehene Backend-Feld ist `meta.mount_route`, aber bestehende Deployments benötigen `mountRoute`, bis die Backend-Korrektur ausgeliefert wird. Behandeln Sie das als eine explizite Ausnahme, nicht als Beleg dafür, dass Registry- oder Backend-Felder generell camelCase wären.
+
+Die Compliance muss diese Ausnahme versionieren, damit sie entfernt werden kann, wenn sich das Backend-Schema ändert.

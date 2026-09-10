@@ -1,43 +1,41 @@
 ---
-title: "Temas: aplicações micro frontend"
-description: "Como aplicações micro frontend recebem a configuração de tema da facade, do escopo dos children e da página."
+title: "Tematização: Apps Micro Frontend"
+description: "A referência de tematização cobre o catálogo completo de variáveis CSS. Este documento cobre como um app micro frontend recebe o tema."
 ---
 
-# Temas: aplicações micro frontend
+# Tematização: Apps Micro Frontend
 
-**Classificação: referência de configuração com receitas parciais.** Os trechos YAML, metadados de pacote e runtime mostram camadas distintas do contrato de tema; combine-os com um projeto `view.page` completo e um entry de facade.
-
-Aplicações micro frontend recebem o mesmo tema efetivo dos children por uma entrega CSS específica do engine. Consulte [Criação de temas](./theming.md) para o contrato compartilhado de autoria.
+A [referência de tematização](./theming.md) cobre o catálogo completo de variáveis CSS. Este documento cobre como um app micro frontend recebe o tema.
 
 ---
 
-## Como o tema chega à aplicação
+## Como o tema chega ao seu app
 
-Em iframe, o host injeta CSS pelo pipeline proxy e coloca variáveis e CSS personalizados em adopted stylesheets do documento. Em Web Fragment, o gateway do framework fornece o CSS da plataforma, e o adaptador fragment coloca variáveis e CSS personalizados no head refletido como elementos `<style>`. O schema atual é `wippy-context-2.0`: o tema da facade aparece como `theming.global`, `theming.host` e `theming.children`; ambos os engines recebem o tema efetivo destinado aos children em `config.theming.global`.
+O host injeta CSS no iframe do seu app micro frontend através do pipeline de injeção do proxy. O schema de runtime atual é `wippy-context-2.0`: a tematização da facade é representada como `theming.global`, `theming.host` e `theming.children`; uma página filha recebe seu tema efetivo voltado ao filho como `config.theming.global`.
 
-### L1 — Global (facade)
+### L1 — Global (nível de facade)
 
-Variáveis CSS no escopo global da facade chegam ao host e às páginas filhas pelo caminho de entrega do engine. Use esse escopo para paleta da marca, cor de destaque e estilo que precisa ser uniforme em todos os lugares.
+Variáveis CSS definidas no escopo de tematização global da facade chegam ao host e a todos os iframes automaticamente, através das injeções de proxy `themeConfig` e de variáveis customizadas. Este é o lugar principal para a paleta de marca, cor de destaque e qualquer estilização que deva ser aplicada de forma consistente em todos os lugares.
 
 ```yaml
 - name: css_variables
   value: '{"--p-primary":"#4f8ef7","--p-secondary":"#6f7385","--p-danger":"#dc2626"}'
 ```
 
-### L2 — Com escopo (host ou children)
+### L2 — Com escopo (escopo host ou children)
 
-A facade expõe escopos separados no schema atual:
+A facade expõe escopos separados no schema atual para o chrome do host e para os iframes filhos:
 
-| Escopo | Alcança | Uso |
+| Escopo do schema | Alcança | Use para |
 |---|---|---|
-| `theming.host` | Somente o chrome do Host | Sidebar, mensagens de chat, splitter e substituições BEM do host |
-| `theming.children` | Somente páginas filhas | CSS aplicado em apps filhas sem vazar para o host |
+| `theming.host` | Apenas o chrome da UI do host | Barra lateral, mensagens de chat, splitter — sobrescritas BEM do host |
+| `theming.children` | Apenas iframes filhos | CSS que se aplica dentro de apps filhos, mas não deve vazar para o host |
 
-CSS definido em `children_css_variables` ou `children_custom_css` chega à aplicação micro frontend; variáveis com escopo do host afetam somente o chrome do Web Host.
+O CSS definido em `children_css_variables` ou `children_custom_css` chega ao seu app micro frontend; variáveis com escopo de host afetam apenas o chrome do Web Host.
 
 ### L3 — Por página (`config_overrides` no YAML do registry)
 
-Dê um tema próprio a uma página por `config_overrides.customization.cssVariables`/`customCSS` no entry YAML. A substituição é projetada em `theming.global` da página e tematiza a página **e tudo o que ela incorpora**. Conteúdo aninhado `<w-artifact>`/`<w-iframe>`/`html.inject` é criado a partir da configuração já mesclada da página e herda o tema recursivamente. Use para uma **subárvore com tema próprio**, como um módulo administrativo e seus artefatos. Não afeta páginas irmãs nem o restante do shell.
+Dê a uma página seu próprio tema definindo `config_overrides.customization.cssVariables` / `customCSS` no YAML da entrada de registry da página. A sobrescrita é projetada no `theming.global` da página, então ela tematiza a página **e tudo o que a página incorpora** — conteúdo aninhado de `<w-artifact>` / `<w-iframe>` / `html.inject` é construído a partir da configuração já mesclada da página e herda o tema, recursivamente por toda a sub-árvore. Esta é a ferramenta para entregar uma **sub-árvore auto-tematizada**: por exemplo, um módulo de administração cujas páginas carregam um tema distinto que se propaga a todos os artefatos e sub-apps que elas hospedam. Isso não afeta páginas irmãs nem o restante do shell da aplicação.
 
 ```yaml
 - name: iframe-demo-themed
@@ -56,15 +54,15 @@ Dê um tema próprio a uma página por `config_overrides.customization.cssVariab
           .demo-banner { background: var(--p-primary-color); color: var(--p-primary-contrast-color); }
 ```
 
-Entrys superiores valem em todos os modos. `@dark` e `@light` substituem entries escolhidos e compilam para blocos de media no modo Auto e seletores forçados `.w-theme-dark`/`.w-theme-light`. O host controla essas classes; aplicações não inventam um protocolo paralelo `data-theme`.
+Entradas de nível superior se aplicam em todos os modos de tema. `@dark` e `@light` substituem entradas selecionadas e compilam tanto para blocos de media do modo Auto quanto para os seletores forçados `.w-theme-dark` / `.w-theme-light`. O host é dono dessas classes; aplicações não inventam um protocolo `data-theme` paralelo.
 
-Um espelho em `wippy.configOverrides` de `package.json` oferece o mesmo formato para renderização sem host, como preview independente e testes unitários. Mantenha os dois sincronizados; o YAML tem precedência quando há um host.
+Um espelho em `package.json`, sob `wippy.configOverrides`, fornece o mesmo formato para renderização sem host (preview de desenvolvimento standalone, testes unitários). Mantenha ambos em sincronia; o YAML vence quando há um host presente.
 
 ---
 
-## Ativar a injeção CSS de iframe
+## Habilitando a injeção de CSS
 
-Para renderização em iframe e sem host, configure as injeções solicitadas pela aplicação no bloco `wippy` de `package.json`:
+No bloco `wippy` do seu `package.json`, configure quais injeções seu app micro frontend solicita:
 
 ```jsonc
 "wippy": {
@@ -72,70 +70,68 @@ Para renderização em iframe e sem host, configure as injeções solicitadas pe
   "proxy": {
     "injections": {
       "css": {
-        "themeConfig":      true,   // --p-* CSS vars (theme-config.css)
-        "primevue":         true,   // PrimeVue component CSS and Tailwind utilities
-        "markdown":         false,  // .data-body markdown styles
-        "iframe":           true,   // Scrollbar styling
-        "customCss":        true,   // Child-projected theming.global.customCSS
-        "customVariables":  true    // Child-projected theming.global.cssVariables
+        "themeConfig":      true,   // variáveis CSS --p-* (theme-config.css)
+        "primevue":         true,   // CSS de componentes PrimeVue (~455 KB)
+        "markdown":         false,  // estilos de markdown .data-body
+        "iframe":           true,   // estilização de scrollbar
+        "customCss":        true,   // theming.global.customCSS projetado para o filho
+        "customVariables":  true    // theming.global.cssVariables projetado para o filho
       },
-      "tailwindConfig": false       // LEGACY runtime-Tailwind only; leave false for Vite builds
+      "tailwindConfig": false       // LEGADO, apenas Tailwind em runtime; deixe false para builds Vite
     }
   }
 }
 ```
 
-O proxy iframe tem padrões amplos quando flags são omitidas. **Ative estas flags para receber CSS de tema**; esta é uma recapitulação, não a lista autoritativa:
+O proxy de iframe tem padrões de runtime amplos quando as flags são omitidas. **Habilite estas flags para receber o CSS de tema** no seu app micro frontend (uma recapitulação focada em tematização, não a lista autoritativa de flags):
 
-- `css.themeConfig` — sistema completo de variáveis `--p-*` (`theme-config.css`).
-- `css.primevue` — estilos de componentes PrimeVue.
-- `css.customCss` — CSS personalizado efetivo dos children: CSS global + children da facade mesclado em `config.theming.global.customCSS`, mais a substituição da página.
-- `css.customVariables` — `config.theming.global.cssVariables` como blocos base, Auto claro/escuro e Light/Dark forçados.
-- `css.markdown` — estilos markdown `.data-body`; ative somente se a página renderiza markdown.
+- `css.themeConfig` — o sistema completo de variáveis CSS `--p-*` (`theme-config.css`). Habilite para herdar a paleta do tema.
+- `css.primevue` — estilos de componentes PrimeVue. Habilite para apps que usam PrimeVue.
+- `css.customCss` — o CSS customizado voltado ao filho, composto pelo host: CSS customizado **global + children** da facade, mesclado em `config.theming.global.customCSS`, mais qualquer sobrescrita por página. A flag controla essa injeção em vez de nomear um único escopo. Habilite para receber CSS customizado da facade/por página.
+- `css.customVariables` — `config.theming.global.cssVariables` projetado ao filho como blocos de base efetiva, Auto-claro, Auto-escuro, Claro forçado e Escuro forçado. Habilite para receber sobrescritas de variáveis de tema.
+- `css.markdown` — estilos de markdown `.data-body`. Habilite apenas se sua página renderizar conteúdo markdown.
 
-Referência completa e padrões da runtime: [Injeção de CSS](../web-host/css-injection.md).
+Referência completa de flags e padrões de runtime: [Injeção de CSS](../web-host/css-injection.md).
 
-Web Fragment não usa essas flags para limitar seu CSS fixo do host. O gateway injeta os assets, e o adaptador aplica variáveis e CSS efetivos após receber AppConfig.
-
-> **Modo de desenvolvimento:** o overlay começa com `themeConfig`, `primevue`, `markdown` e `iframe` desativados. Ative-os para visualizar localmente o tema injetado. Selecione "Auto-accept on reload" para preservar a escolha após recarregar.
+> **Nota sobre modo de desenvolvimento:** O overlay de desenvolvimento inicia com `themeConfig`, `primevue`, `markdown` e `iframe` DESABILITADOS por padrão. Habilite-os no overlay para ver a estilização real do tema localmente. Marque "Auto-accept on reload" para persistir entre recarregamentos.
 
 ---
 
-## Ordem de merge
+## Ordem de merge — o que sobrescreve o quê
 
-Ao aplicar AppConfig, o último valor vence:
+Quando o host aplica o AppConfig (o último a escrever vence):
 
-1. padrões de `theme-config.css` (fallback de desenvolvimento)
-2. `theming.global` e `theming.children` da facade
-3. `wippy.configOverrides` da página (declarativo, incluído na página)
-4. `window.__WIPPY_CONFIG_OVERRIDES__` (runtime, se definido antes do proxy)
+1. Padrões de `theme-config.css` (fallback de tempo de desenvolvimento)
+2. `theming.global` e `theming.children` (voltado ao filho) da facade
+3. `wippy.configOverrides` da página (declarativo, gravado na página)
+4. `window.__WIPPY_CONFIG_OVERRIDES__` (runtime, se definido antes de o proxy carregar)
 
-Em `cssVariables`, o mapa de substituição **troca** o mapa herdado dos children; escreva o conjunto completo desejado. Em `icons`/`iconSets`, o merge é aditivo. Para `axiosDefaults`, `routePrefix` e `apiRoutes`, o host aplica as regras atuais de merge de `AppConfigOverrides`.
+Para `cssVariables`: o map de sobrescrita **substitui** o map herdado do filho — escreva o conjunto completo que você deseja. Para `icons`/`iconSets`: merge aditivo. Para `axiosDefaults`, `routePrefix` e `apiRoutes`: o host aplica as regras atuais de merge de `AppConfigOverrides` para esses campos.
 
-### Substituições de runtime
+### Sobrescritas em runtime (`window.__WIPPY_CONFIG_OVERRIDES__`)
 
-Para tema controlado por query ou feature flag, defina `window.__WIPPY_CONFIG_OVERRIDES__` antes de `proxy.js`.
+Defina o global antes de `proxy.js` rodar, para tematização guiada por parâmetro de query ou feature flag:
 
-Esse global anterior ao proxy é uma saída de integração de embedding/sem host. Em um child hospedado, `window.location` pertence ao engine selecionado — `about:srcdoc` em iframe — e não representa rota ou query do host. Use `config_overrides` declarativo ou AppConfig fornecido pelo host. Nunca deduza estado do host pelas localizações do navegador do child ou parent.
+Esse global pré-proxy é uma válvula de escape para integração de embedding/sem host. Em um filho hospedado, `window.location` pertence à engine de página selecionada — `about:srcdoc` sob entrega por iframe — e não é a rota nem o contexto de query do host. Use `config_overrides` declarativo da página ou o AppConfig fornecido pelo host. Nunca infira o estado do host a partir das locations de navegador do filho ou do pai.
 
 ---
 
-## Verificação
+## Verificando
 
-Para confirmar as variáveis CSS em execução, selecione o realm da página no DevTools — frame interno em iframe ou realm reframed em Web Fragment — e execute:
+Para confirmar que as variáveis CSS estão ativas na sua página em execução: abra o DevTools, selecione o contexto do frame do iframe interno (não a página externa) e execute:
 
 ```js
 getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
 ```
 
-Um resultado não vazio prova apenas que algum CSS de tema foi carregado. Compare o valor configurado na raiz da página, host do web component, raiz interna e cor semântica renderizada; verifique todas as famílias configuradas. Fluxo completo: [Depuração](./debugging.md).
+Um resultado não vazio prova apenas que algum CSS de tema carregou. Compare o valor exato configurado na raiz da página, no host do WC, na raiz interna do WC e na cor semântica renderizada; verifique cada família configurada. Fluxo completo: [Depuração](./debugging.md).
 
 ---
 
 ## Documentos relacionados
 
 - [theming.md](./theming.md) — catálogo de variáveis CSS e antipadrões
-- [web-component-theming.md](./web-component-theming.md) — temas de web components (shadow DOM)
-- [micro-frontend-app.md](./micro-frontend-app.md) — guia completo de desenvolvimento de aplicação micro frontend
-- [host-less-mode.md](./host-less-mode.md) — overlay de desenvolvimento e injeção CSS sem host
-- [compliance-checklist.md](./compliance-checklist.md) — regras REJECT/WARN completas de tema
+- [web-component-theming.md](./web-component-theming.md) — tematização para web components (shadow DOM)
+- [micro-frontend-app.md](./micro-frontend-app.md) — guia completo de desenvolvimento de apps micro frontend
+- [host-less-mode.md](./host-less-mode.md) — overlay de desenvolvimento e injeção de CSS em modo sem host
+- [compliance-checklist.md](./compliance-checklist.md) — regras completas de REJECT/WARN para tematização

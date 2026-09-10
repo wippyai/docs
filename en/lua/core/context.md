@@ -1,6 +1,6 @@
 ---
 title: "Request Context"
-description: "Read request-scoped values propagated through function and process calls."
+description: "Access request-scoped context values. Context is set via Funcs or Process."
 ---
 
 # Request Context

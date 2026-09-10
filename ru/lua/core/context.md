@@ -1,6 +1,6 @@
 ---
 title: "Контекст запроса"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Доступ к значениям контекста уровня запроса. Контекст устанавливается через Funcs или Process."
 ---
 
 # Контекст запроса

@@ -1,6 +1,6 @@
 ---
 title: "Grupos de Processos"
-description: "Gerencie grupos de processos no cluster, associações, broadcasts e inscrições em alterações de membros."
+description: "Agrupe processos em grupos nomeados e faça broadcast para todos os membros em todo o cluster. Modelado no pg do Erlang/OTP: grupos são dinâmicos, um…"
 ---
 
 # Grupos de Processos
@@ -211,12 +211,12 @@ group:release()
 | `pg.leave` | `leave()` | nome do grupo |
 | `pg.get_members` | `get_members()` | nome do grupo |
 | `pg.get_local_members` | `get_local_members()` | nome do grupo |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (nenhum) |
+| `pg.which_local_groups` | `which_local_groups()` | (nenhum) |
 | `pg.broadcast` | `broadcast()` | nome do grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nome do grupo |
 | `pg.monitor` | `monitor()` | nome do grupo |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (nenhum) |
 
 ## Erros
 

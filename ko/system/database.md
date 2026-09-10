@@ -52,15 +52,15 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     lifecycle:
       auto_start: true
 ```
 
 <note>
-SQLite는 항상 단일 연결로 실행되며(<code>max_open</code>과 <code>max_idle</code>은
-<code>1</code>로 강제됨) <code>WAL</code> 저널 모드를 사용합니다. <code>pool</code>에서는
-<code>max_lifetime</code>만 적용됩니다.
+비공개 인메모리 SQLite 데이터베이스(<code>file: ":memory:"</code>)는 하나의 물리적 연결로 범위가 한정되므로 <code>max_open</code>과 <code>max_idle</code>이 <code>1</code>로 강제됩니다. 파일 기반 데이터베이스는 설정된 <code>pool</code> 값을 따르며, CDC 스냅샷 읽기 트랜잭션이 유일한 쓰기 연결을 점유하지 않으려면 이 설정이 필요합니다. 저널 모드는 항상 <code>WAL</code>입니다.
 </note>
 
 ## 연결 필드
@@ -80,40 +80,37 @@ SQLite는 항상 단일 연결로 실행되며(<code>max_open</code>과 <code>ma
 
 ### SQLite 필드
 
-| 필드 | 타입 | 설명 |
-|-------|------|-------------|
-| `file` | string | 데이터베이스 파일 경로 또는 `:memory:` |
-| `pool` | object | `max_lifetime`만 적용됨(연결 수는 1로 고정) |
-| `options` | map | 허용되지만 무시됨 |
-| `lifecycle` | object | 라이프사이클 설정 |
+| 필드 | 타입 | 기본값 | 설명 |
+|-------|------|---------|-------------|
+| `file` | string | 필수 | 데이터베이스 파일 경로 또는 `:memory:` |
+| `pool` | object | - | 연결 풀 설정; `:memory:`에서는 `max_open`과 `max_idle`이 `1`로 강제됨 |
+| `max_mutation_changes` | int | 100000 | 커밋된 변경 관찰자에서 한 트랜잭션이 보유할 수 있는 행 수 |
+| `max_mutation_bytes` | int | 67108864 | 관찰자에서 한 트랜잭션이 보유할 수 있는 논리 바이트 수 (64 MiB) |
+| `options` | map | - | 허용되지만 무시됨 |
+| `lifecycle` | object | - | 라이프사이클 설정 |
 
-### 시크릿과 환경 값
+`max_mutation_changes`와 `max_mutation_bytes`는 [`db.cdc.sqlite`](system/cdc.md) 소스에 데이터를 공급하는 인메모리 커밋 변경 관찰자의 한계를 정합니다. 두 필드 중 하나가 0이면 기본값이 선택되고, 음수 값은 거부됩니다. 이 한계는 정확하기보다 보수적입니다: SQLite는 pre-update 훅에 완전한 행을 전달하므로, 한계가 후보를 거부하기 전에 행 하나가 구체화될 수 있습니다.
 
-디코드 시점에 해석되는 `${env:NAME}` 플레이스홀더를 사용하여 [환경 레지스트리](system/env.md)에서
-연결 값을 가져옵니다. `NAME`은 등록된 변수의 공개 이름이나 엔트리 ID(예:
-`app.secrets:db_password`)이며 원시 OS 환경 변수가 아닙니다.
+### 시크릿 및 환경 값
+
+`${env:NAME}` 플레이스홀더로 [환경 레지스트리](system/env.md)에서 연결 값을 가져오며, 디코드 시점에 해석됩니다. `NAME`은 등록된 변수의 공개 이름 또는 엔트리 ID(예: `app.secrets:db_password`)이며, 원시 OS 환경 변수가 아닙니다.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
   host: ${env:DB_HOST}
-  port: ${env:DB_PORT|5432}
+  port: ${env:DB_PORT}
   database: ${env:DB_NAME}
   username: ${env:DB_USER}
   password: ${env:app.secrets:db_password}
 ```
 
 <note>
-이전 설정은 같은 방식으로 해석되는 형제 <code>&lt;field&gt;_env</code> 지시자
-(<code>host_env</code>, <code>port_env</code>, <code>database_env</code>,
-<code>username_env</code>, <code>password_env</code>)를 사용합니다. 이 형식은
-<b>더 이상 사용되지 않습니다</b>. 위에 표시된 <code>${env:NAME}</code>
-플레이스홀더로 마이그레이션하세요.
+이전 설정은 형제 <code>&lt;field&gt;_env</code> 디렉티브(<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>)를 사용하며 동일하게 해석됩니다. 이 형식은 <b>더 이상 권장되지 않습니다</b> — 위에 제시된 <code>${env:NAME}</code> 플레이스홀더로 이전하세요.
 </note>
 
 <warning>
-설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 <code>env.variable</code>
-엔트리를 사용하세요. 시크릿 설정은 <a href="./env.md">환경</a>을 참조하세요.
+설정에 비밀번호를 직접 입력하지 마세요. 자격 증명에는 <code>env.variable</code> 엔트리를 사용하세요. 안전한 시크릿 관리는 <a href="system/env.md">환경</a>을 참조하세요.
 </warning>
 
 ## 연결 풀
@@ -123,7 +120,7 @@ SQLite는 항상 단일 연결로 실행되며(<code>max_open</code>과 <code>ma
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `max_open` | int | 0 | 최대 열린 연결 (0 = 무제한) |
-| `max_idle` | int | 0 | 최대 유휴 연결 (0 = 무제한) |
+| `max_idle` | int | 0 | 최대 유휴 연결 (0 = 유휴 연결을 유지하지 않음) |
 | `max_lifetime` | duration | 1h | 최대 연결 수명 |
 
 ```yaml
@@ -139,14 +136,15 @@ pool:
 
 ## DSN 형식
 
-각 데이터베이스 타입은 설정에서 DSN을 구성합니다. 모든 `options`는 키로 정렬되어
-추가되며 기본적으로 포함되는 옵션은 없습니다.
+각 데이터베이스 타입은 설정에서 DSN을 구성합니다. `options`가 있으면 키 순으로 정렬되어 뒤에 붙으며, 기본으로 포함되는 옵션은 없습니다.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-host=host port=port user=username password=password dbname=database [option=value ...]
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+포트를 제외한 모든 값은 작은따옴표로 묶이고, 내부의 `'`와 `\`는 백슬래시로 이스케이프되므로, 공백이나 따옴표를 포함한 호스트, 비밀번호, 옵션 값이 그대로 전달됩니다.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -185,9 +183,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-SQLite는 `options` 맵을 DSN에 적용하지 않습니다. 파일 데이터베이스는 항상
-`mode=rwc`로 열리고 저널 모드는 항상 `WAL`로 설정됩니다. `options` 필드는
-허용되지만 무시됩니다.
+SQLite는 `options` 맵을 DSN에 적용하지 않습니다. 파일 데이터베이스는 항상 `mode=rwc`로 열리며 저널 모드는 항상 `WAL`로 설정됩니다. `options` 필드는 허용되지만 무시됩니다.
 
 ## 예제
 
@@ -287,5 +283,6 @@ entries:
 ## 참고
 
 - [SQL 모듈](lua/storage/sql.md) - Lua API 레퍼런스
-- [Store](system/store.md) - `db.sql.*` 데이터베이스 기반 키-값 저장소
+- [Store](system/store.md) - `db.sql.*` 데이터베이스 기반의 키-값 저장소
 - [Queue](system/queue.md) - SQL 기반 큐 핸들러
+- [변경 데이터 캡처](system/cdc.md) - `db.sql.sqlite` 또는 Postgres 데이터베이스에서 행 수준 변경 스트리밍

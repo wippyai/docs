@@ -1,17 +1,15 @@
 ---
 title: "Dataflow"
-description: "Workflows als gerichtete azyklische Graphen erstellen, ausführen, persistieren und wiederherstellen."
+description: "Das Modul wippy/dataflow stellt eine Workflow-Orchestrierungs-Engine auf Basis gerichteter azyklischer Graphen (DAGs) bereit. Workflows bestehen aus Knoten —…"
 ---
 
 # Dataflow
 
-Das Modul `wippy/dataflow` stellt eine Workflow-Engine auf Grundlage gerichteter azyklischer Graphen (DAGs) bereit. Workflows bestehen aus Knoten – Funktionen, Agenten, Zyklen und parallelen Verarbeitern –, die durch typisierte Datenrouten verbunden sind. Der Orchestrator übernimmt Ausführung, Zustandspersistenz und Wiederherstellung.
+Das Modul `wippy/dataflow` stellt eine Workflow-Orchestrierungs-Engine auf Basis gerichteter azyklischer Graphen (DAGs) bereit. Workflows bestehen aus Knoten — Funktionen, Agenten, Zyklen und parallelen Prozessoren — die über typisierte Datenrouten verbunden sind. Der Orchestrator verwaltet Ausführung, Zustandspersistenz und Wiederherstellung.
 
-Diese Seite ist eine API-Einführung mit konzeptionellen und Referenzausschnitten, kein eigenständiges Tutorial. Werte wie `task`, `config` und `file_list` sowie IDs wie `app:tokenize` oder `app:worker` stehen für Daten und Registry-Entrys der Anwendung. Die Ausschnitte setzen außerdem die unter [Einrichtung](#einrichtung) beschriebene Persistenzdatenbank und den Prozess-Host voraus. Ein vollständiges ausführbares Projekt finden Sie unter [Einen Dataflow-Workflow erstellen](../tutorials/dataflow.md).
+## Setup
 
-## Einrichtung
-
-Fügen Sie das Modul dem Projekt hinzu:
+Fügen Sie das Modul Ihrem Projekt hinzu:
 
 ```bash
 wippy add wippy/dataflow
@@ -31,13 +29,13 @@ entries:
     version: "*"
 ```
 
-Das Dataflow-Modul hängt von `wippy/agent`, `wippy/llm`, `wippy/session` und `wippy/test` ab; `wippy install` löst diese Abhängigkeiten automatisch auf. Für die Workflow-Persistenz erwartet es standardmäßig eine Datenbankressource unter `app:db` und einen Prozess-Host unter `app:processes`. Die Migrationen führt `wippy/migration` automatisch aus. Abweichende Ressourcen werden über die Anforderungen `target_db` beziehungsweise `process_host` zugeordnet.
+Das Dataflow-Modul hängt von `wippy/agent`, `wippy/llm` und `wippy/session` ab — diese werden beim Ausführen von `wippy install` automatisch aufgelöst. Das Modul benötigt eine Datenbankressource unter `app:db` für die Workflow-Persistenz und führt Migrationen automatisch über `wippy/migration` aus.
 
-Das Modul veröffentlicht den Eintrag `userspace.dataflow.env:web_host_origin` vom Typ `env.variable` mit dem Standardwert `https://front.wippy.ai`. Nachgelagerte Flows können ihn zum Erzeugen öffentlicher URLs lesen. Überschreiben Sie ihn über den Env-Router oder eine Anforderung.
+Das Modul veröffentlicht einen `env.variable`-Eintrag `userspace.dataflow.env:web_host_origin` (Standard `https://front.wippy.ai`), den nachgelagerte Flows zum Erstellen öffentlicher URLs lesen können. Überschreiben Sie ihn über den Env-Router oder ein Requirement.
 
 ## Flow Builder
 
-Der Flow Builder bietet eine Fluent API zum Zusammensetzen von Workflows. Importieren Sie ihn in Ihren Eintrag:
+Der Flow Builder bietet eine Fluent-Schnittstelle zum Zusammensetzen von Workflows. Importieren Sie ihn in Ihren Eintrag:
 
 ```yaml
 imports:
@@ -61,8 +59,8 @@ flow.create()
     :to(target, input_key, transform)
     :error_to(target, input_key, transform)
     :when(condition)
-    :run()   -- synchronous
-    :start() -- asynchronous
+    :run()   -- synchron
+    :start() -- asynchron
 
 flow.template()
     :[operations]...
@@ -70,7 +68,7 @@ flow.template()
 
 ### Lineare Pipeline
 
-Ohne explizite Routen werden Knoten automatisch verkettet. Die Ausgabe eines Knotens fließt jeweils in den nächsten:
+Knoten werden automatisch verkettet, wenn kein explizites Routing definiert ist. Der Output jedes Knotens fließt in den nächsten:
 
 ```lua
 local result, err = flow.create()
@@ -81,9 +79,9 @@ local result, err = flow.create()
     :run()
 ```
 
-### Benannte Routen
+### Benanntes Routing
 
-Mit `:as()` benennen Sie Knoten, mit `:to()` leiten Sie Daten zwischen ihnen weiter. Verwenden Sie `:as()` nur, wenn der Knoten referenziert werden muss:
+Verwenden Sie `:as()`, um Knoten zu benennen, und `:to()`, um Daten zwischen ihnen zu routen. Verwenden Sie `:as()` nur, wenn der Knoten referenziert werden muss:
 
 ```lua
 local result, err = flow.create()
@@ -103,11 +101,11 @@ local result, err = flow.create()
     :run()
 ```
 
-Der zweite Parameter von `:to()` ist der **Diskriminator**, also der Eingabeschlüssel am Zielknoten. Empfängt ein Knoten mehrere Eingaben, werden sie in einer Tabelle gesammelt, deren Schlüssel die Diskriminatoren sind.
+Der zweite Parameter von `:to()` ist der **Diskriminator** — der Input-Schlüssel am empfangenden Knoten. Empfängt ein Knoten mehrere Inputs, werden diese als Tabelle gesammelt, deren Schlüssel die Diskriminatoren sind.
 
 ### Workflow-Eingabe und statische Daten
 
-`:with_input()` definiert die einzige primäre Eingabe des Workflows. `:with_data()` erzeugt unabhängige statische Datenquellen:
+`:with_input()` ist die einzige primäre Eingabe des Workflows. `:with_data()` erzeugt unabhängige statische Datenquellen:
 
 ```lua
 flow.create()
@@ -131,11 +129,11 @@ flow.create()
     :run()
 ```
 
-Verwenden Sie `:with_input()` für externe Daten, die in den Workflow gelangen. `:with_data()` eignet sich für `config`, Konstanten und Referenzdaten, die mehrere Knoten gemeinsam nutzen. Bei statischen Daten legt die erste Route die eigentlichen Daten an; weitere Routen erzeugen leichtgewichtige Referenzen.
+Verwenden Sie `:with_input()` für externe Daten, die in den Workflow eintreten. Verwenden Sie `:with_data()` für Konfiguration, Konstanten und Referenzdaten, die von mehreren Knoten gemeinsam genutzt werden. Statische Daten nutzen eine Referenzoptimierung — die erste Route erzeugt die eigentlichen Daten, nachfolgende Routen erzeugen leichtgewichtige Referenzen.
 
-### Bedingte Routen
+### Bedingtes Routing
 
-Fügen Sie nach `:to()` mit `:when()` eine Bedingung hinzu. Bedingungen werden in der Syntax von `expr` gegen die Knotenausgabe ausgewertet:
+Verwenden Sie `:when()` nach `:to()`, um Bedingungen hinzuzufügen. Bedingungen werden mit `expr`-Syntax gegen den Output des Knotens ausgewertet:
 
 ```lua
 flow.create()
@@ -150,7 +148,7 @@ flow.create()
     :run()
 ```
 
-Bedingungen lassen sich für komplexere Routen mit Inline-Transformationen kombinieren:
+Bedingungen lassen sich für komplexeres Routing mit Inline-Transformationen kombinieren:
 
 ```lua
 :func("app:decompose"):as("decompose")
@@ -158,20 +156,20 @@ Bedingungen lassen sich für komplexere Routen mit Inline-Transformationen kombi
     :to("processor", "items", "output.items")
 ```
 
-Bedingungsausdrücke unterstützen Vergleiche (`output.score > 0.8`), logische Operatoren (`output.valid && output.count > 5`), Array-Funktionen (`len(output.items) > 0`, `any(output.errors, {.critical})`), Zeichenkettenoperationen (`output.status contains 'success'`) und optionale Verkettung (`output.data?.nested?.value`).
+Bedingte Ausdrücke unterstützen: Vergleiche (`output.score > 0.8`), logische Operatoren (`output.valid && output.count > 5`), Array-Funktionen (`len(output.items) > 0`, `any(output.errors, {.critical})`), String-Operationen (`output.status contains 'success'`) und Optional Chaining (`output.data?.nested?.value`).
 
-### Workflow-Endpunkte
+### Workflow-Terminals
 
-Leiten Sie zu `@success` oder `@fail` weiter, um den Workflow ausdrücklich zu beenden. In verschachtelten Kontexten wie Zyklen und Parallelknoten erzeugen diese Endpunkte eine Knotenausgabe statt einer Workflow-Ausgabe:
+Routen Sie zu `@success` oder `@fail`, um den Workflow explizit zu beenden. In verschachtelten Kontexten (Zyklen, parallel) erzeugen Terminals Knoten-Outputs statt Workflow-Outputs:
 
 ```lua
 :func("app:final_step"):to("@success")
 :func("app:handler"):error_to("@fail")
 ```
 
-### Fehlerrouten
+### Fehler-Routing
 
-Mit `:error_to()` leiten Sie Knotenfehler an einen Handler weiter. Fehler können wie normale Eingaben an Wiederherstellungsknoten übergeben werden:
+Verwenden Sie `:error_to()`, um Knotenfehler an einen Handler zu routen. Fehler können als normale Inputs an Wiederherstellungsknoten geroutet werden:
 
 ```lua
 :agent("app:gpt_planner", { model = "gpt-5" }):as("gpt_planner")
@@ -187,57 +185,57 @@ Mit `:error_to()` leiten Sie Knotenfehler an einen Handler weiter. Fehler könne
 }):as("consolidator")
 ```
 
-Dieses Muster führt beide Planer parallel aus. Schlägt einer fehl, wird sein Fehler zur Eingabe des Konsolidierers, der mit den verfügbaren Ergebnissen fortfährt.
+Dieses Muster führt beide Planer parallel aus — schlägt einer fehl, wird sein Fehler zum Input für den Consolidator, der mit den verfügbaren Ergebnissen fortfährt.
 
-## Zusammenführen von Eingaben
+## Input-Zusammenführung
 
-Wie Knoten Eingaben empfangen, hängt von den Diskriminatoren und davon ab, ob `args` konfiguriert ist.
+Wie Knoten Inputs empfangen, hängt von den Diskriminatoren ab und davon, ob `args` konfiguriert ist.
 
-**Ohne `args` – eine Standardeingabe:**
+**Ohne args — einzelner Default-Input:**
 
 ```lua
 :func("source"):to("target")
--- target receives: raw content (unwrapped)
+-- target erhält: Rohinhalt (nicht eingepackt)
 ```
 
-**Ohne `args` – eine benannte Eingabe:**
+**Ohne args — einzelner benannter Input:**
 
 ```lua
 :func("source"):to("target", "task")
--- target receives: { task = content }
+-- target erhält: { task = content }
 ```
 
-**Ohne `args` – mehrere Eingaben:**
+**Ohne args — mehrere Inputs:**
 
 ```lua
 :func("source1"):to("target", "data")
 :func("source2"):to("target", "config")
--- target receives: { data = content1, config = content2 }
+-- target erhält: { data = content1, config = content2 }
 ```
 
-**Mit `args` – Eingaben werden in die Basis eingefügt:**
+**Mit args — Inputs werden in die Basis gemergt:**
 
 ```lua
 :func("app:api_client", {
     args = { base_url = "https://api.com", timeout = 5000 }
 })
--- with :to("api_client", "body") from upstream
--- api_client receives: { base_url = "https://api.com", timeout = 5000, body = content }
+-- mit :to("api_client", "body") von einem vorgelagerten Knoten
+-- api_client erhält: { base_url = "https://api.com", timeout = 5000, body = content }
 ```
 
 <note>
-Knoten mit <code>args</code> können keine Eingaben mit dem Diskriminator <code>"default"</code> empfangen. Verwenden Sie stattdessen benannte Diskriminatoren mit <code>:to(target, "input_key")</code>.
+Knoten mit <code>args</code> können keine Inputs mit dem Diskriminator <code>"default"</code> empfangen. Verwenden Sie stattdessen benannte Diskriminatoren mit <code>:to(target, "input_key")</code>.
 </note>
 
-## Eingabetransformationen
+## Input-Transformationen
 
 Transformieren Sie Daten, bevor sie einen Knoten erreichen:
 
 ```lua
--- String transform: single expression
+-- String-Transformation: einzelner Ausdruck
 :func("app:step", { input_transform = "input.nested.field" })
 
--- Table transform: named expressions
+-- Tabellen-Transformation: benannte Ausdrücke
 :func("app:step", {
     input_transform = {
         task = "inputs.task",
@@ -247,9 +245,9 @@ Transformieren Sie Daten, bevor sie einen Knoten erreichen:
 })
 ```
 
-In Transformationen stehen die Kontextvariablen `input` (Workflow-Eingabe), `inputs` (alle eingehenden Knoteneingaben) und `output` (aktuelle Knotenausgabe bei der Weiterleitung) zur Verfügung.
+In Transformationen verfügbare Kontextvariablen: `input` (Workflow-Eingabe), `inputs` (alle eingehenden Knoten-Inputs), `output` (Output des aktuellen Knotens beim Routing).
 
-### Inline-Routentransformationen
+### Inline-Routen-Transformationen
 
 Der dritte Parameter von `:to()` ist ein Inline-Transformationsausdruck:
 
@@ -262,9 +260,9 @@ Der dritte Parameter von `:to()` ist ein Inline-Transformationsausdruck:
 
 ## Knotentypen
 
-### Funktionsknoten
+### Function-Knoten
 
-Führt einen registrierten Eintrag vom Typ `function.lua` aus:
+Führt einen registrierten `function.lua`-Eintrag aus:
 
 ```lua
 :func("app:my_function", {
@@ -278,17 +276,17 @@ Führt einen registrierten Eintrag vom Typ `function.lua` aus:
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `args` | table | Basisargumente, die mit den Knoteneingaben zusammengeführt werden |
-| `inputs` | table | Eingabeanforderungen: `{ required = {...}, optional = {...} }` |
-| `context` | table | An die Funktion übergebener Ausführungskontext |
-| `input_transform` | string/table | Ausdruck zum Transformieren von Eingaben |
-| `metadata` | table | Knotenmetadaten, zum Beispiel `{ title = "..." }` |
+| `args` | table | Basisargumente, die mit den Knoten-Inputs gemergt werden |
+| `inputs` | table | Input-Anforderungen: `{ required = {...}, optional = {...} }` |
+| `context` | table | Ausführungskontext, der an die Funktion übergeben wird |
+| `input_transform` | string/table | Ausdruck zur Transformation der Inputs |
+| `metadata` | table | Knoten-Metadaten (z. B. `{ title = "..." }`) |
 
-Gibt die Funktion `{ _control = { commands = [...] } }` zurück, startet der Orchestrator einen untergeordneten Workflow. Darauf beruhen verschachtelte Flows.
+Gibt die Funktion `{ _control = { commands = [...] } }` zurück, startet der Orchestrator einen Kind-Workflow. So funktionieren verschachtelte Flows.
 
-### Agentenknoten
+### Agent-Knoten
 
-Führt einen Agenten mit Tool-Aufrufen und optionaler strukturierter Ausgabe aus:
+Führt einen Agenten mit Tool-Aufrufen und optionalem strukturiertem Exit aus:
 
 ```lua
 :agent("app:content_writer", {
@@ -316,21 +314,19 @@ Führt einen Agenten mit Tool-Aufrufen und optionaler strukturierter Ausgabe aus
 |--------|------|-------------|
 | `model` | string | Modell überschreiben |
 | `arena.prompt` | string | System-Prompt |
-| `arena.max_iterations` | number | Höchstzahl der Schlussfolgerungsschleifen (Standard: 32) |
-| `arena.min_iterations` | number | Mindestzahl der Iterationen vor dem Beenden (Standard: 1) |
+| `arena.max_iterations` | number | Maximale Reasoning-Schleifen (Standard: 32) |
+| `arena.min_iterations` | number | Minimale Iterationen vor dem Exit (Standard: 1) |
 | `arena.tool_calling` | string | `"auto"`, `"any"` (erfordert `exit_schema`), `"none"` (lehnt `exit_schema` ab) |
-| `arena.tools` | array | Registry-IDs der Tools |
-| `arena.exit_schema` | table | JSON-Schema für die strukturierte Ausgabe |
-| `arena.exit_func_id` | string | Funktion zum Validieren der Endausgabe |
+| `arena.tools` | array | Tool-Registry-IDs |
+| `arena.exit_schema` | table | JSON-Schema für den strukturierten Exit |
+| `arena.exit_func_id` | string | Funktion zur Validierung des Exit-Outputs |
 | `arena.context` | table | Zusätzlicher Kontext |
-| `inputs` | table | Eingabeanforderungen |
-| `active_traits` | array | Aktive Traits des ausgewählten Agenten überschreiben; ein leeres Array deaktiviert sie für diesen Knoten |
-| `active_tools` | array | Aktive Tools des ausgewählten Agenten überschreiben; ein leeres Array deaktiviert sie für diesen Knoten |
-| `show_tool_calls` | boolean | Tool-Aufrufe in die Ausgabe aufnehmen |
-| `input_transform` | string/table | Eingaben transformieren |
-| `metadata` | table | Knotenmetadaten |
+| `inputs` | table | Input-Anforderungen |
+| `show_tool_calls` | boolean | Tool-Aufrufe in den Output aufnehmen |
+| `input_transform` | string/table | Inputs transformieren |
+| `metadata` | table | Knoten-Metadaten |
 
-**Dynamische Agentenauswahl:** Übergeben Sie als Agenten-ID eine leere Zeichenkette und lösen Sie sie über `input_transform` auf:
+**Dynamische Agentenauswahl:** Übergeben Sie einen leeren String als Agent-ID und lösen Sie sie über `input_transform` auf:
 
 ```lua
 :agent("", {
@@ -346,11 +342,11 @@ Führt einen Agenten mit Tool-Aufrufen und optionaler strukturierter Ausgabe aus
 })
 ```
 
-**Validierung der Endausgabe:** Ist `exit_func_id` gesetzt, validiert die Funktion die Endausgabe des Agenten. Bei einem Validierungsfehler erhält der Agent den Fehler als Beobachtung und fährt bis höchstens `max_iterations` fort.
+**Exit-Validierung:** Ist `exit_func_id` gesetzt, validiert die Funktion den Exit-Output des Agenten. Schlägt die Validierung fehl, erhält der Agent den Fehler als Beobachtung und fährt fort (bis zu `max_iterations`).
 
-### Zyklusknoten
+### Cycle-Knoten
 
-Führt eine Funktion oder Vorlage wiederholt mit persistentem `state` aus:
+Iteriert eine Funktion oder ein Template wiederholt mit persistentem Zustand:
 
 ```lua
 :cycle({
@@ -359,31 +355,30 @@ Führt eine Funktion oder Vorlage wiederholt mit persistentem `state` aus:
     initial_state = {
         entry_id = entry_id,
         content_prompt = prompt,
-        task = task,
         min_score = 8.0,
         feedback_history = {}
     }
 })
 ```
 
-Die Zyklusfunktion erhält bei jeder Iteration:
+Die Zyklusfunktion erhält in jeder Iteration:
 
 ```lua
 {
-    input = <workflow_input>,  -- only on the first iteration (iteration == 1); nil thereafter
+    input = <workflow_input>,  -- nur in der ersten Iteration (iteration == 1); danach nil
     state = <accumulated_state>,
     last_result = <previous_iteration_output>,
     iteration = <current_iteration_number>
 }
 ```
 
-`input` enthält die Workflow-Eingabe nur in der ersten Iteration und danach `nil`. Legen Sie alles, was über mehrere Iterationen benötigt wird, in `state` ab.
+`input` enthält die Workflow-Eingabe nur in der ersten Iteration und ist danach `nil`; alles, was über Iterationen hinweg benötigt wird, muss in `state` abgelegt werden.
 
 Die Funktion steuert die Fortsetzung:
 
 ```lua
 function my_cycle(cycle_context)
-    -- stop if approved
+    -- anhalten, wenn freigegeben
     if cycle_context.last_result and cycle_context.last_result.approved then
         return {
             state = cycle_context.state,
@@ -392,8 +387,8 @@ function my_cycle(cycle_context)
         }
     end
 
-    -- spawn child workflow for this iteration
-    -- task is read from state since cycle_context.input is nil after iteration 1
+    -- Kind-Workflow für diese Iteration starten
+    -- task wird aus state gelesen, da cycle_context.input ab Iteration 2 nil ist
     return flow.create()
         :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
@@ -404,17 +399,13 @@ end
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `func_id` | string | Iterationsfunktion; schließt `template` aus |
-| `template` | FlowBuilder | Vorlage für jede Iteration; schließt `func_id` aus |
-| `max_iterations` | number | Höchstzahl der Iterationen (Standard: 100) |
-| `initial_state` | table | Anfangszustand (Standard: `{}`) |
-| `continue_condition` | string | Ausdruck: fortsetzen, solange er wahr ist |
-| `inputs` | table | Eingabeanforderungen |
-| `context` | table | An die Zyklusfunktion übergebener Ausführungskontext |
-| `input_transform` | string/table | Eingaben transformieren, bevor der Zyklus sie empfängt |
-| `metadata` | table | Knotenmetadaten |
+| `func_id` | string | Iterationsfunktion (schließt `template` aus) |
+| `template` | FlowBuilder | Template für jede Iteration (schließt `func_id` aus) |
+| `max_iterations` | number | Maximale Anzahl an Iterationen |
+| `initial_state` | table | Anfangszustand |
+| `continue_condition` | string | Ausdruck: fortsetzen, solange true |
 
-**Vorlagenbasierter Zyklus:**
+**Template-basierter Zyklus:**
 
 ```lua
 :cycle({
@@ -425,9 +416,9 @@ end
 })
 ```
 
-### Parallelknoten
+### Parallel-Knoten
 
-Map-Reduce-Muster für Arrays:
+Map-Reduce-Muster über Arrays:
 
 ```lua
 :parallel({
@@ -436,8 +427,7 @@ Map-Reduce-Muster für Arrays:
     iteration_input_key = "spec",
     passthrough_keys = { "task" },
     batch_size = 10,
-    scheduling = "rolling",
-    on_error = "continue",
+    on_error = "collect_errors",
     filter = "successes",
     unwrap = true,
     template = flow.template()
@@ -459,20 +449,16 @@ Map-Reduce-Muster für Arrays:
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `source_array_key` | string | Eingabeschlüssel mit einem nicht leeren Array (erforderlich) |
-| `template` | FlowBuilder | Vorlage für jedes Element (erforderlich; muss zu `@success` führen) |
-| `iteration_input_key` | string | Eingabeschlüssel des aktuellen Elements (Standard: `"default"`) |
-| `batch_size` | number | Positive Ganzzahl bis 1000; Höchstzahl gleichzeitig laufender Elemente (Standard: 1) |
-| `scheduling` | string | `"batch"` (Standard) wartet auf eine vollständige Welle; `"rolling"` füllt frei gewordene Plätze fortlaufend nach und erfordert `on_error = "continue"` |
-| `on_error` | string | `"continue"` (Standard) oder `"fail_fast"`; `"collect_errors"` bleibt ein Kompatibilitätsalias für `"continue"` |
-| `filter` | string | `"all"` (Standard), `"successes"` oder `"failures"` |
-| `unwrap` | boolean | Rohergebnisse statt umhüllter Metadaten zurückgeben (Standard: `false`) |
-| `passthrough_keys` | array | Eingabeschlüssel, die an jede Iteration weitergereicht werden |
-| `inputs` | table | Eingabeanforderungen |
-| `input_transform` | string/table | Eingaben vor der parallelen Verarbeitung transformieren |
-| `metadata` | table | Knotenmetadaten |
+| `source_array_key` | string | Input-Schlüssel, der das Array enthält (erforderlich) |
+| `template` | FlowBuilder | Template für jedes Element (erforderlich, muss zu `@success` routen) |
+| `iteration_input_key` | string | Input-Schlüssel für das aktuelle Element (Standard: `"default"`) |
+| `batch_size` | number | Elemente pro parallelem Batch (Standard: 1 = sequenziell) |
+| `on_error` | string | `"collect_errors"` (Standard) oder `"fail_fast"` |
+| `filter` | string | `"all"` (Standard), `"successes"`, `"failures"` |
+| `unwrap` | boolean | Rohergebnisse statt eingepackter Metadaten zurückgeben (Standard: false) |
+| `passthrough_keys` | array | Input-Schlüssel, die an jede Iteration weitergereicht werden |
 
-**Durchgereichte Schlüssel** stellen jeder Iteration gemeinsamen Kontext wie Konfiguration oder Aufgabenbeschreibung bereit, ohne die Daten im Quellarray zu duplizieren:
+**Passthrough-Schlüssel** stellen jeder Iteration gemeinsamen Kontext (Konfiguration, Aufgabenbeschreibung) bereit, ohne Daten im Quell-Array zu duplizieren:
 
 ```lua
 :with_data(file_list):as("files"):to("processor", "files")
@@ -491,7 +477,7 @@ Map-Reduce-Muster für Arrays:
 }):as("processor")
 ```
 
-### Signalknoten
+### Signal-Knoten
 
 Pausiert die Ausführung, bis ein externes Signal eintrifft. Wird für menschliche Freigaben, externe Ereignisse oder mehrstufige Workflows verwendet:
 
@@ -506,8 +492,7 @@ Pausiert die Ausführung, bis ein externes Signal eintrifft. Wird für menschlic
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
 | `signal_id` | string | Signalname, der mit `client:signal()` abgeglichen wird. Wenn leer oder weggelassen, wird zur Laufzeit eine UUID v7 generiert |
-| `timeout` | string/number | Positive Zeitangabe oder positive endliche Millisekundenzahl; bei Ablauf entsteht `{ timeout = true, code = "SIGNAL_TIMEOUT" }` |
-| `inputs` | table | Eingabeanforderungen |
+| `inputs` | table | Input-Anforderungen |
 | `input_transform` | string/table | Transformiert Inputs, bevor der Knoten sie erhält |
 | `metadata` | table | Knoten-Metadaten |
 
@@ -515,15 +500,15 @@ Senden Sie das Signal von außerhalb des Workflows über die Client-API (siehe `
 
 #### Verhalten
 
-Der Knoten gibt mit `wait_for_signal = true` die Ausführung ab und persistiert diesen Yield im Workflow-Zustand. Der Orchestrator nimmt den Knoten wieder auf, wenn ein passender `NODE_SIGNAL`-Commit eintrifft.
+Der Knoten yieldet mit `wait_for_signal = true` und persistiert diesen Yield im Workflow-Zustand. Der Orchestrator nimmt den Knoten wieder auf, wenn ein passender `NODE_SIGNAL`-Commit eintrifft.
 
-- `client:signal()` speichert ausgelassene, `nil`- oder `false`-Daten als `{}`. Dieses leere Objekt erfüllt den Yield ebenso wie erhaltene Werte, etwa `0` und `""`.
+- Das Signal wird durch jede nicht-`nil` Payload erfüllt. `false`, `0`, `""` und `{}` erfüllen den Yield alle; nur `nil` lässt ihn ausstehend.
 - Ein Signal-Yield blockiert `COMPLETE_WORKFLOW`, aber nicht andere ausstehende Knoten — parallele Zweige werden weiter ausgeführt, während ein Zweig wartet.
-- `client:signal()` reiht das Signal dauerhaft ein und fordert die Aktivierung des Workflows an. Erreicht das Signal den Workflow, bevor der Knoten seinen Yield erreicht, wird es beim Erfassen des Yields zugestellt; ein separater Aufruf von `:start()` ist nicht erforderlich.
+- Signale können vor `:start()` vorab in die Warteschlange gestellt werden: Wenn ein passender `NODE_SIGNAL`-Commit eintrifft, bevor der Signal-Knoten den Yield erreicht, wird er in dem Moment zugestellt, in dem der Yield erfasst wird.
 - Nur ein Signal erfüllt jeden Yield. Wenn ein zweites Signal mit derselben `signal_id` eintrifft, bevor der Yield erfüllt ist, überschreibt es das erste.
-- Teilen mehrere aktive Yields dieselbe `signal_id`, empfängt ein passender Yield die Daten; welcher, ist nicht festgelegt. Verwenden Sie eindeutige IDs, wenn der Empfänger relevant ist.
-- Wird `signal_id` ausgelassen, entsteht eine UUID v7, die der Builder nicht zurückgibt. Legen Sie für über die Client-API zugestellte Signale eine explizite, stabile ID fest.
-- Die zugestellten Signaldaten werden als Signal-Payload an die Ausgabe des Knotens übergeben.
+- Wenn mehrere Signal-Yields dieselbe `signal_id` teilen, erhält der erste passende Yield die Daten.
+- Wenn das Feld `signal_id` fehlt, fällt der Abgleich auf den Diskriminator des Knotens zurück.
+- Die zugestellten Signaldaten werden als Signal-Payload an den Output des Knotens übergeben.
 
 #### Dauerhaftigkeit und Wiederherstellung
 
@@ -537,33 +522,18 @@ Verwaiste Signal-Yields (Yields, deren Elternprozess ohne Abschluss beendet wurd
 
 #### Pipeline-Muster
 
-Signal-Knoten können in jeder Topologie verwendet werden. Ergänzen Sie die
-Client-Bindung neben dem oben gezeigten Import `flow`:
-
-```yaml
-imports:
-  client: userspace.dataflow:client
-```
+Signal-Knoten nehmen an jeder Topologie teil:
 
 ```lua
-local client = require("client")
-local c, client_err = client.new()
-if client_err then return nil, client_err end
-
--- Human-in-the-loop approval between two functions
-local approval_id, start_err = flow.create()
-    :with_input({ draft_id = "draft-123" })
+-- Human-in-the-Loop-Freigabe zwischen zwei Funktionen
+flow.create()
     :func("app:draft")
     :signal({ signal_id = "approve_draft" })
     :func("app:publish")
-    :start()
-if start_err then return nil, start_err end
+    :run()
 
-local _, signal_err = c:signal(approval_id, "approve_draft", { approved = true })
-if signal_err then return nil, signal_err end
-
--- Two parallel approvals that must both arrive before release
-local release_id, release_err = flow.create()
+-- Zwei parallele Freigaben, die beide vor der Veröffentlichung eintreffen müssen
+flow.create()
     :with_input({ doc = "release-notes" })
         :as("trigger")
         :to("legal", "doc")
@@ -582,21 +552,14 @@ local release_id, release_err = flow.create()
         :to("release")
 
     :func("app:release"):as("release"):to("@success")
-    :start()
-if release_err then return nil, release_err end
-
-local _, legal_err = c:signal(release_id, "legal_ok", { approved_by = "legal" })
-if legal_err then return nil, legal_err end
-
-local _, finance_err = c:signal(release_id, "finance_ok", { approved_by = "finance" })
-if finance_err then return nil, finance_err end
+    :run()
 ```
 
-Gespeicherte Signaldaten stehen als Knotenausgabe bereit. Nachgelagerte Knoten erhalten die übermittelte Payload; ausgelassene, `nil`- oder `false`-Daten werden jedoch zu `{}` normalisiert.
+Signaldaten werden als Knoten-Output bereitgestellt, sodass nachgelagerte Knoten alles erhalten, was an `client:signal()` übergeben wurde.
 
 ### Join-Knoten
 
-Sammelt mehrere Eingaben, bevor die Ausführung fortgesetzt wird:
+Sammelt mehrere Inputs, bevor es weitergeht:
 
 ```lua
 :join({
@@ -608,15 +571,13 @@ Sammelt mehrere Eingaben, bevor die Ausführung fortgesetzt wird:
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `output_mode` | string | `"object"` (Standard) oder `"array"` (Ankunftsreihenfolge) |
-| `ignored_keys` | array | Eingabeschlüssel, die von der Ausgabe ausgeschlossen werden |
-| `inputs` | table | Eingabeanforderungen |
-| `input_transform` | string/table | Eingaben vor dem Zusammenführen transformieren |
-| `metadata` | table | Knotenmetadaten |
+| `output_mode` | string | `"object"` (Standard) oder `"array"` (Reihenfolge des Eintreffens) |
+| `ignored_keys` | array | Input-Schlüssel, die aus dem Output ausgeschlossen werden |
+| `inputs` | table | Input-Anforderungen |
 
 ## Templates
 
-Vorlagen definieren wiederverwendbare Unter-Workflows. Erstellen Sie eine Vorlage mit `flow.template()` und fügen Sie sie mit `:use()` ein:
+Templates definieren wiederverwendbare Teil-Workflows. Verwenden Sie `flow.template()` zum Erstellen und `:use()` zum Einfügen:
 
 ```lua
 local preprocessor = flow.template()
@@ -630,11 +591,11 @@ flow.create()
     :run()
 ```
 
-Beim Kompilieren fügt die Vorlage ihre Operationen in den übergeordneten Flow ein.
+Templates fügen ihre Operationen zur Kompilierzeit inline in den übergeordneten Flow ein.
 
 ## Verschachtelte Workflows
 
-In Zyklen und Parallelknoten verwendete Funktionen können einen untergeordneten Workflow starten, indem sie `flow.create():run()` zurückgeben:
+Funktionen, die in Cycle- und Parallel-Knoten verwendet werden, können Kind-Workflows starten, indem sie `flow.create():run()` zurückgeben:
 
 ```lua
 function my_processor(input)
@@ -646,15 +607,15 @@ function my_processor(input)
 end
 ```
 
-Wird `:run()` in einem vorhandenen Dataflow-Kontext ausgeführt, liefert es `{ _control = { commands = [...] } }`, statt den Workflow direkt auszuführen. Der Orchestrator verarbeitet den untergeordneten Workflow über den Yield-Mechanismus.
+Wird `:run()` innerhalb eines bestehenden Dataflow-Kontexts ausgeführt, gibt es `{ _control = { commands = [...] } }` zurück, statt direkt auszuführen. Der Orchestrator behandelt den Kind-Workflow über den Yield-Mechanismus.
 
 <note>
-Eine Funktion, die einen untergeordneten Workflow starten soll, muss <code>flow.create():run()</code> zurückgeben. Andere Dataflow-Funktionen dürfen gewöhnliche Ergebnisse liefern.
+Funktionen, die an der Dataflow-Komposition teilnehmen, <strong>müssen</strong> <code>flow.create():run()</code> zurückgeben. Funktionen, die etwas anderes zurückgeben, können keine Kind-Workflows starten.
 </note>
 
-## Synchrone und asynchrone Ausführung
+## Synchron vs. asynchron
 
-`:run()` führt den Workflow synchron aus. Normalerweise liefert es die abschließende Workflow-Ausgabe. Eine dauerhafte Wartebedingung kann die Ausführung jedoch zuvor passivieren; dann enthält das Ergebnis neben der Workflow-ID sowohl `pending = true` als auch `passivated = true`.
+`:run()` blockiert, bis der Workflow abgeschlossen ist, und gibt den Output zurück:
 
 ```lua
 local result, err = flow.create()
@@ -663,7 +624,7 @@ local result, err = flow.create()
     :run()
 ```
 
-`:start()` liefert sofort eine Workflow-ID zurück:
+`:start()` kehrt sofort mit einer Workflow-ID zurück:
 
 ```lua
 local dataflow_id, err = flow.create()
@@ -672,11 +633,11 @@ local dataflow_id, err = flow.create()
     :start()
 ```
 
-In verschachtelten Kontexten ist `:start()` nicht zulässig.
+`:start()` kann in verschachtelten Kontexten nicht verwendet werden.
 
-## Client API
+## Client-API
 
-Verwenden Sie die Client-API zur programmgesteuerten Verwaltung von Workflows:
+Für die programmatische Workflow-Verwaltung:
 
 ```yaml
 imports:
@@ -691,89 +652,88 @@ local c, err = client.new()
 
 | Methode | Beschreibung |
 |--------|-------------|
-| `client.new()` | Client erstellen; erfordert den aktuellen Security Actor und Scope |
-| `:create_workflow(commands, options?)` | Workflow erstellen; liefert `dataflow_id` |
-| `:execute(dataflow_id, options?)` | Synchron ausführen; liefert das Ergebnis |
-| `:start(dataflow_id, options?)` | Asynchron ausführen; liefert `dataflow_id` |
-| `:output(dataflow_id)` | Workflow-Ausgaben abrufen |
+| `client.new()` | Client erstellen (erfordert einen Security-Actor) |
+| `:create_workflow(commands, options?)` | Workflow erstellen, gibt `dataflow_id` zurück |
+| `:execute(dataflow_id, options?)` | Synchron ausführen, gibt das Ergebnis zurück |
+| `:start(dataflow_id, options?)` | Asynchron ausführen, gibt `dataflow_id` zurück |
+| `:output(dataflow_id)` | Workflow-Outputs abrufen |
 | `:get_status(dataflow_id)` | Aktuellen Status abrufen |
-| `:cancel(dataflow_id, timeout?)` | Kontrolliert abbrechen (Standard: 30 s) |
-| `:terminate(dataflow_id)` | Sofort beenden |
-| `:signal(dataflow_id, signal_id, data?)` | Externes Signal an einen wartenden Signalknoten liefern |
-| `:revive(dataflow_id)` | Aktivierung eines nicht abgeschlossenen Workflows anfordern |
+| `:cancel(dataflow_id, timeout?)` | Sanft abbrechen (Standard: 30s) |
+| `:terminate(dataflow_id)` | Zwangsweise beenden |
+| `:signal(dataflow_id, signal_id, data?)` | Liefert ein externes Signal an einen wartenden Signal-Knoten |
 
 ## Workflow-Status
 
 | Status | Beschreibung |
 |--------|-------------|
-| `pending` | Erstellt, aber noch nicht ausgeführt |
-| `running` | Workflow-Ausführung ist aktiv |
-| `waiting` | Passiviert und wartet auf ein dauerhaftes Ereignis wie ein Signal |
+| `template` | Knoten ist eine Template-Instanz |
+| `pending` | Wartet auf Inputs |
+| `ready` | Inputs gesammelt, bereit zur Ausführung |
+| `running` | Wird aktiv ausgeführt |
+| `paused` | Yieldet, wartet auf Kind-Workflow |
 | `completed` | Erfolgreich abgeschlossen |
 | `failed` | Fehlgeschlagen |
 | `cancelled` | Vom Benutzer abgebrochen |
-| `terminated` | Sofort beendet |
+| `skipped` | Bedingter Zweig nicht genommen |
+| `terminated` | Zwangsweise beendet |
 
-Knoten besitzen einen eigenen Lebenszyklus. Aktuelle Knotenübergänge verwenden `template`, `pending`, `running`, `waiting`, `completed`, `failed` und `cancelled`. `ready` wird beim Laden als Workflow-Aktivierungsstatus akzeptiert. `paused`, `skipped` und `terminated` auf Knotenebene bleiben als Kompatibilitätswerte erkannt, werden von aktuellen Knotenübergängen aber nicht geschrieben.
-
-## Metadata
+## Metadaten
 
 ```lua
 flow.create()
     :with_title("Document Processing Pipeline")
     :with_metadata({ source = "api", priority = "high" })
-    :with_input({ document_id = "doc-123" })
     :func("app:process", { metadata = { title = "Process Document" } })
     :run()
 ```
 
-Ohne Angabe lautet der Titel standardmäßig "Flow Builder Workflow".
+Der Titel ist standardmäßig "Flow Builder Workflow", wenn keiner angegeben wird.
 
 ## Validierungsregeln
 
-Der Compiler validiert den Workflow-Graphen vor der Ausführung:
+Der Compiler validiert Workflows zur Kompilierzeit:
 
-- Alle Namen aus `:as(name)` müssen eindeutig sein.
-- Alle Ziele von `:to()` und `:error_to()` müssen vorhandene Namen referenzieren; ausgenommen sind `@success` und `@fail`.
-- Der Graph muss azyklisch sein.
-- Alle Knoten benötigen eine eingehende Route von einem anderen Knoten, der Workflow-Eingabe oder statischen Daten.
-- `:cycle()` erfordert entweder `func_id` oder `template`, nicht beides.
-- `:parallel()` erfordert `source_array_key` und `template`.
-- Mindestens ein Pfad muss zu `@success` führen oder eine automatische Ausgabe besitzen.
-- Bei Knoten darf `:when()` nur auf `:to()` oder `:error_to()` folgen, nicht auf statische Daten.
-- Knoten mit `args` oder einem `input_transform` in Zeichenkettenform können keine Eingaben mit dem Diskriminator `"default"` empfangen.
+- Alle `:as(name)`-Namen müssen eindeutig sein
+- Alle `:to()`- und `:error_to()`-Ziele müssen auf vorhandene Namen verweisen (außer `@success`, `@fail`)
+- Der Graph muss azyklisch sein
+- Alle Knoten müssen eingehende Routen haben (von einem anderen Knoten, der Workflow-Eingabe oder statischen Daten)
+- `:cycle()` erfordert `func_id` oder `template` (nicht beides)
+- `:parallel()` erfordert `source_array_key` und `template`
+- Mindestens ein Pfad muss zu `@success` führen oder einen automatischen Output haben
+- `:when()` folgt nur auf `:to()` oder `:error_to()` von Knoten (nicht von statischen Daten)
+- Knoten mit `args` können keine Inputs mit dem Diskriminator `"default"` empfangen
 
 ## Ausdrucksreferenz
 
-Ausdrücke verwenden die Syntax des Moduls `expr`. Sie steht in `:when()`-Bedingungen und in Werten von `input_transform` zur Verfügung.
+Ausdrücke verwenden die Syntax des `expr`-Moduls und stehen in `:when()`-Bedingungen und `input_transform`-Werten zur Verfügung.
 
-**Operatoren:** `+`, `-`, `*`, `/`, `%`, `**`, `&`, `|`, `^`, `<<`, `>>`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `in`, `contains`, `startsWith`, `endsWith`
+**Operatoren:** `+`, `-`, `*`, `/`, `%`, `**`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`, `!`, `contains`, `startsWith`, `endsWith`
 
 **Array-Funktionen:** `all()`, `any()`, `none()`, `one()`, `filter()`, `map()`, `count()`, `len()`, `first()`, `last()`
 
 **Mathematische Funktionen:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `round()`, `sqrt()`, `pow()`
 
-**Zeichenkettenfunktionen:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
+**String-Funktionen:** `len()`, `upper()`, `lower()`, `trim()`, `split()`, `join()`
 
 **Typfunktionen:** `type()`, `int()`, `float()`, `string()`
 
-**Literale:** Zahlen, Zeichenketten, boolesche Werte (`true`/`false`), Null (`nil`), Arrays (`[1, 2, 3]`) und Objekte (`{key: value}`)
+**Literale:** Zahlen, Strings, Booleans (`true`/`false`), null (`nil`), Arrays (`[1, 2, 3]`), Objekte (`{key: value}`)
 
-**Ternärer Ausdruck:** `output.age >= 18 ? output.verified : false`
+**Ternärer Operator:** `output.age >= 18 ? output.verified : false`
 
-**Optionale Verkettung:** `output.data?.nested?.value`
+**Optional Chaining:** `output.data?.nested?.value`
 
 ## Fehlerbehandlung
 
 Sowohl `:run()` als auch `:start()` folgen den üblichen Lua-Fehlerkonventionen:
 
-- Erfolg: `data, nil` bei `run` beziehungsweise `dataflow_id, nil` bei `start`
+- Erfolg: `data, nil` (run) oder `dataflow_id, nil` (start)
 - Fehler: `nil, error_message`
 
-Zu den Fehlerkategorien gehören Kompilierungsfehler, Client-Fehler, Fehler beim Erstellen oder Ausführen eines Workflows sowie fehlgeschlagene Workflows.
+Fehlerkategorien: Kompilierungsfehler, Client-Fehler, Fehler bei der Workflow-Erstellung, Ausführungsfehler und Workflow-Fehlschläge.
 
 ## Siehe auch
 
-- [Agenten](framework/agents.md) – Agenten-Framework für Agentenknoten
-- [LLM](framework/llm.md) – von Agenten verwendete Modellschnittstelle
-- [Framework-Überblick](framework/overview.md) – Framework-Module installieren und importieren
+- [Agents](framework/agents.md) - Agent-Framework, das von Agent-Knoten verwendet wird
+- [LLM](framework/llm.md) - LLM-Modul
+- [Framework-Übersicht](framework/overview.md) - Nutzung der Framework-Module

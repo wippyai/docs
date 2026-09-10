@@ -119,9 +119,24 @@ Verbleibende Pfadsegmente mit `{param...}` erfassen:
   func: serve_file
 ```
 
-Der Wildcard-Parameter erfasst die verbleibenden Segmente. Eine Anfrage wie `GET /api/v1/files/docs/guides/readme.md` wird daher mit `req:param("filepath")` gleich `docs/guides/readme.md` weitergeleitet.
+Der Wildcard passt auf die verbleibenden Segmente, sodass eine Anfrage wie `GET /api/v1/files/docs/guides/readme.md` an den Handler weitergereicht wird. Der erfasste Rest wird mit `req:param` unter dem Namen ohne die abschließenden Punkte gelesen:
+
+```lua
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
+```
 
 Der Wildcard muss das letzte Segment im Pfad sein.
+
+## Routen-Vorrang
+
+Alle Router registrieren ihre Endpunkte in einer einzigen Mustermenge, mit dem `prefix` des Routers vorangestellt, und Gos `ServeMux` entscheidet, welches Muster eine Anfrage bedient. Seine Regeln gelten unverändert:
+
+- Das spezifischste Muster gewinnt. Ein Muster ist spezifischer als ein anderes, wenn es eine echte Teilmenge der Anfragen dieses Musters trifft, sodass `/users/admin` gegenüber `/users/{id}` gewinnt und `/files/{name}` gegenüber `/files/{path...}`.
+- Ein Muster mit Methode ist spezifischer als derselbe Pfad ohne Methode, sodass ein `GET`-Endpunkt bei `GET`-Anfragen Vorrang vor einem `*`-Endpunkt auf demselben Pfad hat.
+- Ein abschließendes `{path...}` oder `/` trifft einen ganzen Teilbaum und verliert gegen jedes Muster, das eine Teilmenge davon trifft.
+- Der Abgleich erfolgt auf dem bereinigten, dekodierten Pfad; die Spezifität hängt nie von der Registrierungsreihenfolge ab.
+
+Zwei Muster können auch unmittelbar in Konflikt geraten: Keines ist spezifischer als das andere, doch sie überschneiden sich, wie bei `/users/{id}/settings` und `/users/admin/{section}`. Das ist ein Konfigurationsfehler. Der Router meldet ihn beim Neuaufbau, der Neuaufbau schlägt fehl, und die vorherige Routenmenge bleibt im Betrieb.
 
 ## Handler-Funktionen
 
@@ -129,7 +144,6 @@ Endpunkt-Handler verwenden das Modul `http`, um auf Request- und Response-Objekt
 
 ```lua
 local http = require("http")
-local funcs = require("funcs")
 
 local function handler()
     local req, req_err = http.request()
@@ -142,11 +156,8 @@ local function handler()
     local user, call_err = funcs.call("app.users:get_user", user_id)
     if call_err then return nil, call_err end
 
-    local status_err = res:set_status(http.STATUS.OK)
-    if status_err then return nil, status_err end
-    local write_err = res:write_json(user)
-    if write_err then return nil, write_err end
-    return true
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }

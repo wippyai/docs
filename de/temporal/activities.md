@@ -35,6 +35,7 @@ Die Ausschnitte sind API-Rezepte. Das Zahlungsbeispiel ist illustrativ und erfor
 |------|--------------|--------------|
 | `worker` | Ja | Referenz auf `temporal.worker`-Eintrag |
 | `local` | Nein | Als lokale Activity ausführen (Standard: false) |
+| `name` | Nein | Benutzerdefinierter Activity-Typname (Standard: Eintrags-ID) |
 
 ## Implementierung
 
@@ -169,10 +170,10 @@ end
 | `activity.wait_for_cancellation` | boolean | false | Auf Activity-Stornierung warten |
 | `activity.disable_eager_execution` | boolean | false | Sofortige Ausführung deaktivieren |
 | `activity.retry_policy` | table | - | Retry-Konfiguration (siehe unten) |
-| `activity.versioning_intent` | string oder number | - | Worker-Versionierungsabsicht für die Activity |
-| `activity.summary` | string | - | In den Temporal-Activity-Metadaten angezeigte Zusammenfassung |
-| `activity.priority` | table | - | Prioritätsschlüssel und optionale Fairness-Einstellungen |
-| `activity.name` | string | - | Überschreibung des Activity-Typs |
+| `activity.name` | string | - | Aufzurufender Activity-Typname, wenn er von der Registry-ID abweicht |
+| `activity.summary` | string | - | Menschenlesbare Zusammenfassung, die in der Temporal-UI angezeigt wird |
+| `activity.priority` | table | - | Task-Priorität: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (Build-ID erben) oder `default` (Zuweisungsregeln verwenden) |
 
 Duration-Werte akzeptieren Strings (`"5s"`, `"10m"`, `"1h"`) oder Millisekunden als Zahlen.
 
@@ -247,7 +248,7 @@ Das Feld `local` wird für eine Activity akzeptiert:
         local: true
 ```
 
-Derzeit wird `local: true` zwar geparst, verhält sich aber genauso wie eine reguläre Activity: Die Activity wird über den standardmäßigen Activity-Pfad registriert und ausgeführt. Eine eigenständige lokale Activity-Ausführung gibt es noch nicht; die Einstellung ändert daher weder Latenz noch Task-Queue-Verhalten oder Heartbeating.
+Derzeit wird `local: true` zwar geparst, verhält sich aber identisch zu einer regulären Activity: sie wird über den Standard-Activity-Pfad registriert und ausgeführt. Es gibt noch keine eigene Local-Activity-Ausführung, daher ändert sich weder Latenz noch Task-Queue-Verhalten oder Heartbeating.
 
 ## Activity-Benennung
 
@@ -300,6 +301,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Sicherheitskontext
+
+Eine unter einem Sicherheitskontext geplante Activity erhält den signierten `wippy-security`-Header, dessen Audience die Activity-ID ist. Der Worker prüft Signatur und Audience und führt dann die propagierten `ctx`-Werte und die Sicherheits-Payload auf einem frischen Frame zusammen, bevor die Activity-Funktion läuft.
+
+Diese Zusammenführung ist alles oder nichts und **für die Activity fatal, wenn sie fehlschlägt**: Die Activity gibt einen Fehler zurück, bevor ihr Code ausgeführt wird, sie läuft also nie mit unvollständigem Kontext oder mit einem nicht verifizierten Akteur. Die Zusammenführung schlägt fehl, wenn Signatur oder Audience nicht verifiziert werden, wenn der Envelope inkonsistent ist (ein Akteur ohne Scope oder Policies ohne Akteur) oder wenn eine im Envelope genannte Policy in der lokalen Security-Registry nicht aufgelöst wird — was die häufigste betriebliche Ursache ist: Dem Deployment des Workers fehlt ein Policy-Eintrag, den der Aufrufer hatte.
+
+Der Worker bezieht seine Signier- und Verifizierungsschlüssel aus dem `temporal.client`-Eintrag, auf den er verweist. Siehe [Propagierung des Sicherheitskontexts](temporal/overview.md#security-context-propagation).
+
 ## Fehlerbehandlung
 
 Fehler über das Standard-Lua-Muster zurückgeben:
@@ -329,8 +338,8 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response.status_code >= 400 then
-        return nil, payment_error(response.status_code)
+    if response:status() >= 400 then
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response.body)
@@ -355,9 +364,13 @@ end
 | Fehler | Fehlerart | Wiederholbar | Beschreibung |
 |--------|-----------|--------------|--------------|
 | Anwendungsfehler | Was die Activity zurückgegeben hat | Wird vom zurückgegebenen Fehler übernommen | Von Activity-Code via `return nil, err` zurückgegebener Fehler |
-| Laufzeitabsturz | `Internal` | false | Unbehandelter Lua-Fehler in Activity |
-| Fehlende Activity | `NotFound` | false | Activity nicht beim Worker registriert |
-| Timeout | `Timeout` | false | Activity hat konfiguriertes Timeout überschritten |
+| Laufzeitabsturz | `Internal` | nein | Unbehandelter Lua-Fehler in Activity |
+| Fehlende Activity | `NotFound` | nein | Activity nicht beim Worker registriert |
+| Timeout | `Timeout` | nein | Activity hat konfiguriertes Timeout überschritten |
+| Sicherheitsverifizierung | `Internal` | ja | Signatur-, Audience- oder Envelope-Prüfung des propagierten Sicherheits-Headers fehlgeschlagen |
+| Fehlende Sicherheits-Policy | `Internal` | ja | Eine im Sicherheits-Envelope genannte Policy wird auf diesem Worker nicht aufgelöst |
+
+Beide Sicherheitsfehler treten während der Kontext-Zusammenführung auf, bevor die Activity-Funktion läuft. Sie sind nicht als nicht wiederholbar markiert, sodass die Activity-Retry-Policy sie weiter versucht; Wiederholungen helfen nicht, weil sich weder eine falsche Signatur noch ein fehlender Policy-Eintrag zwischen den Versuchen ändert. `maximum_attempts` bei Activities begrenzen, die schnell fehlschlagen sollen, und einen wiederkehrenden `Internal`-Fehler ohne Activity-Log-Ausgabe als Fehler bei der Kontext-Zusammenführung statt als Fehler in der Activity deuten.
 
 ```lua
 local executor = funcs.new():with_options({

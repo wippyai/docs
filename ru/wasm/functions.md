@@ -121,10 +121,9 @@ pool:
 pool:
   type: adaptive
   max_size: 16       # Upper scaling bound
-  warm_start: true   # Pre-instantiate initial workers
 ```
 
-Максимум эластичного пула по умолчанию -- 100 воркеров, если `max_size` не указан.
+Значение по умолчанию в 100 воркеров применяется только к неявно выбранному пулу (когда `type` не задан). Если явно указать `type: lazy` или `type: adaptive` без `max_size`, максимум по умолчанию -- 16 воркеров.
 
 ### Классы воркеров и привязка к ядрам
 
@@ -194,6 +193,8 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -201,14 +202,26 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## Ограничения выполнения
 
-Установите максимальное время выполнения функции:
+Блок `limits` ограничивает время выполнения функции, память тёплого воркера и сокеты, которые она может открывать:
 
 ```yaml
 limits:
-  max_execution_ms: 5000   # 5 second timeout
+  max_execution_ms: 5000
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-При превышении лимита выполнение отменяется и возвращается ошибка.
+| Поле | По умолчанию | Описание |
+|------|--------------|----------|
+| `max_execution_ms` | без ограничений | Бюджет реального времени на один вызов. При превышении выполнение отменяется и возвращается ошибка. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Триггер утилизации после вызова. Тёплый воркер, линейная память которого превышает это значение, выводится из обращения после вызова, а не переиспользуется. Явный `0` отключает утилизацию по удержанной памяти. |
+| `retained_memory_check_interval` | `16` при встроенном лимите, каждый вызов при явном лимите | Количество вызовов между проверками памяти после вызова. |
+| `max_open_sockets` | `16` | Число одновременно открытых соединений на экземпляр для хоста `socket`. |
+| `socket_timeout_ms` | `30000` | Дедлайн для подключения `socket` и для каждой отправки/приёма. |
+
+Отрицательные значения отклоняются при загрузке.
 
 ## Конфигурация WASI
 
@@ -292,7 +305,7 @@ local active, err = funcs.call("myns:filter_active", users)
 
 ### Асинхронный sleep с WASI Clocks
 
-WASM-компоненты, импортирующие `wasi:clocks` и `wasi:io`, могут использовать часы и опрос (polling). Механизм асинхронной передачи управления интегрируется с диспетчером Wippy:
+WASM-компоненты, импортирующие `wasi:clocks`, `wasi:io` и `wasi:poll`, могут использовать часы и опрос (polling). Механизм асинхронной передачи управления интегрируется с диспетчером Wippy:
 
 ```yaml
   - name: sleep_ms
@@ -303,6 +316,7 @@ WASM-компоненты, импортирующие `wasi:clocks` и `wasi:io`
     method: "test-sleep#sleep-ms"
     imports:
       - wasi:io
+      - wasi:poll
       - wasi:clocks
     pool:
       type: inline

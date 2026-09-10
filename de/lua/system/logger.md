@@ -1,12 +1,11 @@
 ---
 title: "Protokollierung"
-description: "Strukturierte Log-Nachrichten schreiben und Child-Logger mit persistentem Kontext erstellen."
+description: "Strukturierte Protokollierung mit debug, info, warn und error Levels."
 ---
 
 # Protokollierung
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 Das Modul `logger` schreibt strukturierte Nachrichten auf den Stufen Debug, Info, Warn und Error.
@@ -103,4 +102,6 @@ named:info("message")
 
 Ein leerer Name löst einen Lua-Argumentfehler aus; er wird nicht als strukturierter Wert `errors.INVALID` zurückgegeben.
 
-Die Logging-Methoden geben keine strukturierten Fehler zurück. Ungültige Argumenttypen lösen Lua-Argumentfehler aus. Ist dem Ausführungskontext kein Logger zugeordnet, verwirft ein No-op-Logger die Nachricht.
+`logger:named("")` löst einen Lua-Argumentfehler aus (`name cannot be empty`), statt einen Fehlerwert zurückzugeben. Logging-Methoden geben nichts zurück.
+
+Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

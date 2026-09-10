@@ -11,9 +11,9 @@ Dies ist ein Veröffentlichungsworkflow mit Referenz. Die Module, URLs, Tokens, 
 
 ## Voraussetzungen
 
-1. Erstellen Sie ein Konto auf [hub.wippy.ai](https://hub.wippy.ai).
-2. Erstellen Sie eine Organisation oder treten Sie einer bei.
-3. Wählen Sie einen Modulnamen. Die erste Veröffentlichung kann einen fehlenden Namen registrieren, sofern Ihr Konto die Berechtigung besitzt; mit `--create` registrieren Sie ihn vor dem Upload und setzen seine Eigenschaften explizit.
+1. Erstelle ein Konto auf [hub.wippy.ai](https://hub.wippy.ai)
+2. Erstelle eine Organisation oder tritt einer bei
+3. Habe die Berechtigung, Module in dieser Organisation anzulegen — das erste `wippy publish` registriert das Modul automatisch
 
 ## Modulstruktur
 
@@ -41,6 +41,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | Feld | Erforderlich | Beschreibung |
@@ -53,6 +66,16 @@ keywords:
 | `repository` | Nein | URL des Quell-Repositories |
 | `homepage` | Nein | Projekt-Homepage |
 | `keywords` | Nein | Suchschlüsselwörter |
+| `authors` | Nein | Autorenliste |
+| `version` | Nein | Semantische Version; `--version` überschreibt sie |
+| `exclude` | Nein | Muster zum Verwerfen: Werte mit `:` sind Entry-IDs, alles andere ist ein Glob für Quelldateien |
+| `embed` | Nein | Standard-Embed-Muster für `fs.directory`, wenn `--embed` nicht übergeben wird |
+| `exclude_meta` | Nein | Map von Metadatenfeld auf Werte; Einträge, deren Metadaten passen, werden verworfen |
+| `metadata` | Nein | Beliebige Key/Value-Metadaten, die mit dem veröffentlichten Modul mitgeführt werden |
+| `publish.profiles` | Nein | Welche Konfigurationsprofile im Pack ausgeliefert werden (siehe [Veröffentlichungsprofile](#publishing-profiles)) |
+| `publish.runtime` | Nein | Welche Runtime-Konfigurationsabschnitte als Pack-Standardwerte ausgeliefert werden; nur `type: application` |
+
+`exclude` unterscheidet nach Form statt über ein eigenes Feld. `_old/**`, `test/**` und `*.test.lua` filtern Quelldateien, während sie eingesammelt werden; `acme.http:debug_handler` deaktiviert einen Registry-Eintrag, nachdem die Einträge dekodiert wurden. Ein `**`-Segment umfasst beliebig viele Verzeichnissegmente.
 
 `type` ist die maßgebliche Quelle dafür, wie der Hub das Modul klassifiziert, und kann bei einer späteren Veröffentlichung geändert werden; `--module-type` überschreibt es für eine einzelne Veröffentlichung. Wenn es fehlt, erhalten neu erstellte Module standardmäßig den Typ `application` mit einer Deprecation-Warnung.
 
@@ -205,6 +228,15 @@ wippy lint
 wippy publish --dry-run
 ```
 
+Die Veröffentlichung baut das Pack mit und ohne `--dry-run` auf dieselbe Weise, sodass die Validierung alles abdeckt, was die echte Veröffentlichung erzeugen würde:
+
+- `organization` und `module` müssen kleingeschrieben alphanumerisch sein, mit Bindestrichen im Inneren, `version` muss Semver sein, und `type` muss einer der vier Modultypen sein.
+- `publish.runtime` gehört Anwendungen: `source`, `sections` oder `vars` darunter zu deklarieren, schlägt ohne `type: application` fehl.
+- Jede Ressource, die `meta.artifact.format` deklariert, wird von diesem Format geprüft. Ein fehlerhaftes Artefakt scheitert hier statt beim Konsumenten, und zwei Artefakte, deren Ausgaben in überlappenden Verzeichnissen landen würden, werden abgelehnt.
+- Das Format `node-package` verlangt zusätzlich, dass die `package.json` eine semantische `version` trägt, die **der veröffentlichten Modulversion entspricht**, einen gültigen Paket-`name` und kein `preinstall`-, `install`-, `postinstall`- oder `prepare`-Lifecycle-Skript.
+
+Die letzte Regel ist die, die bei einem Release zubeißt: Erhöhe `version` in der `wippy.yaml` und in der `package.json` des Artefakts gemeinsam, sonst bricht die Veröffentlichung ab.
+
 ### 4. Veröffentlichung
 
 ```bash
@@ -232,14 +264,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Statische Dateien einbetten
 
-Wählen Sie einen einzubettenden `fs.directory`-Eintrag entweder mit `--embed` oder über die dauerhafte `embed:`-Liste im Projektmanifest aus. Ausgewählte Einträge werden in `fs.embed`-Ressourcen umgewandelt. Ein nicht ausgewählter `fs.directory`-Eintrag bleibt im Pack, seine referenzierten Verzeichnisinhalte werden jedoch nicht aufgenommen.
-
-```yaml
-# wippy.yaml
-embed:
-  - app:public_files
-  - app:assets
-```
+Module mit `fs.directory`-Einträgen (statische Assets, Templates, öffentliche Dateien) müssen `--embed` verwenden, um sie in das veröffentlichte Paket aufzunehmen. Ohne dieses Flag wird ein `fs.directory`-Eintrag ohne seinen Verzeichnisinhalt gepackt.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

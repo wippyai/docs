@@ -29,11 +29,15 @@ Dateisystem-Einträge stellen Laufzeitmodulen verzeichnisbasierten oder schreibg
 | `directory` | string | erforderlich | Wurzelpfad |
 | `auto_init` | bool | false | Verzeichnis erstellen wenn nicht vorhanden |
 | `mode` | string | 0755 | Unix-Berechtigungsmodus (oktal) |
-| `base` | string | abgeleitet | Basis für relative Pfade: `project` (Arbeitsverzeichnis des Prozesses) oder `module` (Ressourcenwurzel des besitzenden Moduls) |
+| `base` | string | - | Basis für relative Pfade: `project` (Arbeitsverzeichnis des Prozesses) oder `module` (Lade-Wurzel des besitzenden Moduls) |
 
-Bei einem moduleigenen Eintrag wird ein relatives Verzeichnis ohne `base` von der Ressourcenwurzel des besitzenden Moduls aus aufgelöst. Vom Host definierte Einträge bleiben relativ zum Arbeitsverzeichnis des Prozesses. Setzen Sie `base: project`, um für einen Moduleintrag die Auflösung gegen das Arbeitsverzeichnis zu erzwingen, oder `base: module`, um die Auflösung gegen die Modulwurzel ausdrücklich anzufordern. Wenn die Modulzugehörigkeit oder ihre Ressourcenwurzel nicht verfügbar ist, lässt die Runtime den relativen Pfad unverändert.
+Absolute Pfade werden unverändert verwendet, unabhängig von `base`.
 
-Die konfigurierten Owner-Bits des Modus beschränken Operationen; angeforderte Berechtigungen für neu erstellte Dateien und Verzeichnisse werden mit diesem Modus maskiert. Wenn alle Lesebits vorhanden und keine Ausführungsbits gesetzt sind, ergänzt die Runtime die Ausführungsbits, sodass beispielsweise aus `0444` der Modus `0555` wird. Die Betriebssystemberechtigungen des zugrunde liegenden Verzeichnisses gelten weiterhin.
+Bei einem relativen Pfad hält `base: project` ihn relativ zum Arbeitsverzeichnis des Prozesses. Sowohl `base: module` als auch ein nicht gesetztes `base` lösen ihn gegen die Lade-Wurzel des Moduls auf, dem der Eintrag gehört, ermittelt über den Registry-Owner des Eintrags. Hat der Eintrag kein besitzendes Modul oder dieses Modul keine auflösbare Ressourcen-Wurzel, bleibt der Pfad relativ zum Arbeitsverzeichnis des Prozesses.
+
+Jeder andere Wert wird mit `invalid directory base` abgelehnt.
+
+Der Modus beschränkt alle Dateioperationen. Ausführungsbits werden automatisch hinzugefügt, wenn alle Lesebits gesetzt sind und kein Ausführungsbit gesetzt ist.
 
 <note>
 Pfade werden normalisiert und validiert. Es ist nicht möglich, auf Dateien außerhalb des konfigurierten Wurzelverzeichnisses zuzugreifen.
@@ -66,8 +70,6 @@ Beide Dateisystemtypen implementieren:
 | Remove | Ja | Nein |
 | Mkdir | Ja | Nein |
 | Rename | Ja | Nein |
-| Truncate | Ja | Nein |
-| Chtimes | Ja | Nein |
 
 Schreiboperationen auf eingebetteten Dateisystemen geben einen Fehler zurück.
 

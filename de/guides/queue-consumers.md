@@ -26,8 +26,8 @@ flowchart LR
 | `queue` | Erforderlich | - | Queue-Registry-ID |
 | `func` | Erforderlich | - | Handler-Funktions-Registry-ID |
 | `concurrency` | 1 | 1000 | Worker-Anzahl |
-| `prefetch` | 10 | 10000 | Größe des gemeinsamen Zustellungspuffers; AMQP verwendet sie außerdem als QoS-Prefetch-Anzahl des Channels |
-| `auto_ack` | false | - | Backend-spezifische Auto-Ack-Option; bei AMQP fordert `true` die Broker-Bestätigung bei Zustellung an |
+| `prefetch` | 10 | 10000 | Nachrichtenpuffer-Größe |
+| `auto_ack` | false | - | Auto-Ack auf Treiberebene (AMQP `Consume` autoAck; vom Memory-Treiber ignoriert) |
 | `driver_options` | `{}` | - | Treiberspezifische Consumer-Optionen |
 
 ## Entry-Definition
@@ -91,6 +91,8 @@ Sofern der Handler die Zustellung nicht explizit abschließt, verwendet der Cons
 | Zurückgegebener oder ausgelöster Aufruffehler | Nack | Erneute Zustellung ist treiberabhängig |
 
 Gewöhnliche Rückgabewerte einschließlich `false` wählen das Bestätigungsverhalten nicht aus. Verwenden Sie `msg:ack()` oder `msg:nack()` für einen expliziten Abschluss. Der Abschluss erfolgt genau einmal: Der erste gewinnt. Bei AMQP mit `auto_ack: true` bestätigt der Broker bei Zustellung; ein späterer Handlerfehler kann daher keine erneute Zustellung durch den Broker auslösen.
+
+Der Handler kann die Nachricht mit `queue.message()` und `msg:ack()` / `msg:nack()` selbst quittieren; der Consumer überspringt dann sein eigenes Ack/Nack.
 
 ## Worker-Pool
 

@@ -13,9 +13,9 @@ by your organization.
 
 ## Prerequisites
 
-1. Create an account on [hub.wippy.ai](https://hub.wippy.ai).
-2. Create or join an organization.
-3. Choose a module name. The first publish can register a missing name if your account has permission; use `--create` to register it before upload and set its properties explicitly.
+1. Create an account on [hub.wippy.ai](https://hub.wippy.ai)
+2. Create an organization or join one
+3. Have permission to create modules in that organization — the first `wippy publish` registers the module automatically
 
 ## Module Structure
 
@@ -43,6 +43,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | Field | Required | Description |
@@ -55,6 +68,16 @@ keywords:
 | `repository` | No | Source repository URL |
 | `homepage` | No | Project homepage |
 | `keywords` | No | Search keywords |
+| `authors` | No | Author list |
+| `version` | No | Semantic version; `--version` overrides it |
+| `exclude` | No | Patterns to drop: values containing `:` are entry IDs, everything else is a source-file glob |
+| `embed` | No | Default `fs.directory` embed patterns when `--embed` is not passed |
+| `exclude_meta` | No | Metadata field to values map; entries whose metadata matches are dropped |
+| `metadata` | No | Arbitrary key/value metadata carried with the published module |
+| `publish.profiles` | No | Which config profiles to ship in the pack (see [Publishing Profiles](#publishing-profiles)) |
+| `publish.runtime` | No | Which runtime config sections to ship as pack defaults; `type: application` only |
+
+`exclude` splits by shape rather than by a separate field. `_old/**`, `test/**` and `*.test.lua` filter source files as they are collected; `acme.http:debug_handler` disables a registry entry after entries are decoded. A `**` segment spans any number of directory segments.
 
 `type` controls how the Hub classifies the module and can be changed in a later publish. The `--module-type` flag overrides it for one publish. When omitted, a newly created module defaults to `application` with a deprecation warning.
 
@@ -208,6 +231,15 @@ wippy lint
 wippy publish --dry-run
 ```
 
+Publish builds the pack the same way with or without `--dry-run`, so validation covers everything the real publish would produce:
+
+- `organization` and `module` must be lowercase alphanumeric with interior hyphens, `version` must be semver, and `type` must be one of the four module types.
+- `publish.runtime` is application-owned: declaring `source`, `sections`, or `vars` under it without `type: application` fails.
+- Every resource declaring `meta.artifact.format` is inspected by that format. A malformed artifact fails here rather than in a consumer, and two artifacts whose outputs would land in overlapping directories are rejected.
+- The `node-package` format additionally requires `package.json` to carry a semantic `version` that **equals the module version being published**, a valid package `name`, and no `preinstall`, `install`, `postinstall`, or `prepare` lifecycle script.
+
+The last rule is the one that bites during a release: bump `version` in `wippy.yaml` and in the artifact's `package.json` together, or the publish stops.
+
 ### 4. Publish
 
 ```bash
@@ -235,17 +267,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### Embed Static Files
 
-Select an `fs.directory` entry for embedding either with `--embed` or with the
-project manifest's persistent `embed:` list. Selected entries are transformed
-to `fs.embed` resources. An unselected `fs.directory` entry remains in the
-pack, but its referenced directory contents are not included.
-
-```yaml
-# wippy.yaml
-embed:
-  - app:public_files
-  - app:assets
-```
+Modules with `fs.directory` entries (static assets, templates, public files) must use `--embed` to include them in the published package. Without it, an `fs.directory` entry is packed without its directory contents.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

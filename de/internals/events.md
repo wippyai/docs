@@ -53,6 +53,7 @@ Der Bus speichert Zustand in einer einfachen Struktur:
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -77,6 +78,14 @@ Vier Action-Typen fließen durch die Queue:
 | Stop | Leert Subscriber, draint Queue, beendet Loop |
 
 Subscribe und Unsubscribe blockieren, bis der Dispatcher bestätigt. Send arbeitet nach dem Fire-and-Forget-Prinzip. Der Bus akzeptiert höchstens `DefaultMaxSubscribers` Abonnements, standardmäßig 4096; darüber hinaus schlägt das Abonnement mit `ErrSubscribersCapReached` fehl.
+
+`Subscribe` wird mit `ErrSubscribersCapReached` abgelehnt, sobald der Bus `DefaultMaxSubscribers` (4096) aktive Subscriptions hält.
+
+`Subscribe` schlägt sofort fehl, wenn der Subscription-Kontext bereits abgebrochen ist, und erneut im Dispatcher, wenn er vor der Ownership-Entscheidung abgebrochen wird — der Bus übernimmt niemals einen Channel, den er nicht installiert hat.
+
+`Unsubscribe` ist eine Ownership-Barriere, kein Best-Effort-Hinweis. Es kehrt erst zurück, nachdem der Dispatcher bestätigt hat, sodass der Aufrufer den Channel freigeben kann in dem Wissen, dass der Bus keine laufende Send-Referenz mehr hält. Trifft es nach `Stop` ein, wartet die Bestätigung, bis der Dispatcher den bereits gedrainten Batch vollständig zugestellt hat.
+
+`Stop` ist ebenfalls terminal: Ein zweites nebenläufiges `Stop` kehrt nicht vorzeitig über das bereits gesetzte closed-Flag zurück, sondern wartet, bis der Dispatcher gedraint und beendet ist.
 
 ## Queue-Swapping
 
@@ -237,27 +246,22 @@ Jeder Handler implementiert `Pattern()` und `Handle()`. Der Router erstellt eine
 
 ### AwaitService
 
-Request-Response über Pub/Sub. Der Dienst hält ein einziges Abonnement pro Paar `(system, kind)` und ordnet Events anhand von `Path` den Wartenden zu:
+Request-Response über Pub/Sub. Er hält eine einzige Subscription pro `(system, kind)`-Paar und leitet Events anhand von `Path` an die Waiter weiter:
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-if err := svc.Start(ctx); err != nil {
-    return err
-}
+svc.Start(ctx)
 defer svc.Stop()
 
-waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
-if err != nil {
-    return err
-}
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
+result := waiter.Wait()  // liefert AwaitResult{Event, Accepted, Error}
 ```
 
-`Prepare` registriert den Wartenden vor dem Senden des auslösenden Events. Dadurch entsteht kein Rennen, bei dem die Antwort vor der Registrierung eintrifft. `Wait` blockiert bis zu einem Event mit passendem `Path` oder bis zum Timeout. Bei einem nicht positiven Timeout gilt `DefaultAwaitTimeout`, standardmäßig 30 Sekunden. `Accepted` ist wahr, wenn der Event-Kind `accept`, `*.accept` oder `*.accepted` lautet; andernfalls gilt er als Ablehnung, und ein Feld `error` in `Data` erscheint als `Error`. Die Komfortmethode `Await(ctx, system, kind, path, timeout)` kombiniert Prepare und Wait. Die Boot-Infrastruktur registriert einen AwaitService im Kontext, abrufbar über `event.GetAwaitService`.
+`Prepare` registriert den Waiter, bevor das auslösende Event gesendet wird, und vermeidet so die Race-Condition, bei der die Antwort eintrifft, bevor das Warten registriert ist. `Wait` blockiert, bis ein passendes `Path`-Event eintrifft oder der Timeout abläuft (Standard `DefaultAwaitTimeout`, 30s, wenn nicht positiv). `Accepted` ist true, wenn die Event-Kind `accept`, `*.accept` oder `*.accepted` ist; andernfalls gilt die Kind als Ablehnung und ein `error` in `Data` erscheint als `Error`. Die Komfortfunktion `Await(ctx, system, kind, path, timeout)` kombiniert Prepare und Wait. Die Boot-Infrastruktur registriert einen AwaitService im Kontext (`event.GetAwaitService`).
 
 ## Herunterfahren :id=shutdown
 

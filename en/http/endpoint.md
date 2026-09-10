@@ -29,7 +29,7 @@ contracts and identify application calls explicitly.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `meta.router` | registry.ID | Yes | Parent router (referenced by registry ID). |
-| `method` | string | Yes | HTTP method |
+| `method` | string | Yes | HTTP method, or `"*"` for any method |
 | `path` | string | Yes | URL path pattern |
 | `func` | registry.ID | Yes | Function to execute |
 
@@ -47,7 +47,23 @@ Supported methods:
 | `HEAD` | Headers only |
 | `OPTIONS` | CORS preflight (auto-handled) |
 | `TRACE` | Diagnostic loopback |
-| `*` | Match every HTTP method |
+| `*` | Any method |
+
+Method names are uppercase; `method` is required, and any value outside this set is rejected as a configuration error.
+
+### Method-agnostic Endpoints
+
+`method: "*"` registers the path for every HTTP method, and the handler reads the actual method with `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+For a normal endpoint the router also registers an `OPTIONS` handler on the same path, so CORS middleware can answer a preflight without the endpoint running. A `*` endpoint gets no such handler: it already matches `OPTIONS`. Router middleware still wraps it, so configured CORS middleware answers an allowed preflight with `204` before the endpoint runs; any other `OPTIONS` request reaches the endpoint function itself, which must answer it.
 
 ## Path Parameters
 
@@ -99,7 +115,12 @@ Use `{path...}` to match any remaining path segments:
   func: serve_file
 ```
 
-This catch-all segment makes the route match requests like `/files/docs/readme.md`. In that request, `req:param("path")` returns `docs/readme.md`.
+This catch-all segment makes the route match requests like `/files/docs/readme.md`. The captured tail is read like any other parameter, under the name without the trailing dots:
+
+```lua
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
+```
 
 ## Handler Function
 
@@ -137,23 +158,24 @@ return { handler = handler }
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `req:method()` | string, error | HTTP method |
-| `req:path()` | string, error | Request path |
-| `req:param(name)` | string or nil, error | URL parameter |
-| `req:params()` | table, error | All path parameters |
-| `req:query(name)` | string or nil, error | Query parameter |
-| `req:query_params()` | table, error | All query parameters |
-| `req:header(name)` | string or nil, error | Request header |
-| `req:body()` | string, error | Request body |
-| `req:body_json()` | value, error | Parse JSON body |
-| `req:has_body()` | boolean, error | Check if body exists |
-| `req:content_type()` | string or nil, error | Content type |
-| `req:content_length()` | number, error | Body size in bytes |
-| `req:host()` | string, error | Host header |
-| `req:remote_addr()` | string, error | Client address in `IP:port` form unless middleware rewrites it |
-| `req:accepts(type)` | boolean, error | Content negotiation |
-| `req:is_content_type(type)` | boolean, error | Check content type |
-| `req:stream()` | Stream, error | Body as stream for large files |
+| `req:method()` | string | HTTP method |
+| `req:path()` | string | Request path |
+| `req:param(name)` | string | URL parameter |
+| `req:params()` | table | All path parameters |
+| `req:query(name)` | string | Query parameter |
+| `req:query_params()` | table | All query parameters |
+| `req:header(name)` | string | Request header |
+| `req:headers()` | table | All request headers |
+| `req:body()` | string | Request body |
+| `req:body_json()` | table, error | Parse JSON body |
+| `req:has_body()` | boolean | Check if body exists |
+| `req:content_type()` | string | Content type |
+| `req:content_length()` | number | Body size in bytes |
+| `req:host()` | string | Hostname |
+| `req:remote_addr()` | string | Client IP address |
+| `req:accepts(type)` | boolean | Content negotiation |
+| `req:is_content_type(type)` | boolean | Check content type |
+| `req:stream()` | Stream | Body as stream for large files |
 | `req:parse_multipart(max?)` | table, error | Parse multipart form |
 
 ### Response Object

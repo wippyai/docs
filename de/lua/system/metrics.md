@@ -1,6 +1,6 @@
 ---
 title: "Metriken & Telemetrie"
-description: "Anwendungs-Counter, Gauges und Histogrammbeobachtungen erfassen."
+description: "Erfassen Sie Anwendungsmetriken mit Countern, Gauges und Histogrammen."
 ---
 
 # Metriken & Telemetrie

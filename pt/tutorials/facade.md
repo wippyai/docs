@@ -30,7 +30,8 @@ Uma aplicação backend que serve a UI Wippy:
 
 ## Como Funciona
 
-1. O servidor renderiza o shell em `/`.
+1. O shell é renderizado a partir do template do facade e servido em `/` pelo seu servidor
+   HTTP; seus assets e o fallback de deep link vêm de um mount estático no mesmo servidor.
 2. Ao carregar, ele busca `GET /api/public/facade/config`.
 3. Lê `@wippy_token_info` de `localStorage` e redireciona para `login_path` somente quando o item está ausente ou não é JSON válido.
 4. Importa o bundle da CDN (`facade_url + '/module.js'`) e chama `initWippyApp(...)` com a configuração.
@@ -61,6 +62,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -70,7 +72,8 @@ entries:
         value: Verify App
 ```
 
-O shell fornecido busca `/api/public/facade/config`; portanto, o prefixo do router público deve ser `/api/public`.
+O shell requisita sua configuração, script de tema e variáveis CSS sob
+`/api/public/facade/`, então o prefixo do router público deve ser `/api/public`.
 
 ## Executar
 
@@ -88,12 +91,15 @@ Campos selecionados da resposta:
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
-  "login_path": "/login.html",
-  "mode": "compat",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
+  "mode": "compat",
+  "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
@@ -103,9 +109,8 @@ Campos selecionados da resposta:
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "startNavOpen": false, "disableRightPanel": false, "hideSessionSelector": false,
-    "renderEngine": "iframe",
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -146,7 +151,10 @@ Parâmetros são enviados em `parameters`; valores JSON são strings JSON codifi
 | `css_variables` | String JSON de propriedades CSS, como `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | URL do bundle CDN; deixe o padrão salvo ao sobrescrever deliberadamente |
 
-A URL base da API e a URL WebSocket são derivadas em runtime de `PUBLIC_API_URL`, com `http`→`ws` e `https`→`wss`. Se ausente, o navegador usa `window.location.origin`.
+Dois valores são derivados em runtime a partir de `PUBLIC_API_URL` em vez de parâmetros: a
+URL base da API e a URL do WebSocket (`http`→`ws`, `https`→`wss`). O facade a lê através do
+registry de ambiente, então declare-a como uma `env.variable` na sua aplicação. Se não
+definida, o navegador recorre a `window.location.origin`.
 
 ## Limitações
 

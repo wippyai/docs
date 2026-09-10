@@ -1,6 +1,6 @@
 ---
 title: "Security & Access Control"
-description: "Inspect the current actor and scope, evaluate policies, and manage authentication tokens."
+description: "Manage authentication actors, authorization scopes, and access policies."
 ---
 
 # Security & Access Control
@@ -59,18 +59,12 @@ Check whether the current context allows an action on a resource.
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new({
-        message = "Cannot read user data",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new({
-        message = "Cannot modify order",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -256,10 +250,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new({
-        message = "Access denied",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -343,7 +334,7 @@ Validate a token and return its actor and scope.
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, err
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -385,9 +376,7 @@ Security policy evaluation applies to security operations.
 |--------|----------|-------------|
 | `security.policy.get` | Policy ID | Access policy definitions |
 | `security.policy_group.get` | Group ID | Access named scopes |
-| `security.scope.create` | `custom` | Create a custom scope with `new_scope` |
-| `security.scope.create` | `with` | Add a policy with `scope:with` |
-| `security.scope.create` | `without` | Remove a policy with `scope:without` |
+| `security.scope.create` | `custom`, `with`, `without` | Create custom scopes (`new_scope`) and add/remove policies (`scope:with`, `scope:without`) |
 | `security.actor.create` | Actor ID | Create actors |
 | `security.token_store.get` | Store ID | Access token stores |
 | `security.token.validate` | Store ID | Validate tokens |
@@ -402,8 +391,8 @@ See [Security Model](system/security.md) for policy configuration.
 |-----------|------|-----------|
 | No context | `errors.INTERNAL` | no |
 | Empty token store ID | `errors.INVALID` | no |
-| Policy, named-scope, or token-operation permission denied | `errors.INVALID` | no |
-| Actor/scope construction, scope change, or token-store acquisition denied | raises Lua error | no |
+| Permission denied (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | no |
+| Permission denied (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | raised as a Lua error | no |
 | Policy not found | `errors.INTERNAL` | no |
 | Token store not found | `errors.INTERNAL` | no |
 | Token store closed | `errors.INTERNAL` | no |

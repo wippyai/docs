@@ -1,6 +1,6 @@
 ---
 title: "템플릿 엔진"
-description: "Jet template set, source, name, inheritance 및 공유 engine 설정을 구성합니다."
+description: "CloudyKit Jet을 사용한 템플릿 렌더링."
 ---
 
 # 템플릿 엔진
@@ -33,9 +33,9 @@ template 엔트리는 [CloudyKit Jet](https://github.com/CloudyKit/jet) set과 t
 | `engine.development_mode` | bool | false | 템플릿 캐싱 비활성화 |
 | `engine.delimiters.left` | string | `{{` | 변수 시작 구분자 |
 | `engine.delimiters.right` | string | `}}` | 변수 종료 구분자 |
-| `engine.delimiters.comment_left` | string | `{*` | 검증되는 comment opening delimiter; 현재 loader는 적용하지 않음 |
-| `engine.delimiters.comment_right` | string | `*}` | 검증되는 comment closing delimiter; 현재 loader는 적용하지 않음 |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 검증되는 extension list; 현재 loader의 discovery에는 사용되지 않음 |
+| `engine.delimiters.comment_left` | string | `{*` | 검증만 수행, 주석은 항상 Jet의 `{*`를 사용 |
+| `engine.delimiters.comment_right` | string | `*}` | 검증만 수행, 주석은 항상 Jet의 `*}`를 사용 |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | 검증만 수행, 이름 조회는 항상 Jet 내장 `.jet`, `.html.jet`, `.jet.html`을 시도 |
 | `engine.globals` | map | - | 모든 템플릿에서 사용 가능한 변수 |
 
 런타임에서 `development_mode`, 왼쪽 및 오른쪽 expression delimiter, `globals`가 Jet set을 설정합니다. comment-delimiter 및 extension field는 이 릴리스에서 허용되고 검증되지만 in-memory Jet loader가 적용하지 않습니다. 이를 변경해도 parsing이나 template discovery가 달라지지 않습니다.

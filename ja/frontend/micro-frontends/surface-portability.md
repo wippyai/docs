@@ -1,23 +1,16 @@
----
-title: "Surface Portability"
-description: "container query、surface variable、host.surface を使い、browser viewport から独立して view.page application を size 調整する方法。"
----
+# サーフェスの可搬性
 
-# サーフェスポータビリティ :id=surface-portability
+マイクロフロントエンドアプリには**サーフェス** — Web ホストが割り当てる矩形領域 — が与えられます。その領域は通常、ブラウザーウィンドウでは**ありません**。アプリは[マルチパネルレイアウト](../web-host/multi-panel-layout.md)の中の1つのパネルであるかもしれませんし、同じアプリが同じ画面上で、どちらの[レンダリングエンジン](../web-host/render-engines.md)によっても異なるサイズでレンダリングされうるからです。
 
-**分類: focused example を含む rendering contract reference。** CSS、JavaScript、package metadata block は個別の契約 rule を示すもので、完全な application fixture ではありません。
+したがってレイアウトをウィンドウに合わせてサイズ指定するのは、どちらのエンジンでも誤りです。サーフェス契約は、CSS と JavaScript の両方で可搬な代替手段を提供します。
 
-Micro Frontend App は Web Host が割り当てる長方形領域、**surface** を受け取ります。通常、この領域は browser window ではありません。[multi-panel layout](../web-host/multi-panel-layout.md) の一つの panel である場合があり、同じ app が同じ画面上で異なる size のどちらの [render engine](../web-host/render-engines.md) によっても描画される可能性があります。
+> **ステータス:** contract 1、出荷済み。Tailwind の `surface-*` バリアント、ホスト仲介のスクロール、深いヒットテストは **not yet shipped** です。このページは現時点で存在するもののみを記述します。
 
-したがって、layout を window に合わせて size 調整するのはどちらの engine でも誤りです。surface contract は CSS と JavaScript の両方に portable な代替手段を提供します。
+## CSS の契約
 
-> **Status:** contract 1、shipped。Tailwind `surface-*` variant、Host mediated scrolling、deep hit testing は**未提供**です。このページは現在存在する機能だけを記述します。
+### コンテナクエリ
 
-## CSS contract
-
-### コンテナクエリ :id=container-query
-
-Host は app の box を `wippy-surface` と名付けるため、通常の CSS container と同様に query できます。
+ホストはアプリのボックスに `wippy-surface` という名前を付けるため、任意の CSS コンテナと同様にクエリできます。
 
 ```css
 @container wippy-surface (min-width: 640px) {
@@ -25,61 +18,61 @@ Host は app の box を `wippy-surface` と名付けるため、通常の CSS c
 }
 ```
 
-app が占有する空間に応答するものには、`@media (min-width: 640px)` の代わりにこれを使います。native container unit も同じ box に対して解決されます。
+アプリが占める空間に応答するものには、`@media (min-width: 640px)` の代わりにこちらを使ってください。ネイティブのコンテナ単位も同じボックスに対して解決されます。
 
 ```css
 .hero { inline-size: 50cqw; }
 ```
 
-### Surface variable
+### サーフェス変数
 
-四つの custom property が geometry を単純な pixel length として伝えます。
+4つのカスタムプロパティが、ジオメトリを素のピクセル長として運びます。
 
 | プロパティ | 意味 |
-|----------|------|
-| `--wippy-surface-width` | surface 全体の width |
-| `--wippy-surface-width-unit` | surface width の 1% |
-| `--wippy-surface-height` | surface 全体の height（container sizing のみ） |
-| `--wippy-surface-height-unit` | surface height の 1%（container sizing のみ） |
+|----------|---------|
+| `--wippy-surface-width` | サーフェスの幅全体 |
+| `--wippy-surface-width-unit` | サーフェス幅の1% |
+| `--wippy-surface-height` | サーフェスの高さ全体（コンテナサイジングのみ） |
+| `--wippy-surface-height-unit` | サーフェス高さの1%（コンテナサイジングのみ） |
 
-これらは `vw` / `vh` の portable な代替です。
+これらは `vw` / `vh` の可搬な置き換えです。
 
 ```css
-/* was: inline-size: 50vw */
+/* 以前: inline-size: 50vw */
 .panel { inline-size: calc(var(--wippy-surface-width-unit) * 50); }
 ```
 
-値は継承されるため、app 内の任意の element が読めます。query box の **content box** を報告し、これは `100cqw` が解決される box と同じです。
+値は継承されるため、アプリ内のどの要素からも読めます。報告するのはクエリボックスの**コンテンツボックス**で、これは `100cqw` が解決する対象と同じボックスです。
 
-application はこの四つの名前を宣言または代入してはいけません。descendant declaration は継承値を shadow し、app を surface から黙って切り離します。
+アプリケーションはこれら4つの名前を宣言も代入も**してはいけません**。子孫での宣言は継承された値を覆い隠し、アプリを静かにサーフェスから外してしまいます。
 
-また、これらを**登録してはいけません**。`@property` や `CSS.registerProperty()` で記述しないでください。Host は guaranteed-invalid value を代入して block axis を unavailable と示し、property が未登録の場合だけ empty string に compute されます。`initial-value` を与えると代わりにその値へ compute されるため、content-sized app が自身を container-sized と報告し、error なしで `supports('block-size')` が `true` を返し始めます。
+また、これらは**未登録のまま**でなければなりません。`@property` や `CSS.registerProperty()` で記述しないでください。ホストは、保証された無効値を代入することでブロック軸が利用不可であることを示します。これが空文字列に計算されるのは、そのプロパティが未登録である間だけです。`initial-value` を与えると代わりにその値へ計算されるため、コンテンツサイジングのアプリが自分をコンテナサイジングだと報告し、`supports('block-size')` が `true` を返し始めます — しかもどこにもエラーは出ません。
 
-これらの値を `100cqw` と pixel 単位で比較する際の注意は二つあります。**first frame は広くなる場合があります**。boot value は app document が存在する前に Host 側 `<iframe>` element から seed されるため、content が scrollbar を生じさせるか分かりません。その値は document の CSS に埋め込まれ、最初の layout で使われて一 frame 後に補正されます。また値は **1/64 px 単位に量子化**されるため、tolerance を使って比較してください。
+これらの値を `100cqw` とピクセル単位で比較する前に、注意点が2つあります。**最初のフレームは広くなりうる**こと。ブート時の値は、アプリのドキュメントが存在する前にホスト側の `<iframe>` 要素から取られるため、コンテンツがスクロールバーを生じさせるかどうかを知りようがありません。その値がドキュメントの CSS へ焼き込まれるため、最初のレイアウトはそれを使い、1フレーム後に補正されます。そして値は **1/64 px に量子化される**ため、比較には許容誤差を持たせてください。
 
-## Container sizing と content sizing
+## コンテナサイジングとコンテンツサイジング
 
 | | インライン軸 | ブロック軸 |
 |---|---|---|
-| **Container sizing** — Host が両方の dimension を指定 | available | available |
-| **Content sizing** — app content が height を決定 | available | **not available** |
+| **コンテナサイジング** — ホストが両方の寸法を課す | 利用可 | 利用可 |
+| **コンテンツサイジング** — アプリのコンテンツが高さを決める | 利用可 | **利用不可** |
 
-content sizing では height property が意図的に invalid です。そのため `var(--wippy-surface-height, 400px)` は数値を返さず fallback し、`@container wippy-surface (min-height: …)` は一致しません。
+コンテンツサイジングでは高さのプロパティは意図的に無効になるため、`var(--wippy-surface-height, 400px)` は数値を報告せずフォールバックし、`@container wippy-surface (min-height: …)` は決してマッチしません。
 
-**app author は sizing を選べず**、`package.json` の設定でも変更できません。Web Host が app を描画する場所によって決まります。
+**どちらになるかは作者の選択ではなく**、`package.json` の何を変えても変わりません。サイジングは*Web ホストがアプリをどこでレンダリングするか*で決まります。
 
-| 描画方法 | サイジング |
+| レンダリングのされ方 | サイジング |
 |---|---|
-| routed page、layout panel、right panel、registry tab | **container** |
-| embedded artifact、inline artifact block、navbar widget | **content** |
+| ルーティングされたページ、レイアウトパネル、右パネル、レジストリタブ | **コンテナ** |
+| 埋め込みアーティファクト、インラインのアーティファクトブロック、ナビバーウィジェット | **コンテンツ** |
 
-したがって同じ package でも、独自 route では container-sized、埋込時は content-sized です。block axis が必要な app は、それがなくても動作できるようにするか、下記の requirement を宣言して壊れた状態で描画される代わりに拒否させます。現在の mode は `host.surface.snapshot.sizing` で読み、behavior は `host.surface.supports('block-size')` で gate してください。仮定してはいけません。
+つまり同じパッケージでも、自身のルート上ではコンテナサイジングになり、誰かが埋め込めばコンテンツサイジングになります。したがってブロック軸を必要とするアプリは、それが無い状況に耐えられるようにするか、（後述の）要件を宣言して、壊れた状態で描画されるのではなく拒否されるようにしなければなりません。現在のモードは `host.surface.snapshot.sizing` で読み、挙動は `host.surface.supports('block-size')` でゲートしてください — 決して仮定しないこと。
 
-`cqh` は「unavailable」より危険です。必要な axis を提供する container がない場合、container unit は **small viewport** に fallback するため、surface と無関係なもっともらしい値を黙って生成します。root-pinned で明示的に fallback する `var(--wippy-surface-height, <fallback>)` を推奨します。同じ罠は、app が intermediate element に `container-type: inline-size` を宣言し、その下で `cqh` を使う場合にもあります。
+`cqh` は「利用不可」よりたちが悪い振る舞いをします。必要な軸を供給するコンテナがない場合、コンテナ単位は **small viewport** にフォールバックするため、`cqh` はサーフェスとは無関係のもっともらしい数値を静かに生成します。ルートにピン留めされ、目に見えてフォールバックする `var(--wippy-surface-height, <fallback>)` を優先してください。同じ罠は、中間の要素に `container-type: inline-size` を宣言し、その下で `cqh` を使うアプリの内部でも現れます。
 
-## Requirement の宣言
+## 要件の宣言
 
-app の `package.json` で任意指定します。
+アプリの `package.json` に、任意で記述します。
 
 ```json
 {
@@ -93,89 +86,89 @@ app の `package.json` で任意指定します。
 }
 ```
 
-受け入れる token は `block-size` と `surface-scroll` です。どちらも container sizing を必要とし、instance が content-sized なら拒否されます。`registered-hit-testing`、`native-document-hit-testing`、`owner-visibility` は予約語であり、黙って無視されず未実装として拒否されます。
+受け付けられるトークンは `block-size` と `surface-scroll` で、いずれもコンテナサイジングを必要とし、インスタンスがコンテンツサイジングの場合は拒否されます。`registered-hit-testing`、`native-document-hit-testing`、`owner-visibility` は予約語彙で、静かに無視されるのではなく未実装として拒否されます。
 
-validation は startup 前に実行されるため、満たせない declaration は block-axis query が一致しない app を描画せず、明示的に失敗します。`surface` block のない app も描画され、query box と variable を受け取りますが、portability は宣言しません。
+検証は起動前に走るため、満たせない宣言は、ブロック軸のクエリが決してマッチしないアプリを描画するのではなく、目に見えて失敗します。`surface` ブロックのないアプリも依然としてレンダリングされ、クエリボックスと変数を受け取ります。単に可搬性を表明していないだけです。
 
-`surface-scroll` は受け入れられ `supports()` が報告しますが、この release に Host mediated scroll API は**ありません**。宣言は intent を表すだけで、method を有効化しません。
+`surface-scroll` は受け付けられ `supports()` にも報告されますが、このリリースではホスト仲介のスクロール API は**出荷されていません** — 宣言は意図の表明であって、メソッドを解放するものではありません。
 
-## JavaScript から surface を読む
+## JavaScript からサーフェスを読む
 
-完全な signature は [Proxy API → Surface](./proxy-api.md#surface) を参照してください。
+完全なシグネチャは [プロキシ API → Surface](./proxy-api.md#surface) を参照してください。
 
 ```js
 const { width, widthUnit, height, sizing } = host.surface.snapshot
 
 if (host.surface.supports('block-size')) {
-  // safe to rely on the block axis
+  // ブロック軸に依存して安全
 }
 
 const off = host.surface.onChange((s) => reposition(s.width, s.height))
-// call off() on teardown
+// 破棄時に off() を呼ぶ
 ```
 
-snapshot は CSS が解決するのと同じ computed custom property から読み戻されるため、`@container` や `cqw` が参照する値とずれません。
+スナップショットは、CSS が解決するのと同じ計算済みカスタムプロパティから読み戻されるため、`@container` や `cqw` が見ているものとずれることはありません。
 
-layout には CSS を優先してください。JavaScript API は canvas sizing、virtualization calculation、resource selection、runtime-generated style など CSS では扱えない用途に使います。
+レイアウトには CSS を優先してください。JavaScript API に手を伸ばすのは CSS では届かないところ — canvas のサイズ指定、仮想化の計算、リソース選択、実行時に生成されるスタイル — です。
 
 ### `engine: 'host'`
 
-`host.surface.engine` は `iframe`、`fragment`、`host` を報告します。最後の値は page engine ではなく、surface が割り当てられていない場所で code が動作していることを意味します。
+`host.surface.engine` は `iframe`、`fragment`、`host` のいずれかを報告します。最後のものはページエンジンではありません — サーフェスが割り当てられていない場所でコードが動いていることを意味します。
 
-- page 内ではなく Host document に直接 mount された Web Component
-- Web Host が存在しない standalone dev proxy
+- ページの中ではなくホストのドキュメントへ直接マウントされた Web コンポーネント。
+- Web ホストがまったく存在しない、スタンドアロンの開発プロキシ。
 
-そこでは snapshot が `width: 0`、`height: null`、`sizing: 'content'` を報告し、すべての `supports()` が `false` です。browser window を代用すると、まさにこの契約が避けるべき誤った同一視になるため、これは意図的です。直接 mount された component は自身の root を測定してください。
+そこではスナップショットが `width: 0`、`height: null`、`sizing: 'content'` を報告し、`supports()` はすべてについて `false` です。これは意図的です。ブラウザーウィンドウで代用することは、契約が避けるために存在する偽りの等価だからです。直接マウントされたコンポーネントは、代わりに自身のルートを測るべきです。
 
-## 契約の対象外
+## 契約がカバーしないもの
 
-container query が media query を置き換えるのは **CSS** の中だけです。次の mechanism は CSS の外にあり、browser window に従い続けます。
+コンテナクエリが置き換えるのは **CSS** におけるメディアクエリです。次の仕組みは CSS の外にあり、引き続きブラウザーウィンドウに従います。
 
-| メカニズム | 理由 | 対応 |
+| 仕組み | 理由 | 対処 |
 |---|---|---|
-| `<picture>` / `<source media>` | HTML resource selection であり container-query 形式がない | `host.surface.onChange` で制御するか、`@container` 下の CSS `background-image` に art direction を移す |
-| `srcset` + `sizes` | viewport に対して解決される | surface から `sizes` を導出するか JS で source を設定 |
-| `matchMedia()` | 定義上 window に問い合わせる | geometry には `host.surface.onChange`、preference には引き続き `matchMedia` を使う |
+| `<picture>` / `<source media>` | HTML のリソース選択。コンテナクエリの形がない | `host.surface.onChange` から駆動するか、`@container` 配下の CSS の `background-image` へアートディレクションを移す |
+| `srcset` + `sizes` | ビューポートに対して解決される | サーフェスから `sizes` を導出するか、JS からソースを設定する |
+| `matchMedia()` | 定義上ウィンドウに問い合わせる | ジオメトリには `host.surface.onChange` を使い、プリファレンスには `matchMedia` を残す |
 
-## Overlay
+## オーバーレイ
 
-surface contract は `position: fixed` を捕捉しません。`container-type` は layout containment なしに independent formatting context を確立するため、query container は `contain: none` と compute され、何も anchor しません。PrimeVue overlay と自作 fixed overlay はどちらも変更せず動作します。
+サーフェス契約は `position: fixed` を**捕捉しません**。`container-type` はレイアウトの封じ込めなしに独立したフォーマットコンテキストを確立するため、クエリコンテナは `contain: none` と計算され、何もアンカーしません。PrimeVue のオーバーレイも手書きの fixed オーバーレイも、変更なしで動き続けます。
 
-engine behavior は別問題です。Web Fragment engine では `position: fixed` が app panel ではなく **Host window** に対して解決されます。[Render Engines](../web-host/render-engines.md) を参照し、正確な viewport anchoring が重要なら app を `wippy.renderEngine: "iframe"` で固定してください。
+エンジンの挙動は別の問題です。Web Fragment エンジンでは `position: fixed` がアプリのパネルではなく**ホストウィンドウ**に対して解決されます。[レンダリングエンジン](../web-host/render-engines.md) を参照し、正確なビューポートへのアンカーが重要なら `wippy.renderEngine: "iframe"` でアプリをピン留めしてください。
 
-overlay の size と anchoring も別問題です。surface だけを覆う backdrop/drawer では viewport unit をやめ `inset: 0` を使いますが、app に必要な portability に合う positioning scheme と組み合わせます。
+オーバーレイのサイズ指定は、アンカーとは別の問題です。サーフェスをちょうど覆うべきバックドロップやドロワーでは、ビューポート単位をやめて `inset: 0` を使ってください — ただし、アプリがどれだけ可搬でなければならないかに合った位置指定方式と組み合わせてください。
 
 ```css
-/* Portable across BOTH engines: resolves against the app's own root rather
-   than against whatever `fixed` happens to be relative to.
-   `min-block-size: 100%` is load-bearing — see below. */
+/* 両方のエンジンで可搬: `fixed` がたまたま相対する対象ではなく、
+   アプリ自身のルートに対して解決される。
+   `min-block-size: 100%` は必須 — 下記を参照。 */
 .app-root { position: relative; min-block-size: 100%; }
 .backdrop { position: absolute; inset: 0; }
 ```
 
-containing block は surface ではなく **app root** なので、その root が surface を覆う場合だけ overlay も覆います。content sizing では content 自体が height なので自動です。container sizing では Host が query box に height を与えても app root は継承しないため、`min-block-size: 100%` がない backdrop は surface の手前で止まります。`absolute` は content と共に scroll し、`fixed` は固定されるという behavior の違いもあります。
+包含ブロックはサーフェスではなく**アプリのルート**なので、オーバーレイがサーフェスを覆うのは、そのルートが覆っている場合だけです。コンテンツサイジングでは自動的にそうなります（コンテンツ*が*高さだからです）。コンテナサイジングでは、ホストがクエリボックスに課した高さをアプリのルートは継承しないため、`min-block-size: 100%` がないとバックドロップは静かに途中で止まります — まさに `fixed` 版なら正しく見えたはずのモードで失敗するのです。挙動も異なります。`absolute` はコンテンツとともにスクロールし、`fixed` は固定されたままです。
 
-`min-block-size: 100%` は surface 内の**最外層** element に置きます。percentage height には上位まで definite height の連続した chain が必要です。auto-height の `#app` 内に nested した component root に適用すると zero に解決され、同じ gap が再発します。no-`min` case を control として Chromium、Firefox、WebKit で検証されています。
+`min-block-size: 100%` は、サーフェス内の**最も外側**の要素に付けてください。パーセンテージの高さは、その上に確定した高さの途切れない連鎖を必要とします。高さが auto の `#app` の内側に入れ子になったコンポーネントのルートへ適用すると、ゼロに解決され、同じ隙間が再発します。`min` なしのケースを対照として、Chromium、Firefox、WebKit で検証済みです。
 
 ```css
-/* Iframe engine only. `fixed` resolves against the child viewport, which IS
-   the surface there — but against the HOST WINDOW in the fragment engine,
-   where this covers the whole application instead of the panel. */
+/* iframe エンジン専用。`fixed` は子のビューポートに対して解決され、
+   そこではそれがサーフェスそのものである — が、フラグメントエンジンでは
+   ホストウィンドウに対して解決され、パネルではなくアプリケーション全体を覆う。 */
 .backdrop { position: fixed; inset: 0; }
 ```
 
-これに `var(--wippy-surface-height)` を使わないでください。content sizing では unavailable なので、backdrop が collapse します。
+これに `var(--wippy-surface-height)` を使うのは避けてください。コンテンツサイジングでは利用できないため、そう書かれたバックドロップは、もっとも気付きにくいページでちょうど潰れてしまいます。
 
-## App root element（`#app`） :id=the-app-root-element-app
+## アプリのルート要素 (`#app`)
 
-**Web Fragment engine では root element が `id="app"` でなければなりません。** `#root`、`#main`、`<main>` ではなく、id は literal に一致します。
+**Web Fragment エンジンは、ルート要素が `id="app"` であることを要求します。** `#root` でも `#main` でも `<main>` でもありません — id は文字どおりに照合されます。
 
-engine は page height chain をこの selector に bind し、そこを通じて content height を測定します。reflected document は `html` / `body` ではなく `wf-html` / `wf-body` を公開するため、iframe のように document root から chain を構築できません。
+エンジンはページの高さの連鎖をそのセレクターに結び付け、それを通じてコンテンツの高さを測ります。反映されたドキュメントは `html`/`body` ではなく `wf-html`/`wf-body` を公開するため、iframe の内側のようにドキュメントルートから連鎖を組み立てることはできません。
 
-**誤っている場合の症状:** root が `#root` などである content-sized fragment page は **height zero** で描画され、blank panel になります。app code 自身には error が出ず、Host が requirement を示す error を log します。iframe engine は `CmdBodySize` から height を取得するため影響を受けず、同じ package が iframe では正しく見えて fragment では空白になることがあります。
+**間違っているときの症状:** ルートが `#root`（またはそれ以外）のコンテンツサイジングのフラグメントページは**高さゼロ**で描画されます — 空白のパネルで、自分のコードにはエラーが出ません。ホストは要件を示すエラーをログに出します。iframe エンジンは影響を受けません。高さを `CmdBodySize` から取るためで、同じパッケージがそちらでは問題なく見え、フラグメントでは空白になりえます。
 
 ```html
-<!-- correct -->
+<!-- 正しい -->
 <body><div id="app"></div></body>
 ```
 
@@ -183,19 +176,19 @@ engine は page height chain をこの selector に bind し、そこを通じ�
 createApp(App).mount('#app')
 ```
 
-**`#root` に height を与えて zero-height fragment を直そうとしないでください。** 別名の root に `height: 100%`、`min-height: 100dvh`、`100vh` を加えても engine は測定しません。viewport unit は割り当てられた surface ではなく browser window を表します。element を `app` に rename してください。
+**高さゼロのフラグメントを、`#root` に高さを与えて直そうとしないでください。** 別名のルートに `height: 100%`、`min-height: 100dvh`、`100vh` を追加しても、エンジンがそれを測るようにはなりません。しかもここでビューポート単位が誤りである理由こそ、このページ全体が存在する理由です — それらはあなたのサーフェスではなくブラウザーウィンドウを表します。代わりに要素の名前を `app` に変えてください。
 
-## 制限事項
+## 制限
 
-- **Body box。** iframe engine は app の `body` の `margin`、`padding`、`border` を zero にして surface を明確にします。page padding は独自 root element に置きます。fragment engine はこれを行わないため、body padding に依存する app は engine 間でわずかに異なります。まだ build-time diagnostic はありません。
-- **`body > *` selector と `html` / `body` を対象にする rule。** **iframe** engine では Host が body content を surface box で wrap するため、`body` を root とする direct-child selector は app element に一致せず、`body` / `html` は query box の ancestor になります。これらを対象にした `@container` rule は適用されません。**fragment** engine では query box が reflected tree の上にある逆の topology ですが、reflected document は `wf-html` / `wf-body` に rename されるため literal `body` selector はやはり失敗します。両 engine で正しい surface 内の独自 root element に rule を置いてください。
-- **top-level managed panel を含め、`<w-iframe>` / `<w-artifact>` で描画するものには surface がありません。** これらの element は常に surface bootstrap を無効にして child document を構築し、何も測定しないため、`host.surface` は `width: 0`、`sizing: 'content'` を報告します。ただし `engine: 'host'` ではなく `engine: 'iframe'` です。そのように埋め込まれる可能性がある component は `engine` ではなく `snapshot.width` を確認します。nested embed では想定どおりですが、full-size top-level slot でも `{ kind: 'component', tagName: 'w-artifact' }` と宣言した managed layout panel は契約を受けません。必要な content には `kind: 'page'` を使います。
-- **content sizing では block axis がありません。**
-- **Fragment root selector。** fragment app は `#app` に mount する必要があります。height-chain requirement と zero-height symptom は [App root element（`#app`）](#the-app-root-element-app) を参照してください。
-- **deprecated `/page/:id` route には surface がありません。** 何も測定しない bare iframe で描画されるため、完全に opt out します。query box、wrapper、app DOM への変更はありません。surface を得るには `/c/:id` を使います。nested embed と同様 `engine: 'iframe'` を報告するため、engine name ではなく `snapshot.width` を確認します。
-- **二つの engine は scrollbar 分だけ異なる場合があります。** iframe engine は app document 内の query box から inline axis を測るため document scrollbar が幅を狭めます。fragment engine は Host document wrapper を測り、reflected content の scrolling では狭まりません。同じ panel と scrolling content でも fragment engine の報告値が少し広くなります。
-- **isolation boundary ではありません。** 契約は layout を管理します。fragment に独立した document、viewport、selection、top layer、origin を与えません。
+- **body のボックス。** iframe エンジンでは、割り当てられたサーフェスが明確に定義されるよう、ホストがアプリの `body` の `margin`、`padding`、`border` をゼロにします。ページの padding は自分のルート要素に付けてください。フラグメントエンジンはこれを行わないため、body の padding に依存するアプリはエンジン間でわずかに異なる描画になります。これに対するビルド時の診断はまだありません。
+- **`body > *` セレクター、および `html`/`body` を対象とするルール。** **iframe** エンジンでは、ホストが body のコンテンツをサーフェスボックスで包むため、`body` を起点とする直接子セレクターはアプリの要素にマッチしなくなり、`body`/`html` はクエリボックスの*祖先*になります — それらを対象とする `@container` ルールは決して適用されません。**フラグメント**エンジンはトポロジーが逆（クエリボックスは反映されたツリーの上にあります）ですが、そこでも文字どおりの `body` セレクターは失敗します。反映されたドキュメントが `wf-html`/`wf-body` へ名前を変えられているためです。そうしたルールは、サーフェス内の自分のルート要素に付けてください。それが両方のエンジンで正しい方法です。
+- **`<w-iframe>` / `<w-artifact>` を通じて描画されるものにはサーフェスが与えられません — トップレベルのマネージドパネルであっても同様です。** これらの要素は常に、サーフェスのブートストラップを無効にした状態で子ドキュメントを構築し、何もそれらを測らないため、`host.surface` は `width: 0` と `sizing: 'content'` を報告します — ただし `engine: 'host'` ではなく `engine: 'iframe'` です。コンポーネントがそのように埋め込まれうるなら、`engine` ではなく `snapshot.width` を確認してください。*入れ子*の埋め込みではこれは想定どおりですが、`{ kind: 'component', tagName: 'w-artifact' }` として宣言されたマネージドレイアウトのパネルでは見落としやすく、そこはフルサイズのトップレベルのスロットでありながら契約が与えられません。契約を必要とするコンテンツには `kind: 'page'` を使ってください。
+- **コンテンツサイジングにはブロック軸がありません。**
+- **フラグメントエンジンはアプリのルート要素が `#app` であることを要求します。** エンジンはページの高さの連鎖をそのセレクターに結び付け、それを通じてコンテンツの高さを測ります。反映されたドキュメントが `html`/`body` ではなく `wf-html`/`wf-body` を公開するため、アプリは iframe の内側のようにルートから自前の連鎖を組み立てられないからです。ルートが異なる（`#root`、`<main>`）コンテンツサイジングのフラグメントアプリは測定できません。ホストは要件を示すエラーをログに出し、パネルは高さゼロで描画されます。iframe エンジンは影響を受けません — 高さを `CmdBodySize` から取ります。
+- **非推奨の `/page/:id` ルートにはサーフェスが与えられません。** 何も測らない素の iframe へ描画されるため、完全にオプトアウトします — クエリボックスもラッパーもなく、アプリの DOM も変わりません。そこでのアプリの挙動は、この契約が存在する前とまったく同じです。サーフェスを得るには `/c/:id` を使ってください。入れ子の埋め込みと同様、そこでも `engine: 'iframe'` を報告するため、エンジン名ではなく `snapshot.width` を確認してください。
+- **2つのエンジンはスクロールバーの分だけ異なりうる。** iframe エンジンはアプリのドキュメント*内側*のクエリボックスからインライン軸を測るため、ドキュメントのスクロールバーが幅を狭めます。フラグメントエンジンはホストドキュメント側のラッパーを測り、反映されたコンテンツのスクロールはそれを狭めません。同じ割り当てパネルと同じスクロールするコンテンツで、フラグメントエンジンはわずかに大きい数値を報告します。
+- **分離境界ではありません。** 契約が支配するのはレイアウトです。フラグメントに独立したドキュメント、ビューポート、選択範囲、トップレイヤー、オリジンを与えるものではありません。
 
 ## 移行
 
-[Surface Migration](./surface-migration.md) には既存 app の recipe 別変換があり、それぞれ automatic、conditional、manual、not convertible と分類されています。
+[サーフェス移行](./surface-migration.md) には、既存アプリ向けのレシピごとの変換手順があり、それぞれ automatic、conditional、manual、not convertible のいずれかにラベル付けされています。

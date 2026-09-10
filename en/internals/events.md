@@ -53,6 +53,7 @@ The bus stores state in a simple structure:
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -77,6 +78,14 @@ Four action types flow through the queue:
 | Stop | Clears subscribers, drains queue, exits loop |
 
 Subscribe and Unsubscribe block until the dispatcher confirms. Send is fire-and-forget. The bus accepts at most `DefaultMaxSubscribers` subscriptions (4096 by default); subscriptions beyond the cap fail with `ErrSubscribersCapReached`.
+
+`Subscribe` is rejected with `ErrSubscribersCapReached` once the bus holds `DefaultMaxSubscribers` (4096) active subscriptions.
+
+`Subscribe` fails immediately when the subscription context is already canceled, and again at the dispatcher if it is canceled before the ownership decision is made — the bus never takes a channel it did not install.
+
+`Unsubscribe` is an ownership barrier, not a best-effort hint. It returns only after the dispatcher acknowledges, so the caller can release the channel knowing the bus holds no in-flight send reference. When it arrives after `Stop`, the acknowledgement waits for the dispatcher to finish delivering the batch it already drained.
+
+`Stop` is likewise terminal: a second concurrent `Stop` does not return early on the already-closed flag but waits for the dispatcher to drain and exit.
 
 ## Queue Swapping
 

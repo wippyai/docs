@@ -1,6 +1,6 @@
 ---
-title: "Grupos de procesos"
-description: "Administra grupos de procesos en todo el clúster, sus miembros, las difusiones y las suscripciones a cambios de membresía."
+title: "Grupos de Proceso"
+description: "Unir procesos en grupos con nombre y difundir a todos los miembros en el cluster. Modelado sobre pg de Erlang/OTP: los grupos son dinámicos, un…"
 ---
 
 # Grupos de procesos
@@ -211,12 +211,12 @@ group:release()
 | `pg.leave` | `leave()` | nombre de grupo |
 | `pg.get_members` | `get_members()` | nombre de grupo |
 | `pg.get_local_members` | `get_local_members()` | nombre de grupo |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (ninguno) |
+| `pg.which_local_groups` | `which_local_groups()` | (ninguno) |
 | `pg.broadcast` | `broadcast()` | nombre de grupo |
 | `pg.broadcast_local` | `broadcast_local()` | nombre de grupo |
 | `pg.monitor` | `monitor()` | nombre de grupo |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (ninguno) |
 
 ## Errores
 
@@ -225,7 +225,7 @@ group:release()
 | Permiso denegado | `errors.PERMISSION_DENIED` |
 | Argumento faltante o vacío | `errors.INVALID` |
 | Ámbito no encontrado | `errors.INTERNAL` |
-| Salida de un grupo sin membresía | `errors.NOT_FOUND` |
+| Salir de un grupo sin membresía | `errors.NOT_FOUND` |
 | Instancia liberada | `errors.INVALID` |
 | Se alcanzó el límite de grupos/miembros o de la cola de acciones | `errors.RATE_LIMITED` (reintentable) |
 | Servicio detenido, contrapresión o circuito abierto | `errors.UNAVAILABLE` |

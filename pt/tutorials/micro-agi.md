@@ -84,7 +84,7 @@ copiados literalmente. As definições completas de registro de `registry_list` 
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -152,7 +152,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` fornece o grupo de políticas `wippy.security:process` sob o qual os serviços em segundo plano do módulo LLM são executados; sem ele, eles não iniciam.
 
 ### Políticas de Segurança
 
@@ -185,6 +192,17 @@ resultado `undefined` sem correspondência para `app.generated:*` como aprovado 
 filtro próprio. Isso não é autorização do runtime Wippy: operações protegidas exigem
 um `allow` explícito do contexto de execução, incluindo as operações do módulo de
 segurança abaixo e `registry.apply` dentro de `changes:apply()`.
+
+Uma terceira política concede ao próprio processo acesso ao registro. Um processo iniciado sem contexto de segurança tem toda leitura do registro negada, então o comando `agent` carrega esta política como seu próprio escopo:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 Veja [Modelo de Segurança](system/security.md) para detalhes sobre a avaliação de políticas.
 
@@ -281,6 +299,11 @@ O prompt fornece três regras operacionais ao agente:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -290,9 +313,7 @@ O prompt fornece três regras operacionais ao agente:
       compress: wippy.llm.util:compress
 ```
 
-O processo executa como um comando de terminal. `create_tool` aplica a denylist do
-pacote antes de gravar, mas esse filtro não fornece o contexto de segurança do runtime
-ao comando.
+O processo executa como um comando de terminal. `meta.command.security` fornece a ele o ator e o escopo sob os quais executa — sem isso `registry.get` falha com `not allowed to access entry` e o agente nunca carrega. A imposição de segurança para escritas ocorre dentro de `create_tool`, que carrega o grupo de políticas `agent_security` e o avalia antes de escrever.
 
 Imports:
 

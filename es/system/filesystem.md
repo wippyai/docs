@@ -29,11 +29,15 @@ Las entradas de sistema de archivos exponen almacenamiento respaldado por direct
 | `directory` | string | requerido | Ruta raíz |
 | `auto_init` | bool | false | Crear directorio si no existe |
 | `mode` | string | 0755 | Modo de permisos Unix (octal) |
-| `base` | string | inferido | Base de las rutas relativas: `project` (directorio de trabajo del proceso) o `module` (raíz de recursos del módulo propietario) |
+| `base` | string | - | Base de rutas relativas: `project` (directorio de trabajo del proceso) o `module` (raíz de carga del módulo propietario) |
 
-En una entrada propiedad de un módulo, si se omite `base`, los directorios relativos se resuelven desde la raíz de recursos del módulo propietario. Las entradas creadas por el host siguen siendo relativas al directorio de trabajo del proceso. Configure `base: project` para forzar la resolución desde el directorio de trabajo en una entrada de módulo, o `base: module` para solicitar explícitamente la resolución desde la raíz del módulo. Si no están disponibles la propiedad del módulo o su raíz de recursos, el runtime deja la ruta relativa sin cambios.
+Las rutas absolutas se usan tal cual, sea cual sea el valor de `base`.
 
-El modo configurado limita las operaciones según sus bits de propietario, y los permisos solicitados para archivos y directorios nuevos se enmascaran con ese modo. Cuando están presentes todos los bits de lectura pero no hay bits de ejecución, el runtime añade bits de ejecución (por ejemplo, `0444` se convierte en `0555`). Los permisos del sistema operativo siguen aplicándose al directorio subyacente.
+Para una ruta relativa, `base: project` la mantiene relativa al directorio de trabajo del proceso. Tanto `base: module` como un `base` sin definir la resuelven contra la raíz de carga del módulo propietario de la entrada, localizada a través del propietario de la entrada en el registro. Cuando la entrada no tiene módulo propietario, o ese módulo no tiene una raíz de recursos resoluble, la ruta permanece relativa al directorio de trabajo del proceso.
+
+Cualquier otro valor se rechaza con `invalid directory base`.
+
+El modo restringe todas las operaciones de archivo. Los bits de ejecución se agregan automáticamente cuando todos los bits de lectura están establecidos y ningún bit de ejecución lo está.
 
 <note>
 Las rutas se normalizan y validan. No es posible acceder a archivos fuera del directorio raíz configurado.
@@ -66,8 +70,6 @@ Ambos tipos de sistema de archivos implementan:
 | Remove | Sí | No |
 | Mkdir | Sí | No |
 | Rename | Sí | No |
-| Truncate | Sí | No |
-| Chtimes | Sí | No |
 
 Las operaciones de escritura en sistemas de archivos embebidos retornan un error.
 

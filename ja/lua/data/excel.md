@@ -1,6 +1,6 @@
 ---
 title: "Excelスプレッドシート"
-description: "Microsoft ExcelのXLSXワークブックを作成、オープン、読み取り、ストリーミング、変更、書き込みします。"
+description: "Microsoft Excelファイル（.xlsx）の読み書き。ワークブックの作成、シートの管理、セル値の読み取り、フォーマットサポート付きレポートの生成。"
 ---
 
 # Excelスプレッドシート
@@ -9,9 +9,7 @@ description: "Microsoft ExcelのXLSXワークブックを作成、オープン�
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-`excel`モジュールは、Microsoft Excelの`.xlsx`ワークブックを作成および読み取り、シートとセルを管理し、ストリーム互換のファイルにワークブックを書き込みます。
-
-これは、一部にワークブックとファイルシステムのレシピを含むAPIリファレンスです。長いI/Oの例では明示的なクリーンアップを示し、個別のメソッド例では最後のワークブックのクリーンアップを省略しています。本番コードでは、必要なクリーンアップを試行しながら、主要な操作エラーを保持してください。
+Microsoft Excelファイル（.xlsx）の読み書き。ワークブックの作成、シートの管理、セル値の読み取り、フォーマットサポート付きレポートの生成。
 
 ## ロード
 
@@ -19,13 +17,11 @@ description: "Microsoft ExcelのXLSXワークブックを作成、オープン�
 local excel = require("excel")
 ```
 
-使用する前に、実行可能エントリの`modules:`リストに`excel`を追加してください。ファイルシステムのレシピでは`fs`も必要です。
-
-## ワークブックの作成とオープン
+## ワークブックの作成
 
 ### 新規ワークブック
 
-デフォルトの`Sheet1`シートを持つワークブックを作成します。
+新しい空のExcelワークブックを作成。
 
 ```lua
 local wb, err = excel.new()
@@ -33,27 +29,18 @@ if err then
     return nil, err
 end
 
--- Create sheets and add data
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-local set_err = wb:set_cell_value("Report", "A1", "Title")
-if set_err then
-    wb:close()
-    return nil, set_err
-end
+-- シートを作成してデータを追加
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Title")
 
-local close_err = wb:close()
-if close_err then return nil, close_err end
+wb:close()
 ```
 
 **戻り値:** `Workbook, error`
 
 ### ワークブックを開く
 
-リーダーオブジェクトからワークブックを開きます。
+リーダーオブジェクトからExcelワークブックを開く。
 
 ```lua
 local fs = require("fs")
@@ -70,25 +57,18 @@ end
 
 local wb, err = excel.open(file)
 if err then
-    local _ = file:close()
+    file:close()
     return nil, err
 end
 
--- Read data from workbook
-local rows, rows_err = wb:get_rows("Sheet1")
-if rows_err then
-    local _ = wb:close()
-    local _ = file:close()
-    return nil, rows_err
-end
+-- ワークブックからデータを読み取り
+local rows = wb:get_rows("Sheet1")
 for i, row in ipairs(rows) do
     print("Row " .. i .. ": " .. table.concat(row, ", "))
 end
 
-local wb_close_err = wb:close()
-local file_close_err = file:close()
-if wb_close_err then return nil, wb_close_err end
-if file_close_err then return nil, file_close_err end
+wb:close()
+file:close()
 ```
 
 | パラメータ | 型 | 説明 |
@@ -101,45 +81,37 @@ if file_close_err then return nil, file_close_err end
 
 ### シートの作成
 
-シートを作成します。同じ名前のシートが存在する場合は、そのインデックスを返します。
+新しいシートを作成するか、既存のシートインデックスを返す。
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
--- Create sheets
-local idx1, err = wb:new_sheet("Summary")
-if err then return nil, err end
-local idx2, err = wb:new_sheet("Details")
-if err then return nil, err end
-local idx3, err = wb:new_sheet("Charts")
-if err then return nil, err end
+-- シートを作成
+local idx1 = wb:new_sheet("Summary")
+local idx2 = wb:new_sheet("Details")
+local idx3 = wb:new_sheet("Charts")
 
--- If sheet exists, returns its index
-local existing, err = wb:new_sheet("Summary")  -- returns same as idx1
-if err then return nil, err end
+-- シートが存在する場合、そのインデックスを返す
+local existing = wb:new_sheet("Summary")  -- idx1と同じ値を返す
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `name` | string | シート名 |
 
-**戻り値:** `integer, error`。シートのインデックスは1始まりです。
+**戻り値:** `integer, error`
 
 ### シート一覧
 
 ワークブック内のすべてのシート名のリストを返す。
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-for _, name in ipairs({"Sales", "Expenses", "Summary"}) do
-    local _, sheet_err = wb:new_sheet(name)
-    if sheet_err then return nil, sheet_err end
-end
+local wb = excel.new()
+wb:new_sheet("Sales")
+wb:new_sheet("Expenses")
+wb:new_sheet("Summary")
 
-local sheets, list_err = wb:get_sheet_list()
-if list_err then return nil, list_err end
+local sheets = wb:get_sheet_list()
 -- sheets = {"Sheet1", "Sales", "Expenses", "Summary"}
 
 for _, name in ipairs(sheets) do
@@ -153,25 +125,28 @@ end
 
 ### セル値の設定
 
-1つのセルの値を設定します。
+単一セルの値を設定。
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Data")
-if sheet_err then return nil, sheet_err end
+local wb = excel.new()
+wb:new_sheet("Data")
 
--- Set different value types
-local cells = {
-    {"A1", "Product Name"}, {"B1", "Price"}, {"C1", "In Stock"},
-    {"A2", "Widget"}, {"B2", 29.99}, {"C2", true},
-    {"A3", "Gadget"}, {"B3", 49.99}, {"C3", false},
-    {"AA1", "Extended Column"}, {"AB100", "Far cell"}
-}
-for _, cell in ipairs(cells) do
-    local set_err = wb:set_cell_value("Data", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+-- 異なる値タイプを設定
+wb:set_cell_value("Data", "A1", "Product Name")  -- string
+wb:set_cell_value("Data", "B1", "Price")         -- string
+wb:set_cell_value("Data", "C1", "In Stock")      -- string
+
+wb:set_cell_value("Data", "A2", "Widget")
+wb:set_cell_value("Data", "B2", 29.99)           -- number
+wb:set_cell_value("Data", "C2", true)            -- boolean
+
+wb:set_cell_value("Data", "A3", "Gadget")
+wb:set_cell_value("Data", "B3", 49.99)
+wb:set_cell_value("Data", "C3", false)
+
+-- セル参照はZ列を超える列もサポート
+wb:set_cell_value("Data", "AA1", "Extended Column")
+wb:set_cell_value("Data", "AB100", "Far cell")
 ```
 
 | パラメータ | 型 | 説明 |
@@ -184,21 +159,17 @@ end
 
 ### 全行の取得
 
-シートのすべての行を2次元配列として読み取ります。
+シートからすべての行を2次元配列として取得。
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then return nil, sheet_err end
-for _, cell in ipairs({
-    {"A1", "Name"}, {"B1", "Score"},
-    {"A2", "Alice"}, {"B2", 95},
-    {"A3", "Bob"}, {"B3", 87}
-}) do
-    local set_err = wb:set_cell_value("Report", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Name")
+wb:set_cell_value("Report", "B1", "Score")
+wb:set_cell_value("Report", "A2", "Alice")
+wb:set_cell_value("Report", "B2", 95)
+wb:set_cell_value("Report", "A3", "Bob")
+wb:set_cell_value("Report", "B3", 87)
 
 local rows, err = wb:get_rows("Report")
 if err then
@@ -224,11 +195,11 @@ end
 
 **戻り値:** `string[][], error`
 
-すべてのセル値は文字列として返されます。ブール値は`"TRUE"`または`"FALSE"`、数値は文字列表現になります。
+すべてのセル値は文字列として返される。booleanは"TRUE"または"FALSE"、数値は文字列表現。
 
 ### 行のストリーミング
 
-`wb:rows(sheet)`はシートの行を段階的にデコードするカーソルを開きます。一方、`get_rows`はシート全体をメモリに展開します。ワークブックを開く処理ではXLSX入力全体が読み取られ、ワークブックのメタデータや共有文字列が保持される場合があるため、処理全体が一定量のメモリだけで完結するわけではありません。
+`wb:rows(sheet)`は1つのシートに対するストリーミングカーソルを開きます。シート全体をメモリに展開する`get_rows`とは異なり、シートは一定のメモリ使用量でインクリメンタルにデコードされます：
 
 ```lua
 local cursor, err = wb:rows("Report")
@@ -239,7 +210,7 @@ end
 while true do
     local batch, err = cursor:read(500)
     if err then
-        local _ = cursor:close()
+        cursor:close()
         return nil, err
     end
     if not batch then
@@ -249,8 +220,7 @@ while true do
         process(row)
     end
 end
-local close_err = cursor:close()
-if close_err then return nil, close_err end
+cursor:close()
 ```
 
 | メソッド | 説明 |
@@ -264,32 +234,22 @@ if close_err then return nil, close_err end
 
 ### ファイルへの書き込み
 
-ワークブックをライターオブジェクトに書き込みます。
+ワークブックをライターオブジェクトに書き込む。
 
 ```lua
 local fs = require("fs")
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
--- Build report
-local _, sheet_err = wb:new_sheet("Monthly Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-for _, cell in ipairs({
-    {"A1", "Month"}, {"B1", "Revenue"},
-    {"A2", "January"}, {"B2", 45000},
-    {"A3", "February"}, {"B3", 52000}
-}) do
-    local set_err = wb:set_cell_value("Monthly Report", cell[1], cell[2])
-    if set_err then
-        wb:close()
-        return nil, set_err
-    end
-end
+-- レポートを作成
+wb:new_sheet("Monthly Report")
+wb:set_cell_value("Monthly Report", "A1", "Month")
+wb:set_cell_value("Monthly Report", "B1", "Revenue")
+wb:set_cell_value("Monthly Report", "A2", "January")
+wb:set_cell_value("Monthly Report", "B2", 45000)
+wb:set_cell_value("Monthly Report", "A3", "February")
+wb:set_cell_value("Monthly Report", "B3", 52000)
 
--- Write to file
+-- ファイルに書き込み
 local vol, err = fs.get("app:output")
 if err then
     wb:close()
@@ -302,12 +262,13 @@ if err then
     return nil, err
 end
 
-local write_err = wb:write_to(file)
-local file_close_err = file:close()
-local wb_close_err = wb:close()
-if write_err then return nil, write_err end
-if file_close_err then return nil, file_close_err end
-if wb_close_err then return nil, wb_close_err end
+local err = wb:write_to(file)
+file:close()
+wb:close()
+
+if err then
+    return nil, err
+end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -316,39 +277,48 @@ if wb_close_err then return nil, wb_close_err end
 
 **戻り値:** `error`
 
-`write_to`はライターを閉じません。例のように、ファイルは別途閉じてください。
+### 文字列へのシリアライズ
 
-### バイト列へのシリアライズ
-
-ワークブックを完全な`.xlsx`ファイルとして、Luaのバイナリ文字列にシリアライズします。
+ファイルシステムやライターを使わずに、ワークブックを`xlsx`のバイト文字列としてレンダリングします。HTTPレスポンス、オブジェクトストア、キューメッセージにワークブックを渡す場合に使用します。
 
 ```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
 local data, err = wb:bytes()
+wb:close()
 if err then
     return nil, err
 end
 
--- For example, return `data` in an HTTP response or upload it to object storage.
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
 ```
 
 **戻り値:** `string, error`
 
-`bytes()`の呼び出し後もワークブックは開いたままで、引き続き使用できます。ファイル全体がメモリに展開されるため、ライターを利用できる大きなワークブックでは`write_to`を使用してください。
+ワークブック全体がメモリ上に展開されます。`write_to`も同じメモリ上のバッファを構築してからライターへコピーするため、Lua文字列は節約できますが、大きなワークブックをストリーミングするわけではありません。
+
+閉じられたワークブックに対して`bytes()`を呼び出すと、`errors.INTERNAL`エラーが返ります。
 
 ### ワークブックを閉じる
 
-ワークブックを閉じてリソースを解放します。
+ワークブックを閉じてリソースを解放。
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
--- ... work with workbook ...
-local close_err = wb:close()
-if close_err then return nil, close_err end
+local wb = excel.new()
+-- ... ワークブックで作業 ...
+wb:close()
 
--- Safe to call multiple times
-local second_close_err = wb:close()
-if second_close_err then return nil, second_close_err end
+-- 複数回呼び出しても安全
+wb:close()
 ```
 
 **戻り値:** `error`
@@ -357,27 +327,18 @@ if second_close_err then return nil, second_close_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| `new`または`open`にコンテキストがない | `errors.INTERNAL` | いいえ |
-| `open`に無効または空のExcelファイルを渡した | `errors.INTERNAL` | いいえ |
-| `new_sheet`、`get_sheet_list`、`get_rows`、`rows`、`bytes`のワークブックレシーバーが無効 | `errors.INVALID` | いいえ |
-| `set_cell_value`、`write_to`、`close`のワークブックレシーバーが無効 | `errors.INTERNAL` | いいえ |
-| `rows`でワークブックがクローズ済み | `errors.INVALID` | いいえ |
-| その他のワークブック操作でワークブックがクローズ済み | `errors.INTERNAL` | いいえ |
-| シートの作成に失敗 | `errors.INTERNAL` | いいえ |
-| `rows`でシートが存在しない | `errors.INVALID` | いいえ |
-| `get_rows`または`set_cell_value`でシートが存在しない | `errors.INTERNAL` | いいえ |
-| 無効なセル参照 | `errors.INTERNAL` | いいえ |
-| 無効なライターまたは書き込み失敗 | `errors.INTERNAL` | いいえ |
-| `read`の行カーソルが無効またはクローズ済み、あるいはバッチサイズが1未満 | `errors.INVALID` | いいえ |
-| `close`の行カーソルが無効 | `errors.INTERNAL` | いいえ |
-| 行の読み取り、カーソルのクローズ、コンテキストのキャンセルに失敗 | `errors.INTERNAL` | いいえ |
+| コンテキストがない | `errors.INTERNAL` | no |
+| 無効なワークブック | `errors.INVALID` | no |
+| ワークブックがクローズ済み | `errors.INTERNAL`（`rows`からは`errors.INVALID`）| no |
+| ライターではない（`write_to`）| `errors.INTERNAL` | no |
+| リーダーではない（`open`）| 引数エラーとして送出される | no |
+| 無効なExcelファイル | `errors.INTERNAL` | no |
+| 存在しないシート | `errors.INTERNAL`（`rows`からは`errors.INVALID`）| no |
+| 無効なセル参照 | `errors.INTERNAL` | no |
+| 書き込み失敗 | `errors.INTERNAL` | no |
 
-`open`に`io.Reader`ではない値を渡す場合、または`write_to`にuserdataではない値を渡す場合、構造化エラーを返す代わりにLua引数エラーが発生します。`io.Writer`を実装していないライターuserdataでは`errors.INTERNAL`が返ります。行バッチが10,000を超える場合は拒否されず、10,000に制限されます。
-
-ワークブックを閉じると、開いている行カーソルも閉じられます。Lua実行コンテキストのクリーンアップ時にワークブックは自動的に閉じられますが、明示的に`close()`を呼ぶとリソースをより早く解放できます。
-
-エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 関連項目
 
-- [ファイルシステム](lua/storage/filesystem.md) - Excelファイルの読み書きに使用するファイル操作
+- [ファイルシステム](lua/storage/filesystem.md) - Excelファイルの読み書き用ファイル操作

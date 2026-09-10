@@ -59,7 +59,7 @@ wippy run --profile pg
 - La sección `disable` admite operaciones de lista dentro de perfiles — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — de modo que un perfil puede ajustar la lista base en lugar de reemplazarla.
 - Las referencias `${name}` se interpolan desde la sección `vars:` fusionada. Las referencias a variables de entorno del SO no están permitidas dentro de las vars de perfil; usa `${env:NAME}` en la configuración base, resuelta al cargar el archivo.
 
-`wippy run`, `test` y `pack` aceptan `--profile`; `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` y `pack` aceptan `--profile`; `run list`, `install`, `update`, `lint` y `registry` también lo aceptan para perfiles de workspace (junto con `--set`). Las aplicaciones pueden distribuir perfiles dentro de packs — ver [Publicar Perfiles](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -82,13 +82,12 @@ Controla el enrutamiento de registros del runtime. La salida en consola se confi
 |-------|------|---------|-------------|
 | `propagate_downstream` | bool | true | Enviar registros a la salida de consola/archivo |
 | `stream_to_events` | bool | false | Publicar registros al bus de eventos para acceso programático |
-| `min_level` | int | -1 | Nivel mínimo: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-1` con `-v`) | Nivel mínimo: -1=debug, 0=info, 1=warn, 2=error. La CLI escribe esta clave a partir de sus flags después de leer el archivo, así que un valor del archivo se ignora; cámbialo con `--set logmanager.min_level=<n>` |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 Ver: [Módulo Logger](lua/system/logger.md)
@@ -119,11 +118,11 @@ Comportamiento de seguridad global. Las políticas individuales se definen como 
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `strict_mode` | bool | false | Denegar acceso cuando el contexto de seguridad está incompleto |
+| `strict_mode` | bool | true | Denegar acceso cuando el contexto de seguridad está incompleto |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 Ver: [Sistema de Seguridad](system/security.md), [Módulo de Seguridad](lua/security/security.md)
@@ -136,9 +135,15 @@ Almacenamiento de entradas e historial de versiones. El registro almacena todas 
 |-------|------|---------|-------------|
 | `enable_history` | bool | true | Rastrear versiones de entradas |
 | `history_type` | string | memory | Almacenamiento: `memory`, `sqlite`, `postgres`, `nil` |
-| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite (se usa con `history_type: sqlite`) |
-| `history_dsn` | string | | DSN de Postgres (se usa con `history_type: postgres`) |
-| `history_schema` | string | | Nombre de esquema de Postgres (se usa con `history_type: postgres`) |
+| `history_path` | string | .wippy/registry.db | Ruta del archivo SQLite (usada cuando `history_type: sqlite`) |
+| `history_dsn` | string | | DSN de Postgres (usado cuando `history_type: postgres`) |
+| `history_schema` | string | | Nombre del esquema de Postgres (usado cuando `history_type: postgres`) |
+| `event_wait_timeout` | duration | 30s | Espera por operación a la confirmación de los listeners durante un apply del registro |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Tipos de entrada gestionados internamente en lugar de despacharse a los listeners de componentes |
+| `dependency_resolve_timeout` | duration | 0 (ninguno) | Límite para la resolución de dependencias |
+| `dependency_download_timeout` | duration | 0 (ninguno) | Límite para cada descarga de módulo y solicitud de URL de descarga |
+| `dependency_lock_path` | string | `wippy.lock` descubierto | Archivo de bloqueo que el handler de dependencias lee y escribe |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | Directorio que contiene los packs de módulos descargados |
 
 ```yaml
 registry:
@@ -155,13 +160,41 @@ registry:
 
 Ver: [Concepto de Registro](concepts/registry.md), [Módulo de Registro](lua/core/registry.md)
 
+## Artifact
+
+Raíz de salida para los [artefactos de tiempo de build](guides/artifacts.md) materializados.
+
+| Campo | Tipo | Por defecto | Descripción |
+|-------|------|---------|-------------|
+| `materialization_root` | string | padre del directorio vendor de dependencias | Raíz propiedad de la aplicación bajo la cual cada formato de artefacto escribe su propio subárbol |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+Ver: [Artefactos de tiempo de build](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Sustituciones de módulos locales, indexadas por `org/module`. Los valores son directorios; las rutas relativas se resuelven respecto al directorio del primer archivo `--config`, y `null` desactiva una sustitución heredada de una capa de configuración o perfil anterior.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Las sustituciones nunca se escriben en `wippy.lock`. Ver [Desarrollo local con sustituciones](guides/dependency-management.md#local-development-with-replacements).
+
 ## Relay
 
 Enrutamiento de mensajes entre procesos a través de nodos.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `node_name` | string | ID derivado por instancia | Identificador de este nodo relay (predeterminado: UUIDv5 de machine-id/hostname + directorio de trabajo; se puede sobrescribir con `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
+| `node_name` | string | ID derivado por instancia | Identificador de este nodo relay (por defecto: UUIDv5 de machine-id/hostname + directorio de trabajo; anulable mediante `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -198,19 +231,23 @@ Caché de la VM de Lua y evaluación de expresiones.
 
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
-| `proto_cache_size` | int | 60000 | Caché de prototipos compilados |
-| `main_cache_size` | int | 10000 | Caché del chunk principal |
-| `cache.enabled` | bool | false | Persistir caché de bytecode/verificación de tipos en disco |
-| `cache.dir` | string | `.wippy/cache/lua` | Ruta del directorio de caché |
-| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (predeterminado), `readonly`, `off` |
-| `cache.compile.enabled` | bool | true | Persistir bytecode compilado (cuando `cache.enabled`) |
-| `cache.typecheck.enabled` | bool | true | Persistir resultados de comprobación de tipos (cuando `cache.enabled`) |
+| `cache.enabled` | bool | `type_system.enabled` | Persistir caché de bytecode/verificación de tipos en disco; sigue a `type_system.enabled` salvo que se establezca explícitamente |
+| `cache.dir` | string | `.wippy/cache/lua` | Ruta del directorio de caché (relativa al directorio de configuración/trabajo) |
+| `cache.mode` | string | `readwrite` | Modo de caché: `readwrite` (por defecto), `readonly`, `off`; los valores desconocidos recaen en `readwrite` |
+| `cache.compile.enabled` | bool | true | Persistir el bytecode compilado (cuando `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Persistir los resultados de verificación de tipos (cuando `cache.enabled`) |
+| `cache.max_bytes` | int | 1073741824 | Límite máximo del tamaño de la caché en disco, en bytes |
+| `cache.max_entries` | int | 20000 | Número máximo de entradas en caché |
+| `cache.prune_interval` | int | 256 | Escrituras entre pasadas de purga de la caché |
 | `type_system.enabled` | bool | false | Habilitar verificación estática de tipos |
 | `type_system.strict` | bool | false | Tratar advertencias de tipos como errores |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Espera a que se confirme la invalidación de código tras cambiar una entrada |
+| `eval.max_steps` | int | 10000 | Presupuesto de pasos del scheduler por defecto para una ejecución `eval`; los valores negativos se rechazan |
+| `eval.cache_size` | int | 256 | Entradas de la caché de programas compilados para código evaluado |
+| `eval.cache_ttl` | duration | 0 (sin expiración) | Tiempo de vida de un programa compilado en caché |
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -219,6 +256,22 @@ lua:
 ```
 
 Ver: [Visión General de Lua](lua/overview.md)
+
+## Scheduler
+
+Particionado de núcleos para el runtime WASM. Cuando está habilitado, se reservan `reserved_cores` CPUs para la ejecución WASM y el resto sirve al scheduler de actores; una división inválida (por ejemplo, más núcleos reservados que disponibles) se registra y se ignora.
+
+| Campo | Tipo | Por defecto | Descripción |
+|-------|------|---------|-------------|
+| `wasm_isolation.enabled` | bool | false | Particionar núcleos entre trabajo WASM y de actores |
+| `wasm_isolation.reserved_cores` | int | 1 | Núcleos reservados para la ejecución WASM |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -269,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Las variables de entorno estándar de OTEL (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) sobrescriben los campos correspondientes.
+Las variables de entorno estándar de OTEL (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`) sobrescriben los campos correspondientes.
 
 Ver: [Guía de Observabilidad](guides/observability.md)
 
@@ -293,7 +346,7 @@ Buffer interno de recolección de métricas.
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `buffer.size` | int | 10000 | Capacidad del buffer de métricas |
-| `interceptor.enabled` | bool | false | Rastrear automáticamente llamadas a funciones |
+| `interceptor.enabled` | bool | true | Rastrear automáticamente llamadas a funciones |
 
 ```yaml
 metrics:
@@ -312,7 +365,8 @@ Endpoint de métricas de Prometheus.
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `enabled` | bool | false | Iniciar servidor de métricas |
-| `address` | string | | Dirección de escucha; debe establecerse explícitamente cuando `enabled: true`, de lo contrario el servidor de métricas no se inicia |
+| `address` | string | | Dirección de escucha; debe establecerse explícitamente cuando `enabled: true`, de lo contrario el servidor de métricas no arranca |
+| `max_cardinality` | int | 1024 | Conjuntos de etiquetas distintos retenidos por métrica (LRU); `0` o menos usa el valor por defecto |
 
 ```yaml
 prometheus:
@@ -320,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Expone el endpoint `/metrics` para el scraping de Prometheus.
+Expone el endpoint `/metrics` para el scraping de Prometheus, más `/livez`.
 
 Ver: [Guía de Observabilidad](guides/observability.md)
 
@@ -335,6 +389,8 @@ Clustering multi-nodo: membresía por gossip más un núcleo de consenso Raft ac
 | `enabled` | bool | false | Habilitar clustering |
 | `name` | string | hostname | Nombre del nodo; debe ser único en el cluster |
 | `failure_domain` | string | | Etiqueta de zona/rack; anunciada en gossip para que los votantes se distribuyan entre dominios |
+| `kv_crdt_tombstone_retention` | duration | 0 | Antigüedad tras la cual se reclaman las lápidas de borrado de `store.kv.crdt`; `0` deshabilita el GC por antigüedad |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | Usar la membresía viva actual como conjunto de confirmación de lápidas |
 
 ### Membresía (gossip)
 
@@ -356,6 +412,8 @@ Gossip SWIM via memberlist. Usado para descubrimiento de nodos, detección de fa
 | `membership.tcp_timeout` | duration | 1s | Timeout del sondeo TCP de respaldo |
 | `membership.suspicion_mult` | int | 3 | Multiplicador del timeout de sospecha |
 
+Se requiere un secreto de gossip. Establezca `membership.secret_key` o `membership.secret_file` (el archivo gana si se dan ambos); sin ninguno, el componente de cluster no arranca. El valor está codificado en base64.
+
 Las cuatro claves de sondeo heredan los valores por defecto de red local de memberlist cuando no están definidas; auméntalas para enlaces de alta latencia (ej. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internodo (transporte)
@@ -371,11 +429,13 @@ Cada nodo del cluster necesita su propia identidad privada internodo y un mapa d
 | `internode.auto_port` | bool | true | Descubrir el puerto real en el arranque, fijarlo y anunciarlo en gossip |
 | `internode.advertise_addr` | string | | Endpoint de relay adicional (IP o nombre DNS) publicado para peers actualizados — para alcanzabilidad con NAT o balanceadores de carga |
 | `internode.advertise_port` | int | 0 | Puerto para `advertise_addr` (0 = puerto de enlace; requiere `advertise_addr`) |
-| `internode.identity_key` | string | | Semilla o clave privada Ed25519 codificada en base64; obligatoria salvo que se establezca `identity_key_file` |
-| `internode.identity_key_file` | string | | Archivo que contiene una semilla o clave privada Ed25519 codificada en base64; obligatorio salvo que se establezca `identity_key` |
-| `internode.trusted_peer_keys` | map | | Mapa de nombre de nodo a clave pública Ed25519 codificada en base64; debe incluir el nodo local y todos los peers |
+| `internode.identity_key` | string | | Clave privada ed25519 codificada en base64 que identifica a este nodo (en línea) |
+| `internode.identity_key_file` | string | | Ruta a un archivo que contiene esa clave |
+| `internode.trusted_peer_keys` | map | | Clave pública ed25519 codificada en base64 por nombre de nodo, incluido este nodo |
 
 `advertise_addr`/`advertise_port` publican un endpoint aditivo en los metadatos del nodo mientras el endpoint de enlace sigue anunciándose sin cambios, de modo que los clusters con versiones mixtas mantienen la conectividad durante una actualización progresiva.
+
+La identidad internodo es obligatoria siempre que el clustering esté habilitado. `identity_key` e `identity_key_file` son mutuamente excluyentes y una de las dos debe estar presente; el valor decodifica (base64 estándar o crudo) a una semilla ed25519 de 32 bytes o a una clave privada ed25519 de 64 bytes. `trusted_peer_keys` asigna a cada nombre de nodo la clave pública ed25519 de 32 bytes de ese nodo, y debe contener una entrada para el `cluster.name` local cuyo valor coincida con la identidad local — de lo contrario el arranque falla. Ver la [Guía de Cluster](guides/cluster.md#internode-identity).
 
 ### Raft (consenso)
 
@@ -403,6 +463,8 @@ Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo
 | `raft.max_append_entries` | int | 16 | Máximo de entradas por RPC AppendEntries |
 | `raft.leader_probe_interval` | duration | 3s | Cadencia de sonda de alcanzabilidad del líder del registro global |
 | `raft.leader_probe_grace` | int | 3 | Fallos consecutivos de sonda antes de declarar al líder inalcanzable |
+| `raft.registry_backend` | string | kv | Implementación del registro de nombres del clúster: `kv` (espacio de claves kv compartido) o `fsm` (FSM Raft dedicada) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | Cuánto tiempo conserva la caché de diseminación de nombres globales las lápidas de borrado |
 
 Nodo único (desarrollo) — clustering activado, se bootstrapea inmediatamente:
 
@@ -410,15 +472,17 @@ Nodo único (desarrollo) — clustering activado, se bootstrapea inmediatamente:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
   internode:
-    identity_key: "${env:DEV_PRIVATE_KEY}"
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
     trusted_peer_keys:
-      dev: "${env:DEV_PUBLIC_KEY}"
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Cluster de votación de tres nodos — cada nodo lista los otros como semillas y espera a los tres antes de formar quórum:
+Cluster de votación de tres nodos — cada nodo lista los otros como semillas y espera a los tres antes de formar quórum. Cada nodo lleva el mismo mapa `trusted_peer_keys` y su propia clave privada:
 
 ```yaml
 cluster:
@@ -430,17 +494,17 @@ cluster:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-1.identity
+    identity_key_file: /etc/wippy/node-1.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      node-3: "${env:NODE_3_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Cliente solo-gossip — se une al cluster para naming/mensajería pero nunca ejecuta Raft:
+Cliente solo-gossip — se une al cluster para naming/mensajería pero nunca ejecuta Raft. Aún necesita su propia identidad y debe aparecer en el mapa de confianza de cada nodo:
 
 ```yaml
 cluster:
@@ -448,12 +512,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/edge-7.identity
+    identity_key_file: /etc/wippy/edge-7.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```
@@ -550,7 +616,7 @@ extensions:
 
 | Variable | Descripción |
 |----------|-------------|
-| `GOMEMLIMIT` | Límite de memoria de fallback cuando no se establece el flag `--memory-limit` (precedencia: flag `--memory-limit` > `GOMEMLIMIT` > valor predeterminado de 1G) |
+| `GOMEMLIMIT` | Límite de memoria de respaldo cuando no se establece el flag `--memory-limit` (precedencia: flag `--memory-limit` > `GOMEMLIMIT` > 1G por defecto) |
 
 ## Ver También
 

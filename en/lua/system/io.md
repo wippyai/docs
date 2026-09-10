@@ -1,6 +1,6 @@
 ---
 title: "Terminal I/O"
-description: "Read terminal input and write to standard output and standard error."
+description: "Read from stdin and write to stdout/stderr for CLI applications."
 ---
 
 # Terminal I/O

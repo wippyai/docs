@@ -101,7 +101,8 @@ resp:write_json({users = get_users()})
 | `db.sql.sqlite` | SQLite 데이터베이스 |
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |
-| `db.cdc.postgres` | Postgres Change Data Capture 소스 ([CDC](../system/cdc.md) 참조) |
+| `db.cdc.postgres` | Postgres 변경 데이터 캡처 소스 ([CDC](system/cdc.md) 참조) |
+| `db.cdc.sqlite` | SQLite 변경 데이터 캡처 소스 ([CDC](system/cdc.md) 참조) |
 
 ### SQLite
 
@@ -154,7 +155,7 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-`${env:NAME}` 비밀 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참고하세요. 데이터베이스 엔트리 뒤의 환경 변수 기반 값이 변경되면 풀이 라이브로 교체됩니다. 사용 중인 연결은 이전 연결 설정으로 작업을 마칩니다.
+`${env:NAME}` 시크릿 참조, TLS 옵션 및 연결 풀 튜닝은 [Database](system/database.md)를 참조하세요. 데이터베이스 엔트리 뒤의 env 기반 값이 변경되면 풀이 라이브로 교체됩니다 — 진행 중인 대여는 이전 연결 설정으로 완료됩니다.
 
 **Lua API:** [SQL 모듈](lua/storage/sql.md) 참조
 
@@ -250,9 +251,9 @@ local queue = require("queue")
 -- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- In a consumer handler: the message body is the handler's argument
+-- 컨슈머 핸들러에서: 메시지 본문이 핸들러의 인자로 전달됨
 local function main(data)
-    -- access delivery metadata via the current message
+    -- 현재 메시지를 통해 전달 메타데이터에 접근
     local msg = queue.message()
     local id = msg:id()
     local priority = msg:header("priority")
@@ -261,7 +262,7 @@ end
 ```
 
 <note>
-컨슈머의 <code>func</code>는 메시지 본문을 인수로 받아 메시지마다 한 번 호출됩니다. 전달 메타데이터와 수명 주기 작업에는 핸들러 안에서 <code>queue.message()</code>를 사용하세요.
+컨슈머의 <code>func</code>는 메시지마다 한 번씩 메시지 본문을 인자로 받아 호출됩니다. 핸들러 내에서 <code>queue.message()</code>를 사용하면 해당 전달의 <code>id()</code>, <code>header()</code>/<code>headers()</code>, <code>ack()</code>/<code>nack()</code>에 접근할 수 있습니다.
 </note>
 
 ## 프로세스 관리
@@ -271,7 +272,7 @@ end
 | `process.host` | 프로세스 실행 호스트 |
 | `process.service` | 슈퍼바이즈드 프로세스 (process.lua 래핑) |
 | `terminal.host` | 터미널/CLI 호스트 |
-| `pg.scope` | 프로세스 그룹 스코프 ([프로세스 그룹](../system/process-groups.md) 참조) |
+| `pg.scope` | 프로세스 그룹 스코프 ([프로세스 그룹](system/process-groups.md) 참조) |
 
 ```yaml
 # Process host (where processes run)
@@ -312,6 +313,39 @@ end
 </tip>
 
 라이브 `process.host` 엔트리를 업데이트하면 `host.workers`가 제자리에서 재조정됩니다 — 실행 중인 프로세스, PID, 큐는 보존됩니다. `host.queue_size`, `host.local_queue_size`, `lifecycle`은 생성 시 고정됩니다: 이를 변경하는 라이브 업데이트는 거부되며, 워커가 어피니티로 관리되는 호스트에서 워커 수를 조정하는 것도 마찬가지로 거부됩니다.
+
+### 프로세스 보안
+
+`process.lua`와 `process.lua.bc` 엔트리는 최상위 `security:` 블록을 받습니다. 이는 엔트리의 일부이므로 `process.host`와 `terminal.host` 양쪽에서 해당 프로세스의 모든 스폰에 적용됩니다:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| 필드 | 설명 |
+|-------|-------------|
+| `actor.id` | 프로세스가 실행되는 액터 아이덴티티; 상속된 액터를 대체 |
+| `actor.meta` | 정책이 평가하는 액터 속성 |
+| `policies` | 스코프에 병합되는 정책의 레지스트리 ID (`namespace:name`) |
+| `groups` | 정책이 스코프에 병합되는 정책 그룹의 레지스트리 ID |
+
+해석은 프로세스가 시작될 때 일어나며 원자적입니다: 나열된 정책이나 그룹 중 하나라도 해석할 수 없으면 스폰이 실패하고 부분적인 컨텍스트는 설치되지 않습니다. `actor`를 생략하면 스폰한 쪽의 액터를 상속하고, `policies`와 `groups`를 모두 생략하면 스폰한 쪽의 스코프를 상속합니다. `function.lua`, `function.lua.bc`, `process.lua`, `process.lua.bc` 모두 이 블록을 받습니다.
+
+커맨드 엔트리는 추가로 `meta.command.security`를 선언할 수 있으며, 이는 엔트리가 CLI 커맨드로 실행될 때만 적용됩니다 — [커맨드 보안](guides/cli.md#command-security)을 참조하세요. 일반 스폰에는 영향을 주지 않습니다.
+
+[보안](system/security.md)을 참조하세요.
 
 ## Temporal (워크플로우)
 
@@ -366,7 +400,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 초 단위, 기본값 3600
 ```
 
 <tip>
@@ -443,7 +477,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-라우터는 순서대로 스토리지를 확인합니다. 읽기 시 첫 번째로 일치하는 값이 사용되고, 쓰기는 첫 번째 쓰기 가능한 스토리지에 저장됩니다.
+라우터는 순서대로 스토리지를 확인합니다. 읽기 시 첫 번째로 일치하는 값이 사용되고, 쓰기는 목록의 첫 번째 스토리지에 저장됩니다.
 </note>
 
 ## 템플릿
@@ -511,7 +545,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+정책 그룹은 정책 자체에 의해 형성됩니다: 정책이 `groups:` 아래에 자신이 속한 그룹 ID를 나열하고, 그룹은 그 그룹을 지명한 정책들의 집합입니다. 별도의 그룹 엔트리 kind는 없습니다. 그룹 ID는 레지스트리 ID입니다 — 이름만 쓰면 선언한 정책의 네임스페이스에서 해석되므로, 위의 `operators`는 네임스페이스 `app.security`에서 선언되면 `app.security:operators`가 됩니다. 엔트리는 전체 `namespace:name`으로 그룹을 참조합니다.
 
 **Lua API:** [보안 모듈](lua/security/security.md) 참조
 
@@ -528,7 +566,7 @@ local actor = security.actor()
 ```
 
 <warning>
-정책 순서는 접근 여부를 결정하지 않습니다. 스코프는 정책 결정을 결합하며, 일치하는 <code>deny</code>는 일치하는 <code>allow</code> 정책보다 우선하고 평가를 즉시 중단할 수 있습니다. 일치하는 정책이 없으면 허용이 아니라 미정 상태가 됩니다.
+범위 안의 모든 정책이 평가됩니다. 일치하는 정책 중 하나라도 <code>deny</code>를 내면 모든 <code>allow</code>보다 우선합니다. deny가 없으면 일치하는 <code>allow</code>가 접근을 허용합니다. 순서는 중요하지 않습니다.
 </warning>
 
 ## 계약 (의존성 주입)
@@ -595,7 +633,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** [계약 모듈](lua/core/contract.md) 참조
 
 <tip>
-바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요(<code>context_required</code> 필드가 설정되지 않은 경우에만 작동).
+바인딩 ID 없이 계약을 열 때 기본으로 사용하려면 하나의 바인딩에 <code>default: true</code>를 설정하세요. 계약은 기본 바인딩을 하나만 가질 수 있습니다.
 </tip>
 
 ## 실행
@@ -632,11 +670,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssembly 프로세스 |
 
 ```yaml
+# WAT 텍스트는 인라인 소스입니다
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # 또는 wasi-http
+
+# 바이너리 WASM은 파일시스템 엔트리에서 로드되고 해시로 검증됩니다
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # or wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm`과 `process.wasm`은 `fs`, `path`, `hash`를 받습니다 — 바이너리 엔트리에는 `source` 필드가 없으며, `source`는 `function.wat`에만 해당합니다. `hash`는 필수이며 `sha256:<hex>` 형식이어야 합니다; 바이트가 일치하지 않으면 모듈이 거부됩니다.
 
 [WASM 개요](wasm/overview.md) 참조.
 
@@ -655,12 +706,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | 종류 | 설명 |
 |------|-------------|
-| `registry.entry` | 엔트리 디스크립터 (내부) |
+| `registry.entry` | 뒤에 서비스가 없는 순수 데이터 엔트리 (앱 고유 설정) |
 | `ns.definition` | 네임스페이스 정의 |
 | `ns.requirement` | 네임스페이스 요구사항 선언 |
 | `ns.dependency` | 네임스페이스 의존성 |
 
-`registry.entry`는 내부 디스크립터입니다. 작성자는 `_index.yaml`에 `ns.definition`, `ns.requirement`, `ns.dependency` 엔트리를 직접 정의합니다. 파일의 `version`과 `namespace` 필드는 이러한 엔트리를 생성하지 않습니다.
+`ns.*` 종류는 다른 엔트리와 마찬가지로 직접 작성합니다. 컴포넌트는 `ns.definition`과 `ns.requirement`를 선언하고, 호스트는 `ns.dependency`를 선언합니다. [컴포넌트 구축](guides/components.md)을 참조하세요.
 
 ## 라이프사이클 설정
 
@@ -682,7 +733,7 @@ lifecycle:
 ```
 
 <note>
-<code>requires</code>로 서비스 의존성을 선언하세요. 슈퍼바이저는 의존하는 서비스보다 먼저 필수 서비스를 시작하며, 필수 서비스가 실행 중이면 준비된 것으로 간주합니다. <code>depends_on</code>도 레거시 표기로 허용되지만 새 매니페스트는 <code>requires</code>를 사용해야 합니다.
+<code>depends_on</code>을 사용하면 엔트리가 올바른 순서로 시작됩니다. 슈퍼바이저는 각 의존성이 자신의 시작을 완료한 뒤에야 그에 의존하는 엔트리를 시작합니다.
 </note>
 
 ## 엔트리 참조 형식

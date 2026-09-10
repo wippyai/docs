@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "Store and retrieve values with optional expiration and conditional writes."
+description: "Fast key-value storage with TTL support. Ideal for caching, sessions, and temporary state."
 ---
 
 # Key-Value Store
@@ -103,15 +103,8 @@ The method returns `nil` and an `errors.NOT_FOUND` error when the key does not e
 Check whether a key exists without retrieving its value:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -285,16 +278,14 @@ Permission denials from `store.get`, `get`, `set`, `delete`, and `has` raise a L
 
 ## Errors
 
-Input, lookup, backend, and capability failures are returned as structured errors (use `err:kind()`). Permission denials follow the split behavior documented above.
+`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`), except that a permission denial in `store.get`, `get`, `set`, `has` and `delete` raises a Lua error instead.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty resource ID | `errors.INVALID` | no |
-| Resource registry unavailable | `errors.NOT_FOUND` | no |
-| Resource acquisition failed, including a missing resource | `errors.INTERNAL` | no |
+| Resource not found | `errors.INTERNAL` | no |
 | Store released | `errors.INVALID` | no |
-| Permission denied by `info`, `entry`, `list`, or `put` | `errors.PERMISSION_DENIED` | no |
-| Permission denied by `store.get`, `get`, `set`, `delete`, or `has` | raised Lua error | not applicable |
+| Permission denied (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` and key exists | `errors.ALREADY_EXISTS` | no |
 | `if_version` mismatch | `errors.CONFLICT` | yes |
 | Conditional write on a store without support | `errors.INVALID` | no |

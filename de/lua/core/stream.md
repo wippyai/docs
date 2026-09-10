@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "Von I/O-Modulen zurückgegebene Stream-Objekte lesen, schreiben, positionieren, prüfen, scannen und schließen."
+description: "Stream-Lese-/Schreiboperationen zur effizienten Datenverarbeitung. Stream-Objekte werden von anderen Modulen (HTTP, Dateisystem, etc.) bezogen."
 ---
 
 # Streams
@@ -33,9 +33,9 @@ local chunk, err = stream:read(size)
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `size` | integer | Zu lesende Bytes (0 = standardmäßiger 32-KB-Chunk) |
+| `size` | integer | Zu lesende Bytes (0 = Standard-Chunk von 32 KB) |
 
-**Gibt zurück:** `string, error` — `nil, nil` am EOF
+**Gibt zurück:** `string, error` — `nil, nil` bei EOF
 
 ## Schreiben
 
@@ -107,20 +107,16 @@ local scanner, err = stream:scanner(split)
 ### Scanner-Methoden
 
 ```lua
-local has_more, err = scanner:scan()  -- advance to next token
-local token = scanner:text()           -- current token
-local err_msg = scanner:err()          -- scanner error if any
+local has_more, err = scanner:scan()  -- Zum nächsten Token vorrücken
+local token = scanner:text()           -- Aktuelles Token
+local err_msg = scanner:err()          -- Scanner-Fehler falls vorhanden
 ```
 
 ```lua
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then
-        local scan_err = scanner:err()
-        if scan_err then return nil, scan_err end  -- raw scanner error string
-        break  -- clean EOF
-    end
+    if not has_token then break end  -- EOF
     process(scanner:text())
 end
 ```
@@ -130,13 +126,8 @@ Wenn `scan()` den Wert `false` zurückgibt, prüfen Sie `scanner:err()`, bevor S
 ## Fehler
 
 | Bedingung | Art |
-|-----------|-----|
-| Stream geschlossen | `errors.INTERNAL` |
-| Nicht lesbar/schreibbar | `errors.INTERNAL` |
-| Fehler beim Lesen, Schreiben oder Positionieren | `errors.INTERNAL` |
-| Positionieren eines nicht positionierbaren Streams | `errors.INTERNAL` |
-| Fehler beim Schließen, Flushen oder Abrufen von Statistiken | `errors.INTERNAL` |
-| Fehler beim Erstellen eines Scanners oder beim Scan-Dispatch | `errors.INTERNAL` |
-| Tokenisierungsfehler oder Fehler beim zugrunde liegenden Lesen | Unstrukturierter String von `scanner:err()` |
-
-Ein nicht unterstützter `whence`- oder Scanner-Split-Wert löst einen Lua-Argumentfehler aus, statt einen strukturierten Fehlerwert zurückzugeben.
+|-----------|------|
+| Ungültiger whence/split-Typ | wird als Lua-Fehler ausgelöst (nicht zurückgegeben) |
+| Stream geschlossen | `INTERNAL` |
+| Nicht lesbar/schreibbar | `INTERNAL` |
+| Lese-/Schreibfehler | `INTERNAL` |

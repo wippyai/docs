@@ -1,106 +1,81 @@
 ---
-title: "Gates de conformidade e publicação do frontend"
-description: "Regras normativas de conformidade, responsabilidade dos checkers, gates de publicação e requisitos de evidência visual determinística."
+title: "Índice de Regras de Conformidade de Frontend"
+description: "Índice conciso das regras canônicas de frontend e da propriedade dos verificadores determinísticos."
 ---
 
-# Gates de conformidade e publicação do frontend
+# Índice de Regras de Conformidade de Frontend
 
-**Classificação: referência normativa de conformidade e evidência.** Os blocos
-JSON definem formatos com placeholders para entradas dos checkers; não são
-evidência válida nem fixture independente de aplicação.
-
-Esta página define os requisitos determinísticos de checker e publicação. O
-[Contrato de UI portável](../portable-ui-contract.md) define as regras de
-portabilidade e interface; os guias vinculados detalham a implementação. O
-índice associa cada regra à sua fonte e ao resultado obrigatório do checker.
-
-A família pública de pacotes `@wippy-fe/*` 0.0.56 não inclui uma CLI de
-conformidade de módulos. O checker de documentação valida os exemplos e a
-atualidade dos catálogos gerados; o workflow de conformidade escolhido para o
-módulo deve implementar as verificações abaixo.
+Esta página é um índice, não uma segunda cópia do contrato. O
+[Contrato de UI Portável](../portable-ui-contract.md) é dono dos enunciados
+normativos das regras; os links abaixo fornecem orientação detalhada de
+implementação.
 
 | Regra | Orientação detalhada | Resultado determinístico |
 |---|---|---|
-| FE-PORT-001 | [Contrato de UI portável](../portable-ui-contract.md) | Rejeitar pressupostos privados de portabilidade |
-| FE-UI-001 | [Contrato de UI portável](../portable-ui-contract.md) | Rejeitar controles padrão nativos ou recriados manualmente |
-| FE-UI-002 | [Contrato de UI portável](../portable-ui-contract.md) | Exigir análise de affordance |
-| FE-UI-003 | [Contrato de UI portável](../portable-ui-contract.md) | Exigir contrato do controle equivalente e evidência com tema alternativo |
-| FE-UI-004 | [Contrato de UI portável](../portable-ui-contract.md) | Exigir configuração PrimeVue quando houver controles |
-| FE-UI-005 | [Contrato de UI portável](../portable-ui-contract.md) | Rejeitar props e APIs inventadas |
+| FE-PORT-001 | [Contrato de UI Portável](../portable-ui-contract.md) | Rejeitar suposições privadas de portabilidade |
+| FE-UI-001 | [Contrato de UI Portável](../portable-ui-contract.md) | Rejeitar controles padrão crus ou feitos à mão |
+| FE-UI-002 | [Contrato de UI Portável](../portable-ui-contract.md) | Exigir análise de affordance |
+| FE-UI-003 | [Contrato de UI Portável](../portable-ui-contract.md) | Exigir contrato de irmãos e evidência de tema alternativo |
+| FE-UI-004 | [Contrato de UI Portável](../portable-ui-contract.md) | Exigir configuração do PrimeVue quando houver controles |
+| FE-UI-005 | [Contrato de UI Portável](../portable-ui-contract.md) | Rejeitar props e APIs inventadas |
 | FE-TW-001 | [Contrato Tailwind](./tailwind-contract.md) | Resolver o preset Wippy selecionado |
-| FE-TW-002 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar valores de compilação documentados como runtime |
-| FE-TW-003 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar valores fixos sem classificação de invariante |
-| FE-TW-004 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar overrides de mapeamentos protegidos |
-| FE-TOKEN-001 | [Catálogo de tokens](./token-catalogue.md) | Rejeitar referências `--p-*` não declaradas |
-| FE-TOKEN-002 | [Catálogo de tokens](./token-catalogue.md) | Rejeitar nomes de tokens inferidos ou inventados |
-| FE-STYLE-001 | [Criação de temas](./theming.md) | Rejeitar classes privadas da facade e tematização `.p-*` local |
-| FE-A11Y-001 | [Contrato de UI portável](../portable-ui-contract.md) | Rejeitar controles personalizados inválidos ou inacessíveis |
+| FE-TW-002 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar valores de tempo de compilação documentados como runtime |
+| FE-TW-003 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar valores fixos de irmãos sem classificação de invariante |
+| FE-TW-004 | [Contrato Tailwind](./tailwind-contract.md) | Rejeitar sobrescritas de mapeamento protegido |
+| FE-TOKEN-001 | [Catálogo de Tokens](./token-catalogue.md) | Rejeitar referências `--p-*` não declaradas |
+| FE-TOKEN-002 | [Catálogo de Tokens](./token-catalogue.md) | Rejeitar nomes de token deduzidos ou inventados |
+| FE-STYLE-001 | [Autoria de Temas](./theming.md) | Rejeitar classes privadas da facade e temas `.p-*` locais ao módulo |
+| FE-A11Y-001 | [Contrato de UI Portável](../portable-ui-contract.md) | Rejeitar controles customizados inválidos ou inacessíveis |
 
-## Grupos obrigatórios do checker
+## Grupos de verificadores obrigatórios
 
-- analisar o CSS de tokens com PostCSS e comparar o snapshot gerado byte a byte;
-- resolver a configuração Tailwind real e compilar utilities representativas;
-- classificar declarações emitidas como variável de runtime, constante
-  compilada, literal arbitrário ou interna/transitória;
-- rejeitar controles nativos, setup PrimeVue ausente, overrides protegidos,
-  tokens não declarados, dependências privadas da facade e drift de hashes;
-- comparar externals do import map com o snapshot completo fixado;
-- conferir a saída do build contra o registry e o asset servido;
-- usar `host.setThemeMode()` e verificar o estado AppConfig propagado;
-- conferir procedência, tupla de versões e hashes dos catálogos;
-- analisar e compilar exemplos copiáveis quando aplicável;
-- retornar exatamente `UNSUPPORTED` no modo vinculado a projeto e falhar a CI.
+- CSS de tokens parseado com PostCSS; snapshot de tokens gerado comparado byte a byte.
+- Configuração real do Tailwind resolvida e utilitários representativos compilados.
+- Declarações emitidas classificadas como variável de runtime, constante compilada, literal arbitrário ou interno/transitório.
+- Controles crus, configuração ausente do PrimeVue, sobrescritas de mapeamento protegido, tokens não declarados, dependências privadas de facade e drift de hash de contrato são rejeitados.
+- Externals do import map comparados com o snapshot completo e pinado.
+- Saída do build verificada contra o registry configurado e o asset servido.
+- A troca de tema usa `host.setThemeMode()` e verifica o estado propagado do AppConfig;
+  manipulação direta de classes de tema e wires internos do proxy são rejeitados.
+- Catálogos gerados verificados quanto a proveniência, tupla de versão e hashes de origem.
+- Exemplos copiáveis parseados, compilados quando aplicável, e verificados quanto a conteúdo interativo aninhado.
+- O modo vinculado a projeto retorna exatamente `UNSUPPORTED`, e o CI padrão falha.
 
-Promptmap pode gerar pistas, mas não é evidência de existência de tokens,
-resolução de utilities, alcance ou exclusão.
+O Promptmap pode gerar pistas. Ele não é evidência de existência de token, resolução de utilitário, alcançabilidade ou remoção.
 
-## Gates de publicação gerados
+## Gates de publicação para conteúdo gerado
 
-As seções geradas de tokens e Tailwind não podem conter marcadores pendentes na
-publicação. Todo novo token de runtime precisa de consumidor CSS Wippy real,
-teste de mutação de computed style e finalidade portável documentada.
+As seções geradas de tokens e Tailwind não podem conter um marcador pendente na publicação. Todo novo token de runtime precisa de um consumidor CSS real do Wippy, um teste de mutação de estilo computado e um propósito documentado de consumidor portável.
 
-A evidência de runtime permanece fora do repositório. Defina:
+A publicação mantém a evidência de runtime fora do repositório. Defina:
 
-- `WIPPY_THEME_ROOT` para o pacote `@wippy-fe/theme` selecionado;
-- `WIPPY_FE_EVIDENCE_ROOT` para o diretório de evidências da release contendo
+- `WIPPY_THEME_ROOT` como o pacote `@wippy-fe/theme` selecionado.
+- `WIPPY_FE_EVIDENCE_ROOT` como o diretório de evidências da release contendo
   `runtime-acceptance-evidence.json`, `visual-evidence-index.json`, seus
-  manifestos de cenário relativos e as capturas de tela.
-- `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` para o SHA-256 em minúsculas dos bytes
+  manifestos relativos de cenário e as capturas de tela.
+- `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` como o SHA-256 em minúsculas dos bytes
   exatos de `runtime-acceptance-evidence.json`.
 
-Na raiz do Wippy Docs, execute a verificação de publicação com Node.js 22 ou
-mais recente depois de definir as quatro variáveis. Em PowerShell:
-
-```powershell
-$env:FRONTEND_DOCS_PUBLICATION = '1'
-node scripts/check-frontend-docs.mjs
-Remove-Item Env:FRONTEND_DOCS_PUBLICATION
-```
-
-Em um shell POSIX:
-
-```sh
-FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs
-```
-
-O comando invoca o checker canônico do tema com caminho e hash da evidência,
-depois valida e recalcula a evidência visual. A verificação normal de atualidade
-da documentação não exige evidência local de release.
+`FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs` invoca o
+verificador canônico de aceitação do tema selecionado com esse caminho de
+evidência e hash, e então valida e recalcula a evidência visual. Verificações
+normais de atualidade da documentação não exigem evidência local de release.
 
 ## Verificação visual determinística
 
-Cada componente afetado por mudança visual deve ter manifesto de cenário e
-evidência imutável de antes, depois e diff. Baseline e candidato usam o mesmo
-browser, device-pixel ratio, fontes, dados, tema, viewport, reduced motion e
-regra de estabilização. Capture temas claro e escuro, estados de interação,
-overlays, estados desabilitados ou de erro e layouts desktop compatíveis. Não
-invente requisito mobile para um produto exclusivo de desktop.
+Todo componente afetado por uma mudança de aparência tem um manifesto de cenário
+e evidência imutável de antes/depois/diff. A baseline e a candidata usam o mesmo
+build de navegador, device-pixel ratio, fontes, dados de fixture, tema, viewport,
+configuração de movimento reduzido e regra de estabilização. Capture todos os
+estados aplicáveis, incluindo temas claro e escuro, estados de interação,
+overlays, estados desabilitado/erro e os layouts de desktop que o produto
+suporta. Não invente um requisito estreito/mobile para um produto exclusivo de
+desktop.
 
-Cada cenário captura o recorte do componente e o contexto ao redor. Capture a
-página inteira quando overlay, overflow ou layout puderem mudar. Um índice
-declara a matriz aplicável completa e aponta para um manifesto imutável por
-cenário:
+Cada cenário captura o recorte do componente e o contexto da aplicação ao redor.
+Ele também captura a página inteira quando um overlay, um overflow ou o layout da
+página pode ser afetado. Um índice de componente declara a matriz aplicável
+completa e aponta para um manifesto imutável por cenário:
 
 ```json
 {
@@ -136,12 +111,13 @@ cenário:
 }
 ```
 
-O checker expande o produto cartesiano de aplicabilidade e falha se algum tema,
-viewport ou estado não tiver cenário único. Com `overlay: true`, o escopo
-`full-page` também é obrigatório. Commit e hash do build final precisam
-corresponder ao candidato de cada cenário, com `recapturedAfterBuild: true`.
+O verificador expande o produto cartesiano de aplicabilidade e falha se qualquer
+tema, viewport ou estado declarado não tiver um cenário único. Quando `overlay` é
+true, todo cenário também exige o escopo de captura `full-page`. O commit e o
+hash do build final precisam corresponder à candidata de cada cenário, e
+`recapturedAfterBuild` precisa ser true.
 
-Cada manifesto registra hashes em vez de confiar em nomes de arquivos:
+Cada manifesto de cenário registra hashes em vez de confiar em nomes de arquivo:
 
 ```json
 {
@@ -222,8 +198,11 @@ Cada manifesto registra hashes em vez de confiar em nomes de arquivos:
 }
 ```
 
-Os valores acima mostram o formato exigido, não evidência válida. A publicação
-falha se faltar cenário, escopo, imagem ou hash; se o build estiver desatualizado;
-se restarem erros inesperados no Console ou fixtures temporárias; ou se o diff
-exceder a tolerância sem waiver revisado. O waiver registra pixels alterados,
-motivo, revisor e cenário; nunca dispensa capturas, erros do Console nem limpeza.
+Os valores acima mostram o formato exigido, não uma evidência válida. A
+publicação falha quando um componente alterado ou um estado obrigatório não tem
+cenário, um escopo de captura obrigatório está ausente, uma imagem ou hash
+referenciado está faltando, builds estão desatualizados, restam erros
+inesperados de console, resta código temporário de fixture, ou o diff excede a
+tolerância sem um waiver de design revisado. Um waiver registra os pixels
+exatamente alterados, a razão de design, o revisor e o cenário afetado; ele não
+pode dispensar capturas ausentes, erros de console ou limpeza de fixture.

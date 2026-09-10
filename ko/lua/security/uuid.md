@@ -1,6 +1,6 @@
 ---
 title: "UUID 생성"
-description: "UUID를 generate, validate, inspect, parse 및 format합니다."
+description: "범용 고유 식별자를 생성합니다. 워크플로우에 맞게 조정됨 - 난수 UUID는 리플레이 시 일관된 값을 반환합니다."
 ---
 
 # UUID 생성
@@ -142,7 +142,7 @@ local info, err = uuid.parse(id)
 - `version` (integer): UUID 버전 (1, 3, 4, 5, 또는 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, 또는 Invalid
 - `timestamp` (integer): Unix 타임스탬프 (v1 및 v7만)
-- `node` (string): raw 6-byte node identifier(v1만); display 또는 text storage 전에 encode하십시오.
+- `node` (string): 6바이트 원시 노드 ID (v1만)
 
 ### `format`
 

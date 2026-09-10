@@ -1,6 +1,6 @@
 ---
 title: "Template Engine"
-description: "Configure Jet template sets, sources, names, inheritance, and shared engine settings."
+description: "Template rendering using CloudyKit Jet."
 ---
 
 # Template Engine
@@ -33,9 +33,9 @@ All template-set configuration is optional:
 | `engine.development_mode` | bool | false | Disable template caching |
 | `engine.delimiters.left` | string | `{{` | Variable opening delimiter |
 | `engine.delimiters.right` | string | `}}` | Variable closing delimiter |
-| `engine.delimiters.comment_left` | string | `{*` | Validated comment opening delimiter; not applied by the current loader |
-| `engine.delimiters.comment_right` | string | `*}` | Validated comment closing delimiter; not applied by the current loader |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Validated extension list; not used for discovery by the current loader |
+| `engine.delimiters.comment_left` | string | `{*` | Validated only; comments always use Jet's `{*` |
+| `engine.delimiters.comment_right` | string | `*}` | Validated only; comments always use Jet's `*}` |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Validated only; name lookup always tries Jet's built-in `.jet`, `.html.jet`, `.jet.html` |
 | `engine.globals` | map | - | Variables available to all templates |
 
 At runtime `development_mode`, the left and right expression delimiters, and

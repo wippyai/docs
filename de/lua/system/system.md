@@ -1,6 +1,6 @@
 ---
 title: "System"
-description: "Runtime-, Prozess-, Host-, Supervisor- und Cluster-Zustand untersuchen und ausgewählte Runtime-Einstellungen steuern."
+description: "Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten."
 ---
 
 # System
@@ -50,33 +50,39 @@ Jede Modultabelle enthält:
 | `description` | string | Modulbeschreibung |
 | `class` | string[] | Modul-Klassifizierungs-Tags |
 
-## Deployment-Quellen laden
+## Deployment-Quellen
 
-`system.source.load()` baut die normalisierte Registry-Baseline aus der aktuellen Generation der Deployment-Quellen neu auf. Eigentümer und Einträge stammen aus derselben Generation, auch während dynamischer Installationen, Aktualisierungen, Deinstallationen, Ersetzungen und Rollbacks.
+Die Untertabelle `system.source` liest die normalisierte Deployment-Baseline: die Entry-Menge, die aus den Quellen entsteht, aus denen die Anwendung zusammengesetzt wurde, bevor irgendeine Registry-Historie angewendet wird.
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **Gibt zurück:** `table, error`
 
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
-| `owners` | string[] | Stabile Eigentümerkennungen der Quellen; der Anwendungseigentümer ist `application` |
-| `entries` | table[] | Dekodierte Registry-Einträge aus der normalisierten Quell-Baseline |
+| `owners` | string[] | Quell-Owner, die über die Baseline-Entries bestimmen |
+| `entries` | table[] | Baseline-Entries mit `id`, `kind`, `meta`, `data` |
 
-Normalisierungseingaben gepackter Module beanspruchen kein Eigentum, und Dateisystempfade werden nicht offengelegt. Das Laden erfordert `system.read` auf `sources`. Fehler in Quell-Registry, Laden oder Konvertierung liefern einen nicht wiederholbaren Fehler `errors.INTERNAL`; eine verweigerte Berechtigung liefert `errors.PERMISSION_DENIED`.
+`owners` ist sortiert, mit dem Anwendungs-Owner zuerst und den übrigen Ownern alphabetisch danach. Der Anwendungs-Owner ist der String `"application"`.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+Der Ladevorgang wird aus einer stabilen Quell-Generation genommen, sodass Entries und Owner immer dieselbe Baseline beschreiben. Die Dateisystempfade hinter jeder Quelle sind runtime-privat und werden nicht offengelegt; ein fehlgeschlagener Ladevorgang meldet einen generischen internen Fehler, statt den zugrunde liegenden Pfad preiszugeben.
+
+**Berechtigung:** `system.read` auf `sources`
 
 ## Speicherstatistiken
 
@@ -337,7 +343,7 @@ Jede Status-Tabelle hat das gleiche Format wie `system.supervisor.state()`.
 
 ## Cluster-Primitive
 
-Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Wenn [Clustering nicht aktiviert ist](guides/cluster.md), meldet `system.raft.*` "raft not available", `system.cluster` nur den lokalen Knoten, und `system.lock` ist nicht verfügbar, weil es die globale Registry benötigt.
+Die Subtabellen `system.node`, `system.cluster`, `system.raft` und `system.lock` legen die Clustering-Schicht frei. Sie sind am nützlichsten, wenn [Clustering aktiviert ist](guides/cluster.md); auf einem Einzelknoten degradieren sie vorhersagbar — `system.raft.*` meldet "raft not available", `system.cluster` meldet nur den lokalen Knoten, und `system.lock` erfordert den Raft-gestützten KV-Store, den Clustering bereitstellt.
 
 Alle Leseaufrufe sind lokal und günstig: sie melden die Sicht dieses Knotens auf den committierten Zustand, ohne je das Netzwerk zu blockieren.
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### Verteilte Sperren
 
-`system.lock` bietet clusterweiten gegenseitigen Ausschluss. Eine Sperre ist ein global eindeutiger Name, der dem aufrufenden Prozess gehört. Sie baut auf dem Strong-Namens-Scope auf, sodass höchstens ein Halter clusterweit existieren kann, und die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet — es gibt keine steckengebliebene Sperre zu bereinigen.
+`system.lock` bietet clusterweiten gegenseitigen Ausschluss. Eine Sperre ist ein global eindeutiger Name, der dem aufrufenden Prozess gehört. Sie baut auf dem Raft-replizierten System-KV-Store auf, sodass höchstens ein Halter clusterweit existieren kann, und die Sperre wird automatisch freigegeben, wenn der Halterprozess endet oder sein Knoten ausscheidet — es gibt keine steckengebliebene Sperre zu bereinigen.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `cwd` | Arbeitsverzeichnis lesen |
 | `system.read` | `hosts` | Hosts / Host-Prozesse auflisten |
 | `system.read` | `modules` | Geladene Module auflisten |
-| `system.read` | `sources` | Normalisierte Deployment-Quellen laden |
+| `system.read` | `sources` | Deployment-Quell-Baseline laden |
 | `system.read` | `supervisor` | Supervisor-Status lesen |
 | `system.read` | `node` | Identität dieses Knotens lesen |
 | `system.read` | `cluster` | Cluster-Mitgliedschaft und Leader lesen |
@@ -477,9 +483,8 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 
 | Bedingung | Art | Wiederholbar |
 |-----------|-----|--------------|
-| Berechtigung verweigert beim Laden von Deployment-Quellen | `errors.PERMISSION_DENIED` | nein |
-| Berechtigung verweigert bei anderen Operationen außer verteilten Sperren | `errors.INVALID` | nein |
-| Berechtigung verweigert beim Erwerb oder Freigeben verteilter Sperren | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | nein |
+| Berechtigung verweigert (alle anderen Aufrufe) | `errors.INVALID` | nein |
 | Ungültiges Argument | `errors.INVALID` | nein |
 | Fehlendes erforderliches Argument | `errors.INVALID` | nein |
 | Code-Manager nicht verfügbar | `errors.INTERNAL` | nein |
@@ -488,5 +493,6 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Raft läuft nicht auf diesem Knoten | `errors.INTERNAL` | nein |
 | Mitgliedschaft nicht verfügbar | `errors.INTERNAL` | nein |
 | Sperre bereits gehalten | `errors.ALREADY_EXISTS` | nein |
+| Sperrdienst nicht verfügbar (kein Raft auf diesem Knoten) | `errors.INTERNAL` | nein |
 
 Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.

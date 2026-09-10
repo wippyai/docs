@@ -1,92 +1,64 @@
 ---
-title: "Web Components de chat"
-description: "Referência para incorporar os elementos de chat, lista de mensagens, composer e seletor de sessão fornecidos pelo host."
+title: "Web Components de Chat"
+description: "A UI de chat do Wippy está disponível como um conjunto de elementos customizados componíveis, de modo que qualquer micro frontend (ou qualquer página rodando em um contexto filho) pode incorporar um…"
 ---
 
-# Web Components de chat
+# Web Components de Chat
 
-**Classificação: referência de API com exemplos parciais de incorporação.** Os
-blocos HTML e JavaScript pressupõem um child hospedado com o shell dos elementos
-de chat disponível, UUID de sessão ou token inicial de agente válido e código
-da aplicação para montagem e desmontagem.
+A UI de chat do Wippy está disponível como um conjunto de **elementos customizados componíveis**, de modo que qualquer micro frontend (ou qualquer página rodando em um contexto filho) pode incorporar um chat Wippy ao vivo por tag — sem Vue, sem imports, sem registro. Eles encapsulam os mesmos componentes que o chat do próprio host usa (uma única fonte de verdade), apoiados pela mesma camada de dados `ChatTransport` → `SessionManager`.
 
-A interface de chat do Wippy está disponível como **elementos personalizados
-combináveis** nos contextos em que o Host injeta o shell de chat. Um child em
-iframe srcdoc pode incorporar chat ativo pela tag, sem imports Vue nem registro.
-Os elementos usam os mesmos componentes e a mesma camada
-`ChatTransport` → `SessionManager` do host.
+Estes são elementos prontos que você *consome* — diferente de um [Web Component](./web-component.md) que você mesmo constrói, você não os autora nem os registra. O host os disponibiliza por tag em todo filho (veja [Como eles carregam](#how-they-load)).
 
-Esses elementos são fornecidos pelo host para consumo. Diferentemente de um
-[Web Component](./web-component.md) criado por você, eles não são escritos nem
-registrados pela aplicação. O injetor do iframe srcdoc os disponibiliza pela
-tag. O gateway Web Fragment da versão fixada do Framework omite deliberadamente
-`chat.js`; portanto, uma página Fragment não pode presumir que essas tags
-existam e deve usar os controles de chat do host (consulte
-[Como são carregados](#como-são-carregados)).
-
-> Use esses elementos quando quiser uma superfície de chat *dentro da sua própria página ou painel*. Para abrir imperativamente o painel de chat do host, use `host.startChat(token)` / `host.openSession(sessionUUID)` de `@wippy-fe/proxy` (consulte [Proxy API](./proxy-api.md)).
+> Use estes quando quiser uma superfície de chat *dentro da sua própria página ou painel*. Para abrir o painel de chat do próprio host de forma imperativa, use `host.startChat(token)` / `host.openSession(sessionUUID)` do `@wippy-fe/proxy` (veja [API do Proxy](./proxy-api.md)).
 
 ## Os elementos
 
 | Tag | Renderiza | Atributos principais | Eventos |
 |-----|---------|----------------|--------|
 | `<wippy-chat>` | Chat completo — cabeçalho + mensagens + entrada | `session-id`, `start-token`, `agent`, `show-selector`, `hide-header` | `session-started`, `error` |
-| `<wippy-chat-messages>` | Somente lista de mensagens | `session-id` | — |
-| `<wippy-chat-input>` | Somente composer | `session-id` | — |
-| `<wippy-session-selector>` | Seletor de sessão | `active-session-id` | `select` |
+| `<wippy-chat-messages>` | Somente a lista de mensagens | `session-id` | — |
+| `<wippy-chat-input>` | Somente o compositor | `session-id` | — |
+| `<wippy-session-selector>` | Seletor de sessões | `active-session-id` | `select` |
 
-Cada elemento também aceita dois atributos de tema por instância — **`custom-css`** e **`css-variables`** — descritos em [Criação de temas](#criação-de-temas).
+Todo elemento também aceita dois atributos de tematização por instância — **`custom-css`** e **`css-variables`** — cobertos em [Tematização](#theming).
 
-## Como são carregados
+## Como eles carregam
 
-Os elementos de chat são entregues como
-[`<wippy-loading>`](../web-host/packages.md#wippy-feloading): um pequeno shell
-`@wippy-fe/chat.js` registra automaticamente as quatro tags. O
-injetor do iframe srcdoc o inclui no array `scripts` do host, ao lado de
-`loading.js` e `proxy.js`; assim, páginas entregues por iframe não instalam um
-pacote nem chamam `customElements.define()`.
+Os elementos de chat são entregues exatamente como o [`<wippy-loading>`](../web-host/packages.md#wippy-feloading): um shell minúsculo, `@wippy-fe/chat.js` (~21 KB), registra automaticamente as quatro tags e é injetado em todo contexto filho através do array `scripts` do host (junto com `loading.js` e `proxy.js`). Assim, as tags ficam disponíveis por nome em qualquer micro frontend filho com **zero registro por app** — você não instala um pacote nem chama `customElements.define()`.
 
-O gateway Web Fragment do Framework injeta `loading.js` e
-`proxy-fragment.js`, mas não `chat.js`. Páginas entregues como Fragment devem
-usar `host.startChat()` ou `host.openSession()`, a menos que um contrato futuro
-da plataforma adicione uma adesão explícita ao shell de chat. Da mesma forma,
-web components montados diretamente no documento do host não devem presumir
-que outro realm child registrou as tags.
-
-As dependências de implementação são separadas em um chunk `chat-internals.[hash].js` e **carregadas sob demanda na primeira montagem**. Durante o download do chunk, o elemento exibe um placeholder `<wippy-loading>`; se o carregamento falhar, exibe `<wippy-error>`. Páginas que nunca montam uma tag de chat não carregam os componentes internos.
+As partes internas pesadas — a árvore Vue mais PrimeVue, Shiki e o renderizador de markdown (~2 MB) — são separadas via code-splitting em um chunk `chat-internals.[hash].js` distinto e **carregadas sob demanda no primeiro mount**. Enquanto o chunk é baixado, o elemento exibe um placeholder `<wippy-loading>`; se o carregamento falhar, exibe `<wippy-error>`. Páginas que nunca usam uma tag de chat nunca pagam pelas partes internas.
 
 ## `<wippy-chat>`
 
-O controle reativo de sessão exige Web Host `1.0.51` ou mais recente. O shell
-dos elementos é um asset injetado pelo Host, não um pacote público
-`@wippy-fe/chat`; versões antigas do Host oferecem suporte confiável apenas à
-montagem inicial.
+O controle reativo de sessão exige o Web Host `1.0.51` ou mais recente. Fixe a família
+de pacotes `@wippy-fe/*` correspondente `0.0.51+`; elementos de chat injetados mais antigos apenas
+suportam o mount inicial de forma confiável.
 
-A superfície completa de chat: cabeçalho, lista rolável de mensagens e composer.
+A superfície de chat completa: cabeçalho, lista de mensagens rolável e compositor.
 
 | Atributo | Tipo | Padrão | Descrição |
 |-----------|------|---------|-------------|
 | `session-id` | string | — | Renderiza esta sessão existente (um UUID de sessão). |
-| `start-token` | string | — | Token inicial do agente; inicia uma **nova** sessão na montagem quando `session-id` não está definido. |
-| `agent` | string | — | Nome (ou título) do agente pré-selecionado no estado vazio, exibido quando nenhuma sessão está aberta. |
-| `show-selector` | boolean | `false` | Renderiza o seletor de sessão integrado no cabeçalho. |
-| `hide-header` | boolean | `false` | Oculta a barra de cabeçalho de agente/modelo (para incorporações compactas). |
+| `start-token` | string | — | Token de início do agente; inicia uma **nova** sessão no mount quando nenhum `session-id` está definido. |
+| `agent` | string | — | Nome do agente (ou título) a pré-selecionar no estado vazio, exibido quando nenhuma sessão está aberta. |
+| `show-selector` | boolean | `false` | Renderiza o seletor de sessões embutido no cabeçalho. |
+| `hide-header` | boolean | `false` | Oculta a barra de cabeçalho de agente/modelo (para embeds compactos). |
 
-**Eventos** (disparados como `CustomEvent`s no elemento; leia `event.detail`):
+**Eventos** (despachados como `CustomEvent`s no elemento; leia `event.detail`):
 
 | Evento | `detail` | Quando |
 |-------|----------|------|
-| `session-started` | `{ sessionId: string }` | Uma sessão é iniciada — por `start-token` na montagem ou por ação do usuário. |
+| `session-started` | `{ sessionId: string }` | Uma sessão é iniciada — a partir do `start-token` no mount, ou por ação do usuário. |
 | `error` | `{ message: string }` | A inicialização da sessão falha (por exemplo, um `start-token` inválido). |
 
 ```html
-<!-- Start a new session from an agent start token -->
+<!-- Inicia uma nova sessão a partir de um token de início de agente -->
 <wippy-chat start-token="agent-start-token" agent="researcher"></wippy-chat>
 
-<!-- Pin an existing session -->
+<!-- Fixa uma sessão existente -->
 <wippy-chat session-id="019eb2ae-1234-5678-abcd-ef1234567890"></wippy-chat>
 
-<!-- Built-in selector, no header bar -->
+<!-- Seletor embutido, sem barra de cabeçalho -->
 <wippy-chat show-selector hide-header></wippy-chat>
 ```
 
@@ -97,44 +69,42 @@ document.querySelector('wippy-chat')
   })
 ```
 
-### Controle reativo sem remontagem
+### Controle reativo sem remontar
 
-Mantenha um elemento `<wippy-chat>` montado e atualize seus atributos. Alterar
-`session-id` abre essa sessão no mesmo elemento. Definir `session-id=""` ou
-remover um atributo que antes era controlado é uma transição explícita de
-**Novo chat**: ela limpa tanto a sessão ativa fixada quanto a compartilhada. Um
-elemento que nunca teve `session-id` continua sendo controlado pelo seletor; a
-ausência na primeira montagem não é um comando de limpeza.
+Mantenha um único elemento `<wippy-chat>` montado e atualize seus atributos. Um
+`session-id` alterado abre aquela sessão no lugar. Definir `session-id=""` ou remover um
+atributo previamente controlado é uma transição explícita de **Novo Chat**: ela
+limpa tanto a sessão fixada quanto a sessão ativa compartilhada. Um elemento que nunca teve um
+`session-id` permanece guiado pelo seletor; a ausência no primeiro mount não é um
+comando de limpeza.
 
-Quando há um `start-token`, limpar `session-id` inicia novamente a partir desse
-token. Alterar o token também inicia no mesmo elemento. O elemento consome um
-token uma vez por host de elemento personalizado; reconectar ou mover o mesmo
-elemento não repete um início ativo. Se um token mais novo, uma sessão
-controlada, uma seleção manual ou uma desconexão substituir um início em
-andamento, o resultado obsoleto não poderá substituir a sessão atual; qualquer
-sessão criada tardiamente será fechada.
+Quando um `start-token` está presente, limpar `session-id` inicia novamente a partir desse token.
+Alterar o token também inicia no lugar. O elemento consome um token
+uma vez por host de elemento customizado, então reconectar ou mover o mesmo elemento não
+reproduz um início ao vivo. Se um token mais recente, uma sessão controlada, uma seleção manual
+ou uma desconexão substituir um início em andamento, o resultado obsoleto não pode substituir
+a sessão atual; qualquer sessão criada tardiamente é fechada.
 
 ```javascript
 const chat = document.querySelector('wippy-chat')
 
 chat.setAttribute('session-id', existingSessionId)
 
-// New Chat with an agent. No element replacement is required.
+// Novo Chat com um agente. Não é necessário substituir o elemento.
 chat.setAttribute('start-token', agentStartToken)
 chat.removeAttribute('session-id')
 ```
 
-Os resolvers de componentes do layout gerenciado atualizam e removem props no
-elemento personalizado existente. Eles remontam somente quando `tagName` muda,
-preservando a entrada de chat, a posição de rolagem e o estado de ciclo de vida
-do elemento entre atualizações do painel.
+Resolvedores de componentes de layout gerenciado atualizam e removem props no elemento
+customizado existente. Eles remontam apenas quando `tagName` muda, preservando a entrada
+de chat, a posição de rolagem e o estado de ciclo de vida pertencente ao elemento entre atualizações de painel.
 
 ## `<wippy-chat-messages>` e `<wippy-chat-input>`
 
-A lista de mensagens e o composer como elementos separados, para você organizá-los no layout. Cada um recebe um único `session-id`; sem um `session-id` explícito, eles seguem a [sessão ativa compartilhada](#composição-e-sessão-compartilhada) definida por um `<wippy-session-selector>`. Nenhum deles emite eventos.
+A lista de mensagens e o compositor como elementos separados, para que você mesmo possa dispô-los. Cada um recebe um único `session-id`; sem um `session-id` explícito, eles seguem a [sessão ativa compartilhada](#composition--shared-session) definida por um `<wippy-session-selector>`. Nenhum deles emite eventos.
 
 ```html
-<!-- Custom layout: messages above, composer below -->
+<!-- Layout customizado: mensagens acima, compositor abaixo -->
 <div style="display:flex; flex-direction:column; height:100%;">
   <wippy-chat-messages session-id="019eb2ae-…"></wippy-chat-messages>
   <wippy-chat-input    session-id="019eb2ae-…"></wippy-chat-input>
@@ -143,7 +113,7 @@ A lista de mensagens e o composer como elementos separados, para você organizá
 
 ## `<wippy-session-selector>`
 
-Um seletor de sessão. Ele controla a sessão ativa compartilhada que os demais elementos seguem.
+Um seletor de sessões. Ele conduz a sessão ativa compartilhada que outros elementos seguem.
 
 | Atributo | Tipo | Padrão | Descrição |
 |-----------|------|---------|-------------|
@@ -168,39 +138,34 @@ document.querySelector('wippy-session-selector')
 
 ## Composição e sessão compartilhada
 
-Elementos **sem `session-id` explícito** seguem a escolha do `<wippy-session-selector>` por meio do `activeSessionId` compartilhado do gerenciador. Assim, um seletor e um chat (ou um seletor com mensagens + entrada separadas) permanecem sincronizados na mesma página — escolha uma sessão no seletor e os demais serão atualizados. Elementos que **possuem** `session-id` (ou `start-token`) explícito ficam fixados e ignoram o seletor.
+Elementos **sem `session-id` explícito** seguem a escolha do `<wippy-session-selector>` através do `activeSessionId` compartilhado do manager. Assim, um seletor mais um chat (ou um seletor mais uma lista de mensagens + entrada separadas) em uma página permanecem em sincronia — escolha uma sessão no seletor e os outros se atualizam. Elementos que **carregam** um `session-id` explícito (ou `start-token`) ficam fixados e ignoram o seletor.
 
 ```html
-<!-- Selector + chat: the chat follows the picked session -->
+<!-- Seletor + chat: o chat segue a sessão escolhida -->
 <wippy-session-selector></wippy-session-selector>
 <wippy-chat></wippy-chat>
 
-<!-- Selector + split message list / composer, all following the selector -->
+<!-- Seletor + lista de mensagens / compositor separados, todos seguindo o seletor -->
 <wippy-session-selector></wippy-session-selector>
 <wippy-chat-messages></wippy-chat-messages>
 <wippy-chat-input></wippy-chat-input>
 
-<!-- Pinned chat alongside a selector-driven one -->
-<wippy-chat session-id="019eb2ae-…"></wippy-chat>  <!-- ignores the selector -->
-<wippy-chat></wippy-chat>                            <!-- follows the selector -->
+<!-- Chat fixado ao lado de um guiado pelo seletor -->
+<wippy-chat session-id="019eb2ae-…"></wippy-chat>  <!-- ignora o seletor -->
+<wippy-chat></wippy-chat>                            <!-- segue o seletor -->
 ```
 
-## Criação de temas
+## Tematização
 
-Cada elemento é renderizado em um shadow root, portanto os estilos da página do host não vazam para dentro nem para fora. Dois mecanismos aplicam o tema:
+Cada elemento renderiza em um shadow root, então os estilos da página host não vazam para dentro nem para fora. Dois mecanismos aplicam o tema:
 
-- **Variáveis CSS herdadas.** Propriedades personalizadas do tema (`--p-primary-*`, `--p-text-color`, …) são herdadas do tema do host através do limite do shadow DOM. Assim, o chat acompanha a paleta ativa e o modo claro/escuro. Estilos baseados em seletores (PrimeVue, markdown, Tailwind) são empacotados em uma folha `chat-elements.css` e injetados no shadow root. `PrimeVuePlugin` redireciona o destino Portal padrão body/null para uma camada de overlay fixada dentro do shadow root proprietário. Não defina `appendTo: 'self'` habitualmente: essa é uma adesão explícita ao posicionamento inline e pode cortar conteúdo em Dialog ou Drawer com rolagem. Toasts são delegados ao **toast nativo do host** pela proxy, em vez de renderizados no shadow DOM.
-- **Overrides por instância.** Cada elemento aceita dois atributos:
+- **Variáveis CSS herdadas.** Propriedades customizadas do tema (`--p-primary-*`, `--p-text-color`, …) são herdadas através da fronteira do shadow a partir do tema do host, de modo que o chat adota a paleta ativa e o modo claro/escuro sem esforço. Estilos baseados em seletores (PrimeVue, markdown, Tailwind) são empacotados em uma folha `chat-elements.css` e injetados no shadow root. O `PrimeVuePlugin` redireciona o alvo padrão de Portal (body/null) para uma camada de overlay fixada dentro do shadow root proprietário. Não defina `appendTo: 'self'` rotineiramente: isso é uma adesão explícita a posicionamento inline e pode causar recorte dentro de conteúdo rolável de Dialog ou Drawer. Toasts são delegados ao **toast nativo do host** através do proxy, em vez de renderizados dentro do shadow.
+- **Sobrescritas por instância.** Todo elemento aceita dois atributos:
 
 | Atributo | Tipo | Efeito |
 |-----------|------|--------|
-| `custom-css` | string | CSS bruto anexado **por último** ao shadow root do elemento, prevalecendo pela ordem. |
-| `css-variables` | object (JSON) | Overrides de variáveis CSS por instância aplicados a `:host`. As chaves podem omitir o prefixo `--`. |
-
-Trate os dois atributos como configuração confiável da aplicação. Não copie
-entrada não confiável do usuário para CSS bruto nem para valores de variáveis;
-o CSS pode alterar ou ocultar a interface incorporada e iniciar solicitações a
-recursos externos.
+| `custom-css` | string | CSS bruto anexado **por último** no shadow root do elemento, então vence por ordem. |
+| `css-variables` | object (JSON) | Sobrescritas de variáveis CSS por instância aplicadas a `:host`. As chaves podem omitir o `--` inicial. |
 
 ```html
 <wippy-chat
@@ -209,24 +174,18 @@ recursos externos.
 ></wippy-chat>
 ```
 
-Omitir `css-variables` é o caminho normal que respeita a facade. Overrides de cor por instância servem para isolamento deliberado da incorporação, não para reestilização habitual.
+Omitir `css-variables` é o caminho normal que respeita a facade. Sobrescritas de cor por instância servem para isolamento deliberado de embedding, não para reestilização rotineira.
 
-Para o modelo completo de temas — variáveis semânticas, alternância claro/escuro e como o host injeta CSS no shadow DOM — consulte [Criação de temas: Web Components](./web-component-theming.md).
+Para o modelo completo de tematização — variáveis semânticas, alternância claro/escuro e como o host injeta CSS no shadow DOM — veja [Tematização: Web Components](./web-component-theming.md).
 
-## Conexão em runtime
+## Ligação em runtime
 
-Dentro de um child iframe srcdoc, os elementos não exigem configuração
-adicional. Autenticação e configuração vêm do runtime da proxy injetado; REST
-e WebSocket usam as URLs de ambiente da configuração. Quando uma tag de chat é
-montada, o shell já registrado carrega os componentes internos sob demanda e
-se conecta à sessão existente do child. Contextos Web Fragment e diretamente
-no host têm os limites de disponibilidade descritos em
-[Como são carregados](#como-são-carregados).
+Dentro de um filho do Web Host, os elementos não precisam de configuração. Autenticação e configuração vêm dos globais de proxy que o host já injeta (`window.__WIPPY_APP_CONFIG__` / `window.__WIPPY_APP_API__`); REST e WebSocket usam as URLs de ambiente da configuração. Colocar uma tag de chat na página é suficiente — o shell a registra, as partes internas carregam sob demanda e o chat se conecta com a sessão existente do filho.
 
-## Consulte também
+## Veja Também
 
-- [Web Component (`view.component`)](./web-component.md) — crie seu próprio elemento personalizado
-- [Pacotes @wippy-fe](../web-host/packages.md) — import map do host e shells de elementos injetados (`@wippy-fe/chat`, `@wippy-fe/loading`)
-- [Criação de temas: Web Components](./web-component-theming.md) — CSS do shadow DOM e variáveis semânticas
-- [Proxy API](./proxy-api.md) — `host.startChat` / `host.openSession` e o restante de `@wippy-fe/proxy`
-- [Proxy e isolamento](../web-host/proxy-isolation.md) — como o host injeta scripts e configuração nos children
+- [Web Component (`view.component`)](./web-component.md) — construindo seu próprio elemento customizado
+- [Pacotes @wippy-fe](../web-host/packages.md) — o import map do host e os shells de elementos injetados (`@wippy-fe/chat`, `@wippy-fe/loading`)
+- [Tematização: Web Components](./web-component-theming.md) — CSS de shadow DOM e variáveis semânticas
+- [API do Proxy](./proxy-api.md) — `host.startChat` / `host.openSession` e o restante de `@wippy-fe/proxy`
+- [Proxy e Isolamento](../web-host/proxy-isolation.md) — como o host injeta scripts e configuração nos filhos

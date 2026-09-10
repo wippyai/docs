@@ -1,6 +1,6 @@
 ---
 title: "Architektur"
-description: "Wie Wippy Infrastruktur startet, Komponenten und Einträge lädt, Arbeit plant, Nachrichten weiterleitet und herunterfährt."
+description: "Wippy ist ein geschichtetes System, das auf Go aufgebaut ist. Komponenten initialisieren sich in Abhängigkeitsreihenfolge, kommunizieren über einen…"
 ---
 
 # Architektur
@@ -14,7 +14,7 @@ Diese Seite ist eine Implementierungsreferenz. Diagramme und Go-Typen beschreibe
 | Schicht | Komponenten |
 |---------|-------------|
 | Anwendung | Lua-Prozesse, Funktionen, Workflows |
-| Runtime | Lua-Engine (wippyai/go-lua) und Runtime-Module |
+| Runtime | Lua-Engine (gopher-lua), 40+ Module |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topologie, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -40,7 +40,7 @@ Erstellt Kerninfrastruktur bevor Komponenten geladen werden:
 
 ### Phase 2: Komponentenladung
 
-Der Loader löst Abhängigkeiten durch topologische Sortierung auf und lädt Komponenten sequenziell, Ebene für Ebene. Auch Komponenten derselben Ebene werden nacheinander geladen.
+Der Loader löst Abhängigkeiten via topologischer Sortierung auf und lädt Komponenten Level für Level, jeweils eine Komponente nach der anderen.
 
 Abhängigkeitskanten bestimmen die Ebenen. Paketgruppen wie Core und System erzwingen keine zusätzliche globale Reihenfolge. Komponenten ohne Abhängigkeitskante können deshalb unabhängig von ihrer Paketgruppe derselben Ebene angehören.
 
@@ -83,8 +83,8 @@ Komponenten deklarieren Abhängigkeiten. Der Loader baut einen gerichteten azykl
 | Komponente | Abhängigkeiten | Zweck |
 |------------|----------------|-------|
 | PIDGen | keine | Prozess-ID-Generierung |
-| Dispatcher | keine | Dispatch von Command-Handlern |
-| Registry | Artifact | Speicherung und Versionierung von Einträgen |
+| Dispatcher | PIDGen | Command-Handler-Dispatch |
+| Registry | Artifact | Entry-Speicherung und Versionierung |
 | Finder | Registry | Entry-Lookup und Suche |
 | Supervisor | Registry | Service-Neustartrichtlinien |
 | Topology | keine | Eltern-Kind-Baum der Prozesse |
@@ -119,7 +119,7 @@ sequenceDiagram
 
 ### Gängige Topics
 
-Events führen `System` und `Kind` als getrennte Felder. Die integrierten Systeme veröffentlichen:
+Jedes Event trägt ein `System` und ein `Kind`. Die integrierten Systeme veröffentlichen:
 
 | System | Art | Zweck |
 |--------|------|-------|
@@ -135,8 +135,7 @@ Versionierte Speicherung für Entry-Definitionen.
 ### Features
 
 - **Versionierter Zustand** - Jede Mutation erstellt neue Version
-- **Historie** – Standardmäßig im Arbeitsspeicher; optional SQLite-gestützt für ein dauerhaftes Audit-Protokoll (`history_type: sqlite`)
-- **Beobachtung** - Spezifische Einträge auf Änderungen beobachten
+- **History** - SQLite-gestützte Historie für Audit-Trail
 - **Ereignisgesteuert** - Publiziert Events bei Mutationen
 
 ### Entry-Lebenszyklus
@@ -173,14 +172,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same-node hosts and processes]
-    Peer -.- P[External receivers, such as Temporal]
-    Inter -.- I[Other cluster nodes]
+    Local -.- L[Dieser Node]
+    Peer -.- P[Registrierter Peer-Empfänger]
+    Inter -.- I[Andere Cluster-Nodes]
 ```
 
-1. **Local** – Direkte Zustellung zwischen Hosts und Prozessen desselben Nodes
-2. **Peer** – Weiterleitung an einen registrierten externen Empfänger, etwa Temporal
-3. **Internode** – Netzwerk-Routing zu einem anderen Cluster-Node als Fallback
+1. **Local** - Direkte Zustellung innerhalb desselben Nodes
+2. **Peer** - Zustellung an einen für diese Node-ID registrierten Empfänger (ein externer Peer wie ein Temporal-Worker)
+3. **Internode** - Rückfall auf den Internode-Transport des Clusters, der nach dem Boot von der Cluster-Komponente installiert wird
 
 ### Mailbox
 

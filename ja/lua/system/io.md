@@ -1,6 +1,6 @@
 ---
 title: "ターミナルI/O"
-description: "ターミナル入力を読み取り、標準出力と標準エラー出力へ書き込みます。"
+description: "CLIアプリケーション用のstdinからの読み取りとstdout/stderrへの書き込み。"
 ---
 
 # ターミナルI/O

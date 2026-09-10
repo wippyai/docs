@@ -52,10 +52,7 @@ local errors = require("errors")
 
 local actor = security.actor()
 if not actor then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "No actor in context"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No actor in context" })
 end
 ```
 
@@ -324,11 +321,14 @@ strict モードでは、トークン操作だけでなく、アクター、ポ�
 ### 評価フロー
 
 ```
-1. Evaluate policies until a deny is found or the scope is exhausted
-2. If ANY policy returns Deny → Result is Deny
-3. If at least one Allow and no Deny → Result is Allow
-4. No applicable policies → Result is Undefined
+1. コンテキストにアクターまたはスコープがない → strictモードが判断（デフォルトは拒否）
+2. スコープ内の各ポリシーをチェック
+3. いずれかのポリシーがDenyを返す → 結果はDeny
+4. 少なくとも1つのAllowがありDenyがない → 結果はAllow
+5. 適用可能なポリシーがない → 結果はUndefined
 ```
+
+アクセスチェックが通るのは`Allow`の場合のみです。`Undefined`は`Deny`とまったく同様にアクセスを拒否します。アクターとスコープの両方が揃っている場合、strictモードは一切関与しません。
 
 ### 評価結果
 
@@ -348,12 +348,9 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Access denied"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 elseif result == "undefined" then
-    -- No policy matched; treat this as denied unless the caller handles it explicitly.
+    -- ポリシーがマッチしなかった - アクセスチェックはこれを拒否として扱う
 end
 ```
 
@@ -368,10 +365,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Access denied"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 end
 ```
 
@@ -416,13 +410,13 @@ entries:
 ### トークンストアのオプション
 
 | オプション | デフォルト | 説明 |
-|-----------|------------|------|
-| `store` | 必須 | バックエンドのキーバリューストア参照 |
-| `token_length` | 32 | トークンサイズ（バイト、256 ビット） |
-| `default_expiration` | 24h | トークンのデフォルト TTL |
-| `token_key` | なし | HMAC-SHA256 署名キー（直接の値、または[環境変数レジストリ](system/env.md)から取得する `${env:NAME}`） |
+|-----------|-----------|------|
+| `store` | 必須 | バッキングキーバリューストア参照 |
+| `token_length` | 32 | トークンサイズ（バイト、256ビット） |
+| `default_expiration` | 24h | デフォルトトークンTTL |
+| `token_key` | なし | HMAC-SHA256署名キー（直接値、または[envレジストリ](system/env.md)から取得する`${env:NAME}`） |
 
-エントリにシークレットを埋め込まないよう、本番環境では `token_key: ${env:NAME}` を使用してください。従来の `token_key_env` ディレクティブも環境変数レジストリを読み取りますが、検索結果が見つからないか空の場合は、インライン値またはゼロ値を保持します。デフォルトのない最新のプレースホルダーは、変数が見つからない場合に失敗します。従来のディレクティブは非推奨です。
+本番環境ではエントリにシークレットを埋め込まないよう`token_key: ${env:NAME}`を使用してください。従来の`token_key_env`ディレクティブも同じ方法で解決されますが非推奨です。`${env:NAME}`を使用してください。
 
 ### トークンの作成
 
@@ -472,10 +466,7 @@ local errors = require("errors")
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Invalid token"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Invalid token" })
 end
 
 -- Actor and scope are reconstructed from stored data
@@ -523,44 +514,84 @@ if call_err then return nil, call_err end
 | スコープ | はい - 子呼び出しと生成されたプロセスに渡される |
 | strict モード | いいえ - アプリケーション全体に適用 |
 
-## サービスレベルのセキュリティ
+関数と生成されたプロセスは、どちらも呼び出し元のセキュリティコンテキストを継承します。生成されたプロセスはスポーン元からフォークされたフレーム上で開始し、そのフレームはスポーン元のアクターとスコープを運びます。自身のエントリの`security:`ブロックは、その継承されたコンテキストを変更します。エントリがブロックを宣言していない場合、プロセスはスポーン元のアクターとスコープをそのまま保持します。どちらも持たないスポーン元からはどちらも持たない子が生まれ、strictモードはこれを拒否します。宣言されたブロックが`actor`を指定した場合は継承されたアクターを置き換え、その`policies`と`groups`は継承されたスコープにマージされます。`actor`を省略したブロックはスポーン元のアクターを保持し、`policies`と`groups`の両方を省略したブロックはスポーン元のスコープを保持します。
 
-サービスのデフォルトアクターとポリシーを設定します。
+## エントリでのセキュリティ宣言
+
+セキュリティブロックの形は、どこに現れても同じです：
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `actor.id` | string | アクターアイデンティティ。継承したアクターを置き換えます |
+| `actor.meta` | map | ポリシーが評価するアクター属性 |
+| `policies` | list | スコープにマージされるポリシーのレジストリID |
+| `groups` | list | そのポリシーがスコープにマージされるポリシーグループのレジストリID |
+
+`policies`と`groups`は**`namespace:name`形式のレジストリID**です。名前のみでは解決されません。ポリシーエントリの`groups:`フィールドがそのポリシー自身の名前空間をデフォルトとするのとは異なり、これらの参照にはデフォルトの名前空間がありません。
+
+解決はアトミックかつフェイルクローズドです。列挙されたすべてのポリシーとグループは、何かがインストールされる前に解決されます。いずれか1つでも存在しない、空である、またはポリシーを含まない場合、設定全体が失敗し、アクターも部分的なスコープも適用されません。したがって、呼び出し側が中途半端なコンテキストを持って境界を越えることはありません。
+
+### プロセスエントリ
+
+`process.lua`、`process.lua.bc`、`function.lua`、`function.lua.bc`の各エントリは、そのエントリのすべての実行に適用されるトップレベルの`security:`ブロックを取ります：
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+このブロックはプロセスの起動時に、`process.host`と`terminal.host`の両方で適用されます。解決に失敗した場合は、より弱いコンテキストでプロセスを起動するのではなくスポーンを中止します。
+
+### サービスライフサイクル
+
+スーパーバイズされるサービスは、同じブロックを`lifecycle`の下に取ります。これはサービスコントローラの作成時に一度だけ解決され、そのサービスの存続期間中は封印されます：
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
 
-## strict モード
+### CLIコマンド
 
-strict モードはデフォルトで有効で、アクターまたはスコープのいずれかが欠けている場合にアクセスを拒否します。デプロイで従来の寛容な動作が意図的に必要な場合に限り、`false` に設定してください。
+コマンドエントリは`meta.command.security`を宣言します。これはエントリがCLIコマンドとして起動されたときにのみ適用されます。`wippy run <name>`を実行するオペレータが、そのコンテキストの信頼の起点です。同じエントリの通常のスポーンには影響しません。ブロックは厳格に検証されます。未知のフィールドは拒否され、空のブロックは拒否され、コマンドの`name`を持たない`security`は拒否されます。[コマンドのセキュリティ](guides/cli.md#command-security)を参照してください。
+
+## Strictモード
+
+strictモードは、リクエストにアクターもスコープもない場合にどうなるかを決めます。**デフォルトで有効**であり、不完全なコンテキストは拒否されます。無効化することは明示的な選択であり、モジュールマニフェストの`wippy.yaml`ではなく、ランタイム設定ファイル（`.wippy.yaml`）で行います：
 
 ```yaml
 # .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
-| `strict_mode` | 欠落しているコンテキスト | 動作 |
-|---------------|--------------------------|------|
-| `false` | アクターまたはスコープがない | 許可（寛容） |
-| `true`（デフォルト） | アクターまたはスコープがない | 拒否 |
+| モード | 欠落コンテキスト | 動作 |
+|--------|-----------------|------|
+| Strict（デフォルト） | アクター/スコープなし | 拒否 |
+| 寛容（`strict_mode: false`） | アクター/スコープなし | 許可 |
 
-アクターとスコープが両方存在する場合、ポリシーは常に評価されます。strict モードを無効にしても、`undefined` の結果が許可に変換されることはありません。`security.can(...)` は `false` を返しますが、評価が `allow` の場合だけは真になります。
+アクターとスコープが揃っている場合、strictモードは何も変えません。どちらの設定でも評価はデフォルト拒否です。strictモードが支配するのは不完全なケースのみであり、そのためセキュリティコンテキストを宣言せずに実行されるプロセスは、デフォルトではすべてのチェックに失敗します。そのようなプロセスには`security:`ブロックを与えるか、コンテキストを供給する経路から起動してください。
 
 ## 認証フロー
 
@@ -634,15 +665,31 @@ if token_err then return nil, token_err end
 return token
 ```
 
+## ランタイムの信頼境界
+
+ポリシー評価はコードが何をできるかを支配します。どのコードが受け入れられ、コンテキストがどこまで移動できるかは、別の3つの仕組みが支配します。
+
+### モジュールの整合性
+
+`wippy.lock` 内のすべてのモジュールはアーティファクトダイジェストを持ちます。ブート時、ダウンロードはロックに固定されたダイジェストとハブが提供したダイジェストの両方に対して検証され、ベンダー化済みのパックはロードされる前にロックに対して再検証されます。不一致はリトライも回避もされない整合性の失敗であり、モジュールはロードされません。`wippy install` は新規ダウンロードをハブが提供したダイジェストとサイズに対してのみ検証し、不一致の場合はファイルを削除して失敗し、その後に提供されたダイジェストをロックへ書き戻します。したがって固定されたダイジェストは、installによって強制されるのではなく再確立されます。ロックのダイジェストに対してチェックされるのは、ベンダーディレクトリにすでにあるパックだけです。展開されたモジュールディレクトリも自身の記録済みダイジェストとツリーダイジェストを持ち、同様にチェックされるため、変更されたベンダーツリーは信頼されずに検出されます。[依存関係管理](guides/dependency-management.md#integrity-verification)を参照してください。
+
+### クラスタのノード間アイデンティティ
+
+クラスタ内のノードは相互に認証します。各ノードはed25519のアイデンティティ鍵と、信頼するピア公開鍵のマップを保持します。メッシュのハンドシェイクは相互認証であり、共有ゴシップシークレットに対するHMACを、両ノードIDと両ノンスを含むトランスクリプトに対するed25519署名に束縛します。信頼マップに存在しないピア、またはゴシップで広告された鍵が信頼エントリと食い違うピアは拒否されます。未認証のモードは存在せず、アイデンティティを持たないノードはメッシュに参加できません。[ノード間アイデンティティ](guides/cluster.md#internode-identity)を参照してください。
+
+### Temporalへの伝播
+
+Temporalへ越境するセキュリティコンテキストは、平文のワークフロー入力ではなく署名済みヘッダーとして運ばれます。アクター、そのメタデータ、ポリシーIDは`wippy-security`エンベロープにシリアライズされ、クライアントのHMAC鍵で署名され、特定のワークフローIDまたはアクティビティIDにオーディエンス指定されます。受信側のワーカーは、ワークフローやアクティビティの実行前に署名とオーディエンスを検証し、指定されたすべてのポリシーをローカルで解決します。いずれかが失敗すると実行は失敗します。セキュリティコンテキストの下で実行されるワークフローは署名のないシグナルも拒否するため、外部のTemporalクライアントがそれを駆動することはできません。[ワークフロー](temporal/workflows.md#security-context)と[Temporal概要](temporal/overview.md#security-context-propagation)を参照してください。
+
 ## ベストプラクティス
 
-1. **最小権限** - 必要最小限の権限を付与する
-2. **デフォルトで拒否** - 明示的な許可ポリシーを使用し、strict モードを有効にする
-3. **ポリシーグループを使用** - ロールや機能ごとにポリシーを整理する
-4. **トークンに署名** - 本番環境では必ず `token_key` を `${env:NAME}` 参照から設定する
-5. **短い有効期限** - 機密性の高い操作では短いトークン有効期間を使用する
-6. **コンテキストで条件付け** - 静的なポリシーより動的な条件を使用する
-7. **機密性の高いアクションを監査** - セキュリティ関連の操作をログに記録する
+1. **最小権限** - 必要最小限の権限を付与
+2. **デフォルトで拒否** - 明示的な許可ポリシーを使用し、strictモードを有効化
+3. **ポリシーグループを使用** - ロール/機能ごとにポリシーを整理
+4. **トークンに署名** - 本番環境では常に`${env:NAME}`参照から`token_key`を設定
+5. **短い有効期限** - 機密操作には短いトークン寿命を使用
+6. **コンテキストで条件付け** - 静的ポリシーより動的条件を使用
+7. **機密アクションを監査** - セキュリティ関連の操作をログ
 
 ## セキュリティモジュールリファレンス
 

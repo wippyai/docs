@@ -83,9 +83,7 @@ wippy run list
 | `use_case` | No | Entrypoint category; defaults to `run` |
 | `security` | No | Security context applied only when the trusted terminal launcher starts this command |
 
-A `terminal.host` must be present for CLI commands. It owns the scheduler used
-for the command process, so a separate `process.host` is not required. When
-multiple terminal hosts exist, select one with `--host`.
+A `terminal.host` must be present for CLI commands to work; it is the process host that runs the command.
 
 ## Process Lifecycle
 

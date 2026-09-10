@@ -184,10 +184,11 @@ return { main = main }
 
 ## Informações do Sistema
 
-As leituras do sistema são operações protegidas. Adicione esta política e substitua a entrada `app:cli` para que o comando tenha um actor, a política e o módulo `system`:
+Acesse estatísticas do runtime com o módulo `system`. Cada leitura é protegida pela ação `system.read`, então o processo também precisa de uma policy que a permita:
 
 ```yaml
-  - name: cli-system-read
+  # Adicionar às entradas
+  - name: system_read
     kind: security.policy
     policy:
       actions:
@@ -195,18 +196,17 @@ As leituras do sistema são operações protegidas. Adicione esta política e su
       resources: "*"
       effect: allow
 
+  # Atualizar a entrada cli
   - name: cli
     kind: process.lua
     source: file://cli.lua
     method: main
+    security:
+      policies:
+        - app:system_read
     modules:
       - io
       - system
-    security:
-      actor:
-        id: app:cli
-      policies:
-        - app:cli-system-read
 ```
 
 Depois, substitua `src/cli.lua`:

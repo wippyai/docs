@@ -1,12 +1,11 @@
 ---
 title: "로깅"
-description: "structured log message를 작성하고 persistent context가 있는 child logger를 만듭니다."
+description: "debug, info, warn, error 레벨을 지원하는 구조화된 로깅입니다."
 ---
 
 # 로깅
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 `logger` 모듈은 debug, info, warn 및 error level에서 structured message를 작성합니다.
@@ -105,4 +104,6 @@ named:info("message")
 
 빈 name은 Lua argument error를 raise합니다. structured `errors.INVALID` 값으로 반환되지 않습니다.
 
-logging method는 structured error를 반환하지 않습니다. invalid argument type은 Lua argument error를 raise합니다. execution context에 logger가 연결되지 않았으면 module은 no-op logger를 사용하고 message를 discard합니다.
+`logger:named("")`는 에러 값을 반환하는 대신 Lua 인자 에러(`name cannot be empty`)를 발생시킵니다. 로깅 메서드는 아무것도 반환하지 않습니다.
+
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

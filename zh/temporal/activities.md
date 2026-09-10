@@ -31,6 +31,7 @@ Activity 是执行非确定性操作的函数。任何 `function.lua` 或 `proce
 |-------|----------|-------------|
 | `worker` | 是 | 对 `temporal.worker` 条目的引用 |
 | `local` | 否 | 作为本地 activity 执行（默认: false） |
+| `name` | 否 | 自定义 activity 类型名（默认为条目 ID） |
 
 ## 实现
 
@@ -135,6 +136,10 @@ local b, err = reliable:call("app:step_two", a)
 | `activity.wait_for_cancellation` | boolean | false | 等待 activity 取消完成 |
 | `activity.disable_eager_execution` | boolean | false | 禁用即时执行 |
 | `activity.retry_policy` | table | - | 重试配置（见下文） |
+| `activity.name` | string | - | 与注册表 ID 不同时，要调用的 activity 类型名 |
+| `activity.summary` | string | - | 在 Temporal UI 中显示的可读摘要 |
+| `activity.priority` | table | - | 任务优先级：`priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `activity.versioning_intent` | string | - | `compatible`（继承 build ID）或 `default`（使用分配规则） |
 
 Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单位的数字。
 
@@ -194,14 +199,7 @@ Duration 值可使用字符串（`"5s"`、`"10m"`、`"1h"`）或以毫秒为单�
         local: true
 ```
 
-特点：
-- 在 workflow worker 进程中执行
-- 延迟更低（无任务队列往返）
-- 无单独任务队列开销
-- 仅限短时执行（受 `local_activity_options.schedule_to_close_timeout` 限制，通常为几秒）
-- 无 heartbeat 机制
-
-适合快速、短时的操作，如输入验证、数据转换或缓存查找。对于长时间运行的工作，请改用常规 activity。
+目前 `local: true` 会被解析，但行为与普通 activity 完全相同：它通过标准 activity 路径注册和执行。尚不存在独立的 local activity 执行路径，因此它不会改变延迟、任务队列行为或 heartbeat。
 
 ## Activity 命名
 
@@ -249,6 +247,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### 安全上下文
+
+在安全上下文下调度的 activity 会收到已签名的 `wippy-security` 头部，其受众限定为该 activity ID。worker 校验签名和受众，然后在 activity 函数运行之前，把传播的 `ctx` 值和安全载荷合并到一个新的帧上。
+
+该合并是全有或全无的，并且**一旦失败对该 activity 是致命的**：activity 会在其代码执行之前返回错误，因此它绝不会带着不完整的上下文或未经校验的主体运行。以下情况会导致合并失败：签名或受众校验不通过；信封不一致（有主体却没有作用域，或有策略却没有主体）；或者信封中指定的某个策略在本地安全注册表中无法解析——后者是常见的运维成因：worker 的部署缺少调用方所拥有的某个策略记录。
+
+worker 从其引用的 `temporal.client` 记录中获取签名和校验密钥。参见 [安全上下文传播](temporal/overview.md#security-context-propagation)。
+
 ## 错误处理
 
 通过标准 Lua 模式返回错误：
@@ -258,7 +264,7 @@ local errors = require("errors")
 
 local function charge(input)
     if not input.amount or input.amount <= 0 then
-        return nil, errors.new("INVALID", "amount must be positive")
+        return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
     end
 
     local response, err = http.post(url, options)
@@ -267,7 +273,7 @@ local function charge(input)
     end
 
     if response:status() >= 400 then
-        return nil, errors.new("FAILED", "payment declined")
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response:body())
@@ -292,9 +298,13 @@ end
 | 故障 | 错误类型 | 可重试 | 描述 |
 |---------|------------|-----------|-------------|
 | 应用错误 | activity 返回的内容 | 继承自返回的错误 | activity 代码通过 `return nil, err` 返回的错误 |
-| 运行时崩溃 | `INTERNAL` | 是 | activity 中未处理的 Lua 错误 |
-| 缺少 activity | `NOT_FOUND` | 否 | Activity 未注册到 worker |
-| 超时 | `TIMEOUT` | 是 | Activity 超过配置的超时时间 |
+| 运行时崩溃 | `Internal` | 否 | activity 中未处理的 Lua 错误 |
+| 缺少 activity | `NotFound` | 否 | Activity 未注册到 worker |
+| 超时 | `Timeout` | 否 | Activity 超过配置的超时时间 |
+| 安全校验 | `Internal` | 是 | 传播的安全头部的签名、受众或信封检查失败 |
+| 缺少安全策略 | `Internal` | 是 | 安全信封中指定的某个策略在该 worker 上无法解析 |
+
+这两类安全失败都发生在上下文合并期间，即 activity 函数运行之前。它们没有被标记为不可重试，因此 activity 重试策略会持续重新尝试；重试并无帮助，因为签名错误和缺少策略记录都不会在两次尝试之间发生变化。对于希望快速失败的 activity，请限制 `maximum_attempts`；并且把反复出现且没有任何 activity 日志输出的 `Internal` 失败理解为上下文合并失败，而不是 activity 内部的故障。
 
 ```lua
 local executor = funcs.new():with_options({
@@ -303,7 +313,7 @@ local executor = funcs.new():with_options({
 
 local result, err = executor:call("app:missing_activity", input)
 if err then
-    print(err:kind())      -- "NOT_FOUND"
+    print(err:kind())      -- "NotFound"
     print(err:retryable())  -- false
 end
 ```

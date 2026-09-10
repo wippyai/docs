@@ -26,7 +26,7 @@ O linter valida todos os kinds de entrada Lua:
 - `process.lua` — Processos
 - `workflow.lua` — Workflows
 
-Entradas de bytecode contêm bytecode compilado (fs/path/hash), não código-fonte, portanto não podem ser analisadas sintaticamente nem ter seus tipos verificados. O linter verifica somente entradas Lua que contêm código-fonte; suas variantes `.bc` são ignoradas, embora ainda possam aparecer na contagem total de entradas.
+Entradas de bytecode contem bytecode compilado (fs/path/hash), nao codigo-fonte, entao nao podem ser analisadas sintaticamente nem verificadas quanto a tipos; o linter verifica apenas entradas Lua que carregam codigo-fonte (suas variantes `.bc` sao ignoradas, embora ainda possam aparecer na contagem total de entradas).
 
 Cada entrada é analisada sintaticamente, tem seus tipos verificados e é examinada em busca de problemas de correção.
 
@@ -238,18 +238,18 @@ Exemplo de etapa do GitHub Actions:
 
 | Flag | Curta | Padrão | Descrição |
 |------|-------|--------|-----------|
-| `--level` | | warning | Nível mínimo de severidade (error, warning, hint) |
-| `--json` | | false | Saída em formato JSON |
-| `--ns` | | | Filtrar por padrões de namespace |
-| `--code` | | | Filtrar por códigos de erro |
-| `--limit` | | 0 | Número máximo de diagnósticos exibidos (0 = ilimitado) |
-| `--summary` | | false | Agrupar por código de erro |
-| `--no-color` | | false | Desabilitar a saída colorida |
-| `--rules` | | false | Habilitar regras de lint (verificações de estilo/qualidade da série W) |
-| `--cache-reset` | | false | Limpar o cache antes do lint |
-| `--profile` | | | Aplicar um profile do workspace a partir da configuração de runtime mesclada; repita para aplicar profiles em ordem |
-| `--set` | | | Sobrescrever um valor da configuração mesclada como `section.path=value`; repita para várias sobrescritas |
-| `--lock-file` | `-l` | wippy.lock | Caminho do arquivo de lock |
+| `--level` | | warning | Nivel minimo de severidade (error, warning, hint) |
+| `--json` | | false | Saida em formato JSON |
+| `--ns` | | | Filtrar por padroes de namespace |
+| `--code` | | | Filtrar por codigos de erro |
+| `--limit` | | 0 | Maximo de diagnosticos a exibir (0 = ilimitado) |
+| `--summary` | | false | Agrupar por codigo de erro |
+| `--no-color` | | false | Desabilitar saida colorida |
+| `--rules` | | false | Ativar regras de lint (verificacoes de estilo/qualidade serie W) |
+| `--cache-reset` | | false | Limpar cache antes de executar o lint |
+| `--lock-file` | `-l` | wippy.lock | Caminho para o arquivo de lock |
+| `--profile` | | | Aplica um profile de workspace da configuração de runtime mesclada (repetível, aplicado em ordem) |
+| `--set` | | | Sobrescreve um valor da configuração de runtime mesclada (`section.path=value`, repetível) |
 
 ## Consulte Também
 

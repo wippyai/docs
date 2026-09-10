@@ -36,6 +36,41 @@ description: "プロセスの生成、メッセージング、監視、リンク
 - イベントでプロセスのライフサイクルを監視します。
 - 障害を連携させるためにプロセスをリンクします。
 
+## パーミッション
+
+プロセス操作は、呼び出し元エントリのセキュリティポリシーに対してパーミッションチェックされます。以下で使用するアクションを許可する`security.policy`エントリを宣言し、生成・送信・モニタリング・リンク・名前登録を行うすべてのエントリに付与します：
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+この許可がないと、これらの呼び出しは`not allowed to spawn process: app.test.process:echo_worker`のようなエラーを返します。アクションの完全な一覧は[パーミッションリファレンス](lua/core/process.md)にあります。
+
 ## プロセスの生成
 
 エントリ参照から新しいプロセスを生成します。
@@ -125,6 +160,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### 送信者情報のためのメッセージモード
@@ -142,10 +179,7 @@ local function main()
         local data = msg:payload():data()
 
         if sender then
-            local _, send_err = process.send(sender, "reply", data)
-            if send_err then
-                return false, "reply failed: " .. tostring(send_err)
-            end
+            process.send(sender, "reply", data)
         end
         return true
     end

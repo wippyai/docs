@@ -26,7 +26,7 @@ El linter valida todos los tipos de entradas Lua:
 - `process.lua` - Procesos
 - `workflow.lua` - Workflows
 
-Las entradas bytecode contienen bytecode compilado (fs/path/hash), no código fuente, por lo que no pueden analizarse sintácticamente ni comprobarse sus tipos; el linter solo revisa las entradas Lua que contienen código fuente (sus variantes `.bc` se omiten, aunque pueden seguir apareciendo en el recuento total de entradas).
+Las entradas de bytecode contienen bytecode compilado (fs/path/hash), no fuente, por lo que no pueden ser parseadas ni verificadas en tipos; el linter solo revisa entradas Lua con fuente (sus variantes `.bc` se omiten, aunque pueden seguir apareciendo en el conteo total de entradas).
 
 Cada entrada es analizada, verificada en tipos y examinada en busca de problemas de correccion.
 
@@ -250,6 +250,8 @@ Ejemplo de paso en GitHub Actions:
 | `--profile` | | | Aplicar un perfil del workspace desde la configuración combinada del runtime; se puede repetir para aplicar perfiles en orden |
 | `--set` | | | Sobrescribir un valor de configuración combinada como `section.path=value`; se puede repetir para varias sobrescrituras |
 | `--lock-file` | `-l` | wippy.lock | Ruta al archivo de bloqueo |
+| `--profile` | | | Aplicar un perfil de workspace desde la configuracion de runtime combinada (repetible, aplicado en orden) |
+| `--set` | | | Sobrescribir un valor de la configuracion de runtime combinada (`section.path=value`, repetible) |
 
 ## Ver Tambien
 

@@ -1,6 +1,6 @@
 ---
 title: "Message Queue"
-description: "Publish messages and process deliveries from configured queues."
+description: "Publish and consume messages from distributed queues. Supports multiple backends including RabbitMQ and other AMQP-compatible brokers."
 ---
 
 # Message Queue
@@ -88,8 +88,8 @@ This function is available only while a queue consumer is processing a message.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `id()` | `string, error` | Unique message identifier |
-| `header(key)` | `string?, error` | Normalized string value, or nil if missing |
-| `headers()` | `{[string]: string}, error` | All headers with normalized string values |
+| `header(key)` | `string, error` | Single header value as a string (nil if missing) |
+| `headers()` | `table, error` | All message headers |
 | `ack()` | `boolean, error` | Acknowledge processing (single-shot) |
 | `nack()` | `boolean, error` | Signal failure for redelivery or dead-letter (single-shot) |
 
@@ -110,10 +110,11 @@ if err then return nil, err end
 A `queue.consumer` entry binds a queue to the handler referenced by `func`. The handler receives the message payload directly:
 
 ```yaml
-- name: email_worker
-  kind: queue.consumer
-  queue: app:emails
-  func: app:email_handler
+entries:
+  - kind: queue.consumer
+    name: email_worker
+    queue: app:emails
+    func: app:email_handler
 ```
 
 This fragment assumes `app:emails` and the `app:email_handler` function entry already exist. The function source below assumes the application supplies `deliver_email(payload)` and grants any permissions it needs.

@@ -1,71 +1,56 @@
 ---
-title: "Seitenrezept"
-description: "Portables view.page-Rezept mit unterstütztem Routing, Theme-Bereitstellung, Abhängigkeiten und Build-Zuständigkeit."
+title: "Seiten-Rezept"
+description: "Ein portables view.page-Rezept mit unterstütztem Routing, Theme-Auslieferung, Abhängigkeiten und Build-Zuständigkeit."
 ---
 
-# Seitenrezept
+# Seiten-Rezept
 
-Eine Seite ist eine mit Vite gebaute Anwendung, die durch die ältere
-`about:srcdoc`-iframe-Engine oder die Web-Fragment-Engine dargestellt wird.
-Route und Hostkontext stammen aus Wippy-AppConfig und Paketen, nicht aus dem
-Browserstandort.
+Eine Seite ist eine mit Vite gebaute Anwendung, die in einem `about:srcdoc`-iframe gerendert wird. Route und Host-Kontext kommen aus Wippy-AppConfig und -Paketen, nicht aus der Browser-Location.
 
-Dies ist ein Integrationsrezept für ein vorhandenes Vue-/Vite-Projekt. Es nennt
-Wippy-spezifischen Einstiegscode und Deploymentvertrag, stellt aber weder ein
-eigenständiges Projektscaffold noch das Backend bereit.
+## Erforderliches Setup
 
-## Erforderliche Einrichtung
-
-1. Registrieren Sie eine `view.page` und die zugehörigen Dateisystem-/Router-Einträge.
-2. Aktivieren Sie die benötigte CSS-Bereitstellung. Kann iframe gewählt werden, bleibt der CSS-Block `iframe` für einheitliche Scrollbars aktiv.
+1. Registrieren Sie eine `view.page` sowie ihre Filesystem-/Router-Einträge für die Auslieferung.
+2. Aktivieren Sie die erforderliche CSS-Auslieferung. Lassen Sie den `iframe`-CSS-Block aktiviert, damit Scrollbars standardmäßig konsistent bleiben.
 3. Verwenden Sie `@wippy-fe/router` für Vue-Routing.
-4. Installieren Sie PrimeVue und das Wippy-PrimeVue-Plugin, sobald die Seite PrimeVue-artige Steuerelemente darstellt.
-5. Verwenden Sie das gemeinsame Wippy-Tailwind-Preset für Tailwind-Utilities.
-6. Erzeugen Sie Externals aus dem fixierten Snapshot der Web-Host-Import-Map.
-7. Mounten Sie an `#app`; inhaltsbasierte Web Fragments verlangen genau diese Root-ID.
-8. Bauen Sie in das vom Deployment gewählte Ausgabeverzeichnis.
+4. Installieren Sie PrimeVue und das Wippy-PrimeVue-Plugin, wenn die Seite irgendein PrimeVue-artiges Steuerelement rendert.
+5. Verwenden Sie das gemeinsame Wippy-Tailwind-Preset, wenn die Seite Tailwind-Utilities schreibt.
+6. Erzeugen Sie Externals aus dem gepinnten Import-Map-Snapshot des Web Host.
+7. Bauen Sie in das vom Deployment gewählte Ausgabeverzeichnis.
 
 ```ts
 import { createApp } from 'vue'
 import PrimeVue from '@wippy-fe/theme/primevue-plugin'
 import { createAppRouter } from '@wippy-fe/router'
-import { config } from '@wippy-fe/proxy'
 import App from './App.vue'
 import { routes } from './routes'
 
 const app = createApp(App)
 app.use(PrimeVue)
-app.use(createAppRouter(routes, {
-  initialPath: config.context?.route ?? '/',
-}))
+app.use(createAppRouter(routes))
 app.mount('#app')
 ```
 
-Prüfen Sie die exakten exportierten Signaturen gegen die gewählte Paketversion.
-Erstellen Sie keine eigene Routersynchronisierung.
+Prüfen Sie die exakten exportierten Signaturen gegen die gewählte Paketversion. Erstellen Sie keine lokale Schicht zur Router-Synchronisation.
 
 ## Theme-Injektion
 
-Die Seite verwendet das Facade-Theme, das in den gewählten Seiten-Realm
-geliefert wird. Nutzen Sie öffentliche PrimeVue-Komponenten, Theme-Variablen,
-dokumentierte runtimegestützte Tailwind-Utilities und ausdrücklich invariante
-Compile-Time-Utilities.
+Die Seite konsumiert das Facade-Theme, das in ihr iframe geliefert wird. Verwenden Sie öffentliche PrimeVue-Komponenten, öffentliche Theme-Variablen, dokumentierte laufzeitgestützte Tailwind-Utilities und ausdrücklich invariante Compile-Time-Utilities.
 
-Ein Host-Query-Parameter ist kein Anwendungsfixture. AppConfig besitzt den Hostkontext.
+Verwenden Sie keinen Host-Query-Parameter als Anwendungs-Fixture. AppConfig besitzt den Host-Kontext.
 
 ## Build
 
-Rufen Sie das Make-Ziel des Wippy-Modulrepositories auf. Dessen Rezept füllt die Deploymentausgabe mit:
+Rufen Sie das Make-Target des Wippy-Modul-Repositorys auf. Sein Rezept versorgt die
+Deployment-Ausgabe mit:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-`vite.config.ts` bewahrt relatives Assetverhalten und hardcodiert kein
-Deployment-`outDir`. Rufen Sie weder Package Manager noch Vite-Build direkt
-auf. Unter Windows verwenden Sie `make.bat`; es delegiert an die
-`make.ps1`-Implementierung des Ziels.
+`vite.config.ts` behält das relative Asset-Verhalten bei und kodiert kein `outDir` des Deployments fest.
 
-Siehe [Build- und Abhängigkeitsvertrag](./build-system.md),
-[Plattformtopologie](../platform-topology.md) und
-[Konfiguration und Schreibweise](./configuration-casing.md).
+Rufen Sie den zugrundeliegenden Paketmanager- oder Vite-Build-Befehl nicht direkt auf.
+Unter Windows rufen Sie `make.bat` auf; es delegiert an die `make.ps1`-Implementierung
+des Targets.
+
+Siehe [Build- und Abhängigkeitsvertrag](./build-system.md), [Plattform-Topologie](../platform-topology.md) und [Konfiguration und Schreibweise](./configuration-casing.md).

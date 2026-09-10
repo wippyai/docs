@@ -1,59 +1,56 @@
 ---
-title: "Receta de página"
-description: "Una receta portable de view.page con routing, entrega de temas, dependencias y propiedad de compilación admitidos."
+title: "Receta de Página"
+description: "Una receta portable de view.page con enrutamiento soportado, entrega de tema, dependencias y propiedad del build."
 ---
 
-# Receta de página
+# Receta de Página
 
-Una página es una aplicación compilada con Vite que se renderiza mediante el motor iframe heredado `about:srcdoc` o mediante Web Fragment. Su ruta y el contexto del host proceden de AppConfig y de los paquetes de Wippy, no de la ubicación del navegador.
+Una página es una aplicación construida con Vite y renderizada en un iframe `about:srcdoc`. Su ruta y el contexto del host provienen de AppConfig y de los paquetes de Wippy, no de la location del navegador.
 
-Esta es una receta de integración para un proyecto Vue/Vite existente. Identifica el código de entrada específico de Wippy y el contrato de despliegue; no proporciona una estructura de proyecto independiente ni configuración backend.
+## Configuración requerida
 
-## Configuración necesaria
-
-1. Registre una `view.page` y sus entradas de filesystem y router de servicio.
-2. Active la entrega CSS necesaria. Cuando pueda seleccionarse el motor iframe, mantenga habilitado el bloque CSS `iframe` para conservar la coherencia predeterminada de las barras de desplazamiento.
-3. Use `@wippy-fe/router` para el routing de Vue.
-4. Instale PrimeVue y el plugin PrimeVue de Wippy cuando la página renderice algún control similar a PrimeVue.
-5. Use el preset compartido de Tailwind de Wippy cuando la página cree utilidades Tailwind.
-6. Genere las dependencias externas desde la instantánea del mapa de importación de Web Host fijada.
-7. Monte la aplicación en `#app`; los Web Fragments cuyo tamaño depende del contenido requieren ese id exacto de raíz.
-8. Compile en el directorio de salida elegido por el despliegue.
+1. Registre un `view.page` y sus entradas de filesystem/router de servicio.
+2. Habilite la entrega de CSS requerida. Mantenga habilitado el bloque de CSS `iframe` para la consistencia por defecto de las barras de desplazamiento.
+3. Use `@wippy-fe/router` para el enrutamiento de Vue.
+4. Instale PrimeVue y el plugin de PrimeVue de Wippy cuando la página renderice cualquier control similar a PrimeVue.
+5. Use el preset compartido de Tailwind de Wippy cuando la página escriba utilidades de Tailwind.
+6. Genere los externals a partir del snapshot fijado del import-map del Web Host.
+7. Compile hacia el directorio de salida seleccionado por el despliegue.
 
 ```ts
 import { createApp } from 'vue'
 import PrimeVue from '@wippy-fe/theme/primevue-plugin'
 import { createAppRouter } from '@wippy-fe/router'
-import { config } from '@wippy-fe/proxy'
 import App from './App.vue'
 import { routes } from './routes'
 
 const app = createApp(App)
 app.use(PrimeVue)
-app.use(createAppRouter(routes, {
-  initialPath: config.context?.route ?? '/',
-}))
+app.use(createAppRouter(routes))
 app.mount('#app')
 ```
 
-Verifique las firmas exportadas exactas en la versión de paquete elegida. No cree una capa local de sincronización del router.
+Verifique las firmas exportadas exactas contra la versión del paquete seleccionada. No cree una capa local de sincronización del router.
 
-## Inyección del tema
+## Inyección de tema
 
-La página consume el tema de la fachada entregado en el realm de página seleccionado. Use componentes públicos de PrimeVue, variables públicas de tema, utilidades Tailwind documentadas respaldadas en runtime y utilidades de tiempo de compilación explícitamente invariantes.
+La página consume el tema del facade entregado en su iframe. Use componentes públicos de PrimeVue, variables públicas del tema, utilidades de Tailwind documentadas como respaldadas en runtime y utilidades de tiempo de compilación explícitamente invariantes.
 
-No use un parámetro de query del host como fixture de la aplicación. AppConfig es la fuente del contexto del host.
+No use un parámetro de query del host como fixture de la aplicación. AppConfig es el propietario del contexto del host.
 
-## Compilación
+## Build
 
-Invoque el target de Make del repositorio del módulo Wippy. Su receta proporciona la salida del despliegue con:
+Invoque el target de Make del repositorio del módulo de Wippy. Su receta suministra
+la salida de despliegue con:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-`vite.config.ts` conserva el comportamiento relativo de los assets y no fija `outDir` en el código.
+`vite.config.ts` mantiene el comportamiento de assets relativos y no fija el `outDir` de despliegue.
 
-No invoque directamente el gestor de paquetes ni el comando de compilación de Vite subyacente. En Windows, invoque `make.bat`; este delega en la implementación `make.ps1` del target.
+No invoque directamente el gestor de paquetes subyacente ni el comando de build de Vite.
+En Windows, invoque `make.bat`; delega en la implementación `make.ps1`
+del target.
 
-Consulte [Contrato de compilación y dependencias](./build-system.md), [Topología de la plataforma](../platform-topology.md) y [Configuración y uso de mayúsculas](./configuration-casing.md).
+Vea [Contrato de Build y Dependencias](./build-system.md), [Topología de la Plataforma](../platform-topology.md) y [Configuración y Casing](./configuration-casing.md).

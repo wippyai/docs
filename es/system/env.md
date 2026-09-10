@@ -17,7 +17,7 @@ El sistema de entorno separa el almacenamiento del acceso:
 - **Variables** - Referencias nombradas a valores en almacenes
 
 Las variables pueden referenciarse por:
-- **Nombre público** - El valor del campo `variable`
+- **Nombre público** - El valor del campo `variable` (debe ser único en el sistema)
 - **ID de Entrada** - Referencia completa `namespace:name`
 
 Omita el campo `variable` cuando solo se deba acceder a una variable mediante su ID de entrada. La primera variable que reclama un nombre público conserva ese acceso abreviado. Una variable posterior con el mismo nombre público también se registra y sigue siendo accesible por su ID de entrada, pero no reemplaza el acceso abreviado existente.
@@ -126,10 +126,10 @@ Las variables asignan nombres públicos o ID de entradas a valores de un backend
 
 | Propiedad | Tipo | Descripción |
 |----------|------|-------------|
-| `variable` | string | Nombre público opcional de la variable |
-| `storage` | string | Referencia obligatoria al almacén (`namespace:name`) |
+| `variable` | string | Nombre de variable pública (opcional, debe ser único) |
+| `storage` | string | Referencia de almacén (`namespace:name`) |
 | `default` | string | Valor por defecto si no se encuentra |
-| `readonly` | boolean | Impedir modificaciones |
+| `readonly` | boolean | Prevenir modificaciones |
 
 ### Nomenclatura de Variables
 
@@ -176,7 +176,7 @@ Las variables registradas se incorporan a la configuración de las entradas con 
 
 Un campo cuyo valor completo sea un único marcador adopta el tipo de su valor predeterminado en línea. Por ejemplo, `${env:PORT|8080}` produce un entero y convierte un valor almacenado a entero, mientras que `${env:PORT|"8080"}` sigue siendo una cadena. Un marcador mezclado con texto circundante siempre produce una cadena. El `default` propio de la variable se respeta antes que el `|default` en línea del marcador. Una referencia que no resuelve ningún valor y carece de valor predeterminado hace fallar la decodificación.
 
-La resolución ocurre solo en el momento de la decodificación: la entrada almacenada en el registro conserva los placeholders sin resolver, de modo que los secretos resueltos nunca aparecen en los resultados de `registry.get` ni en el estado persistido. Las entradas que referencian `${env:...}` se ordenan automáticamente en el arranque después de los almacenes env y las variables de las que dependen.
+La resolución ocurre solo en el momento de la decodificación: la entrada almacenada en el registro conserva los placeholders sin resolver, de modo que los secretos resueltos nunca aparecen en los resultados de `registry.get` ni en el estado persistido. Las entradas que referencian una variable por ID de entrada (`${env:ns:name}`) se ordenan automáticamente en el arranque después de esa variable; una referencia por nombre público no crea ninguna arista de dependencia.
 
 <note>
 Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (por ejemplo <code>cert_env: app.env:tls_cert</code>) que se resuelve de la misma forma. Esta forma está <b>obsoleta</b>: mígrela al marcador <code>${env:NAME}</code>. Una clave <code>&lt;field&gt;_env</code> que nombra una variable no registrada no se trata como directiva y se deja tal cual; una que nombra una variable registrada pero vacía conserva el valor en línea de <code>&lt;field&gt;</code>. Solo un <code>${env:NAME}</code> explícito sin valor predeterminado falla de forma estricta ante una variable ausente.

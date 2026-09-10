@@ -1,6 +1,6 @@
 ---
 title: "보안 및 접근 제어"
-description: "현재 액터와 스코프를 확인하고, 정책을 평가하며, 인증 토큰을 관리합니다."
+description: "인증 액터, 권한 스코프, 접근 정책을 관리합니다."
 ---
 
 # 보안 및 접근 제어
@@ -59,18 +59,12 @@ end
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new({
-        message = "Cannot read user data",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new({
-        message = "Cannot modify order",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -256,10 +250,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new({
-        message = "Access denied",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -343,7 +334,7 @@ return token
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, err
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -385,9 +376,7 @@ store:close()
 |------|--------|------|
 | `security.policy.get` | 정책 ID | 정책 정의 접근 |
 | `security.policy_group.get` | 그룹 ID | 명명된 스코프 접근 |
-| `security.scope.create` | `custom` | `new_scope`으로 커스텀 스코프 생성 |
-| `security.scope.create` | `with` | `scope:with`로 정책 추가 |
-| `security.scope.create` | `without` | `scope:without`으로 정책 제거 |
+| `security.scope.create` | `custom`, `with`, `without` | 커스텀 스코프 생성(`new_scope`) 및 정책 추가/제거(`scope:with`, `scope:without`) |
 | `security.actor.create` | 액터 ID | 액터 생성 |
 | `security.token_store.get` | 스토어 ID | 토큰 스토어 접근 |
 | `security.token.validate` | 스토어 ID | 토큰 검증 |
@@ -402,8 +391,8 @@ store:close()
 |------|------|-------------|
 | 컨텍스트 없음 | `errors.INTERNAL` | 아니오 |
 | 빈 토큰 스토어 ID | `errors.INVALID` | 아니오 |
-| 정책, 명명된 스코프 또는 토큰 작업 권한 거부 | `errors.INVALID` | 아니오 |
-| 액터/스코프 생성, 스코프 변경 또는 토큰 스토어 획득 거부 | Lua 오류 발생 | 아니오 |
+| 권한 거부됨 (`policy`, `named_scope`, 토큰 `create`/`validate`/`revoke`) | `errors.INVALID` | 아니오 |
+| 권한 거부됨 (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | Lua 에러로 발생 | 아니오 |
 | 정책을 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 토큰 스토어를 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 토큰 스토어 닫힘 | `errors.INTERNAL` | 아니오 |

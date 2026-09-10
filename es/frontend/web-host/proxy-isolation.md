@@ -1,157 +1,167 @@
 ---
-title: "Proxy y aislamiento"
-description: "Cómo las aplicaciones de página y componentes web reciben configuración y se comunican con Web Host mediante Proxy API."
+title: "Proxy y Aislamiento"
+description: "El Web Host ejecuta cada micro-frontend hijo en un contexto sandbox y lo conecta con el host a través de la API del Proxy. Tanto las aplicaciones micro frontend como los web…"
 ---
 
-# Proxy y aislamiento
+# Proxy y Aislamiento
 
-Esta página es una referencia de API y transporte interno. Los fragmentos presuponen una página o componente alojado; son integraciones parciales.
+El Web Host ejecuta cada micro-frontend hijo en un contexto sandbox y lo conecta con el host a través de la **API del Proxy**. Tanto las aplicaciones micro frontend como los web components alcanzan el host importando desde **`@wippy-fe/proxy`**.
 
-Web Host conecta páginas y componentes con servicios mediante **Proxy API**. Una página empaquetada se ejecuta en iframe srcdoc aislado o realm Web Fragment según `hostConfig.renderEngine`; un componente se ejecuta en el DOM del host. Los tres importan **`@wippy-fe/proxy`**.
+![Inyección y anidamiento de la API del Proxy](../diagrams/proxy-layers.svg)
 
-![Inyección y anidamiento de Proxy API](../diagrams/proxy-layers.svg)
+## La API del Proxy
 
-## Proxy API
+La API del Proxy es su punto de entrada al host. Un runtime — `proxy.js` — la entrega: coloca la API y el `AppConfig` actual en la página y los expone mediante el módulo **`@wippy-fe/proxy`**.
 
-Un runtime específico del motor coloca la API y configuración hija en el contexto y las expone por `@wippy-fe/proxy`:
+- Para una **aplicación micro frontend** (`view.page`), el host inyecta `proxy.js` en el `srcdoc` de la página.
+- Para un **web component** (`view.component`), el runtime ya está presente en la página del host: el componente se monta en el DOM del host, no en un iframe separado.
 
-- iframe: inyecta `proxy.js` en `srcdoc`;
-- Fragment: el gateway carga `proxy-fragment.js` en el realm;
-- componente: el runtime ya existe en la página host.
+Su código lo consume mediante los getters síncronos exportados por `@wippy-fe/proxy`:
 
 ```ts
 import { host, api, on, config } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
-const data = await api.get('/api/v1/agents')   // api is an axios instance; the await is the HTTP call
-on('@visibility', (visible) => { /* pause or resume work */ })
+const data = await api.get('/api/v1/agents')   // api es una instancia de axios; el await es la llamada HTTP
+on('@visibility', (visible) => { /* pausar o reanudar el trabajo */ })
 ```
 
-El routing Vue portable es la excepción: `@wippy-fe/router` consume `@history` e informa de navegación; no añada suscripciones manuales.
+El enrutamiento portable de Vue es la excepción: `@wippy-fe/router` consume `@history` e informa de la navegación local por usted. No añada suscripciones manuales de enrutamiento a su alrededor.
 
-Los getters son **síncronos** cuando se ejecuta la aplicación. Iframe parte de configuración inyectada; Fragment la resuelve antes de construir la API. Marque `@wippy-fe/proxy` como `external` en Vite; el host lo proporciona por import map. Consulte [Proxy API](../micro-frontends/proxy-api.md).
+Estos getters son **síncronos**: `host`, `api`, `on`, `config` y el resto están listos en el momento en que se ejecuta su código — la configuración está en su sitio antes de que el runtime se inicialice (vea abajo), así que no hay ningún handshake que esperar. Marque `@wippy-fe/proxy` como `external` en su build de Vite: el host lo proporciona mediante el import map. Vea [API del Proxy](../micro-frontends/proxy-api.md) para la superficie completa.
 
-## Cómo llega la configuración
+## Cómo llega la configuración al iframe de una aplicación
 
-### Iframe
-
-El host construye `srcdoc` e inyecta, en orden y antes de la aplicación:
+Cuando el host carga un `view.page`, construye un `srcdoc` e inyecta, **en este orden, antes del script de su aplicación**:
 
 ```html
-<!-- 1. The child AppConfig — set synchronously, before the runtime loads -->
-<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, context */ }</script>
-<!-- 2. The CSS-injection flags for this page -->
+<!-- 1. El AppConfig del hijo, establecido de forma síncrona antes de que cargue el runtime -->
+<script>window.__WIPPY_APP_CONFIG__ = { /* auth, env, theming, hostConfig, context */ }</script>
+<!-- 2. Los flags de inyección de CSS para esta página -->
 <script>window.__WIPPY_PROXY_CONFIG__ = { injections: { css: { themeConfig: true, primevue: true /* … */ } } }</script>
-<!-- 3. The runtime (preceded by loading.js) -->
+<!-- 3. El runtime (precedido por loading.js) -->
 <script src="/.../loading.js"></script>
 <script src="/.../proxy.js"></script>
 ```
 
-La configuración existe antes de `proxy.js`, por lo que no hay handshake gestionado por la aplicación. Las páginas no referencian scripts: el host reemplaza `<script data-role="@wippy/scripts">`. Los overrides llegan en `window.__WIPPY_CONFIG_OVERRIDES__`; consulta [Proxy API — Overrides de configuración](../micro-frontends/proxy-api.md#overrides-de-configuración).
+Como la global de configuración se establece **antes** de que se ejecute `proxy.js`, el runtime se inicializa de forma síncrona y los getters de `@wippy-fe/proxy` funcionan inmediatamente: sin handshake. Las páginas no referencian estos scripts directamente; el host reemplaza el marcador `<script data-role="@wippy/scripts">` por las etiquetas correctas y ordenadas. Las anulaciones por página llegan como `window.__WIPPY_CONFIG_OVERRIDES__` (vea [API del Proxy — Anulaciones de configuración](../micro-frontends/proxy-api.md#config-overrides)).
 
-### Web Fragment
+Un web component ve las mismas globales porque se ejecuta en la página del host, donde el runtime ya las estableció antes de que se dispare el `connectedCallback` del componente.
 
-El gateway sirve un stub reframed con import map, `loading.js` y `proxy-fragment.js`. Como el servidor no puede inyectar el token del cliente, el runtime obtiene AppConfig mediante `GetConfig`/`SetConfig` por el canal same-origin y construye la misma API autenticada.
+## En qué se diferencian las aplicaciones y los web components
 
-Un componente ve la API y configuración de la página host porque se ejecuta en ella.
+Ambos importan la misma API de `@wippy-fe/proxy`. Se diferencian en el contexto de ejecución y en cómo se entregan los estilos:
 
-## Diferencias
-
-| | Página iframe | Página Fragment | Componente |
-|---|---|---|---|
-| Ejecución | iframe `srcdoc` sandbox | realm same-origin reflejado en shadow root | DOM host con Shadow DOM |
-| Runtime | `proxy.js` inyectado | `proxy-fragment.js` del gateway | ya presente |
-| Configuración | global síncrono y actualizaciones no bloqueantes | handshake bloqueante del runtime | globales del host |
-| CSS | pipeline del cliente | gateway/realm | `hostCssKeys` en shadow DOM |
+| | Aplicación micro frontend (`view.page`) | Web Component (`view.component`) |
+|---|---|---|
+| Se ejecuta en | su propio iframe `srcdoc` | el DOM de la página del host (Shadow DOM) |
+| Entrega del runtime | `proxy.js` inyectado en el iframe | el runtime ya está presente en la página del host |
+| CSS | pipeline de inyección completo (`themeConfig`, `primevue`, …); vea [Inyección de CSS](./css-injection.md) | `hostCssKeys` hacia el Shadow DOM; vea [Temas: Web Components](../micro-frontends/web-component-theming.md) |
 
 ## Composición y anidamiento
 
-Los hijos pueden alojar hijos a cualquier profundidad con la misma API.
+Los hijos se componen. Una aplicación micro frontend o un web component pueden alojar a su vez hijos — de nuevo aplicaciones micro frontend o web components — que pueden alojar los suyos, hasta cualquier profundidad. Cada nivel usa la misma API `@wippy-fe/proxy`.
 
-- Una página o HTML hijo usa `<w-iframe>`, `<w-artifact>` o la inyección HTML. En iframe crea `srcdoc`; en Fragment, una página registrada anidada usa otro Fragment, mientras HTML inline sigue en `srcdoc`.
-- Un componente hijo solo renderiza su tag o se carga con `loadWebComponent` / `loadByTagName`.
+Cómo aloja un nodo a un hijo depende del tipo de hijo:
 
-El código hijo no cambia por profundidad.
+- **Un hijo en iframe** — una aplicación micro frontend, un artefacto o HTML arbitrario de Wippy — pasa por `<w-iframe>`, `<w-artifact>` o `html.inject`. Estos inyectan el runtime completo (URL base, import map, `loading.js`, `proxy.js` y configuración) en el `srcdoc` del hijo, de modo que obtiene la API del Proxy exactamente igual que una aplicación de nivel superior. Su proxy se conecta hacia arriba a través del padre hasta el host.
+- **Un hijo que es web component** no necesita nada de eso. Renderice su etiqueta — o cárguelo con `loadWebComponent` / `loadByTagName` — y se ejecuta en el mismo DOM, importando la API del Proxy directamente.
+
+El código propio del hijo es idéntico tanto si se ejecuta en el nivel superior como si está anidado varios niveles: importe de `@wippy-fe/proxy` y úselo. No hay reglas especiales de anidamiento.
+
+Vea [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custom-element) y [Inyección Avanzada de HTML](#advanced-html-injection) más abajo para conocer la mecánica.
 
 ## Internos: no leer ni sobrescribir
 
-| Global | Función interna |
-|--------|-----------------|
-| `window.$W` | Accesor asíncrono; use el paquete público |
-| `window.getWippyApi` / `window.initWippyApi` | Resolución de instancia; `initWippyApi` obsoleto |
-| `window.__WIPPY_APP_API__` | Instancia resuelta |
-| `window.__WIPPY_APP_CONFIG__` | Snapshot AppConfig hijo |
-| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | Opciones CSS y overrides |
-| `window.__WIPPY_WEB_COMPONENT_CACHE__` | Caché de componentes |
+`proxy.js` instala las siguientes globales para su propio uso. **El código de aplicaciones y componentes nunca debe leerlas ni asignarlas**: use `@wippy-fe/proxy` en su lugar. Se documentan únicamente para que no las sobrescriba por accidente:
 
-La API pública consta de initWippyApp para montar todo el Host y `@wippy-fe/proxy` para hijos. Lo anterior es interno.
+| Global | Qué es |
+|---|---|
+| `window.$W` | Objeto accesor asíncrono (`$W.host()`, `$W.api()`, …). Interno; `@wippy-fe/proxy` es la superficie soportada. |
+| `window.getWippyApi` / `window.initWippyApi` | Funciones asíncronas de "resolver la instancia". Internas (`initWippyApi` está obsoleta). |
+| `window.__WIPPY_APP_API__` | La instancia de proxy resuelta. |
+| `window.__WIPPY_APP_CONFIG__` | El snapshot del `AppConfig` del hijo. |
+| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | Flags de inyección de CSS y anulaciones por página. |
+| `window.__WIPPY_WEB_COMPONENT_CACHE__` | Caché de componentes cargados. |
 
-## Protocolo PostMessage: transporte interno
+Dos puntos de entrada componen la API pública de JavaScript: `initWippyApp(config, rootContainer?)` monta el Web Host completo (el punto de entrada de embebido por módulo que usa el facade; vea [Punto de Entrada del Facade](./entry-point.md)), y **`@wippy-fe/proxy`** es la API síncrona para aplicaciones y componentes hijos. Todo lo de la tabla anterior es interno.
 
-El código de aplicación nunca envía estos mensajes. En iframe, la configuración ya existe y `get-config` solo resincroniza; en Fragment y en el iframe manual completo, el handshake es la fuente inicial.
+## Protocolo PostMessage (`IFrameMessageType`): transporte interno
 
-El sobre es `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`; el tipo puede configurarse mediante `APP_CONFIG_IFRAME_EVENT_TYPE`. La tabla no es exhaustiva:
+Este es el protocolo de cable que el runtime usa internamente; **el código de la aplicación nunca envía ni recibe estos mensajes**: `@wippy-fe/proxy` los gestiona por usted.
 
-| Miembro | Valor | Dirección | Descripción |
-|---------|-------|-----------|-------------|
-| `GetConfig` | `get-config` | Hijo → Host | Solicita AppConfig |
-| `SetConfig` | `set-config` | Host → Hijo | Entrega AppConfig |
-| `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Hijo | Emite `@history` |
-| `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Hijo | Emite `@visibility` |
-| `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Hijo | Topic WebSocket |
-| `CmdRouteChanged` | `cmd-route-changed` | Hijo → Host | Actualiza URL |
-| `CmdTitleChanged` | `cmd-title-changed` | Hijo → Host | Actualiza título |
-| `CmdStartChat` | `cmd-start-chat` | Hijo → Host | Inicia chat |
-| `CmdOpenSession` | `cmd-open-session` | Hijo → Host | Abre sesión |
-| `CmdOpenArtifact` | `cmd-open-artifact` | Hijo → Host | Abre artefacto |
-| `CmdNavigate` | `cmd-navigate` | Hijo → Host | Navegación SPA |
-| `CmdShowToast` | `cmd-show-toast` | Hijo → Host | Toast |
-| `CmdShowConfirm` | `cmd-show-confirm` | Hijo → Host | Confirmación |
-| `OnConfirmResult` | `on-confirm-result` | Host → Hijo | Resultado |
-| `CmdSetContext` | `cmd-set-context` | Hijo → Host | Contexto de chat |
-| `CmdHandleError` | `cmd-handle-error` | Hijo → Host | Error |
-| `CmdLogout` | `cmd-logout` | Hijo → Host | Logout |
-| `CmdSubscribe` | `cmd-subscribe` | Hijo → Host | Se suscribe a un topic WebSocket |
+La vía estándar inyectada por el host no necesita handshake para arrancar: la configuración ya está presente de forma síncrona como `window.__WIPPY_APP_CONFIG__` antes de que se ejecute `proxy.js`, así que el runtime construye su instancia inmediatamente. El intercambio `get-config`/`set-config` sigue ocurriendo en esta vía, pero solo como **canal no bloqueante de resincronización y actualización en vivo**: después de construir la instancia síncrona, el runtime del iframe siempre envía `get-config`, el host responde con `set-config` y vuelve a enviar `set-config` en cada actualización posterior de la configuración. Los hijos anidados `<w-iframe>` se comportan igual. Su código nunca espera nada de esto: los getters síncronos ya están activos.
+
+El handshake es **la única fuente de configuración, y bloqueante**, en exactamente un escenario: el embebido manual en iframe sin facade (`iframe.html?waitForCustomConfig`), donde no hay un `window.__WIPPY_APP_CONFIG__` preinyectado, así que la inicialización se bloquea hasta el primer `set-config` y el padre debe responder a la petición `get-config` (vea [Punto de Entrada del Facade § Embebido manual en iframe](./entry-point.md#manual-facade-less-iframe-embedding)).
+
+Cada mensaje es un sobre JSON con la forma `{ type: '@gen2-chat', action: IFrameMessageType.*, ...payload }`. El campo `type` es configurable mediante `APP_CONFIG_IFRAME_EVENT_TYPE`, pero por defecto es `'@gen2-chat'`.
+
+Todos los tipos de mensaje se definen en el enum `IFrameMessageType`:
+
+| Miembro del enum | Valor de cable | Dirección | Descripción |
+|-------------|------------|-----------|-------------|
+| `GetConfig` | `get-config` | Hijo → Host | Handshake inicial: el hijo solicita su `AppConfig` |
+| `SetConfig` | `set-config` | Host → Hijo | El host entrega el `AppConfig` en respuesta a `GetConfig` |
+| `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Hijo | La URL del host cambió; dispara el evento `@history` del hijo |
+| `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Hijo | La visibilidad del iframe cambió; dispara el evento `@visibility` del hijo |
+| `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Hijo | Entrega un evento de topic de WebSocket a los hijos suscritos |
+| `CmdRouteChanged` | `cmd-route-changed` | Hijo → Host | La ruta interna del hijo cambió; el host actualiza la URL del navegador |
+| `CmdTitleChanged` | `cmd-title-changed` | Hijo → Host | El `document.title` del hijo cambió; el host actualiza el título de la página |
+| `CmdStartChat` | `cmd-start-chat` | Hijo → Host | Abre una nueva sesión de chat |
+| `CmdOpenSession` | `cmd-open-session` | Hijo → Host | Navega a una sesión de chat existente |
+| `CmdOpenArtifact` | `cmd-open-artifact` | Hijo → Host | Abre un artefacto en la barra lateral o en un modal |
+| `CmdNavigate` | `cmd-navigate` | Hijo → Host | Petición de navegación SPA |
+| `CmdShowToast` | `cmd-show-toast` | Hijo → Host | Muestra una notificación toast |
+| `CmdShowConfirm` | `cmd-show-confirm` | Hijo → Host | Muestra un diálogo de confirmación |
+| `OnConfirmResult` | `on-confirm-result` | Host → Hijo | Entrega el resultado del diálogo de confirmación |
+| `CmdSetContext` | `cmd-set-context` | Hijo → Host | Envía contexto a una sesión de chat |
+| `CmdHandleError` | `cmd-handle-error` | Hijo → Host | Informa de un error al host |
+| `CmdLogout` | `cmd-logout` | Hijo → Host | Dispara el cierre de sesión |
+| `CmdSubscribe` | `cmd-subscribe` | Hijo → Host | Se suscribe a un topic de WebSocket |
 | `CmdUnSubscribe` | `cmd-unsubscribe` | Hijo → Host | Cancela la suscripción a un topic |
-| `OnSubscription` | `on-subscription` | Host → Hijo | Evento de suscripción |
+| `OnSubscription` | `on-subscription` | Host → Hijo | Entrega los datos de un evento de suscripción |
 | `CmdStateGet` | `cmd-state-get` | Hijo → Host | Lee una clave de estado persistido |
 | `CmdStateSet` | `cmd-state-set` | Hijo → Host | Escribe una clave de estado persistido |
 | `CmdStateRemove` | `cmd-state-remove` | Hijo → Host | Elimina una clave de estado persistido |
-| `CmdStateClear` | `cmd-state-clear` | Hijo → Host | Borra todo el estado de esta página |
+| `CmdStateClear` | `cmd-state-clear` | Hijo → Host | Limpia todo el estado de esta página |
 | `CmdStateGetAll` | `cmd-state-get-all` | Hijo → Host | Lee todo el estado persistido |
 | `OnStateResult` | `on-state-result` | Host → Hijo | Entrega el resultado de una lectura de estado |
-| `OnStateError` | `on-state-error` | Host → Hijo | Informa de un fallo en una operación de estado |
-| `CmdWsSend` | `cmd-ws-send` | Hijo → Host | Comando WebSocket |
-| `CmdBodySize` | `cmd-body-size` | Hijo → Host | Altura automática |
-| `CmdBridgePost` | `cmd-bridge-post` | Hijo ↔ Padre | Envía un mensaje de canal sin esperar respuesta mediante `host.bridge` |
-| `CmdBridgeRequest` | `cmd-bridge-request` | Hijo ↔ Padre | Envía una solicitud de canal y espera una respuesta mediante `host.bridge` |
-| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Hijo → Host | Reclama la propiedad de navegación (modo nav-owner) |
-| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Hijo → Host | Libera la propiedad de navegación |
-| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Hijo → Host | Se suscribe a las actualizaciones del layout administrado |
-| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Hijo → Host | Modifica parcialmente una definición de panel |
+| `OnStateError` | `on-state-error` | Host → Hijo | Informa del fallo de una operación de estado |
+| `CmdWsSend` | `cmd-ws-send` | Hijo → Host | Reenvía un comando de WebSocket a través de la conexión del host |
+| `CmdBodySize` | `cmd-body-size` | Hijo → Host | Informa del tamaño del body para `auto-height` |
+| `CmdBridgePost` | `cmd-bridge-post` | Hijo ↔ Padre | Mensaje de canal sin respuesta mediante `host.bridge` |
+| `CmdBridgeRequest` | `cmd-bridge-request` | Hijo ↔ Padre | Mensaje de canal petición/respuesta mediante `host.bridge` |
+| `CmdClaimNavOwner` | `cmd-claim-nav-owner` | Hijo → Host | Reclama la propiedad de la navegación (modo nav-owner) |
+| `CmdReleaseNavOwner` | `cmd-release-nav-owner` | Hijo → Host | Libera la propiedad de la navegación |
+| `CmdLayoutSubscribe` | `cmd-layout-subscribe` | Hijo → Host | Se suscribe a las actualizaciones de managed-layout |
+| `CmdLayoutUpdatePanel` | `cmd-layout-update-panel` | Hijo → Host | Parchea una definición de panel |
 | `CmdLayoutBroadcast` | `cmd-layout-broadcast` | Hijo ↔ Host | Mensaje del bus de layout dentro de la pestaña |
-| `OnLayoutChange` | `on-layout-change` | Host → Hijo | Actualización de la instantánea completa del layout |
-| `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Hijo | Cambio en vivo del estado de un panel |
-| `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Hijo | Entrega una difusión del bus de layout |
+| `OnLayoutChange` | `on-layout-change` | Host → Hijo | Actualización completa del snapshot del layout |
+| `OnLayoutPanelChanged` | `on-layout-panel-changed` | Host → Hijo | Delta de estado en vivo por panel |
+| `OnLayoutBroadcast` | `on-layout-broadcast` | Host → Hijo | Entrega de una difusión del bus de layout |
 
-## Elemento `<w-iframe>` :id=w-iframe-custom-element
+El código de la aplicación nunca envía ni recibe estos mensajes directamente. El proxy gestiona el protocolo de forma transparente y expone únicamente la superficie de la API `@wippy-fe/proxy`.
 
-Primitiva de página hija del runtime. Acepta HTML y, en iframe, inyecta base, import map, `loading.js`, `proxy.js` y configuración. En una página Fragment, una `view.page` anidada usa Fragment; HTML inline sigue usando `srcdoc`.
+## Elemento personalizado `<w-iframe>`
 
-Úselo para HTML fuente que necesite API autenticada, estado, WebSocket, routing nav-owner y bridge.
+`<w-iframe>` es la primitiva de iframe de bajo nivel integrada en `proxy.js`. Acepta HTML fuente en bruto, inyecta el runtime completo de Wippy (URL base, import map, `loading.js`, `proxy.js`, configuración del hijo) y renderiza el resultado como un iframe `srcdoc` en sandbox.
+
+Use `<w-iframe>` cuando tenga HTML fuente y quiera el mismo comportamiento de runtime que obtienen automáticamente las aplicaciones micro frontend de Wippy: API autenticada, relé de estado, relé de WebSocket, enrutamiento nav-owner y mensajería puente padre-hijo.
 
 ### Atributos y propiedades
 
-| Campo | Obligatorio | Predeterminado | Descripción |
-|-------|-------------|----------------|-------------|
-| `src` | No | — | URL de HTML obtenida mediante `api` |
-| `srcdoc` | No | — | HTML, también como propiedad |
-| `base-url` | No | derivado | `<base href>` |
-| `resource-id` | No | ID y luego `src` | ID de contexto |
-| `resource-type` | No | `page` | `page` o `artifact` |
-| `sub-path` | No | ruta padre | Ruta inicial en `config.context.route` |
-| `auto-height` | No | `false` | Sincroniza altura con `CmdBodySize` |
-| `nav-owner` | No | `false` | Emite `nav-owner-route` en vez de cambiar URL host |
+| Atributo / propiedad | Obligatorio | Por defecto | Descripción |
+|----------------------|----------|---------|-------------|
+| `src` | No | — | URL que se solicitará como HTML fuente en bruto a través del `api` del proxy. |
+| `srcdoc` | No | — | HTML fuente en bruto. También asignable como `element.srcdoc = html` para cadenas grandes. |
+| `base-url` | No | Derivado de `src` o de `document.baseURI` | `<base href>` inyectado para la resolución de assets relativos. |
+| `resource-id` | No | El `id` del elemento y, si no, `src` | Identificador de contexto del hijo; establece el estado por defecto y el ámbito de log. |
+| `resource-type` | No | `page` | Tipo de contexto del hijo: `page` o `artifact`. |
+| `sub-path` | No | La ruta del padre | Ruta inicial del hijo. Se reenvía como `config.context.route` en el handshake `GetConfig`. |
+| `auto-height` | No | `false` | Redimensiona la altura del iframe para ajustarse a los informes `CmdBodySize` del hijo. |
+| `nav-owner` | No | `false` | Intercepta el `CmdRouteChanged` del hijo y despacha eventos DOM `nav-owner-route` en lugar de mutar la URL del host. |
+
+Propiedades JS aceptadas en el elemento:
 
 ```typescript
 const frame = document.querySelector('w-iframe')
@@ -162,22 +172,22 @@ frame.srcdoc = sourceHtml
 
 ### Eventos y métodos
 
-| Evento | Detail | Descripción |
-|--------|--------|-------------|
-| `loading` | — | Antes de iniciar |
-| `load` | — | Tras cargar |
-| `error` | error | Fallo |
-| `nav-owner-route` | objeto con ruta y navId opcional | Ruta hija; bubbles y composed |
-| `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Bridge |
+| Evento | Detalle | Descripción |
+|-------|--------|-------------|
+| `loading` | — | Se dispara antes de que empiece el fetch/procesado/renderizado. |
+| `load` | — | Se dispara después de que cargue el iframe en sandbox. |
+| `error` | Error original | Se dispara cuando falla el fetch, la inyección o la carga. |
+| `nav-owner-route` | `{ path: string, navId?: number }` | Cambio de ruta del hijo cuando `nav-owner` está establecido. El evento hace bubbling y es `composed`. |
+| `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Mensaje puente procedente del hijo. |
 
 | Método | Descripción |
 |--------|-------------|
-| `post(channel, payload?)` | Envía al hijo un mensaje de bridge sin esperar respuesta. |
-| `request<T>(channel, payload?, { timeoutMs }?)` | Envía una solicitud de bridge y se resuelve con el valor devuelto por el handler. |
+| `post(channel, payload?)` | Mensaje puente sin respuesta hacia el hijo. |
+| `request<T>(channel, payload?, { timeoutMs }?)` | Mensaje puente de petición/respuesta; se resuelve con el valor devuelto por el manejador. |
 
-Parts de Shadow DOM: `loader`, `error`, `frame`.
+Shadow parts: `loader`, `error`, `frame`.
 
-Con `nav-owner`, no se actualiza URL ni se devuelve `UrlWasUpdatedInParent`. `path` es la ruta interna sin prefijo; el padre la mapea:
+Cuando `nav-owner` está establecido, el ciclo por defecto de sincronización de rutas queda completamente suprimido: el host **no** actualiza su propia barra de URL y **no** envía `UrlWasUpdatedInParent` de vuelta al hijo. La propiedad de la navegación se delega por completo en el código del padre que escucha `nav-owner-route`. El `path` del detalle del evento es la **ruta interna en bruto** del hijo, exactamente como el hijo la pasó a `host.onRouteChanged(internalRoute, navId?)`: **no** lleva el prefijo de montaje (a diferencia de la vía por defecto `CmdRouteChanged`, donde el host antepone el prefijo de montaje de la página). El padre embebedor es responsable de cualquier prefijado o mapeo de router:
 
 ```typescript
 const frame = document.querySelector('w-iframe')
@@ -187,8 +197,11 @@ frame.addEventListener('nav-owner-route', (event) => {
 })
 ```
 
-### Bridge padre-hijo
+### Puente padre-hijo
 
+El puente usa canales con nombre, de modo que ninguna de las partes necesita sobres `postMessage` en bruto.
+
+Lado del padre:
 ```typescript
 const frame = document.querySelector('w-iframe')
 
@@ -208,6 +221,7 @@ frame.post('refresh', { reason: 'parent-click' })
 const result = await frame.request('get-selection', undefined, { timeoutMs: 5000 })
 ```
 
+Lado del hijo:
 ```typescript
 import { host } from '@wippy-fe/proxy'
 
@@ -218,41 +232,40 @@ const off = host.bridge.on('refresh', async (payload) => {
   console.log('refresh requested', payload)
   return { ok: true }
 })
-
-// Later, dispose this listener when the owning component or page scope is torn down:
-// off()
 ```
 
-`on()` devuelve unsubscribe. Un canal tiene un handler activo: gana el más reciente, los anteriores quedan ocultos y reaparecen al retirarlo; se emite advertencia por duplicado. Use canales distintos para listeners independientes.
+`host.bridge.on()` devuelve una función para cancelar la suscripción (`() => void`). **Un canal = un manejador activo.** Si se registran varios manejadores para el mismo canal, gana el registrado más recientemente y gestiona **todos** los mensajes entrantes de ese canal, tanto los `post()` sin respuesta como los `request()`. `on()` no es aditivo: los manejadores anteriores quedan ensombrecidos (no eliminados) y no se ejecutan mientras exista un manejador más nuevo, y el proxy registra un `console.warn` ante un registro duplicado. Si el manejador más nuevo cancela su suscripción, el manejador anterior de ese canal vuelve a estar activo. Use nombres de canal distintos si necesita varios listeners independientes.
 
-El timeout predeterminado de `request()` es 10 s. Al vencer rechaza con `Bridge request <id> timed out after <ms>ms`; sin handler rechaza inmediatamente con `No handler registered for channel "<channel>"`.
+Si omite `options.timeoutMs`, `host.bridge.request()` (y el `frame.request()` del lado del padre) usan un plazo por defecto de 10 segundos (`10000` ms). Al agotarse el plazo, la Promise devuelta se rechaza con un `Error` cuyo mensaje es `Bridge request <id> timed out after <ms>ms`. Una petición a un canal para el que la otra parte no tiene manejador se rechaza inmediatamente con `No handler registered for channel "<channel>"` en lugar de esperar a que expire el plazo.
 
-## Elemento `<w-artifact>` :id=w-artifact-custom-element
+## Elemento personalizado `<w-artifact>`
 
-Resuelve metadatos y contenido y delega tipos iframe a `<w-iframe>`. Detecta HTML, Markdown, paquetes web/ESM y tags directos.
+`<w-artifact>` resuelve los metadatos y el contenido de un artefacto o página, y luego delega internamente en `<w-iframe>` los tipos respaldados por iframe. Gestiona la detección del tipo de contenido (HTML, Markdown, paquetes de página web, paquetes ESM, componentes por etiqueta directa) y proporciona una API de más alto nivel que un `<w-iframe>` en bruto.
 
 ### Atributos
 
-| Atributo | Obligatorio | Valores | Predeterminado | Descripción |
-|----------|-------------|---------|----------------|-------------|
-| `id` | Sí | UUID | — | ID de contenido |
-| `type` | No | `artifact` \| `page` | `artifact` | Selecciona endpoint |
-| `auto-height` | No | flag | `false` | Altura del iframe |
-| `url` | No | URL | — | Obtiene directamente e ignora ID/tipo |
-| `sub-path` | No | ruta | — | Ruta inicial |
-| `nav-owner` | No | flag | `false` | Propaga propiedad de navegación |
+| Atributo | Obligatorio | Valores | Por defecto | Descripción |
+|-----------|----------|--------|---------|-------------|
+| `id` | Sí | UUID de artefacto / página | — | Identificador del contenido. |
+| `type` | No | `artifact` \| `page` | `artifact` | Determina el endpoint REST invocado: `/api/v1/artifact/<id>/content` o `/api/public/pages/content/<id>`. |
+| `auto-height` | No | flag booleano | `false` | Se reenvía al `<w-iframe>` interno para la sincronización de altura con `CmdBodySize`. |
+| `url` | No | Cualquier URL | — | Obtiene el contenido directamente de esta URL; ignora `id`/`type`. |
+| `sub-path` | No | Cadena de ruta | — | Se reenvía al `<w-iframe>` interno como ruta inicial del hijo. |
+| `nav-owner` | No | flag booleano | `false` | Se reenvía al `<w-iframe>` interno; los cambios de ruta del hijo despachan `nav-owner-route`. |
 
 ### Eventos
 
 | Evento | Cuándo | Detalle |
-|--------|--------|---------|
-| `loading` | Antes de iniciar el fetch | — |
-| `load` | Después de cargar el iframe | — |
+|-------|------|--------|
+| `loading` | Antes de que empiece el fetch | — |
+| `load` | Después de que cargue el iframe | — |
 | `error` | Falla el fetch o el renderizado | Error original |
-| `nav-owner-route` | Cambia la ruta hija con nav-owner | `{ path: string, navId?: number }` |
-| `wippy-message` | Mensaje de bridge del iframe anidado | `{ channel, payload, requestId?, respond?, reject? }` |
+| `nav-owner-route` | Cambia la ruta de un hijo nav-owner | `{ path: string, navId?: number }` |
+| `wippy-message` | Mensaje puente desde el iframe anidado | `{ channel, payload, requestId?, respond?, reject? }` |
 
 ### Estado CSS y parts
+
+El elemento establece un atributo `status` (`loading`, `ready`, `error`) y expone shadow parts:
 
 ```css
 w-artifact[status="loading"] { opacity: 0.5; }
@@ -262,105 +275,26 @@ w-artifact::part(loader) { font-size: 1rem; }
 w-artifact::part(frame)  { border: 0; }
 ```
 
-## Comparación
+## `<w-iframe>` frente a `<w-artifact>` frente a un `<iframe>` en bruto
 
-| Función | `<w-iframe>` | `<w-artifact>` | `<iframe>` bruto |
-|---------|--------------|----------------|------------------|
-| Inyecta runtime | Sí | Sí | No |
-| Resuelve metadatos | No | Sí | No |
-| Fetch autenticado | Sí, HTML | Sí, resolver | No |
-| Relay de estado | Sí | Sí | No |
-| Relay de WebSocket | Sí | Sí | No |
-| Bridge padre-hijo | Sí | Sí | No |
-| Compatibilidad con nav-owner | Sí | Sí | No |
-| Detecta contenido | No | Sí | No |
-| Parts CSS | `loader`, `error`, `frame` | `loader`, `error`, `frame` | — |
+| Característica | `<w-iframe>` | `<w-artifact>` | `<iframe>` en bruto |
+|---------|-------------|----------------|----------------|
+| Inyecta el runtime de Wippy | Sí | Sí (mediante `<w-iframe>`) | No |
+| Resuelve metadatos de artefacto/página | No | Sí | No |
+| Fetch autenticado de contenido | Sí (HTML en bruto) | Sí (resolvedor completo) | No |
+| Relé de estado | Sí | Sí | No |
+| Relé de WebSocket | Sí | Sí | No |
+| Puente padre-hijo | Sí | Sí (reenviado) | No |
+| Soporte de nav-owner | Sí | Sí | No |
+| Detección del tipo de contenido | No | Sí | No |
+| Shadow parts CSS | `loader`, `error`, `frame` | `loader`, `error`, `frame` | — |
 | Atributo `status` | Sí | Sí | No |
 
-Use `<w-artifact>` con ID Wippy, `<w-iframe>` con HTML ya disponible y un iframe bruto solo para contenido externo sin API Wippy.
+Use `<w-artifact>` cuando tenga un UUID de artefacto de Wippy o un ID de página y quiera que la plataforma gestione toda la resolución. Use `<w-iframe>` cuando ya tenga HTML fuente y quiera inyección directa del runtime. Use un `<iframe>` en bruto solo para contenido completamente externo que no necesite la API de Wippy.
 
-**Detalles normativos del transporte**
+## Inyección avanzada de HTML
 
-La superficie pública se importa siempre desde `@wippy-fe/proxy`. El paquete
-`@wippy-fe/proxy` expone getters síncronos para `host`, `api`, `on` y `config`.
-Los accesores `$W.host()` y `$W.api()` pertenecen al global interno `window.$W`:
-las aplicaciones y los componentes no deben leerlos ni asignarlos.
-Los contextos `view.page` iframe y Fragment consumen `@wippy-fe/proxy`, y un
-`view.component` directo también consume `@wippy-fe/proxy`. En total, el
-runtime, los ejemplos de página, el bridge, el router y la inyección HTML
-mantienen el mismo import `@wippy-fe/proxy`; la referencia de API completa
-sigue documentando `@wippy-fe/proxy` y su contrato estable. Los ejemplos de
-montaje con `<w-iframe>` y bridge también importan `@wippy-fe/proxy`; el
-elemento `<w-iframe>` conserva además el mismo contrato en carga y navegación.
-La referencia de hijos vuelve a citar `@wippy-fe/proxy`, y `<w-iframe>` es su
-primitiva de montaje documentada. El gateway comparte ese mismo
-`@wippy-fe/proxy` con la aplicación reflejada.
-
-El motor iframe establece `window.__WIPPY_APP_CONFIG__` antes de cargar
-`proxy.js`; ese `proxy.js` crea el proxy sobre un `srcdoc`. La resincronización
-posterior usa `GetConfig` y el wire value `get-config`. En Fragment,
-`proxy-fragment.js` usa `GetConfig` como fuente inicial de `AppConfig`. El
-estado `loading` cubre también la espera inicial del runtime.
-El embedding manual `iframe.html?waitForCustomConfig` también espera
-`AppConfig`. El resultado final es el mismo `AppConfig` que reciben la página
-y sus hijos; un cuarto snapshot de `AppConfig` se mantiene en el runtime.
-
-El protocolo se identifica con `IFrameMessageType`. El sobre usa el campo
-`type` con el valor predeterminado `'@gen2-chat'` y un campo distinto, `action`,
-para la acción.
-Los cambios de ruta usan `CmdRouteChanged` y el host vuelve a tratar
-`CmdRouteChanged` al proyectar navegación. El evento público
-`nav-owner-route` transporta `{ path: string, navId?: number }`; el mismo
-detalle `{ path: string, navId?: number }` se emite en rutas anidadas. Un
-parent puede reenviarlo con `host.onRouteChanged(internalRoute, navId?)`.
-
-El estado persistido conserva miembros separados: `CmdStateGet`/
-`cmd-state-get`, `CmdStateSet`/`cmd-state-set`, `CmdStateRemove`/
-`cmd-state-remove`, `CmdStateClear`/`cmd-state-clear` y `CmdStateGetAll`/
-`cmd-state-get-all`. Sus respuestas son `on-state-result` u
-`on-state-error`. El layout usa `cmd-layout-subscribe`,
-`cmd-layout-update-panel`, `on-layout-change`, `on-layout-panel-changed` y
-`on-layout-broadcast`. La propiedad de navegación usa
-`cmd-claim-nav-owner` y `cmd-release-nav-owner`; el body automático usa
-`CmdBodySize`.
-
-El bridge distingue `cmd-bridge-post` y `cmd-bridge-request`. La API
-`host.bridge` ofrece `post()` y `frame.request()`; las formas de alto nivel
-son `host.bridge.request()` y `host.bridge.on()`. El segundo uso de
-`host.bridge` pertenece al hijo. Un listener tiene tipo `() => void`, y el
-detalle completo es `{ channel, payload, requestId?, respond?, reject? }`.
-Los fallos se entregan como `error`; el elemento también emite `error`, el
-resolver puede devolver `error` y una petición rechazada conserva `error`.
-El timeout predeterminado es `10000` y puede cambiarse con
-`options.timeoutMs`. Un canal listo puede señalar `ready`, y el host registra
-duplicados mediante `console.warn`.
-
-`<w-iframe>` admite `src`, `srcdoc`, `auto-height`, `nav-owner` y un `id` de
-recurso. La propiedad `element.srcdoc = html` actualiza el `srcdoc`; un segundo
-`srcdoc` aparece en la composición anidada. El elemento `<w-iframe>` expone
-los parts `loader`, `error` y `frame`, además del atributo `status`; esos parts
-mantienen el mismo significado en `<w-artifact>`. El evento `nav-owner-route` se compone
-con `composed`. La base se resuelve desde `document.baseURI` y el título desde
-`document.title`.
-
-Una página `view.page` puede alojar otro `view.page`; un tercer `view.page`
-registrado usa `<w-iframe>` o Fragment según el motor. Los endpoints de
-contenido son `/api/public/pages/content/<id>` y
-`/api/v1/artifact/<id>/content`. El resolver coloca otro `id` en el contexto.
-`<w-artifact>` delega HTML a `<w-iframe>`; un segundo `<w-artifact>` puede
-resolver páginas y un tercero representa el custom element documentado. Los
-dos contextos iframe se representan como `<iframe>` y `<iframe>`. Las
-referencias a `<w-iframe>` de atributos, métodos, bridge, comparación y
-montaje conservan el mismo contrato; `<w-iframe>` también es la opción
-preferida para montaje normal.
-
-La función pública `initWippyApp(config, rootContainer?)` monta el host
-completo. La inyección avanzada usa literalmente
-`import { html } from '@wippy-fe/proxy'` y `html.inject(...)`;
-`html.inject(...)` también está disponible en la instancia. El helper procesa
-el HTML con html.inject sin que la aplicación use `postMessage`.
-
-## Inyección HTML avanzada
+Para los casos en que necesite la transformación de HTML fuente a srcdoc sin montar un elemento, el proxy expone `html.inject(...)`:
 
 ```typescript
 import { html } from '@wippy-fe/proxy'
@@ -373,4 +307,4 @@ const processed = await html.inject(sourceHtml, {
 })
 ```
 
-También está como `instance.html.inject` y `$W.html`. Prefiera `<w-iframe>` para montaje normal; use `html.inject` al construir infraestructura propia.
+La misma función es accesible como `instance.html.inject`, `$W.html` e `import { html } from '@wippy-fe/proxy'`. Prefiera `<w-iframe>` para el montaje normal; use `html.inject(...)` solo cuando construya infraestructura de alojamiento a medida.

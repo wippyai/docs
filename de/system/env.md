@@ -151,18 +151,18 @@ Variablennamen dürfen nur enthalten: `a-z`, `A-Z`, `0-9`, `_`
   storage: app.config:secrets
 ```
 
-## Platzhalterinterpolation
+## Platzhalter-Interpolation
 
-Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfiguration übernommen und beim Dekodieren zentral gegen diese Registry aufgelöst. Strings in Entry-Konfigurationen werden aufgelöst, sofern der jeweilige Entry-Typ ein Feld nicht als undurchsichtig markiert. Quellfelder wie `template.jet.source` sind undurchsichtig, damit Template- oder Programmtext nicht umgeschrieben wird.
+Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfiguration gezogen und beim Dekodieren zentral gegen diese Registry aufgelöst. Jedes String-Feld in den Daten eines Eintrags darf eine Variable auf diese Weise referenzieren.
 
 | Syntax | Bedeutung |
 |--------|-----------|
-| `${env:NAME}` | `NAME` über die Env-Registry auflösen; Fehler, wenn der Wert nicht gesetzt ist und kein Standardwert existiert |
-| `${env:NAME\|default}` | `NAME` auflösen und bei einem nicht gesetzten Wert auf `default` zurückfallen |
-| `${NAME\|default}` | Kurzform; `NAME` muss Upper-Snake-Case (`A-Z0-9_`) verwenden und `\|default` ist erforderlich — ein bloßes `${VAR}` bleibt unverändert, damit eingebettete Shell- oder Template-Ausdrücke nicht irrtümlich als Referenzen behandelt werden |
-| `$${` | Literales `${` (Escape-Sequenz) |
+| `${env:NAME}` | `NAME` über die env-Registry auflösen; Fehler, wenn nicht gesetzt und kein Default vorhanden |
+| `${env:NAME\|default}` | `NAME` auflösen, mit Rückfall auf `default`, wenn nicht gesetzt |
+| `${NAME\|default}` | Kurzform; `NAME` muss Upper-Snake sein (`A-Z0-9_`) und das `\|default` ist erforderlich — ein bloßes `${VAR}` bleibt unangetastet, damit eingebettete Shell-/Template-Abschnitte nicht als Referenzen missverstanden werden |
+| `$${` | Wörtliches `${` (Escape) |
 
-`NAME` ist der öffentliche Name einer registrierten Variable oder ihre Entry-ID (Registry-ID-Form mit Punkten und Doppelpunkten, zum Beispiel `app.env:tls_cert`). Es ist **keine** rohe Betriebssystem-Umgebungsvariable: Ein OS-Wert ist nur erreichbar, wenn eine mit `env.storage.os` hinterlegte Variable unter diesem Namen registriert ist.
+`NAME` ist der öffentliche Name einer registrierten Variable oder deren Entry-ID (Registry-ID-Form mit Punkten/Doppelpunkten, z. B. `app.env:tls_cert`). Es ist **keine** rohe Betriebssystem-Umgebungsvariable: Ein Betriebssystemwert ist nur erreichbar, wenn unter diesem Namen eine von `env.storage.os` gestützte Variable registriert ist.
 
 ```yaml
 - name: api
@@ -174,9 +174,9 @@ Registrierte Variablen werden mit `${env:NAME}`-Platzhaltern in die Entry-Konfig
     key:  ${env:app.env:tls_key}
 ```
 
-Wenn der gesamte Wert eines Feldes aus einem einzelnen Platzhalter besteht, übernimmt er den Typ seines Inline-Standardwerts. `${env:PORT|8080}` erzeugt beispielsweise einen Integer und konvertiert einen gespeicherten Wert in einen Integer, während `${env:PORT|"8080"}` ein String bleibt. Ein mit umgebendem Text kombinierter Platzhalter erzeugt immer einen String. Der eigene `default` einer Variable hat Vorrang vor dem Inline-Standard `|default` des Platzhalters. Eine Referenz, die keinen Wert ergibt und keinen Standardwert besitzt, lässt die Dekodierung fehlschlagen.
+Ein Feld, dessen gesamter Wert ein einzelner Platzhalter ist, übernimmt den typisierten Wert der Variable (zu bool/int/float gecastet, wenn ein typisierter Default angegeben ist); ein Platzhalter, der mit umgebendem Text gemischt ist, wird in einen String interpoliert. Der eigene `default` einer Variable hat Vorrang vor dem inline angegebenen `|default` des Platzhalters. Eine Referenz, die zu nichts aufgelöst wird und keinen Default hat, lässt das Dekodieren fehlschlagen.
 
-Die Auflösung geschieht nur zur Dekodierzeit: Der gespeicherte Registry-Eintrag behält die rohen Platzhalter, sodass aufgelöste Secrets nie in `registry.get`-Ergebnissen oder persistiertem Zustand erscheinen. Einträge, die `${env:...}` referenzieren, ordnen sich beim Boot automatisch hinter den env-Speichern und -Variablen ein, von denen sie abhängen.
+Die Auflösung geschieht nur zur Dekodierzeit: Der gespeicherte Registry-Eintrag behält die rohen Platzhalter, sodass aufgelöste Secrets nie in `registry.get`-Ergebnissen oder persistiertem Zustand erscheinen. Einträge, die eine Variable über die Eintrags-ID referenzieren (`${env:ns:name}`), ordnen sich beim Boot automatisch hinter dieser Variable ein; eine Referenz über den öffentlichen Namen erzeugt keine Abhängigkeitskante.
 
 <note>
 Ältere Konfigurationen verwenden eine benachbarte <code>&lt;field&gt;_env</code>-Direktive (zum Beispiel <code>cert_env: app.env:tls_cert</code>), die auf dieselbe Weise auflöst. Diese Form ist <b>veraltet</b> — migrieren Sie sie zum <code>${env:NAME}</code>-Platzhalter. Ein <code>&lt;field&gt;_env</code>-Schlüssel, der eine nicht registrierte Variable benennt, wird nicht als Direktive behandelt und bleibt unverändert; einer, der eine registrierte, aber leere Variable benennt, behält den Inline-<code>&lt;field&gt;</code>-Wert. Nur ein explizites <code>${env:NAME}</code> ohne Default schlägt bei einer fehlenden Variable hart fehl.

@@ -1,34 +1,25 @@
 ---
-title: "Quickstart"
-description: "Vue Micro Frontend App または Web Component を登録するための Wippy 固有の integration recipe。"
+title: "クイックスタート"
+description: "公開の wippyai/app リポジトリから取った2つのエンドツーエンドの例 — マイクロフロントエンドアプリ (Vue) と Web コンポーネント (Vue)。それぞれ最小限の…"
 ---
 
-# クイックスタート :id=quickstart
+# クイックスタート
 
-このページでは、公開 [`wippyai/app`](https://github.com/wippyai/app) repository から構成した、二つの簡潔な Vue integration recipe、**Micro Frontend App** と **Web Component** を紹介します。スニペットは Web Host 1.0.56 と public `@wippy-fe/*` 0.0.56 package family を対象とします。Wippy 固有の metadata、entry code、registry declaration に焦点を当て、一般的な Vite scaffolding、dependency installation、backend setup は省略しています。これらの抜粋を standalone project とみなさず、完全な application には link 先 repository を使ってください。
+公開の [`wippyai/app`](https://github.com/wippyai/app) リポジトリから取った2つのエンドツーエンドの例 — **マイクロフロントエンドアプリ**（Vue）と **Web コンポーネント**（Vue）です。それぞれ、最小限のファイル、アーティファクトをバックエンドへ登録する方法、そしてビルド方法を示します。完全で実行可能なソースはリポジトリへのリンクを、各オプションの詳細は掘り下げドキュメントへのリンクをたどってください。
 
-## 前提条件
-
-- [`wippy/views`](../../framework/views.md) と [`wippy/facade`](../../framework/facade.md) module を接続済みの Wippy backend。
-- この例では Node.js 22.12 以降と Vite 7。Vite 7 は Node 20.19+ または 22.12+ を必要とし、このドキュメントでは Node 22 release line を使います。
-- `@wippy-fe/vite-plugin` 0.0.56 は Vite 5 と 6 も受け入れます。それらを選ぶ場合は、その Vite release の Node requirement に従ってください。
-- target Web Host に合わせて選んだ、整合する `@wippy-fe/*` package family。この baseline では public package を正確に `0.0.56`、Web Host を `1.0.56` にします。
-- target Web Host の `import-map.json`。未使用のものも含め、列挙された key をすべて externalize します。import した exact specifier が存在しない場合だけ bundle してください。
-
-consumer toolchain は選択した Vite version の制約を受けます。Web Host source repository には独自の Node/Vite development toolchain があります。target release を変更するときは両方を検証してください。完全な toolchain contract は [Build System](./build-system.md) を参照してください。
+**前提条件:** [`wippy/views`](../../framework/views.md) と [`wippy/facade`](../../framework/facade.md) モジュールが配線された Wippy バックエンド、Node.js 22 以降、Vite 7、そして対象の Web ホスト向けに選択された、現行で整合性のある `@wippy-fe/*` パッケージ群。これらのツールチェーン要件は、選択された Web ホストのパッケージに由来します。そのパッケージが変わったら再度確認してください。対象の Web ホストの `import-map.json` を取得し、未使用のものも含めて列挙されたすべてのキーを external にし、import した正確な指定子がそこに存在しない場合にのみバンドルしてください。ツールチェーンについては [ビルドシステム](./build-system.md) を参照してください。
 
 ---
 
-## Recipe 1: Micro Frontend App（Vue）
+## 例1 — マイクロフロントエンドアプリ (Vue)
 
-Web Host が選択した page engine（既定は iframe、または Web Fragment）で描画する完全な Vue 3 SPA です。Repository: [`frontend/applications/main`](https://github.com/wippyai/app/tree/master/frontend/applications/main)。
+Web ホストが選択したページエンジン（デフォルトでは iframe、または Web Fragment）でレンダリングする、完全な Vue 3 SPA です。リポジトリ: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main)。
 
-**`package.json`** — `wippy` block が page であることと、Host が注入する CSS を宣言します。
+**`package.json`** — `wippy` ブロックが、これがページであることと、ホストがどの CSS を注入するかを宣言します。
 
 ```json
 {
   "name": "@example/admin",
-  "version": "1.0.0",
   "specification": "wippy-component-1.0",
   "wippy": {
     "type": "page",
@@ -45,10 +36,10 @@ Web Host が選択した page engine（既定は iframe、または Web Fragment
 }
 ```
 
-**`src/app.ts`** — Host service を解決して mount し、必須の双方向 route synchronization を接続します。
+**`src/app.ts`** — ホストのサービスを解決し、マウントし、必須の双方向ルート同期を配線します。
 
 ```ts
-import { config } from '@wippy-fe/proxy'   // sync getter — no await to obtain it
+import { config } from '@wippy-fe/proxy'   // 同期ゲッター。取得に await は不要
 import { createApp } from 'vue'
 import { createAppRouter } from '@wippy-fe/router'
 import App from './app/app.vue'
@@ -65,7 +56,7 @@ export function createMainApp() {
 }
 ```
 
-module の `_index.yaml` に**登録します**（operator/deployment policy です。[Micro Frontend Apps (view.page)](../frontend-registry/view-page.md) を参照）。
+**登録** はモジュールの `_index.yaml` で行います（これはオペレーター／デプロイのポリシーです — [マイクロフロントエンドアプリ (view.page)](../frontend-registry/view-page.md) を参照）。
 
 ```yaml
 - name: admin
@@ -73,29 +64,27 @@ module の `_index.yaml` に**登録します**（operator/deployment policy で
   meta:
     type: view.page
     name: admin
-    announced: true        # show in the host nav sidebar
+    announced: true        # ホストのナビゲーションサイドバーに表示する
     url: /app
     base_path: app/admin
     entry_point: app.html
     mountRoute: /admin/:part(.*)*
 ```
 
-module の Make target を呼び出し、served directory に build します。`url + base_path` が指す場所から output を配信すると、Host が `/admin` で描画します。Makefile recipe は `npm run build -- --outDir <abs-or-relative> --emptyOutDir` を使います。Windows では `make.ps1` が同じ target を実装し、`make.bat` は `make.ps1` を呼ぶだけです。完全な walkthrough は [Micro Frontend App](./micro-frontend-app.md) を参照してください。
+モジュールの Make ターゲットを呼び出して配信ディレクトリへビルドし、`url + base_path` が指す場所で出力を配信してください。ホストはそれを `/admin` でレンダリングします。Makefile のレシピは `npm run build -- --outDir <abs-or-relative> --emptyOutDir` を使用します。`make.ps1` は同じターゲットを Windows 向けに実装し、`make.bat` は `make.ps1` を呼び出すだけです。詳しい手順: [マイクロフロントエンドアプリ](./micro-frontend-app.md)。
 
 ---
 
-## Recipe 2: Web Component（Vue）
+## 例2 — Web コンポーネント (Vue)
 
-Host が page DOM（Shadow DOM）に mount し、どの page または chat artifact からも埋め込める custom element です。Repository: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/master/frontend/web-components/reaction-bar)。
+ホストがページの DOM（Shadow DOM）へマウントするカスタム要素で、任意のページやチャットアーティファクトから埋め込めます。リポジトリ: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/main/frontend/web-components/reaction-bar)。
 
-**`package.json`** — `wippy` block が tag、prop（HTML attribute）、event を宣言します。
+**`package.json`** — `wippy` ブロックがタグ、props（HTML 属性）、events を宣言します。
 
 ```json
 {
   "name": "@example/reaction-bar",
-  "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
@@ -114,7 +103,7 @@ Host が page DOM（Shadow DOM）に mount し、どの page または chat arti
 }
 ```
 
-**`src/index.ts`** — Vue component を `WippyVueElement` で wrap して登録します。`define(import.meta.url, …)` は Host が追加する `?declare-tag=` query を読むため、`import.meta.url` を使う必要があります。
+**`src/index.ts`** — Vue コンポーネントを `WippyVueElement` でラップして登録します。`define(import.meta.url, …)` はホストが付加する `?declare-tag=` クエリを読むため、`import.meta.url` を使わなければなりません。
 
 ```ts
 import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
@@ -127,7 +116,7 @@ class ReactionBarElement extends WippyVueElement {
   static get wippyConfig() {
     return {
       propsSchema: pkg.wippy.props,
-      hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const, // pull host theme + PrimeVue into the shadow root
+      hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const, // ホストのテーマと PrimeVue を shadow root へ取り込む
       inlineCss: stylesText,
     }
   }
@@ -143,7 +132,7 @@ export async function webComponent() {
 define(import.meta.url, ReactionBarElement)
 ```
 
-**`src/app/reaction-bar.vue`** — `@wippy-fe/webcomponent-vue` composable で prop を読み、event を emit します。
+**`src/app/reaction-bar.vue`** — `@wippy-fe/webcomponent-vue` のコンポーザブルで props を読み、イベントを発行します。
 
 ```vue
 <script setup lang="ts">
@@ -176,9 +165,9 @@ function toggle(emoji: string) {
 </template>
 ```
 
-（`useComponentProps` / `useComponentEvents` は `src/constants.ts` で定義した薄い `useProps()` / `useEvents()` wrapper です。）
+（`useComponentProps` / `useComponentEvents` は `src/constants.ts` で定義された `useProps()` / `useEvents()` の薄いラッパーです。）
 
-`view.component` として**登録します**（autoload には三つの gate がすべて必要です。[Web Components (view.component)](../frontend-registry/view-component.md) を参照）。
+**登録** は `view.component` として行います（自動ロードには3つのゲートすべてが必要です — [Web コンポーネント (view.component)](../frontend-registry/view-component.md) を参照）。
 
 ```yaml
 - name: reaction-bar
@@ -193,28 +182,28 @@ function toggle(emoji: string) {
     entry_point: index.js
 ```
 
-build 後は任意の page または chat artifact で tag を使えます。
+ビルドすれば、任意のページ（またはチャットアーティファクト）でタグを使えます。
 
 ```html
 <example-reaction-bar reactions='["👍","🎉"]'></example-reaction-bar>
 ```
 
-完全な walkthrough は [Web Component](./web-component.md) を参照してください。
+詳しい手順: [Web コンポーネント](./web-component.md)。
 
 ---
 
-## さらに調べる
+## さらに見る
 
-[`app`](https://github.com/wippyai/app) repository は [`frontend/web-components/`](https://github.com/wippyai/app/tree/master/frontend/web-components) に複数の実行可能な Web Component を収録しています。
+[`app`](https://github.com/wippyai/app) リポジトリには、[`frontend/web-components/`](https://github.com/wippyai/app/tree/main/frontend/web-components) 配下に実行可能な Web コンポーネントがいくつか同梱されています。
 
-| コンポーネント | 示す内容 |
+| コンポーネント | 実演する内容 |
 |---|---|
-| `reaction-bar` | Prop と event emission |
-| `counter-persist` | `@wippy-fe/pinia-persist` により reload 後も残る state |
-| `chart-circle` | Shadow DOM への third-party library（Chart.js）の bundle |
-| `mermaid` | child content（`<template data-type="…">`）と lazy fallback bundle |
+| `reaction-bar` | props とイベントの発行 |
+| `counter-persist` | `@wippy-fe/pinia-persist` によるリロードをまたいで残る状態 |
+| `chart-circle` | Shadow DOM 内でのサードパーティライブラリ（Chart.js）のバンドル |
+| `mermaid` | 子コンテンツ（`<template data-type="…">`）と遅延フォールバックバンドル |
 | `markdown` | `markdown-it` と `sanitize-html` |
-| `websocket-log` | `on(...)` topic subscription を通じた live data |
-| `model-gallery` | proxy を通じた authenticated API call と Shadow DOM 内の PrimeVue |
+| `websocket-log` | `on(...)` によるトピック購読を用いたライブデータ |
+| `model-gallery` | プロキシ経由の認証付き API 呼び出しと Shadow DOM 内の PrimeVue |
 
-どちらの artifact も、テーマ設定は [Theming](./theming.md) → [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) / [Theming: Web Components](./web-component-theming.md) の順に参照してください。完全な Host なしでローカル実行するには [Host-less Mode](./host-less-mode.md) を参照してください。
+どちらのアーティファクトでもテーミングについては [テーミング](./theming.md) → [テーミング: マイクロフロントエンドアプリ](./micro-frontend-app-theming.md) / [テーミング: Web コンポーネント](./web-component-theming.md) を読んでください。ホスト全体を起動せずにローカルで動かすには [ホストレスモード](./host-less-mode.md) を参照してください。

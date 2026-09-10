@@ -165,15 +165,15 @@ entries:
 
 O servidor pode terminar TLS diretamente. Defina `tls.mode` como `manual` (forneça seu próprio certificado) ou `auto` (certificado fornecido por um driver de rede overlay, ex. `network.tailscale`). Listeners clearnet simples não suportam `auto`. Omita `tls` ou deixe o mode vazio para executar HTTP simples.
 
-No modo `auto`, o servidor não deve especificar `cert` nem `key`: o driver de rede os fornece.
+No modo `auto` o servidor não deve especificar `cert`/`key` — o driver de rede os fornece.
 
 ### Certificado manual
 
-Sob `mode: manual`, `cert` e `key` contêm o conteúdo PEM. Forneça esse conteúdo de uma destas três formas para cada campo, sem misturá-las:
+Sob `mode: manual`, `cert` e `key` carregam conteúdo PEM. Forneça esse conteúdo de uma de três formas (escolha uma por campo, nunca misture):
 
 1. **PEM inline** — a string PEM literal.
-2. **Referência `file://`** — caminho relativo ao manifesto, resolvido e incorporado no carregamento com proteção contra travessia de diretório.
-3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](system/env.md) registrada durante a decodificação, com um placeholder `${env:NAME}`.
+2. **Referência `file://`** — caminho relativo ao manifesto, resolvido e embutido no momento do carregamento (seguro contra traversal).
+3. **Referência ao registro de ambiente** — obtém o PEM de uma [variável de ambiente](system/env.md) registrada no momento da decodificação, usando um placeholder `${env:NAME}`.
 
 ```yaml
 - name: api
@@ -195,16 +195,16 @@ Sob `mode: manual`, `cert` e `key` contêm o conteúdo PEM. Forneça esse conte�
     key:  ${env:app.env:tls_key}
 ```
 
-O placeholder `${env:NAME}` resolve `NAME` pelo [registro de ambiente](../system/env.md): o nome público de uma variável registrada ou seu ID de entrada, como `app.env:tls_cert`. Não é uma variável bruta do sistema operacional; um valor do SO só fica acessível quando uma variável apoiada por `env.storage.os` é registrada com esse nome. Um padrão pode ser fornecido como `${env:NAME|default}`.
+O placeholder `${env:NAME}` resolve `NAME` através do [registro de ambiente](system/env.md) — o nome público de uma variável registrada ou o ID da sua entrada (ex. `app.env:tls_cert`). Não é uma variável de ambiente bruta do SO; um valor do SO só é alcançável quando uma variável com backend `env.storage.os` está registrada sob aquele nome. Um padrão pode ser fornecido com `${env:NAME|default}`.
 
 <note>
-Os campos legados <code>cert_env</code> e <code>key_env</code> ainda resolvem valores pelo registro de ambiente da mesma forma, mas estão <b>obsoletos</b>. Prefira o placeholder <code>${env:NAME}</code> mostrado acima.
+Os campos companheiros legados <code>cert_env</code> / <code>key_env</code> ainda resolvem através do registro de ambiente da mesma forma, mas estão <b>deprecados</b> — prefira o placeholder <code>${env:NAME}</code> mostrado acima.
 </note>
 
 | Campo | Descrição |
 |-------|-----------|
-| `mode` | `""` (desativado), `auto` ou `manual` |
-| `cert` / `key` | Conteúdo PEM inline, referência `file://` ou placeholder `${env:NAME}` |
+| `mode` | `""` (off), `auto` ou `manual` |
+| `cert` / `key` | Conteúdo PEM — inline, referência `file://` ou placeholder `${env:NAME}` |
 
 ### Mutual TLS (mTLS)
 
@@ -219,12 +219,12 @@ tls:
   client_auth: require_and_verify
 ```
 
-`client_ca` aceita as mesmas três formas de `cert` e `key`: PEM inline, `file://` ou `${env:NAME}`. O campo legado `client_ca_env` também está obsoleto; prefira `client_ca: ${env:NAME}`.
+`client_ca` aceita as mesmas três formas de `cert`/`key` (PEM inline, `file://` ou `${env:NAME}`). O campo companheiro legado `client_ca_env` está igualmente deprecado em favor de `client_ca: ${env:NAME}`.
 
 | Campo | Descrição |
 |-------|-----------|
 | `client_auth` | `request`, `require_any`, `verify_if_given`, `require_and_verify` |
-| `client_ca` | Bundle PEM de CAs de cliente confiáveis, inline, por `file://` ou por `${env:NAME}` |
+| `client_ca` | Bundle PEM de CAs de cliente confiáveis (inline, `file://` ou `${env:NAME}`) |
 
 `verify_if_given` e `require_and_verify` exigem uma CA. `request` e `require_any` aceitam qualquer certificado de cliente sem verificação de CA.
 

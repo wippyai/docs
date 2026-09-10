@@ -1,6 +1,6 @@
 ---
-title: "Análise sintática com Tree-sitter"
-description: "Analise código-fonte, inspecione árvores de sintaxe concretas e execute consultas Tree-sitter."
+title: "Parsing Tree-sitter"
+description: "Parse código fonte em arvores de sintaxe concretas usando Tree-sitter. Baseado nos bindings go-tree-sitter."
 ---
 
 # Análise sintática com Tree-sitter
@@ -353,9 +353,15 @@ end
 if node:is_missing() then
     -- Parser inserted this to recover from error
 end
+
+if node:is_extra() then
+    -- No e um "extra" (ex.: um comentario) nao exigido pela gramatica
+end
 ```
 
-### Expressão S
+Outros metodos de no: `descendant_count()` e `named_descendant_for_point_range(start_pt, end_pt)`.
+
+### S-Expression
 
 ```lua
 local sexp = node:to_sexp()
@@ -400,9 +406,9 @@ if captures_err then
 end
 for _, capture in ipairs(captures) do
     print(capture.name)   -- "func_name"
-    print(capture.text)   -- actual text
-    print(capture.index)  -- capture index
-    -- capture.node is the Node object
+    print(capture.text)   -- texto real
+    print(capture.index)  -- indice da captura
+    -- capture.node e o objeto Node
 end
 
 -- Get matches (grouped by pattern)
@@ -462,7 +468,9 @@ local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
 
-## Cursor de Árvore
+Outros metodos de inspecao: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
+
+## Cursor de Arvore
 
 Um cursor percorre uma árvore sem criar um objeto de nó a cada passo.
 

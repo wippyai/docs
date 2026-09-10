@@ -93,13 +93,13 @@ TLS 块：
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-内联 `cert`/`key`/`ca` 字段携带 PEM 内容；`*_env` 变体通过 env registry 解析。两种来源在每个字段上互斥。`insecure_skip_verify` 禁用证书验证（仅用于开发）。
+`cert`/`key`/`ca` 携带 PEM 内容——可以内联、通过 `file://`、或通过经由 [env registry](system/env.md) 解析的 `${env:NAME}` 占位符提供。`insecure_skip_verify` 禁用证书验证（仅用于开发）。旧式的 `cert_env`/`key_env`/`ca_env` 指令以同样方式解析，但已弃用；请优先使用 `${env:NAME}`。
 
 ### SQS 驱动
 
@@ -109,14 +109,14 @@ TLS 块：
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,13 +126,13 @@ TLS 块：
 |------|------|--------|------|
 | `config` | Registry ID | 必需 | 提供区域和凭证的 `config.aws` 资源 |
 | `endpoint` | string | - | 自定义 endpoint URL（LocalStack、ElasticMQ）；真实 AWS 时省略 |
-| `message_retention_period` | int | `345600`（4天）| 队列级保留时间（秒）（60–1209600）|
+| `message_retention_period` | int | - | 队列级保留时间（秒）（60–1209600），在创建队列时作为队列属性设置。省略则保留 AWS 默认值 345600（4 天）。|
 | `default_delay_seconds` | int | `0` | CreateQueue 时应用的默认投递延迟（0–900）|
 | `disable_message_checksum_validation` | bool | `false` | 在发送/接收时禁用 SQS 消息校验和检查 |
 | `use_fips` | bool | `false` | 使用 FIPS 兼容的 endpoint |
 | `use_dual_stack` | bool | `false` | 使用 dual-stack（IPv4 + IPv6）endpoint |
 
-队列在首次使用时由驱动自动创建。在发布时使用 SQS 前缀的 header（`sqs.*`）来寻址 SQS 特定属性；像 `correlation_id` 和 `content_type` 这样的中性键在可能的情况下会被翻译为 SQS 系统属性。
+队列在首次使用时由驱动自动创建。在发布时使用 SQS 前缀的 header 来寻址 SQS 特定字段：`sqs.delay_seconds`、`sqs.message_group_id` 和 `sqs.message_deduplication_id` 映射到带类型的 SQS 消息字段。所有其他 header（像 `correlation_id` 和 `content_type` 这样的中性键，以及任何 `sqs.message_attributes.*` 键）都会原样作为 SQS 消息属性携带。
 
 ## 队列配置
 
@@ -157,7 +157,7 @@ TLS 块：
 | `queue_name` | string | 否 | 外部队列名（默认为 entry 名）|
 | `driver_options` | object | 否 | 按驱动 kind 索引的子配置 |
 | `dead_letter.queue` | Registry ID | 否 | 失败消息的队列 ID |
-| `dead_letter.max_attempts` | int | 否 | 路由到 DLQ 之前的尝试次数 |
+| `dead_letter.max_attempts` | int | 否 | 路由到 DLQ 之前的尝试次数（配置可接受，但内置驱动尚未强制执行） |
 
 ### 驱动选项
 
@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery or DLQ
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,15 +286,15 @@ Runtime 根据处理器返回值自动 settle：
 
 | 处理结果 | 动作 |
 |----------|------|
-| `true` 或非 `false` 返回 | Ack |
-| `false` | Nack（根据驱动重新投递或 dead-letter）|
+| 任意普通返回值（包括 `false`） | Ack |
+| 返回 `nil, err` | Nack（根据驱动重新投递或 dead-letter）|
 | 抛出错误 | Nack |
 
 仅在需要提前 settle 时显式调用 `msg:ack()` 或 `msg:nack()`。Settlement 是单次的：先到达的调用获胜。
 
 ### Dead-Letter 路由
 
-当队列上配置了 `dead_letter` 时，nack 超过 `max_attempts` 的消息会被路由到 DLQ，驱动会设置 `x_dead_letter_reason` 和 `x_original_queue` header。发布者不得设置任何 `x_*` header——这些保留给 DLQ 簿记使用。
+死信路由尚未实现。`dead_letter` 块（参见[队列配置](#queue-configuration)）在配置中可以接受，但目前没有内置驱动会统计尝试次数、把 nack 的消息路由到配置的 DLQ，或设置 `x_dead_letter_*` header。被 nack 的消息按驱动自身的策略重新投递。`x_*` header 命名空间保留给未来的 DLQ 簿记使用，因此发布者应避免设置 `x_*` header。
 
 ## 发布消息
 

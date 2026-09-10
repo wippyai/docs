@@ -9,11 +9,11 @@ description: "Organización del proyecto, archivos de definición YAML y convenc
 
 ```
 myapp/
-├── .wippy.yaml          # Runtime configuration
-├── wippy.lock           # Source directories config
-├── .wippy/              # Installed modules
-└── src/                 # Application source
-    ├── _index.yaml      # Entry definitions
+├── .wippy.yaml          # Configuración del runtime
+├── wippy.lock           # Directorios fuente y módulos bloqueados
+├── .wippy/              # Módulos instalados
+└── src/                 # Código fuente de la aplicación
+    ├── _index.yaml      # Definiciones de entradas
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -30,7 +30,7 @@ Las definiciones YAML se cargan en el registro al iniciar. El registro es la fue
 
 ### Formato del archivo de definición
 
-Un archivo de definición contiene un `namespace` y, o bien un array `entries`, o bien los campos de nivel superior `name` y `kind`. El marcador opcional `version` usa por convención el valor `"1.0"`; el cargador de v0.3.32a no lo exige.
+Cualquier archivo YAML con un `namespace` más un array `entries` o un `name`+`kind` de nivel superior es un archivo de definición válido. `version` es opcional:
 
 ```yaml
 version: "1.0"
@@ -58,9 +58,9 @@ entries:
 
 | Campo | Requerido | Descripción |
 |-------|----------|-------------|
-| `version` | No | Marcador de versión del manifiesto (por convención `"1.0"`) |
-| `namespace` | Sí | Namespace de entradas para este archivo |
-| `entries` | Condicional | Array de definiciones de entradas; se omite únicamente cuando se usan `name` y `kind` en el nivel superior |
+| `version` | no | Versión del esquema (actualmente `"1.0"`) |
+| `namespace` | sí | Namespace de entradas para este archivo |
+| `entries` | sí | Array de definiciones de entradas |
 
 ### Convención de Nomenclatura
 
@@ -98,17 +98,35 @@ app.workers
 
 El ID completo de entrada combina namespace y nombre: `app.api:get_user`
 
-### Directorios Fuente
+### El Archivo de Bloqueo
 
-El archivo `wippy.lock` nombra la raíz de código fuente de la aplicación y el directorio base usado para resolver módulos bloqueados:
+`wippy.lock` registra de dónde Wippy carga las definiciones y qué versiones de módulos están seleccionadas:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy añade `directories.src` como ruta de carga de la aplicación. `directories.modules` no se escanea como un único árbol de código fuente sin procesar: cada módulo bloqueado se resuelve a su archivo `.wapp` versionado o a una ruta de módulo desempaquetado, y cada replacement se resuelve a su raíz de entradas configurada. El cargador escanea recursivamente el código fuente de la aplicación y las raíces seleccionadas de módulos o replacements basados en directorios en busca de manifiestos `.yaml`, `.yml` y `.json`; los módulos `.wapp` se leen como archivos. Solo los archivos con forma de objeto y un `namespace` se tratan como manifiestos del registro, y se omiten los directorios `node_modules`. `_index.yaml` es una convención del proyecto, no el único nombre de archivo aceptado.
+| Campo | Descripción |
+|-------|-------------|
+| `directories.src` | Directorio fuente de la aplicación, escaneado recursivamente en busca de archivos YAML de definición |
+| `directories.modules` | Directorio base para módulos vendorizados; los packs quedan en `<modules>/vendor/` |
+| `options.unpack_modules` | Extrae cada `.wapp` en un directorio junto a él en lugar de cargar el pack directamente (por defecto `false`) |
+| `modules[].name` | Identificador del módulo en forma `org/module` |
+| `modules[].version` | Versión seleccionada |
+| `modules[].hash` | Digest del artefacto con el que el pack vendorizado debe coincidir |
+| `modules[].root` | Marca la raíz de despliegue seleccionada; como máximo un módulo puede llevarla |
+
+Los packs vendorizados se conservan como archivos `.wapp`. Con `unpack_modules: true`, cada módulo también se extrae en un directorio, y el `.wapp` verificado permanece junto a él — la instalación busca el pack, así que un directorio cuyo pack falta se descarga de nuevo.
+
+Una sección `replacements:` en `wippy.lock` está obsoleta. Todavía se carga, con una advertencia; declare las sustituciones de módulos locales bajo `workspace.replacements` en un archivo de configuración de runtime en su lugar. Consulte [Gestión de Dependencias](guides/dependency-management.md#local-development-with-replacements).
 
 ## Definiciones de Entrada
 
@@ -216,27 +234,21 @@ Consulta la [Guía de configuración](guides/configuration.md) para los campos d
 
 ### wippy.lock
 
-Define directorios fuente:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+Directorios fuente y el grafo de módulos seleccionado — consulte [El Archivo de Bloqueo](#the-lock-file) más arriba.
 
 ## Referenciando Entradas
 
-Referencia las entradas por ID completo o nombre relativo cuando el kind de entrada lo permita. Los routers HTTP y endpoints se adjuntan mediante `meta.server` y `meta.router`, no mediante listas de hijos en el padre:
+Referencie entradas por ID completo o nombre relativo. Los hijos se vinculan a su padre a través de `meta`, no mediante listas del lado del padre:
 
 ```yaml
-# Router declares itself against a server
+# El router se declara contra un servidor
 - name: api
   kind: http.router
   meta:
     server: app:gateway
   prefix: /api
 
-# Endpoint references router by registry ID (cross-namespace works the same way)
+# El endpoint referencia al router por ID de registro (cross-namespace funciona igual)
 - name: get_user.endpoint
   kind: http.endpoint
   meta:

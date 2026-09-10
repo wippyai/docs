@@ -1,6 +1,6 @@
 ---
 title: "Filesystem"
-description: "Read, write, and manage files in a configured filesystem volume."
+description: "Read, write, and manage files within sandboxed filesystem volumes."
 ---
 
 # Filesystem

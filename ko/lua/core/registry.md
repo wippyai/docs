@@ -1,6 +1,6 @@
 ---
 title: "엔트리 레지스트리"
-description: "레지스트리 엔트리와 메타데이터를 읽고 버전 및 스냅샷을 검사하며 변경 세트를 적용합니다."
+description: "등록된 엔트리를 쿼리하고 수정합니다. 메타데이터, 스냅샷, 버전 히스토리에 접근합니다."
 ---
 
 # 엔트리 레지스트리
@@ -8,9 +8,9 @@ description: "레지스트리 엔트리와 메타데이터를 읽고 버전 및 
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-`registry` 모듈은 엔트리를 읽고 수정하며 스냅샷과 버전 기록에 접근합니다. 이 페이지는 API 참조입니다. 변경 예시는 예시 ID를 사용하며 해당 리소스와 엔트리 종류를 허용하는 정책이 필요합니다.
+등록된 엔트리를 쿼리하고 수정합니다. 메타데이터, 스냅샷, 버전 히스토리에 접근합니다.
 
-## 로드
+## 로딩
 
 ```lua
 local registry = require("registry")
@@ -21,11 +21,15 @@ local registry = require("registry")
 ```lua
 {
     id = "app.lib:assert",     -- string: "namespace:name"
-    kind = "function.lua",     -- string: entry type
-    meta = {type = "test"},    -- table: searchable metadata
-    data = {...}               -- any: entry payload
+    kind = "function.lua",     -- string: 엔트리 타입
+    meta = {type = "test"},    -- table: 검색 가능한 메타데이터
+    data = {...}               -- any: 엔트리 페이로드
 }
 ```
+
+`registry.get`, `registry.find`, `snap:entries()`, `snap:get()`, `snap:namespace()`, `snap:find()`에서 읽어온 엔트리는 이 네 가지 작성자용 필드만 가집니다.
+
+`dependency_root`는 `changes:create()`와 `changes:update()`가 받는 쓰기 측 필드입니다. `ns.dependency` 엔트리를 배포 루트로 표시하는 불리언입니다. 엔트리 API가 이를 반환하는 일은 없으며, 레지스트리 소유 상태는 [`snap:state()`](lua/core/registry.md#snapshot-state)로 읽습니다.
 
 ## 엔트리 가져오기
 
@@ -33,7 +37,7 @@ local registry = require("registry")
 local entry, err = registry.get("app.lib:assert")
 ```
 
-**권한:** 엔트리 ID에 대한 `registry.get`
+**권한:** 엔트리 ID에 대해 `registry.get`
 
 ## 엔트리 찾기
 
@@ -42,7 +46,7 @@ local entries, err = registry.find({[".kind"] = "function.lua"})
 local entries, err = registry.find({[".kind"] = "http.endpoint", [".ns"] = "app.api"})
 ```
 
-루트 선택자는 `.kind`, `.name`, `.ns`, `.id`이며 값은 glob 일치를 지원합니다. 메타데이터 필터는 `{["meta.type"] = "test"}`처럼 `meta.` 접두사를 사용합니다.
+`.` 접두사가 붙은 키는 엔트리 필드(`.kind`, `.ns`, `.name`, `.id`)와 매칭되며 `*` 글롭을 허용합니다. `meta.` 접두사가 붙은 키는 엔트리 메타데이터와 매칭되며, `meta.` 키 앞에 `~`, `*`, `^`, `$`를 붙이면 각각 정규식, 포함, 접두사, 접미사 매칭이 선택됩니다. 접두사가 없는 키는 무시됩니다.
 
 ## ID 파싱
 
@@ -53,49 +57,62 @@ local id = registry.parse_id("app.lib:assert")
 
 ## 스냅샷
 
-스냅샷은 특정 시점의 레지스트리 뷰입니다:
+레지스트리의 특정 시점 뷰:
 
 ```lua
-local snap, err = registry.snapshot()           -- current state
-local snap, err = registry.snapshot_at(5)       -- at version 5
+local snap, err = registry.snapshot()           -- 현재 상태
+local snap, err = registry.snapshot_at(5)       -- 버전 5에서
 ```
 
 ### 스냅샷 메서드
 
 | 메서드 | 반환 | 설명 |
-|--------|---------|-------------|
+|--------|------|------|
 | `snap:entries()` | `Entry[], error` | 접근 가능한 모든 엔트리 |
-| `snap:get(id)` | `Entry, error` | ID로 단일 엔트리 가져오기 |
+| `snap:state()` | `State, error` | 레지스트리 소유 메타데이터를 포함한 엔트리와 해결된 모듈 그래프 |
+| `snap:get(id)` | `Entry, error` | ID로 단일 엔트리 |
 | `snap:find(filter)` | `Entry[]` | 엔트리 필터링 |
 | `snap:namespace(ns)` | `Entry[]` | 네임스페이스의 엔트리 |
 | `snap:version()` | `Version` | 스냅샷 버전 |
-| `snap:changes()` | `Changes` | 변경 세트 만들기 |
+| `snap:changes()` | `Changes` | 변경 세트 생성 |
 
-## 프로세스 로컬 오버레이
+### 스냅샷 상태 {#snapshot-state}
 
-`registry.overlay(owner_id)`는 논리 소유자의 프로세스 로컬 오버레이를 엽니다. 유효 레지스트리의 일반 스냅샷을 반환합니다. 이 스냅샷에서 변경 세트를 만든 뒤 영구 변경과 같은 방식으로 적용합니다:
+`snap:state()`는 엔트리 상태와 함께 해당 스냅샷 버전에 대해 선택된 모듈 그래프를 반환합니다. 레지스트리 소유 출처 정보는 `meta`에 병합되지 않고 각 엔트리에 따로 실리므로, 작성된 메타데이터와 혼동될 수 없습니다.
 
 ```lua
-local snap, err = registry.overlay("controllers:customer-db")
-if err then
-    return nil, err
+local snap, err = registry.snapshot()
+local state, err = snap:state()
+
+for _, entry in ipairs(state.entries) do
+    print(entry.id, entry.registry.owner, entry.registry.root)
 end
 
-local changes = snap:changes()
-changes:create({
-    id = "runtime.data_sources:customer-db",
-    kind = "db.sql.postgres",
-    data = {host = "db.example.com", database = "customer"}
-})
-
-local current_version, err = changes:apply()
+if state.resolution then
+    print(state.resolution.digest, state.resolution.input_digest)
+    for _, module in ipairs(state.resolution.modules) do
+        print(module.name, module.version)
+    end
+end
 ```
 
-오버레이 변경은 이 프로세스의 레지스트리 토폴로지와 리소스에 영향을 주지만 영구 기록 버전을 만들지 않습니다. 따라서 `changes:apply()`는 변경되지 않은 현재 영구 버전을 반환합니다. 오버레이는 일반 기록 커밋과 버전 선택 뒤에도 유지되며 콜드 부팅 또는 명시적 레지스트리 상태 로드 시 제거된 뒤 소유자가 다시 조정합니다.
+`state.entries`의 각 엔트리는 네 가지 작성자용 필드에 더해 다음을 가집니다:
 
-오버레이 스냅샷은 세대 기반 낙관적 동시성을 사용합니다. 오래된 스냅샷의 변경을 적용하면 재시도 가능한 `errors.CONFLICT`로 원자적으로 실패합니다. 오버레이를 다시 열고 변경 세트를 재구성하세요. 변경 세트에는 각 엔트리 ID당 하나의 작업만 포함할 수 있습니다. 소유자 ID는 정규 식별자로 다듬어집니다. 소유자는 엔트리 메타데이터가 아니라 레지스트리 상태이며 확장 지시문이 소유한 엔트리 종류는 오버레이에서 변경할 수 없습니다.
+- `registry.owner` - 엔트리를 공급한 배포 소스
+- `registry.root` - 엔트리가 배포가 선택한 의존성 선언일 때 `true`
 
-일반 `registry.get`, `find`, `snapshot` 호출은 합성된 유효 레지스트리를 보고 각 엔트리에 계속 `registry.get` 권한을 요구합니다. 소유자 수준 오버레이 권한은 읽기 권한을 대체하지 않습니다.
+`state.resolution`은 `registry.snapshot()` 뷰의 모듈 그래프를 기술합니다. 자체 그래프를 가지지 않는 스냅샷 — `registry.snapshot_at()`과 오버레이 스냅샷 포함 — 에서는 존재하지 않습니다:
+
+| 필드 | 타입 | 설명 |
+|-------|------|-------------|
+| `digest` | string | 완전한 불변 선택의 콘텐츠 다이제스트 |
+| `input_digest` | string | 선언된 루트 집합의 다이제스트 |
+| `baseline_digest` | string | 그래프가 해결된 대상 배포 베이스라인의 다이제스트. 바인딩되지 않은 경우 생략됨 |
+| `roots` | array | 솔버 입력으로 사용된 작성된 의존성 선언 |
+| `references` | array | 같은 컴포넌트의 기존 루트에 접힌 루트 형태의 선언. 비어 있으면 생략됨 |
+| `modules` | array | 선택된 모듈 |
+
+`roots`와 `references` 항목은 `id`, `component`, `version`을 가집니다. `modules` 항목은 `name`과 `version`을 가지며, 설정된 경우 `version_id`, `source`, `digest`, `size_bytes`, `protected`도 가집니다.
 
 ## 버전
 
@@ -103,13 +120,13 @@ local current_version, err = changes:apply()
 local version, err = registry.current_version()
 local versions, err = registry.versions()
 
-print(version:id())       -- numeric ID
-print(version:string())   -- display string
-local prev = version:previous()  -- previous version or nil
-local next = version:next()      -- next version or nil
+print(version:id())       -- 숫자 ID
+print(version:string())   -- 표시 문자열
+local prev = version:previous()  -- 이전 버전 또는 nil
+local next = version:next()      -- 다음 버전 또는 nil
 ```
 
-## 기록
+## 히스토리
 
 ```lua
 local hist, err = registry.history()
@@ -120,7 +137,7 @@ local snap, err = hist:snapshot_at(version)
 
 ## 변경 세트
 
-create, update, delete 작업으로 변경 세트를 만든 뒤 적용합니다:
+수정 사항을 빌드하고 적용합니다:
 
 ```lua
 local snap, err = registry.snapshot()
@@ -145,21 +162,34 @@ changes:delete("test:old_entry")
 local new_version, err = changes:apply()
 ```
 
-**권한:** `changes:apply()`에 대한 `registry.apply`
+**권한:** `changes:apply()`에 대해 `registry.apply`
+
+### 엔트리 삭제
+
+`changes:delete()`는 ID 문자열, `id` 문자열을 가진 테이블, `ns`와 `name` 문자열을 가진 테이블, 또는 그중 어떤 것이든 담은 배열을 받습니다. 배열은 중첩될 수 있고, 중복 ID는 하나의 삭제 작업으로 합쳐집니다.
+
+```lua
+changes:delete("test:old_entry")
+changes:delete({id = "test:old_entry"})
+changes:delete({ns = "test", name = "old_entry"})
+changes:delete({"test:a", {ns = "test", name = "b"}, {"test:c"}})
+```
+
+빈 목록, 자기 자신을 참조하는 테이블, 문자열도 테이블도 아닌 값은 `errors.INVALID`로 거부됩니다.
 
 ### Changes 메서드
 
 | 메서드 | 설명 |
-|--------|-------------|
-| `changes:create(entry)` | create 작업 추가 |
-| `changes:update(entry)` | update 작업 추가 |
-| `changes:delete(id)` | delete 작업 추가(문자열 또는 `{ns, name}`) |
+|--------|------|
+| `changes:create(entry)` | 생성 작업 추가 |
+| `changes:update(entry)` | 업데이트 작업 추가 |
+| `changes:delete(id)` | 삭제 작업 추가 |
 | `changes:ops()` | 대기 중인 작업 가져오기 |
-| `changes:apply()` | 변경 적용 후 새 Version 반환 |
+| `changes:apply()` | 변경 적용, 새 Version 반환 |
 
 ## 버전 적용
 
-특정 버전을 적용해 레지스트리를 이전 또는 이후 상태로 이동합니다:
+특정 버전으로 롤백 또는 포워드:
 
 ```lua
 local prev = current_version:previous()
@@ -170,7 +200,7 @@ local ok, err = registry.apply_version(prev)
 
 ## 델타 빌드
 
-두 엔트리 집합 사이를 전환하는 데 필요한 작업을 계산합니다:
+상태 간 전환을 위한 작업 계산:
 
 ```lua
 local from = {{id = "test:a", kind = "test", meta = {}, data = {}}}
@@ -182,30 +212,92 @@ for _, op in ipairs(ops) do
 end
 ```
 
+## 오버레이
+
+오버레이는 논리적 아이덴티티가 소유하는 프로세스 로컬 레지스트리 엔트리 집합입니다. 오버레이 엔트리는 일반적인 토폴로지 및 핸들러 전환에 참여하므로 서비스가 지속 엔트리와 똑같이 시작되고 중지되지만, 레지스트리 히스토리를 진행시키지 않으며 어떤 버전에도 나타나지 않습니다. 실행 중인 프로세스에만 존재하고 콜드 부트 후에는 비어 있으므로, 소유 제어 서비스가 시작 시 조정합니다.
+
+```lua
+local snap, err = registry.overlay("data-sources:crm")
+```
+
+**반환:** `Snapshot, error`
+
+이 스냅샷은 일반적인 메서드를 통해 소유자의 오버레이 엔트리를 노출하며, `snap:version()`으로 현재 레지스트리 버전을 보고합니다. 또한 열리는 시점의 오버레이 세대를 포착하는데, 이것이 쓰기를 안전하게 만듭니다.
+
+```lua
+local snap, err = registry.overlay("data-sources:crm")
+if err then return nil, err end
+
+local changes = snap:changes()
+changes:create({
+    id = "data.crm:connection",
+    kind = "registry.entry",
+    meta = {},
+    data = {endpoint = "https://crm.internal"}
+})
+
+local version, err = changes:apply()
+```
+
+오버레이 스냅샷에서 `changes:apply()`는 오버레이를 기록하고 현재 레지스트리 버전을 반환합니다. 히스토리 버전은 생성되지 않으므로, 지속 변경이 동시에 발생하지 않는 한 반환되는 버전은 그대로입니다.
+
+### 동시성
+
+각 오버레이는 성공한 적용마다 증가하는 세대 카운터를 가집니다. `changes:apply()`는 스냅샷이 열릴 때 포착한 세대와 여전히 일치할 때만 성공합니다. 같은 오버레이에 대한 동시 적용은 재시도 가능으로 표시된 `errors.CONFLICT`로 실패합니다: 오버레이를 다시 열고 변경 세트를 다시 만드세요.
+
+```lua
+local last_err
+for _ = 1, 3 do
+    local snap, err = registry.overlay("data-sources:crm")
+    if err then return nil, err end
+
+    local _, apply_err = snap:changes():delete("data.crm:connection"):apply()
+    if not apply_err then return true end
+    if not apply_err:retryable() then return nil, apply_err end
+    last_err = apply_err
+end
+return nil, last_err
+```
+
+### 제약
+
+- 소유자 문자열은 필수이며 비어 있을 수 없습니다.
+- 변경 세트는 비어 있지 않아야 하며 같은 엔트리를 두 번 지정할 수 없습니다.
+- ID가 이미 지속 상태나 다른 오버레이에 존재하면 `create`가 실패합니다.
+- `update`와 `delete`는 이 소유자가 만든 엔트리에만 동작합니다. 그 밖의 ID는 `errors.NOT_FOUND`로 실패합니다.
+- 오버레이 엔트리는 `dependency_root`나 그 밖의 레지스트리 소유 메타데이터를 설정할 수 없습니다.
+- 오버레이 엔트리는 `ns.dependency`처럼 레지스트리 디렉티브가 소유한 종류를 사용할 수 없습니다.
+- 살아남는 엔트리가 의존하는 엔트리를 제거하는 삭제는 거부됩니다.
+- 의존성은 오버레이 소유자 경계를 넘을 수 없으며, 지속 엔트리는 오버레이 엔트리에 의존할 수 없습니다.
+
+나머지는 `errors.CONFLICT` 또는 `errors.INVALID`로 나타나며 재시도할 수 없습니다. 재시도 가능한 것은 위의 세대 불일치뿐입니다.
+
+**권한:** 열고 읽으려면 소유자에 대한 `registry.overlay.get`, 쓰려면 소유자에 대한 `registry.overlay.apply`, 그리고 변경 세트의 각 엔트리 ID에 대한 `registry.overlay.<create|update|delete>.<kind>`.
+
 ## 권한
 
 | 권한 | 리소스 | 설명 |
-|------------|----------|-------------|
-| `registry.get` | 엔트리 ID | 엔트리 읽기(find/entries 결과도 필터링) |
+|------|--------|------|
+| `registry.get` | 엔트리 ID | 엔트리 읽기 (find/entries 결과도 필터링) |
 | `registry.apply` | - | 변경 세트 적용 |
 | `registry.apply_version` | - | 버전 적용/롤백 |
-| `registry.overlay.get` | 소유자 ID | 소유자의 오버레이 열기 |
+| `registry.overlay.get` | 소유자 ID | 오버레이 스냅샷 열기 및 읽기 |
 | `registry.overlay.apply` | 소유자 ID | 오버레이 변경 세트 적용 |
-| `registry.overlay.create.<kind>` | 엔트리 ID | 오버레이에서 지정 종류의 엔트리 만들기 |
-| `registry.overlay.update.<kind>` | 엔트리 ID | 오버레이에서 지정 종류의 엔트리 업데이트 |
-| `registry.overlay.delete.<kind>` | 엔트리 ID | 오버레이에서 지정 종류의 엔트리 삭제 |
+| `registry.overlay.create.<kind>` | 엔트리 ID | 해당 종류의 오버레이 엔트리 생성 |
+| `registry.overlay.update.<kind>` | 엔트리 ID | 해당 종류의 오버레이 엔트리 갱신 |
+| `registry.overlay.delete.<kind>` | 엔트리 ID | 해당 종류의 오버레이 엔트리 삭제 |
 
-## 오류
+## 에러
 
 | 조건 | 종류 |
-|-----------|------|
+|------|------|
 | 엔트리를 찾을 수 없음 | `errors.NOT_FOUND` |
 | 버전을 찾을 수 없음 | `errors.NOT_FOUND` |
-| 권한 거부 | `errors.PERMISSION_DENIED` |
-| 잘못된 매개변수 | `errors.INVALID` |
+| 권한 거부됨 | `errors.PERMISSION_DENIED` |
+| 잘못된 파라미터 | `errors.INVALID` |
 | 적용할 변경 없음 | `errors.INVALID` |
-| 빈 오버레이 소유자 또는 지시문 소유 종류 | `errors.INVALID` |
-| 오래된 오버레이 스냅샷 | `errors.CONFLICT` (재시도 가능) |
+| 적용 중 오버레이가 변경됨 | `errors.CONFLICT` (재시도 가능) |
+| 오버레이 엔트리가 다른 곳에 소유되었거나 지속 상태와 충돌 | `errors.CONFLICT` |
 | 레지스트리 사용 불가 | `errors.INTERNAL` |
 
-오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.
+에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

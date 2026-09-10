@@ -91,12 +91,8 @@ local function handler()
     local user_id, query_err = req:query("user_id")
     if query_err then return nil, query_err end
 
-    -- Spawn handler process
-    local pid, spawn_err = process.spawn("app.ws:handler", "app:processes")
-    if spawn_err then return nil, spawn_err end
-
-    -- Configure relay
-    local relay_config, encode_err = json.encode({
+    -- 릴레이 설정
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",
@@ -124,7 +120,7 @@ end
 | `target_pid` | string | 필수 | 메시지를 받을 프로세스 PID |
 | `message_topic` | string | `ws.message` | 클라이언트 메시지의 토픽 |
 | `heartbeat_interval` | duration | - | 하트비트 빈도 (예: `30s`) |
-| `metadata` | object | - | 모든 메시지에 첨부 |
+| `metadata` | object | - | join/leave/heartbeat 메시지에 첨부 |
 
 ## 메시지 토픽
 
@@ -175,16 +171,15 @@ end
 
 ## 클라이언트로 전송
 
-클라이언트 PID로 응답을 보냅니다. 선택한 토픽은 `{topic, data}` JSON으로 래핑되어 하나의 WebSocket 텍스트 프레임으로 전달됩니다. 테이블과 문자열은 `data`에서 형태를 유지하고 Bytes payload는 base64로 인코딩됩니다. Lua `process.send`는 인자를 Lua-format payload로 내보내므로 Lua 문자열은 Bytes 분기를 사용하지 않습니다.
+클라이언트 PID를 사용하여 메시지 반환. 선택한 어떤 토픽이든 `{topic, data}` JSON으로 래핑되어 WebSocket으로 전달됩니다. 서버에서 클라이언트로 가는 모든 메시지는 `{topic, data}` JSON 래퍼를 담은 단일 WebSocket TEXT 프레임으로 전송됩니다. 바이너리 페이로드는 `data` 필드에 base64로 인코딩됩니다; 별도의 바이너리 프레임으로 전송되지 않습니다.
 
 ```lua
 -- Send a structured message (any topic name)
 local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
 if send_err then return nil, send_err end
 
--- Close connection (payload is the close reason string)
-local _, close_err = process.send(client_pid, "ws.close", "Session ended")
-if close_err then return nil, close_err end
+-- 연결 종료 (페이로드는 종료 사유 문자열)
+process.send(client_pid, "ws.close", "Session ended")
 ```
 
 서버 -> 클라이언트의 예약된 토픽은 `ws.control` (릴레이 재구성) 및 `ws.close` (연결 종료) 입니다.

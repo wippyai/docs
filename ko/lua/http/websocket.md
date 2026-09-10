@@ -1,6 +1,6 @@
 ---
 title: "WebSocket 클라이언트"
-description: "WebSocket 서버에 연결하고 메시지를 송수신하며 압축과 연결 종료를 제어합니다."
+description: "서버와의 실시간 양방향 통신을 위한 WebSocket 클라이언트."
 ---
 
 # WebSocket 클라이언트
@@ -61,14 +61,14 @@ end
 
 | 옵션 | 타입 | 설명 |
 |------|------|------|
-| `headers` | table | 문자열-문자열 HTTP 핸드셰이크 헤더; 다른 항목은 무시됨 |
-| `protocols` | table | WebSocket 서브프로토콜 문자열; 문자열이 아닌 항목은 무시됨 |
-| `dial_timeout` | number/string | 연결 타임아웃; `0`은 런타임 전체 연결 기한을 적용하지 않음 |
-| `read_timeout` | number/string | 메시지별 읽기 타임아웃; `0`은 비활성화 |
-| `write_timeout` | number/string | Lua API에서 허용되지만 런타임 `v0.3.32a`에서는 적용되지 않음 |
-| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"`, `2`/`"no_context_takeover"`; 기본값은 비활성화 |
-| `compression_threshold` | number | 압축 최소 크기(바이트, 0-104857600); `0`은 모드에 따라 기본값 사용 |
-| `read_limit` | number | 최대 수신 메시지 크기(바이트, 0-134217728); `0`은 16 MiB 사용 |
+| `headers` | table | 핸드셰이크용 HTTP 헤더 |
+| `protocols` | table | WebSocket 서브프로토콜 |
+| `dial_timeout` | number/string | 연결 타임아웃 (ms 또는 "5s") |
+| `read_timeout` | number/string | 읽기 타임아웃 |
+| `write_timeout` | number/string | 쓰기 타임아웃 |
+| `compression` | number/string | 압축 모드 (상수 참조) 또는 `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
+| `compression_threshold` | number | 압축 최소 크기 (0-100MB) |
+| `read_limit` | number | 최대 메시지 크기 (0-128MB) |
 | `channel_capacity` | number | 수신 채널 버퍼 (1-10000) |
 
 **타임아웃 형식:** 숫자는 밀리초이며 문자열은 `"5s"`, `"1m"` 같은 Go duration 형식을 사용합니다.
@@ -80,7 +80,7 @@ end
 ### 텍스트 메시지
 
 ```lua
-local json = require("json")
+client:send("Hello, Server!")
 
 client:send("Hello, Server!")
 
@@ -104,7 +104,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | 메시지 내용 |
 | `type` | number | `websocket.TEXT` (1) 또는 `websocket.BINARY` (2) |
 
-`type`이 없거나 `websocket.TEXT` 또는 `websocket.BINARY`가 아니면 텍스트 메시지를 보냅니다. 호출은 전송 완료까지 yield하며 값을 반환하지 않습니다. 런타임 `v0.3.32a`에서는 전송 실패가 Lua로 반환되지 않습니다.
+메시지가 전송될 때까지 양보(yield)합니다. 반환값이 없습니다.
 
 ### Ping
 
@@ -112,7 +112,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-호출은 ping 완료까지 yield하며 값을 반환하지 않습니다. 런타임 `v0.3.32a`에서는 ping 전송 실패가 Lua로 반환되지 않습니다.
+핑이 전송될 때까지 양보(yield)합니다. 반환값이 없습니다.
 
 ## 메시지 받기
 
@@ -237,9 +237,7 @@ if close_err then return nil, close_err end
 | `code` | number | 닫기 코드 (1000-4999), 기본값 1000 |
 | `reason` | string | 닫기 이유 (선택적) |
 
-호출은 닫기 명령이 완료될 때까지 yield합니다. 성공 시 값을 반환하지 않으며 실패 시 `nil, error`를 반환합니다. 범위를 벗어난 코드는 무시되고 기본 코드 `1000`이 사용됩니다.
-
-수신 channel은 클라이언트가 소유하므로 직접 닫지 마세요. `client:close()`는 구독을 해제하고 클라이언트 측 producer를 중지합니다.
+닫기 프레임이 전송될 때까지 양보(yield)합니다.
 
 ## 상수
 

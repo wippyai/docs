@@ -35,6 +35,7 @@ Add `meta.temporal.activity` to register a function as an activity:
 |-------|----------|-------------|
 | `worker` | Yes | Reference to `temporal.worker` entry |
 | `local` | No | Execute as local activity (default: false) |
+| `name` | No | Custom activity type name (defaults to entry ID) |
 
 ## Implementation
 
@@ -169,10 +170,10 @@ end
 | `activity.wait_for_cancellation` | boolean | false | Wait for activity cancellation |
 | `activity.disable_eager_execution` | boolean | false | Disable eager execution |
 | `activity.retry_policy` | table | - | Retry configuration (see below) |
-| `activity.versioning_intent` | string or number | - | Worker versioning intent for the activity |
-| `activity.summary` | string | - | Summary shown in Temporal activity metadata |
-| `activity.priority` | table | - | Priority key and optional fairness settings |
-| `activity.name` | string | - | Activity type override |
+| `activity.name` | string | - | Activity type name to call, when it differs from the registry ID |
+| `activity.summary` | string | - | Human-readable summary shown in the Temporal UI |
+| `activity.priority` | table | - | Task priority: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (inherit the build ID) or `default` (use assignment rules) |
 
 Duration values accept strings (`"5s"`, `"10m"`, `"1h"`) or milliseconds as numbers.
 
@@ -300,6 +301,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Security Context
+
+An activity scheduled under a security context receives the signed `wippy-security` header, audienced to the activity ID. The worker verifies the signature and audience, then merges the propagated `ctx` values and the security payload onto a fresh frame before the activity function runs.
+
+That merge is all-or-nothing and **fatal to the activity if it fails**: the activity returns an error before its code executes, so it never runs with partial context or with an unverified actor. A merge fails when the signature or audience does not verify, when the envelope is inconsistent (an actor without a scope, or policies without an actor), or when a policy named in the envelope does not resolve in the local security registry — which is the common operational cause: the worker's deployment is missing a policy entry the caller had.
+
+The worker takes its signing and verification keys from the `temporal.client` entry it references. See [Security context propagation](temporal/overview.md#security-context-propagation).
+
 ## Error Handling
 
 Return errors via the standard Lua pattern:
@@ -358,6 +367,10 @@ end
 | Runtime crash | `Internal` | false | Unhandled Lua error in activity |
 | Missing activity | `NotFound` | false | Activity not registered with worker |
 | Timeout | `Timeout` | false | Activity exceeded configured timeout |
+| Security verification | `Internal` | true | Signature, audience, or envelope check failed on the propagated security header |
+| Security policy missing | `Internal` | true | A policy named in the security envelope does not resolve on this worker |
+
+Both security failures happen during context merge, before the activity function runs. They are not marked non-retryable, so the activity retry policy keeps re-attempting them; retries do not help, because neither a bad signature nor a missing policy entry changes between attempts. Cap `maximum_attempts` on activities you want to fail fast, and read a repeating `Internal` failure with no activity log output as a context-merge failure rather than a fault in the activity.
 
 ```lua
 local executor = funcs.new():with_options({

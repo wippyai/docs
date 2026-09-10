@@ -34,9 +34,9 @@ O gerenciador de log controla propagação de logs e streaming de eventos:
 
 ```yaml
 logmanager:
-  propagate_downstream: true   # Propagate to child components
-  stream_to_events: false      # Forward logs to event bus
-  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error
+  propagate_downstream: true   # Propaga para componentes filhos
+  stream_to_events: false      # Encaminha logs para barramento de eventos
+  min_level: 0                 # -1=debug, 0=info, 1=warn, 2=error (wippy run define 0, ou -1 com -v)
 ```
 
 Quando `stream_to_events` está habilitado, entradas de log se tornam eventos que processos podem assinar via barramento de eventos.
@@ -58,7 +58,7 @@ prometheus:
   address: "localhost:9090"
 ```
 
-O servidor Prometheus inicia somente quando `enabled` é `true` e `address` não está vazio. Ele expõe métricas em `/metrics` e o handler de liveness do runtime em `/livez` nesse endereço.
+Métricas são expostas em `/metrics` no endereço configurado; o mesmo listener serve `/livez`. `max_cardinality` (padrão 1024) limita o número de conjuntos de labels vivos por exportador; as séries atualizadas há mais tempo são removidas acima desse limite.
 
 ### Configuração de Scrape
 
@@ -97,7 +97,7 @@ otel:
 
 ### Fontes de Trace
 
-Habilite tracing para componentes específicos:
+Todas as fontes de trace ficam ativas por padrão assim que `otel.enabled` é true; cada uma pode ser desabilitada individualmente:
 
 ```yaml
 otel:
@@ -123,6 +123,7 @@ otel:
   # Function call tracing
   interceptor:
     enabled: true
+    order: 100                 # Ordem de execução do interceptador
 ```
 
 Quando OTEL está habilitado, tracing e propagação HTTP, tracing de processos e spans de ciclo de vida, interceptação de funções, tracing de filas e exportação de traces ficam habilitados por padrão. Tracing Temporal e exportação de métricas ficam desabilitados por padrão. O runtime fixado registra o interceptor de funções na ordem 100; embora um valor `interceptor.order` possa ser decodificado da configuração, ele não altera essa ordem de registro.
@@ -153,12 +154,11 @@ Operações rastreadas:
 
 | Componente | Nome do Span | Atributos |
 |------------|--------------|-----------|
-| Requisições HTTP | `{METHOD} {route}` | http.method, http.url, http.host |
+| Requisições HTTP | `{METHOD} {route}` | http.method, http.url, http.host, http.route |
 | Chamadas de função | ID da Função | process.pid, frame.id |
-| Ciclo de vida de processo | `<source-id>.started/terminated`, ou `process.started/terminated` sem um frame de origem | process.pid, lifecycle.event |
-| Publicação em fila | `<queue-id>.publish` | Atributos de mensagens e contexto de trace nos headers |
-| Consumo de fila | ID da função handler | Atributos de mensagens herdados pelo span da função |
-| Workflows Temporal | Nome da operação do SDK Temporal | Metadados de workflow e execução do SDK Temporal |
+| Ciclo de vida de processo | `{source}.started/terminated` | process.pid |
+| Mensagens de fila | `{queue}.publish` | messaging.operation, messaging.destination.name |
+| Workflows Temporal | Nome do Workflow/Atividade | workflow.id, run.id |
 
 ### Propagação de Contexto
 
@@ -183,6 +183,8 @@ OTEL pode ser configurado via ambiente:
 | `OTEL_SERVICE_VERSION` | Versão do serviço |
 | `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` ou `parentbased_traceidratio` |
 | `OTEL_TRACES_SAMPLER_ARG` | Taxa de amostragem (0.0-1.0) |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` ou `parentbased_traceidratio` (razão vinda de `OTEL_TRACES_SAMPLER_ARG`) |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Defina como `true` para permitir conexões sem TLS |
 | `OTEL_PROPAGATORS` | Lista de propagadores |
 
 ## Estatísticas do Runtime

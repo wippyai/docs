@@ -1,31 +1,29 @@
 ---
-title: "Custom composite"
-description: "必要な affordance を PrimeVue で提供できない control に対する contract-first exception。"
+title: "カスタムコンポジット"
+description: "必要とされるアフォーダンスを PrimeVue が提供できないコントロールのための、契約優先の例外。"
 ---
 
-# Custom composite
+# カスタムコンポジット
 
-**分類: normative exception-contract reference。** JSON block は placeholder を含む schema example で、有効な contract/evidence bundle ではありません。
+カスタムコントロールは例外であり、代替のコンポーネントライブラリではありません。
 
-custom control は例外であり、別の component library ではありません。
+## 受け入れテスト
 
-## 受け入れテスト :id=admission-test
+カスタムコントロールが受け入れられるのは、次を満たす場合に限られます。
 
-custom control が認められるのは次をすべて満たす場合だけです。
+1. 意図するセマンティクス、インタラクション、アフォーダンスを PrimeVue が提供も合成もできない。
+2. 例外に、却下した PrimeVue の合成案が記録されている。
+3. 正確に生成された PrimeVue の兄弟契約と契約ハッシュが指定されている。
+4. その兄弟契約が `shared-runtime` に分類するすべてのプロパティに、正確なソースマッピングがある。
+5. 固定ユーティリティは、その兄弟契約がそのプロパティを正確に `platform-invariant` と分類している場合にのみ受け入れられる。
+6. 新規のジオメトリと挙動が分離され、文書化されている。
+7. アクセシビリティとビジュアルの証跡が合格する。
 
-1. PrimeVue の提供・composition では意図する semantics、interaction、affordance を実現できない。
-2. rejected PrimeVue composition を記録する。
-3. exact generated PrimeVue sibling contract と contract hash を指定する。
-4. sibling contract が `shared-runtime` に分類する全 property に exact source mapping がある。
-5. fixed utility は sibling contract がその exact property を `platform-invariant` と分類した場合だけ許可する。
-6. novel geometry/behavior を分離し文書化する。
-7. accessibility と visual evidence が pass する。
+データ形状の等価性はアフォーダンスの等価性ではありません。複数選択肢の `SelectButton` は3つの値を表現できますが、スライドする3位置トグルのような見た目でも挙動でもありません。逆に、`ToggleSwitch` に `positions` prop を発明してはいけません。アフォーダンスの要件が実在するときにのみ、レビュー済みのカスタム兄弟を作ってください。
 
-data-shape equivalence は affordance equivalence ではありません。3 値の `SelectButton` が sliding three-position toggle と同じ見た目・動作とは限りません。逆に `ToggleSwitch` に `positions` prop を発明してはいけません。本当に affordance requirement がある場合だけ reviewed custom sibling を作ります。
+## モジュール契約
 
-## モジュール契約 :id=module-contract
-
-reviewed exception を module-root `wippy-fe.contract.json` に保存します。
+レビュー済みの例外は、モジュールルートの `wippy-fe.contract.json` に保存します。
 
 ```json
 {
@@ -84,24 +82,20 @@ reviewed exception を module-root `wippy-fe.contract.json` に保存します�
 }
 ```
 
-値は schema placeholder であり有効な evidence ではありません。complete mapping は selected sibling contract から生成し、1 row の抜粋だけでは有効な exception になりません。tooling が source/contract hash を生成し、いずれかが変われば review は無効です。
+示されている値はスキーマのプレースホルダーであり、妥当な証跡ではありません。完全なマッピングは、選択された兄弟契約から生成されます。1行の抜粋はそれ自体では妥当な例外になりません。ソースと契約のハッシュはツールが生成します。ソースハッシュまたは兄弟契約ハッシュが変わると、レビューは無効になります。
 
-このページは normative field を定義しますが JSON Schema ではありません。documentation checker が証明するのは example が required shape を保つことだけです。module compliance implementation は real contract を selected theme manifest に対して検証し、hash と complete property set を確認し、全 evidence reference が同じ candidate build の named passing result/capture に解決することを確認します。public `@wippy-fe/*` 0.0.56 は module-compliance CLI を提供しません。
+このページは規範的なフィールドを定義するものであって、JSON Schema ではありません。ドキュメントチェッカーは、この例が必要な形を保っていることだけを証明します。`wippy-fe-compliance` は、実際のモジュール契約を選択されたテーマのマニフェストに対して検証し、ハッシュと完全なプロパティ集合を確認し、すべての証跡参照が同じ候補ビルドの、名前で指定された合格結果またはキャプチャへ解決されることを確認します。アクセシビリティの証跡は、コンポーネントの `sourceSha256`、ハッシュ化されたファイル、想定外のコンソールエラーがゼロであること、合格結果を束ねます。ビジュアルの証跡は、正典の before/after/diff ファイル、ハッシュ、再計算されたメトリクスと判定、一致する候補ビルドを束ねます。文字列、欠落したファイル、欠落したシナリオ／結果／キャプチャ、古いビルドハッシュ、`pending`、未レビューの結果は、証跡の要件を満たしません。
 
-accessibility evidence は component `sourceSha256`、hashed file、unexpected console error 0 件、passed result を bind します。visual evidence は canonical before/after/diff file、hash、再計算 metric/disposition、matching candidate build を bind します。string、missing file/scenario/result/capture、stale build hash、`pending`、unreviewed result は evidence requirement を満たしません。
+`platformInvariantUtilities` と `moduleLocalProperties` は空でもかまいません。契約のフィールドを空でなくするためだけに `gap-2`、`w-10`、`rounded-md` その他の固定ユーティリティを発明しないでください。特に、ToggleSwitch の兄弟は、選択された兄弟契約がそれらのプロパティを `shared-runtime` に分類しているとき、幅、高さ、角丸、フォーカスのジオメトリ、モーションを invariant として付け替えることはできません。
 
-`platformInvariantUtilities` と `moduleLocalProperties` は空でも構いません。field を埋めるために `gap-2`、`w-10`、`rounded-md` 等を発明しないでください。特に ToggleSwitch sibling の width、height、radius、focus geometry、motion が `shared-runtime` なら invariant に再分類できません。
+兄弟マニフェストはプロパティを次のように分類します。
 
-sibling manifest の分類:
+- `shared-runtime`: すべてのカスタム兄弟が、公開されたトークンまたはランタイムに裏付けられたセマンティックユーティリティをマッピングし利用する。
+- `platform-invariant`: このプロパティに限り、固定値が許可される。
+- `implementation-private`: PrimeVue の内部機構は、カスタム兄弟の要件にはならない。
 
-- `shared-runtime`: 全 custom sibling が published token または runtime-backed semantic utility を map/consume する。
-- `platform-invariant`: fixed value はこの exact property にだけ許可。
-- `implementation-private`: internal PrimeVue mechanic は custom sibling requirement にならない。
+必要なランタイムのセマンティクスが存在しない場合は、まず共有テーマの契約を修正してください。現在の兄弟の寸法をコピーしたり、トークン名を発明したりしてはいけません。
 
-必要な runtime semantic がなければ shared theme contract を先に修正します。現在の sibling dimension を copy したり token 名を発明したりしません。
+`sharedAppearanceMappings` は例示ではなく網羅的です。選択された兄弟契約のすべての `shared-runtime` プロパティに対してちょうど1つのマッピングを含み、それ以外のプロパティ ID を含まず、契約のパート、安定したモジュールセレクター、公開されたソースの種別と名前を正確に記載します。コンプライアンスツールは、セレクター、パート、CSS プロパティ、公開されたソースを用いて PostCSS で構造的にマッピングを証明します。コメントや無関係なセレクター内のトークン名はカウントされません。Tailwind に裏付けられたマッピングは、一意で正確な `utilityClasses` も記録します。正規化後、その集合は選択された兄弟契約のソース集合と等しくなければなりません。`platformInvariantUtilities` は、ユーティリティが選択された兄弟契約のソースと等しい `{ "contractProperty": "...", "utility": "..." }` レコードを含みます。`moduleLocalProperties` は、空でない場合、自由形式の CSS の寄せ集めではなく、構造化されたプロパティ ID とレビュー理由を含みます。
 
-`sharedAppearanceMappings` は illustrative ではなく exhaustive です。selected sibling contract の全 `shared-runtime` property に exactly one mapping を持ち、追加 property ID はなく、contract part、stable module selector、exact published source kind/name を記録します。selected compliance implementation は selector、part、CSS property、published source を使い PostCSS で structural proof を行います。comment や無関係 selector の token 名は数えません。
-
-Tailwind-backed mapping は unique/exact `utilityClasses` も記録し、normalize 後の set が sibling contract source set と一致する必要があります。`platformInvariantUtilities` は sibling source と同じ utility の `{ "contractProperty": "...", "utility": "..." }` record、nonempty `moduleLocalProperties` は free-form CSS bag ではなく structured property ID と review reason を持ちます。
-
-single exception のために shared `@wippy-fe/ui` package は作りません。2 番目の independent consumer が同じ behavior/portability requirement を証明した後にだけ promotion 対象になります。
+単一の例外のために共有の `@wippy-fe/ui` パッケージを作ることはありません。昇格が検討可能になるのは、2つ目の独立したコンシューマーが同じ挙動と可搬性の要件を実証してからです。

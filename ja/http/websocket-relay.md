@@ -93,12 +93,8 @@ local function handler()
     local user_id, query_err = req:query("user_id")
     if query_err then return nil, query_err end
 
-    -- Spawn handler process
-    local pid, spawn_err = process.spawn("app.ws:handler", "app:processes")
-    if spawn_err then return nil, spawn_err end
-
-    -- Configure relay
-    local relay_config, encode_err = json.encode({
+    -- リレーを設定
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",
@@ -124,9 +120,9 @@ end
 | フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
 | `target_pid` | string | 必須 | メッセージを受信するプロセスPID |
-| `message_topic` | string | `ws.message` | クライアントメッセージのトピック |
-| `heartbeat_interval` | duration | `30s` | ハートビート間隔（`30s`など） |
-| `metadata` | object | - | join、leave、heartbeat通知に添付されるデータ |
+| `message_topic` | string | `ws.message` | クライアントメッセージ用トピック |
+| `heartbeat_interval` | duration | - | ハートビート頻度（例：`30s`） |
+| `metadata` | object | - | join/leave/heartbeatメッセージに付与 |
 
 ## メッセージトピック
 
@@ -177,16 +173,15 @@ end
 
 ## クライアントへの送信
 
-クライアントPIDを使用してメッセージを送り返します。任意のトピックが`{topic, data}`形式のJSONでラップされ、WebSocketへ転送されます。サーバーからクライアントへの各メッセージは、ラッパーを含む1つのWebSocketテキストフレームとして送信されます。テーブルは`data`内のJSONオブジェクトのまま、文字列は文字列のままです。Bytes形式でリレーに到達したペイロードは`data`内でBase64エンコードされ、別個のバイナリフレームとしては送信されません。Luaの`process.send`は引数をLua形式のペイロードとしてエクスポートするため、Lua文字列がBytes形式の分岐に入ることはありません。
+クライアントPIDを使用してメッセージを送り返します。任意のトピックは `{topic, data}` JSONとしてラップされ、WebSocketに転送されます。サーバーからクライアントへのメッセージはすべて、`{topic, data}` JSONラッパーを含む単一のWebSocket TEXTフレームとして送信されます。バイナリペイロードは `data` フィールドにbase64エンコードされます。個別のバイナリフレームとしては送信されません。
 
 ```lua
 -- Send a structured message (any topic name)
 local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
 if send_err then return nil, send_err end
 
--- Close connection (payload is the close reason string)
-local _, close_err = process.send(client_pid, "ws.close", "Session ended")
-if close_err then return nil, close_err end
+-- 接続を閉じる (ペイロードはクローズ理由文字列)
+process.send(client_pid, "ws.close", "Session ended")
 ```
 
 サーバー → クライアント方向で予約されているトピックは、`ws.control`（リレーの再設定）と`ws.close`（接続の終了）です。

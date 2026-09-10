@@ -1,6 +1,6 @@
 ---
 title: "Terminal-I/O"
-description: "Terminaleingaben lesen und in Standardausgabe und Standardfehler schreiben."
+description: "Lesen von stdin und Schreiben zu stdout/stderr für CLI-Anwendungen."
 ---
 
 # Terminal-I/O

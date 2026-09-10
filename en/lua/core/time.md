@@ -1,6 +1,6 @@
 ---
 title: "Time & Duration"
-description: "Create, compare, parse, and format time values; work with durations and time zones; and schedule sleeps and timers."
+description: "Work with time values, durations, timezones, and scheduling. Create timers, sleep for specified periods, parse and format timestamps."
 ---
 
 # Time & Duration
@@ -285,7 +285,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500

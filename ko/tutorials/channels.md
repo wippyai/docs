@@ -13,6 +13,8 @@ description: "채널 연산과 코루틴 조정 패턴을 살펴봅니다."
 
 이 코드 조각들은 `process.lua` 같은 실행 가능한 Lua 엔트리의 내보낸 함수 안에서 실행하세요. 해당 실행 환경에서는 `channel`과 `coroutine` API가 전역으로 제공되므로 `require()` 호출이나 `modules` 선언이 필요하지 않습니다. 각 코드 조각은 자체 채널을 생성하므로 서로 따로 실행해야 합니다.
 
+이 페이지는 입문서입니다. 각 스니펫은 하나의 API를 따로 떼어 보여줍니다. [CLI 애플리케이션](tutorials/cli.md) 튜토리얼에서 설정한 대로 `process.lua` 항목의 `main` 함수에 붙여 넣으면 실행됩니다.
+
 ## 채널 생성
 
 채널은 코루틴 사이에 값을 전달합니다. `channel.new(capacity)`로 채널을 만듭니다.
@@ -79,7 +81,7 @@ result.ok              -- true
 
 ### 보내기 연산 선택
 
-`case_send`를 사용하면 선택 대상에 보내기 연산을 포함할 수 있습니다. 기본 사례가 없으면 `channel.select`는 사례 중 하나가 준비될 때까지 기다립니다. 시도를 논블로킹으로 만들려면 `default = true`를 추가하세요.
+select 안에서 전송을 제안하려면 `case_send`를 사용합니다. 채널이 값을 받을 수 있게 되면 해당 케이스가 선택됩니다:
 
 ```lua
 local ch = channel.new(1)
@@ -94,6 +96,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+select는 케이스 중 하나가 준비될 때까지 블로킹합니다. 케이스 테이블에 `default = true`를 추가하면 대신 즉시 반환하며, 준비된 것이 없으면 `result.default`가 true로 설정됩니다:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (버퍼가 가득 참, 전송되지 않음)
 ```
 
 ## 생산자-소비자 패턴

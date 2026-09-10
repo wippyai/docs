@@ -1,6 +1,6 @@
 ---
 title: "HTTP-Client"
-description: "HTTP-Anfragen mit Headern, Authentifizierung, Formularen, Uploads, TLS-Optionen, Streaming und Batches senden."
+description: "Führen Sie HTTP-Anfragen an externe Services durch. Unterstützt alle HTTP-Methoden, Header, Query-Parameter, Formulardaten, Datei-Uploads…"
 ---
 
 # HTTP-Client
@@ -122,9 +122,7 @@ if err then return nil, err end
 | `max_response_body` | number | Max. Response-Größe in Bytes (0 = Standard) |
 | `unix_socket` | string | Über Unix-Socket-Pfad verbinden |
 | `tls` | table | TLS-Konfiguration pro Anfrage (siehe [TLS-Optionen](#tls-optionen)) |
-| `overlay_network` | string | Über ein [Netzwerk-Overlay](../../system/network.md) leiten; Registry-ID eines Eintrags `network.socks5`, `network.tailscale` oder `network.i2p` |
-
-Die Auswahl von `overlay_network` erfordert die Berechtigung `network.select` für diese Netzwerk-ID.
+| `overlay_network` | string | Über ein [Netzwerk-Overlay](system/network.md) routen — Registry-ID eines `network.socks5`- / `network.tailscale`- / `network.i2p`-Eintrags |
 
 ### Query-Parameter
 
@@ -192,7 +190,7 @@ if err then return nil, err end
 | `filename` | string | nein | Originaler Dateiname |
 | `content` | string | ja* | Dateiinhalt |
 | `reader` | userdata | ja* | Alternative: io.Reader für Inhalt |
-| `content_type` | string | nein | Derzeit ignoriert: Jeder Upload-Part wird unabhängig von diesem Feld mit `Content-Type: application/octet-stream` gesendet |
+| `content_type` | string | nein | Derzeit ignoriert: jeder hochgeladene Part wird unabhängig von diesem Feld immer mit `Content-Type: application/octet-stream` gesendet |
 
 *Entweder `content` oder `reader` ist erforderlich.
 
@@ -406,7 +404,7 @@ HTTP-Anfragen unterliegen der Sicherheitsrichtlinienauswertung.
 | `http_client.unix_socket` | Socket-Pfad | Unix-Socket-Verbindungen erlauben/verweigern |
 | `http_client.private_ip` | IP-Adresse | Zugriff auf private IP-Bereiche erlauben/verweigern |
 | `http_client.insecure_tls` | URL | Unsichere TLS-Verbindungen erlauben/verweigern (Verifizierung überspringen) |
-| `network.select` | Netzwerk-ID | Explizite Auswahl von `overlay_network` erlauben oder verweigern |
+| `network.select` | Netzwerk-Entry-ID | Routing über das in der Anfrage angegebene `overlay_network` erlauben/verweigern |
 
 ### Zugriff prüfen
 
@@ -421,14 +419,27 @@ end
 
 ### SSRF-Schutz
 
-Private IP-Bereiche (10.x, 192.168.x, 172.16-31.x, localhost) sind standardmäßig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung.
+Nicht-öffentliche IP-Bereiche sind standardmäßig blockiert. Zugriff erfordert die `http_client.private_ip`-Berechtigung auf der Adresse:
+
+- Loopback, private Bereiche (10.x, 172.16-31.x, 192.168.x), Link-Local-Unicast und -Multicast sowie die unspezifizierte Adresse
+- Carrier-Grade-NAT `100.64.0.0/10`, `192.0.0.0/24`, Multicast `224.0.0.0/4`, reserviert `240.0.0.0/4`
+- Dokumentations- und Benchmarking-Bereiche `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- IPv6-Multicast `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Siehe [Sicherheitsmodell](system/security.md) zur Richtlinienkonfiguration.
+Die Prüfung läuft beim Verbindungsaufbau, nicht auf dem URL-String, und sie erfasst jede Adresse, auf die der Host auflöst. Ein Hostname, der auf mehrere Adressen auflöst, wird Adresse für Adresse geprüft: Eine verweigerte Adresse wird übersprungen und die nächste versucht, und die Anfrage schlägt erst fehl, wenn jeder Kandidat verweigert oder nicht erreichbar ist. Ein öffentlicher Hostname, der auf eine private Adresse auflöst, wird daher genau wie ein privates IP-Literal blockiert.
+
+### Redirects
+
+Bis zu neun Redirects werden verfolgt; der zehnte schlägt mit `stopped after 10 redirects` fehl, wobei diese Zählung die ursprüngliche Anfrage einschließt.
+
+Jeder Sprung wird für sich autorisiert. Bevor der Client einem Redirect folgt, wertet er `http_client.request` gegen die Ziel-URL aus und wendet die Private-IP-Prüfung darauf an, sodass eine erlaubte URL nicht per Weiterleitung zu einer verweigerten führen kann. Ein Sprung, der eine der beiden Prüfungen nicht besteht, bricht die Anfrage ab.
+
+Siehe [Sicherheitsmodell](system/security.md) für Richtlinienkonfiguration.
 
 ## Fehler
 

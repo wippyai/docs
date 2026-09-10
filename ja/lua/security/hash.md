@@ -1,6 +1,6 @@
 ---
 title: "ハッシュ関数"
-description: "暗号学的ハッシュ、HMAC値、PBKDF2鍵、FNV-1ハッシュを計算します。"
+description: "暗号学的ハッシュ関数とHMACメッセージ認証を提供します。"
 ---
 
 # ハッシュ関数
@@ -177,43 +177,33 @@ local n = hash.fnv64("data")
 
 **戻り値:** `number, error`
 
-Luaの数値では、すべての符号なし64ビット整数を正確に表現できません。正確な64ビット値をLuaとの間で往復させる必要がある場合は`fnv64`を使用せず、適切なプロトコル実装が提供するバイト列または文字列表現を使用してください。
-
 ## 鍵導出
 
-### PBKDF2-HMAC
-
-PBKDF2-HMAC-SHA256またはPBKDF2-HMAC-SHA512で生の鍵バイト列を導出します。
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
-
-ここでは、`password`はアプリケーションのシークレット境界を通じて渡され、`salt`は検証子と一緒に保存する新しいランダムバイト列です。戻り値は表示可能なテキストではなく、生の鍵バイト列です。
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `password` | string | 空でないパスワードまたはシークレット入力 |
-| `salt` | string | 空でないソルトのバイト列 |
-| `iterations` | integer | 10,000,000以下の正の反復回数 |
-| `key_length` | integer | 正の出力長（バイト） |
-| `algo` | string? | `sha256`（デフォルト）または`sha512` |
+| `password` | string | パスワード/パスフレーズ（空でないこと） |
+| `salt` | string | ソルト値（空でないこと） |
+| `iterations` | integer | 反復回数（1〜10,000,000） |
+| `key_length` | integer | 生成する鍵の長さ（バイト） |
+| `hash` | string? | `sha256`または`sha512`（デフォルト: `sha256`） |
 
-**戻り値:** `string, error`（生の導出鍵バイト列）
+**戻り値:** `string, error`（生の鍵バイト列）
 
 ## エラー
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 入力が文字列でない | `errors.INVALID` | いいえ |
-| シークレットが文字列でない（HMAC） | `errors.INVALID` | いいえ |
-| PBKDF2のパスワードまたはソルトが空、制限値が不正、またはアルゴリズムが未対応 | `errors.INVALID` | いいえ |
+| 入力が文字列でない | `errors.INVALID` | no |
+| シークレットが文字列でない（HMAC） | `errors.INVALID` | no |
+| パスワード/ソルトが空、反復回数が0以下または過大、非対応のハッシュ（PBKDF2） | `errors.INVALID` | no |
+
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

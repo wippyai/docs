@@ -1,14 +1,11 @@
 ---
 title: "Hello World"
-description: "JSONを返す最小限のWippy HTTP APIを構築して実行します。"
+description: "最初のWippyアプリケーション - JSONを返すシンプルなHTTP API。"
 ---
 
-# Hello World :id=hello-world
+# Hello World
 
-JSONを返すHTTPエンドポイントを1つ備えた、最小限のWippyアプリケーションを構築します。
-
-**分類:** 実行可能なチュートリアルです。ローカルHTTPアプリケーションに必要な
-レジストリとLuaソース一式に加え、起動・検証コマンドも掲載しています。
+最初のWippyアプリケーション - JSONを返すシンプルなHTTP API。
 
 ## 構築するもの
 
@@ -18,20 +15,14 @@ JSONを返すHTTPエンドポイントを1つ備えた、最小限のWippyアプ
 GET /hello → {"message": "hello world"}
 ```
 
-## 前提条件
-
-- `wippy`として実行できるWippyランタイム`v0.3.32a`。`wippy version --short`で確認してください。
-- `curl`または別のHTTPクライアント。
-- ローカルマシンでポート8080を使用できること。
-
 ## プロジェクト構造
 
 ```
 hello-world/
-├── wippy.lock           # Generated lock file
+├── wippy.lock           # 生成されたロックファイル
 └── src/
-    ├── _index.yaml      # Entry definitions
-    └── hello.lua        # Handler code
+    ├── _index.yaml      # エントリ定義
+    └── hello.lua        # ハンドラコード
 ```
 
 ## ステップ1: プロジェクトディレクトリの作成
@@ -50,21 +41,21 @@ version: "1.0"
 namespace: app
 
 entries:
-  # HTTP server
+  # HTTPサーバー
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # Router
+  # ルーター
   - name: api
     kind: http.router
     meta:
       server: app:gateway
     prefix: /
 
-  # Handler function
+  # ハンドラ関数
   - name: hello
     kind: function.lua
     source: file://hello.lua
@@ -72,7 +63,7 @@ entries:
     modules:
       - http
 
-  # Endpoint
+  # エンドポイント
   - name: hello.endpoint
     kind: http.endpoint
     meta:
@@ -82,12 +73,12 @@ entries:
     path: /hello
 ```
 
-アプリケーションは4つのエントリを使用します：
+**4つのエントリが連携して動作：**
 
-1. `gateway` — ポート8080でリッスンするHTTPサーバー
-2. `api` — `meta.server`を介してゲートウェイに接続されたルーター
-3. `hello` — リクエストを処理するLua関数
-4. `hello.endpoint` — `GET /hello`から関数へのルート
+1. `gateway` - ポート8080でリッスンするHTTPサーバー
+2. `api` - `meta.server`経由でgatewayに接続されたルーター
+3. `hello` - リクエストを処理するLua関数
+4. `hello.endpoint` - `GET /hello`を関数にルーティング
 
 ## ステップ3: ハンドラコード
 
@@ -97,25 +88,11 @@ entries:
 local http = require("http")
 
 local function handler()
-    local res, response_err = http.response()
-    if response_err then
-        error("cannot create response: " .. tostring(response_err))
-    end
+    local res = http.response()
 
-    local content_type_err = res:set_content_type(http.CONTENT.JSON)
-    if content_type_err then
-        error("cannot set content type: " .. tostring(content_type_err))
-    end
-
-    local status_err = res:set_status(http.STATUS.OK)
-    if status_err then
-        error("cannot set status: " .. tostring(status_err))
-    end
-
-    local write_err = res:write_json({message = "hello world"})
-    if write_err then
-        error("cannot write response: " .. tostring(write_err))
-    end
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_status(http.STATUS.OK)
+    res:write_json({message = "hello world"})
 end
 
 return {
@@ -128,16 +105,23 @@ return {
 ## ステップ4: 初期化と実行
 
 ```bash
-# Generate lock file from source
+# ソースからロックファイルを生成
 wippy init
 
-# Start the runtime (-c for colorful console output)
+# ランタイムを起動（-c でカラフルなコンソール出力）
 wippy run -c
 ```
 
-`wippy init`は`wippy.lock`を書き出します。エンドポイントをテストしている間は
-`wippy run -c`を実行したままにしてください。ログ形式はビルドによって異なるため、
-準備完了の確認には次のHTTPレスポンスを使用します。
+次のような出力が表示されます：
+
+```
+╦ ╦╦╔═╗╔═╗╦ ╦  Adaptive Application Runtime https://wippy.ai
+║║║║╠═╝╠═╝╚╦╝  v0.3.40a
+╚╩╝╩╩  ╩   ╩   by Spiral Scout
+
+0.00s  INFO  run          runtime ready
+0.11s  INFO  core         service app:gateway is running  {"details": "service listening on :8080"}
+```
 
 ## ステップ5: テスト
 
@@ -145,44 +129,31 @@ wippy run -c
 curl http://localhost:8080/hello
 ```
 
-期待されるレスポンス：
+レスポンス：
 
 ```json
 {"message":"hello world"}
 ```
 
-リクエストはHTTPステータス200と`Content-Type: application/json`を返します。
-
 ## 動作の仕組み
 
-1. `gateway`がポート8080でTCP接続を受け入れます。
-2. `api`ルーターがパスプレフィックス`/`に一致します。
-3. `hello.endpoint`が`GET /hello`に一致します。
-4. `hello`関数がJSONレスポンスを書き込みます。
+1. `gateway`がポート8080でTCP接続を受け入れる
+2. `api`ルーターがパスプレフィックス`/`に一致
+3. `hello.endpoint`が`GET /hello`に一致
+4. `hello`関数が実行されJSONレスポンスを書き込む
 
 ## CLIリファレンス
 
 | コマンド | 説明 |
 |---------|------|
-| `wippy init` | `./src`をソースディレクトリとして`wippy.lock`を作成 |
+| `wippy init` | `src/`からロックファイルを生成 |
 | `wippy run` | ロックファイルからランタイムを起動 |
 | `wippy run -c` | カラフルなコンソール出力で起動 |
 | `wippy run -v` | 詳細なデバッグログで起動 |
 | `wippy run -s` | サイレントモードで起動（コンソールログなし） |
 
-## トラブルシューティングとクリーンアップ
-
-- `wippy init`がエントリを見つけられない場合は、`hello-world/`から実行し、
-  `src/_index.yaml`が存在することを確認してください。
-- 起動時にアドレスが使用中と報告された場合は、ポート8080を使用しているプロセスを停止するか、
-  `addr`とテストURLの両方を同じ空きポートに変更してください。
-- 404レスポンスは通常、ルーターまたはエンドポイントのエントリが上記の定義と異なることを示します。
-  `meta.server`、`meta.router`、`/hello`を正確に確認してください。
-- ランタイムのターミナルでCtrl+Cを押すとアプリケーションが停止します。使い捨ての演習であれば、
-  ディレクトリを離れた後に`hello-world/`を削除してください。
-
 ## 次のステップ
 
-- [Echoサービス](tutorials/echo-service.md) — マルチプロセスCLIサービスを構築する
-- [タスクキュー](tutorials/task-queue.md) — REST APIとバックグラウンド処理を組み合わせる
-- [HTTPルーター](http/router.md) — ルーティングパターンを確認する
+- [Echoサービス](tutorials/echo-service.md) - リクエストパラメータの処理
+- [タスクキュー](tutorials/task-queue.md) - バックグラウンド処理付きREST API
+- [HTTPルーター](http/router.md) - ルーティングパターン

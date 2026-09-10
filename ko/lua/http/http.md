@@ -1,6 +1,6 @@
 ---
 title: "HTTP"
-description: "서버 측 HTTP 요청을 읽고 상태, 헤더, JSON, 스트리밍 및 이벤트 스트림 응답을 구성합니다."
+description: "HTTP 요청을 처리하고 응답을 빌드합니다. 요청 데이터, 라우트 파라미터, 헤더, 본문 내용에 접근합니다. 상태 코드, 헤더, 스트리밍 지원으로 응답을 빌드합니다."
 ---
 
 # HTTP
@@ -141,7 +141,24 @@ if not correlation_id then
 end
 ```
 
-### `content_type`
+조회는 대소문자를 구분하지 않습니다: `req:header("content-type")`와 `req:header("Content-Type")`는 같은 값을 반환합니다. 두 번 이상 전송된 헤더는 값들이 `", "`로 연결되어 반환됩니다. 존재하지 않는 헤더는 `nil`을 반환합니다.
+
+### headers
+
+모든 요청 헤더를 가져옵니다.
+
+```lua
+local headers, err = req:headers()
+for name, value in pairs(headers) do
+    print(name .. ": " .. value)
+end
+```
+
+**반환:** `table, error`
+
+키는 클라이언트가 보낸 대소문자와 무관하게 정규 헤더 이름(`Content-Type`, `X-Correlation-ID`)입니다. 반복된 헤더는 `req:header()`와 마찬가지로 `", "`로 연결됩니다.
+
+### content_type
 
 Content-Type 헤더를 가져옵니다.
 
@@ -367,12 +384,16 @@ if form.files.avatar then
     local content_type, header_err = file:header("Content-Type")  -- "image/jpeg"
     if header_err then return nil, header_err end
 
-    -- Stream the upload to a configured filesystem volume
-    local fs = require("fs")
-    local uploads, fs_err = fs.get("app:avatars")
-    if fs_err then
-        return nil, fs_err
+    -- 파일 내용 읽기
+    local stream = file:stream()
+    local parts = {}
+    while true do
+        local chunk, err = stream:read(65536)
+        if err or not chunk then break end
+        parts[#parts + 1] = chunk
     end
+    stream:close()
+    local content = table.concat(parts)
 
     local stream, stream_err = file:stream()
     if stream_err then return nil, stream_err end

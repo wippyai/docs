@@ -25,4 +25,6 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 ## 依赖
 
-Wippy 使用各种开源依赖，每个都有自己的许可证。所有依赖都与商业使用兼容。
+Wippy 使用各种依赖，每个都有自己的许可证。大多数是与商业使用兼容的宽松许可开源库。
+
+其中一个捆绑组件，即 WASM 运行时（`wippyai/wasm-runtime`），采用 Business Source License 1.1 许可。你可以在生产环境中使用它，但不得以托管或嵌入方式向第三方提供，从而与 Wippy AI 的产品或服务形成竞争。每个版本发布四年后，该版本转为 Apache License 2.0。

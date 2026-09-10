@@ -1,6 +1,6 @@
 ---
-title: "Métricas e Telemetria"
-description: "Registre contadores, gauges e observações de histogramas da aplicação."
+title: "Metricas e Telemetria"
+description: "Registre metricas de aplicação usando contadores, gauges e histogramas."
 ---
 
 # Métricas e Telemetria

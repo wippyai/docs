@@ -1,19 +1,19 @@
 ---
 title: "Registry-Einträge"
-description: "Wie Registry-YAML, Paketmetadaten und wippy-meta.json Frontend-Seiten und Web Components für den Web Host deklarieren."
+description: "Ein Registry-Eintrag ist die Art, wie das Wippy-Backend ein Frontend-Artefakt deklariert — entweder eine Micro-Frontend-App oder eine wiederverwendbare Web Component — damit der Web Host es…"
 ---
 
 # Registry-Einträge
 
-Ein Registry-Eintrag deklariert ein Frontend-Artefakt beim Wippy-Backend, damit der Web Host es finden und ausliefern kann. Das Artefakt kann eine Micro-Frontend-Anwendung oder eine wiederverwendbare Web Component sein. Seine Deklaration erstreckt sich über `_index.yaml` des Moduls, den Block `wippy` in `package.json` und die generierte Datei `wippy-meta.json`.
+Ein Registry-Eintrag ist die Art, wie das Wippy-Backend ein Frontend-Artefakt deklariert — entweder eine Micro-Frontend-App oder eine wiederverwendbare Web Component — damit der Web Host es finden und ausliefern kann. Dieses Dokument erklärt den Vertrag zwischen der `_index.yaml` eines Moduls, dem `wippy`-Block seiner `package.json` und der Datei `wippy-meta.json`, die beide verbindet.
 
-Die Einrichtung des Moduls `wippy/views`, das diese Einträge zur Laufzeit verarbeitet, beschreibt [Views](../../framework/views.md).
+Zum Setup des Moduls `wippy/views`, das diese Einträge zur Laufzeit verarbeitet, siehe [Views](../../framework/views.md).
 
 ## Was ein Registry-Eintrag ist
 
-Jedes Frontend-Artefakt wird als `registry.entry` in `_index.yaml` des Moduls deklariert. Die Kennzeichnung `kind: registry.entry` teilt der Wippy-Registry mit, dass dieser Eintrag von anderen Modulen konsumierte Metadaten trägt, statt direkt eine Lua-Komponente zu definieren.
+Jedes Frontend-Artefakt wird als `registry.entry` in der `_index.yaml` des Moduls deklariert. Der Marker `kind: registry.entry` teilt der Wippy-Registry mit, dass dieser Eintrag Metadaten trägt, die von anderen Modulen konsumiert werden, statt direkt eine Lua-Komponente zu definieren.
 
-> **Häufige Falle:** `view.page` und `view.component` sind **keine** Werte für `kind`. Schreiben Sie stets `kind: registry.entry` und setzen Sie den Typ des Frontend-Artefakts in `meta.type`. `kind: view.page` und `kind: view.component` sind ungültige Formen.
+> **Häufige Falle:** `view.page` und `view.component` sind **keine** `kind`-Werte. Schreiben Sie immer `kind: registry.entry` und tragen Sie den Typ des Frontend-Artefakts in `meta.type` ein. `kind: view.page` und `kind: view.component` sind ungültige Formen.
 
 Minimale korrekte Form:
 
@@ -45,88 +45,85 @@ entries:
       mountRoute: /home/:part(.*)*
 ```
 
-Der Block `meta` wird von `wippy/views` gelesen. Das Feld `meta.type` unterscheidet zwischen den beiden unterstützten Artefakttypen.
+Der `meta`-Block ist das, was `wippy/views` liest. Das Feld `meta.type` unterscheidet zwischen den beiden unterstützten Artefakt-Arten.
 
 ## Der Diskriminator `meta.type`
 
 | Wert | Bedeutung |
-|------|-----------|
-| `view.page` | Eine Micro-Frontend-Anwendung (vollständige SPA), die über die ausgewählte iframe- oder Web-Fragment-Engine der Seite gerendert wird |
-| `view.component` | Eine Web Component (Custom Element), die beliebig in eine Seite eingebettet werden kann |
+|---|---|
+| `view.page` | Eine Micro-Frontend-App (vollständige SPA), die in einem iframe innerhalb des Web Host gerendert wird |
+| `view.component` | Eine Web Component (Custom Element), die sich überall in einer Seite einbetten lässt |
 
-Jedes andere Feld in `meta` wird im Kontext dieses Typs interpretiert. Felder, die nur für einen Typ gelten, beschreiben die Referenzseiten [view.page](./view-page.md) und [view.component](./view-component.md).
+Jedes andere Feld in `meta` wird im Kontext dieses Typs interpretiert. Felder, die für einen Typ gelten und für den anderen nicht, sind auf den typspezifischen Referenzseiten beschrieben ([view.page](./view-page.md), [view.component](./view-component.md)).
 
-## Die Kennzeichnung `specification`
+## Der Marker `specification`
 
-Frontend-Pakete sollten auf der obersten Ebene von `package.json` `"specification": "wippy-component-1.0"` deklarieren. Die Kennzeichnung identifiziert Paketmetadaten und API-Antwortform. `@wippy-fe/vite-plugin` validiert den Wert, wenn er vorhanden ist.
+Jedes Frontend-Paket, das an der Registry teilnimmt, deklariert `"specification": "wippy-component-1.0"` auf oberster Ebene seiner `package.json`. Dieser String ist der Handshake, der Wippy (und dem Tooling) mitteilt, dass dieses Paket dem wippy-component-Vertrag folgt — es hat einen `wippy`-Block mit bekannter Form und wurde mit `@wippy-fe/vite-plugin` gebaut.
 
 ```json
 {
-  "name": "@wippy/example-widget",
+  "name": "@wippy/app-main",
   "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
-  "wippy": {
-    "type": "component",
-    "tagName": "example-widget"
-  }
+  "wippy": { ... }
 }
 ```
 
-Die Kennzeichnung verändert das Renderverhalten nicht. `wippy/views` übernimmt den gebündelten Wert in Seiten- und Komponentendeskriptoren oder setzt für Legacy-Bundles ohne Angabe `wippy-component-1.0`; die Validierung der Registry-YAML hängt nicht von diesem Feld ab.
+Das Vorhandensein von `specification` ändert das Laufzeitverhalten nicht, aber `wippy/views` verwendet es bei der Validierung von Einträgen, die aus der Registry geladen werden.
 
 ## Der Vertrag `wippy-meta.json`
 
-`@wippy-fe/vite-plugin` gibt neben dem gebauten Bundle eine Datei `wippy-meta.json` aus. Sie ist die kanonische Quelle der vom Artefaktautor festgelegten Laufzeitmetadaten: Props-Schema, Ereignisschema, Titel, Icon und Proxy-Injektionseinstellungen.
+`@wippy-fe/vite-plugin` gibt neben dem gebauten Bundle eine Datei `wippy-meta.json` aus. Diese Datei ist die kanonische Quelle der Wahrheit für die Laufzeit-Metadaten des Artefakts: sein Props-Schema, sein Events-Schema, Titel, Icon und die Einstellungen zur Proxy-Injektion.
 
-Verantwortlichkeiten der Metadaten:
+Kurzfassung für Agenten und Tooling:
 
-- **Ausgegeben von:** `wippyPagePlugin()` für `view.page`-Anwendungen und `wippyComponentPlugin()` für Web Components des Typs `view.component`.
-- **Generiert aus:** `package.json`; erstellen Sie `wippy-meta.json` nicht manuell.
-- **Konsumiert von:** `wippy/views`, das die Datei beim Erstellen von Seiten-/Komponentendeskriptoren und API-Antworten aus dem ausgelieferten Bundle-Root liest.
-- **Überschrieben durch:** `_index.yaml`, das für Deployment-Richtlinien und jedes ausdrücklich deklarierte Feld maßgeblich bleibt.
+- **Wer sie ausgibt:** `wippyPagePlugin()` für `view.page`-Apps und `wippyComponentPlugin()` für `view.component`-Web-Components.
+- **Wer sie verfasst:** niemand schreibt `wippy-meta.json` von Hand; das Vite-Plugin generiert sie aus der `package.json`.
+- **Wer sie konsumiert:** `wippy/views` liest sie aus dem Bundle-Root der Auslieferung, wenn Seiten-/Komponenten-Deskriptoren und API-Antworten gebaut werden.
+- **Was YAML tut:** `_index.yaml` bleibt maßgeblich für Deployment-Policy und für jedes Feld, das sie explizit überschreibt.
 
-Beim Laden eines `registry.entry` liest `wippy/views` für Seiten und Komponenten `wippy-meta.json` aus dem ausgelieferten Bundle-Root des Artefakts (`url + base_path`). YAML gewinnt stets: `_index.yaml` hat für jedes dort deklarierte Feld Vorrang. `wippy-meta.json` liefert Standardwerte, wenn für ein Feld keine YAML-Überschreibung vorhanden ist. Deployment-Richtlinienfelder — `announced`, `secure`, `url`, `mountRoute` und `base_path` — müssen in `_index.yaml` gesetzt werden, weil sie Betreiberentscheidungen statt Artefaktautorschaft ausdrücken; in `package.json`/`wippy-meta.json` gibt es dafür keine Autorenschnittstelle. (`base_path` wird für Seiten und Komponenten berücksichtigt; die aktuellen Komponenteneinträge des Anwendungstemplates lassen es lediglich weg.)
+Wenn `wippy/views` einen `registry.entry` lädt, liest es `wippy-meta.json` aus dem Bundle-Root der Auslieferung des Artefakts. Bei Seiten ist dieser Root `url + base_path` der Seite; bei Web Components liefern die aktuellen Einträge die Komponente direkt aus `url` aus. YAML gewinnt immer: `_index.yaml` hat Vorrang für jedes Feld, das sie deklariert. `wippy-meta.json` liefert die Standardwerte, die `wippy/views` liest, wenn für ein Feld kein YAML-Override vorliegt. Felder der Deployment-Policy — `announced`, `secure`, `url`, `mountRoute` und `base_path` — müssen in `_index.yaml` gesetzt werden, weil sie Entscheidungen des Betreibers ausdrücken statt der Autorenschaft an der Komponente; es gibt für sie keine Autorenfläche in `package.json`/`wippy-meta.json`. (`base_path` wird sowohl für Seiten als auch für Komponenten berücksichtigt; die aktuellen Komponenteneinträge des App-Templates lassen es lediglich weg.)
 
-`entry_point` wird dagegen vom Frontend erstellt *und* kann durch YAML überschrieben werden. Für Seiten stammt es aus `wippy.path`, das `@wippy-fe/vite-plugin` **verlangt**; ohne dieses Feld löst das Plugin `wippy.path is required for a page package` aus. Für Komponenten stammt es aus dem obersten Feld `browser`; `wippy.tagName` deklariert separat den Namen des Custom Elements. `meta.entry_point` in `_index.yaml` ist eine optionale Deployment-Überschreibung des erstellten Standardwerts, kein reines YAML-Feld.
+Im Gegensatz dazu wird `entry_point` FE-seitig verfasst *und* ist per YAML überschreibbar. Es wird aus dem `wippy`-Block des Pakets in `wippy-meta.json` eingebacken — `wippy.path` für Seiten (was `@wippy-fe/vite-plugin` **voraussetzt**; wird es weggelassen, wirft das Plugin `wippy.path is required for a page package`) oder `wippy.tagName`/`browser` für Komponenten. Das Feld `meta.entry_point` in `_index.yaml` ist ein optionaler Override pro Deployment über diesem verfassten Standardwert; es ist kein reines YAML-Feld.
 
-Ein Komponentenautor schreibt Anzeigemetadaten einmal in den Block `wippy` von `package.json`; das Vite-Plugin zeichnet sie in `wippy-meta.json` als Autorenstandardwerte auf. Der Betreiber setzt Routing- und Zugriffsrichtlinien in YAML und kann dort auch Anzeigefelder überschreiben.
+Diese Aufteilung bedeutet, dass ein Komponenten-Autor Anzeige-Metadaten einmal im `wippy`-Block der `package.json` schreibt und das Vite-Plugin sie zur Build-Zeit als Autoren-Standardwerte in `wippy-meta.json` einbackt. Der Betreiber, der die Komponente ausliefert, setzt Routing und Zugriffs-Policy in YAML und kann dort auch jedes Feld auf Anzeigeebene überschreiben.
 
 ## Gemeinsame Felder
 
-Diese Felder erscheinen im Block `meta` von `view.page`- und `view.component`-Einträgen.
+Diese Felder erscheinen im `meta`-Block sowohl für `view.page`- als auch für `view.component`-Einträge.
 
-| Feld | Typ | Standardwert | Beschreibung |
-|------|-----|--------------|--------------|
+| Feld | Typ | Standard | Beschreibung |
+|---|---|---|---|
 | `type` | string | — | `view.page` oder `view.component` (erforderlich) |
-| `name` | string | Eintragsname | In API-Antworten verwendeter Bezeichner |
+| `name` | string | Eintragsname | Bezeichner, der in API-Antworten verwendet wird |
 | `title` | string | — | Menschenlesbarer Anzeigename |
-| `icon` | string | — | Iconify-Referenz, zum Beispiel `tabler:layout-dashboard` |
-| `announced` | boolean | — | Steuert die Sichtbarkeit in Listing-APIs; die Semantik ist je Typ unterschiedlich |
-| `secure` | boolean | `false` | Zugriff erfordert Authentifizierung |
-| `url` | string | — | Basis-URL-Präfix für statische Auslieferung (CDN-Origin oder lokaler Mountpfad) |
-| `entry_point` | string | `index.html` / `index.js` | Name der Entry-Datei im statischen Verzeichnis |
+| `icon` | string | — | Iconify-Referenz, z. B. `tabler:layout-dashboard` |
+| `announced` | boolean | — | Steuert die Sichtbarkeit in Listing-APIs; die Semantik unterscheidet sich je nach Typ (siehe unten) |
+| `secure` | boolean | `false` | Erfordert Authentifizierung für den Zugriff |
+| `url` | string | — | Basis-URL-Präfix für die Auslieferung statischer Dateien (CDN-Origin oder lokaler Mount-Pfad) |
+| `entry_point` | string | `index.html` / `index.js` | Name der Einstiegsdatei innerhalb des statischen Verzeichnisses |
 
-### Semantik von `announced` nach Typ
+### Semantik von `announced` je Typ
 
-Das Flag `announced` hat je nach `meta.type` unterschiedliche Folgen:
+Das Flag `announced` hat je nach `meta.type` unterschiedliche Konsequenzen:
 
-- **`view.page`**: Steuert, ob die Seite in der Navigationsseitenleiste (`GET /api/public/pages/list`) erscheint. `announced: false` verbirgt sie in der Navigation, sie wird bei direktem Zugriff aber weiterhin geladen. Dies ist ein gültiges Muster für eingebettete oder ergänzende Seiten.
-- **`view.component`**: Steuert die Aufnahme in `GET /api/public/components/list`. Bei `announced: false` fehlt die Komponente vollständig in diesem Endpunkt; der Web Host injiziert daher nie ihr Script-Tag und `customElements.get(tagName)` bleibt undefined. Komponenten, die automatisch geladen werden sollen, benötigen `announced: true`; Details unter [view.component](./view-component.md).
+- **`view.page`**: steuert, ob die Seite in der Navigations-Sidebar erscheint (`GET /api/public/pages/list`). `announced: false` blendet die Seite aus der Navigation aus, aber die Seite lädt weiterhin, wenn sie direkt aufgerufen wird. Das ist ein legitimes Muster für eingebettete oder ergänzende Seiten.
 
-## Zusammensetzung der Auslieferungsfelder
+- **`view.component`**: steuert die Aufnahme in `GET /api/public/components/list`. Bei `announced: false` wird die Komponente vollständig von diesem Endpunkt ausgeschlossen, was bedeutet, dass der Web Host niemals ihr Script-Tag injiziert und `customElements.get(tagName)` undefined bleibt. Für Komponenten, die Autoload benötigen, ist `announced: true` erforderlich — Details siehe [view.component](./view-component.md).
 
-Bei Micro-Frontend-Anwendungen ergeben die drei Felder zusammen die HTML-URL, die der Web Host lädt:
+## Wie sich die Auslieferungsfelder zusammensetzen
+
+Für Micro-Frontend-Apps setzen sich die drei Felder zu der HTML-URL zusammen, die der Web Host lädt:
 
 ```
 <url>/<base_path>/<entry_point>
 ```
 
-Mit `url: /app`, `base_path: app/main` und `entry_point: app.html` ruft der Host beispielsweise `/app/app/main/app.html` ab.
+Zum Beispiel holt der Host mit `url: /app`, `base_path: app/main`, `entry_point: app.html` die Datei `/app/app/main/app.html`.
 
-Die Trennung von `base_path` und `entry_point` ist beabsichtigt. Der Web Host injiziert `<url>/<base_path>/` als HTML-Tag `<base>` in die geladene Seite; dieser bestimmt, wie der Browser alle relativen URLs innerhalb der Seite auflöst. Die Entry-Datei darf in einem Unterverzeichnis der Basis liegen. Entscheidend ist, dass die Basis auf den gemeinsamen Root zeigt, von dem aus alle Ressourcen relativ erreichbar sind.
+Die Trennung zwischen `base_path` und `entry_point` ist Absicht. Der Web Host injiziert `<url>/<base_path>/` als HTML-`<base>`-Tag in die geladene Seite, was steuert, wie der Browser alle relativen URLs innerhalb dieser Seite auflöst. Die Einstiegsdatei darf in einem Unterverzeichnis der Basis liegen — entscheidend ist, dass die Basis auf den gemeinsamen Root zeigt, von dem aus alle Ressourcen relativ erreichbar sind.
 
-Beispiel für ein Bundle-Layout:
+Wenn ein Bundle beispielsweise dieses Layout hat:
 
 ```
 static/
@@ -137,9 +134,9 @@ static/
     app.js
 ```
 
-Wenn `index.html` auf `../shared/vendor.js` verweist, muss `base_path` auf `static/` zeigen, also auf das Verzeichnis, das sowohl `app/` als auch `shared/` enthält, nicht auf `app/`. Mit `base_path: app` würde `../shared/vendor.js` außerhalb des ausgelieferten Verzeichnisses aufgelöst und 404 zurückgeben.
+und `index.html` auf `../shared/vendor.js` verweist, dann muss `base_path` auf `static/` zeigen (das Verzeichnis, das sowohl `app/` als auch `shared/` enthält), nicht auf `app/`. Mit `base_path: app` würde `../shared/vendor.js` außerhalb des ausgelieferten Verzeichnisses aufgelöst und einen 404 erzeugen.
 
-Im üblichen Fall liegen alle Assets neben der Entry-Datei. Dann befinden sich `base_path` und das Verzeichnis von `entry_point` auf derselben Ebene und die Unterscheidung ist unsichtbar. Relevant wird sie erst, wenn ein Bundle Ressourcen über benachbarte Verzeichnisse hinweg teilt.
+Im üblichen Fall, in dem alle Assets neben der Einstiegsdatei liegen, befinden sich `base_path` und das Verzeichnis mit `entry_point` auf derselben Ebene, sodass der Unterschied unsichtbar bleibt. Er zählt nur, wenn ein Bundle Ressourcen über Geschwisterverzeichnisse hinweg teilt.
 
 Für Web Components setzt der Host die ausgelieferte URL auf dieselbe Weise zusammen:
 
@@ -147,4 +144,4 @@ Für Web Components setzt der Host die ausgelieferte URL auf dieselbe Weise zusa
 <url>/<base_path>/<entry_point>
 ```
 
-Die aktuellen Komponenteneinträge des Anwendungstemplates lassen `base_path` weg. Es wird jedoch unterstützt und ebenso als `<url>/<base_path>/<entry_point>` zusammengesetzt; in diesen Einträgen reduziert sich die URL daher auf `<url>/<entry_point>`. Anders als eine Seite wird eine Komponente als `<script type="module">` injiziert und erhält kein eigenes injiziertes HTML-Tag `<base>`.
+Die aktuellen Komponenteneinträge des App-Templates lassen `base_path` weg, aber es wird unterstützt und setzt sich genauso zusammen (`<url>/<base_path>/<entry_point>`) — in diesen Einträgen fällt die URL also auf `<url>/<entry_point>` zusammen. Der Unterschied zu Seiten ist, dass eine Komponente als `<script type="module">` injiziert wird, statt ein eigenes injiziertes HTML-`<base>`-Tag zu erhalten.

@@ -1,6 +1,6 @@
 ---
 title: "Channels and Coroutines"
-description: "Create buffered and unbuffered channels, exchange values, select across operations, and coordinate concurrent work."
+description: "Go-style channels for inter-coroutine communication. Create buffered or unbuffered channels, send and receive values, and coordinate between…"
 ---
 
 # Channels and Coroutines
@@ -129,13 +129,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
-end
-if not r.ok then
-    return nil, errors.new("Response channel closed")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -252,7 +246,8 @@ After the loop, `processed` contains `2`, `4`, `6`, and `8`; result order depend
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| Send on closed channel | runtime error | n/a |
+| Send on closed channel | runtime error | no |
+| `cases` argument to select is not a table | runtime error | no |
 
 ## See Also
 

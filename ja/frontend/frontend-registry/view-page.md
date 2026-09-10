@@ -1,36 +1,36 @@
 ---
-title: "Micro Frontend App（view.page）"
-description: "view.page micro frontend application の宣言、routing、serving、設定に関するリファレンス。"
+title: "マイクロフロントエンドアプリ (view.page)"
+description: "view.page エントリは、Web Hostがiframe内に読み込む完全なシングルページアプリケーションを記述します。各ページエントリはホスト内のURLパスを…"
 ---
 
-# Micro Frontend App（view.page）
+# マイクロフロントエンドアプリ (view.page)
 
-`view.page` エントリは、Web Host が選択済みの iframe または Web Fragment engine を通して読み込む、完全な single-page application を表します。各エントリは host router 内の path を受け持つことができ、engine の proxy adapter を通して CSS、設定、host API を受け取ります。
+`view.page` エントリは、Web Hostがiframe内に読み込む完全なシングルページアプリケーションを記述します。各ページエントリはホストのルーターでURLパスを確保し、独自の分離されたブラウジングコンテキストを得て、プロキシレイヤーを通じてホストから注入されるCSSと設定を受け取ります。
 
-## フロントエンドフィールド（package.json の wippy ブロック）
+## フロントエンドのフィールド（package.json の wippy ブロック）
 
-これらのフィールドは、FE 開発者が `package.json` の `wippy` ブロックに記述します。Vite プラグインがビルド時に `wippy-meta.json` へ埋め込み、`wippy/views` はそこからデフォルト値を読み取ります。
+これらのフィールドは、FE開発者が `package.json` の `wippy` ブロックに記述します。viteプラグインがビルド時にそれらを `wippy-meta.json` に焼き込み、`wippy/views` がそこからデフォルトとして読み取ります。
 
-> **このセクションの全フィールドは、operator が `_index.yaml` で上書きできます。YAML が常に優先されます。**
+> **このセクションのすべてのフィールドは、運用者が `_index.yaml` でオーバーライドできます。YAMLが常に優先されます。**
 
-### 表示と Navigation
+### 表示とナビゲーション
 
 | フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|
-| `title` | string | — | navigation sidebar と browser tab に表示するラベル |
-| `icon` | string | — | Iconify icon reference。例: `tabler:layout-dashboard` |
+| `title` | string | — | ナビゲーションサイドバーとブラウザのタブに表示されるラベル |
+| `icon` | string | — | Iconifyのアイコン参照。例: `tabler:layout-dashboard` |
 | `type` | string | — | `"page"` でなければならない |
-| `path` | string | — | bundle output directory 内にあるビルド済み HTML entry file への path |
+| `path` | string | — | バンドル出力ディレクトリ内の、ビルド済みHTMLエントリファイルへのパス |
 
-### 描画エンジン :id=render-engine
+### レンダリングエンジン
 
-`renderEngine` は、このページ（`view.page` のみ）の[page render engine](../web-host/render-engines.md)を選択します。proxy API は engine 間で portable ですが、ブラウザの layout と DOM の挙動は異なる場合があります。fragment engine を選ぶ前に、その制約を確認してください。
+`renderEngine` は、このページの[ページレンダリングエンジン](../web-host/render-engines.md)を選択します（`view.page` のみ）。エンジンはアプリコードから透過的で、同じページはどちらでも同一にレンダリングされます。したがって、ページをフラグメントエンジンから離脱させる、または参加させる場合にのみ設定してください。
 
 | 値 | 効果 |
 |-------|--------|
-| `"auto"` _（デフォルト、または省略）_ | deployment の global switch（facade の [`render_engine`](../../framework/facade.md) parameter が設定する `hostConfig.renderEngine`）に従う |
-| `"iframe"` | switch にかかわらず常に srcdoc iframe で render する。pointer hit-testing（`elementFromPoint`）、viewport-unit（`vh`/`vw`、`matchMedia`）layout、`position: fixed` など、reframed と互換性のない技術を使うページ向け |
-| `"fragment"` | [Web Fragment](../web-host/render-engines.md) エンジンを優先する。全体が `fragment` の配置では常に使い、全体が `iframe` の配置では実行時の機能検査が [`/@fragment` ゲートウェイ](../../framework/views.md) とプロキシの存在を確認した場合のみ使う（それ以外は安全に iframe へフォールバック） |
+| `"auto"` _(デフォルト、または省略時)_ | デプロイのグローバルスイッチ（ファサードの [`render_engine`](../../framework/facade.md#render-engine) パラメータが設定する `hostConfig.renderEngine`）に従う。 |
+| `"iframe"` | スイッチに関わらず常にsrcdoc iframeとしてレンダリングする。reframedと非互換の技術を使うページに使用します。ポインタのヒットテスト（`elementFromPoint`）、ビューポート単位（`vh`/`vw`、`matchMedia`）のレイアウト、`position: fixed` など。 |
+| `"fragment"` | [Web Fragment](../web-host/render-engines.md)エンジンを優先する。グローバルが `fragment` のデプロイでは常に使用。グローバルが `iframe` のデプロイでは、ランタイムのケーパビリティプローブが [`/@fragment` ゲートウェイ](../../framework/views.md#web-fragments-gateway)とプロキシの存在を確認した場合のみ使用（それ以外はiframeにフェイルセーフ）。 |
 
 ```json
 {
@@ -41,11 +41,17 @@ description: "view.page micro frontend application の宣言、routing、serving
 }
 ```
 
-engine model 全体と fragment の制約は [Render Engines](../web-host/render-engines.md)を参照してください。
+エンジンモデル全体とフラグメントの制限については、[レンダリングエンジン](../web-host/render-engines.md)を参照してください。
 
-### Proxy 設定
+### プロキシの設定
 
-proxy injection には 2 つの surface があります。FE 開発者は frontend `package.json` の `wippy` ブロックに lower-camel-case key（`themeConfig`、`primevue`、`customCss`）でデフォルトを記述し、Vite プラグインが `wippy-meta.json` に埋め込みます。operator は registry YAML の `meta:` 配下にある `proxy:` ブロックで上書きします。Registry フィールドは汎用的な casing rule ではなく、それぞれの documented schema に従います。nested proxy key は定義済みの lower-camel-case 名を維持し、Host は key を変換せず、その YAML を bundled frontend defaults に deep-merge します。
+プロキシの注入には2つの面があります。FE開発者は、フロントエンドの `package.json` の
+`wippy` ブロックに、小文字始まりのcamelCaseのキー（`themeConfig`、`primevue`、`customCss`）で
+デフォルトを記述します。Viteプラグインがそれらを `wippy-meta.json` に焼き込みます。運用者は、
+レジストリYAMLの `meta:` の下に置いた `proxy:` ブロックでそれらをオーバーライドします。
+レジストリのフィールドは、普遍的なケーシング規則ではなく、それぞれのドキュメント化された
+スキーマに従います。ネストされたプロキシのキーは定義された小文字始まりのcamelCaseの名前を保ち、
+ホストはキーを変換せずにそのYAMLを焼き込み済みのフロントエンドデフォルトの上に深くマージします。
 
 ```json
 {
@@ -73,39 +79,37 @@ proxy injection には 2 つの surface があります。FE 開発者は fronte
 }
 ```
 
-iframe engine では、`proxy.injections` が srcdoc proxy によって追加される asset を設定します。省略すると、この adapter は permissive default を使い、多くの injection を有効にします。Web Host 1.0.56 は `proxy.enabled` を metadata として保持しますが、runtime toggle としては使いません。
+`proxy.enabled: true` は、Web Hostがページを自身のプロキシiframeハーネスで包むことを意味します。このハーネスは、ページのバンドルが評価される前に `window.__WIPPY_APP_CONFIG__` と関連するグローバルを書き込みます。
 
-Web Host 1.0.56 は、これらのフラグを Fragment engine へ変換しません。Fragment gateway は常に `loading.js`、`proxy-fragment.js`、および Host の 4 stylesheet（theme config、iframe scrollbar style、PrimeVue/Tailwind、Markdown）を供給し、proxy も常に error capture を導入します。iframe に fallback し得るページでは、iframe injection の意図を引き続き明示してください。
+`proxy.injections` が省略された場合、iframeプロキシは寛容なランタイムデフォルトを使い、ほとんどの注入を有効にします。以下の一覧は、**典型的なViteマイクロフロントエンドアプリで推奨される明示的な値**であり、ランタイムのデフォルトではありません。これにより、パッケージのレビュアーがページの意図を把握できます。
 
-次のリストは、一般的な Vite micro frontend app に対する**推奨の明示的 iframe 値**です。runtime default ではなく、package reviewer が page の fallback behavior を確認できるように示しています。
+#### 推奨される明示的な注入値
 
-#### 推奨する明示的な injection 値
+これらは、マイクロフロントエンドアプリが通常宣言するフラグと、典型的なVite SPAで設定すべき値です。ランタイムのデフォルトではありません。
 
-これらは通常、micro frontend app が iframe delivery path に宣言するフラグです。runtime default ではなく、Web Host 1.0.56 の Fragment gateway は使用しません。
+- `css.themeConfig` (`true`) — アクティブなテーマのCSSカスタムプロパティ
+- `css.iframe` (`true`) — 必須のデフォルトのテーマ付きスクロールバースタイル。`iframe` は歴史的な名前であり、現在のシートはレイアウトのリセットを提供しません
+- `css.primevue` (`true`) — PrimeVueコンポーネントのベーススタイル
+- `css.markdown` (`false`) — markdownレンダリングのスタイル
+- `css.customCss` (`true`) — 子に投影されるカスタムCSS
+- `css.customVariables` (`true`) — 子に投影されるCSS変数のオーバーライド
+- `tailwindConfig` (`false`) — ホストのTailwind設定オブジェクト（CDN Tailwindのみ）
+- `resizeObserver` (フルSPAでは `false`) — 子のbodyサイズをホストに更新する
+- `preventLinkClicks` (ページでは `false`) — `<a>` のクリックを `classifyLink` を通してルーティングする
+- `iconifyIcons` (`false`) — ホストのIconifyコレクションを事前読み込みする
+- `errorCapture` (`true`) — iframe内の未捕捉エラーをホストへ転送する
 
-- `css.themeConfig`（`true`）— active theme の CSS custom property
-- `css.iframe`（`true`）— デフォルトの themed scrollbar styling に必要。`iframe` は歴史的な名前であり、現在の sheet は layout reset を提供しない
-- `css.primevue`（`true`）— PrimeVue component base style
-- `css.markdown`（`false`）— markdown rendering style
-- `css.customCss`（`true`）— child-projected custom CSS
-- `css.customVariables`（`true`）— child-projected CSS variable override
-- `tailwindConfig`（`false`）— host Tailwind config object（CDN Tailwind のみ）
-- `resizeObserver`（full SPA では `false`）— child body-size update を host へ送る
-- `preventLinkClicks`（page では `false`）— iframe engine の raw-`<a>` classifier hook を導入する。engine 間で portable な link classification には `@wippy-fe/router` を使う
-- `iconifyIcons`（`false`）— host Iconify collection を preload する
-- `errorCapture`（`true`）— page で捕捉されなかった error を host へ転送する
+ほとんどのフルSPAページは、自身でレイアウトとルーティングを管理するため、`resizeObserver: false` と `preventLinkClicks: false` を設定します。テンプレートの `main` アプリは、開発中に未捕捉エラーを表面化するため `errorCapture: true` を設定しています。
 
-ほとんどの full SPA page は自身で layout と routing を管理するため、`resizeObserver: false` と `preventLinkClicks: false` を設定します。template の `main` app は、開発中に uncaught error を表面化するため `errorCapture: true` を設定しています。
+Webフォント専用の注入フラグはありません。Google Fontsは `theming.global.customCSS`（テーマのカスタムCSS内の `@import`）を通じて配信され、既存の `css.customCss` フラグによって注入されます。
 
-専用の web-font injection flag はありません。Google Fonts は theme の custom CSS に含まれる `@import` として `theming.global.customCSS` から配信され、既存の `css.customCss` flag が注入します。
+フラグの完全なリファレンスとランタイムのデフォルト: [CSS注入](../web-host/css-injection.md)。
 
-全フラグと runtime default は [CSS Injection](../web-host/css-injection.md)を参照してください。
+## 運用者の設定（_index.yaml）
 
-## Operator 設定（_index.yaml）
+これらのフィールドは、運用者が `_index.yaml` のレジストリエントリの `meta` ブロックに設定します。その多く（`announced`、`secure`、`url`、`base_path`、`mountRoute`、`auto_register`、`inline`）は、デプロイ時にのみ意味を持ち `package.json` に記述面を持たない、デプロイポリシー（ルーティング、アクセス制御、配信）を表します。唯一の例外は `entry_point` です。これは**FE側で記述され**（viteプラグインは `package.json` の `wippy.path` を必須とし、それを `wippy-meta.json` に焼き込みます）、`meta.entry_point` フィールドはその焼き込み済みデフォルトに対する**任意のデプロイごとのオーバーライド**にすぎません。
 
-これらのフィールドは、operator が `_index.yaml` の registry entry にある `meta` ブロックで設定します。大部分（`announced`、`secure`、`url`、`base_path`、`mountRoute`、`auto_register`、`inline`）は routing、access control、serving などの deployment policy を表し、デプロイ時にのみ意味を持つため `package.json` の authoring surface はありません。唯一の例外は `entry_point` です。これは **FE-authored** であり（Vite プラグインが `package.json` の `wippy.path` を必須とし、`wippy-meta.json` に埋め込む）、`meta.entry_point` はその bundled default に対するデプロイ単位の**任意オーバーライド**です。
-
-> **必須の YAML 形状:** page entry は `kind: registry.entry` と `meta.type: view.page` を使います。`kind: view.page` と書かないでください。
+> **必須のYAMLの形:** ページエントリは `kind: registry.entry` で `meta.type: view.page` です。`kind: view.page` と書いてはいけません。
 
 ```yaml
 - name: main
@@ -115,55 +119,64 @@ Web Host 1.0.56 は、これらのフラグを Fragment engine へ変換しま�
     name: main
 ```
 
-### URL と File Serving
+> **デプロイポリシーのフィールド（`announced`、`secure`、`url`、`base_path`、`mountRoute`、`auto_register`、`inline`）は `package.json` では設定できません。これらは環境ごとに運用者が設定します。`entry_point` は異なり、`package.json` の `wippy.path` として記述され、YAMLの値はそのデフォルトをオーバーライドするだけです。**
+
+### URLとファイル配信
 
 | フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|
-| `url` | string | — | bundle の mount 先となる Base URL prefix（CDN origin または local `http.static` path）。YAML のみで、`package.json` surface はない |
-| `base_path` | string | — | static mount 内の subdirectory。YAML のみで、`package.json` surface はない |
-| `entry_point` | string | `index.html` | 読み込む HTML file。`url` と `base_path` と結合される。`package.json` では `wippy.path` として FE-authored され（`wippy-meta.json` に埋め込み）、YAML 値はデプロイ単位の任意オーバーライド |
+| `url` | string | — | バンドルがマウントされるベースURLプレフィックス（CDNオリジンまたはローカルの `http.static` パス）。YAML専用 — `package.json` に記述面はない |
+| `base_path` | string | — | 静的マウント内のサブディレクトリ。YAML専用 — `package.json` に記述面はない |
+| `entry_point` | string | `index.html` | 読み込むHTMLファイル。`url` と `base_path` と組み合わされる。`package.json` の `wippy.path` としてFE側で記述される（`wippy-meta.json` に焼き込まれる）。YAMLの値は任意のデプロイごとのオーバーライド |
 
-解決後の entry URL は `<url>/<base_path>/<entry_point>` です。operator は同じ bundle を複数のエントリでデプロイするために、異なる `_index.yaml` entry から同じ `base_path` を参照し、それぞれに別の `entry_point` または `config_overrides` を指定できます。
+解決されるエントリURLは `<url>/<base_path>/<entry_point>` です。運用者は、複数の `_index.yaml` エントリを同じ `base_path` に向け、異なる `entry_point` や `config_overrides` の値を与えることで、同じバンドルを複数のエントリの下にデプロイできます。
 
-`url` や `base_path` と異なり、`entry_point` は deploy-only field ではありません。FE 開発者が `package.json` の `wippy` block に `wippy.path` として記述し、Vite プラグインが `wippy-meta.json` へ埋め込みます。プラグインはこれを**必須**とし、省略すると `wippy.path is required for a page package` を throw します。`_index.yaml` の `meta.entry_point` はデプロイ単位でその bundled default を上書きするだけです。解決順は YAML `entry_point` → bundled `wippy.path` → `index.html` です。
+`url` や `base_path` とは異なり、`entry_point` はデプロイ専用のフィールドではありません。これはFE開発者が `package.json` の `wippy` ブロックに `wippy.path` として記述し、viteプラグインが `wippy-meta.json` に焼き込みます。プラグインはこれを**必須**とし、省略された場合は `wippy.path is required for a page package` をスローします。`_index.yaml` の `meta.entry_point` フィールドは、その焼き込み済みデフォルトをデプロイごとにオーバーライドするだけです。解決順序は YAMLの `entry_point` → バンドルされた `wippy.path` → `index.html` です。
 
-### Visibility と Access
-
-| フィールド | 型 | デフォルト | 説明 |
-|---|---|---|---|
-| `announced` | boolean | — | `true` の場合、page は `GET /api/public/pages/list` と nav sidebar に表示される |
-| `secure` | boolean | `false` | `true` の場合は認証必須。unauthenticated request は 401 を受け取る |
-| `inline` | boolean | `false` | `true` の場合は全 listing（sidebar、API）から page を隠す。embedded artifact viewer や補助 route に使う |
-
-`announced: false` は navigation から page を隠しますが、load を防ぎません。page は引き続き embed でき、route から到達できます。`inline: true` はさらに厳しく、public-facing listing のすべてから page を除外します。
-
-### マウントルート :id=mount-route
+### 可視性とアクセス
 
 | フィールド | 型 | デフォルト | 説明 |
 |---|---|---|---|
-| `mountRoute` | string | — | host router 内の URL path を受け持ち、browser が一致する path へ移動したとき Host がこの page を render する |
+| `announced` | boolean | — | `true` → ページが `GET /api/public/pages/list` とナビゲーションサイドバーに現れる |
+| `secure` | boolean | `false` | `true` → 認証が必要。未認証のリクエストは401になる |
+| `inline` | boolean | `false` | `true` → ページがすべての一覧（サイドバー、API）から隠される。埋め込みのアーティファクトビューアや補助的なルートに使用 |
 
-> **casing の例外:** 現在の registry schema は `meta.mountRoute` を読み、registry 内部の `mount_route` field に保存し、API output では再び `mountRoute` を使います。ここに示す authored lower-camel-case spelling を使ってください。
+`announced: false` はページをナビゲーションから隠しますが、読み込みを妨げません。iframeや直接のURLは依然として機能します。`inline: true` はより厳格で、公開向けのすべての一覧からページを抑制します。
 
-`mountRoute` が受け付けるのは v1 catch-all 形式だけです。root は `/:part(.*)*`、prefix 付きは `/<literal-prefix>/:part(.*)*` です。prefix は小文字英数字とハイフンからなる 1 つ以上の segment で、末尾に必ず `:part(.*)*` wildcard が必要です。任意の Vue Router pattern、つまり named param、custom regex、異なる param 名（例: `/home/:id`、`/users/:userId(\d+)`）は拒否されます。backend は `syntax` mount-route conflict を記録し、`GET /api/public/pages/routes` は HTTP 500 を返し、Host startup は Host error handler が中継した error で停止します。`:part(.*)*` wildcard により、host が top-level path を所有したまま child application が自身の sub-route を管理できます。
+### マウントルート
+
+| フィールド | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `mountRoute` | string | — | ホストのルーターでURLパスを確保する。ブラウザが一致するパスに遷移すると、ホストはこのページをレンダリングする |
+
+> **一時的な互換性のための綴り:** `meta.mountRoute` は現在のバックエンドの
+> ケーシングのバグです。意図されているバックエンドのフィールドは `meta.mount_route` で、
+> 将来のバックエンドリリースで変更される見込みです。そのバックエンドの変更が出荷されるまでは
+> `meta.mountRoute` を使用してください。アップグレード時には対象のWippyバージョンを再確認してください。
+
+`mountRoute` はv1のcatch-all形式のみを受け付けます。`/:part(.*)*`（ルート）または `/<literal-prefix>/:part(.*)*` で、プレフィックスは小文字英数字とハイフンからなる1つ以上のセグメントであり、必須のワイルドカード `:part(.*)*` で終わります。任意のVue Routerのパターン（名前付きパラメータ、カスタム正規表現、異なるパラメータ名。例: `/home/:id`、`/users/:userId(\d+)`）は拒否されます。ホストは `syntax` のマウントルート衝突を発生させ、`GET /api/public/pages/routes` はHTTP 500を返し、致命的な全画面エラーとして表示されます。`:part(.*)*` ワイルドカードにより、ホストがトップレベルのパスの所有権を保ったまま、子アプリケーションが自身のサブルートを管理できます。
 
 ```yaml
 mountRoute: /home/:part(.*)*
 ```
 
-Web Host は起動時に `GET /api/public/pages/routes` を取得し、`mountRoute` のある各 entry に対して `router.addRoute()` を呼び出します。同期機構全体は [Dynamic Routing](./dynamic-routing.md)を参照してください。
+Web Hostは起動時に `GET /api/public/pages/routes` を取得し、`mountRoute` を持つ各エントリについて `router.addRoute()` を呼び出します。同期メカニズム全体については[動的ルーティング](./dynamic-routing.md)を参照してください。
 
-### Page 単位の Configuration Override
+### ページごとの設定オーバーライド
 
 | フィールド | 型 | 説明 |
 |---|---|---|
-| `config_overrides` | object | Web Host が page context に注入する AppConfig 値へ deep-merge する |
+| `config_overrides` | object | Web Hostがiframeに注入するAppConfigの値の上に深くマージされる |
 
-`config_overrides` は registry wrapper 名です。nested object では `customization.customCSS` や `customization.cssVariables` など、frontend schema の lower-camel-case key をすでに使用します。Web Host は、`wippy-meta.json` にバンドルされた `wippy.configOverrides` の上にそれらの正確な key を deep-merge し、nested key ごとに YAML 値を優先します。
+`config_overrides` はレジストリ側のラッパー名です。そのネストされたオブジェクトは
+既にフロントエンドスキーマの小文字始まりcamelCaseのキー、例えば
+`customization.customCSS` や `customization.cssVariables` を使用します。Web Hostは
+`wippy-meta.json` からバンドルされた `wippy.configOverrides` の上に、それらの正確なキーを
+深くマージします。ネストされたキーごとにYAMLの値が優先されます。
 
-`config_overrides` は page に注入する AppConfig を変更します。proxy injection flag は変更しません。特に `config_overrides` が `proxy.injections`、`wippy.proxy.injections`、CSS/script injection の runtime default に影響することはありません。デプロイの proxy injection flag を上書きするには、[Operator proxy override](#operator-proxy-override-_indexyaml)で説明する `meta.proxy` を使います。
+`config_overrides` はページに注入されるAppConfigを変更します。プロキシの注入フラグは変更**しません**。特に、`config_overrides` が `proxy.injections`、`wippy.proxy.injections`、CSS/スクリプト注入のランタイムデフォルトに影響することはありません。デプロイに対してプロキシの注入フラグをオーバーライドするには、[運用者によるプロキシのオーバーライド](#operator-proxy-override-_indexyaml)で説明されている `meta.proxy` を使用してください。
 
-一般的なユースケースは、同じ bundle を custom colour palette で動かすことです。
+典型的な用途は、同じバンドルをカスタムのカラーパレットで実行することです:
 
 ```yaml
 - name: iframe-demo-themed
@@ -187,23 +200,37 @@ Web Host は起動時に `GET /api/public/pages/routes` を取得し、`mountRou
           "--p-primary-color": "#7c9ed9"
           "--p-danger": "#e8a0a0"
         customCSS: |
-          /* Palette values here are an intentional page-theme definition, not module CSS. */
+          /* ここでのパレット値は意図的なページテーマの定義であり、モジュールCSSではありません。 */
           :root { font-family: var(--wippy-brand-font, sans-serif); }
 ```
 
-`announced: false` は `view.page` entry で有効です。page は `mountRoute` から到達できますが sidebar には表示されません。
+`announced: false` は `view.page` エントリで有効であることに注意してください。ページは `mountRoute` 経由で到達可能ですが、サイドバーには現れません。
 
-### Operator proxy override（_index.yaml） :id=operator-proxy-override-_indexyaml
+### 運用者によるプロキシのオーバーライド（_index.yaml）
 
-`wippy-meta.json` に埋め込まれた proxy injection default（`package.json` の `wippy` block が供給）は、registry entry の **`meta:` 配下**に `proxy:` block を置くことで deployment 単位に上書きできます。Facade requirement 名は documented snake_case 名を使います。wrapper は `config_overrides` ですが、registry schema は route field を `mountRoute` と定義し、registry 内部の `mount_route` field に保存し、API output では `mountRoute` を返します。nested proxy/config object はそのまま渡され、定義済みの lower-camel-case key を保持します。Host は `meta.proxy` を bundled `wippy.proxy` の上に deep-merge します。
+`wippy-meta.json` に（`package.json` の `wippy` ブロックから）焼き込まれたプロキシ注入の
+デフォルトは、レジストリエントリの **`meta:` の下に**置いた `proxy:` ブロックで、
+デプロイごとにオーバーライドできます。ファサードのrequirement名は、ドキュメント化された
+スネークケースの名前を使用します。レジストリのフィールドには現在、一時的なバックエンドの
+ケーシングのバグが1つ含まれています。ラッパーは `config_overrides` ですが、ルートの
+フィールドは `mount_route` に修正されるまで `mountRoute` として読まれます。
+ネストされたproxy/configのオブジェクトはそのまま渡され、定義された小文字始まりcamelCaseの
+キーを保持します。ホストは `meta.proxy` をバンドルされた `wippy.proxy` の上に深くマージします。
 
-`data.proxy` ではなく `meta.proxy` を使ってください。`config_overrides` のような top-level backend field は snake_case のまま、`themeConfig` や `customCss` のような nested proxy/config key は lower-camel-case のままにし、`injections` wrapper を維持します。`meta.config` や `meta.configOverrides` を作らないでください。page 単位の正確な override wrapper は `meta.config_overrides` です。
+短い答え: `data.proxy` ではなく `meta.proxy` を使用すること。`config_overrides` のような
+トップレベルのバックエンドフィールドはスネークケースのままにし、`themeConfig` や
+`customCss` のようなネストされたproxy/configのキーは保持すること。`injections` の
+ラッパーは残すこと。`meta.config` や `meta.configOverrides` を発明してはいけません。
+ページごとのオーバーライドの正確なラッパーは `meta.config_overrides` です。
 
-frontend に現れる次の 2 種類の spelling を混同しないでください。
+2つのフロントエンドの綴りを明確に区別してください:
 
-- Backend `meta.proxy.injections.css.customCss` は `wippy.proxy.injections.css.customCss` のままです。
-- Backend `meta.config_overrides.customization.customCSS` は frontend `wippy.configOverrides.customization.customCSS` と runtime `config.theming.global.customCSS` に投影されます。
-- どちらの frontend shape にも `appConfig` wrapper を作らないでください。
+- バックエンドの `meta.proxy.injections.css.customCss` は
+  `wippy.proxy.injections.css.customCss` のままです。
+- バックエンドの `meta.config_overrides.customization.customCSS` は、フロントエンドの
+  `wippy.configOverrides.customization.customCSS` およびランタイムの
+  `config.theming.global.customCSS` に投影されます。
+- どちらのフロントエンドの形についても、`appConfig` というラッパーを発明してはいけません。
 
 ```yaml
 - name: dashboard
@@ -227,4 +254,4 @@ frontend に現れる次の 2 種類の spelling を混同しないでくださ�
         iconifyIcons: false
 ```
 
-設定した key だけが上書きされ、それ以外は `wippy-meta.json` に埋め込まれた値を維持します。全フラグと runtime default は [CSS Injection](../web-host/css-injection.md)を参照してください。
+オーバーライドされるのは設定したキーだけで、それ以外は `wippy-meta.json` に焼き込まれた値を保ちます。フラグの完全なリファレンスとランタイムのデフォルト: [CSS注入](../web-host/css-injection.md)。

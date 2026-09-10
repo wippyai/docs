@@ -1,20 +1,18 @@
 ---
-title: "設定と casing"
-description: "backend facade、registry、frontend configuration の境界における casing rule。"
+title: "設定とケーシング"
+description: "バックエンドファサード、レジストリ、フロントエンド設定の各境界におけるケーシング規則。"
 ---
 
-# 設定と casing
+# 設定とケーシング
 
-**分類: schema boundary reference。** YAML block は shape の抜粋であり、完全な registry entry ではありません。
+ケーシングはスキーマ境界に従います。設定オブジェクトを再帰的に変換してはいけません。
 
-casing は schema boundary に従います。configuration object を再帰的に変換しないでください。
-
-| 境界 | ルール | 例 |
+| 境界 | 規則 | 例 |
 |---|---|---|
-| Backend facade requirement 名 | top-level `lower_case_with_underscore` | `custom_css`、`css_variables` |
-| Registry field | 各 field の documented registry schema に従う | `base_path`、`entry_point`、`tag_name` |
-| backend YAML が運ぶ nested frontend configuration | lower camelCase を維持 | `customCSS`、`themeConfig`、`iconifyIcons` |
-| Frontend AppConfig と package metadata | lower camelCase | `configOverrides`、`hostCssKeys` |
+| バックエンドファサードの requirement 名 | トップレベルは `lower_case_with_underscore` | `custom_css`, `css_variables` |
+| レジストリフィールド | 各フィールドはドキュメント化されたレジストリスキーマに従う | `base_path`, `entry_point`, `tag_name` |
+| バックエンドYAMLが運ぶネストされたフロントエンド設定 | 小文字始まりのcamelCaseを保持 | `customCSS`, `themeConfig`, `iconifyIcons` |
+| フロントエンドの AppConfig とパッケージメタデータ | 小文字始まりのcamelCase | `configOverrides`, `hostCssKeys` |
 
 ```yaml
 config_overrides:
@@ -31,8 +29,10 @@ proxy:
       iframe: true
 ```
 
-この例で snake case なのは backend wrapper key だけです。nested frontend object はそのまま渡され、定義済み casing を維持します。
+この例でスネークケースなのはバックエンドのラッパーキーだけです。ネストされたフロントエンドオブジェクトはそのまま渡され、定義されたケーシングを保持します。
 
-## `mountRoute` casing の例外
+## 一時的な mountRoute の例外
 
-現在の view registry schema は `meta.mountRoute` を読み、registry 内部の `mount_route` field に保存し、API output では再び `mountRoute` を使います。この authored lower-camel-case field は文書化された 1 つの例外として扱い、registry/backend field 全般が camelCase だという根拠にはしないでください。
+`meta.mountRoute` は現在のバックエンド互換性上のバグです。意図されているバックエンドのフィールドは `meta.mount_route` ですが、バックエンドの修正が出荷されるまで既存のデプロイでは `mountRoute` が必要です。これは1つの明示的な例外として扱い、レジストリやバックエンドのフィールドが一般にcamelCaseである証拠とは見なさないでください。
+
+コンプライアンス上、この例外はバージョン管理し、バックエンドスキーマが変更された時点で削除できるようにする必要があります。

@@ -1,179 +1,178 @@
 ---
 title: "デザインレイヤー"
-description: "frontend の style と component を theme、shared design package、個別 module のどこに配置するか。"
+description: "テーマ、共有デザインレイヤー、モジュールローカル — 複数のモジュールが同じものを必要とし、テーマにその居場所がないときに何をどこへ置くか。良い例と悪い例つき。"
 ---
 
 # デザインレイヤー
 
-このページは design ownership の判断ガイドです。CSS と component の snippet は、既存の Wippy frontend package と build を前提にした部分的な pattern です。
+Wippy のフロントエンドは、独立して公開された多数のモジュールが1つのアプリケーションへレンダリングされたものです。置き場所として自明なのは2つ、すべてのサーフェスが利用する**テーマ**と、自分自身を所有する**モジュール**です。その2つの間にある領域は自明ではなく、そこに重複が蓄積します — 複数のモジュールが実際に共有しているのに、テーマに対応するコンポーネントがない概念です。
 
-Wippy frontend では、独立して公開された多数の module を 1 つの application に含められます。**theme** はすべての surface に届き、各 **module** は自身の local presentation を所有します。**shared design layer** は、theme が提供しない概念を複数の module が共有する、より限定的な場合を扱います。
+このページでは3つのレイヤーに名前を与え、それらを選び分けるためのテストを示し、それぞれの選択がうまくいった場合と失敗した場合の姿を示します。
 
-## 各レイヤー
+## レイヤー
 
-| レイヤー | 到達範囲 | 所有するもの |
+| レイヤー | 届く範囲 | 所有するもの |
 |---|---|---|
-| **Theme** | 所有していない module を含む、*すべて*の surface | PrimeVue component、shared semantic token、documented class |
-| **Shared design layer** | opt in した module のみ | theme component に裏付けられていない、module 間で共有する vocabulary |
-| **Module** | 自身 | 1 つの surface に固有のもの |
+| **テーマ** | 自分が所有していないモジュールを含む*すべての*サーフェス | PrimeVue コンポーネント、共有のセマンティックトークン、ドキュメント化されたクラス |
+| **共有デザインレイヤー** | オプトインしたモジュールのみ | それらのモジュールが共有する語彙のうち、テーマ化されたコンポーネントを持たないもの |
+| **モジュール** | 自分自身 | 1つのサーフェスに固有と言えるもの |
 
-### Theme は universal であり、それが制約になる
+### テーマは普遍的であり、それが制約になる
 
-theme は**自分が所有していない** markup にも style を適用します。あなたの application を一度も見たことのない作者が作った third-party plugin を含め、どの module も同じ host に render され、同じ theme で描画されます。これにより theme は universal layer になりますが、制約も双方向に働きます。
+テーマは**自分が所有していない**マークアップにスタイルを当てます。どのモジュールも — あなたのアプリを見たことのない誰かが書いたサードパーティ製プラグインを含めて — 同じホストへレンダリングされ、同じテーマによって描画されます。それがテーマを普遍的なレイヤーたらしめている理由であり、両方向に効いてきます。
 
-**application 固有のものを theme に置いてはいけません。** 求めていないすべての module にも強制されるためです。
+**アプリ固有のものをテーマに入れてはなりません。** それを求めていないすべてのモジュールに押し付けることになるからです。
 
-**module は application 固有の何かが theme にあることへ依存してはいけません。** 契約は *PrimeVue component + shared Wippy semantic token + documented class* であり、application が追加したものは含みません。PrimeVue 自身の preset も契約ではありません。Wippy は PrimeVue を `theme: 'none'` で動かすため、依存すべきなのは Wippy semantic token です。
+**モジュールは、アプリ固有のものがテーマにあることに依存してはなりません。** 契約は *PrimeVue コンポーネント + Wippy の共有セマンティックトークン + ドキュメント化されたクラス* であり、アプリケーションが上乗せしたものは含みません。PrimeVue 自身のプリセットも契約ではないことに注意してください。Wippy は PrimeVue を `theme: 'none'` で動かすため、依拠するのは Wippy のセマンティックトークンです。
 
 ```css
-/* GOOD — shared Wippy semantic tokens, present for every module */
+/* GOOD — Wippy の共有セマンティックトークン。すべてのモジュールに存在する */
 .my-panel {
   color: var(--p-text-color);
   background: var(--p-content-background);
   border: 1px solid var(--p-content-border-color);
 }
 
-/* BAD — an application-specific token. Your module now only works inside
-   one app, and silently loses the declaration anywhere else: an undefined
-   custom property makes the declaration invalid at computed-value time, so
-   it drops and the element quietly inherits instead. */
+/* BAD — アプリ固有のトークン。モジュールが1つのアプリの中でしか動かなくなり、
+   他の場所では宣言が静かに失われる。未定義のカスタムプロパティは計算値の時点で
+   宣言を無効にするため、宣言は破棄され、要素は黙って継承する。 */
 .my-panel { background: var(--kx-surface-2); }
 ```
 
-これは「shared vocabulary を facade に置いてよいか」という質問への答えでもあります。所有していない任意の markup に本当に届く必要がある場合だけ許されます。*自分たちの* module 群だけを対象にするなら theme ではなく、その下のレイヤーに属します。
+これは*「共有の語彙をファサードに置けるか？」*への答えでもあります。任意の、所有していないマークアップに本当に届く必要がある場合に限ります。*自分の*モジュール群に閉じているなら、それはテーマに属しません — 1つ下のレイヤーに属します。
 
-### Backbone と component が opt out できる条件
+### バックボーンと、コンポーネントがオプトアウトしてよい場合
 
-Host が提供する PrimeVue と Tailwind は、あらゆる component に推奨される backbone です。component は opt out **できます**が、一般的な UI を少しでも render した時点で選択肢は狭まり、この段階は一方向にしか進みません。
+ホストが同梱する PrimeVue と Tailwind は、あらゆるコンポーネントで推奨されるバックボーンです。コンポーネントはオプトアウト**できます** — ただし、慣習的なものを何かレンダリングした瞬間にオプトアウトの余地は狭まり、はしごは一方向にしか進みません。
 
-| コンポーネントの性質 | 読み込むもの |
+| コンポーネントが… | ロードすべきもの |
 |---|---|
-| presentation-neutral — canvas、SVG、control・token・utility・scrolling のない chart | 何もなし: `hostCssKeys: []` |
-| semantic token または dark mode を使う | `themeConfigUrl` |
-| scroll する可能性がある | `iframeCssUrl` |
-| markdown を render する | `markdownCssUrl` |
-| 通常の layout や spacing に Tailwind utility を選ぶ | `primeVueCssUrl`（Host はこの asset に Tailwind を bundle する） |
-| PrimeVue が component を提供するもの — button、input、form、table、dialog、menu、tag、tooltip、その他 feedback control — を render する | `primeVueCssUrl` **と** `PrimeVuePlugin` |
+| プレゼンテーション中立である — canvas、SVG、コントロールもトークンもユーティリティもスクロールもないチャート | なし: `hostCssKeys: []` |
+| セマンティックトークンまたはダークモードを利用する | `themeConfigUrl` |
+| スクロールできる | `iframeCssUrl` |
+| markdown をレンダリングする | `markdownCssUrl` |
+| **Tailwind** で表現できるものをレンダリングする | Tailwind — 手書きの CSS ではなくユーティリティを書く |
+| **PrimeVue** がコンポーネントを提供しているものをレンダリングする — ボタン、入力、フォーム、テーブル、ダイアログ、メニュー、タグ、ツールチップ、あらゆるフィードバックコントロール | `primeVueCssUrl` **かつ** `PrimeVuePlugin` |
 
-canvas 上の chart は正当な opt-out の典型です。classic UI を持たないため backbone は不要です。同じ chart に toolbar を追加すれば、もう presentation-neutral ではありません。button は PrimeVue button であり、統合全体が必要になります。
+canvas 上のチャートは、正当なオプトアウトの典型例です。古典的な UI を持たないため、バックボーンのどれも必要としません。同じチャートにツールバーを付ければ、もはやプレゼンテーション中立ではありません — そのボタンは PrimeVue のボタンであり、統合一式が付いてきます。
 
-結合関係に注意してください。**Tailwind utility は `primeVueCssUrl` と一緒に配信されます。** Tailwind 専用の Host CSS key はないため、実際には Tailwind を選んだ component は PrimeVue asset も読み込みます。通常の layout と spacing には、component を明快に保てるなら utility を優先してください。ただし utility が最適な表現でなければ、portable な module-owned CSS も有効です。（`preflightCssUrl` は key union に含まれません。shadow root 内で Tailwind preflight が本当に必要なら imperative に読み込みますが、必要になることはまれです。）
+結び付きに注意してください。**Tailwind のユーティリティは `primeVueCssUrl` とともに配信されます。** 独立した Tailwind 用のホスト CSS キーはないため、実際には Tailwind を必要とするコンポーネントは PrimeVue のアセットも読み込むことになります。（`preflightCssUrl` はキーの union には含まれません。shadow root の内側で Tailwind の preflight がどうしても必要なら、命令的にロードしてください — めったに必要ありません。）
 
-このページにとっての実務上の帰結は、**module が必要とするものの大半は backbone にすでに存在する**ということです。shared design layer はその上の狭い帯であり、PrimeVue と Tailwind がすでに扱うものを作り直す場所ではありません。仕組みは [CSS Injection](./web-host/css-injection.md)を参照してください。
+このページにとっての実際的な帰結はこうです。**モジュールが求めるものの大半は、すでにバックボーンに存在します。** 共有デザインレイヤーはその上に載る狭い帯であって、PrimeVue と Tailwind がすでにカバーしているものをやり直す場所ではありません。仕組みについては [CSS インジェクション](./web-host/css-injection.md) を参照してください。
 
-### Shared design layer
+### 共有デザインレイヤー
 
-application 固有の match summary、surface header row、empty state、project 固有の tag sizing vocabulary など、既知の複数 module で繰り返し使われる一方、theme に application-level contract がない概念があります。これらは shared design layer に属します。
+既知のモジュール群にまたがって繰り返し現れ、テーマにコンポーネントが存在しない概念があります。コンテンツカード、サーフェスのヘッダー行、サーフェスが何も持たないときに表示するもの、タグのサイズ展開など。実在し、共有され、そして居場所がありません。
 
-これは**公開 package**として配布し、build 時に各 consumer へ materialize します。consumer が別々の repository にあるため、path alias ではなく package でなければなりません。producer への path access を持たない別 repository の module も vocabulary を取得して build できる必要があります。
+これらは**公開パッケージ**として配布され、ビルド時に各コンシューマーへマテリアライズされます。コンシューマーは別のリポジトリに存在するため、パスエイリアスではなくパッケージでなければなりません — このレイヤーの反証可能なテストは、*別のリポジトリ*にあり、プロデューサーへのパスアクセスを持たないモジュールが、その語彙を利用してビルドできることです。
 
-producer module は package を **build-time artifact** として宣言し、各 consumer は自身の tree に materialize します。宣言、`node-package` format、runtime が調整する範囲、build 側で必要な glue は [Build-time Artifact](../guides/artifacts.md)を参照してください。
+プロデューサー側のモジュールはそのパッケージを**ビルド時アーティファクト**として宣言し、各コンシューマーがそれを自身のツリーへマテリアライズします。宣言方法、`node-package` フォーマット、ランタイムが調整してくれる内容、そしてビルド側が自前で用意しなければならないつなぎについては [ビルド時アーティファクト](../guides/artifacts.md) を参照してください。
 
-### Module
+### モジュール
 
-それ以外のすべてと、shared vocabulary から意図的に逸脱するものすべてです。
+それ以外のすべてと、共有語彙からの意図的な逸脱すべてです。
 
-## 配置先の判断
+## 何をどこに置くか決める
 
-順に問い、最初の yes を採用します。
+順に問い、最初の yes が勝ちます。
 
-1. **値か？** 色、radius、spacing、elevation、severity。
-   → **Theme。** semantic token を読みます。literal は使いません。
-2. **theme がすでに component を提供しているか？** Button、Dialog、Select、Tag。
-   → **Theme。** その component を使います。調整するときは component *上*に class を置き、作り直しません。
-3. **theme component に裏付けられていない同じ概念を、自分たちの 2 つ以上の module が必要とするか？**
-   → **Shared design layer。**
-4. それ以外 → **Module。**
+1. **それは値か？** 色、角丸、余白、エレベーション、severity。
+   → **テーマ。** セマンティックトークンを読みます。リテラルは決して使いません。
+2. **テーマはすでにこれに対応するコンポーネントを提供しているか？** Button、Dialog、Select、Tag。→ **テーマ。** そのコンポーネントを使います。スタイルはコンポーネント*に*クラスを付けて当てます — 決して作り直しません。
+3. **2つ以上のモジュールがこの同じ概念を必要とし、その背後にテーマ化されたコンポーネントがないか？** → **共有デザインレイヤー。**
+4. それ以外 → **モジュール。**
 
-## 例
+引っかかりやすいのは質問2で、その背後には鋭いルールがあります。
 
-例では application 固有の class と stylesheet 名に `kx-` prefix を使います。配置ルールはどの Wippy application にも適用できます。
+## 実例
 
-### Theme component を作り直さない
+以下の例は Kickside — このレイヤーが生まれる前、モジュール CSS の 15.4% が完全な複製だった Wippy アプリケーション — から取ったものです。
 
-PrimeVue は `Button` を提供します。それを native `<button>` 上の `.kx-btn` に置き換えると、interaction と外観が themed component からずれ得る 2 つ目の実装を作ることになります。
+### テーマ化されたコンポーネントを作り直さない
 
-**悪い例:** native `button` 要素に `.kx-btn .kx-btn-primary` を付ける — theme がすでに提供する component の二重実装です。
+PrimeVue は `Button` を提供しています。Kickside の9つのモジュールはそれをオプトアウトし、ネイティブの `<button>` に `.kx-btn` を手書きしていました。別の7モジュールはコンポーネントを使っていました。どちらの方言も局所的には妥当でした — ボタンを置く共有の場所がなかったため、アプリの半分がボタンを発明したのです。互いに突き合わせてみると、一致していたのは font-size と line-height だけでした。
 
-**良い例:** themed component を使い、調整が必要な場合はその上に class を付けます。
+**Bad:** `.kx-btn .kx-btn-primary` を付けたネイティブの `button` 要素 — テーマがすでに提供しているコンポーネントの2つ目の実装です。（ここで意図的にセレクターとして書いています。ドキュメントのゲートはサンプルコード中のネイティブなプロダクトコントロールを拒否します。これはこのルールを1つ上のレイヤーで強制したものです。）
+
+**Good:** テーマ化されたコンポーネント。調整が必要ならクラスを付けます。
 
 ```vue
 <Button label="Save" class="kx-save" />
 ```
 
-themed component が合わないことは、作り直してよい理由にはなりません。component に class を付け、その class を style します。調整が app-wide なら facade、local なら module に置きます。
+テーマ化されたコンポーネントが合わないとき、それは作り直してよい許可ではありません。コンポーネントにクラスを付け、そのクラスにスタイルを当てます — 調整がアプリ全体なものならファサードで、局所的ならモジュールで。Kickside の `knowledge` モジュールは今もネイティブボタンに `.kn-btn` / `.kn-primary` を付けています。それは未完了の移行であって、真似すべきパターンではありません。
 
-### Severity は theme の所有物
+### severity はテーマのものであって、あなたのものではない
 
-severity、つまり `success`、`danger`、`warn`、`info` は公開済み ramp を持つ theme semantics です。module-local name で再定義すると、module 間でずれ得る競合定義を作ります。
+severity — `success`、`danger`、`warn`、`info` — は公開されたランプを持つテーマのセマンティクスです。Kickside はこれを**4つの命名体系にまたがって16回**再導出していました（`tone-gn`、`t-ok`、`kx-tone-success`、`tone-success`）。同じクラス名が3つのモジュールで3つの異なる色を意味していたため、そのうちどれか1つの定義を公開すれば、他を黙って塗り替えていたはずです。
 
 ```css
-/* BAD — severity re-derived under a module-local name */
+/* BAD — モジュールローカルな名前で severity を再導出している */
 .tone-gn { color: #16a34a; }
 
-/* GOOD — severity from the theme */
+/* GOOD — テーマから来た severity */
 .status-dot.success { background: var(--p-success-500); }
 ```
 
-*tone* を shared layer に置くことはできますが、**decorative category colour** としてだけです。severity として使ってはいけません。「失敗した」という意味になり得るなら、それは severity であり theme の所有物です。
+*トーン*は共有レイヤーに存在してもかまいません — ただし**装飾的なカテゴリー色**としてのみであり、severity としてはいけません。「これは失敗した」を意味しうるなら、それは severity であり、テーマのものです。
 
-### Theme が扱わない shared vocabulary
+### テーマに居場所がない共有語彙
 
 ```css
-/* GOOD — this application-specific card contract and empty-state vocabulary
-   recur across modules. PrimeVue's generic Card does not define these domain
-   semantics, so the shared layer owns them. */
+/* GOOD — PrimeVue は Card も surface Header も EmptyState も提供していない。
+   これらはモジュールをまたいで繰り返し現れ、背後にテーマ化されたものがない。
+   まさに共有レイヤーの対象。 */
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-state.css";
 ```
 
-### 採用とは import と削除の両方
+### 採用するとは、import して*削除する*こと
 
-CSS の `@import` は sheet 内のほかのすべての rule より前になければなりません。そのため shared sheet は必ず**先頭**に置かれ、module が後から宣言する同じ specificity の rule が勝ちます。package を import しつつ local copy を残した module は、実質的に何も変更していません。
+CSS の `@import` はシート内の他のすべてのルールに先行しなければなりません。したがって共有シートは常に**最初**に来るため、その後にモジュールが宣言したものは、同じ詳細度なら共有シートに勝ちます。パッケージを import しながら自前のコピーを残しているモジュールは、何ひとつ変えていません。
 
 ```css
-/* BAD — the import is inert; the local copy still wins */
+/* BAD — import は無効化されており、ローカルのコピーが勝ったまま */
 @import "@kickside/ui-kit/kx-card.css";
 .kx-card { border-radius: 14px; border: 1px solid var(--p-content-border-color); }
 
-/* GOOD — import, delete the local copy, keep only a documented delta */
+/* GOOD — import し、ローカルのコピーを削除し、ドキュメント化された差分だけを残す */
 @import "@kickside/ui-kit/kx-card.css";
-/* This surface's cards are inline in a dense list, so they lose the lift. */
+/* このサーフェスのカードは密なリスト内でインライン表示されるため、浮き上がりをなくす。 */
 .kx-card:hover { transform: none; }
 ```
 
-**差分だけ**を残し、body 全体を再記述しないでください。また 1 つの名前に 2 つの意図をまとめないでください。2 つの module で class 名の意味が違うなら、同じ名前をまとった 2 つの概念です。名前を分け、一方を選んでもう一方を塗り替えないでください。
+残すのは**差分だけ**です — 本体全体を書き直してはいけません。そして2つの意図を1つの名前にまとめてはいけません。あるクラス名が2つのモジュールで別のものを意味するなら、それは1つの名前をまとった2つの概念です。名前を分けてください。勝者を選んで敗者を塗り替えるのではなく。
 
-### Theme に対する specificity
+### テーマに対する詳細度
 
-module の CSS は最初に shadow root へ注入され、その後に theme の PrimeVue sheet が追加されます。どちらも `<style>` 要素なので、**document order により 2 番目の theme が勝ちます**。themed component class に勝つ必要がある module rule には、file 内の後ろの行ではなく、より高い *specificity* が必要です。（`adoptedStyleSheets` が持つのは facade の custom CSS であり theme ではないため、adopted sheet を使っても解決しません。）
+モジュールの CSS は shadow root へ最初に注入され、テーマの PrimeVue シートはその後に追加されます。どちらも `<style>` 要素なので、**ドキュメント順が決め手であり、テーマが後です**。テーマ化されたコンポーネントのクラスに勝たなければならないモジュール側のルールには、より高い*詳細度*が必要です — ファイル内でより後ろの行ではありません。（`adoptedStyleSheets` が運ぶのはファサードのカスタム CSS であってテーマではないため、adopted なシートに頼ってもこれには勝てません。）
 
-これは、themed element *上*に自分の class が置かれる pass-through class で特に目立ちます。
+これが最も痛いのはパススルークラス、つまり自分のクラスがテーマ化された要素*に*付く場合です。
 
 ```css
-/* BAD — this class is applied to PrimeVue's own footer element, so at equal
-   specificity the theme wins and the padding never applies. */
+/* BAD — このクラスは PrimeVue 自身のフッター要素に適用されるため、
+   詳細度が同じならテーマが勝ち、padding は決して適用されない。 */
 .kx-modal-foot { padding: 14px 18px; }
 
-/* GOOD — scoped under the dialog root, so it out-specifies the theme */
+/* GOOD — ダイアログのルート配下にスコープし、テーマより高い詳細度にする */
 .kx-modal > .kx-modal-foot { padding: 14px 18px; }
 ```
 
-## Shared layer に含められるもの
+## 共有レイヤーに置いてよいもの
 
-複数 module が本当に共有し、theme が所有しないすべてのもの、つまり CSS vocabulary、derived token、internal component、helper、test harness を含められます。
+モジュール群が実際に共有していて、テーマが所有していないものすべてです。CSS の語彙、派生トークン、内部コンポーネント、ヘルパー、テストハーネス。重複の種類は同じです — Kickside には複製された CSS と並んで、1つのテストブートストラップのコピーが19個ありました。
 
-**semantic chunk を使います。** 各 unit は consumer が理解できる 1 つの名前付き概念、たとえば `kx-card`、`kx-state`、`kx-tag` にします。consumer が必要なものだけを取れるよう、より細粒度の package を優先してください。明確な名前の unit を複数含む 1 package も機能しますが、目指す形ではありません。
+**セマンティックな単位で配布してください。** 各ユニットは、コンシューマーが理解できる1つの名前付き概念であるべきです — `kx-card`、`kx-state`、`kx-tag`。コンシューマーが必要なものだけを取れるよう、より粒度の細かいパッケージを優先してください。明確に命名された複数のユニットを1つのパッケージで配布するのも成立はしますが、目指すべき形ではありません。
 
-**具体的な名前を使います。** `common`、`shared`、`misc`、`utils` のような catch-all unit を避けてください。内容を表さない名前の unit は無関係な概念を集め、このレイヤーが解消するはずの重複を再現します。
+**受け皿を作らないこと。** `common` も `shared` も `misc` も `utils` もいけません。中身が何かを名前が語らないユニットは、他に行き場のなかったものをすべて集め、このレイヤーが解決するはずだった問題を再構築することになります。
 
-## 正規化は視覚的な変更
+## 正規化は視覚的な変更である
 
-ずれた copy を統合すると rendering が変わる可能性があります。すべての定義を比較し、canonical version を選び、その理由を記録し、意図的な divergence は documented override として維持し、結果を視覚的に確認してください。unit test は layout を確認できません。
+ずれたコピーを統合すればピクセルが動きます。Kickside にはあるセレクターに対して**17種類の本体にわたる19の定義**がありました。すべての本体を diff し、正典を選び、なぜそれを選んだかを記録し、意図的な逸脱はドキュメント化されたオーバーライドとして残してください — そして結果を目で見てください。ユニットテストはレイアウトを見られません。
 
-## 関連項目
+## 関連
 
-- [Theming](./micro-frontends/theming.md) — token catalogue と、theme が host と child の両方へ届く仕組み
-- [Compliance checklist](./micro-frontends/compliance-checklist.md) — frontend が検査される module 単位の rule
-- [Build-time Artifact](../guides/artifacts.md) — package の宣言と consumer への materialize
-- [Dependency Management](../guides/dependency-management.md) — module が利用するものの宣言と解決
+- [テーミング](./micro-frontends/theming.md) — トークンのカタログと、テーマがホストと子の両方へ届く仕組み
+- [コンプライアンスチェックリスト](./micro-frontends/compliance-checklist.md) — フロントエンドが照合されるモジュール単位のルール
+- [ビルド時アーティファクト](../guides/artifacts.md) — パッケージの宣言と、コンシューマーへのマテリアライズ
+- [依存関係管理](../guides/dependency-management.md) — モジュールが利用するものの宣言と解決

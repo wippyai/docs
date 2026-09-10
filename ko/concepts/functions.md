@@ -114,7 +114,7 @@ pool:
 ```
 
 <tip>
-명시적인 pool `type`을 권장합니다. `type: static`에서는 `size`를 설정하십시오. `workers`도 있으면 worker count를 제공하지만 여전히 positive `size`가 필요합니다. legacy implicit mode에서는 `workers > 0`과 `size > 0`이 static pool을 선택하고, worker 없이 `max_size > 0`이면 lazy pool을 선택하며, `size`만 있으면 inline execution으로 fall through합니다.
+풀 타입을 지정하지 않으면 런타임이 설정에 따라 자동 선택합니다. `workers`가 있으면 static, `max_size`가 있으면 lazy를 사용하며, `type`을 명시하여 직접 지정할 수도 있습니다. 둘 다 설정하지 않으면 최대 16개의 워커를 갖는 lazy 풀이 됩니다.
 </tip>
 
 ## 인터셉터
@@ -144,15 +144,9 @@ built-in interceptor에는 exponential backoff를 사용하는 retry가 포함�
 
 ```lua
 local contract = require("contract")
-local sender, err = contract.get("app.email:sender")
-if err then return nil, err end
-
-local email, err = sender:open("app.email:sender_impl")
-if err then return nil, err end
-
-local result, err = email:send({to = "user@example.com", subject = "Hello"})
-if err then return nil, err end
-return result
+local sender = contract.get("app.email:sender")
+local email = sender:open("app.email:sender_impl")
+email:send({to = "user@example.com", subject = "Hello"})
 ```
 
 이 추상화를 통해 호출 코드를 변경하지 않고 구현을 교체할 수 있습니다. 테스트, 멀티 테넌트 배포, 점진적 마이그레이션에 유용합니다.

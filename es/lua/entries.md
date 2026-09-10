@@ -18,9 +18,7 @@ Esta página es una referencia de configuración. Los bloques YAML son definicio
 | `workflow.lua` | Flujo de trabajo durable (Temporal) |
 | `library.lua` | Código compartido importado por otras entradas |
 
-Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode '**'` (o un patrón como `--bytecode 'app:**'`). Los autores escriben entradas `.lua`; los tipos de bytecode se emiten al empaquetar con ese flag.
-
-`module.lua` está reservado para definiciones de módulos integrados creadas por el runtime. No es una entrada de código fuente que pueda definir el autor y no tiene contraparte bytecode.
+Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode '**'` (o un patrón como `--bytecode 'app:**'`). Los autores escriben entradas `.lua`; los tipos de bytecode se emiten al empaquetar con esa bandera.
 
 ## Campos Comunes
 
@@ -168,33 +166,26 @@ Usa `pool` para configurar cómo se ejecuta una entrada de función:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # explicit; omit to use auto-select (lazy)
-    max_size: 16      # cap for elastic growth
+    type: adaptive    # explícito; omítalo para usar la auto-selección (lazy)
+    max_size: 16      # tope para el crecimiento elástico
 ```
 
 | Campo | Pools | Descripción |
 |-------|-------|-------------|
-| `type` | todos | Implementación del scheduler (consulta la tabla siguiente) |
-| `workers` | static | Cantidad de workers; cuando se establece, `size` también debe ser positivo durante la validación de configuración |
-| `size` | static | Cantidad de workers cuando no se establece `workers`; si se omite `type`, un `size` positivo por sí solo selecciona `inline` |
-| `buffer` | static | Capacidad de la cola de tareas (predeterminado: `workers * 64`) |
-| `max_size` | lazy, adaptive | Límite superior del crecimiento elástico (predeterminado: 16 para un tipo explícito) |
-| `warm_start` | todos | Flag de configuración aceptado; no tiene efecto en esta versión del runtime |
+| `type` | todos | Implementación del scheduler (ver tabla abajo) |
+| `workers` | static | Cantidad de hilos worker (recurre a `size`, y luego a 8) |
+| `size` | static | Cantidad de workers cuando `workers` no está definido; con `type` omitido, `size` sin `max_size` selecciona un pool inline |
+| `buffer` | static | Capacidad de la cola de tareas (por defecto: `workers * 64`) |
+| `max_size` | lazy, adaptive | Tope superior para crecimiento elástico (por defecto: 16; 100 cuando se omite `type`) |
 
 | Tipo | Comportamiento |
 |------|----------------|
 | `inline` | Ejecución síncrona en la goroutine del llamador. Sin aislamiento entre llamadas. |
 | `lazy` | Cero workers en reposo, se crean bajo demanda y se eliminan cuando están inactivos. |
 | `static` | Pool de tamaño fijo basado en canales. Predecible bajo carga estable. |
-| `adaptive` | Pool autoescalable: crece bajo carga y se reduce cuando está inactivo. |
+| `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. |
 
-Cuando se omite `type`, el runtime selecciona:
-
-- `static` cuando `workers` es positivo;
-- `lazy` cuando `workers` es cero y `size` es cero o `max_size` es positivo; o
-- `inline` cuando `size` es positivo y `max_size` es cero.
-
-El pool lazy seleccionado automáticamente usa `max_size` cuando es positivo y, de lo contrario, toma 100 como valor predeterminado. Un pool `lazy` o `adaptive` explícito usa 16 como `max_size` predeterminado. Un pool `static` explícito usa `workers`, después `size` y finalmente 8; su buffer predeterminado es la cantidad de workers seleccionada multiplicada por 64.
+Cuando se omite `type`, el pool se auto-selecciona a partir de los demás campos: un pool lazy por defecto, un pool static si `workers` está definido, un pool inline si solo `size` está definido.
 
 ## Metadatos
 
@@ -219,10 +210,7 @@ Los metadatos son buscables vía el registro:
 
 ```lua
 local registry = require("registry")
-local handlers, err = registry.find({["meta.type"] = "handler"})
-if err then
-    return nil, err
-end
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 La consulta devuelve todas las entradas coincidentes del registro. El código Lua pertenece a una entrada ejecutable cuya lista `modules` incluye `registry`, como la entrada `api_handler` anterior.

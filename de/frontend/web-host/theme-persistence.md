@@ -1,96 +1,117 @@
 ---
 title: "Theme-Persistenz"
-description: "Die Facade so konfigurieren, dass sie den hellen, dunklen oder automatischen Theme-Modus in einem Cookie oder localStorage speichert."
+description: "Standardmäßig löst der Web Host hell/dunkel aus thememode auf (dem Facade-Standard) und hält es im Speicher — die explizite Wahl eines Benutzers geht also beim…"
 ---
 
 # Theme-Persistenz
 
-Diese Seite ist ein Konfigurationsleitfaden für die Facade. Der HTML-Block für externe Seiten ist ein unvollständiges Integrationsbeispiel und setzt vorhandene Facade-Endpunkte voraus.
+Standardmäßig löst der Web Host hell/dunkel aus `theme_mode` auf (dem Facade-Standard) und hält es
+im Speicher — die explizite Wahl eines Benutzers geht also beim nächsten Neuladen verloren. Die Theme-Persistenz lässt diese
+Wahl Neuladen überdauern, indem sie sie in einem **Cookie** oder in **localStorage** speichert, und lädt sie so früh
+wie möglich, sodass es kein Aufblitzen des falschen Themes gibt.
 
-Standardmäßig ermittelt der Web Host den hellen oder dunklen Modus aus `theme_mode`, dem Facade-Standardwert, und hält die Auswahl im Arbeitsspeicher. Eine ausdrückliche Benutzerauswahl geht beim Neuladen verloren. Theme-Persistenz speichert sie in einem **Cookie** oder in **localStorage** und lädt sie früh, damit das falsche Theme nicht aufblitzt.
+Die Persistenz liegt vollständig in der Facade. Der Web Host bleibt speicheragnostisch: Er gibt lediglich ein
+`themeChanged`-Event aus, das die Facade (oder ein beliebiger Einbetter) zum Persistieren der Wahl verwendet.
 
-Die Persistenz liegt vollständig in der Facade. Der Web Host bleibt speicherunabhängig und gibt nur ein Ereignis `themeChanged` aus, das die Facade oder ein anderer Embedder zum Speichern der Auswahl verwendet.
-
-> **Opt-in.** Standardwert von `theme_persist` ist **`none`** — Persistenz ist **aus**, sofern ein Deployment nicht ausdrücklich `cookie` oder `localStorage` setzt. Beim Standardwert stammt das Theme aus `theme_mode` und wird zwischen Neuladungen nicht gespeichert. Es wird nichts gespeichert, kein Cookie geschrieben und das generierte Script tut nichts.
+> **Opt-in.** `theme_persist` steht standardmäßig auf **`none`** — Persistenz ist **aus**, sofern ein Deployment
+> sie nicht ausdrücklich auf `cookie` oder `localStorage` setzt. Mit dem Standardwert ist das Verhalten genau wie zuvor
+> (das Theme kommt immer aus `theme_mode` und wird über Neuladen hinweg nicht gemerkt). Es wird nichts gespeichert,
+> kein Cookie geschrieben, und das generierte Skript ist ein No-Op, bis Sie es aktivieren.
 
 ## Konfiguration
 
-Zwei Facade-Parameter steuern die Persistenz; siehe [Frontend Facade](../../framework/facade.md):
+Zwei Facade-Parameter steuern es (siehe [Frontend-Facade](../../framework/facade.md)):
 
-| Parameter | Standardwert | Werte | Beschreibung |
-|-----------|--------------|-------|--------------|
-| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | Speicherort des gewählten Modus. `none` entspricht dem aktuellen Verhalten. |
-| `theme_storage_key` | `@wippy-theme-mode` | string | Schlüssel für Cookie / localStorage. |
+| Parameter | Standard | Werte | Beschreibung |
+|-----------|---------|--------|-------------|
+| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | Wo der gewählte Modus gespeichert wird. `none` = bisheriges Verhalten. |
+| `theme_storage_key` | `@wippy-theme-mode` | string | Cookie-/localStorage-Schlüssel. |
 
-Der öffentliche Konfigurationsendpunkt gibt beide als `themePersist` und `themeStorageKey` zurück, sodass auch außerhalb des Web Hosts ausgelieferte Seiten sie lesen können.
+Beide liefert der öffentliche Konfigurationsendpunkt als `themePersist` und `themeStorageKey` zurück, sodass Seiten,
+die außerhalb des Web Host ausgeliefert werden, sie ebenfalls lesen können.
 
 ```yaml
-# in your facade dependency parameters
+# in den Parametern Ihrer Facade-Abhängigkeit
 - name: theme_persist
   value: cookie
 - name: theme_storage_key
   value: "@wippy-theme-mode"
 ```
 
-### Cookie gegenüber localStorage
+### cookie vs. localStorage
 
-- **`cookie`** — die mit Jet gerenderte Host-Shell liest das Cookie **serverseitig** und schreibt vor dem Senden der Antwort die Klasse `w-theme-*` auf `<html>`. Dadurch verwendet bereits der erste Paint das Theme. Dies verhindert Theme-Flashes und wird empfohlen, wenn die Konsistenz des ersten Paints wichtig ist.
-- **`localStorage`** — der Server kann localStorage nicht lesen. Die ausgelieferte Shell lädt daher `theme-persist.js` synchron als erstes Script in `<head>`. Es setzt die gespeicherte Klasse, bevor Brand-Stylesheet, Ladeoberfläche oder Web-Host-Bundle rendern.
+- **`cookie`** — die per Jet gerenderte Host-Hülle liest das Cookie **serverseitig** und schreibt die
+  `w-theme-*`-Klasse auf `<html>`, bevor die Antwort gesendet wird, sodass bereits der allererste Bildaufbau
+  thematisiert ist. **Kein Aufblitzen.** Der beste Standard.
+- **`localStorage`** — der Server kann localStorage nicht lesen, daher wird der gespeicherte Wert von einem
+  synchronen Inline-Skript so früh wie möglich angewandt. Ein kurzes Aufblitzen ist technisch möglich, aber minimiert.
 
-## Das generierte Script
+## Das generierte Skript
 
-Bei aktivierter Persistenz **generiert und liefert** die Facade ein kleines Script unter folgendem Pfad:
+Bei aktivierter Persistenz **generiert und liefert** die Facade ein kleines Skript unter:
 
 ```
 GET /api/public/facade/theme-persist.js
 ```
 
-Konfigurierter Schlüssel und Modus sind eingebaut; auf der Seite muss nichts konfiguriert werden. Binden Sie das Script einmal möglichst früh in `<head>` ein:
+Der konfigurierte Schlüssel und Modus sind eingebacken — auf der Seite ist nichts zu konfigurieren. Binden Sie es
+einmal, so früh wie möglich im `<head>`, ein:
 
 ```html
 <script src="/api/public/facade/theme-persist.js"></script>
 ```
 
-Beim Laden liest es den gespeicherten Wert, setzt die Klasse `w-theme-*` und stellt anschließend eine kleine API bereit:
+Beim Laden liest es den gespeicherten Wert und wendet die `w-theme-*`-Klasse an, dann stellt es eine kleine API bereit:
 
 ```js
 window.wippyThemePersist = {
   mode,            // 'none' | 'cookie' | 'localStorage'
-  key,             // the storage key
+  key,             // der Speicherschlüssel
   read(),          // -> 'auto' | 'light' | 'dark' | null
-  write(mode),     // persist a mode (no-op when mode === 'none')
-  apply(mode),     // toggle the w-theme-* class on <html>
+  write(mode),     // einen Modus persistieren (No-Op, wenn mode === 'none')
+  apply(mode),     // die w-theme-*-Klasse auf <html> umschalten
 }
 ```
 
-Die Host-Shell (`index.html` beziehungsweise Jet-`index.jet`) bindet dieses Script bereits ein, speist den gespeicherten Wert in die Anwendung ein und speichert Änderungen. Die folgenden Abschnitte gelten für **andere** Seiten.
+Die Host-Hülle (`index.html` / das Jet-`index.jet`) bindet dieses Skript bereits ein, überträgt den gespeicherten
+Wert in die App und persistiert Änderungen — Sie müssen daran nichts anfassen. Die folgenden Abschnitte gelten für
+**andere** Seiten.
 
-## Zusammenspiel in der Host-Shell
+## Wie es zusammenpasst (Host-Hülle)
 
-1. **Erster Paint** — Cookie-Modus: Der Server setzte `<html class="w-theme-dark">`. localStorage-Modus: Das Early-Apply-Script setzte die Klasse. In beiden Fällen ist die Seite vor dem Laden des Bundles thematisiert.
-2. **Bootstrap** — die Shell speist den gespeicherten Wert in den Host ein: `themeMode: window.wippyThemePersist.read() ?? cfg.themeMode`, sodass der Host denselben Modus anwendet.
-3. **Bei Änderung** — der Host gibt `themeChanged(mode)` aus; die Shell speichert ihn mit `events.on('themeChanged', window.wippyThemePersist.write)`.
+1. **Erster Bildaufbau** — Cookie-Modus: Der Server hat `<html class="w-theme-dark">` gesetzt. localStorage-Modus:
+   Das Früh-Anwendungs-Skript hat es gesetzt. So oder so ist die Seite thematisiert, bevor das Bundle lädt.
+2. **Bootstrap** — die Hülle überträgt den persistierten Wert in den Host:
+   `themeMode: window.wippyThemePersist.read() ?? cfg.themeMode`, sodass der Host denselben Modus anwendet.
+3. **Bei Änderung** — der Host gibt `themeChanged(mode)` aus; die Hülle persistiert es:
+   `events.on('themeChanged', window.wippyThemePersist.write)`.
 
-### Hostereignis `themeChanged`
+### Das Host-Event `themeChanged`
 
-`globalEvents`, der von `window.initWippyApp(...)` zurückgegebene Emitter, löst bei der Initialisierung und jeder Theme-Änderung `themeChanged(mode)` mit `'auto' | 'light' | 'dark'` aus. Das Ereignis kennt keine Persistenz: Der Host greift nie auf Speicher zu; Embedder entscheiden über die Behandlung.
+`globalEvents` — der von `window.initWippyApp(...)` zurückgegebene Emitter — löst `themeChanged(mode)`
+(`'auto' | 'light' | 'dark'`) bei der Initialisierung und bei jeder Theme-Änderung aus. Es ist persistenzagnostisch: Der Host
+berührt den Speicher nie; Einbetter entscheiden, was damit geschieht.
 
 ```js
 const events = window.initWippyApp(config, '#app')
 events.on('themeChanged', (mode) => {
-  // e.g. persist, or notify a parent window
+  // z. B. persistieren oder ein Parent-Fenster benachrichtigen
 })
 ```
 
-## Nicht von Wippy gehostete Seiten
+## Seiten, die nicht von Wippy gehostet werden
 
-Ein Dokument außerhalb des Vertrags für portable Wippy-Module kann dasselbe Theme verwenden und speichern. Die folgenden nativen Buttons sind nur für ein solches externes statisches Dokument geeignet. Eine Wippy-Seite oder -Komponente mit diesen Steuerelementen muss nach dem [Vertrag für portable Oberflächen](../portable-ui-contract.md) PrimeVue verwenden. Binden Sie das generierte Script ein und rufen Sie `write()` aus Ihrem eigenen Umschalter auf:
+Ein Dokument außerhalb des portablen Modulvertrags von Wippy kann dasselbe Theme
+respektieren und persistieren. Die nativen Schaltflächen unten sind nur für ein solches
+externes statisches Dokument angemessen. Eine Wippy-Seite oder -Komponente mit diesen Steuerelementen muss
+gemäß dem [Portablen UI-Vertrag](../portable-ui-contract.md) PrimeVue verwenden.
+Binden Sie das generierte Skript ein und rufen Sie `write()` aus Ihrem eigenen Umschalter auf:
 
 ```html
 <head>
-  <!-- as early as possible: applies the stored theme + exposes window.wippyThemePersist -->
+  <!-- so früh wie möglich: wendet das gespeicherte Theme an + stellt window.wippyThemePersist bereit -->
   <script src="/api/public/facade/theme-persist.js"></script>
-  <!-- optional: reuse the facade brand theme too -->
+  <!-- optional: auch das Markenthema der Facade wiederverwenden -->
   <link rel="stylesheet" href="/api/public/facade/variables.css">
 </head>
 <body>
@@ -102,24 +123,30 @@ Ein Dokument außerhalb des Vertrags für portable Wippy-Module kann dasselbe Th
     document.querySelectorAll('[data-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const mode = btn.dataset.mode
-        window.wippyThemePersist.apply(mode)   // update <html> now
-        window.wippyThemePersist.write(mode)   // persist for next load / the host
+        window.wippyThemePersist.apply(mode)   // <html> jetzt aktualisieren
+        window.wippyThemePersist.write(mode)   // für das nächste Laden / den Host persistieren
       })
     })
   </script>
 </body>
 ```
 
-Da Schlüssel und Speichermodus geteilt werden, wird eine auf der Loginseite getroffene Auswahl in den Web Host übernommen und umgekehrt. Das Script erhält beide Werte aus derselben Facade-Konfiguration.
+Weil Schlüssel und Speichermodus geteilt werden (das Skript wird aus derselben Facade-Konfiguration generiert),
+überträgt sich eine auf der Login-Seite getroffene Wahl direkt in den Web Host und umgekehrt.
 
-> Alternativ können Sie `/api/public/facade/config` abrufen, `themePersist` und `themeStorageKey` lesen und den Speicher direkt implementieren. Das generierte Script hält diese Logik an einer Stelle.
+> Wenn Sie das Skript lieber nicht laden möchten, können Sie `/api/public/facade/config` abrufen,
+> `themePersist` / `themeStorageKey` lesen und Lesen/Schreiben selbst implementieren — aber das generierte Skript
+> hält die Speicherlogik an einem Ort.
 
-## Serverseitiges Cookie-Rendering ohne Flash
+## Serverseitiges Cookie-Rendering (kein Aufblitzen)
 
-Bei einer benutzerdefinierten serverseitig gerenderten Seite, etwa einem Jet-Login-Template, können Sie das Theme genauso wie die Host-Shell serverseitig anwenden: Lesen Sie aus der Anfrage das durch `theme_storage_key` benannte Cookie und geben Sie die passende Klasse auf `<html>` aus:
+Für eine eigene serverseitig gerenderte Seite (z. B. ein Jet-Login-Template) können Sie das Theme serverseitig anwenden,
+genau wie es die Host-Hülle tut: Lesen Sie das von `theme_storage_key` benannte Cookie aus der Anfrage und
+geben Sie die passende Klasse auf `<html>` aus:
 
 ```html
 <html lang="en"{{ if hasTheme }} class="{{ themeClass }}" style="color-scheme: {{ colorScheme }};"{{ end }}>
 ```
 
-Der Handler setzt `themeClass` anhand des Cookies auf `w-theme-dark` beziehungsweise `w-theme-light` und `colorScheme` auf `dark` beziehungsweise `light`. Binden Sie `theme-persist.js` weiterhin ein, damit die Seite Änderungen zurückschreiben kann.
+wobei der Handler `themeClass` anhand des Cookies auf `w-theme-dark` / `w-theme-light` gesetzt hat (und `colorScheme` auf
+`dark` / `light`). Binden Sie weiterhin `theme-persist.js` ein, damit die Seite Änderungen zurückschreiben kann.

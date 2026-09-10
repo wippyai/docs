@@ -30,7 +30,8 @@ Wippy UI를 제공하는 백엔드 앱을 만듭니다:
 
 ## 작동 방식
 
-1. 파사드 셸은 HTTP 서버가 `/`에서 렌더링합니다.
+1. 셸은 파사드의 템플릿에서 렌더링되어 HTTP 서버의 `/`에서 서빙됩니다; 그 에셋과
+   딥링크 폴백은 동일한 서버의 정적 마운트에서 옵니다.
 2. 로드 시 `GET /api/public/facade/config`를 가져옵니다.
 3. `localStorage`에서 `@wippy_token_info`를 읽고, 항목이 없거나 JSON으로 파싱할 수 없을 때만 `login_path`로 리디렉션합니다.
 4. CDN(`facade_url + '/module.js'`)에서 Web Host 번들을 임포트하고 구성으로 `initWippyApp(...)`을 호출합니다.
@@ -61,6 +62,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -70,7 +72,8 @@ entries:
         value: Verify App
 ```
 
-제공되는 파사드 셸은 `/api/public/facade/config`를 가져오므로 기본 셸이 구성을 찾으려면 공개 라우터의 접두사가 `/api/public`이어야 합니다.
+셸은 구성, 테마 스크립트, CSS 변수를 `/api/public/facade/` 아래에서 요청하므로,
+공개 라우터의 접두사는 `/api/public`이어야 합니다.
 
 ## 실행
 
@@ -88,12 +91,15 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
-  "login_path": "/login.html",
-  "mode": "compat",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
+  "mode": "compat",
+  "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
@@ -103,9 +109,8 @@ curl http://localhost:8087/api/public/facade/config
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "startNavOpen": false, "disableRightPanel": false, "hideSessionSelector": false,
-    "renderEngine": "iframe",
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -146,7 +151,10 @@ window.location.assign('/');
 | `css_variables` | CSS 사용자 지정 속성의 JSON 문자열. 예: `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN 번들 URL(파사드 릴리스별 고정. 재정의하지 않는 한 기본값 유지) |
 
-두 값은 매개변수가 아니라 `PUBLIC_API_URL` 환경 변수에서 런타임에 파생됩니다. API 기본 URL과 WebSocket URL(`http`→`ws`, `https`→`wss`)입니다. 설정하지 않으면 브라우저는 `window.location.origin`으로 폴백합니다.
+두 값은 매개변수가 아니라 `PUBLIC_API_URL`에서 런타임에 파생됩니다: API 기본 URL과
+WebSocket URL (`http`→`ws`, `https`→`wss`). 파사드는 이를 env 레지스트리를 통해 읽으므로,
+앱에서 `env.variable`로 선언하세요. 설정되지 않으면 브라우저는 `window.location.origin`으로
+폴백합니다.
 
 ## 제한 사항
 

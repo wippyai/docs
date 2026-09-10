@@ -29,7 +29,8 @@ a.foo.bar.baz()              -- нет ошибки, может упасть в 
 
 -- unknown: безопасный неизвестный тип, нужно сузить перед использованием
 local u: unknown = get_data()
-u.foo                        -- ОШИБКА: нельзя обращаться к полю unknown
+u.foo                        -- нет ошибки: обращение к полю unknown ведёт себя как any
+local n: number = u          -- ОШИБКА: unknown не присваивается number, сначала сузьте
 if type(u) == "table" then
     -- u сужено до table здесь
 end
@@ -183,11 +184,11 @@ local p: Person = {name = "Alice", age = 30}
 
 ```lua
 type Result<T, E> =
-    | {ok: true, value: T}
+    {ok: true, value: T}
     | {ok: false, error: E}
 
 type LoadState =
-    | {status: "loading"}
+    {status: "loading"}
     | {status: "loaded", data: User}
     | {status: "error", message: string}
 
@@ -232,10 +233,10 @@ print(value)
 
 ```lua
 local user: User? = get_user()
-local name = user!.name              -- утверждаем, что user не nil
+local name = (user!).name            -- утверждаем, что user не nil
 ```
 
-Если значение во время выполнения nil, возникает ошибка. Используйте, когда вы знаете, что значение не может быть nil, но проверщик типов не может это доказать.
+`!` — утверждение только для проверщика типов: оно сужает тип до non-nil, но не порождает проверку во время выполнения. Если значение на самом деле nil, следующая операция завершается обычной ошибкой (например, индексация nil). Используйте, когда вы знаете, что значение не может быть nil, но проверщик типов не может это доказать.
 
 ## Приведения типов
 
@@ -304,7 +305,9 @@ local user = data as User            -- то же что и ::
 ### Kind и Name
 
 ```lua
-print(Number:kind())                 -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -333,23 +336,20 @@ print(nameType:kind())               -- "string"
 ### Типы коллекций
 
 ```lua
-local arr: {number} = {1, 2, 3}
-local arrType = typeof(arr)
-print(arrType:elem():kind())         -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-local map: {[string]: number} = {}
-local mapType = typeof(map)
-print(mapType:key():kind())          -- "string"
-print(mapType:val():kind())          -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### Опциональные типы
 
 ```lua
-local opt: number? = nil
-local optType = typeof(opt)
-print(optType:kind())                -- "optional"
-print(optType:inner():kind())        -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### Union-типы
@@ -365,31 +365,36 @@ end
 ### Типы функций
 
 ```lua
-local fn: (number, string) -> boolean
+type Predicate = (number, string) -> boolean
 
-local fnType = typeof(fn)
-for param in fnType:params() do
+for param in Predicate:params() do
     print(param:kind())
 end
-print(fnType:ret():kind())           -- "boolean"
+print(Predicate:ret():kind())        -- "boolean"
 ```
 
 ### Сравнение типов
 
 ```lua
-print(Number == Number)              -- true
-print(Integer <= Number)             -- true (подтип)
-print(Integer < Number)              -- true (строгий подтип)
+type Num = number
+type Int = integer
+
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (подтип)
+print(Int < Num)                     -- true (строгий подтип)
 ```
 
 ### Типы как ключи таблиц
 
 ```lua
-local handlers = {}
-handlers[Number] = function() return "number handler" end
-handlers[String] = function() return "string handler" end
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
-local h = handlers[typeof(value)]
+local handlers = {}
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
+
+local h = handlers[Point]
 if h then h() end
 ```
 
@@ -424,9 +429,6 @@ local x: number @min(0) @max(100) = 50
 
 -- Шаблон строки
 local email: string @pattern("^.+@.+$") = "test@example.com"
-
--- Валидатор без аргументов
-local x: number @integer = 42
 ```
 
 ### Встроенные валидаторы

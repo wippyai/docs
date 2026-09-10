@@ -1,6 +1,6 @@
 ---
 title: "아키텍처"
-description: "Wippy가 인프라를 부팅하고, 컴포넌트와 엔트리를 로드하고, 작업을 스케줄링하고, 메시지를 라우팅하고, 종료하는 방식입니다."
+description: "Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성 순서로 초기화되고, 이벤트 버스를 통해 통신하며, 작업 스틸링 스케줄러를 통해 Lua 프로세스를 실행합니다."
 ---
 
 # 아키텍처
@@ -14,7 +14,7 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 | 계층 | 컴포넌트 |
 |-------|------------|
 | 애플리케이션 | Lua 프로세스, 함수, 워크플로우 |
-| 런타임 | Lua 엔진(wippyai/go-lua)과 런타임 모듈 |
+| 런타임 | Lua 엔진 (gopher-lua), 40+ 모듈 |
 | 서비스 | HTTP, Queue, Storage, Temporal |
 | 시스템 | Topology, Factory, Functions, Contracts |
 | 코어 | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -40,7 +40,7 @@ Wippy는 Go 기반의 계층화된 시스템입니다. 컴포넌트는 의존성
 
 ### 2단계: 컴포넌트 로딩
 
-Loader는 토폴로지 정렬로 의존성을 해결하고 컴포넌트를 레벨별로 순차 로드합니다. 같은 레벨 안에서도 한 번에 하나씩 로드됩니다.
+Loader가 토폴로지 정렬을 통해 의존성을 해결하고 레벨별로, 한 번에 하나의 컴포넌트씩 로드합니다.
 
 의존성 edge가 레벨을 결정합니다. Core나 System 같은 package group은 별도의 전역 순서를 강제하지 않습니다. 따라서 의존성 edge가 없는 컴포넌트는 package group과 관계없이 같은 레벨에 놓일 수 있습니다.
 
@@ -83,7 +83,7 @@ Loader는 토폴로지 정렬로 의존성을 해결하고 컴포넌트를 레�
 | 컴포넌트 | 의존성 | 목적 |
 |-----------|--------------|---------|
 | PIDGen | 없음 | 프로세스 ID 생성 |
-| Dispatcher | 없음 | 명령 핸들러 디스패치 |
+| Dispatcher | PIDGen | 명령 핸들러 디스패치 |
 | Registry | Artifact | 엔트리 스토리지 및 버전닝 |
 | Finder | Registry | 엔트리 조회 및 검색 |
 | Supervisor | Registry | 서비스 재시작 정책 |
@@ -119,7 +119,7 @@ sequenceDiagram
 
 ### 일반적인 토픽
 
-이벤트에는 별도의 `System`과 `Kind` 필드가 있습니다. 내장 시스템은 다음을 발행합니다.
+모든 이벤트는 `System`과 `Kind`를 가집니다. 내장 시스템이 발행합니다:
 
 | 시스템 | 종류 | 목적 |
 |--------|------|------|
@@ -136,7 +136,6 @@ sequenceDiagram
 
 - **버전화된 상태** - 각 변경이 새 버전 생성
 - **히스토리** - 감사 추적을 위한 SQLite 백업 히스토리
-- **관찰** - 특정 엔트리의 변경 감시
 - **이벤트 기반** - 변경 시 이벤트 퍼블리시
 
 ### 엔트리 라이프사이클
@@ -173,14 +172,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same-node hosts and processes]
-    Peer -.- P[External receivers, such as Temporal]
-    Inter -.- I[Other cluster nodes]
+    Local -.- L[이 노드]
+    Peer -.- P[등록된 피어 수신자]
+    Inter -.- I[다른 클러스터 노드]
 ```
 
-1. **Local** - 같은 노드의 host와 process 사이에 직접 전달
-2. **Peer** - Temporal 같은 등록된 외부 receiver로 전달
-3. **Internode** - 다른 cluster node를 위한 network routing으로 fallback
+1. **Local** - 같은 노드 내 직접 전달
+2. **Peer** - 해당 노드 ID로 등록된 수신자에게 전달 (Temporal 워커 같은 외부 피어)
+3. **Internode** - 부팅 후 클러스터 컴포넌트가 설치하는 클러스터 노드간 전송으로 폴백
 
 ### 메일박스
 

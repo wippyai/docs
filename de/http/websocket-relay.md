@@ -93,12 +93,8 @@ local function handler()
     local user_id, query_err = req:query("user_id")
     if query_err then return nil, query_err end
 
-    -- Spawn handler process
-    local pid, spawn_err = process.spawn("app.ws:handler", "app:processes")
-    if spawn_err then return nil, spawn_err end
-
-    -- Configure relay
-    local relay_config, encode_err = json.encode({
+    -- Relay konfigurieren
+    res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         message_topic = "ws.message",
         heartbeat_interval = "30s",
@@ -125,8 +121,8 @@ end
 |------|-----|----------|--------------|
 | `target_pid` | string | erforderlich | Prozess-PID zum Empfangen von Nachrichten |
 | `message_topic` | string | `ws.message` | Topic für Client-Nachrichten |
-| `heartbeat_interval` | duration | `30s` | Heartbeat-Frequenz, beispielsweise `30s` |
-| `metadata` | object | - | An Join-, Leave- und Heartbeat-Benachrichtigungen angefügt |
+| `heartbeat_interval` | duration | - | Heartbeat-Frequenz (z.B. `30s`) |
+| `metadata` | object | - | An Join-/Leave-/Heartbeat-Nachrichten angehängt |
 
 ## Nachrichten-Topics
 
@@ -177,16 +173,15 @@ end
 
 ## An Client senden
 
-Senden Sie Nachrichten anhand der Client-PID zurück. Jeder gewählte Topic wird als JSON `{topic, data}` verpackt und an den WebSocket weitergeleitet. Jede Server-zu-Client-Nachricht wird als einzelner WebSocket-Text-Frame mit diesem Wrapper gesendet. Tabellen bleiben JSON-Objekte in `data`, Zeichenketten bleiben Zeichenketten. Payloads, die den Relay im Bytes-Format erreichen, werden in `data` Base64-kodiert; sie werden nicht als separate Binär-Frames gesendet. Lua-`process.send` exportiert seine Argumente als Lua-formatierte Payloads, sodass eine Lua-Zeichenkette den Bytes-Zweig nicht verwendet.
+Nachrichten mit der Client-PID zurücksenden. Jeder Topic, den Sie wählen, wird als `{topic, data}` JSON verpackt und an den WebSocket weitergeleitet. Jede Server-zu-Client-Nachricht wird als einzelner WebSocket-TEXT-Frame mit dem `{topic, data}` JSON-Wrapper gesendet. Binäre Payloads werden base64-kodiert im `data`-Feld übertragen; sie werden NICHT als separate Binär-Frames gesendet.
 
 ```lua
 -- Send a structured message (any topic name)
 local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
 if send_err then return nil, send_err end
 
--- Close connection (payload is the close reason string)
-local _, close_err = process.send(client_pid, "ws.close", "Session ended")
-if close_err then return nil, close_err end
+-- Verbindung schließen (Payload ist der Schließgrund-String)
+process.send(client_pid, "ws.close", "Sitzung beendet")
 ```
 
 Die reservierten Topics vom Server zum Client sind `ws.control` für die Relay-Neukonfiguration und `ws.close` zum Schließen der Verbindung.

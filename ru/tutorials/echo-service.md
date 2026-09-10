@@ -63,6 +63,17 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.send
+        - process.spawn
+        - process.spawn.monitored
+        - process.registry.register
+      resources: "*"
+      effect: allow
+
   - name: terminal
     kind: terminal.host
     lifecycle:
@@ -81,6 +92,8 @@ entries:
       - io
       - process
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay
     kind: process.lua
@@ -90,6 +103,8 @@ entries:
       - process
       - logger
       - time
+    security:
+      policies: [app:policy]
 
   - name: relay-service
     kind: process.service
@@ -105,7 +120,11 @@ entries:
     modules:
       - process
       - time
+    security:
+      policies: [app:policy]
 ```
+
+Безопасность работает по принципу запрета по умолчанию, поэтому каждый процесс несёт блок `security:`, называющий политику, которая разрешает выполняемые им действия: регистрацию имени, отправку сообщений и порождение отслеживаемых воркеров.
 
 ## Процесс Relay
 
@@ -149,7 +168,10 @@ local function main()
 
         if r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                logger:info("relay stopping", stats)
+                return
+            elseif event.kind == process.event.EXIT then
                 logger:info("worker exited", {
                     from = event.from,
                     result = event.result
@@ -200,7 +222,7 @@ local r = channel.select {
 }
 ```
 
-Ожидает несколько каналов. `r.channel` указывает, какой сработал, `r.value` содержит данные.
+Ожидает несколько каналов. `r.channel` указывает, какой сработал, `r.value` содержит данные. Событие `CANCEL` приходит в тот же канал событий, когда рантайм останавливает сервис; возврат из `main` в этой ветке позволяет хосту остановиться чисто, а не ждать истечения таймаута остановки.
 
 **Извлечение payload**
 
@@ -352,7 +374,7 @@ Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
-  from worker: {app:processes|0x00004}
+  from worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
 ## Следующие шаги

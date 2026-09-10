@@ -9,11 +9,11 @@ description: "프로젝트 레이아웃, YAML 정의 파일, 명명 규칙."
 
 ```
 myapp/
-├── .wippy.yaml          # Runtime configuration
-├── wippy.lock           # Source directories config
-├── .wippy/              # Installed modules
-└── src/                 # Application source
-    ├── _index.yaml      # Entry definitions
+├── .wippy.yaml          # 런타임 설정
+├── wippy.lock           # 소스 디렉토리 및 잠긴 모듈
+├── .wippy/              # 설치된 모듈
+└── src/                 # 애플리케이션 소스
+    ├── _index.yaml      # 엔트리 정의
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -30,7 +30,7 @@ YAML 정의는 시작 시 레지스트리에 로드됩니다. 레지스트리가
 
 ### 정의 파일 형식
 
-정의 파일은 `namespace`와 `entries` 배열 또는 top-level `name` 및 `kind` 필드를 포함합니다. 선택적인 `version` marker는 관례적으로 `"1.0"`이며 v0.3.32a loader는 이를 요구하지 않습니다.
+`namespace`와 함께 `entries` 배열 또는 최상위 `name`+`kind`가 있는 모든 YAML 파일이 유효한 정의 파일입니다. `version`은 선택적입니다:
 
 ```yaml
 version: "1.0"
@@ -58,9 +58,9 @@ entries:
 
 | 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `version` | 아니요 | manifest version marker(관례적으로 `"1.0"`) |
-| `namespace` | 예 | 이 파일의 엔트리 namespace |
-| `entries` | Conditional | 엔트리 정의 배열; top-level `name`과 `kind`를 사용할 때만 생략 |
+| `version` | 아니오 | 스키마 버전 (현재 `"1.0"`) |
+| `namespace` | 예 | 이 파일의 엔트리 네임스페이스 |
+| `entries` | 예 | 엔트리 정의 배열 |
 
 ### 명명 규칙
 
@@ -98,17 +98,35 @@ app.workers
 
 엔트리 전체 ID는 네임스페이스와 이름을 결합합니다: `app.api:get_user`
 
-### 소스 디렉토리
+### 잠금 파일
 
-`wippy.lock` 파일은 애플리케이션 source root와 locked module을 resolve할 base directory를 지정합니다.
+`wippy.lock`은 Wippy가 정의를 로드하는 위치와 어떤 모듈 버전이 선택되었는지를 기록합니다:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy는 `directories.src`를 애플리케이션 load path로 추가합니다. `directories.modules`는 하나의 raw source tree로 scan되지 않습니다. 각 locked module은 versioned `.wapp` archive 또는 unpacked module path로 resolve되고, 각 replacement는 설정된 entry root로 resolve됩니다. loader는 애플리케이션 source와 선택된 directory 기반 module 또는 replacement root에서 `.yaml`, `.yml`, `.json` manifest를 재귀적으로 scan하며 `.wapp` module은 archive로 읽습니다. `namespace`가 있는 object-shaped file만 registry manifest로 취급하고 `node_modules` directory는 건너뜁니다. `_index.yaml`은 프로젝트 관례이지 유일하게 허용되는 filename은 아닙니다.
+| 필드 | 설명 |
+|-------|-------------|
+| `directories.src` | 애플리케이션 소스 디렉토리, YAML 정의 파일을 재귀적으로 스캔 |
+| `directories.modules` | vendor된 모듈의 기본 디렉토리; 팩은 `<modules>/vendor/` 아래에 놓임 |
+| `options.unpack_modules` | 팩을 직접 로드하는 대신 각 `.wapp`을 옆의 디렉토리로 추출 (기본값 `false`) |
+| `modules[].name` | `org/module` 형식의 모듈 식별자 |
+| `modules[].version` | 선택된 버전 |
+| `modules[].hash` | vendor된 팩이 일치해야 하는 아티팩트 다이제스트 |
+| `modules[].root` | 선택된 배포 루트 표시; 최대 하나의 모듈만 가질 수 있음 |
+
+vendor된 팩은 `.wapp` 파일로 보관됩니다. `unpack_modules: true`이면 각 모듈이 디렉토리로도 추출되고, 검증된 `.wapp`은 그 옆에 남습니다 — 설치는 팩을 찾으므로 팩이 없는 디렉토리는 다시 다운로드됩니다.
+
+`wippy.lock`의 `replacements:` 섹션은 더 이상 사용되지 않습니다. 경고와 함께 여전히 로드되지만, 로컬 모듈 오버라이드는 런타임 설정 파일의 `workspace.replacements` 아래에 선언하세요. [의존성 관리](guides/dependency-management.md#local-development-with-replacements)를 참조하세요.
 
 ## 엔트리 정의
 
@@ -216,27 +234,21 @@ supervisor:
 
 ### wippy.lock
 
-소스 디렉토리 정의:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+소스 디렉토리와 선택된 모듈 그래프 — 위의 [잠금 파일](#the-lock-file)을 참조하세요.
 
 ## 엔트리 참조
 
-entry kind가 지원하는 경우 full ID 또는 relative name으로 엔트리를 참조합니다. HTTP router와 endpoint는 parent-side child list가 아니라 `meta.server` 및 `meta.router`를 통해 연결됩니다.
+전체 ID 또는 상대 이름으로 엔트리를 참조합니다. 자식은 부모 쪽 목록이 아니라 `meta`를 통해 부모에 연결됩니다:
 
 ```yaml
-# Router declares itself against a server
+# 라우터가 서버에 대해 자신을 선언
 - name: api
   kind: http.router
   meta:
     server: app:gateway
   prefix: /api
 
-# Endpoint references router by registry ID (cross-namespace works the same way)
+# 엔드포인트는 레지스트리 ID로 라우터를 참조 (네임스페이스 간에도 동일하게 동작)
 - name: get_user.endpoint
   kind: http.endpoint
   meta:

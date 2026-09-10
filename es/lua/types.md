@@ -239,7 +239,7 @@ local user: User? = get_user()
 local name = (user!).name            -- assert user is non-nil
 ```
 
-`!` es solo una aserción del checker: estrecha el tipo a no nil, pero no emite ninguna comprobación durante la ejecución. Si el valor es realmente nil, la operación siguiente falla con el error habitual (por ejemplo, al indexar nil). Úsalo cuando sepas que un valor no puede ser nil, pero el checker no pueda demostrarlo.
+`!` es una aserción solo para el verificador de tipos — estrecha el tipo a no-nil pero no emite ninguna comprobación en tiempo de ejecución. Si el valor es realmente nil, la operación siguiente falla con el error habitual (p. ej., indexar nil). Úselo cuando sepa que un valor no puede ser nil pero el verificador de tipos no puede demostrarlo.
 
 ## Casts de Tipo
 
@@ -310,8 +310,9 @@ Los tipos son valores de primera clase con métodos de introspección.
 ### Kind y Nombre
 
 ```lua
-type NumberType = number
-print(NumberType:kind())             -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -340,20 +341,20 @@ print(nameType:kind())               -- "string"
 ### Tipos de Colección
 
 ```lua
-type NumberArray = {number}
-print(NumberArray:elem():kind())     -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-type NumberMap = {[string]: number}
-print(NumberMap:key():kind())        -- "string"
-print(NumberMap:val():kind())        -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### Tipos Opcionales
 
 ```lua
-type OptionalNumber = number?
-print(OptionalNumber:kind())         -- "optional"
-print(OptionalNumber:inner():kind()) -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### Tipos Unión
@@ -370,6 +371,7 @@ end
 
 ```lua
 type Predicate = (number, string) -> boolean
+
 for param in Predicate:params() do
     print(param:kind())
 end
@@ -381,25 +383,25 @@ print(Predicate:ret():kind())        -- "boolean"
 ### Comparación de Tipos
 
 ```lua
-type NumberType = number
-type IntegerType = integer
+type Num = number
+type Int = integer
 
-print(NumberType == NumberType)      -- true
-print(IntegerType <= NumberType)     -- true (subtype)
-print(IntegerType < NumberType)      -- true (strict subtype)
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (subtipo)
+print(Int < Num)                     -- true (subtipo estricto)
 ```
 
 ### Tipos como Claves de Tabla
 
 ```lua
-type NumberType = number
-type StringType = string
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
 local handlers = {}
-handlers[NumberType] = function() return "number handler" end
-handlers[StringType] = function() return "string handler" end
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
 
-local h = handlers[NumberType]
+local h = handlers[Point]
 if h then h() end
 ```
 
@@ -430,9 +432,11 @@ type NonNegative = number @min(0)
 type Percentage = number @min(0) @max(100)
 type Email = string @pattern("^.+@.+$")
 
-local x = NonNegative(1)
-local percent, err = Percentage:is(50)
-local email = Email("test@example.com")
+-- Multiple validators
+local x: number @min(0) @max(100) = 50
+
+-- String pattern
+local email: string @pattern("^.+@.+$") = "test@example.com"
 ```
 
 ### Validadores Integrados

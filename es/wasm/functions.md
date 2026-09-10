@@ -125,7 +125,7 @@ pool:
   max_size: 16       # Upper scaling bound
 ```
 
-El valor predeterminado de 100 workers se aplica únicamente al pool seleccionado implícitamente, cuando no se establece `type`. Si se define explícitamente `type: lazy` o `type: adaptive` sin `max_size`, el máximo predeterminado es de 16 workers.
+El valor por defecto de 100 workers se aplica solo al pool seleccionado implicitamente (cuando no se define `type`). Cuando define explicitamente `type: lazy` o `type: adaptive` sin `max_size`, el maximo por defecto es de 16 workers.
 
 ### Clases de workers y afinidad de núcleos
 
@@ -196,6 +196,8 @@ El transporte `wasi-http` mapea solicitudes HTTP a WASM y escribe los resultados
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -203,20 +205,26 @@ El transporte `wasi-http` mapea solicitudes HTTP a WASM y escribe los resultados
 
 ## Límites de ejecución
 
-Limita el tiempo de ejecución y recicla las instancias preparadas que retengan demasiada memoria lineal:
+El bloque `limits` acota el tiempo de ejecucion de una funcion, la memoria de su worker caliente y los sockets que puede abrir:
 
 ```yaml
 limits:
   max_execution_ms: 5000
-  max_retained_memory_bytes: 67108864
-  retained_memory_check_interval: 16
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
-| Campo | Predeterminado | Descripción |
-|-------|---------|-------------|
-| `max_execution_ms` | `0` | Duración máxima de la llamada en milisegundos; `0` deshabilita el tiempo límite |
-| `max_retained_memory_bytes` | 64 MiB | Recicla una instancia preparada después de una llamada cuando la memoria retenida supera este valor; un `0` explícito deshabilita el reciclaje |
-| `retained_memory_check_interval` | Consulta más abajo | Número de llamadas completadas entre comprobaciones de memoria retenida |
+| Campo | Por defecto | Descripcion |
+|-------|-------------|-------------|
+| `max_execution_ms` | sin limite | Presupuesto de tiempo real para una llamada. Cuando se excede, la ejecucion se cancela y se retorna un error. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Disparador de reciclaje posterior a la llamada. Un worker caliente cuya memoria lineal supera esto se retira tras la llamada en lugar de reutilizarse. Un `0` explicito desactiva el reciclaje por memoria retenida. |
+| `retained_memory_check_interval` | `16` con el limite integrado, cada llamada con un limite explicito | Numero de llamadas entre inspecciones de memoria posteriores a la llamada. |
+| `max_open_sockets` | `16` | Conexiones abiertas concurrentemente por instancia para el host `socket`. |
+| `socket_timeout_ms` | `30000` | Plazo para un dial de `socket` y para cada envio/recepcion. |
+
+Los valores negativos se rechazan en el arranque.
 
 Cuando se supera el límite de ejecución, la llamada se cancela y devuelve un error. El límite predeterminado de 64 MiB de memoria retenida se comprueba cada 16 llamadas. Si `max_retained_memory_bytes` se establece explícitamente en un valor positivo y se omite el intervalo, el entorno de ejecución comprueba después de cada llamada. Define un intervalo positivo para amortizar esas comprobaciones.
 
@@ -304,7 +312,7 @@ if filter_err then return nil, filter_err end
 
 ### Espera asíncrona con relojes WASI
 
-Los componentes WASM que importan `wasi:clocks`, `wasi:io` y el perfil independiente `wasi:poll` pueden usar relojes y sondeo. El mecanismo de cesión asíncrona se integra con el dispatcher de Wippy:
+Los componentes WASM que importan `wasi:clocks`, `wasi:io` y `wasi:poll` pueden usar relojes y polling. El mecanismo de yield asincrono se integra con el dispatcher de Wippy:
 
 ```yaml
   - name: sleep_ms

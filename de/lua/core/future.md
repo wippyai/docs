@@ -1,6 +1,6 @@
 ---
 title: "Futures"
-description: "Ergebnisse asynchroner Funktions- und Contract-Aufrufe empfangen, prüfen und abbrechen."
+description: "Asynchrone Operationsergebnisse. Futures werden von funcs.async() und asynchronen Contract-Aufrufen zurückgegeben."
 ---
 
 # Futures
@@ -101,13 +101,9 @@ Fordert den Abbruch der asynchronen Operation nach dem Best-Effort-Prinzip an:
 local canceled, err = future:cancel()
 ```
 
-Die Operation kann trotzdem abgeschlossen werden, wenn sie bereits läuft.
-
 **Gibt zurück:** `boolean, error`
 
-<warning>
-In Runtime v0.3.32a verwenden Function- und Contract-Futures denselben prozessglobalen Cancellation-Callback. Wenn beide Provider geladen sind, bilden <code>cancel()</code> und <code>is_canceled()</code> keinen stabilen providerübergreifenden Vertrag. Verwenden Sie Cancellation nicht für die Korrektheit der Anwendung; lassen Sie stattdessen lokal ein Timeout ablaufen und ignorieren Sie ein verspätetes Ergebnis, bis die Runtime die Provider-Cancellation trennt.
-</warning>
+Operation kann trotzdem abgeschlossen werden, wenn bereits in Bearbeitung.
 
 ## Timeout-Muster
 
@@ -130,11 +126,8 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- The operation may still complete; this caller ignores the late result.
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
+    future:cancel()
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 local payload, result_err = future:result()
@@ -185,9 +178,7 @@ return value
 
 ## Fehler
 
-| Bedingung | Art | Wiederholbar |
-|-----------|-----|--------------|
-| Operation über `result()` abgebrochen | `errors.CANCELED` | nein |
-| Operationsfehler von `result()` | variiert | aus dem Funktionsfehler übernommen |
-| Operationsfehler von `error()` | `errors.INTERNAL` | nein |
-| Dispatch der Cancellation fehlgeschlagen | `errors.INTERNAL` | nein |
+| Bedingung | Art |
+|-----------|------|
+| Operation abgebrochen | `CANCELED` |
+| Asynchrone Operation fehlgeschlagen | `result()` behält die Art der Operation bei; `error()` meldet `INTERNAL` |

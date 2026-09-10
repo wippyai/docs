@@ -1,6 +1,6 @@
 ---
 title: "Tree-sitter Parsing"
-description: "Parse source code, inspect concrete syntax trees, and run Tree-sitter queries."
+description: "Parse source code into concrete syntax trees using Tree-sitter. Based on go-tree-sitter bindings."
 ---
 
 # Tree-sitter Parsing
@@ -352,7 +352,13 @@ end
 if node:is_missing() then
     -- Parser inserted this to recover from error
 end
+
+if node:is_extra() then
+    -- Node is an "extra" (e.g. a comment) not required by the grammar
+end
 ```
+
+Other node methods: `descendant_count()` and `named_descendant_for_point_range(start_pt, end_pt)`.
 
 ### S-Expression
 
@@ -460,6 +466,8 @@ local capture_count = query:capture_count()
 local name = query:capture_name_for_id(0)
 local id = query:capture_index_for_name("func_name")
 ```
+
+Further inspection methods: `string_count()`, `start_byte_for_pattern(i)`, `end_byte_for_pattern(i)`, `get_match_limit()`, `get_timeout()`, `is_pattern_rooted(i)`, `is_pattern_non_local(i)`, `is_pattern_guaranteed(i)`, `capture_quantifier(pattern, capture)`, `set_max_start_depth(n)`, `get_property_predicates(i)`, `get_property_settings(i)`, `get_text_predicates(i)`.
 
 ## Tree Cursor
 

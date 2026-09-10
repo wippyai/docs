@@ -51,13 +51,15 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     lifecycle:
       auto_start: true
 ```
 
 <note>
-O SQLite sempre usa uma única conexão (<code>max_open</code> e <code>max_idle</code> são forçados para <code>1</code>) e o modo de journal <code>WAL</code>. Somente <code>max_lifetime</code> de <code>pool</code> é aplicado.
+Um banco de dados SQLite privado em memória (<code>file: ":memory:"</code>) é limitado a uma conexão física, portanto <code>max_open</code> e <code>max_idle</code> são forçados para <code>1</code>. Um banco de dados baseado em arquivo respeita as configurações de <code>pool</code>, das quais uma transação de leitura de snapshot CDC precisa para não consumir a única conexão de escrita. O modo de journal é sempre <code>WAL</code>.
 </note>
 
 ## Campos de Conexão
@@ -77,33 +79,37 @@ O SQLite sempre usa uma única conexão (<code>max_open</code> e <code>max_idle<
 
 ### Campos SQLite
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `file` | string | Caminho do arquivo de banco de dados ou `:memory:` |
-| `pool` | object | Somente `max_lifetime` é aplicado; as conexões permanecem fixas em 1 |
-| `options` | map | Aceito, mas ignorado |
-| `lifecycle` | object | Configuração de ciclo de vida |
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `file` | string | obrigatório | Caminho do arquivo de banco de dados ou `:memory:` |
+| `pool` | object | - | Configurações de pool de conexões; `max_open` e `max_idle` são forçados para `1` com `:memory:` |
+| `max_mutation_changes` | int | 100000 | Linhas que uma transação pode manter no observador de mutações commitadas |
+| `max_mutation_bytes` | int | 67108864 | Bytes lógicos que uma transação pode manter no observador (64 MiB) |
+| `options` | map | - | Aceito mas ignorado |
+| `lifecycle` | object | - | Configuração de ciclo de vida |
 
-### Valores Secretos e de Ambiente
+`max_mutation_changes` e `max_mutation_bytes` limitam o observador de mutações commitadas em memória que alimenta uma origem [`db.cdc.sqlite`](system/cdc.md). Zero em qualquer um dos campos seleciona o padrão; valores negativos são rejeitados. Os limites são conservadores em vez de exatos: o SQLite entrega uma linha completa ao hook de pre-update, então uma linha pode materializar-se antes que o limite rejeite o candidato.
 
-Obtenha valores do [registro de ambiente](system/env.md) com placeholders `${env:NAME}`, resolvidos durante a decodificação. `NAME` é o nome público de uma variável registrada ou seu ID de entrada, como `app.secrets:db_password`; não é uma variável bruta do sistema operacional.
+### Valores de Segredo e de Ambiente
+
+Obtenha valores de conexão do [registro de ambiente](system/env.md) com placeholders `${env:NAME}`, resolvidos no momento da decodificação. `NAME` é o nome público de uma variável registrada ou o ID da sua entrada (ex. `app.secrets:db_password`); não é uma variável de ambiente bruta do SO.
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
   host: ${env:DB_HOST}
-  port: ${env:DB_PORT|5432}
+  port: ${env:DB_PORT}
   database: ${env:DB_NAME}
   username: ${env:DB_USER}
   password: ${env:app.secrets:db_password}
 ```
 
 <note>
-Configurações antigas usam uma diretiva irmã <code>&lt;field&gt;_env</code> (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>) resolvida da mesma forma. Esse formato está <b>obsoleto</b>; migre para o placeholder <code>${env:NAME}</code> acima.
+Configurações mais antigas usam uma diretiva irmã <code>&lt;field&gt;_env</code> (<code>host_env</code>, <code>port_env</code>, <code>database_env</code>, <code>username_env</code>, <code>password_env</code>) que resolve da mesma forma. Essa forma está <b>deprecada</b> — migre-a para o placeholder <code>${env:NAME}</code> mostrado acima.
 </note>
 
 <warning>
-Evite codificar senhas na configuração. Use entradas <code>env.variable</code> para credenciais. Consulte <a href="./env.md">Ambiente</a> para configurar segredos.
+Evite codificar senhas na configuração. Use entradas <code>env.variable</code> para credenciais. Veja <a href="system/env.md">Ambiente</a> para gerenciamento seguro de segredos.
 </warning>
 
 ## Pool de Conexões
@@ -129,13 +135,15 @@ Defina <code>max_idle</code> menor ou igual a <code>max_open</code>. Conexões e
 
 ## Formatos DSN
 
-Cada tipo de banco constrói um DSN a partir da configuração. Todas as `options` são anexadas em ordem de chave; nenhuma é incluída por padrão.
+Cada tipo de banco de dados constrói um DSN a partir da configuração. Quaisquer `options` são anexadas (ordenadas por chave); nenhuma é incluída por padrão.
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-host=host port=port user=username password=password dbname=database [option=value ...]
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+Todos os valores exceto a porta são delimitados por aspas simples, e `'` e `\` embutidos são escapados com barra invertida, de modo que hosts, senhas e valores de opção contendo espaços ou aspas são passados intactos.
 
 ### MySQL {id="dsn-mysql"}
 
@@ -174,7 +182,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-O SQLite não aplica o mapa `options` ao DSN. Bancos em arquivo sempre abrem com `mode=rwc`, e o modo de journal é sempre `WAL`. O campo `options` é aceito, mas ignorado.
+O SQLite não aplica o mapa `options` ao seu DSN. Bancos de dados em arquivo sempre abrem com `mode=rwc`, e o modo de journal é sempre definido como `WAL`. O campo `options` é aceito, mas ignorado.
 
 ## Exemplos
 
@@ -274,5 +282,6 @@ Consulte o [Módulo SQL](lua/storage/sql.md) para consultas, transações e oper
 ## Veja Também
 
 - [Módulo SQL](lua/storage/sql.md) - Referência da API Lua
-- [Store](system/store.md) - Armazenamento chave-valor baseado em um banco `db.sql.*`
+- [Store](system/store.md) - Armazenamento chave-valor baseado em um banco de dados `db.sql.*`
 - [Queue](system/queue.md) - Handler de fila baseado em SQL
+- [Change Data Capture](system/cdc.md) - Streaming de mudanças em nível de linha a partir de um banco `db.sql.sqlite` ou Postgres

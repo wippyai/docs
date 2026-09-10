@@ -83,16 +83,8 @@ local function get_user(id)
     if err then return nil, err end
 
     local rows, err = db:query("SELECT * FROM users WHERE id = $1", {id})
-    if err then
-        local _, release_err = db:release()
-        return nil, release_err or err
-    end
-
-    local _, release_err = db:release()
-    if release_err then return nil, release_err end
-    if #rows == 0 then
-        return nil, errors.new({kind = errors.NOT_FOUND, message = "user not found"})
-    end
+    if err then return nil, err end
+    if #rows == 0 then return nil, errors.new(errors.NOT_FOUND, "user not found") end
 
     return rows[1]
 end
@@ -104,6 +96,7 @@ Para manipuladores HTTP, use o módulo `http`:
 
 ```lua
 local http = require("http")
+local json = require("json")
 local funcs = require("funcs")
 
 local function handler()
@@ -327,15 +320,9 @@ Tipos de erro: `UNKNOWN`, `INVALID`, `NOT_FOUND`, `ALREADY_EXISTS`, `PERMISSION_
 ```lua
 -- SQL
 local sql = require("sql")
-local db, db_err = sql.get("app:main_db")
-if db_err then return nil, db_err end
+local db = sql.get("app:main_db")
 local rows, err = db:query("SELECT * FROM users WHERE active = $1", {true})
-if err then
-    local _, release_err = db:release()
-    return nil, release_err or err
-end
-local _, release_err = db:release()
-if release_err then return nil, release_err end
+db:execute("INSERT INTO users (name) VALUES ($1)", {name})
 
 -- Key-value store
 local store = require("store")
@@ -409,12 +396,8 @@ local time = require("time")
 
 time.sleep("5s")
 local now = time.now()
-local timeout, timeout_err = time.after("30s")  -- channel that fires once
-if timeout_err then return nil, timeout_err end
-local ticker, ticker_err = time.ticker("10s")  -- repeating channel
-if ticker_err then return nil, ticker_err end
--- Stop the ticker when its consumer finishes.
-ticker:stop()
+local timeout = time.after("30s")  -- channel that fires once
+local ticker = time.ticker("10s")  -- ticker:channel() dispara a cada intervalo
 ```
 
 ### Registro

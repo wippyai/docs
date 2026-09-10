@@ -1,6 +1,6 @@
 ---
 title: "Funktionsaufruf"
-description: "Registrierte Funktionen synchron oder asynchron aufrufen und Anfragekontext, Sicherheitsidentität sowie Aufrufoptionen weitergeben."
+description: "Die primäre Methode zum Aufrufen anderer Funktionen in Wippy. Führen Sie registrierte Funktionen synchron oder asynchron über Prozesse hinweg aus…"
 ---
 
 # Funktionsaufruf
@@ -126,10 +126,7 @@ local exec, err = funcs.new():with_actor(actor)
 if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new({
-        message = "User cannot delete records",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -159,21 +156,35 @@ if err then return nil, err end
 
 ### `with_options`
 
-Setzt Aufrufoptionen. Implementierungen können eigene Optionen definieren; die Runtime erkennt außerdem `network` zur Auswahl eines ausgehenden Netzwerks.
+Setzt Aufrufoptionen wie die Retry-Richtlinie oder das Overlay-Netzwerk. Optionen werden über etwaige voreingestellte Optionen des Ziel-Funktions-Eintrags gemergt.
 
 ```lua
--- Set a 5 second timeout for external API call
-local exec, err = funcs.new():with_options({timeout = 5000})
-if err then return nil, err end
+-- Vorübergehende Fehler bis zu 5 Mal mit exponentiellem Backoff wiederholen
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Handle timeout or other error
+    -- Alle Versuche fehlgeschlagen, oder der Fehler war nicht wiederholbar
 end
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
-| `options` | table | Implementierungsspezifische Optionen |
+| `options` | table | Aufrufoptionen |
+
+| Option | Typ | Beschreibung |
+|--------|-----|-------------|
+| `retry.max_attempts` | int | Maximale Versuche einschließlich des ersten (1 deaktiviert Retry) |
+| `retry.initial_delay` | int/duration | Verzögerung vor erstem Retry (ms oder Duration-String), Standard `100` |
+| `retry.max_delay` | int/duration | Obergrenze der Backoff-Verzögerung (ms oder Duration-String), Standard `10s` |
+| `retry.backoff_factor` | number | Multiplikator, der die Verzögerung nach jedem Versuch skaliert, Standard `2.0` |
+| `retry.jitter` | number | Anteil zufälligen Jitters pro Verzögerung, Standard `0.1` |
+| `retry.retry_kinds` | string[] | Nur Fehler dieser Arten wiederholen; standardmäßig wird jede Art außer `Invalid`, `PermissionDenied` und `Internal` wiederholt |
+| `retry.skip_kinds` | string[] | Fehler dieser Arten niemals wiederholen |
+| `network` | string | Registry-ID eines Overlay-Netzwerks, über das der ausgehende Verkehr des Aufrufs geleitet wird; erfordert die Berechtigung `network.select` |
+
+Nur wiederholbare Fehler lösen Retries aus; nicht wiederholbare Fehler treten sofort zutage. Temporal-Activity-Optionen sind in [Activities](temporal/activities.md) beschrieben.
 
 Die von der Runtime definierte Option ist:
 
@@ -190,11 +201,10 @@ Die Auswahl eines Netzwerks erfordert die Berechtigung `network.select` für die
 Executor-Versionen von call und async, die den konfigurierten Kontext verwenden.
 
 ```lua
--- Build reusable executor with context
-local exec, err = funcs.new():with_context({trace_id = "abc-123"})
-if err then return nil, err end
-exec, err = exec:with_options({timeout = 10000})
-if err then return nil, err end
+-- Wiederverwendbaren Executor mit Kontext aufbauen
+local exec = funcs.new()
+    :with_context({trace_id = "abc-123"})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Make multiple calls with same context
 local users, users_err = exec:call("app.api:list_users")
@@ -364,7 +374,7 @@ Funktionsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `funcs.call` | Funktions-ID | Eine bestimmte Funktion aufrufen |
 | `funcs.context` | `context` | `with_context()` verwenden, um benutzerdefinierten Kontext zu setzen |
 | `funcs.security` | `security` | `with_actor()` oder `with_scope()` verwenden |
-| `network.select` | Netzwerk-ID | Mit `with_options()` ein ausgehendes Netzwerk auswählen |
+| `network.select` | Netzwerk-ID | `with_options({network = ...})` verwenden, um ein Overlay-Netzwerk auszuwählen |
 
 ## Fehler
 
@@ -374,6 +384,7 @@ Funktionsoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Namespace fehlt | `errors.INVALID` | nein |
 | Name fehlt | `errors.INVALID` | nein |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` | nein |
+| Async außerhalb eines Prozesses | `errors.INTERNAL` | nein |
 | Abonnement fehlgeschlagen | `errors.INTERNAL` | nein |
 | Dispatch zum Start des asynchronen Aufrufs fehlgeschlagen | `errors.INTERNAL` | nein |
 | Funktionsfehler | variiert | variiert |

@@ -1,6 +1,6 @@
 ---
 title: "Time e Duração"
-description: "Crie, compare, interprete e formate valores de tempo; trabalhe com durações e fusos horários; e programe pausas e timers."
+description: "Trabalhe com valores de tempo, duracoes, fusos horarios e agendamento. Crie timers, pause execução por periodos especificos, parse e formate…"
 ---
 
 # Time e Duração
@@ -287,7 +287,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -593,7 +593,7 @@ end
 local loc, err = time.load_location("Unknown/Zone")
 if err then
     if errors.is(err, errors.NOT_FOUND) then
-        print("Location not found:", err:message())
+        print("Location não encontrada:", err:message())
     end
     return nil, err
 end

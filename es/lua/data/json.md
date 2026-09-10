@@ -1,6 +1,6 @@
 ---
-title: "Codificación JSON"
-description: "Codifica valores Lua como JSON, decodifica cadenas JSON y valida valores o cadenas con JSON Schema."
+title: "Codificacion JSON"
+description: "Codificar tablas Lua a JSON y decodificar strings JSON a valores Lua. Incluye validacion de JSON Schema para verificacion de datos y cumplimiento de…"
 ---
 
 # Codificación JSON
@@ -111,8 +111,8 @@ print(response.data.users[1].name)  -- "Alice"
 -- Handle errors
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- parse error details
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
+    print(err:message())  -- detalles de error de parseo
 end
 ```
 
@@ -190,10 +190,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new({
-        message = "Invalid request: " .. err:message(),
-        kind = errors.INVALID
-    })
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Now safe to decode
@@ -216,8 +213,9 @@ if decode_err then return nil, decode_err end
 | Array disperso (huecos en los índices) | `errors.INTERNAL` | no |
 | Tipos de clave mixtos en tabla | `errors.INTERNAL` | no |
 | Anidamiento excede 128 niveles | `errors.INTERNAL` | no |
-| Sintaxis JSON no válida | `errors.INTERNAL` | no |
-| Error al compilar el esquema | `errors.INVALID` | no |
-| Error de validación | `errors.INVALID` | no |
+| Sintaxis JSON invalida | `errors.INTERNAL` | no |
+| Entrada que no es cadena o cadena vacia (decode) | `errors.INVALID` | no |
+| Compilacion de schema fallida | `errors.INVALID` | no |
+| Validacion fallida | `errors.INVALID` | no |
 
 Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

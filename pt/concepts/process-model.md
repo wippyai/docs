@@ -78,7 +78,7 @@ return ok
 Mensagens do mesmo remetente chegam em ordem. Mensagens de remetentes diferentes podem se intercalar. A entrega não espera resposta; use padrões de requisição e resposta quando precisar de confirmação.
 
 <note>
-Processos podem se registrar em um registro local de nomes e ser endereçados pelo nome, em vez do PID (por exemplo, `session_manager`). Nomes também podem ser registrados em todo o cluster para endereçamento entre nós por meio de `process.registry`, usando os escopos EVENTUAL (baseado em gossip), CONSISTENT ou STRONG (ambos apoiados por Raft).
+Processos podem se registrar em um registro de nomes local e ser endereçados por nome ao invés de PID (ex: `session_manager`). Nomes também podem ser registrados em todo o cluster para endereçamento entre nós via `process.registry`, usando os escopos EVENTUAL (baseado em gossip), CONSISTENT ou STRONG (ambos apoiados por Raft).
 </note>
 
 ## Supervisão
@@ -111,6 +111,8 @@ No nível do runtime, serviços podem iniciar e supervisionar processos de longa
     restart:
       max_attempts: 5
       initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 O serviço inicia automaticamente e integra-se ao gerenciamento de ciclo de vida do runtime. No runtime fixado, a primeira inicialização que falha conta para `max_attempts`; portanto, `5` permite no máximo quatro novas tentativas de inicialização. Cada retry aguarda `initial_delay` com jitter; o atraso não aumenta entre tentativas.

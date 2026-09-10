@@ -26,8 +26,8 @@ flowchart LR
 | `queue` | Required | - | Queue registry ID |
 | `func` | Required | - | Handler function registry ID |
 | `concurrency` | 1 | 1000 | Worker count |
-| `prefetch` | 10 | 10000 | Shared delivery-buffer size; AMQP also applies it as the channel QoS prefetch count |
-| `auto_ack` | false | - | Backend-specific auto-ack option; for AMQP, `true` asks the broker to acknowledge on delivery |
+| `prefetch` | 10 | 10000 | Message buffer size |
+| `auto_ack` | false | - | Driver-level auto-ack (AMQP `Consume` autoAck; ignored by the memory driver) |
 | `driver_options` | `{}` | - | Driver-specific consumer options |
 
 ## Entry Definition
@@ -91,6 +91,8 @@ Unless the handler explicitly settles the delivery, the consumer uses the functi
 | Returns or raises an invocation error | Nack | Redelivery is driver-dependent |
 
 Ordinary return values, including `false`, do not select acknowledgment behavior. Call `msg:ack()` or `msg:nack()` to settle explicitly. Settlement is single-shot: the first settlement wins. With AMQP `auto_ack: true`, the broker acknowledges on delivery, so a later handler failure cannot cause broker redelivery.
+
+The handler can settle the message itself with `queue.message()` and `msg:ack()` / `msg:nack()`; the consumer then skips its own ack/nack.
 
 ## Worker Pool
 

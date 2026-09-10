@@ -13,10 +13,10 @@
       {"title": "CLI リファレンス", "path": "guides/cli"},
       {"title": "設定リファレンス", "path": "guides/configuration"},
       {"title": "クラスタ", "path": "guides/cluster"},
-      {"title": "リンター", "path": "guides/linter"},
-      {"title": "言語サーバー", "path": "guides/lsp"},
-      {"title": "依存関係管理", "path": "guides/dependency-management"},
-      {"title": "ビルド時アーティファクト", "path": "guides/artifacts"},
+      {"title": "Linter", "path": "guides/linter"},
+      {"title": "Language Server", "path": "guides/lsp"},
+      {"title": "Dependency Management", "path": "guides/dependency-management"},
+      {"title": "Build-time Artifacts", "path": "guides/artifacts"},
       {"title": "コンポーネントの構築", "path": "guides/components"},
       {"title": "エントリ種別リファレンス", "path": "guides/entry-kinds"},
       {"title": "可観測性", "path": "guides/observability"},
@@ -28,23 +28,23 @@
   {
     "title": "コアコンセプト",
     "children": [
-      {"title": "コンピュートユニット", "path": "concepts/compute-units"},
-      {"title": "アプリケーションアーキテクチャ", "path": "concepts/architecture"},
-      {"title": "レジストリ", "path": "concepts/registry"},
-      {"title": "セキュリティモデル：プロセス分離とポリシーチェック", "path": "concepts/security-model"},
-      {"title": "プロセスモデル", "path": "concepts/process-model"},
-      {"title": "クラスター", "path": "concepts/cluster"},
-      {"title": "関数", "path": "concepts/functions"},
-      {"title": "ワークフロー", "path": "concepts/workflows"}
+      {"title": "Compute Units", "path": "concepts/compute-units"},
+      {"title": "アーキテクチャ", "path": "concepts/architecture"},
+      {"title": "Registry", "path": "concepts/registry"},
+      {"title": "Security Model", "path": "concepts/security-model"},
+      {"title": "Process Model", "path": "concepts/process-model"},
+      {"title": "クラスタ", "path": "concepts/cluster"},
+      {"title": "Functions", "path": "concepts/functions"},
+      {"title": "Workflows", "path": "concepts/workflows"}
     ]
   },
   {
     "title": "Lua ランタイム",
     "children": [
-      {"title": "Luaランタイム", "path": "lua/overview"},
-      {"title": "Wippy が Lua を採用する理由", "path": "lua/why-lua"},
-      {"title": "型システム", "path": "lua/types"},
-      {"title": "Luaエントリ種別", "path": "lua/entries"},
+      {"title": "Overview", "path": "lua/overview"},
+      {"title": "Why Lua", "path": "lua/why-lua"},
+      {"title": "Types", "path": "lua/types"},
+      {"title": "Entries", "path": "lua/entries"},
       {
         "title": "コア",
         "children": [
@@ -66,13 +66,13 @@
       {
         "title": "データ形式",
         "children": [
-          {"title": "JSONエンコーディング", "path": "lua/data/json"},
-          {"title": "YAMLエンコーディング", "path": "lua/data/yaml"},
-          {"title": "Base64エンコーディング", "path": "lua/data/base64"},
-          {"title": "圧縮", "path": "lua/data/compress"},
-          {"title": "アーカイブ", "path": "lua/data/archive"},
-          {"title": "ペイロードエンコーディング", "path": "lua/data/payload"},
-          {"title": "Excelスプレッドシート", "path": "lua/data/excel"}
+          {"title": "JSON", "path": "lua/data/json"},
+          {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "Base64", "path": "lua/data/base64"},
+          {"title": "Compress", "path": "lua/data/compress"},
+          {"title": "Archive", "path": "lua/data/archive"},
+          {"title": "Payload", "path": "lua/data/payload"},
+          {"title": "Excel", "path": "lua/data/excel"}
         ]
       },
       {
@@ -87,11 +87,11 @@
       {
         "title": "ストレージ",
         "children": [
-          {"title": "SQLデータベース", "path": "lua/storage/sql"},
-          {"title": "キーバリューストア", "path": "lua/storage/store"},
-          {"title": "ファイルシステム", "path": "lua/storage/filesystem"},
-          {"title": "クラウドストレージ", "path": "lua/storage/cloud"},
-          {"title": "メッセージキュー", "path": "lua/storage/queue"},
+          {"title": "SQL", "path": "lua/storage/sql"},
+          {"title": "Store", "path": "lua/storage/store"},
+          {"title": "Filesystem", "path": "lua/storage/filesystem"},
+          {"title": "Cloud Storage", "path": "lua/storage/cloud"},
+          {"title": "Queue", "path": "lua/storage/queue"},
           {"title": "CDC", "path": "lua/storage/cdc"}
         ]
       },
@@ -220,6 +220,63 @@
     ]
   },
   {
+    "title": "Frontend",
+    "children": [
+      {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
+      {"title": "Platform Topology", "path": "frontend/platform-topology"},
+      {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
+      {"title": "The Design Layer", "path": "frontend/design-layer"},
+      {
+        "title": "Frontend Registry",
+        "children": [
+          {"title": "Registry Entries", "path": "frontend/frontend-registry/registry-entries"},
+          {"title": "Micro Frontend Apps (view.page)", "path": "frontend/frontend-registry/view-page"},
+          {"title": "Web Components (view.component)", "path": "frontend/frontend-registry/view-component"},
+          {"title": "Dynamic Routing", "path": "frontend/frontend-registry/dynamic-routing"}
+        ]
+      },
+      {
+        "title": "Web Host",
+        "children": [
+          {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
+          {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
+          {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
+          {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
+          {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
+          {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+        ]
+      },
+      {
+        "title": "Wippy Micro Frontends",
+        "children": [
+          {"title": "Overview", "path": "frontend/micro-frontends/overview"},
+          {"title": "Quickstart", "path": "frontend/micro-frontends/quickstart"},
+          {"title": "Page Recipe", "path": "frontend/micro-frontends/micro-frontend-app"},
+          {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
+          {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
+          {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
+          {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
+          {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},
+          {"title": "Tailwind Contract", "path": "frontend/micro-frontends/tailwind-contract"},
+          {"title": "Token Catalogue", "path": "frontend/micro-frontends/token-catalogue"},
+          {"title": "Theming: Micro Frontend Apps", "path": "frontend/micro-frontends/micro-frontend-app-theming"},
+          {"title": "Theming: Web Components", "path": "frontend/micro-frontends/web-component-theming"},
+          {"title": "Build and Dependency Contract", "path": "frontend/micro-frontends/build-system"},
+          {"title": "Configuration and Casing", "path": "frontend/micro-frontends/configuration-casing"},
+          {"title": "Custom Composites", "path": "frontend/micro-frontends/custom-composites"},
+          {"title": "Host-less Mode", "path": "frontend/micro-frontends/host-less-mode"},
+          {"title": "Compliance Rule Index", "path": "frontend/micro-frontends/compliance-checklist"},
+          {"title": "Unsupported Project-Bound Modules", "path": "frontend/micro-frontends/unsupported-project-bound"},
+          {"title": "Debugging", "path": "frontend/micro-frontends/debugging"}
+        ]
+      }
+    ]
+  },
+  {
     "title": "Temporal",
     "children": [
       {"title": "Temporal統合", "path": "temporal/overview"},
@@ -232,18 +289,18 @@
     "children": [
       {"title": "プロセスホスト", "path": "system/process-host"},
       {"title": "プロセスグループ", "path": "system/process-groups"},
-      {"title": "ターミナル", "path": "system/terminal"},
-      {"title": "データベースシステム", "path": "system/database"},
-      {"title": "変更データキャプチャ", "path": "system/cdc"},
-      {"title": "ストア（キーバリュー）", "path": "system/store"},
-      {"title": "キュー", "path": "system/queue"},
-      {"title": "ネットワークオーバーレイ", "path": "system/network"},
-      {"title": "ファイルシステム", "path": "system/filesystem"},
-      {"title": "クラウドストレージ", "path": "system/cloudstorage"},
-      {"title": "環境変数システム", "path": "system/env"},
-      {"title": "テンプレートエンジン", "path": "system/template"},
-      {"title": "セキュリティモデル", "path": "system/security"},
-      {"title": "エグゼキューター", "path": "system/exec"}
+      {"title": "Terminal", "path": "system/terminal"},
+      {"title": "Database", "path": "system/database"},
+      {"title": "Change Data Capture", "path": "system/cdc"},
+      {"title": "Store", "path": "system/store"},
+      {"title": "Queue", "path": "system/queue"},
+      {"title": "Network", "path": "system/network"},
+      {"title": "Filesystem", "path": "system/filesystem"},
+      {"title": "Cloud Storage", "path": "system/cloudstorage"},
+      {"title": "Environment", "path": "system/env"},
+      {"title": "Template", "path": "system/template"},
+      {"title": "Security", "path": "system/security"},
+      {"title": "Exec", "path": "system/exec"}
     ]
   },
   {
@@ -262,22 +319,23 @@
     "title": "チュートリアル",
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
-      {"title": "CLIアプリケーション", "path": "tutorials/cli"},
-      {"title": "Echoサービス", "path": "tutorials/echo-service"},
-      {"title": "チャネルと並行処理の基礎", "path": "tutorials/channels"},
-      {"title": "プロセスとメッセージング入門", "path": "tutorials/processes"},
-      {"title": "プロセススーパービジョンのレシピ", "path": "tutorials/supervision"},
-      {"title": "タスクキュー", "path": "tutorials/task-queue"},
-      {"title": "テスト", "path": "tutorials/testing"},
-      {"title": "暗号通貨ティッカー", "path": "tutorials/auth"},
+      {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Terminal UI", "path": "tutorials/tty"},
+      {"title": "Echo Service", "path": "tutorials/echo-service"},
+      {"title": "Channels", "path": "tutorials/channels"},
+      {"title": "Processes", "path": "tutorials/processes"},
+      {"title": "Supervision", "path": "tutorials/supervision"},
+      {"title": "Task Queue", "path": "tutorials/task-queue"},
+      {"title": "Testing", "path": "tutorials/testing"},
+      {"title": "Authentication", "path": "tutorials/auth"},
       {"title": "Frontend Facade", "path": "tutorials/facade"},
       {"title": "ネットワークオーバーレイ", "path": "tutorials/network"},
       {"title": "WippyでRustを実行する", "path": "tutorials/rust-wasm"},
       {"title": "LLM エージェント", "path": "tutorials/llm-agent"},
       {"title": "Micro AGI", "path": "tutorials/micro-agi"},
-      {"title": "MCP 経由の Keeper", "path": "tutorials/keeper-mcp"},
-      {"title": "Dataflow: 永続DAGを実行する", "path": "tutorials/dataflow"},
-      {"title": "Retrieval-Augmented Generation (RAG)", "path": "tutorials/rag"}
+      {"title": "Keeper over MCP", "path": "tutorials/keeper-mcp"},
+      {"title": "Dataflow: Local Knowledge Base", "path": "tutorials/dataflow"},
+      {"title": "Retrieval-Augmented Generation", "path": "tutorials/rag"}
     ]
   },
   {

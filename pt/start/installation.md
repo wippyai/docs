@@ -1,6 +1,6 @@
 ---
 title: "Instalação"
-description: "Instale o runtime do Wippy e verifique se o comando está disponível."
+description: "Instale o runtime Wippy"
 ---
 
 # Instalação
@@ -42,25 +42,30 @@ wippy install
 ## Visão geral dos comandos
 
 | Comando | Descrição |
-| --------- | ------------- |
-| `wippy init` | Criar ou atualizar `wippy.lock` |
-| `wippy run` | Iniciar o runtime |
-| `wippy test` | Executar o entrypoint de teste |
-| `wippy lint` | Verificar erros no código |
-| `wippy add` | Adicionar uma dependência |
-| `wippy install` | Instalar dependências |
-| `wippy update` | Atualizar dependências |
-| `wippy pack` | Criar um snapshot |
-| `wippy publish` | Publicar no Hub |
-| `wippy search` | Pesquisar módulos |
-| `wippy readme` | Buscar o README de um módulo no Hub |
-| `wippy registry` | Inspecionar as entradas de registro carregadas |
-| `wippy auth` | Gerenciar autenticação |
-| `wippy version` | Exibir informações da versão |
+|---------|-----------|
+| `wippy init` | Inicializa um novo projeto |
+| `wippy run` | Inicia o runtime |
+| `wippy test` | Executa o entrypoint de teste |
+| `wippy lint` | Verifica o código em busca de erros |
+| `wippy add` | Adiciona uma dependência |
+| `wippy install` | Instala dependências |
+| `wippy update` | Atualiza dependências |
+| `wippy artifacts` | Materializa artefatos de sistema de arquivos em tempo de build |
+| `wippy pack` | Cria um snapshot |
+| `wippy publish` | Publica no hub |
+| `wippy search` | Busca por módulos |
+| `wippy readme` | Busca o README de um módulo no hub |
+| `wippy registry` | Inspeciona entradas do registro carregadas |
+| `wippy auth` | Gerencia autenticação |
+| `wippy version` | Exibe informações de versão |
 
 Consulte a [Referência da CLI](guides/cli.md) para obter a documentação completa.
 
-## Solução de problemas
+## Solução de Problemas
+
+Se `wippy version` não for encontrado após a instalação, reabra seu shell ou verifique se o diretório de instalação está no seu `PATH`.
+
+## Próximos Passos
 
 Se o shell não encontrar `wippy` após a instalação, reabra-o e confirme que o diretório de instalação está no `PATH`.
 

@@ -341,29 +341,31 @@ local spawner = process.with_options({
 
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
-| `workflow.id` | string | 명시적 워크플로우 실행 ID |
-| `workflow.task_queue` | string | 태스크 큐 오버라이드 |
-| `workflow.execution_timeout` | duration | 전체 워크플로우 실행 타임아웃 |
-| `workflow.run_timeout` | duration | 단일 실행 타임아웃 |
-| `workflow.task_timeout` | duration | 워크플로우 태스크 처리 타임아웃 |
-| `workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
-| `workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
-| `workflow.execution_error_when_already_started` | boolean | 워크플로우가 이미 실행 중이면 오류 |
-| `workflow.retry_policy` | table | 재시도 정책 (아래 참조) |
-| `workflow.cron_schedule` | string | 반복 워크플로우를 위한 cron 표현식 |
-| `workflow.memo` | table | 비인덱스 워크플로우 메타데이터 |
-| `workflow.search_attributes` | table | 인덱싱된 쿼리 가능 속성 |
-| `workflow.enable_eager_start` | boolean | 즉시 실행 시작 |
-| `workflow.start_delay` | duration | 워크플로우 시작 전 지연 |
-| `workflow.summary` | string | Temporal 워크플로우 메타데이터에 표시되는 요약 |
-| `workflow.details` | string | Temporal 워크플로우 메타데이터에 표시되는 세부 정보 |
-| `workflow.versioning_override` | string or table | 자동 업그레이드 모드 또는 고정된 배포/빌드 버전 |
-| `workflow.priority` | table | 우선순위 키와 선택적 공정성 설정 |
-| `workflow.parent_close_policy` | string | 부모 종료 시 자식 동작 |
-| `workflow.wait_for_cancellation` | boolean | 취소가 완료될 때까지 대기 |
-| `workflow.namespace` | string | Temporal 네임스페이스 오버라이드 |
-| `workflow.versioning_intent` | string or number | 자식 워크플로우의 워커 버전 관리 의도 |
-| `workflow.name` | string | 자식 워크플로우 타입 오버라이드 |
+| `temporal.workflow.id` | string | 명시적 워크플로우 실행 ID |
+| `temporal.workflow.task_queue` | string | 태스크 큐 오버라이드 |
+| `temporal.workflow.execution_timeout` | duration | 전체 워크플로우 실행 타임아웃 |
+| `temporal.workflow.run_timeout` | duration | 단일 실행 타임아웃 |
+| `temporal.workflow.task_timeout` | duration | 워크플로우 태스크 처리 타임아웃 |
+| `temporal.workflow.id_conflict_policy` | string | `use_existing`, `fail`, `terminate_existing` |
+| `temporal.workflow.id_reuse_policy` | string | `allow_duplicate`, `allow_duplicate_failed_only`, `reject_duplicate` |
+| `temporal.workflow.execution_error_when_already_started` | boolean | 워크플로우가 이미 실행 중이면 오류 |
+| `temporal.workflow.retry_policy` | table | 재시도 정책 (아래 참조) |
+| `temporal.workflow.cron_schedule` | string | 반복 워크플로우를 위한 cron 표현식 |
+| `temporal.workflow.memo` | table | 비인덱스 워크플로우 메타데이터 |
+| `temporal.workflow.search_attributes` | table | 인덱싱된 쿼리 가능 속성 |
+| `temporal.workflow.enable_eager_start` | boolean | 즉시 실행 시작 |
+| `temporal.workflow.start_delay` | duration | 워크플로우 시작 전 지연 |
+| `temporal.workflow.parent_close_policy` | string | 부모 종료 시 자식 동작 |
+| `temporal.workflow.wait_for_cancellation` | boolean | 취소가 완료될 때까지 대기 |
+| `temporal.workflow.namespace` | string | Temporal 네임스페이스 오버라이드 |
+| `temporal.workflow.name` | string | 레지스트리 ID와 다를 때 시작할 워크플로우 타입 이름 |
+| `temporal.workflow.versioning_intent` | string | `compatible` (빌드 ID 상속) 또는 `default` (할당 규칙 사용) |
+| `temporal.workflow.priority` | table | 태스크 우선순위: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `workflow.summary` | string | Temporal UI에 표시되는 사람이 읽을 수 있는 요약 |
+| `workflow.details` | string | Temporal UI에 표시되는 사람이 읽을 수 있는 상세 정보 |
+| `workflow.versioning_override` | table | 워커 버전 오버라이드: `mode`는 `auto_upgrade`, 또는 `deployment_name`과 `build_id`를 갖는 `pinned` |
+
+모든 옵션은 짧은 키(`workflow.id`, `workflow.task_queue`, ...)로도 허용됩니다. `temporal.workflow.` 접두사는 레거시 별칭입니다. `summary`와 `details`에는 `temporal.workflow.` 별칭이 없습니다.
 
 Duration 값은 문자열(`"5s"`, `"10m"`, `"1h"`) 또는 숫자(밀리초)를 허용합니다.
 
@@ -470,6 +472,36 @@ if err then
     return nil, err
 end
 ```
+
+### 보안 컨텍스트
+
+호출자의 액터와 스코프는 `ctx` 값과는 별개로, 더 엄격한 규칙 아래 워크플로우와 함께 전달됩니다. 두 개의 Temporal 헤더로 운반됩니다:
+
+| 헤더 | 내용 |
+|--------|---------|
+| `wippy-security` | JSON 엔벨로프: 액터 ID, 액터 메타데이터, 정책 ID, 오디언스 |
+| `wippy-security-signature` | 클라이언트의 `security_hmac_key`로 서명한 해당 엔벨로프의 HMAC-SHA256 |
+
+오디언스는 헤더가 발급된 대상 실행의 ID입니다 — 시작과 시그널의 경우 워크플로우 ID, 액티비티의 경우 액티비티 ID입니다. 다른 실행에 대해 재생된 헤더는 오디언스 검사에 실패하므로, 탈취한 헤더를 다른 곳에서 재사용할 수 없습니다.
+
+검증은 워크플로우 본문이 실행되기 전에 이루어집니다. 서명은 클라이언트의 키 중 하나와 일치해야 하고, 오디언스는 이번 실행의 ID와 같아야 하며, 엔벨로프에 명시된 모든 정책이 로컬 보안 레지스트리에서 해석되어야 합니다. **이 중 하나라도 실패하면 워크플로우 실행이 실패합니다** — 경고가 아니며, 축소된 컨텍스트로 워크플로우가 실행되지도 않습니다. 스코프 없는 액터나 액터 없는 정책처럼 내부적으로 일관되지 않은 엔벨로프도 마찬가지입니다.
+
+키는 [`temporal.client`](temporal/overview.md#보안-컨텍스트-전파) 엔트리에 설정합니다. 액터나 스코프가 있는 컨텍스트에서 워크플로우를 시작하려면 서명 키가 필요합니다. 키가 없으면 서명 없이 진행하는 대신 시작이 실패합니다.
+
+#### 보안이 적용된 워크플로우는 서명되지 않은 시그널을 거부합니다
+
+보안 컨텍스트 아래에서 실행되는 워크플로우는 들어오는 모든 시그널이 해당 워크플로우 ID와 해당 시그널 이름에 바인딩된 서명된 릴레이 티켓 — `wippy-relay-signal` 및 `wippy-relay-signal-signature` 헤더 — 을 실을 것을 요구합니다. 서명되지 않았거나 주소가 잘못된 시그널은 전달되지 않고 거부됩니다. Wippy 프로세스가 `process.send`로 보내는 시그널은 자동으로 서명됩니다. Wippy 외부에서 주입된 시그널 — Temporal CLI, `tctl`, 다른 SDK — 은 티켓이 없으므로 보안이 적용된 워크플로우에 대해 실패합니다. 보안이 적용된 워크플로우는 Wippy에서만 구동하세요.
+
+#### 결정론적 자식 및 액티비티 ID
+
+보안 컨텍스트 아래에서는 명시적 ID 없이 시작된 자식 워크플로우나 액티비티가 무작위 ID 대신 파생된 ID를 받습니다. ID가 곧 헤더가 서명된 대상 오디언스이며 리플레이 시 재현 가능해야 하기 때문입니다:
+
+| 보안이 적용된 워크플로우에서 시작 | 생성되는 ID |
+|---------------------------------|--------------|
+| 자식 워크플로우 | `<parentWorkflowID>-<parentRunID>-child-<N>` |
+| 액티비티 | `<parentWorkflowID>-<parentRunID>-activity-<N>` |
+
+`N`은 워크플로우 실행 내에서 카운트됩니다. 명시적으로 제공된 `temporal.workflow.id`나 액티비티 ID는 그대로 사용되며 오디언스가 됩니다. 보안 컨텍스트가 없으면 ID는 이전과 같이 Temporal에 맡겨집니다.
 
 ### HTTP 핸들러에서
 
@@ -1036,7 +1068,7 @@ local now = time.now()
 -- UUID generation
 local id = uuid.v4()
 
--- Crypto operations
+-- 암호화 작업
 local bytes = crypto.random.bytes(32)
 
 -- Child workflows

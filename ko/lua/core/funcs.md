@@ -1,6 +1,6 @@
 ---
 title: "함수 호출"
-description: "등록된 함수를 동기 또는 비동기로 호출하고 요청, 보안 및 호출 옵션을 전파합니다."
+description: "Wippy에서 다른 함수를 호출하는 주요 방법. 컨텍스트 전파, 보안 자격 증명, 타임아웃을 완벽하게 지원하여 프로세스 간에 등록된 함수를 동기 또는 비동기로 실행합니다. 이 모듈은 컴포넌트가 통신해야 하는 분산 애플리케이션 구축의 핵심입니다."
 ---
 
 # 함수 호출
@@ -126,10 +126,7 @@ local exec, err = funcs.new():with_actor(actor)
 if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new({
-        message = "User cannot delete records",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -159,21 +156,35 @@ if err then return nil, err end
 
 ### `with_options`
 
-호출 옵션을 설정합니다. 구현에서 자체 옵션을 정의할 수 있으며, 런타임은 아웃바운드 네트워크를 선택하는 `network`도 인식합니다.
+재시도 정책이나 오버레이 네트워크 같은 호출 옵션을 설정합니다. 옵션은 대상 함수 엔트리의 프리셋 옵션 위에 병합됩니다.
 
 ```lua
--- Set a 5 second timeout for external API call
-local exec, err = funcs.new():with_options({timeout = 5000})
-if err then return nil, err end
+-- 일시적 실패를 지수 백오프로 최대 5회 재시도
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Handle timeout or other error
+    -- 모든 시도가 실패했거나, 재시도할 수 없는 에러
 end
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `options` | table | 구현별 옵션 |
+| `options` | table | 호출 옵션 |
+
+| 옵션 | 타입 | 설명 |
+|--------|------|------|
+| `retry.max_attempts` | int | 첫 시도를 포함한 최대 시도 횟수 (1이면 재시도 비활성화) |
+| `retry.initial_delay` | int/duration | 첫 번째 재시도 전 지연 (ms 또는 duration 문자열), 기본값 `100` |
+| `retry.max_delay` | int/duration | 백오프 지연의 상한 (ms 또는 duration 문자열), 기본값 `10s` |
+| `retry.backoff_factor` | number | 시도할 때마다 지연에 적용되는 배수, 기본값 `2.0` |
+| `retry.jitter` | number | 각 지연에 적용되는 무작위 지터 비율, 기본값 `0.1` |
+| `retry.retry_kinds` | string[] | 이 종류의 에러만 재시도; 기본적으로 `Invalid`, `PermissionDenied`, `Internal`을 제외한 모든 종류를 재시도 |
+| `retry.skip_kinds` | string[] | 이 종류의 에러는 재시도하지 않음 |
+| `network` | string | 호출의 아웃바운드 트래픽을 라우팅할 오버레이 네트워크의 레지스트리 ID; `network.select` 권한 필요 |
+
+재시도 가능한 에러만 재시도를 유발하며, 재시도할 수 없는 에러는 즉시 표면화됩니다. Temporal 액티비티 옵션은 [액티비티](temporal/activities.md)에서 설명합니다.
 
 런타임이 정의하는 옵션은 다음과 같습니다.
 
@@ -190,11 +201,10 @@ end
 executor 버전의 `call`과 `async`는 구성된 컨텍스트와 옵션을 사용합니다.
 
 ```lua
--- Build reusable executor with context
-local exec, err = funcs.new():with_context({trace_id = "abc-123"})
-if err then return nil, err end
-exec, err = exec:with_options({timeout = 10000})
-if err then return nil, err end
+-- 컨텍스트가 있는 재사용 가능한 executor 빌드
+local exec = funcs.new()
+    :with_context({trace_id = "abc-123"})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Make multiple calls with same context
 local users, users_err = exec:call("app.api:list_users")
@@ -364,7 +374,7 @@ end
 | `funcs.call` | 함수 ID | 특정 함수 호출 |
 | `funcs.context` | `context` | `with_context()`를 사용하여 커스텀 컨텍스트 설정 |
 | `funcs.security` | `security` | `with_actor()` 또는 `with_scope()` 사용 |
-| `network.select` | 네트워크 ID | `with_options()`으로 아웃바운드 네트워크 선택 |
+| `network.select` | 네트워크 ID | `with_options({network = ...})`로 오버레이 네트워크 선택 |
 
 ## 에러
 
@@ -374,6 +384,7 @@ end
 | Namespace 누락 | `errors.INVALID` | 아니오 |
 | Name 누락 | `errors.INVALID` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
+| 프로세스 밖에서의 async | `errors.INTERNAL` | 아니오 |
 | 구독 실패 | `errors.INTERNAL` | 아니오 |
 | 비동기 시작 디스패치 실패 | `errors.INTERNAL` | 아니오 |
 | 함수 에러 | 다양함 | 다양함 |

@@ -246,7 +246,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+파일시스템을 WASM 모듈에 마운트하는 것과 WASM 함수를 호출하는 것은 모두 보호되는 액션입니다. 이 정책이 두 액션을 허용하며, 이를 필요로 하는 엔트리가 정책을 참조합니다.
 
 ### WASM 함수
 
@@ -358,10 +371,8 @@ entries:
         name: ls
         short: List files from mounted directory
         security:
-          actor:
-            id: demo.cli:ls
-          policies:
-            - demo.cli:wasm_cli_policy
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -377,7 +388,7 @@ entries:
           guest: /data
 ```
 
-`meta.command` 블록은 WASM 프로세스를 이름 있는 CLI 명령으로 등록합니다. `ls`는 WASI stdout과 파일 시스템 접근을 사용하므로 해당 호스트 프로필을 선언하고 `/data` 마운트만 받습니다.
+`meta.command` 블록은 프로세스를 이름이 있는 CLI 명령으로 등록합니다. `greet` 명령은 문자열 연산만 사용하므로 WASI 임포트가 필요 없습니다. `ls` 명령은 파일시스템 접근이 필요하므로, 마운트를 허용하는 보안 컨텍스트도 함께 지닙니다.
 
 ### HTTP 엔드포인트
 
@@ -425,9 +436,21 @@ wippy run list
 ```
 Available commands:
 
+  greet  Greet someone via WASM  (demo.cli:greet)
   ls  List files from mounted directory  (demo.cli:ls)
 
 Run with: wippy run <command>
+```
+
+명령 이름 뒤의 인자는 익스포트된 함수에 문자열 파라미터로 전달되므로, 각 명령은 WIT 시그니처가 선언한 인자를 정확히 받습니다:
+
+```bash
+# Run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
@@ -443,21 +466,19 @@ wippy run ls /data
 wippy run
 ```
 
-포트 8090에서 HTTP 서버가 시작됩니다. 엔드포인트를 테스트합니다.
+포트 8090에서 HTTP 서버가 시작됩니다. `wasi-http` 트랜스포트는 요청 본문을 함수의 단일 문자열 인자로 전달합니다:
 
 ```bash
-curl -X POST --data 'World' http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
 ```
 
-예상 응답 본문:
-
-```text
+```
 Hello, World!
 ```
 
 ### Lua에서 호출
 
-WASM 함수는 Lua 함수와 같은 방식으로 호출합니다. 다음은 `funcs` 모듈을 선언한 기존 Lua 엔트리를 위한 참조 코드이며, 데모에 필요한 추가 파일이 아닙니다.
+WASM 함수는 Lua 함수와 동일한 방식으로 호출됩니다. 호출하는 프로세스에는 대상에 대한 `funcs.call` 권한이 필요하며, `demo:policy`가 이를 부여합니다:
 
 ```lua
 local funcs = require("funcs")

@@ -1,6 +1,6 @@
 ---
 title: "YAML 编码"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "将 YAML 文档解析为 Lua 表，并将 Lua 值序列化为 YAML 字符串。"
 ---
 
 # YAML 编码
@@ -123,7 +123,7 @@ print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
 -- Parse from file content
-local content = fs.read("config.yaml")
+local content = fs.get("app:config"):readfile("config.yaml")
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")

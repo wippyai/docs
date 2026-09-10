@@ -1,6 +1,6 @@
 ---
 title: "SQLデータベース"
-description: "構成済みのデータベースに対して、パラメータ化 SQL クエリ、トランザクション、プリペアドステートメントを実行します。"
+description: "PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。"
 ---
 
 # SQLデータベース
@@ -57,7 +57,7 @@ return finish(rows)
 </note>
 
 <note>
-直接の `db` クエリとトランザクションクエリは、プレースホルダーを変更せずにデータベースドライバーへ渡します。SQLite と MySQL は `?`、PostgreSQL は `$1`、`$2` などを使用します。ビルダーの `run_with` 呼び出しは、PostgreSQL に対して自動的にドル形式のプレースホルダーを選択します。その他のデータベースタイプでは、デフォルトが `?` である、ビルダーが選択した形式を保持します。`to_sql` で SQL を生成する場合や別の形式が必要な場合は、`placeholder_format` を設定してください。
+プレースホルダーはそのままデータベースドライバーに渡され、ランタイムは書き換えません。SQLite と MySQL は `?`、PostgreSQL は `$1, $2` を使用します。ドライバーが期待する形式で記述してください。以下の例では `?`（SQLite/MySQL）を使用しています。複数のエンジンを対象とするクエリは、[クエリビルダー](#query-builder)で構築してください。ハンドルが PostgreSQL の場合、`run_with` はプレースホルダーを `$1, $2` に書き換え、`to_sql` はビルダーの `placeholder_format` を使用します。
 </note>
 
 ## 定数
@@ -369,7 +369,17 @@ local cond = sql.builder.or_({
 
 **戻り値:** `Sqlizer`
 
-### `sql.builder.question`
+## sqlizer:to_sql
+
+条件のSQLフラグメントとバインド引数を生成。
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**戻り値:** `string, table`
+
+## builder.question
 
 `?` プレースホルダーを使用します（デフォルト）。この形式は `sql.builder.default_placeholder` としても利用できます。
 
@@ -1175,12 +1185,12 @@ local query = sql.builder.update("users")
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `map` | table | {column = value}ペア |
+| `map` | table | {column = value}ペア。値はプレーンな値、`sql.NULL`、または`sql.as.*`（式には`set`を使用） |
 
 **戻り値:** `UpdateBuilder`
 
@@ -1535,15 +1545,16 @@ local sql_str, args = executor:to_sql()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | いいえ |
-| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
-| リソースが見つからない | `errors.NOT_FOUND` | いいえ |
-| リソースがデータベースではない | `errors.INVALID` | いいえ |
-| 無効なパラメータ | `errors.INVALID` | いいえ |
-| ステートメントがクローズ済み | `errors.INVALID` | いいえ |
-| トランザクションがアクティブでない | `errors.INVALID` | いいえ |
-| 無効なセーブポイント名 | `errors.INVALID` | いいえ |
-| ドライバーまたはクエリ実行エラー | 利用可能な場合はドライバーから引き継ぐ。それ以外は unspecified | 状況による |
+| リソースIDが空 | `errors.INVALID` | no |
+| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| リソースが見つからない | `errors.NOT_FOUND` | no |
+| リソースがデータベースではない | `errors.INVALID` | no |
+| 無効なパラメータ | `errors.INVALID` | no |
+| SQL構文エラー | `errors.UNKNOWN` | nil |
+| ステートメントがクローズ済み | `errors.INVALID` | no |
+| トランザクションがアクティブでない | `errors.INVALID` | no |
+| 無効なセーブポイント名 | `errors.INVALID` | no |
+| クエリ実行エラー | `errors.UNKNOWN` | nil |
 
 エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
 

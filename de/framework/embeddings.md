@@ -24,17 +24,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-### Erforderliches Modell und Provider
-
-Registrieren Sie vor API-Aufrufen ein `llm.model` mit `meta.name` gleich
-`text-embedding-3-small`, der Fähigkeit `embed` und einer Provider-Zuordnung zu einem
-Embedding-Provider. Konfigurieren Sie dessen Zugangsdaten, etwa `OPENAI_API_KEY`, über
-den von `wippy/llm` verwendeten Umgebungsspeicher. Siehe
-[LLM-Modellkonfiguration](./llm.md#modellkonfiguration).
-
-### Datenbankabhängigkeit
-
-Deklarieren Sie die Abhängigkeit und setzen Sie `target_db` auf die Anwendungsdatenbank:
+Deklariere die Abhaengigkeit und richte die `target_db`-Anforderung ueber die `parameters` der Abhaengigkeit auf deine Anwendungsdatenbank aus:
 
 ```yaml
 version: "1.0"
@@ -54,8 +44,7 @@ entries:
         value: app:app_db
 ```
 
-Beim Start übernimmt `wippy/migration` die Migration `01_create_embeddings_table`
-und erstellt die Tabelle `embeddings_512` für den konfigurierten Datenbanktreiber.
+Beim Start erkennt `wippy/migration` die Migration `01_create_embeddings_table` und erzeugt die Tabelle `embeddings_512` mit einem passenden Vektorindex fuer deinen Datenbanktreiber.
 
 Erstellen Sie bei Verwendung des gezeigten relativen SQLite-Pfads vor dem Start das
 Verzeichnis `data`.
@@ -201,12 +190,10 @@ müssen exakt 512 numerische Werte enthalten:
 
 Die Migration erzeugt das Schema passend zum Datenbanktreiber bei `target_db`:
 
-- **PostgreSQL** — Tabelle `embeddings_512` mit Spalte `vector(512)` und
-  IVFFlat-Cosinus-Index. Die Migration versucht die Erweiterung `vector` zu installieren;
-  die Datenbankrolle muss dies dürfen oder die Erweiterung muss bereits existieren.
-  `origin_id` wird als `UUID` gespeichert.
-- **SQLite** — virtuelle `vec0`-Tabelle `embeddings_512` mit der Vektorspalte
-  `embedding float[512]` sowie Metadaten- und Inhaltsspalten für die KNN-Suche.
+- **PostgreSQL** - Tabelle `embeddings_512` mit einer `vector(512)`-Spalte und einem IVFFlat-Index. Benoetigt die `pgvector`-Erweiterung.
+- **SQLite** - Virtuelle `vec0`-Tabelle `embeddings_512`, die die Vektorspalte `embedding float[512]` zusammen mit den Metadaten- und Inhaltsspalten fuer die KNN-Suche haelt.
+
+Vektoren werden auf der API-Ebene stets ueber ein einfaches JSON-Array hin- und zurueckgegeben.
 
 ## Siehe auch
 

@@ -1,6 +1,6 @@
 ---
-title: "Base de datos SQL"
-description: "Ejecuta consultas SQL parametrizadas, transacciones y sentencias preparadas en bases de datos configuradas."
+title: "Base de Datos SQL"
+description: "Ejecuta consultas SQL contra bases de datos PostgreSQL, MySQL y SQLite. Incluye consultas parametrizadas, transacciones, sentencias preparadas y un…"
 ---
 
 # Base de datos SQL
@@ -57,7 +57,7 @@ Los leases de base de datos se liberan durante la limpieza del frame de ejecuci�
 </note>
 
 <note>
-Las consultas directas de `db` y de transacciones pasan los placeholders al driver de base de datos sin cambios. SQLite y MySQL usan `?`; PostgreSQL usa `$1`, `$2`, etc. Las llamadas `run_with` del builder seleccionan automáticamente placeholders de dólar para PostgreSQL. Los demás tipos de base de datos conservan el formato elegido por el builder, que de forma predeterminada es `?`. Establece `placeholder_format` al generar SQL con `to_sql` o cuando se necesite otro formato.
+Los marcadores de posición se pasan al controlador de base de datos sin cambios; el runtime no los reescribe. SQLite y MySQL usan `?`, PostgreSQL usa `$1, $2`: escríbalos en la forma que espera su controlador. Los ejemplos siguientes usan `?` (SQLite/MySQL). Para consultas dirigidas a más de un motor, constrúyalas con el Constructor de Consultas: `run_with` reescribe los marcadores a `$1, $2` cuando el handle es PostgreSQL, y `to_sql` usa el `placeholder_format` del constructor.
 </note>
 
 ## Constantes
@@ -369,7 +369,17 @@ local cond = sql.builder.or_({
 
 **Devuelve:** `Sqlizer`
 
-### `sql.builder.question`
+## sqlizer:to_sql
+
+Genera el fragmento SQL y los argumentos de vinculación de una condición.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**Devuelve:** `string, table`
+
+## builder.question
 
 Usa marcadores `?` (predeterminado). Este formato también está disponible como `sql.builder.default_placeholder`.
 
@@ -1175,12 +1185,12 @@ Establece múltiples columnas desde una tabla.
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `map` | table | Pares {column = value} |
+| `map` | table | Pares {column = value}; los valores son valores simples, `sql.NULL` o `sql.as.*` (use `set` para expresiones) |
 
 **Devuelve:** `UpdateBuilder`
 
@@ -1540,10 +1550,11 @@ El acceso a la base de datos está sujeto a la evaluación de políticas de segu
 | Recurso no encontrado | `errors.NOT_FOUND` | no |
 | El recurso no es base de datos | `errors.INVALID` | no |
 | Parámetros inválidos | `errors.INVALID` | no |
+| Error de sintaxis SQL | `errors.UNKNOWN` | nil |
 | Sentencia cerrada | `errors.INVALID` | no |
 | Transacción no activa | `errors.INVALID` | no |
 | Nombre de savepoint inválido | `errors.INVALID` | no |
-| Error del controlador o de ejecución de la consulta | se conserva el del controlador cuando está disponible; de lo contrario, no se especifica | varía |
+| Error de ejecución de consulta | `errors.UNKNOWN` | nil |
 
 Consulte [Manejo de errores](lua/core/errors.md) para trabajar con errores.
 

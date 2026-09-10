@@ -1,6 +1,6 @@
 ---
 title: "WebSocket-клиент"
-description: "<secondary-label ref='network'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "WebSocket-клиент для двунаправленной связи с серверами в реальном времени."
 ---
 
 # WebSocket-клиент
@@ -57,7 +57,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 | `dial_timeout` | number/string | Таймаут подключения (мс или "5s") |
 | `read_timeout` | number/string | Таймаут чтения |
 | `write_timeout` | number/string | Таймаут записи |
-| `compression` | number | Режим сжатия (см. Константы) |
+| `compression` | number/string | Режим сжатия (см. Константы) или `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
 | `compression_threshold` | number | Мин. размер для сжатия (0-100MB) |
 | `read_limit` | number | Макс. размер сообщения (0-128MB) |
 | `channel_capacity` | number | Буфер канала приёма (1-10000) |
@@ -69,10 +69,7 @@ local client, err = websocket.connect("wss://api.example.com/ws", {
 ### Текстовые сообщения
 
 ```lua
-local ok, err = client:send("Hello, Server!")
-if err then
-    return nil, err
-end
+client:send("Hello, Server!")
 
 -- Отправка JSON
 client:send(json.encode({
@@ -92,7 +89,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Содержимое сообщения |
 | `type` | number | `websocket.TEXT` (1) или `websocket.BINARY` (2) |
 
-**Возвращает:** `boolean, error`
+Приостанавливает выполнение до отправки сообщения. Не возвращает значений.
 
 ### Ping
 
@@ -100,7 +97,7 @@ client:send(binary_data, websocket.BINARY)
 client:ping()
 ```
 
-**Возвращает:** `boolean, error`
+Приостанавливает выполнение до отправки ping. Не возвращает значений.
 
 ## Приём сообщений
 
@@ -183,7 +180,7 @@ client:close(websocket.CLOSE_CODES.INTERNAL_ERROR, "Processing failed")
 | `code` | number | Код закрытия (1000-4999), по умолчанию 1000 |
 | `reason` | string | Причина закрытия (опционально) |
 
-**Возвращает:** `boolean, error`
+Приостанавливает выполнение до отправки кадра закрытия.
 
 ## Константы
 

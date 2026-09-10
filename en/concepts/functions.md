@@ -119,11 +119,7 @@ pool:
 ```
 
 <tip>
-Prefer an explicit pool `type`. For `type: static`, set `size`; if `workers` is
-also present, it supplies the worker count and still requires a positive
-`size`. In the legacy implicit mode, `workers > 0` plus `size > 0` selects a
-static pool, `max_size > 0` with no workers selects a lazy pool, and `size`
-alone falls through to inline execution.
+If you don't specify a pool type, the runtime selects one based on your configuration. Set `workers` for static, `max_size` for lazy, or explicitly set `type` for full control. With neither set, the pool is lazy with a maximum of 16 workers.
 </tip>
 
 ## Interceptors

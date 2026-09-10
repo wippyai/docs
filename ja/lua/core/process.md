@@ -1,6 +1,6 @@
 ---
 title: "プロセス管理"
-description: "Wippyプロセスのスポーン、監視、リンク、メッセージ送信、命名、アップグレード。"
+description: "子プロセスのスポーン、監視、通信。メッセージパッシング、スーパービジョン、ライフサイクル管理によるアクターモデルパターンを実装。"
 ---
 
 # プロセス管理
@@ -135,8 +135,8 @@ local events = process.events()  -- Lifecycle events from @events topic
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
 | `kind` | string | イベントタイプ定数 |
-| `from` | string | ソースPID |
-| `result` | table | EXIT/LINK_DOWN用：{value, error}レコード。プロセスの戻り値は `result.value`、エラーは `result.error` に格納されます |
+| `from` | string | ソースPID（OUTDATEDでは存在しない）|
+| `result` | table | EXIT/LINK_DOWN用: {value, error} レコード。プロセスの戻り値は `result.value`、エラーは `result.error` にある |
 | `reason` | string | CANCEL用: プロセスがキャンセルされている理由 |
 | `sources` | string[] | OUTDATED用: 変更された、または推移的に影響を受けたレジストリID |
 
@@ -166,10 +166,10 @@ inboxと、`{message = true}` を指定したlistenerはMessageオブジェク�
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: topic name
-msg:from()             -- string|nil: sender PID
-msg:payload()          -- Payload: wrapper (call :data() to extract)
-msg:payload():data()   -- any: actual payload value
+msg:topic()            -- string: トピック名
+msg:from()             -- string: 送信者PID（不明な場合は空文字列）
+msg:payload()          -- Payload: ラッパー（値を取得するには :data() を呼び出す）。空の場合はnil、複数の値の場合はラッパーのテーブル
+msg:payload():data()   -- any: 実際のペイロード値
 ```
 
 ## 同期呼び出し
@@ -221,20 +221,33 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | オプション | 型 | 説明 |
 |--------|------|-------------|
 | `network` | string | 子プロセスの送信接続に使用する`network.*`エントリのレジストリID |
+| `terminal` | string | 子プロセスに仮想ターミナルをアタッチするビューポートグラント |
 
 **権限:** "context"に対する`process.context`。ネットワークの選択にはさらに、そのネットワークIDに対する`network.select`が必要。
+
+### ターミナルのアタッチ
+
+`terminal`グラントは`viewport:grant()`から取得し、子プロセスに専用のターミナルポートを与えます。これにより子プロセスは、ターミナルホスト上と同じように[TTY](lua/system/tty.md)モジュールを使用できます:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+グラントはワンショットで、アドミッション時に消費されます。起動が拒否された場合はグラントは未解決のまま再利用でき、ポートを解決した子プロセスはグラントを恒久的に消費し、ターミナルのアタッチをサポートしないホストはオプションを黙って破棄するのではなくスポーンを拒否します。スポーン元のプロセスは、自身が作成したビューポートを通じて子プロセスのフレームを読み取り続けます。[ターミナル](system/terminal.md#composable-terminals)を参照してください。
 
 ### SpawnBuilderメソッド
 
 `SpawnBuilder` はイミュータブルであり、各設定メソッドは新しいインスタンスを返します。
 
 ```lua
-spawner:with_context(values)      -- Add context values
-spawner:with_actor(actor)         -- Set security actor
-spawner:with_scope(scope)         -- Set security scope
-spawner:with_name(name)           -- Set process name
-spawner:with_message(topic, ...)  -- Queue message to send after spawn
-spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
+spawner:with_context(values)      -- コンテキスト値を追加
+spawner:with_actor(actor)         -- セキュリティアクターを設定
+spawner:with_scope(scope)         -- セキュリティスコープを設定
+spawner:with_name(name)           -- 起動時に名前を登録。使用済みの場合、spawnは既存のPIDを返し、キューされたメッセージはそのPIDへ送られる
+spawner:with_message(topic, ...)  -- スポーン後に送信するメッセージをキュー
+spawner:with_options(options)     -- スポーン時のオプションをマージ（例: network）
 ```
 
 **権限:** `:with_actor()` と `:with_scope()` には "security" に対する `process.security`
@@ -295,7 +308,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | いいえ | self | 登録するPID。デフォルトは呼び出しプロセス |
 | `scope` | number | いいえ | `LOCAL` | 上記のスコープ定数のいずれか |
 
-成功時は `true`、失敗時は `nil, error` を返します。クラスタスコープで名前が別のPIDに属する競合は `errors.ALREADY_EXISTS` を返します。同じ名前を同じPIDに登録する操作は冪等です。`STRONG` 登録は、すべてのライブノードが確認するか、予約期限が切れるまで待機します。
+成功時は `true`、失敗時は `nil, error` を返します。競合（異なるPIDに同じ名前が既に登録されている）は `errors.ALREADY_EXISTS` を返します。同じPIDに同じ名前を登録することは冪等です。`STRONG` 登録はすべてのライブノードが確認するか予約期限が切れるまでブロックします。タイムアウト時はエラーを返します。
 
 別のPIDを代理して登録する場合は、対象PIDに対する `process.registry.foreign` 権限が追加で必要です。
 
@@ -344,7 +357,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | target PID |
 | `process.link` | `link()` | target PID |
 | `process.unlink` | `unlink()` | target PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`、`with_options()` | "context" |
 | `process.security` | `:with_actor()`、`:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | name |
 | `process.registry.unregister` | `registry.unregister()` | name |
@@ -377,6 +390,7 @@ local ok, err = process.registry.unregister(name, scope)
 | フレームコンテキストが見つからない | `errors.INTERNAL` |
 | 必須引数がない | `errors.INVALID` |
 | 予約済みトピックプレフィックス（`@`） | `errors.INVALID` |
+| 宛先がPIDでも登録済みの名前でもない | `errors.NOT_FOUND` |
 | 名前が登録されていない | `errors.NOT_FOUND` |
 | 権限拒否 | `errors.PERMISSION_DENIED` |
 | 名前が既に登録済み | `errors.ALREADY_EXISTS` |

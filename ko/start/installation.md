@@ -1,6 +1,6 @@
 ---
 title: "설치"
-description: "Wippy 런타임을 설치하고 명령을 사용할 수 있는지 확인합니다."
+description: "Wippy 런타임 설치"
 ---
 
 # 설치
@@ -50,10 +50,11 @@ wippy install
 | `wippy add` | 의존성 추가 |
 | `wippy install` | 의존성 설치 |
 | `wippy update` | 의존성 업데이트 |
+| `wippy artifacts` | 빌드 타임 파일시스템 아티팩트 구체화 |
 | `wippy pack` | 스냅샷 생성 |
 | `wippy publish` | 허브에 퍼블리시 |
 | `wippy search` | 모듈 검색 |
-| `wippy readme` | Hub에서 모듈 README 가져오기 |
+| `wippy readme` | 허브에서 모듈 README 가져오기 |
 | `wippy registry` | 로드된 레지스트리 엔트리 검사 |
 | `wippy auth` | 인증 관리 |
 | `wippy version` | 버전 정보 출력 |
@@ -63,6 +64,10 @@ wippy install
 ## 문제 해결
 
 설치 후 shell에서 `wippy`를 찾지 못하면 shell을 다시 열고 설치 directory가 `PATH`에 있는지 확인하십시오.
+
+## 문제 해결
+
+설치 후 `wippy version`을 찾을 수 없다면 셸을 다시 열거나 설치 디렉토리가 `PATH`에 있는지 확인하세요.
 
 ## 다음 단계
 

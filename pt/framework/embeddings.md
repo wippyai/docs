@@ -18,13 +18,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-### Modelo e provedor obrigatórios
-
-Antes de chamar a API de embeddings, registre um `llm.model` cujo `meta.name` seja `text-embedding-3-small`, cujas capacidades incluam `embed` e cujo mapeamento de provedor resolva para um provedor de embeddings. Configure as credenciais desse provedor, como `OPENAI_API_KEY`, no armazenamento de ambiente usado por `wippy/llm`. Consulte a [configuração de modelos de LLM](./llm.md#configuracao-de-modelo).
-
-### Dependência do banco de dados
-
-Declare a dependência e defina seu parâmetro `target_db` como o banco de dados da aplicação:
+Declare a dependencia e aponte o requisito `target_db` para o banco de dados da sua aplicacao por meio dos `parameters` da dependencia:
 
 ```yaml
 version: "1.0"
@@ -44,7 +38,7 @@ entries:
         value: app:app_db
 ```
 
-Na inicialização, `wippy/migration` detecta a migração `01_create_embeddings_table` e cria a tabela `embeddings_512` para o driver de banco configurado.
+Na inicializacao, `wippy/migration` seleciona a migracao `01_create_embeddings_table` e cria a tabela `embeddings_512` com o indice vetorial apropriado para o driver do seu banco de dados.
 
 Se você usar o caminho relativo do SQLite mostrado acima, crie o diretório `data` antes de iniciar a aplicação.
 
@@ -173,8 +167,8 @@ Use o repositório diretamente quando já tiver um vetor e quiser evitar a gera�
 
 A migração cria o esquema apropriado para o driver do banco em `target_db`:
 
-- **PostgreSQL** — Tabela `embeddings_512` com uma coluna `vector(512)` e um índice IVFFlat de cosseno. A migração tenta instalar a extensão `vector`; portanto, o papel do banco deve poder criá-la ou a extensão já deve existir. O PostgreSQL armazena `origin_id` como `UUID`.
-- **SQLite** — Tabela virtual `vec0` chamada `embeddings_512`, que mantém a coluna vetorial `embedding float[512]` junto das colunas de metadados e conteúdo para busca KNN.
+- **PostgreSQL** - tabela `embeddings_512` com uma coluna `vector(512)` e um indice IVFFlat. Requer a extensao `pgvector`.
+- **SQLite** - tabela virtual `vec0` `embeddings_512` que guarda a coluna vetorial `embedding float[512]` junto com as colunas de metadados e conteudo para busca KNN.
 
 ## Consulte também
 

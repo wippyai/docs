@@ -1,6 +1,6 @@
 ---
 title: "Key-Value Store"
-description: "Armazene e recupere valores com expiração opcional e gravações condicionais."
+description: "Armazenamento key-value rapido com suporte a TTL. Ideal para cache, sessoes e estado temporario."
 ---
 
 # Key-Value Store
@@ -96,22 +96,15 @@ return user
 
 **Retorna:** `any, error`
 
-Retorna `nil` se chave não existe.
+Retorna `nil` e um erro `errors.NOT_FOUND` se a chave não existe ou expirou.
 
 ## Verificando Existencia
 
 Verificar se uma chave existe sem recuperar:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -194,9 +187,7 @@ local errors = require("errors")
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
-    -- someone else holds it
-elseif err then
-    return nil, err
+    -- outra pessoa a detém
 end
 
 -- compare-and-set: write only if the version still matches
@@ -204,9 +195,7 @@ local cur, read_err = cache:entry("config")
 if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
-    -- a concurrent writer changed it; re-read and retry
-elseif err2 then
-    return nil, err2
+    -- um escritor concorrente a alterou; releia e tente novamente
 end
 ```
 
@@ -274,27 +263,23 @@ Operações de store estao sujeitas a avaliação de política de segurança.
 | Ação | Recurso | Atributos | Descrição |
 |------|---------|-----------|-----------|
 | `store.get` | ID do Store | - | Adquirir um recurso store |
-| `store.info` | ID do Store | - | Inspecionar recursos disponíveis no store |
-| `store.key.get` | ID do Store | `key` | Ler o valor de uma chave (também `entry`) |
-| `store.key.set` | ID do Store | `key` | Escrever o valor de uma chave (também `put`) |
+| `store.info` | ID do Store | - | Inspecionar capacidades do store |
+| `store.key.get` | ID do Store | `key` | Ler valor de uma chave (também `entry`) |
+| `store.key.set` | ID do Store | `key` | Escrever valor de uma chave (também `put`) |
 | `store.key.delete` | ID do Store | `key` | Deletar uma chave |
 | `store.key.has` | ID do Store | `key` | Verificar existencia de chave |
 | `store.key.list` | ID do Store | `prefix` | Listar entradas |
 
 ## Erros
 
-Negações de `store.get`, `get`, `set`, `delete` e `has` geram um erro Lua. Os métodos `info`, `entry`, `list` e `put` retornam `errors.PERMISSION_DENIED`. Conceda as ações necessárias antes de chamar código que não tolere uma negação gerada.
-
-Falhas de entrada, lookup, backend e capacidades retornam erros estruturados; inspecione-as com `err:kind()`. As negações de permissão seguem o comportamento dividido descrito acima.
+`store.get()` e todos os métodos do handle do store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) retornam erros estruturados (use `err:kind()`), exceto que uma negação de permissão em `store.get`, `get`, `set`, `has` e `delete` levanta um erro Lua em vez disso.
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID de recurso vazio | `errors.INVALID` | não |
-| Registry de recursos indisponível | `errors.NOT_FOUND` | não |
-| Falha ao adquirir recurso, incluindo recurso ausente | `errors.INTERNAL` | não |
+| Recurso não encontrado | `errors.INTERNAL` | não |
 | Store liberado | `errors.INVALID` | não |
-| Permissão negada por `info`, `entry`, `list` ou `put` | `errors.PERMISSION_DENIED` | não |
-| Permissão negada por `store.get`, `get`, `set`, `delete` ou `has` | gera erro Lua | não aplicável |
+| Permissão negada (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | não |
 | `only_if_absent` e chave existe | `errors.ALREADY_EXISTS` | não |
 | Divergência de `if_version` | `errors.CONFLICT` | sim |
 | Escrita condicional em store sem suporte | `errors.INVALID` | não |

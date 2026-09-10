@@ -1,6 +1,6 @@
 ---
-title: "Contexto da Requisição"
-description: "Leia valores com escopo de requisição propagados por chamadas de funções e processos."
+title: "Request Context"
+description: "Acessa valores de contexto com escopo de requisição. Contexto é definido via Funcs ou Process."
 ---
 
 # Contexto da Requisição

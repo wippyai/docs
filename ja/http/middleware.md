@@ -104,7 +104,7 @@ options:
 
 **キー戦略：** `ip`、`header:X-API-Key`、`query:api_key`
 
-`429 Too Many Requests`を、`X-RateLimit-Limit`、`X-RateLimit-Window`ヘッダーとともに返します。
+`429 Too Many Requests`をヘッダー付きで返します：`X-RateLimit-Limit`、`X-RateLimit-Window`。
 
 ---
 
@@ -145,9 +145,9 @@ options:
 ```
 
 | オプション | デフォルト | 説明 |
-|--------|---------|-------------|
-| `real_ip.trusted.subnets` | ループバック、RFC 1918プライベート、IPv4リンクローカル、CGNAT、IPv6 ULA、IPv6リンクローカルの各範囲 | 信頼するプロキシのCIDR |
-| `real_ip.trust_all` | `false` | すべての送信元を信頼（安全ではありません） |
+|-----------|-----------|------|
+| `real_ip.trusted.subnets` | ループバック、RFC 1918、リンクローカル、CGNAT、IPv6ローカル範囲 | 信頼するプロキシCIDR |
+| `real_ip.trust_all` | `false` | すべてのソースを信頼（安全でない） |
 
 **ヘッダーの優先順位：** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
 
@@ -297,7 +297,7 @@ post_options:
 
 <note>プリハンドラ</note>
 
-受信リクエストのOpenTelemetryスパンとメトリクスを記録します。OTelが有効な場合は自動的に登録され、それ以外では何もしません。
+受信リクエストのOpenTelemetryサーバースパンを記録します。常に登録され、OTelまたはそのHTTP計装が無効な場合はno-opとして動作します。
 
 ```yaml
 middleware:

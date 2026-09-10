@@ -1,6 +1,6 @@
 ---
 title: "テキスト処理"
-description: "正規表現のコンパイル、テキスト比較、パッチ作成、文書のチャンク分割を行います。"
+description: "正規表現、テキスト差分、セマンティックテキスト分割を提供します。"
 ---
 
 # テキスト処理
@@ -394,19 +394,8 @@ if err then
     return nil, err
 end
 
-local fs = require("fs")
-local docs, docs_err = fs.get("app:docs")
-if docs_err then
-    return nil, docs_err
-end
-local readme, read_err = docs:readfile("README.md")
-if read_err then
-    return nil, read_err
-end
-local chunks, split_err = splitter:split_text(readme)
-if split_err then
-    return nil, split_err
-end
+local readme = fs.get("app:docs"):readfile("README.md")
+local chunks, err = splitter:split_text(readme)
 ```
 
 この部分的なレシピでは、実行エントリで`text`と`fs`の両方を有効にし、`app:docs`ファイルシステムリソースを設定して、そのリソース内の`README.md`を読み取り可能にする必要があります。
@@ -423,6 +412,7 @@ end
 | `reference_links` | boolean | false | 参照リンクを保持 |
 | `heading_hierarchy` | boolean | false | 見出しレベルを尊重 |
 | `join_table_rows` | boolean | false | テーブル行をまとめて保持 |
+| `separators` | string[] | nil | カスタム区切り文字リスト |
 
 ### `splitter:split_text`
 

@@ -83,7 +83,7 @@ Stellen Sie den API-Schlüssel über eine dieser Methoden bereit:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Authentifizierungs- und Zugangsdatenfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die veralteten Direktiven `api_key_env` und `key_pem_env` werden auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `api_key: ${env:NAME}` beziehungsweise `key_pem: ${env:NAME}`.
+Auth- und Credential-Felder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktiven `api_key_env` / `key_pem_env` werden auf dieselbe Weise aufgelöst, sind aber veraltet; bevorzugen Sie `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -131,6 +131,30 @@ health_check:
   interval: "30s"
 ```
 
+### Propagierung des Sicherheitskontexts
+
+Wippy propagiert den aufrufenden Akteur und dessen Scope als signierten Temporal-Header an Workflows und Activities. Signiert wird mit HMAC-SHA256 und einem Schlüssel, den der Client-Eintrag hält:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Feld | Beschreibung |
+|------|--------------|
+| `security_hmac_key` | Base64-kodierter Signierschlüssel; muss zu mindestens 32 Bytes dekodieren |
+| `security_hmac_previous_keys` | Base64-kodierte Schlüssel, die zur Verifizierung weiterhin akzeptiert werden, für die Rotation |
+
+Beide Felder sind in YAML base64-kodiert, weil es Byte-Felder sind. Ein Schlüssel mit weniger als 32 dekodierten Bytes wird bei der Konfigurationsvalidierung abgelehnt, ebenso das Deklarieren von `security_hmac_previous_keys` ohne `security_hmac_key`. Neue Header werden immer mit `security_hmac_key` signiert; bei der Verifizierung wird jeder aufgeführte vorherige Schlüssel probiert. Die Rotation lautet also: den neuen Schlüssel als `security_hmac_key` hinzufügen, den alten nach `security_hmac_previous_keys` verschieben und ihn entfernen, sobald keine laufende Ausführung ihn mehr trägt.
+
+**Das Starten eines Workflows unter einem Akteur oder Scope erfordert den Schlüssel.** Hat der Aufrufer einen Sicherheitskontext und der Client keinen Signierschlüssel, kann der Header nicht signiert werden und der Start schlägt fehl. Ein Client ohne Schlüssel kann Workflows nur aus einem Kontext starten, der weder Akteur noch Scope trägt.
+
+Der Worker bezieht die Schlüssel aus dem Client-Eintrag, auf den er verweist, sodass ein Worker Signierung und Verifizierung von `client:` erbt, ohne selbst etwas zu konfigurieren. Siehe [Workflows](temporal/workflows.md#security-context) und [Activities](temporal/activities.md).
+
 ## Worker-Konfiguration
 
 Der `temporal.worker`-Entry-Typ definiert einen Worker, der Workflows und Activities ausführt.
@@ -163,10 +187,10 @@ Worker-Verhalten konfigurieren:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
-    # Identity
-    identity: ""                          # Worker identity (appears in Temporal UI)
+    # Identität
+    identity: ""                          # Worker-Identität (erscheint in der Temporal-UI)
 
-    # Concurrency
+    # Nebenläufigkeit
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
@@ -199,12 +223,13 @@ Worker-Verhalten konfigurieren:
 
     # Versioning
     deployment_name: ""
-    build_id: ${env:BUILD_ID}              # Read from env registry
+    build_id: ""
+    build_id: ${env:BUILD_ID}              # Aus der Env-Registry lesen
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Zugangsdaten- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die veraltete Direktive `build_id_env` wird auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `build_id: ${env:NAME}`.
+Credential- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodieren über die [Umgebungs-Registry](system/env.md) auf. Die Legacy-Direktive `build_id_env` wird auf dieselbe Weise aufgelöst, ist aber veraltet; bevorzugen Sie `build_id: ${env:NAME}`.
 
 ### Versionierungsverhalten
 
@@ -215,7 +240,7 @@ Zugangsdaten- und Bezeichnerfelder lösen `${env:NAME}`-Platzhalter beim Dekodie
 | `pinned` | Workflow bleibt für die gesamte Laufzeit auf der Build-ID, mit der er gestartet wurde |
 | `auto_upgrade` | Workflow kann nach jedem Task auf der neuesten kompatiblen Build-ID fortgesetzt werden |
 
-`build_id: ${env:NAME}` liest die Build-ID aus der Umgebungs-Registry, wenn keine literale `build_id` angegeben wurde.
+`build_id: ${env:NAME}` liest die Build-ID aus der Env-Registry, wenn keine literale `build_id` angegeben ist.
 
 ### Session Worker
 

@@ -1,6 +1,6 @@
 ---
 title: "WebSocket Client"
-description: "Connect to WebSocket servers, send and receive messages, use compression, and close connections."
+description: "WebSocket client for real-time bidirectional communication with servers."
 ---
 
 # WebSocket Client
@@ -61,15 +61,15 @@ end
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `headers` | table | String-to-string HTTP handshake headers; other entries are ignored |
-| `protocols` | table | WebSocket subprotocol strings; non-string entries are ignored |
-| `dial_timeout` | number/string | Connection timeout; `0` applies no runtime-wide connection deadline, while underlying HTTP transport defaults still apply |
-| `read_timeout` | number/string | Per-message read timeout; `0` disables it |
-| `write_timeout` | number/string | Accepted by the Lua API but not applied by runtime `v0.3.32a` |
-| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"`, or `2`/`"no_context_takeover"`; default disabled |
-| `compression_threshold` | number | Minimum size to compress, in bytes (0-104857600); `0` uses 128 bytes for context takeover or 512 for no-context-takeover mode |
-| `read_limit` | number | Maximum inbound message size, in bytes (0-134217728); `0` uses 16 MiB |
-| `channel_capacity` | number | Service-side inbound message buffer (1-10000); default 16 |
+| `headers` | table | HTTP headers for handshake |
+| `protocols` | table | WebSocket subprotocols |
+| `dial_timeout` | number/string | Connection timeout (ms or "5s") |
+| `read_timeout` | number/string | Read timeout |
+| `write_timeout` | number/string | Write timeout |
+| `compression` | number/string | Compression mode (see Constants), or `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
+| `compression_threshold` | number | Min size to compress (0-100MB) |
+| `read_limit` | number | Max message size (0-128MB) |
+| `channel_capacity` | number | Receive channel buffer (1-10000) |
 
 **Timeout format:** Numbers are milliseconds. Strings use Go duration syntax such as `"5s"` or `"1m"`.
 
@@ -108,7 +108,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-If `type` is absent or not `websocket.TEXT` or `websocket.BINARY`, the runtime sends a text message. The call yields until the send command completes and returns no values. In runtime `v0.3.32a`, transport send failures are not returned to Lua.
+Yields until the message is sent. Returns no values.
 
 ### Ping
 
@@ -118,7 +118,7 @@ Send a ping frame.
 client:ping()
 ```
 
-The call yields until the ping command completes and returns no values. In runtime `v0.3.32a`, transport ping failures are not returned to Lua.
+Yields until the ping is sent. Returns no values.
 
 ## Receiving Messages
 

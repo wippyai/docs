@@ -1,6 +1,6 @@
 ---
 title: "Кодирование YAML"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='encoding'/"
+description: "Разбор YAML-документов в Lua-таблицы и сериализация Lua-значений в YAML-строки."
 ---
 
 # Кодирование YAML
@@ -123,7 +123,7 @@ print(config.server.port)     -- 8080
 print(config.features[1])     -- "auth"
 
 -- Разбор содержимого файла
-local content = fs.read("config.yaml")
+local content = fs.get("app:config"):readfile("config.yaml")
 local settings, err = yaml.decode(content)
 if err then
     return nil, errors.wrap(err, "invalid config file")

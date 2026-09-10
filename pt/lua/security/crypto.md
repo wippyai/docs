@@ -1,6 +1,6 @@
 ---
 title: "Criptografia & Assinatura"
-description: "Gere valores aleatórios, autentique dados, criptografe conteúdo, verifique JWTs e derive chaves."
+description: "Operações criptograficas incluindo criptografia, HMAC, JWT e derivação de chaves. Adaptado para workflows."
 ---
 
 # Criptografia & Assinatura
@@ -184,7 +184,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | Token JWT para verificar |
 | `key` | string | Secret (HMAC) ou chave publica PEM (RSA) |
 | `alg` | string? | Algoritmo esperado (padrão: HS256) |
-| `require_exp` | boolean? | Exigir uma claim `exp` (padrão: true) |
+| `require_exp` | boolean? | Exigir a presença de uma claim `exp` (padrão: true); uma `exp` presente é sempre validada |
 
 **Retorna:** `table, error`
 

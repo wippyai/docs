@@ -1,6 +1,6 @@
 ---
 title: "Futures"
-description: "Receive, inspect, and cancel results from asynchronous function and contract calls."
+description: "Asynchronous operation results. Futures are returned by funcs.async() and contract async calls."
 ---
 
 # Futures
@@ -102,13 +102,9 @@ Request cancellation of the asynchronous operation on a best-effort basis:
 local canceled, err = future:cancel()
 ```
 
-The operation may still complete if it is already in progress.
-
 **Returns:** `boolean, error`
 
-<warning>
-In runtime v0.3.32a, function and contract futures share one process-global cancellation callback. When both providers are loaded, <code>cancel()</code> and <code>is_canceled()</code> are not a stable cross-provider contract. Do not use cancellation for application correctness; time out locally and ignore a late result until the runtime separates provider cancellation.
-</warning>
+Operation may still complete if already in progress.
 
 ## Timeout Pattern
 
@@ -131,11 +127,8 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- The operation may still complete; this caller ignores the late result.
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
+    future:cancel()
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 local payload, result_err = future:result()
@@ -186,9 +179,7 @@ return value
 
 ## Errors
 
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| Operation canceled through `result()` | `errors.CANCELED` | no |
-| Operation failure returned by `result()` | varies | preserved from the function error |
-| Operation failure returned by `error()` | `errors.INTERNAL` | no |
-| Cancellation dispatch failed | `errors.INTERNAL` | no |
+| Condition | Kind |
+|-----------|------|
+| Operation canceled | `CANCELED` |
+| Async operation failed | `result()` preserves the operation's kind; `error()` reports `INTERNAL` |

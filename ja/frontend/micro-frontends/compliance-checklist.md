@@ -1,77 +1,61 @@
 ---
-title: "Frontend compliance と publication gate"
-description: "normative frontend compliance rule、checker ownership、publication gate、deterministic visual evidence requirement。"
+title: "フロントエンドコンプライアンスルール索引"
+description: "正典のフロントエンドルールと決定的なチェッカーの所有関係を簡潔にまとめた索引。"
 ---
 
-# Frontend compliance と publication gate
+# フロントエンドコンプライアンスルール索引
 
-**分類: normative compliance/evidence reference。** JSON block は checker input の placeholder shape であり、passing evidence や standalone application fixture ではありません。
+このページは索引であり、契約のもう1つの写しではありません。規範的なルールの記述は [可搬 UI 契約](../portable-ui-contract.md) が所有します。以下のリンクは詳細な実装ガイダンスを提供します。
 
-このページが deterministic checker と publication requirement を所有します。[Portable UI Contract](../portable-ui-contract.md)が underlying rule statement、linked guide が実装詳細を所有します。public `@wippy-fe/*` 0.0.56 は module-compliance CLI を提供しません。repository documentation checker は documentation example と generated catalogue freshness を検証し、module が選択した compliance workflow が次の application-facing check を実装します。
-
-| ルール | 詳細ガイド | 決定論的な結果 |
+| ルール | 詳細なガイダンス | 決定的な結果 |
 |---|---|---|
-| FE-PORT-001 | [Portable UI Contract](../portable-ui-contract.md) | private portability assumption を拒否 |
-| FE-UI-001 | 同上 | raw/hand-rolled standard control を拒否 |
-| FE-UI-002 | 同上 | affordance analysis 必須 |
-| FE-UI-003 | 同上 | sibling contract と alternate-theme evidence 必須 |
-| FE-UI-004 | 同上 | control があれば PrimeVue setup 必須 |
-| FE-UI-005 | 同上 | invented prop/API を拒否 |
-| FE-TW-001 | [Tailwind Contract](./tailwind-contract.md) | selected Wippy preset を解決 |
-| FE-TW-002 | 同上 | runtime と記述した compile-time value を拒否 |
-| FE-TW-003 | 同上 | invariant classification なしの fixed sibling value を拒否 |
-| FE-TW-004 | 同上 | protected mapping override を拒否 |
-| FE-TOKEN-001 | [Token Catalogue](./token-catalogue.md) | undeclared `--p-*` reference を拒否 |
-| FE-TOKEN-002 | 同上 | inferred/invented token 名を拒否 |
-| FE-STYLE-001 | [Theme Authoring](./theming.md) | private facade class と module-local `.p-*` theming を拒否 |
-| FE-A11Y-001 | [Portable UI Contract](../portable-ui-contract.md) | invalid/inaccessible custom control を拒否 |
+| FE-PORT-001 | [可搬 UI 契約](../portable-ui-contract.md) | 私有の可搬性前提を拒否する |
+| FE-UI-001 | [可搬 UI 契約](../portable-ui-contract.md) | 生の、または手書きの標準コントロールを拒否する |
+| FE-UI-002 | [可搬 UI 契約](../portable-ui-contract.md) | アフォーダンス分析を要求する |
+| FE-UI-003 | [可搬 UI 契約](../portable-ui-contract.md) | 兄弟契約と代替テーマの証跡を要求する |
+| FE-UI-004 | [可搬 UI 契約](../portable-ui-contract.md) | コントロールが存在する場合に PrimeVue のセットアップを要求する |
+| FE-UI-005 | [可搬 UI 契約](../portable-ui-contract.md) | 発明された props と API を拒否する |
+| FE-TW-001 | [Tailwind 契約](./tailwind-contract.md) | 選択された Wippy プリセットを解決する |
+| FE-TW-002 | [Tailwind 契約](./tailwind-contract.md) | ランタイムとして文書化されたコンパイル時の値を拒否する |
+| FE-TW-003 | [Tailwind 契約](./tailwind-contract.md) | 不変性の分類がない固定の兄弟値を拒否する |
+| FE-TW-004 | [Tailwind 契約](./tailwind-contract.md) | 保護されたマッピングのオーバーライドを拒否する |
+| FE-TOKEN-001 | [トークンカタログ](./token-catalogue.md) | 未宣言の `--p-*` 参照を拒否する |
+| FE-TOKEN-002 | [トークンカタログ](./token-catalogue.md) | 推測または発明されたトークン名を拒否する |
+| FE-STYLE-001 | [テーマの記述](./theming.md) | 私有のファサードクラスとモジュールローカルな `.p-*` のテーミングを拒否する |
+| FE-A11Y-001 | [可搬 UI 契約](../portable-ui-contract.md) | 妥当でない、またはアクセシブルでないカスタムコントロールを拒否する |
 
-## 必須チェッカーグループ
+## 必要なチェッカーのグループ
 
-- PostCSS で token CSS を parse し、generated snapshot を byte-for-byte compare。
-- actual Tailwind configuration を resolve し representative utility を compile。
-- emitted declaration を runtime variable、compiled constant、arbitrary literal、internal/transient に分類。
-- raw control、missing PrimeVue setup、protected override、undeclared token、private facade dependency、contract hash drift を拒否。
-- import-map external を complete pinned snapshot と比較。
-- build output を registry/served asset と照合。
-- `host.setThemeMode()` を使って propagated AppConfig state を検証し、direct theme-class manipulation/internal wire を拒否。
-- generated catalogue の provenance、version tuple、source hash を検証。
-- copyable example を parse/build し nested interactive content を検査。
-- project-bound mode は exactly `UNSUPPORTED`、標準 CI は失敗。
+- トークン CSS を PostCSS でパースし、生成されたトークンのスナップショットをバイト単位で比較する。
+- 実際の Tailwind 設定を解決し、代表的なユーティリティをコンパイルする。
+- 出力された宣言を、ランタイム変数、コンパイル済み定数、任意リテラル、内部／一時のいずれかに分類する。
+- 生のコントロール、PrimeVue セットアップの欠落、保護されたマッピングのオーバーライド、未宣言のトークン、私有ファサードへの依存、契約ハッシュのずれを拒否する。
+- インポートマップの externals を、ピン留めされた完全なスナップショットと比較する。
+- ビルド出力を、設定されたレジストリおよび配信されるアセットと照合する。
+- テーマ切り替えは `host.setThemeMode()` を使用し、伝播された AppConfig の状態を検証する。テーマクラスの直接操作と内部のプロキシ配線は拒否する。
+- 生成されたカタログについて、出所、バージョンのタプル、ソースのハッシュを確認する。
+- コピー可能なサンプルをパースし、該当する場合はビルドし、ネストしたインタラクティブコンテンツがないか確認する。
+- プロジェクト固定モードは正確に `UNSUPPORTED` を返し、標準の CI は失敗する。
 
-Promptmap は lead を生成できますが、token existence、utility resolution、reachability、deletion の evidence ではありません。
+Promptmap は手がかりを生成することがあります。トークンの存在、ユーティリティの解決、到達可能性、削除の証拠にはなりません。
 
-## 生成された公開ゲート
+## 生成物の公開ゲート
 
-generated token/Tailwind section に pending marker を残せません。新 runtime token には real Wippy CSS consumer、computed-style mutation test、documented portable-consumer purpose が必要です。
+生成されたトークンおよび Tailwind のセクションは、公開時に pending マーカーを含んでいてはなりません。新しいランタイムトークンにはいずれも、実在する Wippy の CSS コンシューマー、計算済みスタイルの変異テスト、そして文書化された可搬コンシューマー向けの目的が必要です。
 
-runtime evidence は repository 外に置き、次を設定します。
+公開ではランタイムの証跡をリポジトリの外に置きます。次を設定してください。
 
-- `WIPPY_THEME_ROOT`: selected `@wippy-fe/theme` package。
-- `WIPPY_FE_EVIDENCE_ROOT`: `runtime-acceptance-evidence.json`、`visual-evidence-index.json`、relative scenario manifest、screenshot を含む release evidence directory。
-- `WIPPY_FE_RUNTIME_EVIDENCE_SHA256`: exact `runtime-acceptance-evidence.json` byte の lowercase SHA-256。
+- `WIPPY_THEME_ROOT` — 選択した `@wippy-fe/theme` パッケージ。
+- `WIPPY_FE_EVIDENCE_ROOT` — `runtime-acceptance-evidence.json`、`visual-evidence-index.json`、それらの相対シナリオマニフェスト、スクリーンショットを含むリリース証跡ディレクトリ。
+- `WIPPY_FE_RUNTIME_EVIDENCE_SHA256` — `runtime-acceptance-evidence.json` の正確なバイト列に対する小文字の SHA-256。
 
-Wippy Docs root から Node.js 22+ で publication check を実行します。PowerShell:
+`FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs` は、選択したテーマの正典の受け入れチェッカーをその証跡パスとハッシュ付きで呼び出し、続いてビジュアル証跡を検証・再計算します。通常のドキュメント鮮度チェックでは、ローカルのリリース証跡は不要です。
 
-```powershell
-$env:FRONTEND_DOCS_PUBLICATION = '1'
-node scripts/check-frontend-docs.mjs
-Remove-Item Env:FRONTEND_DOCS_PUBLICATION
-```
+## 決定的なビジュアル検証
 
-POSIX shell:
+外観の変更に影響を受けるすべてのコンポーネントには、シナリオマニフェストと、変更不可の before/after/diff の証跡があります。ベースラインと候補は、同じブラウザービルド、デバイスピクセル比、フォント、フィクスチャデータ、テーマ、ビューポート、モーション低減設定、安定化ルールを使用します。ライトとダークのテーマ、インタラクション状態、オーバーレイ、無効／エラー状態、そしてプロダクトがサポートするデスクトップレイアウトを含め、該当するすべての状態をキャプチャしてください。デスクトップ専用のプロダクトに対して、狭幅／モバイルの要件を勝手に作らないでください。
 
-```sh
-FRONTEND_DOCS_PUBLICATION=1 node scripts/check-frontend-docs.mjs
-```
-
-checker は selected theme の canonical acceptance checker を evidence path/hash 付きで呼び、visual evidence を validate/recompute します。通常の freshness check は local release evidence を必要としません。
-
-## 決定論的なビジュアル検証
-
-appearance change の影響を受ける全 component は scenario manifest と immutable before/after/diff evidence を持ちます。baseline/candidate は同じ browser build、DPR、font、fixture data、theme、viewport、reduced motion、settling rule を使います。light/dark、interaction、overlay、disabled/error、product が support する desktop layout を capture し、desktop-only product に narrow/mobile requirement を発明しません。
-
-各 scenario は component crop と surrounding context、overlay/overflow/page layout 影響時は full page も capture します。component index は complete applicable matrix と scenario manifest を宣言します。
+各シナリオは、コンポーネントの切り抜きと、その周囲のアプリケーションコンテキストをキャプチャします。オーバーレイ、オーバーフロー、ページレイアウトが影響を受けうる場合はページ全体もキャプチャします。コンポーネントの索引は、該当するマトリクス全体を宣言し、シナリオごとに1つの変更不可なマニフェストを指します。
 
 ```json
 {
@@ -107,9 +91,9 @@ appearance change の影響を受ける全 component は scenario manifest と i
 }
 ```
 
-checker は applicability cross-product を展開し、theme/viewport/state に unique scenario がなければ失敗します。`overlay: true` では各 scenario に `full-page` scope も必要です。final build commit/hash は全 scenario candidate と一致し `recapturedAfterBuild` は true でなければなりません。
+チェッカーは applicability の直積を展開し、宣言されたテーマ、ビューポート、状態のいずれかに固有のシナリオがなければ失敗します。`overlay` が true の場合、すべてのシナリオに `full-page` のキャプチャスコープも必要です。最終ビルドのコミットとハッシュは、すべてのシナリオの候補と一致していなければならず、`recapturedAfterBuild` は true でなければなりません。
 
-各 scenario manifest は filename を信用せず hash を記録します。
+各シナリオのマニフェストは、ファイル名を信頼するのではなくハッシュを記録します。
 
 ```json
 {
@@ -190,4 +174,4 @@ checker は applicability cross-product を展開し、theme/viewport/state に 
 }
 ```
 
-値は required shape で有効な evidence ではありません。changed component/state に scenario がない、required scope/image/hash がない、build が stale、unexpected console error/temporary fixture code が残る、reviewed design waiver なしで tolerance 超過、のいずれかで publication は失敗します。waiver は exact changed pixel、design reason、reviewer、scenario を記録し、missing capture、console error、fixture cleanup は免除できません。
+上記の値は必要な形を示すものであり、妥当な証跡ではありません。変更されたコンポーネントや必須の状態にシナリオがない、必要なキャプチャスコープが欠けている、参照された画像やハッシュが存在しない、ビルドが古い、想定外のコンソールエラーが残っている、一時的なフィクスチャコードが残っている、あるいはレビュー済みのデザイン免除なしに diff が許容量を超えている場合、公開は失敗します。免除は、変更されたピクセル数、デザイン上の理由、レビュアー、影響を受けるシナリオを正確に記録します。キャプチャの欠落、コンソールエラー、フィクスチャの後片付けを免除することはできません。

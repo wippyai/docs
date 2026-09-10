@@ -1,6 +1,6 @@
 ---
 title: "暗号化 & 署名"
-description: "ランダム値の生成、データ認証、コンテンツ暗号化、JWT検証、鍵導出を行います。"
+description: "暗号化、HMAC、JWT、鍵導出を含む暗号操作を提供します。ワークフロー向けに適応されています。"
 ---
 
 # 暗号化 & 署名
@@ -184,7 +184,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | 検証するJWTトークン |
 | `key` | string | シークレット（HMAC）またはPEM公開鍵（RSA） |
 | `alg` | string? | 期待するアルゴリズム（デフォルト: HS256） |
-| `require_exp` | boolean? | `exp`クレームを必須にする（デフォルト: true） |
+| `require_exp` | boolean? | `exp`クレームの存在を必須にする（デフォルト: true）。存在する`exp`は常に検証されます |
 
 **戻り値:** `table, error`
 

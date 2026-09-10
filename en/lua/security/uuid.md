@@ -1,6 +1,6 @@
 ---
 title: "UUID Generation"
-description: "Generate, validate, inspect, parse, and format UUIDs."
+description: "Generate universally unique identifiers. Adapted for workflows - random UUIDs return consistent values on replay."
 ---
 
 # UUID Generation
@@ -142,7 +142,7 @@ Returned table fields:
 - `version` (integer): UUID version (1, 3, 4, 5, or 7)
 - `variant` (string): RFC4122, Reserved, Microsoft, Future, NCS, or Invalid
 - `timestamp` (integer): Unix timestamp (v1 and v7 only)
-- `node` (string): raw six-byte node identifier (v1 only); encode it before display or text storage
+- `node` (string): 6 raw node ID bytes (v1 only)
 
 ### `format`
 

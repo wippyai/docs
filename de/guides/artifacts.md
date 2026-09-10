@@ -1,19 +1,24 @@
 ---
-title: "Buildzeit-Artefakte"
-description: "Formatbewusste Dateisystemartefakte für konsumierende Projekte deklarieren, validieren, veröffentlichen und materialisieren."
+title: "Build-Zeit-Artefakte"
+description: "Eine Filesystem-Ressource als formatbewusstes Artefakt deklarieren, sie in ein konsumierendes Projekt materialisieren und was die Laufzeit automatisch abgleicht."
 ---
 
-# Buildzeit-Artefakte
+# Build-Zeit-Artefakte
 
-Ein Modul kann ein Verzeichnis ausliefern, das Konsumenten **zur Buildzeit** statt zur Laufzeit verwenden, beispielsweise ein Paket, gegen das andere Module kompilieren. Wippy bezeichnet solche Inhalte als **Artefakte**: WAPP-Dateisystemressourcen mit `meta.artifact.format`.
+Ein Modul kann ein Verzeichnis ausliefern, das Konsumenten **zur Build-Zeit** statt
+zur Laufzeit verwenden — am nützlichsten ein Paket, gegen das andere Module kompilieren. Wippy
+nennt diese **Artefakte**: gewöhnliche WAPP-Filesystem-Ressourcen, markiert mit
+`meta.artifact.format`.
 
-Artefakte ermöglichen es, ein gemeinsam genutztes Paket zusammen mit einem Modul über Repository-Grenzen hinweg zu transportieren, an denen ein repository-lokaler Pfadalias nicht aufgelöst werden kann.
+So erreicht ein geteiltes Paket ein Modul in einem anderen Repository. Ein Pfad-Alias
+löst nur innerhalb eines Repos auf; ein Artefakt reist mit dem Modul.
 
-[Die Designschicht](../frontend/design-layer.md) erklärt, *was* in ein solches Paket gehört und was nicht; diese Seite beschreibt den Mechanismus für seine Auslieferung.
+[Die Design-Schicht](../frontend/design-layer.md) erklärt, *was* in ein solches
+Paket gehört und was nicht; diese Seite ist der Mechanismus, der es ausliefert.
 
-## Artefakt deklarieren
+## Ein Artefakt deklarieren
 
-Der Produzent deklariert ein normales `fs.directory` und kennzeichnet es mit einem Format:
+Der Produzent deklariert ein normales `fs.directory` und markiert es mit einem Format:
 
 ```yaml
 # src/_index.yaml
@@ -21,61 +26,82 @@ entries:
   - name: package_fs
     kind: fs.directory
     meta:
-      comment: The npm package consumers materialize at build time.
+      comment: Das npm-Paket, das Konsumenten zur Build-Zeit materialisieren.
       artifact:
         format: node-package
     directory: ./package
 ```
 
-Die Kennzeichnung allein schließt den Verzeichnisinhalt nicht ein. Wählen Sie den Eintrag `fs.directory` über die Liste `embed:` des Produzentenmanifests oder das Flag `--embed` von Publish beziehungsweise Pack aus. Nach der Auswahl wird der Eintrag in eine gepackte Ressource umgewandelt und sein Artefaktformat validiert; fehlerhafte ausgewählte Artefakte schlagen fehl, bevor das WAPP erzeugt wird.
+Sonst ändert sich nichts: Die Ressource wird wie jedes andere `fs.directory` in das WAPP
+eingebettet — listen Sie sie unter `embed:` in `wippy.yaml` auf oder übergeben Sie `--embed` an
+`wippy publish` und `wippy pack`; ein nicht eingebettetes Verzeichnis wird weder gepackt
+noch validiert. Deklarierte Artefakte werden **beim Veröffentlichen des Moduls und beim
+Packen der Anwendung validiert**, sodass ein fehlerhaftes Artefakt beim Veröffentlichen
+scheitert statt bei einem Konsumenten.
 
 ## Formate
 
-Ein Formatadapter entscheidet, wie ein Verzeichnis validiert wird, welche Identität es besitzt und wo es abgelegt wird. Wippy liefert ein integriertes Format:
+Ein Format-Adapter entscheidet, wie ein Verzeichnis validiert wird, welche Identität es hat
+und wo es landet. Wippy liefert eines eingebaut mit:
 
-| Format | Verwalteter Teilbaum | Validiert |
+| Format | Besitzt Teilbaum | Validiert |
 |---|---|---|
 | `node-package` | `npm/` | `package.json` |
 
-`node-package` erfordert `name` und eine semantische `version` und **weist die Lifecycle-Skripte `preinstall`, `install`, `postinstall` und `prepare` zurück** — ein materialisiertes Paket darf bei der Installation nichts ausführen. Es schreibt unterhalb des Materialisierungs-Roots nach `npm/<package name>`.
+`node-package` erfordert einen `name` und eine semantische `version` und **lehnt die
+Lifecycle-Skripte `preinstall`, `install`, `postinstall` und `prepare` ab** — ein
+materialisiertes Paket darf bei der Installation nichts ausführen. Es schreibt nach
+`npm/<Paketname>` unterhalb der Materialisierungswurzel.
 
-Das Format muss in dem Binary registriert sein, das die Arbeit ausführt. Hosts können zusätzliche Formate registrieren; doppelte Namen und überlappende Roots werden abgewiesen.
+Das Format muss in der Binärdatei registriert sein, die die Arbeit erledigt. Hosts können zusätzliche
+Formate registrieren; doppelte Namen und überlappende Wurzeln werden abgelehnt.
 
-## Materialisierung
+## Materialisieren
 
-Materialisierte Ausgaben werden automatisch abgeglichen bei:
+Meistens führen Sie nichts aus. Materialisierte Ausgaben werden automatisch abgeglichen während:
 
-- vollständigem und gezieltem `wippy install` sowie `wippy update`
+- vollständigem und gezieltem `wippy install` und `wippy update`
 - Kaltstart
 - Hub-gestützter dynamischer Installation, Aktualisierung und Deinstallation
 
-Vollständige Installation, Aktualisierung, Kaltstart und Laufzeit-Abhängigkeitsabgleich sind *exakt*: Veraltete Ausgaben werden entfernt. Eine **gezielte** Installation legt nur die ausgewählten Module darüber und erhält Ausgaben von nicht ausgewählten Modulen.
+Vollständige Installation, Aktualisierung, Kaltstart und Laufzeit-Abgleich von Abhängigkeiten sind
+*exakt*: veraltete Ausgaben werden entfernt. Eine **gezielte** Installation überlagert nur die
+ausgewählten Module und bewahrt Ausgaben, die zu nicht ausgewählten Modulen gehören.
 
-Lokale Modulersetzungen durchlaufen denselben Validierungs- und Materialisierungs-Lifecycle wie gepackte Ressourcen. Das Artefakt eines ersetzten Moduls verhält sich deshalb wie ein veröffentlichtes.
+Lokale Modulersetzungen durchlaufen denselben Validierungs- und Materialisierungslebenszyklus
+wie gepackte Ressourcen, sodass sich das Artefakt eines ersetzten Moduls wie ein veröffentlichtes verhält.
 
-### Explizite Materialisierung
+### Explizit materialisieren
 
-Für einen Buildschritt, der das Artefakt benötigt, bevor die Laufzeit beteiligt ist, stellt die CLI es direkt bereit:
+Für einen Build-Schritt, der das Artefakt braucht, bevor die Laufzeit beteiligt ist, stellt die
+CLI es direkt bereit:
 
 ```bash
 wippy artifacts materialize <pack.wapp> <namespace:name> [--root <directory>]
 ```
 
-Der Standardwert von `--root` ist `.wippy`. Die Ressource muss `meta.artifact.format` deklarieren, und dieses Format muss in der CLI registriert sein.
+`--root` verwendet standardmäßig `.wippy`. Die Ressource muss `meta.artifact.format` deklarieren,
+und dieses Format muss in dieser CLI registriert sein.
 
-Dieser Befehl löst **keine** Modulabhängigkeiten auf, verändert `wippy.lock` nicht, ruft keine Paketmanager auf und nimmt nicht an der Laufzeitkomposition teil. Er validiert ein Artefakt aus einem WAPP und schreibt es auf die Festplatte.
+Machen Sie sich klar, was dieses Kommando bewusst **nicht** tut: Es löst keine Modulabhängigkeiten
+auf, verändert `wippy.lock` nicht, ruft keine Paketmanager auf und nimmt nicht an der
+Laufzeitkomposition teil. Es validiert ein Artefakt aus einem WAPP und schreibt es auf die Festplatte.
 
-### Ausgabeort
+### Wo die Ausgabe landet
 
-`artifact.materialization_root` konfiguriert den anwendungseigenen Ausgabe-Root. Standardmäßig ist dies das übergeordnete Verzeichnis des Dependency-Vendor-Verzeichnisses. Jedes Format verwaltet darunter einen nicht überlappenden Teilbaum; die Ausgabe von `node-package` liegt deshalb stets unter `<root>/npm/`.
+`artifact.materialization_root` konfiguriert die von der Anwendung besessene Ausgabewurzel.
+Der Standardwert ist das übergeordnete Verzeichnis des Vendor-Verzeichnisses für Abhängigkeiten. Jedes Format besitzt
+darunter einen nicht überlappenden Teilbaum, sodass die `node-package`-Ausgabe immer unter
+`<root>/npm/` liegt.
 
-Die Materialisierung ist transaktional. Inhalte werden validiert und bereitgestellt, verwaltete Roots unter einer Prozesssperre atomar ausgetauscht, ein Fehler mit der umgebenden Registry-Transaktion zurückgerollt und ein unterbrochener Austausch beim nächsten Lauf wiederhergestellt.
+Materialisierung ist transaktional. Inhalte werden validiert und bereitgestellt, verwaltete
+Wurzeln werden unter einer Prozesssperre atomar getauscht, ein Fehler rollt mit der umgebenden
+Registry-Transaktion zurück, und ein unterbrochener Tausch wird beim nächsten Lauf wiederhergestellt.
 
-## Ausgearbeitetes Integrationsbeispiel: ein gemeinsames Frontend-Paket
+## Ausgearbeitetes Beispiel: ein geteiltes Frontend-Paket
 
-Die Namen `kickside/ui-kit`, Make-Targets, Umgebungsvariablen und Repository-Pfade in diesem Abschnitt veranschaulichen ein Integrationsmuster. Es sind keine von Wippy bereitgestellten Befehle oder Hilfsskripte; passen Sie sie an den Produzenten und das Buildsystem an, die Ihr Artefakt verwalten.
-
-Ein Produzentenmodul kann ein Paket veröffentlichen, ohne eine Laufzeitressource bereitzustellen:
+Ein Produzentenmodul, dessen einzige Aufgabe das Veröffentlichen eines Pakets ist — es liefert zur
+Laufzeit nichts aus:
 
 ```yaml
 # platform/ui-kit/src/_index.yaml
@@ -91,14 +117,15 @@ entries:
     directory: ./package
 ```
 
-Ein Konsument materialisiert es vor der Installation von Abhängigkeiten in seinen eigenen Baum:
+Ein Konsument materialisiert es in seinen eigenen Baum, bevor er Abhängigkeiten installiert:
 
 ```bash
 wippy artifacts materialize kickside-ui-kit-1.5.0.wapp \
   kickside.ui_kit:package_fs --root ./.wippy
 ```
 
-Dadurch entsteht `./.wippy/npm/@kickside/ui-kit`. Der Konsument nimmt es über ein gewöhnliches Workspaces-Glob auf; ab diesem Punkt erfolgt die Auflösung als normale Node-Auflösung:
+Das schreibt `./.wippy/npm/@kickside/ui-kit`. Der Konsument greift es mit einem
+gewöhnlichen Workspaces-Glob auf, sodass die Auflösung von da an schlichte Node-Auflösung ist:
 
 ```json
 {
@@ -110,33 +137,30 @@ Dadurch entsteht `./.wippy/npm/@kickside/ui-kit`. Der Konsument nimmt es über e
 npm install
 ```
 
-Diese Anordnung besitzt zwei wichtige Eigenschaften:
+Zwei Dinge lohnen sich, aus dieser Form zu übernehmen:
 
-- **Das Paket ist ein eigenes Modul und kein Verzeichnis innerhalb eines größeren Moduls.** Das Artefakt trägt seine eigene `package.json`-Version. Wird es an ein Modul gekoppelt, das sich aus anderen Gründen ändert, erzwingt jede Änderung des einen eine Veröffentlichung des anderen.
-- **Der Konsument löst es als normale Abhängigkeit auf.** Nach der Materialisierung gibt es keinen Wippy-spezifischen Importpfad. Dadurch kann derselbe Quellcode sowohl innerhalb als auch außerhalb des Monorepos gebaut werden.
+- **Das Paket ist ein eigenes Modul, kein Verzeichnis in einem größeren.** Das
+  Artefakt trägt seine eigene `package.json`-Version, und es an ein Modul zu binden,
+  das sich aus unabhängigen Gründen ändert, erzwingt jedes Mal ein Release des einen, wenn das
+  andere sich bewegt.
+- **Der Konsument löst es als normale Abhängigkeit auf.** Einmal materialisiert gibt es
+  keinen Wippy-spezifischen Importpfad, und genau das lässt dieselbe Quelle innerhalb
+  des Monorepos und außerhalb davon bauen.
 
-## End-to-End-Workflow
+## Von Anfang bis Ende: Erstellen, Dev-Loop, CI
 
-### Produzent erstellen
+### Den Produzenten erstellen
 
-Bei einem Paketartefakt kann das Verzeichnis selbst das Lieferobjekt sein. Ein Paket für ein CSS-Vokabular besteht aus seinen Dateien und dem Manifest:
+Für ein Paket-Artefakt gibt es meist **nichts zu bauen** — das Verzeichnis ist
+das Liefergut. Ein CSS-Vokabularpaket besteht nur aus Dateien plus einem Manifest:
 
 ```text
 platform/ui-kit/
-├── wippy.yaml           # selects package_fs for embedding
-├── src/_index.yaml      # declares package_fs as the artifact
-└── package/             # the directory that becomes the npm package
+├── src/_index.yaml      # deklariert package_fs als Artefakt
+└── package/             # das Verzeichnis, das zum npm-Paket wird
     ├── package.json
     ├── kx-card.css
     └── kx-state.css
-```
-
-Bewahren Sie die Embed-Auswahl im Produzentenmanifest auf, damit Veröffentlichung, lokales Packen und CI dieselbe Ressourcenmenge verwenden:
-
-```yaml
-# platform/ui-kit/wippy.yaml
-embed:
-  - package_fs
 ```
 
 ```json
@@ -153,39 +177,49 @@ embed:
 }
 ```
 
-`sideEffects` ist für ein reines CSS-Paket wichtig: Ohne diese Angabe kann ein Bundler ein importiertes Stylesheet als toten Code behandeln und entfernen.
+`sideEffects` ist für ein reines CSS-Paket entscheidend: Ohne dieses Feld steht es einem Bundler
+frei, ein importiertes Stylesheet als toten Code zu behandeln und zu verwerfen.
 
-**Die Paketversion muss der Modulversion entsprechen.** `wippy publish` validiert dies und weist Abweichungen zurück; erhöhen Sie daher beide gemeinsam. Dies ist ein weiterer Grund, einem gemeinsam genutzten Paket ein *eigenes* Modul zu geben, statt es in ein größeres einzubetten: Andernfalls erzwingt jede nicht verwandte Änderung am Hostmodul eine Veröffentlichung des Pakets und umgekehrt.
+**Die Paketversion muss der Modulversion entsprechen.** `wippy publish`
+validiert das und verweigert eine Abweichung, also erhöhen Sie beide gemeinsam. Das ist auch der
+Grund, einem geteilten Paket ein *eigenes* Modul zu geben, statt es in ein
+größeres zu verschachteln — sonst erzwingt jede unabhängige Änderung am Host-Modul ein
+Release des Pakets und umgekehrt.
 
 ### Veröffentlichen
 
 ```bash
-# validate without publishing
-wippy publish --dry-run --version 1.5.0
+# validieren, ohne zu veröffentlichen
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
-# publish
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+# veröffentlichen
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
-Da das Produzentenmanifest `package_fs` zum Einbetten auswählt, wird das Artefakt beim Veröffentlichen eingeschlossen und validiert. Eine `package.json`, die die Formatregeln verletzt, wird hier statt erst im Build eines Konsumenten abgewiesen.
+Deklarierte Artefakte werden als Teil des Veröffentlichens validiert, sodass eine package.json, die
+die Regeln des Formats verletzt, hier abgelehnt wird und nicht erst im Build eines Konsumenten.
 
-### Entwicklungszyklus
+### Der Dev-Loop
 
-Packen Sie den Produzenten während der Entwicklung lokal und richten Sie den Materialisierungsschritt des Konsumenten auf diese Datei:
+Bei jeder Änderung zu veröffentlichen ist kein Dev-Loop. Packen Sie den Produzenten lokal und richten Sie den
+Materialisierungsschritt des Konsumenten stattdessen auf diese Datei:
 
 ```bash
-# from the producer module
-wippy pack /tmp/ui-kit-dev.wapp
+# aus dem Produzentenmodul
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
-# consumers materialize from the local pack rather than the published one
+# Konsumenten materialisieren aus dem lokalen Pack statt aus dem veröffentlichten
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
 ```
 
-Die Überschreibung der Packdatei sollte der einzige Unterschied zwischen Entwicklung und CI bleiben. Eine Umgebungsvariable kann das lokale Pack auswählen, während nachgelagerte Materialisierungs- und Buildschritte unverändert bleiben.
+Behalten Sie diese Überschreibung als *einzigen* Unterschied zwischen Dev-Pfad und CI — eine
+Umgebungsvariable, die die Pack-Datei auswählt, während alles Nachgelagerte identisch bleibt. Ein
+Dev-Loop, der anders materialisiert als CI, sagt CI nicht mehr voraus.
 
-### Build- und CI-Integration
+### Einbindung in make und CI
 
-Machen Sie die Materialisierung zu einer **Voraussetzung des Konsumenten-Builds**:
+Machen Sie den Materialisierungsschritt zu einer **Voraussetzung des Konsumenten-Builds**, nicht zu
+etwas, an dessen Ausführung sich jemand erinnern muss:
 
 ```make
 UI_KIT_WAPP ?=
@@ -195,16 +229,27 @@ build:
 	cd $(call fe_dir,$(MOD)) && npm run build
 ```
 
-CI kann anschließend dasselbe `make build` ohne zusätzlichen Artefaktschritt ausführen. `UI_KIT_WAPP` ist nicht gesetzt, sodass der Abruf- und Materialisierungspfad gegen die in `build-inputs` fixierte veröffentlichte Version läuft. Ein frischer Checkout kann nicht gegen ein veraltetes oder fehlendes Paket kompilieren; auch ein Mitwirkender, der Artefakte nicht kennt, erhält einen korrekten Build.
+CI braucht dann überhaupt keinen artefaktspezifischen Schritt: Es führt dasselbe `make build` aus,
+`UI_KIT_WAPP` ist nicht gesetzt, also läuft der Abruf-und-Materialisieren-Pfad gegen die in
+`build-inputs` gepinnte veröffentlichte Version. Ein frischer Checkout kann nicht gegen ein
+veraltetes oder fehlendes Paket kompilieren, und ein Mitwirkender, der nie von
+Artefakten gehört hat, bekommt trotzdem einen korrekten Build.
 
-## Integrationsschritte für Konsumenten
+## Was Sie weiterhin selbst zusammenbauen müssen
 
-Da `wippy artifacts materialize` eine Ressource aus einem Pack verarbeitet, muss ein Konsumenten-Build vier Schritte koordinieren:
+`wippy artifacts materialize` ist bewusst eng gefasst, sodass ein Build, der ein Artefakt
+konsumiert, derzeit vier Schritte selbst zusammenklebt. Zu wissen, welche vier,
+erspart deren Wiederentdeckung:
 
-**1. `.wapp` abrufen.** Der Befehl erwartet einen *Pfad zu einer Packdatei*, keine Modulreferenz, und löst keine Abhängigkeiten auf. Ein möglicher Ansatz ist ein kleines Wippy-Projekt, das den Produzenten fixiert und herunterlädt:
+**1. Das `.wapp` beschaffen.** Das Kommando nimmt einen *Pfad zu einer Pack-Datei*, keine Modul-Referenz,
+und löst keine Abhängigkeiten auf — also muss etwas den Produzenten zuerst holen. Das
+praktikable Muster ist ein winziges Wippy-Projekt, dessen einzige Aufgabe es ist, ihn zu pinnen und herunterzuladen:
 
 ```yaml
-# build-inputs/wippy.lock — a project that exists only to fetch
+# build-inputs/wippy.lock — ein Projekt, das nur zum Abrufen existiert
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0
@@ -216,15 +261,19 @@ modules:
 wapp=$(ls build-inputs/.wippy/vendor/kickside/ui-kit-*.wapp | grep -v sha256 | sort | tail -1)
 ```
 
-Die Fixierung hier statt im Anwendungs-Lock hält eine Buildzeit-Eingabe aus dem Laufzeit-Abhängigkeitsgraphen heraus.
+Es hier statt im Anwendungs-Lock zu pinnen, hält eine Build-Zeit-Eingabe
+aus dem Laufzeit-Abhängigkeitsgraphen heraus.
 
-**2. Einmal pro Konsument materialisieren**, und zwar in einen Root, den dessen Paketmanager sehen kann:
+**2. Einmal pro Konsument materialisieren**, in eine Wurzel, die der Paketmanager des
+Konsumenten sehen kann:
 
 ```bash
 wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wippy
 ```
 
-**3. `package.json` des Konsumenten verdrahten.** Die Materialisierung schreibt Dateien, bearbeitet jedoch keine Manifeste. npm verlinkt das Paket nur, wenn der Konsument *sowohl* das Workspace-Glob als auch die Abhängigkeit deklariert:
+**3. Die `package.json` des Konsumenten verdrahten.** Materialisieren schreibt Dateien; es
+bearbeitet keine Manifeste. npm verlinkt das Paket nur, wenn der Konsument *sowohl*
+den Workspace-Glob als auch die Abhängigkeit deklariert:
 
 ```json
 {
@@ -233,11 +282,15 @@ wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wipp
 }
 ```
 
-Die Version lautet `*`, weil das materialisierte Paket seine eigene Version trägt. Automatisieren Sie diesen Schritt und machen Sie ihn idempotent. Ohne die Manifestverdrahtung kann der Build später für ein Stylesheet `ENOENT` melden, statt die fehlende Abhängigkeitskonfiguration zu benennen.
+Die Version ist `*`, weil das materialisierte Paket seine eigene trägt. Skripten Sie
+das und machen Sie es idempotent — fehlt die Verdrahtung, scheitert der Build viel
+später mit einem nackten `ENOENT` auf einem Stylesheet, was sich wie eine fehlende Datei
+liest statt wie fehlende Verdrahtung.
 
-**4. Paketmanager ausführen.** `materialize` ruft keinen Paketmanager auf; führen Sie daher nach Schritt 3 `npm install` aus.
+**4. Den Paketmanager ausführen.** `materialize` ruft keinen auf, also liegt
+`npm install` nach Schritt 3 bei Ihnen.
 
-Zusammengefasst in einem Target, das das konsumierende Modul als Parameter erhält:
+Zusammen, in einem Target, das das konsumierende Modul als Parameter nimmt:
 
 ```make
 ui-kit:
@@ -249,14 +302,20 @@ ui-kit:
 	cd $(DIR) && node ../../scripts/wire-ui-kit.mjs && npm install --no-audit --no-fund
 ```
 
-Machen Sie das gesamte Target zu einer Voraussetzung des Konsumenten-Builds, damit ein frischer Checkout nicht gegen ein veraltetes oder fehlendes Paket kompiliert.
+Machen Sie das gesamte Target zu einer Voraussetzung des Konsumenten-Builds, damit ein frischer
+Checkout nicht gegen ein veraltetes oder fehlendes Paket kompilieren kann.
 
-## Nicht abgedeckt
+## Nicht im Umfang
 
-Artefakte führen bewusst keinen zweiten Resolver, keine Paket-Registry, kein Archivformat, kein Lockschema, keine Hub-API und kein Modulmanifest ein. Semantik reiner Build-Abhängigkeiten, Weiterverteilungsrichtlinien und Host-ABI-Validierung sind separate Belange und werden hier nicht gelöst.
+Artefakte führen absichtlich keinen zweiten Resolver, keine Paket-Registry,
+kein Archivformat, kein Lock-Schema, keine Hub-API und kein Modulmanifest ein. Semantik reiner
+Build-Abhängigkeiten, Weiterverbreitungsrichtlinien und Host-ABI-Validierung sind separate Belange
+und werden hier nicht gelöst.
 
-## Verwandte Themen
+## Verwandt
 
-- [Abhängigkeitsverwaltung](./dependency-management.md) — Module und lokale Ersetzungen auflösen
-- [Veröffentlichen](./publishing.md) — Inhalt eines veröffentlichten Moduls
-- [Die Designschicht](../frontend/design-layer.md) — Warum ein gemeinsames Frontend-Vokabular überhaupt als Paket ausgeliefert wird
+- [Abhängigkeitsverwaltung](./dependency-management.md) — Module und lokale
+  Ersetzungen auflösen
+- [Veröffentlichen](./publishing.md) — was ein veröffentlichtes Modul enthält
+- [Die Design-Schicht](../frontend/design-layer.md) — warum ein geteiltes Frontend-Vokabular
+  überhaupt als Paket ausgeliefert wird

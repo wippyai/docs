@@ -90,7 +90,7 @@ Bootloader einer Anwendung verwenden `function.lua`:
 | Feld | Erforderlich | Beschreibung |
 |-------|----------|-------------|
 | `meta.type` | Ja | Muss `bootloader` sein |
-| `meta.order` | Nein | Ausführungsreihenfolge (Standard `999`); niedrigere Werte laufen zuerst |
+| `meta.order` | Nein | Ausfuehrungsreihenfolge (Standard `999`); niedrigere laufen zuerst |
 | `meta.description` | Nein | Menschenlesbare Zusammenfassung |
 | `meta.requires` | Nein | Eine ID oder ein Array von Bootloader-/Service-IDs. Frühere Bootloader müssen `success` oder `skipped` zurückgegeben haben; Service-Anforderungen müssen in der Registry vorhanden sein. Eine unerfüllte Anforderung stoppt die verbleibende Sequenz. |
 

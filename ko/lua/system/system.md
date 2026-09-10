@@ -1,6 +1,6 @@
 ---
 title: "시스템"
-description: "런타임, 프로세스, 호스트, 슈퍼바이저, 클러스터 상태를 검사하고 선택된 런타임 설정을 제어합니다."
+description: "메모리 사용량, 가비지 컬렉션 통계, CPU 세부 정보, 프로세스 메타데이터를 포함한 런타임 시스템 정보를 조회합니다."
 ---
 
 # 시스템
@@ -50,33 +50,39 @@ local mods, err = system.modules()
 | `description` | string | 모듈 설명 |
 | `class` | string[] | 모듈 분류 태그 |
 
-## 배포 소스 로드
+## 배포 소스
 
-`system.source.load()`는 현재 배포 소스 세대에서 정규화된 레지스트리 기준선을 다시 구성합니다. 동적 설치, 업데이트, 제거, 교체, 롤백 중에도 소유자와 엔트리는 같은 세대에서 가져옵니다.
+`system.source` 하위 테이블은 정규화된 배포 베이스라인, 즉 레지스트리 히스토리가 적용되기 전에 애플리케이션이 조립된 소스들이 만들어낸 엔트리 집합을 읽습니다.
 
 ```lua
-local sources, err = system.source.load()
-if err then
-    return nil, err
-end
-
-for _, owner in ipairs(sources.owners) do
-    print(owner)
-end
-
-for _, entry in ipairs(sources.entries) do
-    print(entry.id)
-end
+local loaded, err = system.source.load()
 ```
 
 **반환:** `table, error`
 
 | 필드 | 타입 | 설명 |
-|------|------|------|
-| `owners` | string[] | 안정적인 소스 소유자 식별자. 애플리케이션 소유자는 `application` |
-| `entries` | table[] | 정규화된 소스 기준선에서 디코딩한 레지스트리 엔트리 |
+|-------|------|-------------|
+| `owners` | string[] | 베이스라인 엔트리에 대해 권한을 가지는 소스 소유자 |
+| `entries` | table[] | `id`, `kind`, `meta`, `data`를 가진 베이스라인 엔트리 |
 
-패킹된 모듈 정규화 입력은 소유권을 주장하지 않으며 파일시스템 경로는 노출되지 않습니다. 로드에는 `sources`에 대한 `system.read`가 필요합니다. 소스 레지스트리, 로드, 변환 실패는 재시도할 수 없는 `errors.INTERNAL`, 권한 거부는 `errors.PERMISSION_DENIED`를 반환합니다.
+`owners`는 애플리케이션 소유자가 먼저 오고 나머지 소유자가 알파벳순으로 정렬됩니다. 애플리케이션 소유자는 문자열 `"application"`입니다.
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+로드는 하나의 안정된 소스 세대에서 가져오므로 엔트리와 소유자는 항상 동일한 베이스라인을 기술합니다. 각 소스 뒤의 파일시스템 경로는 런타임 내부용이며 노출되지 않습니다. 로드가 실패하면 백킹 경로를 노출하는 대신 일반적인 내부 에러를 보고합니다.
+
+**권한:** `sources`에 대한 `system.read`
 
 ## 메모리 통계
 
@@ -337,7 +343,7 @@ local states, err = system.supervisor.states()
 
 ## 클러스터 프리미티브
 
-`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 비활성화된](guides/cluster.md) 경우 `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 글로벌 레지스트리가 필요하므로 사용할 수 없습니다.
+`system.node`, `system.cluster`, `system.raft`, `system.lock` 서브 테이블은 클러스터링 레이어를 노출합니다. [클러스터링이 활성화된](guides/cluster.md) 경우에 가장 유용합니다; 독립 노드에서는 예측 가능하게 저하됩니다 — `system.raft.*`는 "raft not available"을 보고하고, `system.cluster`는 로컬 노드만 보고하며, `system.lock`은 클러스터링이 제공하는 Raft 기반 KV 스토어가 필요합니다.
 
 모든 읽기 호출은 로컬이고 저렴합니다: 커밋된 상태에 대한 이 노드의 뷰를 보고하며, 네트워크를 차단하지 않습니다.
 
@@ -412,7 +418,7 @@ local stats, err = system.raft.stats()           -- raw stats map (string -> str
 
 ### 분산 잠금
 
-`system.lock`은 클러스터 전체 상호 배제를 제공합니다. 잠금은 호출 프로세스가 소유한 전역 고유 이름입니다. Strong 이름 범위 위에 구축되어 클러스터 전체에 최대 하나의 보유자만 존재할 수 있으며, 보유자 프로세스가 종료되거나 해당 노드가 떠나면 잠금이 자동으로 해제됩니다 — 정리할 고착된 잠금이 없습니다.
+`system.lock`은 클러스터 전체 상호 배제를 제공합니다. 잠금은 호출 프로세스가 소유한 전역 고유 이름입니다. Raft로 복제되는 시스템 KV 스토어 위에 구축되어 클러스터 전체에 최대 하나의 보유자만 존재할 수 있으며, 보유자 프로세스가 종료되거나 해당 노드가 떠나면 잠금이 자동으로 해제됩니다 — 정리할 고착된 잠금이 없습니다.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -464,7 +470,7 @@ return released
 | `system.read` | `cwd` | 작업 디렉토리 읽기 |
 | `system.read` | `hosts` | 호스트 / 호스트 프로세스 목록 조회 |
 | `system.read` | `modules` | 로드된 모듈 목록 조회 |
-| `system.read` | `sources` | 정규화된 배포 소스 로드 |
+| `system.read` | `sources` | 배포 소스 베이스라인 로드 |
 | `system.read` | `supervisor` | 슈퍼바이저 상태 읽기 |
 | `system.read` | `node` | 이 노드의 정체성 읽기 |
 | `system.read` | `cluster` | 클러스터 멤버십 및 리더 읽기 |
@@ -477,9 +483,8 @@ return released
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
-| 권한 거부됨 (배포 소스 로드) | `errors.PERMISSION_DENIED` | 아니오 |
-| 권한 거부됨 (분산 잠금 외 비소스 작업) | `errors.INVALID` | 아니오 |
-| 권한 거부됨 (분산 잠금 획득/해제) | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 (`system.source.load`, `system.lock.*`) | `errors.PERMISSION_DENIED` | 아니오 |
+| 권한 거부됨 (그 외 모든 호출) | `errors.INVALID` | 아니오 |
 | 잘못된 인수 | `errors.INVALID` | 아니오 |
 | 필수 인수 누락 | `errors.INVALID` | 아니오 |
 | 코드 매니저 사용 불가 | `errors.INTERNAL` | 아니오 |
@@ -488,5 +493,6 @@ return released
 | 이 노드에서 Raft 미실행 | `errors.INTERNAL` | 아니오 |
 | 멤버십 사용 불가 | `errors.INTERNAL` | 아니오 |
 | 잠금 이미 보유됨 | `errors.ALREADY_EXISTS` | 아니오 |
+| 잠금 서비스 사용 불가 (이 노드에 Raft 없음) | `errors.INTERNAL` | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

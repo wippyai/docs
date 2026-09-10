@@ -29,20 +29,15 @@ Filesystem entries expose directory-backed or read-only embedded storage to runt
 | `directory` | string | required | Root path |
 | `auto_init` | bool | false | Create directory if missing |
 | `mode` | string | 0755 | Unix permission mode (octal) |
-| `base` | string | inferred | Relative-path base: `project` (process working directory) or `module` (owning module resource root) |
+| `base` | string | - | Relative-path base: `project` (process working directory) or `module` (owning module load root) |
 
-For a module-owned entry, an omitted `base` resolves a relative directory from
-the owning module's resource root. Host-authored entries remain relative to the
-process working directory. Set `base: project` to force working-directory
-resolution for a module entry, or `base: module` to request module-root
-resolution explicitly. If module ownership or its resource root is unavailable,
-the runtime leaves the relative path unchanged.
+Absolute paths are used as given, whatever `base` says.
 
-The configured mode gates operations by its owner bits, and permissions
-requested for newly created files and directories are masked by that mode. When
-all read bits are present and no execute bits are set, the runtime adds execute
-bits (for example, `0444` becomes `0555`). Operating-system permissions still
-apply to the backing directory.
+For a relative path, `base: project` keeps it relative to the process working directory. Both `base: module` and an unset `base` resolve it against the load root of the module that owns the entry, looked up through the entry's registry owner. When the entry has no owning module, or that module has no resolvable resource root, the path stays relative to the process working directory.
+
+Any other value is rejected with `invalid directory base`.
+
+The mode restricts all file operations. Execute bits are added automatically when all read bits are set and no execute bit is.
 
 <note>
 Paths are normalized and validated. It is not possible to access files outside the configured root directory.
@@ -75,8 +70,6 @@ Both filesystem types implement:
 | Remove | Yes | No |
 | Mkdir | Yes | No |
 | Rename | Yes | No |
-| Truncate | Yes | No |
-| Chtimes | Yes | No |
 
 Write operations on embedded filesystems return an error.
 

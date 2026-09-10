@@ -1,96 +1,116 @@
 ---
 title: "テーマの永続化"
-description: "light、dark、automatic theme mode を cookie または localStorage に保存するよう facade を設定する。"
+description: "デフォルトでは、Web Hostはライト/ダークを thememode（ファサードのデフォルト）から解決し、メモリ内に保持します。そのため、ユーザーの明示的な選択は…"
 ---
 
 # テーマの永続化
 
-このページは facade configuration guide です。external-page HTML block は部分的な integration example であり、facade endpoint がすでに存在することを前提とします。
+デフォルトでは、Web Hostはライト/ダークを `theme_mode`（ファサードのデフォルト）から解決し、
+メモリ内に保持します。そのため、ユーザーの明示的な選択は次回のリロードで失われます。テーマの永続化は、
+その選択を**cookie**または**localStorage**に保存することでリロードをまたいで維持し、
+誤ったテーマがちらつかないよう可能な限り早く読み込みます。
 
-デフォルトでは、Web Host は `theme_mode`（facade のデフォルト）から light / dark mode を解決し、選択を memory に保持します。そのため user が明示的に選んでも reload で失われます。theme persistence は選択を **cookie** または **localStorage** に保存し、早期に読み込んで誤った theme の flash を防ぎます。
+永続化は完全にファサード内にあります。Web Hostはストレージに依存しません。ホストは
+`themeChanged` イベントを発行するだけで、ファサード（または任意の埋め込み側）がそれを使って選択を永続化します。
 
-persistence は全面的に facade 側にあります。Web Host は storage-agnostic のままで、facade（または任意の embedder）が選択を保存するための `themeChanged` event だけを発行します。
-
-> **Opt-in。** `theme_persist` のデフォルトは **`none`** です。deployment が明示的に `cookie` または `localStorage` を設定しない限り persistence は**無効**です。デフォルトでは theme は `theme_mode` から決まり、reload 間では記憶されません。何も保存されず、cookie も書き込まず、生成 script は no-op です。
+> **オプトイン。** `theme_persist` のデフォルトは **`none`** です。デプロイが明示的に `cookie` または
+> `localStorage` に設定しない限り、永続化は**オフ**です。デフォルトのままなら挙動は従来どおりです
+> （テーマは常に `theme_mode` から得られ、リロードをまたいで記憶されません）。何も保存されず、
+> cookieも書き込まれず、生成されるスクリプトはオプトインするまで何もしません。
 
 ## 設定
 
-2 つの facade parameter が制御します（[Frontend Facade](../../framework/facade.md)参照）。
+2つのファサードパラメータがこれを制御します（[フロントエンドファサード](../../framework/facade.md)を参照）:
 
-| パラメーター | デフォルト | 値 | 説明 |
+| パラメータ | デフォルト | 値 | 説明 |
 |-----------|---------|--------|-------------|
-| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | 選択した mode の保存先。`none` は現在の動作 |
-| `theme_storage_key` | `@wippy-theme-mode` | string | Cookie / localStorage key |
+| `theme_persist` | `none` | `none` \| `cookie` \| `localStorage` | 選択されたモードの保存先。`none` = 従来の挙動。 |
+| `theme_storage_key` | `@wippy-theme-mode` | string | cookie / localStorage のキー。 |
 
-どちらも public config endpoint から `themePersist` と `themeStorageKey` として返されるため、Web Host 外で配信される page も読み取れます。
+どちらも公開の設定エンドポイントから `themePersist` と `themeStorageKey` として返されるため、
+Web Host外で配信されるページからも読み取れます。
 
 ```yaml
-# in your facade dependency parameters
+# ファサードの依存関係パラメータ内
 - name: theme_persist
   value: cookie
 - name: theme_storage_key
   value: "@wippy-theme-mode"
 ```
 
-### Cookie と localStorage
+### cookie と localStorage の比較
 
-- **`cookie`** — Jet-rendered host shell が cookie を **server-side** で読み、response 送信前に `<html>` へ `w-theme-*` class を書き込むため、最初の paint から正しい theme になります。theme flash を防ぎ、first-paint consistency が重要な場合に推奨します。
-- **`localStorage`** — server は localStorage を読めないため、配信される shell が `<head>` の最初の script として `theme-persist.js` を同期的に読み込みます。brand stylesheet、loading UI、Web Host bundle の render 前に stored class を適用します。
+- **`cookie`** — Jetでレンダリングされるホストシェルが**サーバー側で**cookieを読み、レスポンス送信前に
+  `<html>` に `w-theme-*` クラスを書き込みます。そのため最初の描画から既にテーマが適用されています。
+  **ちらつきなし。** 最良のデフォルトです。
+- **`localStorage`** — サーバーはlocalStorageを読めないため、保存された値は同期的なインラインスクリプトで
+  可能な限り早く適用されます。理論上わずかなちらつきはあり得ますが、最小化されています。
 
-## 生成される script
+## 生成されるスクリプト
 
-persistence を有効にすると、facade は次の path に小さな script を**生成して配信**します。
+永続化が有効な場合、ファサードは小さなスクリプトを**生成して配信**します:
 
 ```
 GET /api/public/facade/theme-persist.js
 ```
 
-設定済みの key と mode は埋め込まれるため、page 側の設定はありません。`<head>` 内のできるだけ早い位置で一度だけ読み込みます。
+設定されたキーとモードが焼き込まれているため、ページ側で設定するものはありません。`<head>` の
+できるだけ早い位置に一度だけ含めてください:
 
 ```html
 <script src="/api/public/facade/theme-persist.js"></script>
 ```
 
-load 時に保存値を読み、`w-theme-*` class を適用してから小さな API を公開します。
+読み込み時に保存された値を読み取って `w-theme-*` クラスを適用し、その後、小さなAPIを公開します:
 
 ```js
 window.wippyThemePersist = {
   mode,            // 'none' | 'cookie' | 'localStorage'
-  key,             // the storage key
+  key,             // ストレージのキー
   read(),          // -> 'auto' | 'light' | 'dark' | null
-  write(mode),     // persist a mode (no-op when mode === 'none')
-  apply(mode),     // toggle the w-theme-* class on <html>
+  write(mode),     // モードを永続化する (mode === 'none' のときは何もしない)
+  apply(mode),     // <html> の w-theme-* クラスを切り替える
 }
 ```
 
-host shell（`index.html` / Jet の `index.jet`）はこの script をすでに読み込み、保存値を application に seed し、変更を永続化します。以下のセクションは**ほかの** page 向けです。
+ホストシェル（`index.html` / Jetの `index.jet`）は既にこのスクリプトを含み、保存された値をアプリに
+渡し、変更を永続化します。手を加える必要はありません。以下のセクションは**それ以外の**ページ向けです。
 
-## 全体の流れ（host shell）
+## 全体の組み合わせ方（ホストシェル）
 
-1. **First paint** — cookie mode では server が `<html class="w-theme-dark">` を設定します。localStorage mode では early-apply script が設定します。どちらも bundle を読み込む前に page が themed になります。
-2. **Bootstrap** — shell は永続化された値を host に seed します。`themeMode: window.wippyThemePersist.read() ?? cfg.themeMode` により host も同じ mode を適用します。
-3. **変更時** — host が `themeChanged(mode)` を発行し、shell が `events.on('themeChanged', window.wippyThemePersist.write)` で保存します。
+1. **最初の描画** — cookieモード: サーバーが `<html class="w-theme-dark">` を設定済み。localStorageモード:
+   早期適用スクリプトが設定します。いずれの場合も、バンドルの読み込み前にページにテーマが適用されます。
+2. **ブートストラップ** — シェルが永続化された値をホストに渡します:
+   `themeMode: window.wippyThemePersist.read() ?? cfg.themeMode`。これによりホストは同じモードを適用します。
+3. **変更時** — ホストが `themeChanged(mode)` を発行し、シェルがそれを永続化します:
+   `events.on('themeChanged', window.wippyThemePersist.write)`。
 
-### `themeChanged` host event
+### ホストの `themeChanged` イベント
 
-`globalEvents`、つまり `window.initWippyApp(...)` が返す emitter は、init 時と theme 変更のたびに `themeChanged(mode)`（`'auto' | 'light' | 'dark'`）を発行します。persistence-agnostic であり、host は storage に触れません。何をするかは embedder が決めます。
+`window.initWippyApp(...)` が返すエミッタである `globalEvents` は、初期化時とテーマ変更のたびに
+`themeChanged(mode)`（`'auto' | 'light' | 'dark'`）を発行します。これは永続化に依存しません。ホストは
+ストレージに一切触れず、埋め込み側がその扱いを決めます。
 
 ```js
 const events = window.initWippyApp(config, '#app')
 events.on('themeChanged', (mode) => {
-  // e.g. persist, or notify a parent window
+  // 例: 永続化する、または親ウィンドウに通知する
 })
 ```
 
-## Wippy で host されない page
+## Wippyでホストされないページ
 
-Wippy portable-module contract 外の document も、同じ theme を尊重して永続化できます。以下の native button が適切なのは、このような外部 static document だけです。これらの control を持つ Wippy page または component は、[Portable UI Contract](../portable-ui-contract.md)に従い PrimeVue を使う必要があります。生成 script を読み込み、自身の switcher から `write()` を呼び出します。
+Wippyのポータブルモジュール契約の外にあるドキュメントでも、同じテーマを尊重し永続化できます。
+以下のネイティブなボタンが適切なのは、そのような外部の静的ドキュメントの場合だけです。
+これらのコントロールを持つWippyのページやコンポーネントは、
+[ポータブルUI契約](../portable-ui-contract.md)のもとでPrimeVueを使用しなければなりません。
+生成されたスクリプトを含め、自分のスイッチャーから `write()` を呼び出してください:
 
 ```html
 <head>
-  <!-- as early as possible: applies the stored theme + exposes window.wippyThemePersist -->
+  <!-- できるだけ早く: 保存されたテーマを適用し、window.wippyThemePersist を公開する -->
   <script src="/api/public/facade/theme-persist.js"></script>
-  <!-- optional: reuse the facade brand theme too -->
+  <!-- 任意: ファサードのブランドテーマも再利用する -->
   <link rel="stylesheet" href="/api/public/facade/variables.css">
 </head>
 <body>
@@ -102,24 +122,31 @@ Wippy portable-module contract 外の document も、同じ theme を尊重し�
     document.querySelectorAll('[data-mode]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const mode = btn.dataset.mode
-        window.wippyThemePersist.apply(mode)   // update <html> now
-        window.wippyThemePersist.write(mode)   // persist for next load / the host
+        window.wippyThemePersist.apply(mode)   // 今すぐ <html> を更新
+        window.wippyThemePersist.write(mode)   // 次回の読み込み / ホストのために永続化
       })
     })
   </script>
 </body>
 ```
 
-key と storage mode が共有されるため、login page で行った選択は Web Host に引き継がれ、その逆も同様です。script は両方の値を同じ facade configuration から受け取ります。
+キーとストレージモードは共有されている（スクリプトは同じファサード設定から生成される）ため、
+ログインページで行った選択はそのままWeb Hostに引き継がれ、その逆も成り立ちます。
 
-> 別の方法として `/api/public/facade/config` を取得し、`themePersist` と `themeStorageKey` を読んで storage を直接実装できます。生成 script はその logic を 1 か所に集約します。
+> スクリプトを読み込みたくない場合は、`/api/public/facade/config` を取得して
+> `themePersist` / `themeStorageKey` を読み、読み書きを自分で実装することもできます。ただし、
+> 生成されるスクリプトはストレージのロジックを一箇所にまとめてくれます。
 
-## Server-side cookie rendering（flash なし）
+## サーバー側でのcookieレンダリング（ちらつきゼロ）
 
-custom server-rendered page（Jet login template など）では、host shell とまったく同様に theme を server-side で適用できます。request から `theme_storage_key` で指定した名前の cookie を読み、一致する class を `<html>` に出力します。
+カスタムのサーバーレンダリングページ（例: Jetのログインテンプレート）では、ホストシェルとまったく同じように
+サーバー側でテーマを適用できます。リクエストから `theme_storage_key` で名前付けられたcookieを読み、
+対応するクラスを `<html>` に出力します:
 
 ```html
 <html lang="en"{{ if hasTheme }} class="{{ themeClass }}" style="color-scheme: {{ colorScheme }};"{{ end }}>
 ```
 
-handler は cookie に基づき `themeClass` を `w-theme-dark` / `w-theme-light` に、`colorScheme` を `dark` / `light` に設定します。page から変更を書き戻せるよう、引き続き `theme-persist.js` を読み込んでください。
+ここでハンドラは、cookieに基づいて `themeClass` を `w-theme-dark` / `w-theme-light` に
+（`colorScheme` を `dark` / `light` に）設定しています。ページが変更を書き戻せるよう、
+`theme-persist.js` も引き続き含めてください。

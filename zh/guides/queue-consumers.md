@@ -27,7 +27,7 @@ flowchart LR
 | `func` | 必填 | - | 处理函数注册表 ID |
 | `concurrency` | 1 | 1000 | 工作线程数 |
 | `prefetch` | 10 | 10000 | 消息缓冲区大小 |
-| `auto_ack` | false | - | 在运行处理器之前自动确认 |
+| `auto_ack` | false | - | 驱动层面的自动确认（AMQP `Consume` autoAck；内存驱动会忽略它） |
 | `driver_options` | `{}` | - | 驱动特定的消费者选项 |
 
 ## 入口定义
@@ -84,6 +84,8 @@ return handler
 |------|------|------|
 | 成功 | Ack | 消息从队列移除 |
 | 错误 | Nack | 消息重新入队（取决于驱动） |
+
+处理器可以用 `queue.message()` 以及 `msg:ack()` / `msg:nack()` 自行结算消息；此时消费者会跳过自己的 ack/nack。
 
 ## 工作池
 

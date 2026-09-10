@@ -53,14 +53,12 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder A
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
 | `hostname` | string | tsnet-Knotenname (wird im knotenspezifischen State-Verzeichnis verwendet) |
-| `auth_key` | string | Tailnet-Auth-Key — inline oder als `${env:NAME}`, aufgelöst über die [Env-Registry](./env.md) |
+| `auth_key` | string | Tailnet-Auth-Key — inline oder `${env:NAME}`, aufgelöst über die [Env-Registry](system/env.md) |
 | `state_dir` | string | Überschreibung des tsnet-State-Verzeichnisses |
 | `control_url` | string | Alternativer Koordinationsserver |
 | `ephemeral` | bool | Als ephemeren Tailnet-Knoten registrieren |
 
-`auth_key` ist erforderlich; geben Sie ihn direkt oder über `${env:NAME}` an. Die veraltete Direktive `auth_key_env` wird auf dieselbe Weise aufgelöst; verwenden Sie stattdessen `auth_key: ${env:NAME}`.
-
-Der tsnet-Hostname ist standardmäßig `wippy`. Wenn `state_dir` fehlt, verwendet die Runtime `<network_service.state_dir>/tailscale/<node>`, wobei `<node>` der konfigurierte Hostname oder, falls keiner konfiguriert ist, der Registry-Entry-Name ist.
+`auth_key` ist erforderlich (direkt oder über `${env:NAME}` angeben). Die Legacy-Direktive `auth_key_env` löst sich genauso auf, ist aber veraltet; bevorzugen Sie `auth_key: ${env:NAME}`.
 
 ## I2P
 
@@ -116,9 +114,7 @@ local pid, err = process.with_options({ network = "app.net:tailnet" })
 if err then return nil, err end
 ```
 
-Das Erstellen des Process-Spawners mit benutzerdefinierten Optionen erfordert außerdem `process.context` für `context`. Eine Verweigerung löst einen Lua-Fehler aus, bevor der Spawner zurückgegeben wird; `network.select` wird anschließend separat für die ausgewählte Netzwerk-ID geprüft.
-
-Das `http_client`-Modul akzeptiert dieselbe Overlay-Auswahl in den Optionen eines einzelnen Aufrufs unter dem Schlüssel `overlay_network`.
+Das `http_client`-Modul akzeptiert dieselbe Overlay-Auswahl in den Per-Call-Optionen unter dem Schlüssel `overlay_network`.
 
 ## Vererbung
 
@@ -134,14 +130,22 @@ Overlay-Treiber lesen app-weite Einstellungen aus einem `network_service:`-Block
 
 ```yaml
 network_service:
-  state_dir: .wippy/net          # base dir for driver state (Tailscale keys, etc.)
-  default_network: app.net:tailnet  # overlay applied when no call sets one
+  state_dir: .wippy/net          # Basisverzeichnis für Treiber-State (Tailscale-Schlüssel etc.)
+  default_network: app.net:tailnet  # Overlay, das verwendet wird, wenn kein Aufruf eines setzt
 ```
 
 | Feld | Standard | Beschreibung |
 |------|----------|--------------|
-| `state_dir` | `.wippy/net` | Verzeichnis für den Treiberzustand. Relative Pfade werden gegen das Verzeichnis der Boot-Konfiguration aufgelöst. |
-| `default_network` | — | Registry-ID eines Overlays für alle Tasks oder Prozesse, die nicht über Optionen ihr eigenes Netzwerk festlegen. |
+| `state_dir` | `.wippy/net` | Verzeichnis für Treiber-State. Relative Pfade werden gegen das Boot-Config-Verzeichnis aufgelöst. |
+| `default_network` | — | Registry-ID eines Overlays, das auf jede Aufgabe oder jeden Prozess angewendet wird, der sein eigenes Netzwerk nicht über Optionen festlegt. |
+
+## Rohe Verbindungsaufbauten
+
+Die Overlay-Auswahl ist nicht auf Lua-Kanten beschränkt. Verbindungsaufbauten über den Runtime-Netzwerkdienst — den WASM-[`socket`-Host](wasm/hosts.md#socket) und den `wasi:sockets`-Dispatcher — lesen das Overlay vom Frame und routen darüber, gleich ob es von `with_options`, von `meta.options.network` am Entry oder von `network_service.default_network` gesetzt wurde.
+
+Das Private-IP-Gate verhält sich auf diesem Pfad anders. Ein direkter Verbindungsaufbau löst das Ziel auf und prüft jede resultierende Adresse gegen `socket.private_ip`. Mit ausgewähltem Overlay wird nur eine literale IP-Adresse im Ziel geprüft; Hostnamen werden dem Overlay zur Auflösung übergeben, der lokale Resolver wird also nie befragt und auf das, was er zurückgegeben hätte, findet keine Prüfung statt.
+
+Ist ein Overlay ausgewählt, der Kontext trägt aber keine Netzwerk-Registry, schlägt der Verbindungsaufbau mit `network "<id>" selected without a network registry` fehl.
 
 ## Overlays aktualisieren
 
@@ -153,12 +157,18 @@ Overlay-Einträge werden bei einer Registry-Aktualisierung ersetzt. Der Treiber 
 |--------|----------|-------------|
 | `network.select` | Netzwerk-Registry-ID | Explizite Overlay-Auswahl bei `funcs.call`, `process.spawn`, `http_client` |
 | `network.bind` | Netzwerk-Registry-ID | Binden eines `http.service`-Listeners über ein Overlay (das Feld `network:`) |
-| `process.context` | `context` | Erstellen eines Process-Spawners mit `process.with_options(...)` |
+| `socket.connect` | `host:port` | Jeder ausgehende Verbindungsaufbau über den Netzwerkdienst |
+| `socket.listen` | `host:port` | Binden eines TCP-Listeners oder eines UDP-Sockets über den Netzwerkdienst |
+| `socket.resolve` | Hostname | DNS-Auflösung über den Netzwerkdienst |
+| `socket.private_ip` | IP-Adresse | Erreichen einer Loopback-, privaten, Link-Local- oder unspezifizierten Adresse |
 
 Verweigern Sie `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert. `network.bind` wird geprüft, wenn ein Server mit einem `network:`-Overlay seinen Listener startet.
+
+Die `socket.*`-Berechtigungen werden vom Netzwerkdienst selbst geprüft. `socket.connect`, `socket.listen` und `socket.resolve` werden vor jedem Overlay-Routing geprüft und gelten damit gleichermaßen für Clearnet- und Overlay-Verkehr; `socket.private_ip` verengt sich auf literale Adressen, sobald ein Overlay ausgewählt ist, wie unter [Rohe Verbindungsaufbauten](system/network.md#rohe-verbindungsaufbauten) beschrieben.
 
 ## Siehe auch
 
 - [Sicherheit](system/security.md) - Richtlinien und Actors
 - [HTTP-Service](http/server.md) - Server-Binding
 - [HTTP-Client](lua/http/client.md) - Overlay-Auswahl pro Aufruf
+- [Host-Funktionen](wasm/hosts.md) - WASM-Socket-Imports

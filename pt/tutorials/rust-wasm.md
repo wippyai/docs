@@ -256,7 +256,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+Montar um sistema de arquivos em um módulo WASM e chamar uma função WASM são ações protegidas. A política as concede; as entradas que precisam delas a referenciam.
 
 ### Funções WASM
 
@@ -370,10 +383,8 @@ entries:
         name: ls
         short: List files from mounted directory
         security:
-          actor:
-            id: demo.cli:ls
-          policies:
-            - demo.cli:wasm_cli_policy
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -389,9 +400,7 @@ entries:
           guest: /data
 ```
 
-O bloco `meta.command` registra o processo WASM como um comando CLI nomeado. `ls` usa
-stdout WASI e acesso ao sistema de arquivos, portanto declara os perfis de host
-correspondentes e recebe somente a montagem `/data`.
+O bloco `meta.command` registra o processo como um comando CLI nomeado. O comando `greet` não precisa de imports WASI já que usa apenas operações com strings. O comando `ls` precisa de acesso ao sistema de arquivos, então também carrega o contexto de segurança que concede a montagem.
 
 ### Endpoint HTTP
 
@@ -439,9 +448,21 @@ wippy run list
 ```
 Available commands:
 
+  greet  Greet someone via WASM  (demo.cli:greet)
   ls  List files from mounted directory  (demo.cli:ls)
 
 Run with: wippy run <command>
+```
+
+Os argumentos após o nome do comando são passados para a função exportada como parâmetros string, de modo que cada comando recebe exatamente os argumentos que sua assinatura WIT declara:
+
+```bash
+# Run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
@@ -459,23 +480,19 @@ encerrar com status 0. O Wippy não imprime payloads de retorno arbitrários de
 wippy run
 ```
 
-Isso inicia o servidor HTTP na porta 8090. Teste o endpoint:
+Isso inicia o servidor HTTP na porta 8090. O transporte `wasi-http` passa o corpo da requisição como o único argumento string da função:
 
 ```bash
-curl -X POST --data 'World' http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
 ```
 
-Corpo de resposta esperado:
-
-```text
+```
 Hello, World!
 ```
 
 ### Chamar a partir de Lua
 
-Funções WASM são chamadas da mesma forma que funções Lua. Este é um snippet de
-referência para uma entrada Lua existente que declara o módulo `funcs`; não é outro
-arquivo exigido pela demonstração:
+Funções WASM são chamadas da mesma forma que funções Lua. O processo chamador precisa de `funcs.call` no destino, o que `demo:policy` concede:
 
 ```lua
 local funcs = require("funcs")

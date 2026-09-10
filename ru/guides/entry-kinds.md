@@ -69,7 +69,7 @@ description: "Полный справочник всех типов записе
   prefix: /api
   middleware:
     - cors
-    - rate_limit
+    - ratelimit
 
 # Эндпоинт
 - name: users_list
@@ -88,7 +88,8 @@ local http = require("http")
 local req = http.request()
 local resp = http.response()
 
-resp:status(200):json({users = get_users()})
+resp:set_status(200)
+resp:write_json({users = get_users()})
 ```
 
 ## Базы данных
@@ -98,6 +99,8 @@ resp:status(200):json({users = get_users()})
 | `db.sql.sqlite` | SQLite |
 | `db.sql.postgres` | PostgreSQL |
 | `db.sql.mysql` | MySQL |
+| `db.cdc.postgres` | Источник Change Data Capture для Postgres (см. [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | Источник Change Data Capture для SQLite (см. [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -183,7 +186,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 - name: persistent_store
   kind: store.sql
   database: app:database
-  table: kv_store
+  table_name: kv_store
   lifecycle:
     auto_start: true
 
@@ -246,13 +249,18 @@ local queue = require("queue")
 -- Публикация сообщения
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- В обработчике — доступ к текущему сообщению
-local msg = queue.message()
-local data = msg:body_json()
+-- В обработчике потребителя: тело сообщения — аргумент обработчика
+local function main(data)
+    -- доступ к метаданным доставки через текущее сообщение
+    local msg = queue.message()
+    local id = msg:id()
+    local priority = msg:header("priority")
+    msg:ack()
+end
 ```
 
 <note>
-Функция <code>func</code> потребителя вызывается для каждого сообщения. Используйте <code>queue.message()</code> внутри обработчика для доступа к текущему сообщению.
+Функция <code>func</code> потребителя вызывается один раз на сообщение, получая тело сообщения аргументом. Используйте <code>queue.message()</code> внутри обработчика для <code>id()</code> доставки, <code>header()</code>/<code>headers()</code> и <code>ack()</code>/<code>nack()</code>.
 </note>
 
 ## Управление процессами
@@ -262,6 +270,7 @@ local data = msg:body_json()
 | `process.host` | Хост выполнения процессов |
 | `process.service` | Супервизируемый процесс (обёртка над process.lua) |
 | `terminal.host` | Хост терминала/CLI |
+| `pg.scope` | Область группы процессов (см. [Группы процессов](system/process-groups.md)) |
 
 ```yaml
 # Хост процессов (где выполняются процессы)
@@ -303,6 +312,39 @@ local data = msg:body_json()
 
 Обновление живой записи `process.host` перемасштабирует `host.workers` на месте — работающие процессы, PID и очереди сохраняются. `host.queue_size`, `host.local_queue_size` и `lifecycle` фиксируются при создании: живое обновление, меняющее их, отклоняется, как и изменение числа воркеров у хоста, воркеры которого управляются аффинностью.
 
+### Безопасность процесса
+
+Записи `process.lua` и `process.lua.bc` принимают блок `security:` верхнего уровня. Он входит в состав записи, поэтому применяется к каждому запуску этого процесса — как на `process.host`, так и на `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Поле | Описание |
+|------|----------|
+| `actor.id` | Идентичность актора, под которой работает процесс; заменяет унаследованного актора |
+| `actor.meta` | Атрибуты актора, которые вычисляют политики |
+| `policies` | Registry ID (`namespace:name`) политик, объединяемых в область |
+| `groups` | Registry ID групп политик, чьи политики объединяются в область |
+
+Разрешение происходит при старте процесса и атомарно: если какую-либо из перечисленных политик или групп разрешить не удаётся, spawn завершается неудачей и частичный контекст не устанавливается. Опущенный `actor` наследует актора порождающей стороны; опущенные одновременно `policies` и `groups` наследуют её область. Блок принимают `function.lua`, `function.lua.bc`, `process.lua` и `process.lua.bc`.
+
+Запись-команда может дополнительно объявить `meta.command.security`, который применяется только при запуске записи как CLI-команды — см. [Безопасность команд](guides/cli.md#command-security). На обычные spawn он не влияет.
+
+См. [Безопасность](system/security.md).
+
 ## Temporal (Workflows)
 
 | Тип | Описание |
@@ -339,8 +381,8 @@ local data = msg:body_json()
 - name: aws
   kind: config.aws
   region: "us-east-1"
-  access_key_id_env: "AWS_ACCESS_KEY_ID"
-  secret_access_key_env: "AWS_SECRET_ACCESS_KEY"
+  access_key_id: ${env:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 
 - name: uploads
   kind: cloudstorage.s3
@@ -356,7 +398,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expires = "1h"})
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- в секундах, по умолчанию 3600
 ```
 
 <tip>
@@ -433,7 +475,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-Роутер перебирает хранилища по порядку. При чтении возвращается первое найденное значение; запись идёт в первое записываемое хранилище.
+Роутер перебирает хранилища по порядку. При чтении возвращается первое найденное значение; запись идёт в первое хранилище из списка.
 </note>
 
 ## Шаблоны
@@ -501,7 +543,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Группы политик образуются самими политиками: политика перечисляет под `groups:` ID групп, к которым принадлежит, а группа — это множество политик, назвавших её. Отдельного типа записи для группы нет. ID групп — это Registry ID: голое имя разрешается в пространстве имён объявляющей политики, поэтому `operators` выше становится `app.security:operators` при объявлении в пространстве имён `app.security`. Записи ссылаются на группы по полному `namespace:name`.
 
 **Lua API:** См. [Модуль Security](lua/security/security.md)
 
@@ -518,7 +564,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Политики вычисляются по порядку. Первая подходящая определяет доступ. Размещайте более специфичные политики перед общими.
+Вычисляется каждая политика в области видимости. <code>deny</code> из любой подходящей политики выигрывает у любого <code>allow</code>; если запрета нет, подходящий <code>allow</code> даёт доступ. Порядок значения не имеет.
 </warning>
 
 ## Контракты (Dependency Injection)
@@ -585,7 +631,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** См. [Модуль Contract](lua/core/contract.md)
 
 <tip>
-Пометьте один binding как <code>default: true</code>, чтобы использовать его при открытии контракта без указания binding ID (работает только если не заданы поля <code>context_required</code>).
+Пометьте один binding как <code>default: true</code>, чтобы использовать его при открытии контракта без указания binding ID. У контракта может быть только один binding по умолчанию.
 </tip>
 
 ## Выполнение команд
@@ -622,11 +668,24 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssembly-процесс |
 
 ```yaml
+# Текст WAT — это inline-исходник
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # или wasi-http
+
+# Бинарный WASM загружается из записи файловой системы и проверяется по хэшу
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # или wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` и `process.wasm` принимают `fs`, `path` и `hash` — поля `source` у бинарной записи нет; `source` относится только к `function.wat`. `hash` обязателен и должен иметь вид `sha256:<hex>`; модуль отклоняется, если байты не совпадают.
 
 См. [Обзор WASM](wasm/overview.md).
 
@@ -645,12 +704,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | Тип | Описание |
 |------|-------------|
-| `registry.entry` | Дескриптор записи (внутренний) |
+| `registry.entry` | Запись с обычными данными без стоящего за ней сервиса (конфигурация, специфичная для приложения) |
 | `ns.definition` | Определение пространства имён |
 | `ns.requirement` | Декларация требования пространства имён |
 | `ns.dependency` | Зависимость пространства имён |
 
-Они создаются загрузчиком реестра из frontmatter `_index.yaml` и деклараций зависимостей. Авторы обычно не определяют их напрямую — они появляются как результат разрешения блоков `version:`, `namespace:` и зависимостей.
+Типы `ns.*` пишутся так же, как любые другие записи: компонент объявляет `ns.definition` и `ns.requirement`, а хост объявляет `ns.dependency`. См. [Создание компонентов](guides/components.md).
 
 ## Настройка жизненного цикла
 
@@ -674,7 +733,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
 <note>
-Используйте <code>depends_on</code> для правильного порядка запуска. Супервизор ждёт, пока зависимости станут стабильными, прежде чем запускать зависимые записи.
+Используйте <code>depends_on</code> для правильного порядка запуска. Супервизор запускает зависимую запись только после того, как каждая из её зависимостей завершила собственный запуск.
 </note>
 
 ## Формат ссылок на записи

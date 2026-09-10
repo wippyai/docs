@@ -1,25 +1,23 @@
 ---
-title: "Build と dependency の契約"
-description: "canonical output command、Windows wrapper、Web Host import-map snapshot、external。"
+title: "ビルドと依存関係の契約"
+description: "正典となる出力コマンド、Windows 用ラッパー、Web ホストのインポートマップスナップショット、externals。"
 ---
 
-# Build と dependency の契約
+# ビルドと依存関係の契約
 
-既存 repository 向け reference contract です。Makefile、PowerShell、batch、Vite block は focused fragment で、standalone project scaffold ではありません。
+## Wippy プロジェクトの正典ビルド契約
 
-## Wippy の標準 production build 契約
+`wippy.exe` によって起動される Wippy アプリケーションまたはモジュールのリポジトリでは、リポジトリの Make ターゲットを呼び出してください。パッケージマネージャーや Vite のビルドコマンドを直接実行してはいけません。
 
-`wippy.exe` が起動する Wippy application/module repository の production artifact では repository Make target を呼びます。documented な `npm run dev` 等の local watch-mode command は有効ですが deployment build の代わりにはなりません。
-
-全 production frontend target の Makefile recipe は次を使います。
+本番向けフロントエンドの各ターゲットについて、Makefile のレシピは次を使用します。
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-deployment build が `<target>` を所有します。`vite.config.ts` に deployment output directory を hardcode しません。
+`<target>` はデプロイビルドが所有します。`vite.config.ts` はデプロイ用の出力ディレクトリをハードコードしてはいけません。
 
-Web Host source など `wippy.exe` が起動しない platform/package-source repository は、その repository の `package.json` が宣言する exact script/argument を使います。自身の script が明記しない限り Wippy module の `--outDir <target> --emptyOutDir` recipe は適用しません。
+Web ホストのソースのように、`wippy.exe` によって起動されないプラットフォーム／パッケージのソースリポジトリでは、そのリポジトリの `package.json` が宣言しているスクリプトと引数をそのまま使用してください。Wippy モジュールの `--outDir <target> --emptyOutDir` というレシピは、パッケージソースのリポジトリ自身が宣言するスクリプトがそれらの引数を明示的にドキュメント化していない限り、適用されません。
 
 ### Makefile
 
@@ -33,7 +31,7 @@ frontend-example:
 
 ### make.ps1
 
-Windows user は matching target を `make.bat` から呼びます。`make.ps1` は Windows で Makefile target を実装するもので、別の public build interface ではありません。
+Windows ユーザーは、対応するターゲットを `make.bat` 経由で呼び出します。`make.ps1` は Makefile のターゲットを Windows 向けに実装したものであり、独立した公開ビルドインターフェースではありません。
 
 ```powershell
 param(
@@ -63,40 +61,27 @@ finally {
 
 ### make.bat
 
-`make.bat` は PowerShell counterpart に委譲し、argument と exit code を転送するだけです。例では `make.bat frontend-example` を実行します。
+`make.bat` は対応する PowerShell スクリプトへ委譲し、引数を転送し、その終了コードを返すだけです。
+example ターゲットの場合、Windows ユーザーは `make.bat frontend-example` を実行します。
 
 ```bat
 @powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0make.ps1" %*
 @exit /b %ERRORLEVEL%
 ```
 
-## import map のスナップショットアルゴリズム :id=import-map-snapshot-algorithm
+## インポートマップのスナップショットアルゴリズム
 
-target Web Host release が host-provided module を定義します。
+対象となる Web ホストのリリースが、ホスト提供モジュールを定義します。
 
-1. target Web Host release tag を解決する。
-2. 開発中に `https://web-host.wippy.ai/<release-tag>/import-map.json` を一度取得する。
-3. release tag、exact resolved URL、完全な `imports` object、取得 payload byte の lowercase SHA-256 を保存する。
-4. `imports` の全 key を externalize する。
-5. host-less mode に同じ完全 snapshot を使う。
-6. host release change 時、または新 dependency が host-provided になり得るとき再取得する。
-7. built output を検査し、snapshot にない bare import を拒否する。
+1. 対象の Web ホストのリリースタグを確定します。
+2. 開発中に一度だけ `https://web-host.wippy.ai/<release-tag>/import-map.json` を取得します。
+3. リリースタグ、解決された正確な URL、完全な `imports` オブジェクト、そして取得したインポートマップのペイロードバイト列の小文字 SHA-256 を保存します。
+4. その `imports` オブジェクトのすべてのキーを external にします。
+5. ホストレスモードでも同じ完全なスナップショットを使用します。
+6. ホストのリリースが変わったとき、または新しく追加した依存関係がホスト提供になった可能性があるときに再取得します。
+7. ビルド出力を検査し、スナップショットに存在しないベアインポートを拒否します。
 
-hand-written package list を維持せず、external 全件を peer dependency に copy しません。
-
-web-component entry build では entry module の registration side effect を保持します。
-
-```ts
-export default {
-  build: {
-    rollupOptions: {
-      preserveEntrySignatures: 'strict',
-    },
-  },
-}
-```
-
-`false` は `define(import.meta.url, Component)` を entry chunk 外へ移し、Host の `?declare-tag=` import から登録できなくなる場合があります。
+手書きのパッケージ一覧を維持しないでください。external の集合全体を peer dependencies へミラーしないでください。
 
 ```ts
 import hostImportMap from './wippy-import-map.json'
@@ -110,8 +95,6 @@ export default {
 }
 ```
 
-snapshot には provenance と hash が必要です。不在 dependency は別の documented build rule がない限り bundle します。
+スナップショットには出所とハッシュを含めなければなりません。スナップショットに存在しない依存関係は、別のドキュメント化されたビルドルールが当てはまらない限りバンドルされます。
 
 Web Host 1.0.56 baseline の canonical URL は `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json` です。local application URL、unpinned `latest` URL、手動再構成 list に置換しないでください。
-
-この Host release は public `@wippy-fe/*` 0.0.56 と coordination します。`@wippy-fe/vite-plugin` 0.0.56 は Vite 5/6/7 に対応します。example は Node 22.12+ と Vite 7 を使い、Vite 5/6 を選ぶ consumer は各 release の Node requirement に従います。Web Host source repository 自体は Node 22+ と Vite 7 を宣言します。

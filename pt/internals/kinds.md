@@ -76,7 +76,7 @@ func MyService() boot.Component {
 
 ## Decodificando Dados de Entrada
 
-Use `entry.DecodeEntryConfig` do pacote `github.com/wippyai/runtime/system/entry` para desserializar os dados da entrada. O pacote pode ser importado por extensões externas ao repositório:
+Use `entry.DecodeEntryConfig` de `system/entry` para deserializar dados da entrada. `DecodeEntryConfigFromContext` pega o transcoder do contexto em vez de recebê-lo como argumento, e `DecodeEntryConfigRaw` pula a resolução de placeholders:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -90,12 +90,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 O decoder:
-1. Resolve os placeholders modernos `${env:...}` nos dados da entrada
-2. Desserializa os dados resolvidos na struct de configuração
-3. Preenche `ID` e `Meta` com os dados da entrada quando os campos decodificados são zero ou nil
-4. Chama `InitDefaults()` quando implementado
-5. Resolve os campos legados `*_env` pelo registro de ambiente
-6. Chama `Validate()` quando implementado
+1. Resolve placeholders `${env:...}` e campos companheiros `*_env` contra o registro de ambiente
+2. Deserializa `entry.Data` em sua struct de config
+3. Popula `ID` e `Meta` da entrada quando a struct os deixa vazios
+4. Chama `InitDefaults()` se implementado
+5. Chama `Validate()` se implementado
 
 ## Estrutura de configuração
 

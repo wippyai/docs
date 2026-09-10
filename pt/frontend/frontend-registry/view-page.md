@@ -1,41 +1,36 @@
 ---
-title: "Apps de micro frontend (view.page)"
-description: "Referência para declarar, rotear, servir e configurar um app de micro frontend view.page."
+title: "Apps Micro Frontend (view.page)"
+description: "Uma entrada view.page descreve uma aplicação single-page completa que o Web Host carrega dentro de um iframe. Cada entrada de página reivindica um caminho de URL no host…"
 ---
 
-# Apps de micro frontend (view.page)
+# Apps Micro Frontend (view.page)
 
-Uma entrada `view.page` descreve uma aplicação single-page completa que o Web
-Host carrega pelo engine selecionado, iframe ou Web Fragment. Cada entrada pode
-assumir uma rota do host e recebe CSS, configuração e APIs do host pelo adapter
-de proxy do engine.
+Uma entrada `view.page` descreve uma aplicação single-page completa que o Web Host carrega dentro de um iframe. Cada entrada de página reivindica um caminho de URL no roteador do host, recebe seu próprio contexto de navegação isolado e recebe CSS e configuração injetados pelo host através da camada de proxy.
 
-## Campos do frontend (bloco wippy de package.json)
+## Campos de Frontend (bloco wippy do package.json)
 
-O desenvolvedor frontend define estes campos no bloco `wippy` de
-`package.json`. O plugin do Vite os incorpora em `wippy-meta.json` durante o
-build, e `wippy/views` os lê dali como defaults.
+Estes campos são escritos pelo desenvolvedor de FE no bloco `wippy` do `package.json`. O plugin do vite os grava no `wippy-meta.json` em tempo de build, e o `wippy/views` os lê de lá como padrões.
 
-> **Todos os campos desta seção podem ser sobrescritos pelo operador em `_index.yaml`. O YAML sempre tem precedência.**
+> **Todos os campos desta seção podem ser sobrescritos pelo operador no `_index.yaml`. O YAML sempre tem precedência.**
 
-### Exibição e navegação
+### Exibição e Navegação
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
 | `title` | string | — | Rótulo exibido na barra lateral de navegação e na aba do navegador |
 | `icon` | string | — | Referência de ícone Iconify, por exemplo `tabler:layout-dashboard` |
 | `type` | string | — | Deve ser `"page"` |
-| `path` | string | — | Caminho para o arquivo HTML de entrada compilado dentro do diretório de saída do bundle |
+| `path` | string | — | Caminho até o arquivo HTML de entrada compilado, dentro do diretório de saída do bundle |
 
-### Engine de renderização
+### Render engine
 
-`renderEngine` seleciona o [engine de renderização de página](../web-host/render-engines.md) para esta página (somente `view.page`). A Proxy API é portátil entre engines, mas o layout do navegador e o comportamento do DOM podem variar; revise as limitações de fragment antes de escolher esse engine para uma página.
+`renderEngine` seleciona a [render engine da página](../web-host/render-engines.md) para esta página (apenas `view.page`). A engine é transparente para o código do app — a mesma página renderiza de forma idêntica em ambos os casos — então defina-a apenas para tirar uma página da engine de fragment, ou colocá-la nela.
 
 | Valor | Efeito |
 |-------|--------|
-| `"auto"` _(padrão ou omitido)_ | Segue a opção global da implantação (`hostConfig.renderEngine`, definida pelo parâmetro [`render_engine`](../../framework/facade.md) da facade). |
-| `"iframe"` | Sempre renderiza como iframe srcdoc, independentemente da opção global. Use em páginas com tecnologia incompatível com reframing — hit testing de ponteiro (`elementFromPoint`), layout com unidades de viewport (`vh`/`vw`, `matchMedia`), `position: fixed`. |
-| `"fragment"` | Prefere o engine [Web Fragment](../web-host/render-engines.md). Em uma implantação global `fragment`: sempre. Em uma implantação global `iframe`: somente se uma sondagem de capacidade em runtime confirmar a presença do [gateway `/@fragment`](../../framework/views.md) e da proxy (caso contrário, fallback seguro para iframe). |
+| `"auto"` _(padrão, ou omitido)_ | Segue o switch global do deployment (`hostConfig.renderEngine`, definido pelo parâmetro de facade [`render_engine`](../../framework/facade.md#render-engine)). |
+| `"iframe"` | Sempre renderiza como um iframe srcdoc, independentemente do switch. Use para páginas com tecnologia incompatível com reframing — hit-testing de ponteiro (`elementFromPoint`), layout com unidades de viewport (`vh`/`vw`, `matchMedia`), `position: fixed`. |
+| `"fragment"` | Prefere a engine [Web Fragment](../web-host/render-engines.md). Em um deployment global-`fragment`: sempre. Em um deployment global-`iframe`: apenas se uma sondagem de capacidade em runtime confirmar que o [gateway `/@fragment`](../../framework/views.md#web-fragments-gateway) + proxy estão presentes (com fallback seguro para iframe caso contrário). |
 
 ```json
 {
@@ -46,18 +41,18 @@ build, e `wippy/views` os lê dali como defaults.
 }
 ```
 
-Consulte [Engines de renderização](../web-host/render-engines.md) para o modelo completo e as limitações de fragment.
+Veja [Render Engines](../web-host/render-engines.md) para o modelo completo de engines e as limitações de fragment.
 
-### Configuração da proxy
+### Configuração do Proxy
 
-A injeção da proxy tem duas superfícies. O desenvolvedor FE define defaults no
-bloco `wippy` do `package.json` frontend, com chaves lower camel case
-(`themeConfig`, `primevue`, `customCss`); o plugin do Vite as incorpora em
-`wippy-meta.json`. O operador as sobrescreve com um bloco `proxy:` sob `meta:`
-no YAML do registro. Os campos do registro seguem o schema documentado, não uma
-regra universal de casing. Chaves aninhadas da proxy preservam seus nomes lower
-camel case, e o host faz deep merge desse YAML sobre os defaults incorporados
-do frontend sem converter chaves.
+A injeção de proxy tem duas superfícies. O desenvolvedor de FE escreve os padrões
+no bloco `wippy` do `package.json` do frontend com chaves em lower-camel-case
+(`themeConfig`, `primevue`, `customCss`); o plugin do Vite as grava no
+`wippy-meta.json`. O operador as sobrescreve com um bloco `proxy:` sob
+`meta:` no YAML do registry. Os campos do registry seguem seu schema documentado, e não
+uma regra universal de casing. Chaves aninhadas de proxy mantêm seus nomes definidos em
+lower-camel-case, e o host faz deep-merge desse YAML sobre os padrões de frontend
+gravados, sem converter chaves.
 
 ```json
 {
@@ -85,51 +80,37 @@ do frontend sem converter chaves.
 }
 ```
 
-No engine iframe, `proxy.injections` configura os assets adicionados pela proxy
-srcdoc. Quando omitido, esse adapter usa defaults permissivos e habilita a
-maioria das injeções. O Web Host 1.0.56 transporta `proxy.enabled` como
-metadado, mas não o usa como opção de runtime.
+`proxy.enabled: true` significa que o Web Host envolve a página em seu harness de iframe de proxy, que escreve `window.__WIPPY_APP_CONFIG__` e globais relacionados antes de o bundle da página ser avaliado.
 
-O Web Host 1.0.56 não traduz essas flags para o engine Fragment. O gateway
-Fragment sempre fornece `loading.js`, `proxy-fragment.js` e as quatro folhas de
-estilo do Host (configuração do tema, estilos da barra de rolagem do iframe,
-PrimeVue/Tailwind e Markdown); sua proxy também instala a captura de erros
-incondicionalmente. Uma página que possa usar iframe como fallback ainda deve
-declarar explicitamente a intenção de injeção para iframe.
-
-A lista abaixo mostra os **valores explícitos recomendados para iframe em um app
-de micro frontend Vite típico** — não os defaults de runtime — para que revisores
-do pacote vejam o comportamento de fallback da página.
+Se `proxy.injections` for omitido, o proxy de iframe usa padrões de runtime permissivos e habilita a maioria das injeções. A lista abaixo mostra os **valores explícitos recomendados para um app micro frontend Vite típico** — não os padrões de runtime — para que revisores de pacote possam ver a intenção da página.
 
 #### Valores explícitos de injeção recomendados
 
-Estas são as flags que um app de micro frontend normalmente declara para seu
-caminho de entrega por iframe. Elas não são os defaults de runtime, e o gateway
-Fragment do Web Host 1.0.56 não as utiliza.
+Estas são as flags que um app micro frontend normalmente declara e o valor a definir para um SPA Vite típico. Elas não são os padrões de runtime.
 
-- `css.themeConfig` (`true`) — propriedades CSS personalizadas do tema ativo
-- `css.iframe` (`true`) — estilo padrão obrigatório da barra de rolagem com tema; `iframe` é um nome histórico e a folha atual não fornece resets de layout
-- `css.primevue` (`true`) — estilos-base dos componentes PrimeVue
+- `css.themeConfig` (`true`) — propriedades CSS customizadas do tema ativo
+- `css.iframe` (`true`) — estilização padrão obrigatória de scrollbar tematizada; `iframe` é um nome histórico e a folha atual não fornece resets de layout
+- `css.primevue` (`true`) — estilos base de componentes PrimeVue
 - `css.markdown` (`false`) — estilos de renderização de markdown
-- `css.customCss` (`true`) — CSS personalizado projetado para o child
-- `css.customVariables` (`true`) — overrides de variáveis CSS projetados para o child
-- `tailwindConfig` (`false`) — objeto de configuração Tailwind do host (somente Tailwind CDN)
-- `resizeObserver` (`false` em SPAs completas) — atualizações do tamanho do body do child para o host
-- `preventLinkClicks` (`false` em páginas) — instala o hook de classificação de `<a>` bruto do engine iframe; use `@wippy-fe/router` para classificação portátil de links entre engines
+- `css.customCss` (`true`) — CSS customizado projetado pelo filho
+- `css.customVariables` (`true`) — sobrescritas de variáveis CSS projetadas pelo filho
+- `tailwindConfig` (`false`) — objeto de configuração Tailwind do host (apenas Tailwind via CDN)
+- `resizeObserver` (`false` para SPAs completos) — atualizações do tamanho do body do filho para o host
+- `preventLinkClicks` (`false` para páginas) — roteia cliques em `<a>` através de `classifyLink`
 - `iconifyIcons` (`false`) — pré-carrega coleções Iconify do host
-- `errorCapture` (`true`) — encaminha erros não capturados da página ao host
+- `errorCapture` (`true`) — encaminha erros não capturados do iframe para o host
 
-A maioria das páginas SPA completas define `resizeObserver: false` e `preventLinkClicks: false`, pois gerencia seu próprio layout e roteamento. O app `main` do template define `errorCapture: true` para expor erros não capturados durante o desenvolvimento.
+A maioria das páginas SPA completas define `resizeObserver: false` e `preventLinkClicks: false` porque gerenciam seu próprio layout e roteamento. O app `main` do template define `errorCapture: true` para expor erros não capturados durante o desenvolvimento.
 
-Não há uma flag dedicada de injeção de fontes web. Google Fonts são entregues por `theming.global.customCSS` (um `@import` no CSS personalizado do tema), injetado pela flag existente `css.customCss`.
+Não existe uma flag dedicada de injeção de web fonts. Google Fonts são entregues através de `theming.global.customCSS` (um `@import` no CSS customizado do tema), injetado pela flag `css.customCss` existente.
 
-Referência completa das flags e defaults de runtime: [Injeção de CSS](../web-host/css-injection.md).
+Referência completa de flags e padrões de runtime: [Injeção de CSS](../web-host/css-injection.md).
 
-## Configuração do operador (_index.yaml)
+## Configuração do Operador (_index.yaml)
 
-Esses campos são definidos pelo operador no bloco `meta` da entrada `_index.yaml` do registro. A maioria — `announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline` — representa política de implantação (roteamento, controle de acesso e entrega) que só faz sentido na implantação e não possui superfície de autoria em `package.json`. A exceção é `entry_point`: ele é **definido pelo FE** (o plugin do Vite exige `wippy.path` em `package.json` e o incorpora em `wippy-meta.json`), e o campo `meta.entry_point` é apenas um **override opcional por implantação** desse default incorporado.
+Estes campos são definidos pelo operador no bloco `meta` da entrada de registry do `_index.yaml`. A maioria deles — `announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline` — representa política de deployment (roteamento, controle de acesso e serving) que só faz sentido em tempo de deploy e não possui superfície de autoria no `package.json`. A única exceção é `entry_point`: ele é **autorado pelo FE** (o plugin do vite exige `wippy.path` no `package.json` e o grava no `wippy-meta.json`), e o campo `meta.entry_point` é apenas uma **sobrescrita opcional por deployment** desse padrão gravado.
 
-> **Formato YAML obrigatório:** uma entrada de página usa `kind: registry.entry` com `meta.type: view.page`. Não escreva `kind: view.page`.
+> **Formato YAML obrigatório:** uma entrada de página é `kind: registry.entry` com `meta.type: view.page`. Não escreva `kind: view.page`.
 
 ```yaml
 - name: main
@@ -139,61 +120,64 @@ Esses campos são definidos pelo operador no bloco `meta` da entrada `_index.yam
     name: main
 ```
 
-### URL e entrega de arquivos
+> **Os campos de política de deployment (`announced`, `secure`, `url`, `base_path`, `mountRoute`, `auto_register`, `inline`) não podem ser definidos no `package.json` — eles são definidos pelo operador para cada ambiente. `entry_point` é diferente: é autorado como `wippy.path` no `package.json`, e o valor em YAML apenas sobrescreve esse padrão.**
+
+### URL e Serving de Arquivos
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
-| `url` | string | — | Prefixo da URL-base onde o bundle é montado (origem CDN ou caminho local `http.static`). Somente YAML — sem superfície em `package.json` |
-| `base_path` | string | — | Subdiretório dentro da montagem estática. Somente YAML — sem superfície em `package.json` |
-| `entry_point` | string | `index.html` | Arquivo HTML a carregar; combinado com `url` e `base_path`. Definido pelo FE como `wippy.path` em `package.json` (incorporado em `wippy-meta.json`); o valor YAML é um override opcional por implantação |
+| `url` | string | — | Prefixo de URL base onde o bundle está montado (origem de CDN ou caminho `http.static` local). Somente YAML — sem superfície no `package.json` |
+| `base_path` | string | — | Subdiretório dentro do mount estático. Somente YAML — sem superfície no `package.json` |
+| `entry_point` | string | `index.html` | Arquivo HTML a carregar; combinado com `url` e `base_path`. Autorado pelo FE como `wippy.path` no `package.json` (gravado no `wippy-meta.json`); o valor em YAML é uma sobrescrita opcional por deployment |
 
-A URL de entrada resolvida é `<url>/<base_path>/<entry_point>`. Um operador implanta o mesmo bundle em várias entradas apontando entradas `_index.yaml` diferentes para o mesmo `base_path`, com valores distintos de `entry_point` ou `config_overrides`.
+A URL de entrada resolvida é `<url>/<base_path>/<entry_point>`. Um operador faz deploy do mesmo bundle sob múltiplas entradas apontando diferentes entradas de `_index.yaml` para o mesmo `base_path` com valores diferentes de `entry_point` ou `config_overrides`.
 
-Ao contrário de `url` e `base_path`, `entry_point` não é exclusivo da implantação. O desenvolvedor FE o define como `wippy.path` no bloco `wippy` de `package.json`, e o plugin do Vite o incorpora em `wippy-meta.json` — o plugin **o exige** e lança `wippy.path is required for a page package` quando omitido. O campo `meta.entry_point` em `_index.yaml` apenas sobrescreve esse default incorporado por implantação; a ordem de resolução é `entry_point` do YAML → `wippy.path` do bundle → `index.html`.
+Diferente de `url` e `base_path`, `entry_point` não é um campo exclusivo de deploy. Ele é autorado pelo desenvolvedor de FE como `wippy.path` no bloco `wippy` do `package.json` e gravado no `wippy-meta.json` pelo plugin do vite — o plugin o **exige** e lança `wippy.path is required for a page package` se for omitido. O campo `meta.entry_point` no `_index.yaml` apenas sobrescreve esse padrão gravado por deployment; a ordem de resolução é `entry_point` do YAML → `wippy.path` do bundle → `index.html`.
 
-### Visibilidade e acesso
+### Visibilidade e Acesso
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
 | `announced` | boolean | — | `true` → a página aparece em `GET /api/public/pages/list` e na barra lateral de navegação |
-| `secure` | boolean | `false` | `true` → exige autenticação; solicitações não autenticadas recebem 401 |
+| `secure` | boolean | `false` | `true` → exige autenticação; requisições não autenticadas recebem 401 |
 | `inline` | boolean | `false` | `true` → a página fica oculta em todas as listagens (barra lateral, API); use para visualizadores de artefatos incorporados ou rotas auxiliares |
 
-`announced: false` oculta a página da navegação, mas não impede seu carregamento. Ela ainda pode ser incorporada ou acessada pela rota. `inline: true` é mais restrito — remove a página de todas as listagens públicas.
+`announced: false` oculta a página da navegação, mas não impede o carregamento. Um iframe ou uma URL direta ainda funcionam. `inline: true` é mais restritivo — ele suprime a página de todas as listagens públicas.
 
-### Rota de montagem
+### Rota de Mount
 
 | Campo | Tipo | Padrão | Descrição |
 |---|---|---|---|
-| `mountRoute` | string | — | Reivindica um caminho de URL no router do host; o host renderiza esta página quando o navegador acessa um caminho correspondente |
+| `mountRoute` | string | — | Reivindica um caminho de URL no roteador do host; o host renderiza esta página quando o navegador navega para um caminho correspondente |
 
-> **Exceção de casing:** o schema atual do registro lê `meta.mountRoute` e o
-> armazena no campo interno `mount_route`; a saída da API volta a usar
-> `mountRoute`. Na autoria, use a grafia lower camel case mostrada aqui.
+> **Grafia temporária de compatibilidade:** `meta.mountRoute` é um bug de casing
+> atual do backend. O campo pretendido no backend é `meta.mount_route`, e espera-se
+> que uma versão futura do backend o altere. Use `meta.mountRoute` até que essa
+> mudança de backend seja lançada; verifique novamente a versão do Wippy de destino ao atualizar.
 
-`mountRoute` aceita somente a forma catch-all v1 — `/:part(.*)*` (raiz) ou `/<literal-prefix>/:part(.*)*`, em que o prefixo contém um ou mais segmentos alfanuméricos minúsculos, com hífen, e termina no wildcard obrigatório `:part(.*)*`. Padrões arbitrários do Vue Router — parâmetros nomeados, regex personalizada ou outro nome de parâmetro (por exemplo, `/home/:id`, `/users/:userId(\d+)`) — são rejeitados: o backend registra um conflito de rota de montagem `syntax`, `GET /api/public/pages/routes` retorna HTTP 500 e a inicialização do Host para, com o erro encaminhado pelo handler de erros do Host. O wildcard `:part(.*)*` permite que a aplicação child gerencie suas próprias sub-rotas enquanto o host mantém a propriedade do caminho de nível superior.
+`mountRoute` aceita apenas a forma catch-all v1 — `/:part(.*)*` (raiz) ou `/<prefixo-literal>/:part(.*)*`, onde o prefixo consiste em um ou mais segmentos alfanuméricos minúsculos com hífen, terminando no wildcard obrigatório `:part(.*)*`. Padrões arbitrários do Vue Router — parâmetros nomeados, regex customizada ou um nome de parâmetro diferente (por exemplo, `/home/:id`, `/users/:userId(\d+)`) — são rejeitados: o host levanta um conflito de mount-route do tipo `syntax` e `GET /api/public/pages/routes` retorna HTTP 500, renderizado como um erro fatal em tela cheia. O wildcard `:part(.*)*` permite que a aplicação filha gerencie suas próprias sub-rotas enquanto o host mantém a propriedade do caminho de nível superior.
 
 ```yaml
 mountRoute: /home/:part(.*)*
 ```
 
-Quando o Web Host inicia, ele busca `GET /api/public/pages/routes` e chama `router.addRoute()` para cada entrada que possui `mountRoute`. Consulte [Roteamento dinâmico](./dynamic-routing.md) para o mecanismo completo de sincronização.
+Quando o Web Host inicia, ele busca `GET /api/public/pages/routes` e chama `router.addRoute()` para cada entrada que tenha um `mountRoute`. Veja [Roteamento Dinâmico](./dynamic-routing.md) para o mecanismo completo de sincronização.
 
-### Overrides de configuração por página
+### Sobrescritas de Configuração por Página
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `config_overrides` | object | Aplicado por deep merge sobre os valores de AppConfig que o Web Host injeta no contexto da página |
+| `config_overrides` | object | Deep-merge sobre os valores de AppConfig que o Web Host injeta no iframe |
 
-`config_overrides` é o nome do wrapper do registro. Seu objeto aninhado já usa
-as chaves lower camel case do schema frontend, como `customization.customCSS` e
-`customization.cssVariables`. O Web Host aplica deep merge dessas chaves exatas
-sobre o `wippy.configOverrides` empacotado em `wippy-meta.json`; o valor YAML
-prevalece em cada chave aninhada.
+`config_overrides` é o nome do wrapper no registry. Seu objeto aninhado já usa
+as chaves em lower-camel-case do schema do frontend, como
+`customization.customCSS` e `customization.cssVariables`. O Web Host
+faz deep-merge dessas chaves exatas sobre o `wippy.configOverrides` do bundle
+vindo do `wippy-meta.json`; o valor do YAML vence por chave aninhada.
 
-`config_overrides` altera o AppConfig injetado na página. Ele **não** altera as flags de injeção da proxy. Em particular, `config_overrides` nunca afeta `proxy.injections`, `wippy.proxy.injections` nem os defaults de runtime da injeção de CSS/scripts. Para sobrescrever as flags de injeção da proxy em uma implantação, use `meta.proxy` conforme descrito em [Override de proxy pelo operador](#override-de-proxy-pelo-operador-_indexyaml).
+`config_overrides` altera o AppConfig injetado na página. Ele **não** altera as flags de injeção do proxy. Em particular, `config_overrides` nunca afeta `proxy.injections`, `wippy.proxy.injections` ou os padrões de runtime para injeção de CSS/script. Para sobrescrever flags de injeção do proxy em um deployment, use `meta.proxy` conforme descrito em [Sobrescrita de proxy pelo operador](#operator-proxy-override-_indexyaml).
 
-Um caso de uso típico é executar o mesmo bundle com uma paleta de cores personalizada:
+Um caso de uso típico é executar o mesmo bundle com uma paleta de cores customizada:
 
 ```yaml
 - name: iframe-demo-themed
@@ -217,38 +201,37 @@ Um caso de uso típico é executar o mesmo bundle com uma paleta de cores person
           "--p-primary-color": "#7c9ed9"
           "--p-danger": "#e8a0a0"
         customCSS: |
-          /* Palette values here are an intentional page-theme definition, not module CSS. */
+          /* Os valores de paleta aqui são uma definição intencional de tema de página, não CSS de módulo. */
           :root { font-family: var(--wippy-brand-font, sans-serif); }
 ```
 
-Observe que `announced: false` é válido em entradas `view.page` — a página pode ser acessada por `mountRoute`, mas não aparece na barra lateral.
+Note que `announced: false` é válido para entradas `view.page` — a página é acessível via seu `mountRoute`, mas não aparece na barra lateral.
 
-### Override de proxy pelo operador (_index.yaml)
+### Sobrescrita de proxy pelo operador (_index.yaml)
 
-Os defaults de injeção da proxy incorporados em `wippy-meta.json` (a partir do
-bloco `wippy` de `package.json`) podem ser sobrescritos por implantação com um
-bloco `proxy:` colocado **sob `meta:`** na entrada do registro. Nomes de
-requisitos da facade usam seus nomes snake case documentados. O wrapper é
-`config_overrides`, enquanto o schema do registro define o campo de rota como
-`mountRoute`, armazena-o no campo interno `mount_route` e emite `mountRoute` na
-saída da API. Objetos aninhados de proxy/configuração são repassados e preservam
-suas chaves lower camel case definidas. O host aplica deep merge de `meta.proxy`
-sobre o `wippy.proxy` empacotado.
+Os padrões de injeção de proxy gravados no `wippy-meta.json` (a partir do
+bloco `wippy` do `package.json`) podem ser sobrescritos por deployment com um bloco
+`proxy:` colocado **sob `meta:`** na entrada do registry. Nomes de requisitos de facade
+usam seus nomes documentados em snake_case. Os campos do registry atualmente incluem um
+bug temporário de casing no backend: o wrapper é `config_overrides`, enquanto o campo de
+rota ainda é lido como `mountRoute` até ser corrigido para `mount_route`.
+Objetos aninhados de proxy/config são repassados e mantêm suas chaves definidas em
+lower-camel-case. O host faz deep-merge de `meta.proxy` sobre o `wippy.proxy` do bundle.
 
-Use `meta.proxy`, não `data.proxy`. Mantenha campos de backend de nível superior,
-como `config_overrides`, em snake case, mas preserve chaves aninhadas da
-proxy/configuração, como `themeConfig` e `customCss`; mantenha o wrapper
-`injections`. Não invente `meta.config` nem `meta.configOverrides`; o wrapper
-exato de override por página é `meta.config_overrides`.
+Resposta curta: use `meta.proxy`, não `data.proxy`; mantenha campos de backend de nível superior
+como `config_overrides` em snake_case, mas preserve chaves aninhadas de proxy/config
+como `themeConfig` e `customCss`; mantenha o wrapper `injections`.
+Não invente `meta.config` ou `meta.configOverrides`; o wrapper exato de
+sobrescrita por página é `meta.config_overrides`.
 
-Mantenha distintas as duas grafias do frontend:
+Mantenha as duas grafias de frontend distintas:
 
-- `meta.proxy.injections.css.customCss` no backend permanece
+- O `meta.proxy.injections.css.customCss` do backend permanece
   `wippy.proxy.injections.css.customCss`.
-- `meta.config_overrides.customization.customCSS` no backend é projetado para
-  `wippy.configOverrides.customization.customCSS` no frontend e
-  `config.theming.global.customCSS`.
-- Não invente um wrapper `appConfig` ao redor de nenhuma das formas frontend.
+- O `meta.config_overrides.customization.customCSS` do backend projeta para
+  o `wippy.configOverrides.customization.customCSS` do frontend e para o
+  `config.theming.global.customCSS` do runtime.
+- Não invente um wrapper `appConfig` em torno de nenhum dos formatos de frontend.
 
 ```yaml
 - name: dashboard
@@ -272,4 +255,4 @@ Mantenha distintas as duas grafias do frontend:
         iconifyIcons: false
 ```
 
-Somente as chaves definidas são sobrescritas; todo o restante preserva o valor incorporado em `wippy-meta.json`. Referência completa das flags e defaults de runtime: [Injeção de CSS](../web-host/css-injection.md).
+Apenas as chaves que você define são sobrescritas; todo o resto mantém o valor gravado no `wippy-meta.json`. Referência completa de flags e padrões de runtime: [Injeção de CSS](../web-host/css-injection.md).

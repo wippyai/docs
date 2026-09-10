@@ -1,6 +1,6 @@
 ---
 title: "Template-Engine"
-description: "Jet-Templates aus konfigurierten Template-Sets rendern."
+description: "Rendern Sie dynamische Inhalte mit der Jet Template Engine. Erstellen Sie HTML-Seiten, E-Mails und Dokumente mit Template-Vererbung und Includes."
 ---
 
 # Template-Engine

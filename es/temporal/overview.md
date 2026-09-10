@@ -83,7 +83,7 @@ Proporcione la API key mediante uno de estos métodos:
     api_key_file: "/etc/secrets/temporal-api-key"
 ```
 
-Los campos de autenticación y credenciales resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](system/env.md) al decodificarse. Las directivas heredadas `api_key_env` y `key_pem_env` se resuelven del mismo modo, pero están obsoletas; prefiera `api_key: ${env:NAME}` y `key_pem: ${env:NAME}`.
+Los campos de autenticación y credenciales resuelven los placeholders `${env:NAME}` a través del [registro de entorno](system/env.md) en el momento de la decodificación. Las directivas heredadas `api_key_env` / `key_pem_env` se resuelven de la misma forma pero están obsoletas; prefiera `api_key: ${env:NAME}` / `key_pem: ${env:NAME}`.
 
 #### mTLS
 
@@ -131,6 +131,30 @@ health_check:
   interval: "30s"
 ```
 
+### Propagación del Contexto de Seguridad
+
+Wippy propaga el actor y el scope que hacen la llamada hacia workflows y activities como una cabecera de Temporal firmada. La firma es HMAC-SHA256 con una clave que mantiene la entrada del cliente:
+
+```yaml
+- name: temporal_client
+  kind: temporal.client
+  address: "localhost:7233"
+  security_hmac_key: ${env:TEMPORAL_SECURITY_KEY}
+  security_hmac_previous_keys:
+    - ${env:TEMPORAL_SECURITY_KEY_PREVIOUS}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `security_hmac_key` | Clave de firma codificada en base64; debe decodificar a al menos 32 bytes |
+| `security_hmac_previous_keys` | Claves codificadas en base64 aún aceptadas para verificación, para rotación |
+
+Ambos campos son base64 en YAML porque son campos de bytes. Una clave de menos de 32 bytes decodificados se rechaza en la validación de configuración, al igual que declarar `security_hmac_previous_keys` sin `security_hmac_key`. Las cabeceras nuevas siempre se firman con `security_hmac_key`; cada clave anterior de la lista se prueba al verificar, así que la rotación es: agregue la clave nueva como `security_hmac_key`, mueva la antigua a `security_hmac_previous_keys`, y elimínela una vez que ninguna ejecución en curso la lleve.
+
+**Iniciar un workflow bajo un actor o scope requiere la clave.** Si el llamador tiene un contexto de seguridad y el cliente no tiene clave de firma, la cabecera no puede firmarse y el inicio falla. Un cliente sin clave solo puede iniciar workflows desde un contexto que no lleve ni actor ni scope.
+
+El worker obtiene las claves de la entrada de cliente a la que hace referencia, por lo que un worker hereda la firma y la verificación de `client:` sin configurar nada por sí mismo. Consulte [Workflows](temporal/workflows.md#security-context) y [Activities](temporal/activities.md).
+
 ## Configuración del Worker
 
 El tipo de entrada `temporal.worker` define un worker que ejecuta workflows y activities.
@@ -163,10 +187,10 @@ Ajuste fino del comportamiento del worker:
   client: app:temporal_client
   task_queue: "my-app-queue"
   worker_options:
-    # Identity
-    identity: ""                          # Worker identity (appears in Temporal UI)
+    # Identidad
+    identity: ""                          # Identidad del worker (aparece en la UI de Temporal)
 
-    # Concurrency
+    # Concurrencia
     max_concurrent_activity_execution_size: 1000
     max_concurrent_workflow_task_execution_size: 1000
     max_concurrent_local_activity_execution_size: 1000
@@ -199,12 +223,13 @@ Ajuste fino del comportamiento del worker:
 
     # Versioning
     deployment_name: ""
-    build_id: ${env:BUILD_ID}              # Read from env registry
+    build_id: ""
+    build_id: ${env:BUILD_ID}              # Leer desde el registro env
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
-Los campos de credenciales e identificadores resuelven los marcadores `${env:NAME}` mediante el [registro de entorno](system/env.md) al decodificarse. La directiva heredada `build_id_env` se resuelve del mismo modo, pero está obsoleta; prefiera `build_id: ${env:NAME}`.
+Los campos de credenciales e identificadores resuelven los placeholders `${env:NAME}` a través del [registro de entorno](system/env.md) en el momento de la decodificación. La directiva heredada `build_id_env` se resuelve de la misma forma pero está obsoleta; prefiera `build_id: ${env:NAME}`.
 
 ### Comportamiento de Versionado
 
@@ -215,7 +240,7 @@ Los campos de credenciales e identificadores resuelven los marcadores `${env:NAM
 | `pinned` | El workflow permanece en el build ID con el que inició durante toda su ejecución |
 | `auto_upgrade` | El workflow puede reanudarse en el último build ID compatible después de cada tarea |
 
-`build_id: ${env:NAME}` lee el build ID del registro de entorno cuando no se proporciona un `build_id` literal.
+`build_id: ${env:NAME}` lee el build ID desde el registro env cuando no se proporciona un `build_id` literal.
 
 ### Session Worker
 

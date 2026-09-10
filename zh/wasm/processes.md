@@ -75,7 +75,7 @@ wippy run list
 | `name` | 是 | 与 `wippy run <name>` 配合使用的命令名 |
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
 
-CLI 命令需要 `terminal.host` 和 `process.host` 才能工作。
+CLI 命令需要存在 `terminal.host` 才能工作；它就是运行该命令的进程宿主。
 
 ## 进程生命周期
 

@@ -1,6 +1,6 @@
 ---
 title: "Управление процессами"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/ <secondary-label ref='permissions'/"
+description: "Создание, мониторинг и коммуникация с дочерними процессами. Реализует паттерны акторной модели с передачей сообщений, супервизией и управлением…"
 ---
 
 # Управление процессами
@@ -134,9 +134,8 @@ local events = process.events()  -- События жизненного цикл
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `kind` | string | Константа типа события |
-| `from` | string | Исходный PID |
-| `result` | any | Для EXIT: возвращённое значение (присутствует при нормальном завершении) |
-| `error` | any | Для EXIT: ошибка (присутствует при аварийном завершении) |
+| `from` | string | Исходный PID (отсутствует для OUTDATED) |
+| `result` | table | Для EXIT/LINK_DOWN: запись {value, error}; возвращаемое значение процесса находится в `result.value`, а ошибка — в `result.error` |
 | `reason` | string | Для CANCEL: причина отмены процесса |
 | `sources` | string[] | Для OUTDATED: registry ID записей, которые изменились или были затронуты транзитивно |
 
@@ -164,8 +163,8 @@ process.unlisten(ch)
 local msg = inbox:receive()
 
 msg:topic()            -- string: имя топика
-msg:from()             -- string|nil: PID отправителя
-msg:payload()          -- Payload: обёртка (вызовите :data() для извлечения)
+msg:from()             -- string: PID отправителя (пустая строка, если неизвестен)
+msg:payload()          -- Payload: обёртка (вызовите :data() для извлечения); nil, если пусто, таблица обёрток для нескольких значений
 msg:payload():data()   -- any: фактическое значение payload
 ```
 
@@ -212,8 +211,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Опция | Тип | Описание |
 |-------|-----|----------|
 | `network` | string | Registry ID записи `network.*`, используемой для исходящих соединений дочернего процесса |
+| `terminal` | string | Грант viewport, который присоединяет виртуальный терминал к дочернему процессу |
 
 **Разрешение:** `process.context` на "context"; выбор сети дополнительно требует `network.select` на этом ID сети.
+
+### Присоединение терминала
+
+Грант `terminal` выдаётся `viewport:grant()` и даёт дочернему процессу собственный терминальный порт, так что он может использовать модуль [TTY](lua/system/tty.md) точно так же, как на терминальном хосте:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+Грант одноразовый и потребляется при допуске: отклонённый запуск оставляет его неразрешённым и пригодным для повторного использования, дочерний процесс, разрешивший порт, потребляет его окончательно, а хост без поддержки присоединения терминала отклоняет spawn, а не игнорирует опцию. Порождающий процесс продолжает читать кадры дочернего процесса через созданный им viewport. См. [Terminal](system/terminal.md#composable-terminals).
 
 ### Методы SpawnBuilder
 
@@ -223,7 +235,7 @@ SpawnBuilder иммутабелен — каждый метод возвраща
 spawner:with_context(values)      -- Добавить значения контекста
 spawner:with_actor(actor)         -- Установить актора безопасности
 spawner:with_scope(scope)         -- Установить область безопасности
-spawner:with_name(name)           -- Установить имя процесса
+spawner:with_name(name)           -- Зарегистрировать имя при старте; если занято, spawn возвращает существующий PID, и поставленные в очередь сообщения уходят ему
 spawner:with_message(topic, ...)  -- Поставить в очередь сообщение для отправки после spawn
 spawner:with_options(options)     -- Объединить опции времени spawn (например, network)
 ```
@@ -286,7 +298,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | нет | self | PID для регистрации; по умолчанию вызывающий процесс |
 | `scope` | number | нет | `LOCAL` | Одна из констант области выше |
 
-Возвращает `true` при успехе, или `nil, error` при ошибке. Конфликты (имя уже зарегистрировано на другой PID в кластерной области) возвращают `errors.ALREADY_EXISTS`. Регистрация того же имени на тот же PID идемпотентна. Регистрация `STRONG` блокируется до подтверждения каждой живой нодой или истечения дедлайна; при таймауте возвращает ошибку.
+Возвращает `true` при успехе, или `nil, error` при ошибке. Конфликты (имя уже зарегистрировано на другой PID) возвращают `errors.ALREADY_EXISTS`. Регистрация того же имени на тот же PID идемпотентна. Регистрация `STRONG` блокируется до подтверждения каждой живой нодой или истечения дедлайна; при таймауте возвращает ошибку.
 
 Регистрация от имени другого PID дополнительно требует разрешения `process.registry.foreign` на целевой PID.
 
@@ -334,7 +346,7 @@ local ok, err = process.registry.unregister(name, scope)
 | `process.unmonitor` | `unmonitor()` | целевой PID |
 | `process.link` | `link()` | целевой PID |
 | `process.unlink` | `unlink()` | целевой PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | имя |
 | `process.registry.unregister` | `registry.unregister()` | имя |
@@ -359,11 +371,11 @@ local ok, err = process.registry.unregister(name, scope)
 
 | Условие | Kind |
 |---------|------|
-| Контекст не найден | `errors.INVALID` |
-| Контекст фрейма не найден | `errors.INVALID` |
+| Контекст не найден | `errors.INTERNAL` |
+| Контекст фрейма не найден | `errors.INTERNAL` |
 | Отсутствуют обязательные аргументы | `errors.INVALID` |
 | Зарезервированный префикс топика (`@`) | `errors.INVALID` |
-| Неверный формат длительности | `errors.INVALID` |
+| Адресат не является ни PID, ни зарегистрированным именем | `errors.NOT_FOUND` |
 | Имя не зарегистрировано | `errors.NOT_FOUND` |
 | Разрешение отклонено | `errors.PERMISSION_DENIED` |
 | Имя уже зарегистрировано | `errors.ALREADY_EXISTS` |

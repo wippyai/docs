@@ -188,7 +188,7 @@ if header_err then return nil, header_err end
 El cliente recibe un evento `ready`:
 
 ```json
-{"stream_pid": "{n1@app:processes|sse-1}", "message_topic": "sse.message"}
+{"stream_pid": "{n1@app:gateway|0x0002a}", "message_topic": "sse.message"}
 ```
 
 ## Tópicos de Mensajes
@@ -199,7 +199,7 @@ El relay usa estos tópicos para la comunicación entre el stream y el proceso o
 |--------|-----------|--------|------------|
 | `sse.join` | stream → objetivo | El cliente se conecta | `client_pid`, `metadata` |
 | `sse.message` | objetivo → stream | Tópico de evento por defecto | Reenviado como evento SSE |
-| `sse.heartbeat` | stream → objetivo | Periódico (si está configurado) | `client_pid`, `uptime`, `message_count`, `metadata` |
+| `sse.heartbeat` | stream → objetivo | Periódico (cada 30s por defecto) | `client_pid`, `uptime`, `message_count`, `metadata` |
 | `sse.leave` | stream → objetivo | El cliente se desconecta | `client_pid`, `metadata` |
 | `sse.control` | cualquiera → stream | Comando de control | Campos de configuración del relay |
 | `sse.close` | cualquiera → stream | Cierre forzado | Cadena opcional de motivo |

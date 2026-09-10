@@ -1,6 +1,6 @@
 ---
 title: "Segurança & Controle de Acesso"
-description: "Inspecione o actor e scope atuais, avalie políticas e gerencie tokens de autenticação."
+description: "Gerencie actors de autenticação, escopos de autorização e políticas de acesso."
 ---
 
 # Segurança & Controle de Acesso
@@ -59,18 +59,12 @@ Verifica se o contexto atual permite uma ação em um recurso.
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new({
-        message = "Cannot read user data",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Não pode ler dados do usuário"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new({
-        message = "Cannot modify order",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Não pode modificar pedido"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -256,10 +250,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new({
-        message = "Access denied",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Acesso negado"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -343,7 +334,7 @@ Validar token e obter actor/scope.
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, err
+    return nil, errors.new("Token inválido"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -385,9 +376,7 @@ Operações de segurança estao sujeitas a avaliação de política de seguranç
 |------|---------|-----------|
 | `security.policy.get` | ID da Policy | Acessar definicoes de política |
 | `security.policy_group.get` | ID do Grupo | Acessar escopos nomeados |
-| `security.scope.create` | `custom` | Criar escopos customizados |
-| `security.scope.create` | `with` | Adicionar uma política com `scope:with` |
-| `security.scope.create` | `without` | Remover uma política com `scope:without` |
+| `security.scope.create` | `custom`, `with`, `without` | Criar escopos customizados (`new_scope`) e adicionar/remover políticas (`scope:with`, `scope:without`) |
 | `security.actor.create` | ID do Actor | Criar actors |
 | `security.token_store.get` | ID da Store | Acessar token stores |
 | `security.token.validate` | ID da Store | Validar tokens |
@@ -402,8 +391,8 @@ Veja [Modelo de Segurança](system/security.md) para configurar as políticas.
 |----------|------|------------|
 | Sem contexto | `errors.INTERNAL` | não |
 | ID de token store vazio | `errors.INVALID` | não |
-| Permissão negada em policy, named scope ou operação de token | `errors.INVALID` | não |
-| Construção de actor/scope, alteração de scope ou aquisição de token store negada | gera erro Lua | não |
+| Permissão negada (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | não |
+| Permissão negada (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | levantada como erro Lua | não |
 | Política não encontrada | `errors.INTERNAL` | não |
 | Token store não encontrado | `errors.INTERNAL` | não |
 | Token store fechado | `errors.INTERNAL` | não |

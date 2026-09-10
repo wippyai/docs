@@ -18,9 +18,7 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind partielle Ein
 | `workflow.lua` | Dauerhafter Workflow (Temporal) |
 | `library.lua` | Gemeinsam genutzter Code, den andere Einträge importieren |
 
-Jeder Kind besitzt ein vorkompiliertes Bytecode-Gegenstück (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`), das `wippy pack --bytecode '**'` oder ein Muster wie `--bytecode 'app:**'` erzeugt. Autoren schreiben `.lua`-Einträge; beim Packen mit diesem Flag werden die Bytecode-Kinds ausgegeben.
-
-`module.lua` ist für integrierte Moduldefinitionen reserviert, die die Runtime erstellt. Es ist kein vom Autor definierbarer Quell-Eintrag und besitzt kein Bytecode-Gegenstück.
+Jede Art hat ein vorkompiliertes Bytecode-Gegenstück (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`), das von `wippy pack --bytecode '**'` (oder einem Muster wie `--bytecode 'app:**'`) erzeugt wird. Autoren schreiben `.lua`-Entries; die Bytecode-Arten werden beim Packen mit diesem Flag ausgegeben.
 
 ## Gemeinsame Felder
 
@@ -168,33 +166,26 @@ Mit `pool` konfigurieren Sie, wie ein Funktionseintrag ausgeführt wird:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # explicit; omit to use auto-select (lazy)
-    max_size: 16      # cap for elastic growth
+    type: adaptive    # explizit; weglassen, um die Auto-Auswahl (lazy) zu nutzen
+    max_size: 16      # Obergrenze für elastisches Wachstum
 ```
 
 | Feld | Pools | Beschreibung |
 |------|-------|--------------|
 | `type` | alle | Scheduler-Implementierung (siehe Tabelle unten) |
-| `workers` | static | Worker-Anzahl; wenn gesetzt, muss bei der Konfigurationsvalidierung auch `size` positiv sein |
-| `size` | static | Worker-Anzahl, wenn `workers` fehlt; bei fehlendem `type` wählt ein positiver `size`-Wert allein `inline` |
-| `buffer` | static | Kapazität der Task-Queue (Standard: `workers * 64`) |
-| `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16 bei explizitem Typ) |
-| `warm_start` | alle | Akzeptiertes Konfigurationsflag; in diesem Runtime-Release ohne Wirkung |
+| `workers` | static | Anzahl der Worker-Threads (fällt auf `size` zurück, dann 8) |
+| `size` | static | Worker-Anzahl, wenn `workers` nicht gesetzt ist; wird `type` weggelassen, wählt `size` ohne `max_size` einen Inline-Pool |
+| `buffer` | static | Aufgabenwarteschlange-Kapazität (Standard: `workers * 64`) |
+| `max_size` | lazy, adaptive | Obergrenze für elastisches Wachstum (Standard: 16; 100, wenn `type` weggelassen wird) |
 
 | Typ | Verhalten |
-|-----|-----------|
-| `inline` | Synchrone Ausführung in der Goroutine des Aufrufers. Keine Isolation zwischen Aufrufen. |
-| `lazy` | Keine inaktiven Worker; werden bei Bedarf gestartet und im Leerlauf beendet. |
-| `static` | Kanalbasierter Pool fester Größe. Vorhersagbar bei gleichmäßiger Last. |
-| `adaptive` | Automatisch skalierender Pool: wächst unter Last und schrumpft im Leerlauf. |
+|------|----------|
+| `inline` | Synchrone Ausführung in der Goroutine des Aufrufers. Geringste Latenz, keine Isolation zwischen Aufrufen. |
+| `lazy` | Keine Idle-Worker, Erstellung bei Bedarf, Abbau im Leerlauf. |
+| `static` | Pool fester Größe (Channel-basiert). Vorhersagbar bei stabiler Last. |
+| `adaptive` | Auto-skalierender Pool — wächst bei Last, schrumpft im Leerlauf. |
 
-Wenn `type` fehlt, wählt die Runtime:
-
-- `static`, wenn `workers` positiv ist;
-- `lazy`, wenn `workers` null ist und entweder `size` null oder `max_size` positiv ist; oder
-- `inline`, wenn `size` positiv und `max_size` null ist.
-
-Der automatisch gewählte Lazy-Pool verwendet einen positiven `max_size`-Wert und andernfalls den Standard 100. Ein expliziter `lazy`- oder `adaptive`-Pool verwendet standardmäßig `max_size: 16`. Ein expliziter `static`-Pool verwendet zuerst `workers`, dann `size` und schließlich 8; sein Standardpuffer entspricht der gewählten Worker-Anzahl multipliziert mit 64.
+Wird `type` weggelassen, wird der Pool aus den übrigen Feldern automatisch gewählt: standardmäßig ein Lazy-Pool, ein statischer Pool, wenn `workers` gesetzt ist, ein Inline-Pool, wenn nur `size` gesetzt ist.
 
 ## Metadaten
 
@@ -219,10 +210,7 @@ Metadaten lassen sich über die Registry durchsuchen:
 
 ```lua
 local registry = require("registry")
-local handlers, err = registry.find({["meta.type"] = "handler"})
-if err then
-    return nil, err
-end
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 Die Abfrage gibt alle passenden Registry-Einträge zurück. Der Lua-Code gehört zu einem ausführbaren Eintrag, dessen `modules`-Liste `registry` enthält, etwa dem oben gezeigten `api_handler`-Eintrag.

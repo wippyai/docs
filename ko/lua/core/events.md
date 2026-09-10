@@ -1,6 +1,6 @@
 ---
 title: "이벤트 버스"
-description: "best-effort runtime 및 application event를 publish하고 observe합니다."
+description: "관측성을 위해 이벤트를 발행하고 구독합니다 — 런타임과 애플리케이션 활동을 모니터링하고 반응합니다."
 ---
 
 # 이벤트 버스

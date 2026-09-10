@@ -101,7 +101,8 @@ resp:write_json({users = get_users()})
 | `db.sql.sqlite` | Banco de dados SQLite |
 | `db.sql.postgres` | Banco de dados PostgreSQL |
 | `db.sql.mysql` | Banco de dados MySQL |
-| `db.cdc.postgres` | Fonte de Change Data Capture do Postgres (consulte [CDC](../system/cdc.md)) |
+| `db.cdc.postgres` | Origem de Change Data Capture do Postgres (veja [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | Origem de Change Data Capture do SQLite (veja [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -250,9 +251,9 @@ local queue = require("queue")
 -- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- In a consumer handler: the message body is the handler's argument
+-- No handler do consumidor: o corpo da mensagem é o argumento do handler
 local function main(data)
-    -- access delivery metadata via the current message
+    -- acessa os metadados de entrega via a mensagem atual
     local msg = queue.message()
     local id = msg:id()
     local priority = msg:header("priority")
@@ -261,7 +262,7 @@ end
 ```
 
 <note>
-O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queue.message()</code> dentro do handler para acessar a mensagem atual.
+O <code>func</code> do consumidor é invocado uma vez por mensagem, com o corpo da mensagem como argumento. Use <code>queue.message()</code> dentro do handler para obter <code>id()</code>, <code>header()</code>/<code>headers()</code> e <code>ack()</code>/<code>nack()</code> da entrega.
 </note>
 
 ## Gerenciamento de Processos
@@ -271,7 +272,7 @@ O <code>func</code> do consumidor é invocado para cada mensagem. Use <code>queu
 | `process.host` | Host de execução de processos |
 | `process.service` | Processo supervisionado (encapsula process.lua) |
 | `terminal.host` | Host de terminal/CLI |
-| `pg.scope` | Escopo de grupo de processos (consulte [Grupos de Processos](../system/process-groups.md)) |
+| `pg.scope` | Escopo de grupo de processos (veja [Process Groups](system/process-groups.md)) |
 
 ```yaml
 # Process host (where processes run)
@@ -312,6 +313,39 @@ Use <code>process.service</code> quando precisar que um processo execute como se
 </tip>
 
 Atualizar uma entrada `process.host` ao vivo redimensiona `host.workers` no lugar — processos em execução, PIDs e filas são preservados. `host.queue_size`, `host.local_queue_size` e `lifecycle` são fixados na construção: uma atualização ao vivo que os altere é rejeitada, assim como redimensionar workers em um host cujos workers são gerenciados por afinidade.
+
+### Segurança de processo
+
+Entradas `process.lua` e `process.lua.bc` aceitam um bloco `security:` de nível superior. Ele faz parte da entrada, portanto se aplica a todo spawn desse processo, tanto em `process.host` quanto em `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `actor.id` | Identidade do ator sob a qual o processo executa; substitui o ator herdado |
+| `actor.meta` | Atributos do ator avaliados pelas políticas |
+| `policies` | IDs de registro (`namespace:name`) das políticas mescladas no escopo |
+| `groups` | IDs de registro de grupos de políticas cujas políticas são mescladas no escopo |
+
+A resolução ocorre quando o processo inicia e é atômica: se qualquer política ou grupo listado não puder ser resolvido, o spawn falha e nenhum contexto parcial é instalado. Omitir `actor` herda o ator do processo que faz o spawn; omitir tanto `policies` quanto `groups` herda o escopo do processo que faz o spawn. `function.lua`, `function.lua.bc`, `process.lua` e `process.lua.bc` aceitam o bloco.
+
+Uma entrada de comando pode declarar adicionalmente `meta.command.security`, que se aplica apenas quando a entrada é lançada como um comando CLI — veja [Segurança de comando](guides/cli.md#command-security). Isso não afeta spawns comuns.
+
+Veja [Segurança](system/security.md).
 
 ## Temporal (Workflows)
 
@@ -366,7 +400,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- segundos, padrão 3600
 ```
 
 <tip>
@@ -443,7 +477,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vão para o primeiro armazenamento gravável.
+O roteador tenta armazenamentos em ordem. Primeiro match ganha para leituras; escritas vão para o primeiro armazenamento da lista.
 </note>
 
 ## Templates
@@ -511,7 +545,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Grupos de políticas são formados pelas próprias políticas: uma política lista sob `groups:` os IDs dos grupos aos quais pertence, e um grupo é o conjunto de políticas que o nomeiam. Não existe um tipo de entrada separado para grupos. IDs de grupo são IDs de registro — um nome simples resolve no namespace da política que o declara, então `operators` acima torna-se `app.security:operators` quando declarado no namespace `app.security`. As entradas referenciam grupos pelo `namespace:name` completo.
 
 **API Lua:** Veja [Módulo Security](lua/security/security.md)
 
@@ -528,7 +566,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Políticas são avaliadas em ordem. A primeira política correspondente determina o acesso. Coloque políticas mais específicas antes das gerais.
+Toda política em escopo é avaliada. Um <code>deny</code> de qualquer política correspondente vence todo <code>allow</code>; sem nenhum deny, um <code>allow</code> correspondente concede o acesso. A ordem não importa.
 </warning>
 
 ## Contratos (Injeção de Dependência)
@@ -595,7 +633,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **API Lua:** Veja [Módulo Contract](lua/core/contract.md)
 
 <tip>
-Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding (funciona apenas quando nenhum campo <code>context_required</code> está definido).
+Marque um binding como <code>default: true</code> para usá-lo ao abrir um contrato sem especificar um ID de binding. Um contrato pode ter apenas um binding padrão.
 </tip>
 
 ## Execução
@@ -632,11 +670,24 @@ Marque um binding como <code>default: true</code> para usá-lo ao abrir um contr
 | `process.wasm` | Processo WebAssembly |
 
 ```yaml
+# O texto WAT é source inline
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # ou wasi-http
+
+# O WASM binário é carregado de uma entrada de filesystem e verificado por hash
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # or wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` e `process.wasm` recebem `fs`, `path` e `hash` — não há campo `source` em uma entrada binária; `source` pertence apenas a `function.wat`. `hash` é obrigatório e deve ser `sha256:<hex>`; o módulo é rejeitado se os bytes não corresponderem.
 
 Veja [Visão Geral do WASM](wasm/overview.md).
 
@@ -655,12 +706,12 @@ Referenciado por `http.service` via `network:`, por `funcs`/`process` via a opca
 
 | Tipo | Descrição |
 |------|-------------|
-| `registry.entry` | Descritor de entrada (interno) |
+| `registry.entry` | Entrada de dados pura, sem serviço por trás (configuração específica da aplicação) |
 | `ns.definition` | Definição de namespace |
 | `ns.requirement` | Declaração de requisito de namespace |
 | `ns.dependency` | Dependência de namespace |
 
-`registry.entry` é um descritor interno. Os autores definem entradas `ns.definition`, `ns.requirement` e `ns.dependency` diretamente em `_index.yaml`; os campos `version` e `namespace` do arquivo não as geram.
+Os tipos `ns.*` são declarados como qualquer outra entrada: um componente declara `ns.definition` e `ns.requirement`, e um host declara `ns.dependency`. Veja [Construindo Componentes](guides/components.md).
 
 ## Configuração de Ciclo de Vida
 
@@ -682,7 +733,7 @@ lifecycle:
 ```
 
 <note>
-Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor aguarda dependências se tornarem estáveis antes de iniciar entradas dependentes.
+Use <code>depends_on</code> para garantir que entradas iniciem na ordem correta. O supervisor inicia uma entrada dependente somente depois que cada uma de suas dependências concluiu o próprio início.
 </note>
 
 ## Formato de Referência de Entradas

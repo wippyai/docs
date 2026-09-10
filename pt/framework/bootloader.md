@@ -80,7 +80,7 @@ Um bootloader é qualquer entrada `function.*` com `meta.type: bootloader`. A ma
 | Campo | Obrigatorio | Descricao |
 |-------|----------|-------------|
 | `meta.type` | Sim | Deve ser `bootloader` |
-| `meta.order` | Não | Ordem de execução (padrão `999`); valores menores executam primeiro |
+| `meta.order` | Nao | Ordem de execucao (padrao `999`); menor executa primeiro |
 | `meta.description` | Nao | Resumo legivel por humanos |
 | `meta.requires` | Nao | Dicas de dependencia exibidas nos logs |
 

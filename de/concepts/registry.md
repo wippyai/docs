@@ -22,9 +22,11 @@ Jeder Eintrag hat eine `ID` im Format `namespace:name`, einen `kind`, der seinen
 
 Registry-IDs dienen bei vielen Autorisierungsprüfungen auch als Ressourcen. Die Registry speichert die Definitionen; der Security-Scope entscheidet, ob geschützte Operationen darauf zugreifen dürfen. Siehe [Sicherheitsmodell](./security-model.md).
 
+Neben diesem verfassten Inhalt führt die Registry für jeden Eintrag ihre eigene Herkunftsinformation: den `owner`, also die Deployment-Quelle, aus der der Eintrag stammt, und `root`, das eine vom Deployment ausgewählte Abhängigkeitsdeklaration markiert. Dieser Zustand wird von der Registry vergeben und nicht vom Autor des Eintrags geschrieben, und er wird getrennt von `meta` gehalten, damit beide nie verwechselt werden können. Gelesen wird er über die Snapshot-State-API statt über die gewöhnlichen Eintrags-APIs — siehe [Registry-Modul](lua/core/registry.md#snapshot-state).
+
 ## Kind-Handler
 
-Beim Übermitteln eines versendeten Eintrags wählt dessen `kind` den registrierten Handler. Der Handler validiert die zugehörige Runtime-Ressource und gleicht sie ab: Ein `http.service`-Eintrag verwaltet einen HTTP-Server, ein `function.lua`-Eintrag einen Funktionspool und ein `db.sql.postgres`-Eintrag einen Verbindungspool. Verfügbare Kinds finden Sie im [Leitfaden zu Entry-Kinds](guides/entry-kinds.md), die Handler-Implementierung unter [Benutzerdefinierte Entry-Kinds](internals/kinds.md).
+Wenn ein Eintrag übermittelt wird, bestimmt sein `kind`, welcher Handler ihn verarbeitet. Der Handler validiert die Konfiguration und erstellt Laufzeit-Ressourcen — ein `http.service`-Eintrag startet einen HTTP-Server, ein `function.lua`-Eintrag erstellt einen Funktionspool, ein `db.sql.postgres`-Eintrag richtet einen Verbindungspool ein. Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für verfügbare Typen und [Benutzerdefinierte Entry-Typen](internals/kinds.md) für die Implementierung von Handlern.
 
 ## Live-Updates
 

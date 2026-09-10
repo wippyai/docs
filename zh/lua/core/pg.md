@@ -1,6 +1,6 @@
 ---
 title: "进程组"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "将进程加入命名组并向集群中所有成员广播。以 Erlang/OTP pg 为模型：组是动态的，进程可以属于多个组，成员资格在集群范围内追踪，并具有最终一致性。"
 ---
 
 # 进程组
@@ -178,12 +178,12 @@ group:release()
 | `pg.leave` | `leave()` | 组名 |
 | `pg.get_members` | `get_members()` | 组名 |
 | `pg.get_local_members` | `get_local_members()` | 组名 |
-| `pg.which_groups` | `which_groups()` | （作用域） |
-| `pg.which_local_groups` | `which_local_groups()` | （作用域） |
+| `pg.which_groups` | `which_groups()` | （无） |
+| `pg.which_local_groups` | `which_local_groups()` | （无） |
 | `pg.broadcast` | `broadcast()` | 组名 |
 | `pg.broadcast_local` | `broadcast_local()` | 组名 |
 | `pg.monitor` | `monitor()` | 组名 |
-| `pg.events` | `events()` | （作用域） |
+| `pg.events` | `events()` | （无） |
 
 ## 错误
 
@@ -191,8 +191,8 @@ group:release()
 |------|------|
 | 权限被拒绝 | `errors.PERMISSION_DENIED` |
 | 参数缺失或为空 | `errors.INVALID` |
-| 作用域未找到 | `errors.NOT_FOUND` |
-| 离开未加入的组 | `errors.INVALID` |
+| 作用域未找到 | `errors.INTERNAL` |
+| 离开未加入的组 | `errors.NOT_FOUND` |
 | 实例已释放 | `errors.INVALID` |
 
 错误处理参见[错误处理](lua/core/errors.md)。

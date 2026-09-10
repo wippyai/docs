@@ -1,6 +1,6 @@
 ---
 title: "JSON-Kodierung"
-description: "Lua-Werte als JSON kodieren, JSON-Strings dekodieren und Werte oder Strings mit JSON Schema validieren."
+description: "Kodieren Sie Lua-Tabellen zu JSON und dekodieren Sie JSON-Strings zu Lua-Werten. Enthält JSON-Schema-Validierung für Datenverifizierung und…"
 ---
 
 # JSON-Kodierung
@@ -111,8 +111,8 @@ print(response.data.users[1].name)  -- "Alice"
 -- Handle errors
 local data, err = json.decode("not valid json")
 if err then
-    print(err:kind())     -- "INTERNAL"
-    print(err:message())  -- parse error details
+    print(err:kind())     -- "Internal" (errors.INTERNAL)
+    print(err:message())  -- Parse-Fehlerdetails
 end
 ```
 
@@ -190,10 +190,7 @@ local schema = {
 local body = '{"action":"create","data":{}}'
 local valid, err = json.validate_string(schema, body)
 if not valid then
-    return nil, errors.new({
-        message = "Invalid request: " .. err:message(),
-        kind = errors.INVALID
-    })
+    return nil, errors.new("Invalid request: " .. err:message()):kind(errors.INVALID)
 end
 
 -- Now safe to decode
@@ -217,6 +214,7 @@ if decode_err then return nil, decode_err end
 | Gemischte Schlüsseltypen in Tabelle | `errors.INTERNAL` | nein |
 | Verschachtelung überschreitet 128 Ebenen | `errors.INTERNAL` | nein |
 | Ungültige JSON-Syntax | `errors.INTERNAL` | nein |
+| Eingabe ist kein String oder leerer String (decode) | `errors.INVALID` | nein |
 | Schema-Kompilierung fehlgeschlagen | `errors.INVALID` | nein |
 | Validierung fehlgeschlagen | `errors.INVALID` | nein |
 

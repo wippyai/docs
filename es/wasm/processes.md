@@ -80,7 +80,7 @@ wippy run list
 | `use_case` | No | Categoría del punto de entrada; el valor predeterminado es `run` |
 | `security` | No | Contexto de seguridad aplicado únicamente cuando el lanzador de terminal de confianza inicia este comando |
 
-Para los comandos CLI debe existir un `terminal.host`. Este posee el planificador que utiliza el proceso del comando, por lo que no se requiere un `process.host` independiente. Si existen varios hosts de terminal, selecciona uno con `--host`.
+Se requiere un `terminal.host` para que los comandos CLI funcionen; es el host de procesos que ejecuta el comando.
 
 ## Ciclo de Vida del Proceso
 

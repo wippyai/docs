@@ -1,135 +1,138 @@
 ---
-title: "Sicherheitsmodell: Prozessisolation und Richtlinienprüfungen"
-description: "Wie Wippy Lua- und WASM-Ausführungsumgebungen begrenzt und geschützte Laufzeitoperationen mit Akteuren, Geltungsbereichen und Richtlinien autorisiert."
+title: Sicherheitsmodell - Prozessisolation, Capability-Kontrolle und Datengrenzen
+description: Wie Wippy steuert, worauf Ihr Code zugreifen kann, worauf nicht und wer diese Grenzen durchsetzt. Behandelt Prozessisolation, registry-basierte Capability-Kontrolle, mandantenfähige Durchsetzung und Agentensicherheit.
 ---
 
 # Sicherheitsmodell
 
-Wippy verbindet Ausführungsisolation mit attributbasierter Zugriffskontrolle (ABAC). Die Isolation bestimmt, welche Module und Hostressourcen Code erreichen kann. ABAC bestimmt, ob eine geschützte Operation im aktuellen Akteur- und Richtliniengeltungsbereich erlaubt ist. Beide Grenzen sind wichtig: Der Import eines Moduls erteilt keine Berechtigungen, und eine Richtlinie kann ein nicht deklariertes Modul nicht für Lua-Code verfügbar machen.
+Wippys Sicherheitsmodell definiert, worauf Ihr Code zugreifen kann, worauf nicht und wer diese Grenzen durchsetzt. Es lohnt sich, es vor dem Bauen zu lesen, denn es arbeitet auf zwei Ebenen, die die meisten Frameworks zu einer zusammenfallen lassen: Die Laufzeit isoliert jeden Prozess, sodass gefährliche Capabilities schlicht nicht vorhanden sind, und eine attributbasierte Richtlinienschicht regelt, welche Registry-Capabilities ein Prozess verwenden darf. Beides zu verstehen ändert, wie Sie eine Anwendung strukturieren.
 
-## Autorisierungsregeln
+## Vertrauensmodell
 
-Ein Sicherheitskontext kann einen **Akteur** und einen **Geltungsbereich** enthalten. Der Akteur identifiziert den Principal und kann Metadaten enthalten. Der Geltungsbereich ist eine unveränderliche Menge von Richtlinien. Eine Richtlinie gleicht Aktion und Ressource ab, kann Akteur- oder Ressourcenmetadaten prüfen und gibt `allow`, `deny` oder `undefined` zurück.
+Wippys Isolationsschicht gibt einem Prozess keine Umgebungsautorität. Ein frischer Lua- oder WASM-Prozess kann weder das Dateisystem noch das Netzwerk, das Host-Betriebssystem oder den Speicher anderer Prozesse berühren, weil diese Capabilities in seiner Umgebung nicht vorhanden sind. Capabilities kommen ausschließlich über die Registry: Funktionen, Tools, Verbindungen und Konfiguration, die dem Prozess ausdrücklich gewährt werden.
 
-Wenn sowohl Akteur als auch Geltungsbereich vorhanden sind:
+Darüber hinaus wird der Zugriff auf Registry-Capabilities durch attributbasierte Zugriffskontrolle (ABAC) geregelt. Jede geschützte Operation wird gegen den Sicherheits-Scope des aktuellen Actors geprüft — eine Menge von Richtlinien, die eine Aktion auf einer Ressource erlauben oder verweigern, optional bedingt durch Metadaten von Actor und Ressource. Das ist deklarativ: Sie definieren Richtlinien in der Konfiguration, nicht im Anwendungscode.
 
-1. Jedes passende Deny hat Vorrang.
-2. Mindestens ein Allow und kein Deny erlaubt die Operation.
-3. Keine passende Richtlinie ergibt `undefined`, das geschützte Laufzeitoperationen als verweigert behandeln.
+Wenn ein Prozess mit Actor und Scope läuft, gilt Zugriff standardmäßig als verweigert: Eine Anfrage wird nur erlaubt, wenn eine Richtlinie sie ausdrücklich zulässt und keine sie verweigert. Der **Strict Mode** regelt den unvollständigen Fall, in dem weder Actor noch Scope etabliert sind. Er ist **standardmäßig aktiv**, sodass ein unvollständiger Kontext verweigert wird; mit `security.strict_mode: false` in der Laufzeitkonfiguration wählen Sie stattdessen das permissive Verhalten. Die Konsequenz, die Sie einplanen müssen: Ein Prozess ohne deklarierten Sicherheitskontext scheitert unter dem Standard an jeder Prüfung — geben Sie einem solchen Prozess einen `security:`-Block in seinem Eintrag oder starten Sie ihn über einen Pfad, der einen liefert. Kombiniert mit Least-Privilege-Richtlinien erhalten Sie so Fail-Closed-Autorisierung auf einer Isolation, die auf Abwesenheit beruht. Siehe die [Sicherheitsreferenz](system/security.md) für Richtliniensyntax, Evaluierungsregeln und die Form des `security:`-Blocks.
 
-`security.strict_mode` gilt nur für einen unvollständigen Kontext, in dem Akteur oder Geltungsbereich fehlt. Runtime v0.3.32a startet mit aktiviertem Strict Mode. Deaktivieren Sie ihn nur, wenn Legacy- oder Übergangscode für einen unvollständigen Kontext weiterhin permissiv behandelt werden muss:
+## Prozessisolation
 
-```yaml
-# .wippy.yaml
-security:
-  strict_mode: false
-```
+Jede Ausführungseinheit in Wippy läuft in einem isolierten Prozess mit eigenem eingebettetem Interpreter (Lua oder WASM).
 
-| Kontext | `strict_mode: false` | `strict_mode: true` |
-|---------|----------------------|---------------------|
-| Akteur und Geltungsbereich vorhanden | Richtlinien auswerten; nur `allow` erlaubt den Zugriff | Gleich |
-| Akteur oder Geltungsbereich fehlt | Geschützte Operation erlauben | Geschützte Operation verweigern |
+**Was ein Prozess hat:** seinen eigenen Speicherbereich (ein Grund-Overhead von ~13 KB bei Lua). Eine begrenzte Sicht auf die Registry. Eine Actor-Identität und einen Sicherheits-Scope. Einen überwachten Lebenszyklus mit Absturz-Wiederherstellung und Neustart-Limits.
 
-Lassen Sie den Strict Mode in Deployments aktiviert, die geschlossen fehlschlagen müssen, und stellen Sie sicher, dass Dienste mit dem für ihre Arbeit erforderlichen Akteur und Geltungsbereich starten. Das Deaktivieren des Strict Mode wandelt das Ergebnis `undefined` eines vollständigen Geltungsbereichs nicht in ein Allow um.
+**Was ein Prozess nicht hat:** Zugriff auf das Dateisystem (außer über registry-kontrollierte Filesystem-Einträge). Zugriff auf das Netzwerk (außer über gewährte HTTP-Client- oder Tool-Module). Zugriff auf den Speicher anderer Prozesse. Zugriff auf die Go-Laufzeit, die ihn hostet. Zugriff auf Umgebungsvariablen (außer über gewährte Environment-Einträge).
 
-Die [Sicherheitsreferenz](../system/security.md) beschreibt Richtliniensyntax, Akteure, Geltungsbereiche und Token-Speicher.
+**Wie Isolation durchgesetzt wird:** Jeder Lua-Prozess startet mit einer minimalen Standardbibliothek. Datei-I/O, Zugriff auf OS-Prozesse, dynamisches Laden von Code und Netzwerkfunktionen werden nie geladen, sind also in der Umgebung nicht vorhanden, und der Prozess kann nicht wiederherstellen, was nicht existiert. Das Laden von Modulen ist eingeschränkt: `require` löst nur die Module und Registry-Einträge auf, die dem Prozess ausdrücklich gewährt wurden, ohne Suchpfad im Dateisystem. WASM-Prozesse erreichen gleichwertige Isolation über WASI: Erreichbar sind nur die Host-Funktionen und eingehängten Filesystem-Einträge, die für diesen Eintrag konfiguriert sind.
 
-## Lua-Isolation
+Das ist kein Sandboxing über Laufzeitberechtigungen (wie seccomp oder AppArmor). Es ist Sandboxing durch Abwesenheit. Gefährliche Capabilities werden nie geladen, können also nicht ausgenutzt, umgangen oder eskaliert werden.
 
-Jeder Lua-Akteurprozess besitzt einen Lua-State; Funktionseinträge werden über Pools isolierter States ausgeführt. Die Laufzeit öffnet statt der vollständigen Hostumgebung eine eingeschränkte Basisumgebung:
+## Capability-Kontrolle
 
-- Die Umgebungsbibliotheken sind die eingeschränkten Bibliotheken `table`, `math`, `os`, `coroutine`, `string` und `errors` sowie Kernglobals wie `channel`, `payload` und `print`.
-- `package.path` und `package.cpath` sind leer, und `package.loadlib` ist deaktiviert.
-- Registry-basierte Module und Bibliotheken sind nur für Chunks sichtbar, die sie über `modules:` oder `imports:` deklarieren.
-- `require()` löst diese begrenzte Menge auf und schlägt bei einem nicht deklarierten Registry-Modul fehl.
+Die Registry ist Wippys Capability-Speicher, und Sicherheitsrichtlinien sind ihre Autorisierungsschicht.
 
-Lua-Code besitzt daher keine direkte API für Hostdateisystem, Sockets, native Prozesse oder Umgebungsvariablen. Er erreicht diese Funktionen nur über Laufzeitmodule wie `fs`, `http_client`, `exec` und `env`; deren geschützte Operationen führen weiterhin Richtlinienprüfungen aus.
+**Jede Capability ist ein Registry-Eintrag.** Funktionen, Tools, Agentendefinitionen, Datenbankverbindungen, Environment-Referenzen, Konfigurationswerte und geplante Aufgaben sind alle Registry-Einträge mit einem deklarierten Kind, Schema und Metadaten. Einträge werden bei der Registrierung von ihrem Kind-Handler validiert.
 
-Eine importierte Bibliothek gibt ihre Importe nicht an ihren Aufrufer weiter. Jede Bibliothek und jeder Einstiegspunkt erhält eine eigene begrenzte Umgebung. Eine intern von einer Bibliothek verwendete Fähigkeit steht einer importierenden Funktion daher nicht automatisch zur Verfügung.
+**Entry-IDs sind namespaced.** Eine ID hat die Form `namespace:name` mit einem einzelnen Doppelpunkt, und Namespaces sind über punktgetrennte Segmente hierarchisch, zum Beispiel `tenant_acme.tools:read` (Namespace `tenant_acme.tools`, Name `read`). Richtlinien matchen Aktionen und Ressourcen, und Ressourcenmuster können ein Namespace-Präfix adressieren, sodass eine einzige Regel einen ganzen Namespace abdecken kann.
 
-## WASM-Isolation
+**Richtlinien entscheiden über Zugriff.** Jeder Capability-Zugriff (ein Registry-Lookup, ein Funktionsaufruf, ein Datenbank-Handle, ein Öffnen einer Datei) wird gegen den Scope des Actors geprüft. Eine Richtlinie deklariert die Aktionen und Ressourcen, die sie abdeckt, einen Allow- oder Deny-Effekt und optionale Bedingungen auf Metadaten von Actor und Ressource. Die Evaluierung geschieht pro Zugriff, nicht einmalig beim Start: Verweigert irgendeine Richtlinie, wird der Zugriff verweigert; erlaubt mindestens eine und verweigert keine, wird er erlaubt; matcht keine Richtlinie, wird der Zugriff verweigert. (Hat der Kontext überhaupt keinen Actor und keinen Scope, entscheidet über diesen unvollständigen Fall der Strict Mode statt der Richtlinienevaluierung.)
 
-WASM-Code läuft über konfigurierte Hostimporte und WASI-Einstellungen. Umgebungswerte und Dateisystem-Mounts müssen am WASM-Eintrag deklariert werden. Vor der Instanziierung prüft die Laufzeit `env.get` für jeden konfigurierten Umgebungseintrag und `fs.get` für jeden konfigurierten Mount. Dateisystem-Mounts werden auf das konfigurierte Dateisystem umgewurzelt, statt das Host-Root offenzulegen.
+**Ein Kontext wird deklariert, nicht aus dem Nichts geerbt.** Funktionen erben Actor und Scope des Aufrufers. Ein gespawnter Prozess erbt sie ebenfalls: Sein Frame wird vom Frame des Spawners abgezweigt, und der `security:`-Block seines eigenen Eintrags modifiziert dann diesen geerbten Kontext — ein dort benannter `actor` ersetzt den geerbten Actor, und die Richtlinien und Richtliniengruppen, die er über Registry-IDs auflistet, werden in den geerbten Scope gemergt. Die Auflösung ist atomar — fehlt eine benannte Richtlinie oder Gruppe, scheitert der Spawn, statt mit einem unvollständigen Scope fortzufahren. Ein CLI-Kommando kann zusätzlich `meta.command.security` deklarieren, das nur auf dem vertrauenswürdigen Startpfad angewendet wird, auf dem der Operator das Kommando selbst gestartet hat.
 
-WASM-Hostfunktionen für Sockets und ausgehendes HTTP führen außerdem operationsspezifische Prüfungen wie `socket.connect`, `socket.listen`, `socket.resolve` und `http_client.request` aus.
-
-## Erwerb und Verwendung von Fähigkeiten
-
-Viele Laufzeitressourcen sind Registry-Einträge. Module beziehen diese Ressourcen über die Eintrags-ID und prüfen eine entsprechende Aktion. Beispiele in v0.3.32a:
-
-| Operation | Prüfung | Ressource |
-|-----------|---------|-----------|
-| Registry-Eintrag lesen | `registry.get` | Eintrags-ID |
-| Funktion aufrufen | `funcs.call` | Funktions-ID |
-| SQL-Datenbankhandle beziehen | `db.get` | ID des Datenbankeintrags |
-| Dateisystem beziehen | `fs.get` | Dateisystem-ID |
-| Umgebungswert lesen | `env.get` | Variablenname oder -ID |
-| Prozess starten | `process.spawn` | ID des Prozesseintrags |
-| Prozesshost auswählen | `process.host` | ID des Hosteintrags |
-
-Diese Prüfungen erfolgen nicht alle mit derselben Granularität. `db.get` autorisiert beispielsweise den Erwerb eines Datenbankhandles; einzelne SQL-Abfragen über dieses Handle wiederholen `db.get` nicht. Ebenso autorisiert `fs.get` den Erwerb eines Dateisystemhandles, statt für jede Dateioperation eine ABAC-Entscheidung anzuwenden. Geben Sie ein erworbenes Handle nicht an einen weniger vertrauenswürdigen Kontext weiter, sofern dieser die Autorität des Handles nicht behalten soll.
-
-Netzwerkmodule führen, wo dokumentiert, zusätzliche Prüfungen für jede Anfrage, Verbindung oder jeden Listener aus. Die Modulreferenz nennt die genaue Aktion und Ressource einer Operation.
-
-## Kontextvererbung
-
-Akteur und Geltungsbereich sind vererbbare Werte des Frame-Kontexts. Funktionsaufrufe und gestartete Prozesse erben sie, sofern der Aufrufer keinen Ersatzkontext erstellt. Das explizite Setzen eines Akteurs oder Geltungsbereichs für einen gestarteten Prozess erfordert zusätzlich zu den jeweiligen Startberechtigungen die Berechtigung `process.security`.
-
-Diese Vererbung hält die Autorisierung an eine Aufrufkette gebunden. Ein privilegierter Elternprozess muss den Kontext von Arbeit, die er an weniger vertrauenswürdigen Code delegiert, jedoch bewusst einschränken.
-
-## Registry-Mutation
-
-Das Lesen von Einträgen und das Ändern der Registry sind unterschiedliche Berechtigungen. Normale dauerhafte Changesets erfordern `registry.apply`; in v0.3.32a verwendet diese Prüfung eine leere Ressource und ist keine Schreibentscheidung pro Eintrag oder Namespace. Erteilen Sie einem nicht vertrauenswürdigen Agenten nicht `registry.apply` in der Annahme, ein Namespace-Muster würde seine Schreibzugriffe begrenzen.
-
-Prozesslokale Overlays besitzen eine kleinere Berechtigungsoberfläche. Sie prüfen den Overlay-Eigentümer sowie operationsspezifische Aktionen wie `registry.overlay.create.<kind>`, `registry.overlay.update.<kind>` und `registry.overlay.delete.<kind>` gegen die betroffene Eintrags-ID. Siehe [Eintrags-Registry](../lua/core/registry.md).
+**Tool-Argumente sind schemageformt.** Ein Tool deklariert ein JSON Schema für seine Eingaben. Dieses Schema wird dem Modell übergeben, damit es konforme Argumente generiert, und der Zugriff auf das Tool wird vor dem Aufruf gegen die Richtlinien geprüft.
 
 ## Datengrenzen
 
-Verwenden Sie unterschiedliche Registry-IDs für mandantenspezifische Datenbanken, Dateisysteme, Funktionen und Umgebungsvariablen. Schreiben Sie anschließend Richtlinien, die nur die vorgesehenen IDs erlauben. So kann ein Kontext keine geschützte Ressource eines anderen Mandanten beziehen, wenn alle Zugriffspfade die geprüften Laufzeitmodule verwenden.
+**Datenbankverbindungen sind Registry-Einträge.** Ein Prozess setzt seinen eigenen Verbindungsstring nicht zusammen. Er fordert eine Verbindung über eine Registry-ID an, und diese Anforderung wird richtliniengeprüft, bevor ein Handle zurückgegeben wird. Ein Prozess, dessen Richtlinien den Datenbankeintrag von Mandant B nicht gewähren, kann kein Handle darauf erhalten.
 
-Umgebungsreferenzen halten Anbieterzugangsdaten aus Quellmanifesten heraus. Ein Anbieter kann eine konfigurierte `env.variable` intern auflösen; dadurch ist der Wert für Anwendungscode jedoch nicht grundsätzlich unlesbar: Code, der `env` importiert und `env.get` für dieselbe Variable verwenden darf, kann ihn lesen. Schützen Sie Secrets sowohl durch Modulbegrenzung als auch durch Richtlinien.
+**LLM-API-Schlüssel leben im Environment-System.** Schlüssel für Claude, GPT und andere Anbieter werden aus dem Environment-System gelesen (zum Beispiel OS-Umgebungsvariablen, die über einen `env.storage.os`-Eintrag freigegeben und von `env.variable`-Einträgen referenziert werden, deren Lesezugriffe über die Aktion `env.get` richtliniengeprüft sind). Der Anbieter liest sie intern; sie werden nicht in Prozessargumenten übergeben oder an aufrufenden Code zurückgegeben.
 
-Der Strict Mode ist für mandantenfähige Deployments wichtig, weil er verhindert, dass Arbeit mit fehlendem Akteur oder Geltungsbereich die Richtlinienauswertung umgeht. Er leitet keine Mandantenidentität ab und erzeugt keine Mandantenrichtlinien; die Anwendung muss Akteur, Geltungsbereich, Ressourcen und Richtlinienabdeckung korrekt festlegen.
+**Datei- und Blob-Speicher folgen demselben Modell.** Ein Prozess liest oder schreibt über Filesystem- oder Cloud-Storage-Registry-Einträge, jeder Zugriff richtliniengeprüft. WASM-Prozesse greifen nur über Filesystem-Einträge auf Dateien zu, die für diesen Eintrag ausdrücklich eingehängt sind.
 
-## Grenzen von Agenten und Tools
+## Agentensicherheit
 
-Framework-Agenten kompilieren die in ihren Definitionen und Traits ausgewählten Tools. Toolschemas begrenzen und validieren die an diese Tools übergebenen Argumente. Registry-basierte Toolimplementierungen laufen über den `funcs`-Aufrufpfad; deshalb wird `funcs.call` gegen die ID der Zielfunktion geprüft.
+Agenten sind LLM-gestützte Prozesse mit Tool-Nutzung. Sie treffen zur Laufzeit Entscheidungen, die Ihr Code nicht direkt kontrolliert, deshalb sind ihre Grenzen wichtig. Wippy handhabt das über dieselben Registry- und Richtlinienmechanismen wie bei jedem anderen Prozess.
 
-Toolliste und Richtliniengeltungsbereich ergänzen einander:
+**Tool-Zugriff.** Ein Agent kann nur Tools aufrufen, die in seiner Definition aufgeführt sind, und jede Tool-Ausführung läuft über `funcs.call`, das richtliniengeprüft ist. Ein verweigerter Aufruf scheitert, bevor die Tool-Funktion läuft. Ein Agent, der Kundendaten lesen, aber nicht löschen soll, hat entweder kein Lösch-Tool in seiner Definition oder ihm wird diese Aktion per Richtlinie verweigert.
 
-- Wird ein Tool weggelassen, kann das Modell es nicht über die normale Agent-Tool-Schnittstelle auswählen.
-- Wird `funcs.call` verweigert, ist die Ausführung auch dann verhindert, wenn das Tool in der kompilierten Liste vorhanden ist.
-- Das Erteilen von `funcs.call` fügt kein nicht deklariertes Tool zur Liste des Modells hinzu.
+**Externe und MCP-Tools.** Wippy kann externe Tools konsumieren und eigene über das Model Context Protocol bereitstellen. Konsumierte Tools laufen über denselben Funktionsaufrufpfad und dieselben Richtlinienprüfungen wie native Tools. Tools, die Wippy externen MCP-Clients bereitstellt, sind durch begrenzte, widerrufbare Zugriffstoken abgesichert, die einschränken, welche Aktionen ein Client ausführen darf.
 
-Behandeln Sie Toolwrapper und externe Integrationen als zusätzlichen Anwendungscode. Sie ersetzen die Laufzeitprüfungen nicht; ihre eigenen Netzwerkzugangsdaten und Autorisierungsregeln müssen ebenfalls geprüft werden.
+**Strukturierte Ausgabe.** Das LLM-Modul kann schemabeschränkte (strukturierte) Ausgabe über die native Structured-Output-Unterstützung des Anbieters anfordern, sodass die Ausgabe eines Agenten an eine deklarierte Form gebunden werden kann.
 
-## Verantwortlichkeiten beim Deployment
+**Observability.** Bei aktiviertem OpenTelemetry werden LLM-Anbieteraufrufe und Tool-Aufrufe nachverfolgt, und der Token-Verbrauch wird über den Usage-Tracker-Contract erfasst. Das gibt Ihnen einen Prüfpfad darüber, was ein Agent aufgerufen und was er verbraucht hat. Siehe [Observability](guides/observability.md).
 
-Wippys Ausführungs- und Richtliniengrenzen ersetzen keine Infrastrukturkontrollen:
+**Grenzen der Selbstmodifikation.** Einem Agenten, der Tools in einem Namespace erstellen darf, kann Schreibzugriff auf seine eigene Definition in einem anderen verweigert werden. Registry-Schreibzugriffe sind richtliniengeprüfte Aktionen, sodass eine Deny-Richtlinie auf dem eigenen Namespace des Agenten verhindert, dass er sich selbst bearbeitet oder sich neue Zugriffe gewährt.
 
-- Speicherverschlüsselung und Sicherungsrichtlinien gehören zur konfigurierten Datenbank, Festplatte oder zum Objektspeicher.
-- VPCs, Firewalls und Dienstrichtlinien steuern die Erreichbarkeit auf Netzwerkebene.
-- Authentifizierung stellt die Benutzer- oder Dienstidentität her, bevor Wippys Autorisierung greift.
-- Hostadministration, SSH-Zugriff und Datenbankadministratoraktionen benötigen Audit-Logging auf Infrastrukturebene.
-- CPU- und Speicherquoten pro Mandant erfordern Kontrollen auf Deployment-Ebene.
+## Mandantenfähige Durchsetzung
 
-OpenTelemetry kann konfigurierte Laufzeit- und Frameworkoperationen nachverfolgen, doch die Abdeckung hängt von der aktivierten Instrumentierung ab. Siehe [Observability](../guides/observability.md).
+Für Deployments, in denen mehrere Kunden eine einzelne Wippy-Instanz teilen, wird Isolation durch Richtlinienevaluierung vor jeder Operation durchgesetzt, nicht durch Anwendungscode, der Mandanten-IDs prüft.
 
-## Review-Checkliste
+**Mandantenisolation ist richtliniengetrieben.** Geben Sie jedem Mandanten einen Actor und einen Scope, dessen Richtlinien nur die Namespaces dieses Mandanten abdecken. Bei aktivem Strict Mode wird dem Prozess eines Mandanten der Zugriff auf Ressourcen außerhalb seines Scopes verweigert, bevor sein Code läuft. Wirksame Isolation hängt davon ab, dass Sie diese mandantenbezogenen Richtlinien schreiben; die Laufzeit setzt sie durch, leitet die Mandantenzugehörigkeit aber nicht für Sie ab.
 
-- Lassen Sie `security.strict_mode` aktiviert, wenn unvollständige Kontexte geschlossen fehlschlagen müssen.
-- Geben Sie jedem Dienst einen bewusst gewählten Akteur und Geltungsbereich.
-- Prüfen Sie sowohl deklarierte Lua-Module/-Importe als auch die Richtlinien für deren geschützte Operationen.
-- Halten Sie `registry.apply` von nicht vertrauenswürdigem Code fern, sofern keine vollständige Mutation der dauerhaften Registry beabsichtigt ist.
-- Teilen Sie erworbene Datenbank- oder Dateisystemhandles nicht über Vertrauensgrenzen hinweg.
-- Trennen Sie Mandantenressourcen nach Registry-ID und testen Sie die Verweigerung außerhalb jedes Mandantengeltungsbereichs.
-- Schützen Sie Umgebungssecrets sowohl durch Modulbegrenzung als auch durch `env.get`-Richtlinien.
-- Prüfen Sie Tracing und Infrastrukturkontrollen unabhängig von der Laufzeitautorisierung.
+**Mandantenübergreifender Zugriff ist explizit.** Eine über Mandanten hinweg geteilte Capability lebt in einem gemeinsamen Namespace, den die Richtlinien jedes Mandanten erlauben. Teilen ist pro Namespace ein Opt-in.
+
+**Nebenläufigkeit wird am Host begrenzt.** Process Hosts begrenzen Nebenläufigkeit über Worker-Pools. Prozessgruppen (`pg.scope`) bieten isolierte, clusterweite Mitgliedschafts- und Broadcast-Namespaces und können Gruppen- und Mitgliederzahlen deckeln. Obergrenzen für CPU oder Speicher pro Mandant sind kein eingebautes Laufzeitfeature; setzen Sie diese auf Infrastrukturebene durch.
+
+Ein eigener Leitfaden zur mandantenfähigen Architektur ist geplant.
+
+## Umfang und Grenzen
+
+Wippys Sicherheitsmodell deckt Prozessisolation, Capability-Kontrolle und Datengrenzen ab. Das Folgende liegt außerhalb des Umfangs der Laufzeit und bleibt Aufgabe Ihrer Infrastruktur.
+
+**Verschlüsselung ruhender Daten.** Verschlüsselung von Datenbank, Festplatte und Blob-Speicher wird von der zugrunde liegenden Infrastruktur übernommen (PostgreSQL TDE, Festplattenverschlüsselung und Ähnliches). Wippy geht davon aus, dass die Speicherschicht die Verschlüsselung übernimmt.
+
+**Isolation auf Netzwerkebene.** Prozessisolation geschieht auf Anwendungsebene. Netzwerksegmentierung zwischen Wippy und seinen Abhängigkeiten (Datenbank, LLM-APIs, externe Dienste) wird von der Infrastruktur übernommen: VPCs, Security Groups, Firewalls.
+
+**Identitätsverwaltung.** Authentifizierung (die Prüfung, wer ein Benutzer ist) wird von Ihrer Auth-Schicht übernommen. Wippys Sicherheitsmodell beginnt nach der Authentifizierung: Es steuert, was die Prozesse eines authentifizierten Benutzers tun dürfen, nicht wer der Benutzer ist. Token, die Actor und Scope tragen, können über einen Token Store ausgestellt und validiert werden.
+
+**Infrastruktur-Audit-Logs.** Wippys Tracing deckt Operationen auf Prozessebene ab: Funktionsaufrufe, Tool-Aufrufe, Prozessaktivität. Zugriffe auf Infrastrukturebene (SSH auf den Server, Datenbank-Administrationsoperationen) sollten von Infrastruktur-Tools auditiert werden.
+
+## Häufige Fragen
+
+**Kann der Agent eines Mandanten auf die Daten eines anderen Mandanten zugreifen?**
+Nicht, wenn die Ressourcen jedes Mandanten per Richtlinie begrenzt sind. Mit mandantenbezogenen Richtlinien und Strict Mode verweigert die Laufzeit den Zugriff auf Ressourcen außerhalb des Mandanten-Scopes, bevor der Code des Agenten läuft.
+
+**Kann ein Agent seine eigenen Berechtigungen eskalieren?**
+Nur wenn seine Richtlinien das Schreiben auf seine eigene Definition erlauben. Registry-Schreibzugriffe sind richtliniengeprüft, sodass eine Deny-Richtlinie auf dem eigenen Namespace des Agenten Selbstmodifikation verhindert. Ein Agent, der Tools in einem Namespace erstellen kann, kann sich keinen Zugriff auf Namespaces gewähren, die sein Scope nicht bereits abdeckt.
+
+**Wie sehe ich, was ein Agent getan hat?**
+Bei aktiviertem OpenTelemetry werden LLM- und Tool-Aufrufe nachverfolgt, und der Token-Verbrauch wird über den Usage-Tracker-Contract erfasst. Siehe [Observability](guides/observability.md).
+
+**Was passiert, wenn ein Agent sich unerwartet verhält?**
+Er wird von der Sandbox eingegrenzt: kein Dateisystem, kein Netzwerk, kein Betriebssystem, kein Zugriff auf andere Prozesse über das hinaus, was ihm gewährt wurde. Er kann nur Tools aus seiner Definition aufrufen, die die Richtlinien erlauben, und diese Aufrufe werden protokolliert.
+
+**Wird Mandantenisolation von meinem Code oder von der Laufzeit durchgesetzt?**
+Von der Laufzeit. Die Richtlinien-Engine evaluiert jeden Zugriff, bevor die Operation läuft. Ihre Aufgabe ist es, die mandantenbezogenen Richtlinien zu schreiben; die Laufzeit setzt sie durch.
+
+**Wie werden externe MCP-Tools abgesichert?**
+Über MCP konsumierte Tools laufen über denselben Funktionsaufrufpfad und dieselben Richtlinienprüfungen wie native Tools. Tools, die Wippy externen MCP-Clients bereitstellt, sind durch begrenzte, widerrufbare Zugriffstoken abgesichert. Das Anbinden eines MCP-Dienstes umgeht das Sicherheitsmodell nicht.
+
+## Sicherheitsreferenz
+
+| Aspekt | Wippys Ansatz |
+|---------|------------------|
+| Prozessisolation | Eigener Interpreter pro Prozess (Lua oder WASM), kein geteilter Speicher |
+| Standardzugriff | Nicht gematchte Richtlinien verweigern, wenn Actor und Scope gesetzt sind; Strict Mode, standardmäßig aktiv, verweigert, wenn weder Actor noch Scope etabliert sind |
+| Kontextdeklaration | `security:`-Block am Eintrag (Actor, Richtlinien, Gruppen); Auflösung ist atomar und fail-closed |
+| Lieferkette | Modul-Packs werden bei Installation und beim Boot per Digest verifiziert; eine Abweichung weist das Modul zurück |
+| Vertrauen zwischen Knoten | Gegenseitig authentifiziertes Internode-Mesh; ed25519-Identität pro Knoten, explizite Trusted-Peer-Map |
+| Workflow-Propagierung | Actor und Scope werden als signierter, audience-gebundener Header an Temporal weitergegeben; ein Verifikationsfehler lässt die Ausführung scheitern |
+| Capability-Kontrolle | Registry-Einträge, geregelt durch attributbasierte Sicherheitsrichtlinien (Actor, Scope, Aktion, Ressource) |
+| Datengrenzen | Verbindungen und Speicher sind Registry-Einträge; jeder Zugriff wird per Entry-ID richtliniengeprüft |
+| API-Schlüsselverwaltung | Im Environment-System gespeichert, intern von Anbietern gelesen, nicht an Prozesscode freigegeben |
+| Agenten-Tool-Kontrolle | Tools auf die Definition des Agenten begrenzt; jeder Aufruf über die `funcs.call`-Richtlinie geprüft |
+| Externe Tools (MCP) | Derselbe Funktionsaufrufpfad und dieselben Richtlinienprüfungen; bereitgestellte Tools durch begrenzte Token abgesichert |
+| Agenten-Prüfpfad | OpenTelemetry-Tracing (wenn aktiviert) plus Usage-Tracker-Aufzeichnungen |
+| Mandantenisolation | Mandantenbezogene Richtlinien und Scopes, von der Laufzeit vor jeder Operation evaluiert |
+| Nebenläufigkeitsgrenzen | Begrenzt durch Worker-Pools des Hosts; keine eingebauten CPU-/Speicher-Obergrenzen pro Mandant |
+| Selbstmodifikation | Deny-Richtlinien auf Registry-Schreibaktionen verhindern, dass Agenten ihre eigenen Definitionen bearbeiten |
 
 ## Siehe auch
 
-- [Sicherheitsreferenz](../system/security.md) — Richtlinien, Geltungsbereiche, Akteure, Strict Mode und Token-Speicher
-- [Eintrags-Registry](../lua/core/registry.md) — Lesen und Ändern der Registry sowie Overlay-Berechtigungen
-- [Prozessverwaltung](../lua/core/process.md) — Berechtigungen für Start, Kontext und Prozesssicherheit
-- [Prozessmodell](./process-model.md) — Prozessisolation und Lifecycle
-- [Agenten](../framework/agents.md) — Agentdefinitionen und Toolauswahl
+- [Sicherheitsreferenz](system/security.md) - Richtlinien, Scopes, Actors, Token Stores und der `security:`-Block
+- [Abhängigkeitsverwaltung](guides/dependency-management.md#integrity-verification) - Verifikation von Modul-Digests
+- [Cluster](guides/cluster.md#internode-identity) - Internode-Identität und Peer-Vertrauen
+- [Temporal-Workflows](temporal/workflows.md#security-context) - Signierte Kontextpropagierung
+- [Registry](concepts/registry.md) - Der Capability-Speicher
+- [Prozessmodell](concepts/process-model.md) - Prozessisolation und Lebenszyklus
+- [Agenten](framework/agents.md) - Agentendefinitionen und Tool-Nutzung

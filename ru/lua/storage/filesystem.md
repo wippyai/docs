@@ -1,6 +1,6 @@
 ---
 title: "Файловая система"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='io'/ <secondary-label ref='permissions'/"
+description: "Чтение, запись и управление файлами в изолированных томах файловой системы."
 ---
 
 # Файловая система
@@ -203,7 +203,7 @@ fs.seek.END       -- от конца
 | `isdir(path)` | `boolean, error` | Проверить директорию |
 | `mkdir(path)` | `boolean, error` | Создать директорию |
 | `remove(path)` | `boolean, error` | Удалить файл/пустую директорию |
-| `readdir(path)` | `iterator` | Список содержимого директории |
+| `readdir(path)` | `iterator, state` | Список содержимого директории (использовать в обобщённом цикле `for`) |
 | `open(path, mode)` | `File, error` | Открыть дескриптор файла |
 | `chdir(path)` | `boolean, error` | Сменить рабочую директорию |
 | `pwd()` | `string, error` | Получить рабочую директорию |

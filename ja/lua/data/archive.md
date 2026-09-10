@@ -1,37 +1,33 @@
 ---
-title: "アーカイブ"
-description: "ZIP、TAR、gzip 圧縮 TAR、Zstandard 圧縮 TAR アーカイブを読み取り、走査、展開、作成します。"
+title: "Archive"
+description: "zip/tarアーカイブを有限のメモリで読み書きします。アーカイブはRAMに読み込まれることも、ディスクへ展開されることもありません。ピークメモリはアーカイブやエントリのサイズに依存しないため、数GBのアーカイブも低RAMのサーバーで扱えます。"
 ---
 
-# アーカイブ
+# Archive
 <secondary-label ref="function"/>
 <secondary-label ref="io"/>
 <secondary-label ref="encoding"/>
 
-`archive` モジュールは、ランダムアクセスリーダー、シーケンシャルストリーム、ファイルシステム上の出力先を通じて、ZIP および TAR 系アーカイブを読み書きします。
+zip/tarアーカイブを有限のメモリで読み書きします。アーカイブはRAMに読み込まれることも、ディスクへ展開されることもありません。ピークメモリはアーカイブやエントリのサイズに依存しないため、数GBのアーカイブも低RAMのサーバーで扱えます。
 
-このページは、部分的な I/O レシピを含む API リファレンスです。ストリーミング操作ではエントリコピー用バッファーの上限が設定されますが、メタデータ、コーデックの状態、raw バイトソース、`read()` の結果は引き続きメモリを消費します。大きなランダムアクセスアーカイブには seek 可能なファイルまたは range reader を、前方にしか読めない入力には `scan()` を使用し、アプリケーションに適した上限を明示してください。
-
-## 読み込み
+## ロード
 
 ```lua
 local archive = require("archive")
 ```
 
-require する前に、実行可能エントリの `modules:` リストへ `archive` を追加します。ファイルシステム、クラウドリーダー、HTTP ストリームを使うレシピには、それらのケイパビリティとセキュリティポリシーも必要です。
+## フォーマット
 
-## 形式
+組み込みフォーマットはマジックバイトで検出されるか、`opts.format`で強制されます:
 
-モジュールは magic byte から組み込み形式を検出するか、`opts.format` で指定された形式を使用します。
-
-| 形式 | ランダム読み取り | シーケンシャル走査 | 書き込み |
-|------|:----------------:|:------------------:|:----------:|
-| `zip` | 可 | 可（local header） | 可 |
+| フォーマット | ランダム読み取り | 逐次スキャン | 書き込み |
+|--------|:-----------:|:---------------:|:-----:|
+| `zip` | 可 | 可（ローカルヘッダー） | 可 |
 | `tar` | 可 | 可 | 可 |
 | `tar.gz` | 不可 | 可 | 可 |
 | `tar.zst` | 不可 | 可 | 可 |
 
-`archive.formats()` は登録済み形式名の一覧を返します。
+`archive.formats()`は登録済みフォーマット名の一覧を返します。
 
 ```lua
 local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
@@ -39,75 +35,47 @@ local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 
 ## オプション
 
-すべてのエントリポイントは、省略可能な `opts` テーブルを受け取ります。
+すべてのエントリポイントは任意の`opts`テーブルを受け取ります:
 
 | キー | デフォルト | 意味 |
-|------|------------|------|
-| `format` | auto | `"zip"`、`"tar"`、`"tar.gz"`、`"tar.zst"`。auto は magic を判別し、それ以外では拡張子を使用 |
-| `max_entries` | 100000 | これを超えるエントリを持つアーカイブを拒否（decompression bomb 対策） |
-| `max_total_bytes` | 2 GiB | `extract_all()` の累積非圧縮出力上限 |
-| `max_file_bytes` | 1 GiB | 1 エントリの非圧縮サイズ上限 |
-| `max_inline_bytes` | 16 MiB | RAM に展開する `read()` 呼び出しのハード上限。超える場合は `stream()` / `extract()` を使用 |
-| `buffer_bytes` | 64 KiB | ストリーミングによる extract/add 経路のコピーバッファー。`read()` の割り当て量は制限しない |
+|-----|---------|---------|
+| `format` | auto | `"zip"`、`"tar"`、`"tar.gz"`、`"tar.zst"`。auto = マジックバイトを判定し、なければ拡張子 |
+| `max_entries` | 100000 | これを超えるエントリ数のアーカイブを拒否（解凍爆弾への防御） |
+| `max_total_bytes` | 2 GiB | 読み取り/展開中の非圧縮出力の累積上限 |
+| `max_file_bytes` | 1 GiB | 単一エントリの非圧縮サイズの上限 |
+| `max_inline_bytes` | 16 MiB | RAM上に実体化する`read()`呼び出しの厳格な上限。これを超える場合は`stream()`/`extract()`を使用 |
+| `buffer_bytes` | 64 KiB | 読み取り/展開/追加のストリーミングコピー用バッファ |
 
-`max_file_bytes` は各エントリを制限します。一方、`max_total_bytes` が適用されるのは reader と walker の `extract_all()` だけです。`read()`、`stream()`、単一エントリの `extract()`、手動 walk を使うアプリケーションでは、独自に累積予算を適用する必要があります。`max_inline_bytes` は `read()` が実体化するエントリデータを制限し、`buffer_bytes` は制限しません。これらの上限には、すべてのメタデータとコーデックの割り当てが含まれるわけではありません。
+`max_total_bytes`/`max_file_bytes`は作業量の上限であり、RAMの上限ではありません。エントリのストリーミングが保持するのは、`buffer_bytes`とコーデックの解凍ウィンドウを超えることはありません。RAMサイズを調整するつまみは`max_inline_bytes`のみです。
 
 ## 読み取り — ランダムアクセス
 
-`archive.open(source, ...)` は、完全なランダムアクセスのために **seek 可能** なソースを開きます（ZIP の central directory は最初に読み取られ、各エントリは必要時に展開されます）。ソースには、`fs.FS` ハンドルとパス、開いた `fs.File`、クラウドストレージリーダー、raw バイトを指定できます（バイトはアーカイブ全体を RAM に保持するため、小さなアーカイブに限定してください）。
+`archive.open(source, ...)`は**シーク可能な**ソースを開き、完全なランダムアクセスを提供します（zipの中央ディレクトリは事前に読み込まれ、エントリは要求に応じて解凍されます）。ソースには、`fs.FS`ハンドルとパスの組み合わせ、開いている`fs.File`、生のバイト列（バイト列はアーカイブ全体をRAMに保持するため小さなアーカイブのみ）、または他のモジュールから渡された任意のランダムアクセスリーダーを指定できます。
+
+他モジュールのリーダーは、`io.ReaderAt`を実装し`Size`を報告する場合に条件を満たします。`opts.format`が省略されたとき、任意の`Name`は拡張子の判定に使われます。[`cloudstorage`](lua/storage/cloud.md)の`open_reader`はその1つで、数GBのアーカイブをオブジェクトストレージから直接読み取ります。その場合、archiveは何も開かず、リーダーを閉じることもありません。それは所有者の役目です。
 
 ```lua
 local fs = require("fs")
 local archive = require("archive")
 
--- Open by fs handle + path (the module opens the file and owns its lifecycle)
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then return nil, fs_err end
-local r, err = archive.open(uploads, "incoming.zip")
-if err then return nil, err end
--- Or from an already-open seekable fs.File
--- local r, err = archive.open(open_file)
--- Or from raw bytes (small archives only)
--- local r, err = archive.open(zip_bytes, { format = "zip" })
+-- fsハンドル + パスで開く（モジュールがファイルを開き、そのライフサイクルを所有する）
+local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
+-- または、すでに開いているシーク可能な fs.File から
+-- local r = archive.open(fs:get("app:uploads"):open("x.zip"))
+-- または、生のバイト列から（小さなアーカイブのみ）
+-- local r = archive.open(zip_bytes, { format = "zip" })
+-- または、他のモジュールが所有するランダムアクセスリーダーから
+-- local reader = cloudstorage.get("app:files"):open_reader("incoming.zip")
+-- local r = archive.open(reader)
 ```
 
-クラウドストレージ上の大きなアーカイブには、`open_reader` が返す ranged reader を渡します。
+**戻り値:** `Reader, error`
 
-```lua
-local cloudstorage = require("cloudstorage")
+**権限:** `archive.read`
 
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
-local source, source_err = storage:open_reader("uploads/large.zip")
-if source_err then
-    storage:release()
-    return nil, source_err
-end
-local r, archive_err = archive.open(source)
-if archive_err then
-    source:close()
-    storage:release()
-    return nil, archive_err
-end
+### entries
 
--- Read archive entries here.
-
-local _, reader_close_err = r:close()
-local _, source_close_err = source:close()
-storage:release()
-if reader_close_err then return nil, reader_close_err end
-if source_close_err then return nil, source_close_err end
-```
-
-archive reader は、`fs.FS` ハンドルとパスから自ら開いたファイルを所有します。外部から渡された `fs.File` または ranged reader は所有しません。最初に archive reader を閉じ、次に呼び出し側が所有する入力とハンドルを閉じてください。
-
-**戻り値：** `Reader, error`
-
-**権限：** `archive.read`
-
-### `entries`
-
-エントリ内容を展開せずにメタデータを反復処理します。
+ディレクトリを反復します（メタデータのみ — 解凍なし）:
 
 ```lua
 for e in r:entries() do
@@ -116,240 +84,172 @@ for e in r:entries() do
 end
 ```
 
-### `stat`
+### stat
 
-内容を展開せずに、名前でエントリのメタデータを読み取ります。
+名前でエントリのメタデータを取得します（解凍なし）:
 
 ```lua
 local info, err = r:stat("docs/readme.md")
-if err then return nil, err end
 ```
 
-### `read`
+### read
 
-1 つのエントリを Lua 文字列として実体化します。`max_inline_bytes` を超えるとエラー（`kind = Invalid`）になります。大きなデータには `stream()` または `extract()` を使用してください。
+単一のエントリをLua文字列として実体化します。`max_inline_bytes`を超えるとエラー（`kind = Invalid`）になります。大きなものには`stream()`または`extract()`を使用してください:
 
 ```lua
-local data, err = r:read("docs/readme.md")  -- small entries only
-if err then return nil, err end
+local data, err = r:read("docs/readme.md")  -- 小さなエントリのみ
 ```
 
-### `stream`
+### stream
 
-必要に応じて展開する `stream.Stream` としてエントリを返します。結果は scan したり、`fs:writefile()` に渡したり、別のストリームコンシューマーに渡したりできます。
+エントリを、要求に応じて解凍する`stream.Stream`として返します。ストリームが使える場所ならどこでも組み合わせられます — `:scanner()`、`fs:writefile()`、あるいは他のモジュールへの受け渡し:
 
 ```lua
 local es, err = r:stream("big.csv")
-if err then return nil, err end
 while true do
-    local chunk, read_err = es:read(65536)
-    if read_err then
-        es:close()
-        return nil, read_err
-    end
+    local chunk = es:read(65536)
     if not chunk then break end
     process(chunk)
 end
-local _, close_err = es:close()
-if close_err then return nil, close_err end
+es:close()
 ```
 
-### `extract`
+### extract
 
-1 つのエントリを出力先ファイルシステムへストリーミングします。
+1つのエントリを宛先のファイルシステムへストリーミングします:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local ok, err = r:extract("docs/readme.md", out)
-if err then return nil, err end
--- optional destination path:
--- r:extract("docs/readme.md", out, "readme.md")
+local ok, err = r:extract("docs/readme.md", fs.get("app:out"))
+-- 宛先パスは任意:
+-- r:extract("docs/readme.md", fs.get("app:out"), "readme.md")
 ```
 
-### `extract_all`
+### extract_all
 
-すべてのエントリを出力先ファイルシステムへストリーミングします。
+すべてのエントリを宛先のファイルシステムへストリーミングします:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local count, err = r:extract_all(out, {
-    prefix = "job123/",          -- prepend to each destination path
-    strip  = 1,                  -- drop N leading path components
+local count, err = r:extract_all(fs.get("app:out"), {
+    prefix = "job123/",          -- 各宛先パスの先頭に付加する
+    strip  = 1,                  -- 先頭のパス構成要素をN個取り除く
     filter = function(e) return not e.is_dir end,
 })
-if err then return nil, err end
 ```
 
-アプリケーションコードで出力先ファイルシステムを別途解決し、`fs.get` のエラーを処理できるようにしてください。単一エントリの `extract` では、安全でない出力先名に対してエラーを返します。`extract_all` は、結果のパスに `..` を含むエントリ、絶対パス、Windows ドライブまたは UNC prefix を持つエントリをスキップします。
+エントリ名は展開時にサニタイズされます。`..`セグメント、絶対パス、Windowsのドライブ/UNCプレフィックスは拒否されます（zip slipへの防御）。
 
-### `close`
+### close
 
-reader を閉じます。この操作は冪等で、タスクスコープでも自動的に閉じられます。
+リーダーを閉じます。冪等であり、タスクスコープでも自動的に閉じられます。
 
 ```lua
-local ok, err = r:close()
-if err then return nil, err end
+r:close()
 ```
 
-## 読み取り — シーケンシャル走査
+## 読み取り — 逐次スキャン
 
-`archive.scan(source, opts?)` は、HTTP アップロード body や multipart ファイルストリームのような **前方にしか読めない** ソースを開きます。エントリはアーカイブ順に処理され、各エントリ reader は walk が次へ進むまでの間だけ有効です。ランダムアクセスの `read(name)` は使用できません。
+`archive.scan(source, opts?)`は**前方向のみ**のストリーム（HTTPアップロードのボディ、マルチパートのファイルストリーム）を開きます。エントリはアーカイブ内の順序で訪問され、各エントリのリーダーは次へ進めるまでの間のみ有効です。ランダムな`read(name)`はできません。
 
 ```lua
-local up, stream_err = form.files.upload[1]:stream()        -- stream.Stream
-if stream_err then return nil, stream_err end
+local up = form.files.upload[1]:stream()        -- stream.Stream
 local s, err = archive.scan(up, { format = "zip" })
-if err then
-    up:close()
-    return nil, err
-end
 
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then
-    s:close()
-    up:close()
-    return nil, fs_err
+for e, entry in s:walk() do                      -- entry は stream.Stream
+    if not e.is_dir then
+        fs.get("app:uploads"):writefile("job123/" .. e.name, entry)
+    end
 end
-
-local count, extract_err = s:extract_all(uploads, {prefix = "job123/"})
-if extract_err then
-    s:close()
-    up:close()
-    return nil, extract_err
-end
-local _, close_err = s:close()
-local _, upload_close_err = up:close()
-if close_err then return nil, close_err end
-if upload_close_err then return nil, upload_close_err end
+s:close()
 ```
 
-**戻り値：** `Walker, error`
+**戻り値:** `Walker, error`
 
-**権限：** `archive.read`
+**権限:** `archive.read`
 
-`extract_all` は、前述したものと同じ出力先パスのサニタイズと合計サイズ上限を適用します。代わりにアプリケーションが `s:walk()` を直接進める場合、iterator のエラーは Lua エラーとして raise され、各エントリストリームは次の反復までしか有効ではありません。タスクスコープのクリーンアップでも walker と現在のエントリストリームは解放されます。アプリケーション側に制御が残る場合、呼び出し側が所有する入力ストリームは明示的に閉じてください。
-
-`tar`、`tar.gz`、`tar.zst` はネイティブにストリーミングされます。`zip` はエントリごとの local header を通じて解析されます。ストリーミング data descriptor（サイズ／CRC がデータの後にある形式）で書かれたエントリは、エントリ境界まで展開して読み取ります。大きな ZIP アップロードを堅牢に扱うには、まずアップロードをファイルとして保存し（上限付きのシーケンシャルコピー）、次に `archive.open` を使用します。
+ウォーカーもランダムアクセスリーダーと同じオプションで`extract_all`をサポートし、すべてのエントリを1回の呼び出しで宛先ファイルシステムへストリーミングします:
 
 ```lua
-local uuid = require("uuid")
-
-local dst, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local upload, stream_err = req:stream()
-if stream_err then return nil, stream_err end
-local stage_id, id_err = uuid.v7()
-if id_err then
-    upload:close()
-    return nil, id_err
-end
-local stage_path = stage_id .. ".zip"
-local copied, copy_err = dst:writefile(stage_path, upload, "wx")
-local _, upload_close_err = upload:close()
-if copy_err or upload_close_err then
-    dst:remove(stage_path)
-    return nil, copy_err or upload_close_err
-end
-local r, open_err = archive.open(dst, stage_path)   -- robust random access
-if open_err then
-    dst:remove(stage_path)
-    return nil, open_err
-end
-
--- Replace this operation with the random-access work the handler needs.
-local info, operation_err = r:stat("manifest.json")
-local _, close_err = r:close()
-local removed, remove_err = dst:remove(stage_path)
-if operation_err then return nil, operation_err end
-if close_err then return nil, close_err end
-if remove_err then return nil, remove_err end
-return info
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
 ```
 
-各リクエストは予測不能なステージ名を生成し、排他的に作成するため、同時実行するハンドラーが互いのファイルを切り詰めることはありません。主要な copy、upload-close、open、archive-operation エラーは、ステージファイルの削除を試みた後に返されます。主要エラーがすでにある場合、本番ハンドラーはクリーンアップ失敗を別途ログに記録できます。このレシピでは、実行可能エントリのモジュール許可リストに `uuid` を追加してください。
+`tar`、`tar.gz`、`tar.zst`はネイティブにストリーミングされます。`zip`はエントリごとのローカルヘッダーで解析されます。ストリーミング用のデータディスクリプタ（サイズ/CRCがデータの後に続く）で書かれたエントリは、エントリ境界まで解凍することで読み取られます。大きなアップロードでzipを堅牢に扱うには、まずアップロードをファイルとして受け取り（有限の逐次コピー）、その後に`archive.open`を使ってください:
+
+```lua
+local dst = fs.get("app:tmp")
+dst:writefile("u.zip", req:stream())   -- アップロードをfsのファイルへストリーミングコピー
+local r = archive.open(dst, "u.zip")   -- 堅牢なランダムアクセス
+-- ... entries / extract_all ...
+r:close()
+dst:remove("u.zip")
+```
 
 ## 書き込み
 
-`archive.create(dest, ...)` は、ファイルシステム上のパス、書き込み可能な開いたファイル、書き込み可能な `stream.Stream` へエントリをストリーミングします。
+`archive.create(dest, ...)`は、エントリを宛先へストリーミングしてアーカイブを構築します。宛先はfs内のファイル（パス付き）または書き込み可能な`stream.Stream`（例: HTTPレスポンス）であり、ダウンロード用の`.zip`を有限のメモリで直接ネットワークへ生成できます。
 
 ```lua
-local tmp, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local w, err = archive.create(tmp, "out.zip", { format = "zip" })
-if err then return nil, err end
+local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
+-- またはレスポンスへストリーミング:
+-- local w = archive.create(res:stream(), { format = "zip" })
 ```
 
-**戻り値：** `Writer, error`
+**戻り値:** `Writer, error`
 
-**権限：** `archive.write`
+**権限:** `archive.write`
 
-### `add`
+### add
 
-テキストまたはバイトを含む Lua 文字列、開いた `fs.File`、`stream.Stream` からエントリを追加します。
+文字列、バイト列、リーダー、または`stream.Stream`からエントリを追加します:
 
 ```lua
-local ok, err = w:add("notes.txt", "hello")
-if err then return nil, err end
-local added, add_err = w:add("from_upload", some_stream, { method = "deflate", mode = 420 }) -- 0644
-if add_err then return nil, add_err end
+w:add("notes.txt", "hello")
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
-### `add_file`
+### add_file
 
-ファイルシステム内のファイルからエントリをストリーミングします。
+ファイルシステム内のファイルからエントリをストリーミングします:
 
 ```lua
-local data_fs, fs_err = fs.get("app:data")
-if fs_err then return nil, fs_err end
-local ok, err = w:add_file("data/big.bin", data_fs, "big.bin")
-if err then return nil, err end
+w:add_file("data/big.bin", fs.get("app:data"), "big.bin")
 ```
 
-### `add_dir`
+### add_dir
 
-ディレクトリエントリを追加します。
+ディレクトリエントリを追加します:
 
 ```lua
-local ok, err = w:add_dir("empty/")
-if err then return nil, err end
+w:add_dir("empty/")
 ```
 
-### `close`
+### close
 
-ZIP の central directory を含めてアーカイブを確定します。この操作は冪等で、writer もタスクスコープで自動的に閉じられます。
+アーカイブを確定します（zipでは中央ディレクトリを書き込みます）。冪等であり、タスクスコープでも自動的に閉じられます。
 
 ```lua
-local ok, err = w:close()
-if err then return nil, err end
+w:close()
 ```
 
-`add` のオプションは `{method = "store"|"deflate", mode, size}` です。TAR 系アーカイブにストリームを追加するときは `size` が必須です。文字列値と `add_file` はサイズを自動的に与えます。`add_file` は `method` と `mode` を受け付け、`add_dir` にはオプションがありません。ZIP writer は、出力先が seek 不可能な書き込みストリームの場合に data descriptor を使用します。
-
-Lua の数値リテラルは 10 進数です。一般に 8 進数の `0644` と表記される Unix パーミッションビットには `420` を使用します。
-
-writer は、エントリソースまたはアーカイブ出力先として外部から渡されたファイルやストリームを閉じません。`w:close()` の後に、呼び出し側が所有するリソースを閉じてください。
+`add*`のオプション: `{ method = "store"|"deflate", mode, size }`。tar系のフォーマットはエントリサイズを事前に必要とするため、ストリームやリーダーから`tar*`アーカイブへ`add()`する場合は`size`が必須です（文字列と`add_file`は自動的に供給します）。zipのライターはデータディスクリプタを用いてシーク不可能なライターへストリーミングするため、レスポンスストリームへの書き込みも動作します。
 
 ## エラー
 
 | 条件 | 種別 |
-|------|------|
-| 未知または不一致の形式 | `errors.INVALID` |
-| 現在の Lua ラッパーが報告する破損または切り詰められたアーカイブ | `errors.INTERNAL` |
-| inline `read()` または `extract_all` の合計上限超過 | `errors.INVALID` |
-| 現在の Lua ラッパーを通じて open/read 中に表面化したエントリ／アーカイブ上限 | `errors.INTERNAL` |
-| ストリーム専用形式へのランダムアクセス（`scan` を使用） | `errors.UNAVAILABLE` |
+|-----------|------|
+| ソースがfsハンドル、fsファイル、バイト列、ランダムアクセスリーダーのいずれでもない | `errors.INVALID` |
+| 未知の / 一致しないフォーマット | `errors.INVALID` |
+| 破損または切り詰められたアーカイブ | `errors.INVALID` |
+| 制限の超過（エントリ / 合計 / ファイル / インライン） | `errors.INVALID` |
+| ストリーム専用フォーマットへのランダムアクセス（`scan`を使用） | `errors.UNAVAILABLE` |
 | エントリ名が見つからない | `errors.NOT_FOUND` |
-| アーカイブポリシーによる拒否 | `errors.PERMISSION_DENIED` |
-| ソースまたは出力先の I/O 失敗 | `errors.INTERNAL` |
-| walk が進んだ後に古いストリームエントリを読み取り | `errors.INTERNAL` |
+| ソースが読み取り不可 / 宛先が書き込み不可 | `errors.PERMISSION_DENIED` |
+| ウォークが進んだ後に古いストリーミングエントリを読み取った | `errors.INTERNAL` |
 
-エラーの扱い方は[エラー処理](../core/errors.md)を参照してください。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 関連項目
 
-- [ファイルシステム](../storage/filesystem.md) - ソースおよび出力先ファイルシステム
-- [クラウドストレージ](../storage/cloud.md) - クラウド上のアーカイブ用 ranged reader
-- [ストリーム](../core/stream.md) - アーカイブとの間で受け渡すストリームオブジェクト
-- [圧縮](./compress.md) - インメモリの gzip/deflate/zstd
+- [ファイルシステム](lua/storage/filesystem.md) - ソースおよび宛先のファイルシステム
+- [Stream](lua/core/stream.md) - アーカイブへ渡す、またはアーカイブから受け取るストリームオブジェクト
+- [圧縮](lua/data/compress.md) - メモリ上でのgzip/deflate/zstd
+- [クラウドストレージ](lua/storage/cloud.md) - ランダムアクセスのアーカイブソースとしての`open_reader`

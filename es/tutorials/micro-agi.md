@@ -76,7 +76,7 @@ El paquete es propietario de todos estos archivos. Esta página reproduce `doc_s
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -143,7 +143,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` proporciona el grupo de políticas `wippy.security:process` bajo el que se ejecutan los servicios en segundo plano del módulo LLM; sin él no arrancan.
 
 ### Políticas de Seguridad
 
@@ -171,7 +178,18 @@ Dos entradas `security.policy` forman una denylist de namespaces a nivel de apli
 
 `create_tool` carga estas políticas como un scope con nombre (`app:agent_security`). El helper rechaza un `deny` explícito para `app:*` (entradas core, modelos y definición del agente) o `app.tools:*` (herramientas integradas), pero trata el resultado `undefined` no coincidente de `app.generated:*` como aprobado por su filtro específico. Esto no es autorización del runtime de Wippy: las operaciones protegidas requieren un `allow` explícito del contexto de ejecución, incluidas las operaciones del módulo de seguridad mostradas más abajo y `registry.apply` dentro de `changes:apply()`.
 
-Consulta [Modelo de seguridad](system/security.md) para más detalles sobre la evaluación de políticas.
+Una tercera política concede al propio proceso acceso al registro. Un proceso lanzado sin contexto de seguridad tiene denegada toda lectura del registro, así que el comando `agent` lleva esta política como su propio ámbito:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
+
+Vea [Modelo de Seguridad](system/security.md) para detalles sobre la evaluación de políticas.
 
 ### Modelos
 
@@ -266,6 +284,11 @@ El prompt da al agente tres reglas operativas:
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -275,7 +298,7 @@ El prompt da al agente tres reglas operativas:
       compress: wippy.llm.util:compress
 ```
 
-El proceso se ejecuta como un comando de terminal. `create_tool` aplica la denylist del paquete antes de escribir, pero ese filtro no proporciona el contexto de seguridad del runtime del comando.
+El proceso se ejecuta como un comando de terminal. `meta.command.security` le da el actor y el ámbito bajo los que se ejecuta — sin ello `registry.get` falla con `not allowed to access entry` y el agente nunca se carga. La aplicación de la seguridad para las escrituras ocurre dentro de `create_tool`, que carga el grupo de políticas `agent_security` y lo evalúa antes de escribir.
 
 Imports:
 - `prompt` — constructor de conversaciones

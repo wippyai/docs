@@ -1,6 +1,6 @@
 ---
 title: "클라우드 스토리지"
-description: "S3 호환 스토리지에서 오브젝트를 업로드, 다운로드, 조회 및 관리합니다."
+description: "S3 호환 오브젝트 스토리지에 접근합니다. 오브젝트를 업로드, 다운로드, 목록 조회, 관리하고, 다운로드/업로드/멀티파트 파트 URL을 presign하며, 랜덤 액세스로 오브젝트를 읽습니다."
 ---
 
 # 클라우드 스토리지
@@ -10,9 +10,7 @@ description: "S3 호환 스토리지에서 오브젝트를 업로드, 다운로�
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-`cloudstorage` 모듈은 S3 호환 스토리지에서 오브젝트를 업로드, 다운로드, 조회 및 관리합니다. 직접 접근을 위한 presigned URL도 생성합니다.
-
-이 페이지는 API 레퍼런스입니다. 예제는 구성된 스토리지 엔트리, 예제에서 지정한 파일시스템 볼륨에 대한 접근 권한, 아래에 나열된 권한을 전제로 합니다. 멀티파트 및 presigned URL 블록은 부분적인 클라이언트 통합 레시피입니다. 애플리케이션이 HTTP 전송을 수행하고 반환된 ETag를 제공해야 합니다. 작업과 리소스 정리가 모두 실패할 수 있는 경우, 주변 애플리케이션은 시작 오류를 유지하면서 정리 실패를 기록하도록 `report_cleanup_error(err)`를 제공합니다.
+S3 호환 오브젝트 스토리지에 접근합니다. 오브젝트를 업로드, 다운로드, 목록 조회, 관리하고, 다운로드/업로드/멀티파트 파트 URL을 presign하며, 랜덤 액세스로 오브젝트를 읽습니다.
 
 스토리지 설정은 [클라우드 스토리지](system/cloudstorage.md)를 참조하세요.
 
@@ -324,6 +322,8 @@ return deleted
 
 **반환:** `boolean, error`
 
+모든 키가 시도됩니다. 존재하지 않는 키를 삭제하는 것은 에러가 아닙니다. 제공자가 키별 실패를 보고하면, 호출은 실패한 각 키와 그 제공자 에러 코드를 명시하는 단일 에러를 반환합니다.
+
 ## 다운로드 URL
 
 스토리지 자격 증명 없이 오브젝트를 다운로드할 수 있는 임시 URL을 생성합니다. 클라이언트는 만료될 때까지 이 URL을 사용할 수 있습니다.
@@ -386,108 +386,146 @@ return {upload_url = url}
 | `key` | string | 오브젝트 키 |
 | `options.expiration` | integer | URL 만료까지 초 (기본값: 3600) |
 | `options.content_type` | string | 업로드에 필요한 콘텐츠 타입 |
-| `options.content_length` | integer | 예상되는 정확한 업로드 길이(바이트) |
+| `options.content_length` | integer | 예상 업로드 크기 바이트 |
 
 **반환:** `string, error`
 
-## 멀티파트 업로드 URL
+## 멀티파트 업로드
 
-대용량 클라이언트 업로드에서는 멀티파트 업로드를 생성하고, 각 파트의 presigned URL을 발급한 뒤 파트 요청이 반환한 ETag로 업로드를 완료합니다. 주변 애플리케이션은 업로드 오류를 유지하면서 abort 실패를 관찰할 수 있도록 `report_cleanup_error(err)`를 제공합니다:
+단일 presigned PUT은 오브젝트를 5 GiB로 제한합니다. presigned 멀티파트 업로드는 더 큰 오브젝트를 여러 파트로 분할해 클라이언트가 직접 업로드한 다음 서버 측에서 조립합니다. 멀티파트는 제공자 기능입니다: S3는 이를 구현하며, 지원하지 않는 제공자는 `errors.UNAVAILABLE`을 반환합니다.
 
 ```lua
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
+local storage = cloudstorage.get("app.infra:files")
 
-local key = "uploads/user-123/video.mp4"
-local upload, err = storage:create_multipart_upload(key, {
-    content_type = "video/mp4"
+local mp, err = storage:create_multipart_upload("backups/huge.zip", {
+    content_type = "application/zip",
+    metadata = { source = "uploader" },
 })
-if err then
-    storage:release()
-    return nil, err
-end
+if err then return nil, err end
 
-local urls, err = storage:presigned_part_urls(key, upload.upload_id, {
+local urls, err = storage:presigned_part_urls("backups/huge.zip", mp.upload_id, {
     count = 3,
-    expiration = 900
+    expiration = 900,
 })
 if err then
-    local _, abort_err = storage:abort_multipart_upload(key, upload.upload_id)
-    storage:release()
-    if abort_err then
-        report_cleanup_error(abort_err)
-    end
+    storage:abort_multipart_upload("backups/huge.zip", mp.upload_id)
     return nil, err
 end
 
--- Upload each part to its URL and retain the ETag response header.
-local completed, err = storage:complete_multipart_upload(key, upload.upload_id, {
-    {part_number = 1, etag = part_1_etag},
-    {part_number = 2, etag = part_2_etag},
-    {part_number = 3, etag = part_3_etag}
+-- 클라이언트는 각 url에 PUT하고 응답 헤더의 ETag를 반환합니다.
+local done, err = storage:complete_multipart_upload("backups/huge.zip", mp.upload_id, {
+    { part_number = 1, etag = etag1 },
+    { part_number = 2, etag = etag2 },
+    { part_number = 3, etag = etag3 },
 })
-if err then
-    local _, abort_err = storage:abort_multipart_upload(key, upload.upload_id)
-    storage:release()
-    if abort_err then
-        report_cleanup_error(abort_err)
-    end
-    return nil, err
-end
 
 storage:release()
-return completed
 ```
 
-`presigned_part_urls`는 `count`와 `parts` 중 정확히 하나를 받습니다. 한 번의 호출은 최대 1,000개의 URL을 반환할 수 있으며 파트 번호 범위는 1부터 10,000까지입니다. `expiration` 기본값은 3,600초이고 선택적 `headers`도 서명에 포함됩니다. `create_multipart_upload`는 `content_type`, `cache_control`, `content_disposition`, `content_encoding`, `metadata`, `headers`를 받습니다. 완료 요청의 파트 순서는 자유롭습니다.
+### create_multipart_upload
+
+키에 대한 멀티파트 업로드를 시작합니다.
+
+| 파라미터 | 타입 | 설명 |
+|-----------|------|-------------|
+| `key` | string | 최종 오브젝트의 오브젝트 키 |
+| `options` | table | `content_type`, `cache_control`, `content_disposition`, `content_encoding`, `metadata`, `headers` - `upload_object`와 동일한 의미 |
+
+**반환:** `table, error` - 테이블에는 이후의 모든 파트, 완료, 중단 호출에서 업로드를 식별하는 `upload_id`가 담깁니다.
+
+조건부 쓰기(`if_match`, `if_none_match`, `only_if_absent`)는 멀티파트 프로토콜의 일부가 아니며 여기서 받지 않습니다.
+
+### presigned_part_urls
+
+진행 중인 업로드의 파트에 대한 presigned PUT URL을 생성합니다. 각 URL에는 일반 HTTP PUT으로 업로드하며, 업로더는 `complete_multipart_upload`를 위해 각 파트의 `ETag` 응답 헤더를 보관해야 합니다.
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|-----------|------|---------|-------------|
+| `key` | string | 필수 | 오브젝트 키 |
+| `upload_id` | string | 필수 | `create_multipart_upload`에서 얻음 |
+| `options.parts` | int[] | - | 명시적 파트 번호 (1-10000, 중복 불가) |
+| `options.count` | int | - | 파트 `1..count`를 presign |
+| `options.headers` | table | - | 각 파트 요청에 필요한 헤더; 서명되며 업로더도 함께 전송해야 함 |
+| `options.expiration` | int | 3600 | URL 만료까지의 초 |
+
+`parts`와 `count` 중 정확히 하나가 필요하며, 한 번의 호출은 최대 1000개의 URL을 presign합니다 - 매우 큰 오브젝트는 페이지 단위로 presign하세요.
+
+**반환:** `table, error` - `{ part_number, url }`의 배열.
+
+마지막을 제외한 모든 파트는 최소 5 MiB여야 하며; 제공자가 완료 시점에 이를 강제합니다.
+
+### complete_multipart_upload
+
+업로드된 파트로부터 최종 오브젝트를 조립합니다. 파트는 순서에 상관없이 보고할 수 있으며 완료 전에 파트 번호로 정렬됩니다.
+
+| 파라미터 | 타입 | 설명 |
+|-----------|------|-------------|
+| `key` | string | 오브젝트 키 |
+| `upload_id` | string | `create_multipart_upload`에서 얻음 |
+| `parts` | table | `{ part_number = int, etag = string }`의 배열 |
+
+**반환:** `table, error` - `etag`, 그리고 제공자가 보고하는 경우 `version_id`와 `location`. 알 수 없는 업로드 ID는 `errors.NOT_FOUND`를 반환합니다.
+
+### abort_multipart_upload
+
+진행 중인 업로드를 폐기하고 저장된 파트를 해제합니다.
+
+| 파라미터 | 타입 | 설명 |
+|-----------|------|-------------|
+| `key` | string | 오브젝트 키 |
+| `upload_id` | string | `create_multipart_upload`에서 얻음 |
+
+**반환:** `boolean, error`
+
+완료되지 않은 업로드는 중단될 때까지 파트가 저장된 채로 남아 과금됩니다. 모든 실패 경로에서 중단하고, 최후의 보루로 버킷 수명 주기 규칙을 설정하세요 - [클라우드 스토리지](system/cloudstorage.md#multipart-uploads)를 참조하세요.
+
+## 범위 리더
+
+`open_reader`는 범위 GET을 사용해 오브젝트에 랜덤 액세스를 엽니다 - 로컬 스테이징도, 전체 다운로드도 없습니다. 주요 소비자는 [`archive.open`](lua/data/archive.md)으로, 제한된 메모리로 수 GB 아카이브를 오브젝트 스토리지에서 바로 읽습니다.
+
+```lua
+local archive = require("archive")
+local storage = cloudstorage.get("app.infra:files")
+
+local reader, err = storage:open_reader("uploads/huge.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4,
+})
+if err then return nil, err end
+
+local r = assert(archive.open(reader))
+for e in r:entries() do
+    print(e.name, e.size)
+end
+r:close()
+reader:close()
+
+storage:release()
+```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|-----------|------|---------|-------------|
+| `key` | string | 필수 | 오브젝트 키 |
+| `options.block_size` | int | 8388608 | 범위 GET 단위, 바이트 (64 KiB에서 128 MiB) |
+| `options.cache_blocks` | int | 4 | 상주 LRU 블록 수 (1에서 64) |
+
+`block_size * cache_blocks`는 256 MiB를 초과할 수 없습니다. 존재하지 않는 오브젝트는 `errors.NOT_FOUND`를 반환합니다.
+
+**반환:** `Reader, error`
+
+리더가 열릴 때 오브젝트의 ETag가 고정되고 모든 범위 읽기에 `If-Match`로 전송되므로, 읽는 도중 덮어써진 오브젝트는 두 세대의 오브젝트가 섞여 제공되는 대신 제공자의 전제 조건 에러로 읽기가 실패합니다. `archive`는 이를 `errors.INTERNAL`로 표면화합니다. ETag를 제공할 수 없는 제공자는 `errors.UNAVAILABLE`을 반환하며; 리더는 고정되지 않은 오브젝트를 절대 제공하지 않습니다.
+
+캐시 미스 읽기는 호출 태스크에서 블로킹 네트워크 IO를 수행하고 동시 리더를 직렬화하므로, 엔트리별 순차 접근 - 아카이브 패턴 - 이 의도된 형태입니다.
+
+### Reader 메서드
 
 | 메서드 | 반환 | 설명 |
-|--------|------|------|
-| `create_multipart_upload(key, opts?)` | `table, error` | 업로드를 시작하고 `{upload_id}` 반환 |
-| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | `{part_number, url}` 레코드 반환 |
-| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | 업로드를 완료하고 ETag 및 선택적 버전/위치 반환 |
-| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 완료되지 않은 업로드 중단 |
+|--------|---------|-------------|
+| `size()` | `integer` | 오픈 시점 stat에서 얻은 오브젝트 크기, 바이트 |
+| `key()` | `string` | 리더가 읽는 오브젝트 키 |
+| `close()` | `boolean, error` | 블록 캐시 해제; 멱등 |
 
-완료하지 않을 업로드는 중단해야 합니다. 버킷 수명 주기 규칙은 버려진 업로드를 위한 보조 수단일 뿐 명시적 정리를 대신하지 않습니다. 구성된 제공자가 필요한 기능을 지원하지 않으면 멀티파트 메서드는 `errors.UNAVAILABLE`을 반환합니다.
-
-## 랜덤 액세스 Reader
-
-`open_reader`는 전체 오브젝트를 다운로드하지 않고도 seek 가능한 읽기 전용 오브젝트를 제공합니다. 캐시 미스에서 범위를 가져오고 오브젝트를 열 때의 ETag를 `If-Match` 조건으로 전송합니다. 이 조건을 강제하는 제공자는 오브젝트가 변경되면 서로 다른 버전을 섞는 대신 `errors.CONFLICT`를 반환합니다.
-
-```lua
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
-
-local reader, err = storage:open_reader("archives/large.zip", {
-    block_size = 8 * 1024 * 1024,
-    cache_blocks = 4
-})
-if err then
-    storage:release()
-    return nil, err
-end
-
-print(reader:key(), reader:size())
-
-local _, close_err = reader:close()
-storage:release()
-if close_err then return nil, close_err end
-```
-
-| 옵션 | 기본값 | 유효 범위 |
-|------|--------|-----------|
-| `block_size` | 8 MiB | 64 KiB~128 MiB |
-| `cache_blocks` | 4 | 1~64 |
-
-캐시(`block_size * cache_blocks`)는 256 MiB를 초과할 수 없습니다. 캐시 미스는 블로킹 네트워크 I/O를 수행하며 직렬화되므로, 이 reader는 아카이브 reader와 같은 순차적 랜덤 액세스 소비자를 위한 것입니다. 제공자는 ETag를 제공해야 하며, 그렇지 않으면 reader 열기는 `errors.UNAVAILABLE`을 반환합니다. ETag를 제공하지만 범위 읽기 전제 조건을 무시하는 제공자는 덮어쓰기 감지 보장을 제공할 수 없습니다.
-
-| Reader 메서드 | 반환 | 설명 |
-|---------------|------|------|
-| `size()` | `number` | 오브젝트 크기(바이트) |
-| `key()` | `string` | 오브젝트 키 |
-| `close()` | `boolean, error` | reader 닫기. 멱등적 |
-
-Reader는 작업 종료 시 자동으로 닫히지만 작업이 끝나면 명시적으로 닫으세요.
+명시적으로 닫지 않으면 리더는 태스크 스코프에서 자동으로 닫힙니다.
 
 ## 스토리지 메서드
 
@@ -500,11 +538,11 @@ Reader는 작업 종료 시 자동으로 닫히지만 작업이 끝나면 명시
 | `delete_objects(keys)` | `boolean, error` | 여러 오브젝트 삭제 |
 | `presigned_get_url(key, opts?)` | `string, error` | 임시 다운로드 URL 생성 |
 | `presigned_put_url(key, opts?)` | `string, error` | 임시 업로드 URL 생성 |
-| `create_multipart_upload(key, opts?)` | `table, error` | 멀티파트 업로드 시작 |
-| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | 멀티파트 업로드 URL 생성 |
-| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | 멀티파트 업로드 완료 |
-| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 멀티파트 업로드 중단 |
-| `open_reader(key, opts?)` | `Reader, error` | seek 가능한 범위 reader 열기 |
+| `create_multipart_upload(key, opts?)` | `table, error` | presigned 멀티파트 업로드 시작 |
+| `presigned_part_urls(key, upload_id, opts)` | `table, error` | 업로드 파트용 PUT URL presign |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | 업로드된 파트로 오브젝트 조립 |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 진행 중인 멀티파트 업로드 폐기 |
+| `open_reader(key, opts?)` | `Reader, error` | 범위 랜덤 액세스 리더 열기 |
 | `release()` | `boolean` | 스토리지 리소스 해제 |
 
 ## 권한
@@ -527,11 +565,12 @@ Reader는 작업 종료 시 자동으로 닫히지만 작업이 끝나면 명시
 | 콘텐츠 nil | `errors.INVALID` | 아니오 |
 | writer가 유효하지 않음 | `errors.INVALID` | 아니오 |
 | 오브젝트를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
+| 알 수 없는 업로드 ID | `errors.NOT_FOUND` | 아니오 |
 | 조건부 전제 조건 실패 | `errors.CONFLICT` | 아니오 |
-| 범위 reader가 열린 동안 오브젝트가 변경됨 | `errors.CONFLICT` | 아니오 |
-| 멀티파트 업로드를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
-| 제공자에 멀티파트 또는 범위 reader 기능이 없음 | `errors.UNAVAILABLE` | 아니오 |
-| `cloudstorage.get`이 권한을 거부함 | 발생한 Lua 오류 | 해당 없음 |
-| 제공자 작업 실패 | 가능한 경우 제공자 오류를 유지하며, 그렇지 않으면 미지정 | 상황에 따라 다름 |
+| 범위 읽기 중 오브젝트가 덮어써짐 (`archive`가 표면화) | `errors.INTERNAL` | 아니오 |
+| 제공자가 멀티파트 업로드를 지원하지 않음 | `errors.UNAVAILABLE` | 아니오 |
+| 제공자가 `open_reader`용 ETag를 제공하지 않음 | `errors.UNAVAILABLE` | 아니오 |
+| 권한 거부됨 | 반환되지 않고 Lua 에러로 발생 | - |
+| 제공자 작업 실패 | `errors.UNKNOWN` | 미설정 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

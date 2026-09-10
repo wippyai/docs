@@ -33,9 +33,9 @@ Toda a configuração de um conjunto de templates é opcional:
 | `engine.development_mode` | bool | false | Desabilita cache de templates |
 | `engine.delimiters.left` | string | `{{` | Delimitador de abertura de variável |
 | `engine.delimiters.right` | string | `}}` | Delimitador de fechamento de variável |
-| `engine.delimiters.comment_left` | string | `{*` | Delimitador de abertura de comentário validado; não é aplicado pelo loader atual |
-| `engine.delimiters.comment_right` | string | `*}` | Delimitador de fechamento de comentário validado; não é aplicado pelo loader atual |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Lista de extensões validada; não é usada para descoberta pelo loader atual |
+| `engine.delimiters.comment_left` | string | `{*` | Apenas validado; comentários sempre usam o `{*` do Jet |
+| `engine.delimiters.comment_right` | string | `*}` | Apenas validado; comentários sempre usam o `*}` do Jet |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Apenas validado; a busca por nome sempre tenta os `.jet`, `.html.jet`, `.jet.html` embutidos do Jet |
 | `engine.globals` | map | - | Variáveis disponíveis para todos os templates |
 
 Em runtime, `development_mode`, os delimitadores esquerdo e direito de expressões e `globals` configuram o conjunto Jet. Os campos de delimitadores de comentários e extensões são aceitos e validados nesta versão, mas não são aplicados pelo loader Jet em memória. Alterá-los não muda o parsing nem faz o loader descobrir templates.

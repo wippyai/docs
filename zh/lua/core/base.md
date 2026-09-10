@@ -1,6 +1,6 @@
 ---
 title: "Lua 标准库"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "所有 Wippy 进程中自动可用的核心 Lua 库，无需 require()。"
 ---
 
 # Lua 标准库
@@ -79,8 +79,10 @@ table.insert(t, [pos,] value)  -- 在 pos 位置插入值（默认：末尾）
 table.remove(t [,pos])         -- 移除并返回 pos 位置的元素（默认：最后一个）
 table.concat(t [,sep [,i [,j]]]) -- 用分隔符连接数组元素
 table.sort(t [,comp])          -- 原地排序，comp(a,b) 返回 true 表示 a < b
-table.pack(...)                -- 将可变参数打包成带 'n' 字段的表
 table.unpack(t [,i [,j]])      -- 将表元素解包为多个值
+table.create(narr, nhash)      -- 按数组和哈希容量预分配表
+table.freeze(t)                -- 使表不可变，返回 t
+table.isfrozen(t)              -- 表不可变时返回 true
 ```
 
 ```lua
@@ -124,7 +126,7 @@ string.sub(s, i [,j])      -- 从 i 到 j 的子串（负索引从末尾计算�
 string.len(s)              -- 字符串长度（或使用 #s）
 string.byte(s [,i [,j]])   -- 字符的数值编码
 string.char(...)           -- 从字符编码创建字符串
-string.rep(s, n [,sep])    -- 用分隔符重复字符串 n 次
+string.rep(s, n)           -- 重复字符串 n 次
 string.reverse(s)          -- 反转字符串
 ```
 
@@ -132,6 +134,9 @@ string.reverse(s)          -- 反转字符串
 
 ```lua
 string.format(fmt, ...)    -- printf 风格格式化
+string.pack(fmt, ...)      -- 将值打包为二进制字符串
+string.unpack(fmt, s [,pos]) -- 解包二进制字符串，返回各值和下一个位置
+string.packsize(fmt)       -- 打包格式所占的字节数
 ```
 
 格式说明符：`%d`（整数）、`%f`（浮点数）、`%s`（字符串）、`%q`（带引号）、`%x`（十六进制）、`%o`（八进制）、`%e`（科学计数法）、`%%`（字面量 %）
@@ -185,7 +190,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- 无穷大
+math.huge     -- 可表示的最大浮点数
 math.mininteger  -- 最小整数
 math.maxinteger  -- 最大整数
 ```
@@ -208,14 +213,18 @@ math.fmod(x, y)       -- 浮点余数
 math.sqrt(x)          -- 平方根
 math.pow(x, y)        -- x^y（或使用 x^y 运算符）
 math.exp(x)           -- e^x
-math.log(x [,base])   -- 自然对数（或以 n 为底的对数）
+math.log(x)           -- 自然对数
+math.log10(x)         -- 以 10 为底的对数
+math.frexp(x)         -- 尾数与指数
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### 三角函数
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- 弧度
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- y/x 的反正切
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 双曲函数
 math.deg(r)   -- 弧度转角度
 math.rad(d)   -- 角度转弧度
@@ -227,7 +236,7 @@ math.rad(d)   -- 角度转弧度
 math.random()         -- 随机浮点数 [0,1)
 math.random(n)        -- 随机整数 [1,n]
 math.random(m, n)     -- 随机整数 [m,n]
-math.randomseed(x)    -- 设置随机种子
+math.randomseed(x)    -- 无效果；生成器自动播种
 ```
 
 ### 类型转换
@@ -328,44 +337,6 @@ err:details()    -- 获取详情表或 nil
 err:stack()      -- 获取堆栈跟踪字符串
 ```
 
-## UTF-8 Unicode
-
-Unicode UTF-8 字符串处理：
-
-### 常量 {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- 匹配单个 UTF-8 字符的模式
-```
-
-### 函数 {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- 从 Unicode 码点创建字符串
-utf8.codes(s)            -- 遍历码点的迭代器: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- 获取位置 i 到 j 的码点
-utf8.len(s [,i [,j]])    -- 计算 UTF-8 字符数（非字节数）
-utf8.offset(s, n [,i])   -- 从位置 i 开始第 n 个字符的字节位置
-```
-
-```lua
-local s = "Hello, 世界"
-
--- 计算字符数（非字节数）
-print(utf8.len(s))  -- 9
-
--- 遍历码点
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- 获取指定位置的码点
-local code = utf8.codepoint(s, 8)  -- 第一个中文字符
-
--- 从码点创建字符串
-local emoji = utf8.char(0x1F600)  -- 笑脸
-```
-
 ## 受限功能
 
 出于安全考虑，以下标准 Lua 功能不可用：
@@ -375,9 +346,11 @@ local emoji = utf8.char(0x1F600)  -- 笑脸
 | `load`、`loadstring`、`loadfile`、`dofile` | 使用[动态求值](lua/dynamic/eval.md)模块 |
 | `collectgarbage` | 自动 GC |
 | `rawlen` | 使用 `#` 运算符 |
-| `io.*` | 使用[文件系统](lua/storage/filesystem.md)模块 |
-| `os.execute`、`os.exit`、`os.remove`、`os.rename`、`os.tmpname` | 使用[命令执行](lua/dynamic/exec.md)、[环境](lua/system/env.md)模块 |
-| `debug.*`（除 traceback 外） | 不可用 |
+| 标准 `io.*` 文件库 | 使用[文件系统](lua/storage/filesystem.md)模块；Wippy 中的 `io` 模块是[终端 I/O](lua/system/io.md) |
+| `os.execute`、`os.exit`、`os.getenv`、`os.remove`、`os.rename`、`os.tmpname` | 使用[命令执行](lua/dynamic/exec.md)、[环境](lua/system/env.md)模块 |
+| `string.dump` | 不可用 |
+| `debug.*` | 不可用 |
+| `utf8.*` | 不可用 |
 | `package.loadlib` | 不支持原生库 |
 
 ## 参见

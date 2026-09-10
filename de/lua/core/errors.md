@@ -1,6 +1,6 @@
 ---
 title: "Fehler"
-description: "Strukturierte Fehler in Lua-Einträgen erstellen, umschließen, untersuchen und klassifizieren."
+description: "Strukturierte Fehlerbehandlung mit Kategorisierung und Retry-Metadaten. Die globale errors-Tabelle ist ohne require verfügbar."
 ---
 
 # Fehler

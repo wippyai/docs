@@ -67,6 +67,8 @@ WASM 执行默认继承调用者的安全上下文：
 
 宿主能力通过显式导入选择性启用。每个条目精确声明所需的 WASI 接口（`wasi:cli`、`wasi:filesystem` 等），限制模块的访问范围。
 
+导入 `funcs` 的 guest 可以回调进注册表。每次调用都会针对目标 ID 以 `funcs.call` 进行策略检查，因此可达集合正好是继承的作用域已经允许的范围。Socket 拨号也以同样方式由[网络服务](system/network.md)针对 `socket.*` 权限进行授权。
+
 ## 另请参阅
 
 - [函数](wasm/functions.md) - WASM 函数条目配置

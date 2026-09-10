@@ -1,17 +1,15 @@
 ---
-title: "Hojas de cálculo de Excel"
-description: "Crea, abre, lee, procesa por streaming, modifica y escribe libros XLSX de Microsoft Excel."
+title: "Hojas de Calculo Excel"
+description: "Leer y escribir archivos Microsoft Excel (.xlsx). Crear libros de trabajo, gestionar hojas, leer valores de celdas y generar reportes con soporte de…"
 ---
 
-# Hojas de cálculo de Excel
+# Hojas de Calculo Excel
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-El módulo `excel` crea y lee libros `.xlsx` de Microsoft Excel, administra hojas y celdas y escribe libros en archivos compatibles con streams.
-
-Esta es una referencia de API con recetas parciales de libros y sistemas de archivos. Los ejemplos de E/S más extensos muestran la limpieza explícita; los ejemplos de métodos aislados omiten la limpieza final del libro. El código de producción debe conservar el error de la operación principal y, aun así, intentar la limpieza necesaria.
+Leer y escribir archivos Microsoft Excel (.xlsx). Crear libros de trabajo, gestionar hojas, leer valores de celdas y generar reportes con soporte de formato.
 
 ## Carga
 
@@ -19,13 +17,11 @@ Esta es una referencia de API con recetas parciales de libros y sistemas de arch
 local excel = require("excel")
 ```
 
-Añade `excel` a la lista `modules:` de la entrada ejecutable antes de requerirlo. Las recetas de sistema de archivos también requieren `fs`.
+## Crear Libros de Trabajo
 
-## Creación y apertura de libros
+### Nuevo Libro de Trabajo
 
-### Creación de un libro
-
-Crea un libro con la hoja predeterminada `Sheet1`:
+Crea un nuevo libro de trabajo Excel vacio.
 
 ```lua
 local wb, err = excel.new()
@@ -33,27 +29,18 @@ if err then
     return nil, err
 end
 
--- Create sheets and add data
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-local set_err = wb:set_cell_value("Report", "A1", "Title")
-if set_err then
-    wb:close()
-    return nil, set_err
-end
+-- Crear hojas y agregar datos
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Title")
 
-local close_err = wb:close()
-if close_err then return nil, close_err end
+wb:close()
 ```
 
 **Devuelve:** `Workbook, error`
 
-### Apertura de un libro
+### Abrir Libro de Trabajo
 
-Abre un libro desde un objeto reader:
+Abre un libro de trabajo Excel desde un objeto reader.
 
 ```lua
 local fs = require("fs")
@@ -70,76 +57,61 @@ end
 
 local wb, err = excel.open(file)
 if err then
-    local _ = file:close()
+    file:close()
     return nil, err
 end
 
--- Read data from workbook
-local rows, rows_err = wb:get_rows("Sheet1")
-if rows_err then
-    local _ = wb:close()
-    local _ = file:close()
-    return nil, rows_err
-end
+-- Leer datos del libro de trabajo
+local rows = wb:get_rows("Sheet1")
 for i, row in ipairs(rows) do
     print("Row " .. i .. ": " .. table.concat(row, ", "))
 end
 
-local wb_close_err = wb:close()
-local file_close_err = file:close()
-if wb_close_err then return nil, wb_close_err end
-if file_close_err then return nil, file_close_err end
+wb:close()
+file:close()
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `reader` | File | Debe implementar io.Reader (por ejemplo, fs.File) |
+| `reader` | File | Debe implementar io.Reader (ej., fs.File) |
 
 **Devuelve:** `Workbook, error`
 
-## Operaciones con hojas
+## Operaciones de Hoja
 
-### Creación de una hoja
+### Crear Hoja
 
-Crea una hoja o devuelve el índice de una hoja existente con el mismo nombre:
+Crea una nueva hoja o devuelve indice de hoja existente.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
--- Create sheets
-local idx1, err = wb:new_sheet("Summary")
-if err then return nil, err end
-local idx2, err = wb:new_sheet("Details")
-if err then return nil, err end
-local idx3, err = wb:new_sheet("Charts")
-if err then return nil, err end
+-- Crear hojas
+local idx1 = wb:new_sheet("Summary")
+local idx2 = wb:new_sheet("Details")
+local idx3 = wb:new_sheet("Charts")
 
--- If sheet exists, returns its index
-local existing, err = wb:new_sheet("Summary")  -- returns same as idx1
-if err then return nil, err end
+-- Si la hoja existe, devuelve su indice
+local existing = wb:new_sheet("Summary")  -- devuelve igual que idx1
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `name` | string | Nombre de hoja |
 
-**Devuelve:** `integer, error`. Los índices de hoja empiezan en 1.
+**Devuelve:** `integer, error`
 
-### Listado de hojas
+### Listar Hojas
 
-Devuelve los nombres de todas las hojas del libro:
+Devuelve lista de todos los nombres de hojas en el libro de trabajo.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-for _, name in ipairs({"Sales", "Expenses", "Summary"}) do
-    local _, sheet_err = wb:new_sheet(name)
-    if sheet_err then return nil, sheet_err end
-end
+local wb = excel.new()
+wb:new_sheet("Sales")
+wb:new_sheet("Expenses")
+wb:new_sheet("Summary")
 
-local sheets, list_err = wb:get_sheet_list()
-if list_err then return nil, list_err end
+local sheets = wb:get_sheet_list()
 -- sheets = {"Sheet1", "Sales", "Expenses", "Summary"}
 
 for _, name in ipairs(sheets) do
@@ -149,29 +121,32 @@ end
 
 **Devuelve:** `string[], error`
 
-## Operaciones con celdas
+## Operaciones de Celda
 
-### Establecimiento del valor de una celda
+### Establecer Valor de Celda
 
-Establece el valor de una celda:
+Establece el valor de una celda individual.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Data")
-if sheet_err then return nil, sheet_err end
+local wb = excel.new()
+wb:new_sheet("Data")
 
--- Set different value types
-local cells = {
-    {"A1", "Product Name"}, {"B1", "Price"}, {"C1", "In Stock"},
-    {"A2", "Widget"}, {"B2", 29.99}, {"C2", true},
-    {"A3", "Gadget"}, {"B3", 49.99}, {"C3", false},
-    {"AA1", "Extended Column"}, {"AB100", "Far cell"}
-}
-for _, cell in ipairs(cells) do
-    local set_err = wb:set_cell_value("Data", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+-- Establecer diferentes tipos de valor
+wb:set_cell_value("Data", "A1", "Product Name")  -- string
+wb:set_cell_value("Data", "B1", "Price")         -- string
+wb:set_cell_value("Data", "C1", "In Stock")      -- string
+
+wb:set_cell_value("Data", "A2", "Widget")
+wb:set_cell_value("Data", "B2", 29.99)           -- número
+wb:set_cell_value("Data", "C2", true)            -- boolean
+
+wb:set_cell_value("Data", "A3", "Gadget")
+wb:set_cell_value("Data", "B3", 49.99)
+wb:set_cell_value("Data", "C3", false)
+
+-- Referencias de celda soportan columnas mas alla de Z
+wb:set_cell_value("Data", "AA1", "Extended Column")
+wb:set_cell_value("Data", "AB100", "Far cell")
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -182,23 +157,19 @@ end
 
 **Devuelve:** `error`
 
-### Obtención de todas las filas
+### Obtener Todas las Filas
 
-Lee todas las filas de una hoja en un array bidimensional:
+Obtiene todas las filas de una hoja como array 2D.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then return nil, sheet_err end
-for _, cell in ipairs({
-    {"A1", "Name"}, {"B1", "Score"},
-    {"A2", "Alice"}, {"B2", 95},
-    {"A3", "Bob"}, {"B3", 87}
-}) do
-    local set_err = wb:set_cell_value("Report", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Name")
+wb:set_cell_value("Report", "B1", "Score")
+wb:set_cell_value("Report", "A2", "Alice")
+wb:set_cell_value("Report", "B2", 95)
+wb:set_cell_value("Report", "A3", "Bob")
+wb:set_cell_value("Report", "B3", 87)
 
 local rows, err = wb:get_rows("Report")
 if err then
@@ -224,11 +195,11 @@ end
 
 **Devuelve:** `string[][], error`
 
-Todos los valores de celda se devuelven como cadenas. Los booleanos usan `"TRUE"` o `"FALSE"`, y los números su representación como cadena.
+Todos los valores de celda se devuelven como strings. Booleanos como "TRUE" o "FALSE", numeros como representacion string.
 
-### Streaming de filas
+### Stream de Filas
 
-`wb:rows(sheet)` abre un cursor que decodifica las filas de la hoja de forma incremental, mientras que `get_rows` materializa toda la hoja. Al abrir el libro se sigue leyendo toda la entrada XLSX y pueden conservarse metadatos del libro y cadenas compartidas, por lo que el proceso no usa memoria constante de principio a fin:
+`wb:rows(sheet)` abre un cursor de streaming sobre una hoja. La hoja se decodifica incrementalmente en memoria constante, a diferencia de `get_rows` que materializa la hoja completa:
 
 ```lua
 local cursor, err = wb:rows("Report")
@@ -239,18 +210,17 @@ end
 while true do
     local batch, err = cursor:read(500)
     if err then
-        local _ = cursor:close()
+        cursor:close()
         return nil, err
     end
     if not batch then
-        break                       -- end of sheet
+        break                       -- fin de la hoja
     end
     for _, row in ipairs(batch) do
         process(row)
     end
 end
-local close_err = cursor:close()
-if close_err then return nil, close_err end
+cursor:close()
 ```
 
 | Método | Descripción |
@@ -260,36 +230,26 @@ if close_err then return nil, close_err end
 
 Los valores de celda se formatean de forma idéntica a `get_rows`. Las filas vacías se devuelven como tablas vacías, y las filas vacías finales se preservan en lugar de recortarse. Tras el final de la hoja o un error, las lecturas posteriores siguen devolviendo ese mismo estado.
 
-## Operaciones con archivos
+## Operaciones de Archivo
 
-### Escritura en un archivo
+### Escribir a Archivo
 
-Escribe un libro en un objeto writer:
+Escribe libro de trabajo a un objeto writer.
 
 ```lua
 local fs = require("fs")
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
--- Build report
-local _, sheet_err = wb:new_sheet("Monthly Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-for _, cell in ipairs({
-    {"A1", "Month"}, {"B1", "Revenue"},
-    {"A2", "January"}, {"B2", 45000},
-    {"A3", "February"}, {"B3", 52000}
-}) do
-    local set_err = wb:set_cell_value("Monthly Report", cell[1], cell[2])
-    if set_err then
-        wb:close()
-        return nil, set_err
-    end
-end
+-- Construir reporte
+wb:new_sheet("Monthly Report")
+wb:set_cell_value("Monthly Report", "A1", "Month")
+wb:set_cell_value("Monthly Report", "B1", "Revenue")
+wb:set_cell_value("Monthly Report", "A2", "January")
+wb:set_cell_value("Monthly Report", "B2", 45000)
+wb:set_cell_value("Monthly Report", "A3", "February")
+wb:set_cell_value("Monthly Report", "B3", 52000)
 
--- Write to file
+-- Escribir a archivo
 local vol, err = fs.get("app:output")
 if err then
     wb:close()
@@ -302,82 +262,83 @@ if err then
     return nil, err
 end
 
-local write_err = wb:write_to(file)
-local file_close_err = file:close()
-local wb_close_err = wb:close()
-if write_err then return nil, write_err end
-if file_close_err then return nil, file_close_err end
-if wb_close_err then return nil, wb_close_err end
+local err = wb:write_to(file)
+file:close()
+wb:close()
+
+if err then
+    return nil, err
+end
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `writer` | File | Debe implementar io.Writer (por ejemplo, fs.File) |
+| `writer` | File | Debe implementar io.Writer (ej., fs.File) |
 
 **Devuelve:** `error`
 
-`write_to` no cierra el writer. Cierra el archivo por separado, como en el ejemplo.
+### Serializar a una Cadena
 
-### Serialización a bytes
-
-Serializa el libro como un archivo `.xlsx` completo en una cadena binaria Lua:
+Renderiza el libro de trabajo en una cadena de bytes `xlsx`, sin sistema de archivos ni writer. Úselo para entregar un libro de trabajo a una respuesta HTTP, un almacén de objetos o un mensaje de cola.
 
 ```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
 local data, err = wb:bytes()
+wb:close()
 if err then
     return nil, err
 end
 
--- For example, return `data` in an HTTP response or upload it to object storage.
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
 ```
 
 **Devuelve:** `string, error`
 
-El libro permanece abierto y puede seguir usándose después de `bytes()`. El archivo completo se materializa en memoria; para libros grandes, usa `write_to` cuando haya un writer disponible.
+Todo el libro de trabajo se materializa en memoria. `write_to` construye el mismo búfer en memoria y luego lo copia al writer, así que ahorra la cadena Lua pero no transmite en streaming un libro de trabajo grande.
 
-### Cierre de un libro
+Llamar a `bytes()` sobre un libro de trabajo cerrado devuelve un error `errors.INTERNAL`.
 
-Cierra un libro y libera sus recursos:
+### Cerrar Libro de Trabajo
+
+Cierra libro de trabajo y libera recursos.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
--- ... work with workbook ...
-local close_err = wb:close()
-if close_err then return nil, close_err end
+local wb = excel.new()
+-- ... trabajar con libro de trabajo ...
+wb:close()
 
--- Safe to call multiple times
-local second_close_err = wb:close()
-if second_close_err then return nil, second_close_err end
+-- Seguro llamar multiples veces
+wb:close()
 ```
 
 **Devuelve:** `error`
 
 ## Errores
 
-| Condición | Clase | Reintentable |
+| Condición | Tipo | Reintentable |
 |-----------|------|--------------|
-| No hay contexto en `new` u `open` | `errors.INTERNAL` | no |
-| Archivo Excel no válido o vacío en `open` | `errors.INTERNAL` | no |
-| Receptor de libro no válido en `new_sheet`, `get_sheet_list`, `get_rows`, `rows` o `bytes` | `errors.INVALID` | no |
-| Receptor de libro no válido en `set_cell_value`, `write_to` o `close` | `errors.INTERNAL` | no |
-| Libro cerrado en `rows` | `errors.INVALID` | no |
-| Libro cerrado en otras operaciones | `errors.INTERNAL` | no |
-| Error al crear la hoja | `errors.INTERNAL` | no |
-| Falta la hoja en `rows` | `errors.INVALID` | no |
-| Falta la hoja en `get_rows` o `set_cell_value` | `errors.INTERNAL` | no |
-| Referencia de celda no válida | `errors.INTERNAL` | no |
-| Writer no válido o error de escritura | `errors.INTERNAL` | no |
-| Cursor de filas no válido o cerrado en `read`, o tamaño de lote inferior a 1 | `errors.INVALID` | no |
-| Cursor de filas no válido en `close` | `errors.INTERNAL` | no |
-| Error de lectura de filas, cierre del cursor o cancelación del contexto | `errors.INTERNAL` | no |
+| Sin contexto | `errors.INTERNAL` | no |
+| Libro de trabajo invalido | `errors.INVALID` | no |
+| Libro de trabajo cerrado | `errors.INTERNAL` (`errors.INVALID` desde `rows`) | no |
+| No es un writer (`write_to`) | `errors.INTERNAL` | no |
+| No es un reader (`open`) | lanzado como error de argumento | no |
+| Archivo Excel invalido | `errors.INTERNAL` | no |
+| Hoja no existente | `errors.INTERNAL` (`errors.INVALID` desde `rows`) | no |
+| Referencia de celda invalida | `errors.INTERNAL` | no |
+| Escritura fallida | `errors.INTERNAL` | no |
 
-Pasar a `open` un valor que no sea un `io.Reader`, o a `write_to` un valor que no sea userdata, genera un error de argumento Lua en lugar de devolver un error estructurado. Un userdata de writer que no implementa `io.Writer` devuelve `errors.INTERNAL`. Un lote de filas mayor que 10 000 se limita a 10 000 en lugar de rechazarse.
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
 
-Al cerrar un libro también se cierran sus cursores de filas abiertos. Los libros se cierran automáticamente cuando se limpia su contexto de ejecución Lua, pero las llamadas explícitas a `close()` liberan antes los recursos.
+## Vea También
 
-Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.
-
-## Véase también
-
-- [Sistema de archivos](lua/storage/filesystem.md) - Operaciones para leer y escribir archivos de Excel
+- [Sistema de Archivos](lua/storage/filesystem.md) - Operaciones de archivo para leer/escribir archivos Excel

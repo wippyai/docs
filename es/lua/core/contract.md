@@ -1,6 +1,6 @@
 ---
 title: "Contratos"
-description: "Abre bindings de servicios tipados, inspecciona contratos, llama implementaciones y propaga el contexto de llamada o seguridad."
+description: "Invocar servicios a traves de contratos tipados. Llamar APIs remotas, flujos de trabajo y funciones con validacion de esquema y soporte de ejecución…"
 ---
 
 # Contratos
@@ -91,10 +91,8 @@ end
 |-------|------|-------------|
 | `name` | string | Nombre del método |
 | `description` | string | Descripción del método |
-| `input_schemas` | table[] o nil | Definiciones de esquema de entrada; se omite si está vacío |
-| `output_schemas` | table[] o nil | Definiciones de esquema de salida; se omite si está vacío |
-
-Cada elemento de esquema contiene un string `format` y puede incluir un valor `definition`.
+| `input_schemas` | table[] | Definiciones de esquema de entrada (ausente cuando el método no declara ninguno) |
+| `output_schemas` | table[] | Definiciones de esquema de salida (ausente cuando el método no declara ninguno) |
 
 ## Encontrar Implementaciones
 
@@ -254,7 +252,12 @@ errores reintentables disparan reintentos; los demás vuelven de inmediato.
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `retry.max_attempts` | int | Intentos máximos incluyendo el primero (1 desactiva reintentos) |
-| `retry.initial_delay` | int/duration | Retardo antes del primer reintento (ms o cadena de duración) |
+| `retry.initial_delay` | int/duration | Retardo antes del primer reintento (ms o cadena de duración), por defecto `100` |
+| `retry.max_delay` | int/duration | Límite superior del retardo de backoff (ms o cadena de duración), por defecto `10s` |
+| `retry.backoff_factor` | number | Multiplicador aplicado al retardo tras cada intento, por defecto `2.0` |
+| `retry.jitter` | number | Fracción de jitter aleatorio aplicada a cada retardo, por defecto `0.1` |
+| `retry.retry_kinds` | string[] | Reintentar solo los errores de estos tipos; por defecto se reintenta cualquier tipo excepto `Invalid`, `PermissionDenied` e `Internal` |
+| `retry.skip_kinds` | string[] | Nunca reintentar los errores de estos tipos |
 
 ## Contexto de Seguridad
 
@@ -298,5 +301,4 @@ Sin `with_actor`/`with_scope` explícitos, un contrato abierto hereda el actor y
 | Método no encontrado | `errors.NOT_FOUND` |
 | Sin binding por defecto | `errors.NOT_FOUND` |
 | Permiso denegado | `errors.PERMISSION_DENIED` |
-| Fallo del dispatcher del contrato o de conversión de respuesta | `errors.INTERNAL` |
-| La implementación devolvió un error | Conserva el tipo de error de la implementación |
+| Llamada fallida | tipo del error de la implementación (preservado); `errors.INTERNAL` para fallos de despacho |

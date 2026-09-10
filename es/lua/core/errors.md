@@ -1,6 +1,6 @@
 ---
 title: "Errores"
-description: "Crea, envuelve, inspecciona y clasifica errores estructurados en entradas Lua."
+description: "Manejo de errores estructurados con categorizacion y metadatos de reintento. Tabla global errors disponible sin require."
 ---
 
 # Errores

@@ -1,6 +1,6 @@
 ---
-title: "Motor de plantillas"
-description: "Configure conjuntos de plantillas Jet, fuentes, nombres, herencia y ajustes compartidos del motor."
+title: "Motor de Plantillas"
+description: "Renderizado de plantillas usando CloudyKit Jet."
 ---
 
 # Motor de Plantillas
@@ -33,9 +33,9 @@ Toda la configuración del conjunto de plantillas es opcional:
 | `engine.development_mode` | bool | false | Deshabilitar caché de plantillas |
 | `engine.delimiters.left` | string | `{{` | Delimitador de apertura de variable |
 | `engine.delimiters.right` | string | `}}` | Delimitador de cierre de variable |
-| `engine.delimiters.comment_left` | string | `{*` | Delimitador de apertura de comentario validado; el loader actual no lo aplica |
-| `engine.delimiters.comment_right` | string | `*}` | Delimitador de cierre de comentario validado; el loader actual no lo aplica |
-| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Lista de extensiones validada; el loader actual no la usa para descubrir plantillas |
+| `engine.delimiters.comment_left` | string | `{*` | Solo se valida; los comentarios siempre usan el `{*` de Jet |
+| `engine.delimiters.comment_right` | string | `*}` | Solo se valida; los comentarios siempre usan el `*}` de Jet |
+| `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Solo se valida; la búsqueda por nombre siempre prueba los `.jet`, `.html.jet`, `.jet.html` integrados de Jet |
 | `engine.globals` | map | - | Variables disponibles para todas las plantillas |
 
 En tiempo de ejecución, `development_mode`, los delimitadores izquierdo y derecho de expresiones y `globals` configuran el conjunto Jet. Los campos de delimitadores de comentarios y extensiones se aceptan y validan en esta versión, pero el loader Jet en memoria no los aplica. Cambiarlos no altera el análisis ni descubre plantillas.

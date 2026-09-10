@@ -125,7 +125,7 @@ pool:
   max_size: 16       # Upper scaling bound
 ```
 
-100-worker 기본값은 암시적으로 선택된 풀(`type`을 설정하지 않은 경우)에만 적용됩니다. `type: lazy` 또는 `type: adaptive`를 명시하고 `max_size`를 생략하면 기본 최대값은 16 workers입니다.
+워커 100개 기본값은 암묵적으로 선택된 풀(`type`이 설정되지 않은 경우)에만 적용됩니다. `max_size` 없이 `type: lazy` 또는 `type: adaptive`를 명시적으로 설정하면 기본 최대값은 워커 16개입니다.
 
 ### 워커 클래스와 코어 어피니티
 
@@ -196,6 +196,8 @@ if err then return nil, err end
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -203,22 +205,26 @@ if err then return nil, err end
 
 ## 실행 제한
 
-실행 시간을 제한하고 linear memory를 너무 많이 유지하는 warm instance를 재활용합니다.
+`limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
 
 ```yaml
 limits:
   max_execution_ms: 5000
-  max_retained_memory_bytes: 67108864
-  retained_memory_check_interval: 16
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
 | 필드 | 기본값 | 설명 |
 |-------|---------|-------------|
-| `max_execution_ms` | `0` | 최대 호출 시간(밀리초); `0`은 timeout 비활성화 |
-| `max_retained_memory_bytes` | 64 MiB | 호출 후 retained memory가 이 값을 넘으면 warm worker instance를 재활용; 명시적 `0`은 재활용 비활성화 |
-| `retained_memory_check_interval` | 아래 참조 | retained-memory 검사 사이의 완료된 호출 수 |
+| `max_execution_ms` | 무제한 | 한 번의 호출에 대한 실제 경과 시간 예산. 초과하면 실행이 취소되고 오류가 반환됩니다. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | 호출 후 재활용 트리거. 선형 메모리가 이 값을 초과한 웜 워커는 재사용되지 않고 호출 후 폐기됩니다. 명시적인 `0`은 유지 메모리 재활용을 비활성화합니다. |
+| `retained_memory_check_interval` | 기본 제한 사용 시 `16`, 명시적 제한 사용 시 매 호출 | 호출 후 메모리 검사 사이의 호출 횟수. |
+| `max_open_sockets` | `16` | `socket` 호스트에 대한 인스턴스당 동시 연결 수. |
+| `socket_timeout_ms` | `30000` | `socket` 다이얼 및 각 송수신에 대한 데드라인. |
 
-실행 시간 제한을 넘으면 호출이 취소되고 오류를 반환합니다. 기본 64 MiB retained-memory 제한은 16회 호출마다 검사합니다. `max_retained_memory_bytes`를 양수로 명시하고 interval을 생략하면 런타임은 매 호출 후 검사합니다. 검사 비용을 분산하려면 양수 interval을 설정하십시오.
+음수 값은 부팅 시 거부됩니다.
 
 ## WASI 설정
 
@@ -304,7 +310,7 @@ if filter_err then return nil, filter_err end
 
 ### WASI Clocks를 사용한 비동기 슬립
 
-`wasi:clocks`, `wasi:io` 및 별도의 `wasi:poll` 프로필을 import하는 WASM 컴포넌트는 clock과 polling을 사용할 수 있습니다. 비동기 yield 메커니즘은 Wippy dispatcher와 통합됩니다.
+`wasi:clocks`, `wasi:io`, `wasi:poll`을 임포트하는 WASM 컴포넌트는 클럭과 폴링을 사용할 수 있습니다. 비동기 양보 메커니즘은 Wippy 디스패처와 통합됩니다:
 
 ```yaml
   - name: sleep_ms

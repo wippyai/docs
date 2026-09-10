@@ -48,6 +48,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -66,11 +73,6 @@ entries:
       - name: process_host
         value: app:processes
 
-  - name: dep.security
-    kind: ns.dependency
-    component: wippy/security
-    version: "*"
-
   - name: dep.terminal
     kind: ns.dependency
     component: wippy/terminal
@@ -81,7 +83,12 @@ entries:
     meta:
       command:
         name: ask
-        short: Ask one question
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -95,6 +102,10 @@ El módulo LLM necesita dos entradas de infraestructura:
 - `env.storage.os` proporciona claves API desde variables de entorno.
 - `process.host` proporciona el runtime de procesos que el módulo LLM usa internamente.
 
+La dependencia `wippy/terminal` proporciona el `terminal.host` en el que se ejecutan los comandos y donde escribe `io.print`.
+
+`meta.command` da al proceso un nombre para que `wippy run ask` lo lance con los argumentos restantes como payloads de tipo string. Su bloque `security` instala el actor y el scope de política para ese lanzamiento: el módulo LLM resuelve modelos desde el registro, y un comando lanzado sin un scope no lee nada de él.
+
 ### Código de Generación
 
 Crea `src/ask.lua`:
@@ -103,17 +114,9 @@ Crea `src/ask.lua`:
 local io = require("io")
 local llm = require("llm")
 
-local function main()
-    io.write("Question: ")
-    io.flush()
-    local question = io.readline()
-    if not question or question == "" then
-        io.print("A question is required")
-        return 1
-    end
-
-    local response, err = llm.generate(question, {
-        model = "gpt-4o-mini",
+local function main(input)
+    local response, err = llm.generate(input, {
+        model = "gpt-4.1-nano",
         temperature = 0.7,
         max_tokens = 512,
     })
@@ -163,20 +166,18 @@ El módulo LLM resuelve modelos desde el registro. Agrega una entrada de modelo 
 
 ```bash
 wippy init
-wippy update
-wippy install
-wippy run ask
+wippy run ask "What is the capital of France?"
 ```
 
-Introduce `What is the capital of France?` en el prompt. La definición del modelo selecciona el proveedor y el nombre de modelo enviado a su API.
+Esto ejecuta el proceso `ask` en el host de terminal con la pregunta como argumento e imprime el resultado. La definición del modelo le indica al módulo LLM qué proveedor usar y qué nombre de modelo enviar a la API.
 
 ## Fase 2: Conversaciones
 
-Pasa de una sola llamada a una conversación multi-turno usando el constructor de prompts. Cambia la entrada de una función a un proceso con E/S de terminal.
+Pasa de una sola llamada a una conversación multi-turno usando el constructor de prompts. Registra el proceso como un comando con nombre.
 
 ### Actualizar Definiciones de Entradas
 
-Reemplaza la entrada `ask` con un proceso `chat`. Conserva la entrada `dep.terminal` de la fase 1:
+Reemplaza la entrada `ask` con un proceso `chat`:
 
 ```yaml
   - name: chat
@@ -185,6 +186,11 @@ Reemplaza la entrada `ask` con un proceso `chat`. Conserva la entrada `dep.termi
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -305,6 +311,11 @@ Cambia al framework de agentes. Actualiza los imports de la entrada:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -812,11 +823,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

@@ -1,6 +1,6 @@
 ---
 title: "Verschlüsselung & Signierung"
-description: "Zufallswerte erzeugen, Daten authentifizieren und verschlüsseln, JWTs prüfen und Schlüssel ableiten."
+description: "Kryptografische Operationen einschließlich Verschlüsselung, HMAC, JWT und Schlüsselableitung. Angepasst für Workflows."
 ---
 
 # Verschlüsselung & Signierung
@@ -184,7 +184,7 @@ local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
 | `token` | string | Zu verifizierender JWT-Token |
 | `key` | string | Secret (HMAC) oder PEM-öffentlicher Schlüssel (RSA) |
 | `alg` | string? | Erwarteter Algorithmus (Standard: HS256) |
-| `require_exp` | boolean? | Vorhandensein eines `exp`-Claims verlangen (Standard: true) |
+| `require_exp` | boolean? | Verlangt, dass ein `exp`-Claim vorhanden ist (Standard: true); ein vorhandener `exp` wird immer validiert |
 
 **Gibt zurück:** `table, error`
 

@@ -1,105 +1,116 @@
 ---
-title: "Host-less Mode"
-description: "Web Host なしで Wippy Micro Frontend App と Web Component を実行・test する方法。"
+title: "ホストレスモード"
+description: "すべての Wippy マイクロフロントエンドアプリと Web コンポーネントを、Wippy Web ホストに包まれることなくビルド・実行・テストできるようにする、スタンドアロン対応の設計契約の権威あるガイド…"
 ---
 
-# ホストレスモード :id=host-less-mode
+# ホストレスモード
 
-Host-less mode では、Wippy Web Host の wrapper なしで Wippy Micro Frontend App または Web Component を build、実行、test できます。
+すべての Wippy マイクロフロントエンドアプリと Web コンポーネントを、Wippy Web ホストに包まれること**なく**ビルド・実行・テストできるようにする、スタンドアロン対応の設計契約の権威あるガイドです。
 
-> **既定の injection state:** dev overlay は `themeConfig`、`primevue`、`markdown`、`iframe` を**無効**、`customCss` と `customVariables` を**有効**にして開始します。custom override だけに依存する app は動作して見えても、platform theme variable や PrimeVue style を期待する app は injection を有効にするまで style なしで描画されます。overlay FAB を開き、必要な injection を有効にし、「Auto-accept on reload」を選んで reload 後も維持します。
+> **インジェクションの初期状態:** 開発オーバーレイは `themeConfig`、`primevue`、`markdown`、`iframe` を**無効**、`customCss` と `customVariables` を**有効**な状態で始まります。そのため、カスタムのオーバーライドだけに依存するアプリは一見動いているように見える一方、プラットフォームのテーマ変数や PrimeVue のスタイルを期待するアプリは、それらのインジェクションを有効にするまでスタイルなしで表示されます。オーバーレイの FAB を開き → 必要なインジェクションを有効にし → 「Auto-accept on reload」にチェックを入れるとリロードをまたいで保持されます。
 
 ---
 
 ## 目次
 
-- [Mental model — app と WC は standalone-aware](#mental-model-apps-and-wcs-are-standalone-aware)
-- [`@wippy/scripts` switchpoint — 一つの tag、二つの boot path](#the-wippyscripts-switchpoint-one-tag-two-boot-paths)
-- [`dev-proxy.js` の動作](#what-dev-proxyjs-actually-does)
-- [dev overlay（config modal）](#the-dev-overlay-config-modal)
-- [Host stub — standalone `host` API](#host-stubs-the-standalone-host-api)
-- [Web Component — host-less playground と test](#web-components-host-less-playground-and-tests)
-- [一般的な逸脱と見分け方](#common-deviations-and-how-to-spot-them)
+- [メンタルモデル — アプリと WC は意図的にスタンドアロン対応](#mental-model--apps-and-wcs-are-intentionally-standalone-aware)
+- [`@wippy/scripts` の分岐点 — 1つのタグ、2つのブートパス](#the-wippyscripts-switchpoint--one-tag-two-boot-paths)
+- [`dev-proxy.js` が実際に行うこと](#what-dev-proxyjs-actually-does)
+- [開発オーバーレイ（設定モーダル）](#the-dev-overlay-config-modal)
+- [ホストスタブ — スタンドアロンの `host` API](#host-stubs--the-standalone-host-api)
+- [Web コンポーネント — ホストレスのプレイグラウンドとテスト](#web-components--host-less-playground-and-tests)
+- [よくある逸脱と見分け方](#common-deviations-and-how-to-spot-them)
 - [トラブルシューティング](#troubleshooting)
 - [関連ドキュメント](#related-docs)
 
 ---
 
-## メンタルモデル — アプリと WC はスタンドアロン対応 :id=mental-model-apps-and-wcs-are-standalone-aware
+## メンタルモデル — アプリと WC は意図的にスタンドアロン対応
 
-すべての Wippy Micro Frontend App と Web Component は一つの runtime constraint に従います。
+すべての Wippy マイクロフロントエンドアプリと Web コンポーネントは、小さくかつ意図的な制約を軸に構築されています。
 
-> **runtime contract は proxy API surface です。**
+> **ランタイムの契約はプロキシ API のサーフェスだけです。それ以外は何もありません。**
 
-実際には次を意味します。
+実際にはこういう意味です。
 
-- app/WC が runtime に触れるのは `@wippy-fe/proxy` から import する sync getter（`host`、`api`、`on`、`config`、`state`、`ws`、`logger`）だけです。どちらも同じ import を使い、runtime が internal global（`window.$W`、`window.__WIPPY_APP_API__`。直接読まない）として install した同じ `ProxyApiInstance` に解決されます。
-- app/WC は隣の app、parent module の Lua side、Wippy Web Host、別 project module の code を import しません。独自 folder に置きます。Vite は pin した target-host `import-map.json` の全 key から Rollup external を導出し、`package.json` は artifact が実際に import する npm dependency と peer root だけを宣言します。
-- 同じ `app.ts`（WC は `index.ts`）が二つの environment で起動します。
-  1. **Hosted** — Wippy Web Host が `proxy.js`、AppConfig、importmap、CSS を注入。
-  2. **Host-less** — Vite dev server、unit-test page、Storybook 型 playground、別の HTTP development host で `app.html` を実行。
+- アプリや WC が実行時に触れるのはプロキシ API のサーフェスだけです。`@wippy-fe/proxy` から import する同期ゲッター（`host`、`api`、`on`、`config`、`state`、`ws`、`logger`）です。アプリも WC も同じ import を使います。内部的には、ランタイムが内部グローバル（`window.$W`、`window.__WIPPY_APP_API__` — これらを直接読んではいけません）としてインストールする同じ `ProxyApiInstance` へ解決されます。
+- アプリと WC は、隣接するアプリ、親モジュールの Lua 側、Wippy Web ホスト、別のプロジェクトモジュールからコードを import **しません**。それぞれが自分のフォルダーの中で完結します。Vite はすべての Rollup external を、ピン留めされた対象ホストの `import-map.json` から導出します。`package.json` は、アーティファクトが実際に import する npm の依存関係とピアのルートだけを宣言します。
+- 同じ `app.ts`（または WC の `index.ts`）が、2つの環境で正しく起動します。
+  1. **ホストあり** — `proxy.js`、AppConfig、importmap、CSS を注入する Wippy Web ホストの内側。
+  2. **ホストレス** — `app.html` を Vite の開発サーバー、file://、ユニットテストページ、Storybook 風のプレイグラウンドなどから直接実行。
 
-各 app/WC は standardized I/O surface を持つ小さな program です。Host は runtime の一つで、standalone も別の runtime です。application code が両者を判別する必要はありません。
+すべてのアプリ／WC は「ごく標準化された小さな I/O サーフェスを持つ小さなプログラム」と考えられます。ホストは可能なランタイムのひとつであり、スタンドアロンはもうひとつです。アプリのコードは、自分がどちらにいるのかを知りません。
 
-これにより full Wippy backend なしの local frontend iteration、Vitest/jsdom の isolated WC unit test、module 間で共有する app、rebuild せず metadata（theming、import map、environment）を patch する customer-specific overlay を実現できます。
+これは偶然でも後付けでもありません。これにより次が可能になります。
+- Wippy バックエンド一式を立ち上げずにローカルで FE を反復開発すること。
+- vitest + jsdom の下で WC を単体でユニットテストできること。
+- Wippy モジュール間でアプリを共有できること — どのモジュールが同梱するかに関わらず、すべてのマイクロフロントエンドアプリと Web コンポーネントが同じツールチェーンでビルドされます。
+- 顧客固有のオーバーレイが成立すること — オペレーターは FE バンドルを再ビルドせずにメタデータ（テーミング、importmap、env）をパッチできます。
 
 ---
 
-## `@wippy/scripts` の切り替えポイント — 一つのタグ、二つのブート経路 :id=the-wippyscripts-switchpoint-one-tag-two-boot-paths
+## `@wippy/scripts` の分岐点 — 1つのタグ、2つのブートパス
 
-canonical app の `app.html` には、load 時に boot path を決める script tag が**一つ**あります。次は body/boot の省略例です。[Import-map snapshot algorithm](./build-system.md#import-map-snapshot-algorithm) の完全で有効な response を挿入し、pin 済み Web Host tag の変更時に更新します。
+正典のアプリの `app.html` は、読み込み時にブートパスを決める **1つ**のスクリプトタグを同梱します。
+
+これは body/boot を短縮した例です。[インポートマップのスナップショットアルゴリズム](./build-system.md#import-map-snapshot-algorithm) が説明する完全で妥当なインポートマップのレスポンスを挿入し、ピン留めした Web ホストのタグが変わったら更新してください。
 
 ```html
-<!-- URL MUST include a release-tag segment: https://web-host.wippy.ai/<release-tag>/dev-proxy.js -->
+<!-- URL にはリリースタグのセグメントが必須: https://web-host.wippy.ai/<release-tag>/dev-proxy.js -->
 <script
     src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"
     data-role="@wippy/scripts"
 ></script>
 ```
 
-完全な `app.html` scaffold は [Micro Frontend App](./micro-frontend-app.md) にあります。
+`app.html` の完全なスキャフォールドは [マイクロフロントエンドアプリ](./micro-frontend-app.md) にあります。
 
-| 属性 | 役割 | 使用者 |
+この1つのタグに付く2つの属性が、デュアルモード契約のすべてを担います。
+
+| 属性 | 役割 | 使うのは |
 |---|---|---|
-| `data-role="@wippy/scripts"` | Host の marker。Host は iframe を配信する前にこの `<script>` を削除し、その位置より前へ自身の `loading.js`、`proxy.js`、importmap、AppConfig を注入します。hosted mode では element が消えます。 | Wippy Web Host |
-| `src="…/dev-proxy.js"` | ホストがない場合のフォールバック URL。ブラウザーが直接 `dev-proxy.js` を読み、ページを起動します。ホストモードでは要素自体がないため `src=` は無関係です。 | スタンドアロンのブラウザー読み込み |
+| `data-role="@wippy/scripts"` | ホスト向けのマーカー。存在する場合、ホストは iframe を配信する前にこの `<script>` 要素を削除し、マーカーの**前**に自身の `loading.js` + `proxy.js` + importmap + AppConfig を注入します。ホストありモードではこの要素は消えます。 | Wippy Web ホスト |
+| `src="…/dev-proxy.js"` | フォールバック URL。ホストが存在しないときに使われます — ブラウザーが `dev-proxy.js` を直接読み込み、そのスクリプトがページをブートストラップします。ホストありモードでは `src=` 属性は無関係です（`<script>` 要素はもう存在しません）。 | スタンドアロンでのブラウザー読み込み |
 
-environment に合う URL を選びます。path には release-tag segment が必須で、facade の `fe_facade_url` と同じ release を使います。Host root 直下の `/dev-proxy.js` は無効です。`/<release-tag>/dev-proxy.js` へ pin してください。同じ bundle を local iteration、CI、共有 preview link に使えます。
+**環境に合った URL を選んでください。** **Web ホストの URL はパスに常にリリースタグのセグメントを必要とする**点に注意してください — ホストのルート直下の `/dev-proxy.js` は妥当では**ありません**。特定のビルド（`/<release-tag>/dev-proxy.js`）を指定する必要があります。これにより、開発モードのすべてのブートが既知で再現可能なバンドルにピン留めされ、「一晩でホストの CDN が更新されてプレビューが壊れた」種の驚きを避けられます。
 
-| 環境 | `src=` の例 |
+| 環境 | `src=` の値の例 |
 |---|---|
-| Public CDN（標準） | `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` |
-| Self-hosted Wippy deployment | `https://<your-wippy-host>/<release-tag>/dev-proxy.js` |
+| 公開 CDN（標準） | `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` |
+| セルフホストの Wippy デプロイ | `https://<your-wippy-host>/<release-tag>/dev-proxy.js` |
 
-同じ HTML element が Host の script-injection anchor と host-less fallback boot を兼ねます。
+タグは、ファサードの `fe_facade_url` が使用するリリースバージョンと一致していなければなりません。明示的にピン留めしてください — タグセグメントのない `/dev-proxy.js` は妥当ではありません。同じバンドルが、ローカルでの反復開発、CI、共有可能なプレビューリンクで動作します。
 
-### importmap に入れるもの
+つまり、同じ1行の HTML が、ホストにとっての「ここにスクリプトを注入せよ」というアンカーで*あり*、同時にホストレスのフォールバックブートでもあります — 条件分岐は一切ありません。
 
-development 中に一度、`fe_facade_url` と `dev-proxy.js` と同じ tag の完全な map を取得します。
+### importmap には何を入れるのか？
+
+開発中に一度だけ完全なマップを取得します。`fe_facade_url` および `dev-proxy.js` と同じタグを使ってください。
 
 ```bash
 curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/import-map.json" -o import-map.json
 ```
 
-取得した JSON response を verbatim で `app.html` の `<script type="importmap">` text に設定します。JSON 内へ comment、ellipsis placeholder、手書きの置換を入れません。[Build and Dependency Contract](./build-system.md#import-map-snapshot-algorithm) が snapshot/provenance requirement を定義し、取得した release response が正確な `imports` object を提供します。
+`app.html` の `<script type="importmap">` 要素のテキストには、取得した JSON レスポンスをそのまま設定します。その JSON の中にコメント、省略記号のプレースホルダー、手書きの代替を入れないでください。[ビルドと依存関係の契約](./build-system.md#import-map-snapshot-algorithm) がスナップショットと出所の要件を定義し、取得したリリースのレスポンスが正確な `imports` オブジェクトを提供します。
 
-- 未使用も含む**取得した全 key**を Rollup external にする。
-- 同じ完全な key/value object を `app.html` に保持し、`esm.sh` で再構築しない。
-- import した specifier の exact key がない場合だけ bundle する。
-- Web Host tag の変更時、または dependency 追加時に再取得して external 化可否を確認する。
+慣習:
+- **取得したすべてのキー**を Rollup の externals に入れます。現在使っていないキーも含みます。
+- `app.html` にも同じ完全なキー／値のオブジェクトを保ちます。`esm.sh` で再構成しないでください。
+- import した指定子は、その正確なキーが存在しない場合にのみバンドルします。
+- Web ホストのタグが変わったとき、または新しい依存関係を追加したときは、その正確な指定子を external にできるか確認するため再取得します。
 
-standalone `app.html` は copy した完全な map を解決し、hosted mode は同じ pin 済み release が配信する map を使います。
+スタンドアロンの `app.html` は、コピーした完全なマップを解決します。ホストありモードでは、同じピン留めされたリリースが配信するマップを使います。
 
-### `package.json` を dev-proxy へ公開する標準構成
+### dev-proxy へ `package.json` を公開する（正典のスキャフォールド）
 
-各 app の `package.json` には runtime default を決める metadata（proxy injection、page theme override、iconify collection など）があります。hosted mode では Host が registry から読み、host-less mode では dev-proxy に同じ data が必要です。
+すべての Wippy アプリの `package.json` は、ランタイムのデフォルトを決めるメタデータを持ちます。プロキシインジェクション（`wippy.proxy.injections.css.*`）、ページごとのテーミングオーバーライド（`wippy.configOverrides.customization`）、iconify のアイコンコレクションなどです。ホストありモードでは、ホストがこれらをレジストリから読みます。ホストレスモードでは、同じデフォルトを適用するために dev-proxy が同じデータを必要とします。
 
-canonical pattern は、整合する現在の `@wippy-fe/vite-plugin` family（公開時 `0.0.56`）の `wippyPagePlugin()` を `vite.config.ts` に一度追加する方法です。plugin は build 時に `package.json` を読み、次を行います。
+正典のパターンは、整合性のある現行の `@wippy-fe/vite-plugin` ファミリー（公開時点では `0.0.46`）の `wippyPagePlugin()` を、`vite.config.ts` へ一度追加することです。プラグインはビルド時に `package.json` を読み、**2つ**のことを行います。
 
-1. `wippy` block 内の `file://` reference（`"file://<relative>"` 形式の string）を参照 file の UTF-8 content に置換します。[build-system.md](./build-system.md) の `*.do-not-link.<ext>` naming convention を参照してください。
-2. 解決済み JSON を二つ出力します。
-   - host-less/dev-proxy boot 用に `<head>` へ注入する `<script type="application/json" data-role="@wippy/package">`。
-   - wippy-hosted mode 用に実際の Vite output directory に置く `wippy-meta.json`。
+1. `wippy` ブロック内の **`file://` 参照を解決**します（`"file://<relative>"` 形式の文字列値は、参照先ファイルの UTF-8 の内容に置き換えられます — [build-system.md](./build-system.md) の `*.do-not-link.<ext>` 命名規約を参照）。
+2. 解決済みの JSON を持つ**2つの出力を生成**します。
+   - ホストレス／dev-proxy ブート用に `<head>` へ注入される `<script type="application/json" data-role="@wippy/package">`。
+   - Wippy ホストありモード用に、実際の Vite 出力ディレクトリへ置かれる `wippy-meta.json`。
 
 ```ts
 // vite.config.ts
@@ -116,17 +127,17 @@ export default defineConfig({
 })
 ```
 
-HTML entry を持たない ESM-only の **Web Component**（`view.component`）では同 package の `wippyComponentPlugin()` を使います。実際の output directory に `wippy-meta.json` だけを出力し、`transformIndexHtml` は行いません。
+**Web コンポーネント**（`view.component`、ESM のみ — 注入先の HTML エントリがありません）では、同じパッケージの `wippyComponentPlugin()` を使います。これは実際の出力ディレクトリへ `wippy-meta.json` を生成するだけで、`transformIndexHtml` のステップはありません。
 
 ```ts
-// vite.config.ts for a web component
+// Web コンポーネント用の vite.config.ts
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 export default defineConfig({ plugins: [wippyComponentPlugin()] })
 ```
 
-> `wippyPackagePlugin` は deprecated compatibility alias として残っています。新しい page code は `wippyPagePlugin()`、component-only build は `wippyComponentPlugin()` を使います。
+> `wippyPackagePlugin` は非推奨の互換エイリアスとして残っています。新しいページのコードは `wippyPagePlugin()` を使い、コンポーネントのみのビルドは `wippyComponentPlugin()` を使います。
 
-plugin は built `app.html` の `<head>` 先頭へ次を出力します。
+プラグインは、ビルドされた `app.html` の `<head>` 先頭へ次を出力します。
 
 ```html
 <script type="application/json" data-role="@wippy/package">
@@ -134,31 +145,52 @@ plugin は built `app.html` の `<head>` 先頭へ次を出力します。
 </script>
 ```
 
-dev-proxy.js は boot 時に `document.querySelector('script[data-role="@wippy/package"]')` で同期的に読み、`wippy.proxy.injections` を proxy-config default、`wippy.configOverrides.customization` を `appConfig.theming.global` の seed にします。`@wippy-fe/shared` は data-role string `@wippy/package` を `WIPPY_PACKAGE_DATA_ROLE` として export し、両側で同じ constant を共有します。
+dev-proxy.js は起動時に `document.querySelector('script[data-role="@wippy/package"]')` でこれを同期的に読み、`wippy.proxy.injections` でプロキシ設定のデフォルトを、`wippy.configOverrides.customization` で `appConfig.theming.global` を初期化します。data-role の文字列 `@wippy/package` は `@wippy-fe/shared` から `WIPPY_PACKAGE_DATA_ROLE` としてエクスポートされており、境界の両側が定数を共有します。
 
-この形には single source、application code より前の同期 access、`<head>` 先頭への明確な順序、plugin-owned template update、shared constant、hosted compatibility があります。hosted processing は registry server-side metadata を読み、inline JSON tag は standalone development path だけが消費します。tag がなければ `resolveDevConfig()` は `getDefaultProxyConfig()` に fallback し、古い app も generic default で動作します。
+この形にする理由:
+- **重複がない。** `package.json` が唯一の真実の源です — プラグインがビルド時にそれを読み、`src/` の中には参照するものが何もありません。
+- **フェッチがない。** 配信される HTML にインラインで含まれ、アプリのコードが動く前に `dev-proxy.js` が同期的に読めます。
+- **順序が正しい。** どのスクリプトタグよりも前、`<head>` の先頭に注入されるため、dev-proxy が実行される時点で DOM に存在します（dev-proxy は同期の UMD スクリプトで、モジュールスクリプトは defer され後から実行されます）。
+- **`app.html` を編集しない。** テンプレートはきれいなままで、注入はプラグインが所有します。
+- **共有パッケージの定数。** 文字列 `'@wippy/package'` はただ1か所（`@wippy-fe/shared` → `WIPPY_PACKAGE_DATA_ROLE`）に存在します。アプリはそれを直接参照せず、dev-proxy とプラグインの双方がそこから import します。
+- **実ホスト下ではきれいに無視される。** ホストの `processWebPage` はサーバー側でレジストリから `package.json` を読みます。インラインの JSON タグは無害なメタデータです。
 
-> **runtime `window` global でない理由:** dev-proxy.js は `<head>` parsing の早期、module script（`app.ts` を含む）より前に動く non-module synchronous script です。build-time HTML transform なら実行時点で DOM に data があります。
+dev-proxy は `resolveDevConfig()` の間にこの JSON を読み、開発オーバーレイのデフォルトを埋めるのに使います。スクリプトタグが存在しない場合（古いアプリ、プラグイン未追加）、dev-proxy は `getDefaultProxyConfig()` にフォールバックします。したがってプラグインの追加は純粋に追加的であり、それがないアプリも汎用のデフォルトで動き続けます。
 
-> **tag が一つだけの理由:** 二つ目の conditional script は Host injection 後にしか動かず、marker が消えた場合 attach 先がありません。single-tag pattern では source HTML に常に marker があり、Host はそれを削除して置換します。誰も削除しない場合が standalone case です。
+> **なぜランタイムの `window` グローバルではなくプラグインなのか？** dev-proxy.js はモジュールではない同期スクリプトで、`<head>` のパース中の早い段階で実行されます — どのモジュールスクリプト（あなたの `app.ts` を含む）よりも前です。したがって `app.ts` は、dev-proxy が読む*前に*グローバルを設定できません。ビルド時の HTML 変換によってデータを最初から DOM に置くことで、dev-proxy が実行される瞬間に利用可能になります。
 
-`wippy.path` の HTML file は追加 script の injection point となる `<script data-role="@wippy/scripts">` を含む必要があります。selector は `data-role` marker で、classic script が HTML default なので `type="text/javascript"` は任意です。canonical template は `src="…/dev-proxy.js"` を含みます。host-less で動けない limitation を記録する場合を除き、**`src=` fallback を含めてください**。
+> **なぜタグが2つではなく1つなのか？** 2つ目の `<script>` ブロック（例: `if (!window.__WIPPY__) load dev-proxy`）は、ホストの注入が完了した後にしか実行されません。マーカーが消えていれば、その条件分岐には取り付く先がありません。単一タグのパターンなら、マーカーは*常に*ソースの HTML にあり、ホストの仕事はまさに「このマーカーを削除して置き換える」ことになります。スタンドアロンのケースは、誰もそれを削除しなかったときにちょうど発生します。
+
+ホストの契約では、`wippy.path` で指定された HTML ファイルが、追加のスクリプトが自動的に注入される `<script type="text/javascript" data-role="@wippy/scripts">` 要素を含んでいなければなりません。
+
+正典の app-template のアプリは、`src="…/dev-proxy.js"` を埋めた状態で同梱されます。それが推奨される形です。ホストレスで動かせないアプリ（まれで、理由の説明に値します）でない限り、**常に `src=` のフォールバックを含めてください**。
 
 ---
 
-## `dev-proxy.js` の動作 :id=what-dev-proxyjs-actually-does
+## `dev-proxy.js` が実際に行うこと
 
-`dev-proxy.js` は `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` から配信される host-less boot bundle です。real Host と同じ internal global を install し、Host なしでも `@wippy-fe/proxy` getter を解決します。app/WC code は global を直接扱いません。
+`dev-proxy.js` はホストレスのブートバンドルで、Wippy Web ホストの CDN の `https://web-host.wippy.ai/<release-tag>/dev-proxy.js` から配信されます。
 
-おおむね五段階です。
+その役割は、実ホストがインストールするのと同じ内部グローバル（`window.$W`、`window.__WIPPY_APP_API__`）をインストールすることで、ホストがなくても `@wippy-fe/proxy` のゲッターが正しく解決されるようにすることです。アプリと WC のコードはそれらのグローバルに一切触れません。単に `@wippy-fe/proxy` から import すればゲッターが機能します。dev-proxy はおおよそ5つのステップでこれを行います。
 
-1. **history guard を install** — iframe-srcdoc 外で vue-router が browser history を変更しないよう `pushState` / `replaceState` を stub 化。
-2. **config を解決** — `@wippy-dev/config` と `@wippy-dev/proxy-config` を読み、auto-accept が true で stored config があれば即使用、それ以外は overlay waiting mode で Accept まで boot を block。
-3. **fake `ProxyApiInstance` を構築** — accepted `ChildAppConfig`、event emitter、console-log host stub、entered URL を使う real axios、standard logger と production-shaped state/WebSocket bridge を接続。real Host responder がないため reply を必要とする call は完了できず、standalone stub layer があるのは下記 `host` API だけです。
-4. **CSS injection を適用** — `themeConfig`、`iframe`、`primevue`、`markdown` と、`appConfig.theming.global` の `customCss` / `customVariables` を選択 config に従い注入。
-5. **internal proxy global を install** — `entry.iframe.ts` と同じ shape で getter を解決。global 自体は internal です。[Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals-do-not-read-or-override) を参照してください。
+1. **history ガードのインストール**（`installHistoryGuard()`）— `pushState` / `replaceState` をスタブ化し、vue-router が iframe-srcdoc コンテキストの外でブラウザー履歴を変更しようとしないようにします。
+2. **設定の解決**（`src/proxy/dev/resolve-dev.ts` の `resolveDevConfig()`）:
+   - `localStorage['@wippy-dev/config']` と `localStorage['@wippy-dev/proxy-config']` を読みます。
+   - `localStorage['@wippy-dev/auto-accept'] === 'true'` かつ保存済みの設定があれば → 直ちにそれを使い、オーバーレイをモニタリングモードで描画します。
+   - そうでなければ → オーバーレイを*待機*モードで描画し（FAB が青く点滅し、「Accept config to continue loading」という吹き出しが出ます）、開発者が Accept をクリックするまでブートをブロックします。
+3. **偽の `ProxyApiInstance` の構築** — 次に配線されます:
+   - 受け入れられた `ChildAppConfig`（`@wippy-fe/proxy` の `config` が返すもの）。
+   - `on(...)` の購読と `@history` / `@visibility` のシミュレーションのための nanoevents エミッター。
+   - すべてのメソッドをコンソールへ出力する `host` のスタブ（`src/proxy/dev/host-stubs.ts` の `createDevHostAPI()`）。
+   - `@wippy-fe/proxy` の `api` を支える実際の axios インスタンス。開発者が入力した URL に対して設定されます（`env.APP_API_URL` のデフォルトは `${location.origin}/api`）。
+   - 本番プロキシと同じ形をミラーする logger / state / ws のスタブ。
+4. **CSS インジェクションの適用** — 開発者が選んだプロキシ設定に基づきます:
+   - `themeConfig: true` → `@wippy-fe/theme` の `theme-config.css` を注入します。
+   - `iframe`、`primevue`、`markdown` → 同様に、`src/proxy/dev/css-inline.ts` のインライン CSS バンドルを注入します。
+   - `customCss` / `customVariables` → `appConfig.theming.global.customCSS` / `cssVariables` を適用します（[micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3--per-page-config_overrides-in-registry-yaml) で説明されている `@dark`/`@light` ブロックを含みます）。
+5. **内部プロキシグローバルのインストール** — `entry.iframe.ts` と同じ形でインストールするため、`@wippy-fe/proxy` のゲッター（`config`、`host`、`api`、`on`、`logger`、`state`、`ws`、`loadWebComponent`）が解決されます。`@wippy-fe/proxy` から import するアプリや WC のコードは、変更なしで動作します。（グローバル自体 — `window.$W` など — は内部のものです。[プロキシと分離 § 内部](../web-host/proxy-isolation.md#internals--do-not-read-or-override) を参照してください。）
 
-`config-store.ts` の既定 `ChildAppConfig`:
+デフォルトの `ChildAppConfig`（`config-store.ts` の `getDefaultConfig()` から）:
 
 ```ts
 {
@@ -174,64 +206,72 @@ dev-proxy.js は boot 時に `document.querySelector('script[data-role="@wippy/p
 }
 ```
 
-modal または `localStorage['@wippy-dev/config']` の編集で上書きします。
+これらはモーダルで（あるいは `localStorage['@wippy-dev/config']` を編集して）上書きできます。
 
 ---
 
-## 開発用オーバーレイ（設定モーダル） :id=the-dev-overlay-config-modal
+## 開発オーバーレイ（設定モーダル）
 
-development overlay は Shadow DOM Web Component（`<wippy-dev-overlay>`）です。右下 FAB、waiting mode の speech bubble、FAB で開く panel を描画します。panel には Monitor、editable JSON の App Config、全 proxy injection flag の checkbox、auto-accept option、Reset/Accept footer があります。Reset は全 `@wippy-dev/*` key を消し、Accept は config を保存して boot promise を解決します。
+見た目としては、開発オーバーレイは次を描画する小さな shadow DOM の Web コンポーネント（`<wippy-dev-overlay>`）です。
 
-| キー | 保存内容 |
+- 右下隅の FAB（フローティングアクションボタン）— クリックするまで唯一目に見えるアフォーダンスです。
+- 待機モードでの**吹き出し**: 「Accept config to continue loading」。
+- FAB をクリックすると開く**パネル**。パネルには3つのセクションがあります。
+  - **Monitor** — 現在のパス、ドキュメントタイトル、ビューポートサイズのライブ表示。「Trigger Refresh」ボタンは `@visibility(true)` を発火させ、アプリが再取得できるようにします。
+  - **Configuration（折りたたみ可能）**:
+    - `App Config (JSON)` — 編集可能な JSON としての完全な `ChildAppConfig`。Accept 時に検証されます。
+    - `Proxy Injections` — すべてのプロキシインジェクションフラグのチェックボックス（`themeConfig`、`iframe`、`primevue`、`markdown`、`customCss`、`customVariables`、`tailwindConfig`、`resizeObserver`、`preventLinkClicks`、`iconifyIcons`、`refreshWhenVisible`、`historyPolyfill`、`errorCapture`）。
+    - `Options` — 「Auto-accept on reload」チェックボックス（auto-accept フラグを localStorage へ書き込みます）。
+  - **Footer** — Reset（`@wippy-dev/*` の localStorage キーをすべて消去）、Accept（設定を保存し、ブートの Promise を解決）。
+
+使用する localStorage のキー（`src/proxy/dev/config-store.ts` で定義）:
+
+| キー | 保存されるもの |
 |---|---|
-| `@wippy-dev/config` | accepted `ChildAppConfig` JSON |
-| `@wippy-dev/proxy-config` | accepted partial `ProxyConfig`（injection flag） |
-| `@wippy-dev/auto-accept` | reload 時に manual accept を省く `'true'` |
+| `@wippy-dev/config` | 受け入れられた `ChildAppConfig` の JSON |
+| `@wippy-dev/proxy-config` | 受け入れられた部分的な `ProxyConfig`（インジェクションのフラグ） |
+| `@wippy-dev/auto-accept` | リロード時に手動の accept を省略する場合は `'true'` |
 
-auto-accept 有効時は最後の accepted config で即 boot します。FAB は monitor と変更のため残ります。
+auto-accept により「ホストレスのビルドに対して反復する」体験がほぼネイティブに近くなります。リロードすればアプリは直前の設定で即座に起動し、FAB は表示されたままなのでモニターや調整ができます。
 
 ---
 
-## Host stub — スタンドアロンの `host` API :id=host-stubs-the-standalone-host-api
+## ホストスタブ — スタンドアロンの `host` API
 
-real Host がない場合、dev-proxy は `src/proxy/dev/host-stubs.ts` の stub layer を使います。
+`host` API（`import { host } from '@wippy-fe/proxy'`）は、アプリがホストに何かを依頼するためのサーフェスです。トースト、ナビゲーション、セッションを開く、コンテキストを設定する、URL を整形するなど。実ホストがない場合、dev-proxy は `src/proxy/dev/host-stubs.ts` のスタブ層で代替します。
 
-| メソッド | スタンドアロン時の動作 |
+| メソッド | スタンドアロンでの挙動 |
 |---|---|
-| `host.toast(message)` | console へのログ出力のみ |
-| `host.confirm({ message })` | browser `window.confirm()` |
-| `host.startChat(token, options)` | console へログ出力 |
-| `host.openSession(uuid, options)` | console へログ出力 |
-| `host.openArtifact(uuid, options)` | console へログ出力 |
-| `host.navigate(url)` | console へのログ出力 + child router 用 `@history` emit + overlay path 更新 |
-| `host.onRouteChanged(path)` | console へのログ出力 + overlay path 更新 |
+| `host.toast(message)` | コンソール出力のみ |
+| `host.confirm({ message })` | ブラウザーの `window.confirm()` |
+| `host.startChat(token, options)` | コンソール出力 |
+| `host.openSession(uuid, options)` | コンソール出力 |
+| `host.openArtifact(uuid, options)` | コンソール出力 |
+| `host.navigate(url)` | コンソール出力 + `@history` を送出して子のルーターが拾えるようにし、オーバーレイのパス表示を更新 |
+| `host.onRouteChanged(path)` | コンソール出力 + オーバーレイのパス表示を更新 |
 | `host.handleError(code, error)` | `console.error` |
-| `host.setContext(context, sessionUUID, source)` | console へログ出力 |
+| `host.setContext(context, sessionUUID, source)` | コンソール出力 |
 | `host.formatUrl(rel)` | `${appConfig.routePrefix || ''}${rel}` を返す |
-| `host.classifyLink(href)` | accepted config の `mountRoutes` / `routePrefix` を使う real implementation |
-| `host.layout.*` | type contract を満たす no-op stub |
-| `host.surface` | width zero、content sizing、optional capability なしの standalone `host` descriptor |
-| `host.bridge.post/on/request` | `post` は log、`on` は no-op subscription、`request` は bridge unavailable で reject |
-| `host.setThemeMode(mode)` / `host.getThemeMode()` | mode を local に保存・報告し theme event を emit |
-| `host.logout()` | console へのログ出力のみ |
+| `host.classifyLink(href)` | 実装そのもの — 受け入れられた設定の `mountRoutes` / `routePrefix` を使用 |
+| `host.layout.*` | 型契約を満たすだけの no-op スタブ |
 
-stub は要求された Host side effect を console に記録します。`host.openSession` が実際に session を開くことなど、正しさが effect に依存する path は Host 下で test してください。
+スタブが意図的におしゃべりなのは、コンソール出力がホストの実際の副作用の代わりになり、ホストを配線せずに*何が起きたはずか*を開発者が見られるようにするためです。アプリの正しさが副作用そのものに依存する場合（例: `host.openSession` が実際にセッションを開く）、そのパスはホストの下でテストしてください。スタブでは検証できません。
 
 ---
 
-## Web Component — host-less playground とテスト :id=web-components-host-less-playground-and-tests
+## Web コンポーネント — ホストレスのプレイグラウンドとテスト
 
-Web Component も同じ dual-mode design ですが iframe ではなく ES module として読み込みます。proxy contract は `@wippy-fe/proxy` からの import で、real proxy または dev-proxy が設定する `window.__WIPPY_APP_API__` を runtime に読みます。
+Web コンポーネントは同じデュアルモード設計を共有しますが、iframe ではなく ES モジュールとして読み込まれます。WC のプロキシ契約は `import { api, host, on, ... } from '@wippy-fe/proxy'` であり、この import は実行時に `window.__WIPPY_APP_API__`（実プロキシまたは dev-proxy が設定します）を読むことで解決されます。
 
-### プレイグラウンド / デモ用 HTML ページ :id=playground-demo-html-page
+### プレイグラウンド／デモ用の HTML ページ
 
 ```html
-<!-- demo.html in your WC project -->
+<!-- WC プロジェクト内の demo.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Required complete import-map script omitted from this abbreviated example. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.56/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <!-- 必須の完全な import-map スクリプトは、この短縮例では省略している。 -->
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
@@ -240,19 +280,21 @@ Web Component も同じ dual-mode design ですが iframe ではなく ES module
 </html>
 ```
 
-同じ switchpoint と dev overlay を使います。WC の `index.ts` が `define(import.meta.url, ...)` を呼んで element を登録し、dev-proxy が Host stub を提供します。`dev-proxy.js` がない場合、`entry.web-component.ts` は次の明示 error を投げます。
+同じ分岐点、同じ開発オーバーレイです。WC の `index.ts` が `define(import.meta.url, ...)` を呼ぶと要素が自身を登録し、dev-proxy がホストスタブを提供します。
+
+`dev-proxy.js` の読み込みに失敗した場合（または含め忘れた場合）、`entry.web-component.ts` は明示的なエラーを投げます。
 
 > `@wippy-fe/proxy: Proxy globals not found. For dev/testing without the Wippy host, add <script src="dev-proxy.js"></script> to your HTML.`
 
-これは host-less boot script がないことを示します。
+このエラーは、ホストレスのブートスクリプトが欠けていることを示す正典のシグナルです。
 
-### Vitest / jsdom の部分的なテスト抜粋
+### Vitest / jsdom のテスト
 
-unit test では UI のない dev overlay は不要です。Host が attach する wrapper object を直接 attach して Host context を fake します。次の抜粋は test module より前に setup file を読み込む `jsdom` environment を前提とします。setup は `window.__WIPPY_APP_API__` と `window.__WIPPY_APP_CONFIG__` を stub 化し、`ElementInternals.states` がない jsdom version では `CustomStateSet` surface も提供します。完全な Vitest project ではなく component-level assertion です。
+ユニットテストでは開発オーバーレイは不要です。テストには操作すべき UI がありません。パターンは、ホストが取り付けるはずのラッパーオブジェクトを取り付けて、**ホストのコンテキストを直接偽装する**ことです。
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { WippyElement } from '@wippy-fe/webcomponent-core'
+import { WippyElement } from './base-element'
 
 class TestEl extends WippyElement {
   static get wippyConfig() {
@@ -273,7 +315,7 @@ it('reads host wrapper attached by resolver as __wippyHost', () => {
 })
 ```
 
-`__wippyHost` は managed-layout Host が使う契約です。API/proxy global が必要な test は Vitest setup file で dev-proxy を mount するか、自身で `window.__WIPPY_APP_API__` を stub 化します。
+`__wippyHost` プロパティは、マネージドレイアウトのホストが用いる契約です。API やプロキシのグローバルを必要とするテストは、vitest のセットアップファイルで dev-proxy をマウントするか、自前で `window.__WIPPY_APP_API__` をスタブ化できます。
 
 ```ts
 // vitest.setup.ts
@@ -281,50 +323,58 @@ it('reads host wrapper attached by resolver as __wippyHost', () => {
   api: mockApi,
   host: mockHost,
   on: mockOn,
-  // ...other ProxyApiInstance fields
+  // ...ProxyApiInstance の他のフィールド
 }
 ```
 
-どちらも test-owned code が Wippy server の代わりに proxy contract を満たします。
+どちらのやり方も、ブラウザーの dev-proxy と同じ意味で「ホストレス」です。プロキシ契約が、実際の Wippy サーバーではなくテストが所有するコードによって満たされます。
 
 ---
 
-## 一般的な逸脱と見分け方 :id=common-deviations-and-how-to-spot-them
+## よくある逸脱と見分け方
 
-| 症状 | 原因 | 修正 |
+アプリや WC がスタンドアロン対応の契約から外れると、症状は予測可能です。
+
+| 症状 | 想定される原因 | 対処 |
 |---|---|---|
-| `app.html` の `<script data-role="@wippy/scripts"></script>` に `src=` がない | Wippy injection なしの HTTP development host で起動できず、proxy runtime が初期化されない | release-tag segment を含む `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` を追加 |
-| dev-proxy script より上に `<script type="importmap">` がない | browser が external bare specifier を解決できない | `<release-tag>/import-map.json` を取得し、完全な `imports` object を dev-proxy より前の `<head>` に copy。全 key を Rollup external にする |
-| body が `<wippy-loading>` でなく custom spinner | canonical pre-bootstrap loader でなく、styled/theme-aware WC loader の boot 後も custom markup が残る | `<wippy-loading title="Loading..."></wippy-loading>` に置換。dev-proxy が body parsing より前に同期登録する |
-| sibling app source を `import` | module boundary を越えた shared-code copy | workspace package へ抽出するか意図的に duplicate。app folder を横断しない |
-| hardcoded `fetch('/api/…')` | proxy axios と `env.APP_API_URL` override を迂回 | app は `useApi()`、WC は `import { api } from '@wippy-fe/proxy'` |
-| live data に `new EventSource(...)` | Host auth/relay bridge を迂回 | `on('your.topic', cb)` を使う。standalone では simulate しない限り発火しない |
-| theme switch に `data-theme` | Wippy theme protocol ではない | Auto mode または Host-managed class を使う。[page theme](./micro-frontend-app-theming.md#l3-per-page-config_overrides-in-registry-yaml) 参照 |
-| `app.ts` で `theme-config.css` を import | Host/dev-proxy injection と重複 | import を削除 |
-| API base URL を hardcode | 別 environment の host-less mode で動かない | `useApi()` から `appConfig.env.APP_API_URL` を読む |
+| `app.html` に `src=` のない `<script data-role="@wippy/scripts"></script>` がある | ページがホストレスで起動できません。ファイルを直接開くと空白ページになります — プロキシのランタイムがインストールされないため、`@wippy-fe/proxy` の import が解決できません。 | タグに `src="https://web-host.wippy.ai/<release-tag>/dev-proxy.js"` を追加してください。URL には常にリリースタグのセグメントが必要です。 |
+| `app.html` に dev-proxy の `<script src=…>` はあるが、その上に **`<script type="importmap">` がない** | ブラウザーが外部のベア指定子を解決できません。最初のモジュールスクリプトの読み込みが `Failed to resolve module specifier` で失敗します。 | `<release-tag>/import-map.json` を取得し、その完全な `imports` オブジェクトを dev-proxy より前の `<head>` へコピーし、すべてのキーを Rollup の externals に使ってください。 |
+| `app.html` の body に `<wippy-loading title="…">` ではなくカスタムの SVG スピナーや `<div>Loading…</div>` がある | ブートストラップ前のローダーが正典の Wippy のイディオムと一致していません。WC のエコシステム（スタイルの付いたテーマ対応ローダーを描画するもの）が完全に起動するまで、カスタムのマークアップが表示され続けます。 | `<wippy-loading title="Loading..."></wippy-loading>` に置き換えてください。`<wippy-loading>` Web コンポーネントは `<body>` のパース前に `dev-proxy.js` によって登録されるため（`@wippy-fe/loading` を同期的に import します）、ページ読み込みのごく初期でも要素が正しく解決されます。 |
+| 兄弟アプリのソースファイルからの `import` | 共有コードがモジュール境界をまたいでコピー＆ペーストされています。 | ワークスペースパッケージへ切り出すか、意図的に複製してください。アプリのフォルダーをまたいで手を伸ばしてはいけません。 |
+| ハードコードされた `fetch('/api/…')` 呼び出し | プロキシが提供する axios インスタンスを迂回しており、`env.APP_API_URL` のオーバーライドを拾いません。 | `useApi()`（アプリ）または `import { api } from '@wippy-fe/proxy'`（WC）を使ってください。 |
+| ライブデータ用の `new EventSource(...)` | ホストの認証／リレーのブリッジを迂回します。スタンドアロンモードには等価物がありません。 | `on('your.topic', cb)` を使ってください — 両モードで動作します（スタンドアロンでは、自分でシミュレートしない限りトピックが発火しないだけです）。 |
+| テーマ切り替えのための `document.documentElement.setAttribute('data-theme', ...)` | `data-theme` は Wippy のテーマプロトコルではありません。 | Auto モード、またはホスト管理の `.w-theme-light` / `.w-theme-dark` クラスを使ってください。設定された `@light` / `@dark` の値は両方の経路をサポートします。[micro-frontend-app-theming.md](./micro-frontend-app-theming.md#l3--per-page-config_overrides-in-registry-yaml) を参照。 |
+| `app.ts` 内の `import '@wippy-fe/theme/theme-config.css'` | 冗長です — ホストは `themeConfig: true` のプロキシインジェクションで theme-config を注入します。ホストレスモードでは dev-proxy も同様に注入します。 | この import を削除してください。 |
+| api/ モジュール内のハードコードされた API ベース URL | 別の環境に対するホストレスモードで動作しません。 | `useApi()` を通じて `appConfig.env.APP_API_URL` から読んでください。 |
 
 ---
 
-## トラブルシューティング :id=troubleshooting
+## トラブルシューティング
 
-**`Proxy globals not found`。** real proxy も dev-proxy も `window.__WIPPY_APP_API__` を初期化していません。page の script tag と URL reachability を確認します。production-host mode では Host の proxy injection failure なので Host log を確認します。
+**「Proxy globals not found」エラー。**
+WC のバンドルは実行されたものの、実プロキシも dev-proxy も `window.__WIPPY_APP_API__` を初期化しませんでした。`<script src=".../dev-proxy.js" data-role="@wippy/scripts">` がページにあり、その URL に到達できることを確認してください。本番ホストモードでこのエラーが出る場合は、ホストが proxy.js の注入に失敗しています — ホストのログを確認してください。
 
-**dev overlay が表示されない。** overlay は `DOMContentLoaded` 後に `document.body` へ追加される Shadow DOM custom element です。body がない、または `display: none` なら描画できません。script を body 末尾へ移すか body を表示します。
+**開発オーバーレイがまったく現れない。**
+オーバーレイは `DOMContentLoaded` の後に `document.body` へ追加される shadow DOM のカスタム要素です。`dev-proxy.js` を `<head>` の中から読み込み、body が存在しないか `display: none` になっていると、オーバーレイは描画できません。スクリプトを body の末尾へ移動するか、body の非表示を解除してください。
 
-**誤った config で auto-accept が stuck。** monitoring mode の overlay は残るため FAB → Reset で全 `@wippy-dev/*` localStorage key を消し、reload します。
+**壊れた設定のまま auto-accept が「固まる」。**
+保存された設定が壊れていて auto-accept が有効な場合でも、オーバーレイは（モニタリングモードで）描画されます。FAB をクリック → Reset で `@wippy-dev/*` の localStorage キーをすべて消去し、リロードしてください。
 
-**dev mode の theme が誤る。** default proxy config は `customCss` / `customVariables` だけ有効です。必要な `themeConfig`、`iframe`、`primevue`、`markdown` を panel で有効化します。
+**開発モードでテーマがおかしい。**
+デフォルトでは `getDefaultProxyConfig()` が `customCss` と `customVariables` を有効にし、`themeConfig`、`iframe`、`primevue`、`markdown` を無効にします。アプリが PrimeVue の theme-config CSS を期待しているなら、パネルでそれらのチェックボックスを切り替えてください。auto-accept が記憶します。
 
-**hosted と standalone の importmap mismatch。** pin 済み release の `import-map.json` を再取得し、完全な host-less `imports` object と Rollup external key を置換します。entry 単位の patch や curated subset は使いません。
+**ホストありとスタンドアロンで importmap が食い違う。**
+ピン留めしたリリースの `import-map.json` を再取得し、ホストレス側の `imports` オブジェクトを丸ごと置き換え、そこから Rollup の external キーを再生成してください。個別のエントリにパッチを当てたり、選り抜きの部分集合を維持したりしないでください。
 
-**WC test の `host getter returned null`。** `connectedCallback` より前に `el.__wippyHost = fakeWrapper` を設定します。`document.body.appendChild(el)` の前に設定するか、suite の resolver pattern で wrapper を fake します。
+**WC のテストが「host getter returned null」で失敗する。**
+テストは `connectedCallback` が発火する*前に* `el.__wippyHost = fakeWrapper` を設定する必要があります。`document.body.appendChild(el)` の前に設定するか、テストスイートが使っているリゾルバーのパターンに沿ってラッパーを偽装してください。
 
 ---
 
-## 関連ドキュメント :id=related-docs
+## 関連ドキュメント
 
-- [proxy-api.md](./proxy-api.md) — hosted/host-less で同じ `@wippy-fe/proxy` reference
-- [micro-frontend-app.md](./micro-frontend-app.md) — dual-mode `app.html` boot path を使う app build
-- [web-component.md](./web-component.md) — `WippyVueElement`、`define()`、host-less playground/test
-- [theming.md](./theming.md) — `config_overrides` による page theme override
-- [compliance-checklist.md](./compliance-checklist.md) — Host-less mode の完全な REJECT rule
+- [proxy-api.md](./proxy-api.md) — `@wippy-fe/proxy` の完全なリファレンス（ホストあり／ホストレスで同一に動作します）
+- [micro-frontend-app.md](./micro-frontend-app.md) — マイクロフロントエンドアプリの構築（ブートパスは、この文書が扱うデュアルモードの `app.html` パターンです）
+- [web-component.md](./web-component.md) — Web コンポーネントの構築（`WippyVueElement`、`define()`、ホストレスのプレイグラウンド／テスト）
+- [theming.md](./theming.md) — `config_overrides` によるページごとのテーマオーバーライド（`theming.global.cssVariables` / `customCSS` を通じて dev-proxy にも渡ります）
+- [compliance-checklist.md](./compliance-checklist.md) — §9 ホストレスモードのチェックリストと完全な REJECT ルール

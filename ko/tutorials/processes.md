@@ -15,7 +15,42 @@ description: "프로세스 생성, 메시징, 모니터링, 연결, 이름 등�
 
 ## 실행 환경과 의존성
 
-예제는 실행 가능한 Lua 엔트리 안에서 실행되며 `app:processes`라는 실행 중인 `process.host`가 등록되어 있다고 가정합니다. `app.test.process:echo_worker` 같은 엔트리 ID는 프로젝트에서 정의해야 하는 프로세스 엔트리 자리표시자입니다. `process`와 `channel` API는 전역으로 제공됩니다. 직접 `process.*`에 접근하는 것이 일반적이며, `require("process")`도 모듈 선언 없이 해석됩니다. `time.after()`를 호출하는 코드 조각에는 `local time = require("time")`와 엔트리 `modules` 목록의 `time`이 필요합니다.
+## 권한
+
+프로세스 작업은 호출하는 엔트리의 보안 정책에 대해 권한 검사를 거칩니다. 아래에서 사용하는 액션을 허용하는 `security.policy` 엔트리를 선언하고, 프로세스를 스폰하거나 메시지를 보내거나 모니터링하거나 연결하거나 이름을 등록하는 모든 엔트리에 연결하세요:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+이 권한이 없으면 이러한 호출은 `not allowed to spawn process: app.test.process:echo_worker`와 같은 에러를 반환합니다. 전체 액션 목록은 [권한 레퍼런스](lua/core/process.md)에 있습니다.
+
+## 프로세스 스폰
 
 생성, 보내기, 모니터링, 연결, 취소, 종료, 레지스트리 변경은 보호되는 연산입니다. 실행 엔트리에 액터를 지정하고 필요한 연산 및 리소스만 허용하는 정책을 부여하세요. 그렇지 않으면 엄격 모드가 해당 연산을 거부합니다.
 
@@ -117,6 +152,8 @@ local function main()
         end
     end
 end
+
+return { main = main }
 ```
 
 ### 송신자 정보를 위한 메시지 모드
@@ -134,10 +171,7 @@ local function main()
         local data = msg:payload():data()
 
         if sender then
-            local _, send_err = process.send(sender, "reply", data)
-            if send_err then
-                return false, "reply failed: " .. tostring(send_err)
-            end
+            process.send(sender, "reply", data)
         end
         return true
     end

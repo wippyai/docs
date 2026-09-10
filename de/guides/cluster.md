@@ -56,26 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-2.identity
+    identity_key_file: /etc/wippy/node-2.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 Der erste Knoten benötigt keine `join_addrs`; er startet als Seed. Beitritte werden mit Backoff wiederholt, und ein isolierter Knoten versucht regelmäßig erneut beizutreten. Das unterstützt Knoten, die wie häufig in Kubernetes mit einer neuen IP neu starten.
 
-Gossip kann mit einem gemeinsamen Schlüssel verschlüsselt werden, der inline oder aus einer Datei angegeben wird:
+Gossip ist immer mit einem gemeinsamen Schlüssel verschlüsselt. Er wird inline als `membership.secret_key` oder aus einer Datei als `membership.secret_file` angegeben; ein Knoten, der ohne beides startet, bringt die Cluster-Komponente nicht hoch. Der Wert ist base64-kodiert und auf jedem Knoten identisch.
+
+Mitgliedschaftsänderungen (`NodeJoined`, `NodeLeft`, `NodeUpdated`) sind die Ereignisse, die Raft-Bootstrap, Voter-Reconciliation, Prozessgruppen-Sync und automatische Bereinigung von Namen eines ausgeschiedenen Knotens antreiben.
+
+## Internode-Identität
+
+Jeder Knoten hält ein ed25519-Schlüsselpaar, und jeder Knoten trägt die Karte der öffentlichen Schlüssel, denen er vertraut. Beides ist zwingend, wenn `cluster.enabled: true` gilt.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-Der Gossip-Schlüssel schützt den Mitgliedschaftsverkehr. Internode-TCP-Verbindungen verwenden eine separate Ed25519-Identität. Jeder Clusterknoten muss entweder `internode.identity_key` oder `internode.identity_key_file` bereitstellen; `trusted_peer_keys` muss den passenden öffentlichen Schlüssel für den lokalen Knoten und jeden erreichbaren Peer enthalten. `identity_key` enthält einen Base64-kodierten Seed mit 32 Byte oder privaten Schlüssel mit 64 Byte; vertrauenswürdige Peer-Werte sind Base64-kodierte öffentliche Schlüssel. Verwenden Sie für jeden Knoten einen eigenen privaten Schlüssel und verteilen Sie dieselbe Karte vertrauenswürdiger öffentlicher Schlüssel an alle Knoten.
+| Schlüssel | Inhalt |
+|-----------|--------|
+| `internode.identity_key` | Der private Schlüssel des Knotens, inline |
+| `internode.identity_key_file` | Pfad zu einer Datei, die diesen Schlüssel enthält |
+| `internode.trusted_peer_keys` | Knotenname auf öffentlichen Schlüssel, für jeden Knoten im Mesh einschließlich dieses Knotens |
 
-Mitgliedschaftsänderungen (`NodeJoined`, `NodeLeft`, `NodeUpdated`) sind die Ereignisse, die Raft-Bootstrap, Voter-Reconciliation, Prozessgruppen-Sync und automatische Bereinigung von Namen eines ausgeschiedenen Knotens antreiben.
+Schlüsselformat: base64, Standard- oder Raw-Kodierung (ohne Padding). Ein privater Schlüssel dekodiert entweder zu einem 32-Byte-ed25519-Seed oder zu einem vollständigen 64-Byte-ed25519-Privatschlüssel; ein vertrauenswürdiger Peer-Schlüssel dekodiert zu einem 32-Byte-ed25519-Public-Key. Es gibt keinen Unterbefehl zur Schlüsselerzeugung — Schlüssel werden mit einem beliebigen ed25519-Werkzeug erzeugt und die Rohbytes base64-kodiert:
+
+```bash
+# 32-Byte-Seed und zugehöriger öffentlicher Schlüssel, base64-kodiert
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key` und `identity_key_file` schließen sich gegenseitig aus, und eines von beiden ist erforderlich. `trusted_peer_keys` muss einen Eintrag für den lokalen `cluster.name` enthalten, dessen Wert der eigene öffentliche Schlüssel dieses Knotens ist; ein fehlender oder abweichender Selbsteintrag bricht den Start ab. Damit ist die Vertrauenskarte ein einzelnes Artefakt, das sich unverändert an jeden Knoten verteilen lässt.
+
+Der Mesh-Handshake ist gegenseitig. Jede Seite weist die Kenntnis des gemeinsamen Gossip-Secrets mit einem HMAC über ein Transkript nach, das beide Knoten-IDs und beide Nonces bindet, und signiert dieses Transkript mit ihrem Identitätsschlüssel; der Peer prüft die Signatur gegen den öffentlichen Schlüssel, den er für diese Knoten-ID hat, und gegen den Schlüssel, den der Peer im Gossip bewirbt. Schlägt eine der Prüfungen fehl, wird die Verbindung geschlossen.
+
+Damit ist zu rechnen:
+
+- Das Mesh arbeitet nicht mit einem Knoten ohne Identität zusammen. Jeder Knoten im Cluster muss mit einer konfiguriert sein.
+- Ein Peer, dessen Knoten-ID in `trusted_peer_keys` fehlt, wird abgelehnt, ebenso einer, dessen im Gossip beworbener öffentlicher Schlüssel nicht mit dem vertrauenswürdigen Eintrag übereinstimmt. Einen Knoten hinzuzufügen bedeutet, seinen öffentlichen Schlüssel an die bestehenden Knoten zu verteilen.
+- Eine Knoten-ID muss in der lebenden Gossip-Mitgliedschaft vorhanden sein, bevor sich ihr Schlüssel auflöst; ein Peer, der dem Gossip nicht beigetreten ist, kann daher keine Mesh-Verbindung öffnen.
 
 ## Bootstrap
 
@@ -131,7 +165,7 @@ Siehe [Prozessgruppen](lua/core/pg.md) für die Lua-API und den [`pg.scope`-Entr
 
 ## Verteilte Sperren
 
-`system.lock` stellt clusterweiten gegenseitigen Ausschluss über einen Raft-linearisierbaren bedingten Schreibvorgang im gemeinsamen Key-Value-Store bereit. Das Erwerben führt ein Set-if-absent der Halter-PID unter `_sys:lock:<name>` aus; das Freigeben löscht den Eintrag, sofern ihn weiterhin der Aufrufer hält. Da der bedingte Schreibvorgang über Raft läuft und Schreibvorgänge abseits des Leaders weitergeleitet werden, ist er linearisierbar und erlaubt clusterweit höchstens einen Halter.
+`system.lock` ist clusterweiter gegenseitiger Ausschluss, aufgebaut auf einem raft-linearisierbaren bedingten Schreibvorgang im gemeinsamen Key-Value-Store. Das Erwerben einer Sperre führt ein Set-If-Absent der Halter-PID unter `_sys:lock:<name>` aus; das Freigeben löscht diesen Eintrag, sofern er noch vom Aufrufer gehalten wird. Da der bedingte Schreibvorgang über Raft läuft (Schreibvorgänge außerhalb des Leaders werden an den Leader weitergeleitet), ist er linearisierbar, sodass höchstens ein Halter clusterweit existieren kann.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -163,15 +197,17 @@ Einzelknoten (Entwicklung):
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
   internode:
-    identity_key: "${env:DEV_PRIVATE_KEY}"
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
     trusted_peer_keys:
-      dev: "${env:DEV_PUBLIC_KEY}"
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Drei-Knoten-Voting-Cluster:
+Drei-Knoten-Voting-Cluster (`node-2` und `node-3` unterscheiden sich nur in `name`, `identity_key_file` und `join_addrs`):
 
 ```yaml
 cluster:
@@ -182,16 +218,16 @@ cluster:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-1.identity
+    identity_key_file: /etc/wippy/node-1.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      node-3: "${env:NODE_3_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-Gossip-only-Client (tritt für Benennung/Messaging bei, betreibt niemals Raft):
+Gossip-only-Client (tritt für Benennung/Messaging bei, betreibt niemals Raft). Er braucht dennoch eine Identität, und die Voter brauchen seinen öffentlichen Schlüssel in ihren eigenen Karten:
 
 ```yaml
 cluster:
@@ -199,12 +235,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/edge-7.identity
+    identity_key_file: /etc/wippy/edge-7.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

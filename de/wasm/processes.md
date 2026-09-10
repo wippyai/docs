@@ -83,9 +83,7 @@ wippy run list
 | `use_case` | Nein | Kategorie des Einstiegspunkts; Standard ist `run` |
 | `security` | Nein | Sicherheitskontext, der nur angewendet wird, wenn der vertrauenswürdige Terminal-Launcher diesen Befehl startet |
 
-Für CLI-Befehle muss ein `terminal.host` vorhanden sein. Er besitzt den Scheduler
-für den Befehlsprozess, sodass kein separater `process.host` erforderlich ist. Wenn
-mehrere Terminal Hosts vorhanden sind, wählen Sie einen mit `--host` aus.
+Ein `terminal.host` muss vorhanden sein, damit CLI-Befehle funktionieren; er ist der Prozess-Host, der den Befehl ausfuehrt.
 
 ## Prozesslebenszyklus
 

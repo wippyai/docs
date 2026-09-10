@@ -20,11 +20,11 @@ app:templates             → Template set
 
 各 entry には `ID`（namespace:name 形式）、handler を決定する `kind`、任意の `meta` field、kind 固有の `data` があります。
 
-registry ID は、多くの authorization check でも resource として使われます。registry は definition を保存し、security scope が保護対象 operation から access できるかを決定します。[セキュリティモデル](./security-model.md)を参照してください。
+こうした作成者が記述するコンテンツとは別に、レジストリは各エントリについて独自の来歴情報を保持します。エントリの出自であるデプロイメントソースを示す`owner`と、デプロイメントが選択した依存関係宣言を示す`root`です。この状態はレジストリが割り当てるものであり、エントリの作成者が記述するものではありません。両者が混同されることのないよう、`meta`とは分離して保持されます。この情報は通常のエントリAPIではなく、スナップショット状態APIを通じて読み取ります — [レジストリモジュール](lua/core/registry.md#snapshot-state)を参照してください。
 
-## Kind handler :id=kind-handlers
+## 種別ハンドラ
 
-dispatch された entry が submit されると、その `kind` に登録された handler が選択されます。handler は対応する runtime resource を検証して reconcile します。`http.service` entry は HTTP server、`function.lua` entry は function pool、`db.sql.postgres` entry は connection pool を管理します。利用可能な kind は[エントリ種別ガイド](guides/entry-kinds.md)、handler の実装は[カスタムエントリ種別](internals/kinds.md)を参照してください。
+エントリが送信されると、その`kind`がどのハンドラが処理するかを決定します。ハンドラは設定を検証し、ランタイムリソースを作成します。`http.service`エントリはHTTPサーバーを起動し、`function.lua`エントリは関数プールを作成し、`db.sql.postgres`エントリは接続プールを確立します。利用可能な種別については[エントリ種別ガイド](guides/entry-kinds.md)を、ハンドラの実装については[カスタムエントリ種別](internals/kinds.md)を参照してください。
 
 ## ライブ更新
 

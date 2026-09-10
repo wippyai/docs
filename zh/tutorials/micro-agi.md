@@ -71,7 +71,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` 提供 `wippy.security:process` 策略组，LLM 模块的后台服务在该组下运行；缺少它们将无法启动。
 
 ### 安全策略
 
@@ -165,6 +172,17 @@ entries:
 ```
 
 这些策略由 `create_tool` 作为命名作用域 (`app:agent_security`) 加载，并在任何注册表写入之前进行评估。智能体可以写入 `app.generated:*`（无匹配的拒绝策略），但不能写入 `app:*`（核心入口、模型、智能体定义）或 `app.tools:*`（内置工具）。
+
+第三条策略授予进程自身访问注册表的权限。未携带安全上下文启动的进程会被拒绝所有注册表读取，因此 `agent` 命令将该策略作为自身的作用域携带：
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 有关策略评估的详细信息，参见[安全模型](system/security.md)。
 
@@ -260,6 +278,11 @@ GPT-5.1 处理推理和工具使用。GPT-4.1 Nano 以低 25 倍的成本处理�
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +292,7 @@ GPT-5.1 处理推理和工具使用。GPT-4.1 Nano 以低 25 倍的成本处理�
       compress: wippy.llm.util:compress
 ```
 
-进程作为终端命令运行。安全强制在 `create_tool` 内部进行，它加载 `agent_security` 策略组并在写入前进行评估。
+进程作为终端命令运行。`meta.command.security` 为它指定运行时的执行者和作用域——没有它，`registry.get` 会以 `not allowed to access entry` 失败，智能体永远无法加载。写入的安全强制在 `create_tool` 内部进行，它加载 `agent_security` 策略组并在写入前进行评估。
 
 导入：
 - `prompt` —— 对话构建器
@@ -367,7 +390,7 @@ local MAX_NAME_LEN = 64
 local ALLOWED_MODULES = {
     time = true, json = true, http_client = true, expr = true,
     text = true, base64 = true, yaml = true, crypto = true,
-    hash = true, uuid = true, url = true,
+    hash = true, uuid = true,
 }
 ```
 

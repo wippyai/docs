@@ -20,9 +20,11 @@ app:templates             → Template set
 
 Cada entrada possui um `ID` (no formato namespace:nome), um `kind` que determina seu handler, campos `meta` arbitrários e `data` específicos do kind.
 
-Os IDs do registro também são usados como recursos por muitas verificações de autorização. O registro armazena as definições; o escopo de segurança decide se as operações protegidas podem acessá-las. Consulte o [Modelo de Segurança](./security-model.md).
+Além desse conteúdo autorado, o registry mantém sua própria proveniência para cada entrada: o `owner`, ou seja, a origem de deployment de onde a entrada veio, e `root`, que marca uma declaração de dependência selecionada pelo deployment. Esse estado é atribuído pelo registry, não escrito pelo autor da entrada, e é mantido separado de `meta` para que os dois nunca sejam confundidos. Ele é lido através da API de estado do snapshot, e não pelas APIs comuns de entrada — veja [Módulo Registry](lua/core/registry.md#snapshot-state).
 
-## Handlers de kind
+## Handlers de Kind
+
+Quando uma entrada é submetida, seu `kind` determina qual handler a processa. O handler valida a configuração e cria recursos de runtime — uma entrada `http.service` inicia um servidor HTTP, uma entrada `function.lua` cria um pool de funções, uma entrada `db.sql.postgres` estabelece um pool de conexões. Veja o [Guia de Tipos de Entradas](guides/entry-kinds.md) para kinds disponíveis e [Tipos de Entradas Personalizados](internals/kinds.md) para implementar handlers.
 
 Quando uma entrada despachada é enviada, seu `kind` seleciona o handler registrado. O handler valida e reconcilia o recurso correspondente no runtime: uma entrada `http.service` gerencia um servidor HTTP, uma entrada `function.lua` gerencia um pool de funções e uma entrada `db.sql.postgres` gerencia um pool de conexões. Consulte o [Guia de Tipos de Entrada](guides/entry-kinds.md) para conhecer os kinds disponíveis e [Tipos de Entrada Personalizados](internals/kinds.md) para a implementação de handlers.
 

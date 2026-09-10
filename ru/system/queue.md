@@ -93,13 +93,13 @@ flowchart LR
   tls:
     enabled: true
     server_name: "rabbit.example.com"
-    cert_env: "AMQP_CLIENT_CERT"
-    key_env: "AMQP_CLIENT_KEY"
-    ca_env: "AMQP_CA_CERT"
+    cert: ${env:app.env:amqp_cert}
+    key:  ${env:app.env:amqp_key}
+    ca:   ${env:app.env:amqp_ca}
     insecure_skip_verify: false
 ```
 
-Инлайновые поля `cert`/`key`/`ca` содержат PEM-контент; варианты `*_env` разрешаются через реестр env. Эти два источника взаимоисключающие для каждого поля. `insecure_skip_verify` отключает проверку сертификата (только для разработки).
+`cert`/`key`/`ca` содержат PEM-контент — инлайн, через `file://` или через плейсхолдер `${env:NAME}`, разрешаемый через [реестр env](system/env.md). `insecure_skip_verify` отключает проверку сертификата (только для разработки). Устаревшие директивы `cert_env`/`key_env`/`ca_env` разрешаются так же, но не рекомендуются; предпочитайте `${env:NAME}`.
 
 ### Драйвер SQS
 
@@ -109,14 +109,14 @@ flowchart LR
 - name: aws_config
   kind: config.aws
   region: us-east-1
-  access_key_id_env: app:AWS_ACCESS_KEY_ID
-  secret_access_key_env: app:AWS_SECRET_ACCESS_KEY
+  access_key_id: ${env:app:AWS_ACCESS_KEY_ID}
+  secret_access_key: ${env:app:AWS_SECRET_ACCESS_KEY}
 
 - name: sqs_driver
   kind: queue.driver.sqs
   config: app:aws_config
   endpoint: "http://localhost:9324"
-  message_retention_period: 345600
+  message_retention_period: 86400
   default_delay_seconds: 0
   lifecycle:
     auto_start: true
@@ -126,13 +126,13 @@ flowchart LR
 |------|-----|--------------|----------|
 | `config` | Registry ID | обязательно | Ресурс `config.aws` с регионом и учётными данными |
 | `endpoint` | string | - | Кастомный URL эндпойнта (LocalStack, ElasticMQ); опустить для реального AWS |
-| `message_retention_period` | int | `345600` (4д) | Срок хранения на уровне очереди в секундах (60–1209600) |
+| `message_retention_period` | int | - | Срок хранения на уровне очереди в секундах (60–1209600), задаётся атрибутом очереди при создании. Опустите, чтобы оставить значение AWS по умолчанию — 345600 (4 дня). |
 | `default_delay_seconds` | int | `0` | Задержка доставки по умолчанию при CreateQueue (0–900) |
 | `disable_message_checksum_validation` | bool | `false` | Отключить проверку контрольных сумм SQS при отправке/приёме |
 | `use_fips` | bool | `false` | Использовать FIPS-совместимые эндпойнты |
 | `use_dual_stack` | bool | `false` | Использовать dual-stack эндпойнты (IPv4 + IPv6) |
 
-Очереди создаются драйвером автоматически при первом использовании. Используйте заголовки с префиксом `sqs.*` для адресации SQS-специфичных атрибутов при публикации; нейтральные ключи вроде `correlation_id` и `content_type` по возможности транслируются в системные атрибуты SQS.
+Очереди создаются драйвером автоматически при первом использовании. Используйте заголовки с префиксом `sqs.` для адресации SQS-специфичных полей при публикации: `sqs.delay_seconds`, `sqs.message_group_id` и `sqs.message_deduplication_id` отображаются в типизированные поля сообщения SQS. Все остальные заголовки (нейтральные ключи вроде `correlation_id` и `content_type`, а также любые ключи `sqs.message_attributes.*`) передаются как есть в виде атрибутов сообщения SQS.
 
 ## Настройка очереди
 
@@ -157,7 +157,7 @@ flowchart LR
 | `queue_name` | string | Нет | Внешнее имя очереди (по умолчанию имя записи) |
 | `driver_options` | object | Нет | Под-набор для каждого драйвера, ключ — kind драйвера |
 | `dead_letter.queue` | Registry ID | Нет | ID очереди для неуспешных сообщений |
-| `dead_letter.max_attempts` | int | Нет | Количество попыток до маршрутизации в DLQ |
+| `dead_letter.max_attempts` | int | Нет | Количество попыток до маршрутизации в DLQ (принимается, но пока не применяется ни одним встроенным драйвером) |
 
 ### Опции драйвера
 
@@ -262,9 +262,9 @@ local function main(body)
 
     local ok, err = process_task(body)
     if err then
-        return false  -- nack: redelivery or DLQ
+        return nil, err  -- nack: redelivery per driver
     end
-    return true       -- ack: remove from queue
+    return true          -- ack: remove from queue
 end
 
 return { main = main }
@@ -286,15 +286,15 @@ return { main = main }
 
 | Результат обработчика | Действие |
 |-----------------------|----------|
-| `true` или возврат, не равный `false` | Ack |
-| `false` | Nack (повторная доставка или dead-letter в зависимости от драйвера) |
+| Любое обычное возвращаемое значение (включая `false`) | Ack |
+| Возврат `nil, err` | Nack (повторная доставка в зависимости от драйвера) |
 | Брошенная ошибка | Nack |
 
 Вызывайте `msg:ack()` или `msg:nack()` явно только для досрочной фиксации. Фиксация однократна: побеждает первый сработавший вызов.
 
 ### Маршрутизация в Dead-Letter
 
-Когда на очереди настроен `dead_letter`, сообщение, которое получает nack сверх `max_attempts`, маршрутизируется в DLQ с заголовками `x_dead_letter_reason` и `x_original_queue`, устанавливаемыми драйвером. Издатели не должны устанавливать никакие заголовки `x_*` — они зарезервированы для учёта DLQ.
+Маршрутизация в dead-letter пока не реализована. Блок `dead_letter` (см. [Конфигурация очереди](#queue-configuration)) принимается в конфигурации, но ни один встроенный драйвер сейчас не считает попытки, не маршрутизирует сообщения с nack в настроенную DLQ и не устанавливает заголовки `x_dead_letter_*`. Сообщение с nack переотправляется согласно собственной политике драйвера. Пространство имён заголовков `x_*` зарезервировано для будущего учёта DLQ, поэтому издателям следует избегать установки заголовков `x_*`.
 
 ## Публикация сообщений
 

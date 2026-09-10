@@ -53,6 +53,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -71,11 +78,6 @@ entries:
       - name: process_host
         value: app:processes
 
-  - name: dep.security
-    kind: ns.dependency
-    component: wippy/security
-    version: "*"
-
   - name: dep.terminal
     kind: ns.dependency
     component: wippy/terminal
@@ -86,7 +88,12 @@ entries:
     meta:
       command:
         name: ask
-        short: Ask one question
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -100,6 +107,10 @@ The LLM module needs two infrastructure entries:
 - `env.storage.os` provides API keys from environment variables.
 - `process.host` provides the process runtime used internally by the LLM module.
 
+The `wippy/terminal` dependency provides the `terminal.host` that commands execute on and where `io.print` writes.
+
+`meta.command` gives the process a name so `wippy run ask` launches it with the remaining arguments as string payloads. Its `security` block installs the actor and policy scope for that launch: the LLM module resolves models from the registry, and a command launched without a scope reads nothing from it.
+
 ### Generation Code
 
 Create `src/ask.lua`:
@@ -108,17 +119,9 @@ Create `src/ask.lua`:
 local io = require("io")
 local llm = require("llm")
 
-local function main()
-    io.write("Question: ")
-    io.flush()
-    local question = io.readline()
-    if not question or question == "" then
-        io.print("A question is required")
-        return 1
-    end
-
-    local response, err = llm.generate(question, {
-        model = "gpt-4o-mini",
+local function main(input)
+    local response, err = llm.generate(input, {
+        model = "gpt-4.1-nano",
         temperature = 0.7,
         max_tokens = 512,
     })
@@ -168,22 +171,18 @@ The LLM module resolves models from the registry. Add a model entry to `_index.y
 
 ```bash
 wippy init
-wippy update
-wippy install
-wippy run ask
+wippy run ask "What is the capital of France?"
 ```
 
-Enter `What is the capital of France?` at the prompt. The model definition selects
-the provider and the model name sent to its API.
+This runs the `ask` process on the terminal host with the question as its argument and prints the result. The model definition tells the LLM module which provider to use and what model name to send to the API.
 
 ## Phase 2: Conversations
 
-Upgrade from a single call to a multi-turn conversation using the prompt builder. Change the entry from a function to a process with terminal I/O.
+Upgrade from a single call to a multi-turn conversation using the prompt builder. Register the process as a named command.
 
 ### Update Entry Definitions
 
-Replace the `ask` entry with a `chat` process. Keep the `dep.terminal` entry from
-Phase 1:
+Replace the `ask` entry with a `chat` process:
 
 ```yaml
   - name: chat
@@ -192,6 +191,11 @@ Phase 1:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -313,6 +317,11 @@ Switch to the agent framework. Update the entry imports:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -821,11 +830,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

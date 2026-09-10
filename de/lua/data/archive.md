@@ -1,6 +1,6 @@
 ---
 title: "Archive"
-description: "ZIP-, TAR-, gzip-komprimierte TAR- und Zstandard-komprimierte TAR-Archive lesen, durchsuchen, extrahieren und erstellen."
+description: "Lesen und Schreiben von zip/tar-Archiven mit begrenztem Speicherverbrauch. Archive werden weder in den RAM geladen noch auf die Festplatte entpackt —…"
 ---
 
 # Archive
@@ -8,9 +8,7 @@ description: "ZIP-, TAR-, gzip-komprimierte TAR- und Zstandard-komprimierte TAR-
 <secondary-label ref="io"/>
 <secondary-label ref="encoding"/>
 
-Das Modul `archive` liest und schreibt Archive der ZIP- und TAR-Familie über Random-Access-Reader, sequenzielle Streams und Dateisystemziele.
-
-Dies ist eine API-Referenz mit unvollständigen E/A-Rezepten. Die Streaming-Operationen begrenzen Puffer zum Kopieren von Einträgen, doch Metadaten, Codec-Zustand, Quellen aus Rohbytes und Ergebnisse von `read()` belegen weiterhin Arbeitsspeicher. Verwenden Sie für große Archive mit wahlfreiem Zugriff seekfähige Dateien oder Ranged Reader, `scan()` für ausschließlich vorwärts lesbare Eingaben und für die Anwendung geeignete explizite Grenzwerte.
+Lesen und Schreiben von zip/tar-Archiven mit begrenztem Speicherverbrauch. Archive werden weder in den RAM geladen noch auf die Festplatte entpackt — der Spitzenspeicherbedarf ist unabhängig von Archiv- und Eintragsgröße, sodass Archive im Multi-GB-Bereich auf einem Server mit wenig RAM laufen.
 
 ## Laden
 
@@ -18,20 +16,18 @@ Dies ist eine API-Referenz mit unvollständigen E/A-Rezepten. Die Streaming-Oper
 local archive = require("archive")
 ```
 
-Fügen Sie `archive` zur Liste `modules:` des ausführbaren Eintrags hinzu, bevor Sie es laden. Rezepte mit Dateisystemen, Cloud-Readern oder HTTP-Streams benötigen außerdem diese Fähigkeiten und die zugehörigen Sicherheitsrichtlinien.
-
 ## Formate
 
-Das Modul erkennt integrierte Formate an Magic Bytes oder verwendet das in `opts.format` angegebene Format.
+Eingebaute Formate werden anhand von Magic Bytes erkannt oder mit `opts.format` erzwungen:
 
-| Format | Wahlfreies Lesen | Sequenzieller Scan | Schreiben |
-|--------|:----------------:|:------------------:|:---------:|
+| Format | Wahlfreier Zugriff | Sequenzieller Scan | Schreiben |
+|--------|:-----------:|:---------------:|:-----:|
 | `zip` | ja | ja (lokale Header) | ja |
 | `tar` | ja | ja | ja |
 | `tar.gz` | nein | ja | ja |
 | `tar.zst` | nein | ja | ja |
 
-`archive.formats()` gibt die Liste registrierter Formatnamen zurück.
+`archive.formats()` gibt die Liste der registrierten Formatnamen zurück.
 
 ```lua
 local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
@@ -39,75 +35,47 @@ local names = archive.formats()  -- {"zip", "tar", "tar.gz", "tar.zst", ...}
 
 ## Optionen
 
-Jeder Einstiegspunkt akzeptiert eine optionale Tabelle `opts`:
+Alle Einstiegspunkte akzeptieren eine optionale `opts`-Tabelle:
 
-| Schlüssel | Standardwert | Bedeutung |
-|-----------|--------------|-----------|
-| `format` | auto | `"zip"`, `"tar"`, `"tar.gz"`, `"tar.zst"`; auto = Magic Bytes erkennen, andernfalls Dateiendung |
-| `max_entries` | 100000 | Archive mit mehr Einträgen zurückweisen (Schutz vor Dekompressionsbomben) |
-| `max_total_bytes` | 2 GiB | Kumulatives Limit der unkomprimierten Ausgabe für `extract_all()` |
-| `max_file_bytes` | 1 GiB | Limit der unkomprimierten Größe eines einzelnen Eintrags |
-| `max_inline_bytes` | 16 MiB | Hartes Limit für den im RAM materialisierenden Aufruf `read()`; darüber `stream()`/`extract()` verwenden |
-| `buffer_bytes` | 64 KiB | Kopierpuffer für Streaming-Extract-/Add-Pfade; begrenzt die Allokation von `read()` nicht |
+| Schlüssel | Standard | Bedeutung |
+|-----|---------|---------|
+| `format` | auto | `"zip"`, `"tar"`, `"tar.gz"`, `"tar.zst"`; auto = Magic Bytes prüfen, sonst Dateiendung |
+| `max_entries` | 100000 | Archive mit mehr Einträgen ablehnen (Schutz vor Dekomprimierungsbomben) |
+| `max_total_bytes` | 2 GiB | Obergrenze für die kumulierte unkomprimierte Ausgabe beim Lesen/Extrahieren |
+| `max_file_bytes` | 1 GiB | Obergrenze für die unkomprimierte Größe eines einzelnen Eintrags |
+| `max_inline_bytes` | 16 MiB | Harte Obergrenze für den RAM-materialisierenden `read()`-Aufruf; darüber `stream()`/`extract()` verwenden |
+| `buffer_bytes` | 64 KiB | Streaming-Kopierpuffer für Lesen/Extrahieren/Hinzufügen |
 
-`max_file_bytes` begrenzt jeden Eintrag, während `max_total_bytes` nur von `extract_all()` des Readers und Walkers erzwungen wird. Anwendungen, die `read()`, `stream()`, `extract()` für einen Eintrag oder manuelles Walking verwenden, müssen ihr eigenes kumulatives Budget durchsetzen. `max_inline_bytes` begrenzt die durch `read()` materialisierten Eintragsdaten; `buffer_bytes` tut dies nicht. Diese Limits umfassen nicht alle Metadaten- und Codec-Allokationen.
+`max_total_bytes`/`max_file_bytes` sind Arbeitsgrenzen, keine RAM-Grenzen — das Streamen eines Eintrags hält nie mehr als `buffer_bytes` plus das Dekomprimierungsfenster des Codecs. Der einzige Stellhebel für die RAM-Größe ist `max_inline_bytes`.
 
-## Lesen — wahlfreier Zugriff
+## Lesen — Wahlfreier Zugriff
 
-`archive.open(source, ...)` öffnet eine **seekfähige** Quelle für vollständigen wahlfreien Zugriff. Das zentrale ZIP-Verzeichnis wird vorab gelesen; Einträge werden bei Bedarf dekomprimiert. Die Quelle kann ein `fs.FS`-Handle mit Pfad, eine offene `fs.File`, ein Cloud-Storage-Reader oder Rohbytes sein. Rohbytes halten das gesamte Archiv im RAM und eignen sich nur für kleine Archive.
+`archive.open(source, ...)` öffnet eine **suchbare** Quelle für vollständigen wahlfreien Zugriff (das zentrale Verzeichnis eines Zip wird vorab gelesen; Einträge werden bei Bedarf dekomprimiert). Die Quelle kann ein `fs.FS`-Handle plus Pfad sein, eine geöffnete `fs.File`, rohe Bytes (Bytes halten das gesamte Archiv im RAM — nur für kleine Archive) oder ein beliebiger Reader mit wahlfreiem Zugriff, den ein anderes Modul übergibt.
+
+Ein Reader aus einem anderen Modul qualifiziert sich, wenn er `io.ReaderAt` implementiert und seine `Size` meldet; ein optionaler `Name` wird für die Erkennung anhand der Dateiendung verwendet, wenn `opts.format` weggelassen wird. [`cloudstorage`](lua/storage/cloud.md) `open_reader` ist ein solcher und liest ein Multi-GB-Archiv direkt aus dem Objektspeicher. Das Archiv öffnet in diesem Fall nichts und schließt den Reader nie — das tut sein Besitzer.
 
 ```lua
 local fs = require("fs")
 local archive = require("archive")
 
--- Open by fs handle + path (the module opens the file and owns its lifecycle)
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then return nil, fs_err end
-local r, err = archive.open(uploads, "incoming.zip")
-if err then return nil, err end
--- Or from an already-open seekable fs.File
--- local r, err = archive.open(open_file)
--- Or from raw bytes (small archives only)
--- local r, err = archive.open(zip_bytes, { format = "zip" })
+-- Öffnen per fs-Handle + Pfad (das Modul öffnet die Datei und besitzt ihren Lebenszyklus)
+local r, err = archive.open(fs.get("app:uploads"), "incoming.zip")
+-- Oder aus einer bereits geöffneten, suchbaren fs.File
+-- local r = archive.open(fs:get("app:uploads"):open("x.zip"))
+-- Oder aus rohen Bytes (nur kleine Archive)
+-- local r = archive.open(zip_bytes, { format = "zip" })
+-- Oder aus einem Reader mit wahlfreiem Zugriff, der einem anderen Modul gehört
+-- local reader = cloudstorage.get("app:files"):open_reader("incoming.zip")
+-- local r = archive.open(reader)
 ```
-
-Übergeben Sie für ein großes Archiv im Cloud-Speicher den von `open_reader` zurückgegebenen Ranged Reader:
-
-```lua
-local cloudstorage = require("cloudstorage")
-
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
-local source, source_err = storage:open_reader("uploads/large.zip")
-if source_err then
-    storage:release()
-    return nil, source_err
-end
-local r, archive_err = archive.open(source)
-if archive_err then
-    source:close()
-    storage:release()
-    return nil, archive_err
-end
-
--- Read archive entries here.
-
-local _, reader_close_err = r:close()
-local _, source_close_err = source:close()
-storage:release()
-if reader_close_err then return nil, reader_close_err end
-if source_close_err then return nil, source_close_err end
-```
-
-Der Archiv-Reader besitzt eine Datei, die er aus einem `fs.FS`-Handle und Pfad öffnet. Eine extern bereitgestellte `fs.File` oder einen Ranged Reader besitzt er nicht; schließen Sie zuerst den Archiv-Reader und danach vom Aufrufer verwaltete Eingaben und Handles.
 
 **Rückgabe:** `Reader, error`
 
 **Berechtigung:** `archive.read`
 
-### `entries`
+### entries
 
-Über Eintragsmetadaten iterieren, ohne die Inhalte zu dekomprimieren:
+Über das Verzeichnis iterieren (nur Metadaten — keine Dekomprimierung):
 
 ```lua
 for e in r:entries() do
@@ -116,240 +84,172 @@ for e in r:entries() do
 end
 ```
 
-### `stat`
+### stat
 
-Eintragsmetadaten anhand des Namens lesen, ohne den Inhalt zu dekomprimieren:
+Eintrags-Metadaten per Name abrufen (keine Dekomprimierung):
 
 ```lua
 local info, err = r:stat("docs/readme.md")
-if err then return nil, err end
 ```
 
-### `read`
+### read
 
-Einen einzelnen Eintrag als Lua-String materialisieren. Oberhalb von `max_inline_bytes` wird ein Fehler mit `kind = Invalid` zurückgegeben; verwenden Sie für große Inhalte `stream()` oder `extract()`:
+Einen einzelnen Eintrag als Lua-String materialisieren. Oberhalb von `max_inline_bytes` ein Fehler (`kind = Invalid`) — für alles Große `stream()` oder `extract()` verwenden:
 
 ```lua
-local data, err = r:read("docs/readme.md")  -- small entries only
-if err then return nil, err end
+local data, err = r:read("docs/readme.md")  -- nur kleine Einträge
 ```
 
-### `stream`
+### stream
 
-Einen Eintrag als `stream.Stream` zurückgeben, der bei Bedarf dekomprimiert. Das Ergebnis kann gescannt, an `fs:writefile()` übergeben oder einem anderen Stream-Konsumenten bereitgestellt werden:
+Gibt den Eintrag als `stream.Stream` zurück, der bei Bedarf dekomprimiert. Lässt sich überall komponieren, wo ein Stream das kann — `:scanner()`, `fs:writefile()` oder an ein anderes Modul übergeben:
 
 ```lua
 local es, err = r:stream("big.csv")
-if err then return nil, err end
 while true do
-    local chunk, read_err = es:read(65536)
-    if read_err then
-        es:close()
-        return nil, read_err
-    end
+    local chunk = es:read(65536)
     if not chunk then break end
     process(chunk)
 end
-local _, close_err = es:close()
-if close_err then return nil, close_err end
+es:close()
 ```
 
-### `extract`
+### extract
 
-Einen Eintrag in ein Zieldateisystem streamen:
+Einen Eintrag in ein Ziel-Dateisystem streamen:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local ok, err = r:extract("docs/readme.md", out)
-if err then return nil, err end
--- optional destination path:
--- r:extract("docs/readme.md", out, "readme.md")
+local ok, err = r:extract("docs/readme.md", fs.get("app:out"))
+-- optionaler Zielpfad:
+-- r:extract("docs/readme.md", fs.get("app:out"), "readme.md")
 ```
 
-### `extract_all`
+### extract_all
 
-Alle Einträge in ein Zieldateisystem streamen:
+Jeden Eintrag in ein Ziel-Dateisystem streamen:
 
 ```lua
-local out, fs_err = fs.get("app:out")
-if fs_err then return nil, fs_err end
-local count, err = r:extract_all(out, {
-    prefix = "job123/",          -- prepend to each destination path
-    strip  = 1,                  -- drop N leading path components
+local count, err = r:extract_all(fs.get("app:out"), {
+    prefix = "job123/",          -- jedem Zielpfad voranstellen
+    strip  = 1,                  -- N führende Pfadkomponenten verwerfen
     filter = function(e) return not e.is_dir end,
 })
-if err then return nil, err end
 ```
 
-Lösen Sie das Zieldateisystem separat im Anwendungscode auf, damit Fehler von `fs.get` behandelt werden können. Bei `extract` für einen Eintrag ergeben unsichere Zielnamen einen Fehler. `extract_all` überspringt Einträge, deren resultierender Pfad `..` enthält, absolut ist oder ein Windows-Laufwerks- beziehungsweise UNC-Präfix besitzt.
+Eintragsnamen werden beim Extrahieren bereinigt — `..`-Segmente, absolute Pfade und Windows-Laufwerks-/UNC-Präfixe werden abgelehnt (Zip-Slip-Schutz).
 
-### `close`
+### close
 
-Den Reader schließen. Die Operation ist idempotent; der Reader wird außerdem am Ende des Task-Geltungsbereichs automatisch geschlossen.
+Den Reader schließen. Idempotent; wird auch am Ende des Task-Scopes automatisch geschlossen.
 
 ```lua
-local ok, err = r:close()
-if err then return nil, err end
+r:close()
 ```
 
-## Lesen — sequenzieller Scan
+## Lesen — Sequenzieller Scan
 
-`archive.scan(source, opts?)` öffnet eine **ausschließlich vorwärts lesbare** Quelle wie einen HTTP-Upload-Body oder Multipart-Dateistream. Einträge werden in Archivreihenfolge besucht; jeder Eintrags-Reader bleibt nur gültig, bis der Walk fortschreitet. Wahlfreier Zugriff mit `read(name)` ist nicht verfügbar.
+`archive.scan(source, opts?)` öffnet einen **nur vorwärts lesbaren** Stream (einen HTTP-Upload-Body, einen Multipart-Dateistream). Einträge werden in Archivreihenfolge besucht; der Reader jedes Eintrags ist nur gültig, bis Sie weiterschalten. Kein wahlfreies `read(name)`.
 
 ```lua
-local up, stream_err = form.files.upload[1]:stream()        -- stream.Stream
-if stream_err then return nil, stream_err end
+local up = form.files.upload[1]:stream()        -- stream.Stream
 local s, err = archive.scan(up, { format = "zip" })
-if err then
-    up:close()
-    return nil, err
-end
 
-local uploads, fs_err = fs.get("app:uploads")
-if fs_err then
-    s:close()
-    up:close()
-    return nil, fs_err
+for e, entry in s:walk() do                      -- entry ist ein stream.Stream
+    if not e.is_dir then
+        fs.get("app:uploads"):writefile("job123/" .. e.name, entry)
+    end
 end
-
-local count, extract_err = s:extract_all(uploads, {prefix = "job123/"})
-if extract_err then
-    s:close()
-    up:close()
-    return nil, extract_err
-end
-local _, close_err = s:close()
-local _, upload_close_err = up:close()
-if close_err then return nil, close_err end
-if upload_close_err then return nil, upload_close_err end
+s:close()
 ```
 
 **Rückgabe:** `Walker, error`
 
 **Berechtigung:** `archive.read`
 
-`extract_all` wendet dieselbe Bereinigung von Zielpfaden und dieselbe Gesamtgrößenbegrenzung wie oben beschrieben an. Wenn eine Anwendung stattdessen `s:walk()` direkt fortsetzt, werden Iteratorfehler als Lua-Fehler ausgelöst, und jeder Eintragsstream ist nur bis zur nächsten Iteration gültig. Die Bereinigung im Task-Geltungsbereich gibt Walker und aktuellen Eintragsstream weiterhin frei; schließen Sie vom Aufrufer verwaltete Eingabestreams ausdrücklich, wenn die Kontrolle in der Anwendung bleibt.
-
-`tar`, `tar.gz` und `tar.zst` streamen nativ. `zip` wird über lokale Header pro Eintrag geparst; Einträge mit einem Streaming-Data-Descriptor, bei denen Größe und CRC hinter den Daten stehen, werden bis zur Eintragsgrenze dekomprimiert. Für robuste Verarbeitung großer ZIP-Uploads schreiben Sie den Upload zunächst als begrenzte sequenzielle Kopie in eine Datei und verwenden anschließend `archive.open`:
+Ein Walker unterstützt außerdem `extract_all` mit denselben Optionen wie der Reader mit wahlfreiem Zugriff und streamt in einem Aufruf jeden Eintrag in ein Ziel-Dateisystem:
 
 ```lua
-local uuid = require("uuid")
-
-local dst, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local upload, stream_err = req:stream()
-if stream_err then return nil, stream_err end
-local stage_id, id_err = uuid.v7()
-if id_err then
-    upload:close()
-    return nil, id_err
-end
-local stage_path = stage_id .. ".zip"
-local copied, copy_err = dst:writefile(stage_path, upload, "wx")
-local _, upload_close_err = upload:close()
-if copy_err or upload_close_err then
-    dst:remove(stage_path)
-    return nil, copy_err or upload_close_err
-end
-local r, open_err = archive.open(dst, stage_path)   -- robust random access
-if open_err then
-    dst:remove(stage_path)
-    return nil, open_err
-end
-
--- Replace this operation with the random-access work the handler needs.
-local info, operation_err = r:stat("manifest.json")
-local _, close_err = r:close()
-local removed, remove_err = dst:remove(stage_path)
-if operation_err then return nil, operation_err end
-if close_err then return nil, close_err end
-if remove_err then return nil, remove_err end
-return info
+local count, err = s:extract_all(fs.get("app:uploads"), { prefix = "job123/" })
 ```
 
-Jede Anfrage erzeugt einen unvorhersagbaren Staging-Namen und legt ihn exklusiv an, sodass gleichzeitige Handler ihre Dateien nicht gegenseitig kürzen können. Nach dem Versuch, die Staging-Datei zu entfernen, wird der primäre Kopier-, Upload-Close-, Open- oder Archivoperationsfehler zurückgegeben. Produktionshandler können einen Bereinigungsfehler separat protokollieren, wenn bereits ein primärer Fehler vorliegt. Fügen Sie für dieses Rezept `uuid` zur Modul-Allowlist des ausführbaren Eintrags hinzu.
+`tar`, `tar.gz` und `tar.zst` streamen nativ. `zip` wird über lokale Header pro Eintrag geparst; Einträge, die mit einem Streaming-Data-Descriptor geschrieben wurden (Größe/CRC folgen den Daten), werden gelesen, indem bis zur Eintragsgrenze dekomprimiert wird. Für robuste Zip-Verarbeitung großer Uploads legen Sie den Upload zuerst als Datei ab (eine begrenzte sequenzielle Kopie) und verwenden dann `archive.open`:
+
+```lua
+local dst = fs.get("app:tmp")
+dst:writefile("u.zip", req:stream())   -- Streaming-Kopie Upload → fs-Datei
+local r = archive.open(dst, "u.zip")   -- robuster wahlfreier Zugriff
+-- ... entries / extract_all ...
+r:close()
+dst:remove("u.zip")
+```
 
 ## Schreiben
 
-`archive.create(dest, ...)` streamt Einträge in einen Dateisystempfad, eine offene beschreibbare Datei oder einen beschreibbaren `stream.Stream`.
+`archive.create(dest, ...)` baut ein Archiv, indem Einträge in ein Ziel gestreamt werden — eine Datei in einem fs (mit Pfad) oder ein beschreibbarer `stream.Stream` (z. B. eine HTTP-Antwort), sodass ein `.zip` zum Herunterladen mit begrenztem Speicher direkt auf die Leitung erzeugt wird.
 
 ```lua
-local tmp, fs_err = fs.get("app:tmp")
-if fs_err then return nil, fs_err end
-local w, err = archive.create(tmp, "out.zip", { format = "zip" })
-if err then return nil, err end
+local w, err = archive.create(fs.get("app:tmp"), "out.zip", { format = "zip" })
+-- oder in eine Antwort streamen:
+-- local w = archive.create(res:stream(), { format = "zip" })
 ```
 
 **Rückgabe:** `Writer, error`
 
 **Berechtigung:** `archive.write`
 
-### `add`
+### add
 
-Einen Eintrag aus einem Lua-String mit Text oder Bytes, einer offenen `fs.File` oder einem `stream.Stream` hinzufügen:
+Einen Eintrag aus einem String, Bytes, einem Reader oder einem `stream.Stream` hinzufügen:
 
 ```lua
-local ok, err = w:add("notes.txt", "hello")
-if err then return nil, err end
-local added, add_err = w:add("from_upload", some_stream, { method = "deflate", mode = 420 }) -- 0644
-if add_err then return nil, add_err end
+w:add("notes.txt", "hello")
+w:add("from_upload", some_stream, { method = "deflate", mode = tonumber("644", 8) })
 ```
 
-### `add_file`
+### add_file
 
 Einen Eintrag aus einer Datei in einem Dateisystem streamen:
 
 ```lua
-local data_fs, fs_err = fs.get("app:data")
-if fs_err then return nil, fs_err end
-local ok, err = w:add_file("data/big.bin", data_fs, "big.bin")
-if err then return nil, err end
+w:add_file("data/big.bin", fs.get("app:data"), "big.bin")
 ```
 
-### `add_dir`
+### add_dir
 
 Einen Verzeichniseintrag hinzufügen:
 
 ```lua
-local ok, err = w:add_dir("empty/")
-if err then return nil, err end
+w:add_dir("empty/")
 ```
 
-### `close`
+### close
 
-Das Archiv einschließlich des zentralen ZIP-Verzeichnisses finalisieren. Die Operation ist idempotent; der Writer wird außerdem am Ende des Task-Geltungsbereichs automatisch geschlossen.
+Das Archiv finalisieren (schreibt bei zip das zentrale Verzeichnis). Idempotent; wird auch am Ende des Task-Scopes automatisch geschlossen.
 
 ```lua
-local ok, err = w:close()
-if err then return nil, err end
+w:close()
 ```
 
-Die Optionen von `add` lauten `{method = "store"|"deflate", mode, size}`. `size` ist erforderlich, wenn einem Archiv der TAR-Familie ein Stream hinzugefügt wird; Stringwerte und `add_file` liefern ihre Größe automatisch. `add_file` akzeptiert `method` und `mode`; `add_dir` besitzt keine Optionen. Der ZIP-Writer verwendet Data Descriptors, wenn sein Ziel ein nicht seekfähiger beschreibbarer Stream ist.
-
-Numerische Lua-Literale sind dezimal; verwenden Sie `420` für die Unix-Berechtigungsbits, die üblicherweise oktal als `0644` geschrieben werden.
-
-Der Writer schließt keine extern bereitgestellte Datei und keinen Stream, die beziehungsweise der als Eintragsquelle oder Archivziel dient. Schließen Sie vom Aufrufer verwaltete Ressourcen nach `w:close()`.
+`add*`-Optionen: `{ method = "store"|"deflate", mode, size }`. Tar-Formate benötigen die Eintragsgröße vorab, daher erfordert `add()` aus einem Stream oder Reader in ein `tar*`-Archiv `size` (Strings und `add_file` liefern sie mit). Der Zip-Writer streamt mittels Data Descriptors auch zu nicht suchbaren Writern, sodass das Schreiben in einen Antwort-Stream funktioniert.
 
 ## Fehler
 
-| Bedingung | Art |
-|-----------|-----|
+| Bedingung | Kind |
+|-----------|------|
+| Quelle ist kein fs-Handle, keine fs-Datei, keine Bytes und kein Reader mit wahlfreiem Zugriff | `errors.INVALID` |
 | Unbekanntes / nicht passendes Format | `errors.INVALID` |
-| Vom aktuellen Lua-Wrapper gemeldetes beschädigtes oder abgeschnittenes Archiv | `errors.INTERNAL` |
-| Gesamtlimit von Inline-`read()` oder `extract_all` überschritten | `errors.INVALID` |
-| Beim Öffnen oder Lesen über den aktuellen Lua-Wrapper erreichtes Eintrags-/Archivlimit | `errors.INTERNAL` |
-| Wahlfreier Zugriff auf ein reines Streaming-Format (`scan` verwenden) | `errors.UNAVAILABLE` |
+| Beschädigtes oder abgeschnittenes Archiv | `errors.INVALID` |
+| Grenzwert überschritten (Einträge / gesamt / Datei / inline) | `errors.INVALID` |
+| Wahlfreier Zugriff auf ein reines Stream-Format (`scan` verwenden) | `errors.UNAVAILABLE` |
 | Eintragsname nicht gefunden | `errors.NOT_FOUND` |
-| Archivrichtlinie verweigert | `errors.PERMISSION_DENIED` |
-| E/A-Fehler der Quelle oder des Ziels | `errors.INTERNAL` |
-| Veralteten gestreamten Eintrag lesen, nachdem der Walk fortgeschritten ist | `errors.INTERNAL` |
+| Quelle nicht lesbar / Ziel nicht beschreibbar | `errors.PERMISSION_DENIED` |
+| Lesen eines veralteten gestreamten Eintrags, nachdem der Walk weitergeschaltet hat | `errors.INTERNAL` |
 
-Unter [Fehlerbehandlung](../core/errors.md) erfahren Sie, wie Sie mit Fehlern arbeiten.
+Siehe [Fehlerbehandlung](lua/core/errors.md) für den Umgang mit Fehlern.
 
 ## Siehe auch
 
-- [Dateisystem](../storage/filesystem.md) - Quell- und Zieldateisysteme
-- [Cloud-Speicher](../storage/cloud.md) - Ranged Reader für in der Cloud gespeicherte Archive
-- [Stream](../core/stream.md) - An Archive übergebene und von ihnen zurückgegebene Streamobjekte
-- [Komprimierung](./compress.md) - gzip/deflate/zstd im Arbeitsspeicher
+- [Dateisystem](lua/storage/filesystem.md) - Quell- und Ziel-Dateisysteme
+- [Stream](lua/core/stream.md) - Stream-Objekte, die an Archive übergeben und von ihnen zurückgegeben werden
+- [Kompression](lua/data/compress.md) - gzip/deflate/zstd im Speicher
+- [Cloud Storage](lua/storage/cloud.md) - `open_reader` als Archivquelle mit wahlfreiem Zugriff

@@ -1,25 +1,31 @@
 ---
-title: "Contrato de compilación y dependencias"
-description: "Comandos canónicos de salida, wrappers de Windows, instantáneas del mapa de importación de Web Host y dependencias externas."
+title: "Contrato de Build y Dependencias"
+description: "Comandos de salida canónicos, wrappers de Windows, snapshots del import map del Web Host y externals."
 ---
 
-# Contrato de compilación y dependencias
+# Contrato de Build y Dependencias
 
-Esta es una referencia de contrato para repositorios existentes. Los bloques de Makefile, PowerShell, batch y Vite siguientes son fragmentos específicos; no forman una estructura de proyecto independiente.
+## Contrato canónico de build de un proyecto Wippy
 
-## Contrato canónico de compilación de producción de Wippy
+En un repositorio de aplicación o módulo Wippy lanzado por `wippy.exe`, invoque
+el target de Make del repositorio. No ejecute directamente comandos de build del
+gestor de paquetes ni de Vite.
 
-Para un artefacto de producción de una aplicación o repositorio de módulo Wippy iniciado por `wippy.exe`, invoque el target de Make del repositorio. Los comandos locales de modo watch, como `npm run dev`, siguen siendo válidos cuando el repositorio los documenta, pero no sustituyen la compilación de despliegue.
-
-La receta del Makefile para cada target frontend de producción usa:
+La receta del Makefile para cada target de frontend de producción usa:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-La compilación de despliegue controla `<target>`. `vite.config.ts` no debe fijar un directorio de salida de despliegue.
+El build de despliegue es dueño de `<target>`. `vite.config.ts` no debe fijar en
+duro un directorio de salida de despliegue.
 
-Los repositorios fuente de plataforma o paquetes que no inicia `wippy.exe`, como el código fuente de Web Host, usan los scripts y argumentos exactos declarados por el `package.json` de ese repositorio. La receta de módulo Wippy con directorio de salida limpio no se aplica a repositorios fuente de paquetes, salvo que su propio script declarado documente expresamente esos argumentos.
+Los repositorios fuente de plataforma o de paquetes que no se lanzan con
+`wippy.exe`, como el código fuente del Web Host, usan exactamente los scripts y
+argumentos declarados por el `package.json` de ese repositorio. La receta
+`--outDir <target> --emptyOutDir` de los módulos Wippy no se aplica a
+repositorios fuente de paquetes salvo que su propio script declarado documente
+explícitamente esos argumentos.
 
 ### Makefile
 
@@ -33,7 +39,9 @@ frontend-example:
 
 ### make.ps1
 
-Los usuarios de Windows invocan el target correspondiente mediante `make.bat`. `make.ps1` implementa el target del Makefile para Windows; no es una interfaz pública de compilación independiente.
+Los usuarios de Windows invocan el target equivalente a través de `make.bat`.
+`make.ps1` implementa el target del Makefile para Windows; no es una interfaz de
+build pública separada.
 
 ```powershell
 param(
@@ -63,40 +71,34 @@ finally {
 
 ### make.bat
 
-`make.bat` solo delega en su equivalente de PowerShell, reenvía los argumentos y devuelve su código de salida. Para el target de ejemplo, los usuarios de Windows ejecutan `make.bat frontend-example`.
+`make.bat` solo delega en su contraparte de PowerShell, reenvía los argumentos y devuelve su código de salida.
+Para el target de ejemplo, los usuarios de Windows ejecutan `make.bat frontend-example`.
 
 ```bat
 @powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0make.ps1" %*
 @exit /b %ERRORLEVEL%
 ```
 
-## Algoritmo de instantánea del mapa de importación
+## Algoritmo del snapshot del import map
 
-La versión objetivo de Web Host define los módulos proporcionados por el host.
+La release del Web Host de destino define los módulos provistos por el host.
 
-1. Resuelva la etiqueta de la versión objetivo de Web Host.
-2. Obtenga `https://web-host.wippy.ai/<release-tag>/import-map.json` una vez durante el desarrollo.
-3. Almacene la etiqueta de versión, la URL resuelta exacta, el objeto `imports` completo y el SHA-256 en minúsculas de los bytes exactos del payload del mapa de importación obtenido.
-4. Marque como externa cada clave de ese objeto `imports`.
-5. Use la misma instantánea completa en el modo sin host.
-6. Vuelva a obtenerla cuando cambie la versión del host o cuando una dependencia recién añadida pueda estar ahora proporcionada por el host.
-7. Inspeccione la salida compilada y rechace imports simples que no figuren en la instantánea.
+1. Resuelva el tag de release del Web Host de destino.
+2. Obtenga
+   `https://web-host.wippy.ai/<release-tag>/import-map.json` una vez durante el
+   desarrollo.
+3. Almacene el tag de release, la URL exacta resuelta, el objeto `imports`
+   completo y el SHA-256 en minúsculas de los bytes exactos del payload del
+   import map obtenido.
+4. Externalice cada clave de ese objeto `imports`.
+5. Use el mismo snapshot completo para el modo host-less.
+6. Vuelva a obtenerlo cuando cambie la release del host o cuando una dependencia
+   recién añadida pueda estar ahora provista por el host.
+7. Inspeccione la salida compilada y rechace los imports desnudos que no estén en
+   el snapshot.
 
-No mantenga una lista de paquetes escrita a mano. No replique el conjunto completo de dependencias externas en las peer dependencies.
-
-Para compilaciones de entrada de componentes web, conserve el efecto secundario de registro del módulo de entrada:
-
-```ts
-export default {
-  build: {
-    rollupOptions: {
-      preserveEntrySignatures: 'strict',
-    },
-  },
-}
-```
-
-Usar `false` puede sacar `define(import.meta.url, Component)` del chunk de entrada, de modo que el import `?declare-tag=` del Host no registre el elemento.
+No mantenga una lista de paquetes escrita a mano. No replique el conjunto
+completo de externals en las peer dependencies.
 
 ```ts
 import hostImportMap from './wippy-import-map.json'
@@ -110,8 +112,8 @@ export default {
 }
 ```
 
-La instantánea debe incluir su procedencia y hash. Una dependencia ausente de la instantánea se incluye en el bundle, salvo que se aplique otra regla de compilación documentada.
+El snapshot debe incluir su procedencia y su hash. Una dependencia ausente del
+snapshot se empaqueta en el bundle salvo que se aplique otra regla de build
+documentada.
 
 Para la versión de referencia Web Host 1.0.56, la URL canónica de la instantánea es `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`. No la sustituya por la URL de la aplicación local, una URL `latest` sin fijar ni una lista de paquetes reconstruida manualmente.
-
-Esta versión del Host se coordina con los paquetes públicos `@wippy-fe/*` 0.0.56. `@wippy-fe/vite-plugin` 0.0.56 admite Vite 5, 6 y 7. Los ejemplos de esta documentación usan Vite 7 con Node 22.12 o posterior; quienes decidan permanecer en Vite 5 o 6 deben seguir los requisitos de Node de esa versión de Vite. El repositorio fuente de Web Host declara por separado Node 22+ y usa Vite 7.

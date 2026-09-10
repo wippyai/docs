@@ -1,15 +1,13 @@
 ---
 title: "Migraciones"
-description: "Define, aplica, inspecciona y revierte migraciones ordenadas de bases de datos para SQLite, PostgreSQL y MySQL."
+description: "El modulo wippy/migration proporciona un framework de migracion de bases de datos con un pequeno DSL para definir cambios de esquema, un runner que las…"
 ---
 
 # Migraciones
 
-El módulo `wippy/migration` proporciona un DSL para cambios de esquema, un runner que descubre y ejecuta migraciones y un bootloader que aplica migraciones pendientes a cada `target_db` registrado.
+El modulo `wippy/migration` proporciona un framework de migracion de bases de datos con un pequeno DSL para definir cambios de esquema, un runner que las descubre y ejecuta, y un bootloader que ejecuta las migraciones pendientes para cada `target_db` registrado en el proyecto.
 
-Las migraciones admiten SQLite, PostgreSQL y MySQL. Cada migración puede definir juntas implementaciones `up` y `down` específicas del driver.
-
-Esta página es una receta parcial de migración y una referencia del runner, no una aplicación completa. La definición siguiente se puede adaptar después de conectar el módulo y la base de datos; las llamadas posteriores al runner y las tablas de resultados son fragmentos de referencia. Cree backups antes de aplicar migraciones a datos que necesite conservar y pruebe primero `up` y `down` contra una base de datos desechable.
+Las migraciones soportan SQLite, PostgreSQL y MySQL, con implementaciones `up`/`down` por driver definidas lado a lado.
 
 ## Configuracion
 
@@ -29,7 +27,7 @@ namespace: app
 entries:
   - name: app_db
     kind: db.sql.sqlite
-    file: ./data/app.db
+    path: ./data/app.db
 
   - name: dep.migration
     kind: ns.dependency
@@ -38,8 +36,6 @@ entries:
 ```
 
 El bootloader de migracion se registra con `wippy/bootloader` en el orden `20`. Cuando la aplicacion inicia, descubre cada entrada de migracion en el registro, las agrupa por `meta.target_db` y ejecuta las migraciones pendientes contra cada base de datos.
-
-Si usa la ruta relativa de SQLite mostrada arriba, cree el directorio `data` antes de iniciar la aplicación. Verifique el resultado con `runner:status()`; use `runner:rollback()` solo cuando la implementación `down` de la migración sea segura para los datos de prueba.
 
 ## Definir una Migracion
 
@@ -63,7 +59,7 @@ return require("migration").define(function()
     migration("Create users table", function()
         database("sqlite", function()
             up(function(db)
-                local _, err = db:execute([[
+                local ok, err = db:execute([[
                     CREATE TABLE users (
                         id    INTEGER PRIMARY KEY,
                         name  TEXT NOT NULL,
@@ -74,26 +70,23 @@ return require("migration").define(function()
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
 
         database("postgres", function()
             up(function(db)
-                local _, err = db:execute([[
+                db:execute([[
                     CREATE TABLE users (
                         id    SERIAL PRIMARY KEY,
                         name  TEXT NOT NULL,
                         email TEXT NOT NULL UNIQUE
                     )
                 ]])
-                if err then error(err) end
             end)
 
             down(function(db)
-                local _, err = db:execute("DROP TABLE IF EXISTS users")
-                if err then error(err) end
+                db:execute("DROP TABLE IF EXISTS users")
             end)
         end)
     end)
@@ -109,11 +102,11 @@ end)
 | `meta.timestamp` | no | Marca de tiempo ISO-8601 usada para ordenar cuando multiples migraciones apuntan a la misma base de datos |
 | `meta.tags` | no | Array de etiquetas; el runner puede filtrar migraciones por etiqueta |
 
-Las migraciones para una base de datos se ejecutan en orden ascendente de `meta.timestamp`. `meta.timestamp` es opcional; el ID completo de la entrada desempata, de modo que las migraciones sin marca o con la misma marca mantienen un orden estable y determinista.
+Las migraciones para una base de datos se ejecutan en orden ascendente de `meta.timestamp`. `meta.timestamp` es opcional; el id completo de la entrada es el desempate, de modo que las migraciones con marcas de tiempo iguales o ausentes se ejecutan igualmente en un orden estable y determinista.
 
 ## DSL
 
-Dentro de la funcion pasada a `migration.define`, hay tres funciones anidadas disponibles:
+Dentro de la funcion pasada a `migration.define`, estan disponibles las siguientes funciones anidadas:
 
 | Funcion | Descripcion |
 |---------|-------------|
@@ -127,9 +120,9 @@ Cada funcion `up`/`down`/`after` recibe un objeto de transaccion, no una conexio
 ### Metodos de Transaccion
 
 ```lua
-local rows, err  = db:query(sql, params)    -- SELECT, returns array of rows
-local result, err = db:execute(sql, params) -- INSERT/UPDATE/DDL, returns { rows_affected, last_insert_id }
-local stmt, err  = db:prepare(sql)          -- prepared statement
+local rows, err  = db:query(sql, params)    -- SELECT, retorna array de filas
+local result, err = db:execute(sql, params) -- INSERT/UPDATE/DDL, retorna { rows_affected, last_insert_id }
+local stmt, err  = db:prepare(sql)          -- sentencia preparada
 ```
 
 Usa siempre consultas parametrizadas:
@@ -149,7 +142,7 @@ up(function(db)
 end)
 ```
 
-## API del ejecutor :id=api-del-runner
+## API del Runner
 
 El runner se expone como una biblioteca para uso programatico:
 
@@ -161,10 +154,10 @@ imports:
 ```lua
 local runner = require("runner").setup("app:app_db")
 
-local result = runner:run()      -- apply all pending migrations
-local result = runner:run_next() -- apply the next pending migration
-local result = runner:rollback() -- roll back the most recently applied migration
-local status = runner:status()   -- list applied + pending migrations
+local result = runner:run()      -- aplicar todas las migraciones pendientes
+local result = runner:run_next() -- aplicar la siguiente migracion pendiente
+local result = runner:rollback() -- revertir la migracion aplicada mas recientemente
+local status = runner:status()   -- listar migraciones aplicadas + pendientes
 ```
 
 ### `runner:run(options)`
@@ -173,13 +166,13 @@ Aplica cada migracion pendiente para la base de datos configurada. Retorna un re
 
 ```lua
 {
-    status = "complete",            -- "complete" or "error"
+    status = "complete",            -- "complete" o "error"
     migrations_found = 3,
     migrations_applied = 2,
     migrations_skipped = 1,
     migrations_failed = 0,
     duration = 0.123,
-    migrations = { ... },           -- per-migration status
+    migrations = { ... },           -- estado por migracion
     skipped_details = { ... },
 }
 ```
@@ -192,24 +185,24 @@ Opciones:
 
 ### `runner:rollback(options)`
 
-Revierte migraciones en orden inverso de aplicación. Sin opciones, revierte la última:
+Revierte las migraciones aplicadas en orden inverso al de aplicacion. Sin opciones revierte unicamente la migracion aplicada mas recientemente:
 
 ```lua
-runner:rollback()                                            -- roll back the last migration
-runner:rollback({ count = 3 })                               -- roll back the last 3
-runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restrict to specific ids
+runner:rollback()                                            -- revertir la ultima migracion
+runner:rollback({ count = 3 })                               -- revertir las ultimas 3
+runner:rollback({ allowed_ids = { "app:01_create_users_table" } }) -- restringir a ids concretos
 ```
 
 Opciones:
 
-| Opción | Descripción |
+| Opcion | Descripcion |
 |--------|-------------|
-| `count` | Número de migraciones que se revierten; el valor predeterminado es `1` |
-| `allowed_ids` | Array de IDs de migración; solo estos pueden revertirse |
+| `count` | Numero de migraciones a revertir; por defecto `1` |
+| `allowed_ids` | Array de ids de migracion; solo estas son elegibles para reversion |
 
 ### `runner:status(options)`
 
-Devuelve un informe de estado que describe cada migración de la base de datos:
+Retorna un informe de estado que describe cada migracion de la base de datos:
 
 ```lua
 {
@@ -226,7 +219,7 @@ Devuelve un informe de estado que describe cada migración de la base de datos:
 }
 ```
 
-Las migraciones aplicadas aparecen primero (ordenadas por `applied_at`), seguidas de las pendientes (ordenadas por `meta.timestamp` y luego por id).
+Las migraciones aplicadas se listan primero (ordenadas por `applied_at`), seguidas de las pendientes (ordenadas por `meta.timestamp`, luego por id).
 
 ## API de Registry
 
@@ -243,7 +236,7 @@ El bootloader las usa para descubrir el conjunto completo de bases de datos dest
 
 ## Seguimiento de Migraciones
 
-El runner crea una tabla `_migrations` en cada base de datos destino en la primera ejecución. Las migraciones aplicadas se registran por id para que las ejecuciones posteriores las omitan. La tabla de seguimiento se crea automáticamente; no escriba su propia migración para crearla.
+El runner crea una tabla `_migrations` en cada base de datos destino en la primera ejecucion. Las migraciones aplicadas se registran por id para que las ejecuciones posteriores las omitan. La tabla de seguimiento se crea automaticamente; no escribas tu propia migracion para crearla.
 
 ## Buenas Practicas
 
@@ -255,6 +248,6 @@ El runner crea una tabla `_migrations` en cada base de datos destino en la prime
 
 ## Ver Tambien
 
-- [Driver SQL](system/database.md) — Configuración del recurso de base de datos
-- [Bootloader](framework/bootloader.md) — Ordenamiento y hooks del bootloader
-- [Visión general del framework](framework/overview.md) — Uso de módulos del framework
+- [SQL Driver](system/database.md) - Configuracion del recurso de base de datos
+- [Bootloader](framework/bootloader.md) - Ordenamiento y hooks del bootloader
+- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework

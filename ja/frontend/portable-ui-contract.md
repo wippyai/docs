@@ -1,76 +1,74 @@
 ---
-title: "Portable UI 契約"
-description: "PrimeVue、Tailwind、token、custom control、accessibility、portability に関する規範的な規則。"
+title: "ポータブルUI契約"
+description: "PrimeVue、Tailwind、トークン、カスタムコントロール、アクセシビリティ、ポータビリティに関する規範的なルール。"
 ---
 
-# Portable UI 契約
+# ポータブルUI契約
 
-このページは規範的な契約リファレンスです。各 rule ID は実装チュートリアルではなく、review と acceptance の要件を定義します。
+以下のIDが、それぞれのルールの正式な所有者です。
 
-以下の ID が各規則の正規の所有者です。
+## ポータビリティ
 
-## 移植性
+### FE-PORT-001: ポータブルであることがデフォルト
 
-### FE-PORT-001：portable がデフォルト
+準拠したモジュールは、モジュールを編集することなく、またプロジェクト固有の非公開ファサードクラスに頼ることなく、別の準拠ファサードテーマでも動作します。
 
-準拠モジュールは、モジュールを編集せず、プロジェクト固有の facade class を使わずに、別の準拠 facade theme でも動作します。
+### FE-STYLE-001: 非公開ファサードへの依存禁止
 
-### FE-STYLE-001：private facade への依存を禁止
+ポータブルなモジュールは、1つのファサードだけが定義する任意のクラスやセレクタを必要としてはいけません。共有のPrimeVue `.p-*` テーマルールは非公開クラスではありません。あるモジュールが必要とするPrimeVue以外のスタイリングはそのモジュールに属しますが、共有コンポーネントとセマンティクスに従うことで最小化すべきです。
 
-portable module は、1 つの facade だけで定義された任意の class または selector を要求できません。共有 PrimeVue `.p-*` theme rule は private class ではありません。1 つのモジュールだけが必要とする PrimeVue 以外の styling はそのモジュールに置きますが、共有 component と semantics に従って最小限にする必要があります。
+自分の*複数の*モジュールが同じPrimeVue以外のスタイリングを必要とする場合、それはファサードにも各モジュールにも属しません。[デザインレイヤー](./design-layer.md)を参照してください。
 
-自作モジュールの *複数* で同じ PrimeVue 以外の styling が必要な場合、それは facade にも各モジュールにも属しません。[デザインレイヤー](./design-layer.md)を参照してください。
+## コンポーネントとアフォーダンス
 
-## コンポーネントと affordance
+### FE-UI-001: PrimeVueがコントロールを満たすなら使用する
 
-### FE-UI-001：要件を満たす場合は PrimeVue を使用
+PrimeVueが必要なセマンティクス、インタラクション、意図されたアフォーダンスを提供するなら、モジュールはそれを使用しなければなりません。
 
-PrimeVue が必要な semantics、interaction、意図した affordance を提供する場合、モジュールはそれを使用する必要があります。
+### FE-UI-002: データ形状はアフォーダンスではない
 
-### FE-UI-002：データ形状は affordance ではない
+同じ値を表現できるからといって、2つのコントロールが等価になるわけではありません。意図されたアフォーダンスが見た目にも挙動としてもトグルである場合、`SelectButton` はスライド式の3状態トグルの代替に自動的になるわけではありません。
 
-同じ値を表現できるだけでは、2 つのコントロールが等価とは限りません。意図する affordance が見た目と動作の両方で toggle である場合、`SelectButton` が 3 position sliding toggle の自動的な代替になるわけではありません。
+### FE-UI-003: セマンティクスとアフォーダンスが同じなら見た目も同じ
 
-### FE-UI-003：意味と操作性が同じなら外観も同じ
+等価なコントロールは、サイズ、間隔、色、タイポグラフィ、ボーダー、シャドウ、フォーカス、ホバー、無効、不正、モーションの挙動を共有しなければなりません。カスタムのコンポジットは、PrimeVueにおける視覚的な兄弟を明示し、該当するすべての共有ランタイムプロパティを継承します。
 
-等価なコントロールは、size、spacing、color、typography、border、shadow、focus、hover、disabled、invalid、motion の挙動を共有する必要があります。custom composite は PrimeVue の visual sibling を指定し、適用可能な共有 runtime property をすべて継承します。
+### FE-UI-004: PrimeVueの省略は狭い範囲に限られる
 
-### FE-UI-004：PrimeVue の省略は限定的
+PrimeVueを省略できるのは、モジュールが物理的にもセマンティックにもPrimeVue的なものを一切レンダリングしない場合に限られます。チャートのみのコンポーネントは該当しますが、ボタンやフォームフィールドを含むチャートは該当しません。
 
-物理的にも意味的にも PrimeVue に類するものを何も描画しない場合に限り、PrimeVue を省略できます。chart だけの component は該当しますが、button や form field を持つ chart は該当しません。
+### FE-UI-005: コンポーネントAPIを発明しない
 
-### FE-UI-005：component API を作り出さない
+ドキュメント化されていないpropや挙動は近道ではありません。PrimeVueの `ToggleSwitch` は、新しいpositions propを発明したところで3状態のコントロールにはなりません。必要なアフォーダンスを供給するPrimeVueコンポーネントやコンポジションが存在しない場合は、レビュー済みのカスタム兄弟プロセスを使用してください。
 
-未文書化の prop や behavior は近道ではありません。存在しない positions prop を追加しても PrimeVue `ToggleSwitch` は 3 position control になりません。必要な affordance を提供する PrimeVue component または composition がない場合、review 済み custom-sibling process を使用します。
+## Tailwindとトークン
 
-## Tailwind と token
+### FE-TW-001: Wippy Tailwindはサポートされている
 
-### FE-TW-001：Wippy Tailwind はサポート対象
+共有のWippyプリセットはサポートされたビルド時の契約です。モジュールはドキュメント化されたユーティリティを使用でき、ドメイン固有のレイアウト、アプリケーション固有のブレークポイント、装飾、新規の可視化のために拡張できます。
 
-共有 Wippy preset はサポート対象のビルド時契約です。モジュールは文書化された utility を使用し、domain layout、application-specific breakpoint、decoration、新しい visualization のために拡張できます。
+### FE-TW-002: コンパイルされた値はランタイムトークンではない
 
-### FE-TW-002：コンパイル済み値は runtime token ではない
+`px-3`、`rounded-md`、`duration-200` のようなユーティリティは通常、定数にコンパイルされます。一貫したベースラインを提供しますが、ファサードがランタイムのテーマ変数を差し替えても変化しません。
 
-`px-3`、`rounded-md`、`duration-200` などの utility は通常、定数へコンパイルされます。一貫した baseline を提供しますが、facade が runtime theme variable を切り替えても変化しません。
+### FE-TW-003: 共有される兄弟の見た目はランタイムのセマンティクスに追従する
 
-### FE-TW-003：共有 sibling appearance は runtime semantics に追従
+見た目のプロパティがテーマをまたいでPrimeVueの兄弟に追従しなければならない場合は、ドキュメント化されたランタイム連動のセマンティックユーティリティか、公開トークンを直接使用してください。固定値のユーティリティが許されるのは、そのプロパティが明示的に `platform-invariant` に分類されている場合だけです。
 
-appearance property が theme 間で PrimeVue sibling に追従する必要がある場合、文書化された runtime-backed semantic utility または public token を直接使用します。固定 utility が許可されるのは、その property が明示的に `platform-invariant` と分類されている場合だけです。
+### FE-TW-004: 保護されたマッピングは意味を保つ
 
-### FE-TW-004：保護された mapping の意味を維持
+モジュールはプリセットを拡張できますが、保護された primary、surface、severity、text、content、highlight、ポータブルコントロールのセマンティクスを非互換な形で再定義してはいけません。
 
-モジュールは preset を拡張できますが、保護された primary、surface、severity、text、content、highlight、portable-control semantics を非互換に再定義できません。
+### FE-TOKEN-001: すべてのトークンは実在しなければならない
 
-### FE-TOKEN-001：すべての token が実在すること
+すべての `--p-*` 参照は、選択された生成済みマニフェストに存在しなければなりません。
 
-すべての `--p-*` 参照は、選択した生成済み manifest に存在する必要があります。
+### FE-TOKEN-002: トークン名は推測可能なAPIではない
 
-### FE-TOKEN-002：token 名は推測可能な API ではない
-
-類推で token を組み立てないでください。[トークンカタログ](./micro-frontends/token-catalogue.md)または選択した package manifest を検索します。
+類推でトークンを組み立ててはいけません。[トークンカタログ](./micro-frontends/token-catalogue.md)または選択したパッケージのマニフェストを検索してください。
 
 ## アクセシビリティ
 
-### FE-A11Y-001：custom は accessibility 免除ではない
+### FE-A11Y-001: カスタムであることはアクセシビリティの免除ではない
 
-custom-control の例外でも、有効な HTML、keyboard interaction、focus、accessible name、state、disabled behavior を維持する必要があります。interactive element を入れ子にしてはいけません。
+カスタムコントロールの例外は、妥当なHTML、キーボード操作、フォーカス、アクセシブル名、状態、無効時の挙動を維持しなければなりません。インタラクティブ要素をネストしてはいけません。

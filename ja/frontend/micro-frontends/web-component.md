@@ -1,31 +1,29 @@
 ---
-title: "Web Component Recipe"
-description: "content-only と control-bearing custom element 向けの portable view.component recipe。"
+title: "Web コンポーネントのレシピ"
+description: "コンテンツのみのカスタム要素と、コントロールを含むカスタム要素のための可搬な view.component レシピ。"
 ---
 
-# Web コンポーネントレシピ :id=web-component-recipe
+# Web コンポーネントのレシピ
 
-web component は `view.component` として登録され、通常 shadow root に render します。最小限の有効な setup を選びます。
+Web コンポーネントは `view.component` として登録され、通常は shadow root 内でレンダリングされます。妥当な範囲で最小の構成を選んでください。
 
-以下は既存 Vue/Vite project 向け integration recipe で、standalone scaffold ではなく Wippy 固有 element、metadata、build configuration を示します。
+## バリアント A: コンテンツのみ
 
-## バリアント A: コンテンツのみ :id=variant-a-content-only
-
-chart、diagram、renderer、visualization は control を render せず shared Tailwind utility も author しない場合、PrimeVue と Tailwind を省略できます。
+チャート、ダイアグラム、レンダラー、ビジュアライゼーションは、コントロールを一切レンダリングせず、共有 Tailwind ユーティリティを記述しない場合、PrimeVue と Tailwind を省略できます。
 
 それでも次は必須です。
 
-- 有効な custom-element tag を publish する。
-- rendered content の accessibility を保つ。
-- supported Wippy configuration/CSS delivery を使う。
-- project-private facade class を避ける。
-- Wippy module repository の canonical Make target で build する。
+- 妥当なカスタム要素タグを公開すること。
+- レンダリングされるコンテンツのアクセシビリティを保つこと。
+- サポートされる Wippy の設定と CSS 配信を使うこと。
+- プロジェクト私有のファサードクラスを避けること。
+- Wippy モジュールリポジトリの正典の Make ターゲットでビルドすること。
 
-button、input、form、menu、その他 PrimeVue 相当 control を追加した時点で exemption は終了します。
+後からボタン、入力、フォーム、メニュー、その他 PrimeVue 相当のコントロールを追加した時点で、この免除は終了します。
 
-## バリアント B: コントロール付き :id=variant-b-control-bearing
+## バリアント B: コントロールを含む
 
-control を持つ component は Wippy PrimeVue plugin で PrimeVue を導入し、host theme と PrimeVue CSS を受け取ります。web-component package は全 host CSS key をデフォルトで読みます。次の explicit list は example が使う asset と shared iframe/scrollbar CSS に絞ります。
+コントロールを持つコンポーネントは、Wippy の PrimeVue プラグインを通じて PrimeVue をインストールし、必要な CSS 配信キーを設定しなければなりません。次のエントリは、現在パッケージがサポートする Vue の書き方です。
 
 ```ts
 import { defineComponent, h } from 'vue'
@@ -68,9 +66,7 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
-### パッケージメタデータ契約 :id=package-metadata-contract
-
-package metadata は同じ custom element を識別する必要があります。
+パッケージのメタデータは、同じカスタム要素を示していなければなりません。
 
 ```json
 {
@@ -78,7 +74,6 @@ package metadata は同じ custom element を識別する必要があります�
   "version": "0.1.0",
   "type": "module",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
   "wippy": {
     "type": "component",
     "tagName": "example-controls",
@@ -91,9 +86,7 @@ package metadata は同じ custom element を識別する必要があります�
 }
 ```
 
-有効な package `wippy.type` は `"component"` と `"widget"` です。registry kind `view.component` を package value に使いません。
-
-component build は strict Wippy component plugin と complete pinned target-host import-map snapshot を使います。
+コンポーネントのビルドでは、厳格な Wippy コンポーネントプラグインと、ピン留めされた対象ホストの完全なインポートマップスナップショットを使用します。
 
 ```ts
 import { defineConfig } from 'vite'
@@ -111,32 +104,29 @@ export default defineConfig({
     },
     rollupOptions: {
       external: Object.keys(hostImportMap.imports),
-      preserveEntrySignatures: 'strict',
     },
   },
 })
 ```
 
-`preserveEntrySignatures: 'strict'` を維持してください。ほかの Rollup value はこの Wippy component build contract を満たしません。
+このコンポーネントが Tailwind ユーティリティを記述する場合は、共有の Wippy Tailwind プリセットを使用してください。PrimeVue 自体は、モジュールが Tailwind ユーティリティを発明することを要求しません。
 
-component が Tailwind utility を author する場合は shared Wippy Tailwind preset を使います。PrimeVue 自体は module に Tailwind utility の作成を要求しません。
+## shadow root のルール
 
-## Shadow-root rule
+- 公開された CSS 変数は shadow root へ継承されます。
+- セレクターのルールは、ホストがそれらをルートへ配信した場合にのみ効きます。
+- 共有の PrimeVue テーマ CSS はサポートされる依存関係です。
+- 任意のファサードクラスは可搬な API ではありません。
+- オーバーレイの配置は実際のランタイムで検証しなければなりません。汎用的な配置レシピを押し付けないでください。
 
-- public CSS variable は shadow root に継承できる。
-- selector rule は host が root 内へ配信した場合だけ効く。
-- shared PrimeVue theme CSS は supported dependency。
-- 任意 facade class は portable API ではない。
-- overlay placement は実 runtime で検証し、generic placement recipe を強制しない。
+## メタデータとビルド
 
-## Metadata と build
-
-props/events は package metadata に記述します。registry entry の deployment-specific `meta.props` / `meta.events` override が存在すれば bundled metadata より優先します。module repository の Make target を呼び、その recipe が次を使います。
+選択したスキーマが要求するとおり、props と events をパッケージのメタデータとレジストリエントリの両方に記載してください。モジュールリポジトリの Make ターゲットを呼び出します。そのレシピは次を使用します。
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-underlying command を直接実行しません。Windows では `make.bat` を呼び、`make.ps1` に委譲します。
+この裏側のコマンドを直接実行しないでください。Windows では `make.bat` を呼び出します。`make.bat` は `make.ps1` へ委譲します。
 
-[Theme Authoring](./theming.md)、[Tailwind Contract](./tailwind-contract.md)、[Build and Dependency Contract](./build-system.md)も参照してください。
+[テーマの記述](./theming.md)、[Tailwind 契約](./tailwind-contract.md)、[ビルドと依存関係の契約](./build-system.md) を参照してください。

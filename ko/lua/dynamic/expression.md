@@ -1,6 +1,6 @@
 ---
 title: "표현식 언어"
-description: "Lua에서 expr-lang expression을 compile하고 evaluate합니다."
+description: "expr-lang 구문을 사용하여 동적 표현식을 평가합니다. 전체 Lua 실행 없이 필터링, 검증, 규칙 평가를 위한 안전한 표현식을 컴파일하고 실행합니다."
 ---
 
 # 표현식 언어
@@ -8,8 +8,11 @@ description: "Lua에서 expr-lang expression을 compile하고 evaluate합니다.
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-`expr` 모듈은 Lua source code를 실행하지 않고 filtering, validation, calculation, rule evaluation을 수행할 수 있도록 [expr-lang](https://expr-lang.org/) expression을 compile하고 evaluate합니다. 이 페이지는 canonical Lua API reference입니다. example은 entry가 `expr` 모듈을 선언한 기존 Wippy Lua process 안에서 실행되며 standalone Wippy application은 아닙니다. expression과 capability-restricted Lua 중 선택할 때는 [동적 평가](./eval.md)를 참조하십시오.
+[expr-lang](https://expr-lang.org/) 구문을 사용하여 동적 표현식을 평가합니다. 전체 Lua 실행 없이 필터링, 검증, 규칙 평가를 위한 안전한 표현식을 컴파일하고 실행합니다.
 
+## 캐싱
+
+`expr.eval`은 컴파일된 표현식의 내부 LRU 캐시를 유지합니다(기본 용량 1000). 캐시는 모듈에 내장되어 있으며 별도 설정이 필요 없습니다.
 ## 로딩
 
 ```lua

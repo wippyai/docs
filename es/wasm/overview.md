@@ -73,7 +73,9 @@ Las ejecuciones WASM heredan el contexto de seguridad del llamador por defecto:
 
 Las capacidades del host se habilitan mediante imports explícitos. Cada entrada declara los perfiles de host que necesita, como `funcs`, `wasi1`, `wasi:cli` o `wasi:filesystem`, lo que limita la superficie de acceso del módulo. Habilitar un perfil no elude las comprobaciones de seguridad del entorno de ejecución para operaciones como llamadas a funciones, sockets o HTTP saliente.
 
-## Véase también
+Un guest que importa `funcs` puede llamar de vuelta al registry. Cada llamada se verifica contra la politica como `funcs.call` sobre el ID objetivo, por lo que el conjunto alcanzable es exactamente lo que el alcance heredado ya permite. Los dials de socket se autorizan de la misma forma, por el [servicio de red](system/network.md), contra los permisos `socket.*`.
+
+## Ver Tambien
 
 - [Funciones](wasm/functions.md) - Configuración de entradas de funciones WASM
 - [Funciones del host](wasm/hosts.md) - Interfaces WASI y Wippy disponibles en el host

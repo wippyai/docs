@@ -23,12 +23,12 @@ flowchart LR
 
 | Opción | Predeterminado | Máximo | Descripción |
 |--------|---------|-----|-------------|
-| `queue` | Obligatorio | - | ID de la cola en el registro |
-| `func` | Obligatorio | - | ID de la función controladora en el registro |
-| `concurrency` | 1 | 1000 | Número de workers |
-| `prefetch` | 10 | 10000 | Tamaño del buffer compartido de deliveries; AMQP también lo aplica como número de prefetch QoS del channel |
-| `auto_ack` | false | - | Opción auto-ack específica del backend; para AMQP, `true` pide al broker confirmar al entregar |
-| `driver_options` | `{}` | - | Opciones del consumer específicas del driver |
+| `queue` | Requerido | - | ID de registro de la cola |
+| `func` | Requerido | - | ID de registro de la función handler |
+| `concurrency` | 1 | 1000 | Cantidad de workers |
+| `prefetch` | 10 | 10000 | Tamaño del buffer de mensajes |
+| `auto_ack` | false | - | Auto-ack a nivel de driver (AMQP `Consume` autoAck; ignorado por el driver de memoria) |
+| `driver_options` | `{}` | - | Opciones de consumidor específicas del driver |
 
 ## Definición de la entrada
 
@@ -85,10 +85,9 @@ return {main = main}
 
 A menos que el handler liquide explícitamente el delivery, el consumer usa el resultado de invocar la función:
 
-| Resultado del handler | Acción | Efecto |
-|-----------------|--------|--------|
-| Termina sin error de invocación | Ack | El mensaje se elimina de la queue |
-| Devuelve o lanza un error de invocación | Nack | La redelivery depende del driver |
+El handler puede resolver el mensaje él mismo con `queue.message()` y `msg:ack()` / `msg:nack()`; el consumidor omite entonces su propio ack/nack.
+
+## Pool de Workers
 
 Los valores de retorno ordinarios, incluido `false`, no eligen el comportamiento de acknowledgment. Llama a `msg:ack()` o `msg:nack()` para liquidarlo explícitamente. La liquidación es single-shot: gana la primera. Con AMQP `auto_ack: true`, el broker confirma al entregar, por lo que un fallo posterior del handler no puede provocar redelivery del broker.
 

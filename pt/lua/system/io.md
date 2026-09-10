@@ -1,6 +1,6 @@
 ---
 title: "Terminal I/O"
-description: "Leia a entrada do terminal e escreva na saída padrão e na saída de erro padrão."
+description: "Leia de stdin e escreva para stdout/stderr para aplicacoes CLI."
 ---
 
 # Terminal I/O

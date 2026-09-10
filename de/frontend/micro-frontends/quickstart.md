@@ -1,43 +1,25 @@
 ---
-title: "Schnellstart"
-description: "Wippy-spezifische Integrationsrezepte zum Registrieren einer Vue-Micro-Frontend-App oder Web Component."
+title: "Quickstart"
+description: "Zwei End-to-End-Beispiele — eine Micro-Frontend-App (Vue) und eine Web Component (Vue) — aus dem öffentlichen Repository wippyai/app. Jedes zeigt die minimalen…"
 ---
 
-# Schnellstart
+# Quickstart
 
-Diese Seite enthält zwei verdichtete Vue-Integrationsrezepte aus dem
-öffentlichen Repository [`wippyai/app`](https://github.com/wippyai/app): eine
-**Micro-Frontend-App** und eine **Web Component**. Sie gelten für Web Host
-1.0.56 und `@wippy-fe/*` 0.0.56 und konzentrieren sich auf Wippy-Metadaten,
-Einstiegscode und Registry-Deklarationen. Gewöhnliches Vite-Scaffolding,
-Installation und Backend-Setup fehlen bewusst. Verwenden Sie für vollständige
-Anwendungen das verlinkte Repository; die Ausschnitte sind nicht eigenständig.
+Zwei End-to-End-Beispiele — eine **Micro-Frontend-App** (Vue) und eine **Web Component** (Vue) — aus dem öffentlichen Repository [`wippyai/app`](https://github.com/wippyai/app). Jedes zeigt die minimal nötigen Dateien, wie das Artefakt beim Backend registriert wird und wie es gebaut wird. Folgen Sie den Links zum Repo für den vollständigen, lauffähigen Quellcode und zu den Vertiefungsdokumenten für jede Option.
 
-## Voraussetzungen
-
-- Wippy-Backend mit eingebundenem [`wippy/views`](../../framework/views.md) und [`wippy/facade`](../../framework/facade.md).
-- Node.js 22.12 oder neuer und Vite 7. Vite 7 verlangt Node 20.19+ oder 22.12+; hier wird Node 22 verwendet.
-- `@wippy-fe/vite-plugin` 0.0.56 akzeptiert auch Vite 5/6; beachten Sie deren Node-Anforderungen.
-- Zusammengehörige `@wippy-fe/*`-Familie für den Zielhost, hier exakt 0.0.56 mit Web Host 1.0.56.
-- `import-map.json` des Zielhosts. Externalisieren Sie jeden Schlüssel; bündeln Sie einen exakten importierten Specifier nur, wenn er fehlt.
-
-Die Consumer-Toolchain hängt von der gewählten Vite-Version ab; das Web-Host-
-Quellrepository besitzt seine eigene Node-/Vite-Toolchain. Prüfen Sie bei einem
-Releasewechsel beide. Siehe [Build- und Abhängigkeitsvertrag](./build-system.md).
+**Voraussetzungen:** ein Wippy-Backend mit verdrahteten Modulen [`wippy/views`](../../framework/views.md) und [`wippy/facade`](../../framework/facade.md), Node.js 22 oder neuer, Vite 7 und die aktuelle kohärente `@wippy-fe/*`-Package-Familie für den Ziel-Web-Host. Diese Toolchain-Anforderungen stammen aus dem gewählten Web-Host-Package; prüfen Sie sie erneut, wenn sich dieses Package ändert. Holen Sie die `import-map.json` des Ziel-Web-Hosts, externalisieren Sie jeden aufgeführten Key einschließlich der ungenutzten, und bundeln Sie einen importierten exakten Specifier nur, wenn er fehlt. Siehe [Build System](./build-system.md) für die Toolchain.
 
 ---
 
-## Rezept 1: Micro-Frontend-App (Vue)
+## Beispiel 1 — Micro-Frontend-App (Vue)
 
-Eine vollständige Vue-3-SPA, die der Host durch iframe oder Web Fragment
-darstellt. Repository: [`frontend/applications/main`](https://github.com/wippyai/app/tree/master/frontend/applications/main).
+Eine vollständige Vue-3-SPA, die der Web Host über seine gewählte Page-Engine rendert (standardmäßig ein iframe oder ein Web Fragment). Repo: [`frontend/applications/main`](https://github.com/wippyai/app/tree/main/frontend/applications/main).
 
-**`package.json`** — der `wippy`-Block deklariert Seite und CSS-Injektionen:
+**`package.json`** — der `wippy`-Block deklariert sie als Page und legt fest, welches CSS der Host injiziert:
 
 ```json
 {
   "name": "@example/admin",
-  "version": "1.0.0",
   "specification": "wippy-component-1.0",
   "wippy": {
     "type": "page",
@@ -54,11 +36,10 @@ darstellt. Repository: [`frontend/applications/main`](https://github.com/wippyai
 }
 ```
 
-**`src/app.ts`** — Hostdienste verwenden, mounten und beidseitige
-Routersynchronisierung einrichten:
+**`src/app.ts`** — Host-Dienste auflösen, mounten und den obligatorischen bidirektionalen Routen-Sync verdrahten:
 
 ```ts
-import { config } from '@wippy-fe/proxy'   // sync getter — no await to obtain it
+import { config } from '@wippy-fe/proxy'   // synchroner Getter — kein await nötig
 import { createApp } from 'vue'
 import { createAppRouter } from '@wippy-fe/router'
 import App from './app/app.vue'
@@ -75,7 +56,7 @@ export function createMainApp() {
 }
 ```
 
-**Registrierung** in `_index.yaml`; dies ist Betreiber-/Deploymentpolicy — siehe [Micro-Frontend-Anwendungen (`view.page`)](../frontend-registry/view-page.md):
+**Registrieren Sie sie** in der `_index.yaml` Ihres Moduls (das ist Betreiber-/Deployment-Policy — siehe [Micro Frontend Apps (view.page)](../frontend-registry/view-page.md)):
 
 ```yaml
 - name: admin
@@ -83,35 +64,32 @@ export function createMainApp() {
   meta:
     type: view.page
     name: admin
-    announced: true        # show in the host nav sidebar
+    announced: true        # in der Navigationsleiste des Hosts anzeigen
     url: /app
     base_path: app/admin
     entry_point: app.html
     mountRoute: /admin/:part(.*)*
 ```
 
-Rufen Sie das Make-Ziel des Moduls auf und liefern Sie die Ausgabe an
-`url + base_path` aus; der Host rendert sie unter `/admin`. Das Makefile nutzt
+Rufen Sie das Make-Target des Moduls auf, um in das ausgelieferte Verzeichnis
+zu bauen, und liefern Sie die Ausgabe dort aus, wohin `url + base_path` zeigt;
+der Host rendert sie unter `/admin`. Das Makefile-Rezept verwendet
 `npm run build -- --outDir <abs-or-relative> --emptyOutDir`; `make.ps1`
-implementiert dasselbe Ziel unter Windows und `make.bat` ruft es auf.
-Vollständige Anleitung: [Seitenrezept](./micro-frontend-app.md).
+implementiert dasselbe Target für Windows, und `make.bat` ruft lediglich
+`make.ps1` auf. Vollständige Anleitung: [Micro Frontend App](./micro-frontend-app.md).
 
 ---
 
-## Rezept 2: Web Component (Vue)
+## Beispiel 2 — Web Component (Vue)
 
-Ein im Hostseiten-DOM mit Shadow DOM gemountetes Custom Element, einbettbar in
-jede Seite oder jedes Chat-Artefakt. Repository:
-[`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/master/frontend/web-components/reaction-bar).
+Ein Custom Element, das der Host im DOM der Page (Shadow DOM) mountet, einbettbar aus jeder Page oder jedem Chat-Artefakt. Repo: [`frontend/web-components/reaction-bar`](https://github.com/wippyai/app/tree/main/frontend/web-components/reaction-bar).
 
-**`package.json`** — Tag, Props und Ereignisse:
+**`package.json`** — der `wippy`-Block deklariert das Tag, die Props (HTML-Attribute) und die Events:
 
 ```json
 {
   "name": "@example/reaction-bar",
-  "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
   "wippy": {
     "tagName": "example-reaction-bar",
     "type": "widget",
@@ -130,8 +108,7 @@ jede Seite oder jedes Chat-Artefakt. Repository:
 }
 ```
 
-**`src/index.ts`** — Vue-Komponente in `WippyVueElement` hüllen und registrieren.
-`define(import.meta.url, …)` liest die vom Host ergänzte Query `?declare-tag=`:
+**`src/index.ts`** — eine Vue-Komponente in `WippyVueElement` einwickeln und registrieren. `define(import.meta.url, …)` liest den vom Host angehängten Query-Parameter `?declare-tag=`, deshalb muss es `import.meta.url` verwenden:
 
 ```ts
 import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
@@ -144,7 +121,7 @@ class ReactionBarElement extends WippyVueElement {
   static get wippyConfig() {
     return {
       propsSchema: pkg.wippy.props,
-      hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const, // pull host theme + PrimeVue into the shadow root
+      hostCssKeys: ['themeConfigUrl', 'primeVueCssUrl'] as const, // Host-Theme + PrimeVue in den Shadow Root ziehen
       inlineCss: stylesText,
     }
   }
@@ -160,7 +137,7 @@ export async function webComponent() {
 define(import.meta.url, ReactionBarElement)
 ```
 
-**`src/app/reaction-bar.vue`** — Props lesen und Ereignisse senden:
+**`src/app/reaction-bar.vue`** — Props lesen und Events auslösen mit den Composables aus `@wippy-fe/webcomponent-vue`:
 
 ```vue
 <script setup lang="ts">
@@ -193,10 +170,9 @@ function toggle(emoji: string) {
 </template>
 ```
 
-`useComponentProps` / `useComponentEvents` sind dünne lokale Wrapper um
-`useProps()` / `useEvents()` in `src/constants.ts`.
+(`useComponentProps` / `useComponentEvents` sind dünne Wrapper um `useProps()` / `useEvents()`, definiert in `src/constants.ts`.)
 
-**Registrierung** als `view.component`; alle drei Autoload-Gates sind erforderlich — siehe [Web Components (`view.component`)](../frontend-registry/view-component.md):
+**Registrieren Sie sie** als `view.component` (alle drei Tore sind für den Autoload erforderlich — siehe [Web Components (view.component)](../frontend-registry/view-component.md)):
 
 ```yaml
 - name: reaction-bar
@@ -211,32 +187,28 @@ function toggle(emoji: string) {
     entry_point: index.js
 ```
 
-Nach dem Build kann jede Seite oder jedes Chat-Artefakt den Tag verwenden:
+Bauen Sie sie, und jede Page (oder jedes Chat-Artefakt) kann das Tag verwenden:
 
 ```html
 <example-reaction-bar reactions='["👍","🎉"]'></example-reaction-bar>
 ```
 
-Vollständige Anleitung: [Web-Component-Rezept](./web-component.md).
+Vollständige Anleitung: [Web Component](./web-component.md).
 
 ---
 
-## Weitere Beispiele
+## Mehr entdecken
 
-Das Repository [`app`](https://github.com/wippyai/app) enthält unter
-[`frontend/web-components/`](https://github.com/wippyai/app/tree/master/frontend/web-components):
+Das Repo [`app`](https://github.com/wippyai/app) liefert mehrere lauffähige Web Components unter [`frontend/web-components/`](https://github.com/wippyai/app/tree/main/frontend/web-components):
 
-| Komponente | Demonstriert |
+| Komponente | Zeigt |
 |---|---|
-| `reaction-bar` | Props und Ereignisse |
-| `counter-persist` | Reload-festen Zustand über `@wippy-fe/pinia-persist` |
-| `chart-circle` | Drittanbieterbibliothek Chart.js im Shadow DOM |
-| `mermaid` | Kindinhalt (`<template data-type="…">`) und lazy Fallback-Bundle |
+| `reaction-bar` | Props + Auslösen von Events |
+| `counter-persist` | Zustand, der Reloads überlebt, via `@wippy-fe/pinia-persist` |
+| `chart-circle` | Bundling einer Drittanbieter-Bibliothek (Chart.js) im Shadow DOM |
+| `mermaid` | Children-Inhalte (`<template data-type="…">`) + ein Lazy-Fallback-Bundle |
 | `markdown` | `markdown-it` + `sanitize-html` |
-| `websocket-log` | Live-Daten über Themenabonnements mit `on(...)` |
-| `model-gallery` | Authentifizierte Proxy-API-Aufrufe und PrimeVue im Shadow DOM |
+| `websocket-log` | Live-Daten über `on(...)`-Topic-Subscriptions |
+| `model-gallery` | Authentifizierte API-Aufrufe über den Proxy + PrimeVue im Shadow DOM |
 
-Zum Theming siehe [Theme-Erstellung](./theming.md),
-[Theming für Micro-Frontend-Apps](./micro-frontend-app-theming.md) und
-[Theming für Web Components](./web-component-theming.md). Für lokale Ausführung
-ohne vollständigen Host siehe [Host-less-Modus](./host-less-mode.md).
+Zum Theming beider Artefakte lesen Sie [Theming](./theming.md) → [Theming: Micro Frontend Apps](./micro-frontend-app-theming.md) / [Theming: Web Components](./web-component-theming.md). Zum lokalen Betrieb ohne vollständigen Host siehe [Host-less Mode](./host-less-mode.md).

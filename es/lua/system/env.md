@@ -1,6 +1,6 @@
 ---
 title: "Variables de Entorno"
-description: "Lee y actualiza las variables de entorno expuestas por el sistema de entorno configurado."
+description: "Acceder a variables de entorno para valores de configuración, secretos y ajustes de tiempo de ejecución."
 ---
 
 # Variables de Entorno
@@ -25,17 +25,10 @@ local env = require("env")
 Obtiene el valor de una variable de entorno.
 
 ```lua
--- Get database connection string
-local db_url, db_err = env.get("DATABASE_URL")
-if db_err then return nil, db_err end
-
--- Apply a fallback only to a missing variable. Permission and backend errors
--- still propagate to the caller.
-local function get_or(key, fallback)
-    local value, err = env.get(key)
-    if not err then return value end
-    if errors.is(err, errors.NOT_FOUND) then return fallback end
-    return nil, err
+-- Obtener cadena de conexión de base de datos
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 local port, port_err = get_or("PORT", "8080")
@@ -88,10 +81,7 @@ logger:debug("accessible environment variables", {keys = accessible_keys})
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new({
-            message = "Missing required env var: " .. key,
-            kind = errors.INVALID
-        })
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -109,7 +99,7 @@ El acceso a entorno esta sujeto a evaluacion de politica de seguridad.
 | `env.get` | Nombre de variable | Leer variable de entorno |
 | `env.set` | Nombre de variable | Escribir variable de entorno |
 
-`get_all` no tiene una acción de seguridad específica: solo devuelve las variables para las que se permite la acción `env.get`, filtrando cada nombre de variable mediante `env.get`.
+`get_all` no tiene una acción de seguridad dedicada: devuelve solo las variables para las que la acción `env.get` está permitida, filtrando cada nombre de variable a través de `env.get`.
 
 ### Verificar Acceso
 

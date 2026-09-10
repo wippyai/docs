@@ -1,6 +1,6 @@
 ---
 title: "メッセージキュー"
-description: "構成済みのキューにメッセージを発行し、配信を処理します。"
+description: "分散キューからメッセージをパブリッシュおよびコンシュームします。RabbitMQなどのAMQP互換ブローカーを含む複数のバックエンドをサポートしています。"
 ---
 
 # メッセージキュー
@@ -88,10 +88,10 @@ if headers_err then return nil, headers_err end
 | メソッド | 戻り値 | 説明 |
 |--------|---------|-------------|
 | `id()` | `string, error` | 一意のメッセージ識別子 |
-| `header(key)` | `string?, error` | 正規化された文字列値。存在しない場合は nil |
-| `headers()` | `{[string]: string}, error` | 正規化された文字列値を持つすべてのヘッダー |
-| `ack()` | `boolean, error` | 処理を確認（1 回限り） |
-| `nack()` | `boolean, error` | 再配信またはデッドレターに向けて失敗を通知（1 回限り） |
+| `header(key)` | `string, error` | 単一のヘッダー値を文字列で返す（存在しない場合nil） |
+| `headers()` | `table, error` | すべてのメッセージヘッダー |
+| `ack()` | `boolean, error` | 処理を確認 (single-shot) |
+| `nack()` | `boolean, error` | 再配信またはデッドレターの失敗を通知 (single-shot) |
 
 ランタイムはハンドラーの成功時に自動で ack し、ハンドラーのエラー時に自動で nack します。早期に確定するときだけ `ack`/`nack` を呼び出してください。確定は 1 回限りであり、コンシューマハンドラーが戻った後の `Message` は無効です。
 
@@ -107,27 +107,22 @@ if err then return nil, err end
 
 ## コンシューマパターン
 
-`queue.consumer` エントリは、キューを `func` が参照するハンドラーに結び付けます。ハンドラーはメッセージのペイロードを直接受け取ります:
+`queue.consumer`エントリは、キューをハンドラ関数（`func`で参照）に結び付けます。ハンドラはメッセージペイロードを直接受け取ります:
 
 ```yaml
-- name: email_worker
-  kind: queue.consumer
-  queue: app:emails
-  func: app:email_handler
+entries:
+  - kind: queue.consumer
+    name: email_worker
+    queue: app:emails
+    func: app:email_handler
 ```
 
 このフラグメントでは、`app:emails` と `app:email_handler` の関数エントリがすでに存在することを前提としています。次の関数ソースでは、アプリケーションが `deliver_email(payload)` と、それに必要な権限を提供することを前提としています。
 
 ```lua
-local queue = require("queue")
-local logger = require("logger")
-
-local function main(payload)
-    local msg, msg_err = queue.message()
-    if msg_err then return nil, msg_err end
-
-    local message_id, id_err = msg:id()
-    if id_err then return nil, id_err end
+-- app:email_handler
+function handle_email(payload)
+    local msg = queue.message()
 
     logger:info("Processing", {
         message_id = message_id,

@@ -53,6 +53,7 @@ flowchart LR
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -77,6 +78,14 @@ type Bus struct {
 | Stop | 구독자 정리, 큐 드레인, 루프 종료 |
 
 Subscribe와 Unsubscribe는 dispatcher가 확인할 때까지 block합니다. Send는 fire-and-forget입니다. bus는 최대 `DefaultMaxSubscribers`개 구독(기본값 4096)을 허용하며 cap을 넘는 구독은 `ErrSubscribersCapReached`로 실패합니다.
+
+버스가 `DefaultMaxSubscribers`(4096)개의 활성 구독을 보유하면 `Subscribe`는 `ErrSubscribersCapReached`로 거부됩니다.
+
+`Subscribe`는 구독 컨텍스트가 이미 취소된 경우 즉시 실패하며, 소유권 결정이 내려지기 전에 취소되면 디스패처에서 다시 실패합니다 — 버스는 자신이 설치하지 않은 채널을 절대 넘겨받지 않습니다.
+
+`Unsubscribe`는 최선 노력 힌트가 아니라 소유권 배리어입니다. 디스패처가 확인 응답을 보낸 뒤에만 반환하므로, 호출자는 버스가 전송 중인 채널 참조를 가지고 있지 않다는 것을 알고 채널을 해제할 수 있습니다. `Stop` 이후에 도착하면, 확인 응답은 디스패처가 이미 드레인한 배치의 전달을 마칠 때까지 기다립니다.
+
+`Stop` 역시 종단적입니다: 동시에 들어온 두 번째 `Stop`은 이미 설정된 closed 플래그를 보고 일찍 반환하지 않고, 디스패처가 드레인하고 종료할 때까지 기다립니다.
 
 ## 큐 스와핑
 
@@ -237,27 +246,22 @@ defer router.Stop()
 
 ### AwaitService
 
-Pub/sub 기반 request-response를 제공합니다. `(system, kind)` pair당 하나의 구독을 유지하고 `Path`로 이벤트를 waiter에 라우팅합니다.
+pub/sub 위의 요청-응답입니다. `(system, kind)` 쌍마다 하나의 구독만 유지하고, 이벤트를 `Path` 기준으로 대기자에게 라우팅합니다:
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-if err := svc.Start(ctx); err != nil {
-    return err
-}
+svc.Start(ctx)
 defer svc.Stop()
 
-waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
-if err != nil {
-    return err
-}
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
+result := waiter.Wait()  // AwaitResult{Event, Accepted, Error} 반환
 ```
 
-`Prepare`는 trigger event를 보내기 전에 waiter를 등록하여 응답이 먼저 도착하는 race를 피합니다. `Wait`는 같은 `Path`의 이벤트가 오거나 timeout이 만료될 때까지 block합니다. 양수가 아닌 timeout은 기본 `DefaultAwaitTimeout` 30초를 사용합니다. event kind가 `accept`, `*.accept`, `*.accepted`이면 `Accepted`가 true이고, 그 밖의 kind는 reject로 취급되어 `Data`의 `error`가 `Error`로 나타납니다. `Await(ctx, system, kind, path, timeout)` helper는 Prepare와 Wait를 결합합니다. boot infrastructure는 AwaitService를 context에 등록하며 `event.GetAwaitService`로 가져올 수 있습니다.
+`Prepare`는 트리거 이벤트를 보내기 전에 대기자를 등록하므로, 대기가 등록되기 전에 응답이 도착하는 레이스를 피합니다. `Wait`는 `Path`가 매칭되는 이벤트가 도착하거나 타임아웃(0 이하이면 기본값 `DefaultAwaitTimeout`, 30초)이 만료될 때까지 블록합니다. 이벤트 kind가 `accept`, `*.accept`, `*.accepted`이면 `Accepted`가 true이고, 그 외의 kind는 거부로 취급되어 `Data`의 `error`가 `Error`로 드러납니다. 편의 함수 `Await(ctx, system, kind, path, timeout)`은 Prepare와 Wait를 합친 것입니다. 부트 인프라는 컨텍스트에 AwaitService를 등록합니다(`event.GetAwaitService`).
 
 ## 셧다운
 

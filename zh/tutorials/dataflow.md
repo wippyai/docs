@@ -24,6 +24,7 @@ description: "在您自己的机器上构建知识库 — 创建向量存储，�
 wippy add wippy/embeddings
 wippy add wippy/migration
 wippy add wippy/bootloader
+wippy add wippy/security
 wippy add wippy/llm
 wippy install
 ```
@@ -33,6 +34,7 @@ wippy install
 KB 存放在一个本地 SQLite 数据库中。`wippy/embeddings` 附带一个创建向量表的迁移；bootloader 在启动时运行它。将各部分连接在一起：
 
 ```yaml
+# src/_index.yaml
 version: "1.0"
 namespace: app
 
@@ -46,12 +48,12 @@ entries:
   - name: processes
     kind: process.host
     host:
-      max_processes: 1000
       workers: 8
 
   - name: embeddings
     kind: ns.dependency
     component: wippy/embeddings
+    version: "*"
     parameters:
       - name: target_db
         value: app:db
@@ -59,6 +61,7 @@ entries:
   - name: migration
     kind: ns.dependency
     component: wippy/migration
+    version: "*"
     parameters:
       - name: app_db
         value: app:db
@@ -66,6 +69,7 @@ entries:
   - name: bootloader
     kind: ns.dependency
     component: wippy/bootloader
+    version: "*"
     parameters:
       - name: application_host
         value: app:processes
@@ -73,7 +77,24 @@ entries:
         value: app:db
       - name: env_storage
         value: app.env:store
+
+  - name: security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
+
+  - name: process_access
+    kind: security.policy
+    groups:
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
 ```
+
+bootloader 和各个 provider 服务运行在 `wippy.security:process`
+策略组下，因此 `wippy/security` 以及一个属于该组的策略也是这套接线的一部分。
 
 bootloader 需要一个环境存储；在它自己的命名空间中添加标准存储：
 
@@ -197,7 +218,7 @@ local results, err = embeddings.search("how do I configure TLS?", {
 
 ## 运行说明
 
-- **块大小**：500–1000 个 token 是一个良好的默认值。使用 `chunk_overlap`（块大小的 ~10–20%），以免句子在边界处被切断。
+- **块大小**：`chunk_size` 和 `chunk_overlap` 统计的是字符而非 token；2000–4000 个字符是一个良好的默认值。使用 `chunk_overlap`（块大小的 ~10–20%），以免句子在边界处被切断。
 - **维度**：512 维的 `text-embedding-3-small` 具有成本效益，并与 `embeddings_512` 表匹配。更大的向量意味着更大的存储和更慢的搜索。
 - **本地 vs. 共享**：SQLite（`vec0`）将整个 KB 保存在一个本地文件中 — 非常适合开发和单节点应用。将 `target_db` 指向带有 `pgvector` 的 `db.sql.postgres` 即可获得共享的生产存储；摄取代码无需改动。
 

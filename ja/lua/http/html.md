@@ -1,6 +1,6 @@
 ---
 title: "HTMLサニタイズ"
-description: "プリセットまたはカスタムの要素、属性、URL ポリシーを使用して、信頼できない HTML をサニタイズします。"
+description: "XSS攻撃を防ぐために信頼されていないHTMLをサニタイズ。bluemondayに基づく。"
 ---
 
 # HTMLサニタイズ
@@ -284,7 +284,7 @@ policy:require_parseable_urls(true)
 policy:add_target_blank_to_fully_qualified_links(true)
 
 policy:sanitize('<a href="https://example.com">Link</a>')
--- '<a href="https://example.com" target="_blank">Link</a>'
+-- '<a href="https://example.com" target="_blank" rel="noopener">Link</a>'
 ```
 
 | パラメータ | 型 | 説明 |
@@ -341,7 +341,7 @@ policy:sanitize('<ul><li>Item 1</li><li>Item 2</li></ul>')
 
 ### テーブルの許可
 
-`table`、`caption`、`col`、`colgroup`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th` を許可します。helper が検証する table dimension、alignment、span、header、scope、および関連する presentation 属性も許可します。
+テーブル要素を許可: `table`、`caption`、`col`、`colgroup`、`thead`、`tbody`、`tfoot`、`tr`、`td`、`th`。
 
 ```lua
 policy:allow_tables()
@@ -354,7 +354,7 @@ policy:sanitize('<table><tr><td>Cell</td></tr></table>')
 
 ### 標準属性の許可
 
-標準属性 `dir`、`id`、`lang`、`title` をグローバルに許可します。値には制約があり、`dir` は `ltr` または `rtl`、`lang` は 2～20 文字の ASCII 英字、`id` と `title` は sanitizer の安全な文字パターンに一致する必要があります。この helper は `class` を許可しません。
+一般的な属性を許可: `id`、`title`、`dir`、`lang`。
 
 ```lua
 policy:allow_elements("p")

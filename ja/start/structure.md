@@ -11,11 +11,11 @@ description: "プロジェクトレイアウト、YAML定義ファイル、命�
 
 ```
 myapp/
-├── .wippy.yaml          # Runtime configuration
-├── wippy.lock           # Source directories config
-├── .wippy/              # Installed modules
-└── src/                 # Application source
-    ├── _index.yaml      # Entry definitions
+├── .wippy.yaml          # ランタイム設定
+├── wippy.lock           # ソースディレクトリとロックされたモジュール
+├── .wippy/              # インストール済みモジュール
+└── src/                 # アプリケーションソース
+    ├── _index.yaml      # エントリ定義
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -32,7 +32,7 @@ YAML定義は起動時にレジストリにロードされます。レジスト�
 
 ### Definition file の形式 :id=definition-file-format
 
-definition file には `namespace` と、`entries` array または top-level の `name` / `kind` field が必要です。省略可能な `version` marker は慣例上 `"1.0"` ですが、v0.3.32a loader では必須ではありません。
+`namespace`に加えて、`entries`配列またはトップレベルの`name`+`kind`のいずれかを持つYAMLファイルは有効な定義ファイルです。`version`は省略可能です：
 
 ```yaml
 version: "1.0"
@@ -60,9 +60,9 @@ entries:
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `version` | いいえ | manifest version marker（慣例上 `"1.0"`） |
-| `namespace` | はい | この file の entry namespace |
-| `entries` | 条件付き | entry definition の array。top-level の `name` と `kind` を使う場合のみ省略 |
+| `version` | いいえ | スキーマバージョン（現在は`"1.0"`） |
+| `namespace` | はい | このファイルのエントリ名前空間 |
+| `entries` | はい | エントリ定義の配列 |
 
 ### 命名規則
 
@@ -100,17 +100,35 @@ app.workers
 
 エントリのフルIDは名前空間と名前を組み合わせます：`app.api:get_user`
 
-### ソースディレクトリ
+### ロックファイル
 
-`wippy.lock` file は application source root と、locked module を resolve する base directory を指定します。
+`wippy.lock`は、Wippyが定義をロードする場所と、選択されたモジュールのバージョンを記録します：
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy は `directories.src` を application load path に追加します。`directories.modules` は raw source tree として scan されません。locked module は versioned `.wapp` archive または unpacked module path、replacement は設定済み entry root に resolve されます。loader は application source と、選択された directory-based module / replacement root を再帰的に scan し、`.yaml`、`.yml`、`.json` manifest を読み込みます。`.wapp` module は archive として読みます。`namespace` を持つ object-shaped file だけが registry manifest となり、`node_modules` directory は除外されます。`_index.yaml` は project convention であり、唯一の有効 filename ではありません。
+| フィールド | 説明 |
+|------------|------|
+| `directories.src` | アプリケーションのソースディレクトリ。YAML定義ファイルを再帰的にスキャンする |
+| `directories.modules` | ベンダリングされたモジュールのベースディレクトリ。パックは`<modules>/vendor/`配下に配置される |
+| `options.unpack_modules` | 各`.wapp`をパックのまま読み込むのではなく、その隣のディレクトリへ展開する（デフォルトは`false`）|
+| `modules[].name` | `org/module`形式のモジュール識別子 |
+| `modules[].version` | 選択されたバージョン |
+| `modules[].hash` | ベンダリングされたパックが一致しなければならないアーティファクトのダイジェスト |
+| `modules[].root` | 選択されたデプロイメントルートを示す。これを持てるモジュールは最大1つ |
+
+ベンダリングされたパックは`.wapp`ファイルとして保持されます。`unpack_modules: true`の場合、各モジュールはディレクトリへも展開され、検証済みの`.wapp`はその隣に残ります。インストール処理はパックを探すため、パックが失われたディレクトリは再度ダウンロードされます。
+
+`wippy.lock`内の`replacements:`セクションは非推奨です。警告付きで引き続きロードされますが、ローカルモジュールのオーバーライドはランタイム設定ファイルの`workspace.replacements`配下で宣言してください。[依存関係管理](guides/dependency-management.md#local-development-with-replacements)を参照してください。
 
 ## エントリ定義
 
@@ -218,27 +236,21 @@ runtime configuration field は[設定ガイド](guides/configuration.md)を参�
 
 ### wippy.lock
 
-ソースディレクトリを定義します：
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+ソースディレクトリと選択されたモジュールグラフ — 上記の[ロックファイル](#the-lock-file)を参照してください。
 
 ## エントリの参照
 
-entry kind が対応する場合、full ID または relative name で entry を参照できます。HTTP router と endpoint は parent 側の child list ではなく、`meta.server` と `meta.router` で attach します。
+エントリはフルIDまたは相対名で参照できます。子は親側のリストではなく、`meta`を通じて親に紐付きます：
 
 ```yaml
-# Router declares itself against a server
+# ルーターは自身をサーバーに対して宣言する
 - name: api
   kind: http.router
   meta:
     server: app:gateway
   prefix: /api
 
-# Endpoint references router by registry ID (cross-namespace works the same way)
+# エンドポイントはレジストリIDでルーターを参照する（名前空間をまたぐ場合も同じ）
 - name: get_user.endpoint
   kind: http.endpoint
   meta:

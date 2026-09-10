@@ -17,6 +17,8 @@ Run these snippets inside an exported function of an executable Lua entry such a
 execution context; they do not need `require()` calls or `modules` declarations.
 Each snippet creates its own channels and should be evaluated separately.
 
+This page is a primer: each snippet shows one API in isolation. Paste them into the `main` function of a `process.lua` entry to run them, as set up in the [CLI Applications](tutorials/cli.md) tutorial.
+
 ## Creating Channels
 
 Channels pass values between coroutines. Create one with `channel.new(capacity)`:
@@ -83,7 +85,7 @@ result.ok              -- true
 
 ### Select with Send
 
-Use `case_send` to include a send operation in a select. Without a default case, `channel.select` waits until one of its cases is ready. Add `default = true` to make the attempt non-blocking:
+Use `case_send` to offer a send inside a select. The case is chosen once the channel can accept the value:
 
 ```lua
 local ch = channel.new(1)
@@ -98,6 +100,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+Select blocks until one of its cases is ready. Add `default = true` to the case table to return immediately instead, with `result.default` set to true when nothing was ready:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer full, nothing sent)
 ```
 
 ## Producer-Consumer Pattern

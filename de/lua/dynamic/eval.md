@@ -1,74 +1,78 @@
 ---
 title: "Dynamische Auswertung"
-description: "Ausdrücke auswerten oder Lua-Code mit eingeschränkten Fähigkeiten und konfiguriertem Modul- und Registry-Zugriff ausführen."
+description: "Führen Sie Code dynamisch zur Laufzeit mit Sandbox-Umgebungen und kontrolliertem Modulzugriff aus."
 ---
 
 # Dynamische Auswertung
 
-Wippy wertet Ausdrücke aus und führt zur Laufzeit bereitgestellten Lua-Code mit eingeschränkten Fähigkeiten aus. Diese Seite ist ein API-Leitfaden. Die Beispiele laufen in einem vorhandenen Wippy-Lua-Prozess und setzen voraus, dass dessen Eintrag die vom Aufrufer verwendeten Module deklariert. Registry-IDs, Richtlinien und Anwendungsdaten sind Platzhalter, die die umgebende Anwendung bereitstellt.
+Führen Sie Code dynamisch zur Laufzeit mit Sandbox-Umgebungen und kontrolliertem Modulzugriff aus.
 
-`eval_runner` begrenzt, welche Wippy-Module der ausgewertete Code erreichen kann, ist aber keine vollständige Eindämmung feindlichen Codes. Insbesondere zählt `limits.max_steps` Scheduler-Fortsetzungen statt Lua-Anweisungen. Eine Endlosschleife ohne Yield wird durch dieses Limit nicht unterbrochen.
-
-## Auswertungssystem auswählen
+## Zwei Systeme
 
 Wippy bietet zwei Auswertungssysteme:
 
 | System | Zweck | Anwendungsfall |
 |--------|---------|----------|
 | `expr` | Ausdrucksauswertung | Konfiguration, Templates, einfache Berechnungen |
-| `eval_runner` | Lua-Ausführung mit eingeschränkten Fähigkeiten | Vertrauenswürdige Plugins und kontrollierter dynamischer Code |
+| `eval_runner` | Vollständige Lua-Ausführung | Plugins, Benutzerskripte, dynamischer Code |
 
-## Ausdrucksauswertung mit `expr`
+## expr-Modul
 
-Das Modul `expr` wertet Ausdrücke in der Syntax von expr-lang aus. Verwenden Sie es für Ausdrücke, nicht für vollständige Lua-Programme. [Ausdruckssprache](lua/dynamic/expression.md) ist die vollständige Referenz für Lua-API und Syntax.
+Leichtgewichtige Ausdrucksauswertung mit expr-lang-Syntax.
 
 ```lua
 local expr = require("expr")
 
 local result, err = expr.eval("x + y * 2", {x = 10, y = 5})
-if err then
-    return nil, err
-end
 -- result = 20
 ```
 
-### Kompilierte Ausdrücke wiederverwenden
+### Ausdrücke kompilieren
 
 Einmal kompilieren, mehrfach ausführen:
 
 ```lua
 local program, err = expr.compile("price * quantity")
-if err then
-    return nil, err
-end
 
-local total1, first_err = program:run({price = 10, quantity = 5})
-if first_err then
-    return nil, first_err
-end
-
-local total2, second_err = program:run({price = 20, quantity = 3})
-if second_err then
-    return nil, second_err
-end
+local total1 = program:run({price = 10, quantity = 5})
+local total2 = program:run({price = 20, quantity = 3})
 ```
 
-### Syntax im Überblick
+### Unterstützte Syntax
 
-| Merkmal | Ausdruck | Ergebnis |
-|---------|----------|----------|
-| Arithmetik | `1 + 2 * 3` | `7` |
-| Rest | `10 % 3` | `1` |
-| Vergleich | `x > 5` mit `{x = 10}` | `true` |
-| Boolesch | `a && b` mit `{a = true, b = false}` | `false` |
-| Ternär | `x > 0 ? 'positive' : 'negative'` mit `{x = 5}` | `"positive"` |
-| Funktion | `max(1, 5, 3)` | `5` |
-| Array-Index | `[1, 2, 3][0]` | `1` |
-| Verkettung | `'hello' + ' ' + 'world'` | `"hello world"` |
+```lua
+-- Arithmetik
+expr.eval("1 + 2 * 3")           -- 7
+expr.eval("10 / 2 - 1")          -- 4
+expr.eval("10 % 3")              -- 1
 
-## Lua mit eingeschränkten Fähigkeiten über `eval_runner`
+-- Vergleich
+expr.eval("x > 5", {x = 10})     -- true
+expr.eval("x == y", {x = 1, y = 1}) -- true
 
-Das Modul `eval_runner` führt Lua mit konfiguriertem Modul- und Registry-Zugriff aus.
+-- Boolean
+expr.eval("a && b", {a = true, b = false})  -- false
+expr.eval("a || b", {a = true, b = false})  -- true
+expr.eval("!a", {a = false})     -- true
+
+-- Ternär
+expr.eval("x > 0 ? 'positive' : 'negative'", {x = 5})
+
+-- Funktionen
+expr.eval("max(1, 5, 3)")        -- 5
+expr.eval("min(1, 5, 3)")        -- 1
+expr.eval("len([1, 2, 3])")      -- 3
+
+-- Arrays
+expr.eval("[1, 2, 3][0]")        -- 1
+
+-- String-Verkettung
+expr.eval("'hello' + ' ' + 'world'")
+```
+
+## eval_runner-Modul
+
+Vollständige Lua-Ausführung mit Sicherheitskontrollen.
 
 ```lua
 local runner = require("eval_runner")
@@ -83,9 +87,6 @@ local result, err = runner.run({
     method = "double",
     args = {21}
 })
-if err then
-    return nil, err
-end
 -- result = 42
 ```
 
@@ -101,58 +102,61 @@ end
 | `context` | table | Als `ctx` verfügbare Werte |
 | `allow_classes` | string[] | Zusätzliche Modulklassen |
 | `custom_modules` | table | Benutzerdefinierte Tabellen als Module |
-| `limits` | table | Ausführungslimits für die Auswertung |
+| `limits` | table | Ausführungslimits für diesen Lauf |
 
-Wird `modules` ausgelassen oder ist die Liste leer, stellt der Host alle verfügbaren Module bereit, deren Klassen den Standardfilter passieren. In diesem impliziten Modus erweitert `allow_classes` den Filter und kann Module der genannten Klassen hinzufügen. Bei einer expliziten `modules`-Liste erlaubt es nur aufgeführte Module, deren Klassen andernfalls ausgeschlossen wären. Verwenden Sie vorzugsweise eine explizite, minimale Liste, damit die Fähigkeiten des Programms im Aufruf sichtbar sind.
+### Schritt-Limit
 
-In Runtime v0.3.32a prüfen `eval.module`-Richtlinien nur ausdrücklich in `modules` genannte Namen, nicht implizit über den Standardfilter ausgewählte Module. Verlassen Sie sich daher nicht auf `eval.module`, um ein solches Standardmodul zu entfernen; übergeben Sie stattdessen eine explizite Liste.
-
-### Schrittlimit
-
-Mit `limits.max_steps` begrenzen Sie die Anzahl der Scheduler-Fortsetzungen während einer Auswertung:
+`limits.max_steps` begrenzt, wie lange ein einzelnes `runner.run` laufen darf:
 
 ```lua
 local result, err = runner.run({
-    source = user_code,
-    modules = {"json"},
-    limits = {max_steps = 1000}
+    source = user_source,
+    method = "main",
+    limits = {max_steps = 500}
 })
-if err then
-    return nil, err
-end
 ```
 
-`max_steps` muss eine nicht negative Ganzzahl sein. Fehlt der Wert, wird `lua.eval.max_steps` übernommen, standardmäßig `10000`; ein ausdrücklicher Wert `0` entfernt das Limit. Jede Scheduler-Fortsetzung verbraucht einen Schritt, somit auch Yields aus Modulaufrufen. Gewöhnliche Lua-Schleifeniterationen zählen nicht, daher ist dies kein CPU- oder Anweisungsbudget für Code ohne Yield.
+Ein Schritt ist eine Runde des Eval-Schedulers: Das Programm läuft weiter, bis es yieldet oder fertig ist, und jedes Resume verbraucht einen Schritt. Reine Berechnung zwischen Yields zählt als ein Schritt, egal wie lange sie dauert, das Limit begrenzt also Scheduling-Runden, nicht CPU-Zeit.
 
-Unbekannte Felder in `limits`, ein nicht tabellarischer `limits`-Wert und ungültige `max_steps`-Werte liefern einen nicht wiederholbaren Fehler `errors.INVALID`.
+Übersteigt der Zähler das Limit, stoppt der Lauf und gibt `errors.INTERNAL` mit `eval exceeded maximum step limit` zurück.
+
+`max_steps = 0` bedeutet unbegrenzt. Wird `limits` weggelassen, gilt der Host-Standard:
+
+```yaml
+# .wippy.yaml
+lua:
+  eval:
+    max_steps: 10000  # Standardbudget für Läufe ohne limits.max_steps
+                      # 0 = unbegrenzt; ein negativer Wert lässt den Boot fehlschlagen
+```
+
+`limits` gilt nur für `runner.run`; `runner.compile` akzeptiert keine Limits. `limits` muss eine Tabelle sein, die ausschließlich `max_steps` enthält, und `max_steps` muss eine nicht-negative Ganzzahl sein — alles andere gibt `errors.INVALID` zurück, bevor das Programm läuft.
 
 ### Modulzugriff
 
 Erlaubte Module auf Whitelist setzen:
 
 ```lua
-local encoded, err = runner.run({
+runner.run({
     source = [[
         local json = require("json")
         return json.encode({hello = "world"})
     ]],
     modules = {"json"}
 })
-if err then
-    return nil, err
-end
 ```
 
-Bei einer expliziten Liste können Module außerhalb dieser Liste nicht per `require()` geladen werden. Jedes aufgeführte Modul erfordert außerdem die Berechtigung `eval.module`.
+Module, die nicht in der Liste sind, können nicht mit require geladen werden.
 
 ### Registry-Imports
 
 Einträge aus der Registry importieren:
 
 ```lua
-local result, err = runner.run({
+runner.run({
     source = [[
         local data = ...
+        local utils = require("utils")
         return utils.format(data)
     ]],
     imports = {
@@ -160,9 +164,6 @@ local result, err = runner.run({
     },
     args = {{key = "value"}}
 })
-if err then
-    return nil, err
-end
 ```
 
 ### Privilegierte Imports
@@ -170,8 +171,9 @@ end
 Einem Import können Module gewährt werden, die der evaluierte Code selbst nicht sehen kann. Verwenden Sie die Tabellenform mit `id` und `modules`:
 
 ```lua
-local quote, err = runner.run({
+runner.run({
     source = [[
+        local pricing = require("pricing")
         return pricing.quote(...)
     ]],
     modules = {"json"},
@@ -179,50 +181,36 @@ local quote, err = runner.run({
         pricing = { id = "app.lib:pricing", modules = {"funcs"} }
     },
 })
-if err then
-    return nil, err
-end
 ```
 
-Die Bibliothek `pricing` läuft in einer abgegrenzten Umgebung, in der `funcs` verfügbar ist. Der ausgewertete Quellcode kann `funcs` weder per `require()` laden noch direkt erreichen. Das Gewähren eines Moduls an einen Import erfordert die Berechtigung `eval.module` für dieses Modul; der Import kann daher kein Modul erhalten, das dem Aufrufer nicht zur Verfügung steht.
+Die `pricing`-Bibliothek läuft in ihrer eigenen abgegrenzten Umgebung, in der `funcs` verfügbar ist; der evaluierte Quellcode kann `funcs` weder requiren noch direkt erreichen. Das Gewähren eines Moduls an einen Import erfordert, dass der Aufrufer die `eval.module`-Berechtigung für dieses Modul besitzt — Capabilities können nicht über das hinaus delegiert werden, was dem Aufrufer selbst erlaubt ist.
 
 ### Benutzerdefinierte Module
 
-Stellen Sie benutzerdefinierte Tabellen als Module bereit:
+Benutzerdefinierte Tabellen injizieren:
 
 ```lua
-local version, err = runner.run({
+runner.run({
     source = [[
         return sdk.version
     ]],
     custom_modules = {
-        sdk = {version = "1.0.0"}
+        sdk = {version = "1.0.0", api_key = "xxx"}
     }
 })
-if err then
-    return nil, err
-end
 ```
-
-Werte benutzerdefinierter Module sind für den ausgewerteten Code direkt erreichbar. Legen Sie dort keine Secrets oder privilegierten Handles ab, sofern deren Offenlegung nicht beabsichtigt ist.
 
 ### Kontextwerte
 
 Daten übergeben, die als `ctx` zugänglich sind:
 
 ```lua
-local greeting, err = runner.run({
+runner.run({
     source = [[
-        local user, ctx_err = ctx.get("user")
-        if ctx_err then error(ctx_err) end
-        return "Hello, " .. user
+        return "Hello, " .. ctx.get("user")
     ]],
-    modules = {"ctx"},
     context = {user = "Alice"}
 })
-if err then
-    return nil, err
-end
 ```
 
 ### Programme kompilieren
@@ -236,17 +224,14 @@ local program, err = runner.compile([[
     end
     return { process = process }
 ]], "process", {modules = {"json"}})
-if err then
-    return nil, err
-end
 
 program:method()   -- "process"  (string)
 program:modules()  -- {"json"}    (string[])
 ```
 
-Das kompilierte Programm ist informativ; ausgeführt wird durch Aufruf von `runner.run` mit Quellcode und Methode.
+Die Optionstabelle akzeptiert dieselben Felder `modules` und `imports` wie `runner.run`, und es gelten dieselben Berechtigungsprüfungen `eval.module` und `eval.import`. Das kompilierte Programm ist informativ; ausgeführt wird durch Aufruf von `runner.run` mit Quellcode und Methode.
 
-## Steuerung der Fähigkeiten
+## Sicherheitsmodell
 
 ### Modulklassen
 
@@ -258,34 +243,22 @@ Module werden nach Fähigkeiten kategorisiert:
 | `encoding` | Datenkodierung | Erlaubt |
 | `time` | Zeitoperationen | Erlaubt |
 | `nondeterministic` | Zufall, etc. | Erlaubt |
-| `io` | Ein-/Ausgabe ohne eigene blockierte Klasse | Erlaubt |
-| `security` | Sicherheits-Hilfsfunktionen | Erlaubt |
-| `workflow` | Workflow-sichere Operationen | Erlaubt |
 | `process` | Spawn, Registry | Blockiert |
 | `storage` | Datei, Datenbank | Blockiert |
 | `network` | HTTP, Sockets | Blockiert |
 
-„Blockiert“ bedeutet: blockiert, sofern der Aufrufer die Klasse nicht in `allow_classes` nennt und für die Ressource `eval.class` autorisiert ist. Ein Modul kann mehreren Klassen angehören; führen Sie jede blockierte Klasse des Moduls auf.
-
-### Zusätzliche Klassen erlauben
+### Blockierte Klassen aktivieren
 
 ```lua
-local status, err = runner.run({
+runner.run({
     source = [[
         local http = require("http_client")
-        local response, err = http.get("https://api.example.com")
-        if err then error(err) end
-        return response.status_code
+        return http.get("https://api.example.com")
     ]],
     modules = {"http_client"},
     allow_classes = {"network"}
 })
-if err then
-    return nil, err
-end
 ```
-
-Die Klassenautorisierung nimmt das Modul nur in die Eval-Umgebung auf. Die eigenen Sicherheitsprüfungen des Moduls und externe Zugriffskontrollen gelten weiterhin.
 
 ### Berechtigungsprüfungen
 
@@ -299,9 +272,9 @@ Das System prüft Berechtigungen für:
 
 In Sicherheitsrichtlinien konfigurieren.
 
-## Cache kompilierter Programme
+## Compile-Cache
 
-Kompilierte Programme werden in einem LRU-Cache nach Quelle, Methode, Modulen und erlaubten Klassen gespeichert. Wiederholte Ausführungen identischen Codes überspringen die Kompilierung. Imports, benutzerdefinierte Module, Argumente und Kontext werden zur Laufzeit gebunden und beeinflussen den Cache-Schlüssel nicht.
+Kompilierte Programme werden in einem LRU gecacht, geschlüsselt nach Quelle, Methode, Modulen und erlaubten Klassen — wiederholte Läufe identischen Codes überspringen die Neukompilierung. Imports und Kontext werden zur Laufzeit gebunden und beeinflussen den Cache-Schlüssel nicht.
 
 ```yaml
 # .wippy.yaml
@@ -309,90 +282,67 @@ lua:
   eval:
     cache_size: 256   # entries; 0 or less disables caching (default: 256)
     cache_ttl: 0      # expiry; 0 = no expiry (default: 0)
-    max_steps: 10000  # inherited run limit; 0 = unlimited (default: 10000)
 ```
 
-## Auswertungsfehler behandeln
+## Fehlerbehandlung
 
 ```lua
-local result, err = runner.run(run_config)
+local result, err = runner.run({...})
 if err then
     if err:kind() == errors.PERMISSION_DENIED then
-        -- Access denied by security policy
+        -- Zugriff durch Sicherheitsrichtlinie verweigert
     elseif err:kind() == errors.INVALID then
-        -- Missing source or invalid limits configuration
+        -- Ungültige Quelle oder Konfiguration
     elseif err:kind() == errors.INTERNAL then
-        -- Syntax, compilation, import, or execution failure
+        -- Ausführungs- oder Kompilierungsfehler
     end
 end
 ```
 
-`run_config` ist hier die von der umgebenden Anwendung zusammengestellte Konfigurationstabelle.
+## Anwendungsfälle
 
-## Auswahl nach Anwendungsfall
-
-### Plugins
+### Plugin-System
 
 ```lua
-local plugins, find_err = registry.find({["meta.type"] = "plugin"})
-if find_err then
-    return nil, find_err
-end
+local plugins = registry.find({meta = {type = "plugin"}})
 
 for _, plugin in ipairs(plugins) do
-    local _, run_err = runner.run({
-        source = plugin.data.source,
+    local source = plugin:data().source
+    runner.run({
+        source = source,
         method = "init",
         modules = {"json", "time"},
         context = {config = app_config}
     })
-    if run_err then
-        return nil, run_err
-    end
 end
 ```
 
-Dieses Teilmuster setzt voraus, dass der Aufrufer `registry` und `eval_runner` geladen hat, `app_config` definiert ist und passende Registry-Einträge Lua-Quellcode unter `data.source` speichern. `registry.find` liefert Entry-Tabellen; Felder werden daher als `plugin.data` gelesen, nicht über eine Entry-Methode.
-
-### Wiederholte Regeln
+### Template-Auswertung
 
 ```lua
-local compiled, compile_err = expr.compile("score >= minimum")
-if compile_err then
-    return nil, compile_err
-end
+local template = "Hello, {{name}}! You have {{count}} messages."
+local compiled = expr.compile("name")
 
-for _, candidate in ipairs(candidates) do
-    local accepted, run_err = compiled:run({
-        score = candidate.score,
-        minimum = 80
-    })
-    if run_err then
-        return nil, run_err
-    end
-    candidate.accepted = accepted
+-- Schnelle wiederholte Auswertung
+for _, user in ipairs(users) do
+    local greeting = compiled:run({name = user.name})
 end
 ```
-
-Dieses Teilmuster setzt voraus, dass `candidates` von der Anwendung bereitgestellt wird. Für gerenderten Text verwenden Sie das Template-Modul statt `expr`.
 
 ### Benutzerskripte
 
 ```lua
+local user_code = request:body()
+
 local result, err = runner.run({
-    source = user_code, -- Supplied by the surrounding application
-    modules = {"json", "text"},
+    source = user_code,
+    modules = {"json", "text"},  -- Nur sichere Module
     context = {data = input_data}
 })
-if err then
-    return nil, err
-end
 ```
-
-Dies ist ein Teilmuster für eine Integration, keine Sandbox für feindlichen Code. Prüfen Sie, wer `user_code` liefern darf, gewähren Sie nur benötigte Module und Richtlinien und erzwingen Sie einen externen Timeout oder eine Isolationsgrenze, wenn nicht vertrauenswürdiger Code möglicherweise keinen Yield ausführt.
 
 ## Siehe auch
 
-- [Expression](./expression.md) – Referenz der Ausdruckssprache
-- [Exec](lua/dynamic/exec.md) – Ausführung von Systembefehlen
-- [Security](lua/security/security.md) – Sicherheitsrichtlinien
+- [Expression](lua/dynamic/expression.md) - Ausdruckssprachen-Referenz
+- [Exec](lua/dynamic/exec.md) - Systembefehlsausführung
+- [Security](lua/security/security.md) - Sicherheitsrichtlinien

@@ -1,6 +1,6 @@
 ---
 title: "메시지 큐"
-description: "설정된 큐에 메시지를 게시하고 전달을 처리합니다."
+description: "분산 큐에서 메시지를 발행하고 소비합니다. RabbitMQ 및 기타 AMQP 호환 브로커를 포함한 여러 백엔드를 지원합니다."
 ---
 
 # 메시지 큐
@@ -88,8 +88,8 @@ if headers_err then return nil, headers_err end
 | 메서드 | 반환 | 설명 |
 |--------|------|------|
 | `id()` | `string, error` | 고유 메시지 식별자 |
-| `header(key)` | `string?, error` | 정규화된 문자열 값, 없으면 nil |
-| `headers()` | `{[string]: string}, error` | 정규화된 문자열 값의 모든 헤더 |
+| `header(key)` | `string, error` | 단일 헤더 값을 문자열로 반환 (없으면 nil) |
+| `headers()` | `table, error` | 모든 메시지 헤더 |
 | `ack()` | `boolean, error` | 처리 확인 (single-shot) |
 | `nack()` | `boolean, error` | 재전송 또는 dead-letter를 위한 실패 신호 (single-shot) |
 
@@ -107,27 +107,22 @@ if err then return nil, err end
 
 ## 컨슈머 패턴
 
-`queue.consumer` 엔트리는 큐를 `func`가 참조하는 핸들러에 바인딩합니다. 핸들러는 메시지 페이로드를 직접 받습니다:
+`queue.consumer` 엔트리는 큐를 핸들러 함수(`func`로 참조)에 바인딩합니다. 핸들러는 메시지 페이로드를 직접 받습니다:
 
 ```yaml
-- name: email_worker
-  kind: queue.consumer
-  queue: app:emails
-  func: app:email_handler
+entries:
+  - kind: queue.consumer
+    name: email_worker
+    queue: app:emails
+    func: app:email_handler
 ```
 
 이 조각은 `app:emails`와 `app:email_handler` 함수 엔트리가 이미 있다고 가정합니다. 아래 함수 소스는 애플리케이션이 `deliver_email(payload)`를 제공하고 필요한 권한을 부여한다고 가정합니다.
 
 ```lua
-local queue = require("queue")
-local logger = require("logger")
-
-local function main(payload)
-    local msg, msg_err = queue.message()
-    if msg_err then return nil, msg_err end
-
-    local message_id, id_err = msg:id()
-    if id_err then return nil, id_err end
+-- app:email_handler
+function handle_email(payload)
+    local msg = queue.message()
 
     logger:info("Processing", {
         message_id = message_id,

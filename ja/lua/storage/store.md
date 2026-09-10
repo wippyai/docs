@@ -1,6 +1,6 @@
 ---
 title: "キーバリューストア"
-description: "有効期限と条件付き書き込みを必要に応じて指定し、値を保存・取得します。"
+description: "TTLサポート付きの高速キーバリューストレージ。キャッシュ、セッション、一時的な状態に最適。"
 ---
 
 # キーバリューストア
@@ -96,22 +96,15 @@ return user
 
 **戻り値:** `any, error`
 
-キーが存在しないか有効期限が切れている場合、このメソッドは `nil` と `errors.NOT_FOUND` エラーを返します。
+キーが存在しないか期限切れの場合は`nil`と`errors.NOT_FOUND`エラーを返す。
 
 ## 存在確認
 
 取得せずにキーが存在するか確認:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -194,9 +187,7 @@ local errors = require("errors")
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
-    -- someone else holds it
-elseif err then
-    return nil, err
+    -- 他の誰かが保持している
 end
 
 -- compare-and-set: write only if the version still matches
@@ -204,9 +195,7 @@ local cur, read_err = cache:entry("config")
 if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
-    -- a concurrent writer changed it; re-read and retry
-elseif err2 then
-    return nil, err2
+    -- 並行ライターが変更した。再読み取りして再試行
 end
 ```
 
@@ -274,29 +263,27 @@ end
 | アクション | リソース | 属性 | 説明 |
 |--------|----------|------------|-------------|
 | `store.get` | Store ID | - | ストアリソースを取得 |
-| `store.info` | Store ID | - | ストアの機能を確認 |
-| `store.key.get` | Store ID | `key` | キー値を読み取り（`entry` も対象） |
-| `store.key.set` | Store ID | `key` | キー値を書き込み（`put` も対象） |
+| `store.info` | Store ID | - | ストアのケーパビリティを調べる |
+| `store.key.get` | Store ID | `key` | キー値を読み取り（`entry` も同様） |
+| `store.key.set` | Store ID | `key` | キー値を書き込み（`put` も同様） |
 | `store.key.delete` | Store ID | `key` | キーを削除 |
 | `store.key.has` | Store ID | `key` | キーの存在を確認 |
-| `store.key.list` | Store ID | `prefix` | エントリを一覧表示 |
-
-`store.get`、`get`、`set`、`delete`、`has` で権限が拒否されると Lua エラーが送出されます。一方、`info`、`entry`、`list`、`put` メソッドは `errors.PERMISSION_DENIED` エラーを返します。送出された拒否を処理できないコードを呼び出す前に、必要なアクションを付与してください。
+| `store.key.list` | Store ID | `prefix` | エントリを一覧 |
 
 ## エラー
 
-入力、検索、バックエンド、機能に関する失敗は構造化エラーとして返されます（`err:kind()` を使用）。権限拒否については、前述した二通りの動作に従います。
+`store.get()` とストアハンドルのすべてのメソッド（`get`、`entry`、`set`、`put`、`list`、`has`、`delete`、`info`）は構造化エラーを返します（`err:kind()` を使用）。ただし `store.get`、`get`、`set`、`has`、`delete` での権限拒否は、エラーを返す代わりに Lua エラーとして送出されます。
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | いいえ |
-| リソースレジストリを利用できない | `errors.NOT_FOUND` | いいえ |
-| リソースが見つからない場合を含む、ストア取得の失敗 | `errors.INTERNAL` | いいえ |
-| ストアが解放済み | `errors.INVALID` | いいえ |
-| `info`、`entry`、`list`、`put` による権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
-| `store.get`、`get`、`set`、`delete`、`has` による権限拒否 | Lua エラーを送出 | 該当なし |
-| `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | いいえ |
-| `if_version` 不一致 | `errors.CONFLICT` | はい |
-| サポートのないストアでの条件付き書き込み | `errors.INVALID` | いいえ |
+| リソースIDが空 | `errors.INVALID` | no |
+| リソースが見つからない | `errors.INTERNAL` | no |
+| ストアが解放済み | `errors.INVALID` | no |
+| 権限拒否（`entry`、`put`、`list`、`info`） | `errors.PERMISSION_DENIED` | no |
+| `only_if_absent` でキーが存在する | `errors.ALREADY_EXISTS` | no |
+| `if_version` 不一致 | `errors.CONFLICT` | yes |
+| サポートのないストアでの条件付き書き込み | `errors.INVALID` | no |
+
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

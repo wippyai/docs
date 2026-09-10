@@ -1,6 +1,6 @@
 ---
 title: "압축"
-description: "gzip, Brotli, Zstandard, 원시 DEFLATE, zlib으로 문자열을 압축하고 해제합니다."
+description: "gzip, deflate, zlib, brotli, zstd 알고리즘을 사용하여 데이터를 압축 및 해제합니다."
 ---
 
 # 압축
@@ -75,7 +75,7 @@ if content_encoding == "gzip" then
     if body_err then return nil, body_err end
     local decompressed, err = compress.gzip.decode(body)
     if err then
-        return nil, errors.wrap(err, "gzip request body could not be decoded")
+        return nil, errors.new("Invalid gzip data"):kind(errors.INVALID)
     end
     body = decompressed
 end
@@ -83,7 +83,7 @@ end
 -- Decompress with size limit (prevent zip bombs)
 local decompressed, err = compress.gzip.decode(data, {max_size = 10 * 1024 * 1024})
 if err then
-    return nil, errors.wrap(err, "gzip decode failed")
+    return nil, errors.new("Decompressed size exceeds 10MB limit"):kind(errors.INVALID)
 end
 ```
 
@@ -423,6 +423,6 @@ end
 | 빈 입력 | `errors.INVALID` | 아니오 |
 | 범위 밖 레벨 | `errors.INVALID` | 아니오 |
 | 잘못된 압축 데이터 | `errors.INVALID` | 아니오 |
-| 압축 해제 크기 제한 초과 | `errors.INTERNAL` | 아니오 |
+| 압축 해제 크기 제한 초과 | `errors.INTERNAL` (gzip, zlib, zstd) / `errors.INVALID` (deflate, brotli) | 아니오 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

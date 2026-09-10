@@ -1,6 +1,6 @@
 ---
 title: "프로세스 그룹"
-description: "클러스터 전체 프로세스 그룹, 멤버십, 브로드캐스트, 멤버십 구독을 관리합니다."
+description: "프로세스를 명명된 그룹에 참여시키고 클러스터 전체의 모든 멤버에게 브로드캐스트합니다. Erlang/OTP pg를 모델로 합니다: 그룹은 동적이고, 프로세스는 여러 그룹에 속할 수 있으며, 멤버십은 클러스터 전체에서 추적되며 결과적으로 일관성이 있습니다."
 ---
 
 # 프로세스 그룹
@@ -211,21 +211,21 @@ group:release()
 | `pg.leave` | `leave()` | 그룹 이름 |
 | `pg.get_members` | `get_members()` | 그룹 이름 |
 | `pg.get_local_members` | `get_local_members()` | 그룹 이름 |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (없음) |
+| `pg.which_local_groups` | `which_local_groups()` | (없음) |
 | `pg.broadcast` | `broadcast()` | 그룹 이름 |
 | `pg.broadcast_local` | `broadcast_local()` | 그룹 이름 |
 | `pg.monitor` | `monitor()` | 그룹 이름 |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (없음) |
 
 ## 오류
 
 | 조건 | 종류 |
 |-----------|------|
-| 권한 거부 | `errors.PERMISSION_DENIED` |
-| 누락되거나 빈 인수 | `errors.INVALID` |
-| Scope를 찾을 수 없음 | `errors.INTERNAL` |
-| 멤버십이 없는 그룹 탈퇴 | `errors.NOT_FOUND` |
+| 권한 거부됨 | `errors.PERMISSION_DENIED` |
+| 인수 누락 또는 빈 인수 | `errors.INVALID` |
+| 범위 찾을 수 없음 | `errors.INTERNAL` |
+| 멤버십 없는 그룹 탈퇴 | `errors.NOT_FOUND` |
 | 인스턴스 해제됨 | `errors.INVALID` |
 | 그룹/멤버 또는 작업 큐 제한 도달 | `errors.RATE_LIMITED` (재시도 가능) |
 | 서비스 중지, 백프레셔 또는 회로 열림 | `errors.UNAVAILABLE` |

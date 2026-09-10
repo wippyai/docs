@@ -1,6 +1,6 @@
 ---
 title: "Expression Language"
-description: "Compile and evaluate expr-lang expressions from Lua."
+description: "Evaluate dynamic expressions using expr-lang syntax. Compile and execute safe expressions for filtering, validation, and rule evaluation without full…"
 ---
 
 # Expression Language

@@ -86,6 +86,7 @@ flowchart TB
     subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
+        SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
@@ -121,6 +122,8 @@ flowchart TB
     %% Token store deps
     MemStore --> TokenStore
     Policy -->|attached to token| TokenStore
+    SysPolicy -->|"actor + scope"| AuthEndpoint
+    SysPolicy -->|"actor + scope"| Ticker
 
     %% Auth uses DB for API keys
     AuthEndpoint -->|lookup API key| DB
@@ -129,7 +132,6 @@ flowchart TB
     WSHandler -->|subscribe| Ticker
     Ticker -->|broadcast| WSHandler
     WSRelay <-->|"ws frames"| Browser
-
 ```
 
 ## Security Flow
@@ -182,16 +184,8 @@ entries:
     groups:
       - user
 
-  # Capabilities for trusted background services
-  - name: service_policy
-    kind: security.policy
-    policy:
-      actions: "*"
-      resources: "*"
-      effect: allow
-
-  # Capabilities for the public token-exchange handler
-  - name: token_issuer_policy
+  # Policy for internal code that runs without an end-user actor
+  - name: system_policy
     kind: security.policy
     policy:
       actions:
@@ -201,6 +195,9 @@ entries:
         - security.scope.create
         - security.token_store.get
         - security.token.create
+        - process.registry.register
+        - process.send
+        - process.monitor
       resources: "*"
       effect: allow
 
@@ -224,21 +221,28 @@ entries:
     modules: [sql, logger, crypto]
     security:
       actor:
-        id: app:migrate
+        id: "service:migrate"
       policies:
-        - app:service_policy
+        - app:system_policy
+
+  - name: migrate-service
+    kind: process.service
+    process: app:migrate
+    host: app:processes
+    lifecycle:
+      auto_start: true
 
   # Ticker broadcaster
   - name: ticker
     kind: process.lua
     source: file://ticker.lua
     method: main
-    modules: [logger, time, json, crypto]
+    modules: [logger, time, crypto]
     security:
       actor:
-        id: app:ticker
+        id: "service:ticker"
       policies:
-        - app:service_policy
+        - app:system_policy
 
   - name: ticker-service
     kind: process.service
@@ -313,9 +317,9 @@ entries:
     modules: [http, sql, crypto, security, json]
     security:
       actor:
-        id: app:token-issuer
+        id: "service:auth"
       policies:
-        - app:token_issuer_policy
+        - app:system_policy
 
   - name: auth_token.endpoint
     kind: http.endpoint
@@ -341,10 +345,9 @@ entries:
     func: app:ws_ticker
 ```
 
-The signing key, wildcard user policy, raw API-key storage, and memory token store are
-appropriate only for this loopback demo. In production, use `token_key_env`, hash API
-keys before storage, narrow policy actions and resources, restrict allowed origins, and
-use a durable token store. See [Environment System](system/env.md).
+`user_policy` rides inside every issued token and covers what an authenticated connection does. `system_policy` covers the code that runs before any token exists — the migration, the ticker, and the token exchange itself — because a gated call made without an actor and a scope is denied.
+
+For production, read the HMAC key from an environment variable with a placeholder (`token_key: ${env:TOKEN_KEY}`) instead of hardcoding it. See [Environment System](system/env.md).
 
 ## Token Exchange
 
@@ -491,13 +494,14 @@ return { handler = handler }
 
 ## Connection Handler
 
-The `websocket_relay` middleware sends lifecycle messages to the handler process:
+The `websocket_relay` middleware automatically sends lifecycle messages to the handler process:
+- `ws.join` - Connection established, includes `client_pid` for sending responses
+- `ws.message` - Client sent a message; the payload is the raw frame (a string for text frames)
+- `ws.leave` - Connection closed (sent automatically on disconnect)
 
-- `ws.join` — Connection established; includes `client_pid` for responses
-- `ws.message` — Client sent a message
-- `ws.leave` — Connection closed; includes the same `client_pid` and metadata as `ws.join`
+Messages sent the other way, to the client PID, reach the browser as a single JSON text frame shaped `{topic, data}`. The topic is yours to pick and the payload arrives as `data`.
 
-`ws_handler.lua` handles these lifecycle messages:
+`ws_handler.lua` - handles these lifecycle messages:
 
 ```lua
 local logger = require("logger")
@@ -531,21 +535,14 @@ local function main(user_id)
             subscribed = true
 
             -- Send welcome
-            process.send(client_pid, "ws.send", {
-                type = "text",
-                data = json.encode({type = "welcome", user_id = user_id})
-            })
+            process.send(client_pid, "welcome", {user_id = user_id})
 
             logger:info("client joined", {user_id = user_id, client_pid = client_pid})
 
         elseif topic == "ws.message" then
-            -- Text WebSocket frames arrive as string payloads.
             local content = json.decode(data)
             if content and content.type == "ping" then
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "pong"})
-                })
+                process.send(client_pid, "pong", {})
             end
 
         elseif topic == "ws.leave" then
@@ -572,7 +569,6 @@ the tutorial does not call an external market-data service:
 ```lua
 local logger = require("logger")
 local time = require("time")
-local json = require("json")
 local crypto = require("crypto")
 
 -- handler_pid -> client_pid mapping
@@ -584,10 +580,9 @@ local prices = {
     ["SOL-USD"] = 95.00
 }
 
-local function broadcast(message)
-    local data = json.encode(message)
+local function broadcast(updates)
     for _, client_pid in pairs(subscriptions) do
-        process.send(client_pid, "ws.send", {type = "text", data = data})
+        process.send(client_pid, "ticker", updates)
     end
 end
 
@@ -639,12 +634,16 @@ local function main()
         if r.channel == tick_ch then
             update_prices()
             if next(subscriptions) then
-                broadcast({type = "ticker", data = get_updates()})
+                broadcast(get_updates())
             end
 
         elseif r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                ticker:stop()
+                logger:info("ticker stopping")
+                return 0
+            elseif event.kind == process.event.EXIT then
                 -- Handler exited, remove subscription
                 if subscriptions[event.from] then
                     logger:info("handler exited", {handler_pid = event.from})
@@ -666,10 +665,7 @@ local function main()
 
                 logger:info("subscribed", {handler_pid = handler_pid, client_pid = client_pid})
 
-                process.send(client_pid, "ws.send", {
-                    type = "text",
-                    data = json.encode({type = "ticker", data = get_updates()})
-                })
+                process.send(client_pid, "ticker", get_updates())
 
             elseif topic == "unsubscribe" then
                 subscriptions[data.handler_pid] = nil
@@ -751,93 +747,66 @@ end
 return { main = main }
 ```
 
-The raw demo key appears in logs only when it is first generated. Save it for the
-browser step. If it is lost, stop the app, remove `data/auth.db`, and run the
-migration again. Do not paste a production credential into this demo database.
-
 ## Browser Client
 
-Create `src/public/index.html`. The browser exchanges the API key for a short-lived
-token, keeps that token only in memory, and sends it through the middleware's
-`x-auth-token` query parameter because the browser WebSocket API cannot set an
-`Authorization` header.
+`public/index.html` - exchanges the API key for a token, then streams prices. A browser cannot set headers on a WebSocket handshake, so the token travels in the `x-auth-token` query parameter that `token_auth` also reads:
 
 ```html
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Wippy Crypto Ticker</title>
+  <title>Crypto Ticker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
+    #status { color: #666; }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>Crypto Ticker</h1>
-    <form id="connect-form">
-      <label for="api-key">Demo API key</label>
-      <input id="api-key" name="api-key" autocomplete="off" required>
-      <button type="submit">Connect</button>
-    </form>
-    <p id="status">Disconnected</p>
-    <ul id="prices"></ul>
-  </main>
+  <h1>Crypto Ticker</h1>
+  <input id="key" placeholder="demo API key" size="40">
+  <button id="connect">Connect</button>
+  <p id="status">disconnected</p>
+  <table><thead><tr><th>Symbol</th><th>Price</th></tr></thead><tbody id="rows"></tbody></table>
 
   <script>
-    const form = document.querySelector('#connect-form');
-    const input = document.querySelector('#api-key');
-    const status = document.querySelector('#status');
-    const prices = document.querySelector('#prices');
-    let socket;
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
 
-    function setStatus(message) {
-      status.textContent = message;
-    }
+    document.getElementById("connect").onclick = async () => {
+      const res = await fetch("/auth/token", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({api_key: document.getElementById("key").value})
+      });
+      if (!res.ok) { status.textContent = "auth failed"; return; }
+      const {token} = await res.json();
 
-    function renderPrices(items) {
-      prices.replaceChildren(...items.map((item) => {
-        const row = document.createElement('li');
-        row.textContent = `${item.symbol}: $${Number(item.price).toFixed(2)}`;
-        return row;
-      }));
-    }
+      const url = `ws://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(url);
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (socket) socket.close();
-      setStatus('Authenticating...');
+      ws.onopen = () => {
+        status.textContent = "connected";
+        ws.send(JSON.stringify({type: "ping"}));
+      };
+      ws.onclose = () => { status.textContent = "disconnected"; };
 
-      try {
-        const response = await fetch('/auth/token', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({api_key: input.value}),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
-
-        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-        const url = `${scheme}://${location.host}/ws/ticker?x-auth-token=${encodeURIComponent(result.token)}`;
-        socket = new WebSocket(url);
-
-        socket.addEventListener('open', () => setStatus(`Connected as ${result.user_id}`));
-        socket.addEventListener('close', () => setStatus('Disconnected'));
-        socket.addEventListener('error', () => setStatus('WebSocket error'));
-        socket.addEventListener('message', (message) => {
-          const event = JSON.parse(message.data);
-          if (event.type === 'ticker') renderPrices(event.data);
-        });
-      } catch (error) {
-        setStatus(error.message);
-      }
-    });
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.topic !== "ticker") return;
+        rows.innerHTML = "";
+        for (const quote of msg.data) {
+          rows.insertAdjacentHTML("beforeend",
+            `<tr><td>${quote.symbol}</td><td>${quote.price.toFixed(2)}</td></tr>`);
+        }
+      };
+    };
   </script>
 </body>
 </html>
 ```
-
-Query-string bearer tokens can appear in access logs and browser history. This demo
-uses a one-hour token on loopback; production browser authentication should use a
-secure, HttpOnly cookie or a purpose-built, single-use WebSocket ticket.
 
 ## Running
 
@@ -846,6 +815,7 @@ services. Running the migration as a separate command prevents the token endpoin
 from racing the table creation.
 
 ```bash
+mkdir -p data
 wippy init
 wippy run -x app:migrate
 wippy run

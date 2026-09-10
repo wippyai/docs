@@ -1,6 +1,6 @@
 ---
 title: "키-값 스토어"
-description: "선택적 만료 및 조건부 쓰기를 사용해 값을 저장하고 조회합니다."
+description: "TTL 지원이 있는 빠른 키-값 스토리지. 캐싱, 세션, 임시 상태에 이상적입니다."
 ---
 
 # 키-값 스토어
@@ -96,22 +96,15 @@ return user
 
 **반환:** `any, error`
 
-키가 없거나 만료되면 `nil`과 `errors.NOT_FOUND` 오류를 반환합니다.
+키가 존재하지 않거나 만료된 경우 `nil`과 `errors.NOT_FOUND` 에러를 반환합니다.
 
 ## 존재 확인
 
 조회하지 않고 키 존재 확인:
 
 ```lua
-local errors = require("errors")
-
-local exists, err = cache:has("lock:" .. resource_id)
-if err then return nil, err end
-if exists then
-    return nil, errors.new({
-        message = "Resource is locked",
-        kind = errors.CONFLICT
-    })
+if cache:has("lock:" .. resource_id) then
+    return nil, errors.new({ kind = errors.CONFLICT, message = "Resource is locked" })
 end
 ```
 
@@ -194,9 +187,7 @@ local errors = require("errors")
 -- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
-    -- someone else holds it
-elseif err then
-    return nil, err
+    -- 다른 누군가가 보유 중
 end
 
 -- compare-and-set: write only if the version still matches
@@ -204,9 +195,7 @@ local cur, read_err = cache:entry("config")
 if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
-    -- a concurrent writer changed it; re-read and retry
-elseif err2 then
-    return nil, err2
+    -- 동시 쓰기가 이를 변경함; 다시 읽고 재시도
 end
 ```
 
@@ -274,27 +263,23 @@ end
 | 액션 | 리소스 | 속성 | 설명 |
 |------|--------|------|------|
 | `store.get` | 스토어 ID | - | 스토어 리소스 획득 |
-| `store.info` | 스토어 ID | - | 스토어 기능 검사 |
-| `store.key.get` | 스토어 ID | `key` | 키 값 읽기(`entry` 포함) |
-| `store.key.set` | 스토어 ID | `key` | 키 값 쓰기(`put` 포함) |
+| `store.info` | 스토어 ID | - | 스토어 기능 조회 |
+| `store.key.get` | 스토어 ID | `key` | 키 값 읽기(`entry`도 포함) |
+| `store.key.set` | 스토어 ID | `key` | 키 값 쓰기(`put`도 포함) |
 | `store.key.delete` | 스토어 ID | `key` | 키 삭제 |
 | `store.key.has` | 스토어 ID | `key` | 키 존재 확인 |
 | `store.key.list` | 스토어 ID | `prefix` | 엔트리 목록 조회 |
 
-`store.get`, `get`, `set`, `delete`, `has`에서 권한이 거부되면 Lua 오류가 발생합니다. 반면 `info`, `entry`, `list`, `put` 메서드는 `errors.PERMISSION_DENIED` 오류를 반환합니다. 발생한 거부를 허용할 수 없는 코드를 호출하기 전에 필요한 액션을 허가하세요.
-
 ## 에러
 
-입력, 조회, 백엔드 및 기능 실패는 구조화된 오류로 반환됩니다(`err:kind()` 사용). 권한 거부는 위에서 설명한 분할 동작을 따릅니다.
+`store.get()`과 스토어 핸들의 모든 메서드(`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`)는 구조화된 오류를 반환합니다(`err:kind()` 사용). 단, `store.get`, `get`, `set`, `has`, `delete`에서의 권한 거부는 대신 Lua 에러로 발생합니다.
 
 | 조건 | 종류 | 재시도 가능 |
 |------|------|-------------|
 | 빈 리소스 ID | `errors.INVALID` | 아니오 |
-| 리소스 레지스트리를 사용할 수 없음 | `errors.NOT_FOUND` | 아니오 |
-| 누락된 리소스를 포함한 리소스 획득 실패 | `errors.INTERNAL` | 아니오 |
+| 리소스를 찾을 수 없음 | `errors.INTERNAL` | 아니오 |
 | 스토어 해제됨 | `errors.INVALID` | 아니오 |
-| `info`, `entry`, `list`, `put`의 권한 거부 | `errors.PERMISSION_DENIED` | 아니오 |
-| `store.get`, `get`, `set`, `delete`, `has`의 권한 거부 | Lua 오류 발생 | 해당 없음 |
+| 권한 거부됨 (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | 아니오 |
 | `only_if_absent`이고 키가 존재함 | `errors.ALREADY_EXISTS` | 아니오 |
 | `if_version` 불일치 | `errors.CONFLICT` | 예 |
 | 지원하지 않는 스토어에서 조건부 쓰기 | `errors.INVALID` | 아니오 |

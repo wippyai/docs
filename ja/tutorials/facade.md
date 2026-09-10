@@ -34,7 +34,8 @@ Wippy UI を配信するバックエンドアプリ：
 
 ## 動作の仕組み
 
-1. FacadeシェルがHTTPサーバーによって`/`にレンダリングされます。
+1. シェルはファサードのテンプレートからレンダリングされ、HTTP サーバーの `/` で配信されます。
+   そのアセットとディープリンクのフォールバックは、同じサーバー上の静的マウントから提供されます。
 2. 読み込み時に `GET /api/public/facade/config` を取得します。
 3. `localStorage`から`@wippy_token_info`を読み取り、その項目が存在しないかJSONとして解析できない場合のみ`login_path`へリダイレクトします。
 4. CDN (`facade_url + '/module.js'`) から Web Host バンドルをインポートし、その構成で `initWippyApp(...)` を呼び出します。
@@ -65,6 +66,7 @@ entries:
   - name: facade
     kind: ns.dependency
     component: wippy/facade
+    version: "*"
     parameters:
       - name: server
         value: app:gateway
@@ -74,8 +76,7 @@ entries:
         value: Verify App
 ```
 
-同梱のFacadeシェルは`/api/public/facade/config`を取得するため、デフォルトシェルが設定を見つけられるよう、
-パブリックルーターのプレフィックスは`/api/public`でなければなりません。
+シェルは構成、テーマスクリプト、CSS 変数を `/api/public/facade/` の下で要求するため、パブリックルーターのプレフィックスは `/api/public` でなければなりません。
 
 ## 実行
 
@@ -91,12 +92,15 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
-  "login_path": "/login.html",
-  "mode": "compat",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
+  "mode": "compat",
+  "login_path": "/login.html",
+  "themeMode": "auto",
+  "themePersist": "none",
+  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
@@ -106,9 +110,8 @@ curl http://localhost:8087/api/public/facade/config
   },
   "hostConfig": {
     "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "startNavOpen": false, "disableRightPanel": false, "hideSessionSelector": false,
-    "renderEngine": "iframe",
-    "session": { "type": "non-persistent" }, "history": "hash"
+    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
+    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -157,7 +160,7 @@ window.location.assign('/');
 | `css_variables` | CSS カスタムプロパティの JSON 文字列、例: `'{"--p-primary":"#6366f1"}'` |
 | `fe_facade_url` | CDN バンドル URL (ファサードリリースごとに固定。オーバーライドしない限りデフォルトのままにする) |
 
-2 つの値は、パラメータではなく `PUBLIC_API_URL` 環境変数からランタイムに導出されます。API ベース URL と WebSocket URL (`http`→`ws`、`https`→`wss`) です。未設定の場合、ブラウザは `window.location.origin` にフォールバックします。
+2 つの値は、パラメータではなく `PUBLIC_API_URL` からランタイムに導出されます。API ベース URL と WebSocket URL (`http`→`ws`、`https`→`wss`) です。ファサードはこれを env レジストリ経由で読み取るため、アプリで `env.variable` として宣言してください。未設定の場合、ブラウザは `window.location.origin` にフォールバックします。
 
 ## 注意事項
 

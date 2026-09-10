@@ -30,10 +30,10 @@ local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
 local s: string = a          -- ERROR: any is not assignable to string
 
--- unknown: safe unknown, must narrow before use as a concrete type
+-- unknown: sicheres unknown, vor Verwendung als konkreter Typ eingrenzen
 local u: unknown = get_data()
-u.foo                        -- no error: member access on unknown behaves like any
-local n: number = u          -- ERROR: unknown not assignable to number, narrow first
+u.foo                        -- kein Fehler: Member-Zugriff auf unknown verhält sich wie any
+local n: number = u          -- ERROR: unknown nicht an number zuweisbar, zuerst eingrenzen
 if type(u) == "table" then
     -- u narrowed to table here
 end
@@ -239,7 +239,7 @@ local user: User? = get_user()
 local name = (user!).name            -- assert user is non-nil
 ```
 
-`!` ist ausschließlich eine Assertion für den Typprüfer: Sie verengt den Typ auf Nicht-`nil`, erzeugt aber keine Runtime-Prüfung. Ist der Wert tatsächlich `nil`, schlägt die folgende Operation mit dem üblichen Fehler fehl, etwa beim Indizieren von `nil`. Verwenden Sie die Assertion, wenn ein Wert sicher nicht `nil` sein kann, der Typprüfer dies aber nicht beweisen kann.
+`!` ist ausschließlich eine Assertion für den Typprüfer - sie grenzt den Typ auf nicht-nil ein, erzeugt aber keine Laufzeitprüfung. Ist der Wert tatsächlich nil, schlägt die folgende Operation mit dem üblichen Fehler fehl (z. B. Indizierung von nil). Verwende dies, wenn du weißt, dass ein Wert nicht nil sein kann, der Typprüfer dies aber nicht beweisen kann.
 
 ## Typ-Casts
 
@@ -310,8 +310,9 @@ Typen sind erstklassige Werte mit Introspektionsmethoden.
 ### Kind und Name
 
 ```lua
-type NumberType = number
-print(NumberType:kind())             -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -340,20 +341,20 @@ print(nameType:kind())               -- "string"
 ### Collection-Typen
 
 ```lua
-type NumberArray = {number}
-print(NumberArray:elem():kind())     -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-type NumberMap = {[string]: number}
-print(NumberMap:key():kind())        -- "string"
-print(NumberMap:val():kind())        -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### Optionale Typen
 
 ```lua
-type OptionalNumber = number?
-print(OptionalNumber:kind())         -- "optional"
-print(OptionalNumber:inner():kind()) -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### Union-Typen
@@ -370,6 +371,7 @@ end
 
 ```lua
 type Predicate = (number, string) -> boolean
+
 for param in Predicate:params() do
     print(param:kind())
 end
@@ -381,25 +383,25 @@ print(Predicate:ret():kind())        -- "boolean"
 ### Typ-Vergleich
 
 ```lua
-type NumberType = number
-type IntegerType = integer
+type Num = number
+type Int = integer
 
-print(NumberType == NumberType)      -- true
-print(IntegerType <= NumberType)     -- true (subtype)
-print(IntegerType < NumberType)      -- true (strict subtype)
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (subtype)
+print(Int < Num)                     -- true (strict subtype)
 ```
 
 ### Typen als Tabellenschlüssel
 
 ```lua
-type NumberType = number
-type StringType = string
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
 local handlers = {}
-handlers[NumberType] = function() return "number handler" end
-handlers[StringType] = function() return "string handler" end
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
 
-local h = handlers[NumberType]
+local h = handlers[Point]
 if h then h() end
 ```
 
@@ -430,9 +432,11 @@ type NonNegative = number @min(0)
 type Percentage = number @min(0) @max(100)
 type Email = string @pattern("^.+@.+$")
 
-local x = NonNegative(1)
-local percent, err = Percentage:is(50)
-local email = Email("test@example.com")
+-- Multiple validators
+local x: number @min(0) @max(100) = 50
+
+-- String pattern
+local email: string @pattern("^.+@.+$") = "test@example.com"
 ```
 
 Eine Annotation an einer lokalen Variable wird vom Linter statisch geprüft. Sie fügt bei der Zuweisung keine automatische Runtime-Prüfung ein; die Durchsetzung zur Laufzeit erfolgt, wenn ein Typwert einen Wert validiert.

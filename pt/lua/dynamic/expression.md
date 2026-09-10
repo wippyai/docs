@@ -1,14 +1,18 @@
 ---
-title: "Linguagem de Expressões"
-description: "Compile e avalie expressões expr-lang a partir de Lua."
+title: "Linguagem de Expressão"
+description: "Avalie expressões dinâmicas usando a sintaxe expr-lang. Compile e execute expressões seguras para filtragem, validação e avaliação de regras sem…"
 ---
 
-# Linguagem de Expressões
+# Linguagem de Expressão
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-O módulo `expr` compila e avalia expressões [expr-lang](https://expr-lang.org/) para filtragem, validação, cálculos e avaliação de regras sem executar código-fonte Lua. Esta página é a referência canônica da API Lua; seus exemplos são executados dentro de um processo Lua Wippy existente cuja entrada declara o módulo `expr`, mas não são aplicações Wippy independentes. Consulte [Avaliação Dinâmica](./eval.md) para escolher entre expressões e Lua com restrições de capacidades.
+Avalie expressões dinâmicas usando a sintaxe [expr-lang](https://expr-lang.org/). Compile e execute expressões seguras para filtragem, validação e avaliação de regras sem execução Lua completa.
+
+## Cache
+
+`expr.eval` mantém um cache LRU interno de expressões compiladas (capacidade padrão 1000). O cache é embutido no módulo e não requer configuração.
 
 ## Carregamento
 
@@ -16,24 +20,16 @@ O módulo `expr` compila e avalia expressões [expr-lang](https://expr-lang.org/
 local expr = require("expr")
 ```
 
-## Cache
+## Avaliando Expressões
 
-`expr.eval` mantém um cache LRU interno de expressões compiladas, com capacidade padrão de 1.000. O cache faz parte do módulo e não exige configuração.
-
-## Avaliando Expressoes
-
-Avaliar uma string de expressao e retornar o resultado. Usa cache LRU interno para expressoes compiladas:
+Avaliar uma string de expressão e retornar o resultado. Usa cache LRU interno para expressões compiladas:
 
 ```lua
--- Simple math
-local result, err = expr.eval("1 + 2 * 3")
-if err then
-    return nil, err
-end
--- result == 7
+-- Matemática simples
+local result = expr.eval("1 + 2 * 3")  -- 7
 
--- With variables
-local total, total_err = expr.eval("price * quantity", {
+-- Com variáveis
+local total = expr.eval("price * quantity", {
     price = 29.99,
     quantity = 3
 })
@@ -42,8 +38,17 @@ if total_err then
 end
 -- total == 89.97
 
--- Ternary operator
-local label, label_err = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
+-- Expressões booleanas
+local is_adult = expr.eval("age >= 18", {age = 21})  -- true
+
+-- Operações com string
+local greeting = expr.eval('name + " is " + status', {
+    name = "Alice",
+    status = "online"
+})  -- "Alice is online"
+
+-- Operador ternário
+local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
 })
 if label_err then
@@ -54,14 +59,14 @@ end
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `expression` | string | Expressao em sintaxe expr-lang |
-| `env` | `any` | Ambiente de variáveis da expressão (opcional; normalmente uma tabela) |
+| `expression` | string | Expressão em sintaxe expr-lang |
+| `env` | table | Ambiente de variáveis para expressão (opcional) |
 
 **Retorna:** `any, error`
 
-## Compilando Expressoes
+## Compilando Expressões
 
-Compilar uma expressao em um objeto Program reutilizavel para avaliação repetida:
+Compilar uma expressão em um objeto Program reutilizável para avaliação repetida:
 
 ```lua
 -- Compile once for repeated use
@@ -85,14 +90,14 @@ end
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `expression` | string | Expressao em sintaxe expr-lang |
-| `env` | `any` | Ambiente de hints de tipo para compilação (opcional; normalmente uma tabela) |
+| `expression` | string | Expressão em sintaxe expr-lang |
+| `env` | table | Ambiente de tipos para compilação (opcional) |
 
 **Retorna:** `Program, error`
 
 ## Executando Programas Compilados
 
-Executar uma expressao compilada com ambiente fornecido:
+Executar uma expressão compilada com ambiente fornecido:
 
 ```lua
 -- Validation rule
@@ -129,7 +134,7 @@ end
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `env` | `any` | Ambiente de variáveis da expressão (opcional; normalmente uma tabela) |
+| `env` | table | Ambiente de variáveis para expressão (opcional) |
 
 **Retorna:** `any, error`
 
@@ -138,15 +143,19 @@ end
 Expr-lang fornece muitas funções built-in:
 
 ```lua
-local maximum, max_err = expr.eval("max(1, 5, 3)")
-if max_err then
-    return nil, max_err
-end
+-- Funções matemáticas
+expr.eval("max(1, 5, 3)")        -- 5
+expr.eval("min(10, 2, 8)")       -- 2
+expr.eval("abs(-42)")            -- 42
+expr.eval("ceil(3.2)")           -- 4
+expr.eval("floor(3.8)")          -- 3
 
-local uppercase, upper_err = expr.eval('upper("hello")')
-if upper_err then
-    return nil, upper_err
-end
+-- Funções de string
+expr.eval('len("hello")')        -- 5
+expr.eval('upper("hello")')      -- "HELLO"
+expr.eval('lower("HELLO")')      -- "hello"
+expr.eval('trim("  hi  ")')      -- "hi"
+expr.eval('"hello" contains "ell"')  -- true
 
 local total, sum_err = expr.eval("sum(values)", {values = {1, 2, 3, 4}})
 if sum_err then
@@ -161,9 +170,9 @@ Outras funções integradas incluem `min`, `abs`, `ceil`, `floor`, `len`, `lower
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Expressao vazia | `errors.INVALID` | não |
-| Sintaxe de expressao invalida | `errors.INTERNAL` | não |
-| Avaliação de expressao falhou | `errors.INTERNAL` | não |
-| Conversao de resultado falhou | `errors.INTERNAL` | não |
+| Expressão vazia | `errors.INVALID` | não |
+| Sintaxe de expressão inválida | `errors.INTERNAL` | não |
+| Avaliação de expressão falhou | `errors.INTERNAL` | não |
+| Conversão de resultado falhou | `errors.INTERNAL` | não |
 
-Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
+Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.

@@ -1,6 +1,6 @@
 ---
 title: "Textverarbeitung"
-description: "Reguläre Ausdrücke kompilieren, Texte vergleichen, Patches erstellen und Dokumente in Abschnitte aufteilen."
+description: "Reguläre Ausdrücke, Text-Diffing und semantisches Text-Splitting."
 ---
 
 # Textverarbeitung
@@ -366,19 +366,8 @@ if err then
     return nil, err
 end
 
-local fs = require("fs")
-local docs, docs_err = fs.get("app:docs")
-if docs_err then
-    return nil, docs_err
-end
-local readme, read_err = docs:readfile("README.md")
-if read_err then
-    return nil, read_err
-end
-local chunks, split_err = splitter:split_text(readme)
-if split_err then
-    return nil, split_err
-end
+local readme = fs.get("app:docs"):readfile("README.md")
+local chunks, err = splitter:split_text(readme)
 ```
 
 Dieses Teilrezept setzt voraus, dass der Eintrag sowohl `text` als auch `fs` aktiviert, eine Dateisystemressource `app:docs` konfiguriert ist und darin eine lesbare `README.md` vorhanden ist.
@@ -395,6 +384,7 @@ Dieses Teilrezept setzt voraus, dass der Eintrag sowohl `text` als auch `fs` akt
 | `reference_links` | boolean | false | Referenz-Links erhalten |
 | `heading_hierarchy` | boolean | false | Überschriftenebenen beachten |
 | `join_table_rows` | boolean | false | Tabellenzeilen zusammenhalten |
+| `separators` | string[] | nil | Benutzerdefinierte Trennzeichenliste |
 
 ### `splitter:split_text`
 

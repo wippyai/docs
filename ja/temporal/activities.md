@@ -35,6 +35,7 @@ Temporalアクティビティは非決定論的な操作を実行します。`fu
 |-----------|------|------|
 | `worker` | はい | `temporal.worker`エントリへの参照 |
 | `local` | いいえ | ローカルアクティビティとして実行（デフォルト: false） |
+| `name` | いいえ | カスタムのアクティビティ型名（デフォルトはエントリID） |
 
 ## 実装
 
@@ -169,10 +170,10 @@ end
 | `activity.wait_for_cancellation` | boolean | false | アクティビティキャンセルを待機 |
 | `activity.disable_eager_execution` | boolean | false | イーガー実行を無効化 |
 | `activity.retry_policy` | table | - | リトライ設定（下記参照） |
-| `activity.versioning_intent` | string or number | - | アクティビティに対するワーカーのバージョニング意図 |
-| `activity.summary` | string | - | Temporalアクティビティのメタデータに表示される概要 |
-| `activity.priority` | table | - | 優先度キーと任意の公平性設定 |
-| `activity.name` | string | - | アクティビティ種別名の上書き |
+| `activity.name` | string | - | 呼び出すアクティビティ型名。レジストリIDと異なる場合に指定 |
+| `activity.summary` | string | - | Temporal UIに表示される人間可読なサマリ |
+| `activity.priority` | table | - | タスク優先度: `priority_key`（number）、`fairness_key`（string）、`fairness_weight`（number） |
+| `activity.versioning_intent` | string | - | `compatible`（ビルドIDを継承）または`default`（割り当てルールを使用） |
 
 duration値は文字列（`"5s"`、`"10m"`、`"1h"`）またはミリ秒の数値を受け付けます。
 
@@ -247,7 +248,7 @@ local executor = funcs.new():with_options({
         local: true
 ```
 
-現在、`local: true`は解析されますが、通常のアクティビティと同じ動作をします。標準のアクティビティ経路を通じて登録・実行されます。まだ独立したローカルアクティビティ実行はないため、レイテンシー、タスクキューの動作、ハートビートは変わりません。
+現在、`local: true` はパースされますが、通常のアクティビティとまったく同じ動作をします。標準のアクティビティ経路で登録・実行されます。ローカルアクティビティ固有の実行はまだ存在しないため、レイテンシー、タスクキューの挙動、ハートビートは変わりません。
 
 ## アクティビティの命名
 
@@ -300,6 +301,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### セキュリティコンテキスト
+
+セキュリティコンテキストの下でスケジュールされたアクティビティは、アクティビティIDを対象（audience）として署名された`wippy-security`ヘッダーを受け取ります。ワーカーは署名とaudienceを検証し、伝播された`ctx`の値とセキュリティペイロードを、アクティビティ関数の実行前に新しいフレームへマージします。
+
+このマージは全か無かであり、**失敗した場合はアクティビティにとって致命的です**。アクティビティはコードが実行される前にエラーを返すため、不完全なコンテキストや未検証のアクターのまま実行されることはありません。マージが失敗するのは、署名またはaudienceの検証に失敗した場合、エンベロープに矛盾がある場合（スコープのないアクター、またはアクターのないポリシー）、あるいはエンベロープに記載されたポリシーがローカルのセキュリティレジストリで解決できない場合です。最後のケースが運用上よくある原因で、呼び出し元が持っていたポリシーエントリがワーカーのデプロイメントに欠けている状況です。
+
+ワーカーは署名鍵と検証鍵を、参照する`temporal.client`エントリから取得します。[セキュリティコンテキストの伝播](temporal/overview.md#security-context-propagation)を参照してください。
+
 ## エラー処理
 
 標準のLuaパターンでエラーを返します。
@@ -329,8 +338,8 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response.status_code >= 400 then
-        return nil, payment_error(response.status_code)
+    if response:status() >= 400 then
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response.body)
@@ -355,9 +364,13 @@ end
 | 障害 | エラー種別 | リトライ可能 | 説明 |
 |------|-----------|------------|------|
 | アプリケーションエラー | アクティビティが返したもの | 返されたエラーから継承 | `return nil, err` でアクティビティコードが返したエラー |
-| ランタイムクラッシュ | `Internal` | false | アクティビティ内の未処理Luaエラー |
-| アクティビティ未登録 | `NotFound` | false | ワーカーに登録されていないアクティビティ |
-| タイムアウト | `Timeout` | false | アクティビティが設定されたタイムアウトを超過 |
+| ランタイムクラッシュ | `Internal` | いいえ | アクティビティ内の未処理Luaエラー |
+| アクティビティ未登録 | `NotFound` | いいえ | ワーカーに登録されていないアクティビティ |
+| タイムアウト | `Timeout` | いいえ | アクティビティが設定されたタイムアウトを超過 |
+| セキュリティ検証 | `Internal` | はい | 伝播されたセキュリティヘッダーの署名、audience、またはエンベロープの検査に失敗 |
+| セキュリティポリシー欠落 | `Internal` | はい | セキュリティエンベロープに記載されたポリシーがこのワーカーで解決できない |
+
+セキュリティ関連の失敗はいずれも、アクティビティ関数の実行前、コンテキストのマージ中に発生します。これらはリトライ不可としてマークされないため、アクティビティのリトライポリシーは再試行を続けます。しかし署名の誤りもポリシーエントリの欠落も試行のたびに変わるものではないため、リトライしても解決しません。早期に失敗させたいアクティビティでは`maximum_attempts`に上限を設け、アクティビティのログ出力がないまま`Internal`失敗が繰り返される場合は、アクティビティ自体の不具合ではなくコンテキストのマージ失敗と読み取ってください。
 
 ```lua
 local executor = funcs.new():with_options({

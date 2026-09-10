@@ -47,25 +47,24 @@ type Registry struct {
 | 範囲 | モジュール | 例 |
 |-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
-| 10, 14, 16, 18-23 | clock | Sleep、ticker、timer の操作 |
-| 30-34 | socket | Connect, Listen, Accept, Bind, Resolve |
-| 50-57 | stream | Read, Write, Close, Seek, Flush, Stat、Scanner の操作 |
-| 60-61 | http | Request, RequestBatch |
-| 70-78 | tty | ターミナル I/O |
-| 80-85 | websocket | Connect, Send, Receive, Close, Ping, Subscribe |
-| 90-91 | event | Subscribe, Send |
-| 100-111 | sql | Query, Execute, Prepare、statement と transaction の操作 |
-| 120-126 | store | Get, Set, Delete, Has, Entry, List, Put |
-| 130-132 | security | ValidateToken, CreateToken, RevokeToken |
-| 140-142 | function | Call, AsyncStart, AsyncCancel |
-| 150 | exec | ProcessWait |
-| 160-169 | cloudstorage | オブジェクトおよびマルチパート操作 |
+| 10-29 | clock | Sleep, Ticker, Timer |
+| 30-39 | socket | Dial, Listen, Accept, Close |
+| 50-59 | stream | Read, Write, Close, Seek |
+| 60-69 | http | Request, RequestBatch |
+| 70-79 | tty | ターミナルI/O |
+| 80-89 | websocket | Connect, Send, Receive |
+| 90-99 | event | Subscribe, Send |
+| 100-119 | sql | Query, Execute, Prepare, Stmt, Tx ops |
+| 120-129 | store | Get, Set, Delete, Has |
+| 130-139 | security | ValidateToken, CreateToken |
+| 140-149 | function | Call, AsyncStart, AsyncCancel |
+| 150-159 | exec | ProcessWait |
+| 160-169, 173-174 | cloudstorage | Upload, Download, List, Presigned URLs, Multipart, OpenReader |
 | 170-171 | eval | Compile, Run |
 | 172 | cdc | Subscribe |
-| 173-174 | cloudstorage | AbortMultipartUpload, OpenReader |
-| 180-183 | workflow | SideEffect, Exec, Version, UpsertAttrs |
-| 190-193 | contract | Open, Call, AsyncCall, AsyncCancel |
-| 200-211 | pg（プロセスグループ） | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
+| 180-189 | workflow | SideEffect, Exec, Version, UpsertAttrs |
+| 190-199 | contract | Open, Call, AsyncCall, AsyncCancel |
+| 200-211 | pg (プロセスグループ) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | ユーザー定義サービス |
 
 パッケージは `init()` から `MustRegisterCommands()` を使用してコマンド ID の所有権を予約します。所有権の衝突は、パッケージの初期化中に panic を発生させます。コンポーネントのロード中、各サービスは `Registrar.Register` を通じてハンドラをバインドします。ディスパッチャーが freeze されるのは、それらのハンドラがインストールされた後です。

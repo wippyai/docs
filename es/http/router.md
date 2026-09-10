@@ -70,7 +70,7 @@ Las entradas referencian padres vía metadatos:
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `meta.router` | ID de Registro | Router padre |
-| `method` | string | Método HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` o `*` para todos los métodos |
+| `method` | string | Método HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, o `*` para cualquier método |
 | `path` | string | Patrón de ruta URL (comienza con `/`) |
 | `func` | ID de Registro | Función handler |
 
@@ -119,9 +119,24 @@ Capture segmentos de ruta restantes con `{param...}`:
   func: serve_file
 ```
 
-El comodín coincide con los segmentos restantes, por lo que una solicitud como `GET /api/v1/files/docs/guides/readme.md` se despacha con `req:param("filepath")` establecido en `docs/guides/readme.md`.
+El comodín coincide con los segmentos restantes, por lo que una solicitud como `GET /api/v1/files/docs/guides/readme.md` se despacha al handler. La cola capturada se lee con `req:param` bajo el nombre sin los puntos finales:
+
+```lua
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
+```
 
 El comodín debe ser el último segmento de la ruta.
+
+## Precedencia de Rutas
+
+Todos los routers registran sus endpoints en un único conjunto de patrones, prefijados por el `prefix` del router, y el `ServeMux` de Go decide qué patrón sirve una solicitud. Sus reglas se aplican sin cambios:
+
+- Gana el patrón más específico. Un patrón es más específico que otro cuando coincide con un subconjunto estricto de las solicitudes de ese patrón, por lo que `/users/admin` gana a `/users/{id}`, y `/files/{name}` gana a `/files/{path...}`.
+- Un patrón con método es más específico que la misma ruta sin él, por lo que un endpoint `GET` tiene precedencia sobre un endpoint `*` en la misma ruta para las solicitudes `GET`.
+- Un `{path...}` o `/` final coincide con un subárbol completo y pierde ante cualquier patrón que coincida con un subconjunto de él.
+- La coincidencia se hace sobre la ruta limpiada y decodificada; la especificidad nunca depende del orden de registro.
+
+Dos patrones también pueden entrar en conflicto directo: ninguno es más específico que el otro, pero se solapan, como ocurre con `/users/{id}/settings` y `/users/admin/{section}`. Esto es un error de configuración. El router lo expone cuando reconstruye, la reconstrucción falla, y el conjunto de rutas anterior permanece en servicio.
 
 ## Funciones Handler
 
@@ -129,7 +144,6 @@ Los handlers de endpoint usan el módulo `http` para acceder a objetos de solici
 
 ```lua
 local http = require("http")
-local funcs = require("funcs")
 
 local function handler()
     local req, req_err = http.request()
@@ -142,11 +156,8 @@ local function handler()
     local user, call_err = funcs.call("app.users:get_user", user_id)
     if call_err then return nil, call_err end
 
-    local status_err = res:set_status(http.STATUS.OK)
-    if status_err then return nil, status_err end
-    local write_err = res:write_json(user)
-    if write_err then return nil, write_err end
-    return true
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }

@@ -1,31 +1,31 @@
 ---
-title: "Receita de web component"
-description: "Receitas portáveis de view.component para custom elements somente de conteúdo ou com controles."
+title: "Receita de Web Component"
+description: "Receitas portáveis de view.component para custom elements apenas de conteúdo e para os que trazem controles."
 ---
 
-# Receita de web component
+# Receita de Web Component
 
-Um web component é registrado como `view.component` e normalmente renderiza em um shadow root. Escolha a menor configuração válida.
+Um web component é registrado como `view.component` e normalmente renderiza em um shadow root. Escolha a configuração válida mais enxuta.
 
-Estas são receitas de integração para um projeto Vue/Vite existente. Elas mostram o elemento, os metadados e a configuração de build específicos do Wippy, não um scaffold de projeto independente.
+## Variante A: apenas conteúdo
 
-## Variante A: somente conteúdo
+Um gráfico, diagrama, renderizador ou visualização pode omitir PrimeVue e Tailwind quando não renderiza nenhum controle e não escreve nenhum utilitário Tailwind compartilhado.
 
-Um gráfico, diagrama, renderer ou visualização pode omitir PrimeVue e Tailwind quando não renderiza controles nem cria utilities Tailwind compartilhadas.
+Ele ainda precisa:
 
-Mesmo assim, ele deve:
-
-- Publicar uma tag válida de custom element.
+- Publicar uma tag de custom element válida.
 - Preservar a acessibilidade do conteúdo renderizado.
-- Usar configuração Wippy e entrega de CSS compatíveis.
+- Usar configuração e entrega de CSS suportadas pelo Wippy.
 - Evitar classes privadas da facade do projeto.
-- Compilar pelo target Make canônico do repositório do módulo Wippy.
+- Compilar através do target Make canônico do repositório do módulo Wippy.
 
-Se depois for adicionado um botão, input, formulário, menu ou outro controle semelhante ao PrimeVue, a isenção deixa de valer.
+Se um botão, input, formulário, menu ou outro controle no estilo PrimeVue for adicionado depois, essa isenção termina.
 
 ## Variante B: com controles
 
-Um componente com controles precisa instalar PrimeVue pelo plugin PrimeVue do Wippy e receber o tema e o CSS PrimeVue do host. O pacote de web component carrega por padrão todas as chaves CSS do host; a lista explícita abaixo restringe o padrão aos assets usados pelo exemplo, além do CSS compartilhado de iframe/scrollbar:
+Um componente com controles precisa instalar o PrimeVue através do plugin
+PrimeVue do Wippy e configurar as chaves de entrega de CSS necessárias. A entrada
+a seguir é o caminho Vue atualmente suportado pelo pacote:
 
 ```ts
 import { defineComponent, h } from 'vue'
@@ -68,9 +68,7 @@ export async function webComponent() {
 define(import.meta.url, ExampleControlsElement)
 ```
 
-### Contrato de metadados do pacote
-
-Os metadados do pacote devem identificar o mesmo custom element:
+Os metadados do pacote precisam identificar o mesmo custom element:
 
 ```json
 {
@@ -78,7 +76,6 @@ Os metadados do pacote devem identificar o mesmo custom element:
   "version": "0.1.0",
   "type": "module",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
   "wippy": {
     "type": "component",
     "tagName": "example-controls",
@@ -91,9 +88,8 @@ Os metadados do pacote devem identificar o mesmo custom element:
 }
 ```
 
-Os valores válidos de `wippy.type` do pacote são `"component"` e `"widget"`. Não use o kind de registry `view.component` como valor de `wippy.type`.
-
-O build do componente usa o plugin estrito de componentes Wippy e o snapshot completo e fixado do import map do host alvo:
+O build do componente usa o plugin estrito de componente do Wippy e o snapshot
+completo e pinado do import map do host-alvo:
 
 ```ts
 import { defineConfig } from 'vite'
@@ -111,32 +107,32 @@ export default defineConfig({
     },
     rollupOptions: {
       external: Object.keys(hostImportMap.imports),
-      preserveEntrySignatures: 'strict',
     },
   },
 })
 ```
 
-Mantenha `preserveEntrySignatures: 'strict'`. Outros valores do Rollup não satisfazem o contrato de build de componente Wippy documentado aqui.
-
-Use o preset Tailwind compartilhado do Wippy quando o componente criar utilities Tailwind. O próprio PrimeVue não exige que o módulo invente utilities Tailwind.
+Use o preset Tailwind compartilhado do Wippy quando este componente escrever
+utilitários Tailwind. O próprio PrimeVue não exige que um módulo invente
+utilitários Tailwind.
 
 ## Regras do shadow root
 
-- Variáveis CSS públicas podem ser herdadas pelo shadow root.
-- Regras de seletor produzem efeito somente quando o host as entrega dentro do root.
-- O CSS compartilhado do tema PrimeVue é uma dependência compatível.
+- Variáveis CSS públicas podem ser herdadas dentro do shadow root.
+- Regras de seletor só têm efeito se o host as entregar dentro da raiz.
+- O CSS compartilhado do tema PrimeVue é uma dependência suportada.
 - Classes arbitrárias da facade não são APIs portáveis.
-- O posicionamento de overlays precisa ser verificado na runtime real; não imponha uma receita genérica.
+- O posicionamento de overlay precisa ser verificado no runtime real; não force uma receita genérica de posicionamento.
 
 ## Metadados e build
 
-Documente props e eventos nos metadados do pacote. Um entry de registry pode repeti-los como substituições específicas da implantação em `meta.props` e `meta.events`; quando presentes, elas têm precedência sobre os metadados incluídos no bundle. Invoque o target Make do repositório do módulo; sua receita usa:
+Documente props e eventos tanto nos metadados do pacote quanto na entrada do registry, conforme exigido pelo schema selecionado. Invoque o target Make do repositório do módulo; a receita dele usa:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
-Não invoque diretamente esse comando subjacente. No Windows, invoque `make.bat`; ele delega a `make.ps1`.
+Não invoque esse comando subjacente diretamente. No Windows, invoque
+`make.bat`; ele delega ao `make.ps1`.
 
-Consulte [Criação de temas](./theming.md), [Contrato Tailwind](./tailwind-contract.md) e [Contrato de build e dependências](./build-system.md).
+Veja [Autoria de Temas](./theming.md), [Contrato Tailwind](./tailwind-contract.md) e [Contrato de Build e Dependências](./build-system.md).

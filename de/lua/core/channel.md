@@ -1,6 +1,6 @@
 ---
 title: "Channels und Coroutinen"
-description: "Gepufferte und ungepufferte Channels erstellen, Werte austauschen, Operationen auswählen und nebenläufige Arbeit koordinieren."
+description: "Go-artige Channels für Inter-Coroutine-Kommunikation. Erstellen Sie gepufferte oder ungepufferte Channels, senden und empfangen Sie Werte und…"
 ---
 
 # Channels und Coroutinen
@@ -105,10 +105,10 @@ local result = channel.select(cases)
 | `cases` | table | Array von Select-Cases |
 | `default` | boolean | Gibt sofort zurück, wenn `true` und kein Case bereit ist |
 
-**Rückgabewert:** `table`
+**Gibt zurück:** `table`
 
-- Für einen Channel-Case: `{channel, value, ok}` — `channel` ist der Channel des Cases, `value` der empfangene oder gesendete Wert und `ok` bei einem Receive auf einem geschlossenen Channel `false`.
-- Für den Default-Zweig, wenn kein Case bereit und `default = true` ist: `{default = true, ok = true}`.
+- Für einen Channel-Case: `{channel, value, ok}` — `channel` ist der Channel des Cases, `value` ist der empfangene/gesendete Wert, `ok` ist false bei einem Empfang auf einem geschlossenen Channel.
+- Für den Default-Zweig (wenn kein Case bereit ist und `default = true`): `{default = true, ok = true}`.
 
 ### Timeout-Muster
 
@@ -129,13 +129,7 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
-end
-if not r.ok then
-    return nil, errors.new("Response channel closed")
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 return r.value
 ```
@@ -251,8 +245,9 @@ Nach der Schleife enthält `processed` die Werte `2`, `4`, `6` und `8`; ihre Rei
 ## Fehler
 
 | Bedingung | Art | Wiederholbar |
-|-----------|-----|--------------|
-| Send auf geschlossenem Channel | Runtime-Fehler | nicht anwendbar |
+|-----------|------|-----------|
+| Send auf geschlossenem Channel | Laufzeitfehler | nein |
+| `cases`-Argument von select ist keine Tabelle | Laufzeitfehler | nein |
 
 ## Siehe auch
 

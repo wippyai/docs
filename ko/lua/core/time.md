@@ -1,6 +1,6 @@
 ---
 title: "시간과 기간"
-description: "시간 값을 만들고 비교, 파싱, 서식화하며 기간 및 시간대를 다루고 sleep과 타이머를 예약합니다."
+description: "시간 값, 기간, 타임존, 스케줄링 작업. 타이머 생성, 지정된 기간 동안 슬립, 타임스탬프 파싱 및 포맷."
 ---
 
 # 시간과 기간
@@ -285,7 +285,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500

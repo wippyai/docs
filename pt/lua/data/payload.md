@@ -1,6 +1,6 @@
 ---
 title: "Codificação de Payload"
-description: "Crie payloads tipados, inspecione seu formato, extraia valores e transcodifique entre representações compatíveis."
+description: "Converta dados entre formatos incluindo JSON, MessagePack e binario. Manipule payloads tipados para comunicação entre serviços e passagem de dados em…"
 ---
 
 # Codificação de Payload
@@ -154,7 +154,7 @@ if err then
 end
 ```
 
-Tanto `data()` quanto `unmarshal()` retornam o valor Lua existente ou transcodificam um payload não Lua para o formato Lua. `unmarshal()` é mais estrito quando um transcoder produz um resultado inválido: ele retorna um erro `errors.INTERNAL`, enquanto `data()` retorna `nil`.
+`unmarshal()` se comporta como `data()`: ambos transcodificam payloads não-Lua para o formato Lua e retornam o valor Lua resultante. A única diferença é que `unmarshal()` retorna um erro quando os dados transcodificados não são um valor Lua válido, enquanto `data()` retorna `nil`.
 
 **Retorna:** `any, error`
 

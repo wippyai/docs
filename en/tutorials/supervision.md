@@ -569,21 +569,44 @@ entries:
     method: main
     modules:
       - time
-    security:
-      actor:
-        id: app.supervisor:pool
-      policies:
-        - app:supervision-policy
 
   - name: pool-service
     kind: process.service
     process: app.supervisor:pool
     host: app:processes
-    input:
-      - 4
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: "service:supervisor"
+        groups:
+          - app.security:supervisors
 ```
+
+Strict mode is on by default, so a service that declares no security context is denied every check, including `process.spawn`. Grant the pool the actions it and its workers use:
+
+```yaml
+# src/security/_index.yaml
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: supervisor_policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.linked
+        - process.host
+        - process.registry.register
+        - process.terminate
+      resources: "*"
+      effect: allow
+    groups:
+      - supervisors
+```
+
+Workers inherit the actor and scope of the pool that spawns them, so they need no block of their own.
 
 ### Supervisor Implementation
 
@@ -642,6 +665,10 @@ local function main(worker_count)
         elseif result.channel == events_ch then
             local event = result.value
 
+            if event.kind == process.event.CANCEL then
+                return "supervisor stopped"
+            end
+
             if event.kind == process.event.LINK_DOWN then
                 local dead_worker = workers[event.from]
                 if dead_worker then
@@ -692,6 +719,9 @@ local function main(worker_id)
     local time = require("time")
     local events_ch = process.events()
     local inbox_ch = process.inbox()
+
+    -- Register under a name so other processes can reach this worker
+    process.registry.register("worker-" .. worker_id)
 
     print("Task worker " .. worker_id .. " started")
 
@@ -774,14 +804,57 @@ wippy init
 wippy run
 ```
 
-The supervisor autostarts and spawns four workers. To verify restart behavior, add a
-trusted control entry that discovers a worker PID, has `process.terminate` permission
-for that PID, terminates it, and checks that the supervisor starts a replacement.
+The supervisor autostarts, spawns four workers, and logs `Worker N started` for each. `LINK_DOWN` is only delivered when a linked process exits with an error, so trigger a restart by forcefully terminating a worker. The terminating code has to run inside the same runtime, so add it as an ad-hoc service:
 
-An abnormal worker exit makes the pool receive `LINK_DOWN`; it waits 100 ms and
-respawns the worker under the same id. A graceful `process.cancel()` lets the worker
-exit cleanly, which does not raise `LINK_DOWN` and therefore does not trigger a
-restart. Stop the application with Ctrl+C when verification is complete.
+```yaml
+# src/chaos/_index.yaml
+version: "1.0"
+namespace: app.chaos
+
+entries:
+  - name: killer
+    kind: process.lua
+    source: file://killer.lua
+    method: main
+    modules:
+      - time
+
+  - name: killer-service
+    kind: process.service
+    process: app.chaos:killer
+    host: app:processes
+    lifecycle:
+      auto_start: true
+      security:
+        actor:
+          id: "service:chaos"
+        groups:
+          - app.security:supervisors
+```
+
+```lua
+-- src/chaos/killer.lua
+local function main()
+    local time = require("time")
+
+    time.sleep("2s")
+    process.terminate("worker-1")
+
+    return "terminated"
+end
+
+return { main = main }
+```
+
+Run `wippy init` again to pick up the new entries, then `wippy run`. Two seconds in, the pool receives `LINK_DOWN`, waits 100 ms, and respawns the worker under the same id:
+
+```
+INFO  Worker 1 died after 2s, restarting
+INFO  Worker 1 started: {...@app:processes|0x00009}
+INFO  Task worker 1 started
+```
+
+A graceful `process.cancel()` lets the worker exit cleanly, which does not raise `LINK_DOWN` and therefore does not trigger a restart — that is why the supervision loop returns on `CANCEL` rather than treating shutdown as a worker failure.
 
 ## Next Steps
 

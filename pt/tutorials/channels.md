@@ -13,6 +13,8 @@ Esta página apresenta canais para coordenar coroutines dentro de um processo. O
 
 Execute os trechos em uma função exportada de uma entrada Lua executável, como `process.lua`. As APIs `channel` e `coroutine` são globais do ambiente e não exigem `require()` nem declarações em `modules`. Cada trecho cria seus próprios canais e deve ser avaliado separadamente.
 
+Esta página é uma introdução: cada trecho mostra uma API isolada. Cole-os na função `main` de uma entrada `process.lua` para executá-los, como configurado no tutorial [Aplicações CLI](tutorials/cli.md).
+
 ## Criando Channels
 
 Channels são canais de comunicação para corrotinas. Crie com `channel.new(capacity)`:
@@ -79,7 +81,7 @@ result.ok              -- true
 
 ### Select com Send
 
-Use `case_send` para incluir um envio no `select`. Sem caso padrão, `channel.select` espera até uma operação ficar pronta. Adicione `default = true` para tornar a tentativa não bloqueante:
+Use `case_send` para oferecer um envio dentro de um select. O case é escolhido assim que o channel consegue aceitar o valor:
 
 ```lua
 local ch = channel.new(1)
@@ -94,6 +96,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+Select bloqueia até que um de seus cases esteja pronto. Adicione `default = true` à tabela de cases para retornar imediatamente, com `result.default` definido como true quando nada estava pronto:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer cheio, nada enviado)
 ```
 
 ## Padrão Produtor-Consumidor

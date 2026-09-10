@@ -51,6 +51,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -69,11 +76,6 @@ entries:
       - name: process_host
         value: app:processes
 
-  - name: dep.security
-    kind: ns.dependency
-    component: wippy/security
-    version: "*"
-
   - name: dep.terminal
     kind: ns.dependency
     component: wippy/terminal
@@ -84,7 +86,12 @@ entries:
     meta:
       command:
         name: ask
-        short: Ask one question
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
     method: main
     modules:
@@ -97,6 +104,10 @@ LLM モジュールには2つのインフラストラクチャエントリが必
 - `env.storage.os` は環境変数から API キーを提供します
 - `process.host` は LLM モジュールが内部で使用するプロセスランタイムを提供します
 
+`wippy/terminal` 依存関係は、コマンドが実行される `terminal.host` を提供し、そこが `io.print` の出力先になります。
+
+`meta.command` はプロセスに名前を与え、`wippy run ask` が残りの引数を文字列ペイロードとして渡して起動できるようにします。その `security` ブロックはその起動用のアクターとポリシースコープをインストールします。LLM モジュールはレジストリからモデルを解決するため、スコープなしで起動されたコマンドはレジストリから何も読み取れません。
+
 ### 生成コード
 
 `src/ask.lua` を作成します:
@@ -105,17 +116,9 @@ LLM モジュールには2つのインフラストラクチャエントリが必
 local io = require("io")
 local llm = require("llm")
 
-local function main()
-    io.write("Question: ")
-    io.flush()
-    local question = io.readline()
-    if not question or question == "" then
-        io.print("A question is required")
-        return 1
-    end
-
-    local response, err = llm.generate(question, {
-        model = "gpt-4o-mini",
+local function main(input)
+    local response, err = llm.generate(input, {
+        model = "gpt-4.1-nano",
         temperature = 0.7,
         max_tokens = 512,
     })
@@ -165,20 +168,18 @@ LLM モジュールはレジストリからモデルを解決します。`_index
 
 ```bash
 wippy init
-wippy update
-wippy install
-wippy run ask
+wippy run ask "What is the capital of France?"
 ```
 
-プロンプトに`What is the capital of France?`と入力します。モデル定義は、使用するプロバイダーとAPIへ送るモデル名を指定します。
+これは質問を引数として `ask` プロセスをターミナルホスト上で実行し、結果を表示します。モデル定義は、LLM モジュールにどのプロバイダーを使用し、API にどのモデル名を送信するかを伝えます。
 
 ## フェーズ 2: 会話
 
-プロンプトビルダーを使用して、単一の呼び出しからマルチターン会話にアップグレードします。エントリを関数からターミナル I/O を持つプロセスに変更します。
+プロンプトビルダーを使用して、単一の呼び出しからマルチターン会話にアップグレードします。プロセスを名前付きコマンドとして登録します。
 
 ### エントリ定義の更新
 
-`ask`エントリを`chat`プロセスに置き換えます。フェーズ1の`dep.terminal`エントリは残してください：
+`ask` エントリを `chat` プロセスに置き換えます:
 
 ```yaml
   - name: chat
@@ -187,6 +188,11 @@ wippy run ask
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -308,6 +314,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -813,11 +824,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```

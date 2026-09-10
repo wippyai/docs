@@ -52,6 +52,7 @@ wippy install
 | `wippy add` | Add a dependency |
 | `wippy install` | Install dependencies |
 | `wippy update` | Update dependencies |
+| `wippy artifacts` | Materialize build-time filesystem artifacts |
 | `wippy pack` | Create a snapshot |
 | `wippy publish` | Publish to hub |
 | `wippy search` | Search for modules |

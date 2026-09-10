@@ -29,9 +29,9 @@ description: "http.staticを使用して、ファイルシステムエントリ�
 | `meta.server` | Registry ID | 親HTTPサーバー |
 | `path` | string | URLマウントパス（`/`で始まる必要があります） |
 | `fs` | Registry ID | 配信元のファイルシステムエントリ |
-| `static_options.spa` | bool | SPAモード（一致しないパスにはindexを配信） |
-| `static_options.index` | string | インデックスファイル（`spa=true`の場合は必須） |
-| `static_options.cache` | string | Cache-Controlヘッダーの値 |
+| `static_options.spa` | bool | SPAモード - マッチしないパスにindexを配信 |
+| `static_options.index` | string | インデックスファイル（spa=trueの場合必須） |
+| `static_options.cache` | string | Cache-Controlヘッダー値 |
 | `middleware` | []string | ミドルウェアチェーン |
 | `options` | map | ミドルウェアオプション（ドット記法） |
 
@@ -61,7 +61,7 @@ entries:
 
 リクエスト`/static/css/style.css`に対して`./public/css/style.css`が配信されます。
 
-サブディレクトリを配信するには、その場所をルートとするファイルシステムエントリを`fs`から参照します。たとえば、`fs.directory`を使用し、その`directory:`をサブディレクトリに設定します：
+サブディレクトリを配信するには、`fs` 参照をそのディレクトリをルートとするファイルシステムエントリに向けます—たとえば `directory:` にサブディレクトリを設定した `fs.directory` です：
 
 ```yaml
 entries:

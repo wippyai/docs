@@ -25,8 +25,8 @@ Un `http.endpoint` asigna un método y una ruta HTTP a una función handler de L
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `meta.router` | registry.ID | Sí | Router padre (referenciado por ID de registro) |
-| `method` | string | Sí | Método HTTP |
+| `meta.router` | registry.ID | No | Router padre (por defecto, el único router si exactamente uno está registrado) |
+| `method` | string | Sí | Método HTTP, o `"*"` para cualquier método |
 | `path` | string | Sí | Patrón de ruta URL |
 | `func` | registry.ID | Sí | Función a ejecutar |
 
@@ -44,7 +44,23 @@ Métodos soportados:
 | `HEAD` | Solo headers |
 | `OPTIONS` | Preflight CORS (auto-manejado) |
 | `TRACE` | Loopback de diagnóstico |
-| `*` | Coincidir con todos los métodos HTTP |
+| `*` | Cualquier método |
+
+Los nombres de método van en mayúsculas; `method` es obligatorio, y cualquier valor fuera de este conjunto se rechaza como error de configuración.
+
+### Endpoints Agnósticos al Método
+
+`method: "*"` registra la ruta para todos los métodos HTTP, y el handler lee el método real con `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+Para un endpoint normal el router también registra un handler `OPTIONS` en la misma ruta, de modo que el middleware CORS puede responder un preflight sin que el endpoint se ejecute. Un endpoint `*` no obtiene ese handler: ya coincide con `OPTIONS`. El middleware del router sigue envolviéndolo, así que un middleware CORS configurado responde un preflight permitido con `204` antes de que el endpoint se ejecute; cualquier otra solicitud `OPTIONS` llega a la propia función del endpoint, que debe responderla.
 
 ## Parámetros de Ruta
 
@@ -96,7 +112,12 @@ Capture la ruta restante con `{path...}`:
   func: serve_file
 ```
 
-Este segmento comodín hace que la ruta coincida con solicitudes como `/files/docs/readme.md`. En esa solicitud, `req:param("path")` devuelve `docs/readme.md`.
+Este segmento catch-all hace que la ruta coincida con solicitudes como `/files/docs/readme.md`. La cola capturada se lee como cualquier otro parámetro, bajo el nombre sin los puntos finales:
+
+```lua
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
+```
 
 ## Función Handler
 
@@ -134,23 +155,24 @@ return { handler = handler }
 
 | Método | Retorna | Descripción |
 |--------|---------|-------------|
-| `req:method()` | string, error | Método HTTP |
-| `req:path()` | string, error | Ruta de la solicitud |
-| `req:param(name)` | string o nil, error | Parámetro de URL |
-| `req:params()` | table, error | Todos los parámetros de ruta |
-| `req:query(name)` | string o nil, error | Parámetro de consulta |
-| `req:query_params()` | table, error | Todos los parámetros de consulta |
-| `req:header(name)` | string o nil, error | Cabecera de la solicitud |
-| `req:body()` | string, error | Cuerpo de la solicitud |
-| `req:body_json()` | value, error | Analizar el cuerpo JSON |
-| `req:has_body()` | boolean, error | Comprobar si existe un cuerpo |
-| `req:content_type()` | string o nil, error | Tipo de contenido |
-| `req:content_length()` | number, error | Tamaño del cuerpo en bytes |
-| `req:host()` | string, error | Cabecera Host |
-| `req:remote_addr()` | string, error | Dirección del cliente con formato `IP:port`, salvo que un middleware la reescriba |
-| `req:accepts(type)` | boolean, error | Negociación de contenido |
-| `req:is_content_type(type)` | boolean, error | Comprobar el tipo de contenido |
-| `req:stream()` | Stream, error | Cuerpo como stream para archivos grandes |
+| `req:method()` | string | Método HTTP |
+| `req:path()` | string | Ruta de solicitud |
+| `req:param(name)` | string | Parámetro de URL |
+| `req:params()` | table | Todos los parámetros de ruta |
+| `req:query(name)` | string | Parámetro de query |
+| `req:query_params()` | table | Todos los parámetros de query |
+| `req:header(name)` | string | Header de solicitud |
+| `req:headers()` | table | Todos los headers de la solicitud |
+| `req:body()` | string | Cuerpo de solicitud |
+| `req:body_json()` | table, error | Parsear cuerpo JSON |
+| `req:has_body()` | boolean | Verifica si existe cuerpo |
+| `req:content_type()` | string | Tipo de contenido |
+| `req:content_length()` | number | Tamaño del cuerpo en bytes |
+| `req:host()` | string | Nombre del host |
+| `req:remote_addr()` | string | Dirección IP del cliente |
+| `req:accepts(type)` | boolean | Negociación de contenido |
+| `req:is_content_type(type)` | boolean | Verifica tipo de contenido |
+| `req:stream()` | Stream | Cuerpo como stream para archivos grandes |
 | `req:parse_multipart(max?)` | table, error | Parsear formulario multipart |
 
 ### Objeto Response
@@ -306,7 +328,7 @@ entries:
 
 ### Endpoint Protegido
 
-El middleware de autorización se configura en el router padre, no en el endpoint. El middleware post-match —como `endpoint_firewall`— se ejecuta después de hacer coincidir la ruta y se aplica a todos los endpoints del router:
+El middleware de autorización se configura en el router padre, no en el endpoint. El middleware post-match (como `endpoint_firewall`) se ejecuta después del matching de ruta y se aplica a todos los endpoints bajo el router:
 
 ```yaml
 - name: admin_router

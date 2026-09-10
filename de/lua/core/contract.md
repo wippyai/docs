@@ -1,6 +1,6 @@
 ---
 title: "Contracts"
-description: "Typisierte Service-Bindings öffnen, Contracts prüfen, Implementierungen aufrufen und Aufruf- oder Sicherheitskontext weitergeben."
+description: "Rufen Sie Services über typisierte Contracts auf. Rufen Sie Remote-APIs, Workflows und Funktionen mit Schema-Validierung und Unterstützung für…"
 ---
 
 # Contracts
@@ -88,10 +88,8 @@ end
 |-------|------|-------------|
 | `name` | string | Methodenname |
 | `description` | string | Methodenbeschreibung |
-| `input_schemas` | table[] oder nil | Eingabe-Schemadefinitionen; bei leerer Liste nicht vorhanden |
-| `output_schemas` | table[] oder nil | Ausgabe-Schemadefinitionen; bei leerer Liste nicht vorhanden |
-
-Jedes Schemaelement enthält einen String `format` und kann einen Wert `definition` enthalten.
+| `input_schemas` | table[] | Eingabe-Schema-Definitionen (nicht vorhanden, wenn die Methode keine deklariert) |
+| `output_schemas` | table[] | Ausgabe-Schema-Definitionen (nicht vorhanden, wenn die Methode keine deklariert) |
 
 ## Implementierungen finden
 
@@ -247,7 +245,12 @@ Optionen gelten für jeden Methodenaufruf auf der zurückgegebenen Instanz. Nur 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
 | `retry.max_attempts` | int | Maximale Versuche inkl. dem ersten (1 deaktiviert Retry) |
-| `retry.initial_delay` | int/duration | Verzögerung vor dem ersten Wiederholungsversuch (ms oder Dauer-String) |
+| `retry.initial_delay` | int/duration | Verzoegerung vor erstem Retry (ms oder Duration-String), Standard `100` |
+| `retry.max_delay` | int/duration | Obergrenze der Backoff-Verzoegerung (ms oder Duration-String), Standard `10s` |
+| `retry.backoff_factor` | number | Multiplikator, der die Verzoegerung nach jedem Versuch skaliert, Standard `2.0` |
+| `retry.jitter` | number | Anteil zufaelligen Jitters pro Verzoegerung, Standard `0.1` |
+| `retry.retry_kinds` | string[] | Nur Fehler dieser Arten wiederholen; standardmaessig wird jede Art ausser `Invalid`, `PermissionDenied` und `Internal` wiederholt |
+| `retry.skip_kinds` | string[] | Fehler dieser Arten niemals wiederholen |
 
 ## Sicherheitskontext
 
@@ -291,5 +294,4 @@ Ohne explizites `with_actor`/`with_scope` erbt ein geöffneter Contract den ambi
 | Methode nicht gefunden | `errors.NOT_FOUND` |
 | Kein Standard-Binding | `errors.NOT_FOUND` |
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
-| Contract-Dispatcher oder Konvertierung der Antwort fehlgeschlagen | `errors.INTERNAL` |
-| Implementierung gab einen Fehler zurück | Fehlerart der Implementierung bleibt erhalten |
+| Aufruf fehlgeschlagen | Art des Fehlers der Implementierung (bleibt erhalten); `errors.INTERNAL` bei Dispatch-Fehlern |

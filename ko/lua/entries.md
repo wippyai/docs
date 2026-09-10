@@ -18,9 +18,7 @@ Lua 엔트리 종류는 소스 코드를 함수, 프로세스, 워크플로우, 
 | `workflow.lua` | 내구성 있는 워크플로우 (Temporal) |
 | `library.lua` | 다른 엔트리가 임포트하는 공유 코드 |
 
-각 종류에는 `wippy pack --bytecode '**'` 또는 `--bytecode 'app:**'` 같은 패턴으로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 해당 플래그로 패킹할 때 바이트코드 종류가 생성됩니다.
-
-`module.lua`는 런타임이 생성하는 내장 모듈 정의용으로 예약되어 있습니다. 작성 가능한 소스 엔트리가 아니며 바이트코드 대응 항목도 없습니다.
+각 종류에는 `wippy pack --bytecode '**'`(또는 `--bytecode 'app:**'` 같은 패턴)로 생성되는 사전 컴파일된 바이트코드 대응 항목(`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`)이 있습니다. 작성자는 `.lua` 엔트리를 작성하고, 바이트코드 종류는 해당 플래그로 패킹할 때 생성됩니다.
 
 ## 공통 필드
 
@@ -168,18 +166,17 @@ imports:
   source: file://handler.lua
   method: main
   pool:
-    type: adaptive    # explicit; omit to use auto-select (lazy)
-    max_size: 16      # cap for elastic growth
+    type: adaptive    # 명시적 지정; 생략하면 자동 선택(lazy)
+    max_size: 16      # 탄력적 확장의 상한
 ```
 
 | 필드 | 풀 | 설명 |
 |------|----|------|
 | `type` | 모두 | 스케줄러 구현 (아래 표 참조) |
-| `workers` | static | 워커 수. 설정 검증 중 값이 있으면 `size`도 양수여야 함 |
-| `size` | static | `workers`가 없을 때의 워커 수. `type`이 없고 양수 `size`만 있으면 `inline` 선택 |
-| `buffer` | static | 작업 큐 용량 (기본값: `workers * 64`) |
-| `max_size` | lazy, adaptive | 탄력적 확장 상한 (명시적 타입의 기본값: 16) |
-| `warm_start` | 모두 | 허용되는 설정 플래그지만 이 런타임 릴리스에서는 효과 없음 |
+| `workers` | static | 워커 스레드 수 (없으면 `size`, 그다음 8로 폴백) |
+| `size` | static | `workers`가 없을 때의 워커 수; `type`을 생략한 상태에서 `max_size` 없이 `size`만 주면 inline 풀이 선택됩니다 |
+| `buffer` | static | 작업 큐 용량 (기본값 `workers * 64`) |
+| `max_size` | lazy, adaptive | 탄력적 확장 상한 (기본값 16, `type`을 생략하면 100) |
 
 | 유형 | 동작 |
 |------|------|
@@ -188,13 +185,7 @@ imports:
 | `static` | 채널 기반 고정 크기 풀. 안정 부하에서 예측 가능. |
 | `adaptive` | 자동 확장 풀 — 부하 시 증가, 유휴 시 감소. |
 
-`type`을 생략하면 런타임은 다음과 같이 선택합니다:
-
-- `workers`가 양수이면 `static`
-- `workers`가 0이고 `size`가 0이거나 `max_size`가 양수이면 `lazy`
-- `size`가 양수이고 `max_size`가 0이면 `inline`
-
-자동 선택된 lazy 풀은 `max_size`가 양수이면 그 값을 사용하고, 아니면 기본값 100을 사용합니다. 명시적 `lazy` 또는 `adaptive` 풀의 `max_size` 기본값은 16입니다. 명시적 `static` 풀은 `workers`, `size`, 8 순서로 워커 수를 정하며 기본 버퍼는 선택한 워커 수의 64배입니다.
+`type`을 생략하면 나머지 필드로부터 풀이 자동 선택됩니다. 기본은 lazy 풀이며, `workers`가 설정되어 있으면 static 풀, `size`만 설정되어 있으면 inline 풀입니다.
 
 ## 메타데이터
 
@@ -219,10 +210,7 @@ imports:
 
 ```lua
 local registry = require("registry")
-local handlers, err = registry.find({["meta.type"] = "handler"})
-if err then
-    return nil, err
-end
+local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
 쿼리는 일치하는 모든 레지스트리 엔트리를 반환합니다. 이 Lua 코드는 위 `api_handler`처럼 `modules` 목록에 `registry`를 포함한 실행 가능 엔트리에 둡니다.

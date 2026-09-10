@@ -1,16 +1,14 @@
 ---
 title: "ビュー"
-description: "wippy/views でサーバーレンダリングページ、フロントエンドアプリケーション、Web コンポーネント、リソース、環境マッピングを定義します。"
+description: "wippy/views モジュールは、テンプレートレンダリング、リソース管理、環境変数マッピングを備えた仮想ページとコンポーネントシステムを提供します。…"
 ---
 
 # ビュー
 
-`wippy/views` モジュールはページとコンポーネントを定義し、それらのリソースを管理し、環境変数をレンダリング出力へマッピングします。次の 2 つのページモデルをサポートします。
+`wippy/views` モジュールは、テンプレートレンダリング、リソース管理、環境変数マッピングを備えた仮想ページとコンポーネントシステムを提供します。ページには 2 つの明確に異なる形態があります：
 
-- **Jet テンプレートページ**（`kind: template.jet`）は、ページデータとリソースを組み立てた後、サーバー上で HTML をレンダリングします。[テンプレートページ](#テンプレートページ)を参照してください。
-- **レジストリエントリのフロントエンド**（`kind: registry.entry`）は、CDN または静的マウントから配信されるマイクロフロントエンドアプリケーション（`view.page`）と再利用可能な Web コンポーネント（`view.component`）を表します。レジストリエントリにはルーティングとデプロイポリシーを記述します。フロントエンド所有のメタデータはパッケージが生成する `wippy-meta.json` から取得し、明示したレジストリフィールドが優先されます。[コンポーネントページ](#コンポーネントページ)と[ビューコンポーネント](#ビューコンポーネント)を参照してください。
-
-このページはレジストリと HTTP API のリファレンスです。YAML、HTML、JSON の各ブロックは独立した参照スニペットであり、1 つの実行可能プロジェクトではありません。利用する例に合わせて、依存関係が参照する `http.router`、環境ストレージ、HTTP サービスと、例に現れるテンプレートセット、関数、リソース、フロントエンドバンドルを用意してください。
+- **Jet テンプレートページ**（`kind: template.jet`）— サーバー側でレンダリングされる HTML。ページのデータとリソースはサーバー側で組み立てられて注入され、その後 Jet エンジンが最終的な HTML をレンダリングします。これはレガシーのサーバーレンダリングモデルです。[テンプレートページ](#template-pages)を参照してください。
+- **レジストリエントリフロントエンド**（`kind: registry.entry`）— 2 種類あります：マイクロフロントエンドアプリ（`view.page`、完全な SPA）と再利用可能な Web コンポーネント（`view.component`）で、CDN または静的マウントから配信されます。レジストリエントリが保持するのはルーティングとデプロイポリシーのみで、プロキシ／CSS の注入はフロントエンドパッケージの `package.json` に記述します。[コンポーネントページ](#component-pages)と[ビューコンポーネント](#view-components)を参照してください。
 
 ## セットアップ
 
@@ -43,13 +41,13 @@ entries:
 |-----------|----------|---------|-------------|
 | `api_router` | はい | — | ビュー API エンドポイント用の HTTP ルーター |
 | `env_storage` | はい | — | 変数 `PUBLIC_API_URL` を提供する環境ストレージ |
-| `server` | いいえ | `app:gateway` | 自己マウントされる [Web Fragments ゲートウェイ](#web-fragments-ゲートウェイ)のルーター（`/@fragment`）がバインドする HTTP サービス。`http.service` の ID が `app:gateway` と異なる場合だけ上書き |
+| `server` | いいえ | `app:gateway` | 自己マウントされる [Web Fragments ゲートウェイ](#web-fragments-gateway)ルーター（`/@fragment`）がバインドする HTTP サービス。`http.service` の ID が `app:gateway` と異なる場合のみ上書きします。 |
 
 ## テンプレートページ
 
-> **サーバーレンダリングモデル。** `wippy/views` はテンプレートデータとリソースをサーバー側で組み立て、Jet で最終 HTML をレンダリングします。レスポンスは通常の HTML で、iframe プロキシやクライアント側マイクロフロントエンドを使用しません。外部 SPA とコンポーネントについては[コンポーネントページ](#コンポーネントページ)を参照してください。
+> **サーバーレンダリングモデル。** テンプレートページはレガシーのサーバー側レンダリング機構です：`wippy/views` がサーバー上でページデータとリソースを組み立て、Jet テンプレートエンジンで最終的な HTML をレンダリングします。iframe プロキシもクライアント側のマイクロフロントエンドもなく、レスポンスはプレーンな HTML です。外部の SPA やコンポーネントについては[コンポーネントページ](#component-pages)を参照してください。
 
-テンプレートページは Jet テンプレートを使用してサーバー側でレンダリングされます。データは `data.set`、`data.data_func`、`data.resources` で注入します。
+テンプレートページは Jet テンプレートを使用してサーバー側でレンダリングされます。データは `data.set`、`data.data_func`、`data.resources`（サーバー側のリソース注入）を通じて注入されます：
 
 ```yaml
 entries:
@@ -114,9 +112,9 @@ entries:
 
 ## コンポーネントページ
 
-コンポーネントページは、Web Host が設定済みページエンジン（既定は iframe、有効化時は Web Fragment）で読み込む外部 SPA またはマイクロフロントエンドを指します。レジストリエントリは URL 配信、アクセス制御、マウントルート、ページごとの設定上書きを定義します。
+コンポーネントページは、Web Host が iframe 内でロードする外部のシングルページアプリケーション（SPA、マイクロフロントエンド）を指します。レジストリエントリが保持するのは**レジストリルーティングとデプロイポリシーのフィールドのみ**です — URL の配信、アクセス制御、マウントルート、ページごとの設定オーバーライドです：
 
-> **必須のレジストリ形状:** コンポーネントページは `kind: registry.entry` と `meta.type: view.page` を使います。`view.page` を `kind` の値として使うことはありません。プロキシのデプロイ上書きは `data.proxy` ではなく `meta.proxy` に置きます。
+> **必須のレジストリ形状：** コンポーネントページは `kind: registry.entry` と `meta.type: view.page` で定義します。`view.page` が `kind` の値になることはありません。プロキシのデプロイオーバーライドは `data.proxy` ではなく `meta.proxy` に置きます。
 
 ```yaml
 entries:
@@ -139,30 +137,25 @@ entries:
             "--p-primary": "#7c9ed9"
 ```
 
-API は解決済みベース URL を持つコンポーネント記述子を返します。Web Host は選択した iframe または Web Fragment エンジンで SPA をレンダリングします。iframe ページはフロントエンドパッケージが要求したプロキシ注入を適用し、Fragment ゲートウェイは固定の変換と Host CSS 注入経路を使います。
+API は解決済みのベース URL を含むコンポーネント記述子を返します。Web Host は iframe 内で SPA をレンダリングし、フロントエンドパッケージが要求したプロキシ注入を適用します。
 
-### コンポーネントフィールド
+### コンポーネントページのフィールド
 
 | フィールド | 型 | デフォルト | 説明 |
 |-------|------|---------|-------------|
-| `meta.name` | string | — | ページ名。`/pages/list` はバンドルメタデータを読み込まないためレジストリ YAML に保持 |
-| `meta.title` | string | — | 表示タイトル。`/pages/list` は生のレジストリタイトルでソートするためレジストリ YAML に保持 |
-| `meta.url` | string | — | バンドルをマウントするベース URL 接頭辞（CDN オリジンまたは `http.static` パス） |
+| `meta.url` | string | — | バンドルがマウントされているベース URL プレフィックス（CDN オリジンまたは `http.static` のパス） |
 | `meta.base_path` | string | — | 静的マウント内のサブディレクトリ |
-| `meta.entry_point` | string | バンドルの `wippy.path`、次に `index.html` | HTML エントリファイル。`<url>/<base_path>/<entry_point>` として結合 |
-| `meta.mountRoute` | string | — | ホストルーターの URL パスを確保。catch-all の `/:part(.*)*`（ルート）または `/<literal-prefix>/:part(.*)*` のみ許可。任意の Vue Router パターンは HTTP 500 で拒否 |
-| `meta.announced` | boolean | `announced or public or false` | ナビゲーションと `/pages/list` に表示。`public: true` は明示した `announced: false` より優先 |
+| `meta.entry_point` | string | `index.html` | HTML エントリファイル。`<url>/<base_path>/<entry_point>` として組み立てられる |
+| `meta.mountRoute` | string | — | ホストルーター内の URL パスを要求する。許可されるのはキャッチオール形式の `/:part(.*)*`（ルート）または `/<literal-prefix>/:part(.*)*` のみで、任意の Vue Router パターンは拒否される（HTTP 500）。[view-page.md](../frontend/frontend-registry/view-page.md) / [dynamic-routing.md](../frontend/frontend-registry/dynamic-routing.md) を参照 |
+| `meta.announced` | boolean | — | ナビゲーションと `pages/list` に表示 |
 | `meta.secure` | boolean | `false` | 認証が必要 |
-| `meta.render_engine` | string | バンドルの `wippy.renderEngine` | ページごとのエンジン指定: `auto`、`iframe`、`fragment` |
-| `meta.config_overrides` | object | — | ページごとの AppConfig 上書き（camelCase）。バンドル既定値の上に deep merge |
-
-コンポーネントページの content descriptor を構築するとき、`wippy/views` は解決済みバンドルルートから `wippy-meta.json` を要求します。レジストリ YAML がフィールドごとに優先され、パッケージバージョン、エントリパス、プロキシ設定、レンダーエンジン、設定上書きなどの省略されたフロントエンド所有フィールドはバンドルメタデータで補われます。メタデータファイルを使用できない場合は従来の YAML descriptor にフォールバックします。`meta.name` と `meta.title` はレジストリ YAML に保持してください。`/pages/list` はバンドルを取得せず生のレジストリフィールドを使い、タイトル欠落は同順位ソートを壊す可能性があります。`config_overrides` は `customization`、`axiosDefaults`、`routePrefix`、`apiRoutes`、`themeMode` をサポートします。
+| `meta.config_overrides` | object | — | ページごとの AppConfig オーバーライド（camelCase）。バンドルされたデフォルトの上にディープマージされる |
 
 ### プロキシ注入
 
-SPA ページのプロキシ注入は、フロントエンドパッケージの camelCase `wippy.proxy.injections` ブロックで設定します。ビルドは設定を `wippy-meta.json` に記録します。デプロイ時には、レジストリエントリの `meta:` 下に、パッケージの `wippy.proxy` と同じ形状および `injections` ラッパーを持つ camelCase の `proxy:` ブロックを置いて上書きできます。ホストはデプロイ値をバンドル設定へ deep merge し、ネストされた各キーでは YAML が優先されます。snake_case 形式や casing の正規化はありません。`config_overrides` が deep merge するのは `customization`、`axiosDefaults`、`routePrefix`、`apiRoutes`、`themeMode` だけで、`proxy.injections` には影響しません。
+SPA ページのプロキシ注入は、FE の package.json の `wippy.proxy.injections` ブロック（camelCase）で設定し、ビルド時に `wippy-meta.json` へ焼き込まれます。レジストリエントリの `meta:` 配下にネストした camelCase の `proxy:` ブロック（package.json の `wippy.proxy` ブロックと同じ形状・同じ `injections` ラッパー）により、デプロイごとに上書きすることもできます。ホストはそれをバンドルされた `wippy.proxy` の上にディープマージし、ネストしたキーごとに YAML の値が優先されます。snake_case 形式は存在せず、ケーシングの正規化も行われません。`config_overrides` がディープマージするのは `customization`、`axiosDefaults`、`routePrefix`、`apiRoutes` のみであり、`proxy.injections` には一切影響しない点に注意してください。[マイクロフロントエンドアプリ（view.page）](../frontend/frontend-registry/view-page.md)と [CSS 注入](../frontend/web-host/css-injection.md)を参照してください。
 
-デプロイ上書きの例:
+デプロイオーバーライドの最小の正しい形状：
 
 ```yaml
 entries:
@@ -171,6 +164,7 @@ entries:
     meta:
       type: view.page
       proxy:
+        enabled: true
         injections:
           css:
             themeConfig: true
@@ -181,7 +175,7 @@ entries:
 
 ## ビューコンポーネント
 
-ビューコンポーネントは、Web Host が検出して登録する再利用可能なカスタム要素（Web コンポーネントまたはマイクロフロントエンド）です。ページではなく、ナビゲーションエントリも持ちません。コンポーネントページと同様、レジストリエントリがルーティングとデプロイポリシーを定義します。
+ビューコンポーネントは、Web Host が検出して登録する再利用可能なカスタム要素（Web コンポーネント、マイクロフロントエンド）です — ページではなく、ナビゲーションエントリも持ちません。コンポーネントページと同様に、レジストリエントリはルーティングとデプロイポリシーのみを保持します：
 
 ```yaml
 entries:
@@ -198,7 +192,7 @@ entries:
       entry_point: index.js
 ```
 
-コンポーネントは `view.page` ではなく `meta.type: view.component` を使用します。YAML で `tag_name`、`entry_point`、`props`、`events` を上書きできます。それ以外のフロントエンド所有フィールドは `wippy-meta.json` から取得し、最後のエントリポイントフォールバックは `index.js` です。コンポーネントはページ iframe のプロキシ注入ブロックを使用しません。shadow DOM のプラットフォーム CSS はコンポーネント実装が `hostCssKeys` を通じて要求します。
+コンポーネントは `view.page` ではなく `meta.type: view.component` を使用し、`meta.tag_name` で自身を識別し、エントリポイントは `index.js` がデフォルトです。コンポーネントのプロキシ注入とテーマ CSS も同様に FE の package.json（camelCase）に記述し、shadow DOM 用の CSS は `hostCssKeys` で宣言します — レジストリ YAML には書きません。[Web コンポーネント（view.component）](../frontend/frontend-registry/view-component.md)と [CSS 注入](../frontend/web-host/css-injection.md)を参照してください。
 
 ## リソース
 
@@ -305,11 +299,11 @@ views モジュールは、設定されたルーター上に以下のエンド�
 | メソッド | パス | 説明 |
 |--------|------|-------------|
 | GET | `/pages/list` | アクセス可能で公示されているページをリストする |
-| GET | `/components/list` | ビューコンポーネントをリストする |
+| GET | `/components/list` | アクセス可能で公示されているビューコンポーネントをリストする |
 | GET | `/pages/content/{id}` | ページをレンダリングするか、コンポーネント記述子を返す |
 | GET | `/pages/public/{id}` | コンポーネントのベース URL を取得する |
-| GET | `/components/by-tag/{tag}` | カスタム要素のタグ名を `view.component` 記述子に解決する（ホストの `loadByTagName` が使用） |
-| GET | `/pages/routes` | `mountRoute` → `pageId` のマップを返す。無効または重複した `mountRoute` は HTTP 500。`announced` ではフィルタリングされず（非表示ページにも URL 解決が必要）、secure ページにはアクセス制御が適用される |
+| GET | `/components/by-tag/{tag}` | カスタム要素のタグ名を `view.component` 記述子へ解決する（ホストの `loadByTagName` が使用） |
+| GET | `/pages/routes` | `mountRoute` → `pageId` のマップを返す。`mountRoute` が不正または重複している場合は HTTP 500。`announced` によるフィルタリングは行われない（非表示ページでも URL 解決は必要）。セキュアページにはアクセス制御が適用される |
 
 ### レンダリングレスポンス
 
@@ -340,15 +334,15 @@ views モジュールは、設定されたルーター上に以下のエンド�
 }
 ```
 
-CSS 注入フラグは `themeConfig`、`iframe`、`primevue`、`markdown`、`customCss`、`customVariables` です。`fonts` フラグはありません。Google Fonts は `theming.global.customCSS` の `@import` 規則として配信され、`customCss` によって注入されます。
+`css` 注入フラグは `themeConfig`、`iframe`、`primevue`、`markdown`、`customCss`、`customVariables` です。`fonts` フラグは存在しません — Google Fonts は `theming.global.customCSS`（`@import` ルール）経由で配信され、`customCss` によって注入されます。
 
 ## Web Fragments ゲートウェイ
 
-Web Host が[fragment レンダーエンジン](../frontend/web-host/render-engines.md)でページを描画すると、そのページは `<web-fragment src="/@fragment/{id}/">` としてマウントされます。`wippy/views` は専用エンドポイント **`/@fragment/{id}/{path...}`** で、この reframing 契約を提供します。
+Web Host が[フラグメントレンダーエンジン](../frontend/web-host/render-engines.md)でページをレンダリングすると、そのページは `<web-fragment src="/@fragment/{id}/">` としてマウントされます。`wippy/views` は、専用のゲートウェイエンドポイント **`/@fragment/{id}/{path...}`** を通じてこのリフレーミング契約を提供します。
 
-consumer の `api_router` にマウントされる view API と異なり、ゲートウェイは独自のトップレベル `/@fragment` `http.router` を宣言します。このため CDN キャッシュでルーティングでき、`token_auth` から独立しています。認証は、注入された fragment proxy とホストの handshake を通じてクライアント側で処理します。consumer にルーターエントリや `fragment_router` パラメータは不要で、iframe エンジンを使うアプリケーションには fragment 設定も不要です。
+ビュー API（コンシューマーの `api_router` にマウントされる）とは異なり、ゲートウェイは **`wippy/views`（0.5.9 以上）が自己提供**します：モジュールが内部でトップレベルの `/@fragment` `http.router` を宣言するため、CDN でキャッシュルーティング可能であり、`token_auth` を持ちません — ゲートウェイは認証非依存です（注入されたフラグメントプロキシがクライアント側でホストと認証ハンドシェイクを行います）。**コンシューマー側にフラグメント配線は不要です** — ルーターエントリも `fragment_router` パラメータも必要ありません。フラグメントが有効かどうかにかかわらず、アプリは iframe エンジンで通常どおり起動します。
 
-自己マウントされるルーターは、既定で `app:gateway` を指す `server` requirement にバインドします。アプリケーションの `http.service` エントリが別 ID の場合は、`wippy/views` の `server` パラメータをそのエントリに設定します。
+自己マウントされるルーターは、**デフォルトが `app:gateway`** の `server` 要件にバインドします。任意の上書きは 1 つだけです：アプリの `http.service` エントリの ID が `app:gateway` 以外の場合、`wippy/views` の `server` パラメータをそれに合わせて設定します：
 
 ```yaml
 entries:
@@ -361,25 +355,25 @@ entries:
         value: app:api.public
       - name: env_storage
         value: app:env.storage
-      - name: server                 # optional — only if your http.service id ≠ app:gateway
+      - name: server                 # 任意 — http.service の ID が app:gateway と異なる場合のみ
         value: app:my_http_service
 ```
 
-> **Fragment の可用性。** iframe ベースのデプロイで `wippy.renderEngine: "fragment"` を設定したページは、ランタイム能力プローブを使います。ゲートウェイまたは `proxy-fragment.js` が利用できない場合、エラーを報告せず iframe エンジンを維持します。グローバルの `render_engine: fragment` 設定はこのプローブを行いません。
+> **フラグメント配線不要、起動リスクなし。** `wippy/views` が `/@fragment` ルーターを所有し、それを `server`（デフォルト `app:gateway`）にバインドするため、モジュールをアップグレードしたコンシューマーはフラグメント設定を一切行わなくても iframe エンジンで通常どおり起動します。iframe デプロイ上でページ単位でフラグメントを選択（`wippy.renderEngine: "fragment"`）した場合は、ランタイムの**ケーパビリティプローブ**によって保護され、ゲートウェイまたは `proxy-fragment.js` が利用できないときは**そのページを静かに iframe エンジンのまま維持します**。グローバルの `render_engine: fragment` スイッチはオペレーターを信頼し、プローブを行いません。
 
-### Reframing 契約
+### リフレーミング契約
 
-ゲートウェイは同じ `/@fragment/{id}/` URL に対して、リクエストの `Sec-Fetch-Dest` ヘッダーとサブパスに応じた 3 種類の応答を返します。
+ゲートウェイは同じ `/@fragment/{id}/` URL に対し、リクエストの `Sec-Fetch-Dest` ヘッダーとサブパスによって区別される 3 通りの応答を返します：
 
 | リクエスト | レスポンス |
 |---------|----------|
-| realm iframe 読み込み（`Sec-Fetch-Dest: iframe`） | ホストの import map、`loading.js`、`proxy-fragment.js` を持つ小さな reframed stub |
-| ドキュメント取得（空のサブパス） | realm 用に変換したアプリ HTML。最初の import map と開発用プレースホルダーを削除し、相対 `href="./…"` と `src="./…"` 属性を書き換え、Host CSS リンクを注入し、`<html>`/`<head>`/`<body>` を `<wf-*>` へ変更。`<base>` は注入しない |
-| アセット（空でないサブパス） | ページの実際の `base_url` とサブパスへプロキシ |
+| レルム iframe のロード（`Sec-Fetch-Dest: iframe`） | ホストのインポートマップ + `loading.js` + `proxy-fragment.js` を含む小さな**リフレーミングスタブ**。 |
+| ドキュメントフェッチ（サブパスが空） | ページのアプリ HTML を、レルム向けに変換したもの（`<base>`、ホスト CSS のリンク、`<html>`／`<head>`／`<body>` → `<wf-*>` へのリネーム）。 |
+| アセット（サブパスが空でない） | ページの実際の `base_url` + サブパスへプロキシされる。 |
 
-レスポンスには `Cache-Control` が付きます。stub は共有キャッシュ可能（`public, max-age=300`）、アクセス制御されたドキュメントとアセットは `private` です（ユーザーごとの `can_access` 検査を通るため、共有キャッシュではユーザー間漏えいが起こります）。ランタイムエラーは明示的な HTTP レスポンスです: `400 Missing fragment id`、`404 Fragment page not found`、`401 Access denied`、`502 Fragment document fetch failed: … (url: …)`。
+レスポンスには `Cache-Control` が付きます：スタブは共有キャッシュ可能（`public, max-age=300`）で、アクセス制御されたドキュメントとアセットは `private` です（ユーザーごとの `can_access` チェックを通るため、共有キャッシュではユーザー間で漏洩する可能性があります）。ランタイムエラーは明示的な HTTP レスポンスです — `400 Missing fragment id`、`404 Fragment page not found`、`401 Access denied`、`502 Fragment document fetch failed: … (url: …)`。
 
-フロントエンドがエンジンを選択して fragment をマウントします。詳細は[レンダーエンジン](../frontend/web-host/render-engines.md)を参照してください。
+FE がエンジンを選択してフラグメントをマウントします — [レンダーエンジン](../frontend/web-host/render-engines.md)を参照してください。
 
 ## アクセス制御
 
@@ -402,11 +396,11 @@ data:
 
 ## 関連項目
 
-- [Facade](framework/facade.md) — フロントエンド facade とナビゲーションサイドバー
-- [Template](system/template.md) — Jet テンプレートエンジン
-- [Security](system/security.md) — セキュリティアクターとアクセス制御
-- [Environment](system/env.md) — 環境変数ストレージ
-- [Framework 概要](framework/overview.md) — Framework モジュールの利用
-- [マイクロフロントエンドアプリ（`view.page`）](../frontend/frontend-registry/view-page.md) — `view.page` メタデータとプロキシ注入の完全なリファレンス
-- [Web コンポーネント（`view.component`）](../frontend/frontend-registry/view-component.md) — `view.component` 自動読み込みと props の完全なリファレンス
-- [レンダーエンジン](../frontend/web-host/render-engines.md) — iframe と Web Fragment のページ描画
+- [ファサード](./facade.md) - フロントエンド iframe ファサードとナビゲーションサイドバー
+- [テンプレート](../system/template.md) - Jet テンプレートエンジン
+- [セキュリティ](../system/security.md) - セキュリティアクターとアクセス制御
+- [環境](../system/env.md) - 環境変数ストレージ
+- [フレームワーク概要](./overview.md) - フレームワークモジュールの利用
+- [マイクロフロントエンドアプリ（view.page）](../frontend/frontend-registry/view-page.md) - view.page のメタデータとプロキシ注入の完全なリファレンス
+- [Web コンポーネント（view.component）](../frontend/frontend-registry/view-component.md) - view.component の自動ロードと props の完全なリファレンス
+- [レンダーエンジン](../frontend/web-host/render-engines.md) - iframe と Web Fragment のページレンダリング（`/@fragment` ゲートウェイの利用者）

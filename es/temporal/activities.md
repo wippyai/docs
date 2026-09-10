@@ -35,6 +35,7 @@ Agregue `meta.temporal.activity` para registrar una función como activity:
 |-------|-----------|-------------|
 | `worker` | Sí | Referencia a entrada `temporal.worker` |
 | `local` | No | Ejecutar como activity local (por defecto: false) |
+| `name` | No | Nombre personalizado del tipo de activity (por defecto: el ID de la entrada) |
 
 ## Implementación
 
@@ -169,10 +170,10 @@ end
 | `activity.wait_for_cancellation` | boolean | false | Esperar cancelación de la activity |
 | `activity.disable_eager_execution` | boolean | false | Deshabilitar ejecución anticipada |
 | `activity.retry_policy` | table | - | Configuración de reintentos (ver abajo) |
-| `activity.versioning_intent` | string o number | - | Intención de versionado del worker para la activity |
-| `activity.summary` | string | - | Resumen mostrado en los metadatos de la activity de Temporal |
-| `activity.priority` | table | - | Clave de prioridad y ajustes opcionales de equidad |
-| `activity.name` | string | - | Nombre alternativo del tipo de activity |
+| `activity.name` | string | - | Nombre del tipo de activity a llamar, cuando difiere del ID del registro |
+| `activity.summary` | string | - | Resumen legible mostrado en la UI de Temporal |
+| `activity.priority` | table | - | Prioridad de tarea: `priority_key` (number), `fairness_key` (string), `fairness_weight` (number) |
+| `activity.versioning_intent` | string | - | `compatible` (hereda el build ID) o `default` (usa las reglas de asignación) |
 
 Los valores de duración aceptan cadenas (`"5s"`, `"10m"`, `"1h"`) o milisegundos como números.
 
@@ -247,7 +248,7 @@ El campo `local` se acepta en una activity:
         local: true
 ```
 
-Actualmente, `local: true` se analiza pero se comporta igual que una activity normal: se registra y ejecuta por la ruta estándar de activities. Todavía no existe una ejecución diferenciada de activities locales, por lo que no cambia la latencia, el comportamiento de la cola de tareas ni el heartbeating.
+Actualmente `local: true` se parsea pero se comporta igual que una activity regular: se registra y se ejecuta a través de la ruta estándar de activities. Todavía no existe una ejecución diferenciada de activity local, por lo que no cambia la latencia, el comportamiento de la cola de tareas ni el heartbeating.
 
 ## Nombrado de Activities
 
@@ -300,6 +301,14 @@ local executor = funcs.new():with_context({trace_id = "abc-123"})
 local result, err = executor:call("app:charge_payment", input)
 ```
 
+### Contexto de Seguridad
+
+Una activity programada bajo un contexto de seguridad recibe la cabecera firmada `wippy-security`, con audiencia dirigida al ID de la activity. El worker verifica la firma y la audiencia, luego fusiona los valores de `ctx` propagados y el payload de seguridad sobre un frame nuevo antes de que se ejecute la función de la activity.
+
+Esa fusión es de todo o nada y **fatal para la activity si falla**: la activity retorna un error antes de que su código se ejecute, por lo que nunca se ejecuta con contexto parcial o con un actor no verificado. Una fusión falla cuando la firma o la audiencia no se verifican, cuando el envelope es inconsistente (un actor sin scope, o políticas sin actor), o cuando una política nombrada en el envelope no se resuelve en el registro de seguridad local — que es la causa operativa común: al despliegue del worker le falta una entrada de política que el llamador sí tenía.
+
+El worker toma sus claves de firma y verificación de la entrada `temporal.client` a la que hace referencia. Consulte [Propagación del contexto de seguridad](temporal/overview.md#security-context-propagation).
+
 ## Manejo de Errores
 
 Retorne errores mediante el patrón estándar de Lua:
@@ -329,8 +338,8 @@ local function charge(input)
         return nil, errors.wrap(err, "payment API failed")
     end
 
-    if response.status_code >= 400 then
-        return nil, payment_error(response.status_code)
+    if response:status() >= 400 then
+        return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
     return json.decode(response.body)
@@ -355,9 +364,13 @@ end
 | Fallo | Tipo de Error | Reintentable | Descripción |
 |-------|---------------|--------------|-------------|
 | Error de aplicación | Lo que la activity haya retornado | Heredado del error retornado | Error retornado por código de activity vía `return nil, err` |
-| Crash en tiempo de ejecución | `Internal` | no | Error Lua no controlado en la activity |
+| Crash en tiempo de ejecución | `Internal` | no | Error Lua no manejado en activity |
 | Activity faltante | `NotFound` | no | Activity no registrada con el worker |
-| Timeout | `Timeout` | no | La activity superó el timeout configurado |
+| Timeout | `Timeout` | no | La activity excedió el timeout configurado |
+| Verificación de seguridad | `Internal` | sí | Falló la comprobación de firma, audiencia o envelope en la cabecera de seguridad propagada |
+| Política de seguridad faltante | `Internal` | sí | Una política nombrada en el envelope de seguridad no se resuelve en este worker |
+
+Ambos fallos de seguridad ocurren durante la fusión del contexto, antes de que se ejecute la función de la activity. No están marcados como no reintentables, por lo que la política de reintentos de la activity sigue reintentándolos; los reintentos no ayudan, porque ni una firma inválida ni una entrada de política faltante cambian entre intentos. Limite `maximum_attempts` en las activities que quiera que fallen rápido, y lea un fallo `Internal` repetido sin salida en el log de la activity como un fallo de fusión de contexto en lugar de un defecto en la activity.
 
 ```lua
 local executor = funcs.new():with_options({

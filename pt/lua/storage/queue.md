@@ -1,6 +1,6 @@
 ---
 title: "Message Queue"
-description: "Publique mensagens e processe entregas de filas configuradas."
+description: "Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP."
 ---
 
 # Message Queue
@@ -90,8 +90,8 @@ Uma `Message` é válida somente durante a execução do handler do consumer; o 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
 | `id()` | `string, error` | Identificador único da mensagem |
-| `header(key)` | `string?, error` | Valor string normalizado, ou nil se ausente |
-| `headers()` | `{[string]: string}, error` | Todos os headers com valores string normalizados |
+| `header(key)` | `string, error` | Valor de header único como string (nil se ausente) |
+| `headers()` | `table, error` | Todos os headers da mensagem |
 | `ack()` | `boolean, error` | Confirmar processamento (single-shot) |
 | `nack()` | `boolean, error` | Sinalizar falha para reentrega ou dead-letter (single-shot) |
 
@@ -109,27 +109,20 @@ if err then return nil, err end
 
 ## Padrão de Consumer
 
-Uma entrada `queue.consumer` vincula a fila ao handler referenciado por `func`. O handler recebe diretamente o payload da mensagem. O fragmento pressupõe que `app:emails` e a função `app:email_handler` já existam; o código da função pressupõe que a aplicação forneça `deliver_email(payload)`.
-
-Consumers de fila sao definidos como entry points que recebem o payload diretamente:
+Uma entrada `queue.consumer` vincula uma fila a uma função handler (referenciada por `func`). O handler recebe o payload da mensagem diretamente:
 
 ```yaml
-- name: email_worker
-  kind: queue.consumer
-  queue: app:emails
-  func: app:email_handler
+entries:
+  - kind: queue.consumer
+    name: email_worker
+    queue: app:emails
+    func: app:email_handler
 ```
 
 ```lua
-local queue = require("queue")
-local logger = require("logger")
-
-local function main(payload)
-    local msg, msg_err = queue.message()
-    if msg_err then return nil, msg_err end
-
-    local message_id, id_err = msg:id()
-    if id_err then return nil, id_err end
+-- app:email_handler
+function handle_email(payload)
+    local msg = queue.message()
 
     logger:info("Processing", {
         message_id = message_id,

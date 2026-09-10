@@ -1,6 +1,6 @@
 ---
 title: "Metricas y Telemetria"
-description: "Registra contadores, gauges y observaciones de histogramas de la aplicación."
+description: "Registrar metricas de aplicación usando contadores, gauges e histogramas."
 ---
 
 # Metricas y Telemetria

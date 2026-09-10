@@ -1,6 +1,6 @@
 ---
 title: "Prozessgruppen"
-description: "Clusterweite Prozessgruppen, Mitgliedschaften, Broadcasts und Mitgliedschaftsabonnements verwalten."
+description: "Prozesse in benannte Gruppen aufnehmen und an jedes Mitglied im Cluster senden. Modelliert nach Erlang/OTP pg: Gruppen sind dynamisch, ein Prozess…"
 ---
 
 # Prozessgruppen
@@ -211,12 +211,12 @@ group:release()
 | `pg.leave` | `leave()` | Gruppenname |
 | `pg.get_members` | `get_members()` | Gruppenname |
 | `pg.get_local_members` | `get_local_members()` | Gruppenname |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (keine) |
+| `pg.which_local_groups` | `which_local_groups()` | (keine) |
 | `pg.broadcast` | `broadcast()` | Gruppenname |
 | `pg.broadcast_local` | `broadcast_local()` | Gruppenname |
 | `pg.monitor` | `monitor()` | Gruppenname |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (keine) |
 
 ## Fehler
 
@@ -225,7 +225,7 @@ group:release()
 | Berechtigung verweigert | `errors.PERMISSION_DENIED` |
 | Fehlendes oder leeres Argument | `errors.INVALID` |
 | Scope nicht gefunden | `errors.INTERNAL` |
-| Gruppe ohne Mitgliedschaft verlassen | `errors.NOT_FOUND` |
+| Gruppe verlassen ohne Mitgliedschaft | `errors.NOT_FOUND` |
 | Instanz freigegeben | `errors.INVALID` |
 | Gruppen-, Mitglieder- oder Aktions-Queue-Limit erreicht | `errors.RATE_LIMITED` (wiederholbar) |
 | Service gestoppt, Backpressure oder offener Circuit | `errors.UNAVAILABLE` |

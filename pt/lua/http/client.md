@@ -1,6 +1,6 @@
 ---
 title: "Cliente HTTP"
-description: "Envie requisições HTTP com headers, autenticação, formulários, uploads, opções TLS, streaming e lotes."
+description: "Faca requisicoes HTTP para serviços externos. Suporta todos os métodos HTTP, headers, parametros de query, dados de formulario, uploads de arquivo…"
 ---
 
 # Cliente HTTP
@@ -135,8 +135,8 @@ if err then return nil, err end
 | `stream` | boolean | Streaming do corpo da resposta ao inves de buffer |
 | `max_response_body` | number | Tamanho maximo da resposta em bytes (0 = padrão) |
 | `unix_socket` | string | Conectar via caminho de socket Unix |
-| `tls` | table | Configuração TLS por requisição (veja [Opções TLS](#tls-options)) |
-| `overlay_network` | string | Rotear por um [overlay de rede](../../system/network.md) — ID de registro de uma entrada `network.socks5`, `network.tailscale` ou `network.i2p` |
+| `tls` | table | Configuracao TLS por requisicao (ver [Opcoes TLS](#opcoes-tls)) |
+| `overlay_network` | string | Roteia através de um [overlay de rede](system/network.md) — ID de registro de uma entrada `network.socks5` / `network.tailscale` / `network.i2p` |
 
 Selecionar `overlay_network` exige a permissão `network.select` no ID da rede.
 
@@ -208,7 +208,7 @@ if err then return nil, err end
 | `filename` | string | não | Nome original do arquivo |
 | `content` | string | sim* | Conteudo do arquivo |
 | `reader` | userdata | sim* | Alternativa: io.Reader para conteudo |
-| `content_type` | string | não | Atualmente ignorado: cada parte enviada usa sempre `Content-Type: application/octet-stream`, independentemente deste campo |
+| `content_type` | string | não | Atualmente ignorado: cada parte enviada é sempre transmitida com `Content-Type: application/octet-stream` independentemente deste campo |
 
 *É obrigatório fornecer `content` ou `reader`.
 
@@ -429,7 +429,7 @@ Requisicoes HTTP estao sujeitas a avaliação de política de segurança.
 | `http_client.unix_socket` | Caminho do socket | Permitir/negar conexoes Unix socket |
 | `http_client.private_ip` | Endereco IP | Permitir/negar acesso a faixas de IP privado |
 | `http_client.insecure_tls` | URL | Permitir/negar TLS inseguro (pular verificacao) |
-| `network.select` | ID da rede | Permitir/negar a seleção explícita de `overlay_network` |
+| `network.select` | ID da entrada de rede | Permitir/negar roteamento pela `overlay_network` informada na requisição |
 
 ### Verificando Acesso
 
@@ -444,14 +444,27 @@ end
 
 ### Protecao SSRF
 
-Faixas de IP privado (10.x, 192.168.x, 172.16-31.x, localhost) sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip`.
+Faixas de IP nao publicas sao bloqueadas por padrão. Acesso requer a permissão `http_client.private_ip` no endereço:
+
+- loopback, privadas (10.x, 172.16-31.x, 192.168.x), link-local unicast e multicast, e o endereço não especificado
+- NAT de operadora `100.64.0.0/10`, `192.0.0.0/24`, multicast `224.0.0.0/4`, reservadas `240.0.0.0/4`
+- faixas de documentação e benchmarking `192.0.2.0/24`, `198.18.0.0/15`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`
+- multicast IPv6 `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
 
-Veja [Modelo de Segurança](system/security.md) para configurar as políticas.
+A verificação ocorre no momento da conexão, não sobre a string da URL, e cobre todos os endereços para os quais o host resolve. Um hostname que resolve para vários endereços é verificado endereço por endereço: um endereço negado é ignorado e o próximo é tentado, e a requisição só falha quando todos os candidatos são negados ou inalcançáveis. Um hostname público que resolve para um endereço privado é portanto bloqueado exatamente como um IP privado literal.
+
+### Redirecionamentos
+
+Até nove redirecionamentos são seguidos; o décimo falha com `stopped after 10 redirects`, uma contagem que inclui a requisição original.
+
+Cada salto é autorizado por conta própria. Antes de seguir um redirecionamento, o cliente avalia `http_client.request` contra a URL alvo e aplica a verificação de IP privado a ela, então uma URL permitida não pode ser usada para alcançar uma negada por redirecionamento. Um salto que falha em qualquer das verificações aborta a requisição.
+
+Veja [Security Model](system/security.md) para configuração de políticas.
 
 ## Erros
 

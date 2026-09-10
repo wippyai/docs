@@ -1,12 +1,11 @@
 ---
 title: "ロギング"
-description: "構造化ログメッセージを書き込み、永続フィールドを持つ子ロガーを作成します。"
+description: "debug、info、warn、errorレベル付きの構造化ロギングを提供します。"
 ---
 
 # ロギング
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 `logger` モジュールは debug、info、warn、error レベルの構造化メッセージを書き込みます。
@@ -103,6 +102,10 @@ named:info("message")
 
 **戻り値:** `Logger`
 
-空の名前を指定すると Lua の引数エラーが発生します。構造化された `errors.INVALID` 値として返されるわけではありません。
+## エラー
+
+`logger:named("")` はエラー値を返す代わりに Lua の引数エラー（`name cannot be empty`）を送出します。ロギングメソッドは何も返しません。
+
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ログメソッドは構造化エラーを返しません。無効な引数型では Lua の引数エラーが発生します。実行コンテキストにロガーが接続されていない場合、モジュールは no-op ロガーを使用し、メッセージを破棄します。

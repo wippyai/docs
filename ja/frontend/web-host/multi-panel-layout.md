@@ -1,56 +1,58 @@
 ---
 title: "マルチパネルレイアウト"
-description: "Web Host の managed multi-panel layout を宣言・制御する early-access reference。"
+description: "マネージドレイアウトモードは、標準の Wippy クロームを完全に宣言的なパネルツリーへ置き換えます。固定のチャットとサイドバーのシェルの代わりに…"
 ---
 
 # マルチパネルレイアウト
 
-このページは early-access configuration/API reference です。YAML と TypeScript block は部分的な declaration/integration pattern であり、単体で production-ready shell ではありません。
+> **ステータス: Draft 1（プレビュー）— 早期アクセス、本番向けではありません。** マネージドレイアウトの API は出荷済みですが、本番のコンシューマーで十分に実戦検証されていません。フィールド名、デフォルト値、検証ルールはマイナーリリース間で変わる可能性があります。このラベルが外れるまでは、CDN の正確なバージョンにピン留めしてください。**ほとんどすべてのアプリケーションでは、標準の `compat` モードが推奨される本番モードです** — クローム自体を組み立てる必要が本当にあるときだけ、マネージドレイアウトに手を伸ばしてください。
 
-> **Status: Draft 1 preview — early access、production 非対応。** managed-layout API は利用できますが production consumer で未検証です。minor release 間で field、default、validation rule が変わる可能性があります。この label が外れるまで exact CDN version を pin し、host chrome 自体を compose する必要がなければ production では標準 `compat` mode を使ってください。
+マネージドレイアウトモードは、標準の Wippy クロームを完全に宣言的なパネルツリーへ置き換えます。固定のチャットとサイドバーのシェルの代わりに、名前付きパネルのツリーをバックエンドの YAML で記述します。Web ホストは起動時にレイアウトを組み立て、検証し、実行時にリアクティブに維持します。パネルはページのリロードなしにリサイズ、折りたたみ、入れ替え、追加、削除ができます。
 
-managed-layout mode は標準 Wippy chrome を declarative panel tree に置換します。backend YAML で named panel を定義し、Web Host が boot 時に layout を組み立てて検証し、runtime で reactive に維持します。page reload なしで resize、collapse、swap、add、remove ができます。
+## マネージドレイアウトを使うとき
 
-## Managed Layout を使う場面
+標準の `compat` モード（デフォルト）は、固定された Wippy プロダクト、すなわちナビサイドバー、チャットパネル、ページ領域、右のアーティファクトパネルを提供します。これは現行でもっとも使われている本番モードであり、ほとんどすべてのアプリケーションにとって十分です。
 
-標準 `compat` mode が production のデフォルトです。custom chrome composition が必要な場合だけ `fe_mode = managed` を選びます。
+`fe_mode = managed`（早期アクセス）にオプトインするのは、クローム自体を組み立てる必要があるときだけにしてください。
 
-| 要件 | Compat | Managed |
-|---|---|---|
-| 標準 chat + nav | はい | 置換可能 |
-| 複数 page slot | いいえ | はい |
-| custom sidebar/coordinator | 制限あり | はい |
-| breakpoint ごとの responsive layout | いいえ | はい |
-| floating overlay | いいえ | はい |
-| headless coordinator | いいえ | はい（`coordinators`） |
-| panel 単位 routing | main のみ | 全 `kind: page` |
-| cross-panel bus | いいえ | はい |
+| 必要なもの | Compat | Managed |
+|------|--------|---------|
+| 標準の Wippy チャット + ナビ | あり | 置き換え可能 |
+| 複数のページスロットを横並びに | 不可 | 可能 |
+| カスタムのサイドバーやコーディネーターコンポーネント | 限定的 | 可能 — 任意のパネル種別 |
+| ブレークポイントごとのレスポンシブレイアウト | 不可 | 可能 |
+| 浮動するオーバーレイパネル | 不可 | 可能 |
+| ヘッドレスのコーディネーターコンポーネント | 不可 | 可能（`coordinators`） |
+| パネルごとの URL 対応ルーティング | メインパネルのみ | すべての `kind: page` パネル |
+| パネル間のメッセージバス | 不可 | 可能（`broadcast`/`send`/`on`） |
 
 ## 互換性
 
-Web Host、facade、`@wippy-fe/*` package は exact release に対応する 1 family を使い、served import map を検証してください。無関係な release の version を混在させません。
+マネージドレイアウトは Web ホスト、ファサード、いくつかの `@wippy-fe/*` パッケージにまたがります。対象の Web ホストのリリースに正確に対応する、互換性のあるパッケージ群をひとそろい使い、その配信されるインポートマップを検証してください。無関係なリリースのパッケージバージョンを混ぜてはいけません。
 
 ### リリース対応表
 
-| リリース | Managed-layout の追加内容 |
+| リリース | マネージドレイアウトの追加点 |
 |---|---|
-| `1.0.50` / `0.0.50` | 型付き互換意図、コーディネーター、URL 同期、パネルタブ、フローティングパネル、`useSwapBuffer()` |
-| `1.0.51` / `0.0.51` | 競合に強いチャット制御、スプリッターハンドル、軸制約、ドロワー修正、プロキシソースマップ |
-| `1.0.52` / `0.0.52` | 保持された WC の可視性、即時準備完了、古いキーの拒否、インプレースのプロパティ更新、スプリッター層 |
-| `1.0.53` / `0.0.53` | 強制ライト・ダークモードで設定済みトークンを正しく伝播 |
-| `1.0.54` / `0.0.54` | サーフェスポータビリティ契約 v1 |
-| `1.0.55` / `0.0.55` | 管理対象のアーティファクト・チャット、コールドディープリンク、安定したアーティファクト、テーマ対応スプリッターハンドル |
-| `1.0.56` / `0.0.56` | アーティファクト・モーダル、アーティファクトを開いた理由、チャットセレクター・スロットのライフサイクル修正 |
+| Web ホスト `1.0.50`、Wippy FE `0.0.50` | 型付きの compat インテント、`@HOST/compat-coordinator`、ブラウザー URL と戻る／進むの同期、組み込みのパネルタブ、アンカー付きの浮動パネル、`useSwapBuffer()`。 |
+| Web ホスト `1.0.51`、Wippy FE `0.0.51` | リアクティブかつ競合状態に安全な `<wippy-chat>` のセッション／トークン制御、オプトインのテーマ対応スプリッターハンドル、分割軸のみのサイズ制約、ドロワーのジオメトリ／重なりの修正、同梱されたプロキシのソースマップ。 |
+| Web ホスト `1.0.52`、Wippy FE `0.0.52` | 型付きの保持 WC の可視性と `useHostVisibilityRefresh()`、14秒のフォールバックを待たない即時のページ準備完了、古いレンダラーキーの拒否、コンポーネント prop のインプレース更新、`--wippy-layout-splitter-z-index` を伴う分離されたスプリッターレイヤー。 |
 
-14 秒後のページ表示は 1.0.52 のフォールバックです。保持された直接 WC の可視性には Web Host 1.0.52 と core/vue/shared 0.0.52 以上が必要です。
+14秒のページ表示は Web ホスト `1.0.52` のフォールバックであり、1.0.51 の機能でもアプリケーションの読み込み遅延でもありません。分割軸のサイズ指定とリアクティブなチャットは 1.0.51 で入りました。保持された可視性、キー付きの準備完了、スプリッターのレイヤー化は 1.0.52 で入りました。
 
-### 保持された Web Component の動作
+保持された直接 Web コンポーネントの可視性には、Web ホスト `1.0.52` と、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`、`@wippy-fe/shared` の `0.0.52` が必要です。それ以前のマネージドレイアウトのリリースは、型付きの `data-wippy-visible` 契約も `useHostVisibilityRefresh()` も提供しません。
 
-panel は swap、breakpoint change、drawer cycle をまたいで mount を保持します。Host は direct custom element の接続前に `data-wippy-visible="true" | "false"` を設定し、logical ownership の変更時に in-place update します。CSS/viewport/document visibility ではなく remount も意味しません。Vue は `useHostVisibility()`、または mount 後と exact `false -> true` reveal 時だけ task を動かす `useHostVisibilityRefresh(task)` を使います。direct WC では iframe/Fragment channel の proxy `@visibility` を使いません。この reference は `webcomponents-1.0.56` と package `0.0.56` を基準にします。
+### 保持された Web コンポーネントのアクティビティ
 
-## Managed Layout の有効化
+マネージドレイアウトは、バッファーの入れ替え、ブレークポイントの変更、ドロワーの開閉サイクルをまたいでパネルをマウントしたまま保ちます。ホストは、直接のカスタム要素を接続する前に `data-wippy-visible="true" | "false"` を設定し、論理的な所有権が変わったときにその場で更新します。これは CSS、ビューポート、ドキュメントの可視性ではなく、再マウントを意味することもありません。
 
-facade で managed entry を有効にし、backend `host_config.layout` を指定します。
+Vue コンポーネントは `useHostVisibility()` でこの状態を読むか、`useHostVisibilityRefresh(task)` によって通常の初期読み込みと再表示時のリフレッシュを組み合わせます。後者はマウント後に実行され、その後は厳密な `false -> true` のときにのみ実行されます。直接の WC でプロキシの `@visibility` トピックを使ってはいけません。それは iframe / Web Fragment のメッセージチャネルです。
+
+Draft 1 のラベルが外れるまでは、CDN の正確なタグ — 少なくとも `https://web-host.wippy.ai/webcomponents-1.0.52` — にピン留めしてください。
+
+## マネージドレイアウトの有効化
+
+ファサードの設定でマネージドのエントリを有効にし、バックエンドの `host_config.layout` 宣言を用意します。
 
 ```yaml
 host_config:
@@ -69,52 +71,54 @@ host_config:
       main: { kind: page,    id: home }
 ```
 
-facade は `module.js` の代わりに `managed-layout.js` を配信します。`fe_mode` は facade requirement parameter（default `compat`）で、`AppConfig` 内ではありません。layout は `AppConfig.hostConfig.layout` で child に伝わります。API surface は両 mode で同じですが効果は異なります。
+マネージドのエントリが選択されると、ファサードは `module.js` の代わりに `managed-layout.js` を配信します。`fe_mode` は現行のファサードの要件パラメーター（デフォルト `compat`、オプトインで `managed`）であり、`wippy.facade` の requirement に設定するもので、`AppConfig` のペイロードには含まれません。`AppConfig.feature` フィールドは存在しません — マネージドレイアウトは完全に `AppConfig.hostConfig.layout` を通じて子へ伝えられます。プロキシ API の*サーフェス*は両モードで同一ですが、一方のモードでしか効かないコマンドもあります — [どのモードで何が動くか](#what-works-in-which-mode) を参照してください。
 
 ## `HostLayoutDeclaration`
 
-backend `host_config.layout` から frontend `AppConfig.hostConfig.layout` へ投影される単一 object です。mount 前に検証され、`LayoutValidationError` は `{ kind, message, panelId? }` とともに console に出ます。
+レイアウト全体は、ファサード設定のバックエンド `host_config.layout` の下に入れ子になった単一の `HostLayoutDeclaration` オブジェクトで記述され、フロントエンドの `AppConfig.hostConfig.layout` へ投影されます。ホストはマウント前にこれを検証します — `LayoutValidationError` はブラウザーのコンソールに `{ kind, message, panelId? }` として現れます。
 
 | フィールド | 型 | 説明 |
-|---|---|---|
-| `layouts` | `Record<string, PanelTree> & { default: PanelTree }` | breakpoint-keyed tree。`default` 必須 |
-| `breakpoints?` | `Record<string, number>` | non-default key を有効にする pixel width |
-| `panels` | `Record<string, HostPanelDef>` | named panel content |
-| `floating?` | `Record<string, HostFloatingDef>` | boot-time overlay |
-| `modals?` | `Record<string, HostModalDef>` | boot-time modal |
-| `coordinators?` | `Record<string, HostCoordinatorDef>` | headless coordinator |
-| `services?` | 同上 | deprecated alias |
-| `dragEnabled?` | boolean | splitter drag。default `true` |
+|-------|------|-------------|
+| `layouts` | `Record<string, PanelTree> & { default: PanelTree }` | ブレークポイントをキーとしたパネルツリー。`default` キーは必須です。 |
+| `breakpoints?` | `Record<string, number>` | default 以外のレイアウトキーを有効化するピクセル幅。 |
+| `panels` | `Record<string, HostPanelDef>` | 名前付きのパネルコンテンツ定義。 |
+| `floating?` | `Record<string, HostFloatingDef>` | 起動時の浮動オーバーレイパネル。 |
+| `modals?` | `Record<string, HostModalDef>` | 起動時のモーダル定義。 |
+| `coordinators?` | `Record<string, HostCoordinatorDef>` | ヘッドレスのコーディネーターコンポーネント。 |
+| `services?` | `Record<string, HostCoordinatorDef>` | `coordinators` の非推奨エイリアス。新しい宣言では `coordinators` を使ってください。 |
+| `dragEnabled?` | boolean | ユーザーによるスプリッターのドラッグを許可します。デフォルトは `true`。 |
 
-## パネル種別
+## パネルの種別
 
-| 種別 | 説明 | 必須 |
-|---|---|---|
-| `page` | iframe/Fragment engine の Wippy page | `id` |
-| `artifact` | host resolver の artifact | `id` |
-| `component` | host DOM の web component | `tagName` |
-| `builtin` | framework-owned component | `id` |
+`panels`、`floating`、`modals`、`coordinators` の各エントリは、`kind` によるタグ付きユニオンです。
 
-tree 内 exactly one panel に `main: true` が必要です。browser URL ownership には `@HOST/compat-coordinator` 等の route sync が必要です。
+| 種別 | 説明 | 必須フィールド |
+|------|-------------|-----------------|
+| `page` | srcdoc iframe にマウントされる Wippy のページモジュール | `id`（ページのレジストリ ID） |
+| `artifact` | srcdoc iframe にマウントされる Wippy のアーティファクト | `id`（アーティファクトの UUID） |
+| `component` | ホストの DOM へ直接マウントされる Web コンポーネント | `tagName` |
+| `builtin` | フレームワークが所有するホストコンポーネント（下記参照） | `id` |
 
-### 組み込みパネル ID
+レイアウトツリー内で `main: true` を持つパネルはちょうど1つでなければなりません。ブラウザー URL の所有権には、`@HOST/compat-coordinator` または同等のコンシューマー側の調整によるルート同期が引き続き必要です。他のすべてのパネルは、自身の iframe 内で独立してルーティングします。
 
-`@HOST/` は framework-owned panel 用です。
+### 組み込みのパネル ID
 
-| ID | 描画 |
-|---|---|
-| `@HOST/nav-sidebar` | 標準 nav sidebar |
-| `@HOST/chat-wrapper` | active session chat |
-| `@HOST/artifact-viewer` | artifact viewer |
-| `@HOST/session-selector` | session picker |
-| `@HOST/compat-coordinator` | headless intent/route coordinator |
-| `@HOST/panel-tab` | collapsed panel reveal tab |
+`kind: builtin` は次の `id` 値を受け付けます。`@HOST/` プレフィックスはフレームワークが所有するパネル用に予約されています。
 
-未知の `@HOST/<id>` は `LayoutValidationError` になります。
+| ID | 描画されるもの |
+|----|-----------------|
+| `@HOST/nav-sidebar` | 標準の Wippy ナビサイドバー（セッション、ページ、設定） |
+| `@HOST/chat-wrapper` | アクティブなセッション向けの標準 Wippy チャットパネル |
+| `@HOST/artifact-viewer` | 汎用のアーティファクトビューアー（ルート `/:uuid` と組み合わせます） |
+| `@HOST/session-selector` | セッションの一覧と選択 |
+| `@HOST/compat-coordinator` | ヘッドレスの compat インテントおよびメインルートのコーディネーター。`coordinators` の下に宣言します |
+| `@HOST/panel-tab` | 折りたたまれたパネルを開くための端のタブ。`floating` の下に宣言します |
 
-## breakpoint 別レイアウト
+未知の `@HOST/<id>` は、空のスロットを黙って描画するのではなく、宣言の読み込み時に `LayoutValidationError` を起こします。
 
-`default` は常に存在し、より狭い breakpoint が一致したとき切り替わります。
+## ブレークポイントをキーとしたレイアウト
+
+`layouts` フィールドは、ブレークポイントのキーをパネルツリーへマッピングします。より狭いブレークポイントが一致しない限り、常に `default` が使われます。ブレークポイントのピクセル幅は `breakpoints` の下で定義します。
 
 ```yaml
 host_config:
@@ -144,13 +148,22 @@ host_config:
       main: { kind: page, id: app-home,    route: / }
 ```
 
-同じ `id` の panel は stable content host を維持し、iframe、WC/Vue state、scroll position を保持します。iframe を reload する reparenting は避けます。
+ブレークポイントが変わると、同じ `id` のパネルは、親を付け替えることなくアクティブなスロットを視覚的に追う、1つの安定したコンテンツホストを保ちます。iframe の `contentWindow`、Web コンポーネントの状態、Vue の状態、スクロール位置は遷移をまたいで保たれます。Teleport による親の付け替えは意図的に避けられています。iframe を取り除いて挿入し直すと再読み込みされてしまうためです。
 
-### drawer モードのパネル
+### ドロワーモードのパネル
 
-`display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` は overlay drawer を作ります。track sizing に参加せず、edge に absolute position、layout API で開閉し、backdrop click で全 drawer を閉じます。`main: true` は禁止。左右は `drawerSize.width`、bottom は `height`、default は `320px`。
+パネルのスロットは `display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` を宣言して、インラインの flex アイテムではなくスライドインのオーバーレイとして描画できます。ドロワーパネルは:
 
-## フローティングパネル
+- 親コンテナのトラックのサイズ計算に参加しません（`size` は無視されます）
+- 指定した端に固定された絶対配置のオーバーレイとして描画されます
+- `host.layout.openDrawer(id)` / `closeDrawer(id)` / `toggleDrawer(id)` で切り替わる開閉状態を持ちます
+- 開いているときは背景を表示し、背景をクリックすると開いているすべてのドロワーが閉じます
+
+`main: true` のスロットはドロワーモードにできません — ホストの検証が例外を投げます。左右のドロワーの幅は `drawerSize.width` フィールドで、下のドロワーの高さは `drawerSize.height` で制御します。デフォルトは `320px` です。
+
+## 浮動パネル
+
+浮動パネルは `floating` の下に宣言される、自由に配置されるオーバーレイです。flex のレイアウトツリーには参加せず、実行時に追加・削除できます。
 
 ```yaml
 floating:
@@ -161,8 +174,9 @@ floating:
     size: { width: 48, height: 80 }
 ```
 
+実行時の管理:
 ```typescript
-// Add a floating panel
+// 浮動パネルを追加する
 host.layout.addFloating('inspector', {
   kind: 'component',
   tagName: 'my-inspector',
@@ -170,13 +184,13 @@ host.layout.addFloating('inspector', {
   size: { width: 400, height: 300 },
 })
 
-// Remove it
+// 削除する
 host.layout.removeFloating('inspector')
 ```
 
-## ヘッドレスコーディネーター
+## ヘッドレスのコーディネーター
 
-hidden host に mount され、panel-scoped API を受け取る component です。
+コーディネーターは、隠されたホストへマウントされるコンポーネントです。目に見えるスロットは持ちませんが、パネルスコープのホスト API を受け取ります。横断的なロジックに使うことで、表示用のパネルは描画に集中できます。古い `services` フィールドは非推奨の互換エイリアスとして残っています。
 
 ```yaml
 coordinators:
@@ -185,30 +199,27 @@ coordinators:
     tagName: my-coordinator
 ```
 
+コーディネーターのコンポーネントはパネルスコープのホストラッパーを受け取り、`onMount` の中で即座にバスのチャネルを購読できます。
+
 ```typescript
 import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class MyCoordinator extends WippyElement {
-  private offOpenChat: (() => void) | null = null
-
   protected onMount() {
-    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
+    this.host?.layout.on('open-chat', ({ payload }) => {
       this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
       this.host?.layout.expandPanel('right')
-    }) ?? null
+    })
   }
-  protected onUnmount() {
-    this.offOpenChat?.()
-    this.offOpenChat = null
-  }
+  protected onUnmount() {}
   static get wippyConfig() { return { propsSchema: { properties: {} } } }
 }
 customElements.define('my-coordinator', MyCoordinator)
 ```
 
-### 同梱の compat coordinator
+### 同梱の compat コーディネーター
 
-managed layout は宣言済み surface だけを持つため compat command は `@HOST/intent` に typed intent を publish します。次を宣言して browser URL と main panel も bind します。
+マネージドレイアウトには、宣言されたサーフェスしか存在しません。したがって `host.openArtifact()`、`host.startChat()`、`host.openSession()`、`host.navigate()` といった呼び出しは、予約チャネル `@HOST/intent` に型付きのインテントを発行します。それらに対処し、ブラウザー URL をメインパネルへ束ねるために、同梱のコーディネーターを宣言してください。
 
 ```yaml
 coordinators:
@@ -223,89 +234,95 @@ coordinators:
       wsActions: true
 ```
 
-標準 navigation contract では `routeSync: true` を保ちます。coordinator がなければ deep link、Back/Forward、sidebar navigation を panel route に反映できません。boot 中の intent は最初の subscriber まで bounded queue に保持されます。`@HOST/` traffic は ordinary panel から偽装できません。ただし host realm の direct component は security sandbox ではありません。boot parity table が不足を警告します。
+標準のナビゲーション契約を使う場合は `routeSync: true` を維持してください。コーディネーターも同等のコンシューマー側ロジックもない場合、ディープリンク、戻る／進む、`@HOST/nav-sidebar` のナビゲーションには、駆動すべきパネルのルートがありません。子の起動中に発生したインテントは、最初のコーディネーターが購読するまで上限付きのキューに保持されます。
 
-## タブ内ブロードキャストバス
+`@HOST/` は双方向に予約されています。通常のパネルはシステムのトラフィックを発行できず、それを受け取れるのはサポートされたホスト API を通じた `coordinators` 配下のエントリだけです。この境界は iframe / Web Fragment のパネルに対して強制されます。ホストのレルムへ直接マウントされたコンポーネントはホストの DOM を共有しており、セキュリティサンドボックスではありません。起動時、コーディネーターの処理、モーダルの対象サーフェス、メインパネルの URL バインド、宣言されたコーディネーターのタグのいずれかが欠けていると、ホストは対応表を出力します。完全な宣言であれば警告は出ません。
 
-current browser tab 内だけで通信します。multi-tab は custom WebSocket topic を使います。
+## タブ内のブロードキャストバス
+
+パネルは、現在のブラウザータブにスコープされたバスを通じて通信します。バスが他のタブへ渡ることはありません — マルチタブ同期が必要なら、カスタムの WebSocket トピックを使ってください。
 
 | メソッド | 説明 |
-|---|---|
-| `broadcast` | 全 panel（sender 除外） |
-| `send` | 特定 panel |
-| `on` | subscribe、`off()` を返す |
+|--------|-------------|
+| `host.layout.broadcast(channel, payload)` | すべてのパネルへ発行します。送信者は除外されます |
+| `host.layout.send(targetPanelId, channel, payload)` | 特定の1つのパネルへ発行します |
+| `host.layout.on(channel, handler)` | 購読します。購読解除の `off()` 関数を返します |
 
-`sourcePanelId` は host が設定し spoof 不可です。direct import の `host` は panel scope を失うため、component は scoped wrapper を使います。
+受信メッセージの `sourcePanelId` は、発行元のウィンドウからホストが設定するもので、偽装できません。チャネル名は大文字小文字を区別する素の文字列です。
+
+**重要:** `@wippy-fe/proxy` から `host` を直接 import するコンポーネントは、パネルスコープを迂回します — バスの呼び出しは通りますが `sourcePanelId` を失います。代わりに常にパネルスコープのラッパーを使ってください。
 
 ```typescript
-// raw HTMLElement
+// 素の HTMLElement
 import { getWippyHost } from '@wippy-fe/webcomponent-core'
 const host = getWippyHost(this)
 
-// WippyElement subclass — this.host is already panel-scoped
+// WippyElement のサブクラス — this.host はすでにパネルスコープ
 this.host?.layout.broadcast('open-chat', { token: 'abc' })
 
-// Vue component
+// Vue コンポーネント
 import { useHost } from '@wippy-fe/webcomponent-vue'
-// ProxyApiInstance is an ambient global type (from @wippy-fe/types-global-proxy) — reference it without an import.
+// ProxyApiInstance はアンビエントのグローバル型（@wippy-fe/types-global-proxy 由来）— import せずに参照する。
 const host = useHost<ProxyApiInstance['host']>()
 host?.layout.broadcast('open-chat', { token: 'abc' })
 ```
 
-## Layout API リファレンス（`host.layout`）
+## レイアウト API リファレンス (`host.layout`)
 
 | メソッド | 説明 |
-|---|---|
-| `.snapshot` | full layout snapshot を同期的に返す。managed-layout 外では `null` |
-| `.resizePanel(id, size)` | active breakpoint の named panel を resize |
-| `.collapsePanel(id)` | `collapsible: true` の panel を collapse |
-| `.expandPanel(id)` | collapsed panel を expand |
-| `.openDrawer(id)` | drawer-mode panel を開く |
-| `.closeDrawer(id)` | drawer-mode panel を閉じる |
-| `.toggleDrawer(id)` | drawer-mode panel を切り替える |
-| `.movePanel(id, target)` | panel を新しい tree position へ移動 |
-| `.removePanel(id)` | 全 breakpoint layout から panel を削除 |
-| `.updatePanel(id, def)` | runtime で panel definition を patch。`props` は shallow-merge、ほかは replace |
-| `.addFloating(id, def)` | floating panel を追加する |
-| `.removeFloating(id)` | floating panel を削除する |
-| `.openModal(id, def)` | modal を開く。public 0.0.56 API は `def` 必須で、同 id の declaration に merge。default は native `<dialog>.showModal()`、`useNativeDialog: false` で legacy overlay。open 済み id は no-op |
-| `.closeModal(id)` | open modal を閉じる |
-| `.broadcast(channel, payload)` | 全 panel へ publish |
-| `.send(target, channel, payload)` | 1 panel へ publish |
-| `.on(channel, handler)` | bus channel を subscribe |
+|--------|-------------|
+| `.snapshot` | レイアウトのスナップショット全体を返す同期ゲッター。マネージドレイアウトモード外では `null` |
+| `.resizePanel(id, size)` | アクティブなブレークポイントで、指定したパネルをリサイズします |
+| `.collapsePanel(id)` | `collapsible: true` と宣言されたパネルを折りたたみます |
+| `.expandPanel(id)` | 折りたたまれたパネルを展開します |
+| `.openDrawer(id)` | ドロワーモードのパネルを開きます |
+| `.closeDrawer(id)` | ドロワーモードのパネルを閉じます |
+| `.toggleDrawer(id)` | ドロワーモードのパネルを切り替えます |
+| `.movePanel(id, target)` | パネルをツリーの新しい位置へ移動します |
+| `.removePanel(id)` | すべてのブレークポイントのレイアウトからパネルを削除します |
+| `.updatePanel(id, def)` | 実行時にパネル定義へパッチを当てます。`props` は浅くマージされ、トップレベルのフィールドは置き換えられます |
+| `.addFloating(id, def)` | 浮動パネルを追加します |
+| `.removeFloating(id)` | 浮動パネルを削除します |
+| `.openModal(id, def?)` | 宣言済みのモーダルを id で開きます。任意でその定義を上書きできます。実行時のみのモーダルには `def` が必要です。デフォルトはネイティブの `<dialog>.showModal()` で、レガシーな div のオーバーレイにするには `useNativeDialog: false` を渡します。すでに開いている id を再度開くのは黙って何もしません。 |
+| `.closeModal(id)` | 開いているモーダルを閉じます |
+| `.broadcast(channel, payload)` | すべてのパネルへ発行します |
+| `.send(target, channel, payload)` | 1つのパネルへ発行します |
+| `.on(channel, handler)` | バスのチャネルを購読します |
 
-`openModal()` は host-internal layout infrastructure の説明で、application component recipe ではありません。Vue product UI は custom native-dialog styling を複製せず、PrimeVue `Dialog` または host confirmation API を使います。
+`openModal()` はホスト内部のレイアウト基盤を文書化したものであって、アプリケーションコンポーネントのレシピではありません。出荷される Vue のプロダクト UI は、このネイティブダイアログの挙動をカスタムのモーダルスタイルで複製するのではなく、PrimeVue の `Dialog` かホストの確認 API を使うべきです。
 
-### `updatePanel` のマージセマンティクス
+### `updatePanel` のマージのセマンティクス
 
-`props` は shallow-merge、それ以外の top-level field は wholesale replace です。
+`host.layout.updatePanel(id, def)` は既存のパネル定義へパッチを当てるもので、置き換えではありません。`props` オブジェクトはパネルの現在の props へ**浅くマージ**されます。与えたキーは追加または上書きされ、省略したキーは保持されます。`def` の**それ以外の**トップレベルのフィールド（`route`、`kind`、`id`、`tagName`、`title`、`icon` など）は、現在の値をまるごと**置き換えます**。
+
+現在の props が `{ artifactId: 'old', zoom: 2 }` であるパネルの場合:
 
 ```typescript
-// props shallow-merges → { artifactId: 'abc', zoom: 2 }
+// props は浅くマージされる → { artifactId: 'abc', zoom: 2 }
 host.layout.updatePanel('right', { props: { artifactId: 'abc' } })
 
-// route replaces wholesale; props left untouched
+// route はまるごと置き換わる。props はそのまま
 host.layout.updatePanel('right', { route: '/x' })
 ```
 
-nested object は replace され、prop key は削除できず overwrite のみです。
+注意点が2つあります。props のマージは**浅い**ため、`props` の中の入れ子オブジェクトは深くマージされずまるごと置き換わります。また浅いマージでは prop のキーを削除できません（上書きしかできません）。
 
-## Vue composable — `@wippy-fe/vue-host`
+## Vue のコンポーザブル — `@wippy-fe/vue-host`
 
-これらの composable は proxy layout API を reactive な Vue 3 ref でラップします。基盤の subscription は module scope にあり、iframe の存続期間中維持されるため、component の unmount ごとの cleanup はありません。
+これらのコンポーザブルは、プロキシのレイアウト API を Vue 3 のリアクティブな ref で包みます。背後の購読はモジュールスコープで iframe の生存期間中続くため、アンマウント時のコンポーネントごとの後片付けはありません。
 
-| コンポーザブル | 戻り値 |
-|------------|--------|
-| `useWippyLayout()` | layout state と変更メソッド全体 |
-| `useWippyPanel(panelId)` | 指定した panel の live state（`panelId` は必須で、`string`、`Ref<string>`、getter のいずれか） |
-| `useWippyBreakpoint()` | active breakpoint 名の reactive ref |
-| `useWippyMainRoute()` | main panel の現在の route を表す reactive ref |
+| コンポーザブル | 返すもの |
+|------------|---------|
+| `useWippyLayout()` | レイアウトの完全な状態とミューテーションのメソッド |
+| `useWippyPanel(panelId)` | 指定パネルのライブ状態（`panelId` は必須で `string`、`Ref<string>`、または getter） |
+| `useWippyBreakpoint()` | リアクティブな ref としてのアクティブなブレークポイント名 |
+| `useWippyMainRoute()` | メインパネルの現在のルートへのリアクティブな ref |
 
-composable 自体は `null` を返しません。managed-layout host がない場合は内部の `.value` が低機能状態になります。`useWippyLayout().snapshot.value` は `null`（`isManaged.value` は `false` で、変更操作は何もしません）、`useWippyBreakpoint().value` と `useWippyMainRoute().value` は空文字列、存在しない ID に対する `useWippyPanel(id).value` は `null` です。戻り値を `=== null` で確認するのではなく、`layout.isManaged.value`（または `layout.snapshot.value !== null`）で host の存在を確認してください。
+これらのコンポーザブルは決して `null` を返しません — 常にオブジェクト／ref を返し、マネージドレイアウトのホストが存在しない場合はその内側の `.value` が縮退します。`useWippyLayout().snapshot.value` は `null`（かつ `isManaged.value` は `false` なので、ミューテーションは黙って何もしません）、`useWippyBreakpoint().value` と `useWippyMainRoute().value` は空文字列、id が存在しない場合の `useWippyPanel(id).value` は `null` です。ホストの有無は、戻り値に対する `=== null` の判定ではなく `layout.isManaged.value`（または `layout.snapshot.value !== null`）でガードしてください。これにより、マネージドレイアウトのホストがない単体のプレイグラウンドやユニットテストでもコンポーザブルを使えます。
 
-## 再マウントしない swap buffering
+## 再マウントなしのスワップバッファリング
 
-`useSwapBuffer()` は incoming content readiness まで outgoing surface を維持します。immutable `slot.index` を DOM key にし、index と content key の両方を readiness call に渡します。
+`@wippy-fe/layout` の `useSwapBuffer()` は、入ってくるコンテンツが準備完了を報告するまで、出ていくサーフェスをマウントしたまま保ちます。明示的なタイムアウトの上限付きです。DOM のキーには不変の `slot.index` を使い、古い非同期シグナルが拒否されるよう `markReady()` / `markFailed()` にはインデックスとコンテンツキーの両方を渡し、エラーはバッファーごとにスコープしてください。コンテンツの同一性は `keyOf` に属します。DOM のキーを変えると iframe が挿入し直され、バッファリングが保とうとしている状態が破壊されます。
 
 ```typescript
 const swap = useSwapBuffer<Surface>({
@@ -318,108 +335,118 @@ const swap = useSwapBuffer<Surface>({
 
 const slot = swap.push(surface)
 swap.markReady(slot.index, slot.key)
-// or: swap.markFailed(slot.index, error, slot.key)
+// または: swap.markFailed(slot.index, error, slot.key)
 ```
 
-timeout は stale content を残さず content を reveal します。loading UI は `swap.showLoader` に bind。failed buffer は sibling から分離し、retry 前に `clearError(index)`。
+示されている値はデフォルトです。準備完了のタイムアウトは、古いコンテンツをローダーの裏に残すのではなく、デフォルトでコンテンツを表示します。読み込み中の UI は、準備完了に直接ではなく `swap.showLoader` にバインドしてください。失敗したバッファーは兄弟から分離されたままです。エラーを処理したら、再試行のために `clearError(index)` を呼んでください。
 
-### Web Host ページの準備完了
+### Web ホストのページ準備完了
 
-Host も keyed readiness と 14 秒の最終 ceiling を使い、painted content は即時 reveal、ceiling は report しない content の fallback だけです。late stale event は拒否します。application loading delay として timer を追加しないでください。
+Web ホストは、マネージドのページサーフェスに対して同じキー付きの準備完了の規律を、14秒の最終表示の上限とともに用います。iframe と直接 Web コンポーネントのレンダラーは、Vue のイベントリスナーを通じて `load` / `error` を送出し、そのレンダラーが所有する不変のコンテンツキーを含めます。したがって描画されたコンテンツは即座に表示され、上限は報告を行わないコンテンツのためのフォールバックにすぎません。追い出されたレンダラーからの遅れて届くイベントは、そのバッファーインデックスがすでに再利用されている場合に拒否されます。
 
-### 安定したコンポーネント更新とパネルサイジング
+14秒のホスト側の上限をアプリケーションの読み込み遅延として使わないでください。また通常のページの準備完了の周りに2つ目のタイマーを追加しないでください。日常的に上限へ達するページは、準備完了かライフサイクルの経路が壊れており、その所有者のところで直すべきです。
 
-component の prop change は既存 element の attribute を update/remove し、`tagName` 変更時だけ element を置換します。`minSize`/`maxSize` は active split axis だけを制限。drawer content は remount せず open 時だけ前面化します。
+### 安定したコンポーネントの更新とパネルのサイズ指定
 
-## Splitter とハンドルのスタイル
+`kind: component` では、パネルの `props` を変更すると既存のカスタム要素の属性が更新または削除されます。ホストが要素を差し替えるのは `tagName` が変わったときだけです。これにより、`updatePanel()` の呼び出し中やブレークポイントの遷移中も、要素が所有する状態が保たれます。
 
-splitter layer は default z-index `700`。handle は opt-in です。
+`minSize` と `maxSize` は、アクティブな分割軸のみを制約します。水平ツリーでは幅、垂直ツリーでは高さです。交差軸は制限しないため、ナビゲーション、チャット、その他の全高のマウントは自身のトラックを埋められます。ドロワーのマウントはアニメーションするドロワーのジオメトリに従い、開いている間だけ、コンテンツを再マウントすることなくアンカーと背景の上へ引き上げられます。
+
+## スプリッターとハンドルのスタイル
+
+スプリッターの当たり判定は目に見える線より広く、パッケージの分離されたレイヤースタックに存在します。`--wippy-layout-splitter-z-index` のデフォルトは `700` で、ドロワーやモーダルの背景より下です。円形のハンドルはオプトインです。
 
 | 変数 | デフォルト | 目的 |
 |---|---|---|
-| `--wippy-layout-splitter-size` | `1px` | line thickness |
-| `--wippy-layout-splitter-hit-size` | `10px` | hit area、coarse pointer は `24px` |
-| `--wippy-layout-splitter-z-index` | `700` | layer |
-| `--wippy-layout-splitter-handle-size` | `0` | diameter、`0` で無効 |
-| `--wippy-layout-splitter-handle-bg` | `transparent` | fill |
-| `--wippy-layout-splitter-handle-border` | `0 solid transparent` | border |
-| `--wippy-layout-splitter-handle-shadow` | `none` | shadow |
-| `--wippy-layout-splitter-handle-icon-color` | `transparent` | SVG color |
+| `--wippy-layout-splitter-size` | `1px` | 目に見えるスプリッター線の太さ |
+| `--wippy-layout-splitter-hit-size` | `10px` | 線の周囲のポインター当たり判定。粗いポインターでは `24px` |
+| `--wippy-layout-splitter-z-index` | `700` | スプリッターとハンドルのレイヤー |
+| `--wippy-layout-splitter-handle-size` | `0` | ハンドルの直径。`0` で無効 |
+| `--wippy-layout-splitter-handle-bg` | `transparent` | ハンドルの塗り |
+| `--wippy-layout-splitter-handle-border` | `0 solid transparent` | border のショートハンド |
+| `--wippy-layout-splitter-handle-shadow` | `none` | ハンドルの影 |
+| `--wippy-layout-splitter-handle-icon-color` | `transparent` | `currentColor` によるテーマ対応の SVG 色 |
 
-opt-in 時は size/fill/border/shadow/icon を一緒に設定します。
+オプトインする際は、サイズ、塗り、border／影、アイコン色をまとめて設定してください。SVG は垂直スプリッターでは90度回転し、ロックされた分割では非表示のままです。
 
-## モードごとの効果 :id=what-works-in-which-mode
+## どのモードで何が動くか
 
-### `host.layout` が効くのは managed モードのみ
+プロキシ API の*サーフェス*は compat とマネージドで同一です — 同じ `@wippy-fe/proxy` の import が両方で解決されます — が、そのうち2つの部分は**効果がモード依存**です。この食い違いは、アプリをマネージドレイアウトへ移すときにもっとも注意すべき点であり、マネージドがまだ早期アクセスである理由でもあります。
 
-layout 未宣言の compat mode では `snapshot` は null、全 mutation/bus call は silent no-op です。
+### `host.layout` はマネージドモードでのみ効果がある
+
+ホストがレイアウトのレシーバーをインストールするのは、**レイアウトが宣言されている場合だけ**です（`hostConfig.layout` によってゲートされるマネージドのエントリ）。compat モードでも `host.layout` は存在しますが、`host.layout.snapshot` は `null` であり、すべてのミューテーションとバスの呼び出し（`resizePanel`、`updatePanel`、`movePanel`、`openModal`、`addFloating`、`broadcast`、`send`、`on` など）は**黙って何もしません** — メッセージは送られますが、ホスト側で誰も待ち受けていません。ミューテーションの前にスナップショットでゲートしてください。
 
 ```typescript
 if (host.layout.snapshot) {
-  host.layout.updatePanel('right', { route: '/details' })   // managed only
+  host.layout.updatePanel('right', { route: '/details' })   // マネージド専用
 }
 // Vue: const { isManaged } = useWippyLayout(); if (isManaged.value) { … }
 ```
 
-`addPanel` / `setLayout` はどちらの mode でも proxy に未公開です。
+（これとは別の軸として、`addPanel` と `setLayout` はどちらのモードでもプロキシ越しに*まったく*公開されていません。[既知の制限](#known-limitations) を参照してください。）
 
-### Compat shell を前提とする `host.*` コマンド
+### compat のシェルを前提とする `host.*` コマンド
 
-managed shell は宣言済み layout だけを render します。compat chrome を対象とする command は typed `@HOST/intent` を publish し、`@HOST/compat-coordinator` または同等の coordinator が panel へ対応付けます。
+マネージドのシェルは**宣言されたレイアウトだけ**を描画します。Web ホスト 1.0.50 以降、通常なら compat のクロームを対象とするコマンドは、黙って失敗する代わりに型付きの `@HOST/intent` メッセージを発行します。それらのインテントを自分のパネルへ対応付けるには、`@HOST/compat-coordinator` を宣言するか、同等のコーディネーターを実装してください。
 
-| `host.*` コマンド | Compat | Managed |
+| `host.*` コマンド | Compat（デフォルト） | Managed |
 |---|---|---|
-| `setContext`、`toast`、`confirm`、`handleError`、`logout`、`bridge.*`、top-level `state` / `ws` / `on` | 動作 | global toast/confirm surface を含め直接動作 |
-| `openArtifact(id, ...)` | right panel または modal で開く | intent を publish。coordinator が `artifactPanel` / `modalId` を選ぶ |
-| `startChat(token)` / `openSession(uuid)` | session を開く | intent を publish。coordinator が token を解決し `chatPanel` を更新 |
-| `navigate(url)` | compat root router を push | intent を publish。`routeSync` が main panel と browser history を同期 |
-| `onRouteChanged(route, navId?)` | host browser URL を駆動 | panel route state を更新し、`routeSync` が main route を browser URL に投影 |
+| `setContext`、`toast`、`confirm`、`handleError`、`logout`、`bridge.*`、トップレベルの `state` / `ws` / `on` | 動作します | 直接動作します。マネージドはグローバルなトーストと確認のサーフェスをマウントします |
+| `openArtifact(id, ...)` | 右パネルまたはモーダルで開きます | インテントを発行します。compat コーディネーターが `artifactPanel` または `modalId` を対象にします |
+| `startChat(token)` / `openSession(uuid)` | セッションを開いて表示します | インテントを発行します。compat コーディネーターが開始トークンを解決し、宣言された `chatPanel` を更新します |
+| `navigate(url)` | compat のルートルーターへ push します | インテントを発行します。`routeSync` がそれをメインパネルへ適用し、ブラウザー履歴との整合を保ちます |
+| `onRouteChanged(route, navId?)` | ホストのブラウザー URL を駆動します | パネルのルート状態を更新します。`routeSync` がメインパネルのルートをブラウザー URL へ投影します |
 
-coordinator がまだなければ boot-time intent は最初の subscription まで bounded queue に保持されます。handler 不在は boot parity table が報告し、reserved intent は `coordinators` entry だけが読めます。
+コーディネーターがまだ利用できない場合、起動時のインテントは最初のコーディネーターの購読まで上限付きのキューに保持されます。ハンドラーのない宣言は、起動時の対応表で報告されます。予約されたインテントは `coordinators` のエントリだけが読め、通常のパネルが偽造することはできません。
 
-## 状態管理
+## 状態管理のアプローチ
 
-次の 3 tier を順に使います。
+優先順位の高い順に3つの層があります。
 
-**Route** — bookmark/share できる state。各 `kind: page` panel は自身の router と `@history` event を使います。
+**ルート** — ユーザーがその状態をブックマークしたり共有したりすることに意味があるなら、URL に入れてください。各 `kind: page` パネルは自身のルーターを動かし、`@history` イベントに反応します。これは疎結合で、ディープリンク可能で、ブラウザー履歴を意識したやり方です。
 
-**Layout snapshot** — size、collapsed flag、component props など layout shape に関わる state。`updatePanel` / `resizePanel` を使い、全 subscriber に届くため payload は小さくします。
+**レイアウトのスナップショット** — レイアウトの形（サイズ、折りたたみのフラグ、コンポーネントの props）に影響するなら、`updatePanel` や `resizePanel` を通じてスナップショットに入れてください。購読しているすべてのパネルがすべてのスナップショットの変更を見るため、ペイロードは小さく保ってください。
 
-**Panel-local** — form draft、modal state、transient UI。panel 自身の Pinia store/ref に留めます。
+**パネルローカル** — それ以外のすべて（フォームの下書き、モーダルの状態、一時的な UI）は、パネル自身の Pinia ストアや ref の中に留め、パネルの外へ出しません。
 
-## 標準のコーディネーションパターン :id=canonical-coordination-pattern
+## 正典の調整パターン
 
-bus event → coordinator → `updatePanel` → panel router の順です。
+パネル間のやり取りに推奨されるパターンは、バスのイベント → コーディネーターのサービス → `updatePanel` → パネルが自身のルーターで反応する、です。
 
 ```typescript
-// In the coordinator service
+// コーディネーターのサービス内
 this.host?.layout.on('open-chat', ({ payload }) => {
   this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
   this.host?.layout.expandPanel('right')
 })
 
-// In the right-panel app (a normal Vue page module)
+// 右パネルのアプリ内（通常の Vue ページモジュール）
 const router = createAppRouter([...])
-// createAppRouter already mirrors host history events into the router
-// with an echo/current-route guard; add no manual routing subscription.
+// createAppRouter はすでにホストの history イベントを、エコー／現在ルートの
+// ガード付きでルーターへ反映している。手動のルーティング購読は追加しないこと。
 ```
 
-## 既知の制約
+コーディネーターは薄く保ってください。パネルは自身の UI を所有し続けてください。
 
-- proxy の `addPanel` / `setLayout` は未提供。internal `LayoutManager` にだけ存在し、iframe proxy boundary を越えて公開されません。`openModal`、`closeModal`、`movePanel` は提供済みです。
-- panel data model と `movePanel()` は動作しますが、user-facing drag-to-rearrange UI は未実装です。
-- tabbed-container primitive は未実装です。`@HOST/panel-tab` は collapsed panel を表示する edge control で、汎用 tab container ではありません。
-- grid-tile container は未実装です。
-- runtime mutation は reload 間で保存されない。必要なら手動保存する。
+## 既知の制限
+
+Draft 1 時点で、以下はまだ実装されていません。
+
+- **プロキシ越しの `addPanel` / `setLayout`** — 未出荷です。これらは内部の `@wippy-fe/layout` の `LayoutManager` にのみ存在し、iframe のプロキシ境界を越えて公開されていません。（`openModal`、`closeModal`、`movePanel` は出荷済みです — レイアウト API リファレンスを参照してください。）
+- **パネルのドラッグによる並べ替え UI** — データモデルと `movePanel()` API は動作しますが、ユーザー向けのドラッグはまだ実装されていません。
+- **タブのプリミティブ** — まだ実装されていません。
+- **グリッドタイルのコンテナ** — 後続対応として追跡中です。
+- **実行時ミューテーションの永続化** — ミューテーションはリロードをまたいで永続化されません。必要なら手動で永続化してください:
   ```typescript
   on('@layout-change', () =>
     state.set('layout', host.layout.snapshot)
   )
   ```
-- `nav-sidebar` header の logo、app-name、toggle button position はこの draft では固定です。
+- **`nav-sidebar` のヘッダースロットの拡張点** — このドラフトでは、ロゴ、アプリ名、トグルボタンの位置は固定です。
 
 ## 関連項目
 
-- [Facade Entry Point](./entry-point.md)
-- [Bootstrap Sequence](./bootstrap.md)
-- [Packages](./packages.md)
+- [ファサードのエントリーポイント](./entry-point.md) — ファサードが JS モジュールのエントリを読み込み、設定を配信する仕組み
+- [ブートストラップのシーケンス](./bootstrap.md) — ホストが起動時にマネージドレイアウトのエントリへ振り分ける仕組み
+- [パッケージ](./packages.md) — `@wippy-fe/layout`、`@wippy-fe/vue-host`、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`

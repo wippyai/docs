@@ -1,166 +1,156 @@
----
-title: "Migration von Oberflächen"
-description: "Rezepte zum Umstellen viewportbasierter responsiver Regeln auf den Wippy-Oberflächenvertrag."
----
+# Surface-Migration
 
-# Migration von Oberflächen
+Rezepte, um eine bestehende Micro-Frontend-App von viewport-basierter
+Responsivität auf den [Surface-Vertrag](./surface-portability.md) umzustellen.
 
-**Klassifizierung: Sammlung partieller Migrationsrezepte.** Jeder Vorher-/Nachher-
-Block konvertiert ein isoliertes Muster. Wenden Sie den Entscheidungsbaum auf
-das gesamte Stylesheet an und prüfen Sie danach beide Engines und Sizing-Modi.
+Jedes Rezept ist gekennzeichnet:
 
-Die Rezepte stellen eine vorhandene Micro-Frontend-Anwendung von
-viewportbasierter Responsivität auf den
-[Oberflächenvertrag](./surface-portability.md) um.
+| Kennzeichnung | Bedeutung |
+| --- | --- |
+| **automatisch** | Mechanisch. Die konvertierte Regel bedeutet dasselbe. |
+| **bedingt** | Nur sicher, wenn eine genannte Vorbedingung gilt. Prüfen Sie sie. |
+| **manuell** | Braucht eine menschliche Entscheidung; es gibt keine einzig richtige Umschreibung. |
+| **nicht konvertierbar** | Es existiert keine Container-Query-Form. Verwenden Sie `host.surface` oder behalten Sie das Viewport-Verhalten bewusst bei. |
 
-Jedes Rezept trägt ein Label:
+Jedes Rezept unten ist eine Technik für sich. Das Web-Host-Repository pflegt
+eine lauffähige Seite, die alle kombiniert und von seiner Testsuite ausgeführt
+wird, damit die Rezepte nicht zu falschen Anweisungen verrotten.
 
-| Label | Bedeutung |
-|---|---|
-| **automatisch** | Mechanisch. Die konvertierte Regel hat dieselbe Bedeutung. |
-| **bedingt** | Nur sicher, wenn eine genannte Vorbedingung erfüllt ist. Prüfen Sie sie. |
-| **manuell** | Eine menschliche Entscheidung ist nötig; es gibt keine einzige richtige Umstellung. |
-| **nicht konvertierbar** | Es gibt keine Container-Query-Form. Verwenden Sie `host.surface` oder behalten Sie das Viewportverhalten bewusst bei. |
-
-Jedes folgende Rezept zeigt eine Technik isoliert. Das Web-Host-Repository
-enthält eine ausführbare Seite, die sie kombiniert und von seiner Testsuite
-abgedeckt wird.
-
-> Rezepte, die von noch nicht ausgelieferten Funktionen abhängen — Tailwind-`surface-*`-Varianten, Builddiagnostik, hostvermitteltes Scrollen oder Hit-Testing — sind als **noch nicht ausgeliefert** gekennzeichnet und beschreiben ausschließlich den heutigen Stand.
+> Rezepte, die von nicht ausgeliefertem Stand abhängen — Tailwind-`surface-*`-Varianten,
+> Build-Zeit-Diagnosen, host-vermitteltes Scrollen, Hit-Testing — sind als **noch nicht
+> ausgeliefert** markiert und beschreiben nur, was heute existiert.
 
 ---
 
-## Entscheidungsbaum: Worauf bezieht sich diese Regel?
+## Entscheidungsbaum: worum geht es in dieser Regel?
 
-Klassifizieren Sie vor jeder Konvertierung die Absicht. Eine mechanisch
-korrekte Umstellung bleibt falsch, wenn sich die ursprüngliche Regel nicht auf
-die Oberfläche bezog.
+Klassifizieren Sie die Absicht, bevor Sie etwas konvertieren. Die meisten
+schlechten Migrationen sind korrekt ausgeführte Konvertierungen von Regeln, die
+gar nicht hätten konvertiert werden dürfen.
 
 ```text
-Does the rule respond to how much room THIS PAGE has?
-├── yes → convert to @container wippy-surface        (recipes 1-8)
-├── no, it responds to one COMPONENT's width
-│        → give that component its own container      (recipe 22)
-├── no, it responds to a user/device PREFERENCE
-│        → leave it as @media                         (recipe 13)
-└── no, it deliberately tracks the BROWSER WINDOW
-         (a true full-window overlay)
-         → leave it, and document why
+Reagiert die Regel darauf, wie viel Platz DIESE PAGE hat?
+├── ja → in @container wippy-surface konvertieren       (Rezepte 1-8)
+├── nein, sie reagiert auf die Breite EINER KOMPONENTE
+│        → dieser Komponente einen eigenen Container geben (Rezept 22)
+├── nein, sie reagiert auf eine Benutzer-/Geräte-PRÄFERENZ
+│        → als @media belassen                          (Rezept 13)
+└── nein, sie verfolgt absichtlich das BROWSERFENSTER
+         (ein echtes Vollfenster-Overlay)
+         → belassen und begründen
 ```
 
-Wenn die Absicht unklar ist, lassen Sie die Regel stehen und prüfen Sie sie
-später erneut. Eine nicht konvertierte Media Query ist lediglich nicht
-portabel; eine falsch konvertierte Regel ist unbemerkt defekt.
+Wenn Sie es nicht entscheiden können, lassen Sie es und kommen Sie darauf
+zurück. Eine nicht konvertierte Media Query ist lediglich nicht portabel; eine
+falsch konvertierte ist stillschweigend kaputt.
 
 ---
 
 ## 1. `max-width` → `inline-size <=` — **automatisch**
 
 ```css
-/* before */ @media (max-width: 640px)                      { .nav { display: none } }
-/* after  */ @container wippy-surface (max-width: 640px)    { .nav { display: none } }
+/* vorher */ @media (max-width: 640px)                      { .nav { display: none } }
+/* nachher */ @container wippy-surface (max-width: 640px)    { .nav { display: none } }
 ```
 
 ## 2. `min-width` → `inline-size >=` — **automatisch**
 
 ```css
-/* before */ @media (min-width: 640px)                      { .sidebar { display: block } }
-/* after  */ @container wippy-surface (min-width: 640px)    { .sidebar { display: block } }
+/* vorher */ @media (min-width: 640px)                      { .sidebar { display: block } }
+/* nachher */ @container wippy-surface (min-width: 640px)    { .sidebar { display: block } }
 ```
 
-## 3. Begrenzter Breitenbereich — **automatisch**
+## 3. Ein begrenzter Breitenbereich — **automatisch**
 
 ```css
-/* before */ @media (min-width: 640px) and (max-width: 1024px) { … }
-/* after  */ @container wippy-surface (640px <= width <= 1024px) { … }
+/* vorher */ @media (min-width: 640px) and (max-width: 1024px) { … }
+/* nachher */ @container wippy-surface (640px <= width <= 1024px) { … }
 ```
 
-Die Bereichssyntax wird von allen Engines unterstützt, die der
-Oberflächenvertrag adressiert. Falls bevorzugt, funktioniert auch die
-`and`-Form.
+Die Bereichssyntax wird von allen Engines unterstützt, auf die der
+Surface-Vertrag zielt. Die `and`-Form funktioniert ebenfalls, wenn Sie sie
+bevorzugen.
 
-## 4. Mehrere Breakpoints mit erhaltener Kaskadenreihenfolge — **automatisch**
+## 4. Mehrere Breakpoints, Kaskadenreihenfolge erhalten — **automatisch**
 
-Container Queries ändern weder Spezifität noch Reihenfolge. Behalten Sie die Quellreihenfolge:
+Container Queries ändern weder Spezifität noch Reihenfolge. Konvertieren Sie
+jeden Block und behalten Sie dieselbe Quellreihenfolge bei:
 
 ```css
 @container wippy-surface (min-width: 480px)  { .grid { grid-template-columns: repeat(2, 1fr) } }
 @container wippy-surface (min-width: 900px)  { .grid { grid-template-columns: repeat(4, 1fr) } }
 ```
 
-## 5. Höhenabfragen — **bedingt** (nur Container-Sizing)
+## 5. Höhen-Queries — **bedingt** (nur bei Container-Sizing)
 
 ```css
-/* after */ @container wippy-surface (min-height: 500px) { .tall-only { display: block } }
+/* nachher */ @container wippy-surface (min-height: 500px) { .tall-only { display: block } }
 ```
 
-Vorbedingung: Die Seite verwendet **Container-Sizing**. Bei Content-Sizing ist
-die Höhe der Seite ihr eigener Inhalt, sodass Höhenabfragen niemals matchen.
-Deklarieren Sie die Abhängigkeit, damit ein falscher Renderort sichtbar
-abgelehnt wird, statt unbemerkt fehlerhaft zu rendern:
+Vorbedingung: Die Page ist **container-sized**. Beim Content-Sizing ist die Höhe
+der Page ihr eigener Inhalt, Höhen-Queries greifen also nie. Deklarieren Sie die
+Abhängigkeit, damit es laut statt still fehlschlägt:
 
 ```json
 { "wippy": { "surface": { "contract": 1, "requirements": ["block-size"] } } }
 ```
 
-## 6. Seitenverhältnis — **bedingt** (nur Container-Sizing)
+## 6. Aspect-Ratio-Queries — **bedingt** (nur bei Container-Sizing)
 
 ```css
-/* before */ @media (min-aspect-ratio: 16/9)                     { … }
-/* after  */ @container wippy-surface (min-aspect-ratio: 16/9)   { … }
+/* vorher */ @media (min-aspect-ratio: 16/9)                     { … }
+/* nachher */ @container wippy-surface (min-aspect-ratio: 16/9)   { … }
 ```
 
-Es gilt dieselbe Vorbedingung wie in Rezept 5: Das Seitenverhältnis benötigt
-beide Achsen.
+Dieselbe Vorbedingung wie in Rezept 5: Das Seitenverhältnis braucht beide Achsen.
 
-## 7. Orientierung — **bedingt** (nur Container-Sizing)
+## 7. Orientation-Queries — **bedingt** (nur bei Container-Sizing)
 
-`@container wippy-surface (orientation: landscape)` beschreibt die Form
-**Ihres Panels**, was meist die eigentliche Absicht ist. War tatsächlich das
-Gerät gemeint, handelt es sich um eine Media Query — belassen Sie sie (Rezept
-13).
+`@container wippy-surface (orientation: landscape)` beschreibt die Form *Ihres
+Panels*, was meist gemeint war. Wenn Sie wirklich das Gerät meinten, ist das
+eine Media Query — behalten Sie sie (Rezept 13).
 
-## 8. Höhe/Verhältnis/Orientierung bei Content-Sizing — **nicht konvertierbar**
+## 8. Höhe / Aspect Ratio / Orientation beim Content-Sizing — **nicht konvertierbar**
 
-Es gibt keine abfragbare Blockachse. Strukturieren Sie das Layout so um, dass
-es von der Inline-Achse abhängt. Simulieren Sie die Höhe nicht mit `cqh` — siehe
+Es gibt keine Blockachse, die abgefragt werden könnte. Bauen Sie so um, dass das
+Layout von der Inline-Achse abhängt. Täuschen Sie es nicht mit `cqh` vor — siehe
 Rezept 22.
 
-Die App kann sich nicht selbst auf Container-Sizing umstellen: Der Web Host
-legt den Modus durch den Renderort fest, nicht durch eine Angabe im Paket. Wenn
-das Layout ohne Blockachse wirklich nicht funktioniert, deklarieren Sie
-`requirements: ["block-size"]`. Dann wird eine Content-Sizing-Platzierung
-vollständig abgelehnt, statt falsch zu rendern. Lassen Sie die App in einem
-Container-Sizing-Kontext rendern, etwa auf einer eigenen Route oder in einem
-Layoutpanel. Siehe „Container-Sizing und Content-Sizing“ unter
-[Portabilität von Oberflächen](./surface-portability.md).
+Sie können die App nicht selbst auf Container-Sizing umstellen: Das Sizing wird
+davon bestimmt, wo der Web Host die App rendert, nicht von irgendetwas in ihrem
+Package. Wenn das Layout ohne die Blockachse wirklich nicht funktionieren kann,
+deklarieren Sie `requirements: ["block-size"]`, damit eine content-sized
+Platzierung rundweg abgelehnt wird, statt falsch zu rendern, und sorgen Sie
+dafür, dass die App in einem container-sized Kontext gerendert wird (eigene Route
+oder ein Layout-Panel). Siehe "Container sizing and content sizing" in
+[Surface Portability](./surface-portability.md).
 
-## 9. Geometrie in einer Umwelt-Media-Query — **manuell**
+## 9. Geometrie, verschachtelt in einer Umgebungs-Media-Query — **manuell**
 
 ```css
-/* before */
+/* vorher */
 @media (prefers-color-scheme: dark) and (min-width: 640px) { .panel { … } }
 
-/* after — split: the preference stays, the geometry moves */
+/* nachher — aufteilen: die Präferenz bleibt, die Geometrie wandert */
 @media (prefers-color-scheme: dark) {
   @container wippy-surface (min-width: 640px) { .panel { … } }
 }
 ```
 
-Dies ist manuell, weil die Verschachtelungsreihenfolge ändern kann, welche
-Deklarationen gewinnen, wenn beide Bedingungen zuvor in einem Prelude
-kombiniert waren. Prüfen Sie das Ergebnis erneut.
+Manuell, weil die Verschachtelungsreihenfolge ändern kann, welche Deklarationen
+gewinnen, wenn die beiden Bedingungen zuvor in einer Prelude kombiniert waren.
+Prüfen Sie das Ergebnis nach.
 
-## 10. Komma-OR — **manuell**
+## 10. Komma-ODER-Zweige — **manuell**
 
 ```css
-/* before */ @media (max-width: 480px), (min-width: 1200px) { … }
+/* vorher */ @media (max-width: 480px), (min-width: 1200px) { … }
 ```
 
-Ein Komma bedeutet OR. Eine Aufteilung in zwei `@container`-Blöcke erhält OR
-**nur, wenn beide Blöcke ansonsten identisch und benachbart sind**. Werden sie
-versehentlich verschachtelt, wird OR zu AND und nichts matcht. Duplizieren Sie
-die Deklarationen in zwei gleichrangige Blöcke:
+Ein Komma ist ODER. Die Aufteilung in zwei `@container`-Blöcke erhält das ODER
+**nur, wenn die beiden Blöcke ansonsten identisch und benachbart sind**;
+verschachteln Sie sie versehentlich, haben Sie aus ODER ein UND gemacht, das auf
+nichts passt. Duplizieren Sie die Deklarationen in zwei benachbarte Blöcke:
 
 ```css
 @container wippy-surface (max-width: 480px)  { … }
@@ -169,245 +159,240 @@ die Deklarationen in zwei gleichrangige Blöcke:
 
 ## 11. `not`, `only`, komplexe Boolesche Ausdrücke — **manuell**
 
-`only` ist ein Artefakt von Medientypen und besitzt kein Container-Äquivalent —
-lassen Sie es weg. `not` invertiert in beiden Syntaxen die Gesamtbedingung; bei
-einer Kombination aus `and`/`or` gelten jedoch andere Präzedenzregeln. Setzen
-Sie Klammern ausdrücklich, statt der ursprünglichen Gruppierung zu vertrauen.
+`only` ist ein Artefakt der Medientypen und hat kein Container-Äquivalent —
+lassen Sie es weg. `not` invertiert in beiden Syntaxen die gesamte Bedingung,
+aber die Präzedenz unterscheidet sich, sobald Sie `and`/`or` mischen; klammern
+Sie explizit, statt der ursprünglichen Gruppierung zu vertrauen.
 
-## 12. `screen` / `print` mit Geometrie — **manuell**
+## 12. `screen` / `print` kombiniert mit Geometrie — **manuell**
 
-Medientypen haben keine Containerform. Behalten Sie den Typ als Media Query und
-verschachteln Sie die Geometrie darin, wie in Rezept 9. Insbesondere ein
-Printlayout sollte meist vollständig viewport- beziehungsweise seitenbasiert
-bleiben.
+Medien*typen* haben keine Container-Form. Behalten Sie den Typ als Media Query
+und verschachteln Sie die Geometrie darin (wie in Rezept 9). Insbesondere das
+Drucklayout sollte in der Regel vollständig viewport-/seitenbasiert bleiben.
 
-## 13. Präferenzen bleiben Media Queries — **nicht konvertierbar**
+## 13. Präferenzen bleiben Media Queries — **nicht konvertierbar** (und so korrekt)
 
 `prefers-color-scheme`, `prefers-contrast`, `prefers-reduced-motion`,
-`forced-colors`, `hover`, `pointer`, `any-pointer` bleiben unverändert.
-`@container` unterstützt nur Größenmerkmale. Eine Konvertierung dieser
-Präferenzen erzeugt eine Regel, die niemals matcht.
+`forced-colors`, `hover`, `pointer`, `any-pointer`. `@container` unterstützt nur
+Size-Features. Eine Konvertierung erzeugt eine Regel, die nie greift.
 
 ## 14. `em`-Breakpoints — **manuell**
 
-`@media (min-width: 40em)` wertet `em` gegen die initiale Schriftgröße aus.
-`@container wippy-surface (min-width: 40em)` wertet es gegen die Schriftgröße
-des **Containers** aus. Unterscheiden sich beide, verschiebt sich der Breakpoint
-unbemerkt. Rechnen Sie in `px` um oder prüfen Sie zuerst den berechneten
+`@media (min-width: 40em)` löst `em` gegen die initiale Schriftgröße auf.
+`@container wippy-surface (min-width: 40em)` löst es gegen die Schriftgröße des
+**Containers** auf. Unterscheiden sich diese, verschiebt sich Ihr Breakpoint
+stillschweigend. Konvertieren Sie nach `px` oder prüfen Sie zuerst die berechnete
 `font-size` des Containers.
 
 ## 15. `rem`-Breakpoints — **manuell**
 
-`rem` ist innerhalb von `@media` **nicht** rootrelativ. Media-Query-Bedingungen
-werten sowohl `em` als auch `rem` gegen die *initiale* Schriftgröße aus, also
-den Browserstandard unabhängig von Autoren-CSS. `@container` wertet sie dagegen
-auf gewöhnliche Weise gegen die tatsächliche berechnete Root-/Container-
-Schriftgröße aus.
+`rem` ist innerhalb von `@media` **nicht** root-relativ. Media-Query-Bedingungen
+lösen sowohl `em` als auch `rem` gegen die *initiale* Schriftgröße auf — den
+Browser-Standard, unabhängig von jedem Autoren-CSS — während `@container` sie auf
+gewöhnlichem Weg gegen die tatsächlich berechnete Root-/Container-Schriftgröße
+auflöst.
 
-Sobald die Root-Schriftgröße vom Browserstandard abweicht, sind beide Werte
-bereits ungleich, ohne dass zur Laufzeit etwas geändert wird. Schon der übliche
-Reset `html { font-size:
-62.5% }` verschiebt einen konvertierten Breakpoint von 640 px auf 400 px.
+Die beiden sind also bereits ungleich, sobald Ihre Root-Schriftgröße vom
+Browser-Standard abweicht, ganz ohne Änderung zur Laufzeit. Der verbreitete
+Reset `html { font-size: 62.5% }` genügt, um einen konvertierten Breakpoint von
+640px auf 400px zu verschieben.
 
-„Die Root-Schriftgröße ändert sich nicht“ ist deshalb **keine** ausreichende
-Vorbedingung. Rechnen Sie in `px` um, ebenso wie bei `em` (Rezept 14), sofern die
-berechnete Root-Schriftgröße nicht nachweislich dem Browserstandard entspricht.
+"Nichts ändert die Root-Schriftgröße" ist daher **keine** hinreichende
+Vorbedingung. Konvertieren Sie nach `px`, genau wie bei `em` (Rezept 14), außer
+die berechnete Schriftgröße des Roots entspricht nachweislich dem
+Browser-Standard.
 
-## 16. Scrollbargrenze — **bedingt**
+## 16. Viewport vs. Content-Box-Scrollbar-Grenze — **bedingt**
 
-`100vw` enthält die klassische Scrollbar-Rinne. In der **iframe-Engine** ist die
-Oberflächenbreite die **Content Box** der Querybox im App-Dokument und enthält
-sie deshalb nicht. Bei einer Seite mit Dokument-Scrollbar ist der konvertierte
-Wert um deren Breite kleiner; meistens ist das die beabsichtigte Korrektur, denn
-Horizontaloverflow durch `100vw` ist ein klassischer Fehler.
+`100vw` schließt die klassische Scrollbar-Rinne ein. In der **iframe-Engine** ist
+die Surface-Breite die **Content Box** der Query-Box innerhalb des Dokuments der
+App, also nicht: Auf einer Page mit Dokument-Scrollbar ist der konvertierte Wert
+um die Scrollbar-Breite schmaler, was meist genau die gewünschte Korrektur ist
+(`100vw` als Ursache von horizontalem Overflow ist ein klassischer Bug).
 
-Die **Fragment-Engine** misst einen Wrapper im Hostdokument, den das Scrollen
-des Inhalts nicht verengt, und nimmt diese Korrektur daher nicht vor. Dasselbe
-Panel mit demselben scrollenden Inhalt liefert je nach Engine eine um die
-Scrollbarbreite unterschiedliche Breite. Vorbedingung dieses Rezepts ist somit
-die verwendete Engine, nicht nur pixelgenaue Ausrichtung.
+Die **Fragment-Engine** misst einen Wrapper im Host-Dokument, den das Scrollen
+des Inhalts nicht verschmälert, und wendet diese Korrektur daher nicht an.
+Gleiches Panel, gleicher scrollender Inhalt, Breiten, die sich um eine Scrollbar
+unterscheiden. Die Bedingung dieses Rezepts ist folglich, *in welcher Engine die
+App läuft*, nicht bloß, ob die Ausrichtung pixelgenau ist.
 
-## 17. Regeln für `html` / `body` — **manuell**
+## 17. Regeln, die auf `html` / `body` zielen — **manuell**
 
-Eine Container Query kann ihren eigenen Container nicht stylen. Eine Regel für
-`html` oder `body` scheitert daher in beiden Engines — aus unterschiedlichen
+Eine Container Query stylt nie ihren eigenen Container, und eine Regel, die auf
+`html` oder `body` zielt, schlägt in beiden Engines fehl — aus verschiedenen
 Gründen:
 
-- **iframe-Engine:** Der Host legt die Surface-Box um den Body-Inhalt; `html`
-  und `body` sind Vorfahren des Querycontainers. Eine `@container`-Regel kann
-  keinen Vorfahren erreichen.
-- **Fragment-Engine:** Hier liegt die Querybox über dem Inhalt. Ein wörtlicher
-  `body`-Selektor scheitert trotzdem, weil das reflektierte Dokument in
+- **Iframe-Engine:** Der Host verpackt Ihren Body-Inhalt in die Surface-Box,
+  also sind `html` und `body` *Vorfahren* des Query-Containers. Eine
+  `@container`-Regel kann keinen Vorfahren erreichen.
+- **Fragment-Engine:** die umgekehrte Topologie — die Query-Box ist ein
+  Wrapper im Host-Dokument *über* Ihrem Inhalt —, aber ein wörtlicher
+  `body`-Selektor scheitert dennoch, weil das gespiegelte Dokument in
   `wf-html` / `wf-body` umbenannt wird.
 
-Die engine-sichere Lösung ist in beiden Fällen gleich: Verschieben Sie die
-Regel auf Ihren eigenen Root innerhalb der Oberfläche.
+So oder so ist die Lösung dieselbe und engine-sicher:
 
 ```css
-/* ✗ silently never matches */
+/* ✗ greift stillschweigend nie */
 @container wippy-surface (min-width: 640px) { body { display: flex } }
 
-/* ✓ move it to your own root inside the surface */
+/* ✓ auf Ihr eigenes Root innerhalb der Surface verschieben */
 @container wippy-surface (min-width: 640px) { #app { display: flex } }
 ```
 
 ## 18. `<picture><source media>` und `<link media>` — **nicht konvertierbar**
 
-HTML-Ressourcenauswahl kennt keine Container Queries. Per
-`host.surface.onChange` steuern oder Art Direction in CSS verlagern, etwa als
-`background-image` unter einer `@container`-Regel.
+Ressourcenauswahl auf HTML-Ebene hat keine Container-Query-Form. Steuern Sie sie
+entweder aus JS mit `host.surface.onChange` oder verlagern Sie die Art Direction
+ins CSS (`background-image` unter einer `@container`-Regel), wo der Vertrag gilt.
 
-## 19. Geometrisches `matchMedia()` → `host.surface` — **automatisch**
+## 19. Geometrie-`matchMedia()` → `host.surface` — **automatisch**
 
 ```js
-// before
+// vorher
 const mq = matchMedia('(min-width: 640px)')
 mq.addEventListener('change', render)
 
-// after
-import { host } from '@wippy-fe/proxy'
-
+// nachher
 const off = host.surface.onChange(s => render(s.width >= 640))
 render(host.surface.snapshot.width >= 640)
-// call off() on teardown
+// off() beim Abbau aufrufen
 ```
 
-Für Präferenzabfragen bleibt `matchMedia` richtig — nur Geometrie ist hier
-falsch.
+Behalten Sie `matchMedia` für Präferenz-Queries — nur die Geometrie ist falsch.
 
-## 20. Runtime-CSS, Adopted Stylesheets, CSS-in-JS — **manuell**
+## 20. Laufzeit-CSS, adopted Stylesheets, CSS-in-JS — **manuell**
 
-Bevorzugen Sie ausgegebene `@container wippy-surface (...)`-Regeln und lassen
-Sie CSS reagieren. Wenn Sie Pixelwerte in JavaScript berechnen, erzeugen Sie
-sie bei `onChange` neu: Ein einmal aus `snapshot` gelesener Wert bleibt
-eingefroren und läuft beim nächsten Resize auseinander.
-
-Geben Sie niemals selbst die vier reservierten `--wippy-surface-*`-Namen aus,
-und registrieren Sie sie weder mit `@property` noch mit
-`CSS.registerProperty()`. Eine Registrierung zerstört das Hostsignal
-„Blockachse nicht verfügbar“, sodass sich eine Content-Sizing-App unbemerkt als
-Container-Sizing meldet. Eine Deklaration auf einem Nachfahren überschreibt den
-geerbten Wert und löst die Seite von der Oberfläche.
+Bevorzugen Sie es, `@container wippy-surface (...)`-Regeln auszugeben und CSS
+reagieren zu lassen. Wenn Sie Pixel in JS berechnen, erzeugen Sie sie aus
+`onChange` neu — ein einmalig aus `snapshot` gelesener Wert ist eingefroren und
+desynchronisiert beim nächsten Resize. Geben Sie die vier reservierten
+`--wippy-surface-*`-Namen niemals selbst aus und registrieren Sie sie niemals mit
+`@property` / `CSS.registerProperty()` — die Registrierung hebelt das Signal
+"Blockachse nicht verfügbar" des Hosts aus, sodass sich eine content-sized App
+stillschweigend als container-sized meldet; eine Deklaration in einem Nachfahren
+überdeckt den geerbten Wert und löst Ihre Page von der Surface.
 
 ## 21. Gebündeltes Drittanbieter-CSS — **manuell**
 
-Solche Styles lassen sich meist nicht bearbeiten. Bevorzugt konfigurieren Sie
-die Bibliothek mit einem Breakpoint oder einer Breite aus `host.surface`.
-Alternativ hüllen Sie sie in einen eigenen Container und übersetzen dort. Als
-letzten Ausweg pinnen Sie die Seite an die iframe-Engine
-(`wippy.renderEngine: "iframe"`) und akzeptieren bewusst fensterbasiertes
-Verhalten. Buildzeitliches Scannen nach solchen Regeln ist **noch nicht
-verfügbar**.
+Meist können Sie es nicht bearbeiten. In dieser Reihenfolge: Konfigurieren Sie
+die Bibliothek so, dass sie einen Breakpoint bzw. eine Breite akzeptiert, die Sie
+aus `host.surface` liefern; umschließen Sie sie mit einem eigenen Container und
+übersetzen Sie; oder pinnen Sie die Page auf die iframe-Engine
+(`wippy.renderEngine: "iframe"`) und akzeptieren Sie fensterbasiertes Verhalten.
+Build-Zeit-Scanning, um diese Fälle automatisch zu finden, ist **noch nicht
+ausgeliefert**.
 
-## 22. Verschachtelte Container und `cq*`-Fallback — **manuell**
+## 22. Verschachtelte Container und die `cq*`-Fallback-Falle — **manuell**
 
-Einheiten lösen gegen den nächsten Container mit benötigter Achse auf:
+Container-Einheiten lösen gegen den *nächstgelegenen* Container auf, der die
+benötigte Achse hat. Zwei Konsequenzen:
 
 ```css
-.card { container-type: inline-size; }   /* has NO block axis */
-.card .thing { block-size: 25cqh; }      /* ✗ silently uses the small viewport */
+.card { container-type: inline-size; }   /* hat KEINE Blockachse */
+.card .thing { block-size: 25cqh; }      /* ✗ verwendet still den kleinen Viewport */
 ```
 
-`cqh`/`cqb` erzeugen keinen Fehler, wenn kein Blockachsencontainer gefunden
-wird. Sie fallen auf den Small Viewport zurück und liefern einen plausiblen,
-aber falschen Wert. Verwenden Sie für die Surface-Blockachse
-`var(--wippy-surface-height, <fallback>)`: Der Wert ist am Root gebunden, kann
-nicht von einem näheren Container abgefangen werden und fällt sichtbar zurück,
-wenn die Achse fehlt.
+`cqh`/`cqb` erzeugen keinen Fehler, wenn kein Container mit Blockachse gefunden
+wird — sie fallen auf den kleinen Viewport zurück und rendern eine plausible
+falsche Zahl. Verwenden Sie `var(--wippy-surface-height, <fallback>)`, wenn Sie
+die Blockachse der Surface wollen: Sie ist am Root verankert, ein näherer
+Container kann sie also nicht abfangen, und sie fällt sichtbar zurück, wenn sie
+nicht verfügbar ist.
 
-Komponentenqueries sind additiv und kein Ersatz: Auch aus einem verschachtelten
-Container heraus bezeichnet `wippy-surface` weiterhin die Fläche der Seite.
+Komponenten-Queries sind additiv, kein Ersatz: `wippy-surface` bezieht sich auch
+aus einem verschachtelten Container heraus weiterhin auf die Fläche der Page.
 
 ---
 
 ## Viewport-Einheiten
 
-| Vorher | Ersatz | Hinweise |
-|---|---|---|
+| War | Verwenden Sie | Hinweise |
+| --- | --- | --- |
 | `100vw` | `var(--wippy-surface-width)` | Content Box; siehe Rezept 16 |
-| `1vw` / `37vw` | `calc(var(--wippy-surface-width-unit) * 37)` oder `37cqw` | Einheit ist 1 % |
-| `100vh` | `var(--wippy-surface-height)` | nur Container-Sizing |
-| `1vh` / `37vh` | `calc(var(--wippy-surface-height-unit) * 37)` | nur Container-Sizing |
-| `vmin` | `min(var(--wippy-surface-width), var(--wippy-surface-height))` | beide Achsen nötig |
-| `vmax` | `max(var(--wippy-surface-width), var(--wippy-surface-height))` | beide Achsen nötig |
-| `vi` / `vb` | `cqi` / `cqb` oder physische Variablen | Surface-Variablen sind physisch |
-| `sv*` / `lv*` / `dv*` | `var(--wippy-surface-*)` | **keine getrennten Äquivalente.** Diese Einheiten beschreiben Zustände der Browser-Chrome, die ein Panel nicht besitzt; die Oberfläche hat genau eine Größe |
+| `1vw` / `37vw` | `calc(var(--wippy-surface-width-unit) * 37)` oder `37cqw` | die Einheit ist 1 % |
+| `100vh` | `var(--wippy-surface-height)` | nur bei Container-Sizing |
+| `1vh` / `37vh` | `calc(var(--wippy-surface-height-unit) * 37)` | nur bei Container-Sizing |
+| `vmin` | `min(var(--wippy-surface-width), var(--wippy-surface-height))` | nur bei Container-Sizing — braucht beide Achsen |
+| `vmax` | `max(var(--wippy-surface-width), var(--wippy-surface-height))` | nur bei Container-Sizing |
+| `vi` / `vb` | `cqi` / `cqb` oder die physischen Variablen | logisch; die Surface-Variablen sind physisch |
+| `sv*` / `lv*` / `dv*` | `var(--wippy-surface-*)` | **keine separaten Äquivalente.** Sie beschreiben Zustände der Browser-Chrome, die ein Panel nicht hat; die Surface hat eine Größe |
 
-`sv*`/`lv*` sind Browser-Viewport-Einheiten, nicht „surface“.
+`sv*`/`lv*` sind echte CSS-Einheiten — sie bedeuten **nicht** "Surface".
 
 ### Berechnungen
 
 ```css
-/* before */ block-size: calc(100vh - 4rem);
-/* after  */ block-size: calc(var(--wippy-surface-height, 400px) - 4rem);
+/* vorher */ block-size: calc(100vh - 4rem);
+/* nachher */ block-size: calc(var(--wippy-surface-height, 400px) - 4rem);
 ```
 
-Der Fallback ist absichtlich fest und offensichtlich falsch statt `100vh` —
-siehe „Fehlenden Vertrag nicht hinter einem Fallback verbergen“. Auf der
-Blockachse ist das besonders wichtig: Die Höhe ist bei **jeder** Content-Sizing-
-Platzierung ungültig, nicht nur bei fehlendem Vertrag. Ein `100vh`-Fallback
-rendert daher beim ersten Embed unbemerkt die Fensterhöhe.
+Der Fallback ist bewusst fest und offensichtlich falsch statt `100vh` — siehe "Verstecken Sie einen fehlenden Vertrag nicht hinter einem Fallback" weiter unten. Das zählt auf der Blockachse mehr als auf der Inline-Achse: Die Höhe ist bei **jeder** content-sized Platzierung ungültig, nicht nur dort, wo der Vertrag fehlt, sodass ein `100vh`-Fallback beim ersten Einbetten der App stillschweigend die Fensterhöhe rendert.
 
-`min()`/`max()`/`clamp()` werden unverändert konvertiert; ersetzen Sie die darin
-verwendeten Einheiten.
+`min()`/`max()`/`clamp()` konvertieren unverändert; ersetzen Sie darin die
+Einheiten.
 
-### Wann `100%` besser als ein Surface-Wert ist
+### Wann `100%` besser ist als ein Surface-Wert
 
-Soll ein Element seinen **Elternknoten** füllen, verwenden Sie `100%` oder
-`w-full`. Greifen Sie nur dann zu `--wippy-surface-width`, wenn Sie ausdrücklich
-die Seitenfläche benötigen, typischerweise um aus einem schmaleren Vorfahren
-auszubrechen. Etwas am Root zu binden, das elternrelativ sein sollte, erzeugt
-Layouts, die nur bei genau einer Verschachtelungstiefe stimmen.
+Soll ein Element sein **Elternelement** füllen, verwenden Sie `100%` oder
+`w-full`. Greifen Sie nur dann zu `--wippy-surface-width`, wenn Sie
+ausdrücklich die Fläche der *Page* brauchen — typischerweise, weil ein Vorfahre
+schmaler ist und Sie ihm entkommen wollen. Etwas am Root zu verankern, das
+elternrelativ sein sollte, ist der Weg zu einem Layout, das in einer
+Verschachtelungstiefe korrekt und in einer anderen falsch ist.
 
-### Fehlenden Vertrag nicht hinter einem Fallback verbergen
+### Verstecken Sie einen fehlenden Vertrag nicht hinter einem Fallback
 
 ```css
 /* ✗ */ inline-size: var(--wippy-surface-width, 100vw);
 ```
 
-Dieser Fallback rendert bei fehlendem Vertrag die Fensterbreite — genau den
-Fehler, den der Vertrag verhindern soll — und macht ihn unsichtbar. Lassen Sie
-die Deklaration sichtbar fehlschlagen oder wählen Sie einen festen,
-offensichtlich falschen Fallback (`400px`), damit der Fehler auffällt.
+Das rendert die Fensterbreite, wenn der Vertrag fehlt — genau der Bug, den der
+Vertrag verhindern soll, nur unsichtbar gemacht. Lassen Sie es sichtbar
+fehlschlagen oder wählen Sie einen festen Fallback, der offensichtlich falsch ist
+(`400px`), damit es auffällt.
 
 ---
 
 ## Overlays
 
-Der Oberflächenvertrag erfasst `position: fixed` **nicht**. `container-type`
-erzeugt einen unabhängigen Formatierungskontext ohne Layout-Containment; ein
-Querycontainer berechnet daher `contain: none` und verankert nichts. PrimeVue-
-Overlays und selbst implementierte Fixed-Overlays funktionieren unverändert,
-die **Positionierung benötigt also keine Migration**.
+Der Surface-Vertrag erfasst `position: fixed` **nicht** — `container-type`
+etabliert einen unabhängigen Formatierungskontext ohne Layout-Containment, ein
+Query-Container berechnet also `contain: none` und verankert nichts. Das ist über
+Chromium, Firefox und WebKit hinweg verifiziert. PrimeVue-Overlays und
+handgebaute Fixed-Overlays funktionieren weiterhin, die **Positionierung braucht
+also keine Migration**.
 
-Ihre *Größe* benötigt sie. Ein Overlay, das die Oberfläche abdecken soll,
-verwendet `inset: 0` statt `100vw`/`100vh`, die im Multi-Panel-Host das
-Browserfenster messen und überstehen. Verwenden Sie auch nicht
-`var(--wippy-surface-height)`, das bei Content-Sizing fehlt. Kombinieren Sie
-`inset: 0` für beide Engines mit `position: absolute` und einem eigenen App-Root, der
-`position: relative` besitzt. `position: fixed` ist nur in der iframe-Engine
-richtig, wie der folgende Absatz erklärt.
+Ihre *Größenbestimmung* schon. Ein Overlay, das die Surface abdecken soll, sollte
+`inset: 0` verwenden — nicht `100vw`/`100vh`, die das Browserfenster messen und
+in einem Multi-Panel-Host darüber hinausschießen, und nicht
+`var(--wippy-surface-height)`, das beim Content-Sizing nicht verfügbar ist.
+Kombinieren Sie `inset: 0` mit `position: absolute` innerhalb eines eigenen
+Roots der App mit `position: relative`, wenn es in beiden Engines funktionieren
+muss; `position: fixed` ist nur in der iframe-Engine korrekt, aus dem direkt
+folgenden Grund.
 
-Zu beachten ist die Engine, nicht der Vertrag: In der Web-Fragment-Engine löst
-`position: fixed` gegen das **Hostfenster** auf, nicht gegen Ihr Panel. Siehe
-[Render-Engines](../web-host/render-engines.md) und pinnen Sie die App bei Bedarf
-mit `wippy.renderEngine: "iframe"`.
+Aufmerksamkeit braucht die Engine, nicht der Vertrag: In der
+Web-Fragment-Engine löst `position: fixed` gegen das **Host-Fenster** auf, nicht
+gegen Ihr Panel. Siehe [Render Engines](../web-host/render-engines.md) und pinnen
+Sie die App mit `wippy.renderEngine: "iframe"`, falls das wichtig ist.
 
-Hostvermittelte Overlay-Platzierung und Scrollhilfen über `host.surface` sind
-**noch nicht verfügbar**.
+Host-vermittelte Overlay-Platzierung und `host.surface`-Scroll-Helfer sind
+**noch nicht ausgeliefert**.
 
 ---
 
 ## Checkliste
 
-1. Jede Regel als Seite, Komponente, Präferenz oder bewusstes Fensterverhalten klassifizieren.
-2. Seitengeometrie nach `@container wippy-surface` konvertieren.
-3. Viewport-Einheiten ersetzen.
-4. `html`/`body`-Ziele auf den eigenen Root verschieben.
-5. `em`-Breakpoints erneut prüfen.
-6. Bei Blockachsenabhängigkeit `requirements` deklarieren.
-7. Die Seite in beiden Engines **und beiden Sizing-Modi** testen — Container
-   und Content sind das, was diese Migration tatsächlich aktiviert. Eine App
-   ist Content-Sizing, sobald sie eingebettet statt geroutet wird. Den Modus aus
-   `host.surface.snapshot.sizing` lesen und Blockachsenverhalten über
-   `host.surface.supports('block-size')` absichern.
+1. Klassifizieren Sie jede Regel (Page / Komponente / Präferenz / bewusst Fenster).
+2. Konvertieren Sie Geometrie mit Page-Absicht zu `@container wippy-surface`.
+3. Ersetzen Sie Viewport-Einheiten durch die Surface-Variablen.
+4. Verschieben Sie jede Regel, die auf `html`/`body` zielte, auf Ihr eigenes Root-Element.
+5. Prüfen Sie `em`-Breakpoints erneut.
+6. Deklarieren Sie `requirements`, wenn Sie von der Blockachse abhängen.
+7. Führen Sie die Page in beiden Engines **und in beiden Sizings** aus —
+   Container und Content sind das, was diese Migration tatsächlich betrifft, und
+   eine App ist content-sized, sobald sie eingebettet statt geroutet wird. Prüfen
+   Sie mit `host.surface.snapshot.sizing`, in welchem Sizing Sie sind, und
+   koppeln Sie Blockachsen-Verhalten an
+   `host.surface.supports('block-size')`.

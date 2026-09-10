@@ -59,7 +59,7 @@ wippy run --profile pg
 - Der Abschnitt `disable` unterstützt Listenoperationen innerhalb von Profilen — `namespaces.add`, `namespaces.remove`, `entries.add`, `entries.remove` — sodass ein Profil die Basisliste anpassen kann, statt sie zu ersetzen.
 - `${name}`-Referenzen interpolieren aus dem zusammengeführten `vars:`-Abschnitt. OS-Umgebungsreferenzen sind innerhalb von Profil-Vars nicht erlaubt; verwenden Sie `${env:NAME}` in der Basiskonfiguration, aufgelöst beim Laden der Datei.
 
-`wippy run`, `test` und `pack` akzeptieren `--profile`; `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](guides/publishing.md#publishing-profiles).
+`wippy run`, `test` und `pack` akzeptieren `--profile`; `run list`, `install`, `update`, `lint` und `registry` akzeptieren es ebenfalls für Workspace-Profile (zusammen mit `--set`). Anwendungen können Profile in Packs ausliefern — siehe [Profile veröffentlichen](guides/publishing.md#publishing-profiles).
 
 ## Logger
 
@@ -82,13 +82,12 @@ Steuert das Runtime-Log-Routing. Konsolenausgabe wird über [CLI-Flags](guides/c
 |------|-----|----------|--------------|
 | `propagate_downstream` | bool | true | Logs an Konsolen-/Dateiausgabe senden |
 | `stream_to_events` | bool | false | Logs für programmatischen Zugriff zum Event-Bus veröffentlichen |
-| `min_level` | int | -1 | Minimales Level: -1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0 (`-1` mit `-v`) | Minimales Level: -1=debug, 0=info, 1=warn, 2=error. Die CLI schreibt diesen Schlüssel nach dem Lesen der Datei aus ihren Flags, sodass ein Dateiwert ignoriert wird; ändern Sie ihn mit `--set logmanager.min_level=<n>` |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 Siehe: [Logger-Modul](lua/system/logger.md)
@@ -123,7 +122,7 @@ Globales Sicherheitsverhalten. Individuelle Richtlinien werden als [security.pol
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 Siehe: [Sicherheitssystem](system/security.md), [Sicherheitsmodul](lua/security/security.md)
@@ -136,9 +135,15 @@ Eintragsspeicherung und Versionshistorie. Die Registry enthält alle Konfigurati
 |------|-----|----------|--------------|
 | `enable_history` | bool | true | Eintragsversionen verfolgen |
 | `history_type` | string | memory | Speicher: `memory`, `sqlite`, `postgres`, `nil` |
-| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad bei `history_type: sqlite` |
-| `history_dsn` | string | | PostgreSQL-DSN bei `history_type: postgres` |
-| `history_schema` | string | | PostgreSQL-Schemaname bei `history_type: postgres` |
+| `history_path` | string | .wippy/registry.db | SQLite-Dateipfad (verwendet bei `history_type: sqlite`) |
+| `history_dsn` | string | | Postgres-DSN (verwendet bei `history_type: postgres`) |
+| `history_schema` | string | | Postgres-Schemaname (verwendet bei `history_type: postgres`) |
+| `event_wait_timeout` | duration | 30s | Wartezeit pro Operation auf die Bestätigung durch Listener während eines Registry-Apply |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Entry-Typen, die intern behandelt statt an Komponenten-Listener verteilt werden |
+| `dependency_resolve_timeout` | duration | 0 (keins) | Grenze für die Auflösung von Abhängigkeiten |
+| `dependency_download_timeout` | duration | 0 (keins) | Grenze für jeden Modul-Download und jede Download-URL-Anfrage |
+| `dependency_lock_path` | string | gefundene `wippy.lock` | Lock-Datei, die der Abhängigkeits-Handler liest und schreibt |
+| `dependency_vendor_dir` | string | `<lock-Verzeichnis>/<directories.modules>/vendor` | Verzeichnis mit den heruntergeladenen Modul-Packs |
 
 ```yaml
 registry:
@@ -155,13 +160,41 @@ registry:
 
 Siehe: [Registry-Konzept](concepts/registry.md), [Registry-Modul](lua/core/registry.md)
 
+## Artifact
+
+Ausgabewurzel für materialisierte [Build-Zeit-Artefakte](guides/artifacts.md).
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `materialization_root` | string | übergeordnetes Verzeichnis des Dependency-Vendor-Verzeichnisses | Von der Anwendung besessene Wurzel, unter der jedes Artefaktformat seinen eigenen Teilbaum schreibt |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+Siehe: [Build-Zeit-Artefakte](guides/artifacts.md#where-output-lands)
+
+## Workspace
+
+Lokale Modulersetzungen, adressiert über `org/module`. Die Werte sind Verzeichnisse; relative Pfade werden gegen das Verzeichnis der ersten `--config`-Datei aufgelöst, und `null` deaktiviert eine Ersetzung, die aus einer früheren Konfigurationsebene oder einem Profil geerbt wurde.
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+Ersetzungen werden nie in `wippy.lock` geschrieben. Siehe [Lokale Entwicklung mit Ersetzungen](guides/dependency-management.md#local-development-with-replacements).
+
 ## Relay
 
 Nachrichtenrouting zwischen Prozessen über Knoten hinweg.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `node_name` | string | abgeleitete Instanz-ID | Kennung dieses Relay-Knotens (Standard: UUIDv5 aus Machine-ID/Hostname und Arbeitsverzeichnis; überschreibbar über `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
+| `node_name` | string | abgeleitete instanzspezifische ID | Bezeichner für diesen Relay-Knoten (Standard: UUIDv5 aus machine-id/Hostname + Arbeitsverzeichnis; überschreibbar über `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME`) |
 
 ```yaml
 relay:
@@ -198,19 +231,23 @@ Lua-VM-Caching und Expression-Auswertung.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
-| `proto_cache_size` | int | 60000 | Kompilierter Prototype-Cache |
-| `main_cache_size` | int | 10000 | Main-Chunk-Cache |
-| `cache.enabled` | bool | false | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren |
-| `cache.dir` | string | `.wippy/cache/lua` | Cache-Verzeichnispfad relativ zum Konfigurations-/Arbeitsverzeichnis |
-| `cache.mode` | string | `readwrite` | Cache-Modus: `readwrite` (Standard), `readonly`, `off` |
-| `cache.compile.enabled` | bool | true | Kompilierten Bytecode persistieren, wenn `cache.enabled` gesetzt ist |
-| `cache.typecheck.enabled` | bool | true | Typecheck-Ergebnisse persistieren, wenn `cache.enabled` gesetzt ist |
+| `cache.enabled` | bool | `type_system.enabled` | Kompilierten Bytecode-/Typecheck-Cache auf Disk persistieren; folgt `type_system.enabled`, sofern nicht explizit gesetzt |
+| `cache.dir` | string | `.wippy/cache/lua` | Cache-Verzeichnis-Pfad (relativ zum Konfigurations-/Arbeitsverzeichnis) |
+| `cache.mode` | string | `readwrite` | Cache-Modus: `readwrite` (Standard), `readonly`, `off`; unbekannte Werte fallen auf `readwrite` zurück |
+| `cache.compile.enabled` | bool | true | Kompilierten Bytecode persistieren (bei `cache.enabled`) |
+| `cache.typecheck.enabled` | bool | true | Typecheck-Ergebnisse persistieren (bei `cache.enabled`) |
+| `cache.max_bytes` | int | 1073741824 | Obergrenze der Cache-Größe auf Disk in Bytes |
+| `cache.max_entries` | int | 20000 | Maximale Anzahl gecachter Einträge |
+| `cache.prune_interval` | int | 256 | Schreibvorgänge zwischen Cache-Bereinigungsläufen |
 | `type_system.enabled` | bool | false | Statische Typprüfung aktivieren |
 | `type_system.strict` | bool | false | Typwarnungen als Fehler behandeln |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Wartezeit auf die Bestätigung der Code-Invalidierung nach einer Eintragsänderung |
+| `eval.max_steps` | int | 10000 | Standardbudget an Scheduler-Schritten für einen `eval`-Lauf; negative Werte werden abgelehnt |
+| `eval.cache_size` | int | 256 | Cache-Einträge kompilierter Programme für ausgewerteten Quellcode |
+| `eval.cache_ttl` | duration | 0 (kein Ablauf) | Lebensdauer eines zwischengespeicherten kompilierten Programms |
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -219,6 +256,22 @@ lua:
 ```
 
 Siehe: [Lua-Übersicht](lua/overview.md)
+
+## Scheduler
+
+Core-Partitionierung für die WASM-Runtime. Wenn aktiviert, werden `reserved_cores` CPUs für die WASM-Ausführung reserviert und die übrigen bedienen den Actor-Scheduler; eine ungültige Aufteilung (zum Beispiel mehr reservierte Cores als verfügbar) wird protokolliert und ignoriert.
+
+| Feld | Typ | Standard | Beschreibung |
+|------|-----|----------|--------------|
+| `wasm_isolation.enabled` | bool | false | Cores zwischen WASM- und Actor-Arbeit aufteilen |
+| `wasm_isolation.reserved_cores` | int | 1 | Für die WASM-Ausführung reservierte Cores |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## Finder
 
@@ -269,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-Standard-OTEL-Umgebungsvariablen (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`, `OTEL_SDK_DISABLED`) überschreiben die entsprechenden Felder.
+Standard-OTEL-Umgebungsvariablen (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_SERVICE_NAME`, `OTEL_SERVICE_VERSION`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_PROPAGATORS`) überschreiben die entsprechenden Felder.
 
 Siehe: [Observability-Anleitung](guides/observability.md)
 
@@ -293,7 +346,7 @@ Interner Metriken-Sammlungspuffer.
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `buffer.size` | int | 10000 | Metriken-Puffer-Kapazität |
-| `interceptor.enabled` | bool | false | Funktionsaufrufe automatisch verfolgen |
+| `interceptor.enabled` | bool | true | Funktionsaufrufe automatisch verfolgen |
 
 ```yaml
 metrics:
@@ -312,7 +365,8 @@ Prometheus-Metriken-Endpunkt.
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
 | `enabled` | bool | false | Metriken-Server starten |
-| `address` | string | localhost:9090 | Adresse zum Lauschen |
+| `address` | string | | Adresse zum Lauschen; muss explizit gesetzt werden, wenn `enabled: true`, sonst startet der Metriken-Server nicht |
+| `max_cardinality` | int | 1024 | Pro Metrik behaltene unterschiedliche Label-Sets (LRU); `0` oder kleiner verwendet den Standard |
 
 ```yaml
 prometheus:
@@ -320,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-Stellt `/metrics`-Endpunkt für Prometheus-Scraping bereit.
+Stellt `/metrics`-Endpunkt für Prometheus-Scraping bereit, zusätzlich `/livez`.
 
 Siehe: [Observability-Anleitung](guides/observability.md)
 
@@ -335,6 +389,8 @@ Multi-Node-Clustering: Gossip-Mitgliedschaft plus ein begrenzter Raft-Konsensker
 | `enabled` | bool | false | Clustering aktivieren |
 | `name` | string | hostname | Knotenname; muss im Cluster eindeutig sein |
 | `failure_domain` | string | | Zonen-/Rack-Label; im Gossip beworben, damit Voter über Domains verteilt werden |
+| `kv_crdt_tombstone_retention` | duration | 0 | Alter, ab dem `store.kv.crdt`-Lösch-Tombstones freigegeben werden; `0` deaktiviert die altersbasierte GC |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | Die aktuelle Alive-Mitgliedschaft als Bestätigungsmenge für Tombstones verwenden |
 
 ### Mitgliedschaft (Gossip)
 
@@ -356,6 +412,8 @@ SWIM-Gossip über memberlist. Wird für Knotenentdeckung, Fehlererkennung und Me
 | `membership.tcp_timeout` | duration | 1s | Timeout der TCP-Fallback-Probe |
 | `membership.suspicion_mult` | int | 3 | Multiplikator des Suspicion-Timeouts |
 
+Ein Gossip-Secret ist erforderlich. Entweder `membership.secret_key` oder `membership.secret_file` setzen (die Datei gewinnt, wenn beides angegeben ist); ohne beides startet die Cluster-Komponente nicht. Der Wert ist base64-kodiert.
+
 Die vier Probe-Schlüssel erben die Local-Network-Defaults von memberlist, wenn sie nicht gesetzt sind; erhöhen Sie sie für Verbindungen mit hoher Latenz (z.B. `probe_interval: 2s`, `probe_timeout: 500ms`, `suspicion_mult: 5`).
 
 ### Internode (Transport)
@@ -369,13 +427,13 @@ TCP-Mesh für Relay- und Raft-Verkehr zwischen Knoten. Raft nutzt dieses Mesh ü
 | `internode.auto_port` | bool | true | Tatsächlichen Port beim Start ermitteln, festlegen und im Gossip bewerben |
 | `internode.advertise_addr` | string | | Zusätzlicher Relay-Endpunkt (IP oder DNS-Name), veröffentlicht für aktualisierte Peers — für NAT- oder Load-Balancer-Erreichbarkeit |
 | `internode.advertise_port` | int | 0 | Port für `advertise_addr` (0 = Bind-Port; erfordert `advertise_addr`) |
-| `internode.identity_key` | string | | Base64-kodierter privater Ed25519-Seed oder -Schlüssel; erforderlich, wenn `identity_key_file` nicht gesetzt ist |
-| `internode.identity_key_file` | string | | Datei mit Base64-kodiertem privatem Ed25519-Seed oder -Schlüssel; erforderlich, wenn `identity_key` nicht gesetzt ist |
-| `internode.trusted_peer_keys` | map | | Zuordnung von Knotennamen zu öffentlichen Base64-Schlüsseln; muss den lokalen Knoten und jeden vertrauenswürdigen Peer enthalten |
+| `internode.identity_key` | string | | Base64-kodierter privater ed25519-Schlüssel, der diesen Knoten identifiziert (inline) |
+| `internode.identity_key_file` | string | | Pfad zu einer Datei, die diesen Schlüssel enthält |
+| `internode.trusted_peer_keys` | map | | Base64-kodierter öffentlicher ed25519-Schlüssel je Knotenname, einschließlich dieses Knotens |
 
 `advertise_addr`/`advertise_port` veröffentlichen einen additiven Endpunkt in den Knoten-Metadaten, während der Bind-Endpunkt unverändert beworben bleibt, sodass Cluster mit gemischten Versionen während eines Rolling Upgrades verbunden bleiben.
 
-Jeder Clusterknoten benötigt eine eigene private Internode-Identität und eine Karte vertrauenswürdiger öffentlicher Schlüssel. Konfigurieren Sie genau eine Quelle für den privaten Schlüssel. Inline-Werte und Schlüsseldateien müssen einen Base64-kodierten Seed mit 32 Byte oder Schlüssel mit 64 Byte enthalten; Vertrauenswerte sind Base64-kodierte öffentliche Schlüssel.
+Die Internode-Identität ist zwingend, sobald Clustering aktiviert ist. `identity_key` und `identity_key_file` schließen sich gegenseitig aus, und eines von beiden muss vorhanden sein; der Wert dekodiert (Standard- oder Raw-base64) entweder zu einem 32-Byte-ed25519-Seed oder zu einem 64-Byte-ed25519-Privatschlüssel. `trusted_peer_keys` bildet jeden Knotennamen auf den 32-Byte-ed25519-Public-Key dieses Knotens ab und muss einen Eintrag für den lokalen `cluster.name` enthalten, dessen Wert zur lokalen Identität passt — andernfalls schlägt der Start fehl. Siehe die [Cluster-Anleitung](guides/cluster.md#internode-identity).
 
 ### Raft (Konsens)
 
@@ -403,6 +461,8 @@ Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unte
 | `raft.max_append_entries` | int | 16 | Maximale Einträge pro AppendEntries RPC |
 | `raft.leader_probe_interval` | duration | 3s | Takt der Globale-Registry-Leader-Erreichbarkeits-Probe |
 | `raft.leader_probe_grace` | int | 3 | Aufeinanderfolgende Probe-Fehler, bevor Leader als nicht erreichbar gilt |
+| `raft.registry_backend` | string | kv | Implementierung der Cluster-Namensregistry: `kv` (gemeinsamer kv-Keyspace) oder `fsm` (dedizierte Raft-FSM) |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | Wie lange der Verbreitungs-Cache globaler Namen Lösch-Tombstones behält |
 
 Einzelknoten (Entwicklung) — Clustering aktiviert, bootstrappt sich sofort:
 
@@ -410,15 +470,17 @@ Einzelknoten (Entwicklung) — Clustering aktiviert, bootstrappt sich sofort:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
   internode:
-    identity_key: "${env:DEV_PRIVATE_KEY}"
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
     trusted_peer_keys:
-      dev: "${env:DEV_PUBLIC_KEY}"
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-Drei-Knoten-Voting-Cluster — jeder Knoten listet die anderen als Seeds und wartet auf alle drei vor der Quorumbildung:
+Drei-Knoten-Voting-Cluster — jeder Knoten listet die anderen als Seeds und wartet auf alle drei vor der Quorumbildung. Jeder Knoten trägt dieselbe `trusted_peer_keys`-Karte und seinen eigenen privaten Schlüssel:
 
 ```yaml
 cluster:
@@ -430,17 +492,17 @@ cluster:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-1.identity
+    identity_key_file: /etc/wippy/node-1.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      node-3: "${env:NODE_3_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-Gossip-only-Client — tritt dem Cluster für Benennung/Messaging bei, betreibt nie Raft:
+Gossip-only-Client — tritt dem Cluster für Benennung/Messaging bei, betreibt nie Raft. Er braucht dennoch eine eigene Identität und muss in der Vertrauenskarte jedes Knotens auftauchen:
 
 ```yaml
 cluster:
@@ -448,12 +510,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/edge-7.identity
+    identity_key_file: /etc/wippy/edge-7.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```
@@ -550,7 +614,7 @@ extensions:
 
 | Variable | Beschreibung |
 |----------|--------------|
-| `GOMEMLIMIT` | Speicherlimit (überschreibt `--memory-limit` Flag) |
+| `GOMEMLIMIT` | Speicherlimit-Fallback, wenn das Flag `--memory-limit` nicht gesetzt ist (Vorrang: Flag `--memory-limit` > `GOMEMLIMIT` > Standard 1G) |
 
 ## Siehe auch
 

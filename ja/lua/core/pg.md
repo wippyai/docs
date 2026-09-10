@@ -1,6 +1,6 @@
 ---
 title: "プロセスグループ"
-description: "クラスタ全体のプロセスグループ、メンバーシップ、ブロードキャスト、メンバーシップ購読を管理する方法。"
+description: "プロセスを名前付きグループに参加させ、クラスタ全体のすべてのメンバーにブロードキャストします。Erlang/OTP pg をモデルにしています: グループは動的で、プロセスは複数のグループに所属でき、メンバーシップはクラスタ全体で追跡され、最終的整合性があります。"
 ---
 
 # プロセスグループ
@@ -211,12 +211,12 @@ group:release()
 | `pg.leave` | `leave()` | group name |
 | `pg.get_members` | `get_members()` | group name |
 | `pg.get_local_members` | `get_local_members()` | group name |
-| `pg.which_groups` | `which_groups()` | - |
-| `pg.which_local_groups` | `which_local_groups()` | - |
+| `pg.which_groups` | `which_groups()` | (なし) |
+| `pg.which_local_groups` | `which_local_groups()` | (なし) |
 | `pg.broadcast` | `broadcast()` | group name |
 | `pg.broadcast_local` | `broadcast_local()` | group name |
 | `pg.monitor` | `monitor()` | group name |
-| `pg.events` | `events()` | - |
+| `pg.events` | `events()` | (なし) |
 
 ## エラー
 

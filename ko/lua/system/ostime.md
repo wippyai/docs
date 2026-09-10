@@ -1,6 +1,6 @@
 ---
 title: "OS 시간"
-description: "Lua global os table로 runtime time을 읽고 date를 format하며 time difference를 계산합니다."
+description: "표준 Lua os 시간 함수입니다. 타임스탬프, 날짜 포맷팅, 시간 계산을 위한 실제 벽시계 시간을 제공합니다."
 ---
 
 # OS 시간
@@ -115,8 +115,8 @@ local t = os.date("*t", now)
 | `%b` | 월 약어 | Jun |
 | `%w` | 요일 (0-6, 일요일=0) | 6 |
 | `%j` | 연중 일 (001-366) | 167 |
-| `%U` | ISO 8601 week number (01-53, week starts Monday) | 24 |
-| `%W` | ISO 8601 week number (01-53, week starts Monday) | 24 |
+| `%U` | ISO 8601 주 번호 (01-53, 주는 월요일 시작) | 24 |
+| `%W` | ISO 8601 주 번호 (01-53, 주는 월요일 시작) | 24 |
 | `%z` | 시간대 오프셋 | -0700 |
 | `%Z` | 시간대 이름 | PDT |
 | `%c` | 전체 날짜/시간 | Sat Jun 15 14:30:45 2024 |

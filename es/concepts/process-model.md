@@ -43,7 +43,9 @@ Cada proceso se ejecuta bajo una identidad de actor y una security policy. Norma
 
 El control de acceso se aplica en varios niveles. La security policy puede restringir operaciones individuales del proceso y el envío de mensajes entre hosts. La policy asociada al actor actual determina qué operaciones están permitidas.
 
-Para las implicaciones de seguridad del aislamiento de procesos, consulta el [Modelo de seguridad](./security-model.md).
+Para las implicaciones de seguridad del aislamiento de procesos, consulte el [Modelo de Seguridad](concepts/security-model.md).
+
+## Creando Procesos
 
 ## Creación de procesos
 
@@ -78,7 +80,7 @@ return ok
 Los mensajes de un mismo remitente llegan en orden. Los de remitentes distintos pueden intercalarse. La entrega se realiza sin esperar respuesta; usa patrones de solicitud-respuesta si necesitas confirmación.
 
 <note>
-Los procesos pueden registrarse en un registro local de nombres y dirigirse por nombre en vez de PID (por ejemplo, `session_manager`). También se pueden registrar nombres globales para dirigirse entre nodos mediante `process.registry` con scopes EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).
+Los procesos pueden registrarse en un registro de nombres local y ser direccionados por nombre en lugar de PID (ej., `session_manager`). Los nombres también pueden registrarse a nivel de clúster para direccionamiento entre nodos mediante `process.registry`, usando los alcances EVENTUAL (basado en gossip), CONSISTENT o STRONG (ambos respaldados por Raft).
 </note>
 
 ## Supervisión
@@ -111,6 +113,8 @@ A nivel del runtime, los servicios pueden iniciar y supervisar procesos de larga
     restart:
       max_attempts: 5
       initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 El servicio se inicia automáticamente y se integra en la gestión del ciclo de vida del runtime. En el runtime fijado, el primer inicio fallido cuenta para `max_attempts`, por lo que `5` permite como máximo cuatro inicios posteriores. Cada reintento espera `initial_delay` con jitter; el delay no aumenta entre intentos.

@@ -1,6 +1,6 @@
 ---
 title: "Funções de Hash"
-description: "Calcule hashes criptográficos, valores HMAC, chaves PBKDF2 e hashes FNV-1."
+description: "Funções de hash criptograficas e autenticação de mensagens HMAC."
 ---
 
 # Funções de Hash
@@ -177,36 +177,24 @@ local n = hash.fnv64("data")
 
 **Retorna:** `number, error`
 
-Os números Lua não representam exatamente todos os inteiros sem sinal de 64 bits. Não use `fnv64` quando o valor exato de 64 bits precisar fazer round-trip por Lua; use uma representação em bytes ou string fornecida por uma implementação de protocolo apropriada.
+## Derivação de Chave
 
-## Derivação de Chaves
-
-### PBKDF2-HMAC
-
-Derive bytes brutos de chave com PBKDF2-HMAC-SHA256 ou PBKDF2-HMAC-SHA512:
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
-
-Aqui, `password` é fornecida pelo limite de secrets da aplicação e `salt` contém bytes aleatórios novos armazenados com o verificador. Os valores retornados são bytes brutos da chave, não texto imprimível.
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `password` | string | Senha ou secret de entrada não vazio |
-| `salt` | string | Bytes de salt não vazios |
-| `iterations` | integer | Número positivo de iterações, no máximo 10.000.000 |
-| `key_length` | integer | Tamanho positivo da saída em bytes |
-| `algo` | string? | `sha256` (padrão) ou `sha512` |
+| `password` | string | Senha/passphrase (não vazia) |
+| `salt` | string | Valor do salt (não vazio) |
+| `iterations` | integer | Quantidade de iterações (1 a 10.000.000) |
+| `key_length` | integer | Comprimento desejado da chave em bytes |
+| `hash` | string? | `sha256` ou `sha512` (padrão: `sha256`) |
 
-**Retorna:** `string, error` (bytes brutos da chave derivada)
+**Retorna:** `string, error` (bytes brutos da chave)
 
 ## Erros
 
@@ -214,6 +202,6 @@ Aqui, `password` é fornecida pelo limite de secrets da aplicação e `salt` con
 |----------|------|------------|
 | Input não e string | `errors.INVALID` | não |
 | Secret não e string (HMAC) | `errors.INVALID` | não |
-| Senha/salt PBKDF2 vazios, limites inválidos ou algoritmo não suportado | `errors.INVALID` | não |
+| Senha/salt vazios, iterações não positivas ou excessivas, hash não suportado (PBKDF2) | `errors.INVALID` | não |
 
 Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

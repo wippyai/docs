@@ -1,6 +1,6 @@
 ---
 title: "Futures"
-description: "Recibe, inspecciona y cancela resultados de llamadas asíncronas a funciones y contratos."
+description: "Resultados de operaciones asincronas. Los futures son devueltos por funcs.async() y llamadas async de contrato."
 ---
 
 # Futures
@@ -107,6 +107,8 @@ Solicita la cancelación de la operación asíncrona con semántica de mejor esf
 local canceled, err = future:cancel()
 ```
 
+**Devuelve:** `boolean, error`
+
 La operación puede aun completarse si ya esta en progreso.
 
 **Devuelve:** `boolean, error`
@@ -141,11 +143,8 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- The operation may still complete; this caller ignores the late result.
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
+    future:cancel()
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 local payload, result_err = future:result()
@@ -196,9 +195,7 @@ return value
 
 ## Errores
 
-| Condición | Tipo | Reintentable |
-|-----------|------|--------------|
-| Operación cancelada mediante `result()` | `errors.CANCELED` | no |
-| Fallo de operación devuelto por `result()` | varía | se conserva del error de la función |
-| Fallo de operación devuelto por `error()` | `errors.INTERNAL` | no |
-| Fallo del dispatch de cancelación | `errors.INTERNAL` | no |
+| Condición | Tipo |
+|-----------|------|
+| Operación cancelada | `CANCELED` |
+| Operación asincrona fallida | `result()` preserva el tipo de la operación; `error()` reporta `INTERNAL` |

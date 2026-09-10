@@ -250,6 +250,8 @@ Example GitHub Actions step:
 | `--profile` | | | Apply a workspace profile from merged runtime configuration; repeat to apply profiles in order |
 | `--set` | | | Override a merged configuration value as `section.path=value`; repeat for multiple overrides |
 | `--lock-file` | `-l` | wippy.lock | Path to lock file |
+| `--profile` | | | Apply a workspace profile from the merged runtime config (repeatable, applied in order) |
+| `--set` | | | Override a merged runtime config value (`section.path=value`, repeatable) |
 
 ## See Also
 

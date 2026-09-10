@@ -1,6 +1,6 @@
 ---
 title: "Ошибки"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Структурированная обработка ошибок с категоризацией и метаданными retry. Глобальная таблица errors доступна без require."
 ---
 
 # Ошибки

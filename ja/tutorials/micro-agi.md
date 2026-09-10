@@ -82,7 +82,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -150,7 +150,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` は LLM モジュールのバックグラウンドサービスが動作するポリシーグループ `wippy.security:process` を提供します。これがないとサービスは起動しません。
 
 ### セキュリティポリシー
 
@@ -181,7 +188,18 @@ entries:
 これはWippyランタイムの認可ではありません。保護された操作には実行コンテキストからの明示的な`allow`が必要で、
 後述のsecurityモジュール操作や`changes:apply()`内の`registry.apply`も含まれます。
 
-ポリシー評価の詳細は[セキュリティモデル](system/security.md)を参照してください。
+3 つ目のポリシーは、プロセス自身にレジストリへのアクセスを与えます。セキュリティコンテキストなしで起動されたプロセスはすべてのレジストリ読み取りを拒否されるため、`agent` コマンドはこのポリシーを自身のスコープとして携えます：
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
+
+ポリシー評価の詳細については、[セキュリティモデル](system/security.md) を参照してください。
 
 ### モデル
 
@@ -276,6 +294,11 @@ GPT-5.1は推論とツール使用を担当し、GPT-4.1 Nanoはコンテキス�
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, funcs, registry, time, security]
@@ -285,8 +308,7 @@ GPT-5.1は推論とツール使用を担当し、GPT-4.1 Nanoはコンテキス�
       compress: wippy.llm.util:compress
 ```
 
-プロセスはターミナルコマンドとして実行されます。`create_tool`は書き込み前にパッケージのdenylistを適用しますが、
-このフィルターはコマンドのランタイムセキュリティコンテキストを提供しません。
+プロセスはターミナルコマンドとして実行されます。`meta.command.security` が、実行時のアクターとスコープを与えます。これがないと `registry.get` が `not allowed to access entry` で失敗し、エージェントはロードされません。書き込みに対するセキュリティ強制は `create_tool` 内部で行われ、`agent_security` ポリシーグループをロードして書き込み前に評価します。
 
 インポート：
 

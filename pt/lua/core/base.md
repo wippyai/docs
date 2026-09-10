@@ -1,6 +1,6 @@
 ---
 title: "Bibliotecas Lua Padrão"
-description: "APIs globais integradas de Lua, incluindo table, string, math, coroutine e erros estruturados, disponíveis nas entradas do Wippy."
+description: "Bibliotecas Lua centrais automaticamente disponíveis em todos os processos Wippy. Nenhum require() necessário."
 ---
 
 # Bibliotecas Lua Padrão
@@ -77,11 +77,14 @@ _VERSION  -- Lua version string
 A biblioteca `table` fornece operações in-place sobre arrays, ordenação, concatenação e desempacotamento:
 
 ```lua
-table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
-table.remove(t [,pos])         -- Remove and return element at pos (default: last)
-table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
-table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.insert(t, [pos,] value)  -- Inserir valor em pos (padrão: fim)
+table.remove(t [,pos])         -- Remover e retornar elemento em pos (padrão: último)
+table.concat(t [,sep [,i [,j]]]) -- Concatenar elementos array com separador
+table.sort(t [,comp])          -- Ordenar in place, comp(a,b) retorna true se a < b
+table.unpack(t [,i [,j]])      -- Desempacotar elementos de tabela como múltiplos valores
+table.create(narr, nhash)      -- Prealocar tabela com capacidade de array e hash
+table.freeze(t)                -- Tornar a tabela imutável, retorna t
+table.isfrozen(t)              -- true se a tabela é imutável
 ```
 
 ```lua
@@ -121,18 +124,21 @@ string.lower(s)   -- Convert to lowercase
 ### Substrings e Caracteres
 
 ```lua
-string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
-string.len(s)              -- String length (or use #s)
-string.byte(s [,i [,j]])   -- Numeric codes of characters
-string.char(...)           -- Create string from character codes
-string.rep(s, n)           -- Repeat string n times
-string.reverse(s)          -- Reverse string
+string.sub(s, i [,j])      -- Substring de i até j (índices negativos do fim)
+string.len(s)              -- Tamanho da string (ou use #s)
+string.byte(s [,i [,j]])   -- Códigos numéricos de caracteres
+string.char(...)           -- Criar string de códigos de caractere
+string.rep(s, n)           -- Repetir string n vezes
+string.reverse(s)          -- Inverter string
 ```
 
 ### Formatação
 
 ```lua
-string.format(fmt, ...)    -- Printf-style formatting
+string.format(fmt, ...)    -- Formatação estilo printf
+string.pack(fmt, ...)      -- Empacotar valores em uma string binária
+string.unpack(fmt, s [,pos]) -- Desempacotar string binária, retorna valores e próxima posição
+string.packsize(fmt)       -- Tamanho em bytes de um formato empacotado
 ```
 
 Específicadores de formato: `%d` (inteiro), `%f` (float), `%s` (string), `%q` (quoted), `%x` (hex), `%o` (octal), `%e` (científico), `%%` (% literal)
@@ -186,9 +192,9 @@ A biblioteca `math` fornece constantes numéricas e operações matemáticas com
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
-math.mininteger  -- Minimum integer
-math.maxinteger  -- Maximum integer
+math.huge     -- Maior float representável
+math.mininteger  -- Inteiro mínimo
+math.maxinteger  -- Inteiro máximo
 ```
 
 ### Operações Básicas
@@ -209,28 +215,30 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x)           -- Natural log
-math.log10(x)         -- Base-10 log
+math.log(x)           -- Log natural
+math.log10(x)         -- Log base 10
+math.frexp(x)         -- Mantissa e expoente
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Trigonometria
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.sin(x)   math.cos(x)   math.tan(x)    -- Radianos
 math.asin(x)  math.acos(x)  math.atan(x)
-math.atan2(y, x)                            -- Arc tangent of y/x
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
-math.deg(r)   -- Radians to degrees
-math.rad(d)   -- Degrees to radians
+math.atan2(y, x)                            -- Arco tangente de y/x
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hiperbólico
+math.deg(r)   -- Radianos para graus
+math.rad(d)   -- Graus para radianos
 ```
 
 ### Números Aleatórios
 
 ```lua
-math.random()         -- Random float [0,1)
-math.random(n)        -- Random integer [1,n]
-math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Compatibility no-op; does not seed math.random
+math.random()         -- Float aleatório [0,1)
+math.random(n)        -- Inteiro aleatório [1,n]
+math.random(m, n)     -- Inteiro aleatório [m,n]
+math.randomseed(x)    -- Sem efeito; o gerador é semeado automaticamente
 ```
 
 `math.random` não é determinístico. Não o use em decisões que precisem ser reproduzidas de forma idêntica em um workflow; `math.randomseed` não pode torná-lo determinístico.
@@ -330,11 +338,11 @@ local stack = errors.call_stack(err)
 ### Métodos de Erro
 
 ```lua
-err:message()    -- Get error message string
-err:kind()       -- Get error kind (e.g., "NOT_FOUND")
-err:retryable()  -- true, false, or nil (unknown)
-err:details()    -- Get details table or nil
-err:stack()      -- Get stack trace as string
+err:message()    -- Obter string de mensagem de erro
+err:kind()       -- Obter tipo de erro (ex: "NOT_FOUND")
+err:retryable()  -- true, false, ou nil (desconhecido)
+err:details()    -- Obter tabela de detalhes ou nil
+err:stack()      -- Obter stack trace como string
 ```
 
 ## Recursos Restritos
@@ -346,11 +354,9 @@ Os seguintes recursos padrão de Lua não estão disponíveis nos processos do W
 | `load`, `loadstring`, `loadfile`, `dofile` | Use o módulo [Avaliação Dinâmica](lua/dynamic/eval.md) |
 | `collectgarbage` | GC automático |
 | `rawlen` | Use operador `#` |
-| `string.dump` | Não suportado |
-| `io.*` | Use [Filesystem](lua/storage/filesystem.md) para arquivos ou [I/O de Terminal](../system/io.md) para streams de terminal |
-| `os.execute` | Use [Execução de Comandos](lua/dynamic/exec.md) |
-| `os.remove`, `os.rename` | Use [Filesystem](../storage/filesystem.md) |
-| `os.exit`, `os.tmpname` | Sem equivalente direto na biblioteca padrão |
+| Biblioteca padrão de arquivos `io.*` | Use módulo [File System](lua/storage/filesystem.md); o módulo `io` no Wippy é [Terminal I/O](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Use módulos [Command Execution](lua/dynamic/exec.md), [Environment](lua/system/env.md) |
+| `string.dump` | Não disponível |
 | `debug.*` | Não disponível |
 | `utf8.*` | Não disponível |
 | `package.loadlib` | Bibliotecas nativas não suportadas |

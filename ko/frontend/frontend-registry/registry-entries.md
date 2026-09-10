@@ -1,19 +1,19 @@
 ---
 title: "레지스트리 엔트리"
-description: "레지스트리 YAML, 패키지 메타데이터, wippy-meta.json으로 프런트엔드 페이지와 웹 컴포넌트를 Web Host에 선언하는 방법입니다."
+description: "레지스트리 엔트리는 Wippy 백엔드가 프론트엔드 아티팩트 — 마이크로 프론트엔드 앱 또는 재사용 가능한 웹 컴포넌트 — 를 선언하여 Web Host가…"
 ---
 
 # 레지스트리 엔트리
 
-레지스트리 엔트리는 Wippy 백엔드에 프런트엔드 아티팩트를 선언하여 Web Host가 이를 발견하고 제공할 수 있게 합니다. 아티팩트는 마이크로 프런트엔드 앱 또는 재사용 가능한 웹 컴포넌트일 수 있습니다. 선언은 모듈의 `_index.yaml`, `package.json`의 `wippy` 블록, 생성된 `wippy-meta.json` 파일에 걸쳐 있습니다.
+레지스트리 엔트리는 Wippy 백엔드가 프론트엔드 아티팩트 — 마이크로 프론트엔드 앱 또는 재사용 가능한 웹 컴포넌트 — 를 선언하여 Web Host가 이를 발견하고 서빙할 수 있게 하는 방법입니다. 이 문서는 모듈의 `_index.yaml`, 해당 `package.json`의 `wippy` 블록, 그리고 이 둘을 연결하는 `wippy-meta.json` 파일 사이의 계약을 설명합니다.
 
-런타임에 이 엔트리를 처리하는 `wippy/views` 모듈 설정은 [Views](../../framework/views.md)를 참고하십시오.
+런타임에 이 엔트리들을 처리하는 `wippy/views` 모듈 설정은 [Views](../../framework/views.md)를 참고하세요.
 
 ## 레지스트리 엔트리란
 
-모든 프런트엔드 아티팩트는 모듈 `_index.yaml`의 `registry.entry`로 선언합니다. `kind: registry.entry` 표시는 이 엔트리가 Lua 컴포넌트를 직접 정의하는 대신 다른 모듈이 소비하는 메타데이터를 담는다는 것을 Wippy 레지스트리에 알립니다.
+모든 프론트엔드 아티팩트는 모듈의 `_index.yaml`에서 `registry.entry`로 선언됩니다. `kind: registry.entry` 마커는 이 엔트리가 Lua 컴포넌트를 직접 정의하는 것이 아니라 다른 모듈이 소비하는 메타데이터를 담고 있음을 Wippy 레지스트리에 알립니다.
 
-> **흔한 함정:** `view.page`와 `view.component`는 `kind` 값이 **아닙니다**. 항상 `kind: registry.entry`를 작성하고 프런트엔드 아티팩트 유형은 `meta.type`에 넣으십시오. `kind: view.page`와 `kind: view.component`는 잘못된 형태입니다.
+> **흔한 함정:** `view.page`와 `view.component`는 `kind` 값이 **아닙니다**. 항상 `kind: registry.entry`를 작성하고 프론트엔드 아티팩트 타입은 `meta.type`에 넣으세요. `kind: view.page`와 `kind: view.component`는 유효하지 않은 형태입니다.
 
 최소한의 올바른 형태:
 
@@ -45,77 +45,75 @@ entries:
       mountRoute: /home/:part(.*)*
 ```
 
-`wippy/views`가 읽는 것은 `meta` 블록입니다. `meta.type` 필드가 지원하는 두 아티팩트 종류를 구분합니다.
+`meta` 블록이 `wippy/views`가 읽는 부분입니다. `meta.type` 필드는 지원되는 두 가지 아티팩트 종류를 구분합니다.
 
-## `meta.type` 구분자
+## `meta.type` 판별자
 
 | 값 | 의미 |
 |---|---|
-| `view.page` | 페이지에서 선택한 iframe 또는 Web Fragment 엔진으로 렌더링되는 마이크로 프런트엔드 앱(전체 SPA) |
-| `view.component` | 페이지 어디에나 삽입할 수 있는 웹 컴포넌트(사용자 정의 요소) |
+| `view.page` | 마이크로 프론트엔드 앱(완전한 SPA)으로, Web Host 내부의 iframe에 렌더링됩니다 |
+| `view.component` | 페이지 어디에나 임베드할 수 있는 Web Component(커스텀 엘리먼트)입니다 |
 
-`meta`의 다른 필드는 이 유형의 컨텍스트에서 해석됩니다. 한 유형에만 적용되는 필드는 유형별 참조 문서([view.page](./view-page.md), [view.component](./view-component.md))에서 설명합니다.
+`meta`의 다른 모든 필드는 이 타입의 맥락에서 해석됩니다. 한쪽 타입에만 적용되는 필드는 타입별 레퍼런스 페이지([view.page](./view-page.md), [view.component](./view-component.md))에서 설명합니다.
 
-## `specification` 표시
+## `specification` 마커
 
-프런트엔드 패키지는 `package.json` 최상위에 `"specification": "wippy-component-1.0"`을 선언해야 합니다. 이 표시는 패키지 메타데이터와 API 응답 형태를 식별합니다. 값이 있으면 `@wippy-fe/vite-plugin`이 이를 검증합니다.
+레지스트리에 참여하는 모든 프론트엔드 패키지는 `package.json` 최상위에 `"specification": "wippy-component-1.0"`을 선언합니다. 이 문자열은 해당 패키지가 wippy-component 계약을 따른다는 것 — 알려진 형태의 `wippy` 블록을 가지며 `@wippy-fe/vite-plugin`으로 빌드되었다는 것 — 을 Wippy(및 툴링)에 알리는 핸드셰이크입니다.
 
 ```json
 {
-  "name": "@wippy/example-widget",
+  "name": "@wippy/app-main",
   "version": "1.0.0",
   "specification": "wippy-component-1.0",
-  "browser": "dist/index.js",
-  "wippy": {
-    "type": "component",
-    "tagName": "example-widget"
-  }
+  "wippy": { ... }
 }
 ```
 
-이 표시는 렌더링 동작을 바꾸지 않습니다. `wippy/views`는 번들 값을 페이지 및 컴포넌트 descriptor에 전달하거나 이를 생략한 레거시 번들에 `wippy-component-1.0`을 제공합니다. 레지스트리 YAML 검증은 이 필드에 의존하지 않습니다.
+`specification`의 존재 자체가 런타임 동작을 바꾸지는 않지만, `wippy/views`는 레지스트리에서 로드한 엔트리를 검증할 때 이를 사용합니다.
 
 ## `wippy-meta.json` 계약
 
-`@wippy-fe/vite-plugin`은 빌드된 번들 옆에 `wippy-meta.json`을 출력합니다. props schema, events schema, title, icon, proxy 주입 설정처럼 아티팩트 작성자가 정의한 런타임 메타데이터의 정식 소스입니다.
+`@wippy-fe/vite-plugin`은 빌드된 번들 옆에 `wippy-meta.json` 파일을 생성합니다. 이 파일은 아티팩트의 런타임 메타데이터 — props 스키마, events 스키마, title, icon, proxy 주입 설정 — 에 대한 정식 소스 오브 트루스입니다.
 
-메타데이터 책임:
+에이전트와 툴링을 위한 요약:
 
-- **출력 주체:** `view.page` 앱의 `wippyPagePlugin()`과 `view.component` 웹 컴포넌트의 `wippyComponentPlugin()`.
-- **생성 원본:** `package.json`. `wippy-meta.json`을 직접 작성하지 마십시오.
-- **소비 주체:** 제공 번들 root에서 이를 읽어 페이지/컴포넌트 descriptor와 API 응답을 만드는 `wippy/views`.
-- **재정의 주체:** 배포 정책과 명시적으로 선언한 모든 필드에서 계속 권위 있는 `_index.yaml`.
+- **생성 주체:** `view.page` 앱은 `wippyPagePlugin()`, `view.component` 웹 컴포넌트는 `wippyComponentPlugin()`.
+- **작성 주체:** `wippy-meta.json`을 손으로 작성하는 사람은 없습니다. vite 플러그인이 `package.json`에서 생성합니다.
+- **소비 주체:** `wippy/views`가 페이지/컴포넌트 디스크립터와 API 응답을 구성할 때 서빙된 번들 루트에서 이를 읽습니다.
+- **YAML의 역할:** `_index.yaml`은 배포 정책과 명시적으로 오버라이드하는 모든 필드에 대해 권위를 유지합니다.
 
-`wippy/views`는 `registry.entry`를 불러올 때 페이지와 컴포넌트 모두에서 아티팩트의 제공 번들 root(`url + base_path`)에 있는 `wippy-meta.json`을 읽습니다. YAML이 항상 이깁니다. `_index.yaml`이 선언한 모든 필드에서 우선하며, 선언이 없을 때 `wippy-meta.json`이 기본값을 제공합니다. `announced`, `secure`, `url`, `mountRoute`, `base_path` 같은 배포 정책 필드는 컴포넌트 저작이 아니라 운영자 결정을 표현하므로 `_index.yaml`에 설정해야 하며 `package.json`/`wippy-meta.json` 작성 surface가 없습니다. (`base_path`는 페이지와 컴포넌트 모두에서 적용됩니다. 현재 app-template 컴포넌트 엔트리는 생략할 뿐입니다.)
+`wippy/views`가 `registry.entry`를 로드할 때, 아티팩트의 서빙된 번들 루트에서 `wippy-meta.json`을 읽습니다. 페이지의 경우 그 루트는 페이지의 `url + base_path`이며, 웹 컴포넌트의 경우 현재 엔트리들은 컴포넌트를 `url`에서 직접 서빙합니다. YAML이 항상 우선합니다: `_index.yaml`은 자신이 선언하는 모든 필드에 대해 우선권을 가집니다. `wippy-meta.json`은 특정 필드에 YAML 오버라이드가 없을 때 `wippy/views`가 읽는 기본값을 제공합니다. 배포 정책 필드 — `announced`, `secure`, `url`, `mountRoute`, `base_path` — 는 컴포넌트 작성이 아니라 운영자의 결정을 표현하므로 `_index.yaml`에 설정해야 합니다. 이들에 대한 `package.json`/`wippy-meta.json` 작성 표면은 존재하지 않습니다. (`base_path`는 페이지와 컴포넌트 모두에서 인정되며, 현재 app-template 컴포넌트 엔트리들은 단지 이를 생략할 뿐입니다.)
 
-반면 `entry_point`는 FE가 작성하며 YAML로 재정의할 수 있습니다. 페이지에서는 `wippy.path`에서 옵니다. `@wippy-fe/vite-plugin`이 이를 **필수**로 요구하므로 생략하면 `wippy.path is required for a page package` 오류가 납니다. 컴포넌트에서는 최상위 `browser` 필드에서 오며 `wippy.tagName`은 사용자 정의 요소 이름을 별도로 선언합니다. `_index.yaml`의 `meta.entry_point`는 작성된 기본값 위에 적용하는 선택적 배포별 재정의이며 YAML 전용 필드가 아닙니다.
+반면 `entry_point`는 FE에서 작성하면서 *동시에* YAML로 오버라이드할 수 있습니다. 이는 패키지의 `wippy` 블록에서 `wippy-meta.json`으로 구워집니다 — 페이지는 `wippy.path`(`@wippy-fe/vite-plugin`이 **필수**로 요구하며, 생략하면 플러그인이 `wippy.path is required for a page package`를 던집니다), 컴포넌트는 `wippy.tagName`/`browser`입니다. `_index.yaml`의 `meta.entry_point` 필드는 그 작성된 기본값 위에 얹히는 배포별 선택적 오버라이드이며, YAML 전용 필드가 아닙니다.
 
-컴포넌트 작성자는 표시 메타데이터를 `package.json`의 `wippy` 블록에 한 번 작성하고 vite plugin이 작성자 기본값으로 `wippy-meta.json`에 기록합니다. 운영자는 라우팅과 접근 정책을 YAML에 설정하고 표시 필드도 재정의할 수 있습니다.
+이 분리 덕분에 컴포넌트 작성자는 표시 메타데이터를 `package.json`의 `wippy` 블록에 한 번만 작성하고, vite 플러그인이 빌드 시점에 이를 작성자 기본값으로 `wippy-meta.json`에 굽습니다. 컴포넌트를 배포하는 운영자는 라우팅과 접근 정책을 YAML에 설정하며, 표시 수준의 필드도 거기서 오버라이드할 수 있습니다.
 
 ## 공통 필드
 
-다음 필드는 `view.page`와 `view.component` 엔트리의 `meta` 블록에 모두 나타납니다.
+다음 필드들은 `view.page`와 `view.component` 엔트리 모두의 `meta` 블록에 나타납니다.
 
-| 필드 | 유형 | 기본값 | 설명 |
+| 필드 | 타입 | 기본값 | 설명 |
 |---|---|---|---|
-| `type` | string | — | `view.page` 또는 `view.component`(필수) |
-| `name` | string | 엔트리 이름 | API 응답에서 사용하는 식별자 |
+| `type` | string | — | `view.page` 또는 `view.component` (필수) |
+| `name` | string | 엔트리 이름 | API 응답에서 사용되는 식별자 |
 | `title` | string | — | 사람이 읽을 수 있는 표시 이름 |
-| `icon` | string | — | Iconify 참조. 예: `tabler:layout-dashboard` |
-| `announced` | boolean | — | 목록 API 표시 여부. 유형에 따라 의미가 다름(아래 참고) |
-| `secure` | boolean | `false` | 접근에 인증 필요 |
-| `url` | string | — | 정적 파일 제공을 위한 기본 URL 접두사(CDN origin 또는 로컬 마운트 경로) |
-| `entry_point` | string | `index.html` / `index.js` | 정적 디렉터리 안의 엔트리 파일 이름 |
+| `icon` | string | — | Iconify 참조, 예: `tabler:layout-dashboard` |
+| `announced` | boolean | — | 목록 API에서의 노출을 제어합니다. 의미는 타입별로 다릅니다(아래 참고) |
+| `secure` | boolean | `false` | 접근에 인증이 필요합니다 |
+| `url` | string | — | 정적 파일 서빙을 위한 기본 URL 접두사(CDN 오리진 또는 로컬 마운트 경로) |
+| `entry_point` | string | `index.html` / `index.js` | 정적 디렉터리 내의 엔트리 파일 이름 |
 
-### 유형별 `announced` 의미
+### 타입별 `announced` 의미
 
-- **`view.page`**: 탐색 사이드바(`GET /api/public/pages/list`)에 페이지가 나타나는지 제어합니다. `announced: false`는 탐색에서 숨길 뿐 직접 접근하면 여전히 불러옵니다. 삽입 페이지나 보조 페이지에 적합한 패턴입니다.
+`announced` 플래그는 `meta.type`에 따라 다른 결과를 가집니다:
 
-- **`view.component`**: `GET /api/public/components/list` 포함 여부를 결정합니다. `announced: false`이면 엔드포인트에서 완전히 제외되어 Web Host가 script tag를 주입하지 않고 `customElements.get(tagName)`은 undefined로 남습니다. autoload가 필요하면 `announced: true`가 필수입니다. 자세한 내용은 [view.component](./view-component.md)을 참고하십시오.
+- **`view.page`**: 페이지가 내비게이션 사이드바(`GET /api/public/pages/list`)에 나타나는지를 제어합니다. `announced: false`로 설정하면 내비게이션에서 페이지가 숨겨지지만, 직접 접근하면 페이지는 여전히 로드됩니다. 임베드용 또는 보조 페이지에 적합한 정당한 패턴입니다.
 
-## 제공 필드의 조합 방식
+- **`view.component`**: `GET /api/public/components/list`에 포함될지를 결정합니다. `announced: false`이면 컴포넌트는 해당 엔드포인트에서 완전히 제외되며, 이는 Web Host가 그 스크립트 태그를 결코 주입하지 않고 `customElements.get(tagName)`이 undefined로 남는다는 뜻입니다. 자동 로드가 필요한 컴포넌트에는 `announced: true`가 필수입니다 — 자세한 내용은 [view.component](./view-component.md)를 참고하세요.
 
-마이크로 프런트엔드 앱에서는 세 필드가 결합되어 Web Host가 불러올 HTML URL을 만듭니다.
+## 서빙 필드의 조합 방식
+
+마이크로 프론트엔드 앱의 경우, 세 필드가 조합되어 Web Host가 로드하는 HTML URL을 만듭니다:
 
 ```
 <url>/<base_path>/<entry_point>
@@ -123,9 +121,9 @@ entries:
 
 예를 들어 `url: /app`, `base_path: app/main`, `entry_point: app.html`이면 호스트는 `/app/app/main/app.html`을 가져옵니다.
 
-`base_path`와 `entry_point`의 분리는 의도적입니다. Web Host는 불러온 페이지에 `<url>/<base_path>/`를 HTML `<base>` tag로 주입하며, 이는 브라우저가 페이지 안의 모든 상대 URL을 해석하는 방식을 지배합니다. 엔트리 파일은 base 하위 디렉터리에 있을 수 있습니다. 중요한 것은 모든 리소스에 상대 경로로 도달할 수 있는 공통 root를 base가 가리키는 것입니다.
+`base_path`와 `entry_point`의 분리는 의도적입니다. Web Host는 로드된 페이지에 `<url>/<base_path>/`를 HTML `<base>` 태그로 주입하며, 이는 브라우저가 그 페이지 내의 모든 상대 URL을 해석하는 방식을 결정합니다. 엔트리 파일은 베이스의 하위 디렉터리에 있어도 됩니다 — 중요한 것은 베이스가 모든 리소스에 상대 경로로 도달할 수 있는 공통 루트를 가리켜야 한다는 점입니다.
 
-예를 들어 번들 레이아웃이 다음과 같다면:
+예를 들어 번들이 다음과 같은 레이아웃을 가진다면:
 
 ```
 static/
@@ -136,14 +134,14 @@ static/
     app.js
 ```
 
-`index.html`이 `../shared/vendor.js`를 참조한다면 `base_path`는 `app/`이 아니라 `static/`(즉 `app/`과 `shared/`를 모두 포함하는 디렉터리)을 가리켜야 합니다. `base_path: app`을 설정하면 `../shared/vendor.js`가 제공 디렉터리 밖으로 해석되어 404가 발생합니다.
+그리고 `index.html`이 `../shared/vendor.js`를 참조한다면, `base_path`는 `app/`이 아니라 `static/`(즉 `app/`과 `shared/`를 모두 포함하는 디렉터리)를 가리켜야 합니다. `base_path: app`으로 설정하면 `../shared/vendor.js`가 서빙 디렉터리 밖으로 해석되어 404가 됩니다.
 
-모든 자산이 엔트리 파일 옆에 있는 일반적인 경우에는 `base_path`와 `entry_point`를 포함하는 디렉터리가 같은 수준이므로 차이가 드러나지 않습니다. 번들이 형제 디렉터리 사이에서 리소스를 공유할 때만 중요합니다.
+모든 에셋이 엔트리 파일과 같은 위치에 있는 일반적인 경우에는 `base_path`와 `entry_point`가 있는 디렉터리가 같은 레벨이므로 이 구분이 드러나지 않습니다. 번들이 형제 디렉터리 간에 리소스를 공유할 때만 문제가 됩니다.
 
-웹 컴포넌트에서도 호스트는 같은 방식으로 제공 URL을 조합합니다.
+웹 컴포넌트의 경우에도 호스트는 서빙 URL을 같은 방식으로 구성합니다:
 
 ```
 <url>/<base_path>/<entry_point>
 ```
 
-현재 app-template 컴포넌트 엔트리는 `base_path`를 생략하지만 지원되며 같은 방식(`<url>/<base_path>/<entry_point>`)으로 조합됩니다. 따라서 해당 엔트리의 URL은 `<url>/<entry_point>`로 줄어듭니다. 페이지와 달리 컴포넌트는 자체 주입 HTML `<base>` tag를 받지 않고 `<script type="module">`로 주입됩니다.
+현재 app-template 컴포넌트 엔트리들은 `base_path`를 생략하지만, 이는 지원되며 동일하게 조합됩니다(`<url>/<base_path>/<entry_point>`) — 따라서 그런 엔트리에서는 URL이 `<url>/<entry_point>`로 축약됩니다. 페이지와의 차이는 컴포넌트가 자체 HTML `<base>` 태그를 주입받는 대신 `<script type="module">`로 주입된다는 점입니다.

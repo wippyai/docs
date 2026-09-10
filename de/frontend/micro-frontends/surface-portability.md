@@ -1,29 +1,16 @@
----
-title: "Portabilität von Oberflächen"
-description: "view.page-Anwendungen mit Container Queries, Oberflächenvariablen und host.surface unabhängig vom Browser-Viewport skalieren."
----
+# Surface-Portabilität
 
-# Portabilität von Oberflächen
+Einer Micro-Frontend-App wird eine **Surface** zugewiesen — der rechteckige Bereich, den der Web Host ihr zuteilt. Dieser Bereich ist meist **nicht** das Browserfenster: Die App kann eines von mehreren Panels in einem [Multi-Panel-Layout](../web-host/multi-panel-layout.md) sein, und dieselbe App kann von jeder der beiden [Render-Engines](../web-host/render-engines.md) in unterschiedlichen Größen auf demselben Bildschirm gerendert werden.
 
-**Klassifizierung: Rendering-Vertragsreferenz mit gezielten Beispielen.** CSS-,
-JavaScript- und Paketblöcke zeigen einzelne Regeln, kein vollständiges Fixture.
+Ein Layout am Fenster auszurichten ist daher in beiden Engines falsch. Der Surface-Vertrag gibt Ihnen eine portable Alternative in CSS und in JavaScript.
 
-Eine Micro-Frontend-App erhält eine **Oberfläche**, also den rechteckigen Bereich,
-den der Web Host ihr zuweist. Dieser ist meist nicht das Browserfenster. Die App
-kann ein Panel eines [Multi-Panel-Layouts](../web-host/multi-panel-layout.md)
-sein und durch beide [Render Engines](../web-host/render-engines.md) in
-unterschiedlichen Größen erscheinen. Fensterbasierte Größen sind daher in
-beiden Engines falsch; der Oberflächenvertrag bietet portable CSS- und JS-Alternativen.
+> **Status:** Vertrag 1, ausgeliefert. Tailwind-`surface-*`-Varianten, host-vermitteltes Scrollen und tiefes Hit-Testing sind **noch nicht ausgeliefert**; diese Seite dokumentiert nur, was heute existiert.
 
-> **Status:** Vertrag 1 ist ausgeliefert. Tailwind-Varianten `surface-*`,
-> hostvermitteltes Scrollen und tiefes Hit-Testing sind **noch nicht verfügbar**;
-> diese Seite dokumentiert ausschließlich den heutigen Stand.
-
-## CSS-Vertrag
+## Der CSS-Vertrag
 
 ### Container Queries
 
-Der Host nennt die Appbox `wippy-surface`:
+Der Host benennt die Box der App `wippy-surface`, sodass sie wie jeder CSS-Container abgefragt werden kann:
 
 ```css
 @container wippy-surface (min-width: 640px) {
@@ -31,90 +18,61 @@ Der Host nennt die Appbox `wippy-surface`:
 }
 ```
 
-Verwenden Sie dies statt `@media (min-width: 640px)` für Reaktionen auf den tatsächlich
-zugewiesenen Platz. Native Container-Einheiten beziehen sich auf dieselbe Box:
+Verwenden Sie das statt `@media (min-width: 640px)` für alles, was auf den Platz reagiert, den die App einnimmt. Native Container-Einheiten lösen gegen dieselbe Box auf:
 
 ```css
 .hero { inline-size: 50cqw; }
 ```
 
-### Oberflächenvariablen
+### Surface-Variablen
 
-| Eigenschaft | Bedeutung |
-|---|---|
-| `--wippy-surface-width` | gesamte Breite |
-| `--wippy-surface-width-unit` | 1 % der Breite |
-| `--wippy-surface-height` | gesamte Höhe, nur Container-Sizing |
-| `--wippy-surface-height-unit` | 1 % der Höhe, nur Container-Sizing |
+Vier Custom Properties tragen die Geometrie als schlichte Pixel-Längen:
 
-Portabler Ersatz für `vw` / `vh`:
+| Property | Bedeutung |
+|----------|---------|
+| `--wippy-surface-width` | volle Surface-Breite |
+| `--wippy-surface-width-unit` | 1 % der Surface-Breite |
+| `--wippy-surface-height` | volle Surface-Höhe (nur bei Container-Sizing) |
+| `--wippy-surface-height-unit` | 1 % der Surface-Höhe (nur bei Container-Sizing) |
+
+Sie sind der portable Ersatz für `vw` / `vh`:
 
 ```css
-/* was: inline-size: 50vw */
+/* war: inline-size: 50vw */
 .panel { inline-size: calc(var(--wippy-surface-width-unit) * 50); }
 ```
 
-Die Werte werden vererbt, sodass jedes Element der App sie lesen kann. Sie
-beschreiben die **Content Box** der Querybox, gegen die auch `100cqw` auflöst.
+Die Werte werden vererbt, jedes Element in der App kann sie also lesen. Sie melden die **Content Box** der Query-Box, dieselbe Box, gegen die `100cqw` auflöst.
 
-Apps dürfen diese vier Namen weder deklarieren noch zuweisen. Eine Deklaration
-auf einem Nachfahren überschreibt den geerbten Wert und löst die App unbemerkt
-von der Oberfläche.
+Anwendungen dürfen diese vier Namen **nicht** deklarieren oder zuweisen. Eine Deklaration in einem Nachfahren überdeckt den geerbten Wert und löst die App stillschweigend von der Surface.
 
-Die Eigenschaften müssen außerdem **unregistriert** bleiben. Beschreiben Sie
-sie weder mit `@property` noch mit `CSS.registerProperty()`. Der Host markiert
-eine nicht verfügbare Blockachse mit einem garantiert ungültigen Wert, der nur
-bei einer unregistrierten Eigenschaft zum leeren String wird. Ein
-`initial-value` würde stattdessen berechnet: Eine Content-Sizing-App würde sich
-damit ohne irgendeinen Fehler als Container-Sizing melden, und
-`supports('block-size')` gäbe `true` zurück.
+Sie müssen außerdem **unregistriert** bleiben. Beschreiben Sie sie nicht mit `@property` oder `CSS.registerProperty()`. Der Host markiert die Blockachse als nicht verfügbar, indem er einen garantiert ungültigen Wert zuweist, der nur solange zum leeren String berechnet wird, wie die Property unregistriert ist. Geben Sie einer ein `initial-value`, berechnet sie stattdessen dieses, sodass eine content-sized App sich als container-sized meldet und `supports('block-size')` beginnt, `true` zu liefern — ganz ohne Fehler.
 
-Beachten Sie zwei Einschränkungen, bevor Sie diese Werte pixelgenau mit
-`100cqw` vergleichen. Der **erste Frame kann breiter sein**: Der Startwert wird
-vom hostseitigen `<iframe>` übernommen, bevor das App-Dokument existiert und
-eine mögliche Scrollbar bekannt ist. Dieser Wert ist in das CSS des Dokuments
-eingebettet; das erste Layout verwendet ihn und wird einen Frame später
-korrigiert. Außerdem sind die Werte auf 1/64 px quantisiert und müssen mit
-Toleranz verglichen werden.
+Zwei Vorbehalte, bevor Sie diese Werte pixelgenau mit `100cqw` vergleichen. Der **erste Frame kann breiter sein**: Der Boot-Wert wird aus dem host-seitigen `<iframe>`-Element gesetzt, bevor das Dokument der App existiert, er kann also nicht wissen, ob der Inhalt eine Scrollbar hervorruft. Dieser Wert ist im CSS des Dokuments verankert, das erste Layout verwendet ihn also und wird einen Frame später korrigiert. Und die Werte sind auf 1/64 px **quantisiert**, vergleichen Sie also mit einer Toleranz.
 
-## Container- und Content-Sizing
+## Container-Sizing und Content-Sizing
 
-| | Inline-Achse | Block-Achse |
+| | Inline-Achse | Blockachse |
 |---|---|---|
-| **Container-Sizing** — Host gibt beide Maße vor | verfügbar | verfügbar |
-| **Content-Sizing** — Inhalt bestimmt Höhe | verfügbar | **nicht verfügbar** |
+| **Container-Sizing** — der Host gibt beide Dimensionen vor | verfügbar | verfügbar |
+| **Content-Sizing** — der Inhalt der App bestimmt die Höhe | verfügbar | **nicht verfügbar** |
 
-Bei Content-Sizing sind die Höheneigenschaften absichtlich ungültig;
-`var(--wippy-surface-height, 400px)` verwendet deshalb den Fallback, und
-`@container wippy-surface (min-height: …)` matcht nie.
+Beim Content-Sizing sind die Höhen-Properties absichtlich ungültig, sodass `var(--wippy-surface-height, 400px)` zurückfällt, statt eine Zahl zu melden, und `@container wippy-surface (min-height: …)` nie greift.
 
-**Der Autor wählt den Modus nicht**, und nichts in `package.json` ändert ihn.
-Der Renderort im Web Host entscheidet:
+**Welches eine App bekommt, ist nicht die Wahl des Autors**, und nichts in `package.json` ändert das. Das Sizing bestimmt sich daraus, *wo der Web Host die App rendert*:
 
-| Darstellung | Sizing |
+| Gerendert als | Sizing |
 |---|---|
-| Geroutete Seite, Layoutpanel, rechtes Panel, Registry-Tab | **container** |
-| Eingebettetes/Inline-Artefakt, Navbar-Widget | **content** |
+| geroutete Page, Layout-Panel, rechtes Panel, Registry-Tab | **Container** |
+| eingebettetes Artefakt, Inline-Artefakt-Block, Navbar-Widget | **Content** |
 
-Dasselbe Paket kann also auf eigener Route Container- und eingebettet Content-
-Sizing erhalten. Eine App, die die Blockachse benötigt, muss ihr Fehlen
-tolerieren oder die Anforderung deklarieren (siehe unten), damit sie abgelehnt
-wird, statt fehlerhaft zu rendern. Lesen Sie den aktuellen Modus mit
-`host.surface.snapshot.sizing` und sichern Sie Verhalten über
-`host.surface.supports('block-size')` ab — treffen Sie niemals Annahmen.
+Dasselbe Package ist also container-sized auf seiner eigenen Route und content-sized, wenn jemand es einbettet. Eine App, die die Blockachse braucht, muss es daher tolerieren, sie nicht zu haben, oder die Anforderung deklarieren (siehe unten), damit sie abgelehnt statt kaputt gerendert wird. Lesen Sie den aktuellen Modus mit `host.surface.snapshot.sizing` und koppeln Sie Verhalten an `host.surface.supports('block-size')` — nehmen Sie nie etwas an.
 
-`cqh` verhält sich sogar schlechter als „nicht verfügbar“: Fehlt ein Container
-mit der benötigten Achse, fallen Container-Einheiten auf den **Small Viewport**
-zurück. `cqh` liefert dadurch unbemerkt einen plausiblen, aber von der
-Oberfläche unabhängigen Wert. Verwenden Sie stattdessen
-`var(--wippy-surface-height, <fallback>)`; der Wert ist am Root gebunden und
-fällt sichtbar zurück. Dieselbe Falle entsteht, wenn eine App auf einem
-Zwischenelement `container-type: inline-size` deklariert und darunter `cqh`
-verwendet.
+`cqh` verhält sich schlechter als "nicht verfügbar": Container-Einheiten fallen auf den **kleinen Viewport** zurück, wenn kein Container die benötigte Achse liefert, `cqh` produziert also stillschweigend eine plausible Zahl ohne Bezug zur Surface. Bevorzugen Sie `var(--wippy-surface-height, <fallback>)`, das am Root verankert ist und sichtbar zurückfällt. Dieselbe Falle taucht innerhalb einer App auf, die `container-type: inline-size` auf einem Zwischenelement deklariert und darunter `cqh` verwendet.
 
 ## Anforderungen deklarieren
 
-Optional in `package.json`:
+Optional, in der `package.json` der App:
 
 ```json
 {
@@ -128,123 +86,98 @@ Optional in `package.json`:
 }
 ```
 
-Zulässig sind `block-size` und `surface-scroll`; beide verlangen Container-
-Sizing. `registered-hit-testing`, `native-document-hit-testing` und
-`owner-visibility` sind reserviert und werden als nicht implementiert abgelehnt.
-Validierung erfolgt vor Start. Ohne `surface`-Block erhält die App Box und
-Variablen, wirbt aber nicht mit Portabilität. `surface-scroll` wird akzeptiert
-und von `supports()` gemeldet, schaltet in diesem Release jedoch keine
-hostvermittelte Scroll-API frei.
+Akzeptierte Tokens sind `block-size` und `surface-scroll`; beide setzen Container-Sizing voraus und werden abgelehnt, wenn die Instanz content-sized ist. `registered-hit-testing`, `native-document-hit-testing` und `owner-visibility` sind reserviertes Vokabular und werden als nicht implementiert abgelehnt, statt stillschweigend ignoriert zu werden.
 
-## Oberfläche aus JavaScript lesen
+Die Validierung läuft vor dem Start, eine unerfüllbare Deklaration schlägt also sichtbar fehl, statt eine App zu rendern, deren Blockachsen-Queries nie greifen. Eine App ohne `surface`-Block rendert weiterhin und erhält weiterhin Query-Box und Variablen; sie sagt lediglich keine Portabilität zu.
 
-Siehe [Proxy-API → Surface](./proxy-api.md#surface).
+`surface-scroll` wird akzeptiert und von `supports()` gemeldet, aber dieses Release liefert **keine** host-vermittelte Scroll-API — die Deklaration bekundet eine Absicht, sie schaltet keine Methode frei.
+
+## Die Surface aus JavaScript lesen
+
+Siehe [Proxy API → Surface](./proxy-api.md#surface) für die vollständige Signatur.
 
 ```js
 const { width, widthUnit, height, sizing } = host.surface.snapshot
 
 if (host.surface.supports('block-size')) {
-  // safe to rely on the block axis
+  // Verlass auf die Blockachse ist sicher
 }
 
 const off = host.surface.onChange((s) => reposition(s.width, s.height))
-// call off() on teardown
+// off() beim Abbau aufrufen
 ```
 
-Der Snapshot wird aus denselben berechneten Variablen gelesen wie CSS und kann
-nicht von `@container`/`cqw` abweichen. Verwenden Sie CSS für Layout und JS für
-Canvas, Virtualisierung, Ressourcenauswahl und runtimegenerierte Styles.
+Der Snapshot wird aus denselben berechneten Custom Properties zurückgelesen, die das CSS auflöst, er kann also nicht von dem abweichen, was `@container` und `cqw` sehen.
+
+Bevorzugen Sie CSS für Layout. Greifen Sie zur JavaScript-API dort, wo CSS nicht hinkommt: Canvas-Größen, Virtualisierungsberechnungen, Ressourcenauswahl und zur Laufzeit erzeugte Styles.
 
 ### `engine: 'host'`
 
-`host.surface.engine` ist `iframe`, `fragment` oder `host`. Der letzte Wert ist
-keine Page-Engine, sondern bedeutet, dass keine Seitenoberfläche zugewiesen
-wurde:
+`host.surface.engine` meldet `iframe`, `fragment` oder `host`. Letzteres ist keine Page-Engine — es bedeutet, dass der Code dort läuft, wo keine Surface zugewiesen wurde:
 
-- eine Web Component, die direkt im Hostdokument statt in einer Seite gemountet ist;
-- der eigenständige Dev-Proxy ohne Web Host.
+- eine Web Component, die direkt ins Host-Dokument statt in eine Page gemountet wurde;
+- der eigenständige Dev-Proxy, ganz ohne Web Host.
 
-Der Snapshot meldet dann `width: 0`, `height: null`, `sizing: 'content'`, und
-`supports()` ist für alles `false`. Das ist beabsichtigt: Das Browserfenster
-einzusetzen wäre genau die falsche Gleichsetzung, die der Vertrag verhindern
-soll. Ein direkt gemountetes Element misst stattdessen seinen eigenen Root.
+Dort meldet der Snapshot `width: 0`, `height: null`, `sizing: 'content'`, und `supports()` ist für alles `false`. Das ist Absicht: Das Browserfenster einzusetzen wäre genau die falsche Gleichsetzung, die der Vertrag vermeiden soll. Eine direkt gemountete Komponente sollte stattdessen ihr eigenes Root messen.
 
-## Nicht abgedeckte Mechanismen
+## Was der Vertrag nicht abdeckt
 
-| Mechanismus | Grund | Alternative |
+Container Queries ersetzen Media Queries in **CSS**. Diese Mechanismen liegen außerhalb von CSS und folgen weiterhin dem Browserfenster:
+
+| Mechanismus | Warum | Was zu tun ist |
 |---|---|---|
-| `<picture>` / `<source media>` | HTML-Ressourcenauswahl kennt keine Container Query | `host.surface.onChange` oder CSS-`background-image` unter `@container` |
-| `srcset` + `sizes` | Auflösung gegen Viewport | `sizes` aus Oberfläche ableiten oder Quelle per JS setzen |
-| `matchMedia()` | fragt definitionsgemäß das Fenster | Für Geometrie `host.surface.onChange`, für Präferenzen weiter `matchMedia` |
+| `<picture>` / `<source media>` | HTML-Ressourcenauswahl; keine Container-Query-Form | Aus `host.surface.onChange` steuern oder die Art Direction in ein CSS-`background-image` unter `@container` verlagern |
+| `srcset` + `sizes` | lösen gegen den Viewport auf | `sizes` aus der Surface ableiten oder die Quelle aus JS setzen |
+| `matchMedia()` | fragt definitionsgemäß das Fenster | `host.surface.onChange` für Geometrie verwenden; `matchMedia` für Präferenzen behalten |
 
 ## Overlays
 
-Der Vertrag bindet `position: fixed` nicht. `container-type` erzeugt einen
-unabhängigen Formatierungskontext ohne Layout-Containment; eine Querybox
-berechnet daher `contain: none` und verankert nichts. PrimeVue-Overlays und
-selbst implementierte Fixed-Overlays funktionieren unverändert weiter.
+Der Surface-Vertrag erfasst `position: fixed` **nicht**. `container-type` etabliert einen unabhängigen Formatierungskontext ohne Layout-Containment, ein Query-Container berechnet also `contain: none` und verankert nichts. PrimeVue-Overlays und handgebaute Fixed-Overlays funktionieren beide unverändert weiter.
 
-Das Engine-Verhalten ist eine getrennte Frage: Im Web Fragment bezieht sich
-`position: fixed` auf das **Hostfenster** statt auf das Panel der App. Siehe
-[Render-Engines](../web-host/render-engines.md). Pinnen Sie die App bei nötiger
-exakter Viewport-Verankerung mit `wippy.renderEngine: "iframe"`.
+Das Verhalten der Engine ist eine eigene Sache: In der Web-Fragment-Engine löst `position: fixed` gegen das **Host-Fenster** auf statt gegen das Panel der App. Siehe [Render Engines](../web-host/render-engines.md) und pinnen Sie die App mit `wippy.renderEngine: "iframe"`, wenn exakte Viewport-Verankerung wichtig ist.
 
-Die Größe eines Overlays ist eine andere Frage als seine Verankerung. Für eine
-Fläche, die exakt die Oberfläche abdecken soll, ersetzen Sie Viewport-Einheiten
-durch `inset: 0` und kombinieren dies mit dem Positionierungsschema, das zur
-benötigten Portabilität passt:
+Ein Overlay zu dimensionieren ist eine andere Frage als es zu verankern. Für ein Backdrop oder eine Drawer, die genau die Surface abdecken soll, lassen Sie Viewport-Einheiten weg und verwenden `inset: 0` — kombinieren Sie es aber mit dem Positionierungsschema, das dazu passt, wie portabel die App sein muss:
 
 ```css
-/* Portable across BOTH engines: resolves against the app's own root rather
-   than against whatever `fixed` happens to be relative to.
-   `min-block-size: 100%` is load-bearing — see below. */
+/* Portabel über BEIDE Engines: löst gegen das eigene Root der App auf statt
+   gegen das, worauf sich `fixed` gerade bezieht.
+   `min-block-size: 100%` ist tragend — siehe unten. */
 .app-root { position: relative; min-block-size: 100%; }
 .backdrop { position: absolute; inset: 0; }
 ```
 
-Der Containing Block ist der **App-Root**, nicht die Oberfläche. Bei
-Content-Sizing deckt er sie automatisch ab, weil der Inhalt die Höhe bestimmt.
-Bei Container-Sizing gibt der Host der Querybox eine Höhe vor, die der App-Root
-nicht erbt. Ohne `min-block-size: 100%` endet das Backdrop daher zu früh, obwohl
-die `fixed`-Variante die Oberfläche abdecken würde. `absolute` scrollt mit dem
-Inhalt, `fixed` bleibt verankert.
+Der enthaltende Block ist das **Root der App**, nicht die Surface, das Overlay deckt die Surface also nur ab, wenn dieses Root es tut. Beim Content-Sizing geschieht das automatisch (der Inhalt *ist* die Höhe). Beim Container-Sizing gibt der Host der Query-Box eine Höhe vor, die das Root der App nicht erbt, ohne `min-block-size: 100%` bleibt das Backdrop also still zu kurz — und versagt genau in dem Modus, in dem die `fixed`-Variante korrekt ausgesehen hätte. Die beiden unterscheiden sich auch im Verhalten: `absolute` scrollt mit dem Inhalt, `fixed` bleibt verankert.
 
-Setzen Sie `min-block-size: 100%` auf das **äußerste** Element innerhalb der
-Oberfläche. Eine Prozenthöhe braucht eine lückenlose Kette bestimmter Höhen;
-auf einem Komponenten-Root innerhalb eines automatisch hohen `#app` löst sie
-zu null auf und erzeugt dieselbe Lücke erneut. Dies ist in Chromium, Firefox
-und WebKit verifiziert, jeweils mit dem Fall ohne `min` als Kontrolle.
+Setzen Sie `min-block-size: 100%` auf das **äußerste** Element innerhalb der Surface. Eine prozentuale Höhe braucht eine ununterbrochene Kette definiter Höhen darüber; auf ein Komponenten-Root angewendet, das in einem `#app` mit automatischer Höhe verschachtelt ist, löst sie zu null auf und bringt dieselbe Lücke zurück. Verifiziert über Chromium, Firefox und WebKit hinweg, mit dem Fall ohne `min` als Kontrolle.
 
 ```css
-/* Iframe engine only. `fixed` resolves against the child viewport, which IS
-   the surface there — but against the HOST WINDOW in the fragment engine,
-   where this covers the whole application instead of the panel. */
+/* Nur iframe-Engine. `fixed` löst gegen den Child-Viewport auf, der dort DIE
+   Surface IST — aber in der Fragment-Engine gegen das HOST-FENSTER, wo das
+   die ganze Anwendung statt des Panels abdeckt. */
 .backdrop { position: fixed; inset: 0; }
 ```
 
-Verwenden Sie dafür nicht `var(--wippy-surface-height)`: Der Wert ist bei
-Content-Sizing nicht verfügbar, sodass ein so geschriebenes Backdrop dort
-zusammenfällt.
+Vermeiden Sie hierfür `var(--wippy-surface-height)`: Es ist beim Content-Sizing nicht verfügbar, ein so geschriebenes Backdrop kollabiert also genau auf den Pages, wo es am schwersten auffällt.
 
-## App-Root (`#app`)
+## Das App-Root-Element (`#app`)
 
-**Web Fragment verlangt exakt `id="app"`.** Nicht `#root`, nicht `#main`, nicht
-`<main>` — die ID wird wörtlich abgeglichen.
+**Die Web-Fragment-Engine verlangt, dass Ihr Root-Element `id="app"` hat.** Nicht
+`#root`, nicht `#main`, nicht `<main>` — die ID wird wörtlich abgeglichen.
 
-Die Engine bindet die Höhenkette der Seite an diesen Selektor und misst darüber
-die Inhaltshöhe. Der reflektierte Baum nutzt `wf-html`/`wf-body` statt
-`html`/`body`; die Kette kann daher nicht wie in einem iframe am Dokument-Root
-aufgebaut werden.
+Die Engine bindet die Seitenhöhen-Kette an diesen Selektor und misst darüber die
+Höhe Ihres Inhalts. Das gespiegelte Dokument stellt `wf-html`/`wf-body` statt
+`html`/`body` bereit, Sie können die Kette also nicht wie in einem iframe vom
+Dokument-Root aus aufbauen.
 
-**Symptom bei einem falschen Root:** Eine Content-Sizing-Fragmentseite mit
-`#root` oder einem anderen Root rendert mit **null Höhe** — ein leeres Panel,
-ohne Fehler im eigenen Code. Der Host protokolliert einen Fehler, der die
-Anforderung benennt. Die iframe-Engine ist nicht betroffen, weil sie die Höhe
-aus `CmdBodySize` übernimmt. Dasselbe Paket kann deshalb im iframe korrekt und
-als Fragment leer erscheinen.
+**Symptom, wenn es falsch ist:** Eine content-sized Fragment-Page, deren Root
+`#root` (oder etwas anderes) ist, rendert mit **Höhe null** — leeres Panel, kein
+Fehler in Ihrem eigenen Code. Der Host protokolliert einen Fehler, der die
+Anforderung benennt. Die iframe-Engine ist nicht betroffen, weil sie die Höhe aus
+`CmdBodySize` bezieht; dasselbe Package kann dort also gut aussehen und als
+Fragment leer sein.
 
 ```html
-<!-- correct -->
+<!-- korrekt -->
 <body><div id="app"></div></body>
 ```
 
@@ -252,24 +185,24 @@ als Fragment leer erscheinen.
 createApp(App).mount('#app')
 ```
 
-Versuchen Sie nicht, ein Fragment mit null Höhe durch eine Höhe auf `#root` zu
-reparieren. `height: 100%`, `min-height: 100dvh` oder `100vh` auf einem anders
-benannten Root führen nicht dazu, dass die Engine ihn misst. Viewport-Einheiten
-beschreiben das Browserfenster, nicht die zugewiesene Oberfläche. Benennen Sie
+**Versuchen Sie nicht, ein Fragment mit Höhe null zu reparieren, indem Sie
+`#root` eine Höhe geben.** `height: 100%`, `min-height: 100dvh` oder `100vh` auf
+einem anders benannten Root bringt die Engine nicht dazu, es zu messen, und
+Viewport-Einheiten sind hier aus genau dem Grund falsch, aus dem es diese ganze
+Seite gibt — sie beschreiben das Browserfenster, nicht Ihre Surface. Benennen Sie
 das Element stattdessen in `app` um.
 
 ## Einschränkungen
 
-- **Body-Box.** In der iframe-Engine setzt der Host `margin`, `padding` und `border` des App-`body` auf null, damit die zugewiesene Oberfläche eindeutig definiert ist. Padding gehört auf den eigenen App-Root. Fragment tut dies nicht; eine App, die Body-Padding voraussetzt, rendert daher leicht unterschiedlich. Eine Builddiagnostik dafür gibt es noch nicht.
-- **`body > *`-Selektoren und Regeln für `html`/`body`.** In der **iframe**-Engine legt der Host die Surface-Box um den Body-Inhalt. Direkte Kindselektoren ab `body` treffen deshalb keine App-Elemente mehr, und `body`/`html` sind Vorfahren der Querybox, die eine `@container`-Regel nicht erreichen kann. Die **Fragment**-Engine hat die umgekehrte Topologie: Die Querybox liegt über dem reflektierten Baum. Ein wörtlicher `body`-Selektor scheitert dennoch, weil das Dokument in `wf-html`/`wf-body` umbenannt wird. Solche Regeln gehören auf den eigenen Root innerhalb der Oberfläche; das funktioniert in beiden Engines.
-- **Über `<w-iframe>` / `<w-artifact>` gerenderter Inhalt erhält keine Oberfläche — auch nicht als verwaltetes Top-Level-Panel.** Diese Elemente erzeugen ihr Kinddokument immer mit deaktiviertem Surface-Bootstrap; nichts misst sie. `host.surface` meldet deshalb `width: 0` und `sizing: 'content'`, aber `engine: 'iframe'`, nicht `engine: 'host'`. Prüfen Sie `snapshot.width` statt `engine`, wenn Ihre Komponente so eingebettet werden kann. Bei einem verschachtelten Embed ist das erwartbar; leicht übersehen wird es bei einem verwalteten Layoutpanel als `{ kind: 'component', tagName: 'w-artifact' }`: Es belegt einen vollständigen Top-Level-Slot und erhält dennoch keinen Vertrag. Verwenden Sie `kind: 'page'` für Inhalte, die ihn benötigen.
-- Bei Content-Sizing gibt es keine Blockachse.
-- Fragment-Apps müssen an `#app` mounten; siehe [App-Root (`#app`)](#app-root-app) zur erforderlichen Höhenkette und zum Nullhöhen-Symptom.
-- **Die veraltete Route `/page/:id` erhält keine Oberfläche.** Sie rendert in ein bloßes iframe, das nichts misst, und verzichtet vollständig auf den Vertrag: keine Querybox, kein Wrapper, keine Änderung am App-DOM. Die App verhält sich dort wie vor Einführung des Vertrags. Verwenden Sie `/c/:id`, um eine Oberfläche zu erhalten. Wie verschachtelte Embeds meldet die alte Route weiterhin `engine: 'iframe'`; prüfen Sie deshalb `snapshot.width` statt des Engine-Namens.
-- **Die Engines können sich um eine Scrollbarbreite unterscheiden.** Die iframe-Engine misst die Inline-Achse an der Querybox innerhalb des App-Dokuments, sodass eine Dokument-Scrollbar sie verengt. Fragment misst einen Hostdokument-Wrapper, den das Scrollen des reflektierten Inhalts nicht verengt. Bei demselben Panel und scrollenden Inhalt meldet Fragment deshalb einen etwas größeren Wert.
-- **Keine Isolationsgrenze.** Der Vertrag regelt das Layout. Er gibt einem Fragment kein eigenes Dokument, keinen Viewport, keine Selection, keinen Top Layer und keine Origin.
+- **Body-Box.** In der iframe-Engine setzt der Host `margin`, `padding` und `border` am `body` der App auf null, damit die zugewiesene Surface wohldefiniert ist. Legen Sie das Seiten-Padding auf Ihr eigenes Root-Element. Die Fragment-Engine tut das nicht, eine App, die sich auf Body-Padding stützt, rendert also zwischen den Engines leicht unterschiedlich. Eine Build-Zeit-Diagnose dafür gibt es noch nicht.
+- **`body > *`-Selektoren und Regeln, die auf `html`/`body` zielen.** In der **iframe**-Engine verpackt der Host den Body-Inhalt in die Surface-Box, sodass an `body` verwurzelte Direct-Child-Selektoren keine App-Elemente mehr treffen und `body`/`html` zu *Vorfahren* der Query-Box werden — eine `@container`-Regel, die auf sie zielt, greift nie. Die **Fragment**-Engine hat die umgekehrte Topologie (die Query-Box sitzt über dem gespiegelten Baum), aber ein wörtlicher `body`-Selektor scheitert auch dort, weil das gespiegelte Dokument in `wf-html`/`wf-body` umbenannt wird. Setzen Sie solche Regeln auf Ihr eigenes Root-Element innerhalb der Surface; das ist in beiden Engines korrekt.
+- **Alles, was über `<w-iframe>` / `<w-artifact>` gerendert wird, bekommt keine Surface — auch ein Top-Level-Managed-Panel nicht.** Diese Elemente bauen ihr Child-Dokument immer mit deaktiviertem Surface-Bootstrap, und nichts misst sie, `host.surface` meldet also `width: 0` und `sizing: 'content'` — aber mit `engine: 'iframe'`, nicht `engine: 'host'`. Prüfen Sie `snapshot.width` statt `engine`, wenn Ihre Komponente so eingebettet werden kann. Für ein *verschachteltes* Embed ist das zu erwarten; leicht zu übersehen ist es bei einem Managed-Layout-Panel, das als `{ kind: 'component', tagName: 'w-artifact' }` deklariert ist, ein vollflächiger Top-Level-Slot, der dennoch keinen Vertrag bekommt. Verwenden Sie `kind: 'page'` für Inhalte, die einen brauchen.
+- **Keine Blockachse beim Content-Sizing.**
+- **Die Fragment-Engine verlangt, dass das Root-Element der App `#app` ist.** Sie bindet die Seitenhöhen-Kette an diesen Selektor und misst darüber die Höhe des Inhalts, weil das gespiegelte Dokument `wf-html`/`wf-body` statt `html`/`body` bereitstellt und eine App ihre Kette daher nicht wie in einem iframe vom Root aus aufbauen kann. Eine content-sized Fragment-App mit einem anderen Root (`#root`, `<main>`) kann nicht gemessen werden: Der Host protokolliert einen Fehler, der die Anforderung benennt, und das Panel rendert mit Höhe null. Die iframe-Engine ist nicht betroffen — sie bezieht die Höhe aus `CmdBodySize`.
+- **Die veraltete Route `/page/:id` bekommt keine Surface.** Sie rendert in einen nackten iframe, der nie etwas misst, und steigt damit vollständig aus — keine Query-Box, kein Wrapper, keine Änderung am DOM der App. Eine App verhält sich dort genau wie vor der Existenz dieses Vertrags. Verwenden Sie `/c/:id`, um eine Surface zu bekommen. Wie verschachtelte Embeds meldet sie weiterhin `engine: 'iframe'`, testen Sie also `snapshot.width` statt des Engine-Namens.
+- **Die beiden Engines können sich um eine Scrollbar unterscheiden.** Die iframe-Engine misst die Inline-Achse an der Query-Box *innerhalb* des Dokuments der App, eine Dokument-Scrollbar verschmälert sie also. Die Fragment-Engine misst einen Wrapper im Host-Dokument, den das Scrollen des gespiegelten Inhalts nicht verschmälert. Gleiches zugewiesenes Panel und gleicher scrollender Inhalt: Die Fragment-Engine meldet die etwas größere Zahl.
+- **Keine Isolationsgrenze.** Der Vertrag regelt Layout. Er gibt einem Fragment kein eigenes Dokument, keinen eigenen Viewport, keine eigene Selektion, keinen eigenen Top Layer und keinen eigenen Origin.
 
 ## Migration
 
-[Migration von Oberflächen](./surface-migration.md) enthält Umstellungen mit
-den Labels automatisch, bedingt, manuell oder nicht konvertierbar.
+[Surface Migration](./surface-migration.md) enthält Rezept für Rezept die Konvertierungen für bestehende Apps, jeweils als automatisch, bedingt, manuell oder nicht konvertierbar gekennzeichnet.

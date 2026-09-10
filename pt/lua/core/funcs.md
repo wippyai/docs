@@ -1,6 +1,6 @@
 ---
 title: "Invocação de Funções"
-description: "Chame funções registradas de forma síncrona ou assíncrona e propague opções de requisição, segurança e chamada."
+description: "A forma principal de chamar outras funções no Wippy. Execute funções registradas síncronamente ou assíncronamente entre processos, com suporte…"
 ---
 
 # Invocação de Funções
@@ -128,10 +128,7 @@ local exec, err = funcs.new():with_actor(actor)
 if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
-    return nil, errors.new({
-        message = "User cannot delete records",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
 end
 ```
 
@@ -161,21 +158,35 @@ if err then return nil, err end
 
 ### `with_options`
 
-Define opções de chamada. As implementações podem definir opções próprias; o runtime também reconhece `network` para selecionar uma rede de saída.
+Define opções de chamada como a política de retry ou a rede overlay. As opções são mescladas sobre quaisquer opções pré-definidas da entrada de função alvo.
 
 ```lua
--- Set a 5 second timeout for external API call
-local exec, err = funcs.new():with_options({timeout = 5000})
-if err then return nil, err end
+-- Repetir falhas transitórias até 5 vezes com backoff exponencial
+local exec = funcs.new():with_options({
+    retry = { max_attempts = 5, initial_delay = 100 }
+})
 local result, err = exec:call("app.external:fetch_data", query)
 if err then
-    -- Handle timeout or other error
+    -- Todas as tentativas falharam, ou o erro não era retentável
 end
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `options` | table | Opções específicas da implementação |
+| `options` | table | Opções de chamada |
+
+| Opção | Tipo | Descrição |
+|-------|------|-----------|
+| `retry.max_attempts` | int | Máximo de tentativas incluindo a primeira (1 desabilita retry) |
+| `retry.initial_delay` | int/duration | Atraso antes do primeiro retry (ms ou string de duração), padrão `100` |
+| `retry.max_delay` | int/duration | Limite superior do atraso de backoff (ms ou string de duração), padrão `10s` |
+| `retry.backoff_factor` | number | Multiplicador aplicado ao atraso após cada tentativa, padrão `2.0` |
+| `retry.jitter` | number | Fração de jitter aleatório aplicada a cada atraso, padrão `0.1` |
+| `retry.retry_kinds` | string[] | Só repete erros destes kinds; por padrão todo kind exceto `Invalid`, `PermissionDenied` e `Internal` é repetido |
+| `retry.skip_kinds` | string[] | Nunca repete erros destes kinds |
+| `network` | string | ID de registro de uma rede overlay pela qual rotear o tráfego de saída da chamada; requer a permissão `network.select` |
+
+Apenas erros retentáveis disparam retries; erros não retentáveis surgem imediatamente. Opções de atividade do Temporal são descritas em [Activities](temporal/activities.md).
 
 A opção definida pelo runtime é:
 
@@ -192,11 +203,10 @@ Selecionar uma rede exige a permissão `network.select` no ID dessa rede.
 Versões Executor de call e async que usam o contexto configurado.
 
 ```lua
--- Build reusable executor with context
-local exec, err = funcs.new():with_context({trace_id = "abc-123"})
-if err then return nil, err end
-exec, err = exec:with_options({timeout = 10000})
-if err then return nil, err end
+-- Construir executor reutilizável com contexto
+local exec = funcs.new()
+    :with_context({trace_id = "abc-123"})
+    :with_options({retry = {max_attempts = 3}})
 
 -- Make multiple calls with same context
 local users, users_err = exec:call("app.api:list_users")
@@ -368,7 +378,7 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | `funcs.call` | ID da Função | Chamar uma função específica |
 | `funcs.context` | `context` | Usar `with_context()` para definir contexto customizado |
 | `funcs.security` | `security` | Usar `with_actor()` ou `with_scope()` |
-| `network.select` | ID da rede | Selecionar uma rede de saída com `with_options()` |
+| `network.select` | ID da Rede | Usar `with_options({network = ...})` para selecionar uma rede overlay |
 
 ## Erros
 
@@ -378,6 +388,7 @@ Operações de função estão sujeitas a avaliação de política de segurança
 | Namespace ausente | `errors.INVALID` | não |
 | Nome ausente | `errors.INVALID` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
+| Async fora de um processo | `errors.INTERNAL` | não |
 | Falha de inscrição | `errors.INTERNAL` | não |
 | Falha ao despachar o início assíncrono | `errors.INTERNAL` | não |
 | Erro da função | varia | varia |

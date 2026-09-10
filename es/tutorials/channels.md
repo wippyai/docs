@@ -13,6 +13,8 @@ Esta página presenta los canales para coordinar coroutines dentro de un proceso
 
 Ejecuta estos fragmentos dentro de una función exportada de una entrada Lua ejecutable, como `process.lua`. Las API `channel` y `coroutine` son globales ambientales en ese contexto de ejecución; no necesitan llamadas a `require()` ni declaraciones `modules`. Cada fragmento crea sus propios canales y debe evaluarse por separado.
 
+Esta página es una introducción: cada fragmento muestra una API de forma aislada. Péguelos en la función `main` de una entrada `process.lua` para ejecutarlos, tal como se configura en el tutorial de [Aplicaciones CLI](tutorials/cli.md).
+
 ## Crear Canales
 
 Los canales son tuberías de comunicación para coroutines. Cree con `channel.new(capacity)`:
@@ -79,7 +81,7 @@ result.ok              -- true
 
 ### Selección con envío :id=select-con-send
 
-Utiliza `case_send` para incluir una operación de envío en un select. Sin un caso predeterminado, `channel.select` espera hasta que uno esté listo. Añade `default = true` para que el intento no sea bloqueante:
+Use `case_send` para ofrecer un envío dentro de un select. El caso se elige cuando el canal puede aceptar el valor:
 
 ```lua
 local ch = channel.new(1)
@@ -94,6 +96,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+Select bloquea hasta que uno de sus casos esté listo. Agregue `default = true` a la tabla de casos para retornar de inmediato en su lugar, con `result.default` en true cuando nada estaba listo:
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true (buffer lleno, nada enviado)
 ```
 
 ## Patrón Productor-Consumidor

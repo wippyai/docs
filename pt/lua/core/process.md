@@ -1,6 +1,6 @@
 ---
 title: "Gerenciamento de Processos"
-description: "Crie, monitore, vincule, envie mensagens, nomeie e atualize processos do Wippy."
+description: "Crie, monitore e comunique-se com processos filhos. Implementa padrões de modelo de atores com passagem de mensagens, supervisão e gerenciamento de…"
 ---
 
 # Gerenciamento de Processos
@@ -73,7 +73,7 @@ Todas as variantes exigem `process.spawn` no ID do processo. As variantes monito
 -- Forcefully terminate a process
 local ok, err = process.terminate(destination)
 
--- Request graceful cancellation with an optional reason
+-- Solicitar cancelamento gracioso com motivo opcional
 local ok, err = process.cancel(destination, "shutting down")
 ```
 
@@ -135,8 +135,8 @@ local events = process.events()  -- Lifecycle events from @events topic
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `kind` | string | Constante de tipo de evento |
-| `from` | string | PID de origem |
-| `result` | table | Para EXIT/LINK_DOWN: registro {value, error}; o valor retornado pelo processo fica em `result.value` e qualquer erro em `result.error` |
+| `from` | string | PID de origem (ausente para OUTDATED) |
+| `result` | table | Para EXIT/LINK_DOWN: um registro {value, error}; o valor de retorno do processo está em `result.value` e qualquer erro em `result.error` |
 | `reason` | string | Para CANCEL: motivo pelo qual o processo está sendo cancelado |
 | `sources` | string[] | Para OUTDATED: IDs de registro que mudaram ou foram afetados transitivamente |
 
@@ -166,10 +166,10 @@ Ao receber do inbox ou com `{message = true}`:
 ```lua
 local msg = inbox:receive()
 
-msg:topic()            -- string: topic name
-msg:from()             -- string|nil: sender PID
-msg:payload()          -- Payload: wrapper (call :data() to extract)
-msg:payload():data()   -- any: actual payload value
+msg:topic()            -- string: nome do tópico
+msg:from()             -- string: PID do remetente (string vazia quando desconhecido)
+msg:payload()          -- Payload: wrapper (chame :data() para extrair); nil quando vazio, tabela de wrappers para vários valores
+msg:payload():data()   -- any: valor real do payload
 ```
 
 ## Chamada Síncrona
@@ -221,20 +221,33 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Opção | Tipo | Descrição |
 |-------|------|-----------|
 | `network` | string | ID de registro de uma entrada `network.*` para as conexões de saída do processo filho |
+| `terminal` | string | Concessão de viewport que anexa um terminal virtual ao processo filho |
 
 **Permissão:** `process.context` em "context"; selecionar uma rede requer adicionalmente `network.select` nesse ID de rede.
+
+### Anexação de Terminal
+
+Uma concessão `terminal` vem de `viewport:grant()` e dá ao processo filho uma porta de terminal própria, de modo que ele pode usar o módulo [TTY](lua/system/tty.md) exatamente como faria em um terminal host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+A concessão é de uso único e é consumida na admissão: um start rejeitado a deixa não resolvida e reutilizável, um processo filho que resolve a porta a consome permanentemente, e um host que não suporta anexações de terminal rejeita o spawn em vez de descartar a opção. O processo que faz o spawn continua lendo os frames do filho através do viewport que criou. Veja [Terminal](system/terminal.md#composable-terminals).
 
 ### Métodos SpawnBuilder
 
 SpawnBuilder é imutável - cada método retorna uma nova instância:
 
 ```lua
-spawner:with_context(values)      -- Add context values
-spawner:with_actor(actor)         -- Set security actor
-spawner:with_scope(scope)         -- Set security scope
-spawner:with_name(name)           -- Set process name
-spawner:with_message(topic, ...)  -- Queue message to send after spawn
-spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
+spawner:with_context(values)      -- Adicionar valores de contexto
+spawner:with_actor(actor)         -- Definir ator de segurança
+spawner:with_scope(scope)         -- Definir escopo de segurança
+spawner:with_name(name)           -- Registrar nome no início; se já tomado, spawn retorna o PID existente e as mensagens enfileiradas vão para ele
+spawner:with_message(topic, ...)  -- Enfileirar mensagem para enviar após spawn
+spawner:with_options(options)     -- Mesclar opções de spawn (ex. network)
 ```
 
 **Permissão:** `process.security` em "security" para `:with_actor()` e `:with_scope()`
@@ -295,7 +308,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | não | self | PID a registrar; padrão é o processo chamador |
 | `scope` | number | não | `LOCAL` | Um dos constantes de escopo acima |
 
-Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente sob um escopo de cluster) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
+Retorna `true` em caso de sucesso, ou `nil, error` em caso de falha. Conflitos (nome já registrado para um PID diferente) retornam `errors.ALREADY_EXISTS`. Registrar o mesmo nome para o mesmo PID é idempotente. Um registro `STRONG` bloqueia até que todos os nós ativos reconheçam ou o prazo da reserva expire; em timeout retorna um erro.
 
 Registrar em nome de um PID diferente requer adicionalmente a permissão `process.registry.foreign` no PID alvo.
 
@@ -343,7 +356,7 @@ Políticas podem permitir/negar baseado em:
 | `process.unmonitor` | `unmonitor()` | PID de destino |
 | `process.link` | `link()` | PID de destino |
 | `process.unlink` | `unlink()` | PID de destino |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | nome |
 | `process.registry.unregister` | `registry.unregister()` | nome |
@@ -376,6 +389,7 @@ Algumas operações requerem múltiplas permissões:
 | Contexto de frame não encontrado | `errors.INTERNAL` |
 | Argumentos requeridos ausentes | `errors.INVALID` |
 | Prefixo de tópico reservado (`@`) | `errors.INVALID` |
+| Destino não é um PID nem um nome registrado | `errors.NOT_FOUND` |
 | Nome não registrado | `errors.NOT_FOUND` |
 | Permissão negada | `errors.PERMISSION_DENIED` |
 | Nome já registrado | `errors.ALREADY_EXISTS` |

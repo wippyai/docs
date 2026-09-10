@@ -1,6 +1,6 @@
 ---
 title: "Excel Spreadsheets"
-description: "Create, open, read, stream, modify, and write Microsoft Excel XLSX workbooks."
+description: "Read and write Microsoft Excel files (.xlsx). Create workbooks, manage sheets, read cell values, and generate reports with formatting support."
 ---
 
 # Excel Spreadsheets
@@ -9,9 +9,7 @@ description: "Create, open, read, stream, modify, and write Microsoft Excel XLSX
 <secondary-label ref="io"/>
 <secondary-label ref="external"/>
 
-The `excel` module creates and reads Microsoft Excel `.xlsx` workbooks, manages sheets and cells, and writes workbooks to stream-compatible files.
-
-This is an API reference with partial workbook and filesystem recipes. Longer I/O examples show explicit cleanup; isolated method examples omit final workbook cleanup. Production code should preserve the primary operation error while still attempting required cleanup.
+Read and write Microsoft Excel files (.xlsx). Create workbooks, manage sheets, read cell values, and generate reports with formatting support.
 
 ## Loading
 
@@ -19,13 +17,11 @@ This is an API reference with partial workbook and filesystem recipes. Longer I/
 local excel = require("excel")
 ```
 
-Add `excel` to the executable entry's `modules:` list before requiring it. Filesystem recipes also require `fs`.
+## Creating Workbooks
 
-## Creating and Opening Workbooks
+### New Workbook
 
-### Create a Workbook
-
-Create a workbook with the default `Sheet1` sheet:
+Creates a new empty Excel workbook.
 
 ```lua
 local wb, err = excel.new()
@@ -34,26 +30,17 @@ if err then
 end
 
 -- Create sheets and add data
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-local set_err = wb:set_cell_value("Report", "A1", "Title")
-if set_err then
-    wb:close()
-    return nil, set_err
-end
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Title")
 
-local close_err = wb:close()
-if close_err then return nil, close_err end
+wb:close()
 ```
 
 **Returns:** `Workbook, error`
 
-### Open a Workbook
+### Open Workbook
 
-Open a workbook from a reader object:
+Opens an Excel workbook from a reader object.
 
 ```lua
 local fs = require("fs")
@@ -70,25 +57,18 @@ end
 
 local wb, err = excel.open(file)
 if err then
-    local _ = file:close()
+    file:close()
     return nil, err
 end
 
 -- Read data from workbook
-local rows, rows_err = wb:get_rows("Sheet1")
-if rows_err then
-    local _ = wb:close()
-    local _ = file:close()
-    return nil, rows_err
-end
+local rows = wb:get_rows("Sheet1")
 for i, row in ipairs(rows) do
     print("Row " .. i .. ": " .. table.concat(row, ", "))
 end
 
-local wb_close_err = wb:close()
-local file_close_err = file:close()
-if wb_close_err then return nil, wb_close_err end
-if file_close_err then return nil, file_close_err end
+wb:close()
+file:close()
 ```
 
 | Parameter | Type | Description |
@@ -99,47 +79,39 @@ if file_close_err then return nil, file_close_err end
 
 ## Sheet Operations
 
-### Create a Sheet
+### Create Sheet
 
-Create a sheet or return the index of an existing sheet with the same name:
+Creates a new sheet or returns existing sheet index.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
 -- Create sheets
-local idx1, err = wb:new_sheet("Summary")
-if err then return nil, err end
-local idx2, err = wb:new_sheet("Details")
-if err then return nil, err end
-local idx3, err = wb:new_sheet("Charts")
-if err then return nil, err end
+local idx1 = wb:new_sheet("Summary")
+local idx2 = wb:new_sheet("Details")
+local idx3 = wb:new_sheet("Charts")
 
 -- If sheet exists, returns its index
-local existing, err = wb:new_sheet("Summary")  -- returns same as idx1
-if err then return nil, err end
+local existing = wb:new_sheet("Summary")  -- returns same as idx1
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `name` | string | Sheet name |
 
-**Returns:** `integer, error`. Sheet indexes are 1-based.
+**Returns:** `integer, error`
 
 ### List Sheets
 
-Return the names of all sheets in the workbook:
+Returns list of all sheet names in workbook.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-for _, name in ipairs({"Sales", "Expenses", "Summary"}) do
-    local _, sheet_err = wb:new_sheet(name)
-    if sheet_err then return nil, sheet_err end
-end
+local wb = excel.new()
+wb:new_sheet("Sales")
+wb:new_sheet("Expenses")
+wb:new_sheet("Summary")
 
-local sheets, list_err = wb:get_sheet_list()
-if list_err then return nil, list_err end
+local sheets = wb:get_sheet_list()
 -- sheets = {"Sheet1", "Sales", "Expenses", "Summary"}
 
 for _, name in ipairs(sheets) do
@@ -151,27 +123,30 @@ end
 
 ## Cell Operations
 
-### Set a Cell Value
+### Set Cell Value
 
-Set the value of one cell:
+Sets value of a single cell.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Data")
-if sheet_err then return nil, sheet_err end
+local wb = excel.new()
+wb:new_sheet("Data")
 
 -- Set different value types
-local cells = {
-    {"A1", "Product Name"}, {"B1", "Price"}, {"C1", "In Stock"},
-    {"A2", "Widget"}, {"B2", 29.99}, {"C2", true},
-    {"A3", "Gadget"}, {"B3", 49.99}, {"C3", false},
-    {"AA1", "Extended Column"}, {"AB100", "Far cell"}
-}
-for _, cell in ipairs(cells) do
-    local set_err = wb:set_cell_value("Data", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+wb:set_cell_value("Data", "A1", "Product Name")  -- string
+wb:set_cell_value("Data", "B1", "Price")         -- string
+wb:set_cell_value("Data", "C1", "In Stock")      -- string
+
+wb:set_cell_value("Data", "A2", "Widget")
+wb:set_cell_value("Data", "B2", 29.99)           -- number
+wb:set_cell_value("Data", "C2", true)            -- boolean
+
+wb:set_cell_value("Data", "A3", "Gadget")
+wb:set_cell_value("Data", "B3", 49.99)
+wb:set_cell_value("Data", "C3", false)
+
+-- Cell references support columns beyond Z
+wb:set_cell_value("Data", "AA1", "Extended Column")
+wb:set_cell_value("Data", "AB100", "Far cell")
 ```
 
 | Parameter | Type | Description |
@@ -184,21 +159,17 @@ end
 
 ### Get All Rows
 
-Read all rows from a sheet into a two-dimensional array:
+Gets all rows from a sheet as 2D array.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
-local _, sheet_err = wb:new_sheet("Report")
-if sheet_err then return nil, sheet_err end
-for _, cell in ipairs({
-    {"A1", "Name"}, {"B1", "Score"},
-    {"A2", "Alice"}, {"B2", 95},
-    {"A3", "Bob"}, {"B3", 87}
-}) do
-    local set_err = wb:set_cell_value("Report", cell[1], cell[2])
-    if set_err then return nil, set_err end
-end
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Name")
+wb:set_cell_value("Report", "B1", "Score")
+wb:set_cell_value("Report", "A2", "Alice")
+wb:set_cell_value("Report", "B2", 95)
+wb:set_cell_value("Report", "A3", "Bob")
+wb:set_cell_value("Report", "B3", 87)
 
 local rows, err = wb:get_rows("Report")
 if err then
@@ -224,11 +195,11 @@ end
 
 **Returns:** `string[][], error`
 
-All cell values are returned as strings. Booleans use `"TRUE"` or `"FALSE"`, and numbers use their string representation.
+All cell values returned as strings. Booleans as "TRUE" or "FALSE", numbers as string representation.
 
 ### Stream Rows
 
-`wb:rows(sheet)` opens a cursor that decodes sheet rows incrementally, while `get_rows` materializes the full sheet. Opening the workbook still reads the complete XLSX input and may retain workbook metadata and shared strings, so this is not constant-memory end to end:
+`wb:rows(sheet)` opens a streaming cursor over one sheet. The sheet is decoded incrementally in constant memory, unlike `get_rows` which materializes the entire sheet:
 
 ```lua
 local cursor, err = wb:rows("Report")
@@ -239,7 +210,7 @@ end
 while true do
     local batch, err = cursor:read(500)
     if err then
-        local _ = cursor:close()
+        cursor:close()
         return nil, err
     end
     if not batch then
@@ -249,8 +220,7 @@ while true do
         process(row)
     end
 end
-local close_err = cursor:close()
-if close_err then return nil, close_err end
+cursor:close()
 ```
 
 | Method | Description |
@@ -258,36 +228,26 @@ if close_err then return nil, close_err end
 | `cursor:read(n?)` | Read the next batch of up to `n` rows (default 1, max 10000). Returns `string[][], error`; `nil, nil` at end of sheet |
 | `cursor:close()` | Release the cursor (idempotent; cursors also close with the workbook) |
 
-Cell values use the same format as `get_rows`. Empty rows are returned as empty tables, and trailing empty rows are preserved. After the end of the sheet or an error, later reads continue to return that state.
+Cell values format identically to `get_rows`. Empty rows come back as empty tables, and trailing empty rows are preserved rather than trimmed. After end-of-sheet or an error, subsequent reads keep returning that same state.
 
 ## File Operations
 
-### Write to a File
+### Write to File
 
-Write a workbook to a writer object:
+Writes workbook to a writer object.
 
 ```lua
 local fs = require("fs")
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 
 -- Build report
-local _, sheet_err = wb:new_sheet("Monthly Report")
-if sheet_err then
-    wb:close()
-    return nil, sheet_err
-end
-for _, cell in ipairs({
-    {"A1", "Month"}, {"B1", "Revenue"},
-    {"A2", "January"}, {"B2", 45000},
-    {"A3", "February"}, {"B3", 52000}
-}) do
-    local set_err = wb:set_cell_value("Monthly Report", cell[1], cell[2])
-    if set_err then
-        wb:close()
-        return nil, set_err
-    end
-end
+wb:new_sheet("Monthly Report")
+wb:set_cell_value("Monthly Report", "A1", "Month")
+wb:set_cell_value("Monthly Report", "B1", "Revenue")
+wb:set_cell_value("Monthly Report", "A2", "January")
+wb:set_cell_value("Monthly Report", "B2", 45000)
+wb:set_cell_value("Monthly Report", "A3", "February")
+wb:set_cell_value("Monthly Report", "B3", 52000)
 
 -- Write to file
 local vol, err = fs.get("app:output")
@@ -302,12 +262,13 @@ if err then
     return nil, err
 end
 
-local write_err = wb:write_to(file)
-local file_close_err = file:close()
-local wb_close_err = wb:close()
-if write_err then return nil, write_err end
-if file_close_err then return nil, file_close_err end
-if wb_close_err then return nil, wb_close_err end
+local err = wb:write_to(file)
+file:close()
+wb:close()
+
+if err then
+    return nil, err
+end
 ```
 
 | Parameter | Type | Description |
@@ -316,39 +277,48 @@ if wb_close_err then return nil, wb_close_err end
 
 **Returns:** `error`
 
-`write_to` does not close the writer. Close the file separately, as in the example.
+### Serialize to a String
 
-### Serialize to Bytes
-
-Serialize the workbook as a complete `.xlsx` file in a Lua binary string:
+Renders the workbook into an `xlsx` byte string, without a filesystem or a writer. Use it to hand a workbook to an HTTP response, an object store or a queue message.
 
 ```lua
+local cloudstorage = require("cloudstorage")
+
+local wb = excel.new()
+wb:new_sheet("Report")
+wb:set_cell_value("Report", "A1", "Total")
+wb:set_cell_value("Report", "B1", 45000)
+
 local data, err = wb:bytes()
+wb:close()
 if err then
     return nil, err
 end
 
--- For example, return `data` in an HTTP response or upload it to object storage.
+local storage = cloudstorage.get("app.infra:files")
+storage:upload_object("reports/monthly.xlsx", data, {
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+})
+storage:release()
 ```
 
 **Returns:** `string, error`
 
-The workbook remains open and usable after `bytes()`. The complete file is materialized in memory, so use `write_to` for large workbooks when a writer is available.
+The whole workbook is materialized in memory. `write_to` builds the same in-memory buffer and then copies it to the writer, so it saves the Lua string but does not stream a large workbook.
 
-### Close a Workbook
+Calling `bytes()` on a closed workbook returns an `errors.INTERNAL` error.
 
-Close a workbook and release its resources:
+### Close Workbook
+
+Closes workbook and releases resources.
 
 ```lua
-local wb, err = excel.new()
-if err then return nil, err end
+local wb = excel.new()
 -- ... work with workbook ...
-local close_err = wb:close()
-if close_err then return nil, close_err end
+wb:close()
 
 -- Safe to call multiple times
-local second_close_err = wb:close()
-if second_close_err then return nil, second_close_err end
+wb:close()
 ```
 
 **Returns:** `error`
@@ -357,24 +327,15 @@ if second_close_err then return nil, second_close_err end
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
-| No context in `new` or `open` | `errors.INTERNAL` | no |
-| Invalid or empty Excel file in `open` | `errors.INTERNAL` | no |
-| Invalid workbook receiver in `new_sheet`, `get_sheet_list`, `get_rows`, `rows`, or `bytes` | `errors.INVALID` | no |
-| Invalid workbook receiver in `set_cell_value`, `write_to`, or `close` | `errors.INTERNAL` | no |
-| Closed workbook in `rows` | `errors.INVALID` | no |
-| Closed workbook in other workbook operations | `errors.INTERNAL` | no |
-| Sheet creation failure | `errors.INTERNAL` | no |
-| Missing sheet in `rows` | `errors.INVALID` | no |
-| Missing sheet in `get_rows` or `set_cell_value` | `errors.INTERNAL` | no |
+| No context | `errors.INTERNAL` | no |
+| Invalid workbook | `errors.INVALID` | no |
+| Workbook closed | `errors.INTERNAL` (`errors.INVALID` from `rows`) | no |
+| Not a writer (`write_to`) | `errors.INTERNAL` | no |
+| Not a reader (`open`) | raised as an argument error | no |
+| Invalid Excel file | `errors.INTERNAL` | no |
+| Non-existent sheet | `errors.INTERNAL` (`errors.INVALID` from `rows`) | no |
 | Invalid cell reference | `errors.INTERNAL` | no |
-| Invalid writer or write failure | `errors.INTERNAL` | no |
-| Invalid or closed row cursor in `read`, or batch size below 1 | `errors.INVALID` | no |
-| Invalid row cursor in `close` | `errors.INTERNAL` | no |
-| Row read, cursor close, or context-cancellation failure | `errors.INTERNAL` | no |
-
-Passing a value that is not an `io.Reader` to `open`, or a non-userdata value to `write_to`, raises a Lua argument error instead of returning a structured error. Writer userdata that does not implement `io.Writer` returns `errors.INTERNAL`. A row batch larger than 10,000 is capped at 10,000 rather than rejected.
-
-Closing a workbook also closes its open row cursors. Workbooks are closed automatically when their Lua execution context is cleaned up, but explicit `close()` calls release resources sooner.
+| Write failed | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

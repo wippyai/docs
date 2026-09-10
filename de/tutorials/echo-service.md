@@ -81,16 +81,14 @@ version: "1.0"
 namespace: app
 
 entries:
-  # Capabilities used by the CLI, relay, and workers in strict mode
-  - name: process-policy
+  - name: policy
     kind: security.policy
     policy:
       actions:
-        - process.host
-        - process.registry.register
         - process.send
         - process.spawn
         - process.spawn.monitored
+        - process.registry.register
       resources: "*"
       effect: allow
 
@@ -112,10 +110,7 @@ entries:
       - io
       - time
     security:
-      actor:
-        id: app:cli
-      policies:
-        - app:process-policy
+      policies: [app:policy]
 
   - name: relay
     kind: process.lua
@@ -125,10 +120,7 @@ entries:
       - logger
       - time
     security:
-      actor:
-        id: app:relay
-      policies:
-        - app:process-policy
+      policies: [app:policy]
 
   - name: relay-service
     kind: process.service
@@ -144,11 +136,10 @@ entries:
     modules:
       - time
     security:
-      actor:
-        id: app:worker
-      policies:
-        - app:process-policy
+      policies: [app:policy]
 ```
+
+Sicherheit ist standardmäßig ablehnend, deshalb trägt jeder Prozess einen `security:`-Block, der die Policy benennt, die die von ihm ausgeführten Aktionen gewährt: einen Namen registrieren, Nachrichten senden und überwachte Worker starten.
 
 ## Der Relay-Prozess
 
@@ -195,7 +186,10 @@ local function main()
 
         if r.channel == events then
             local event = r.value
-            if event.kind == process.event.EXIT then
+            if event.kind == process.event.CANCEL then
+                logger:info("relay stopping", stats)
+                return
+            elseif event.kind == process.event.EXIT then
                 logger:info("worker exited", {
                     from = event.from,
                     result = event.result
@@ -246,7 +240,7 @@ local r = channel.select {
 }
 ```
 
-Dies wartet auf mehrere Channels. `r.channel` identifiziert den ausgewählten Channel, und `r.value` enthält dessen Daten.
+Wartet auf mehrere Channels. `r.channel` identifiziert welcher gefeuert hat, `r.value` enthält die Daten. Das `CANCEL`-Event trifft auf demselben Events-Channel ein, wenn die Runtime den Service herunterfährt; ein Return aus `main` an dieser Stelle lässt den Host sauber stoppen, statt sein Stop-Timeout abzuwarten.
 
 **Payload-Extraktion**
 
@@ -416,7 +410,7 @@ Type messages to echo. Ctrl+C to exit.
 
 > hello world
   HELLO WORLD
-  from worker: {app:processes|0x00004}
+  von worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
 Die Worker-PID wird zur Laufzeit erzeugt und fällt daher anders aus. Geben Sie mehrere

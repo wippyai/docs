@@ -114,7 +114,7 @@ pool:
 ```
 
 <tip>
-明示的な pool `type` を推奨します。`type: static` では `size` を設定してください。`workers` も存在する場合は worker 数を指定しますが、正の `size` が引き続き必要です。legacy implicit mode では、`workers > 0` と `size > 0` の組合せが static pool、worker なしの `max_size > 0` が lazy pool を選択し、`size` だけの場合は inline execution に fall through します。
+プールタイプを指定しない場合、ランタイムは設定に基づいて選択します。`workers`を設定するとstatic、`max_size`を設定するとlazy、完全な制御には明示的に`type`を設定してください。どちらも設定しない場合、プールは最大16ワーカーのlazyになります。
 </tip>
 
 ## インターセプター
@@ -144,15 +144,9 @@ pool:
 
 ```lua
 local contract = require("contract")
-local sender, err = contract.get("app.email:sender")
-if err then return nil, err end
-
-local email, err = sender:open("app.email:sender_impl")
-if err then return nil, err end
-
-local result, err = email:send({to = "user@example.com", subject = "Hello"})
-if err then return nil, err end
-return result
+local sender = contract.get("app.email:sender")
+local email = sender:open("app.email:sender_impl")
+email:send({to = "user@example.com", subject = "Hello"})
 ```
 
 contract により、呼び出し元は interface を使いながら implementation を別に選択できます。test、multi-tenant deployment、段階的な migration を支援します。

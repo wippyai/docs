@@ -61,7 +61,7 @@ entries:
 
 Anfrage `/static/css/style.css` stellt `./public/css/style.css` bereit.
 
-Um ein Unterverzeichnis bereitzustellen, verweisen Sie mit `fs` auf einen dort verwurzelten Dateisystemeintrag, beispielsweise auf ein `fs.directory`, dessen `directory` auf das Unterverzeichnis gesetzt ist:
+Um ein Unterverzeichnis bereitzustellen, richten Sie die `fs`-Referenz auf einen Dateisystem-Eintrag, der dort verwurzelt ist - zum Beispiel ein `fs.directory` mit `directory:` auf das Unterverzeichnis gesetzt:
 
 ```yaml
 entries:

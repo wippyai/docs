@@ -1,6 +1,6 @@
 ---
 title: "에러"
-description: "Lua 엔트리에서 structured error를 생성, wrap, inspect 및 classify합니다."
+description: "분류와 재시도 메타데이터가 있는 구조화된 에러 처리. 전역 errors 테이블은 require 없이 사용 가능합니다."
 ---
 
 # 에러

@@ -76,7 +76,7 @@ func MyService() boot.Component {
 
 ## エントリデータのデコード
 
-エントリデータを unmarshal するには、`github.com/wippyai/runtime/system/entry` の `entry.DecodeEntryConfig` を使用します。このパッケージはリポジトリ外の拡張からも import できます。
+`system/entry`の`entry.DecodeEntryConfig`を使用してエントリデータをアンマーシャルします。`DecodeEntryConfigFromContext`は引数の代わりにコンテキストからトランスコーダを取得し、`DecodeEntryConfigRaw`はプレースホルダの解決をスキップします：
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -89,7 +89,12 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 }
 ```
 
-decoder は次の処理を行います。
+デコーダーは：
+1. `${env:...}`プレースホルダと`*_env`の対応フィールドを環境レジストリに対して解決
+2. `entry.Data`を設定構造体にアンマーシャル
+3. 構造体が空のままの場合、エントリから`ID`と`Meta`を設定
+4. 実装されていれば`InitDefaults()`を呼び出し
+5. 実装されていれば`Validate()`を呼び出し
 
 1. エントリデータ内の新しい形式の `${env:...}` プレースホルダーを解決
 2. 解決済みデータを設定構造体へ unmarshal

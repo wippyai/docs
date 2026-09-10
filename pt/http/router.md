@@ -70,10 +70,10 @@ As entradas referenciam seus pais por metadados:
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `meta.router` | ID do registro | Roteador pai |
-| `method` | string | Método HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE` ou `*` para todos os métodos |
-| `path` | string | Padrão do caminho da URL, começando com `/` |
-| `func` | ID do registro | Função handler |
+| `meta.router` | ID do Registro | Roteador pai |
+| `method` | string | Método HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, `TRACE`, ou `*` para qualquer método |
+| `path` | string | Padrão de caminho URL (começa com `/`) |
+| `func` | ID do Registro | Função handler |
 
 ## Parâmetros de caminho
 
@@ -120,17 +120,31 @@ Capture os segmentos de caminho restantes com `{param...}`:
   func: serve_file
 ```
 
-O curinga corresponde aos segmentos restantes. Assim, uma requisição como `GET /api/v1/files/docs/guides/readme.md` é despachada com `req:param("filepath")` definido como `docs/guides/readme.md`.
+O curinga corresponde aos segmentos restantes, de modo que uma requisição como `GET /api/v1/files/docs/guides/readme.md` é despachada para o handler. A cauda capturada é lida com `req:param` sob o nome sem os pontos finais:
+
+```lua
+local filepath = req:param("filepath")  -- "docs/guides/readme.md"
+```
 
 O curinga deve ser o último segmento do caminho.
 
-## Funções handler
+## Precedência de Rotas
+
+Todos os roteadores registram seus endpoints em um único conjunto de padrões, prefixado pelo `prefix` do roteador, e o `ServeMux` do Go decide qual padrão atende uma requisição. Suas regras se aplicam sem alteração:
+
+- O padrão mais específico vence. Um padrão é mais específico que outro quando corresponde a um subconjunto estrito das requisições daquele padrão, então `/users/admin` vence `/users/{id}`, e `/files/{name}` vence `/files/{path...}`.
+- Um padrão com método é mais específico que o mesmo caminho sem método, então um endpoint `GET` tem precedência sobre um endpoint `*` no mesmo caminho para requisições `GET`.
+- Um `{path...}` ou `/` final corresponde a uma subárvore inteira e perde para qualquer padrão que corresponda a um subconjunto dela.
+- A correspondência é feita sobre o caminho limpo e decodificado; a especificidade nunca depende da ordem de registro.
+
+Dois padrões também podem entrar em conflito direto: nenhum é mais específico que o outro, mas eles se sobrepõem, como em `/users/{id}/settings` e `/users/admin/{section}`. Isso é um erro de configuração. O roteador o expõe ao reconstruir, a reconstrução falha, e o conjunto de rotas anterior permanece em serviço.
+
+## Funções Handler
 
 Os handlers de endpoint usam o módulo `http` para acessar os objetos de requisição e resposta. Consulte o [módulo HTTP](lua/http/http.md) para ver a referência da API.
 
 ```lua
 local http = require("http")
-local funcs = require("funcs")
 
 local function handler()
     local req, req_err = http.request()
@@ -143,11 +157,8 @@ local function handler()
     local user, call_err = funcs.call("app.users:get_user", user_id)
     if call_err then return nil, call_err end
 
-    local status_err = res:set_status(http.STATUS.OK)
-    if status_err then return nil, status_err end
-    local write_err = res:write_json(user)
-    if write_err then return nil, write_err end
-    return true
+    res:set_status(http.STATUS.OK)
+    res:write_json(user)
 end
 
 return { handler = handler }

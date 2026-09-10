@@ -20,6 +20,41 @@ description: "Создание изолированных процессов и 
 - Мониторинг жизненного цикла процессов через события
 - Связывание процессов для координированной обработки отказов
 
+## Разрешения
+
+Операции с процессами проверяются по политике безопасности вызывающей записи. Объявите запись `security.policy`, дающую права на используемые ниже действия, и подключите её к каждой записи, которая порождает, отправляет, мониторит, связывает или регистрирует имена:
+
+```yaml
+  - name: policy
+    kind: security.policy
+    policy:
+      actions:
+        - process.spawn
+        - process.spawn.monitored
+        - process.spawn.linked
+        - process.host
+        - process.send
+        - process.monitor
+        - process.unmonitor
+        - process.link
+        - process.unlink
+        - process.registry.register
+        - process.registry.unregister
+      resources: "*"
+      effect: allow
+
+  - name: worker
+    kind: process.lua
+    source: file://worker.lua
+    method: main
+    modules:
+      - process
+    security:
+      policies: [app:policy]
+```
+
+Без этого разрешения такие вызовы возвращают ошибки вида `not allowed to spawn process: app.test.process:echo_worker`. Полный список действий приведён в [справочнике по разрешениям](lua/core/process.md).
+
 ## Создание процессов
 
 Создание нового процесса по ссылке на запись.
@@ -105,10 +140,12 @@ local function main()
         elseif result.channel == inbox_ch then
             -- Messages to any OTHER topic arrive here
             local msg = result.value
-            print("Inbox got:", msg.topic, msg.payload)
+            print("Inbox got:", msg:topic(), msg:payload():data())
         end
     end
 end
+
+return { main = main }
 ```
 
 ### Режим сообщений для информации об отправителе
@@ -123,10 +160,10 @@ local function main()
     local msg = ch:receive()
     if msg then
         local sender = msg:from()
-        local payload = msg:payload()
+        local data = msg:payload():data()
 
         if sender then
-            process.send(sender, "reply", payload)
+            process.send(sender, "reply", data)
         end
         return true
     end

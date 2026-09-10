@@ -1,6 +1,6 @@
 ---
 title: "セキュリティ & アクセス制御"
-description: "現在のアクターとスコープの確認、ポリシー評価、認証トークン管理を行います。"
+description: "認証アクター、認可スコープ、アクセスポリシーを管理します。"
 ---
 
 # セキュリティ & アクセス制御
@@ -59,18 +59,12 @@ end
 ```lua
 -- Check read permission
 if not security.can("read", "user:" .. user_id) then
-    return nil, errors.new({
-        message = "Cannot read user data",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot read user data"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check write permission
 if not security.can("write", "order:" .. order_id) then
-    return nil, errors.new({
-        message = "Cannot modify order",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Cannot modify order"):kind(errors.PERMISSION_DENIED)
 end
 
 -- Check with metadata
@@ -256,10 +250,7 @@ local result = scope:evaluate(actor, "read", "document:123")
 -- "allow", "deny", or "undefined"
 
 if result ~= "allow" then
-    return nil, errors.new({
-        message = "Access denied",
-        kind = errors.PERMISSION_DENIED
-    })
+    return nil, errors.new("Access denied"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -343,7 +334,7 @@ return token
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, err
+    return nil, errors.new("Invalid token"):kind(errors.PERMISSION_DENIED)
 end
 ```
 
@@ -385,9 +376,7 @@ store:close()
 |--------|----------|-------------|
 | `security.policy.get` | ポリシーID | ポリシー定義へのアクセス |
 | `security.policy_group.get` | グループID | 名前付きスコープへのアクセス |
-| `security.scope.create` | `custom` | `new_scope`でカスタムスコープを作成 |
-| `security.scope.create` | `with` | `scope:with`でポリシーを追加 |
-| `security.scope.create` | `without` | `scope:without`でポリシーを削除 |
+| `security.scope.create` | `custom`、`with`、`without` | カスタムスコープの作成（`new_scope`）とポリシーの追加/削除（`scope:with`、`scope:without`） |
 | `security.actor.create` | アクターID | アクターの作成 |
 | `security.token_store.get` | ストアID | トークンストアへのアクセス |
 | `security.token.validate` | ストアID | トークンの検証 |
@@ -400,15 +389,15 @@ store:close()
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| コンテキストなし | `errors.INTERNAL` | いいえ |
-| 空のトークンストアID | `errors.INVALID` | いいえ |
-| ポリシー、名前付きスコープ、またはトークン操作の権限拒否 | `errors.INVALID` | いいえ |
-| アクターまたはスコープの作成、スコープ変更、トークンストア取得の拒否 | Luaエラーを発生 | いいえ |
-| ポリシーが見つからない | `errors.INTERNAL` | いいえ |
-| トークンストアが見つからない | `errors.INTERNAL` | いいえ |
-| トークンストアがクローズ済み | `errors.INTERNAL` | いいえ |
-| 無効な有効期限フォーマット | `errors.INVALID` | いいえ |
-| トークン検証失敗 | `errors.INTERNAL` | いいえ |
+| コンテキストなし | `errors.INTERNAL` | no |
+| 空のトークンストアID | `errors.INVALID` | no |
+| 権限拒否（`policy`、`named_scope`、トークンの`create`/`validate`/`revoke`） | `errors.INVALID` | no |
+| 権限拒否（`new_scope`、`new_actor`、`token_store`、`scope:with`/`without`） | Luaエラーとして送出 | no |
+| ポリシーが見つからない | `errors.INTERNAL` | no |
+| トークンストアが見つからない | `errors.INTERNAL` | no |
+| トークンストアがクローズ済み | `errors.INTERNAL` | no |
+| 無効な有効期限フォーマット | `errors.INVALID` | no |
+| トークン検証失敗 | `errors.INTERNAL` | no |
 
 ```lua
 local store, err = security.token_store("app:tokens")

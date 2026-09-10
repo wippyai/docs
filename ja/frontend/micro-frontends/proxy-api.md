@@ -1,48 +1,46 @@
 ---
-title: "Proxy API"
-description: "@wippy-fe/proxy が公開する設定、ホスト制御、API アクセス、イベント、状態、WebSocket、ロギング、ユーティリティのリファレンス。"
+title: "プロキシAPI"
+description: "子アプリとWebコンポーネントは、プロキシランタイム（proxy.js）を通じてWippyホストと通信します。コードがそのランタイムと直接やり取りすることはありません…"
 ---
 
-# Proxy API
+# プロキシAPI
 
-**分類: 部分的な統合スニペットを含む API リファレンス。** 例では、Host から配信される child、
-有効なデプロイ URL と認証情報、および `file`、`uuid`、イベントハンドラー、ルートなどの
-アプリケーション値を前提としています。スタンドアロンプロジェクトではなく、API 操作を
-一度に 1 つずつ示します。
+子アプリとWebコンポーネントは、プロキシランタイム（`proxy.js`）を通じてWippyホストと通信します。コードがそのランタイムと直接やり取りすることはありません。その上の薄い同期ファサードである **`@wippy-fe/proxy`** から名前付きゲッターをimportします。同じimportが両方の面で機能します:
 
-child app と web component は、proxy runtime（`proxy.js`）を介して Wippy host と通信します。アプリケーションコードは、その薄い同期 facade である **`@wippy-fe/proxy`** の named getter を使います。同じ import が両方の surface で機能します。
+- **マイクロフロントエンドアプリ（`view.page`）** は、ホストが `proxy.js` を注入するsrcdoc iframe内で動作します。
+- **Webコンポーネント（`view.component`）** は、ホストページ内でESMモジュールとして動作します。ホストはimport mapを通じて `@wippy-fe/proxy` を提供します。
 
-- **Micro Frontend App（`view.page`）** は選択された srcdoc iframe または Web Fragment adapter を介して実行され、どちらも同じ proxy contract を提供します。
-- **Web component（`view.component`）** は host page 内で ESM module として実行されます。host は import map を介して `@wippy-fe/proxy` を提供します。
+各コンテキストにランタイムが読み込まれる方法については、[プロキシと分離](../web-host/proxy-isolation.md)を参照してください。
 
-各 context に runtime が読み込まれる仕組みについては、[Proxy と分離](../web-host/proxy-isolation.md)を参照してください。
+## 初期化
 
-## 初期化 :id=initialization
+`@wippy-fe/proxy` は同期ゲッターをエクスポートします: `host`、`api`、`on`、`config`、`state`、`ws`、`logger`、`sanitize`、`html`、`loadCss`、`loadWebComponent`、`loadByTagName`、`hostCss`、`define`、`classifyLink`、`installVueWarnSuppressor`、`addIcons`、`tailwindConfig`。必要なものをimportして直接使用してください。`getWippyApi` も `instance` も、待つべき `GetConfig`/`SetConfig` のハンドシェイクも**ありません**。
 
-`@wippy-fe/proxy` は同期 getter、すなわち `host`、`api`、`on`、`config`、`state`、`ws`、`logger`、`sanitize`、`html`、`loadCss`、`loadWebComponent`、`loadByTagName`、`hostCss`、`define`、`classifyLink`、`installVueWarnSuppressor`、`addIcons`、`tailwindConfig` を export します。必要なものを import して直接使います。host は `view.page` app と `view.component` web component のどちらでも runtime の読込前に child config を注入するため、アプリケーションコードの実行時には getter を利用できます。`getWippyApi` も `instance` も、待機すべき `GetConfig`/`SetConfig` handshake も**存在しません**。await するのは、HTTP call や state read など実際の非同期操作だけです。
+この同期ゲッターのパターンは、マイクロフロントエンドアプリとWebコンポーネントで共通です:
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
-const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
+const agents = await api.get('/api/v1/agents')   // api は axios。await は HTTP 呼び出しであり、`api` の取得ではない
 const token = config.auth.token
 ```
 
-Iframe app と Web Fragment app は、proxy の `@visibility` topic を介して
-lifecycle visibility を受け取ります。直接実行される web component は受け取りません。
+iframeアプリとWeb Fragmentアプリは、プロキシの `@visibility` トピックを通じて
+ライフサイクルの可視性を受け取ります。直接のWebコンポーネントはそうではありません。
 `@wippy-fe/webcomponent-vue` の `useHostVisibility()` または
-`useHostVisibilityRefresh()`、あるいは同等の `WippyElement` API を使ってください。
+`useHostVisibilityRefresh()`、あるいは同等の `WippyElement` のAPIを使用してください。
 
-開発中に対象 Web Host release の `import-map.json` を一度取得し、その `imports`
-object のすべての key を Rollup external として使います。これには
-`@wippy-fe/proxy` も含まれます。単一 package だけ、または import 済みのものだけを
-列挙する external list は保守しないでください。再取得するのは、Web Host tag が
-変わったとき、または dependency を追加する際にその正確な specifier を external に
-できるか確認するときだけです。
+これらのゲッターは**同期的**です。`host`、`api`、`on`、`config` などは、コードが実行される時点で利用可能です。ホストは（`view.page` アプリと `view.component` Webコンポーネントの両方について）ランタイムの読み込み**前に同期的に**子の設定を注入するため、スクリプトが実行される前にランタイムが初期化されます。ゲッターを*取得する*ために `await` することはなく、`GetConfig`/`SetConfig` のハンドシェイクもありません。書く必要がある `await` は、実際の非同期操作（`api` によるHTTP呼び出し、`state` の読み取りなど）だけです。
+
+開発中に一度、対象のWeb Hostリリースの `import-map.json` を取得し、その
+`imports` オブジェクトのすべてのキーをRollupのexternalとして使用してください。
+これには `@wippy-fe/proxy` も含まれます。1パッケージだけ、あるいはimportしたものだけの
+externalリストを保守してはいけません。再取得するのは、Web Hostのタグが変わったとき、
+または依存関係を追加してその正確な指定子をexternalにできるか確認するときだけです:
 
 ```typescript
-// vite.config.ts (after saving the fetched response as import-map.json)
+// vite.config.ts (取得したレスポンスを import-map.json として保存した後)
 import { readFileSync } from 'node:fs'
 
 const hostImportMap = JSON.parse(
@@ -58,9 +56,9 @@ export default defineConfig({
 })
 ```
 
-### TypeScript 型 :id=typescript-types
+### TypeScriptの型
 
-proxy 型（`AppConfig`、`ProxyApiInstance`、`StateApi`、`ProxyWsApi`、WebSocket message 型）は、どの package の named export でもなく、`@wippy-fe/types-global-proxy` の **ambient declaration** として提供されます。これを `tsconfig.json` の `types` に追加する（または triple-slash reference を使う）と、import なしで global に利用できます。
+プロキシの型（`AppConfig`、`ProxyApiInstance`、`StateApi`、`ProxyWsApi`、およびWebSocketのメッセージ型）は、どのパッケージの名前付きエクスポートでもなく、`@wippy-fe/types-global-proxy` の**アンビエント宣言**として配布されます。`tsconfig.json` の `types` に追加する（またはトリプルスラッシュ参照を使う）と、importなしでグローバルに利用できます:
 
 ```jsonc
 // tsconfig.json
@@ -68,26 +66,31 @@ proxy 型（`AppConfig`、`ProxyApiInstance`、`StateApi`、`ProxyWsApi`、WebSo
 ```
 
 ```typescript
-// AppConfig, ProxyApiInstance, … are ambient globals — annotate with them directly, no import:
+// AppConfig、ProxyApiInstance などはアンビエントなグローバル。importなしで直接注釈に使う:
 function render(cfg: AppConfig) { /* … */ }
-type HostApi = ProxyApiInstance['host']   // HostApi is this indexed type, not a separate export
+type HostApi = ProxyApiInstance['host']   // HostApi はこのインデックス型であり、別のエクスポートではない
 ```
 
-上記 proxy API のための `import … from '@wippy-fe/shared'` は**存在しません**。`@wippy-fe/shared` は cross-package 型と `GLOBAL_*` name constant を提供します。`0.0.52` 以降は、runtime retained-WC helper の `readWippyVisibility`、`setWippyVisibility`、`WIPPY_VISIBILITY_ATTRIBUTE` も export します。直接 WC を記述する場合は通常、`@wippy-fe/webcomponent-vue` の `useHostVisibility()` または `useHostVisibilityRefresh()` を使います。proxy の `@visibility` event は引き続き iframe/Web Fragment channel です。
+上記のプロキシAPIに対する `import … from '@wippy-fe/shared'` は**ありません**。`@wippy-fe/shared` はパッケージ横断の型と `GLOBAL_*` の名前定数を運びます。`0.0.52` 以降は、ランタイムの保持型WC向けヘルパー
+`readWippyVisibility`、`setWippyVisibility`、
+`WIPPY_VISIBILITY_ATTRIBUTE` もエクスポートします。直接のWCの作者は通常、
+`@wippy-fe/webcomponent-vue` の `useHostVisibility()` または
+`useHostVisibilityRefresh()` を使用します。プロキシの `@visibility` イベントは
+iframe/Web Fragmentのチャネルのままです。
 
-### 内部 API（使用禁止） :id=internals-do-not-use
+### 内部（使用しないこと）
 
-runtime は自身で使うために、`window.$W`、`window.getWippyApi`、`window.initWippyApi`、`window.__WIPPY_*` 群という少数の global を設定します。**アプリケーションおよび component のコードは、これらを読み取ったり上書きしたりしてはいけません。** 必ず代わりに `@wippy-fe/proxy` を介してください。名前は衝突を防ぐために掲載しています。[Proxy と分離 § 内部 API](../web-host/proxy-isolation.md#internals-do-not-read-or-override)を参照してください。
+ランタイムは自身の用途のためにいくつかのグローバルをインストールします: `window.$W`、`window.getWippyApi`、`window.initWippyApi`、および `window.__WIPPY_*` の一群です。**アプリケーションやコンポーネントのコードがこれらを読んだりオーバーライドしたりしてはいけません。** 常に `@wippy-fe/proxy` を経由してください。誤って上書きしないよう記載しているだけです。[プロキシと分離 § 内部](../web-host/proxy-isolation.md#internals--do-not-read-or-override)を参照してください。
 
-> ここで説明する `@wippy-fe/proxy` が、child code から使う API です。host 自身の bootstrap である `initWippyApp(config, rootContainer?)` は、module-embed / facade path に Web Host 全体を mount します。child app code から呼び出すことはありません。
+> ここで説明する `@wippy-fe/proxy` が、子のコードが使うAPIです。ホスト自身のブートストラップである `initWippyApp(config, rootContainer?)` は、モジュール埋め込み / ファサードの経路でWeb Host全体をマウントします。子アプリのコードがこれを呼ぶことはありません。
 
 ---
 
-## Config
+## 設定
 
 ### `config`
 
-host から配信される child application configuration です。function ではなく plain object であり、直接 import して同期的に読み取れます。このページでは現在の `wippy-context-2.0` contract のみを説明します。
+ホストが配信する子アプリケーションの設定です。関数ではなくプレーンなオブジェクトで、直接importして同期的に読めます。新しいドキュメントは現行の `wippy-context-2.0` 契約のみを対象としています。
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -131,17 +134,17 @@ interface ChildAppConfig {
 }
 ```
 
-dynamic page で host URL が `/c/page-id/something/else?foo=1` の場合:
-- `config.context?.route` には `/something/else?foo=1` が入ります。
-- `config.path` は `wippy-context-2.0` より前の payload に由来する非推奨の互換 field であり、新しいコードでは使わないでください。
+動的なページで、ホストのURLが `/c/page-id/something/else?foo=1` の場合:
+- `config.context?.route` は `/something/else?foo=1` を運びます。
+- `config.path` は `wippy-context-2.0` 以前のペイロード由来の非推奨の互換フィールドであり、新しいコードで使うべきではありません。
 
 ---
 
-## Host 制御 :id=host-control
+## ホストの制御
 
 ### `host`
 
-host communication API（`HostApi`）です。直接 import して同期的に使います。
+ホストとの通信API（`HostApi`）です。直接importして同期的に使用します。
 
 ```typescript
 import { host } from '@wippy-fe/proxy'
@@ -149,96 +152,80 @@ import { host } from '@wippy-fe/proxy'
 
 ---
 
-### `host.setThemeMode(mode)` と `host.getThemeMode()` :id=hostsetthememodemode-and-hostgetthememode
+### `host.setThemeMode(mode)` と `host.getThemeMode()`
 
-theme mode は AppConfig が保持する host state です。切替は public proxy API
-だけを介して行います。
+テーマモードはAppConfigが運ぶホストの状態です。公開のプロキシAPIを通じてのみ
+切り替えてください:
 
 ```typescript
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
-  if (host.getThemeMode() === mode) return
-
   await new Promise<void>((resolve, reject) => {
-    let settled = false
-    let unsubscribe = () => {}
-    const finish = (error?: unknown) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timeout)
-      unsubscribe()
-      if (error) reject(error)
-      else resolve()
-    }
-    const timeout = window.setTimeout(
-      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
-      5_000,
-    )
-
-    unsubscribe = on('@theme', (appliedMode) => {
+    const unsubscribe = on('@theme', (appliedMode) => {
       if (appliedMode !== mode) return
-      finish()
+      unsubscribe()
+      const currentMode = host.getThemeMode()
+      if (currentMode !== mode) {
+        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
+        return
+      }
+      resolve()
     })
 
-    // Subscribe before the command so a fast propagation event cannot be lost.
-    try {
-      host.setThemeMode(mode)
-    } catch (error) {
-      finish(error)
-    }
+    // 高速な伝播イベントを取りこぼさないよう、コマンドの前に購読する。
+    host.setThemeMode(mode)
   })
 }
 
 await setThemeMode('dark')
 ```
 
-指定できる mode は `auto`、`light`、`dark` です。`auto` は operating system の設定に
-従います。変更は host に適用されて AppConfig に書き戻され、実行中の iframe および
-Web Fragment page realm と直接実行される web component に broadcast され、さらに
-nested Wippy container を介して転送されます。コードから適用済みの child state を
-待つ必要がある場合は、`@theme` を subscribe してください。component の unmount 時に
-subscription を解除します。
+受け付けられるモードは `auto`、`light`、`dark` です。`auto` はオペレーティング
+システムの設定に従います。変更はホストに適用され、AppConfigに書き戻され、稼働中の
+ページのiframeとWebコンポーネントにブロードキャストされ、ネストされたWippyの
+コンテナを通じて転送されます。適用後の子の状態を待つ必要があるコードは `@theme` を
+購読してください。コンポーネントのアンマウント時に購読を解放してください。
 
-永続化の責務は host にはありません。embedding facade が host の theme-change event を
-listen し、[テーマの永続化](../web-host/theme-persistence.md)で説明するように user choice を
-永続化します。
+永続化はホストの担当ではありません。埋め込み側のファサードがホストのテーマ変更
+イベントを待ち受け、[テーマの永続化](../web-host/theme-persistence.md)で説明されている
+とおりにユーザーの選択を永続化します。
 
-`w-theme-dark` / `w-theme-light` class の追加や削除、内部 `applyThemeMode` の呼出、
-AppConfig store の変更、proxy message の合成、`window.getWippyApi` の使用は避けてください。
-これらは Web Host の実装詳細であり、application API や browser-test API ではありません。
-runtime test では `host.setThemeMode()` を実行し、伝播された `@theme` event を待ち、外観を
-capture する前に `host.getThemeMode()` を検証する必要があります。AppConfig は host-to-child
-transport です。内部 store を変更したり、以前 import した config snapshot を完了 signal と
-して扱ったりしないでください。
+`w-theme-dark` / `w-theme-light` クラスの追加や削除、内部の `applyThemeMode` の呼び出し、
+AppConfigのストアの変更、プロキシメッセージの合成、`window.getWippyApi` の使用を
+してはいけません。これらはWeb Hostの実装詳細であり、アプリケーションやブラウザテストの
+APIではありません。ランタイムのテストは `host.setThemeMode()` を実行し、伝播した
+`@theme` イベントを待ち、外観をキャプチャする前に `host.getThemeMode()` を検証しなければ
+なりません。AppConfigはホストから子へのトランスポートです。その内部ストアを変更したり、
+以前にimportした設定のスナップショットを完了シグナルとして頼ったりしてはいけません。
 
-`host.applyTheme()` method は存在しません。
+`host.applyTheme()` というメソッドはありません。
 
 ---
 
 ### `host.startChat(agentToken, options?)`
 
-指定した agent start token を使って、新しい chat session を開きます。
+指定されたエージェントのstart tokenを使って新しいチャットセッションを開きます。
 
 ```typescript
 host.startChat(agentToken: string, options?: { sidebar?: boolean }): void
 ```
 
-| パラメーター | 型 | デフォルト | 説明 |
+| パラメータ | 型 | デフォルト | 説明 |
 |-----------|------|---------|-------------|
-| `agentToken` | `string` | — | 起動する agent を識別する token |
-| `options.sidebar` | `boolean` | `false` | `true` なら右 sidebar panel、`false` なら main area に chat を開く |
+| `agentToken` | `string` | — | どのエージェントを開始するかを識別するトークン |
+| `options.sidebar` | `boolean` | `false` | `true` は右のサイドバーパネルでチャットを開き、`false` はメイン領域で開く |
 
 ```typescript
-host.startChat('my-agent-token')                     // Main area
-host.startChat('my-agent-token', { sidebar: true })  // Right sidebar
+host.startChat('my-agent-token')                     // メイン領域
+host.startChat('my-agent-token', { sidebar: true })  // 右サイドバー
 ```
 
 ---
 
 ### `host.openSession(sessionId, options?)`
 
-既存の chat session を UUID で開きます。
+UUIDで既存のチャットセッションを開きます。
 
 ```typescript
 host.openSession(sessionId: string, options?: { sidebar?: boolean }): void
@@ -252,12 +239,12 @@ host.openSession('abc-123-uuid', { sidebar: false })
 
 ### `host.navigate(url)`
 
-host に SPA navigation を要求します。次の pattern を利用できます。
+ホストにSPAの遷移を要求します。サポートされるパターン:
 
-- `/c/<page-id>` — dynamic page へ移動
-- `/c/<page-id>/<sub-path>` — sub-path を伴う dynamic page
-- `/chat/<session-id>` — chat session を開く
-- registry entry の `mountRoute` で page が宣言した任意の mount route
+- `/c/<page-id>` — 動的ページへ遷移
+- `/c/<page-id>/<sub-path>` — サブパス付きの動的ページ
+- `/chat/<session-id>` — チャットセッションを開く
+- レジストリエントリで `mountRoute` を持つページが確保した任意のマウントルート
 
 ```typescript
 host.navigate(url: string): void
@@ -269,31 +256,25 @@ host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
 
-> **Managed-layout の注意点。** `startChat`、`openSession`、`openArtifact`、`navigate` は、
-> standard compat shell に対して直接作用します。`fe_mode = managed` では、型付き
-> `@HOST/intent` message を publish します。付属の `@HOST/compat-coordinator` または
-> 同等の coordinator を宣言し、それらの intent を宣言済みの chat、artifact、modal、
-> main-route panel に対応付けてください。Managed mode には暗黙の compat chrome がありません。
-> coordinator がなければ intent は publish されますが、何も描画されません。
-> [マルチパネルレイアウト § mode ごとに機能するもの](../web-host/multi-panel-layout.md#what-works-in-which-mode)を参照してください。
+> **マネージドレイアウトでの注意。** `startChat`、`openSession`、`openArtifact`、`navigate` は標準のcompatシェル（チャットビュー、右パネル、ルートのルート）を対象としています。`fe_mode = managed` では、これらはディスパッチされるものの組み込みのレンダリング面を持ちません。代わりに、宣言されたパネルを通じてチャット、アーティファクト、サブルートをレンダリングしてください。[マルチパネルレイアウト § どのモードで何が動作するか](../web-host/multi-panel-layout.md#what-works-in-which-mode)を参照してください。
 
 ---
 
-### `host.onRouteChanged(internalRoute, navId?)` — low-level router 統合 :id=hostonroutechangedinternalroute-navid-low-level-router-integration
+### `host.onRouteChanged(internalRoute, navId?)` — 低レベルのルーター統合
 
-page の internal route が変わったことを host に通知します。host は child の route を含めるよう browser URL bar を更新します。この呼出は**必須**です。呼び出さない場合、host URL は page root のままとなり、browser の戻る button が child navigation で機能しません。
+ページの内部ルートが変わったことをホストに通知します。ホストは子のルートを含むようブラウザのURLバーを更新します。この呼び出しは**必須**です。これがないと、ホストのURLはページのルートに留まり、子の遷移に対してブラウザの戻るボタンが機能しません。
 
 ```typescript
 host.onRouteChanged(internalRoute: string, navId?: number): void
 ```
 
-portable Vue application では `@wippy-fe/router` の `createAppRouter()` を使います。この package が、この呼出、対応する `@history` subscription、normalization、echo-loop suppression を担います。application code でこれらを手動接続しないでください。この method は platform adapter の作者と Vue 以外の統合向けに掲載しています。
+ポータブルなVueアプリケーションは `@wippy-fe/router` の `createAppRouter()` を使用します。このパッケージが、この呼び出し、対応する `@history` の購読、正規化、エコーループの抑制を所有します。これらをアプリケーションコードで手動で配線してはいけません。このメソッドは、プラットフォームのアダプタ作者と非Vueの統合のために引き続き記載されています。
 
 ---
 
 ### `host.confirm(options)` → `Promise<boolean>`
 
-PrimeVue confirmation dialog を表示します。user が承認した場合は `true`、拒否または閉じた場合は `false` に resolve します。
+PrimeVueの確認ダイアログを表示します。ユーザーが承諾すれば `true`、拒否または閉じた場合は `false` で解決します。
 
 ```typescript
 host.confirm(options: LimitedConfirmationOptions): Promise<boolean>
@@ -318,13 +299,13 @@ if (confirmed) {
 
 ### `host.toast(options)`
 
-PrimeVue toast notification を表示します。
+PrimeVueのトースト通知を表示します。
 
 ```typescript
 host.toast(options: ToastMessageOptions): void
 ```
 
-| `severity` | 外観 |
+| `severity` | 見た目 |
 |------------|-----------|
 | `success` | 緑 |
 | `info` | 青 |
@@ -344,7 +325,7 @@ host.toast({
 
 ### `host.openArtifact(artifactUUID, options?)`
 
-artifact を sidebar または modal に開きます。
+サイドバーまたはモーダルでアーティファクトを開きます。
 
 ```typescript
 host.openArtifact(
@@ -353,7 +334,7 @@ host.openArtifact(
 ): void
 ```
 
-既定の target は `'sidebar'` です。
+デフォルトのターゲットは `'sidebar'` です。
 
 ```typescript
 host.openArtifact('artifact-uuid-123', { target: 'modal' })
@@ -363,7 +344,7 @@ host.openArtifact('artifact-uuid-123', { target: 'modal' })
 
 ### `host.setContext(context, sessionUUID?, source?)`
 
-現在の chat session に context data を送信します。まだ session が開いていない場合、context は queue に入り、次に `startChat` または `openSession` で開かれる session に適用されます。必要に応じて context の scope を特定の session UUID に限定したり、source descriptor を付けたりできます。
+現在のチャットセッションにコンテキストデータを送ります。まだセッションが開いていない場合、コンテキストはキューに入れられ、`startChat` または `openSession` で次に開かれたセッションに適用されます。任意で、特定のセッションUUIDにコンテキストをスコープしたり、ソースの記述子でマークしたりできます。
 
 ```typescript
 host.setContext(
@@ -384,7 +365,7 @@ host.setContext({
 
 ### `host.classifyLink(url)` → `LinkClassification`
 
-href を host-nav、child-nav、external、ignore のいずれかに分類します。child config の `mountRoutes` と `routePrefix` に加え、組込済みの system route segment を使います。side effect のない pure function です。
+hrefを host-nav、child-nav、external、ignore のいずれかに分類します。子の設定にある `mountRoutes` と `routePrefix`、および焼き込まれたシステムのルートセグメントを使用します。純粋関数であり、副作用はありません。
 
 ```typescript
 host.classifyLink(href: string): LinkClassification
@@ -393,12 +374,12 @@ interface LinkClassification {
   kind: 'host-nav' | 'child-nav' | 'external' | 'ignore'
   href: string
   normalizedPath?: string
-  targetPageId?: string  // set when host-nav matched a specific mountRoute
+  targetPageId?: string  // host-nav が特定の mountRoute に一致した場合に設定される
 }
 ```
 
 ```typescript
-// Classifier-aware anchor handler
+// 分類器を用いたアンカーのハンドラ
 import { host } from '@wippy-fe/proxy'
 
 document.addEventListener('click', (ev) => {
@@ -410,17 +391,17 @@ document.addEventListener('click', (ev) => {
     ev.preventDefault()
     host.navigate(cls.normalizedPath ?? cls.href)
   }
-  // child-nav / external / ignore: let existing handlers run
+  // child-nav / external / ignore: 既存のハンドラに任せる
 })
 ```
 
-Vue app では、`vue-router` の `RouterLink` を `@wippy-fe/router` の `RouterLink` に置き換えてください。内部で `classifyLink` を使い、本来の `RouterLink` と prop compatibility があります。
+Vueアプリでは、`vue-router` の `RouterLink` を `@wippy-fe/router` の `RouterLink` に置き換えてください。内部で `classifyLink` を使用し、本物の `RouterLink` とpropの互換性があります。
 
 ---
 
 ### `host.handleError(code, error)`
 
-集中管理された処理のために error を host に報告します。
+集中的な処理のため、ホストにエラーを報告します。
 
 ```typescript
 host.handleError(
@@ -429,32 +410,26 @@ host.handleError(
 ): void
 ```
 
-- `'auth-expired'` — host の再認証 flow を起動
-- `'other'` — 一般的な error。log に記録し、必要に応じて user に表示
+- `'auth-expired'` — ホストの再認証フローを起動します
+- `'other'` — 一般的なエラー。ログに記録され、適切な場合はユーザーに表示されます
 
 ```typescript
 try {
   await api.get('/protected-endpoint')
 } catch (error) {
-  // Same-origin 401 responses already trigger the proxy's single-flight
-  // auth-expired flow. Report only application-specific non-auth failures.
-  if ((error as any).response?.status !== 401) {
+  if ((error as any).response?.status === 401) {
+    host.handleError('auth-expired', error as Record<string, unknown>)
+  } else {
     host.handleError('other', error as Record<string, unknown>)
   }
 }
 ```
 
-proxy は same-origin request に Wippy bearer token を追加し、その request が 401 を
-返した場合に host の `auth-expired` flow を一度呼び出します。`skipDefaultAuth: true` を
-設定するのは、この 2 つの動作を意図的に迂回する request だけです。完全修飾された
-cross-origin request では、Wippy token が別の origin に送信されないよう、これらを
-自動的に省略します。
-
 ---
 
 ### `host.logout()`
 
-現在の user を sign out し、その session を終了します。
+現在のユーザーをサインアウトさせ、そのセッションを終了します。
 
 ```typescript
 host.logout(): void
@@ -464,61 +439,59 @@ host.logout(): void
 
 ### `host.bridge`
 
-page が `<w-iframe>` 内に embed されている場合の channel-based parent-child messaging です。完全な protocol は [Proxy と分離 § Parent-child bridge](../web-host/proxy-isolation.md#parent-child-bridge)を参照してください。
+ページが `<w-iframe>` の内部に埋め込まれている場合の、チャネルベースの親子間メッセージングです。プロトコル全体については[プロキシと分離 § 親子間のブリッジ](../web-host/proxy-isolation.md#parent-child-bridge)を参照してください。
 
 ```typescript
-// Fire-and-forget to parent
+// 親への一方向送信
 host.bridge.post(channel: string, payload?: unknown): void
 
-// Request/response (resolves with parent handler's return value)
+// リクエスト/レスポンス (親のハンドラの戻り値で解決)
 host.bridge.request<T>(
   channel: string,
   payload?: unknown,
   options?: { timeoutMs?: number }
 ): Promise<T>
 
-// Register a handler for incoming messages from parent
+// 親からの受信メッセージにハンドラを登録
 host.bridge.on(
   channel: string,
   handler: (payload: unknown) => unknown | Promise<unknown>
-): () => void  // returns unsubscribe
+): () => void  // 購読解除関数を返す
 ```
 
-`options.timeoutMs` を省略した場合、`host.bridge.request()` の deadline は既定で 10 秒（`10000` ms）です。timeout すると、返された promise は message が `` Bridge request <id> timed out after <ms>ms `` の `Error` で reject します。parent に handler がない channel への request は、deadline まで待つことなく `` No handler registered for channel "<channel>" `` ですぐに reject します。
+`options.timeoutMs` を省略した場合、`host.bridge.request()` は10秒（`10000` ミリ秒）の期限をデフォルトとします。タイムアウト時、返されるPromiseは `` Bridge request <id> timed out after <ms>ms `` というメッセージの `Error` で拒否されます。親にハンドラが登録されていないチャネルへの要求は、期限を待たずに `` No handler registered for channel "<channel>" `` で即座に拒否されます。
 
 ---
 
 ### `host.layout`
 
-managed-layout API への access です。`hostConfig.layout` が設定されている場合（つまり `fe_mode = managed`）だけ利用できます。それ以外の context では `host.layout.snapshot` は `null` で、mutation call は no-op です。
+マネージドレイアウトAPIへのアクセスです。`hostConfig.layout` が設定されている場合（すなわち `fe_mode = managed`）にのみ利用できます。それ以外のコンテキストでは、`host.layout.snapshot` は `null` で、変更系の呼び出しは何もしません。
 
 ```typescript
 const layout = host.layout
 
-// Read current snapshot
+// 現在のスナップショットを読む
 if (layout.snapshot) {
   console.log(layout.snapshot.activeBreakpoint)  // 'default' | 'sm' | ...
-  console.log(layout.snapshot.panels)             // panel definition map
-  console.log(layout.snapshot.layouts)            // breakpoint-keyed panel trees
+  console.log(layout.snapshot.panels)             // パネル定義のマップ
+  console.log(layout.snapshot.layouts)            // ブレークポイントをキーとするパネルツリー
 }
 
-// Subscribe to changes (the fresh snapshot is passed to the handler)
+// 変更を購読する (新しいスナップショットがハンドラに渡される)
 import { on } from '@wippy-fe/proxy'
 
-const stopLayoutChanges = on('@layout-change', (snapshot) => {
+on('@layout-change', (snapshot) => {
   console.log(snapshot.activeBreakpoint)
 })
 
-// Call stopLayoutChanges() when the owning page or component tears down.
-
-// Mutations
+// 変更操作
 layout.resizePanel('right', '40%')
 layout.collapsePanel('nav')
 layout.expandPanel('nav')
 layout.movePanel('right', { relativeTo: 'main', position: 'after' })
 layout.removePanel('right')
-layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} replaces content wholesale
-layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} shallow-merges into existing props
+layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} はコンテンツを丸ごと置き換える
+layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} は既存のpropsに浅くマージされる
 
 layout.addFloating('flap', {
   kind: 'component',
@@ -530,17 +503,17 @@ layout.addFloating('flap', {
 layout.removeFloating('flap')
 layout.closeModal('confirm-discard')
 
-// In-tab bus
-layout.broadcast('open-chat', { token: 'abc' })       // 1:N (sender excluded)
-layout.send('right', 'open-chat', { token: 'abc' })   // 1:1 to named panel
+// タブ内のバス
+layout.broadcast('open-chat', { token: 'abc' })       // 1:N (送信者を除く)
+layout.send('right', 'open-chat', { token: 'abc' })   // 名前付きパネルへの 1:1
 
 const off = layout.on('open-chat', ({ payload, sourcePanelId, targetPanelId }) => {
-  // handle
+  // 処理する
 })
-off()  // unsubscribe
+off()  // 購読解除
 ```
 
-managed-layout model の全体像は、[マルチパネルレイアウト](../web-host/multi-panel-layout.md)を参照してください。
+マネージドレイアウトのモデル全体については、[マルチパネルレイアウト](../web-host/multi-panel-layout.md)を参照してください。
 
 ---
 
@@ -548,11 +521,9 @@ managed-layout model の全体像は、[マルチパネルレイアウト](../we
 
 ### `api`
 
-事前設定済みの axios instance で、次の機能があります。
-- deployment environment から取得した base URL
-- `skipDefaultAuth: true` でない限り、same-origin request に
-  `Authorization: Bearer <token>` を自動注入。cross-origin request には
-  Wippy token を付与しません
+次の設定が済んだaxiosインスタンスです:
+- デプロイ環境から得たベースURL
+- すべてのリクエストへの `Authorization: Bearer <token>` の自動注入
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -561,7 +532,7 @@ const response = await api.get('/api/v1/users')
 const result   = await api.post('/api/v1/items', { name: 'New item' })
 ```
 
-### ファイルの upload :id=file-upload
+### ファイルのアップロード
 
 ```typescript
 import { api, on } from '@wippy-fe/proxy'
@@ -583,27 +554,21 @@ const response = await api.post('/api/v1/uploads', formData, {
 
 const uploadedUuid = response.data.uuid  // { success: boolean, uuid: string }
 
-// Track processing status via WebSocket. Retain and call the unsubscribe on
-// completion, failure, cancellation, or component teardown.
-const stopUploadStatus = on(`upload:${uploadedUuid}`, (msg) => {
+// WebSocket で処理状況を追跡する
+on(`upload:${uploadedUuid}`, (msg) => {
   // msg.data.status: 'uploaded' | 'completed' | 'error' | 'processing'
 })
 
+// 実行中のアップロードをキャンセルする
+abort.abort()
 ```
 
-POST が pending の間に、application の cancel action から `abort.abort()` を
-呼び出します。await している response が settle した後に abort しても、完了済みの
-upload は cancel できません。処理が terminal status に達したとき、または所有する
-component の teardown 時に `stopUploadStatus()` を呼び出してください。
+最大ファイルサイズ: 100 MB。
 
-Host 組込の upload UI は 100 MB を超える file を拒否します。proxy の axios instance は
-この上限を適用しません。custom endpoint または child UI は、文書化した独自の client
-および server 上限を適用する必要があります。
-
-### ファイルの download :id=file-download
+### ファイルのダウンロード
 
 ```typescript
-const response = await api.get(`/api/v1/uploads/${uuid}/download`, {
+const response = await api.get('/api/v1/uploads/{uuid}/download', {
   responseType: 'blob',
 })
 
@@ -615,25 +580,25 @@ a.click()
 URL.revokeObjectURL(url)
 ```
 
-### Upload 情報の取得 :id=retrieve-upload-info
+### アップロード情報の取得
 
 ```typescript
-// Paginated list
+// ページネーション付きの一覧
 const list = await api.get('/api/v1/uploads/list', {
   params: { limit: 10, offset: 0 },
 })
 // list.data.uploads: Array<{ uuid, mime_type, size, status, meta: { filename } }>
 
-// Single upload
+// 単一のアップロード
 const upload = await api.get(`/api/v1/uploads/${uuid}`)
 // upload.data: { uuid, mime_type, size, status, meta: { filename, content_sample? } }
 ```
 
-### SSE streaming
+### SSEストリーミング
 
-proxy の `api` は fetch adapter を介して server-sent event stream をサポートします。token 単位の LLM completion、長時間実行する progress stream、または任意の `text/event-stream` response に使います。
+プロキシの `api` は、fetchアダプタを介したserver-sent eventのストリームをサポートします。トークン単位のLLM補完、長時間実行の進捗ストリーム、その他あらゆる `text/event-stream` のレスポンスに使用してください。
 
-> browser native の `EventSource` は使わないでください。custom header を付加できないため、proxy の `Authorization: Bearer` token を送れません。
+> ブラウザのネイティブな `EventSource` を使ってはいけません。カスタムヘッダーを付けられないため、プロキシの `Authorization: Bearer` トークンを運べません。
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -641,7 +606,7 @@ import { api } from '@wippy-fe/proxy'
 const abort = new AbortController()
 
 const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
-  adapter: 'fetch',          // required — the default xhr adapter buffers the full body
+  adapter: 'fetch',          // 必須 — デフォルトの xhr アダプタはボディ全体をバッファリングする
   responseType: 'stream',
   headers: { Accept: 'text/event-stream' },
   signal: abort.signal,
@@ -650,16 +615,13 @@ const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
 const reader = (response.data as ReadableStream<Uint8Array>).getReader()
 const decoder = new TextDecoder()
 let buffer = ''
-let endedByMarker = false
 
 try {
-  stream: while (true) {
+  while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-    // SSE permits CRLF. Normalize before looking for blank-line delimiters.
-    buffer = buffer.replace(/\r\n/g, '\n')
 
     while (true) {
       const sep = buffer.indexOf('\n\n')
@@ -674,38 +636,28 @@ try {
 
       if (dataLines.length === 0) continue
       const payload = dataLines.join('\n')
-      if (payload === '[DONE]') {
-        endedByMarker = true
-        break stream
-      }
+      if (payload === '[DONE]') return
 
-      let evt: unknown
       try {
-        evt = JSON.parse(payload)
+        const evt = JSON.parse(payload)
+        handleEvent(evt)
       } catch {
         handleText(payload)
-        continue
       }
-      handleEvent(evt)
     }
   }
 } finally {
-  try {
-    if (endedByMarker) await reader.cancel()
-  } finally {
-    reader.releaseLock()
-  }
+  reader.releaseLock()
 }
+
+// ストリームをキャンセルする
+abort.abort()
 ```
 
-read loop が active な間に、所有する cancel または teardown path から `abort.abort()` を
-呼び出します。結果として生じる abort rejection は、その path が開始した場合にのみ
-想定内として扱います。その他の stream failure は通常どおり報告してください。
-
-すべての request で fetch adapter を既定にするには、次のようにします。
+すべてのリクエストのデフォルトをfetchアダプタにするには:
 
 ```jsonc
-// In package.json → wippy.configOverrides, or window.__WIPPY_CONFIG_OVERRIDES__
+// package.json の wippy.configOverrides、または window.__WIPPY_CONFIG_OVERRIDES__ で
 {
   "axiosDefaults": { "adapter": "fetch" }
 }
@@ -713,13 +665,13 @@ read loop が active な間に、所有する cancel または teardown path か
 
 ---
 
-## Surface
+## サーフェス
 
-Web Host がこの app に割り当てた領域の geometry です。その領域は通常 browser window では**ありません**。app は複数 panel の 1 つである可能性があるため、`window.innerWidth` や viewport unit を基準に sizing するのは不適切です。完全な contract は [Surface portability](./surface-portability.md)、移行手順は [Surface migration](./surface-migration.md)を参照してください。
+Web Hostがこのアプリに割り当てた領域のジオメトリです。その領域は通常、ブラウザのウィンドウでは**ありません**。アプリは複数あるパネルの1つかもしれないため、`window.innerWidth` やビューポート単位はサイズの基準として誤りです。契約全体については[サーフェスのポータビリティ](./surface-portability.md)を、変換のレシピについては[サーフェスの移行](./surface-migration.md)を参照してください。
 
 ### `host.surface.snapshot`
 
-現在の geometry です。app の CSS が resolve するのと同じ computed custom property から読み戻されるため、`@container wippy-surface (…)` や `cqw` が認識する値とずれることはありません。
+現在のジオメトリです。アプリのCSSが解決するのと同じ計算済みカスタムプロパティから読み戻されるため、`@container wippy-surface (…)` や `cqw` が見る値とずれることはありません。
 
 ```typescript
 const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit } = host.surface.snapshot
@@ -727,16 +679,16 @@ const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit
 
 | フィールド | 型 | 注記 |
 |-------|------|-------|
-| `contract` | `1` | contract の version |
-| `revision` | `number` | 単調増加。geometry が変わると進む |
-| `engine` | `'iframe' \| 'fragment' \| 'host'` | `host` は surface が割り当てられていないことを示す |
+| `contract` | `1` | 契約のバージョン |
+| `revision` | `number` | 単調増加。ジオメトリが変わると進む |
+| `engine` | `'iframe' \| 'fragment' \| 'host'` | `host` はサーフェスが割り当てられていないことを意味する |
 | `sizing` | `'container' \| 'content'` | |
-| `width` / `widthUnit` | `number` | CSS pixel 単位の全幅とその 1% |
-| `height` / `heightUnit` | `number \| null` | content sizing では `null`。block axis は実際に利用できない |
+| `width` / `widthUnit` | `number` | 全体の幅と、その1%（CSSピクセル） |
+| `height` / `heightUnit` | `number \| null` | contentサイジングでは `null`。ブロック軸は本当に利用できない |
 
 ### `host.surface.onChange(listener)` → `() => void`
 
-geometry の変更を subscribe します。冪等な unsubscribe function を返します。teardown 時に**必ず**呼び出してください。
+ジオメトリの変更を購読します。冪等な購読解除関数を返し、破棄時に**必ず**呼び出す必要があります。
 
 ```typescript
 const off = host.surface.onChange((snapshot) => {
@@ -748,45 +700,45 @@ const off = host.surface.onChange((snapshot) => {
 
 ```typescript
 if (host.surface.supports('block-size')) {
-  // the block axis is available (container sizing)
+  // ブロック軸が利用できる (container サイジング)
 }
 ```
 
-現在、capability `block-size` と `surface-scroll` には実際の状態が返されます。`registered-hit-testing`、`native-document-hit-testing`、`owner-visibility` は予約済みの語彙で、常に `false` を返します。
+ケーパビリティ: `block-size` と `surface-scroll` は現在、真の値を返します。`registered-hit-testing`、`native-document-hit-testing`、`owner-visibility` は予約された語彙であり、常に `false` を返します。
 
-`engine` による分岐より `supports()` を優先してください。重要なのは、どの engine が描画しているかではなく、capability が利用できるかどうかです。
+`engine` で分岐するより `supports()` を優先してください。重要なのはケーパビリティが利用できるかであり、どのエンジンがレンダリングしているかではありません。
 
-### `host.surface.engine` と `host.surface.sizing` :id=hostsurfaceengine-and-hostsurfacesizing
+### `host.surface.engine` と `host.surface.sizing`
 
-snapshot 上の同じ値に対する read-only shortcut です。`engine: 'host'` は、surface が割り当てられず、コードが host document に直接 mount されている（または standalone dev proxy で実行されている）ことを示します。snapshot が `width: 0` と `sizing: 'content'` を返すのは仕様どおりです。
+スナップショット上の同じ値への読み取り専用のショートカットです。`engine: 'host'` は、コードがサーフェスを割り当てられずにホストドキュメントへ直接マウントされている（またはスタンドアロンの開発プロキシで動作している）ことを意味します。スナップショットは設計上 `width: 0` と `sizing: 'content'` を報告します。
 
-`engine` は「surface が割り当てられたか」を確実に判定する方法ではありません。`<w-iframe>` / `<w-artifact>` で embed された page にも surface は割り当てられません。nested-surface support が提供されるまでは nested embed が opt out するためです。それでも `engine: 'iframe'` と `width: 0` が返されます。この区別が重要な場合は `snapshot.width` を確認してください。
+`engine` は「サーフェスが割り当てられたか」を判定する信頼できる方法ではありません。`<w-iframe>`/`<w-artifact>` 経由で埋め込まれたページもサーフェスを受け取りません（ネストされたサーフェスのサポートが出荷されるまで、ネストされた埋め込みは対象外です）が、`engine: 'iframe'` と `width: 0` を報告します。その区別が重要な場合は `snapshot.width` を確認してください。
 
 ---
 
-## イベント :id=events
+## イベント
 
 ### `on(topic, handler)` → `() => void`
 
-`on` は host の WebSocket layer または内部 proxy event を subscribe します。unsubscribe function を返します。
+`on` は、ホストのWebSocketレイヤーからのイベント、またはプロキシの内部イベントを購読します。購読解除関数を返します。
 
 ```typescript
 on(topic: string, handler: (event: unknown) => void): () => void
 ```
 
-topic は colon 区切りの segment を使います。`*` は単一 segment の wildcard です。pattern と一致対象の topic では segment 数が同じでなければなりません。
+トピックはコロン区切りのセグメントを使います。`*` は1セグメントのワイルドカードです。パターンは、一致させるトピックと同じセグメント数でなければなりません。
 
 ```typescript
 import { on } from '@wippy-fe/proxy'
 
-// Unsubscribe when done
+// 終わったら購読解除する
 const unsub = on('session:abc:message:*', (msg) => {
   console.log(msg.data)
 })
 unsub()
 ```
 
-`on()` は呼び出すたびに unsubscribe function を返します。leak を防ぐため、component の unmount 時に必ず呼び出してください。iframe の unload 時には残った subscription が自動 cleanup されますが、長時間存続する iframe 内で mount と unmount を行う component には、引き続き明示的な cleanup が必要です。
+すべての `on()` の呼び出しは購読解除関数を返します。リークを防ぐため、コンポーネントのアンマウント時に必ず呼び出してください。iframeのアンロード時に残りの購読は自動的にクリーンアップされますが、長寿命のiframe内でマウントとアンマウントを繰り返すコンポーネントでは、明示的なクリーンアップが依然として必要です。
 
 ```typescript
 // Vue Composition API
@@ -802,7 +754,7 @@ onUnmounted(() => {
 ```
 
 ```typescript
-// Vanilla / Web Component
+// バニラ / Webコンポーネント
 import { on } from '@wippy-fe/proxy'
 
 class MyEl extends HTMLElement {
@@ -819,74 +771,73 @@ class MyEl extends HTMLElement {
 }
 ```
 
-### 組込 topic :id=built-in-topics
+### 組み込みのトピック
 
-| トピック | ハンドラーペイロード | 説明 |
+| トピック | ハンドラのペイロード | 説明 |
 |-------|-----------------|-------------|
-| `@history` | `{ path: string }` | Host URL が変更された（SPA navigation）。parent が新しい route を push したときに発火。 |
-| `@visibility` | `boolean` | Iframe/Web Fragment の visibility が変更された。直接実行される web component は代わりに型付き host-visibility contract を使う。 |
-| `@theme` | `'auto' \| 'light' \| 'dark'` | Host から伝播された適用済み theme mode。 |
-| `@message` | 完全な WS message | すべての WebSocket message。内部で `*`、`*:*`、`*:*:*`、`*:*:*:*` を subscribe。 |
-| `@state-error` | `{ error: string, key?: string }` | state save 操作の失敗（quota 超過、serialization error）。 |
-| `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot が更新され、最新 snapshot が handler に渡される。`host.layout.snapshot` の読取と同等。 |
-| `@layout-breakpoint` | `{ name: string, width: number }` | active managed-layout breakpoint が変更された。`name` は新しい breakpoint、`width` は threshold（px）。 |
+| `@history` | `{ path: string }` | ホストのURLが変わった（SPAの遷移）。親が新しいルートをpushしたときに発火。 |
+| `@visibility` | `boolean` | iframe/Web Fragmentの可視性が変わった。直接のWebコンポーネントは代わりに型付きのhost-visibility契約を使う。 |
+| `@message` | WSメッセージ全体 | すべてのWebSocketメッセージ。内部的に `*`、`*:*`、`*:*:*`、`*:*:*:*` を購読する。 |
+| `@state-error` | `{ error: string, key?: string }` | 状態の保存操作が失敗した（クォータ超過、シリアライズエラー）。 |
+| `@layout-change` | `LayoutSnapshot` | マネージドレイアウトのスナップショットが更新された。新しいスナップショットがハンドラに渡される。`host.layout.snapshot` を読むのと等価。 |
+| `@layout-breakpoint` | `{ name: string, width: number }` | マネージドレイアウトの有効なブレークポイントが変わった。`name` が新しいブレークポイント、`width` がそのしきい値（px）。 |
 
-### Wildcard パターン :id=wildcard-patterns
+### ワイルドカードのパターン
 
 ```typescript
-// Iframe/Web Fragment pages only; direct WCs use useHostVisibility().
-on('@visibility', (visible: boolean) => { /* shown or hidden */ })
+// iframe/Web Fragment のページのみ。直接の WC は useHostVisibility() を使う。
+on('@visibility', (visible: boolean) => { /* 表示または非表示 */ })
 
-// All session messages in a specific session
+// 特定のセッション内のすべてのセッションメッセージ
 on('session:abc-123:message:*', (msg) => { /* ... */ })
 
-// All messages across all sessions
+// すべてのセッションにわたるすべてのメッセージ
 on('@message', (msg) => { /* ... */ })
 
-// Topics whose parts contain ':' must be encoded
+// ':' を含む部分を持つトピックはエンコードが必要
 on(`session:${encodeURIComponent('id:with:colons')}:message:*`, handler)
 ```
 
-`@history` は protocol の完全性を保つために掲載しています。portable Vue application では `@wippy-fe/router` に subscribe させ、application 所有の 2 つ目の handler を追加しないでください。
+`@history` はプロトコルの網羅性のために記載しています。ポータブルなVueアプリケーションは `@wippy-fe/router` にこれを購読させなければなりません。アプリケーション側で2つ目のハンドラを追加してはいけません。
 
-同じ frame から同じ topic を複数回 subscribe しても安全です。proxy が host level で重複を除去します。それでも `on()` 呼出ごとに独立した unsubscribe handle が返されます。
+同じフレームから同じトピックを複数回購読しても安全です。プロキシはホストレベルで重複を除去します。それでも各 `on()` の呼び出しは、それぞれ独立した購読解除ハンドルを得ます。
 
 ---
 
-## 状態 :id=state
+## 状態
 
-### `state` — host-mediated key-value 永続化 :id=state-host-mediated-key-value-persistence
+### `state` — iframeをまたぐキー・バリューの永続化
 
-`state` は page realm が破棄されても存続する host-mediated storage を提供します。state は page または artifact UUID ごとに scope され、各 app に分離された namespace が割り当てられます。
+`state` は、iframeの破棄を越えて残る、ホストが仲介するストレージを提供します。状態はページまたはアーティファクトのUUIDごとにスコープされ、各アプリは分離された名前空間を得ます。
 
-すべての method は、省略可能な `{ scope?: string }` option で既定の scope を上書きできます。同じ component の複数 instance に別々の state bucket が必要な場合は `scope` を使います。
+すべてのメソッドは、デフォルトのスコープを上書きする任意の `{ scope?: string }` オプションを受け付けます。同じコンポーネントの複数インスタンスが別々の状態バケットを必要とする場合に `scope` を使用してください。
 
-> **Scope の一意性:** raw `state` API は scope value をそのまま渡すため、application 全体で global に一意でなければなりません。`@wippy-fe/pinia-persist` plugin は system scope との衝突を防ぐため、custom scope に `@custom:` prefix を自動付与します。
+> **スコープの一意性:** スコープの値は、生の `state` APIによってそのまま渡されるため、アプリケーション全体でグローバルに一意でなければなりません。`@wippy-fe/pinia-persist` プラグインは、システムのスコープとの衝突を防ぐため、カスタムのスコープに自動的に `@custom:` を前置します。
 
 ```typescript
 import { state } from '@wippy-fe/proxy'
 
-// Write (fire-and-forget; @state-error fires on quota exceeded)
+// 書き込み (一方向。クォータ超過時に @state-error が発火する)
 await state.set('filters', { search: 'john', status: 'active' })
 
-// Read (returns null if key not found)
+// 読み取り (キーが見つからない場合は null を返す)
 const filters = await state.get<{ search: string, status: string }>('filters')
 
-// Delete a key
+// キーを削除する
 await state.remove('filters')
 
-// Clear all state for this page
+// このページのすべての状態をクリアする
 await state.clear()
 
-// Read all at once (useful for bulk hydration)
+// 一度にすべて読む (一括ハイドレーションに便利)
 const all = await state.getAll()
 
-// Custom scope
+// カスタムスコープ
 await state.set('count', 42, { scope: 'my-widget-instance-1' })
 const count = await state.get<number>('count', { scope: 'my-widget-instance-1' })
 ```
 
-**Method の signature:**
+**メソッドのシグネチャ:**
 
 ```typescript
 state.get<T = unknown>(key: string, options?: { scope?: string }): Promise<T | null>
@@ -896,24 +847,22 @@ state.clear(options?: { scope?: string }): Promise<void>
 state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 ```
 
-**推奨 iframe/Web Fragment save pattern** — 変更のたびではなく、page が background に移るときに保存します。直接実行される WC は、同じ lifecycle 判定に `useHostVisibility()` を使います。
+**推奨されるiframe/Web Fragmentの保存パターン** — 変更のたびではなく、ページがバックグラウンドに移ったときに保存します。直接のWCは、同じライフサイクル上の判断に `useHostVisibility()` を使用します:
 
 ```typescript
-const stopVisibility = on('@visibility', async (visible) => {
+on('@visibility', async (visible) => {
   if (!visible) {
     await state.set('scrollY', document.documentElement.scrollTop)
     await state.set('formData', currentFormData)
   }
 })
-
-// Call stopVisibility() when the owning page or component tears down.
 ```
 
-**上限:** page あたり 2 MB（JSON serialization 後。host が `hostConfig.stateCache` で設定可能）。state は host memory に置かれます。iframe reload 後も存続しますが、browser page 全体を refresh すると失われます。
+**制限:** ページあたり2 MB（JSONシリアライズ後。ホストが `hostConfig.stateCache` で設定可能）。状態はホストのメモリ内にあり、iframeの再読み込みは越えますが、ブラウザページの完全な再読み込みは越えません。
 
-### Pinia 統合 :id=pinia-integration
+### Piniaとの統合
 
-Pinia を使う Vue app では、`@wippy-fe/pinia-persist` が永続化を自動化します。
+Piniaを使うVueアプリでは、`@wippy-fe/pinia-persist` が永続化を自動化します:
 
 ```typescript
 import { createWippyPersist, preloadWippyState } from '@wippy-fe/pinia-persist'
@@ -924,7 +873,7 @@ pinia.use(createWippyPersist(preloaded))
 app.use(pinia)
 ```
 
-続いて store を指定します。
+そのうえでストアにマークを付けます:
 
 ```typescript
 const useMyStore = defineStore('my-store', () => {
@@ -932,7 +881,7 @@ const useMyStore = defineStore('my-store', () => {
   return { filters }
 }, {
   wippyPersist: true,
-  // or: wippyPersist: { pick: ['filters'], debounce: 500 }
+  // または: wippyPersist: { pick: ['filters'], debounce: 500 }
 })
 ```
 
@@ -942,11 +891,11 @@ const useMyStore = defineStore('my-store', () => {
 
 ### `ws`
 
-`ws` は host の WebSocket connection を介して command を送信します。response は `on()` の topic subscription を介して届きます。
+`ws` は、ホストのWebSocket接続を通じてコマンドを送信します。レスポンスは `on()` によるトピックの購読で届きます。
 
 ### `ws.send(command)`
 
-fire-and-forget です。response は配信されないため、先に関連 topic を subscribe してください。
+一方向です。レスポンスは配信されないため、先に該当するトピックを購読してください。
 
 ```typescript
 ws.send(command: WsCommand): void
@@ -955,7 +904,7 @@ ws.send(command: WsCommand): void
 ```typescript
 import { ws, on } from '@wippy-fe/proxy'
 
-const stopMessages = on('session:my-session:message:*', (msg) => {
+on('session:my-session:message:*', (msg) => {
   console.log('Response:', msg.data)
 })
 
@@ -967,12 +916,9 @@ ws.send({
 })
 ```
 
-`stopMessages` を保持し、所有する component または page の teardown 時に呼び出します。
-response がまだ必要な場合は、`send()` の直後に unsubscribe しないでください。
-
 ### `ws.sendWithResponse(command)` → `Promise<WsMessage>`
 
-command を送信し、一致する server response を待ちます。30 秒で timeout します。
+コマンドを送信し、対応するサーバーのレスポンスを待ちます。30秒でタイムアウトします。
 
 ```typescript
 ws.sendWithResponse(command: WsCommand): Promise<WsMessage>
@@ -988,7 +934,7 @@ console.log('Session opened:', response.data)
 
 ### `ws.sendCommand(sessionId, data)`
 
-session control command のための便利な wrapper です。
+セッション制御コマンドのための便利なラッパーです。
 
 ```typescript
 ws.sendCommand(sessionId: string, data: { command: string, [key: string]: unknown }): void
@@ -1002,13 +948,13 @@ ws.sendCommand('session-uuid', { command: 'agent', name: 'my-agent' })
 
 ---
 
-## Logger
+## ロガー
 
 ### `logger`
 
-child-to-host boundary を越える structured logging です。log は child → host → parent website の順に流れ、そこで transport（Sentry、Graylog、console）が処理します。各 child の context（`resourceId`、`resourceType`、nesting depth）は、すべての log entry に自動付与されます。
+iframeの境界を越える構造化ログです。ログは 子 → ホスト → 親ウェブサイト と流れ、そこでトランスポート（Sentry、Graylog、コンソール）が処理します。各子のコンテキスト（`resourceId`、`resourceType`、ネストの深さ）が、すべてのログエントリに自動的に付与されます。
 
-production monitoring に表示したいものには、`console.log/error` ではなく `logger` を使ってください。
+本番のモニタリングに表示したいものには、`console.log/error` ではなく `logger` を使用してください。
 
 ```typescript
 import { logger } from '@wippy-fe/proxy'
@@ -1021,7 +967,7 @@ logger.error('Failed to save', { endpoint: '/api/save' })
 
 ### `logger.captureException(error, context?)`
 
-exception を capture して転送します。`ProxyConfig.injections.errorCapture` が `true` の場合、未処理 error（`window.onerror`、`unhandledrejection`）は自動 capture されます。
+例外を捕捉して転送します。`ProxyConfig.injections.errorCapture` が `true` の場合、未処理のエラー（`window.onerror`、`unhandledrejection`）は自動的に捕捉されます。
 
 ```typescript
 try {
@@ -1031,28 +977,28 @@ try {
 }
 ```
 
-### Breadcrumb と context :id=breadcrumbs-and-context
+### ブレッドクラムとコンテキスト
 
 ```typescript
-// Breadcrumbs attach to the next exception for debugging context
+// ブレッドクラムはデバッグのコンテキストとして次の例外に付与される
 logger.addBreadcrumb({ category: 'navigation', message: 'Navigated to /settings' })
 logger.addBreadcrumb({ category: 'ui', message: 'Clicked Save button' })
 
-// Persistent context — attached to all subsequent logs from this child
+// 永続的なコンテキスト — この子からの以降のすべてのログに付与される
 logger.setContext('user', { id: 'user-123', role: 'admin' })
 
-// Tags — key/value pairs for filtering and search
+// タグ — フィルタリングと検索のためのキー/値のペア
 logger.setTag('version', '1.2.0')
 logger.setTag('feature', 'dashboard')
 ```
 
 ---
 
-## Web Component :id=web-components
+## Webコンポーネント
 
 ### `loadByTagName(tagName, options?)` → `Promise<void>`
 
-peer web component を HTML tag name で読み込んで登録します。`customElements.define` の発火後に resolve するため、直後に `document.createElement(tagName)` を安全に実行できます。成功すると tag は `sanitize` allowlist に自動追加されます。
+HTMLのタグ名で、対等なWebコンポーネントを読み込んで登録します。`customElements.define` が発火した後に解決するため、直後に `document.createElement(tagName)` しても安全です。成功時、そのタグは自動的に `sanitize` の許可リストに追加されます。
 
 ```typescript
 import { loadByTagName } from '@wippy-fe/proxy'
@@ -1060,15 +1006,15 @@ import { loadByTagName } from '@wippy-fe/proxy'
 await loadByTagName('wc-thread-picker')
 await loadByTagName('wc-slow-pkg', { timeoutMs: 60_000 })
 
-// Safe to use immediately
+// すぐに使用しても安全
 document.body.appendChild(document.createElement('wc-thread-picker'))
 ```
 
-`options.timeoutMs` は、script append 後に `customElements.define` を待つ既定の 30 秒 deadline を上書きします。停止または破損した component（404、parse error、`define` 呼出の欠落）を無期限の hang ではなく rejection として表面化させます。
+`options.timeoutMs` は、スクリプトが追加された後に `customElements.define` を待つデフォルトの30秒の期限を上書きします。停止したり壊れたりしたコンポーネント（404、パースエラー、`define` 呼び出しの欠落）を、無期限のハングではなく拒否として表面化します。
 
 ### `loadWebComponent(componentId, tagName?)` → `Promise<void>`
 
-web component を tag name ではなく Wippy registry artifact id で読み込みます。config value や backend response から registry id を得ている場合に便利です。
+タグ名ではなく、WippyレジストリのアーティファクトIDでWebコンポーネントを読み込みます。設定値やバックエンドのレスポンスからレジストリIDを得ている場合に便利です。
 
 ```typescript
 import { loadWebComponent } from '@wippy-fe/proxy'
@@ -1076,9 +1022,9 @@ import { loadWebComponent } from '@wippy-fe/proxy'
 await loadWebComponent('wippy.components:my-chart')
 ```
 
-### DOM scan loader（`<script type="wippy-components-loader">`） :id=dom-scan-loader-script-typewippy-components-loader
+### DOMスキャン型のローダー（`<script type="wippy-components-loader">`）
 
-複数の component が必要な page では、proxy が初期化時にこの script tag を scan し、各 entry を `loadWebComponent` で読み込みます。
+複数のコンポーネントを必要とするページのために、プロキシは初期化時にこれらのスクリプトタグを走査し、各エントリを `loadWebComponent` で読み込みます:
 
 ```html
 <script type="wippy-components-loader">
@@ -1086,15 +1032,15 @@ await loadWebComponent('wippy.components:my-chart')
 </script>
 ```
 
-重複除去と allowlist 自動更新の動作は `loadByTagName` と同じです。
+重複除去と許可リストの自動更新の挙動は `loadByTagName` と同じです。
 
 ---
 
-## ユーティリティ :id=utilities
+## ユーティリティ
 
 ### `sanitize(html, options?)` → `string`
 
-現在の proxy context を scope とする、既定 allowlist 方式の HTML sanitizer です。chat rendering の既定値（`<p>`、`<a>`、`<code>`、`<table>` など）と、この runtime に現在登録されているすべての web component tag を組み合わせます。
+現在のプロキシコンテキストにスコープされた、デフォルトで許可リスト方式のHTMLサニタイザです。チャットレンダリングのデフォルト（`<p>`、`<a>`、`<code>`、`<table>` など）と、このランタイムに現在登録されているすべてのWebコンポーネントのタグを組み合わせます。
 
 ```typescript
 import { sanitize, loadByTagName } from '@wippy-fe/proxy'
@@ -1102,20 +1048,20 @@ import { sanitize, loadByTagName } from '@wippy-fe/proxy'
 const safe = sanitize('<p>hi</p><script>alert(1)</script>')
 // → '<p>hi</p>'
 
-// After loadByTagName, the tag is automatically allowed:
+// loadByTagName の後、そのタグは自動的に許可される:
 await loadByTagName('wc-thread-picker')
 sanitize('<wc-thread-picker thread-id="42"></wc-thread-picker>')
 // → '<wc-thread-picker thread-id="42"></wc-thread-picker>'
 
-// One-off extra tags
+// 単発の追加タグ
 sanitize(dialogBody, { extraTags: { 'iconify-icon': ['icon'] } })
 ```
 
-`sanitize` は呼出ごとに tag allowlist を再読込するため、import 後に登録された tag も検出します。
+`sanitize` は呼び出しのたびにタグの許可リストを読み直すため、importの後に登録されたタグも拾われます。
 
 ### `html.inject(sourceHtml, options)` → `Promise<string>`
 
-element を mount せずに source-HTML-to-srcdoc 変換を適用します。通常は `<w-iframe>` を優先し、custom hosting infrastructure を構築するときだけ使ってください。
+要素をマウントせずに、ソースHTMLからsrcdocへの変換を適用します。通常の用途では `<w-iframe>` を優先してください。これはカスタムのホスティング基盤を構築する場合にのみ使用します。
 
 ```typescript
 import { html } from '@wippy-fe/proxy'
@@ -1130,17 +1076,17 @@ const processed = await html.inject(sourceHtml, {
 
 ---
 
-## Config の上書き :id=config-overrides
+## 設定のオーバーライド
 
-page は別途 deploy せずに、選択した child-facing config field を page ごとに override できます。override shape は互換性のため引き続き `customization` を使います。host は page が `wippy-context-2.0` config を受け取る前に、それらの value を現在の child `theming.global` result に投影します。
+ページは、別途デプロイすることなく、選択した子向けの設定フィールドをページごとにオーバーライドできます。オーバーライドの形は互換性のため引き続き `customization` を使い、ホストはページが `wippy-context-2.0` の設定を受け取る前に、それらの値を現在の子の `theming.global` の結果に投影します。
 
-### Override の設定 :id=setting-overrides
+### オーバーライドの設定方法
 
-**Registry page（推奨）:** page の `_index.yaml` に `meta.config_overrides` を設定します。host が content API response に含め、自動注入します。
+**レジストリのページ（推奨）:** ページの `_index.yaml` に `meta.config_overrides` を設定します。ホストはそれをコンテンツAPIのレスポンスに含め、自動的に注入します。
 
-**Standalone package:** page の `package.json` に `wippy.configOverrides` を設定します。
+**スタンドアロンのパッケージ:** ページの `package.json` に `wippy.configOverrides` を設定します。
 
-**手動 / test:** `proxy.js` より前に実行される `<script>` tag で `window.__WIPPY_CONFIG_OVERRIDES__` を設定します。
+**手動 / テスト:** `proxy.js` より前に実行される `<script>` タグ内で `window.__WIPPY_CONFIG_OVERRIDES__` を設定します。
 
 ```typescript
 window.__WIPPY_CONFIG_OVERRIDES__ = {
@@ -1153,26 +1099,26 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-### Merge 規則 :id=merge-rules
+### マージの規則
 
-| フィールド | マージ動作 |
+| フィールド | マージの挙動 |
 |-------|---------------|
-| `cssVariables` | host の value を**置換**。page が独自 theme を提供する |
-| `customCSS` | host の value を**置換** |
-| `iconSets` | 加算的に **merge** |
-| `axiosDefaults` | **deep merge** |
-| `routePrefix` | **置換** |
-| `apiRoutes` | **deep merge** |
+| `cssVariables` | ホストの値を**置き換える**。ページが自身のテーマを提供する |
+| `customCSS` | ホストの値を**置き換える** |
+| `iconSets` | 加算的に**マージされる** |
+| `axiosDefaults` | **深くマージされる** |
+| `routePrefix` | **置き換えられる** |
+| `apiRoutes` | **深くマージされる** |
 
-page が embed するすべての nested child（`<w-iframe>`、`<w-artifact>`、`html.inject` content）は、page の merge 済み config から構築され、sub-tree を下って再帰的に自動継承します。したがって page の override（特に theming）は page 自身だけでなく、その下のすべてに伝播します。
+ページが埋め込むネストされたすべての子（`<w-iframe>`、`<w-artifact>`、`html.inject` のコンテンツ）は、そのページの既にマージ済みの設定から構築され、サブツリーを再帰的に下って自動的にそれを継承します。したがって、ページのオーバーライド（特にテーマ）は、そのページ自身だけでなく、その下にあるすべてに伝播します。
 
 ---
 
-## Vue ユーティリティ :id=vue-utilities
+## Vueのユーティリティ
 
 ### `installVueWarnSuppressor(app)`
 
-現在の coherent `@wippy-fe/proxy` family で利用できます。`app.component(...)` ではなく `customElements.define(...)` で登録された tag に対する `[Vue warn]: Failed to resolve component: foo-bar` を抑制します。Vue の template compiler は認識できない web component tag にこの warning を出します。element は正しく描画されますが、console には対処不要な warning が表示されます。
+現行の整合的な `@wippy-fe/proxy` ファミリーで利用できます。`app.component(...)` ではなく `customElements.define(...)` で登録されたタグに対する `[Vue warn]: Failed to resolve component: foo-bar` を抑制します。Vueのテンプレートコンパイラは、認識できないWebコンポーネントのタグに対してこれらの警告を出します。要素は正しくレンダリングされますが、コンソールがノイズで埋まります。
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/proxy'
@@ -1185,22 +1131,22 @@ app.use(router)
 app.mount('#app')
 ```
 
-抑制するもの:
+抑制されるもの:
 
-- `customElements.define(...)` ですでに登録された tag。system tag（`w-iframe`、`w-artifact`、`wippy-loading`、`wippy-error`）と autoload pipeline（`loadByTagName`、scanner）で登録されたすべての tag が含まれます。
-- custom element naming shape（`^[a-z][a-z0-9]*-[a-z0-9-]*$`）に一致する未登録の tag。autoload script の到着前に Vue が render する race window をカバーします。
+- 既に `customElements.define(...)` で登録されたタグ。システムのタグ（`w-iframe`、`w-artifact`、`wippy-loading`、`wippy-error`）と、自動読み込みのパイプライン（`loadByTagName`、スキャナ）が登録したすべてのタグ。
+- まだ登録されていないが、カスタム要素の命名形（`^[a-z][a-z0-9]*-[a-z0-9-]*$`）に一致するタグ。自動読み込みのスクリプトが到着する前にVueがレンダリングする競合の窓を対象とします。
 
-引き続き warning を出すもの:
+引き続き警告が出るもの:
 
-- **PascalCase component の typo**（`<UsreCard />`）。suppressor はこれを kebab pattern に一致させず、`customElements.get` も `undefined` を返すため、console にそのまま流れます。これにより、実際の bug と noise を区別する signal が維持されます。
+- **PascalCaseのコンポーネントのタイプミス**（`<UsreCard />`）。抑制器はこれらをケバブのパターンに一致させず、`customElements.get` も `undefined` を返すため、コンソールへ通過します。これにより、本物のバグとノイズを区別するシグナルが保たれます。
 
-この function は冪等です。同じ `app` に 2 回目の呼出を行っても完全な no-op です。`app.config` に `Symbol.for('@wippy-fe/proxy/vue-warn-suppressor-installed')` marker が設定されます。この marker は reload をまたいで clear する必要がある test setup 向けに `VUE_WARN_SUPPRESSOR_INSTALLED_MARKER` として export されます。
+この関数は冪等です。同じ `app` に対する2回目の呼び出しは、本当に何もしません。`app.config` に `Symbol.for('@wippy-fe/proxy/vue-warn-suppressor-installed')` のマーカーが埋め込まれます。このマーカーは、再読み込みをまたいでクリアする必要があるテストのセットアップ向けに `VUE_WARN_SUPPRESSOR_INSTALLED_MARKER` としてエクスポートされています。
 
-`warnHandler` がすでに install 済みの場合は `previous` として保持され、suppressor が抑制しない warning に対して呼び出されます。
+既に `warnHandler` がインストールされていた場合、それは `previous` として保持され、抑制器が黙らせない警告について呼び出されます。
 
-### `@wippy-fe/router` の `createAppRouter(routes, options?)` :id=createapprouterroutes-options-from-wippy-ferouter
+### `@wippy-fe/router` の `createAppRouter(routes, options?)`
 
-どちらの render engine の `view.page` application にも使える memory-router factory です。memory history、`afterEach` による host との route synchronization、`@history` subscription を提供します。
+srcdocのサブアプリのための、正式なメモリルーターのファクトリです。現在すべてのサブアプリが重複して書いている定型（メモリ履歴、ホストへの `afterEach` によるルート同期、`@history` の購読）を置き換えます:
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'
@@ -1215,19 +1161,19 @@ app.use(router)
 
 ---
 
-## Loading component と Error component :id=loading-and-error-components
+## ローディングとエラーのコンポーネント
 
-2 つの web component が `loading.js`（`proxy.js` より前に注入）を介して自動登録されます。import や手動登録は不要です。
+2つのWebコンポーネントが、（`proxy.js` の前に注入される）`loading.js` によって自動登録されます。importも手動の登録も不要です。
 
 ### `<wippy-loading>`
 
-theme-aware color を使う fullscreen loading spinner です。
+テーマに追従する色を持つ、全画面のローディングスピナーです。
 
 | 属性 | 説明 |
 |-----------|-------------|
-| `title` | main text（例: "Loading..."） |
-| `subtitle` | 補助 text |
-| `no-bg` | Boolean。overlay 用の透明背景 |
+| `title` | 主要なテキスト（例: "Loading..."） |
+| `subtitle` | 補助的なテキスト |
+| `no-bg` | boolean — オーバーレイ用途のための透明な背景 |
 
 ```html
 <wippy-loading title="Loading..." subtitle="Please wait"></wippy-loading>
@@ -1236,12 +1182,12 @@ theme-aware color を使う fullscreen loading spinner です。
 
 ### `<wippy-error>`
 
-severity に応じた色を使う fullscreen error display です。
+重大度に応じた色付けを持つ、全画面のエラー表示です。
 
 | 属性 | 値 | デフォルト |
 |-----------|--------|---------|
-| `title` | 任意の string | "Something went wrong" |
-| `message` | 任意の string | （空） |
+| `title` | 任意の文字列 | "Something went wrong" |
+| `message` | 任意の文字列 | （空） |
 | `icon` | `circle`, `triangle`, `sad` | `circle` |
 | `severity` | `danger`, `warning` | `danger` |
 | `no-bg` | Boolean | （なし） |
@@ -1251,9 +1197,9 @@ severity に応じた色を使う fullscreen error display です。
 <wippy-error title="Connection Lost" message="Retrying..." icon="triangle" severity="warning"></wippy-error>
 ```
 
-どちらの component も `@wippy-fe/theme` の CSS variable を含む Shadow DOM を使い、theme 適用前の context 向けに hardcoded fallback を備えています。
+どちらのコンポーネントも、`@wippy-fe/theme` のCSS変数とともにShadow DOMを使い、テーマ適用前のコンテキストのためにハードコードされたフォールバックを含んでいます。
 
-**vanilla HTML page の推奨 pattern:**
+**バニラHTMLページで推奨されるパターン:**
 
 ```html
 <body>
@@ -1265,7 +1211,7 @@ severity に応じた色を使う fullscreen error display です。
 
     async function init() {
       try {
-        // fetch data, set up page...
+        // データを取得し、ページを準備する...
         document.getElementById('loader').remove()
         document.getElementById('content').style.display = 'block'
       } catch (error) {
@@ -1280,7 +1226,7 @@ severity に応じた色を使う fullscreen error display です。
 </body>
 ```
 
-**Vue 3 — `app.html` entry:**
+**Vue 3 — `app.html` のエントリ:**
 ```html
 <div id="app">
   <wippy-loading title="Loading..."></wippy-loading>
@@ -1288,4 +1234,4 @@ severity に応じた色を使う fullscreen error display です。
 <script type="module" src="./src/app.ts"></script>
 ```
 
-Vue が `#app` に mount すると、`<wippy-loading>` element は自動的に置き換えられます。
+Vueが `#app` にマウントすると、`<wippy-loading>` 要素は自動的に置き換えられます。

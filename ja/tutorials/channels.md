@@ -16,6 +16,8 @@ description: "チャネル操作とコルーチン連携のパターンを確認
 `channel`と`coroutine` APIはその実行コンテキストに組み込まれているため、`require()`呼び出しや
 `modules`宣言は不要です。各スニペットは独自のチャネルを作成するので、個別に評価してください。
 
+このページは入門です。各スニペットは1つのAPIを単独で示しています。実行するには、[CLIアプリケーション](tutorials/cli.md)チュートリアルで設定したように、`process.lua`エントリの`main`関数に貼り付けてください。
+
 ## チャネルの作成
 
 チャネルはコルーチン間で値を受け渡します。`channel.new(capacity)`で作成します：
@@ -82,9 +84,7 @@ result.ok              -- true
 
 ### 送信付きselect
 
-selectに送信操作を含めるには`case_send`を使用します。デフォルトケースがなければ、
-`channel.select`はいずれかのケースが準備できるまで待機します。`default = true`を追加すると
-ノンブロッキングで試行できます：
+select内で送信を提示するには`case_send`を使用します。チャネルが値を受け入れられるようになった時点でそのケースが選択されます：
 
 ```lua
 local ch = channel.new(1)
@@ -99,6 +99,20 @@ if not result.default then
 end
 
 local v = ch:receive()  -- "sent"
+```
+
+selectはいずれかのケースが準備できるまでブロックします。ケーステーブルに`default = true`を追加すると、代わりに即座に戻り、準備できたものがなければ`result.default`がtrueになります：
+
+```lua
+local full = channel.new(1)
+full:send("first")
+
+local result = channel.select{
+    full:case_send("second"),
+    default = true
+}
+
+result.default  -- true（バッファがいっぱいで、何も送信されていない）
 ```
 
 ## プロデューサー/コンシューマーパターン

@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "Lee, escribe, posiciona, inspecciona, escanea y cierra objetos stream devueltos por módulos de E/S."
+description: "Operaciones de lectura/escritura de streams para manejar datos eficientemente. Los objetos stream se obtienen de otros modulos (HTTP, sistema de…"
 ---
 
 # Streams
@@ -36,9 +36,9 @@ local chunk, err = stream:read(size)
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `size` | integer | Bytes que se leerán (0 = bloque predeterminado de 32 KB) |
+| `size` | integer | Bytes a leer (0 = fragmento por defecto de 32KB) |
 
-**Devuelve:** `string, error` — `nil, nil` al llegar a EOF
+**Devuelve:** `string, error` — `nil, nil` en EOF
 
 ## Escritura
 
@@ -50,7 +50,7 @@ local bytes, err = stream:write(data)
 |-----------|------|-------------|
 | `data` | string | Datos a escribir |
 
-**Devuelve:** `integer, error` - bytes escritos
+**Devuelve:** `integer, error` — bytes escritos
 
 ## Posicionamiento
 
@@ -63,7 +63,7 @@ local pos, err = stream:seek(whence, offset)
 | `whence` | string | `"set"`, `"cur"`, o `"end"` |
 | `offset` | integer | Desplazamiento en bytes |
 
-**Devuelve:** `integer, error` - nueva posicion
+**Devuelve:** `integer, error` — nueva posicion
 
 ## Vaciar buffers
 
@@ -110,20 +110,16 @@ local scanner, err = stream:scanner(split)
 ### Metodos de Scanner
 
 ```lua
-local has_more, err = scanner:scan()  -- advance to next token
-local token = scanner:text()           -- current token
-local err_msg = scanner:err()          -- scanner error if any
+local has_more, err = scanner:scan()  -- avanzar al siguiente token
+local token = scanner:text()           -- token actual
+local err_msg = scanner:err()          -- error del scanner si lo hay
 ```
 
 ```lua
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then
-        local scan_err = scanner:err()
-        if scan_err then return nil, scan_err end  -- raw scanner error string
-        break  -- clean EOF
-    end
+    if not has_token then break end  -- EOF
     process(scanner:text())
 end
 ```
@@ -136,13 +132,7 @@ en el scanner y no aparecen en el segundo valor devuelto por `scan()`.
 
 | Condición | Tipo |
 |-----------|------|
-| Stream cerrado | `errors.INTERNAL` |
-| No es legible/escribible | `errors.INTERNAL` |
-| Fallo de lectura/escritura/posicionamiento | `errors.INTERNAL` |
-| Posicionamiento en un stream no posicionable | `errors.INTERNAL` |
-| Fallo al cerrar, vaciar buffers o consultar estadísticas | `errors.INTERNAL` |
-| Fallo al crear el scanner o despachar scan | `errors.INTERNAL` |
-| Fallo de tokenización o lectura subyacente del scanner | String sin estructura de `scanner:err()` |
-
-Un valor no compatible de `whence` o de separación del scanner lanza un error de
-argumento Lua en vez de devolver un valor de error estructurado.
+| Tipo de whence/split invalido | lanzado como error de Lua (no devuelto) |
+| Stream cerrado | `INTERNAL` |
+| No es legible/escribible | `INTERNAL` |
+| Fallo de lectura/escritura | `INTERNAL` |

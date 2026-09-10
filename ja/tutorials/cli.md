@@ -192,11 +192,11 @@ return { main = main }
 
 ## システム情報
 
-システム情報の読み取りは保護された操作です。次のポリシーを追加し、`app:cli`エントリを
-置き換えて、コマンドにアクター、ポリシー、`system`モジュールを設定します：
+`system`モジュールでランタイム統計にアクセスします。すべての読み取りは`system.read`アクションでガードされているため、プロセスにはそれを許可するポリシーも必要です：
 
 ```yaml
-  - name: cli-system-read
+  # エントリに追加
+  - name: system_read
     kind: security.policy
     policy:
       actions:
@@ -204,18 +204,17 @@ return { main = main }
       resources: "*"
       effect: allow
 
+  # cliエントリを更新
   - name: cli
     kind: process.lua
     source: file://cli.lua
     method: main
+    security:
+      policies:
+        - app:system_read
     modules:
       - io
       - system
-    security:
-      actor:
-        id: app:cli
-      policies:
-        - app:cli-system-read
 ```
 
 続いて`src/cli.lua`を置き換えます：

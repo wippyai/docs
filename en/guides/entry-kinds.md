@@ -104,6 +104,7 @@ resp:write_json({users = get_users()})
 | `db.sql.postgres` | PostgreSQL database |
 | `db.sql.mysql` | MySQL database |
 | `db.cdc.postgres` | Postgres Change Data Capture source (see [CDC](system/cdc.md)) |
+| `db.cdc.sqlite` | SQLite Change Data Capture source (see [CDC](system/cdc.md)) |
 
 ### SQLite
 
@@ -315,6 +316,39 @@ Use <code>process.service</code> when you need a process to run as a supervised 
 
 Updating a live `process.host` entry rescales `host.workers` in place — running processes, PIDs, and queues are preserved. `host.queue_size`, `host.local_queue_size`, and `lifecycle` are fixed at construction: a live update changing them is rejected, as is resizing workers on a host whose workers are affinity-managed.
 
+### Process security
+
+`process.lua` and `process.lua.bc` entries accept a top-level `security:` block. It is part of the entry, so it applies to every spawn of that process, on both `process.host` and `terminal.host`:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| Field | Description |
+|-------|-------------|
+| `actor.id` | Actor identity the process runs as; replaces the inherited actor |
+| `actor.meta` | Actor attributes policies evaluate |
+| `policies` | Registry IDs (`namespace:name`) of policies merged into the scope |
+| `groups` | Registry IDs of policy groups whose policies are merged into the scope |
+
+Resolution happens as the process starts and is atomic: if any listed policy or group cannot be resolved, the spawn fails and no partial context is installed. Omitting `actor` inherits the spawner's actor; omitting both `policies` and `groups` inherits the spawner's scope. `function.lua`, `function.lua.bc`, `process.lua`, and `process.lua.bc` all accept the block.
+
+A command entry can additionally declare `meta.command.security`, which applies only when the entry is launched as a CLI command — see [Command security](guides/cli.md#command-security). It does not affect ordinary spawns.
+
+See [Security](system/security.md).
+
 ## Temporal (Workflows)
 
 | Kind | Description |
@@ -445,7 +479,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-The router tries storages in order. First match wins for reads; writes go to the first writable storage.
+The router tries storages in order. First match wins for reads; writes go to the first storage in the list.
 </note>
 
 ## Templates
@@ -513,7 +547,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+Policy groups are formed by the policies themselves: a policy lists the group IDs it belongs to under `groups:`, and a group is the set of policies naming it. There is no separate group entry kind. Group IDs are registry IDs — a bare name resolves in the declaring policy's namespace, so `operators` above becomes `app.security:operators` when declared in namespace `app.security`. Entries reference groups by their full `namespace:name`.
 
 **Lua API:** See [Security Module](lua/security/security.md)
 
@@ -530,10 +568,7 @@ local actor = security.actor()
 ```
 
 <warning>
-Policy order does not determine access. The scope combines policy decisions;
-any matching <code>deny</code> overrides matching <code>allow</code> policies and
-can stop evaluation immediately. If no policy matches, the result is undefined
-rather than allowed.
+Every policy in scope is evaluated. A <code>deny</code> from any matching policy wins over every <code>allow</code>; with no deny, a matching <code>allow</code> grants access. Order does not matter.
 </warning>
 
 ## Contracts (Dependency Injection)
@@ -600,7 +635,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** See [Contract Module](lua/core/contract.md)
 
 <tip>
-Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID (only works when no <code>context_required</code> fields are set).
+Mark one binding as <code>default: true</code> to use it when opening a contract without specifying a binding ID. A contract may have only one default binding.
 </tip>
 
 ## Execution
@@ -637,11 +672,24 @@ Mark one binding as <code>default: true</code> to use it when opening a contract
 | `process.wasm` | WebAssembly process |
 
 ```yaml
+# WAT text is inline source
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # or wasi-http
+
+# Binary WASM is loaded from a filesystem entry and verified by hash
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # or wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
+
+`function.wasm` and `process.wasm` take `fs`, `path`, and `hash` — there is no `source` field on a binary entry; `source` belongs to `function.wat` only. `hash` is required and must be `sha256:<hex>`; the module is rejected if the bytes do not match.
 
 See [WASM Overview](wasm/overview.md).
 
@@ -660,12 +708,12 @@ Referenced by `http.service` via `network:`, by `funcs`/`process` via the `netwo
 
 | Kind | Description |
 |------|-------------|
-| `registry.entry` | Entry descriptor (internal) |
+| `registry.entry` | Plain data entry with no service behind it (app-specific config) |
 | `ns.definition` | Namespace definition |
 | `ns.requirement` | Namespace requirement declaration |
 | `ns.dependency` | Namespace dependency |
 
-`registry.entry` is an internal descriptor. Authors define `ns.definition`, `ns.requirement`, and `ns.dependency` entries directly in `_index.yaml`; the file's `version` and `namespace` fields do not generate them.
+The `ns.*` kinds are authored like any other entry: a component declares `ns.definition` and `ns.requirement`, and a host declares `ns.dependency`. See [Building Components](guides/components.md).
 
 ## Lifecycle Configuration
 
@@ -687,7 +735,7 @@ lifecycle:
 ```
 
 <note>
-Use <code>requires</code> to declare service dependencies. The supervisor starts required services before their dependents and considers a dependency ready when it is running. <code>depends_on</code> remains accepted as a legacy spelling, but new manifests should use <code>requires</code>.
+Use <code>depends_on</code> to ensure entries start in the correct order. The supervisor starts a dependent entry only after each of its dependencies has completed its own start.
 </note>
 
 ## Entry Reference Format

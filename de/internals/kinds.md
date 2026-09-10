@@ -76,7 +76,7 @@ func MyService() boot.Component {
 
 ## Entry-Daten dekodieren
 
-Verwenden Sie `entry.DecodeEntryConfig` aus `github.com/wippyai/runtime/system/entry`, um Entry-Daten zu dekodieren. Das Paket kann auch von Erweiterungen außerhalb des Runtime-Baums importiert werden:
+Verwenden Sie `entry.DecodeEntryConfig` aus `system/entry`, um Entry-Daten zu unmarshallen. `DecodeEntryConfigFromContext` nimmt den Transcoder aus dem Kontext statt als Argument, und `DecodeEntryConfigRaw` überspringt die Platzhalterauflösung:
 
 ```go
 func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
@@ -90,13 +90,11 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
 ```
 
 Der Decoder:
-
-1. Löst moderne `${env:...}`-Platzhalter in den Entry-Daten auf.
-2. Dekodiert die aufgelösten Daten in Ihre Konfigurationsstruktur.
-3. Übernimmt `ID` und `Meta` aus dem Eintrag, wenn die dekodierten Felder null beziehungsweise `nil` sind.
-4. Ruft, sofern implementiert, `InitDefaults()` auf.
-5. Löst ältere `*_env`-Felder über die Environment-Registry auf.
-6. Ruft, sofern implementiert, `Validate()` auf.
+1. Löst `${env:...}`-Platzhalter und `*_env`-Begleitfelder gegen die Environment-Registry auf
+2. Unmarshalled `entry.Data` in Ihre Config-Struct
+3. Befüllt `ID` und `Meta` aus dem Entry, wenn die Struct sie leer lässt
+4. Ruft `InitDefaults()` auf wenn implementiert
+5. Ruft `Validate()` auf wenn implementiert
 
 ## Config-Struktur
 

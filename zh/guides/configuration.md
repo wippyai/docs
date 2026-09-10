@@ -59,7 +59,7 @@ wippy run --profile pg
 - `disable` 区段在 profile 内支持列表操作 — `namespaces.add`、`namespaces.remove`、`entries.add`、`entries.remove` — 因此 profile 可以调整基础列表而不是整体替换。
 - `${name}` 引用从合并后的 `vars:` 区段插值。profile 的 vars 中不允许引用 OS 环境变量；请在基础配置中使用 `${env:NAME}`，在文件加载时解析。
 
-`wippy run`、`test` 和 `pack` 接受 `--profile`；`install`、`update`、`lint` 和 `registry` 同样接受它用于工作区 profile（连同 `--set`）。应用可以在包内附带 profile — 参见[发布 Profile](guides/publishing.md#publishing-profiles)。
+`wippy run`、`test` 和 `pack` 接受 `--profile`；`run list`、`install`、`update`、`lint` 和 `registry` 同样接受它用于工作区 profile（连同 `--set`）。应用可以在包内附带 profile — 参见[发布 Profile](guides/publishing.md#publishing-profiles)。
 
 ## Logger
 
@@ -82,13 +82,12 @@ logger:
 |------|------|--------|------|
 | `propagate_downstream` | bool | true | 发送日志到控制台/文件输出 |
 | `stream_to_events` | bool | false | 将日志发布到事件总线供程序访问 |
-| `min_level` | int | -1 | 最低级别：-1=debug, 0=info, 1=warn, 2=error |
+| `min_level` | int | 0（带 `-v` 时为 `-1`） | 最低级别：-1=debug, 0=info, 1=warn, 2=error。CLI 在读取文件之后用自己的命令行标志写入该键，因此文件中的值会被忽略；请用 `--set logmanager.min_level=<n>` 修改 |
 
 ```yaml
 logmanager:
   propagate_downstream: true
   stream_to_events: false
-  min_level: 0
 ```
 
 参见：[Logger 模块](lua/system/logger.md)
@@ -119,11 +118,11 @@ profiler:
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `strict_mode` | bool | false | 安全上下文不完整时拒绝访问 |
+| `strict_mode` | bool | true | 安全上下文不完整时拒绝访问 |
 
 ```yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 参见：[安全系统](system/security.md)、[Security 模块](lua/security/security.md)
@@ -135,8 +134,16 @@ security:
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enable_history` | bool | true | 跟踪入口版本 |
-| `history_type` | string | memory | 存储类型：memory, sqlite, nil |
-| `history_path` | string | .wippy/registry.db | SQLite 文件路径 |
+| `history_type` | string | memory | 存储类型：`memory`、`sqlite`、`postgres`、`nil` |
+| `history_path` | string | .wippy/registry.db | SQLite 文件路径（`history_type: sqlite` 时使用） |
+| `history_dsn` | string | | Postgres DSN（`history_type: postgres` 时使用） |
+| `history_schema` | string | | Postgres schema 名称（`history_type: postgres` 时使用） |
+| `event_wait_timeout` | duration | 30s | 注册表应用期间，每次操作等待监听器确认的时长 |
+| `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | 由内部处理而不派发给组件监听器的记录类型 |
+| `dependency_resolve_timeout` | duration | 0（无） | 依赖解析的时间上限 |
+| `dependency_download_timeout` | duration | 0（无） | 每次模块下载及下载 URL 请求的时间上限 |
+| `dependency_lock_path` | string | 自动发现的 `wippy.lock` | 依赖处理器读写的锁文件 |
+| `dependency_vendor_dir` | string | `<lock dir>/<directories.modules>/vendor` | 存放已下载模块包的目录 |
 
 ```yaml
 registry:
@@ -144,7 +151,42 @@ registry:
   history_path: /var/lib/wippy/registry.db
 ```
 
+```yaml
+registry:
+  history_type: postgres
+  history_dsn: ${env:WIPPY_REGISTRY_HISTORY_DSN}
+  history_schema: wippy_registry
+```
+
 参见：[注册表概念](concepts/registry.md)、[Registry 模块](lua/core/registry.md)
+
+## 制品
+
+已物化的[构建期制品](guides/artifacts.md)的输出根目录。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `materialization_root` | string | 依赖 vendor 目录的上级目录 | 由应用拥有的根目录，每种制品格式在其下写入各自的子目录树 |
+
+```yaml
+artifact:
+  materialization_root: build/wippy
+```
+
+参见：[构建期制品](guides/artifacts.md#where-output-lands)
+
+## 工作区
+
+本地模块替换，以 `org/module` 为键。取值为目录；相对路径相对于第一个 `--config` 文件所在目录解析，而 `null` 会禁用从更早的配置层或配置档继承来的替换。
+
+```yaml
+workspace:
+  replacements:
+    acme/http: ../local-http
+    acme/sql: null
+```
+
+替换项从不写入 `wippy.lock`。参见[使用替换进行本地开发](guides/dependency-management.md#local-development-with-replacements)。
 
 ## 中继
 
@@ -152,7 +194,7 @@ registry:
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `node_name` | string | local | 中继节点标识符 |
+| `node_name` | string | 按实例派生的 ID | 此中继节点的标识符（默认：machine-id/hostname + 工作目录的 UUIDv5；可通过 `WIPPY_NODE_ID` / `WIPPY_RELAY_NODE_NAME` 覆盖） |
 
 ```yaml
 relay:
@@ -189,17 +231,23 @@ Lua 虚拟机缓存和表达式求值。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `proto_cache_size` | int | 60000 | 编译原型缓存 |
-| `main_cache_size` | int | 10000 | 主块缓存 |
-| `cache.enabled` | bool | false | 将编译后的字节码/类型检查缓存持久化到磁盘 |
-| `cache.dir` | string | （系统缓存目录） | 缓存目录路径 |
-| `cache.mode` | string | `read_write` | 缓存模式：`read_write`、`read_only`、`write_only` |
+| `cache.enabled` | bool | `type_system.enabled` | 将编译后的字节码/类型检查缓存持久化到磁盘；除非显式设置，否则跟随 `type_system.enabled` |
+| `cache.dir` | string | `.wippy/cache/lua` | 缓存目录路径（相对于配置/工作目录） |
+| `cache.mode` | string | `readwrite` | 缓存模式：`readwrite`（默认）、`readonly`、`off`；未知值回退为 `readwrite` |
+| `cache.compile.enabled` | bool | true | 持久化编译后的字节码（当 `cache.enabled` 时） |
+| `cache.typecheck.enabled` | bool | true | 持久化类型检查结果（当 `cache.enabled` 时） |
+| `cache.max_bytes` | int | 1073741824 | 磁盘缓存大小上限（字节） |
+| `cache.max_entries` | int | 20000 | 最大缓存条目数 |
+| `cache.prune_interval` | int | 256 | 两次缓存修剪之间的写入次数 |
 | `type_system.enabled` | bool | false | 启用静态类型检查 |
 | `type_system.strict` | bool | false | 将类型警告视为错误 |
+| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout`（30s） | 记录变更后等待代码失效被确认的时长 |
+| `eval.max_steps` | int | 10000 | 一次 `eval` 运行的默认调度器步数预算；负值会被拒绝 |
+| `eval.cache_size` | int | 256 | 被求值源码的已编译程序缓存条目数 |
+| `eval.cache_ttl` | duration | 0（不过期） | 已缓存的已编译程序的存活时长 |
 
 ```yaml
 lua:
-  proto_cache_size: 60000
   cache:
     enabled: true
     dir: .cache/lua
@@ -208,6 +256,22 @@ lua:
 ```
 
 参见：[Lua 概览](lua/overview.md)
+
+## 调度器
+
+WASM 运行时的核心分区。启用后，会为 WASM 执行预留 `reserved_cores` 个 CPU，其余的服务于 actor 调度器；无效的划分（例如预留核心数超过可用核心数）会被记录日志并忽略。
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `wasm_isolation.enabled` | bool | false | 在 WASM 与 actor 工作之间划分核心 |
+| `wasm_isolation.reserved_cores` | int | 1 | 为 WASM 执行预留的核心数 |
+
+```yaml
+scheduler:
+  wasm_isolation:
+    enabled: true
+    reserved_cores: 2
+```
 
 ## 查找器
 
@@ -258,7 +322,7 @@ otel:
     trace_lifecycle: true
 ```
 
-标准 OTEL 环境变量（`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_SERVICE_NAME`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`、`OTEL_SDK_DISABLED`）会覆盖对应字段。
+标准 OTEL 环境变量（`OTEL_SDK_DISABLED`、`OTEL_EXPORTER_OTLP_ENDPOINT`、`OTEL_EXPORTER_OTLP_PROTOCOL`、`OTEL_EXPORTER_OTLP_INSECURE`、`OTEL_SERVICE_NAME`、`OTEL_SERVICE_VERSION`、`OTEL_TRACES_SAMPLER`、`OTEL_TRACES_SAMPLER_ARG`、`OTEL_PROPAGATORS`）会覆盖对应字段。
 
 参见：[可观测性指南](guides/observability.md)
 
@@ -282,7 +346,7 @@ shutdown:
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `buffer.size` | int | 10000 | 指标缓冲区容量 |
-| `interceptor.enabled` | bool | false | 自动跟踪函数调用 |
+| `interceptor.enabled` | bool | true | 自动跟踪函数调用 |
 
 ```yaml
 metrics:
@@ -301,7 +365,8 @@ Prometheus 指标端点。
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | bool | false | 启动指标服务 |
-| `address` | string | localhost:9090 | 监听地址 |
+| `address` | string | | 监听地址；`enabled: true` 时必须显式设置，否则指标服务器不会启动 |
+| `max_cardinality` | int | 1024 | 每个指标保留的不同标签集数量（LRU）；`0` 或更小则使用默认值 |
 
 ```yaml
 prometheus:
@@ -309,7 +374,7 @@ prometheus:
   address: "0.0.0.0:9090"
 ```
 
-暴露 `/metrics` 端点供 Prometheus 抓取。
+暴露 `/metrics` 端点供 Prometheus 抓取，同时还有 `/livez`。
 
 参见：[可观测性指南](guides/observability.md)
 
@@ -324,6 +389,8 @@ prometheus:
 | `enabled` | bool | false | 启用集群 |
 | `name` | string | hostname | 节点名称；在集群中必须唯一 |
 | `failure_domain` | string | | 可用区/机架标签；在 gossip 中广播，使选民分布在不同域 |
+| `kv_crdt_tombstone_retention` | duration | 0 | `store.kv.crdt` 删除墓碑被回收的年龄阈值；`0` 表示禁用基于年龄的 GC |
+| `kv_crdt_tombstone_gc_alive_peers` | bool | false | 使用当前存活成员集合作为墓碑确认集合 |
 
 ### 成员（gossip）
 
@@ -345,6 +412,8 @@ prometheus:
 | `membership.tcp_timeout` | duration | 1s | TCP 回退探测超时 |
 | `membership.suspicion_mult` | int | 3 | 怀疑超时乘数 |
 
+必须提供 gossip 密钥。设置 `membership.secret_key` 或 `membership.secret_file`（两者都给出时以文件为准）；两者都未设置时，集群组件无法启动。该值经 base64 编码。
+
 四个探测键未设置时继承 memberlist 面向局域网的默认值；高延迟链路应调高它们（例如 `probe_interval: 2s`、`probe_timeout: 500ms`、`suspicion_mult: 5`）。
 
 ### 节点间（传输）
@@ -358,8 +427,13 @@ prometheus:
 | `internode.auto_port` | bool | true | 启动时发现实际端口，固定并在 gossip 中广播 |
 | `internode.advertise_addr` | string | | 为已升级的对等节点发布的额外中继端点（IP 或 DNS 名称）— 用于 NAT 或负载均衡场景的可达性 |
 | `internode.advertise_port` | int | 0 | `advertise_addr` 的端口（0 = 绑定端口；需要设置 `advertise_addr`） |
+| `internode.identity_key` | string | | 标识本节点的 base64 编码 ed25519 私钥（内联） |
+| `internode.identity_key_file` | string | | 存放该密钥的文件路径 |
+| `internode.trusted_peer_keys` | map | | 每个节点名对应的 base64 编码 ed25519 公钥，包括本节点 |
 
 `advertise_addr`/`advertise_port` 在节点元数据中发布一个附加端点，同时绑定端点保持原样继续广播，因此混合版本集群在滚动升级期间仍能保持连接。
+
+只要启用了集群，节点间身份就是必需的。`identity_key` 和 `identity_key_file` 互斥且必须提供其中之一；该值（标准或原始 base64）解码后为 32 字节的 ed25519 种子或 64 字节的 ed25519 私钥。`trusted_peer_keys` 把每个节点名映射到该节点的 32 字节 ed25519 公钥，并且必须包含与本地 `cluster.name` 对应的条目，其值与本地身份匹配——否则启动失败。参见[集群指南](guides/cluster.md#internode-identity)。
 
 ### Raft（共识）
 
@@ -387,6 +461,8 @@ prometheus:
 | `raft.max_append_entries` | int | 16 | 每次 AppendEntries RPC 的最大条目数 |
 | `raft.leader_probe_interval` | duration | 3s | 全局注册表 leader 可达性探测间隔 |
 | `raft.leader_probe_grace` | int | 3 | 声明 leader 不可达前允许的连续探测失败次数 |
+| `raft.registry_backend` | string | kv | 集群名称注册表实现：`kv`（共享 kv 键空间）或 `fsm`（专用 Raft FSM） |
+| `raft.global_dissem_tombstone_retention` | duration | 0 | 全局名称传播缓存保留删除墓碑的时长 |
 
 单节点（开发环境）——集群开启，立即自举：
 
@@ -394,11 +470,17 @@ prometheus:
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
+  internode:
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
+    trusted_peer_keys:
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-三节点投票集群——每个节点列出其他节点作为种子，等待三个节点全部就绪后组成 quorum：
+三节点投票集群——每个节点列出其他节点作为种子，等待三个节点全部就绪后组成 quorum。每个节点都携带相同的 `trusted_peer_keys` 映射和各自的私钥：
 
 ```yaml
 cluster:
@@ -409,12 +491,18 @@ cluster:
     bind_port: 7946
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
     max_voters: 5
 ```
 
-仅 gossip 客户端——加入集群用于命名/消息传递，但从不运行 Raft：
+仅 gossip 客户端——加入集群用于命名/消息传递，但从不运行 Raft。它同样需要自己的身份，并且必须出现在每个节点的信任映射中：
 
 ```yaml
 cluster:
@@ -422,6 +510,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/edge-7.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```
@@ -518,7 +614,7 @@ extensions:
 
 | 变量 | 说明 |
 |------|------|
-| `GOMEMLIMIT` | 内存限制（覆盖 `--memory-limit` 参数） |
+| `GOMEMLIMIT` | 未设置 `--memory-limit` 参数时的内存限制回退值（优先级：`--memory-limit` 参数 > `GOMEMLIMIT` > 默认 1G） |
 
 ## 另请参阅
 

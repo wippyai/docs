@@ -1,120 +1,61 @@
 ---
 title: "CSS-Injektion"
-description: "Referenz zur CSS-Bereitstellung für Web-Host-Seiten-Engines und Shadow Roots von Web Components."
+description: "Der Web Host verwendet eine geschichtete Injektions-Pipeline, um Kind-iframes dasselbe visuelle Theme zu geben wie dem Host selbst. Da iframes kein CSS erben von…"
 ---
 
 # CSS-Injektion
 
-Diese Seite ist die Konfigurationsreferenz für vom Host bereitgestelltes CSS.
-JSON- und TypeScript-Blöcke zeigen einzelne Einstellungen und Komponentenverträge,
-keine vollständigen Frontend-Pakete.
+Der Web Host verwendet eine geschichtete Injektions-Pipeline, um Kind-iframes dasselbe visuelle Theme zu geben wie dem Host selbst. Da iframes kein CSS von ihrem Parent-Dokument erben, injiziert der Host jedes Style-Asset explizit erneut in das `srcdoc` des Kindes. Jede Schicht lässt sich über `ProxyConfig` unabhängig ein- und ausschalten.
 
-Für iframe-Seiten nutzt der Web Host eine geschichtete Injektionspipeline, um
-dem Kinddokument dasselbe visuelle Theme wie dem Host zu geben. Da ein iframe
-kein CSS vom Elterndokument erbt, injiziert der Host Styles in dessen `srcdoc`;
-`ProxyConfig` steuert diese Schichten. Web-Fragment-Seiten verwenden den unten
-beschriebenen separaten Pfad.
+Diese Seite dokumentiert die Injektions-Pipeline, alle verfügbaren Flags und wie sich Styles global, für das Host-Chrome oder pro Seite anpassen lassen. Sie ist die **kanonische Referenz für die CSS-Flags in `proxy.injections` und deren Laufzeit-Standardwerte** — Autorendokumente, die empfohlene explizite Werte zeigen, verlinken hierher zurück. Für den Theming-Leitfaden aus Entwicklersicht (CSS-Variablen-Tokens, Tailwind-Zuordnung, Muster für Web Components) siehe [Theming](../micro-frontends/theming.md).
 
-Diese Seite dokumentiert Pipeline, Flags und Anpassungen im globalen, Host-
-Chrome- oder Seiten-Scope. Sie ist die **kanonische Referenz für die CSS-Flags
-unter `proxy.injections` und ihre Runtime-Standards**. Die entwicklerorientierte
-Anleitung steht unter [Theming](../micro-frontends/theming.md).
+## Matrix der CSS-Auslieferung
 
-## Matrix der CSS-Bereitstellung
+Die Facade stellt Theming über drei Scopes bereit — **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`) und **children** (`children_custom_css`, `children_css_variables`). Der Web Host komponiert sie je Oberfläche. Zwei Regeln bestimmen alles Folgende:
 
-Die Facade stellt Theming in drei Scopes bereit: **global** (`custom_css`,
-`css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`,
-`host_icon_sets`) und **children** (`children_custom_css`,
-`children_css_variables`). Der Web Host setzt sie je Oberfläche zusammen.
+- **CSS-Custom-Properties (`*_css_variables`) werden an einen WC-Host vererbt und durch dessen inneren Root mit erzwungenem Theme gebrückt.** WippyElement zählt jeden effektiven konfigurierten Namen auf, sodass lokale Theme-Standardwerte ihn nicht zurücksetzen können. Das ist generisch und unabhängig von `customCss`.
+- **CSS-Selektorregeln (`*_custom_css`) kaskadieren nicht über die Shadow-Grenze.** Sie gelten nur dort, wo sie injiziert werden: in jedes iframe-Dokument bei `view.page` und — **seit Web Host 1.0.43** — in jeden `view.component`-Shadow-Root (abwählbar über das `customCss`-Flag der Komponente). Vor 1.0.43 erreichten ihn nur Variablen.
 
-- **CSS Custom Properties (`*_css_variables`) werden an einen WC-Host vererbt.**
-  WippyElement überbrückt Namen aus der effektiven globalen sowie der
-  Children-/Seiten-Map durch seinen Forced-Theme-Inner-Root, damit lokale
-  Theme-Standards sie nicht zurücksetzen. Das ist unabhängig von `customCss`.
-  Reine Hostnamen verlassen sich auf normale Vererbung und können durch lokales
-  Theme-CSS am Inner Root verdeckt werden.
-- **CSS-Selektorregeln (`*_custom_css`) überschreiten iframe- oder Shadow-
-  Grenzen nicht von selbst.** Die Runtime injiziert sie in den ausgewählten
-  `view.page`-Realm und — **seit Web Host 1.0.43** — in jeden Shadow Root einer
-  `view.component` (Opt-out über deren `customCss`-Flag). Vor 1.0.43 erreichten
-  nur Variablen einen Komponenten-Shadow-Root.
-
-| Facade-Einstellung | Liefert | Host-Shell-Dokument | `view.page`-Kind-Realm | Shadow Root von `view.component` |
+| Facade-Stellschraube | Liefert | Host-Shell-Dokument | `view.page`-iframe | `view.component`-Shadow-Root |
 |---|---|---|---|---|
-| `custom_css` (global) | Selektorregeln | ✓ injiziert | ✓ injiziert¹ | ✓ injiziert (1.0.43+, Opt-out)¹ |
-| `css_variables` (global) | Custom Properties | ✓ effektive Modusblöcke | ✓ effektive Modusblöcke | ✓ vererbt und überbrückt |
+| `custom_css` (global) | Selektorregeln | ✓ injiziert | ✓ injiziert¹ | ✓ injiziert (1.0.43+, abwählbar)¹ |
+| `css_variables` (global) | Custom Properties | ✓ effektive Modus-Blöcke | ✓ effektive Modus-Blöcke | ✓ vererbt + gebrückt |
 | `host_custom_css` (host) | Selektorregeln | ✓ injiziert | ✗ | ✗ |
-| `host_css_variables` (host) | Custom Properties | ✓ `:root` | ✗ | nur hostgemountete WCs² |
-| `children_custom_css` (children) | Selektorregeln | ✗ | ✓ injiziert¹ | ✓ injiziert (1.0.43+, Opt-out)¹ |
+| `host_css_variables` (host) | Custom Properties | ✓ `:root` | ✗ | nur host-gemountete WCs² |
+| `children_custom_css` (children) | Selektorregeln | ✗ | ✓ injiziert¹ | ✓ injiziert (1.0.43+, abwählbar)¹ |
 | `children_css_variables` (children) | Custom Properties | ✗ | ✓ `:root` | nur Seiten-WCs² |
 
-¹ Der Web Host **kombiniert** für `view.page` beider Engines und
-`view.component` globales und Children-CSS in einem Sheet; `children_custom_css`
-folgt `custom_css`. Die iframe- und Komponentenflags `customCss` sind Gates,
-keine Auswahl eines einzelnen Scopes. Der Web-Fragment-Adapter verwendet das
-zusammengesetzte Seitensheet ohne das iframe-Flag.
+¹ Der Web Host **komponiert**, was ein Kind erhält: Sowohl ein `view.page`-iframe als auch eine `view.component` bekommen das Custom-CSS aus **global + children** in einem Stylesheet gemergt (`children_custom_css` wird nach `custom_css` angehängt). Das `customCss`-Flag ist ein Tor, keine wörtliche Injektion eines einzelnen Scopes.
 
-² Eine Web Component erbt Custom Properties aus `:root` ihres Mountortes: Eine
-WC in der Host-Chrome erbt global + host, eine WC in `view.page` global +
-children. Die Inner-Root-Bridge umfasst globale und Children-/Seitennamen,
-nicht reine Hostnamen. Ihr injiziertes Custom CSS ist immer der Children-Scope
-(global + children). Gemeinsame Styles gehören nach `custom_css` /
-`css_variables`, damit sie alle Oberflächen erreichen.
+² Eine Web Component erbt ihre Custom **Properties** vom `:root` dessen, worin sie gemountet ist: Eine WC im Host-Chrome erbt die Variablen aus **global + host** vom Host-Dokument; eine WC innerhalb einer `view.page` erbt die Variablen aus **global + children** von diesem iframe. Ihr injiziertes Custom-**CSS** ist immer der Children-Scope (global + children). Halten Sie geteiltes Styling in `custom_css` / `css_variables` (global) — diese erreichen jede Oberfläche unabhängig vom Mount-Ort.
 
-**Unterstützung für `fs://`:** Die sechs genannten Theming-Einstellungen
-akzeptieren `fs://<path>`, das bei der Anfrage aus dem Dateisystem `content_fs`
-aufgelöst wird; siehe [Facade → Wiederverwendung von Facade-Theming](../../framework/facade.md#facade-theming-auf-seiten-außerhalb-des-web-hosts-wiederverwenden).
-`icon_sets` / `host_icon_sets` und alle Nicht-Theming-JSON-Parameter sind nur
-inline möglich.
+**Unterstützung für `fs://`-Dateien:** Die sechs obigen Theming-Stellschrauben akzeptieren einen `fs://<path>`-Wert, der zur Anfragezeit aus dem Filesystem `content_fs` aufgelöst wird — siehe [Facade → Facade-Theming auf Seiten außerhalb des Web Host wiederverwenden](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` und jeder Nicht-Theming-JSON-Parameter sind nur inline möglich.
 
-Größere CSS- oder JSON-Anpassungen gehören in eigene Dateien hinter `content_fs`
-und werden über `fs://` referenziert. `file://` ist kein Ersatz: Es ist ein
-Inlining-Mechanismus zur Ladezeit, nicht der Theming-Vertrag der Facade zur
-Anfragezeit.
+Bei mehr als ein paar Overrides halten Sie CSS und JSON in getrennten Dateien hinter `content_fs` und referenzieren sie mit `fs://`. So bleiben Theme-Assets prüfbar und wiederverwendbar. Ersetzen Sie das nicht durch `file://`: Das ist ein Inlining-Mechanismus zur Ladezeit, nicht der Theming-Vertrag der Facade zur Anfragezeit.
 
-## Injektionspipeline für iframe
+## Die Injektions-Pipeline
 
-Die Styles werden logisch in folgender Reihenfolge geschichtet. Die ersten vier
-Schichten sind normale `<style>`-/`<link>`-Elemente. `cssVariables` und die
-Nicht-`@import`-Deklarationen aus `customCSS` liegen in `adoptedStyleSheets` des
-iframe-Dokuments (siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets)) und gewinnen unabhängig von der Quellreihenfolge im `<head>`.
-Da Constructable Stylesheets kein `@import` erlauben, extrahiert der Proxy diese
-Regeln in einen normalen Head-Style mit gewöhnlicher Kaskade:
+Styles werden in dieser logischen Schichtung injiziert. Die ersten vier Schichten sind gewöhnliche `<style>`/`<link>`-Elemente; die letzten beiden (`customCSS` und `cssVariables`) nicht — sie werden in die `adoptedStyleSheets` des iframe-Dokuments gelegt (siehe [Override-Mechanismus](#override-mechanism-adopted-stylesheets) unten), sodass sie unabhängig von der Reihenfolge im `<head>` immer gewinnen:
 
-Der iframe-Pfad von `view.page` lautet logisch `themeConfig` →
-`primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss`.
-Die Konfigurationspräzedenz ist davon getrennt: Facade-Theme →
-`config_overrides` der Seite → Runtime-Override bestimmt die **Werte**, nicht
-ihre Position in der iframe-Kaskade.
+Kurzfassung für Fragen zur "Reihenfolge der CSS-Injektion": Die Style-Pipeline des view.page-iframes lautet in logischer Kaskadenreihenfolge `themeConfig` → `primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss`. Verwechseln Sie das nicht mit den Schichten der Konfigurationsvorrangs wie Facade-Theme → Seiten-`config_overrides` → Laufzeit-Override; die entscheiden, **welche Werte** zu `customVariables`/`customCss` werden, nicht wo die daraus entstehenden Styles in der iframe-Kaskade sitzen.
 
 ```
-1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
-2. primevue.css          — PrimeVue component styles scoped via those variables
-   tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
-3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
-4. markdown.css          — .data-body rendering styles for Markdown content
-5. cssVariables          — effective base + Auto/forced mode blocks from AppConfig.theming.global.cssVariables (adopted stylesheet)
-6. customCSS             — Non-@import CSS in an adopted stylesheet; extracted @import rules use a head style
+1. theme-config.css      — CSS-Custom-Properties (--p-primary-*, --p-surface-*, --p-secondary-*)
+2. primevue.css          — PrimeVue-Komponenten-Styles, gescopt über diese Variablen
+   tailwind.css          — Tailwind-Utility-Klassen (dasselbe Bundle wie primevue.css)
+3. iframe.css            — Standardmäßiges themengerechtes Scrollbar-Styling (historischer Name; kein iframe-Layout-Reset)
+4. markdown.css          — .data-body-Render-Styles für Markdown-Inhalte
+5. cssVariables          — effektive Basis + Auto-/erzwungene Modus-Blöcke aus AppConfig.theming.global.cssVariables (adoptiertes Stylesheet)
+6. customCSS             — Rohes CSS aus dem kindprojizierten AppConfig.theming.global.customCSS (adoptiertes Stylesheet)
 ```
 
-Dies ist die logische Überschreibungsreihenfolge, nicht die tatsächliche
-Einfügereihenfolge im `<head>`. Die Adopted-Stylesheet-Kaskade bestimmt die
-Präzedenz von `cssVariables` und Nicht-`@import`-Regeln; extrahierte Imports
-bleiben normale Dokumentstyles. Siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets).
+Diese Liste zeigt die logische Override-Reihenfolge, nicht die wörtliche Einfügereihenfolge im `<head>`. Im Produktions-Proxy werden die beiden Schichten adoptierter Stylesheets (`cssVariables`, dann `customCSS`) tatsächlich *vor* `theme-config.css` und PrimeVue eingefügt und überschreiben sie dennoch — weil adoptierte Stylesheets nach allen `<style>`/`<link>`-Elementen des Dokuments kaskadieren. Siehe [Override-Mechanismus](#override-mechanism-adopted-stylesheets).
 
-Jedes Kind-iframe erhält eigene Kopien der für diese Seite aktivierten
-Plattformbundles. Host, iframe-Seiten, Web Fragments und Komponenten-Shadow-
-Roots erhalten anschließend ihre scopespezifischen Anpassungen. Ihre gesamten
-Stylesätze sind daher nicht identisch.
+Jedes Kind-iframe erhält eine unabhängige Kopie aller Styles, keine Vererbung über die Kaskade. Host und alle Kinder rendern mit demselben visuellen Theme, weil sie identische injizierte Assets aus derselben Quelle erhalten.
 
-## Flags unter `ProxyConfig.injections.css`
+## Flags von `ProxyConfig.injections.css`
 
-Diese verschachtelten Flags verwenden lower camelCase sowohl im Registry-YAML
-als auch in `package.json` unter `wippy.proxy.injections.css`. Facade-Requirement-
-Namen verwenden ihre dokumentierten snake_case-Namen; Registry-Felder folgen
-ihrem jeweiligen Schema. Verschachtelte Proxy-Objekte werden ohne
-Schlüsselkonvertierung durchgereicht. YAML gewinnt je verschachteltem Schlüssel.
-Siehe [Micro-Frontend-Anwendungen § Betreiber-Proxy-Überschreibung](../frontend-registry/view-page.md#betreiber-proxy-überschreibung-_indexyaml).
+Diese verschachtelten Flags sind sowohl im Backend-Registry-YAML als auch in der Frontend-`package.json` unter `wippy.proxy.injections.css` in lower camelCase. Namen von Facade-Requirements verwenden ihre dokumentierten snake_case-Namen, während Registry-Felder ihrem jeweiligen Schema folgen. Verschachtelte Proxy-Objekte werden ohne Schlüsselumwandlung durchgereicht. YAML gewinnt pro verschachteltem Schlüssel. Siehe [Micro-Frontend-Apps (view.page) § Proxy-Override durch den Betreiber](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
 
 ```yaml
 meta:
@@ -158,56 +99,36 @@ meta:
 
 ### CSS-Flags
 
-| Flag | Standard | Injektion |
-|---|---|---|
-| `themeConfig` | `true` | `theme-config.css` mit allen `--p-primary-*`, `--p-surface-*`, `--p-secondary-*` und semantischen PrimeVue-Variablen. Deaktivierung entfernt nur diese Plattformschicht; `customVariables` und `customCss` bleiben unabhängig. |
-| `iframe` | `true` | `iframe.css` mit Standard-Scrollbar-Theming. Der historische Name bezeichnet keine iframe-Layoutregeln. Für konsistente Scrollbars aktiviert lassen. |
-| `primevue` | `true` | `primevue.css` + `tailwind.css` mit PrimeVue-Komponentenstyles und Tailwind-v3-Utilities. Nur deaktivieren, solange das gesamte Artefakt keine PrimeVue-ähnliche Produkt-UI enthält. Die Frameworkwahl allein ist keine Ausnahme. |
-| `markdown` | `true` | `markdown.css` für `.data-body`-Markdown in der Chat-Artefaktdarstellung. |
-| `customCss` | `true` | String `customCSS` aus der für das Kind projizierten `AppConfig.theming.global`. |
-| `customVariables` | `true` | Für alle konfigurierten Custom Properties kompilierte effektive Basis-, Auto-Hell/Dunkel- und erzwungene Hell/Dunkel-Blöcke. |
+| Flag | Standard | Was injiziert wird |
+|------|---------|-----------------|
+| `themeConfig` | `true` | `theme-config.css` — alle `--p-primary-*`-, `--p-surface-*`-, `--p-secondary-*`- und semantischen PrimeVue-Variablen. Deaktivieren entfernt die Theme-Vererbung vollständig. |
+| `iframe` | `true` | `iframe.css` — standardmäßiges themengerechtes Scrollbar-Styling. Der Name ist historisch und impliziert keine iframe-Layout-Regeln. Für jede Seite wegen der Scrollbar-Konsistenz aktiviert lassen. |
+| `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue-Komponenten-Styles und Tailwind-v3-Utilities (~455 KB zusammen). Nur deaktivieren, solange das gesamte Artefakt keine PrimeVue-artige Produkt-UI hat. Die Framework-Wahl allein ist keine Ausnahme. |
+| `markdown` | `true` | `markdown.css` — `.data-body`-Markdown-Render-Styles, die die Chat-Artefaktanzeige verwendet. |
+| `customCss` | `true` | Den `customCSS`-String aus dem kindprojizierten `AppConfig.theming.global`. |
+| `customVariables` | `true` | Die kindprojizierte `cssVariables`-Map, kompiliert als effektive Basis sowie Auto-hell/-dunkel und erzwungene Hell-/Dunkel-Blöcke für jeden konfigurierten Custom-Property-Namen. |
 
-Es gibt kein eigenes Fonts-Flag. Google Fonts werden als `@import` über
-`theming.global.customCSS` und das vorhandene `customCss`-Flag geliefert.
+Es gibt kein eigenes Flag für Schriften. Google Fonts werden über `theming.global.customCSS` ausgeliefert (eine `@import`-Regel), das das iframe über das bestehende `customCss`-Flag injiziert.
 
-### Nicht-CSS-Injektionsflags
+### Injektions-Flags außerhalb von CSS
 
-Diese Flags liegen neben `css` im Block `injections`:
+Diese Flags stehen im `injections`-Block neben `css`:
 
-| Flag | Standard | Wirkung |
-|---|---|---|
-| `tailwindConfig` | `true` | Stellt `window.tailwind.config` für die CDN-Tailwind-Runtime bereit; bei zur Buildzeit kompilierten Vite-Builds unnötig. |
-| `resizeObserver` | `true` | Beobachtet den Dokumentkörper und meldet dessen Größe an den Host; ein Body-Size-Relay, kein Browser-API-Polyfill. |
-| `preventLinkClicks` | `true` | Fängt alle `<a>`-Klicks im iframe ab und klassifiziert sie vor der Navigation mit `host.classifyLink()`. |
-| `iconifyIcons` | `true` | Injiziert registrierte Iconify-Sets für offline funktionierende `<iconify-icon>`-Elemente. |
-| `refreshWhenVisible` | `true` | Lädt das Kindfenster neu, wenn `@visibility` zu `true` wird. Deaktivieren, wenn ein beibehaltenes iframe ohne Reload fortsetzen soll. |
-| `historyPolyfill` | `true` | **Derzeit No-op.** Der Polyfill ist für `srcdoc`-iframes deaktiviert. Die Runtime installiert stets einen History-*Guard*, der `window.history` stubbt und vor Memory-History-Routing warnt. Das Flag macht SPA-Routenänderungen nicht für den Host sichtbar. |
-| `errorCapture` | `true` | Installiert `window.onerror` und `window.onunhandledrejection`, die unbehandelte Fehler über `logger.captureException` an den Host weiterleiten. |
+| Flag | Standard | Was es tut |
+|------|---------|--------------|
+| `tailwindConfig` | `true` | Stellt `window.tailwind.config` für Apps bereit, die die CDN-Tailwind-Laufzeit verwenden (`<script src="https://cdn.tailwindcss.com">`). Nicht nötig für Vite-Builds, die Tailwind zur Build-Zeit kompilieren. |
+| `resizeObserver` | `true` | Beobachtet den Body des Kind-Dokuments und sendet Größenaktualisierungen an den Host. Das ist ein Relais für die Body-Größe, kein Polyfill einer Browser-API. |
+| `preventLinkClicks` | `true` | Fängt alle `<a>`-Klicks im iframe ab und klassifiziert sie vor der Navigation über `host.classifyLink()`. Nützlich für Seiten mit externem Markdown-Inhalt, der host-navigierbare Links enthalten kann. |
+| `iconifyIcons` | `true` | Injiziert registrierte Iconify-Icon-Sets, damit `<iconify-icon>`-Elemente offline funktionieren. |
+| `refreshWhenVisible` | `true` | Benachrichtigt das Kind, wenn ein zuvor verborgenes iframe wieder sichtbar wird. |
+| `historyPolyfill` | `true` | **Heute ein No-Op.** Das History-Polyfill ist für `srcdoc`-iframes bewusst deaktiviert (`window.location` ist nicht konfigurierbar), sodass dieses Flag keine Laufzeitwirkung hat. Die Laufzeit installiert stattdessen immer einen History-*Guard*, der die `window.history`-Methoden stubbt und zur Verwendung von Memory-History-Routing rät — Apps müssen den Memory-Modus verwenden (z. B. `createAppRouter` mit Memory-History). Dieses Flag zu setzen macht SPA-Routenwechsel für den Host **nicht** beobachtbar. |
+| `errorCapture` | `true` | Hängt `window.onerror`- und `window.onunhandledrejection`-Handler an, die nicht abgefangene Fehler über `logger.captureException` an den Host weiterleiten. In der Produktion für zentrale Fehlererfassung aktivieren. |
 
-Fehlt `wippy.proxy.injections`, aktiviert der iframe-Proxy mit permissiven
-Runtime-Standards die meisten Injektionen. Vite-Micro-Frontends sollten die
-benötigten Werte dennoch ausdrücklich deklarieren, damit Erwartungen an
-Host-CSS, Linkbehandlung, Größenmeldungen und Fehlererfassung prüfbar sind.
-
-### Bereitstellung für Web Fragment
-
-Web-Fragment-Seiten verwenden die iframe-CSS-Schalter nicht. Das Framework-
-Gateway ergänzt beim Umschreiben die festen Web-Host-CSS-Assets. Nach dem
-AppConfig-Handshake setzt der Fragment-Adapter effektive `cssVariables` und
-`customCSS` als normale `<style>`-Elemente in den reflektierten Head. Die Flags
-`proxy.injections.css` sperren Plattform-CSS für ein Fragment daher nicht.
-Fragment-Fehlererfassung ist unabhängig vom iframe-Flag `errorCapture` immer aktiv.
-
-Siehe [Render Engines](./render-engines.md) und
-[Framework Views](../../framework/views.md).
+Lässt eine Seite `wippy.proxy.injections` weg, hat der iframe-Proxy permissive Laufzeit-Standardwerte und aktiviert die meisten Injektionen. Vite-Micro-Frontend-Apps sollten die expliziten Werte, auf die sie sich stützen, dennoch deklarieren, damit eine Paketprüfung erkennen kann, ob die App Host-CSS, Link-Abfangen, Meldung der Body-Größe oder Fehlererfassung erwartet.
 
 ### Unerwünschte Injektionen deaktivieren
 
-Eine Seite darf PrimeVue nur deaktivieren, solange sie keine Standard-
-Produktsteuerelemente oder -oberflächen enthält. Canvas-/SVG-/reine Chartseiten
-sind zulässig. Sobald Button, Eingabe, Formular, Tabelle, Dialog, Menü, Tag,
-Tooltip oder Feedbackelement hinzukommt, verwenden Sie PrimeVue und lassen die
-Injektion aktiv; die Frameworkwahl allein rechtfertigt keine Ausnahme.
+Eine Seite darf die PrimeVue-Injektion nur deaktivieren, solange sie keine Standard-Produktsteuerelemente oder -Oberflächen enthält, die PrimeVue bereitstellt. Eine reine Canvas-/SVG-/Diagrammseite ist zulässig. Sobald sie eine Schaltfläche, ein Eingabefeld, ein Formular, eine Tabelle, einen Dialog, ein Menü, ein Tag, einen Tooltip oder ein Feedback-Steuerelement erhält, verwenden Sie PrimeVue und lassen die Injektion aktiviert; die Framework-Wahl allein ist kein Grund für den Verzicht.
 
 ```json
 {
@@ -224,26 +145,14 @@ Injektion aktiv; die Frameworkwahl allein rechtfertigt keine Ausnahme.
 }
 ```
 
-Auch dann erhält die Seite `customCSS`, `cssVariables` und `iframe.css`, sofern
-diese nicht ebenfalls deaktiviert sind. Proxy-API, State-Relay und WebSocket-
-Bridge bleiben von CSS-Flags unberührt.
+Sind beide deaktiviert, erhält die Seite weiterhin `customCSS`, `cssVariables` und `iframe.css` (Scrollbar-Reset), sofern diese nicht ebenfalls abgeschaltet werden. Die Proxy-API, das State-Relais und die WebSocket-Brücke bleiben von CSS-Flags unberührt.
 
-## Web Components: Facade-Custom-CSS und `hostCssKeys`
+## Web Components: Facade-Custom-CSS + `hostCssKeys`
 
-Web Components durchlaufen die iframe-Pipeline nicht. Zwei Kanäle bringen das
-Theme in ihren Shadow Root:
+Web Components durchlaufen die iframe-Injektions-Pipeline nicht. Zwei Kanäle bringen das Theme in den Shadow Root einer Komponente:
 
-- **Konfigurierte Variablen und Facade-Custom-CSS.**
-  `@wippy-fe/webcomponent-core` ermittelt alle effektiven globalen und
-  Children-/Seiten-Custom-Property-Namen einschließlich `@light` / `@dark` und
-  installiert nach den Plattformstandards eine allgemeine Vererbungsbridge.
-  Danach folgt globales + Children-`customCSS` als letzte Schicht.
-  `customCss: false` deaktiviert nur Selektorregeln, nicht die Weitergabe von
-  Variablen.
-- **Plattform-CSS-Assets (`hostCssKeys`).** `theme-config.css`, PrimeVue,
-  Markdown- und iframe-/Scrollbar-Styles sind statische Bundle-Assets. Eine
-  Komponente fordert benötigte URLs über `wippyConfig.hostCssKeys` an oder lädt
-  sie ausnahmsweise mit `loadCss()` aus `@wippy-fe/proxy`.
+- **Konfigurierte Variablen + Facade-Custom-CSS.** `@wippy-fe/webcomponent-core` zählt jeden effektiven Custom-Property-Namen aus global/children/page auf, einschließlich der Namen unter `@light` / `@dark`, und installiert nach den Plattform-Theme-Standardwerten eine generische Vererbungsbrücke. Anschließend installiert es das komponierte `customCSS` aus global + children als letzte Schicht. `customCss: false` deaktiviert nur die Schicht der Selektorregeln; die Weitergabe konfigurierter Variablen wird dadurch nicht deaktiviert.
+- **Plattform-CSS-Assets (`hostCssKeys`).** `theme-config.css`, PrimeVue, Markdown und iframe-/Scrollbar-Styles sind **statische Bundle-Assets**, nicht das konfigurierte CSS der Facade. Eine Komponente fordert die benötigten per URL über `wippyConfig.hostCssKeys` an (oder holt sie ad hoc mit `loadCss()` aus `@wippy-fe/proxy`), und die Laufzeit injiziert sie in den Shadow Root.
 
 ```typescript
 static get wippyConfig() {
@@ -253,37 +162,30 @@ static get wippyConfig() {
 }
 ```
 
-Für normale Komponenten ist `hostCssKeys` zu bevorzugen. `loadCss()` ist ein
-Integrationsausweg; überschreiben Sie einen gemounteten Shadow Tree nie mit
-`shadowRoot.innerHTML`.
+Verwenden Sie beim normalen Komponentenbau das deklarative `hostCssKeys`. `loadCss()` ist ein Notausgang für Integrationen; überschreiben Sie einen gemounteten Shadow-Baum niemals mit `shadowRoot.innerHTML`.
 
 Verfügbare `hostCss`-Schlüssel:
 
-| Schlüssel | Inhalt | Bundle-Auswirkung |
-|---|---|---|
-| `hostCss.themeConfigUrl` | CSS-Variablen (`--p-primary-*`, hell + dunkel) | Klein |
-| `hostCss.primeVueCssUrl` | PrimeVue-Komponenten + Tailwind-Utilities | Groß |
-| `hostCss.markdownCssUrl` | `.data-body`-Markdown-Styles | Klein |
-| `hostCss.iframeCssUrl` | Scrollbar-Styling mit `--p-surface-*` | Sehr klein |
-| `hostCss.preflightCssUrl` | Tailwind-/PrimeVue-Preflight-Reset | Klein |
+| Schlüssel | Inhalt | Auswirkung auf das Bundle |
+|-----|---------|---------------|
+| `hostCss.themeConfigUrl` | CSS-Variablen (`--p-primary-*`, hell + dunkel) | Klein (~5 KB) |
+| `hostCss.primeVueCssUrl` | PrimeVue-Komponenten + Tailwind-Utilities | Groß (~455 KB) |
+| `hostCss.markdownCssUrl` | `.data-body`-Markdown-Render-Styles | Klein |
+| `hostCss.iframeCssUrl` | Scrollbar-Styling mit `--p-surface-*` | Winzig |
+| `hostCss.preflightCssUrl` | Tailwind-/PrimeVue-Preflight-Basis-Reset (normalize/reset) | Klein |
 
-Eine Web Component, die hostgetreu rendern soll, muss eventuell
-`hostCss.preflightCssUrl` mit `loadCss()` abrufen und den Text über
-`injectInlineCss(shadow, css)` einsetzen, weil der Host-Preflight die
-Shadow-Grenze nicht überschreitet. Die Entscheidungshilfe steht unter
-[WC-Theming § Entscheidungsbaum für hostCssKeys](../micro-frontends/web-component-theming.md).
+Eine Web Component, die host-getreues Rendering will, muss `hostCss.preflightCssUrl` unter Umständen explizit über `loadCss()` holen, weil der Basis-Preflight-Reset des Hosts die Shadow-Grenze **nicht** überschreitet.
+
+Für Hinweise dazu, welche Schlüssel wann anzufordern sind — einschließlich des Entscheidungsbaums zur Abwägung zwischen Stiltreue und Shadow-DOM-Bundle-Größe — siehe [WC-Theming § Entscheidungsbaum für hostCssKeys](../micro-frontends/web-component-theming.md).
 
 ## Projektion von `AppConfig.theming`
 
-Die Facade kennt `theming.global`, `theming.host` und `theming.children`. Bevor
-eine Seite ihre Kindkonfiguration erhält, projiziert der Host das effektive
-Kind-Theme nach `AppConfig.theming.global`. Die gewählte Engine wendet diesen
-Scope über ihren CSS-/Variablenpfad an.
+Die Facade-Konfiguration stellt drei Theming-Scopes bereit: `theming.global`, `theming.host` und `theming.children`. Bevor ein Seiten-iframe seine Kind-Konfiguration erhält, projiziert der Host das effektive Kind-Theme in `AppConfig.theming.global`. Dieser globale Kind-Scope ist es, den `customCss` und `customVariables` in das iframe injizieren.
 
-Schlüssel sind CSS-Variablennamen in ihrer endgültigen Form:
+Die Schlüssel sind CSS-Variablennamen genau so, wie sie im CSS erscheinen sollen:
 
 ```typescript
-// In the facade configuration or SetConfig PostMessage payload.
+// In der Facade-Konfiguration oder im SetConfig-PostMessage-Payload.
 theming: {
   global: {
     cssVariables: {
@@ -295,41 +197,29 @@ theming: {
 }
 ```
 
-Für iframe normalisiert der Compiler führende `--`, verbindet die Basis mit
-`@light` / `@dark` und erzeugt effektive Blöcke für Auto-Hell/Dunkel sowie
-erzwungen Hell/Dunkel. Er ist variablenagnostisch. Die Überschreibung hängt
-nicht von der Quellreihenfolge im `<head>` ab; siehe [Überschreibungsmechanismus](#überschreibungsmechanismus-adopted-stylesheets).
+Der Compiler normalisiert führende `--`, merged die Basis auf oberster Ebene mit `@light` / `@dark` und gibt im adoptierten Stylesheet des iframes effektive Blöcke für Auto-hell, Auto-dunkel, erzwungen Hell und erzwungen Dunkel aus. Er ist variablenagnostisch: Paletten-Basen, direkte Abstufungen/Aliase, Surfaces, Typografie, Host-Tokens und anwendungsspezifische Properties folgen demselben Pfad. Das Override hängt nicht von der Quellreihenfolge im `<head>` ab — siehe [Override-Mechanismus](#override-mechanism-adopted-stylesheets).
 
-### Überschreibungsmechanismus: Adopted Stylesheets
+### Override-Mechanismus: adoptierte Stylesheets
 
-Bei iframe sind `cssVariables` und Nicht-`@import`-Deklarationen aus `customCSS`
-keine gewöhnlichen Head-Elemente. Der Proxy legt sie in
-[`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets)
-des iframe-Dokuments. Diese folgen in der CSS-Kaskade unabhängig von der
-Einfügereihenfolge den Dokumentstyles und gewinnen daher gegen die
-Plattformstyles. `@import`-Regeln werden in einen normalen Head-Style extrahiert
-und erhalten diese Garantie nicht. Web Fragment nutzt normale `<style>`-
-Elemente im reflektierten Head.
+`customCSS` und `cssVariables` sind **keine** gewöhnlichen `<style>`/`<link>`-Elemente im `<head>`. Der Proxy legt sie in die [`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets) des iframe-Dokuments (konstruierbare Stylesheets). Gemäß der CSS-Kaskade ordnen sich adoptierte Stylesheets unabhängig von der Einfügereihenfolge immer **nach** allen `<style>`/`<link>`-Dokument-Stylesheets ein, sodass sie stets über `theme-config.css`, `primevue.css`, `iframe.css` und `markdown.css` gewinnen. Im Produktions-Proxy werden diese Custom-Schichten tatsächlich *vor* `theme-config.css` und PrimeVue eingefügt; das Override gilt dennoch, weil es aus der Kaskadenposition adoptierter Stylesheets stammt und nicht aus der Quellreihenfolge im `<head>`.
 
-Zwischen den beiden iframe-Adopted-Schichten überschreibt Nicht-`@import`-
-`customCSS` die `cssVariables`: Zuerst kommt `cssVariables`, danach `customCSS`.
+Zwischen den beiden Custom-Schichten gilt: **`customCSS` überschreibt `cssVariables`** — die adoptierten Stylesheets sind in der Reihenfolge zuerst `cssVariables`, dann `customCSS` angeordnet, und später adoptierte Stylesheets haben höhere Priorität. Ist dasselbe `--p-*`-Token in beiden gesetzt, gewinnt der Wert aus `customCSS`.
 
 ### Drei Theming-Scopes
 
-| Scope-Schlüssel | Injektion | Zweck |
-|---|---|---|
-| `theming.global` | Host-Chrome und jede Kindseite | Markenfarben, Primärpalette, gemeinsame Icon-Sets |
-| `theming.host` | Nur Host-Chrome | Sidebar-, Header-, Chat- und App-Titel-Anpassungen |
-| `theming.children` | Nur Kindseiten | Kindseitige CSS-Variablen und -Regeln |
+Die Facade unterstützt drei `cssVariables`-Scopes, um verschiedene Renderschichten anzusprechen:
 
-Kindseiten erhalten `theming.host` und `theming.children` nicht separat,
-sondern das zusammengeführte Ergebnis als `config.theming.global`.
+| Scope-Schlüssel | Injiziert in | Anwendungsfall |
+|-----------|---------------|----------|
+| `theming.global` | Host-Chrome und jedes Kind-iframe | Markenfarben, Primärpalette, geteilte Icon-Sets |
+| `theming.host` | Nur Host-Chrome | Overrides für Sidebar, Header, Chat und App-Titel |
+| `theming.children` | Nur Kind-iframes | Nur für Kinder bestimmte CSS-Variablen und CSS-Overrides |
 
-### Seitenspezifische Überschreibungen
+Kind-iframes erhalten `theming.host` oder `theming.children` nicht als eigene Scopes. Sie erhalten das gemergte kindgerichtete Ergebnis als `config.theming.global`.
 
-Einzelne Seiten überschreiben Variablen über
-`window.__WIPPY_CONFIG_OVERRIDES__`, gesetzt als `meta.config_overrides` im
-Registry-Eintrag oder als `wippy.configOverrides` in `package.json`:
+### Overrides pro Seite
+
+Einzelne Seiten können Variablen über `window.__WIPPY_CONFIG_OVERRIDES__` überschreiben (gesetzt im Registry-Eintrag der Seite als `meta.config_overrides` oder in der `package.json` als `wippy.configOverrides`):
 
 ```typescript
 window.__WIPPY_CONFIG_OVERRIDES__ = {
@@ -342,19 +232,11 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-Backend-YAML `config_overrides.customization` projiziert `cssVariables` und
-`customCSS` vor Auslieferung der AppConfig nach
-`theming.global.cssVariables` / `customCSS` und ersetzt für diese Seite die
-geerbten Kindwerte. Weil die Überschreibung in `theming.global` eingeht, wird
-sie an den gesamten verschachtelten Unterbaum weitergegeben: `<w-iframe>`,
-`<w-artifact>` und Inhalte aus `html.inject` erben das Theme rekursiv.
+Das Backend-YAML `config_overrides.customization` ist die Autorenfläche pro Seite. Seine Schlüssel `cssVariables` und `customCSS` projizieren in die Frontend-Werte `theming.global.cssVariables` und `customCSS`, bevor die Seite die AppConfig erhält, und ersetzen für diese Seite die geerbten Kind-Werte. Weil das Override in `theming.global` gemergt wird, **überträgt es sich auf den gesamten verschachtelten Unterbaum**: Jedes Kind, das die Seite einbettet — `<w-iframe>`, `<w-artifact>` und `html.inject`-Inhalte — wird aus der bereits gemergten Konfiguration der Seite gebaut und erbt das Theme rekursiv. Eine Seite (oder ein Modul, das mehrere solcher Seiten ausliefert) thematisiert also alles darunter, nicht nur sich selbst.
 
-## Variablen `--wippy-host-*`
+## `--wippy-host-*`-Variablen
 
-Der Host stellt `--wippy-host-*`-Variablen für seine Chrome bereit. Sie passen
-Sidebar, Chatblasen, Eingabeleiste und Panelteiler an, ohne Kindseiten zu
-berühren. Überschreiben Sie sie über `customCSS` oder `cssVariables` im
-`:root`-Scope:
+Der Host stellt einen Satz `--wippy-host-*`-CSS-Variablen bereit, um Chrome-Elemente des Web Host anzupassen — Sidebar, Chat-Blasen, Eingabeleiste, Panel-Trenner — ohne die Styles der Kind-iframes zu berühren. Überschreiben Sie sie über `customCSS` oder `cssVariables` mit Scope `:root` (die Variablen sind bereits präfigiert und lecken nicht in Kind-iframes):
 
 ```typescript
 theming: {
@@ -367,69 +249,69 @@ theming: {
       --wippy-host-message-user-bg: var(--p-info-100);
       --wippy-host-message-agent-bg: var(--p-warn-100);
     }
-    /* Class selectors must be scoped to .wippy-host-app */
+    /* Klassenselektoren müssen auf .wippy-host-app gescopt werden */
     .wippy-host-app .chat-message__footer { display: none; }
   `
   }
 }
 ```
 
-### Layoutvariablen
+### Layout-Variablen
 
 | Variable | Standard | Beschreibung |
-|---|---|---|
-| `--wippy-host-sidebar-width-open` | `16rem` | Breite der geöffneten Sidebar |
-| `--wippy-host-sidebar-width-closed` | `3.5rem` | Breite der geschlossenen Sidebar |
-| `--wippy-host-splitter-width` | `1px` | Linienbreite des Panelteilers |
-| `--wippy-host-splitter-hit-area` | `10px` | Ziehbereich des Panelteilers |
-| `--wippy-host-splitter-color` | `surface-200/600` | Farbe des Panelteilers |
-| `--wippy-host-chat-bg` | `surface-50/700` | Chathintergrund |
-| `--wippy-host-chat-padding-x` | `10px` | Horizontaler Abstand der Nachrichtenliste |
-| `--wippy-host-meta-bar-border-color` | `surface-200/600` | Rahmen der Agent-/Modellleiste |
+|----------|---------|-------------|
+| `--wippy-host-sidebar-width-open` | `16rem` | Sidebar-Breite im ausgeklappten Zustand |
+| `--wippy-host-sidebar-width-closed` | `3.5rem` | Sidebar-Breite im eingeklappten Zustand |
+| `--wippy-host-splitter-width` | `1px` | Linienbreite des Panel-Trenners |
+| `--wippy-host-splitter-hit-area` | `10px` | Ziehbereich des Panel-Trenners |
+| `--wippy-host-splitter-color` | `surface-200/600` | Farbe des Panel-Trenners |
+| `--wippy-host-chat-bg` | `surface-50/700` | Hintergrund des Chat-Containers |
+| `--wippy-host-chat-padding-x` | `10px` | Horizontales Padding der Nachrichtenliste |
+| `--wippy-host-meta-bar-border-color` | `surface-200/600` | Rahmen der Agenten-/Modell-Leiste |
 
-### Nachrichtenvariablen
+### Nachrichten-Variablen
 
 | Variable | Standard | Beschreibung |
-|---|---|---|
+|----------|---------|-------------|
 | `--wippy-host-message-bg` | `surface-50/700` | Standard-Nachrichtenhintergrund |
 | `--wippy-host-message-border-color` | `surface-200/600` | Rahmen der Nachrichtenblase |
 | `--wippy-host-message-shadow` | `0 1px 2px 0 rgba(...)` | Schatten der Nachrichtenblase |
-| `--wippy-host-message-font-size` | `0.875rem` | Textgröße |
-| `--wippy-host-message-radius` | `1rem` | Eckenradius |
-| `--wippy-host-message-padding-x` | `1rem` | Horizontaler Innenabstand |
-| `--wippy-host-message-padding-y` | `0.5rem` | Vertikaler Innenabstand |
+| `--wippy-host-message-font-size` | `0.875rem` | Textgröße des Nachrichtentexts |
+| `--wippy-host-message-radius` | `1rem` | Ecken der Nachrichtenblase |
+| `--wippy-host-message-padding-x` | `1rem` | Horizontales Padding der Nachricht |
+| `--wippy-host-message-padding-y` | `0.5rem` | Vertikales Padding der Nachricht |
 | `--wippy-host-message-gap` | `0.5rem` | Abstand zwischen Avatar und Blase |
-| `--wippy-host-message-spacing` | `1rem` | Vertikaler Nachrichtenabstand |
-| `--wippy-host-message-user-bg` | `primary-50` | Hintergrund einer Benutzernachricht |
-| `--wippy-host-message-agent-bg` | `yellow-50/surface-800` | Hintergrund einer Agentennachricht |
-| `--wippy-host-tool-bg` | `help-50` | Hintergrund eines Toolaufrufs |
-| `--wippy-host-tool-border` | `help-300` | Linker Rahmen eines Toolaufrufs |
-| `--wippy-host-avatar-size` | `2rem` | Avatardurchmesser |
+| `--wippy-host-message-spacing` | `1rem` | Vertikaler Abstand zwischen Nachrichten |
+| `--wippy-host-message-user-bg` | `primary-50` | Hintergrund der Benutzernachricht |
+| `--wippy-host-message-agent-bg` | `yellow-50/surface-800` | Hintergrund der Agentennachricht |
+| `--wippy-host-tool-bg` | `help-50` | Hintergrund des Tool-Aufrufs |
+| `--wippy-host-tool-border` | `help-300` | Linker Rahmen des Tool-Aufrufs |
+| `--wippy-host-avatar-size` | `2rem` | Durchmesser des Nachrichten-Avatars |
 
-### Eingabevariablen
+### Eingabe-Variablen
 
 | Variable | Standard | Beschreibung |
-|---|---|---|
+|----------|---------|-------------|
 | `--wippy-host-input-bg` | `surface-50/700` | Hintergrund der Eingabeleiste |
 | `--wippy-host-input-border-color` | `surface-200/600` | Oberer Rahmen der Eingabeleiste |
-| `--wippy-host-input-group-bg` | `surface-0/800` | Eingabefeldhintergrund |
-| `--wippy-host-input-group-border-color` | `surface-300/700` | Eingabefeldrahmen |
+| `--wippy-host-input-group-bg` | `surface-0/800` | Hintergrund des Eingabefelds |
+| `--wippy-host-input-group-border-color` | `surface-300/700` | Rahmen des Eingabefelds |
 | `--wippy-host-input-group-radius` | `0.375rem` | Ecken des Eingabefelds |
-| `--wippy-host-input-min-height` | `2.5rem` | Anfangshöhe des Textbereichs |
-| `--wippy-host-input-max-height` | `10rem` | Maximale Höhe des Textbereichs |
+| `--wippy-host-input-min-height` | `2.5rem` | Anfangshöhe der Textarea |
+| `--wippy-host-input-max-height` | `10rem` | Maximalhöhe der Textarea |
 
 ### Prompt-Variablen
 
 | Variable | Standard | Beschreibung |
-|---|---|---|
-| `--wippy-host-prompt-bg` | `surface-100/800` | Hintergrund eines Promptvorschlags |
-| `--wippy-host-prompt-border-color` | `surface-300/600` | Rahmen eines Promptvorschlags |
-| `--wippy-host-prompt-radius` | `0.5rem` | Ecken eines Promptvorschlags |
+|----------|---------|-------------|
+| `--wippy-host-prompt-bg` | `surface-100/800` | Hintergrund des Prompt-Vorschlags |
+| `--wippy-host-prompt-border-color` | `surface-300/600` | Rahmen des Prompt-Vorschlags |
+| `--wippy-host-prompt-radius` | `0.5rem` | Ecken des Prompt-Vorschlags |
 
-Diese Variablen wirken ausschließlich auf die Host-Chrome.
+Diese Variablen wirken nur auf das Host-Chrome. Die Styles der Kind-iframes bleiben unberührt — sie erhalten nur die oben beschriebene Standard-Injektions-Pipeline.
 
 ## Siehe auch
 
-- [Theming](../micro-frontends/theming.md) — CSS-Token-Referenz, Tailwind-Abbildung und Web-Component-Muster
-- [Proxy und Isolation](./proxy-isolation.md) — Injektionspipeline und `ProxyConfig` auf Protokollebene
-- [Render Engines](./render-engines.md) — Host-CSS für srcdoc-iframes und Web-Fragment-Shadow-Roots
+- [Theming](../micro-frontends/theming.md) — Referenz der CSS-Tokens, Tailwind-Zuordnung und Style-Muster für Web Components
+- [Proxy & Isolation](./proxy-isolation.md) — wie die Proxy-Injektions-Pipeline funktioniert und was `ProxyConfig` auf Protokollebene steuert
+- [Render-Engines](./render-engines.md) — Host-CSS erreicht sowohl srcdoc-iframes als auch Web-Fragment-Shadow-Roots

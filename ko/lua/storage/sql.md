@@ -1,6 +1,6 @@
 ---
 title: "SQL 데이터베이스"
-description: "설정된 데이터베이스에서 파라미터화된 SQL 쿼리, 트랜잭션, prepared statement를 실행합니다."
+description: "PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다."
 ---
 
 # SQL 데이터베이스
@@ -57,7 +57,7 @@ return finish(rows)
 </note>
 
 <note>
-직접 실행하는 `db` 및 트랜잭션 쿼리의 플레이스홀더는 데이터베이스 드라이버에 변경 없이 전달됩니다. SQLite와 MySQL은 `?`를 사용하고, PostgreSQL은 `$1`, `$2` 등을 사용합니다. 빌더의 `run_with` 호출은 PostgreSQL에서 dollar 플레이스홀더를 자동으로 선택합니다. 다른 데이터베이스 타입은 빌더에서 선택한 형식을 유지하며 기본값은 `?`입니다. `to_sql`로 SQL을 생성하거나 다른 형식이 필요하면 `placeholder_format`을 설정하세요.
+플레이스홀더는 데이터베이스 드라이버에 변경 없이 전달되며 런타임은 이를 재작성하지 않습니다. SQLite와 MySQL은 `?`, PostgreSQL은 `$1, $2`를 사용합니다. 드라이버가 기대하는 형식으로 작성하세요. 아래 예제는 `?`(SQLite/MySQL)를 사용합니다. 여러 엔진을 대상으로 하는 쿼리는 [쿼리 빌더](#query-builder)로 작성하세요. 핸들이 PostgreSQL이면 `run_with`가 플레이스홀더를 `$1, $2`로 재작성하고, `to_sql`은 빌더의 `placeholder_format`을 사용합니다.
 </note>
 
 ## 상수
@@ -369,7 +369,17 @@ local cond = sql.builder.or_({
 
 **반환:** `Sqlizer`
 
-### `sql.builder.question`
+## sqlizer:to_sql
+
+조건의 SQL 조각과 바인드 인자를 생성합니다.
+
+```lua
+local frag, args = sql.builder.eq({active = 1}):to_sql()
+```
+
+**반환:** `string, table`
+
+## builder.question
 
 `?` 플레이스홀더 형식을 사용합니다(기본값). `sql.builder.default_placeholder` 별칭으로도 사용할 수 있습니다.
 
@@ -1175,12 +1185,12 @@ local query = sql.builder.update("users")
 
 ```lua
 local query = sql.builder.update("users")
-    :set_map({status = "active", updated_at = sql.builder.expr("NOW()")})
+    :set_map({status = "active", login_count = 0})
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
-| `map` | table | {column = value} 쌍 |
+| `map` | table | {column = value} 쌍, 값은 일반 값, `sql.NULL`, 또는 `sql.as.*` (표현식에는 `set` 사용) |
 
 **반환:** `UpdateBuilder`
 
@@ -1540,10 +1550,11 @@ local sql_str, args = executor:to_sql()
 | 리소스를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 리소스가 데이터베이스 아님 | `errors.INVALID` | 아니오 |
 | 잘못된 파라미터 | `errors.INVALID` | 아니오 |
+| SQL 구문 에러 | `errors.UNKNOWN` | nil |
 | Statement 닫힘 | `errors.INVALID` | 아니오 |
 | 트랜잭션 비활성 | `errors.INVALID` | 아니오 |
 | 잘못된 savepoint 이름 | `errors.INVALID` | 아니오 |
-| 드라이버 또는 쿼리 실행 오류 | 가능한 경우 드라이버 오류를 그대로 유지하고, 그렇지 않으면 지정되지 않음 | 다양함 |
+| 쿼리 실행 에러 | `errors.UNKNOWN` | nil |
 
 오류 처리 방법은 [오류 처리](lua/core/errors.md)를 참조하세요.
 

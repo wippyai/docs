@@ -1,6 +1,6 @@
 ---
 title: "Hash Functions"
-description: "Compute cryptographic hashes, HMAC values, PBKDF2 keys, and FNV-1 hashes."
+description: "Cryptographic hash functions and HMAC message authentication."
 ---
 
 # Hash Functions
@@ -177,36 +177,24 @@ local n = hash.fnv64("data")
 
 **Returns:** `number, error`
 
-Lua numbers cannot exactly represent every unsigned 64-bit integer. Do not use `fnv64` when the exact 64-bit value must round-trip through Lua; use a byte or string representation supplied by an appropriate protocol implementation instead.
-
 ## Key Derivation
 
-### PBKDF2-HMAC
-
-Derive raw key bytes with PBKDF2-HMAC-SHA256 or PBKDF2-HMAC-SHA512:
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
-
-Here, `password` is supplied through the application's secret boundary and `salt` is fresh random bytes stored with that verifier. The returned values are raw key bytes, not printable text.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `password` | string | Non-empty password or secret input |
-| `salt` | string | Non-empty salt bytes |
-| `iterations` | integer | Positive iteration count, at most 10,000,000 |
-| `key_length` | integer | Positive output length in bytes |
-| `algo` | string? | `sha256` (default) or `sha512` |
+| `password` | string | Password/passphrase (non-empty) |
+| `salt` | string | Salt value (non-empty) |
+| `iterations` | integer | Iteration count (1 to 10,000,000) |
+| `key_length` | integer | Desired key length in bytes |
+| `hash` | string? | `sha256` or `sha512` (default: `sha256`) |
 
-**Returns:** `string, error` (raw derived key bytes)
+**Returns:** `string, error` (raw key bytes)
 
 ## Errors
 
@@ -214,6 +202,6 @@ Here, `password` is supplied through the application's secret boundary and `salt
 |-----------|------|-----------|
 | Input not a string | `errors.INVALID` | no |
 | Secret not a string (HMAC) | `errors.INVALID` | no |
-| PBKDF2 password/salt empty, limits invalid, or algorithm unsupported | `errors.INVALID` | no |
+| Empty password/salt, non-positive or excessive iterations, unsupported hash (PBKDF2) | `errors.INVALID` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

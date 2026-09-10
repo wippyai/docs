@@ -1,6 +1,6 @@
 ---
 title: "Metrics & Telemetry"
-description: "Record application counters, gauges, and histogram observations."
+description: "Record application metrics using counters, gauges, and histograms."
 ---
 
 # Metrics & Telemetry

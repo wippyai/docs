@@ -1,19 +1,24 @@
 ---
-title: "빌드 시점 아티팩트"
-description: "사용 프로젝트를 위한 format-aware 파일 시스템 artifact를 선언, 검증, 게시, materialize합니다."
+title: "빌드 타임 아티팩트"
+description: "파일 시스템 리소스를 포맷 인식 아티팩트로 선언하고, 이를 소비 프로젝트로 구체화하며, 런타임이 자동으로 조정하는 것들을 설명합니다."
 ---
 
-# 빌드 시점 아티팩트
+# 빌드 타임 아티팩트
 
-모듈은 다른 모듈이 compile할 때 사용하는 package처럼 런타임이 아니라 **빌드 시점**에 consumer가 사용할 directory를 포함할 수 있습니다. Wippy는 `meta.artifact.format`으로 표시한 WAPP 파일 시스템 resource를 **artifact**라고 부릅니다.
+모듈은 소비자가 런타임이 아니라 **빌드 타임에** 사용하는 디렉터리를 제공할 수
+있습니다. 가장 유용한 사례는 다른 모듈이 컴파일 대상으로 삼는 패키지입니다. Wippy는
+이를 **아티팩트**라고 부릅니다. `meta.artifact.format`으로 표시된 평범한 WAPP 파일
+시스템 리소스입니다.
 
-artifact를 사용하면 repository-local path alias로 resolve할 수 없는 공유 package를 모듈과 함께 repository 경계를 넘어 전달할 수 있습니다.
+공유 패키지가 다른 저장소의 모듈에 도달하는 방식이 바로 이것입니다. 경로 별칭은 한
+저장소 안에서만 해석되지만, 아티팩트는 모듈과 함께 이동합니다.
 
-[Design Layer](../frontend/design-layer.md)는 이런 package에 *무엇을* 넣어야 하고 무엇을 넣지 않아야 하는지 설명합니다. 이 페이지는 package를 전달하는 mechanism을 다룹니다.
+[디자인 레이어](../frontend/design-layer.md)는 그런 패키지에 *무엇이* 들어가고 무엇이
+들어가지 않는지를 설명합니다. 이 페이지는 그것을 전달하는 메커니즘입니다.
 
-## Artifact 선언
+## 아티팩트 선언
 
-producer는 일반 `fs.directory`를 선언하고 format을 표시합니다.
+생산자는 일반적인 `fs.directory`를 선언하고 포맷으로 표시합니다:
 
 ```yaml
 # src/_index.yaml
@@ -21,61 +26,81 @@ entries:
   - name: package_fs
     kind: fs.directory
     meta:
-      comment: The npm package consumers materialize at build time.
+      comment: 소비자가 빌드 타임에 구체화하는 npm 패키지.
       artifact:
         format: node-package
     directory: ./package
 ```
 
-marker만으로 directory content가 포함되지는 않습니다. producer manifest의 `embed:` 목록 또는 publish/pack의 `--embed` flag로 `fs.directory` 엔트리를 선택하십시오. 선택하면 엔트리는 packed resource로 변환되고 artifact format을 검증합니다. 형식이 잘못된 선택 artifact는 WAPP 생성 전에 실패합니다.
+그 외에는 달라지는 것이 없습니다. 리소스는 다른 `fs.directory`와 마찬가지로 WAPP에
+임베드됩니다. `wippy.yaml`의 `embed:`에 나열하거나 `wippy publish`와 `wippy pack`에
+`--embed`를 전달하십시오. 임베드되지 않은 디렉터리는 패킹되지도, 검증되지도 않습니다.
+선언된 아티팩트는 **모듈 게시와 애플리케이션 패킹 중에 검증되므로**, 잘못된 아티팩트는
+소비자 쪽이 아니라 게시 시점에 실패합니다.
 
-## 형식
+## 포맷
 
-format adapter는 directory 검증 방식, identity, 출력 위치를 결정합니다. Wippy에는 다음 built-in format이 있습니다.
+포맷 어댑터는 디렉터리를 어떻게 검증할지, 어떤 신원을 갖는지, 어디에 놓일지를
+결정합니다. Wippy는 하나를 기본 제공합니다:
 
-| 형식 | 하위 트리 소유 | 검증 |
+| 포맷 | 소유 하위 트리 | 검증 대상 |
 |---|---|---|
 | `node-package` | `npm/` | `package.json` |
 
-`node-package`에는 `name`과 semantic `version`이 필요하며 **`preinstall`, `install`, `postinstall`, `prepare` lifecycle script를 거부합니다.** materialize된 package는 install 시 어떤 것도 실행할 수 없습니다. materialization root 아래 `npm/<package name>`에 기록합니다.
+`node-package`는 `name`과 시맨틱 `version`을 요구하며, **`preinstall`, `install`,
+`postinstall`, `prepare` 라이프사이클 스크립트를 거부합니다**. 구체화된 패키지는
+설치 시 어떤 것도 실행해서는 안 됩니다. 출력은 구체화 루트 아래
+`npm/<package name>`에 씁니다.
 
-작업을 수행하는 binary에 format이 등록되어 있어야 합니다. host는 format을 추가로 등록할 수 있으며 중복 이름과 겹치는 root는 거부됩니다.
+포맷은 작업을 수행하는 바이너리에 등록되어 있어야 합니다. 호스트는 추가 포맷을
+등록할 수 있으며, 이름 중복과 하위 트리 겹침은 거부됩니다.
 
 ## 구체화
 
-materialize된 출력은 다음 작업 중 자동으로 reconcile됩니다.
+대부분의 경우 아무것도 실행하지 않습니다. 구체화된 출력은 다음 과정에서 자동으로
+조정됩니다:
 
-- 전체 및 targeted `wippy install`, `wippy update`
-- cold boot
-- Hub 기반 dynamic install, update, uninstall
+- 전체 및 대상 지정 `wippy install`과 `wippy update`
+- 콜드 부트
+- Hub 기반 동적 설치, 업데이트, 제거
 
-전체 install, update, cold boot, runtime dependency reconciliation은 *exact*하므로 stale output을 prune합니다. **targeted** install은 선택된 모듈만 overlay하고 선택하지 않은 모듈의 output은 보존합니다.
+전체 설치, 업데이트, 콜드 부트, 런타임 의존성 조정은 *정확합니다*. 오래된 출력은
+정리됩니다. **대상 지정** 설치는 선택된 모듈만 덮어쓰며, 선택하지 않은 모듈에
+속하는 출력은 보존합니다.
 
-local module replacement도 packed resource와 같은 validation 및 materialization lifecycle을 거치므로 replaced module의 artifact는 published artifact와 같은 방식으로 동작합니다.
+로컬 모듈 대체(replacement)도 패킹된 리소스와 동일한 검증 및 구체화 라이프사이클을
+거치므로, 대체된 모듈의 아티팩트는 게시된 것과 똑같이 동작합니다.
 
-### 명시적 materialization
+### 명시적으로 구체화하기
 
-런타임이 관여하기 전에 artifact가 필요한 build step에서는 CLI를 직접 사용할 수 있습니다.
+런타임이 개입하기 전에 아티팩트가 필요한 빌드 단계를 위해 CLI가 이를 직접
+노출합니다:
 
 ```bash
 wippy artifacts materialize <pack.wapp> <namespace:name> [--root <directory>]
 ```
 
-`--root` 기본값은 `.wippy`입니다. resource는 `meta.artifact.format`을 선언해야 하고 해당 format이 이 CLI에 등록되어 있어야 합니다.
+`--root`의 기본값은 `.wippy`입니다. 리소스는 `meta.artifact.format`을 선언해야
+하고, 그 포맷은 이 CLI에 등록되어 있어야 합니다.
 
-이 command는 모듈 dependency를 resolve하지 않고 `wippy.lock`을 변경하지 않으며 package manager를 호출하거나 runtime composition에 참여하지 않습니다. WAPP 하나에서 artifact 하나를 검증해 disk에 기록합니다.
+이 명령이 의도적으로 **하지 않는** 일을 분명히 해 두겠습니다. 모듈 의존성을 해석하지
+않고, `wippy.lock`을 변경하지 않으며, 패키지 매니저를 호출하지 않고, 런타임 구성에
+참여하지 않습니다. 하나의 WAPP에서 하나의 아티팩트를 검증해 디스크에 쓸 뿐입니다.
 
-### 출력 위치
+### 출력이 놓이는 위치
 
-`artifact.materialization_root`는 애플리케이션이 소유하는 output root를 설정합니다. 기본값은 dependency vendor directory의 parent입니다. 각 format은 그 아래 겹치지 않는 subtree를 소유하므로 `node-package` output은 항상 `<root>/npm/` 아래에 있습니다.
+`artifact.materialization_root`는 애플리케이션이 소유하는 출력 루트를 구성합니다.
+기본값은 의존성 vendor 디렉터리의 상위입니다. 각 포맷은 그 아래 겹치지 않는 하위
+트리를 소유하므로, `node-package` 출력은 항상 `<root>/npm/` 아래에 있습니다.
 
-materialization은 transactional합니다. content를 검증하고 staging하며 process lock 아래에서 managed root를 atomic하게 교체합니다. 실패하면 주변 registry transaction과 함께 rollback되고 중단된 swap은 다음 실행에서 복구됩니다.
+구체화는 트랜잭션적입니다. 콘텐츠가 검증되고 스테이징되며, 관리되는 루트는 프로세스
+락 아래에서 원자적으로 교체되고, 실패하면 주변 레지스트리 트랜잭션과 함께 롤백되며,
+중단된 교체는 다음 실행에서 복구됩니다.
 
-## 통합 예제: 공유 frontend package
+## 실습 예제: 공유 프론트엔드 패키지
 
-이 절의 `kickside/ui-kit` 이름, Make target, 환경 변수, repository path는 하나의 통합 pattern을 예시합니다. Wippy가 제공하는 command나 helper script가 아니므로 artifact와 build system을 소유한 producer에 맞게 조정하십시오.
-
-producer module은 runtime resource를 serve하지 않고 package를 publish할 수 있습니다.
+패키지를 게시하는 것이 유일한 임무인 생산자 모듈입니다. 런타임에는 아무것도
+서빙하지 않습니다:
 
 ```yaml
 # platform/ui-kit/src/_index.yaml
@@ -91,14 +116,15 @@ entries:
     directory: ./package
 ```
 
-consumer는 dependency를 install하기 전에 자신의 tree에 materialize합니다.
+소비자는 의존성을 설치하기 전에 이를 자신의 트리로 구체화합니다:
 
 ```bash
 wippy artifacts materialize kickside-ui-kit-1.5.0.wapp \
   kickside.ui_kit:package_fs --root ./.wippy
 ```
 
-이 command는 `./.wippy/npm/@kickside/ui-kit`을 기록합니다. consumer는 일반 workspaces glob으로 이를 가져오며 이후 resolution은 평범한 node resolution입니다.
+이는 `./.wippy/npm/@kickside/ui-kit`를 씁니다. 소비자는 평범한 workspaces glob으로
+이를 집어 들며, 그 이후로는 순수한 node 해석이 이루어집니다:
 
 ```json
 {
@@ -110,33 +136,28 @@ wippy artifacts materialize kickside-ui-kit-1.5.0.wapp \
 npm install
 ```
 
-이 구성에는 두 가지 중요한 속성이 있습니다.
+이 형태에서 따라 할 만한 두 가지가 있습니다:
 
-- **package는 더 큰 모듈 안의 directory가 아니라 자체 모듈입니다.** artifact는 자체 `package.json` version을 가지며, 관련 없는 이유로 변경되는 모듈에 묶으면 어느 한쪽이 바뀔 때마다 다른 쪽도 release해야 합니다.
-- **consumer는 일반 dependency로 resolve합니다.** materialize 이후 Wippy 전용 import path가 없으므로 같은 source를 monorepo 안과 밖에서 build할 수 있습니다.
+- **패키지는 더 큰 모듈 안의 디렉터리가 아니라 그 자체로 하나의 모듈입니다.**
+  아티팩트는 자체 `package.json` 버전을 갖는데, 무관한 이유로 바뀌는 모듈에 이를
+  묶어 두면 한쪽이 움직일 때마다 다른 쪽의 릴리스가 강제됩니다.
+- **소비자는 이를 평범한 의존성으로 해석합니다.** 일단 구체화되면 Wippy 고유의
+  import 경로가 없으며, 덕분에 동일한 소스가 모노레포 안팎에서 똑같이 빌드됩니다.
 
-## 엔드투엔드 워크플로
+## 처음부터 끝까지: 작성, 개발 루프, CI
 
-### Producer 작성
+### 생산자 작성
 
-package artifact에서는 directory 자체가 deliverable이 될 수 있습니다. CSS vocabulary package는 file과 manifest로 구성됩니다.
+패키지 아티팩트에는 보통 **빌드할 것이 없습니다**. 디렉터리 자체가 산출물입니다.
+CSS 어휘 패키지는 파일 몇 개와 매니페스트가 전부입니다:
 
 ```text
 platform/ui-kit/
-├── wippy.yaml           # selects package_fs for embedding
-├── src/_index.yaml      # declares package_fs as the artifact
-└── package/             # the directory that becomes the npm package
+├── src/_index.yaml      # package_fs를 아티팩트로 선언
+└── package/             # npm 패키지가 되는 디렉터리
     ├── package.json
     ├── kx-card.css
     └── kx-state.css
-```
-
-publish, local pack, CI가 같은 resource set을 사용하도록 producer manifest에 embed selection을 유지하십시오.
-
-```yaml
-# platform/ui-kit/wippy.yaml
-embed:
-  - package_fs
 ```
 
 ```json
@@ -153,39 +174,48 @@ embed:
 }
 ```
 
-CSS-only package에서는 `sideEffects`가 중요합니다. 이 설정이 없으면 bundler가 import한 stylesheet를 dead code로 보고 제거할 수 있습니다.
+`sideEffects`는 CSS 전용 패키지에 중요합니다. 이것이 없으면 번들러가 import된
+스타일시트를 죽은 코드로 취급해 제거해도 무방합니다.
 
-**package version은 module version과 같아야 합니다.** `wippy publish`는 이를 검증하고 불일치를 거부하므로 둘을 함께 bump하십시오. 공유 package에 자체 모듈을 제공해야 하는 이유이기도 합니다. 더 큰 모듈 안에 넣으면 host module의 관련 없는 변경이 package release를 강제하고 그 반대도 마찬가지입니다.
+**패키지 버전은 모듈 버전과 같아야 합니다.** `wippy publish`가 이를 검증하고
+불일치를 거부하므로 둘을 함께 올리십시오. 이것이 공유 패키지를 더 큰 모듈 안에
+중첩하지 않고 *자체* 모듈로 두어야 하는 이유이기도 합니다. 그렇지 않으면 호스트
+모듈의 무관한 변경 하나하나가 패키지 릴리스를 강제하고, 그 반대도 마찬가지입니다.
 
 ### 게시
 
 ```bash
-# validate without publishing
-wippy publish --dry-run --version 1.5.0
+# 게시하지 않고 검증
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
-# publish
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+# 게시
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
-producer manifest가 `package_fs`를 embedding 대상으로 선택하므로 publish 중 artifact를 포함하고 검증합니다. format 규칙에 맞지 않는 `package.json`은 consumer build가 아니라 여기에서 거부됩니다.
+선언된 아티팩트는 게시 과정의 일부로 검증되므로, 포맷 규칙을 통과하지 못하는
+package.json은 소비자의 빌드가 아니라 여기서 거부됩니다.
 
-### 개발 loop
+### 개발 루프
 
-개발 중에는 producer를 로컬로 pack하고 consumer materialization step이 그 file을 가리키게 합니다.
+편집할 때마다 게시하는 것은 개발 루프가 아닙니다. 생산자를 로컬에서 패킹하고
+소비자의 구체화 단계가 그 파일을 가리키게 하십시오:
 
 ```bash
-# from the producer module
-wippy pack /tmp/ui-kit-dev.wapp
+# 생산자 모듈에서
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
-# consumers materialize from the local pack rather than the published one
+# 소비자는 게시된 팩 대신 로컬 팩에서 구체화
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
 ```
 
-개발과 CI의 유일한 차이를 pack-file override로 유지하십시오. 환경 변수로 local pack을 선택하면서 downstream materialization과 build step은 바꾸지 않을 수 있습니다.
+이 오버라이드를 개발 경로와 CI 사이의 *유일한* 차이로 유지하십시오. 팩 파일을
+선택하는 환경 변수 하나만 다르고 그 이후는 전부 동일해야 합니다. CI와 다르게
+구체화하는 개발 루프는 CI를 예측하지 못하게 됩니다.
 
-### Build 및 CI 통합
+### make와 CI에 연결하기
 
-materialization을 **consumer build의 prerequisite**로 만드십시오.
+구체화 단계를 사람이 기억해서 실행하는 것이 아니라 **소비자 빌드의 선행 조건**으로
+만드십시오:
 
 ```make
 UI_KIT_WAPP ?=
@@ -195,16 +225,27 @@ build:
 	cd $(call fe_dir,$(MOD)) && npm run build
 ```
 
-그러면 CI도 별도 artifact step 없이 같은 `make build`를 실행할 수 있습니다. `UI_KIT_WAPP`이 설정되지 않았으므로 fetch-and-materialize 경로는 `build-inputs`에 pin된 published version을 사용합니다. fresh checkout은 stale 또는 누락된 package로 compile할 수 없으며 artifact를 모르는 contributor도 올바른 build를 얻습니다.
+그러면 CI에는 아티팩트 전용 단계가 전혀 필요 없습니다. 동일한 `make build`를
+실행하고, `UI_KIT_WAPP`이 설정되지 않았으므로 `build-inputs`에 고정된 게시 버전에
+대해 가져오기-구체화 경로가 실행됩니다. 새로 체크아웃한 트리가 오래되었거나 없는
+패키지에 대해 컴파일할 수 없고, 아티팩트라는 말을 들어 본 적 없는 기여자도 올바른
+빌드를 얻습니다.
 
-## Consumer 통합 단계
+## 아직 직접 만들어야 하는 것
 
-`wippy artifacts materialize`는 pack 하나의 resource 하나를 처리하므로 consumer build가 다음 네 단계를 조율해야 합니다.
+`wippy artifacts materialize`는 의도적으로 범위가 좁아서, 아티팩트를 소비하는
+빌드는 현재 네 단계를 직접 이어 붙여야 합니다. 어떤 네 단계인지 알아 두면 다시
+찾아낼 필요가 없습니다:
 
-**1. `.wapp` 가져오기.** command는 module reference가 아니라 *pack file path*를 받으며 dependency를 resolve하지 않습니다. 한 가지 방식은 producer를 pin하고 download하는 작은 Wippy project를 사용하는 것입니다.
+**1. `.wapp` 가져오기.** 이 명령은 모듈 참조가 아니라 *팩 파일 경로*를 받으며
+의존성을 해석하지 않으므로, 무언가가 먼저 생산자를 가져와야 합니다. 실용적인 패턴은
+고정하고 내려받는 것만이 임무인 작은 Wippy 프로젝트입니다:
 
 ```yaml
-# build-inputs/wippy.lock — a project that exists only to fetch
+# build-inputs/wippy.lock — 가져오기 위해서만 존재하는 프로젝트
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0
@@ -216,15 +257,19 @@ modules:
 wapp=$(ls build-inputs/.wippy/vendor/kickside/ui-kit-*.wapp | grep -v sha256 | sort | tail -1)
 ```
 
-application lock이 아니라 여기에 pin하면 build-time input을 runtime dependency graph 밖에 둘 수 있습니다.
+애플리케이션 락이 아니라 여기서 고정하면 빌드 타임 입력이 런타임 의존성 그래프
+밖에 머무릅니다.
 
-**2. consumer마다 한 번 materialize**하여 package manager가 볼 수 있는 root에 놓습니다.
+**2. 소비자마다 한 번씩 구체화하기.** 소비자의 패키지 매니저가 볼 수 있는 루트로
+구체화합니다:
 
 ```bash
 wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wippy
 ```
 
-**3. consumer의 `package.json` 연결.** materialization은 file을 기록하지만 manifest를 수정하지 않습니다. consumer가 workspace glob과 dependency를 **모두** 선언해야 npm이 package를 link합니다.
+**3. 소비자의 `package.json` 연결하기.** 구체화는 파일을 쓸 뿐 매니페스트를 편집하지
+않습니다. npm은 소비자가 workspace glob과 의존성을 *둘 다* 선언해야 패키지를
+연결합니다:
 
 ```json
 {
@@ -233,11 +278,15 @@ wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wipp
 }
 ```
 
-materialize된 package가 자체 version을 가지므로 version은 `*`입니다. 이 단계를 자동화하고 idempotent하게 만드십시오. manifest wiring이 없으면 build는 누락된 dependency 설정 대신 나중에 stylesheet `ENOENT`를 보고할 수 있습니다.
+구체화된 패키지가 자체 버전을 갖고 있으므로 버전은 `*`입니다. 이 과정을
+스크립트로 만들고 멱등하게 유지하십시오. 연결이 빠져 있으면 빌드는 한참 뒤에
+스타일시트에 대한 맨 `ENOENT`로 실패하는데, 이는 연결 누락이 아니라 파일 누락처럼
+보입니다.
 
-**4. package manager 실행.** `materialize`는 package manager를 호출하지 않으므로 3단계 이후 `npm install`을 실행합니다.
+**4. 패키지 매니저 실행하기.** `materialize`는 패키지 매니저를 호출하지 않으므로,
+3단계 이후 `npm install`은 여러분이 호출해야 합니다.
 
-consumer module을 parameter로 받는 target에서는 다음처럼 결합할 수 있습니다.
+소비 모듈을 매개변수로 받는 타깃 하나에 모두 모으면 다음과 같습니다:
 
 ```make
 ui-kit:
@@ -249,14 +298,18 @@ ui-kit:
 	cd $(DIR) && node ../../scripts/wire-ui-kit.mjs && npm install --no-audit --no-fund
 ```
 
-fresh checkout이 stale 또는 없는 package로 compile하지 않도록 전체 target을 consumer build의 prerequisite로 만드십시오.
+이 타깃 전체를 소비자 빌드의 선행 조건으로 만들어, 새로 체크아웃한 트리가
+오래되었거나 없는 패키지에 대해 컴파일할 수 없게 하십시오.
 
 ## 범위 밖
 
-artifact는 의도적으로 두 번째 resolver, package registry, archive format, lock schema, Hub API, module manifest를 도입하지 않습니다. build-only dependency semantics, redistribution policy, host ABI validation은 별도 관심사이며 여기에서 해결하지 않습니다.
+아티팩트는 의도적으로 두 번째 리졸버, 패키지 레지스트리, 아카이브 포맷, 락 스키마,
+Hub API, 모듈 매니페스트를 도입하지 않습니다. 빌드 전용 의존성 의미론, 재배포 정책,
+호스트 ABI 검증은 별개의 관심사이며 여기서 해결하지 않습니다.
 
-## 관련 문서
+## 관련 항목
 
-- [Dependency 관리](./dependency-management.md) — 모듈 및 local replacement resolve
-- [Publishing](./publishing.md) — published module의 내용
-- [Design Layer](../frontend/design-layer.md) — 공유 frontend vocabulary가 package로 제공되는 이유
+- [의존성 관리](./dependency-management.md) — 모듈 해석과 로컬 대체
+- [게시](./publishing.md) — 게시된 모듈에 담기는 것
+- [디자인 레이어](../frontend/design-layer.md) — 공유 프론트엔드 어휘가 애초에
+  패키지로 전달되는 이유

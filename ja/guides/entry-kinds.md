@@ -101,7 +101,8 @@ resp:write_json({users = get_users()})
 | `db.sql.sqlite` | SQLiteデータベース |
 | `db.sql.postgres` | PostgreSQLデータベース |
 | `db.sql.mysql` | MySQLデータベース |
-| `db.cdc.postgres` | Postgres の Change Data Capture ソース（[CDC](../system/cdc.md)を参照） |
+| `db.cdc.postgres` | Postgres変更データキャプチャソース（[CDC](system/cdc.md)を参照）|
+| `db.cdc.sqlite` | SQLite変更データキャプチャソース（[CDC](system/cdc.md)を参照）|
 
 ### SQLite
 
@@ -250,9 +251,9 @@ local queue = require("queue")
 -- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
--- In a consumer handler: the message body is the handler's argument
+-- コンシューマハンドラ内: メッセージ本体がハンドラの引数になります
 local function main(data)
-    -- access delivery metadata via the current message
+    -- 現在のメッセージから配信メタデータにアクセスします
     local msg = queue.message()
     local id = msg:id()
     local priority = msg:header("priority")
@@ -261,7 +262,7 @@ end
 ```
 
 <note>
-コンシューマの <code>func</code> はメッセージごとに 1 回、メッセージ本文を引数として呼び出されます。ハンドラ内で <code>queue.message()</code> を使うと、配信の <code>id()</code>、<code>header()</code>/<code>headers()</code>、<code>ack()</code>/<code>nack()</code> にアクセスできます。
+コンシューマの<code>func</code>は、メッセージ本体を引数として各メッセージにつき1回呼び出されます。配信の<code>id()</code>、<code>header()</code>/<code>headers()</code>、<code>ack()</code>/<code>nack()</code>にはハンドラ内で<code>queue.message()</code>を使用します。
 </note>
 
 ## プロセス管理
@@ -271,7 +272,7 @@ end
 | `process.host` | プロセス実行ホスト |
 | `process.service` | 監督されたプロセス（process.luaをラップ） |
 | `terminal.host` | ターミナル/CLIホスト |
-| `pg.scope` | プロセスグループのスコープ（[プロセスグループ](../system/process-groups.md)を参照） |
+| `pg.scope` | プロセスグループのスコープ（[プロセスグループ](system/process-groups.md)を参照） |
 
 ```yaml
 # Process host (where processes run)
@@ -312,6 +313,39 @@ end
 </tip>
 
 稼働中の`process.host`エントリを更新すると、`host.workers`はその場で再スケールされます — 実行中のプロセス、PID、キューは保持されます。`host.queue_size`、`host.local_queue_size`、`lifecycle`は構築時に固定されており、これらを変更するライブ更新は拒否されます。ワーカーがアフィニティ管理されているホストでのワーカー数の変更も同様に拒否されます。
+
+### プロセスのセキュリティ
+
+`process.lua`と`process.lua.bc`エントリは、トップレベルの`security:`ブロックを受け付けます。これはエントリの一部であるため、`process.host`と`terminal.host`のいずれにおいても、そのプロセスのすべてのスポーンに適用されます:
+
+```yaml
+- name: worker_process
+  kind: process.lua
+  source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: system.worker
+      meta:
+        tenant: acme
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:background_jobs
+```
+
+| フィールド | 説明 |
+|------------|------|
+| `actor.id` | プロセスが実行時に名乗るアクターID。継承したアクターを置き換える |
+| `actor.meta` | ポリシーが評価するアクター属性 |
+| `policies` | スコープにマージされるポリシーのレジストリID（`namespace:name`）|
+| `groups` | ポリシーがスコープにマージされるポリシーグループのレジストリID |
+
+解決はプロセスの起動時に行われ、アトミックです。列挙されたポリシーまたはグループのいずれかが解決できない場合、スポーンは失敗し、部分的なコンテキストがインストールされることはありません。`actor`を省略するとスポーン元のアクターを継承し、`policies`と`groups`の両方を省略するとスポーン元のスコープを継承します。`function.lua`、`function.lua.bc`、`process.lua`、`process.lua.bc`のすべてがこのブロックを受け付けます。
+
+コマンドエントリはさらに`meta.command.security`を宣言できます。これはエントリがCLIコマンドとして起動された場合にのみ適用されます — [コマンドのセキュリティ](guides/cli.md#command-security)を参照してください。通常のスポーンには影響しません。
+
+[セキュリティ](system/security.md)を参照してください。
 
 ## Temporal（ワークフロー）
 
@@ -366,7 +400,7 @@ local cloudstorage = require("cloudstorage")
 local storage, err = cloudstorage.get("app:uploads")
 
 storage:upload_object("files/doc.pdf", file_content)
-local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- seconds, default 3600
+local url = storage:presigned_get_url("files/doc.pdf", {expiration = 3600})  -- 秒単位、デフォルトは3600
 ```
 
 <tip>
@@ -443,7 +477,7 @@ env.set("CACHE_TTL", "3600")
 ```
 
 <note>
-ルーターはストレージを順番に試行します。読み取りは最初のマッチが勝ちます。書き込みは最初の書き込み可能なストレージに送られます。
+ルーターはストレージを順番に試行します。読み取りは最初のマッチが勝ちます。書き込みはリスト内の最初のストレージに送られます。
 </note>
 
 ## テンプレート
@@ -511,7 +545,11 @@ local html = set:render("email", {
     resources: "*"
     effect: allow
     expression: 'actor.id == meta.owner_id || actor.meta.role == "admin"'
+  groups:
+    - operators
 ```
+
+ポリシーグループはポリシー自身によって形成されます。ポリシーが`groups:`配下に所属するグループIDを列挙し、グループとはそれを指名しているポリシーの集合です。グループ専用のエントリ種別はありません。グループIDはレジストリIDです。名前だけを書いた場合は宣言元ポリシーの名前空間で解決されるため、名前空間`app.security`で宣言された上記の`operators`は`app.security:operators`になります。エントリはグループを完全な`namespace:name`で参照します。
 
 **Lua API:** [セキュリティモジュール](lua/security/security.md)を参照
 
@@ -528,7 +566,7 @@ local actor = security.actor()
 ```
 
 <warning>
-ポリシーの順序でアクセスが決まるわけではありません。スコープはポリシーの判定を組み合わせ、マッチする <code>deny</code> はマッチする <code>allow</code> より優先され、ただちに評価を停止する場合があります。どのポリシーにもマッチしなければ、許可ではなく未定義の結果になります。
+スコープ内のすべてのポリシーが評価されます。マッチしたいずれかのポリシーからの<code>deny</code>は、あらゆる<code>allow</code>に優先します。denyがない場合、マッチした<code>allow</code>がアクセスを許可します。順序は関係ありません。
 </warning>
 
 ## コントラクト（依存性注入）
@@ -595,7 +633,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 **Lua API:** [コントラクトモジュール](lua/core/contract.md)を参照
 
 <tip>
-1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます（<code>context_required</code>フィールドが設定されていない場合のみ動作）。
+1つのバインディングを<code>default: true</code>としてマークすると、バインディングIDを指定せずにコントラクトを開くときに使用されます。コントラクトが持てるデフォルトバインディングは1つだけです。
 </tip>
 
 ## 実行
@@ -632,13 +670,26 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `process.wasm` | WebAssemblyプロセス |
 
 ```yaml
+# WATテキストはインラインのソース
+- name: sum_wat
+  kind: function.wat
+  source: file://sum.wat
+  method: sum
+  transport: payload   # または wasi-http
+
+# バイナリWASMはファイルシステムエントリからロードされ、ハッシュで検証される
 - name: sum
   kind: function.wasm
-  source: file://sum.wasm
-  transport: payload   # or wasi-http
+  fs: app:modules
+  path: sum.wasm
+  hash: sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+  method: sum
+  transport: payload
 ```
 
-[WASM の概要](wasm/overview.md)を参照してください。
+`function.wasm`と`process.wasm`は`fs`、`path`、`hash`を取ります。バイナリエントリに`source`フィールドはありません。`source`は`function.wat`専用です。`hash`は必須で、`sha256:<hex>`形式でなければなりません。バイト列が一致しない場合、モジュールは拒否されます。
+
+[WASM概要](wasm/overview.md)を参照。
 
 ## ネットワーク
 
@@ -655,12 +706,12 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 | 種別 | 説明 |
 |------|-------------|
-| `registry.entry` | エントリ記述子（内部） |
+| `registry.entry` | 背後にサービスを持たない純粋なデータエントリ（アプリ固有の設定）|
 | `ns.definition` | 名前空間定義 |
 | `ns.requirement` | 名前空間要件宣言 |
 | `ns.dependency` | 名前空間依存関係 |
 
-`registry.entry` は内部記述子です。作成者は `_index.yaml` 内で `ns.definition`、`ns.requirement`、`ns.dependency` エントリを直接定義します。ファイルの `version` と `namespace` フィールドからこれらが生成されるわけではありません。
+`ns.*`種別は他のエントリと同様に記述します。コンポーネントは`ns.definition`と`ns.requirement`を宣言し、ホストは`ns.dependency`を宣言します。[コンポーネントの構築](guides/components.md)を参照してください。
 
 ## ライフサイクル設定
 
@@ -682,7 +733,7 @@ lifecycle:
 ```
 
 <note>
-サービスの依存関係は <code>requires</code> で宣言します。スーパーバイザは依存先を先に起動し、実行中になった時点で準備完了とみなします。<code>depends_on</code> は従来の表記として引き続き使用できますが、新しいマニフェストでは <code>requires</code> を使用してください。
+エントリが正しい順序で起動することを保証するには<code>depends_on</code>を使用します。スーパーバイザは、各依存関係が自身の起動を完了した後にのみ、依存側のエントリを起動します。
 </note>
 
 ## エントリ参照形式

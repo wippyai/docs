@@ -1,35 +1,31 @@
 ---
 title: "Build- und Abhängigkeitsvertrag"
-description: "Kanonische Ausgabebefehle, Windows-Wrapper, Snapshots der Web-Host-Import-Map und Externals."
+description: "Kanonische Ausgabekommandos, Windows-Wrapper, Import-Map-Snapshots des Web Hosts und Externals."
 ---
 
 # Build- und Abhängigkeitsvertrag
 
-Dies ist ein Referenzvertrag für vorhandene Repositories. Die folgenden
-Makefile-, PowerShell-, Batch- und Vite-Blöcke sind gezielte Fragmente, kein
-eigenständiges Projektscaffold.
+## Kanonischer Build-Vertrag für Wippy-Projekte
 
-## Kanonischer Produktions-Build für Wippy
+In einem Wippy-Anwendungs- oder Modul-Repository, das von `wippy.exe` gestartet
+wird, rufen Sie das Make-Target des Repositories auf. Führen Sie keine
+Paketmanager- oder Vite-Build-Kommandos direkt aus.
 
-Ein Produktionsartefakt in einem durch `wippy.exe` gestarteten Wippy-Anwendungs-
-oder Modulrepository wird über das Make-Ziel des Repositories gebaut. Lokale
-Watch-Befehle wie `npm run dev` bleiben gültig, wenn das Repository sie
-dokumentiert, ersetzen aber nicht den Deployment-Build.
-
-Das Makefile-Rezept jedes Produktions-Frontend-Ziels verwendet:
+Das Makefile-Rezept für jedes Produktions-Frontend-Target verwendet:
 
 ```text
 npm run build -- --outDir <target> --emptyOutDir
 ```
 
 Der Deployment-Build besitzt `<target>`. `vite.config.ts` darf kein
-Deployment-Ausgabeverzeichnis fest eintragen.
+Deployment-Ausgabeverzeichnis fest verdrahten.
 
-Plattform-/Paketquell-Repositories, die nicht von `wippy.exe` gestartet werden,
-beispielsweise der Web-Host-Quellcode, verwenden exakt die in ihrer
-`package.json` deklarierten Skripte und Argumente. Das Wippy-Modulrezept
-`--outDir <target> --emptyOutDir` gilt dort nur, wenn das eigene Skript es
-ausdrücklich dokumentiert.
+Plattform- bzw. Package-Quell-Repositories, die nicht von `wippy.exe` gestartet
+werden, etwa die Web-Host-Quellen, verwenden exakt die Skripte und Argumente,
+die die `package.json` des jeweiligen Repositories deklariert. Das
+Wippy-Modul-Rezept `--outDir <target> --emptyOutDir` gilt nicht für
+Package-Quell-Repositories, sofern deren eigenes deklariertes Skript diese
+Argumente nicht ausdrücklich dokumentiert.
 
 ### Makefile
 
@@ -43,9 +39,9 @@ frontend-example:
 
 ### make.ps1
 
-Unter Windows wird das passende Ziel über `make.bat` aufgerufen. `make.ps1`
-implementiert das Makefile-Ziel für Windows und ist keine eigene öffentliche
-Buildschnittstelle.
+Windows-Benutzer rufen das passende Target über `make.bat` auf. `make.ps1`
+implementiert das Makefile-Target für Windows; es ist keine separate
+öffentliche Build-Schnittstelle.
 
 ```powershell
 param(
@@ -75,45 +71,31 @@ finally {
 
 ### make.bat
 
-`make.bat` delegiert lediglich an PowerShell, leitet Argumente weiter und gibt
-den Exitcode zurück. Für das Beispiel lautet der Windows-Aufruf
-`make.bat frontend-example`.
+`make.bat` delegiert lediglich an sein PowerShell-Gegenstück, reicht Argumente weiter und gibt dessen Exit-Code zurück.
+Für das Beispiel-Target führen Windows-Benutzer `make.bat frontend-example` aus.
 
 ```bat
 @powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0make.ps1" %*
 @exit /b %ERRORLEVEL%
 ```
 
-## Algorithmus für den Import-Map-Snapshot :id=importmap-snapshot-algorithmus
+## Algorithmus für den Import-Map-Snapshot
 
-Der Zielrelease des Web Hosts definiert die vom Host bereitgestellten Module.
+Das Ziel-Release des Web Hosts definiert die vom Host bereitgestellten Module.
 
-1. Ziel-Release-Tag des Web Hosts bestimmen.
-2. `https://web-host.wippy.ai/<release-tag>/import-map.json` einmal während der Entwicklung abrufen.
-3. Release-Tag, exakt aufgelöste URL, vollständiges `imports`-Objekt und kleingeschriebenen SHA-256 der exakten Payloadbytes speichern.
-4. Jeden Schlüssel dieses `imports`-Objekts externalisieren.
-5. Denselben vollständigen Snapshot im Host-less-Modus verwenden.
-6. Bei geändertem Hostrelease oder möglicherweise neu vom Host bereitgestellter Abhängigkeit erneut abrufen.
-7. Buildausgabe untersuchen und bare Imports ablehnen, die im Snapshot fehlen.
+1. Lösen Sie das Release-Tag des Ziel-Web-Hosts auf.
+2. Holen Sie
+   `https://web-host.wippy.ai/<release-tag>/import-map.json` einmalig während
+   der Entwicklung.
+3. Speichern Sie das Release-Tag, die exakt aufgelöste URL, das vollständige
+   `imports`-Objekt und den kleingeschriebenen SHA-256 der exakt geholten
+   Import-Map-Payload-Bytes.
+4. Externalisieren Sie jeden Key in diesem `imports`-Objekt.
+5. Verwenden Sie denselben vollständigen Snapshot für den Host-less-Modus.
+6. Holen Sie ihn erneut, wenn sich das Host-Release ändert oder wenn eine neu hinzugefügte Abhängigkeit nun vom Host bereitgestellt sein könnte.
+7. Prüfen Sie die Build-Ausgabe und weisen Sie Bare Imports zurück, die im Snapshot fehlen.
 
-Pflegen Sie keine Paketliste von Hand und kopieren Sie nicht die gesamte
-External-Menge in Peer Dependencies.
-
-Bei Web-Component-Einstiegsbuilds muss der Registrierungseffekt des Einstiegsmoduls erhalten bleiben:
-
-```ts
-export default {
-  build: {
-    rollupOptions: {
-      preserveEntrySignatures: 'strict',
-    },
-  },
-}
-```
-
-Mit `false` kann `define(import.meta.url, Component)` aus dem Entry-Chunk
-verschoben werden, sodass der Hostimport mit `?declare-tag=` das Element nicht
-registriert.
+Pflegen Sie keine handgeschriebene Paketliste. Spiegeln Sie nicht die vollständige Externals-Menge in die Peer Dependencies.
 
 ```ts
 import hostImportMap from './wippy-import-map.json'
@@ -127,15 +109,8 @@ export default {
 }
 ```
 
-Der Snapshot muss Herkunft und Hash enthalten. Eine fehlende Abhängigkeit wird
-gebündelt, sofern keine andere dokumentierte Buildregel gilt.
+Der Snapshot muss seine Herkunft und seinen Hash enthalten. Eine Abhängigkeit, die im Snapshot fehlt, wird gebundelt, sofern keine andere dokumentierte Build-Regel greift.
 
 Für Web Host 1.0.56 ist die kanonische URL
 `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`. Ersetzen Sie
 sie nicht durch eine lokale Anwendungs-URL, `latest` oder eine rekonstruierte Liste.
-
-Dieser Hostrelease gehört zur öffentlichen Paketfamilie `@wippy-fe/*` 0.0.56.
-`@wippy-fe/vite-plugin` 0.0.56 unterstützt Vite 5, 6 und 7. Die Beispiele
-verwenden Vite 7 mit Node 22.12 oder neuer; Nutzer von Vite 5/6 müssen dessen
-Node-Anforderungen beachten. Das Web-Host-Quellrepository verlangt separat
-Node 22+ und nutzt Vite 7.

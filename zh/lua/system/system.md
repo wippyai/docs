@@ -1,6 +1,6 @@
 ---
 title: "系统"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='permissions'/"
+description: "查询运行时系统信息，包括内存使用、垃圾回收统计、CPU 详情和进程元数据。"
 ---
 
 # 系统
@@ -47,6 +47,40 @@ local mods, err = system.modules()
 | `name` | string | 模块名称 |
 | `description` | string | 模块描述 |
 | `class` | string[] | 模块分类标签 |
+
+## 部署来源
+
+`system.source` 子表读取规范化的部署基线：即应用组装所依据的来源产生的 entry 集合，尚未应用任何 registry 历史。
+
+```lua
+local loaded, err = system.source.load()
+```
+
+**返回：** `table, error`
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `owners` | string[] | 对基线 entry 具有权威性的来源所有者 |
+| `entries` | table[] | 包含 `id`、`kind`、`meta`、`data` 的基线 entry |
+
+`owners` 排序时应用所有者在前，其余所有者按字母顺序排列。应用所有者是字符串 `"application"`。
+
+```lua
+local loaded, err = system.source.load()
+if err then return nil, err end
+
+for _, owner in ipairs(loaded.owners) do
+    print(owner)
+end
+
+for _, entry in ipairs(loaded.entries) do
+    print(entry.id, entry.kind)
+end
+```
+
+加载取自同一个稳定的来源世代，因此 entry 和所有者始终描述同一份基线。每个来源背后的文件系统路径是运行时私有的，不会对外暴露；加载失败会报告通用的内部错误，而不会泄露底层路径。
+
+**权限：** 对 `sources` 的 `system.read`
 
 ## 内存统计
 
@@ -307,7 +341,7 @@ local states, err = system.supervisor.states()
 
 ## 集群原语
 
-`system.node`、`system.cluster`、`system.raft` 和 `system.lock` 子表暴露集群层。[启用集群](guides/cluster.md)时最为有用；在独立节点上会优雅降级——`system.raft.*` 报告"raft not available"，`system.cluster` 仅报告本地节点，`system.lock` 需要集群提供的全局注册表。
+`system.node`、`system.cluster`、`system.raft` 和 `system.lock` 子表暴露集群层。[启用集群](guides/cluster.md)时最为有用；在独立节点上会优雅降级——`system.raft.*` 报告"raft not available"，`system.cluster` 仅报告本地节点，`system.lock` 需要集群提供的 Raft 支持的 KV 存储。
 
 所有读取调用都是本地且廉价的：报告此节点已提交状态的视图，从不阻塞网络。
 
@@ -382,7 +416,7 @@ local stats, err = system.raft.stats()           -- 原始统计映射（string 
 
 ### 分布式锁
 
-`system.lock` 提供集群范围的互斥锁。锁是调用进程拥有的全局唯一名称。基于 Strong 名称作用域构建，因此整个集群最多只能有一个持有者，且持有者进程退出或其节点离开时锁自动释放——不会产生卡死的锁需要清理。
+`system.lock` 提供集群范围的互斥锁。锁是调用进程拥有的全局唯一名称。基于 Raft 复制的系统 KV 存储构建，因此整个集群最多只能有一个持有者，且持有者进程退出或其节点离开时锁自动释放——不会产生卡死的锁需要清理。
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -426,6 +460,7 @@ end
 | `system.read` | `cwd` | 读取工作目录 |
 | `system.read` | `hosts` | 列出主机 / 主机进程 |
 | `system.read` | `modules` | 列出已加载模块 |
+| `system.read` | `sources` | 加载部署来源基线 |
 | `system.read` | `supervisor` | 读取监督器状态 |
 | `system.read` | `node` | 读取此节点的标识 |
 | `system.read` | `cluster` | 读取集群成员资格和 leader |
@@ -438,7 +473,8 @@ end
 
 | 条件 | 类型 | 可重试 |
 |------|------|--------|
-| 权限被拒绝 | `errors.INVALID` | 否 |
+| 权限被拒绝（`system.source.load`、`system.lock.*`） | `errors.PERMISSION_DENIED` | 否 |
+| 权限被拒绝（所有其他调用） | `errors.INVALID` | 否 |
 | 参数无效 | `errors.INVALID` | 否 |
 | 缺少必需参数 | `errors.INVALID` | 否 |
 | 代码管理器不可用 | `errors.INTERNAL` | 否 |
@@ -447,5 +483,6 @@ end
 | 此节点 Raft 未运行 | `errors.INTERNAL` | 否 |
 | 成员资格不可用 | `errors.INTERNAL` | 否 |
 | 锁已被持有 | `errors.ALREADY_EXISTS` | 否 |
+| 锁服务不可用（此节点无 Raft） | `errors.INTERNAL` | 否 |
 
 错误处理参见[错误处理](lua/core/errors.md)。

@@ -101,7 +101,7 @@ options:
 
 **Стратегии ключа:** `ip`, `header:X-API-Key`, `query:api_key`
 
-Возвращает `429 Too Many Requests` с заголовками: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+Возвращает `429 Too Many Requests` с заголовками: `X-RateLimit-Limit`, `X-RateLimit-Window`.
 
 ---
 
@@ -143,7 +143,7 @@ options:
 
 | Опция | По умолчанию | Описание |
 |-------|--------------|----------|
-| `real_ip.trusted.subnets` | Приватные сети | Доверенные CIDR прокси |
+| `real_ip.trusted.subnets` | Loopback, RFC 1918, link-local, CGNAT и локальные диапазоны IPv6 | Доверенные CIDR прокси |
 | `real_ip.trust_all` | `false` | Доверять всем источникам (небезопасно) |
 
 **Приоритет заголовков:** `True-Client-IP` > `X-Real-IP` > `X-Forwarded-For`
@@ -294,7 +294,7 @@ post_options:
 
 <warning>Pre-match</warning>
 
-Записывает OpenTelemetry spans и метрики для входящих запросов. Регистрируется автоматически, когда OTel включён; иначе работает как no-op.
+Записывает серверные OpenTelemetry spans для входящих запросов. Регистрируется всегда; работает как no-op, когда OTel или его HTTP-инструментация отключены.
 
 ```yaml
 middleware:

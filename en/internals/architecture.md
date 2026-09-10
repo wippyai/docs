@@ -1,6 +1,6 @@
 ---
 title: "Architecture"
-description: "How Wippy boots infrastructure, loads components and entries, schedules work, routes messages, and shuts down."
+description: "Wippy is a layered system built on Go. Components initialize in dependency order, communicate through an event bus, and execute Lua processes via a…"
 ---
 
 # Architecture
@@ -14,7 +14,7 @@ This is an implementation reference. The diagrams and Go types describe runtime 
 | Layer | Components |
 |-------|------------|
 | Application | Lua processes, functions, workflows |
-| Runtime | Lua engine (wippyai/go-lua) and runtime modules |
+| Runtime | Lua engine (wippyai/go-lua), 40+ modules |
 | Services | HTTP, Queue, Storage, Temporal |
 | System | Topology, Factory, Functions, Contracts |
 | Core | Scheduler, Registry, Dispatcher, EventBus, Relay |
@@ -40,9 +40,7 @@ Creates core infrastructure before any components load:
 
 ### Phase 2: Component Loading
 
-The Loader resolves dependencies via topological sort and loads components
-sequentially, level by level. Components within a level are also loaded one at
-a time.
+The Loader resolves dependencies via topological sort and loads components level by level, one component at a time.
 
 Dependency edges determine the levels; package groups such as Core and System
 do not impose a separate global order. Components with no dependency edge may
@@ -124,7 +122,7 @@ sequenceDiagram
 
 ### Common Topics
 
-Events carry separate `System` and `Kind` fields. Built-in systems publish:
+Every event carries a `System` and a `Kind`. The built-in systems publish:
 
 | System | Kind | Purpose |
 |--------|------|---------|
@@ -141,7 +139,6 @@ Versioned storage for entry definitions.
 
 - **Versioned State** - Each mutation creates new version
 - **History** - In-memory history by default; optional SQLite-backed history for a durable audit trail (history_type: sqlite)
-- **Observation** - Watch specific entries for changes
 - **Event-driven** - Publishes events on mutations
 
 ### Entry Lifecycle
@@ -178,14 +175,14 @@ flowchart LR
         Peer --> Inter[Internode]
     end
 
-    Local -.- L[Same-node hosts and processes]
-    Peer -.- P[External receivers, such as Temporal]
+    Local -.- L[This node]
+    Peer -.- P[Registered peer receiver]
     Inter -.- I[Other cluster nodes]
 ```
 
-1. **Local** - Deliver directly between hosts and processes on the same node
-2. **Peer** - Forward to a registered external receiver, such as Temporal
-3. **Internode** - Fall back to network routing for another cluster node
+1. **Local** - Direct delivery within same node
+2. **Peer** - Deliver to a receiver registered for that node ID (an external peer such as a Temporal worker)
+3. **Internode** - Fall back to the cluster internode transport, installed by the cluster component after boot
 
 ### Mailbox
 

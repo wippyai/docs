@@ -1,12 +1,12 @@
 ---
-title: "Almacenamiento en la nube"
-description: "Configure credenciales de AWS y almacenamiento de objetos compatible con S3."
+title: "Almacenamiento en la Nube"
+description: "Almacenamiento de objetos compatible con S3 con URLs prefirmadas, cargas multiparte y lecturas por rango."
 ---
 
 # Almacenamiento en la Nube
 <secondary-label ref="external"/>
 
-Las entradas de almacenamiento en la nube configuran credenciales de AWS y buckets compatibles con S3 usados por la API de almacenamiento de Lua. Esta página es una referencia de configuración; los fragmentos presuponen que ya existen el bucket indicado y las credenciales o la cadena de credenciales del SDK.
+Almacenamiento de objetos compatible con S3 con URLs prefirmadas, cargas multiparte y lecturas por rango.
 
 ## Tipos de Entrada
 
@@ -15,9 +15,7 @@ Las entradas de almacenamiento en la nube configuran credenciales de AWS y bucke
 | `config.aws` | Configuración de credenciales y región AWS |
 | `cloudstorage.s3` | Conexión a bucket S3 |
 
-## Configuración de AWS
-
-Credenciales estáticas registradas mediante el sistema de entorno:
+## Configuración AWS
 
 ```yaml
 - name: aws_config
@@ -27,30 +25,22 @@ Credenciales estáticas registradas mediante el sistema de entorno:
   secret_access_key: ${env:AWS_SECRET_ACCESS_KEY}
 ```
 
-Cadena de credenciales predeterminada del SDK de AWS (por ejemplo, roles IAM o perfiles de instancia):
-
-```yaml
-- name: aws_config
-  kind: config.aws
-  region: ${env:AWS_REGION}
-```
-
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `region` | string | Sí | Región de AWS. Proporciónela mediante `${env:NAME}` cuando cambie por deployment |
-| `access_key_id` | string | No | ID de clave de acceso de AWS (en línea o `${env:NAME}`) |
-| `secret_access_key` | string | No | Clave de acceso secreta de AWS (en línea o `${env:NAME}`) |
+| `region` | string | Sí | Región AWS. Proporciónela mediante `${env:NAME}` cuando difiera por despliegue |
+| `access_key_id` | string | No | ID de la access key de AWS (en línea o `${env:NAME}`) |
+| `secret_access_key` | string | No | Secret access key de AWS (en línea o `${env:NAME}`) |
 
-Los campos de credenciales se resuelven desde el [registro de entorno](./env.md) al decodificarse. Un marcador moderno `${env:NAME}` sin valor predeterminado hace fallar la decodificación cuando falta su variable; por tanto, omita `access_key_id` y `secret_access_key` para usar la cadena de credenciales predeterminada del SDK de AWS. Las credenciales estáticas solo se aplican cuando ambos campos se resuelven a valores no vacíos.
+Las credenciales se resuelven desde el [registro de entorno](system/env.md) en el momento de la decodificación. Tanto `access_key_id` como `secret_access_key` deben resolverse a valores no vacíos para que se apliquen credenciales estáticas; en caso contrario se usa la cadena de credenciales por defecto del SDK de AWS (roles IAM, perfiles de instancia, etc.).
 
 Las solicitudes son firmadas con AWS Signature Version 4 por el SDK de AWS usando las credenciales resueltas. No se requiere configuración de firma.
 
 <note>
-Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) que también consulta el registro de entorno. A diferencia de un marcador moderno sin valor predeterminado, una consulta heredada no registrada o vacía conserva el valor en línea o cero. La forma heredada está <b>obsoleta</b>: migre de forma deliberada y añada valores predeterminados en los marcadores cuando necesite un comportamiento alternativo equivalente.
+Las configuraciones antiguas usan una directiva hermana <code>&lt;field&gt;_env</code> (<code>region_env</code>, <code>access_key_id_env</code>, <code>secret_access_key_env</code>) que se resuelve de la misma manera. Esta forma está <b>obsoleta</b> — migre a la sustitución <code>${env:NAME}</code> mostrada arriba.
 </note>
 
 <note>
-Una sola entrada <code>config.aws</code> puede reutilizarse entre servicios respaldados por AWS. <code>queue.driver.sqs</code> referencia la misma entrada mediante su campo <code>config:</code>.
+Una sola entrada <code>config.aws</code> puede reutilizarse en distintos servicios respaldados por AWS. <code>queue.driver.sqs</code> referencia la misma entrada mediante su campo <code>config:</code>.
 </note>
 
 ## Almacenamiento S3
@@ -64,7 +54,7 @@ Una sola entrada <code>config.aws</code> puede reutilizarse entre servicios resp
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `bucket` | string | Sí | Nombre del bucket S3. Proporciónelo mediante `${env:NAME}` cuando cambie por deployment |
+| `bucket` | string | Condicional | Nombre del bucket S3. Proporciónelo mediante `${env:NAME}` cuando difiera por despliegue |
 | `config` | referencia | Sí | Referencia a entrada de config AWS |
 | `endpoint` | string | No | Endpoint personalizado para servicios compatibles con S3 (en línea o `${env:NAME}`) |
 
@@ -82,9 +72,32 @@ Para MinIO u otros servicios compatibles con S3, establezca un endpoint personal
 
 Cuando se proporciona un endpoint, el acceso por estilo de ruta se habilita automáticamente.
 
+## Cargas Multiparte
+
+Las cargas multiparte prefirmadas son una capacidad del proveedor, no una característica del runtime. El tipo `cloudstorage.s3` las implementa; un proveedor que no soporta el protocolo multiparte falla `create_multipart_upload`, `presigned_part_urls`, `complete_multipart_upload` y `abort_multipart_upload` con `errors.UNAVAILABLE`.
+
+Las partes de una carga que nunca se completa ni se aborta permanecen almacenadas y se facturan. Las aplicaciones abortan en cada ruta de fallo, pero un cliente que se cae no deja nada que ejecute ese abort. Configure una regla de ciclo de vida `AbortIncompleteMultipartUpload` en el bucket como respaldo:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-multipart",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
+```
+
+## Lecturas por Rango
+
+`open_reader` lee un objeto mediante GETs por rango y fija el ETag del objeto con `If-Match` en cada lectura. Un proveedor que no devuelve un ETag en el stat inicial falla la llamada con `errors.UNAVAILABLE`, y un proveedor que ignora `If-Match` pierde la protección contra sobrescritura - la lectura entonces no puede detectar que mezcló dos generaciones del objeto.
+
 ## API Lua
 
-Consulte el [módulo Cloud Storage](lua/storage/cloud.md) para las operaciones (listar, subir, descargar, eliminar y URLs prefirmadas).
+Ver [Módulo Cloud Storage](lua/storage/cloud.md) para operaciones (list, upload, download, delete, URLs prefirmadas, cargas multiparte, lectores por rango).
 
 ## Ver También
 

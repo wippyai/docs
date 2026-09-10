@@ -101,7 +101,18 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Memory queue driver
+  # ハンドラ、ワーカー、マイグレーション用のアクセスポリシー
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
+  # メモリキュードライバ
   - name: queue_driver
     kind: queue.driver.memory
     lifecycle:
@@ -135,9 +146,9 @@ entries:
       - logger
     security:
       actor:
-        id: app:migrate
+        id: "service:migrate"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Migration service (auto-starts, exits on success)
   - name: migrate-service
@@ -164,9 +175,9 @@ entries:
       - uuid
     security:
       actor:
-        id: app:create_task
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -177,9 +188,9 @@ entries:
       - sql
     security:
       actor:
-        id: app:list_tasks
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Queue worker
   - name: process_task
@@ -192,9 +203,9 @@ entries:
       - json
     security:
       actor:
-        id: app:process_task
+        id: "service:worker"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -223,6 +234,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+ストリクトモードはデフォルトで有効なため、データベースやキューにアクセスするエントリにはアクターとスコープが必要です。各 Lua エントリの `security:` ブロックが `app:task_policy` からその両方を与えます。[セキュリティモデル](system/security.md)を参照してください。
+</tip>
 
 ## マイグレーションプロセス
 
@@ -421,7 +436,7 @@ return { main = main }
 ```
 
 <note>
-コンシューマーはハンドラが正常に返ると自動でack、エラーを発生させると自動でnackします。ハンドラ終了前に明示的な制御が必要な場合のみ、<code>queue.message()</code>経由で<code>msg:ack()</code>または<code>msg:nack()</code>を呼び出してください。
+コンシューマーはハンドラが正常に返ると自動でack、エラーを発生させると自動でnackします。ハンドラ終了前に明示的な制御が必要な場合のみ、`queue.message()` 経由で `msg:ack()` または `msg:nack()`を呼び出してください。
 </note>
 
 ## サービスの実行

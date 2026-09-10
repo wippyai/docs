@@ -53,6 +53,7 @@ flowchart LR
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -78,7 +79,15 @@ type Bus struct {
 
 Subscribe と Unsubscribe は dispatcher の確認までブロックします。Send は fire-and-forget です。バスは最大 `DefaultMaxSubscribers` 件（デフォルト 4096）の subscription を受け付けます。上限を超えた subscription は `ErrSubscribersCapReached` で失敗します。
 
-## キューの交換
+バスが`DefaultMaxSubscribers`（4096）個のアクティブなサブスクリプションを保持すると、`Subscribe`は`ErrSubscribersCapReached`で拒否される。
+
+`Subscribe`は、サブスクリプションのコンテキストが既にキャンセルされている場合は即座に失敗し、所有権の判断が下される前にキャンセルされた場合はディスパッチャ側で再度失敗する。バスは自身がインストールしていないチャネルを決して受け取らない。
+
+`Unsubscribe`はベストエフォートのヒントではなく、所有権のバリアである。ディスパッチャが確認応答した後にのみ戻るため、呼び出し側はバスが送信中の参照を保持していないことを前提にチャネルを解放できる。`Stop`の後に到着した場合、確認応答はディスパッチャが既にドレイン済みのバッチの配信を終えるまで待機する。
+
+`Stop`も同様に終端的である。並行する2回目の`Stop`は、クローズ済みフラグを見て早期に戻ることはなく、ディスパッチャがドレインして終了するまで待機する。
+
+## キュースワッピング
 
 dispatcher は、定常状態での allocation を避けるためスライスを交換します。
 
@@ -237,27 +246,22 @@ defer router.Stop()
 
 ### AwaitService
 
-pub/sub 上の request-response です。`(system, kind)` の組ごとに 1 つの subscription を維持し、`Path` によってイベントを waiter へルーティングします。
+pub/sub上でのリクエスト・レスポンス。`(system, kind)`ペアごとに単一のサブスクリプションを保持し、`Path`によってイベントをwaiterにルーティング：
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-if err := svc.Start(ctx); err != nil {
-    return err
-}
+svc.Start(ctx)
 defer svc.Stop()
 
-waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
-if err != nil {
-    return err
-}
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
+result := waiter.Wait()  // AwaitResult{Event, Accepted, Error}を返す
 ```
 
-`Prepare` は起動イベントが送信される前に waiter を登録し、wait の登録前に応答が到着する競合を回避します。`Wait` は一致する `Path` のイベントが到着するか、タイムアウト（非正数の場合はデフォルトの `DefaultAwaitTimeout`、30 秒）までブロックします。イベント種別が `accept`、`*.accept`、`*.accepted` の場合は `Accepted` が true になります。それ以外の種別は reject として扱われ、`Data` 内の `error` は `Error` として公開されます。便利な `Await(ctx, system, kind, path, timeout)` は Prepare と Wait を組み合わせます。ブートインフラストラクチャは context に AwaitService を登録します（`event.GetAwaitService`）。
+`Prepare`はトリガーとなるイベントを送信する前にwaiterを登録し、待機の登録前にレスポンスが到着する競合状態を回避する。`Wait`は`Path`がマッチするイベントの到着、またはタイムアウト（非正の値の場合はデフォルトの`DefaultAwaitTimeout`、30秒）の満了までブロック。`Accepted`はイベント種別が`accept`、`*.accept`、`*.accepted`のいずれかの場合にtrueとなり、それ以外の種別は拒否として扱われ、`Data`内の`error`は`Error`として返される。便宜的な`Await(ctx, system, kind, path, timeout)`はPrepareとWaitを組み合わせたもの。ブートインフラストラクチャはAwaitServiceをコンテキストに登録する（`event.GetAwaitService`）。
 
 ## シャットダウン
 

@@ -25,8 +25,8 @@ Ein `http.endpoint` ordnet eine HTTP-Methode und einen Pfad einer Lua-Handler-Fu
 
 | Feld | Typ | Erforderlich | Beschreibung |
 |------|-----|--------------|--------------|
-| `meta.router` | registry.ID | Ja | Übergeordneter Router (über die Registry-ID referenziert) |
-| `method` | string | Ja | HTTP-Methode |
+| `meta.router` | registry.ID | Nein | Übergeordneter Router (Standard: der einzige Router, falls genau einer registriert ist) |
+| `method` | string | Ja | HTTP-Methode, oder `"*"` für jede Methode |
 | `path` | string | Ja | URL-Pfadmuster |
 | `func` | registry.ID | Ja | Auszuführende Funktion |
 
@@ -44,7 +44,23 @@ Unterstützte Methoden:
 | `HEAD` | Nur Header |
 | `OPTIONS` | CORS-Preflight (automatisch behandelt) |
 | `TRACE` | Diagnostischer Loopback |
-| `*` | Jede HTTP-Methode abgleichen |
+| `*` | Jede Methode |
+
+Methodennamen werden großgeschrieben; `method` ist erforderlich, und jeder Wert außerhalb dieser Menge wird als Konfigurationsfehler abgelehnt.
+
+### Methodenunabhängige Endpunkte
+
+`method: "*"` registriert den Pfad für jede HTTP-Methode, und der Handler liest die tatsächliche Methode mit `req:method()`:
+
+```yaml
+- name: proxy
+  kind: http.endpoint
+  method: "*"
+  path: /proxy/{path...}
+  func: proxy_handler
+```
+
+Für einen normalen Endpunkt registriert der Router zusätzlich einen `OPTIONS`-Handler auf demselben Pfad, sodass CORS-Middleware einen Preflight beantworten kann, ohne dass der Endpunkt läuft. Ein `*`-Endpunkt erhält keinen solchen Handler: Er trifft `OPTIONS` bereits selbst. Router-Middleware umhüllt ihn dennoch, sodass konfigurierte CORS-Middleware einen erlaubten Preflight mit `204` beantwortet, bevor der Endpunkt läuft; jede andere `OPTIONS`-Anfrage erreicht die Endpunkt-Funktion selbst, die sie beantworten muss.
 
 ## Pfadparameter
 
@@ -96,7 +112,12 @@ Verbleibenden Pfad mit `{path...}` erfassen:
   func: serve_file
 ```
 
-Dieses Catch-all-Segment lässt die Route beispielsweise auf `/files/docs/readme.md` reagieren. Bei dieser Anfrage gibt `req:param("path")` den Wert `docs/readme.md` zurück.
+Dieses Catch-all-Segment lässt die Route auf Anfragen wie `/files/docs/readme.md` passen. Der erfasste Rest wird wie jeder andere Parameter gelesen, unter dem Namen ohne die abschließenden Punkte:
+
+```lua
+local req = http.request()
+local tail = req:param("path")  -- "docs/readme.md"
+```
 
 ## Handler-Funktion
 
@@ -134,23 +155,24 @@ return { handler = handler }
 
 | Methode | Rückgabe | Beschreibung |
 |---------|----------|--------------|
-| `req:method()` | string, error | HTTP-Methode |
-| `req:path()` | string, error | Request-Pfad |
-| `req:param(name)` | string oder nil, error | URL-Parameter |
-| `req:params()` | table, error | Alle Pfadparameter |
-| `req:query(name)` | string oder nil, error | Query-Parameter |
-| `req:query_params()` | table, error | Alle Query-Parameter |
-| `req:header(name)` | string oder nil, error | Request-Header |
-| `req:body()` | string, error | Request-Body |
-| `req:body_json()` | value, error | JSON-Body parsen |
-| `req:has_body()` | boolean, error | Prüfen, ob ein Body vorhanden ist |
-| `req:content_type()` | string oder nil, error | Content-Type |
-| `req:content_length()` | number, error | Body-Größe in Bytes |
-| `req:host()` | string, error | Host-Header |
-| `req:remote_addr()` | string, error | Client-Adresse in der Form `IP:port`, sofern sie nicht von Middleware umgeschrieben wurde |
-| `req:accepts(type)` | boolean, error | Inhaltsaushandlung |
-| `req:is_content_type(type)` | boolean, error | Content-Type prüfen |
-| `req:stream()` | Stream, error | Body als Stream für große Dateien |
+| `req:method()` | string | HTTP-Methode |
+| `req:path()` | string | Request-Pfad |
+| `req:param(name)` | string | URL-Parameter |
+| `req:params()` | table | Alle Pfadparameter |
+| `req:query(name)` | string | Query-Parameter |
+| `req:query_params()` | table | Alle Query-Parameter |
+| `req:header(name)` | string | Request-Header |
+| `req:headers()` | table | Alle Request-Header |
+| `req:body()` | string | Request-Body |
+| `req:body_json()` | table, error | JSON-Body parsen |
+| `req:has_body()` | boolean | Prüfen, ob Body vorhanden |
+| `req:content_type()` | string | Content-Type |
+| `req:content_length()` | number | Body-Größe in Bytes |
+| `req:host()` | string | Hostname |
+| `req:remote_addr()` | string | Client-IP-Adresse |
+| `req:accepts(type)` | boolean | Content Negotiation |
+| `req:is_content_type(type)` | boolean | Content-Type prüfen |
+| `req:stream()` | Stream | Body als Stream für große Dateien |
 | `req:parse_multipart(max?)` | table, error | Multipart-Formular parsen |
 
 ### Response-Objekt
@@ -306,7 +328,7 @@ entries:
 
 ### Geschützter Endpunkt
 
-Autorisierungs-Middleware wird auf dem übergeordneten Router und nicht auf dem Endpunkt konfiguriert. Post-Match-Middleware wie `endpoint_firewall` läuft nach dem Routenabgleich und gilt für jeden Endpunkt unter dem Router:
+Autorisierungs-Middleware wird auf dem übergeordneten Router konfiguriert, nicht auf dem Endpunkt. Post-Match-Middleware (wie `endpoint_firewall`) läuft nach dem Routen-Matching und gilt für jeden Endpunkt unter dem Router:
 
 ```yaml
 - name: admin_router

@@ -1,6 +1,6 @@
 ---
 title: "ストリーム"
-description: "I/O モジュールが返すストリームオブジェクトの読み取り、書き込み、シーク、検査、スキャン、クローズを行います。"
+description: "データを効率的に処理するためのストリーム読み書き操作。ストリームオブジェクトは他のモジュール（HTTP、ファイルシステムなど）から取得されます。"
 ---
 
 # ストリーム
@@ -33,7 +33,7 @@ local chunk, err = stream:read(size)
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `size` | integer | 読み取るバイト数（0 = 既定の 32 KB チャンク） |
+| `size` | integer | 読み取るバイト数（0 = デフォルトの 32KB チャンク） |
 
 **戻り値:** `string, error` — EOF では `nil, nil`
 
@@ -107,20 +107,16 @@ local scanner, err = stream:scanner(split)
 ### スキャナメソッド
 
 ```lua
-local has_more, err = scanner:scan()  -- advance to next token
-local token = scanner:text()           -- current token
-local err_msg = scanner:err()          -- scanner error if any
+local has_more, err = scanner:scan()  -- 次のトークンに進む
+local token = scanner:text()           -- 現在のトークン
+local err_msg = scanner:err()          -- スキャナのエラー（あれば）
 ```
 
 ```lua
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then
-        local scan_err = scanner:err()
-        if scan_err then return nil, scan_err end  -- raw scanner error string
-        break  -- clean EOF
-    end
+    if not has_token then break end  -- EOF
     process(scanner:text())
 end
 ```
@@ -131,12 +127,9 @@ end
 
 | 条件 | 種別 |
 |-----------|------|
-| ストリームがクローズ済み | `errors.INTERNAL` |
-| 読み取り/書き込み不可 | `errors.INTERNAL` |
-| 読み取り/書き込み/シーク失敗 | `errors.INTERNAL` |
-| シーク非対応ストリームでのシーク | `errors.INTERNAL` |
-| クローズ、フラッシュ、または stat の失敗 | `errors.INTERNAL` |
-| スキャナーの作成または scan ディスパッチの失敗 | `errors.INTERNAL` |
-| スキャナーのトークン化または基になる読み取りの失敗 | `scanner:err()` が返す非構造化文字列 |
+| 無効なwhence/splitタイプ | Luaエラーとして送出される（返されない）|
+| ストリームがクローズ済み | `INTERNAL` |
+| 読み取り/書き込み不可 | `INTERNAL` |
+| 読み取り/書き込み失敗 | `INTERNAL` |
 
 未対応の `whence` またはスキャナー分割値を指定すると、構造化エラー値ではなく Lua の引数エラーが発生します。

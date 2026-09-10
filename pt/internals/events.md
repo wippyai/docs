@@ -53,6 +53,7 @@ O bus armazena estado em uma estrutura simples:
 type Bus struct {
     subscribers       map[SubscriberID]sub
     subscriberCounter uint64
+    maxSubscribers    int
 
     actionQueue []action
     spareQueue  []action
@@ -77,6 +78,14 @@ Quatro tipos de ação fluem pela fila:
 | Stop | Limpa subscribers, drena fila, sai do loop |
 
 Subscribe e Unsubscribe bloqueiam até que o dispatcher confirme. Send é fire-and-forget. O bus aceita no máximo `DefaultMaxSubscribers` inscrições (4096 por padrão); inscrições além desse limite falham com `ErrSubscribersCapReached`.
+
+`Subscribe` é rejeitado com `ErrSubscribersCapReached` assim que o barramento atinge `DefaultMaxSubscribers` (4096) assinaturas ativas.
+
+`Subscribe` falha imediatamente quando o contexto da inscrição já está cancelado, e novamente no dispatcher se for cancelado antes da decisão de posse ser tomada — o bus nunca assume um canal que não instalou.
+
+`Unsubscribe` é uma barreira de posse, não uma dica de melhor esforço. Ele retorna apenas depois que o dispatcher confirma, então o chamador pode liberar o canal sabendo que o bus não mantém nenhuma referência de envio em andamento. Quando chega depois de `Stop`, a confirmação aguarda o dispatcher terminar de entregar o lote que já havia drenado.
+
+`Stop` é igualmente terminal: um segundo `Stop` concorrente não retorna antecipadamente pela flag de já fechado, mas aguarda o dispatcher drenar e sair.
 
 ## Troca de Fila
 
@@ -237,27 +246,22 @@ Cada handler implementa `Pattern()` e `Handle()`. O router cria um Subscriber pa
 
 ### AwaitService
 
-Implementa request-response sobre pub/sub. Mantém uma única inscrição para cada par `(system, kind)` e roteia eventos aos waiters por `Path`:
+Requisição-resposta sobre pub/sub. Mantém uma única inscrição por par `(system, kind)` e roteia eventos para os waiters por `Path`:
 
 ```go
 svc := eventbus.NewAwaitService(bus)
-if err := svc.Start(ctx); err != nil {
-    return err
-}
+svc.Start(ctx)
 defer svc.Stop()
 
-waiter, err := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
-if err != nil {
-    return err
-}
+waiter, _ := svc.Prepare(ctx, "test", "response.(accept|reject)", "test/path", 5*time.Second)
 defer waiter.Close()
 
 bus.Send(ctx, triggeringEvent)
 
-result := waiter.Wait()  // returns AwaitResult{Event, Accepted, Error}
+result := waiter.Wait()  // retorna AwaitResult{Event, Accepted, Error}
 ```
 
-`Prepare` registra o waiter antes do envio do evento que dispara a resposta, evitando a race na qual a resposta chega antes de o waiter ser registrado. `Wait` bloqueia até chegar um evento com `Path` correspondente ou até expirar o timeout — quando o valor não é positivo, o padrão é `DefaultAwaitTimeout`, de 30 segundos. `Accepted` é verdadeiro quando o kind do evento é `accept`, `*.accept` ou `*.accepted`; qualquer outro kind é tratado como rejeição, e um campo `error` em `Data` é exposto como `Error`. O helper `Await(ctx, system, kind, path, timeout)` combina Prepare e Wait. A infraestrutura de boot registra um AwaitService no contexto (`event.GetAwaitService`).
+`Prepare` registra o waiter antes de o evento acionador ser enviado, evitando a race em que a resposta chega antes de a espera ser registrada. `Wait` bloqueia até que um evento com `Path` correspondente chegue ou o timeout (padrão `DefaultAwaitTimeout`, 30s, quando não positivo) expire. `Accepted` é true quando o kind do evento é `accept`, `*.accept` ou `*.accepted`; caso contrário o kind é tratado como rejeição e qualquer `error` em `Data` aparece como `Error`. A conveniência `Await(ctx, system, kind, path, timeout)` combina Prepare e Wait. A infraestrutura de boot registra um AwaitService no contexto (`event.GetAwaitService`).
 
 ## Encerramento
 

@@ -310,8 +310,9 @@ Types are first-class values that provide introspection methods.
 ### Kind and Name
 
 ```lua
-type NumberType = number
-print(NumberType:kind())             -- "number"
+type Num = number
+
+print(Num:kind())                    -- "number"
 print(Point:kind())                  -- "record"
 print(Point:name())                  -- "Point"
 ```
@@ -340,20 +341,20 @@ print(nameType:kind())               -- "string"
 ### Collection Types
 
 ```lua
-type NumberArray = {number}
-print(NumberArray:elem():kind())     -- "number"
+type NumberList = {number}
+print(NumberList:elem():kind())      -- "number"
 
-type NumberMap = {[string]: number}
-print(NumberMap:key():kind())        -- "string"
-print(NumberMap:val():kind())        -- "number"
+type ScoreMap = {[string]: number}
+print(ScoreMap:key():kind())         -- "string"
+print(ScoreMap:val():kind())         -- "number"
 ```
 
 ### Optional Types
 
 ```lua
-type OptionalNumber = number?
-print(OptionalNumber:kind())         -- "optional"
-print(OptionalNumber:inner():kind()) -- "number"
+type MaybeNumber = number?
+print(MaybeNumber:kind())            -- "optional"
+print(MaybeNumber:inner():kind())    -- "number"
 ```
 
 ### Union Types
@@ -370,6 +371,7 @@ end
 
 ```lua
 type Predicate = (number, string) -> boolean
+
 for param in Predicate:params() do
     print(param:kind())
 end
@@ -381,25 +383,25 @@ print(Predicate:ret():kind())        -- "boolean"
 ### Type Comparison
 
 ```lua
-type NumberType = number
-type IntegerType = integer
+type Num = number
+type Int = integer
 
-print(NumberType == NumberType)      -- true
-print(IntegerType <= NumberType)     -- true (subtype)
-print(IntegerType < NumberType)      -- true (strict subtype)
+print(Num == Num)                    -- true
+print(Int <= Num)                    -- true (subtype)
+print(Int < Num)                     -- true (strict subtype)
 ```
 
 ### Types as Table Keys
 
 ```lua
-type NumberType = number
-type StringType = string
+type Point = {x: number, y: number}
+type Line = {from: Point, to: Point}
 
 local handlers = {}
-handlers[NumberType] = function() return "number handler" end
-handlers[StringType] = function() return "string handler" end
+handlers[Point] = function() return "point handler" end
+handlers[Line] = function() return "line handler" end
 
-local h = handlers[NumberType]
+local h = handlers[Point]
 if h then h() end
 ```
 

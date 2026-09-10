@@ -1,6 +1,6 @@
 ---
 title: "Base64 Encoding"
-description: "Encode strings and binary data as standard RFC 4648 Base64 and decode them back to bytes."
+description: "Encode binary data to base64 strings and decode base64 back to binary. Uses standard base64 encoding per RFC 4648."
 ---
 
 # Base64 Encoding
@@ -35,12 +35,9 @@ local encoded, err = base64.encode("Hello, World!")
 if err then return nil, err end
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
--- Encode binary data from a configured filesystem volume
-local fs = require("fs")
-local assets = assert(fs.get("app:assets"))
-local image_data = assert(assets:readfile("photo.jpg"))
-local image_b64, encode_err = base64.encode(image_data)
-if encode_err then return nil, encode_err end
+-- Encode binary data (e.g., from file)
+local image_data = fs.get("app:data"):readfile("photo.jpg")
+local image_b64 = base64.encode(image_data)
 
 -- Encode JSON for transport
 local json = require("json")
@@ -76,10 +73,7 @@ print(decoded)  -- "Hello, World!"
 -- Decode with error handling
 local data, err = base64.decode(user_input)
 if err then
-    return nil, errors.new({
-        message = "Invalid base64 data",
-        kind = errors.INVALID
-    })
+    return nil, errors.new("Invalid base64 data"):kind(errors.INVALID)
 end
 
 -- Decode binary data
@@ -87,22 +81,11 @@ local image_data, err = base64.decode(encoded_image)
 if err then
     return nil, err
 end
-local fs = require("fs")
-local output = assert(fs.get("app:output"))
-local ok, write_err = output:writefile("output.jpg", image_data)
-if write_err then
-    return nil, write_err
-end
+fs.get("app:data"):writefile("output.jpg", image_data)
 
--- Decode the first field from a dot-delimited value
-local encoded_header, header_err = base64.encode("header")
-if header_err then return nil, header_err end
-local encoded_payload, payload_err = base64.encode("payload")
-if payload_err then return nil, payload_err end
-local value = encoded_header .. "." .. encoded_payload
-local encoded_field = assert(value:match("^([^.]+)"))
-local field, err = base64.decode(encoded_field)
-if err then return nil, err end
+-- Decode a base64-wrapped JSON document
+local json = require("json")
+local doc = json.decode(base64.decode(encoded_json))
 ```
 
 The final block demonstrates delimiter handling only. It does not parse or verify a signed token format.

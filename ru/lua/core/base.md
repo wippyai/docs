@@ -1,6 +1,6 @@
 ---
 title: "Стандартные библиотеки Lua"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "Базовые библиотеки Lua, автоматически доступные во всех процессах Wippy. Не требуют require()."
 ---
 
 # Стандартные библиотеки Lua
@@ -79,8 +79,10 @@ table.insert(t, [pos,] value)  -- Вставить значение в пози�
 table.remove(t [,pos])         -- Удалить и вернуть элемент в позиции pos (по умолчанию: последний)
 table.concat(t [,sep [,i [,j]]]) -- Конкатенировать элементы массива с разделителем
 table.sort(t [,comp])          -- Сортировать на месте, comp(a,b) возвращает true если a < b
-table.pack(...)                -- Упаковать varargs в таблицу с полем 'n'
 table.unpack(t [,i [,j]])      -- Распаковать элементы таблицы как множественные значения
+table.create(narr, nhash)      -- Предвыделить таблицу с ёмкостью массива и хеш-части
+table.freeze(t)                -- Сделать таблицу неизменяемой, возвращает t
+table.isfrozen(t)              -- true, если таблица неизменяема
 ```
 
 ```lua
@@ -124,7 +126,7 @@ string.sub(s, i [,j])      -- Подстрока от i до j (отрицате
 string.len(s)              -- Длина строки (или используйте #s)
 string.byte(s [,i [,j]])   -- Числовые коды символов
 string.char(...)           -- Создать строку из кодов символов
-string.rep(s, n [,sep])    -- Повторить строку n раз с разделителем
+string.rep(s, n)           -- Повторить строку n раз
 string.reverse(s)          -- Перевернуть строку
 ```
 
@@ -132,6 +134,9 @@ string.reverse(s)          -- Перевернуть строку
 
 ```lua
 string.format(fmt, ...)    -- Форматирование в стиле printf
+string.pack(fmt, ...)      -- Упаковать значения в бинарную строку
+string.unpack(fmt, s [,pos]) -- Распаковать бинарную строку, возвращает значения и следующую позицию
+string.packsize(fmt)       -- Размер упакованного формата в байтах
 ```
 
 Спецификаторы формата: `%d` (целое), `%f` (дробное), `%s` (строка), `%q` (в кавычках), `%x` (hex), `%o` (octal), `%e` (научная нотация), `%%` (буквальный %)
@@ -185,7 +190,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Бесконечность
+math.huge     -- Наибольшее представимое число с плавающей точкой
 math.mininteger  -- Минимальное целое
 math.maxinteger  -- Максимальное целое
 ```
@@ -208,14 +213,18 @@ math.fmod(x, y)       -- Остаток от деления с плавающе�
 math.sqrt(x)          -- Квадратный корень
 math.pow(x, y)        -- x^y (или используйте оператор x^y)
 math.exp(x)           -- e^x
-math.log(x [,base])   -- Натуральный логарифм (или логарифм по основанию n)
+math.log(x)           -- Натуральный логарифм
+math.log10(x)         -- Логарифм по основанию 10
+math.frexp(x)         -- Мантисса и экспонента
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### Тригонометрия
 
 ```lua
 math.sin(x)   math.cos(x)   math.tan(x)    -- Радианы
-math.asin(x)  math.acos(x)  math.atan(y [,x])
+math.asin(x)  math.acos(x)  math.atan(x)
+math.atan2(y, x)                            -- Арктангенс y/x
 math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Гиперболические
 math.deg(r)   -- Радианы в градусы
 math.rad(d)   -- Градусы в радианы
@@ -227,7 +236,7 @@ math.rad(d)   -- Градусы в радианы
 math.random()         -- Случайное дробное [0,1)
 math.random(n)        -- Случайное целое [1,n]
 math.random(m, n)     -- Случайное целое [m,n]
-math.randomseed(x)    -- Установить seed
+math.randomseed(x)    -- Не действует; генератор инициализируется автоматически
 ```
 
 ### Преобразование типов
@@ -328,44 +337,6 @@ err:details()    -- Получить таблицу деталей или nil
 err:stack()      -- Получить стек трейс как строку
 ```
 
-## UTF-8 Unicode
-
-Обработка UTF-8 строк:
-
-### Константы {id="utf8-constants"}
-
-```lua
-utf8.charpattern  -- Паттерн, соответствующий одному UTF-8 символу
-```
-
-### Функции {id="utf8-functions"}
-
-```lua
-utf8.char(...)           -- Создать строку из Unicode codepoints
-utf8.codes(s)            -- Итератор по codepoints: for pos, code in utf8.codes(s)
-utf8.codepoint(s [,i [,j]]) -- Получить codepoints в позициях от i до j
-utf8.len(s [,i [,j]])    -- Посчитать UTF-8 символы (не байты)
-utf8.offset(s, n [,i])   -- Позиция в байтах n-го символа от позиции i
-```
-
-```lua
-local s = "Hello, 世界"
-
--- Подсчёт символов (не байтов)
-print(utf8.len(s))  -- 9
-
--- Итерация по codepoints
-for pos, code in utf8.codes(s) do
-    print(pos, code, utf8.char(code))
-end
-
--- Получить codepoint в позиции
-local code = utf8.codepoint(s, 8)  -- Первый китайский символ
-
--- Создать строку из codepoints
-local emoji = utf8.char(0x1F600)  -- Улыбающееся лицо
-```
-
 ## Ограниченные возможности
 
 Следующие стандартные возможности Lua НЕ доступны из соображений безопасности:
@@ -375,9 +346,11 @@ local emoji = utf8.char(0x1F600)  -- Улыбающееся лицо
 | `load`, `loadstring`, `loadfile`, `dofile` | Используйте модуль [Динамическое выполнение](lua/dynamic/eval.md) |
 | `collectgarbage` | Автоматический GC |
 | `rawlen` | Используйте оператор `#` |
-| `io.*` | Используйте модуль [Файловая система](lua/storage/filesystem.md) |
-| `os.execute`, `os.exit`, `os.remove`, `os.rename`, `os.tmpname` | Используйте модули [Выполнение команд](lua/dynamic/exec.md), [Окружение](lua/system/env.md) |
-| `debug.*` (кроме traceback) | Недоступно |
+| Стандартная файловая библиотека `io.*` | Используйте модуль [Файловая система](lua/storage/filesystem.md); модуль `io` в Wippy — это [Терминальный ввод-вывод](lua/system/io.md) |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | Используйте модули [Выполнение команд](lua/dynamic/exec.md), [Окружение](lua/system/env.md) |
+| `string.dump` | Недоступно |
+| `debug.*` | Недоступно |
+| `utf8.*` | Недоступно |
 | `package.loadlib` | Нативные библиотеки не поддерживаются |
 
 ## См. также

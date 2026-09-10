@@ -25,6 +25,6 @@ bajo MPL-2.0. Consulta el texto de la licencia para conocer todos los términos.
 
 ## Dependencias
 
-Las dependencias conservan sus propias licencias. Por ejemplo, el repositorio público
-[`wippyai/wasm-runtime`](https://github.com/wippyai/wasm-runtime/blob/main/LICENSE)
-usa MIT en vez de MPL-2.0.
+Wippy usa varias dependencias, cada una con sus propias licencias. La mayoría son bibliotecas de código abierto con licencias permisivas compatibles con uso comercial.
+
+Un componente incluido, el runtime WASM (`wippyai/wasm-runtime`), está licenciado bajo la Business Source License 1.1. Puede usarlo en producción, excepto para ofrecerlo a terceros de forma alojada o embebida de manera que compita con los productos o servicios de Wippy AI. Cuatro años después de la publicación de cada versión, esa versión pasa a la Apache License 2.0.

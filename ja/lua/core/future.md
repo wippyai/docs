@@ -1,6 +1,6 @@
 ---
 title: "Future"
-description: "非同期の関数呼び出しとコントラクト呼び出しの結果を受信、調査、キャンセルします。"
+description: "非同期操作の結果。Futureはfuncs.async()およびコントラクト非同期呼び出しによって返されます。"
 ---
 
 # Future
@@ -101,6 +101,8 @@ end
 local canceled, err = future:cancel()
 ```
 
+**戻り値:** `boolean, error`
+
 操作が既に進行中の場合でも完了する可能性あり。
 
 **戻り値:** `boolean, error`
@@ -130,11 +132,8 @@ local r = channel.select {
 }
 
 if r.channel == timeout then
-    -- The operation may still complete; this caller ignores the late result.
-    return nil, errors.new({
-        message = "Operation timed out",
-        kind = errors.TIMEOUT
-    })
+    future:cancel()
+    return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
 local payload, result_err = future:result()
@@ -185,9 +184,7 @@ return value
 
 ## エラー
 
-| 条件 | 種別 | 再試行可能 |
-|-----------|------|-----------|
-| `result()` を通じて操作がキャンセルされた | `errors.CANCELED` | いいえ |
-| `result()` が返す操作エラー | 関数エラーの種別を保持 | 関数エラーから保持 |
-| `error()` が返す操作エラー | `errors.INTERNAL` | いいえ |
-| キャンセルのディスパッチに失敗 | `errors.INTERNAL` | いいえ |
+| 条件 | 種別 |
+|-----------|------|
+| 操作がキャンセルされた | `CANCELED` |
+| 非同期操作が失敗 | `result()`は操作の kind を保持する。`error()`は`INTERNAL`を報告する |

@@ -1,6 +1,6 @@
 ---
 title: "WebSocket-Client"
-description: "Verbindungen zu WebSocket-Servern herstellen, Nachrichten senden und empfangen, Komprimierung verwenden und Verbindungen schließen."
+description: "WebSocket-Client für bidirektionale Echtzeit-Kommunikation mit Servern."
 ---
 
 # WebSocket-Client
@@ -59,15 +59,15 @@ end
 
 | Option | Typ | Beschreibung |
 |--------|------|-------------|
-| `headers` | table | HTTP-Handshake-Header als Zeichenkettenpaare; andere Einträge werden ignoriert |
-| `protocols` | table | WebSocket-Subprotokolle als Zeichenketten; andere Einträge werden ignoriert |
-| `dial_timeout` | number/string | Verbindungs-Timeout; `0` setzt keine Runtime-weite Frist, Standardwerte des HTTP-Transports gelten weiterhin |
-| `read_timeout` | number/string | Lese-Timeout pro Nachricht; `0` deaktiviert ihn |
-| `write_timeout` | number/string | Von der Lua-API akzeptiert, in Runtime `v0.3.32a` aber nicht angewendet |
-| `compression` | number/string | `0`/`"disabled"`, `1`/`"context_takeover"` oder `2`/`"no_context_takeover"`; standardmäßig deaktiviert |
-| `compression_threshold` | number | Mindestgröße für Komprimierung in Bytes (0-104857600); `0` verwendet 128 Bytes bei Context Takeover oder 512 bei No Context Takeover |
-| `read_limit` | number | Maximale Größe eingehender Nachrichten in Bytes (0-134217728); `0` verwendet 16 MiB |
-| `channel_capacity` | number | Serverseitiger Puffer eingehender Nachrichten (1-10000); Standard 16 |
+| `headers` | table | HTTP-Header für Handshake |
+| `protocols` | table | WebSocket-Subprotokolle |
+| `dial_timeout` | number/string | Verbindungs-Timeout (ms oder "5s") |
+| `read_timeout` | number/string | Lese-Timeout |
+| `write_timeout` | number/string | Schreib-Timeout |
+| `compression` | number/string | Komprimierungsmodus (siehe Konstanten) oder `"disabled"`, `"context_takeover"`, `"no_context_takeover"` |
+| `compression_threshold` | number | Min. Größe zum Komprimieren (0-100MB) |
+| `read_limit` | number | Max. Nachrichtengröße (0-128MB) |
+| `channel_capacity` | number | Empfangs-Channel-Puffer (1-10000) |
 
 **Timeout-Format:** Zahlen sind Millisekunden; Zeichenketten verwenden Go-Dauersyntax wie `"5s"` oder `"1m"`. Ungültige Timeout-Zeichenketten und nicht unterstützte oder außerhalb des Bereichs liegende Optionswerte werden ignoriert, sodass der jeweilige Standard gilt.
 
@@ -76,7 +76,7 @@ end
 ### Textnachrichten
 
 ```lua
-local json = require("json")
+client:send("Hello, Server!")
 
 client:send("Hello, Server!")
 
@@ -100,7 +100,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Nachrichteninhalt |
 | `type` | number | `websocket.TEXT` (1) oder `websocket.BINARY` (2) |
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis die Nachricht gesendet ist. Gibt keine Werte zurück.
 
 Fehlt `type` oder ist es weder `websocket.TEXT` noch `websocket.BINARY`, sendet die Runtime eine Textnachricht. Der Aufruf yieldet bis zum Abschluss des Send-Commands und gibt keine Werte zurück. Transportfehler beim Senden werden in Runtime `v0.3.32a` nicht an Lua gemeldet.
 
@@ -110,7 +110,7 @@ Fehlt `type` oder ist es weder `websocket.TEXT` noch `websocket.BINARY`, sendet 
 client:ping()
 ```
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis der Ping gesendet ist. Gibt keine Werte zurück.
 
 Der Aufruf yieldet bis zum Abschluss des Ping-Commands und gibt keine Werte zurück. Transportfehler beim Ping werden in Runtime `v0.3.32a` nicht an Lua gemeldet.
 
@@ -237,7 +237,7 @@ if close_err then return nil, close_err end
 | `code` | number | Schließ-Code (1000-4999), Standard 1000 |
 | `reason` | string | Schließgrund (optional) |
 
-**Gibt zurück:** `boolean, error`
+Wartet, bis der Close-Frame gesendet ist.
 
 Der Aufruf yieldet bis zum Abschluss des Close-Commands. Erfolg gibt keine Werte zurück; ein Fehler liefert `nil, error`. Erfassen Sie beim Prüfen zwei Ergebnisse, da der Fehler an zweiter Stelle steht. Werte außerhalb des erlaubten numerischen Bereichs werden ignoriert und durch den Standardcode `1000` ersetzt.
 

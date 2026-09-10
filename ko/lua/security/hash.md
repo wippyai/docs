@@ -1,6 +1,6 @@
 ---
 title: "해시 함수"
-description: "암호화 해시, HMAC 값, PBKDF2 키, FNV-1 해시를 계산합니다."
+description: "암호화 해시 함수와 HMAC 메시지 인증을 제공합니다."
 ---
 
 # 해시 함수
@@ -177,43 +177,31 @@ local n = hash.fnv64("data")
 
 **반환:** `number, error`
 
-Lua 숫자는 모든 부호 없는 64비트 정수를 정확히 표현할 수 없습니다. 정확한 64비트 값을 Lua를 통해 왕복해야 한다면 `fnv64`를 사용하지 말고 적절한 프로토콜 구현이 제공하는 바이트 또는 문자열 표현을 사용하세요.
-
 ## 키 파생
 
-### PBKDF2-HMAC
-
-PBKDF2-HMAC-SHA256 또는 PBKDF2-HMAC-SHA512로 원시 키 바이트를 파생합니다:
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
 
-여기서 `password`는 애플리케이션의 비밀 경계를 통해 제공되고 `salt`는 해당 검증자와 함께 저장하는 새 임의 바이트입니다. 반환 값은 출력 가능한 텍스트가 아니라 원시 키 바이트입니다.
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| `password` | string | 비밀번호/패스프레이즈 (비어 있으면 안 됨) |
+| `salt` | string | 솔트 값 (비어 있으면 안 됨) |
+| `iterations` | integer | 반복 횟수 (1 ~ 10,000,000) |
+| `key_length` | integer | 원하는 키 길이 (바이트) |
+| `hash` | string? | `sha256` 또는 `sha512` (기본값: `sha256`) |
 
-| 매개변수 | 타입 | 설명 |
-|-----------|------|-------------|
-| `password` | string | 비어 있지 않은 비밀번호 또는 비밀 입력 |
-| `salt` | string | 비어 있지 않은 salt 바이트 |
-| `iterations` | integer | 양의 반복 횟수. 최대 10,000,000 |
-| `key_length` | integer | 바이트 단위의 양의 출력 길이 |
-| `algo` | string? | `sha256`(기본값) 또는 `sha512` |
+**반환:** `string, error` (원시 키 바이트)
 
-**반환:** `string, error`(원시 파생 키 바이트)
-
-## 오류
+## 에러
 
 | 조건 | 종류 | 재시도 가능 |
-|-----------|------|-----------|
-| 입력이 문자열이 아님 | `errors.INVALID` | 아니요 |
-| 비밀이 문자열이 아님(HMAC) | `errors.INVALID` | 아니요 |
-| PBKDF2 비밀번호/salt가 비었거나 제한이 잘못되었거나 알고리즘이 지원되지 않음 | `errors.INVALID` | 아니요 |
+|------|------|-------------|
+| 입력이 문자열이 아님 | `errors.INVALID` | 아니오 |
+| 비밀이 문자열이 아님 (HMAC) | `errors.INVALID` | 아니오 |
+| 빈 비밀번호/솔트, 0 이하이거나 과도한 반복 횟수, 지원하지 않는 해시 (PBKDF2) | `errors.INVALID` | 아니오 |
 
 오류 작업 방법은 [오류 처리](lua/core/errors.md)를 참고하세요.

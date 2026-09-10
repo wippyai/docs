@@ -1,6 +1,6 @@
 ---
 title: "Dateisystem"
-description: "Dateien in einem konfigurierten Dateisystem-Volume lesen, schreiben und verwalten."
+description: "Lesen, Schreiben und Verwalten von Dateien innerhalb von Sandbox-Dateisystem-Volumes."
 ---
 
 # Dateisystem
@@ -296,7 +296,7 @@ fs.seek.END       -- from end
 | `isdir(path)` | `boolean, error` | Prüfen ob Verzeichnis |
 | `mkdir(path)` | `boolean, error` | Verzeichnis erstellen |
 | `remove(path)` | `boolean, error` | Datei/leeres Verzeichnis entfernen |
-| `readdir(path)` | `iterator, state` | Verzeichnis auflisten (in einer generischen `for`-Schleife verwenden) |
+| `readdir(path)` | `iterator, state` | Verzeichnis auflisten (in generischer `for`-Schleife verwenden) |
 | `open(path, mode)` | `File, error` | Datei-Handle öffnen |
 | `chdir(path)` | `boolean, error` | Arbeitsverzeichnis wechseln |
 | `pwd()` | `string, error` | Arbeitsverzeichnis abrufen |

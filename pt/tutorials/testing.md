@@ -1,50 +1,37 @@
 ---
 title: "Testes"
-description: "Escreva e execute testes Lua com asserções, hooks, mocks, filtros e códigos de saída do wippy/test."
+description: "Escreva e execute testes para seu código Lua com o framework wippy/test — um runner estilo BDD com asserções, hooks de ciclo de vida e mocking,…"
 ---
 
 # Testes
 
-Use o framework `wippy/test` para definir casos Lua com asserções, hooks de ciclo de vida e mocks e executá-los com `wippy test`.
+Escreva e execute testes para seu código Lua com o framework `wippy/test` — um runner
+estilo BDD com asserções, hooks de ciclo de vida e mocking, executado pelo comando
+`wippy test`.
 
-**Classificação:** tutorial executável. Ele contém uma biblioteca completa, entrada de teste, dependências, saída esperada e verificações de falha.
+## O que você construirá
 
-## O Que Você Criará
+Uma pequena biblioteca e uma suíte de testes que a cobre:
 
-Uma pequena biblioteca e uma suite que a testa:
-
-1. Uma biblioteca `calc` com funções `add` e `div`.
-2. Uma entrada que descreve casos, verifica comportamento e ignora um caso pendente.
-3. Uma execução bem-sucedida com `wippy test`.
+1. Uma biblioteca `calc` com as funções `add` e `div`.
+2. Uma entrada de teste que descreve casos, verifica comportamento e pula um caso pendente.
+3. Uma execução de teste verde via `wippy test`.
 
 ## Pré-requisitos
 
-- Runtime Wippy `v0.3.32a`.
-- Um diretório vazio. Crie e inicialize o projeto e instale o framework:
+- Um projeto Wippy (clone o [app-template](https://github.com/wippyai/app-template), ou
+  `wippy init` em um diretório vazio).
+- O framework de testes instalado:
 
   ```bash
-  mkdir testing-demo
-  cd testing-demo
-  mkdir src
-  wippy init
   wippy add wippy/test
   wippy install
   ```
 
-  O framework declara `wippy/terminal` como dependência, portanto a instalação inclui o host usado pela UI ao vivo do runner.
+  O runner renderiza uma UI de terminal ao vivo sobre `wippy/terminal`, que `wippy/test`
+  traz para você.
 
-O projeto concluído contém:
-
-```text
-testing-demo/
-├── wippy.lock
-└── src/
-    ├── _index.yaml
-    ├── calc.lua
-    └── calc_test.lua
-```
-
-## Código Testado
+## O código sob teste
 
 ```lua
 -- src/calc.lua
@@ -62,9 +49,10 @@ end
 return { add = add, div = div }
 ```
 
-## O Teste
+## O teste
 
-Um teste é uma entrada `function.lua` comum marcada com `meta.type: test`. Seu método retorna o valor produzido por `test.run_cases(...)`, invocado pelo runner:
+Um teste é uma entrada `function.lua` comum marcada com `meta.type: test`. Seu método
+retorna o valor produzido por `test.run_cases(...)`, que o runner invoca:
 
 ```lua
 -- src/calc_test.lua
@@ -102,7 +90,8 @@ end
 return { run = test.run_cases(define_tests) }
 ```
 
-Registre as duas entradas. A descoberta usa `meta.type: test`; `meta.suite` agrupa os resultados:
+Registre ambas as entradas. A descoberta se baseia em `meta.type: test`; `meta.suite`
+agrupa os resultados na saída:
 
 ```yaml
 # src/_index.yaml
@@ -110,6 +99,11 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: test_framework
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
   - name: calc
     kind: library.lua
     source: file://calc.lua
@@ -127,82 +121,71 @@ entries:
       calc: app:calc
 ```
 
-O mapa `imports` controla a resolução de `require(...)`: `test` vincula o framework e `calc`, a unidade testada.
+A entrada `ns.dependency` é o que monta `wippy/test` na aplicação; sem ela o namespace
+do framework nunca chega ao registro e `wippy.test:test` não é resolvido. O mapa
+`imports` controla o que `require(...)` resolve dentro do teste: `test` vincula
+o framework, `calc` vincula a unidade sob teste.
 
-## Executar
+## Execute
 
 ```bash
 wippy test
 ```
 
-Filtre por substring do ID da entrada durante a iteração:
-
-```bash
-wippy test test calc_test
-```
-
-O primeiro `test` escolhe o entrypoint do runner. Os argumentos restantes são filtros aplicados aos IDs das entradas.
-
-Saída esperada:
+Saída para a suíte acima:
 
 ```
-    o setup ran <duration>
-    o adds numbers <duration>
-    o returns error on divide by zero <duration>
+  Running Tests
+
+  1 tests in 1 suites
+
+    o setup ran <1ms
+    o adds numbers <1ms
+    o returns error on divide by zero <1ms
     - not implemented yet (skipped)
-  o calculator (4) 3/4 1 skipped <duration>
+  o calculator (4) 3/4 1 skipped 21ms
 
-  PASSED
-  3 tests  1 skipped  <duration>
+  PASSED  ██████████████████░░░░░░░
+
+  3 tests  1 skipped  26ms
 ```
 
-O renderer imprime cada caso antes do resumo; os tempos variam.
-
-`wippy test` sai com `0` quando todos os casos passam e `1` quando algum falha, permitindo que a CI use o status do processo.
-
-Para verificar a falha, altere temporariamente o resultado esperado de `5` para `6`. O runner deve imprimir `FAILED` e sair com status 1. Restaure `5` antes de continuar.
+`wippy test` sai com `0` quando todos os casos passam e `1` em qualquer falha, então
+ele se encaixa diretamente em CI.
 
 ## Asserções
 
-Cada asserção gera erro em caso de falha; os guards de tipo também retornam o valor validado.
+Cada asserção lança erro em caso de falha; os type guards também retornam o valor validado.
 
 | Asserção | Verifica |
 |---|---|
 | `test.eq(a, b)` / `test.neq(a, b)` | Igualdade / desigualdade |
-| `test.ok(v)` / `test.fail(msg)` | Valor truthy / falha forçada |
-| `test.is_nil(v)` / `test.not_nil(v)` | Nil / não nil |
+| `test.ok(v)` / `test.fail(msg)` | Truthy / força uma falha |
+| `test.is_nil(v)` / `test.not_nil(v)` | Nil / não-nil |
 | `test.is_true(v)` / `test.is_false(v)` | Valor booleano |
-| `test.is_string/number/table/function/boolean(v)` | Guards de tipo, retornando `v` |
+| `test.is_string/number/table/function/boolean(v)` | Type guards (retornam `v`) |
 | `test.contains(str, sub)` / `test.matches(str, pattern)` | Substring / padrão Lua |
 | `test.has_key(tbl, key)` / `test.len(v, n)` | Chave de mapa / comprimento |
 | `test.gt/gte/lt/lte(a, b)` | Comparação numérica |
 | `test.throws(fn)` / `test.has_error(val, err)` / `test.no_error(val, err)` | Tratamento de erros |
 
-Todas aceitam uma mensagem opcional como último argumento.
+Todas aceitam um argumento de mensagem opcional ao final.
 
-## Ciclo de Vida e Mocking
+## Ciclo de vida e mocking
 
-Chame estas funções dentro de um bloco `describe`:
+Chame estes dentro de um bloco `describe`:
 
 - `test.before_all` / `test.after_all` — executam uma vez por bloco.
 - `test.before_each` / `test.after_each` — executam ao redor de cada caso.
-- `test.mock("module.field", fn)` — substitui uma função no caso atual; os mocks são restaurados automaticamente. Use `test.restore_all_mocks()` para limpá-los antes.
+- `test.mock("module.field", fn)` — substitui uma função para o caso atual; os mocks
+  são restaurados automaticamente após cada caso. Use `test.restore_all_mocks()` para
+  limpá-los antecipadamente.
 
-Blocos `describe` aninhados herdam hooks do pai: `before_*` externo primeiro e `after_*` interno primeiro.
-
-## Solução de Problemas
-
-- `No test runner found` significa que `wippy/test` não está em `wippy.lock`; execute `wippy add wippy/test` e `wippy install`.
-- Um módulo `calc` ou `test` ausente indica que as chaves de `imports` não correspondem a `require(...)`.
-- Um arquivo só é descoberto se sua entrada tiver `meta.type: test`.
-- Tempos e glifos variam conforme o terminal. Use o status final e o código de saída para automação.
-
-## Limpeza
-
-Depois de sair de `testing-demo`, remova o diretório quando não precisar mais do projeto descartável.
+Blocos `describe` aninhados herdam os hooks do pai (o `before_*` externo primeiro, o
+`after_*` interno primeiro).
 
 ## Próximos Passos
 
-- [Hello World](tutorials/hello-world.md) — Estrutura mínima de projeto
-- [Tipos de Entrada](guides/entry-kinds.md) — `function.lua`, `library.lua` e entradas relacionadas
-- [Framework de Testes](framework/testing.md) — Referência do runner e protocolo de eventos
+- [Hello World](tutorials/hello-world.md) — o layout mínimo de projeto
+- [Entry Kinds](guides/entry-kinds.md) — `function.lua`, `library.lua` e companhia
+- [Test Framework](framework/testing.md) — referência completa do runner e do protocolo de eventos

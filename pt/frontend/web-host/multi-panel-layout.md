@@ -1,89 +1,72 @@
 ---
-title: "Layout multipainel"
-description: "Referência de acesso antecipado para declarar e controlar o layout multipainel gerenciado do Web Host."
+title: "Layout Multi-Painel"
+description: "O modo de layout gerenciado substitui o chrome padrão do Wippy por uma árvore de painéis totalmente declarativa. Em vez do shell fixo de chat e sidebar, você…"
 ---
 
-# Layout multipainel
+# Layout Multi-Painel
 
-Esta página é uma referência de configuração e API em acesso antecipado. Os
-blocos YAML e TypeScript são declarações parciais e padrões de integração; não
-formam sozinhos um shell pronto para produção.
+> **Status: Draft 1 (preview) — acesso antecipado, não para produção.** A API de layout gerenciado foi entregue, mas ainda não foi testada em campo por um consumidor de produção. Nomes de campos, padrões e regras de validação ainda podem mudar entre releases menores. Fixe uma versão exata do CDN até este rótulo ser removido. **Para quase todas as aplicações, o modo padrão `compat` é o modo de produção recomendado** — recorra ao layout gerenciado apenas quando você genuinamente precisar compor o próprio chrome.
 
-> **Status: preview do Draft 1 — acesso antecipado, não usar em produção.** A
-> API de layout gerenciado está disponível, mas ainda não foi validada com um
-> consumidor de produção. Nomes de campos, defaults e regras de validação podem
-> mudar entre releases menores. Fixe uma versão exata da CDN enquanto este aviso
-> existir. Use o modo `compat` padrão em produção, salvo quando a aplicação precisar compor o
-> próprio chrome do host.
+O modo de layout gerenciado substitui o chrome padrão do Wippy por uma árvore de painéis totalmente declarativa. Em vez do shell fixo de chat e sidebar, você descreve uma árvore de painéis nomeados no YAML do seu backend. O Web Host monta o layout no boot, o valida e o mantém reativamente em tempo de execução. Painéis podem ser redimensionados, colapsados, trocados, adicionados e removidos sem recarregar a página.
 
-O modo de layout gerenciado substitui o chrome padrão do Wippy por uma árvore de
-painéis declarativa. Defina os painéis nomeados no YAML do backend; o Web Host
-monta e valida o layout na inicialização e o mantém reativamente em runtime. Os
-painéis podem ser redimensionados, recolhidos, trocados, adicionados e removidos sem recarregar a página.
+## Quando Usar Layout Gerenciado
 
-## Quando usar o layout gerenciado
+O modo padrão `compat` (o default) entrega o produto Wippy fixo: sidebar de navegação, painel de chat, área de página e um painel direito de artefatos. É o modo de produção atual, mais usado, e é suficiente para quase todas as aplicações.
 
-O modo `compat` é o padrão de produção. Ele fornece o shell fixo do Wippy: barra
-lateral de navegação, painel de chat, área da página e painel direito de artefatos.
-
-Adote `fe_mode = managed` (acesso antecipado) somente quando precisar compor o próprio chrome:
+Opte por `fe_mode = managed` (acesso antecipado) apenas quando você precisar compor o próprio chrome:
 
 | Necessidade | Compat | Gerenciado |
 |------|--------|---------|
-| Chat + navegação padrão do Wippy | Sim | Substituíveis |
+| Chat + navegação padrão do Wippy | Sim | Substituível |
 | Vários slots de página lado a lado | Não | Sim |
-| Barra lateral ou coordenador personalizado | Limitado | Sim — qualquer tipo de painel |
+| Sidebar ou componente coordenador customizado | Limitado | Sim — qualquer tipo de painel |
 | Layouts responsivos por breakpoint | Não | Sim |
-| Painéis de overlay flutuantes | Não | Sim |
-| Coordenador headless | Não | Sim (`coordinators`) |
-| Roteamento ciente da URL por painel | Só o painel principal | Todo painel `kind: page` |
-| Barramento entre painéis | Não | Sim (`broadcast`/`send`/`on`) |
+| Painéis flutuantes de overlay | Não | Sim |
+| Componente coordenador headless | Não | Sim (`coordinators`) |
+| Roteamento ciente de URL por painel | Apenas o painel principal | Todo painel `kind: page` |
+| Barramento de mensagens entre painéis | Não | Sim (`broadcast`/`send`/`on`) |
 
 ## Compatibilidade
 
-O layout gerenciado abrange o Web Host, a facade e vários pacotes `@wippy-fe/*`. Use uma família de pacotes compatível com a release exata do Web Host de destino e verifique o import map servido; não misture versões de releases sem relação.
+O layout gerenciado abrange o Web Host, a facade e vários pacotes `@wippy-fe/*`. Use uma família de pacotes compatível com a release exata do Web Host alvo e verifique o import map servido por ela; não misture versões de pacotes de releases não relacionadas.
 
 ### Mapa de releases
 
-| Versão | Adições ao layout gerenciado |
+| Release | Adições de layout gerenciado |
 |---|---|
-| Web Host `1.0.50`, Wippy FE `0.0.50` | Intenções de compatibilidade tipadas, `@HOST/compat-coordinator`, sincronização da URL e de Voltar/Avançar, abas integradas, painéis flutuantes ancorados e `useSwapBuffer()`. |
-| Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corridas de sessão/token de `<wippy-chat>`, alças tematizadas opcionais, restrições apenas no eixo de divisão, correções de gavetas e do mapa de código-fonte do proxy. |
-| Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidade tipada de WC retido, `useHostVisibilityRefresh()`, prontidão imediata, rejeição de chaves obsoletas, atualização de props no lugar e camada isolada do splitter. |
-| Web Host `1.0.53`, Wippy FE `0.0.53` | Tokens de tema configurados propagam-se corretamente quando o modo claro ou escuro é forçado. |
-| Web Host `1.0.54`, Wippy FE `0.0.54` | Contrato v1 de portabilidade de superfície para páginas iframe e Web Fragment, com registro de layout gerenciado e dimensionamento reativo. |
-| Web Host `1.0.55`, Wippy FE `0.0.55` | Contratos de artefato gerenciado e chat independente, preservação de deep links a frio, renderização estável e alças tematizadas. |
-| Web Host `1.0.56`, Wippy FE `0.0.56` | Correções de renderização de artefatos/modais gerenciados, motivos publicados de abertura e correções no seletor de chat e ciclo de vida de slots. |
+| Web Host `1.0.50`, Wippy FE `0.0.50` | Intents de compat tipados, `@HOST/compat-coordinator`, sincronização de URL do navegador e Voltar/Avançar, abas de painel embutidas, painéis flutuantes ancorados e `useSwapBuffer()`. |
+| Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corrida de sessão/token do `<wippy-chat>`, alças de splitter tematizadas opcionais, restrições de tamanho apenas no eixo de divisão, correções de geometria/empilhamento de drawer e o source map do proxy empacotado. |
+| Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidade tipada de WC retido e `useHostVisibilityRefresh()`, prontidão imediata de página em vez de esperar o fallback de 14 segundos, rejeição de chave de renderer obsoleta, atualizações de props de componente in-place e a camada isolada de splitter com `--wippy-layout-splitter-z-index`. |
 
-A revelação da página após 14 segundos é um fallback do Web Host `1.0.52`, não
-um recurso da 1.0.51 nem um atraso de carregamento da aplicação.
+A revelação de página em 14 segundos é um fallback do Web Host `1.0.52`, não uma
+feature da 1.0.51 nem um atraso de carregamento da aplicação. O dimensionamento
+por eixo de divisão e o chat reativo chegaram na 1.0.51; visibilidade retida,
+prontidão por chave e camadas de splitter chegaram na 1.0.52.
 
-A visibilidade retida de web components diretos exige Web Host `1.0.52` e
+Visibilidade retida de web component direto exige Web Host `1.0.52` e
 `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue` e
-`@wippy-fe/shared` `0.0.52`. Releases anteriores do layout gerenciado não
+`@wippy-fe/shared` `0.0.52`. Releases anteriores de layout gerenciado não
 fornecem o contrato tipado `data-wippy-visible` nem `useHostVisibilityRefresh()`.
 
-### Atividade preservada de web components
+### Atividade retida de web component
 
-Layouts gerenciados mantêm os painéis montados durante trocas de buffer, mudanças
-de breakpoint e ciclos de fechar/abrir drawers. O host define
-`data-wippy-visible="true" | "false"` antes de conectar um elemento personalizado direto
-e o atualiza no lugar quando a propriedade lógica muda. Isso não é visibilidade
-de CSS, viewport ou documento e nunca implica remontagem.
+Layouts gerenciados mantêm painéis montados através de trocas de buffer, mudanças
+de breakpoint e ciclos de abrir/fechar de drawer. O host define
+`data-wippy-visible="true" | "false"` antes de conectar um custom element direto e
+o atualiza in-place quando a propriedade lógica muda. Isso não é visibilidade de
+CSS, de viewport ou de documento, e nunca implica uma remontagem.
 
-Componentes Vue leem o estado com `useHostVisibility()` ou combinam carregamento
-inicial comum com atualizações na revelação por `useHostVisibilityRefresh(task)`.
-O segundo é executado após a montagem e depois somente em `false -> true` exato.
-Não use o tópico `@visibility` do proxy em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
+Componentes Vue leem o estado com `useHostVisibility()` ou combinam o
+carregamento inicial comum com refreshes de revelação através de
+`useHostVisibilityRefresh(task)`. Este último roda após a montagem e depois apenas
+em uma transição exata de `false -> true`. Não use o tópico `@visibility` do proxy
+em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
 
-Fixe uma tag exata da CDN até a remoção do rótulo Draft 1. Esta referência foi
-validada com `https://web-host.wippy.ai/webcomponents-1.0.56` e a família
-correspondente `@wippy-fe/*` `0.0.56`. A visibilidade retida de web components
-diretos ainda exige pelo menos 1.0.52/0.0.52.
+Fixe uma tag exata do CDN — no mínimo `https://web-host.wippy.ai/webcomponents-1.0.52` — até o rótulo Draft 1 ser removido.
 
-## Como habilitar o layout gerenciado
+## Habilitando o Layout Gerenciado
 
-Habilite a entrada managed na configuração da facade e forneça uma declaração `host_config.layout` no backend:
+Habilite a entrada gerenciada na configuração da sua facade e forneça uma declaração `host_config.layout` no backend:
 
 ```yaml
 host_config:
@@ -102,54 +85,54 @@ host_config:
       main: { kind: page,    id: home }
 ```
 
-Quando a entrada managed é selecionada, a facade serve `managed-layout.js` em vez de `module.js`. `fe_mode` é um parâmetro atual do requisito da facade (padrão `compat`, adesão a `managed`); ele é definido no requisito `wippy.facade`, não transportado no payload de `AppConfig`. Não existe campo `AppConfig.feature` — o layout gerenciado é transmitido ao filho inteiramente por `AppConfig.hostConfig.layout`. A *superfície* da Proxy API é idêntica nos dois modos, mas alguns comandos só produzem efeito em um deles — consulte [O que funciona em cada modo](#o-que-funciona-em-cada-modo).
+Quando a entrada gerenciada é selecionada, a facade serve `managed-layout.js` em vez de `module.js`. `fe_mode` é um parâmetro de requisito atual da facade (padrão `compat`, opcional `managed`); ele é definido no requisito `wippy.facade`, e não carregado dentro do payload do `AppConfig`. Não existe campo `AppConfig.feature` — o layout gerenciado é comunicado ao filho inteiramente através de `AppConfig.hostConfig.layout`. A *superfície* da API do proxy é idêntica nos dois modos, mas alguns comandos só têm efeito em um deles — veja [O que funciona em qual modo](#what-works-in-which-mode).
 
 ## A `HostLayoutDeclaration`
 
-Todo o layout é descrito por um único objeto `HostLayoutDeclaration`, aninhado sob `host_config.layout` do backend na configuração da facade e projetado em `AppConfig.hostConfig.layout` do frontend. O host o valida antes da montagem — qualquer `LayoutValidationError` aparece no console do navegador com `{ kind, message, panelId? }`.
+O layout inteiro é descrito por um único objeto `HostLayoutDeclaration` aninhado sob `host_config.layout` no backend, na configuração da sua facade, e projetado no frontend como `AppConfig.hostConfig.layout`. O host o valida antes de montar — qualquer `LayoutValidationError` aparece no console do navegador com `{ kind, message, panelId? }`.
 
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
-| `layouts` | `Record<string, PanelTree> & { default: PanelTree }` | Árvores de painéis por breakpoint. A chave `default` é obrigatória. |
-| `breakpoints?` | `Record<string, number>` | Larguras em pixels que ativam chaves de layout diferentes do padrão. |
-| `panels` | `Record<string, HostPanelDef>` | Definições nomeadas do conteúdo dos painéis. |
-| `floating?` | `Record<string, HostFloatingDef>` | Painéis de overlay flutuantes na inicialização. |
-| `modals?` | `Record<string, HostModalDef>` | Definições de modal na inicialização. |
+| `layouts` | `Record<string, PanelTree> & { default: PanelTree }` | Árvores de painéis indexadas por breakpoint. A chave `default` é obrigatória. |
+| `breakpoints?` | `Record<string, number>` | Larguras em pixels que ativam chaves de layout não padrão. |
+| `panels` | `Record<string, HostPanelDef>` | Definições nomeadas de conteúdo de painel. |
+| `floating?` | `Record<string, HostFloatingDef>` | Painéis flutuantes de overlay definidos no boot. |
+| `modals?` | `Record<string, HostModalDef>` | Definições de modais no boot. |
 | `coordinators?` | `Record<string, HostCoordinatorDef>` | Componentes coordenadores headless. |
-| `services?` | `Record<string, HostCoordinatorDef>` | Alias obsoleto de `coordinators`; novas declarações devem usar `coordinators`. |
-| `dragEnabled?` | boolean | Permite que o usuário arraste o splitter. Padrão `true`. |
+| `services?` | `Record<string, HostCoordinatorDef>` | Alias deprecado de `coordinators`; declarações novas precisam usar `coordinators`. |
+| `dragEnabled?` | boolean | Permite arrastar o splitter pelo usuário. Padrão `true`. |
 
-## Tipos de painel
+## Tipos de Painel
 
-Cada entrada em `panels`, `floating`, `modals` e `coordinators` é uma união discriminada por `kind`:
+Cada entrada em `panels`, `floating`, `modals` e `coordinators` é uma união marcada por `kind`:
 
 | Tipo | Descrição | Campos obrigatórios |
 |------|-------------|-----------------|
-| `page` | Módulo de página Wippy montado pelo engine de iframe ou Web Fragment selecionado | `id` (id no registro de páginas) |
-| `artifact` | Artefato Wippy renderizado pelo resolver de artefato/página do host | `id` (UUID do artefato) |
-| `component` | Web component montado diretamente no DOM do host | `tagName` |
-| `builtin` | Componente do host pertencente ao framework (veja abaixo) | `id` |
+| `page` | Um módulo de página Wippy montado em um iframe srcdoc | `id` (id de registry da página) |
+| `artifact` | Um artefato Wippy montado em um iframe srcdoc | `id` (UUID do artefato) |
+| `component` | Um web component montado diretamente no DOM do host | `tagName` |
+| `builtin` | Um componente de host pertencente ao framework (veja abaixo) | `id` |
 
-Exatamente um painel na árvore de layout deve ter `main: true`. A propriedade da URL do navegador ainda exige sincronização de rota por `@HOST/compat-coordinator` ou coordenação equivalente do consumidor. Todos os outros painéis de página roteiam independentemente dentro dos realms selecionados.
+Exatamente um painel da árvore de layout precisa carregar `main: true`. A propriedade da URL do navegador ainda exige sincronização de rotas através de `@HOST/compat-coordinator` ou coordenação equivalente do consumidor. Todos os demais painéis roteiam independentemente dentro dos seus iframes.
 
-### IDs de painel integrados
+### IDs de Painel Embutidos
 
-`kind: builtin` aceita os valores de `id` a seguir. O prefixo `@HOST/` é reservado para painéis pertencentes ao framework:
+`kind: builtin` aceita os seguintes valores de `id`. O prefixo `@HOST/` é reservado para painéis pertencentes ao framework:
 
 | ID | O que renderiza |
 |----|-----------------|
-| `@HOST/nav-sidebar` | Barra lateral de navegação padrão do Wippy (sessões, páginas, configurações) |
+| `@HOST/nav-sidebar` | Sidebar de navegação padrão do Wippy (sessões, páginas, configurações) |
 | `@HOST/chat-wrapper` | Painel de chat padrão do Wippy para a sessão ativa |
 | `@HOST/artifact-viewer` | Visualizador genérico de artefatos (combine com a rota `/:uuid`) |
 | `@HOST/session-selector` | Lista e seletor de sessões |
-| `@HOST/compat-coordinator` | Coordenador headless de intents compat e rota principal; declare sob `coordinators` |
-| `@HOST/panel-tab` | Tab de borda para revelar um painel recolhido; declare sob `floating` |
+| `@HOST/compat-coordinator` | Coordenador headless de intents de compat e da rota principal; declare em `coordinators` |
+| `@HOST/panel-tab` | Aba de borda para revelar um painel colapsado; declare em `floating` |
 
-Um `@HOST/<id>` desconhecido causa `LayoutValidationError` ao carregar a declaração, em vez de renderizar silenciosamente um slot vazio.
+Um `@HOST/<id>` desconhecido causa um `LayoutValidationError` no carregamento da declaração, em vez de renderizar silenciosamente um slot vazio.
 
-## Layouts definidos por breakpoint
+## Layouts Indexados por Breakpoint
 
-O campo `layouts` mapeia chaves de breakpoint para árvores de painéis. `default` é sempre usado, a menos que um breakpoint mais estreito corresponda. As larguras em pixels dos breakpoints são definidas sob `breakpoints`:
+O campo `layouts` mapeia chaves de breakpoint para árvores de painéis. O `default` é sempre usado, a menos que um breakpoint mais estreito case. As larguras em pixels dos breakpoints são definidas em `breakpoints`:
 
 ```yaml
 host_config:
@@ -179,22 +162,22 @@ host_config:
       main: { kind: page, id: app-home,    route: / }
 ```
 
-Quando o breakpoint muda, painéis com o mesmo `id` mantêm um host de conteúdo estável que acompanha visualmente o slot ativo sem reparenting. `contentWindow` do iframe, estado do web component, estado do Vue e posição de rolagem sobrevivem à transição; o reparenting por Teleport é evitado intencionalmente porque remover e reinserir um iframe o recarrega.
+Quando o breakpoint muda, painéis com o mesmo `id` mantêm um host de conteúdo estável que acompanha visualmente o slot ativo sem reparentar. O `contentWindow` do iframe, o estado do web component, o estado do Vue e a posição de rolagem sobrevivem à transição; reparentar via Teleport é evitado intencionalmente, porque remover e reinserir um iframe o recarrega.
 
-### Painéis em modo drawer
+### Painéis em Modo Drawer
 
-Um slot de painel pode declarar `display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` para ser renderizado como overlay deslizante em vez de item flex inline. Painéis drawer:
+Um slot de painel pode declarar `display: 'drawer-left' | 'drawer-right' | 'drawer-bottom'` para renderizar como um overlay deslizante em vez de um item flex inline. Painéis drawer:
 
-- Não participam do dimensionamento das faixas do contêiner parent (`size` é ignorado)
-- São renderizados como overlays de posição absoluta ancorados à borda nomeada
-- Têm estado aberto/fechado alternado por `host.layout.openDrawer(id)` / `closeDrawer(id)` / `toggleDrawer(id)`
-- Exibem um backdrop quando abertos; clicar nele fecha todos os drawers abertos
+- Não participam do dimensionamento de trilhas do container pai (`size` é ignorado)
+- Renderizam como overlays posicionados de forma absoluta, ancorados à borda nomeada
+- Têm um estado aberto/fechado alternado via `host.layout.openDrawer(id)` / `closeDrawer(id)` / `toggleDrawer(id)`
+- Exibem um backdrop quando abertos; clicar no backdrop fecha todos os drawers abertos
 
-Slots `main: true` não podem usar o modo drawer — a validação do host lança erro. O campo `drawerSize.width` controla a largura de drawers à esquerda/direita; `drawerSize.height`, a altura dos inferiores. O padrão é `320px`.
+Slots com `main: true` não podem estar em modo drawer — a validação do host lança erro. O campo `drawerSize.width` controla a largura para drawers esquerdo/direito; `drawerSize.height` para drawers inferiores. O padrão é `320px`.
 
-## Painéis flutuantes
+## Painéis Flutuantes
 
-Painéis flutuantes são overlays de posição livre declarados sob `floating`. Eles não participam da árvore de layout flex e podem ser adicionados ou removidos em runtime:
+Painéis flutuantes são overlays posicionados livremente, declarados em `floating`. Eles não participam da árvore de layout flex e podem ser adicionados ou removidos em tempo de execução:
 
 ```yaml
 floating:
@@ -205,9 +188,9 @@ floating:
     size: { width: 48, height: 80 }
 ```
 
-Gerenciamento em runtime:
+Gerenciamento em tempo de execução:
 ```typescript
-// Add a floating panel
+// Adicionar um painel flutuante
 host.layout.addFloating('inspector', {
   kind: 'component',
   tagName: 'my-inspector',
@@ -215,13 +198,13 @@ host.layout.addFloating('inspector', {
   size: { width: 400, height: 300 },
 })
 
-// Remove it
+// Removê-lo
 host.layout.removeFloating('inspector')
 ```
 
-## Coordenadores headless
+## Coordenadores Headless
 
-Coordenadores são componentes montados em um host oculto. Eles não têm slot visível, mas recebem a API do host no escopo do painel. Use-os para lógica transversal, mantendo os painéis visuais concentrados na renderização. O campo antigo `services` permanece como alias de compatibilidade obsoleto.
+Coordenadores são componentes montados em um host oculto. Eles não têm slot visível, mas recebem a API de host com escopo de painel. Use-os para lógica transversal, de modo que os painéis de exibição permaneçam focados em renderizar. O campo mais antigo `services` permanece como alias deprecado de compatibilidade.
 
 ```yaml
 coordinators:
@@ -230,35 +213,31 @@ coordinators:
     tagName: my-coordinator
 ```
 
-Um componente coordenador recebe o wrapper do host no escopo do painel e pode assinar canais do barramento imediatamente em `onMount`:
+Um componente coordenador recebe o wrapper de host com escopo de painel e pode assinar canais do barramento imediatamente em `onMount`:
 
 ```typescript
 import { WippyElement } from '@wippy-fe/webcomponent-core'
 
 class MyCoordinator extends WippyElement {
-  private offOpenChat: (() => void) | null = null
-
   protected onMount() {
-    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
+    this.host?.layout.on('open-chat', ({ payload }) => {
       this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
       this.host?.layout.expandPanel('right')
-    }) ?? null
+    })
   }
-  protected onUnmount() {
-    this.offOpenChat?.()
-    this.offOpenChat = null
-  }
+  protected onUnmount() {}
   static get wippyConfig() { return { propsSchema: { properties: {} } } }
 }
 customElements.define('my-coordinator', MyCoordinator)
 ```
 
-### Coordenador de compatibilidade incluído
+### Coordenador de compat entregue
 
-O layout gerenciado contém somente as superfícies declaradas. Chamadas como
+O layout gerenciado contém apenas as surfaces declaradas. Chamadas como
 `host.openArtifact()`, `host.startChat()`, `host.openSession()` e
 `host.navigate()` publicam, portanto, intents tipados no canal reservado
-`@HOST/intent`. Declare o coordenador entregue para agir sobre eles e vincular a URL do navegador ao painel principal:
+`@HOST/intent`. Declare o coordenador entregue para agir sobre eles e para
+vincular a URL do navegador ao painel principal:
 
 ```yaml
 coordinators:
@@ -273,109 +252,112 @@ coordinators:
       wsActions: true
 ```
 
-Mantenha `routeSync: true` ao usar o contrato padrão de navegação. Sem um
-coordenador ou lógica de consumidor equivalente, deep links, Voltar/Avançar e a
-navegação de `@HOST/nav-sidebar` não têm rota de painel para controlar. Intents
-gerados durante a inicialização do filho ficam em uma fila limitada até a primeira assinatura de coordenador.
+Mantenha `routeSync: true` ao usar o contrato de navegação padrão. Sem um
+coordenador ou lógica equivalente do consumidor, deep links, Voltar/Avançar e a
+navegação do `@HOST/nav-sidebar` não têm rota de painel para acionar. Intents
+levantados durante o boot do filho são mantidos em uma fila limitada até o
+primeiro coordenador assinar.
 
-`@HOST/` é reservado nas duas direções: painéis comuns não podem publicar tráfego
-do sistema, e somente entradas sob `coordinators` o recebem pelas APIs
-compatíveis do host. Essa fronteira é imposta para painéis iframe/Web Fragment.
-Um componente direto montado no realm do host compartilha o DOM do host e não é
-uma sandbox de segurança. Na inicialização, o host imprime uma tabela de paridade
-quando falta o tratamento do coordenador, uma superfície de destino modal, o
-vínculo da URL ao painel principal ou uma tag de coordenador declarada; uma declaração completa não gera aviso.
+`@HOST/` é reservado nos dois sentidos: painéis comuns não podem publicar tráfego
+de sistema, e apenas entradas em `coordinators` o recebem através de APIs de host
+suportadas. Esse limite é imposto para painéis de iframe/Web Fragment. Um
+componente direto montado no realm do host compartilha o DOM do host e não é um
+sandbox de segurança. No boot, o host imprime uma tabela de paridade quando falta
+tratamento de coordenador, uma surface de destino de modal, vinculação de URL ao
+painel principal ou uma tag de coordenador declarada; uma declaração completa não
+produz aviso.
 
-## Barramento de broadcast dentro da aba
+## O Barramento de Broadcast na Aba
 
-Os painéis se comunicam por um barramento no escopo da aba atual do navegador. O barramento nunca cruza para outras abas — use um tópico WebSocket personalizado se precisar de sincronização entre abas.
+Painéis se comunicam através de um barramento com escopo na aba atual do navegador. O barramento nunca cruza para outras abas — use um tópico WebSocket customizado se você precisar de sincronização entre abas.
 
 | Método | Descrição |
 |--------|-------------|
-| `host.layout.broadcast(channel, payload)` | Publica para todos os painéis, exceto o remetente |
+| `host.layout.broadcast(channel, payload)` | Publica para todos os painéis; o remetente é excluído |
 | `host.layout.send(targetPanelId, channel, payload)` | Publica para um painel específico |
-| `host.layout.on(channel, handler)` | Assina; retorna a função de cancelamento `off()` |
+| `host.layout.on(channel, handler)` | Assina; retorna a função `off()` de cancelamento |
 
-O `sourcePanelId` das mensagens recebidas é definido pelo host a partir da window publicadora e não pode ser falsificado. Nomes de canais são strings simples sensíveis a maiúsculas e minúsculas.
+O `sourcePanelId` das mensagens recebidas é definido pelo host a partir da janela publicadora e não pode ser forjado. Nomes de canal são strings simples sensíveis a maiúsculas e minúsculas.
 
-**Importante:** componentes que importam `host` diretamente de `@wippy-fe/proxy` ignoram o escopo do painel — as chamadas do barramento passam, mas perdem `sourcePanelId`. Em vez disso, sempre use o wrapper no escopo do painel:
+**Importante:** Componentes que importam `host` diretamente de `@wippy-fe/proxy` contornam o escopo de painel — as chamadas de barramento passam, mas perdem o `sourcePanelId`. Sempre use o wrapper com escopo de painel:
 
 ```typescript
-// raw HTMLElement
+// HTMLElement cru
 import { getWippyHost } from '@wippy-fe/webcomponent-core'
 const host = getWippyHost(this)
 
-// WippyElement subclass — this.host is already panel-scoped
+// Subclasse de WippyElement — this.host já tem escopo de painel
 this.host?.layout.broadcast('open-chat', { token: 'abc' })
 
-// Vue component
+// Componente Vue
 import { useHost } from '@wippy-fe/webcomponent-vue'
-// ProxyApiInstance is an ambient global type (from @wippy-fe/types-global-proxy) — reference it without an import.
+// ProxyApiInstance é um tipo global ambiente (de @wippy-fe/types-global-proxy) — referencie-o sem import.
 const host = useHost<ProxyApiInstance['host']>()
 host?.layout.broadcast('open-chat', { token: 'abc' })
 ```
 
-## Referência da API de layout (`host.layout`)
+## Referência da API de Layout (`host.layout`)
 
 | Método | Descrição |
 |--------|-------------|
 | `.snapshot` | Getter síncrono que retorna o snapshot completo do layout, ou `null` fora do modo de layout gerenciado |
 | `.resizePanel(id, size)` | Redimensiona o painel nomeado no breakpoint ativo |
-| `.collapsePanel(id)` | Recolhe um painel declarado como `collapsible: true` |
-| `.expandPanel(id)` | Expande um painel recolhido |
+| `.collapsePanel(id)` | Colapsa um painel declarado como `collapsible: true` |
+| `.expandPanel(id)` | Expande um painel colapsado |
 | `.openDrawer(id)` | Abre um painel em modo drawer |
 | `.closeDrawer(id)` | Fecha um painel em modo drawer |
 | `.toggleDrawer(id)` | Alterna um painel em modo drawer |
-| `.movePanel(id, target)` | Move um painel para outra posição na árvore |
-| `.removePanel(id)` | Remove um painel de todos os layouts de breakpoint |
-| `.updatePanel(id, def)` | Atualiza parcialmente a definição do painel em runtime; `props` usa merge raso e campos de nível superior são substituídos |
+| `.movePanel(id, target)` | Move o painel para uma nova posição na árvore |
+| `.removePanel(id)` | Remove o painel de todos os layouts de breakpoint |
+| `.updatePanel(id, def)` | Aplica um patch na definição do painel em tempo de execução; `props` faz merge raso, campos de nível superior substituem |
 | `.addFloating(id, def)` | Adiciona um painel flutuante |
 | `.removeFloating(id)` | Remove um painel flutuante |
-| `.openModal(id, def)` | Abre um modal. A API TypeScript pública 0.0.56 exige `def`; o host o mescla sobre qualquer declaração com o mesmo id. `<dialog>.showModal()` nativo é o padrão; passe `useNativeDialog: false` para o overlay div legado. Reabrir um id já aberto é um no-op silencioso. |
+| `.openModal(id, def?)` | Abre um modal declarado por id, opcionalmente sobrescrevendo sua definição. Modais criados em tempo de execução exigem `def`. O `<dialog>.showModal()` nativo é o padrão; passe `useNativeDialog: false` para o overlay legado em div. Reabrir um id já aberto é um no-op silencioso. |
 | `.closeModal(id)` | Fecha um modal aberto |
 | `.broadcast(channel, payload)` | Publica para todos os painéis |
 | `.send(target, channel, payload)` | Publica para um painel |
 | `.on(channel, handler)` | Assina um canal do barramento |
 
-`openModal()` documenta infraestrutura de layout interna do host, não uma receita para componentes da aplicação. Uma UI de produto Vue entregue deve usar `Dialog` do PrimeVue ou a API de confirmação do host, em vez de clonar esse comportamento de diálogo nativo com estilo modal personalizado.
+`openModal()` documenta infraestrutura interna de layout do host, não uma receita de componente de aplicação. UI de produto em Vue entregue deve usar o `Dialog` do PrimeVue ou a API de confirmação do host, em vez de clonar esse comportamento de dialog nativo com estilização customizada de modal.
 
-### Semântica de merge de `updatePanel`
+### Semântica de Merge de `updatePanel`
 
-`host.layout.updatePanel(id, def)` atualiza parcialmente uma definição de painel existente — não a substitui. O objeto `props` passa por **merge raso** com as props atuais do painel: chaves fornecidas são adicionadas ou sobrescritas, e chaves omitidas são preservadas. Todo **outro** campo de nível superior de `def` (`route`, `kind`, `id`, `tagName`, `title`, `icon`, …) **substitui** integralmente o valor atual.
+`host.layout.updatePanel(id, def)` aplica um patch em uma definição de painel existente — ele não a substitui. O objeto `props` sofre **merge raso** com as props atuais do painel: chaves fornecidas são adicionadas ou sobrescritas, chaves omitidas são preservadas. Todo **outro** campo de nível superior de `def` (`route`, `kind`, `id`, `tagName`, `title`, `icon`, …) **substitui** o valor atual por completo.
 
-Dado um painel cujas props atuais sejam `{ artifactId: 'old', zoom: 2 }`:
+Dado um painel cujas props atuais são `{ artifactId: 'old', zoom: 2 }`:
 
 ```typescript
-// props shallow-merges → { artifactId: 'abc', zoom: 2 }
+// props sofre merge raso → { artifactId: 'abc', zoom: 2 }
 host.layout.updatePanel('right', { props: { artifactId: 'abc' } })
 
-// route replaces wholesale; props left untouched
+// route substitui por completo; props ficam intactas
 host.layout.updatePanel('right', { route: '/x' })
 ```
 
-Duas ressalvas: o merge de props é **raso** — um objeto aninhado em `props` é substituído por inteiro, sem merge profundo — e um merge raso não pode excluir uma chave de prop (apenas sobrescrevê-la).
+Duas ressalvas: o merge de props é **raso** — um objeto aninhado dentro de `props` é substituído por inteiro, não mesclado em profundidade — e um merge raso não consegue apagar uma chave de prop (você só pode sobrescrevê-la).
 
 ## Composables Vue — `@wippy-fe/vue-host`
 
-Esses composables encapsulam a API de layout do proxy em refs reativas do Vue 3. A assinatura subjacente tem escopo de módulo e dura por toda a vida do iframe; portanto, não há limpeza por componente na desmontagem:
+Esses composables envolvem a API de layout do proxy em refs reativos do Vue 3. A assinatura subjacente tem escopo de módulo e vive durante todo o ciclo de vida do iframe, então não há limpeza por componente na desmontagem:
 
 | Composable | Retorna |
 |------------|---------|
 | `useWippyLayout()` | Estado completo do layout e métodos de mutação |
-| `useWippyPanel(panelId)` | Estado em tempo real do painel nomeado (`panelId` é obrigatório — `string`, `Ref<string>` ou getter) |
-| `useWippyBreakpoint()` | Nome do breakpoint ativo como ref reativa |
-| `useWippyMainRoute()` | Ref reativa para a rota atual do painel principal |
+| `useWippyPanel(panelId)` | Estado ao vivo do painel nomeado (`panelId` é obrigatório — `string`, `Ref<string>` ou getter) |
+| `useWippyBreakpoint()` | Nome do breakpoint ativo como um ref reativo |
+| `useWippyMainRoute()` | Ref reativo para a rota atual do painel principal |
 
-Os composables nunca retornam `null` — sempre devolvem objetos/refs cujo `.value` interno degrada quando não há host de layout gerenciado: `useWippyLayout().snapshot.value` é `null` (e `isManaged.value` é `false`, então mutações são no-ops silenciosos), `useWippyBreakpoint().value` e `useWippyMainRoute().value` são strings vazias, e `useWippyPanel(id).value` é `null` quando o id não existe. Proteja a presença do host com `layout.isManaged.value` (ou `layout.snapshot.value !== null`), não com uma verificação `=== null` no valor retornado. Isso mantém os composables utilizáveis em playgrounds independentes e testes unitários sem host de layout gerenciado.
+Os composables nunca retornam `null` — eles sempre devolvem objetos/refs cujo `.value` interno degrada quando não há host de layout gerenciado presente: `useWippyLayout().snapshot.value` é `null` (e `isManaged.value` é `false`, então mutações são no-ops silenciosos), `useWippyBreakpoint().value` e `useWippyMainRoute().value` são strings vazias, e `useWippyPanel(id).value` é `null` quando o id está ausente. Proteja a presença do host com `layout.isManaged.value` (ou `layout.snapshot.value !== null`), e não com uma checagem `=== null` no valor de retorno. Isso mantém os composables utilizáveis em playgrounds autônomos e testes unitários onde não há host de layout gerenciado.
 
-## Buffer de troca sem remontagens
+## Buffering de troca sem remontagens
 
-`useSwapBuffer()` de `@wippy-fe/layout` mantém a superfície de saída montada até
-que o conteúdo de entrada sinalize prontidão, com um limite explícito de timeout.
-Use o `slot.index` imutável como chave do DOM, passe índice e chave do conteúdo a
-`markReady()` / `markFailed()` para rejeitar sinais assíncronos obsoletos e
-mantenha erros no escopo de cada buffer. A identidade do conteúdo pertence a
-`keyOf`; mudar a chave do DOM reinseriria um iframe e destruiria o estado que o buffer deve reter.
+`useSwapBuffer()` de `@wippy-fe/layout` mantém a surface que está saindo montada
+até o conteúdo entrante reportar prontidão, com um teto explícito de timeout.
+Use o `slot.index` imutável como chave do DOM, passe tanto o índice quanto a
+chave de conteúdo para `markReady()` / `markFailed()` para que sinais assíncronos
+obsoletos sejam rejeitados, e mantenha os erros com escopo por buffer. A
+identidade do conteúdo pertence a `keyOf`; mudar a chave do DOM reinseriria um
+iframe e destruiria o estado que o buffering existe para reter.
 
 ```typescript
 const swap = useSwapBuffer<Surface>({
@@ -388,141 +370,143 @@ const swap = useSwapBuffer<Surface>({
 
 const slot = swap.push(surface)
 swap.markReady(slot.index, slot.key)
-// or: swap.markFailed(slot.index, error, slot.key)
+// ou: swap.markFailed(slot.index, error, slot.key)
 ```
 
-Os valores mostrados são os padrões. Por padrão, um timeout de prontidão revela
-o conteúdo em vez de deixar conteúdo obsoleto atrás de um loader. Vincule a UI
-de carregamento a `swap.showLoader`, não diretamente à prontidão. Um buffer com
-falha permanece isolado de seu irmão; após tratar o erro, chame `clearError(index)` para tentar novamente.
+Os valores mostrados são os padrões. Um timeout de prontidão revela o conteúdo por
+padrão, em vez de deixar conteúdo obsoleto atrás de um loader. Vincule a UI de
+carregamento a `swap.showLoader`, não diretamente à prontidão. Um buffer que
+falhou permanece isolado do seu irmão; depois de tratar o erro, chame
+`clearError(index)` para tentar de novo.
 
-### Prontidão da página no Web Host
+### Prontidão de página no Web Host
 
-O Web Host usa a mesma disciplina de prontidão por chave para superfícies de
-página gerenciadas, com limite final de revelação de 14 segundos. Renderers de
-página e Web Component direto emitem `load` / `error` por listeners de eventos
-Vue e incluem a chave imutável de conteúdo pertencente ao renderer. Assim, o
-conteúdo desenhado é revelado imediatamente; o limite é apenas fallback para
-conteúdo que nunca responde. Um evento tardio de renderer removido é rejeitado
-quando seu índice de buffer já foi reutilizado.
+O Web Host usa a mesma disciplina de prontidão por chave para surfaces de página
+gerenciadas, com um teto final de revelação de 14 segundos. Renderers de iframe e
+de Web Component direto emitem `load` / `error` através de listeners de evento do
+Vue e incluem a chave de conteúdo imutável pertencente àquele renderer. Conteúdo
+já pintado é, portanto, revelado imediatamente; o teto é apenas um fallback para
+conteúdo que nunca reporta. Um evento tardio de um renderer descartado é rejeitado
+quando o índice de buffer dele já foi reutilizado.
 
-Não use o limite de 14 segundos do host como atraso de carregamento da aplicação
-e não adicione um segundo timer à prontidão normal da página. Uma página que
-atinge o limite com frequência tem um caminho quebrado de prontidão ou ciclo de vida que deve ser corrigido na origem.
+Não use o teto de 14 segundos do host como atraso de carregamento da aplicação, e
+não adicione um segundo timer em volta da prontidão normal de página. Uma página
+que atinge o teto regularmente tem um caminho de prontidão ou ciclo de vida
+quebrado, que deve ser corrigido no seu dono.
 
 ### Atualizações estáveis de componente e dimensionamento de painel
 
-Para `kind: component`, mudar `props` do painel atualiza ou remove atributos no
-elemento personalizado existente. O host só substitui o elemento quando
-`tagName` muda. Isso preserva o estado pertencente ao elemento durante chamadas
-de `updatePanel()` e transições de breakpoint.
+Para `kind: component`, mudar as `props` do painel atualiza ou remove atributos do
+custom element existente. O host substitui o elemento apenas quando o `tagName`
+muda. Isso preserva o estado pertencente ao elemento durante chamadas de
+`updatePanel()` e transições de breakpoint.
 
-`minSize` e `maxSize` restringem somente o eixo ativo da divisão: largura em uma
+`minSize` e `maxSize` restringem apenas o eixo de divisão ativo: largura em uma
 árvore horizontal e altura em uma árvore vertical. Eles não limitam o eixo
-transversal; assim, navegação, chat e outras montagens de altura total podem
-preencher sua faixa. Montagens drawer seguem a geometria animada do drawer e
-são promovidas acima da âncora e do backdrop somente enquanto abertas, sem remontar seu conteúdo.
+transversal, então navegação, chat e outros mounts de altura completa podem
+preencher sua trilha. Mounts de drawer seguem a geometria animada do drawer e são
+promovidos acima da sua âncora e do backdrop apenas enquanto abertos, sem
+remontar o conteúdo.
 
-## Estilo do splitter e da alça
+## Estilização do splitter e da alça
 
-A área de acerto do splitter é mais larga que sua linha visível e fica na pilha
-isolada de camadas do pacote. `--wippy-layout-splitter-z-index` tem padrão `700`,
-abaixo de drawers e backdrops de modais. A alça circular é opcional:
+A área de acerto do splitter é mais larga do que sua linha visível e vive na pilha
+de camadas isolada do pacote. `--wippy-layout-splitter-z-index` tem padrão `700`,
+abaixo de drawers e backdrops de modal. A alça circular é opcional:
 
-| Variável | Padrão | Finalidade |
+| Variável | Padrão | Propósito |
 |---|---|---|
 | `--wippy-layout-splitter-size` | `1px` | Espessura da linha visível do splitter |
-| `--wippy-layout-splitter-hit-size` | `10px` | Área do ponteiro ao redor da linha; `24px` em ponteiros imprecisos |
+| `--wippy-layout-splitter-hit-size` | `10px` | Área de acerto do ponteiro em volta da linha; `24px` em ponteiros grossos |
 | `--wippy-layout-splitter-z-index` | `700` | Camada do splitter e da alça |
 | `--wippy-layout-splitter-handle-size` | `0` | Diâmetro da alça; `0` a desabilita |
 | `--wippy-layout-splitter-handle-bg` | `transparent` | Preenchimento da alça |
-| `--wippy-layout-splitter-handle-border` | `0 solid transparent` | Forma abreviada da borda |
+| `--wippy-layout-splitter-handle-border` | `0 solid transparent` | Shorthand de borda |
 | `--wippy-layout-splitter-handle-shadow` | `none` | Sombra da alça |
-| `--wippy-layout-splitter-handle-icon-color` | `transparent` | Cor SVG ciente do tema via `currentColor` |
+| `--wippy-layout-splitter-handle-icon-color` | `transparent` | Cor do SVG ciente do tema via `currentColor` |
 
-Ao habilitar, defina juntos tamanho, preenchimento, borda/sombra e cor do ícone.
-O SVG gira 90 graus em splitters verticais e permanece oculto em divisões bloqueadas.
+Defina tamanho, preenchimento, borda/sombra e cor do ícone em conjunto ao optar
+por ela. O SVG rotaciona 90 graus para splitters verticais e permanece oculto em
+divisões travadas.
 
-## O que funciona em cada modo
+## O que funciona em qual modo
 
-A *superfície* da Proxy API é idêntica nos modos compat e managed: os mesmos
-imports de `@wippy-fe/proxy` são resolvidos em ambos. Duas partes da API têm
-**efeito específico por modo**; portanto, considere o modo ativo ao migrar uma aplicação para layout gerenciado.
+A *superfície* da API do proxy é idêntica nos modos compat e gerenciado — os mesmos imports de `@wippy-fe/proxy` resolvem em ambos — mas duas partes dela são **específicas de modo em efeito**. Essa divergência é o principal ponto de atenção ao mover um app para o layout gerenciado (e uma razão pela qual o gerenciado ainda é acesso antecipado).
 
-### `host.layout` só produz efeito no modo gerenciado
+### `host.layout` só tem efeito no modo gerenciado
 
-O host instala o receptor de layout **somente quando um layout é declarado** (a entrada managed, controlada por `hostConfig.layout`). No modo compat, `host.layout` ainda existe, mas `host.layout.snapshot` é `null` e toda mutação e chamada do barramento (`resizePanel`, `updatePanel`, `movePanel`, `openModal`, `addFloating`, `broadcast`, `send`, `on`, …) é um **no-op silencioso** — a mensagem é enviada, mas nada no host a escuta. Verifique o snapshot antes de modificar:
+O host instala o receptor de layout **apenas quando um layout é declarado** (a entrada gerenciada, condicionada a `hostConfig.layout`). No modo compat, `host.layout` ainda existe, mas `host.layout.snapshot` é `null` e toda mutação e chamada de barramento (`resizePanel`, `updatePanel`, `movePanel`, `openModal`, `addFloating`, `broadcast`, `send`, `on`, …) é um **no-op silencioso** — a mensagem é postada, mas nada no host está escutando. Condicione ao snapshot antes de mutar:
 
 ```typescript
 if (host.layout.snapshot) {
-  host.layout.updatePanel('right', { route: '/details' })   // managed only
+  host.layout.updatePanel('right', { route: '/details' })   // apenas no gerenciado
 }
 // Vue: const { isManaged } = useWippyLayout(); if (isManaged.value) { … }
 ```
 
-(Separadamente — em outro eixo — `addPanel` e `setLayout` não são expostos pelo proxy *de forma alguma*, em nenhum modo; consulte [Limitações conhecidas](#limitações-conhecidas).)
+(Separadamente — em outro eixo — `addPanel` e `setLayout` não são expostos pelo proxy *de forma alguma*, em nenhum dos modos; veja [Limitações Conhecidas](#known-limitations).)
 
-### Comandos `host.*` que pressupõem o shell de compatibilidade
+### Comandos `host.*` que assumem o shell compat
 
-O shell managed renderiza **somente o layout declarado**. Desde o Web Host 1.0.50, comandos que normalmente apontam para o chrome compat publicam mensagens tipadas `@HOST/intent` em vez de falhar silenciosamente. Declare `@HOST/compat-coordinator` ou implemente um coordenador equivalente para mapear esses intents aos painéis:
+O shell gerenciado renderiza **apenas o layout que você declarou**. A partir do Web Host 1.0.50, comandos que normalmente miram o chrome compat publicam mensagens `@HOST/intent` tipadas em vez de falhar silenciosamente. Declare `@HOST/compat-coordinator` ou implemente um coordenador equivalente para mapear esses intents aos seus painéis:
 
-| Comando `host.*` | Compat (padrão) | Managed |
+| Comando `host.*` | Compat (padrão) | Gerenciado |
 |---|---|---|
-| `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, `state` / `ws` / `on` no nível superior | Funciona | Funciona diretamente; managed monta as superfícies globais de toast e confirmação |
-| `openArtifact(id, ...)` | Abre no painel direito ou em um modal | Publica um intent; o coordenador compat aponta para `artifactPanel` ou `modalId` |
-| `startChat(token)` / `openSession(uuid)` | Abre e exibe a sessão | Publica um intent; o coordenador compat resolve tokens iniciais e atualiza o `chatPanel` declarado |
-| `navigate(url)` | Avança o router raiz compat | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
-| `onRouteChanged(route, navId?)` | Controla a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
+| `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, `state` / `ws` / `on` de nível superior | Funciona | Funciona diretamente; o gerenciado monta as surfaces globais de toast e confirmação |
+| `openArtifact(id, ...)` | Abre no painel direito ou em um modal | Publica um intent; o coordenador de compat mira `artifactPanel` ou `modalId` |
+| `startChat(token)` / `openSession(uuid)` | Abre e exibe a sessão | Publica um intent; o coordenador de compat resolve tokens de início e atualiza o `chatPanel` declarado |
+| `navigate(url)` | Empurra o router raiz do compat | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
+| `onRouteChanged(route, navId?)` | Aciona a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
 
-Se ainda não houver coordenador disponível, intents da inicialização ficam em uma fila limitada até a primeira assinatura de coordenador. A tabela de paridade da inicialização relata uma declaração sem handler. Intents reservados só podem ser lidos por entradas de `coordinators` e não podem ser falsificados por painéis comuns.
+Se ainda não houver coordenador disponível, os intents de boot são mantidos em uma fila limitada até a primeira assinatura de coordenador. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
 
-## Estratégia de gerenciamento de estado
+## Abordagem de Gerenciamento de Estado
 
 Três níveis, em ordem de preferência:
 
-**Rota** — se o usuário puder favoritar ou compartilhar o estado de modo útil, coloque-o na URL. Cada painel `kind: page` executa seu próprio router e reage a eventos `@history`. Isso é desacoplado, aceita deep links e respeita o histórico do navegador.
+**Rota** — Se o usuário puder, de forma significativa, salvar nos favoritos ou compartilhar o estado, coloque-o na URL. Cada painel `kind: page` roda seu próprio router e reage a eventos `@history`. Isso é desacoplado, permite deep links e é ciente do histórico do navegador.
 
-**Snapshot do layout** — se afetar a forma do layout (tamanhos, flags de recolhimento, props do componente), coloque-o no snapshot por `updatePanel` ou `resizePanel`. Todo painel inscrito vê cada mudança do snapshot; mantenha os payloads pequenos.
+**Snapshot de layout** — Se afeta a forma do layout (tamanhos, flags de colapso, props de componente), coloque-o no snapshot via `updatePanel` ou `resizePanel`. Todo painel assinante vê toda mudança de snapshot, então mantenha os payloads pequenos.
 
-**Local ao painel** — todo o resto (rascunhos de formulários, estado de modal, UI transitória) permanece nas stores Pinia ou refs do próprio painel e nunca sai dele.
+**Local ao painel** — Todo o resto (rascunhos de formulário, estado de modal, UI transitória) fica dentro das stores Pinia ou refs do próprio painel e nunca sai dele.
 
-## Padrão canônico de coordenação
+## Padrão Canônico de Coordenação
 
-O padrão recomendado de interação entre painéis é: evento do barramento → serviço coordenador → `updatePanel` → painel reage por seu próprio router.
+O padrão recomendado para interação entre painéis é: evento de barramento → serviço coordenador → `updatePanel` → o painel reage via seu próprio router.
 
 ```typescript
-// In the coordinator service
+// No serviço coordenador
 this.host?.layout.on('open-chat', ({ payload }) => {
   this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
   this.host?.layout.expandPanel('right')
 })
 
-// In the right-panel app (a normal Vue page module)
+// No app do painel direito (um módulo de página Vue comum)
 const router = createAppRouter([...])
-// createAppRouter already mirrors host history events into the router
-// with an echo/current-route guard; add no manual routing subscription.
+// createAppRouter já espelha os eventos de histórico do host no router
+// com uma guarda de eco/rota atual; não adicione assinatura manual de roteamento.
 ```
 
-Mantenha coordenadores enxutos. Deixe cada painel ser dono de sua UI.
+Mantenha os coordenadores enxutos. Mantenha os painéis donos da própria UI.
 
-## Limitações conhecidas
+## Limitações Conhecidas
 
-No Draft 1, os itens a seguir ainda não estão implementados:
+Na Draft 1, os itens a seguir ainda não estão implementados:
 
-- **`addPanel` / `setLayout` pelo proxy** — não entregues. Existem somente no `LayoutManager` interno de `@wippy-fe/layout` e não são expostos pela fronteira proxy do iframe. (`openModal`, `closeModal` e `movePanel` são entregues — consulte a Referência da API de layout.)
-- **UI de arrastar para reorganizar painéis** — o modelo de dados e a API `movePanel()` funcionam; o arraste para o usuário ainda não foi implementado.
-- **Primitiva de contêiner com tabs** — ainda não implementada. O `@HOST/panel-tab` entregue é um controle de borda para revelar um painel recolhido, não um contêiner de layout geral com tabs.
-- **Contêiner de tiles em grade** — ainda não implementado.
-- **Persistência de mutações em runtime** — as mutações não persistem entre recargas. Se necessário, persista manualmente:
+- **`addPanel` / `setLayout` pelo proxy** — não entregues. Eles existem apenas no `LayoutManager` interno de `@wippy-fe/layout` e não são expostos através da fronteira do proxy do iframe. (`openModal`, `closeModal` e `movePanel` foram entregues — veja a Referência da API de Layout.)
+- **UI de arrastar para rearranjar painéis** — o modelo de dados e a API `movePanel()` funcionam; o arrastar voltado ao usuário ainda não está implementado.
+- **Primitiva de abas** — ainda não implementada.
+- **Container de grade em tiles** — acompanhado para uma etapa posterior.
+- **Persistência de mutações em tempo de execução** — mutações não são persistidas entre recarregamentos. Persista manualmente se necessário:
   ```typescript
   on('@layout-change', () =>
     state.set('layout', host.layout.snapshot)
   )
   ```
-- **Pontos de extensão de slot no cabeçalho de `nav-sidebar`** — as posições de logo, nome do app e botão de alternância são fixas neste draft.
+- **Pontos de extensão do slot de cabeçalho da `nav-sidebar`** — as posições do logo, do nome do app e do botão de alternância são fixas nesta draft.
 
-## Consulte também
+## Veja Também
 
-- [Ponto de entrada da facade](./entry-point.md) — como a facade carrega a entrada de módulo JS e entrega a configuração
-- [Sequência de bootstrap](./bootstrap.md) — como o host encaminha para a entrada de layout gerenciado na inicialização
+- [Ponto de Entrada da Facade](./entry-point.md) — como a facade carrega a entrada de módulo JS e entrega a configuração
+- [Sequência de Bootstrap](./bootstrap.md) — como o host despacha para a entrada de layout gerenciado no boot
 - [Pacotes](./packages.md) — `@wippy-fe/layout`, `@wippy-fe/vue-host`, `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`

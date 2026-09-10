@@ -9,11 +9,11 @@ description: "Projektlayout, YAML-Definitionsdateien und Namenskonventionen."
 
 ```
 myapp/
-├── .wippy.yaml          # Runtime configuration
-├── wippy.lock           # Source directories config
-├── .wippy/              # Installed modules
-└── src/                 # Application source
-    ├── _index.yaml      # Entry definitions
+├── .wippy.yaml          # Runtime-Konfiguration
+├── wippy.lock           # Quellverzeichnisse und gesperrte Module
+├── .wippy/              # Installierte Module
+└── src/                 # Anwendungsquellcode
+    ├── _index.yaml      # Entry-Definitionen
     ├── api/
     │   ├── _index.yaml
     │   └── *.lua
@@ -30,7 +30,7 @@ YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist di
 
 ### Format einer Definitionsdatei
 
-Eine Definitionsdatei enthält einen `namespace` und entweder ein `entries`-Array oder die Felder `name` und `kind` auf oberster Ebene. Der optionale Marker `version` ist üblicherweise `"1.0"`; der Loader von v0.3.32a verlangt ihn nicht.
+Jede YAML-Datei mit einem `namespace` plus entweder einem `entries`-Array oder einem `name`+`kind` auf oberster Ebene ist eine gültige Definitionsdatei. `version` ist optional:
 
 ```yaml
 version: "1.0"
@@ -58,9 +58,9 @@ entries:
 
 | Feld | Erforderlich | Beschreibung |
 |------|--------------|--------------|
-| `version` | Nein | Manifest-Versionsmarker, üblicherweise `"1.0"` |
-| `namespace` | Ja | Entry-Namespace für diese Datei |
-| `entries` | Bedingt | Array von Entry-Definitionen; nur bei Verwendung von `name` und `kind` auf oberster Ebene weglassen |
+| `version` | nein | Schemaversion (aktuell `"1.0"`) |
+| `namespace` | ja | Entry-Namespace für diese Datei |
+| `entries` | ja | Array von Entry-Definitionen |
 
 ### Namenskonvention
 
@@ -98,17 +98,35 @@ app.workers
 
 Die vollständige Entry-ID kombiniert Namespace und Name: `app.api:get_user`
 
-### Quellverzeichnisse
+### Die Lock-Datei
 
-Die Datei `wippy.lock` benennt den Quellstamm der Anwendung und das Basisverzeichnis zur Auflösung gesperrter Module:
+`wippy.lock` hält fest, woher Wippy Definitionen lädt und welche Modulversionen ausgewählt sind:
 
 ```yaml
 directories:
   modules: .wippy
   src: ./src
+options:
+  unpack_modules: false
+modules:
+  - name: acme/http
+    version: v1.2.0
+    hash: 4ea816fe84ca58a1f0869e5ca6afa93d6ddd72fa09e1162d9e600a7fbf39f0a2
 ```
 
-Wippy fügt `directories.src` als Ladepfad der Anwendung hinzu. `directories.modules` wird nicht als ein einziger Quellbaum gescannt: Jedes gesperrte Modul wird in sein versioniertes `.wapp`-Archiv oder seinen entpackten Modulpfad aufgelöst, jeder Ersatz in seinen konfigurierten Entry-Stamm. Der Loader scannt die Anwendungsquelle und ausgewählte verzeichnisbasierte Modul- oder Ersatzwurzeln rekursiv nach `.yaml`-, `.yml`- und `.json`-Manifesten; `.wapp`-Module werden als Archive gelesen. Nur objektförmige Dateien mit `namespace` gelten als Registry-Manifeste, `node_modules`-Verzeichnisse werden übersprungen. `_index.yaml` ist eine Projektkonvention, nicht der einzige zulässige Dateiname.
+| Feld | Beschreibung |
+|------|--------------|
+| `directories.src` | Quellverzeichnis der Anwendung, wird rekursiv nach YAML-Definitionsdateien durchsucht |
+| `directories.modules` | Basisverzeichnis für eingebundene Module; Packs landen unter `<modules>/vendor/` |
+| `options.unpack_modules` | Jede `.wapp` in ein Verzeichnis daneben entpacken, statt das Pack direkt zu laden (Standard `false`) |
+| `modules[].name` | Modulkennung in der Form `org/module` |
+| `modules[].version` | Ausgewählte Version |
+| `modules[].hash` | Artefakt-Digest, dem das eingebundene Pack entsprechen muss |
+| `modules[].root` | Markiert die ausgewählte Deployment-Wurzel; höchstens ein Modul darf sie tragen |
+
+Eingebundene Packs werden als `.wapp`-Dateien aufbewahrt. Mit `unpack_modules: true` wird jedes Modul zusätzlich in ein Verzeichnis entpackt, und die verifizierte `.wapp` bleibt daneben liegen — die Installation sucht nach dem Pack, ein Verzeichnis ohne zugehöriges Pack wird also erneut heruntergeladen.
+
+Ein `replacements:`-Abschnitt in `wippy.lock` ist veraltet. Er wird weiterhin geladen, mit einer Warnung; lokale Modul-Überschreibungen stattdessen unter `workspace.replacements` in einer Runtime-Konfigurationsdatei deklarieren. Siehe [Abhängigkeitsverwaltung](guides/dependency-management.md#local-development-with-replacements).
 
 ## Entry-Definitionen
 
@@ -216,27 +234,21 @@ Die Runtime-Konfigurationsfelder beschreibt der [Konfigurationsleitfaden](guides
 
 ### wippy.lock
 
-Definiert Quellverzeichnisse:
-
-```yaml
-directories:
-  modules: .wippy
-  src: ./src
-```
+Quellverzeichnisse und der ausgewählte Modulgraph — siehe [Die Lock-Datei](#the-lock-file) oben.
 
 ## Einträge referenzieren
 
-Referenzieren Sie Einträge nach vollständiger ID oder — sofern der Entry-Kind dies unterstützt — relativem Namen. HTTP-Router und -Endpoints hängen sich über `meta.server` und `meta.router` an, nicht über kindseitige Listen ihrer Kinder:
+Referenzieren Sie Einträge nach vollständiger ID oder relativem Namen. Kinder hängen sich über `meta` an ihren Parent, nicht über Listen auf Parent-Seite:
 
 ```yaml
-# Router declares itself against a server
+# Router deklariert sich gegen einen Server
 - name: api
   kind: http.router
   meta:
     server: app:gateway
   prefix: /api
 
-# Endpoint references router by registry ID (cross-namespace works the same way)
+# Endpunkt referenziert den Router per Registry-ID (namespace-übergreifend funktioniert es genauso)
 - name: get_user.endpoint
   kind: http.endpoint
   meta:

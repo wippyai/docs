@@ -1,6 +1,6 @@
 ---
 title: "터미널 I/O"
-description: "terminal input을 읽고 standard output과 standard error에 씁니다."
+description: "CLI 애플리케이션을 위해 stdin에서 읽고 stdout/stderr에 씁니다."
 ---
 
 # 터미널 I/O

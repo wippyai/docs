@@ -1,6 +1,6 @@
 ---
 title: "環境変数"
-description: "構成済み環境システムが公開する環境変数を読み取り、更新します。"
+description: "設定値、シークレット、ランタイム設定のための環境変数へのアクセス。"
 ---
 
 # 環境変数
@@ -25,17 +25,10 @@ local env = require("env")
 環境変数の値を取得。
 
 ```lua
--- Get database connection string
-local db_url, db_err = env.get("DATABASE_URL")
-if db_err then return nil, db_err end
-
--- Apply a fallback only to a missing variable. Permission and backend errors
--- still propagate to the caller.
-local function get_or(key, fallback)
-    local value, err = env.get(key)
-    if not err then return value end
-    if errors.is(err, errors.NOT_FOUND) then return fallback end
-    return nil, err
+-- データベース接続文字列を取得
+local db_url = env.get("DATABASE_URL")
+if not db_url then
+    return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
 local port, port_err = get_or("PORT", "8080")
@@ -88,10 +81,7 @@ logger:debug("accessible environment variables", {keys = accessible_keys})
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
-        return nil, errors.new({
-            message = "Missing required env var: " .. key,
-            kind = errors.INVALID
-        })
+        return nil, errors.new({ kind = errors.INVALID, message = "Missing required env var: " .. key })
     end
 end
 ```
@@ -109,7 +99,7 @@ end
 | `env.get` | 変数名 | 環境変数を読み取り |
 | `env.set` | 変数名 | 環境変数を書き込み |
 
-`get_all` 専用のセキュリティアクションはありません。各変数名を `env.get` でフィルタリングし、呼び出し元に `env.get` が許可された変数だけを返します。
+`get_all` に専用のセキュリティアクションはありません。各変数名を `env.get` でフィルタリングし、`env.get` アクションが許可されている変数のみを返します。
 
 ### アクセス確認
 

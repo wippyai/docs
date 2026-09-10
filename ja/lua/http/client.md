@@ -1,6 +1,6 @@
 ---
 title: "HTTPクライアント"
-description: "ヘッダー、認証、フォーム、アップロード、TLS オプション、ストリーミング、バッチ処理を使用して HTTP リクエストを送信します。"
+description: "外部サービスへのHTTPリクエストを行う。すべてのHTTPメソッド、ヘッダー、クエリパラメータ、フォームデータ、ファイルアップロード、ストリーミングレスポンス、並行バッチリクエストをサポート。"
 ---
 
 # HTTPクライアント
@@ -122,9 +122,7 @@ if err then return nil, err end
 | `max_response_body` | number | 最大レスポンスサイズ（バイト単位）（0 = デフォルト） |
 | `unix_socket` | string | Unixソケットパス経由で接続 |
 | `tls` | table | リクエストごとのTLS設定（[TLSオプション](#tlsオプション)を参照） |
-| `overlay_network` | string | [network overlay](../../system/network.md) 経由でルーティングする `network.socks5` / `network.tailscale` / `network.i2p` エントリのレジストリ ID |
-
-`overlay_network` を選択するには、そのネットワーク ID に対する `network.select` 権限が必要です。
+| `overlay_network` | string | [ネットワークオーバーレイ](system/network.md)経由でルーティング — `network.socks5` / `network.tailscale` / `network.i2p` エントリのレジストリ ID |
 
 ### クエリパラメータ
 
@@ -192,7 +190,7 @@ if err then return nil, err end
 | `filename` | string | いいえ | 元のファイル名 |
 | `content` | string | yes* | ファイル内容 |
 | `reader` | userdata | yes* | 代替: 内容用のio.Reader |
-| `content_type` | string | いいえ | 現在は無視され、常に `Content-Type: application/octet-stream` で送信 |
+| `content_type` | string | no | 現在は無視されます: アップロードされる各パートは、このフィールドに関わらず常に `Content-Type: application/octet-stream` で送信されます |
 
 *`content`または`reader`のいずれかが必須。
 
@@ -407,7 +405,7 @@ HTTPリクエストはセキュリティポリシー評価の対象。
 | `http_client.unix_socket` | ソケットパス | Unixソケット接続を許可/拒否 |
 | `http_client.private_ip` | IPアドレス | プライベートIP範囲へのアクセスを許可/拒否 |
 | `http_client.insecure_tls` | URL | 安全でないTLS（検証スキップ）の許可/拒否 |
-| `network.select` | ネットワーク ID | 明示的な `overlay_network` 選択を許可/拒否 |
+| `network.select` | ネットワークエントリID | リクエストで指定された`overlay_network`経由のルーティングの許可/拒否 |
 
 ### アクセス確認
 
@@ -422,12 +420,25 @@ end
 
 ### SSRF保護
 
-プライベートIP範囲（10.x、192.168.x、172.16-31.x、localhost）はデフォルトでブロック。アクセスには`http_client.private_ip`権限が必要。
+パブリックでないIP範囲はデフォルトでブロック。アクセスにはそのアドレスに対する`http_client.private_ip`権限が必要:
+
+- ループバック、プライベート（10.x、172.16-31.x、192.168.x）、リンクローカルユニキャストおよびマルチキャスト、未指定アドレス
+- キャリアグレードNAT `100.64.0.0/10`、`192.0.0.0/24`、マルチキャスト `224.0.0.0/4`、予約済み `240.0.0.0/4`
+- ドキュメント用およびベンチマーク用の範囲 `192.0.2.0/24`、`198.18.0.0/15`、`198.51.100.0/24`、`203.0.113.0/24`、`2001:db8::/32`
+- IPv6マルチキャスト `ff00::/8`
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
 -- Error: not allowed: private IP 192.168.1.1
 ```
+
+チェックはURL文字列に対してではなくダイヤル時に行われ、ホストが解決するすべてのアドレスを対象とする。複数のアドレスに解決されるホスト名はアドレスごとにチェックされ、拒否されたアドレスはスキップして次が試される。リクエストが失敗するのは、すべての候補が拒否されたか到達不能な場合のみ。したがって、プライベートアドレスに解決されるパブリックなホスト名は、プライベートIPリテラルとまったく同様にブロックされる。
+
+### リダイレクト
+
+リダイレクトは最大9回まで追跡され、10回目は`stopped after 10 redirects`で失敗する。この数には元のリクエストが含まれる。
+
+各ホップは個別に認可される。リダイレクトを追跡する前に、クライアントは対象URLに対して`http_client.request`を評価し、プライベートIPチェックを適用する。そのため、許可されたURLをリダイレクトで拒否されたURLへの到達に利用することはできない。いずれかのチェックに失敗したホップはリクエストを中止する。
 
 ポリシー設定については[セキュリティモデル](system/security.md)を参照。
 

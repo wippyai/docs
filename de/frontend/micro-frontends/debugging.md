@@ -1,86 +1,76 @@
 ---
 title: "Wippy FE debuggen"
-description: "DevTools-Prüfungen für häufige Start-, Komponenten-, API-, Theme-, Routing- und Hosted-Runtime-Fehler."
+description: "Wenn etwas kaputt ist, beginnen Sie hier. Jeder Abschnitt listet die häufigsten Ursachen nach Wahrscheinlichkeit auf, jeweils mit der passenden DevTools-Prüfung."
 ---
 
 # Wippy FE debuggen
 
-Mit diesen Prüfungen lassen sich häufige Frontendfehler eingrenzen, bevor
-Anwendungscode geändert wird.
+Wenn etwas kaputt ist, beginnen Sie hier. Jeder Abschnitt listet die häufigsten Ursachen nach Wahrscheinlichkeit auf, jeweils mit der passenden DevTools-Prüfung.
 
 ## Leerer Bildschirm beim Laden
 
-**1. Zuerst die Konsole prüfen:**
+**1. Prüfen Sie zuerst die Konsole:**
+- `Failed to resolve module specifier 'vue'` — die Seite hat einen Specifier externalisiert, den ihre aktive Import-Map nicht bereitstellt. Im gehosteten Modus prüfen Sie die Import-Map, die das Ziel-Web-Host-Release tatsächlich ausliefert; im Host-losen Modus prüfen Sie die Map in `app.html`. Vergleichen Sie jedes Rollup-External gegen genau diese Map, statt eine kanonische Paketliste oder eine Merge-Reihenfolge anzunehmen.
+- `Proxy globals not found` (oder Ihre `@wippy-fe/proxy`-Imports kommen undefined zurück) — `proxy.js` / `dev-proxy.js` wurde nicht geladen, bevor Ihr App-Skript lief, sodass die Laufzeit ihre internen Globals nie installiert hat. Prüfen Sie, ob `dev-proxy.js` in `app.html` mit `data-role="@wippy/scripts"` referenziert wird.
+- Stilles Hängen (keine Fehler, keine App) — die Konfiguration wird synchron als `window.__WIPPY_APP_CONFIG__` injiziert, bevor `proxy.js` läuft, sodass die Getter von `@wippy-fe/proxy` sofort auflösen (oder `Proxy globals not found` werfen); sie warten nicht auf `SetConfig`. Ein echtes Hängen bedeutet, dass die Laufzeit nie gemountet hat — entweder konnten `proxy.js` / `dev-proxy.js` nicht geladen werden und ihre Globals nicht installieren (siehe den Punkt `Proxy globals not found` oben), oder im Host-losen Modus wartet das Dev-Overlay im Zustand "waiting", weil Sie nicht auf **Accept** geklickt haben. Vergewissern Sie sich, dass der FAB des Dev-Overlays (schwebende Schaltfläche) erschienen ist; wenn nicht, wurde das Proxy-Skript nicht geladen. (Der `SetConfig`/`GetConfig`-Handshake gilt nur für die manuelle Einbettung auf Host-Ebene über `iframe.html?waitForCustomConfig`, nicht für ein gehostetes oder Host-loses Micro-Frontend.)
 
-- `Failed to resolve module specifier 'vue'`: Ein externalisierter Specifier fehlt in der aktiven Import Map. Prüfen Sie hosted die tatsächlich vom Zielrelease gelieferte Map, Host-less die Map in `app.html`, und vergleichen Sie jeden Rollup-External exakt.
-- `Proxy globals not found` oder undefinierte Proxy-Importe: `proxy.js` / `dev-proxy.js` lief nicht vor dem Appskript. Prüfen Sie in `app.html` den Marker `data-role="@wippy/scripts"`.
-- Stiller Stillstand: Im Host-less-Modus wartet das Overlay möglicherweise auf **Accept**. Fehlt der FAB, konnte die Proxy-Runtime nicht geladen oder installiert werden.
+**2. Prüfen Sie den Network-Tab:**
+- Bestätigen Sie, dass `dev-proxy.js` (Host-los) bzw. `proxy.js` (gehostet) mit Status 200 geladen wurde.
+- Bei 404: Das `src` in Ihrem `<script data-role="@wippy/scripts">`-Tag zeigt auf die falsche URL.
 
-Hosted-iframe und Host-less erhalten Konfiguration synchron vor dem Proxy.
-Web Fragment verwendet den `GetConfig`/`SetConfig`-Handshake des Adapters,
-ebenso die manuelle Host-Einbettung `iframe.html?waitForCustomConfig`.
-
-**2. Network-Tab:**
-
-- `dev-proxy.js` oder `proxy.js` muss Status 200 haben.
-- Bei 404 zeigt `src` im Skriptmarker auf die falsche URL.
-
-**3. Interne Globals als Diagnose prüfen:**
-
+**3. Prüfen Sie, ob die Laufzeit ihre Globals installiert hat (interne Diagnose):**
 ```javascript
-// Internal globals — app code never reads these; this is only a console smoke test
-// that the proxy runtime mounted. App/WC code uses `import { ... } from '@wippy-fe/proxy'`.
-window.$W              // should be an object, not undefined
-window.__WIPPY_APP_API__ // the resolved proxy instance — present once the runtime installed
+// Interne Globals — App-Code liest diese nie; das ist nur ein Konsolen-Rauchtest,
+// dass die Proxy-Laufzeit gemountet hat. App-/WC-Code nutzt `import { ... } from '@wippy-fe/proxy'`.
+window.$W              // sollte ein Objekt sein, nicht undefined
+window.__WIPPY_APP_API__ // die aufgelöste Proxy-Instanz — vorhanden, sobald die Laufzeit installiert hat
 ```
+Die Getter von `@wippy-fe/proxy` lesen diese Globals (`window.__WIPPY_APP_API__` ist die aktive Host-Instanz); das ist unabhängig davon, wie die Modul-URL aufgelöst wird. Existieren die Globals, aber die Imports schlagen fehl, prüfen Sie die aktive Import-Map und die Netzwerkantwort für den exakten `@wippy-fe/proxy`-Specifier. Korrigieren Sie die Map oder die Externalisierungsentscheidung in der Umgebung, die die Seite ausliefert; schließen Sie nicht von einem erfolgreichen Host-losen Boot auf das gehostete Verhalten.
 
-Existieren die Globals, aber Importe scheitern, prüfen Sie aktive Import Map
-und Netzwerkantwort des exakten `@wippy-fe/proxy`-Specifiers. Korrigieren Sie
-Map oder Externalisierung in der ausliefernden Umgebung; ein Host-less-Erfolg
-beweist kein Hosted-Verhalten.
+## Web Component erscheint nie
 
-## Web Component erscheint nicht
+**1. Prüfen Sie die drei Tore:**
 
-**1. Drei Gates prüfen.** Vom Backend aus:
-
+Führen Sie aus Ihrem Backend aus:
 ```bash
 curl /api/public/components/list?auto_register=true
 ```
+Der `tag_name` Ihrer Komponente muss in der Antwort erscheinen. Wenn nicht:
+- `announced: true` fehlt in `_index.yaml` → hinzufügen
+- `auto_register: true` fehlt → hinzufügen
+- Die Komponente ist nicht bei `wippy/views` registriert → prüfen Sie Ihre Modul-Abhängigkeiten
 
-`tag_name` muss in der Antwort stehen. Andernfalls fehlen `announced: true`,
-`auto_register: true` oder die Registrierung über `wippy/views`.
-
-**2. Konsole:**
-
+**2. Prüfen Sie die Konsole:**
 ```javascript
-customElements.get('your-tag-name')  // undefined means the element was not registered
+customElements.get('your-tag-name')  // undefined heißt, das Element wurde nicht registriert
 ```
 
-**3. Network-Tab:** Die URL von `index.js` muss
-`?declare-tag=your-tag-name` enthalten. Fehlt die Query, wurde
-`define(import.meta.url, MyElement)` nicht im Entry-Chunk bewahrt. Setzen Sie
-`build.rollupOptions.preserveEntrySignatures` auf `'strict'`; siehe
-[Build- und Abhängigkeitsvertrag](./build-system.md).
+**3. Prüfen Sie den Network-Tab:**
+- Filtern Sie nach der `index.js`-URL Ihrer Komponente
+- Die URL sollte `?declare-tag=your-tag-name` enthalten — so registriert sich das Element selbst
+- Fehlt der Query `?declare-tag=` in der URL: `define(import.meta.url, MyElement)` lag nicht im Entry-Chunk. Das ist das `preserveEntrySignatures: false`-Problem — siehe [Build-System](./build-system.md)
 
 ## API-Aufrufe schlagen fehl / 401
 
-**Host-less:** Der Stub `dev-token` ist kein echtes Credential. Ersetzen Sie
-`auth.token` im Overlay durch ein echtes Bearer-Token und prüfen Sie, dass
-`APP_API_URL` auf das laufende Backend zeigt.
+**1. Im Host-losen Modus:**
+- Der `dev-token`-Stub in der Proxy-Konfiguration ist keine echte Zugangsberechtigung — er erhält von einem echten Backend immer 401
+- Öffnen Sie das Dev-Overlay → finden Sie das Feld `auth.token` in der JSON-Konfiguration → fügen Sie ein echtes Bearer-Token ein
+- Bestätigen Sie, dass `APP_API_URL` in der Overlay-Konfiguration auf das laufende Backend zeigt (nicht auf localhost, wenn Ihr Backend anderswo läuft)
 
-**Hosted:** Verwenden Sie den Proxy-Client `api`. Für geeignete Same-Origin-401
-führt er Single-Flight aus und ruft automatisch
-`host.handleError('auth-expired', error)` auf. Bei flächendeckenden 401 prüfen
-Sie Hostkonfiguration und Session-Token-Injektion. Manueller Fehleraufruf ist
-nur für bewusst am Standardclient vorbeigeführte Requests nötig.
+**2. Im gehosteten Modus:**
+- Behandeln Sie 401, indem Sie `host.handleError('auth-expired', error)` aufrufen — das löst den Re-Authentifizierungsfluss des Hosts aus
+- Wenn alle API-Aufrufe mit 401 antworten: Prüfen Sie, ob das Session-Token des Hosts korrekt injiziert wird (der Proxy erledigt das automatisch über `api.get(...)`)
 
 ## Theme sieht falsch aus
 
-Im Host-less-Overlay sind `themeConfig`, `primevue`, `markdown` und `iframe`
-anfangs deaktiviert; `customCss` und `customVariables` bleiben aktiv. Schalten
-Sie benötigte Injektionen ein und aktivieren Sie „Auto-accept on reload“.
+**1. Im Host-losen Modus:**
+Das Dev-Overlay startet mit den Injektionen `themeConfig`, `primevue`, `markdown` und `iframe` **standardmäßig deaktiviert**. Ihre App rendert ohne jegliches Plattform-CSS, bis Sie sie aktivieren.
 
-Vergleichen Sie die vollständige Kette mit deutlich unterschiedlichen Werten:
+Öffnen Sie den FAB des Dev-Overlays → schalten Sie die benötigten CSS-Injektionen ein → aktivieren Sie "Auto-accept on reload".
+
+**2. Vergleichen Sie die vollständige effektive Kette:**
+
+Ein nicht leeres Token genügt nicht. Verwenden Sie unterscheidbare Werte, damit ein Zurücksetzen auf die Standardpalette oder ein versehentlicher Familien-Alias offensichtlich wird:
 
 ```yaml
 css_variables:
@@ -95,30 +85,30 @@ css_variables:
   "--theme-diagnostic-sentinel": "#123456"
 ```
 
-1. Effektive Map `config.theming.global.cssVariables` samt aktiver `@light`-/`@dark`-Ersetzungen.
-2. Seiten-Root über `getComputedStyle(document.documentElement)`.
-3. WC-Host über `getComputedStyle(customElement)`.
-4. WC-Inner-Root über `[data-wippy-theme-root]`.
-5. Gerenderte semantische Farbe eines Probes mit `var(--p-<family>-color)`.
+Vergleichen Sie dann in dieser Reihenfolge:
 
-Wiederholen Sie dies für Auto-Hell/Dunkel und erzwungen Hell/Dunkel. Prüfen Sie
-je Familie Basis, Abstufungen 50–950, `color`, `contrast-color`, `hover-color`,
-`active-color`, außerdem direkte Shade-/Alias-Überschreibung, Surface und Sentinel.
-Die erste Abweichung lokalisiert Map-Merge, Seiteninjektion, WC-Weitergabe,
-Inner-Root-Bridge oder konsumierenden Selektor.
+1. **Effektive konfigurierte Map:** Prüfen Sie `config.theming.global.cssVariables` und bestätigen Sie die Basis plus die aktiven `@light`/`@dark`-Ersetzungen.
+2. **Seiten-Root:** Lesen Sie das exakte Token mit `getComputedStyle(document.documentElement).getPropertyValue(name).trim()`.
+3. **WC-Host:** Lesen Sie dasselbe Token aus `getComputedStyle(customElement)`.
+4. **Innerer WC-Root:** Lesen Sie es aus `getComputedStyle(customElement.shadowRoot.querySelector('[data-wippy-theme-root]'))`.
+5. **Gerenderte semantische Farbe:** Setzen Sie `background-color: var(--p-<family>-color)` auf eine Sonde und vergleichen Sie deren berechnete `backgroundColor`; das löst `color-mix()` physisch auf.
 
-Für Web Components: `themeConfigUrl` liefert Plattformstandards,
-`primeVueCssUrl` PrimeVue-Styles. Ein aktuelles `@wippy-fe/webcomponent-core`
-muss konfigurierte Werte in den Inner Root überbrücken; kopieren Sie keine Palette.
+Wiederholen Sie das in Auto-hell, Auto-dunkel, erzwungen Hell und erzwungen Dunkel. Prüfen Sie für jede konfigurierte Familie ihre Basis, alle Abstufungen 50–950, `color`, `contrast-color`, `hover-color` und `active-color`; prüfen Sie außerdem ein direktes Shade-/Alias-Override, ein Surface-Token und den Sentinel. Werte von Seite, Host und innerem Root müssen übereinstimmen.
 
-Die vollständige Injektionspipeline beschreiben [Theming für Micro-Frontend-Anwendungen](./micro-frontend-app-theming.md) und [Theming für Web Components](./web-component-theming.md).
+Interpretieren Sie die erste Abweichung: eine falsche effektive Map bedeutet Konfiguration/Merge; ein falscher Seiten-Root bedeutet Variablenkompilierung/-injektion; korrekte Seite, aber falscher WC-Host bedeutet Host-Weitergabe; korrekter WC-Host, aber falscher innerer Root bedeutet die Brücke für das erzwungene Theme oder lokale Standardwerte; gleiche Tokens, aber falsche gerenderte Farbe bedeutet, dass der konsumierende Selektor oder der semantische Alias falsch ist.
 
-## Host-Adresszeile aktualisiert sich nicht
+**3. Spezifisch für Web Components:**
+- Fehlen die Plattform-Standardwerte, prüfen Sie, ob `hostCssKeys` den Eintrag `'themeConfigUrl'` enthält.
+- Ist der Host korrekt, aber der innere Root fällt auf Standardwerte zurück, stellen Sie ein aktuelles `@wippy-fe/webcomponent-core` sicher; kopieren Sie keine Palette in Komponenten-CSS.
+- Rendern PrimeVue-Komponenten ohne Styling, fügen Sie `'primeVueCssUrl'` zu `hostCssKeys` hinzu.
 
-Portable Apps verwenden `createAppRouter()` aus `@wippy-fe/router`; das Paket
-besitzt beide Synchronisierungsrichtungen. Anwendungscode darf
-`router.afterEach` und `@history` nicht nachbauen.
+Siehe [Theming: Micro-Frontend-Apps](./micro-frontend-app-theming.md) oder [Theming: Web Components](./web-component-theming.md) für die vollständige Injektions-Pipeline.
 
+## Die URL-Leiste des Hosts aktualisiert sich nicht
+
+Portable Micro-Frontend-Apps müssen die Factory `createAppRouter()` aus `@wippy-fe/router` verwenden. Das Paket besitzt beide Richtungen der Host-Synchronisation; Anwendungscode darf `router.afterEach` und die `@history`-Verdrahtung nicht nachbauen.
+
+**Prüfen:**
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'
 import { config } from '@wippy-fe/proxy'
@@ -129,45 +119,35 @@ const router = createAppRouter(routes, {
 })
 ```
 
-Prüfen Sie bei weiterhin fehlender Aktualisierung eine zusammengehörige
-Paketfamilie und dass kein lokaler Wrapper die Factory ersetzt. Host-less zeigt
-der Monitor-Tab die gemeldete Route.
+Aktualisiert sich die Host-URL weiterhin nicht, stellen Sie sicher, dass die aktuelle `@wippy-fe/router`-Familie stimmig installiert ist und kein lokaler Wrapper die Factory ersetzt. Im Host-losen Modus zeigt der Monitor-Tab des Dev-Overlays die Route, die das Paket meldet.
 
-## Lokal erfolgreich, hosted defekt
+## Funktioniert lokal, bricht im gehosteten Betrieb
 
-**Relative Assets:** Bei iframe muss `document.baseURI` auf
-`<url>/<base_path>/` zeigen:
-
+**1. Prüfen Sie `document.baseURI`:**
 ```javascript
-document.baseURI  // should be <url>/<base_path>/ from your registry entry
+document.baseURI  // sollte <url>/<base_path>/ aus Ihrem Registry-Eintrag sein
 ```
+Wenn leer oder falsch: Das `<base>`-Tag wurde nicht injiziert. Prüfen Sie, ob `base_path` in `_index.yaml` zur tatsächlichen Verzeichnisstruktur Ihres Build-Ergebnisses passt.
 
-Bei Fehler muss `base_path` zur Buildstruktur passen. Web Fragment injiziert
-kein `<base>`; relative `href="./…"` und `src="./…"` müssen auf Gateway-URLs
-umgeschrieben sein.
-
-**Proxy-Diagnose:**
-
+**2. Prüfen Sie die Proxy-Globals (interne Diagnose):**
 ```javascript
-window.__WIPPY_PROXY_CONFIG__  // internal — must exist in iframe-hosted mode
+window.__WIPPY_PROXY_CONFIG__  // intern — muss im iframe-gehosteten Modus existieren
 ```
+Undefined bedeutet, dass der Proxy nicht injiziert wurde, bevor Ihre App lief. App-Code liest das nie direkt; siehe [Proxy & Isolation § Interna](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
-Undefiniert bedeutet, dass der Proxy nicht rechtzeitig injiziert wurde.
-Anwendungscode liest das Global nie; siehe
-[Proxy und Isolation § Interna](../web-host/proxy-isolation.md#interna-nicht-lesen-oder-überschreiben).
+**3. Bestätigen Sie `base: ''` in vite.config.ts:**
+Ohne `base: ''` gibt Vite absolute Asset-Pfade aus. Die App lädt auf Ihrem lokalen Dev-Server (der von `/` ausliefert) einwandfrei, liefert aber 404, wenn sie aus einem CDN-Unterverzeichnis ausgeliefert wird.
 
-**Vite:** Ohne `base: ''` erzeugt Vite absolute Assetpfade, die lokal
-funktionieren, aber im CDN-Unterverzeichnis 404 liefern.
+**4. Import-Map stimmt nicht überein:**
+Holen Sie `<version-tag>/import-map.json` erneut vom Web-Host-Release, das durch
+`fe_facade_url` gepinnt ist. Ersetzen Sie das vollständige `imports`-Objekt in der Host-losen
+`app.html` und erzeugen Sie die Vite-Externals aus allen ihren Schlüsseln neu. Entfernen Sie die
+Host-lose Map nicht und patchen Sie keine einzelnen Einträge. Bündeln Sie einen neu importierten
+exakten Specifier nur dann, wenn er in der geholten Map fehlt.
 
-**Import Map:** Rufen Sie `<version-tag>/import-map.json` des durch
-`fe_facade_url` fixierten Hosts erneut ab, ersetzen Sie das vollständige
-`imports`-Objekt in `app.html` und erzeugen Sie Externals aus allen Schlüsseln.
-Patchen Sie keine Einzeleinträge.
+## Den Logger als Debugging-Werkzeug nutzen
 
-## Logger zur Diagnose
-
-`logger.debug()` und `logger.info()` erscheinen während der Entwicklung in der
-Browserkonsole:
+Die Ausgabe von `logger.debug()` und `logger.info()` erscheint während der Entwicklung in der Browser-Konsole — nicht nur in Produktions-Transports. Nutzen Sie sie, um die Boot-Sequenz nachzuverfolgen:
 
 ```typescript
 import { logger, config, host, api } from '@wippy-fe/proxy'
@@ -175,9 +155,8 @@ import { logger, config, host, api } from '@wippy-fe/proxy'
 export function createMainApp() {
   logger.debug('App bootstrap started')
   logger.debug('Host services resolved', { hasConfig: !!config })
-  // ... use config, host, api directly
+  // ... config, host, api direkt verwenden
 }
 ```
 
-`logger.captureException(error)` schreibt im Dev-Modus ebenfalls in die Konsole
-und wird in Produktion vom Fehlererfassungssystem des Hosts aufgenommen.
+`logger.captureException(error)` loggt im Dev-Modus ebenfalls in die Konsole und wird in der Produktion vom Error-Capture-System des Hosts erfasst.

@@ -1,6 +1,6 @@
 ---
 title: "クラウドストレージ"
-description: "S3 互換ストレージでオブジェクトをアップロード、ダウンロード、一覧表示、管理します。"
+description: "S3互換オブジェクトストレージへのアクセス。オブジェクトのアップロード、ダウンロード、一覧表示、管理に加え、ダウンロード・アップロード・マルチパートパートのURLの署名付き生成、およびランダムアクセスによるオブジェクトの読み取りを行います。"
 ---
 
 # クラウドストレージ
@@ -10,7 +10,7 @@ description: "S3 互換ストレージでオブジェクトをアップロード
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-`cloudstorage` モジュールは、S3 互換ストレージでオブジェクトをアップロード、ダウンロード、一覧表示、管理します。直接アクセス用の署名付き URL も作成できます。
+S3互換オブジェクトストレージへのアクセス。オブジェクトのアップロード、ダウンロード、一覧表示、管理に加え、ダウンロード・アップロード・マルチパートパートのURLの署名付き生成、およびランダムアクセスによるオブジェクトの読み取りを行います。
 
 このページは API リファレンスです。スニペットでは、構成済みのストレージエントリ、記載されているファイルシステムボリュームへのアクセス、後述する権限を前提としています。マルチパートと署名付き URL のブロックはクライアント統合の部分的なレシピであり、アプリケーションが HTTP 転送を実行して、返された ETag を提供する必要があります。操作とリソースのクリーンアップがともに失敗し得る箇所では、周囲のアプリケーションが `report_cleanup_error(err)` を提供し、起点となったエラーを保持したままクリーンアップの失敗を記録します。
 
@@ -324,6 +324,8 @@ return deleted
 
 **戻り値:** `boolean, error`
 
+すべてのキーが試行されます。存在しないキーを削除してもエラーにはなりません。プロバイダーがキーごとの失敗を報告した場合、この呼び出しは失敗した各キーとそのプロバイダーエラーコードを列挙した単一のエラーを返します。
+
 ## ダウンロードURL
 
 ストレージの認証情報なしでオブジェクトのダウンロードを許可する一時 URL を作成します。クライアントは URL の有効期限まで使用できます。
@@ -386,108 +388,146 @@ return {upload_url = url}
 | `key` | string | オブジェクトキー |
 | `options.expiration` | integer | URLが期限切れになるまでの秒数（デフォルト: 3600） |
 | `options.content_type` | string | アップロードに必要なコンテンツタイプ |
-| `options.content_length` | integer | 想定される正確なアップロード長（バイト） |
+| `options.content_length` | integer | 想定されるアップロードサイズ（バイト単位） |
 
 **戻り値:** `string, error`
 
-## マルチパートアップロード URL
+## マルチパートアップロード
 
-クライアントから大きなファイルをアップロードする場合は、マルチパートアップロードを作成し、各パートの署名付き URL を発行して、パートのリクエストで返された ETag を使ってアップロードを完了します。周囲のアプリケーションは `report_cleanup_error(err)` を提供します。これにより、アボートの失敗を観測可能にしながら、起点となったアップロードエラーを置き換えずに済みます:
+単一の署名付きPUTでは、オブジェクトサイズは5 GiBが上限です。署名付きマルチパートアップロードは、より大きなオブジェクトをパートに分割してクライアントが直接アップロードし、サーバー側で組み立てます。マルチパートはプロバイダーの機能です。S3はこれを実装しており、対応していないプロバイダーは`errors.UNAVAILABLE`を返します。
 
 ```lua
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
+local storage = cloudstorage.get("app.infra:files")
 
-local key = "uploads/user-123/video.mp4"
-local upload, err = storage:create_multipart_upload(key, {
-    content_type = "video/mp4"
+local mp, err = storage:create_multipart_upload("backups/huge.zip", {
+    content_type = "application/zip",
+    metadata = { source = "uploader" },
 })
-if err then
-    storage:release()
-    return nil, err
-end
+if err then return nil, err end
 
-local urls, err = storage:presigned_part_urls(key, upload.upload_id, {
+local urls, err = storage:presigned_part_urls("backups/huge.zip", mp.upload_id, {
     count = 3,
-    expiration = 900
+    expiration = 900,
 })
 if err then
-    local _, abort_err = storage:abort_multipart_upload(key, upload.upload_id)
-    storage:release()
-    if abort_err then
-        report_cleanup_error(abort_err)
-    end
+    storage:abort_multipart_upload("backups/huge.zip", mp.upload_id)
     return nil, err
 end
 
--- Upload each part to its URL and retain the ETag response header.
-local completed, err = storage:complete_multipart_upload(key, upload.upload_id, {
-    {part_number = 1, etag = part_1_etag},
-    {part_number = 2, etag = part_2_etag},
-    {part_number = 3, etag = part_3_etag}
+-- クライアントは各urlにPUTし、レスポンスヘッダーからETagを返す。
+local done, err = storage:complete_multipart_upload("backups/huge.zip", mp.upload_id, {
+    { part_number = 1, etag = etag1 },
+    { part_number = 2, etag = etag2 },
+    { part_number = 3, etag = etag3 },
 })
-if err then
-    local _, abort_err = storage:abort_multipart_upload(key, upload.upload_id)
-    storage:release()
-    if abort_err then
-        report_cleanup_error(abort_err)
-    end
-    return nil, err
-end
 
 storage:release()
-return completed
 ```
 
-`presigned_part_urls` は `count` または `parts` のどちらか一方だけを受け付けます。1 回の呼び出しで返せる URL は最大 1,000 件で、パート番号は 1 から 10,000 までです。`expiration` のデフォルトは 3,600 秒で、必要に応じて指定した `headers` も署名に含まれます。`create_multipart_upload` は `content_type`、`cache_control`、`content_disposition`、`content_encoding`、`metadata`、`headers` を受け付けます。完了リクエスト内のパートの順序は問いません。
+### create_multipart_upload
+
+キーに対するマルチパートアップロードを開始します。
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `key` | string | 最終的なオブジェクトのオブジェクトキー |
+| `options` | table | `content_type`、`cache_control`、`content_disposition`、`content_encoding`、`metadata`、`headers` — `upload_object`と同じ意味 |
+
+**戻り値:** `table, error` — テーブルには`upload_id`が含まれ、以降のすべてのパート、完了、中止の呼び出しでこのアップロードを識別します。
+
+条件付き書き込み（`if_match`、`if_none_match`、`only_if_absent`）はマルチパートプロトコルの一部ではなく、ここでは受け付けられません。
+
+### presigned_part_urls
+
+進行中のアップロードのパート用に、署名付きPUT URLを生成します。各URLへは通常のHTTP PUTでアップロードします。アップローダーは`complete_multipart_upload`のために、各パートの`ETag`レスポンスヘッダーを保持する必要があります。
+
+| パラメータ | 型 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `key` | string | 必須 | オブジェクトキー |
+| `upload_id` | string | 必須 | `create_multipart_upload`から取得 |
+| `options.parts` | int[] | - | 明示的なパート番号（1〜10000、重複不可）|
+| `options.count` | int | - | パート`1..count`に署名付きURLを生成 |
+| `options.headers` | table | - | 各パートリクエストに必要なヘッダー。署名対象となり、アップローダーも同じヘッダーを送信する必要がある |
+| `options.expiration` | int | 3600 | URLが期限切れになるまでの秒数 |
+
+`parts`と`count`のいずれか一方が必須です。1回の呼び出しで署名できるURLは最大1000個であるため、非常に大きなオブジェクトではページ単位で署名してください。
+
+**戻り値:** `table, error` — `{ part_number, url }`の配列。
+
+最後のパートを除くすべてのパートは5 MiB以上である必要があります。プロバイダーは完了時にこれを強制します。
+
+### complete_multipart_upload
+
+アップロード済みのパートから最終的なオブジェクトを組み立てます。パートは任意の順序で報告でき、完了前にパート番号でソートされます。
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `key` | string | オブジェクトキー |
+| `upload_id` | string | `create_multipart_upload`から取得 |
+| `parts` | table | `{ part_number = int, etag = string }`の配列 |
+
+**戻り値:** `table, error` — `etag`、およびプロバイダーが報告する場合は`version_id`と`location`。未知のアップロードIDは`errors.NOT_FOUND`を返します。
+
+### abort_multipart_upload
+
+進行中のアップロードを破棄し、保存されているパートを解放します。
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `key` | string | オブジェクトキー |
+| `upload_id` | string | `create_multipart_upload`から取得 |
+
+**戻り値:** `boolean, error`
+
+完了されなかったアップロードは、中止されるまでパートが保存されたまま残り、課金対象になります。すべての失敗経路で中止し、最後の防波堤としてバケットのライフサイクルルールを設定してください — [クラウドストレージ](system/cloudstorage.md#multipart-uploads)を参照。
+
+## 範囲指定リーダー
+
+`open_reader`は範囲指定GETを使ってオブジェクトへのランダムアクセスを開きます。ローカルへの一時保存も全体のダウンロードも行いません。主な利用者は[`archive.open`](lua/data/archive.md)で、数GBのアーカイブを限られたメモリでオブジェクトストレージから直接読み取ります。
+
+```lua
+local archive = require("archive")
+local storage = cloudstorage.get("app.infra:files")
+
+local reader, err = storage:open_reader("uploads/huge.zip", {
+    block_size = 8 * 1024 * 1024,
+    cache_blocks = 4,
+})
+if err then return nil, err end
+
+local r = assert(archive.open(reader))
+for e in r:entries() do
+    print(e.name, e.size)
+end
+r:close()
+reader:close()
+
+storage:release()
+```
+
+| パラメータ | 型 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `key` | string | 必須 | オブジェクトキー |
+| `options.block_size` | int | 8388608 | 範囲指定GETの単位（バイト、64 KiB〜128 MiB）|
+| `options.cache_blocks` | int | 4 | メモリ上に保持するLRUブロック数（1〜64）|
+
+`block_size * cache_blocks`は256 MiBを超えられません。オブジェクトが存在しない場合は`errors.NOT_FOUND`を返します。
+
+**戻り値:** `Reader, error`
+
+リーダーを開いた時点でオブジェクトのETagが固定され、範囲指定読み取りのたびに`If-Match`として送信されます。そのため読み取り中に上書きされたオブジェクトは、2つのオブジェクト世代を混在させて返すのではなく、プロバイダーの前提条件エラーで読み取りが失敗します。`archive`はこれを`errors.INTERNAL`として表面化します。ETagを提供できないプロバイダーは`errors.UNAVAILABLE`を返します。リーダーが固定されていないオブジェクトを提供することはありません。
+
+キャッシュミス時の読み取りは呼び出し元のタスク内でブロッキングのネットワークIOを行い、並行するリーダーを直列化します。したがってエントリごとの逐次アクセス — アーカイブのパターン — が想定された使い方です。
+
+### Readerメソッド
 
 | メソッド | 戻り値 | 説明 |
-|--------|---------|-------------|
-| `create_multipart_upload(key, opts?)` | `table, error` | アップロードを開始し、`{upload_id}` を返す |
-| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | `{part_number, url}` レコードを返す |
-| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | アップロードを完了し、ETag と必要に応じてバージョン/場所を返す |
-| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 未完了のアップロードをアボートする |
+|---------|--------|------|
+| `size()` | `integer` | オープン時のstatによるオブジェクトサイズ（バイト）|
+| `key()` | `string` | リーダーが読み取るオブジェクトキー |
+| `close()` | `boolean, error` | ブロックキャッシュを解放する。冪等 |
 
-完了しないアップロードはアボートしてください。バケットのライフサイクルルールは放棄されたアップロードに対する予備策であり、明示的なクリーンアップの代わりにはなりません。構成済みのプロバイダーが必要な機能をサポートしない場合、マルチパートメソッドは `errors.UNAVAILABLE` を返します。
-
-## ランダムアクセスリーダー
-
-`open_reader` は、オブジェクト全体をダウンロードせずにシーク可能な読み取り専用オブジェクトを公開します。キャッシュミス時に範囲を取得し、オブジェクトを開いた時点の ETag を `If-Match` 条件として送信します。条件を適用するプロバイダーでは、オブジェクトが変更されると、複数バージョンを混在させずに `errors.CONFLICT` を返します。
-
-```lua
-local storage, storage_err = cloudstorage.get("app.infra:files")
-if storage_err then return nil, storage_err end
-
-local reader, err = storage:open_reader("archives/large.zip", {
-    block_size = 8 * 1024 * 1024,
-    cache_blocks = 4
-})
-if err then
-    storage:release()
-    return nil, err
-end
-
-print(reader:key(), reader:size())
-
-local _, close_err = reader:close()
-storage:release()
-if close_err then return nil, close_err end
-```
-
-| オプション | デフォルト | 有効範囲 |
-|--------|---------|-------------|
-| `block_size` | 8 MiB | 64 KiB から 128 MiB |
-| `cache_blocks` | 4 | 1 から 64 |
-
-キャッシュ（`block_size * cache_blocks`）は 256 MiB を超えられません。キャッシュミスはブロッキングネットワーク I/O を実行し、直列化されるため、このリーダーはアーカイブリーダーのような逐次的ランダムアクセスのコンシューマを想定しています。プロバイダーは ETag を提供する必要があり、提供しない場合はリーダーを開くと `errors.UNAVAILABLE` が返されます。ETag を提供しても範囲読み取りの前提条件を無視するプロバイダーは、上書き検出を保証できません。
-
-| リーダーメソッド | 戻り値 | 説明 |
-|---------------|---------|-------------|
-| `size()` | `number` | オブジェクトのサイズ（バイト） |
-| `key()` | `string` | オブジェクトキー |
-| `close()` | `boolean, error` | リーダーを閉じる（冪等） |
-
-リーダーはタスク終了時に自動的に閉じますが、作業が終わったら明示的に閉じてください。
+明示的にクローズされなかった場合、リーダーはタスクスコープで自動的にクローズされます。
 
 ## ストレージメソッド
 
@@ -500,11 +540,11 @@ if close_err then return nil, close_err end
 | `delete_objects(keys)` | `boolean, error` | 複数のオブジェクトを削除 |
 | `presigned_get_url(key, opts?)` | `string, error` | 一時ダウンロードURLを生成 |
 | `presigned_put_url(key, opts?)` | `string, error` | 一時アップロードURLを生成 |
-| `create_multipart_upload(key, opts?)` | `table, error` | マルチパートアップロードを開始 |
-| `presigned_part_urls(key, upload_id, opts)` | `table[], error` | マルチパートアップロード URL を生成 |
-| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | マルチパートアップロードを完了 |
-| `abort_multipart_upload(key, upload_id)` | `boolean, error` | マルチパートアップロードをアボート |
-| `open_reader(key, opts?)` | `Reader, error` | シーク可能な範囲リーダーを開く |
+| `create_multipart_upload(key, opts?)` | `table, error` | 署名付きマルチパートアップロードを開始 |
+| `presigned_part_urls(key, upload_id, opts)` | `table, error` | アップロードパート用の署名付きPUT URLを生成 |
+| `complete_multipart_upload(key, upload_id, parts)` | `table, error` | アップロード済みパートからオブジェクトを組み立て |
+| `abort_multipart_upload(key, upload_id)` | `boolean, error` | 進行中のマルチパートアップロードを破棄 |
+| `open_reader(key, opts?)` | `Reader, error` | 範囲指定のランダムアクセスリーダーを開く |
 | `release()` | `boolean` | ストレージリソースを解放 |
 
 ## 権限
@@ -519,19 +559,22 @@ if close_err then return nil, close_err end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| リソースIDが空 | `errors.INVALID` | いいえ |
-| リソースが見つからない | `errors.NOT_FOUND` | いいえ |
-| クラウドストレージリソースではない | `errors.INVALID` | いいえ |
-| ストレージが解放済み | `errors.INVALID` | いいえ |
-| キーが空 | `errors.INVALID` | いいえ |
-| コンテンツがnil | `errors.INVALID` | いいえ |
-| ライターが無効 | `errors.INVALID` | いいえ |
-| オブジェクトが見つからない | `errors.NOT_FOUND` | いいえ |
-| 条件付き前提条件の失敗 | `errors.CONFLICT` | いいえ |
-| 範囲リーダーを開いている間にオブジェクトが変更された | `errors.CONFLICT` | いいえ |
-| マルチパートアップロードが見つからない | `errors.NOT_FOUND` | いいえ |
-| プロバイダーにマルチパートまたは範囲リーダー機能がない | `errors.UNAVAILABLE` | いいえ |
-| `cloudstorage.get` による権限拒否 | Lua エラーを送出 | 該当なし |
-| プロバイダー操作の失敗 | 利用可能な場合はプロバイダーから引き継ぐ。それ以外は unspecified | 状況による |
+| リソースIDが空 | `errors.INVALID` | no |
+| リソースが見つからない | `errors.NOT_FOUND` | no |
+| クラウドストレージリソースではない | `errors.INVALID` | no |
+| ストレージが解放済み | `errors.INVALID` | no |
+| キーが空 | `errors.INVALID` | no |
+| コンテンツがnil | `errors.INVALID` | no |
+| ライターが無効 | `errors.INVALID` | no |
+| オブジェクトが見つからない | `errors.NOT_FOUND` | no |
+| 未知のアップロードID | `errors.NOT_FOUND` | no |
+| 条件付き前提条件の失敗 | `errors.CONFLICT` | no |
+| 範囲指定読み取り中にオブジェクトが上書きされた（`archive`が表面化） | `errors.INTERNAL` | no |
+| プロバイダーがマルチパートアップロードに対応していない | `errors.UNAVAILABLE` | no |
+| プロバイダーが`open_reader`用のETagを提供しない | `errors.UNAVAILABLE` | no |
+| 権限拒否 | 返されず、Luaエラーとして送出 | - |
+| プロバイダー操作の失敗 | `errors.UNKNOWN` | 未設定 |
+
+エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

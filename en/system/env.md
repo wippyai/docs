@@ -181,7 +181,7 @@ Registered variables are pulled into entry configuration with `${env:NAME}` plac
 
 A field whose entire value is a single placeholder takes the type of its inline default. For example, `${env:PORT|8080}` produces an integer and coerces a stored value to an integer, while `${env:PORT|"8080"}` remains a string. A placeholder mixed with surrounding text always produces a string. A variable's own `default` is honored before the placeholder's inline `|default`. A reference that resolves to nothing and has no default fails decoding.
 
-Resolution happens at decode time only: the stored registry entry keeps the raw placeholders, so resolved secrets never appear in `registry.get` results or persisted state. Entries referencing `${env:...}` automatically order after the env storages and variables they depend on at boot.
+Resolution happens at decode time only: the stored registry entry keeps the raw placeholders, so resolved secrets never appear in `registry.get` results or persisted state. Entries referencing a variable by entry ID (`${env:ns:name}`) automatically order after that variable at boot; a reference by public name creates no dependency edge.
 
 <note>
 Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (for example <code>cert_env: app.env:tls_cert</code>) that resolves the same way. This form is <b>deprecated</b> — migrate it to the <code>${env:NAME}</code> placeholder. A <code>&lt;field&gt;_env</code> key naming an unregistered variable is not treated as a directive and is left as-is; one naming a registered but empty variable keeps the inline <code>&lt;field&gt;</code> value. Only an explicit <code>${env:NAME}</code> without a default hard-fails on a missing variable.

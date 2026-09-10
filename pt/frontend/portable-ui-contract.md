@@ -1,76 +1,74 @@
 ---
-title: "Contrato de UI portável"
-description: "Regras normativas para PrimeVue, Tailwind, tokens, controles personalizados, acessibilidade e portabilidade."
+title: "Contrato de UI Portável"
+description: "Regras normativas para PrimeVue, Tailwind, tokens, controles customizados, acessibilidade e portabilidade."
 ---
 
-# Contrato de UI portável
+# Contrato de UI Portável
 
-Esta página é uma referência normativa de contrato. Seus IDs de regra definem requisitos de revisão e aceitação, não um tutorial de implementação.
-
-Os IDs abaixo são os proprietários canônicos de suas regras.
+Os IDs a seguir são os donos canônicos de suas regras.
 
 ## Portabilidade
 
 ### FE-PORT-001: Portável é o padrão
 
-Um módulo compatível funciona com outro tema de facade compatível sem alterações no módulo e sem classes privadas da facade do projeto.
+Um módulo conforme funciona com outro tema de facade conforme, sem edições no módulo e sem classes de facade privadas do projeto.
 
-### FE-STYLE-001: Sem dependência privada da facade
+### FE-STYLE-001: Sem dependência privada de facade
 
-Módulos portáveis não podem exigir classes ou seletores arbitrários definidos apenas por uma facade. Regras de tema `.p-*` compartilhadas do PrimeVue não são classes privadas. Estilo não PrimeVue exigido por um único módulo pertence a esse módulo, mas deve ser minimizado pela conformidade com componentes e semânticas compartilhados.
+Módulos portáveis não podem exigir classes ou seletores arbitrários definidos por apenas uma facade. Regras de tema `.p-*` compartilhadas do PrimeVue não são classes privadas. Estilização não-PrimeVue exigida por um módulo pertence a esse módulo, mas deve ser minimizada pela conformidade com componentes e semânticas compartilhados.
 
-Quando *vários* módulos próprios precisam do mesmo estilo não PrimeVue, ele não pertence à facade nem a cada módulo: consulte [A camada de design](./design-layer.md).
+Quando *vários* dos seus próprios módulos precisam da mesma estilização não-PrimeVue, ela não pertence nem à facade nem a cada módulo: veja [A Camada de Design](./design-layer.md).
 
 ## Componentes e affordance
 
 ### FE-UI-001: Use PrimeVue quando ele atende ao controle
 
-Se PrimeVue oferece a semântica, interação e affordance pretendida, o módulo deve usá-lo.
+Se o PrimeVue fornece a semântica, a interação e a affordance pretendida, o módulo deve usá-lo.
 
-### FE-UI-002: Formato dos dados não é affordance
+### FE-UI-002: Formato de dados não é affordance
 
-A capacidade de representar os mesmos valores não torna dois controles equivalentes. Um `SelectButton` não substitui automaticamente um toggle deslizante de três posições quando a affordance pretendida é visual e comportamentalmente um toggle.
+A capacidade de representar os mesmos valores não torna dois controles equivalentes. Um `SelectButton` não é automaticamente um substituto para um toggle deslizante de três posições quando a affordance pretendida é, visual e comportamentalmente, um toggle.
 
-### FE-UI-003: Mesma semântica e affordance significam mesma aparência
+### FE-UI-003: Mesma semântica e affordance significa mesma aparência
 
-Controles equivalentes devem compartilhar tamanhos, espaçamento, cores, tipografia, bordas, sombras, foco, hover, estados desativado e inválido e movimento. Uma composição personalizada nomeia seu equivalente visual PrimeVue e herda todas as propriedades compartilhadas aplicáveis da runtime.
+Controles equivalentes devem compartilhar tamanhos, espaçamento, cores, tipografia, bordas, sombras, foco, hover, desabilitado, inválido e comportamento de movimento. Um composto customizado nomeia seu irmão visual no PrimeVue e herda toda propriedade de runtime compartilhada aplicável.
 
 ### FE-UI-004: A omissão do PrimeVue é restrita
 
-PrimeVue pode ser omitido apenas quando o módulo não renderiza nada física ou semanticamente semelhante ao PrimeVue. Um componente apenas de gráfico se qualifica; um gráfico com botão ou campo de formulário, não.
+O PrimeVue pode ser omitido apenas quando o módulo não renderiza nada que seja física ou semanticamente semelhante ao PrimeVue. Um componente apenas de gráfico se qualifica; um gráfico com um botão ou campo de formulário não.
 
 ### FE-UI-005: Nunca invente APIs de componentes
 
-Uma prop ou um comportamento não documentado não é um atalho. O `ToggleSwitch` do PrimeVue não se torna um controle de três posições pela invenção de uma prop de posições. Quando nenhum componente ou composição PrimeVue oferece a affordance necessária, use o processo revisado de equivalente personalizado.
+Uma prop ou comportamento não documentado não é um atalho. O `ToggleSwitch` do PrimeVue não se torna um controle de três posições por inventar uma nova prop de posições. Quando nenhum componente ou composição do PrimeVue fornece a affordance necessária, use o processo revisado de irmão customizado.
 
 ## Tailwind e tokens
 
-### FE-TW-001: O Tailwind do Wippy é compatível
+### FE-TW-001: O Tailwind do Wippy é suportado
 
-O preset compartilhado do Wippy é um contrato de build compatível. Módulos podem usar suas utilities documentadas e estendê-lo para layout de domínio, breakpoints específicos da aplicação, decoração e novas visualizações.
+O preset compartilhado do Wippy é um contrato suportado de tempo de build. Módulos podem usar seus utilitários documentados e estendê-lo para layout de domínio, breakpoints específicos da aplicação, decoração e visualização inédita.
 
-### FE-TW-002: Valores compilados não são tokens da runtime
+### FE-TW-002: Valores compilados não são tokens de runtime
 
-Utilities como `px-3`, `rounded-md` e `duration-200` normalmente são compiladas em constantes. Elas oferecem uma base consistente, mas não mudam quando uma facade troca variáveis de tema da runtime.
+Utilitários como `px-3`, `rounded-md` e `duration-200` normalmente compilam para constantes. Eles fornecem uma linha de base consistente, mas não mudam quando uma facade troca as variáveis de tema de runtime.
 
-### FE-TW-003: Aparência compartilhada acompanha a semântica da runtime
+### FE-TW-003: A aparência de irmãos compartilhados acompanha a semântica de runtime
 
-Quando uma propriedade visual precisa acompanhar um equivalente PrimeVue entre temas, use uma utility semântica documentada e apoiada pela runtime ou um token público direto. Uma utility fixa só é permitida quando a propriedade está explicitamente classificada como `platform-invariant`.
+Quando uma propriedade de aparência deve acompanhar um irmão PrimeVue entre temas, use um utilitário semântico documentado e apoiado em runtime, ou um token público direto. Um utilitário fixo só é permitido quando a propriedade é explicitamente classificada como `platform-invariant`.
 
-### FE-TW-004: Mapeamentos protegidos preservam seu significado
+### FE-TW-004: Mapeamentos protegidos mantêm seu significado
 
-Módulos podem estender o preset, mas não podem redefinir de forma incompatível as semânticas protegidas de primary, surface, severity, text, content, highlight ou controles portáveis.
+Módulos podem estender o preset, mas não podem redefinir de forma incompatível as semânticas protegidas de primary, surface, severity, text, content, highlight ou de controles portáveis.
 
 ### FE-TOKEN-001: Todo token deve existir
 
-Cada referência `--p-*` deve estar presente no manifest gerado selecionado.
+Toda referência `--p-*` deve estar presente no manifesto gerado selecionado.
 
-### FE-TOKEN-002: Nomes de tokens não são APIs dedutíveis
+### FE-TOKEN-002: Nomes de token não são APIs adivinháveis
 
-Nunca construa um token por analogia. Pesquise o [Catálogo de tokens](./micro-frontends/token-catalogue.md) ou o manifest do pacote selecionado.
+Nunca construa um token por analogia. Pesquise no [Catálogo de Tokens](./micro-frontends/token-catalogue.md) ou no manifesto do pacote selecionado.
 
 ## Acessibilidade
 
-### FE-A11Y-001: Personalização não dispensa acessibilidade
+### FE-A11Y-001: Customizado não é dispensa de acessibilidade
 
-Uma exceção para controle personalizado deve preservar HTML válido, interação por teclado, foco, nome acessível, estado e comportamento desativado. Elementos interativos não podem ser aninhados.
+Uma exceção de controle customizado deve preservar HTML válido, interação por teclado, foco, nome acessível, estado e comportamento de desabilitado. Elementos interativos não devem ser aninhados.

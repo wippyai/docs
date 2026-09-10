@@ -51,13 +51,15 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
+      max_open: 4
+      max_idle: 2
       max_lifetime: "1h"
     lifecycle:
       auto_start: true
 ```
 
 <note>
-SQLite は常に単一接続で動作し（<code>max_open</code> と <code>max_idle</code> は <code>1</code> に固定）、ジャーナルモードは <code>WAL</code> です。<code>max_lifetime</code> だけが <code>pool</code> から適用されます。
+プライベートなインメモリSQLiteデータベース（<code>file: ":memory:"</code>）は1本の物理接続にスコープされるため、<code>max_open</code>と<code>max_idle</code>は<code>1</code>に強制されます。ファイルベースのデータベースは設定された<code>pool</code>の値をそのまま使用します。CDCのスナップショット読み取りトランザクションが唯一のライター接続を占有しないために、これが必要です。ジャーナルモードは常に<code>WAL</code>です。
 </note>
 
 ## 接続フィールド
@@ -77,33 +79,37 @@ SQLite は常に単一接続で動作し（<code>max_open</code> と <code>max_i
 
 ### SQLite フィールド
 
-| フィールド | 型 | 説明 |
-|------------|-----|------|
-| `file` | string | データベースファイルのパスまたは `:memory:` |
-| `pool` | object | `max_lifetime` のみ適用（接続数は 1 に固定） |
-| `options` | map | 受け付けるが無視される |
-| `lifecycle` | object | ライフサイクル設定 |
+| フィールド | 型 | デフォルト | 説明 |
+|------------|-----|-----------|------|
+| `file` | string | 必須 | データベースファイルパスまたは`:memory:` |
+| `pool` | object | - | 接続プール設定。`:memory:`では`max_open`と`max_idle`は`1`に強制される |
+| `max_mutation_changes` | int | 100000 | コミット済みミューテーションオブザーバーで1トランザクションが保持できる行数 |
+| `max_mutation_bytes` | int | 67108864 | オブザーバーで1トランザクションが保持できる論理バイト数（64 MiB） |
+| `options` | map | - | 受け付けられるが無視される |
+| `lifecycle` | object | - | ライフサイクル設定 |
+
+`max_mutation_changes`と`max_mutation_bytes`は、[`db.cdc.sqlite`](system/cdc.md)ソースに供給するインメモリのコミット済みミューテーションオブザーバーの上限を定めます。いずれのフィールドも0を指定するとデフォルトが選択され、負の値は拒否されます。この上限は厳密ではなく保守的なものです。SQLiteはpre-updateフックに行全体を渡すため、上限が候補を拒否する前に1行が実体化することがあります。
 
 ### シークレットと環境変数の値
 
-接続値は、デコード時に解決される `${env:NAME}` プレースホルダーを使用して[環境変数レジストリ](system/env.md)から取得します。`NAME` は登録済み変数の公開名またはエントリ ID（例: `app.secrets:db_password`）であり、生の OS 環境変数ではありません。
+接続値は`${env:NAME}`プレースホルダで[環境レジストリ](system/env.md)から取得され、デコード時に解決されます。`NAME`は登録済み変数の公開名またはそのエントリID（例: `app.secrets:db_password`）であり、生のOS環境変数ではありません。
 
 ```yaml
 - name: prod_db
   kind: db.sql.postgres
   host: ${env:DB_HOST}
-  port: ${env:DB_PORT|5432}
+  port: ${env:DB_PORT}
   database: ${env:DB_NAME}
   username: ${env:DB_USER}
   password: ${env:app.secrets:db_password}
 ```
 
 <note>
-古い設定では、同じ方法で解決される兄弟キーの <code>&lt;field&gt;_env</code> ディレクティブ（<code>host_env</code>、<code>port_env</code>、<code>database_env</code>、<code>username_env</code>、<code>password_env</code>）を使用します。この形式は<b>非推奨</b>です。上記の <code>${env:NAME}</code> プレースホルダーに移行してください。
+古い設定では、同じ方法で解決される兄弟の<code>&lt;field&gt;_env</code>ディレクティブ（<code>host_env</code>、<code>port_env</code>、<code>database_env</code>、<code>username_env</code>、<code>password_env</code>）を使用します。この形式は<b>非推奨</b>です — 上記の<code>${env:NAME}</code>プレースホルダに移行してください。
 </note>
 
 <warning>
-設定にパスワードをハードコードしないでください。認証情報には <code>env.variable</code> エントリを使用します。シークレットの設定については、<a href="./env.md">環境変数</a>を参照してください。
+設定にパスワードをハードコードしないでください。認証情報には<code>env.variable</code>エントリを使用してください。セキュアなシークレット管理については<a href="system/env.md">環境変数</a>を参照してください。
 </warning>
 
 ## 接続プール
@@ -114,7 +120,7 @@ SQLite は常に単一接続で動作し（<code>max_open</code> と <code>max_i
 |------------|-----|------------|------|
 | `max_open` | int | 0 | 最大オープン接続数（0 = 無制限） |
 | `max_idle` | int | 0 | 最大アイドル接続数（0 = アイドル接続を保持しない） |
-| `max_lifetime` | duration | 1h | 接続の最大存続時間 |
+| `max_lifetime` | duration | 1h | 最大接続寿命 |
 
 ```yaml
 pool:
@@ -129,13 +135,15 @@ pool:
 
 ## DSN 形式
 
-各データベース種別は設定から DSN を構築します。`options` はキーでソートされて追加されます。デフォルトではオプションは含まれません。
+各データベースタイプは設定からDSNを構築します。`options`はすべて（キー順にソートして）付加されます。デフォルトで含まれるものはありません。
 
 ### PostgreSQL {id="dsn-postgresql"}
 
 ```
-host=host port=port user=username password=password dbname=database [option=value ...]
+host='host' port=port user='username' password='password' dbname='database' [option='value' ...]
 ```
+
+ポート以外のすべての値はシングルクォートで囲まれ、埋め込まれた`'`と`\`はバックスラッシュでエスケープされます。そのため、スペースやクォートを含むホスト、パスワード、オプション値もそのまま渡されます。
 
 ### MySQL {id="dsn-mysql"}
 
@@ -174,7 +182,7 @@ options:
 
 ### SQLite {id="options-sqlite"}
 
-SQLite は `options` マップを DSN に適用しません。ファイルデータベースは常に `mode=rwc` で開かれ、ジャーナルモードは常に `WAL` に設定されます。`options` フィールドは受け付けられますが、無視されます。
+SQLiteは`options`マップをDSNに適用しません。ファイルデータベースは常に`mode=rwc`で開かれ、ジャーナルモードは常に`WAL`に設定されます。`options`フィールドは受け付けられますが無視されます。
 
 ## 例
 
@@ -273,6 +281,7 @@ entries:
 
 ## 関連項目
 
-- [SQL モジュール](lua/storage/sql.md) - Lua API リファレンス
-- [ストア](system/store.md) - `db.sql.*` データベースをバックエンドとするキーバリューストア
-- [キュー](system/queue.md) - SQL をバックエンドとするキューハンドラー
+- [SQLモジュール](lua/storage/sql.md) - Lua APIリファレンス
+- [ストア](system/store.md) - `db.sql.*`データベースをバックエンドとするキーバリューストア
+- [キュー](system/queue.md) - SQLバックエンドのキューハンドラ
+- [変更データキャプチャ](system/cdc.md) - `db.sql.sqlite`またはPostgresデータベースからの行レベル変更のストリーミング

@@ -1,6 +1,6 @@
 ---
 title: "Шаблоны"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='external'/"
+description: "Рендеринг динамического контента с помощью шаблонизатора Jet. Подходит для генерации HTML-страниц, писем и документов с поддержкой наследования и…"
 ---
 
 # Шаблоны

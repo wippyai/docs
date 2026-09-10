@@ -1,6 +1,6 @@
 ---
 title: "標準Luaライブラリ"
-description: "Wippyエントリで利用できる組み込みLuaグローバル、table、string、math、coroutine、構造化エラーAPI。"
+description: "すべてのWippyプロセスで自動的に利用可能なコアLuaライブラリ。require()不要。"
 ---
 
 # 標準Luaライブラリ
@@ -77,11 +77,14 @@ _VERSION  -- Lua version string
 `table` ライブラリは、配列のインプレース操作、ソート、連結、展開を提供します。
 
 ```lua
-table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
-table.remove(t [,pos])         -- Remove and return element at pos (default: last)
-table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
-table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.insert(t, [pos,] value)  -- pos位置に値を挿入（デフォルト: 末尾）
+table.remove(t [,pos])         -- pos位置の要素を削除して返す（デフォルト: 最後）
+table.concat(t [,sep [,i [,j]]]) -- 配列要素をセパレータで連結
+table.sort(t [,comp])          -- インプレースでソート、comp(a,b)はa < bならtrueを返す
+table.unpack(t [,i [,j]])      -- テーブル要素を複数の値としてアンパック
+table.create(narr, nhash)      -- 配列部とハッシュ部の容量を事前確保してテーブルを作成
+table.freeze(t)                -- テーブルをイミュータブルにする、tを返す
+table.isfrozen(t)              -- テーブルがイミュータブルならtrue
 ```
 
 ```lua
@@ -121,18 +124,21 @@ string.lower(s)   -- Convert to lowercase
 ### サブ文字列と文字
 
 ```lua
-string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
-string.len(s)              -- String length (or use #s)
-string.byte(s [,i [,j]])   -- Numeric codes of characters
-string.char(...)           -- Create string from character codes
-string.rep(s, n)           -- Repeat string n times
-string.reverse(s)          -- Reverse string
+string.sub(s, i [,j])      -- iからjまでのサブ文字列（負のインデックスは末尾から）
+string.len(s)              -- 文字列長（または#sを使用）
+string.byte(s [,i [,j]])   -- 文字の数値コード
+string.char(...)           -- 文字コードから文字列を作成
+string.rep(s, n)           -- 文字列をn回繰り返す
+string.reverse(s)          -- 文字列を反転
 ```
 
 ### フォーマット
 
 ```lua
-string.format(fmt, ...)    -- Printf-style formatting
+string.format(fmt, ...)    -- printfスタイルのフォーマット
+string.pack(fmt, ...)      -- 値をバイナリ文字列にパック
+string.unpack(fmt, s [,pos]) -- バイナリ文字列をアンパック、値と次の位置を返す
+string.packsize(fmt)       -- パックされたフォーマットのバイトサイズ
 ```
 
 フォーマット指定子：`%d`（整数）、`%f`（浮動小数点）、`%s`（文字列）、`%q`（クォート付き）、`%x`（16進数）、`%o`（8進数）、`%e`（科学的表記）、`%%`（リテラル%）
@@ -186,9 +192,9 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
-math.mininteger  -- Minimum integer
-math.maxinteger  -- Maximum integer
+math.huge     -- 表現可能な最大の浮動小数点数
+math.mininteger  -- 最小整数
+math.maxinteger  -- 最大整数
 ```
 
 ### 基本操作
@@ -209,28 +215,30 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x)           -- Natural log
-math.log10(x)         -- Base-10 log
+math.log(x)           -- 自然対数
+math.log10(x)         -- 10を底とする対数
+math.frexp(x)         -- 仮数と指数
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### 三角関数
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.sin(x)   math.cos(x)   math.tan(x)    -- ラジアン
 math.asin(x)  math.acos(x)  math.atan(x)
-math.atan2(y, x)                            -- Arc tangent of y/x
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
-math.deg(r)   -- Radians to degrees
-math.rad(d)   -- Degrees to radians
+math.atan2(y, x)                            -- y/xの逆正接
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 双曲線
+math.deg(r)   -- ラジアンから度
+math.rad(d)   -- 度からラジアン
 ```
 
 ### 乱数
 
 ```lua
-math.random()         -- Random float [0,1)
-math.random(n)        -- Random integer [1,n]
-math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Compatibility no-op; does not seed math.random
+math.random()         -- ランダム浮動小数点 [0,1)
+math.random(n)        -- ランダム整数 [1,n]
+math.random(m, n)     -- ランダム整数 [m,n]
+math.randomseed(x)    -- 効果なし。ジェネレータは自動的にシードされる
 ```
 
 `math.random` は非決定的です。ワークフローで同一にリプレイする必要がある判断には使用しないでください。`math.randomseed` で決定的にすることはできません。
@@ -330,11 +338,11 @@ local stack = errors.call_stack(err)
 ### エラーメソッド
 
 ```lua
-err:message()    -- Get error message string
-err:kind()       -- Get error kind (e.g., "NOT_FOUND")
-err:retryable()  -- true, false, or nil (unknown)
-err:details()    -- Get details table or nil
-err:stack()      -- Get stack trace as string
+err:message()    -- エラーメッセージ文字列を取得
+err:kind()       -- エラー種別を取得（例："NOT_FOUND"）
+err:retryable()  -- true、false、またはnil（不明）
+err:details()    -- 詳細テーブルまたはnilを取得
+err:stack()      -- スタックトレースを文字列として取得
 ```
 
 ## 制限された機能
@@ -346,14 +354,12 @@ err:stack()      -- Get stack trace as string
 | `load`、`loadstring`、`loadfile`、`dofile` | [動的評価](lua/dynamic/eval.md)モジュールを使用 |
 | `collectgarbage` | 自動GC |
 | `rawlen` | `#`演算子を使用 |
-| `string.dump` | サポートなし |
-| `io.*` | ファイルには[ファイルシステム](lua/storage/filesystem.md)、端末ストリームには[ターミナルI/O](../system/io.md)を使用 |
-| `os.execute` | [コマンド実行](lua/dynamic/exec.md)を使用 |
-| `os.remove`、`os.rename` | [ファイルシステム](../storage/filesystem.md)を使用 |
-| `os.exit`、`os.tmpname` | 標準ライブラリに直接の代替なし |
+| 標準の`io.*`ファイルライブラリ | [ファイルシステム](lua/storage/filesystem.md)モジュールを使用。Wippyの`io`モジュールは[ターミナルI/O](lua/system/io.md) |
+| `os.execute`、`os.exit`、`os.getenv`、`os.remove`、`os.rename`、`os.tmpname` | [コマンド実行](lua/dynamic/exec.md)、[環境](lua/system/env.md)モジュールを使用 |
+| `string.dump` | 利用不可 |
 | `debug.*` | 利用不可 |
 | `utf8.*` | 利用不可 |
-| `package.loadlib` | ネイティブライブラリはサポートされていません |
+| `package.loadlib` | ネイティブライブラリはサポートされていない |
 
 ## 関連項目
 

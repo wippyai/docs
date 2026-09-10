@@ -1,104 +1,86 @@
 ---
 title: "Facade-Einstiegspunkt"
-description: "Wie wippy/facade den Web Host ausliefert, AppConfig konstruiert, Authentifizierung behandelt und manuelle iframe-Einbettung unterstützt."
+description: "Das Backend-Modul wippy/facade ist der Einstiegspunkt, der den Web Host an die Benutzer ausliefert. Es liefert eine HTML-Seite, die das Web-Host-JS-Modul lädt,…"
 ---
 
 # Facade-Einstiegspunkt
 
-Diese Seite ist eine Integrationsreferenz. Die Shell-Bootstrap- und manuellen iframe-Blöcke isolieren einzelne Verträge; sie ersetzen keinen vollständigen Anmeldeablauf und kein Anwendungsprojekt.
+Das Backend-Modul `wippy/facade` ist der Einstiegspunkt, der den Web Host an die Benutzer ausliefert. Es liefert eine HTML-Seite, die das Web-Host-JS-Modul lädt, Authentifizierungs-Weiterleitungen behandelt, einen `/facade/config`-Endpunkt bereitstellt und deploymentspezifische Konfiguration in das per CDN gehostete Frontend-Bundle überbrückt. Im Bundle selbst ist keine Konfiguration eingebacken — jedes Deployment liefert seine eigene Konfiguration über diesen Mechanismus.
 
-Das Backend-Modul `wippy/facade` liefert den Web Host an Benutzer aus. Es stellt die HTML-Shell und `/facade/config` bereit. Die Shell lädt das Web-Host-Modul, prüft das im Browser gespeicherte Authentifizierungstoken, leitet nicht authentifizierte Benutzer um und stellt Deployment-spezifische Konfiguration für das CDN-gehostete Frontend-Bundle zusammen. Das Bundle selbst enthält keine Deployment-spezifische Konfiguration.
-
-![Facade entry point](../diagrams/facade-entry-point.svg)
+![Facade-Einstiegspunkt](../diagrams/facade-entry-point.svg)
 
 ## Die HTML-Seite
 
-Beim Aufruf einer Wippy-Anwendung übernimmt das Web-Host-Modul Seite und Browserverlauf. Der Host läuft daher als Anwendung und nicht in einem iframe.
+Wenn ein Benutzer eine Wippy-Anwendung aufruft, liefert `wippy/facade` eine HTML-Seite aus. Diese Seite ist schlank: Sie lädt ein Web-Host-JS-Modul vom CDN und initialisiert den Host mit der Konfiguration, die `/facade/config` zurückgibt. Das Modul übernimmt die gesamte Seite — einschließlich ihrer Browser-History —, sodass der Host als komplette Anwendung läuft und nicht innerhalb eines iframes.
 
-Abhängig vom konfigurierten `fe_mode` lädt die Facade einen von zwei JS-Modul-Entries:
+Die Facade lädt je nach konfiguriertem `fe_mode` einen von zwei JS-Modul-Einstiegen:
 
-- **`module.js`** — **Compat**-Shell (Standard): Layout aus Navigationsseitenleiste, Seitenbereich und rechtem Chatpanel.
-- **`managed-layout.js`** — **Managed**-Shell (Opt-in, Early Access): deklaratives Multi-Panel-Layout.
+- **`module.js`** — die **compat**-Hülle (Standard): das übliche Layout aus Navigations-Sidebar + Seitenbereich + rechtem Chat-Panel.
+- **`managed-layout.js`** — die **managed**-Hülle (optional, Early Access): das deklarative Multi-Panel-Layout.
 
-Eine vereinfachte Version des Bootstrap-Aufrufs sieht so aus. Die ausgelieferte Shell lädt zusätzlich konfigurierte Scripts, installiert die Import Map des Web Hosts, behandelt Fehler und setzt vor diesem Aufruf das gespeicherte Theme:
+Eine vereinfachte Version der Seite sieht so aus:
 
-```javascript
-const response = await fetch('/api/public/facade/config')
-if (!response.ok)
-  throw new Error(`Facade config request failed: ${response.status}`)
-const cfg = await response.json()
-
-const storedAuth = localStorage.getItem('@wippy_token_info')
-if (!storedAuth)
-  throw new Error('Authentication is required before bootstrapping the host')
-const { token } = JSON.parse(storedAuth)
-if (typeof token !== 'string' || token.length === 0)
-  throw new Error('Stored authentication does not contain a token')
-
-await import(cfg.facade_url + cfg.module_file)
-
-const appConfig = {
-  $schema: `${cfg.facade_url}/schemas/wippy-context-2.0.xsd`,
-  auth: {
-    token,
-    expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-  },
-  env: cfg.env,
-  routePrefix: cfg.routePrefix,
-  themeMode: window.wippyThemePersist?.read() || cfg.themeMode,
-  apiRoutes: cfg.apiRoutes,
-  axiosDefaults: cfg.axiosDefaults,
-  theming: cfg.theming,
-  hostConfig: cfg.hostConfig,
-  context: { resourceId: '', resourceType: 'page' },
-}
-
-window.initWippyApp(appConfig, '#app')
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My App</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
+  <script>
+    fetch('/facade/config')
+      .then(r => r.json())
+      .then(config => {
+        window.initWippyApp(config, '#app')
+      })
+  </script>
+</body>
+</html>
 ```
 
-> **Abrufpfad.** `/facade/config` ist der Pfad, den die Facade am öffentlichen Router registriert. Die angeforderte URL enthält außerdem dessen Präfix. Beim Beispielpräfix `/api/public` lautet die Anfrage `/api/public/facade/config`, wie in der ausgelieferten Facade-Seite und im Bootstrap-Beispiel. Vertragsbeschreibungen unten verwenden den Registry-lokalen Pfad.
+Die Seite holt ihre Konfiguration und übergibt sie an die Init-Funktion des Moduls. Der Host mountet in die Seite, übernimmt Routing und Browser-History und fährt mit der vollständigen Initialisierung fort.
 
-## Konfigurationsfluss
+> **Hinweis zum Fetch-Pfad.** `/facade/config` ist der Pfad, den die Facade auf dem öffentlichen Router registriert; die tatsächliche URL, die Ihre Seite abruft, enthält das Präfix dieses Routers. Mit dem Beispielpräfix `/api/public` lautet sie `/api/public/facade/config` — genau das, was die ausgelieferte Facade-Seite abruft. Die hier gezeigten Inline-Snippets `fetch('/facade/config')` sind der Lesbarkeit halber gekürzt.
 
-Der Konfigurationsfluss besteht aus vier Schritten:
+## Der Konfigurationsfluss
 
-1. Das Inline-JavaScript der Seite ruft `GET /facade/config` auf derselben Origin auf. `wippy/facade` registriert diesen Endpunkt am öffentlichen Router.
-2. Die Shell liest `@wippy_token_info` aus localStorage. Fehlt der Wert oder kann er nicht dekodiert werden, leitet der Browser zu `login_path` um.
-3. Die Shell lädt `extraScripts`, installiert die Import Map des Web Hosts und importiert das durch `module_file` ausgewählte Modul.
-4. Die Shell ergänzt `$schema`, `auth` und `context` zu den unterstützten Deployment-Feldern und ruft `window.initWippyApp(appConfig, rootContainer?)` auf.
+Der Konfigurationsfluss hat zwei Schritte:
 
-Der Web Host empfängt diese zusammengestellte `AppConfig` und initialisiert sich vollständig. Danach ist das Seitenscript passiv; alle Benutzerinteraktionen finden im gemounteten Host statt.
+1. Das Inline-JavaScript der Seite ruft `GET /facade/config` auf derselben Origin wie die Seite auf. Diesen Endpunkt registriert `wippy/facade` auf dem öffentlichen Router.
+2. Bei der Antwort übergibt die Seite das vollständige Konfigurationsobjekt an die Init-Funktion des geladenen JS-Moduls (`window.initWippyApp(config, rootContainer?)`).
 
-Das CDN-Bundle ist in allen Deployments identisch. Deployment-spezifische URLs und Branding kommen aus der Konfigurationsantwort, das Bearer-Token aus dem Browserspeicher.
+Der Web Host entnimmt dem Konfigurationsobjekt den `AppConfig`-Payload und fährt mit der vollständigen Initialisierung fort. Ab diesem Punkt ist das Seitenskript passiv — jede Benutzerinteraktion findet innerhalb des gemounteten Hosts statt.
 
-> **Konfigurationsantwort gegenüber `AppConfig`.** `/facade/config` gibt keine vollständige `AppConfig` zurück: `$schema`, `auth` und `context` fehlen. `facade_url`, `iframe_origin`, `iframe_url` und `login_path` sind Shell-Einstellungen; `env`, `theming` und `hostConfig` fließen in die zusammengestellte `AppConfig` ein.
+Dieses Muster bedeutet, dass das per CDN gehostete Bundle nie deploymentspezifische URLs, Tokens oder Branding enthält. Das Bundle ist für jedes Deployment identisch. Nur der Konfigurations-Payload unterscheidet sich.
 
-## Antwort von `/facade/config`
+> **Shell-Felder vs. Kind-`AppConfig`.** Die Antwort von `/facade/config` trägt beides. Felder wie `facade_url`, `iframe_origin`, `iframe_url` und `login_path` sind Felder auf **Shell-Ebene**, die die einbettende Seite verwendet, um sich selbst aufzubauen — sie sind nicht Teil der Kind-`AppConfig`. Die `AppConfig`, mit der der Host tatsächlich initialisiert, sind `auth`, `env`, `theming`, `hostConfig`, `context` und die weiteren unten dokumentierten Felder.
 
-Der Endpunkt gibt Shell-Einstellungen und Web-Host-Konfiguration zurück, die `wippy/facade` aus Modulparametern und laufender Umgebung zusammenstellt. Dies ist eine konfigurierte Beispielantwort; leere optionale JSON-Blöcke sind weggelassen:
+## Die Antwort von `/facade/config`
+
+Der Konfigurationsendpunkt liefert ein JSON-Objekt zurück, das sowohl die Felder auf Shell-Ebene als auch die Kind-`AppConfig` trägt. Die Facade-Seite übergibt es an die Init-Funktion des Host-Moduls; eine manuelle iframe-Einbettung liefert den `AppConfig`-Teil stattdessen über PostMessage (siehe unten). Alle Felder stellt `wippy/facade` aus seinen Modulparametern und der laufenden Umgebung zusammen:
 
 ```json
 {
+  "$schema": "wippy-context-2.0",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
-  "login_redirect_param": "return_to",
-  "mode": "compat",
-  "module_file": "/module.js",
+  "auth": {
+    "token": "eyJ...",
+    "expiresAt": "2026-06-01T12:00:00Z"
+  },
   "env": {
     "APP_API_URL": "https://api.example.com",
     "APP_AUTH_API_URL": "https://api.example.com",
     "APP_WEBSOCKET_URL": "wss://api.example.com"
   },
   "routePrefix": "https://api.example.com",
-  "themeMode": "auto",
-  "themePersist": "localStorage",
-  "themeStorageKey": "@wippy-theme-mode",
-  "axiosDefaults": { "timeout": 30000 },
-  "apiRoutes": { "agents": { "list": "/custom/agents" } },
+  "axiosDefaults": {},
+  "apiRoutes": {},
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
-  "extraScripts": ["/monitoring.js"],
   "theming": {
     "global": {
       "customCSS": "@import url('https://fonts.googleapis.com/...');",
@@ -123,211 +105,170 @@ Der Endpunkt gibt Shell-Einstellungen und Web-Host-Konfiguration zurück, die `w
     }
   },
   "hostConfig": {
+    // Beispielwerte — Standardwerte in der Tabelle unten
     "session": { "type": "non-persistent" },
     "history": "hash",
-    "renderEngine": "iframe",
     "showAdmin": true,
     "allowSelectModel": false,
     "startNavOpen": false,
     "hideNavBar": false,
     "disableRightPanel": false,
     "hideSessionSelector": false,
-    "additionalNavItems": [
-      { "id": "reports", "name": "Reports", "title": "Reports", "icon": "tabler:report", "order": 10 }
-    ],
-    "stateCache": { "maxPages": 50, "maxSizePerPage": 1048576 },
-    "allowAdditionalTags": { "w-chart": ["data", "type"] },
-    "chat": { "convertPasteToFile": { "enabled": true, "minFileSize": 1024, "allowHtml": false } }
+    "additionalNavItems": [],
+    "stateCache": {},
+    "allowAdditionalTags": [],
+    "chat": {}
+  },
+  "context": {
+    "resourceId": "root",
+    "resourceType": "page",
+    "route": "/"
   }
 }
 ```
 
 ### Feldreferenz
 
-**Shell- und Integrationsfelder** — von Standard-Shell oder benutzerdefiniertem Embedder verwendet:
+**Felder auf Shell-Ebene** — von der einbettenden Seite verwendet, um sich selbst aufzubauen; nicht Teil der Kind-`AppConfig`:
 
 | Feld | Beschreibung |
-|------|--------------|
-| `facade_url` | Basis-CDN-URL des Web-Host-Bundles; löst Modul-Entry und Vendor-Scripts auf |
-| `iframe_origin` | `Origin`-Headerwert des CDN; `targetOrigin` für PostMessage bei manueller iframe-Einbettung |
-| `iframe_url` | Vollständiges iframe-`src` mit `?waitForCustomConfig`; nur für manuelle iframe-Einbettung ohne Facade |
-| `login_path` | Pfad auf der Seiten-Origin für die Umleitung nicht authentifizierter Benutzer |
-| `login_redirect_param` | Optionaler Query-Parameter, der bei der clientseitigen Login-Umleitung die angeforderte relative URL erhält |
-| `mode` | Normalisierter Frontend-Modus: `compat` oder `managed` |
-| `module_file` | Vom Modus gewähltes Modul: `/module.js` oder `/managed-layout.js` |
-| `themePersist` | Konfigurierter Theme-Persistenzmodus, auch für externe Seiten |
-| `themeStorageKey` | Konfigurierter Cookie-/localStorage-Schlüssel, auch für externe Seiten |
-| `extraScripts` | Optionale Scripts, die die Shell vor dem Web-Host-Modul lädt |
+|-------|-------------|
+| `facade_url` | Basis-CDN-URL für das Web-Host-Bundle. Dient zur Auflösung des Modul-Einstiegs und der Vendor-Skripte. |
+| `iframe_origin` | Wert des `Origin`-Headers des CDN. Wird als `targetOrigin` für PostMessage bei manuellen iframe-Einbettungen verwendet (siehe unten). |
+| `iframe_url` | Vollständiges iframe-`src` inklusive `?waitForCustomConfig`. Nur von manuellen, facadelosen iframe-Einbettungen verwendet (siehe unten). |
+| `login_path` | Pfad auf der Origin der Seite, zu dem nicht authentifizierte Benutzer weitergeleitet werden. |
 
-**Vom Endpunkt zurückgegebene Web-Host-Felder** — werden selektiv in die von der Seite zusammengestellte `AppConfig` kopiert:
+**Felder der Kind-`AppConfig`** — an die Init-Funktion des Hosts übergeben und vom laufenden Host verwendet:
 
 | Feld | Beschreibung |
-|------|--------------|
-| `env` | Laufzeit-URLs als oberstes `AppConfig.env` |
-| `routePrefix` | An Kindanwendungen weitergegebenes API-URL-Präfix |
-| `themeMode` | Anfangsmodus `auto`, `light` oder `dark`; in der Standard-Shell hat eine gespeicherte Auswahl Vorrang |
-| `axiosDefaults` | An Kindanwendungen weitergegebene Axios-Standardwerte |
-| `apiRoutes` | Überschreibt einzelne API-Endpunktpfade als oberstes AppConfig-Feld |
-| `tanstack` | Vom Endpunkt zurückgegebene TanStack-Query-Standardwerte; beachten Sie die folgende Weiterleitungsgrenze |
-| `theming` | CSS-Anpassung in drei Geltungsbereichen |
-| `hostConfig` | Web-Host-Funktionsflags und UI-Konfiguration |
+|-------|-------------|
+| `$schema` | Version des Konfigurationsvertrags (`"wippy-context-2.0"`). |
+| `auth` | Laufzeit-Bearer-Token und Ablauf, injiziert als `AppConfig.auth`. |
+| `env` | Laufzeit-URLs, injiziert als `AppConfig.env` auf oberster Ebene. |
+| `routePrefix` | API-URL-Präfix, das an Kind-Apps weitergereicht wird. |
+| `axiosDefaults` | Standardwerte der Axios-Instanz, die an Kind-Apps weitergereicht werden. |
+| `apiRoutes` | Überschreibt einzelne Pfade von API-Endpunkten (Feld auf oberster `AppConfig`-Ebene). |
+| `tanstack` | Standardwerte für TanStack Query — global + pro rollenbasierter Kategorie (`content`/`lists`); Feld auf oberster `AppConfig`-Ebene. Der Host-Standard ist `refetchOnWindowFocus:false`. |
+| `theming` | CSS-Anpassung, aufgeteilt in drei Scopes. |
+| `hostConfig` | Feature-Flags und UI-Konfiguration des Web Host. |
+| `context` | Anfänglicher Seiten- oder Artefaktkontext für den Host. |
 
-Die Standard-Shell ergänzt selbst diese erforderlichen `AppConfig`-Felder:
-
-| Feld | Quelle |
-|------|--------|
-| `$schema` | `<facade_url>/schemas/wippy-context-2.0.xsd` |
-| `auth` | Token aus `@wippy_token_info`; die aktuelle Shell erzeugt eine Ablaufzeit einen Tag nach der Initialisierung |
-| `context` | `{ resourceId: '', resourceType: 'page' }` |
-
-> **Aktuelle `tanstack`-Weiterleitungsgrenze.** Der Handler gibt ein konfiguriertes Objekt `tanstack` zurück und der Web Host akzeptiert `AppConfig.tanstack`. Die Standard-Facade-Shell kopiert `cfg.tanstack` derzeit nicht in ihr Argument für `initWippyApp`; der Facade-Parameter wirkt auf diesem Pfad deshalb nicht. Ein manueller Embedder kann `tanstack: cfg.tanstack` in seine `AppConfig` aufnehmen.
-
-**Felder von `env`:**
+**`env`-Felder:**
 
 | Feld | Quelle | Beschreibung |
-|------|--------|--------------|
-| `APP_API_URL` | Umgebungsvariable `PUBLIC_API_URL` | Basis-URL aller Backend-HTTP-Aufrufe |
-| `APP_AUTH_API_URL` | Wie `APP_API_URL` | Auth-Endpunkt-URL; darf in benutzerdefinierten Setups abweichen |
-| `APP_WEBSOCKET_URL` | Aus `APP_API_URL` abgeleitet | `http://` → `ws://`, `https://` → `wss://` |
+|-------|--------|-------------|
+| `APP_API_URL` | Umgebungsvariable `PUBLIC_API_URL` | Basis-URL für alle HTTP-Aufrufe ans Backend |
+| `APP_AUTH_API_URL` | Wie `APP_API_URL` | URL des Auth-Endpunkts (kann in eigenen Setups abweichen) |
+| `APP_WEBSOCKET_URL` | Abgeleitet aus `APP_API_URL` | `http://` → `ws://`, `https://` → `wss://` |
 
-**Geltungsbereiche von `theming`:**
+**`theming`-Scopes:**
 
-| Bereich | Angewendet auf |
-|---------|---------------|
-| `global` | Host-Chrome und alle Renderkontexte untergeordneter Seiten |
-| `host` | Nur Host-Chrome; enthält außerdem `i18n.app` für Titel, Icon und Namen in der Seitenleiste |
-| `children` | Renderkontexte untergeordneter Seiten (srcdoc-iframes oder Web Fragments) |
+| Scope | Angewandt auf |
+|-------|-----------|
+| `global` | Sowohl das Host-Chrome als auch alle Kind-iframes |
+| `host` | Nur das Host-Chrome. Trägt außerdem `i18n.app` für App-Titel, Icon und Name in der Sidebar. |
+| `children` | Nur Kind-iframes (vom Proxy-Skript injiziert) |
 
-**Felder von `hostConfig`:**
+**`hostConfig`-Felder:**
 
-| Feld | Typ | Standardwert | Beschreibung |
-|------|-----|--------------|--------------|
-| `session.type` | `"non-persistent"` \| `"cookie"` | `"non-persistent"` | Token-Speichermodus |
-| `history` | `"hash"` \| `"browser"` | `"hash"` | History-Modus von Vue Router |
-| `renderEngine` | `"iframe"` \| `"fragment"` | `"iframe"` | Render Engine für gepackte `view.page`-Anwendungen |
-| `showAdmin` | boolean | `true` | Administratorfunktionen anzeigen |
-| `allowSelectModel` | boolean | `false` | LLM-Modellauswahl anzeigen |
-| `startNavOpen` | boolean | `false` | Navigationsseitenleiste beim Laden ausklappen |
-| `hideNavBar` | boolean | `false` | Linke Navigationsseitenleiste vollständig ausblenden |
-| `disableRightPanel` | boolean | `false` | Rechtes Artefaktpanel deaktivieren |
-| `hideSessionSelector` | boolean | `false` | Chatsitzungsauswahl ausblenden |
-| `additionalNavItems` | array | `[]` | Zusätzliche Elemente der Seitenleiste |
-| `stateCache` | object | `{}` | LRU-Cache-Konfiguration für Zustand untergeordneter Seiten |
-| `allowAdditionalTags` | object | `{}` | Tag-Allowlist des HTML-Sanitizers (`Record<string, string[]>`, Tag → erlaubte Attribute) |
-| `chat` | object | `{}` | Überschreibungen der Chatoberfläche, etwa Paste-to-File |
+| Feld | Typ | Standard | Beschreibung |
+|-------|------|---------|-------------|
+| `session.type` | `"non-persistent"` \| `"cookie"` | `"non-persistent"` | Speichermodus des Tokens |
+| `history` | `"hash"` \| `"browser"` | `"hash"` | History-Modus des Vue Routers |
+| `showAdmin` | boolean | `true` | Admin-Funktionen in der UI anzeigen |
+| `allowSelectModel` | boolean | `false` | Auswahl des LLM-Modells anzeigen |
+| `startNavOpen` | boolean | `false` | Navigations-Sidebar beim Laden ausklappen |
+| `hideNavBar` | boolean | `false` | Linke Navigations-Sidebar vollständig ausblenden |
+| `disableRightPanel` | boolean | `false` | Rechtes Artefakt-Panel deaktivieren |
+| `hideSessionSelector` | boolean | `false` | Auswahl der Chat-Sitzung ausblenden |
+| `additionalNavItems` | array | `[]` | Zusätzliche Einträge, die in die Sidebar injiziert werden |
+| `stateCache` | object | `{}` | LRU-Cache-Konfiguration für den State der Kind-iframes |
+| `allowAdditionalTags` | object | `{}` | Tag-Whitelist des HTML-Sanitizers (`Record<string, string[]>`, Tag → erlaubte Attribute) |
+| `chat` | object | `{}` | Overrides der Chat-UI (Verhalten beim Einfügen als Datei usw.) |
 
 ## Authentifizierungsfluss
 
-Die Facade liefert HTML-Shell und öffentliche Konfigurationsantwort aus, bevor sie das clientseitige Bearer-Token kennt. Im Browser liest die Shell `@wippy_token_info` aus localStorage. Ein fehlender Wert oder ungültiges JSON löst eine Umleitung zu `login_path` aus. Ist `login_redirect_param` konfiguriert, ergänzt die Shell aktuellen Pfad, Query und Hash, damit der Login den Benutzer zur angeforderten URL zurückführen kann.
+Ist der Benutzer beim Laden der Seite nicht authentifiziert, leitet `wippy/facade` zu `login_path` weiter, bevor die HTML-Seite ausgeliefert wird. Nach erfolgreicher Anmeldung kehrt der Benutzer zur ursprünglichen URL zurück. Über die Web-Host-Konfiguration selbst wird kein Authentifizierungszustand übergeben — der Web Host vertraut dem Auth-Token, das die authentifizierte Seitenantwort in `auth`/`env` eingebettet hat.
 
-Bei einem gültigen gespeicherten Wert kopiert die Shell dessen `token` in `AppConfig.auth` und setzt `expiresAt` auf einen Tag nach der Initialisierung. Der Konfigurationsendpunkt selbst enthält weder Token noch benutzerspezifischen Auth-Zustand. `APP_API_URL` und `APP_WEBSOCKET_URL` sind Deployment-Einstellungen, keine benutzerspezifischen Werte.
+Weil der Konfigurationsendpunkt von derselben authentifizierten Sitzung ausgeliefert wird, die auch die HTML-Seite geliefert hat, spiegeln `APP_API_URL` und die daraus abgeleitete WebSocket-URL automatisch das korrekte Backend für diesen Benutzer wider.
 
-## Modul-Initialisierungsfunktion
+## Die Init-Funktion des Moduls
 
-Beide JS-Modul-Entries registrieren dieselbe Funktion `window.initWippyApp`. Die Modulwahl bestimmt die gerenderte Shell und ist unabhängig von der Einbettungsart.
+Der JS-Modul-Einstieg registriert `window.initWippyApp` auf der Seite. Die Facade-Seite ruft sie mit dem von `/facade/config` geholten Konfigurationsobjekt auf. `fe_mode` wählt, welches Modul die Facade lädt — `module.js` für **compat**, `managed-layout.js` für **managed** —, und beide stellen dieselbe Einstiegsfunktion `initWippyApp` bereit. Die Modulwahl betrifft, welche Hülle rendert; sie ist unabhängig vom Einbettungsstil (JS-Modul-Seite vs. manuelles iframe).
 
-`initWippyApp(appConfig, rootContainer?)` gibt einen einfachen Ereignisemitter zurück:
+`initWippyApp(config, rootContainer?)` liefert einen einfachen Event-Emitter zurück:
 
 ```javascript
-const events = window.initWippyApp(appConfig, '#app')
+const events = window.initWippyApp(config, '#app')
 events.on('ready', () => console.log('Wippy loaded'))
 events.on('error', err => console.error('Failed to load:', err))
 ```
 
-Ohne Rootcontainer mountet der Host in ein Standardelement.
+Wird sie ohne Root-Container aufgerufen, mountet der Host in ein Standardelement. Der Host übernimmt ab diesem Punkt die Seite und ihre Browser-History.
 
-## Manuelle iframe-Einbettung ohne Facade
+## Manuelle (facadelose) iframe-Einbettung
 
-Die JS-Modul-Seite ist der empfohlene Standardpfad der aktuellen Facade. Ein zweiter Mechanismus führt den vollständigen Host **innerhalb eines iframe** aus, etwa in einem Teilbereich einer Seite mit stärkerer Isolation von der umgebenden Anwendung. In diesem Modus betten Sie den Host selbst ein; die Facade erzeugt diese Seite nicht.
+Die obige JS-Modul-Seite ist der Standardweg, wird empfohlen und wird von der aktuellen Facade verwendet. Es gibt außerdem einen zweiten Einbettungsmechanismus für Fälle, in denen Sie den vollständigen Host **innerhalb eines iframes** betreiben möchten — etwa um nur einen Teil einer Seite mit stärkerer Isolation von der umgebenden Anwendung zu belegen. In diesem Modus betten Sie den Host selbst ein; die Facade erzeugt diese Seite nicht.
 
-![Manual iframe embedding](../diagrams/manual-iframe-embedding.svg)
+![Manuelle iframe-Einbettung](../diagrams/manual-iframe-embedding.svg)
 
-Sie können `/facade/config` weiterhin für Deployment-Einstellungen verwenden. `iframe_url` enthält den Entry `iframe.html` des Hosts mit `?waitForCustomConfig`; `iframe_origin` ist dessen PostMessage-`targetOrigin`. Die Elternseite muss Authentifizierung im eigenen Clientablauf beziehen und vor der Handshake-Antwort eine vollständige `AppConfig` zusammenstellen.
+Sie können weiterhin den `/facade/config`-Endpunkt der Facade nutzen, um die URLs und die Konfiguration zu erhalten: Seine Felder `iframe_url` (der `iframe.html`-Einstieg des Hosts mit bereits angehängtem `?waitForCustomConfig`) und `iframe_origin` (die `targetOrigin` für PostMessage) existieren genau für diesen Weg. Sie erzeugen das iframe dann selbst und schließen den Konfigurations-Handshake ab.
 
-Anders als beim JS-Modul-Pfad **fordert** der Host im iframe seine Konfiguration an: Er startet, sendet `get-config` an die Elternseite und erhält `set-config` zurück. Warten Sie bei `<iframe id="wippy"></iframe>` auf diese Anfrage, statt Konfiguration beim Laden blind zu senden:
+Anders als beim JS-Modul-Weg **fordert** der Host im iframe seine Konfiguration an: Er bootet und sendet eine `get-config`-Nachricht an den Parent, und der Parent antwortet mit `set-config`. Der Parent **lauscht** also auf die Anfrage, statt die Konfiguration blind bei `load` zu pushen:
 
-```javascript
-async function mountWippyIframe(auth) {
-  const response = await fetch('/api/public/facade/config')
-  if (!response.ok)
-    throw new Error(`Facade config request failed: ${response.status}`)
-  const cfg = await response.json()
-  const iframe = document.getElementById('wippy')
-  if (!(iframe instanceof HTMLIFrameElement))
-    throw new Error('Expected <iframe id="wippy">')
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My App</title>
+</head>
+<body>
+  <iframe id="wippy" style="width:100%;height:100vh;border:none"></iframe>
+  <script>
+    fetch('/facade/config')
+      .then(r => r.json())
+      .then(config => {
+        const iframe = document.getElementById('wippy')
 
-  const iframeUrl = new URL(cfg.iframe_url)
-  if (iframeUrl.origin !== cfg.iframe_origin)
-    throw new Error('iframe_url and iframe_origin must identify the same origin')
+        // Auf die @gen2-chat-Konfigurationsanfrage des Kindes lauschen und sie beantworten.
+        window.addEventListener('message', (event) => {
+          if (event.origin !== config.iframe_origin) return
+          const msg = event.data
+          if (msg?.type === '@gen2-chat' && msg.action === 'get-config') {
+            iframe.contentWindow.postMessage(
+              { type: '@gen2-chat', action: 'set-config', ...config },
+              config.iframe_origin
+            )
+          }
+        })
 
-  const appConfig = {
-    $schema: `${cfg.facade_url}/schemas/wippy-context-2.0.xsd`,
-    auth,
-    env: cfg.env,
-    routePrefix: cfg.routePrefix,
-    themeMode: cfg.themeMode,
-    apiRoutes: cfg.apiRoutes,
-    axiosDefaults: cfg.axiosDefaults,
-    tanstack: cfg.tanstack,
-    theming: cfg.theming,
-    hostConfig: cfg.hostConfig,
-    context: { resourceId: '', resourceType: 'page' },
-  }
-
-  function onMessage(event) {
-    if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
-      return
-
-    let message
-    try {
-      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
-    }
-    catch {
-      return
-    }
-    if (message?.type === '@gen2-chat' && message.action === 'get-config') {
-      event.source.postMessage(
-        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
-        cfg.iframe_origin,
-      )
-    }
-  }
-
-  window.addEventListener('message', onMessage)
-
-  // iframe_url already includes ?waitForCustomConfig
-  iframe.src = iframeUrl.href
-
-  return function unmount() {
-    window.removeEventListener('message', onMessage)
-    iframe.remove()
-  }
-}
+        // iframe_url enthält bereits ?waitForCustomConfig
+        iframe.src = config.iframe_url
+      })
+  </script>
+</body>
+</html>
 ```
 
-Rufen Sie `mountWippyIframe` mit einem Objekt `auth` auf, das das aktuelle Bearer-`token` und ein ISO-8601-`expiresAt` enthält. Beziehen Sie dieses Token nicht aus `/facade/config`; der Endpunkt gibt keines zurück. Bewahren Sie die zurückgegebene Funktion `unmount` auf und rufen Sie sie beim Entfernen der Einbettungsoberfläche auf, damit Window-Listener und iframe ihren Eigentümer nicht überleben.
-
-Die Prüfungen der Elternseite schützen sie davor, Nachrichten eines anderen Frames zu akzeptieren. In Web Host 1.0.56 prüft der eingehende `SetConfig`-Handler des iframe nur Envelope-`type` und `action`; `event.origin` und `event.source` werden nicht authentifiziert, und eine spätere passende Nachricht kann die Konfiguration ersetzen. Behandeln Sie jedes Script und Fenster, das dem iframe Nachrichten senden kann, als Teil der vertrauenswürdigen Konfigurationsgrenze. DOM- und Style-Isolation des iframe ist keine Isolation der Konfigurationsautorität.
-
-Der bereits in `iframe_url` enthaltene Query-Parameter `?waitForCustomConfig` ist das entscheidende Signal. Er pausiert die Initialisierung des Web Hosts: Die Anwendung mountet, versucht aber erst nach einer Nachricht `set-config`, Authentifizierung aufzulösen oder Routen zu laden. Ohne ihn würde der Host Auth-Tokens aus URL-Parametern oder Standardwerten lesen, was für eingebettete Deployments ungeeignet ist.
+Der Query-Parameter `?waitForCustomConfig` (bereits in `iframe_url` enthalten) ist das entscheidende Signal. Er weist den Web Host an, die Initialisierung anzuhalten — die App mountet, versucht aber bewusst nicht, die Authentifizierung aufzulösen oder Routen zu laden, bis sie eine `set-config`-Nachricht erhält. Ohne ihn würde der Web Host versuchen, Auth-Tokens aus URL-Parametern oder Standardwerten zu lesen, was für eingebettete Deployments nicht angemessen ist.
 
 Der Handshake verwendet das PostMessage-Protokoll `@gen2-chat`:
 
-1. Die Elternseite ruft `GET /facade/config` ab oder liefert gleichwertige Deployment-Einstellungen, stellt eine vollständige `AppConfig` zusammen und erstellt den iframe mit `iframe_url`.
-2. Der startende iframe sendet `{ type: '@gen2-chat', action: 'get-config' }` an die Elternseite.
-3. Deren `message`-Listener antwortet mit `{ type: '@gen2-chat', action: 'set-config', ...appConfig }` und zielt auf `iframe_origin`.
+1. Der Parent holt `GET /facade/config` (oder liefert selbst einen gleichwertigen `AppConfig`-Payload) und erzeugt das iframe mit Ziel `iframe_url`.
+2. Das bootende iframe sendet `{ type: '@gen2-chat', action: 'get-config' }` an den Parent.
+3. Der `message`-Listener des Parents antwortet mit `{ type: '@gen2-chat', action: 'set-config', ...config }`, gerichtet an `iframe_origin`.
 
-Der Web Host extrahiert `AppConfig` und initialisiert sich vollständig. Das vollständige Nachrichtenprotokoll mit `@gen2-chat`-Envelope und Enum `IFrameMessageType` beschreibt [Proxy und Isolation](./proxy-isolation.md). Dieser `SetConfig`-Handshake gilt nur für manuelle Einbettung ohne Facade; `wippy/facade` lädt den Web Host stattdessen als JS-Modul.
+Der Web Host entnimmt den `AppConfig`-Payload und fährt mit der vollständigen Initialisierung fort. Für das vollständige Nachrichtenprotokoll (den `@gen2-chat`-Umschlag und das `IFrameMessageType`-Enum) siehe [Proxy & Isolation](./proxy-isolation.md). Dieser `SetConfig`-Handshake ist spezifisch für die manuelle, facadelose Einbettung; das Modul `wippy/facade` lädt den Web Host stattdessen als JS-Modul.
 
-## Facade-Modul konfigurieren
+## Das Facade-Modul konfigurieren
 
-Setzen Sie in `_index.yaml` die Parameter von `wippy/facade`, aus denen die Konfigurationsantwort entsteht. Dieses Beispiel stammt aus `app-template`:
+Die `wippy/facade`-Parameter, die die obige Konfigurationsantwort erzeugen, werden in Ihrer `_index.yaml` gesetzt. Ein echtes Beispiel aus `app-template`:
 
 ```yaml
 - name: facade
   kind: ns.dependency
   component: wippy/facade
-  version: '0.6.37'
+  version: '>=v0.5.37'
   parameters:
     - name: server
       value: app:gateway
@@ -356,6 +297,8 @@ Setzen Sie in `_index.yaml` die Parameter von `wippy/facade`, aus denen die Konf
       value: '{"--p-primary":"#6366f1"}'
     - name: host_custom_css
       value: ".wippy-host-app .chat-container { background: var(--p-content-background); }"
+    - name: tanstack
+      value: '{"lists":{"refetchOnWindowFocus":true}}'
 ```
 
-Die vollständige Parameterliste und ihre Standardwerte finden Sie in der [Facade-Modulreferenz](../../framework/facade.md).
+Die vollständige Liste der verfügbaren Parameter und ihrer Standardwerte finden Sie in der [Referenz des Facade-Moduls](../../framework/facade.md).

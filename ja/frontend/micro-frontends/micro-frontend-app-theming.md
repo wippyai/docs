@@ -1,43 +1,41 @@
 ---
-title: "テーマ設定: Micro Frontend App"
-description: "Micro Frontend App が facade、child scope、ページ単位のテーマ設定を受け取る仕組み。"
+title: "テーマ: マイクロフロントエンドアプリ"
+description: "テーマのリファレンスはCSS変数の完全なカタログを扱います。このドキュメントは、マイクロフロントエンドアプリがどのようにテーマを受け取るかを扱います。"
 ---
 
-# テーマ設定: Micro Frontend App
+# テーマ: マイクロフロントエンドアプリ
 
-**分類: 部分的なレシピを含む設定リファレンス。** YAML、package metadata、runtime の各スニペットは、テーマ契約の一つの層を示しています。完全な `view.page` プロジェクトおよび facade entry と組み合わせてください。
-
-Micro Frontend App は、engine ごとの CSS 配信を通じて同じ有効な child theme を受け取ります。共通の作成契約は [Theme Authoring](./theming.md) を参照してください。
+[テーマのリファレンス](./theming.md)はCSS変数の完全なカタログを扱います。このドキュメントは、マイクロフロントエンドアプリがどのようにテーマを受け取るかを扱います。
 
 ---
 
-## テーマがアプリに届く仕組み
+## テーマがアプリに届くまで
 
-iframe 配信では、Host が proxy pipeline を通じて CSS を注入し、custom variable と CSS を document-level adopted stylesheet に配置します。Web Fragment 配信では、framework gateway が platform CSS を提供し、fragment adapter が custom variable と CSS を reflected head 内の通常の `<style>` element として配置します。現在の runtime schema は `wippy-context-2.0` です。facade のテーマ設定は `theming.global`、`theming.host`、`theming.children` として表現され、どちらの page engine も有効な child 向け theme を `config.theming.global` として受け取ります。
+ホストは、プロキシ注入パイプラインを通じてマイクロフロントエンドアプリのiframeにCSSを注入します。現在のランタイムスキーマは `wippy-context-2.0` です。ファサードのテーマは `theming.global`、`theming.host`、`theming.children` として表現され、子ページは実効的な子向けテーマを `config.theming.global` として受け取ります。
 
-### L1 — Global（facade level）
+### L1 — グローバル（ファサードレベル）
 
-facade の global theming scope で設定した CSS variable は、engine の CSS 配信経路を通じて Host と child page に届きます。brand palette、accent color、および全体で一貫して適用すべき style にはこの scope を使います。
+ファサードのグローバルテーマスコープで設定されたCSS変数は、`themeConfig` とカスタム変数のプロキシ注入を介して、ホストとすべてのiframeに自動的に届きます。ここが、ブランドパレット、アクセントカラー、およびどこでも一貫して適用されるべきスタイリングの主要な置き場所です。
 
 ```yaml
 - name: css_variables
   value: '{"--p-primary":"#4f8ef7","--p-secondary":"#6f7385","--p-danger":"#dc2626"}'
 ```
 
-### L2 — Scoped（host または children scope）
+### L2 — スコープ付き（hostまたはchildrenスコープ）
 
-facade は、Host chrome 用と child page 用に、現在の schema で別々の scope を公開します。
+ファサードは、ホストのクロームと子iframeに対して、現行スキーマの別々のスコープを公開します:
 
-| スキーマスコープ | 適用先 | 用途 |
+| スキーマスコープ | 到達先 | 用途 |
 |---|---|---|
-| `theming.host` | Host UI chrome のみ | Sidebar、chat message、splitter — Host の BEM override |
-| `theming.children` | Child page のみ | child app 内に適用し、Host には漏らしてはならない CSS |
+| `theming.host` | ホストUIのクロームのみ | サイドバー、チャットメッセージ、スプリッター — ホストのBEMオーバーライド |
+| `theming.children` | 子iframeのみ | 子アプリ内には適用されるが、ホストに漏れてはならないCSS |
 
-`children_css_variables` または `children_custom_css` に設定した CSS は Micro Frontend App に届きます。host scope の variable は Web Host chrome だけを対象にします。
+`children_css_variables` または `children_custom_css` に設定したCSSはマイクロフロントエンドアプリに届きます。hostスコープの変数はWeb Hostのクロームのみを対象とします。
 
-### L3 — ページ単位（registry YAML の `config_overrides`） :id=l3-per-page-config_overrides-in-registry-yaml
+### L3 — ページごと（レジストリYAMLの `config_overrides`）
 
-page の registry entry YAML で `config_overrides.customization.cssVariables` / `customCSS` を設定すると、page 固有の theme を与えられます。override は page の `theming.global` に投影されるため、page と、page が埋め込むすべてのものをテーマ設定します。ネストされた `<w-artifact>` / `<w-iframe>` / `html.inject` content は page の merge 済み config から構築され、再帰的に theme を継承します。artifact や sub-app へ theme を伝播させる admin module のような、**自己完結した theme sub-tree** に使います。sibling page や app shell の残りには影響しません。
+ページのレジストリエントリYAMLで `config_overrides.customization.cssVariables` / `customCSS` を設定すると、そのページ専用のテーマを与えられます。このオーバーライドはページの `theming.global` に投影されるため、**そのページと、そのページが埋め込むすべてのもの**にテーマが適用されます。ネストされた `<w-artifact>` / `<w-iframe>` / `html.inject` のコンテンツは、そのページの既にマージ済みの設定から構築され、サブツリーを再帰的に下ってテーマを継承します。これは**自己テーマ化されたサブツリー**を出荷するための道具です。例えば、独自のテーマを持ち、それがホストするすべてのアーティファクトとサブアプリに伝播する管理モジュールなどです。兄弟ページやアプリシェルの他の部分には影響しません。
 
 ```yaml
 - name: iframe-demo-themed
@@ -56,15 +54,15 @@ page の registry entry YAML で `config_overrides.customization.cssVariables` /
           .demo-banner { background: var(--p-primary-color); color: var(--p-primary-contrast-color); }
 ```
 
-top-level entry はすべての theme mode に適用されます。`@dark` と `@light` は選択した entry を置換し、Auto mode の media block と強制 `.w-theme-dark` / `.w-theme-light` selector の両方にコンパイルされます。これらの class は Host が所有します。application が別の `data-theme` protocol を作ってはいけません。
+トップレベルのエントリはすべてのテーマモードで適用されます。`@dark` と `@light` は選択されたエントリを置き換え、Autoモードのメディアブロックと、強制の `.w-theme-dark` / `.w-theme-light` セレクタの両方にコンパイルされます。これらのクラスはホストが所有します。アプリケーションが並行する `data-theme` プロトコルを発明してはいけません。
 
-`wippy.configOverrides` 以下に同じ形を置いた `package.json` mirror は、host-less rendering（standalone development preview と unit test）で同じ設定を提供します。両者を同期してください。Host がある場合は YAML が優先されます。
+`wippy.configOverrides` の下にある `package.json` のミラーは、ホストなしのレンダリング（スタンドアロンの開発プレビュー、ユニットテスト）のために同じ形を提供します。両者は同期を保ってください。ホストが存在する場合はYAMLが優先されます。
 
 ---
 
-## iframe CSS injection の有効化
+## CSS注入の有効化
 
-iframe-hosted および host-less rendering では、Micro Frontend App が要求する injection を `package.json` の `wippy` block で設定します。
+`package.json` の `wippy` ブロックで、マイクロフロントエンドアプリが要求する注入を設定します:
 
 ```jsonc
 "wippy": {
@@ -72,70 +70,68 @@ iframe-hosted および host-less rendering では、Micro Frontend App が要�
   "proxy": {
     "injections": {
       "css": {
-        "themeConfig":      true,   // --p-* CSS vars (theme-config.css)
-        "primevue":         true,   // PrimeVue component CSS and Tailwind utilities
-        "markdown":         false,  // .data-body markdown styles
-        "iframe":           true,   // Scrollbar styling
-        "customCss":        true,   // Child-projected theming.global.customCSS
-        "customVariables":  true    // Child-projected theming.global.cssVariables
+        "themeConfig":      true,   // --p-* CSS変数 (theme-config.css)
+        "primevue":         true,   // PrimeVueコンポーネントCSS (約455 KB)
+        "markdown":         false,  // .data-body のmarkdownスタイル
+        "iframe":           true,   // スクロールバーのスタイリング
+        "customCss":        true,   // 子に投影される theming.global.customCSS
+        "customVariables":  true    // 子に投影される theming.global.cssVariables
       },
-      "tailwindConfig": false       // LEGACY runtime-Tailwind only; leave false for Vite builds
+      "tailwindConfig": false       // レガシーのランタイムTailwind専用。Viteビルドではfalseのままにする
     }
   }
 }
 ```
 
-flag を省略した場合、iframe proxy には広範な runtime default があります。Micro Frontend App で theme CSS を受け取るには、次の flag を有効にします（テーマ設定に絞った要約であり、正式な flag 一覧ではありません）。
+iframeプロキシは、フラグが省略された場合に広めのランタイムデフォルトを持ちます。マイクロフロントエンドアプリで**テーマCSSを受け取るにはこれらのフラグを有効にしてください**（テーマに焦点を当てた要約であり、確定的なフラグ一覧ではありません）:
 
-- `css.themeConfig` — 完全な `--p-*` CSS variable system（`theme-config.css`）。theme palette を継承する場合に有効化します。
-- `css.primevue` — PrimeVue component style。PrimeVue を使う app で有効化します。
-- `css.customCss` — Host が構成した child 向け custom CSS。facade の **global + children** custom CSS を `config.theming.global.customCSS` に merge し、ページ単位の override を加えたものです。この flag は単一 scope の名前ではなく、この injection を制御します。facade/page の custom CSS を受け取る場合に有効化します。
-- `css.customVariables` — child に投影された `config.theming.global.cssVariables` を、effective base、Auto-light、Auto-dark、forced Light、forced Dark block として注入します。theme variable override を受け取る場合に有効化します。
-- `css.markdown` — `.data-body` markdown style。page が markdown content を描画する場合だけ有効化します。
+- `css.themeConfig` — `--p-*` CSS変数システム一式（`theme-config.css`）。テーマパレットを継承するには有効にします。
+- `css.primevue` — PrimeVueコンポーネントのスタイル。PrimeVueを使うアプリでは有効にします。
+- `css.customCss` — ホストが合成した子向けのカスタムCSS。ファサードの**グローバル + children**のカスタムCSSが `config.theming.global.customCSS` にマージされ、さらにページごとのオーバーライドが加わります。このフラグは単一のスコープを指すのではなく、この注入全体を制御します。ファサード/ページごとのカスタムCSSを受け取るには有効にします。
+- `css.customVariables` — 子に投影された `config.theming.global.cssVariables` を、実効ベース、Autoライト、Autoダーク、強制ライト、強制ダークの各ブロックとして提供します。テーマ変数のオーバーライドを受け取るには有効にします。
+- `css.markdown` — `.data-body` のmarkdownスタイル。ページがmarkdownコンテンツをレンダリングする場合のみ有効にします。
 
-完全な flag reference と runtime default は [CSS Injection](../web-host/css-injection.md) を参照してください。
+フラグの完全なリファレンスとランタイムのデフォルト: [CSS注入](../web-host/css-injection.md)。
 
-Web Fragment 配信では、固定された Host CSS をこれらの flag で制御しません。framework gateway がそれらの asset を注入し、fragment adapter は AppConfig を受け取った後に有効な custom variable と CSS を適用します。
-
-> **Development mode:** development overlay は `themeConfig`、`primevue`、`markdown`、`iframe` を無効にした状態で開始します。ローカルで注入 theme を preview するには有効化してください。reload 後も選択を保持するには「Auto-accept on reload」を選びます。
+> **開発モードの注意:** 開発オーバーレイは、`themeConfig`、`primevue`、`markdown`、`iframe` がデフォルトで無効の状態から始まります。ローカルで実際のテーマスタイリングを見るには、オーバーレイでこれらを有効にしてください。「Auto-accept on reload」をチェックすると、リロードをまたいで保持されます。
 
 ---
 
-## Merge order — 何が何を上書きするか
+## マージ順序 — 何が何を上書きするか
 
-Host が AppConfig を適用する順序です（後勝ち）。
+ホストがAppConfigを適用するとき（後から書いた方が勝ちます）:
 
-1. `theme-config.css` default（development-time fallback）
-2. facade の `theming.global` と child 向け `theming.children`
-3. page の `wippy.configOverrides`（declarative、page に組み込み）
-4. `window.__WIPPY_CONFIG_OVERRIDES__`（runtime、proxy 読込前に設定されている場合）
+1. `theme-config.css` のデフォルト（開発時のフォールバック）
+2. ファサードの `theming.global` と子向けの `theming.children`
+3. ページの `wippy.configOverrides`（宣言的で、ページに焼き込まれる）
+4. `window.__WIPPY_CONFIG_OVERRIDES__`（ランタイム。プロキシの読み込み前に設定された場合）
 
-`cssVariables` では override map が継承した child map を**置換**するため、必要な完全な set を記述してください。`icons` / `iconSets` は追加 merge です。`axiosDefaults`、`routePrefix`、`apiRoutes` には、Host が現在の `AppConfigOverrides` merge rule を適用します。
+`cssVariables` の場合: オーバーライドのマップは継承された子のマップを**置き換えます**。欲しいセット全体を書いてください。`icons`/`iconSets` の場合: 加算的なマージです。`axiosDefaults`、`routePrefix`、`apiRoutes` の場合: ホストがそれらのフィールドに対する現行の `AppConfigOverrides` のマージ規則を適用します。
 
-### Runtime override（`window.__WIPPY_CONFIG_OVERRIDES__`）
+### ランタイムのオーバーライド（`window.__WIPPY_CONFIG_OVERRIDES__`）
 
-query parameter や feature flag に基づくテーマ設定では、`proxy.js` が実行される前に `window.__WIPPY_CONFIG_OVERRIDES__` を設定します。
+クエリパラメータやフィーチャーフラグ駆動のテーマのために、`proxy.js` の実行前にこのグローバルを設定します:
 
-この pre-proxy global は embedding/host-less integration の escape hatch です。hosted child の `window.location` は選択された page engine のものであり、iframe 配信では `about:srcdoc` です。Host route や query context ではありません。declarative な page `config_overrides` または Host が提供する AppConfig を使ってください。child や parent の browser location から Host state を推測してはいけません。
+このプロキシ前のグローバルは、埋め込み/ホストなし統合のための脱出ハッチです。ホストされた子では、`window.location` は選択されたページエンジンのもの（iframe配信では `about:srcdoc`）であり、ホストのルートやクエリのコンテキストではありません。宣言的なページの `config_overrides` か、ホストが供給するAppConfigを使用してください。子や親のブラウザlocationからホストの状態を推測してはいけません。
 
 ---
 
 ## 検証
 
-実行中の page で CSS variable が有効か確認するには、DevTools で execution realm（iframe 配信では inner frame、Web Fragment 配信では reframed fragment realm）を選び、次を実行します。
+稼働中のページでCSS変数が有効かどうかを確認するには、DevToolsを開き、（外側のページではなく）内側のiframeのフレームコンテキストを選択して、次を実行します:
 
 ```js
 getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color')
 ```
 
-空でない結果は、何らかの theme CSS が読み込まれたことだけを示します。page root、WC host、WC inner root、rendered semantic color で正確な設定値を比較し、設定したすべての family を検証してください。完全な手順は [Debugging](./debugging.md) を参照してください。
+空でない結果が証明するのは、何らかのテーマCSSが読み込まれたことだけです。設定した正確な値を、ページのルート、WCホスト、WCの内側のroot、レンダリングされたセマンティックカラーで比較し、設定したすべてのファミリーを検証してください。完全なワークフロー: [デバッグ](./debugging.md)。
 
 ---
 
 ## 関連ドキュメント
 
-- [theming.md](./theming.md) — CSS variable catalogue と anti-pattern
-- [web-component-theming.md](./web-component-theming.md) — Web Component（Shadow DOM）のテーマ設定
-- [micro-frontend-app.md](./micro-frontend-app.md) — Micro Frontend App 開発 guide
-- [host-less-mode.md](./host-less-mode.md) — host-less mode の dev overlay と CSS injection
-- [compliance-checklist.md](./compliance-checklist.md) — テーマ設定に関する完全な REJECT/WARN rule
+- [theming.md](./theming.md) — CSS変数のカタログとアンチパターン
+- [web-component-theming.md](./web-component-theming.md) — Webコンポーネント（shadow DOM）のテーマ
+- [micro-frontend-app.md](./micro-frontend-app.md) — マイクロフロントエンドアプリ開発の完全ガイド
+- [host-less-mode.md](./host-less-mode.md) — ホストなしモードでの開発オーバーレイとCSS注入
+- [compliance-checklist.md](./compliance-checklist.md) — テーマに関するREJECT/WARNルール一式

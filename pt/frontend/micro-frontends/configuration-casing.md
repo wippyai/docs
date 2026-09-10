@@ -1,20 +1,18 @@
 ---
-title: "Configuração e casing"
-description: "Regras de casing nos limites entre facade backend, registry e configuração frontend."
+title: "Configuração e Casing"
+description: "Regras de casing nas fronteiras de facade do backend, do registry e da configuração de frontend."
 ---
 
-# Configuração e casing
+# Configuração e Casing
 
-**Classificação: referência de limites de schema.** O bloco YAML é um trecho de formato, não um entry completo do registry.
+O casing segue a fronteira do schema. Nunca converta recursivamente um objeto de configuração.
 
-O casing segue o limite do schema. Nunca converta recursivamente um objeto de configuração.
-
-| Limite | Regra | Exemplos |
-|--------|-------|----------|
-| Nomes de requirements da facade backend | `lower_case_with_underscore` no nível superior | `custom_css`, `css_variables` |
-| Campos do registry | cada campo segue seu schema documentado | `base_path`, `entry_point`, `tag_name` |
-| Configuração frontend aninhada transportada por YAML backend | preservar lower camelCase | `customCSS`, `themeConfig`, `iconifyIcons` |
-| AppConfig frontend e metadados de pacote | lower camelCase | `configOverrides`, `hostCssKeys` |
+| Fronteira | Regra | Exemplos |
+|---|---|---|
+| Nomes de requisitos da facade do backend | `lower_case_with_underscore` no nível superior | `custom_css`, `css_variables` |
+| Campos do registry | cada campo segue seu schema de registry documentado | `base_path`, `entry_point`, `tag_name` |
+| Configuração de frontend aninhada carregada por YAML do backend | preserva lower camelCase | `customCSS`, `themeConfig`, `iconifyIcons` |
+| AppConfig do frontend e metadados de pacote | lower camelCase | `configOverrides`, `hostCssKeys` |
 
 ```yaml
 config_overrides:
@@ -31,8 +29,10 @@ proxy:
       iframe: true
 ```
 
-Somente as chaves wrapper do backend usam snake case neste exemplo. Objetos frontend aninhados são repassados e mantêm o casing definido.
+Apenas as chaves do wrapper do backend estão em snake case neste exemplo. Objetos de frontend aninhados são repassados e mantêm seu casing definido.
 
-## Exceção de casing de `mountRoute`
+## Exceção temporária do mountRoute
 
-O schema atual do registry de views lê `meta.mountRoute` e o armazena no campo interno `mount_route`; a saída da API volta a usar `mountRoute`. Trate o campo lower camelCase escrito na origem como uma exceção documentada, não como evidência de que campos do registry ou backend geralmente usam camelCase.
+`meta.mountRoute` é um bug atual de compatibilidade do backend. O campo pretendido no backend é `meta.mount_route`, mas os deployments existentes exigem `mountRoute` até que a correção do backend seja lançada. Trate isso como uma exceção explícita, não como evidência de que campos do registry ou do backend sejam geralmente camelCase.
+
+A conformidade deve versionar essa exceção para que ela possa ser removida quando o schema do backend mudar.

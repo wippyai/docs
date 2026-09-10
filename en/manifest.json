@@ -263,6 +263,7 @@
     "children": [
       {"title": "Hello World", "path": "tutorials/hello-world"},
       {"title": "CLI Applications", "path": "tutorials/cli"},
+      {"title": "Terminal UI", "path": "tutorials/tty"},
       {"title": "Echo Service", "path": "tutorials/echo-service"},
       {"title": "Channels", "path": "tutorials/channels"},
       {"title": "Processes", "path": "tutorials/processes"},

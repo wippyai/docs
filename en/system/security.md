@@ -52,10 +52,7 @@ local errors = require("errors")
 
 local actor = security.actor()
 if not actor then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "No actor in context"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No actor in context" })
 end
 ```
 
@@ -324,11 +321,14 @@ Grant only the operations and IDs a caller needs. The actor, scope, and token ex
 ### Evaluation Flow
 
 ```
-1. Evaluate policies until a deny is found or the scope is exhausted
-2. If ANY policy returns Deny → Result is Deny
-3. If at least one Allow and no Deny → Result is Allow
-4. No applicable policies → Result is Undefined
+1. No actor or no scope in context → strict mode decides (deny by default)
+2. Check each policy in scope
+3. If ANY policy returns Deny → Result is Deny
+4. If at least one Allow and no Deny → Result is Allow
+5. No applicable policies → Result is Undefined
 ```
+
+An access check passes only on `Allow`. `Undefined` denies access, exactly like `Deny` — strict mode plays no part once an actor and a scope are both present.
 
 ### Evaluation Results
 
@@ -348,12 +348,9 @@ local result = scope:evaluate(actor, "read", "document:123", {
 })
 
 if result == "deny" then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Access denied"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 elseif result == "undefined" then
-    -- No policy matched; treat this as denied unless the caller handles it explicitly.
+    -- No policy matched - access checks treat this as denied
 end
 ```
 
@@ -368,10 +365,7 @@ local allowed = security.can("read", "document:123", {
 })
 
 if not allowed then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Access denied"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Access denied" })
 end
 ```
 
@@ -477,10 +471,7 @@ local errors = require("errors")
 local actor, scope, err = store:validate(token)
 store:close()
 if err then
-    return nil, errors.new({
-        kind = errors.PERMISSION_DENIED,
-        message = "Invalid token"
-    })
+    return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Invalid token" })
 end
 
 -- Actor and scope are reconstructed from stored data
@@ -533,48 +524,84 @@ if call_err then return nil, call_err end
 | Scope | Yes - passes to child calls and spawned processes |
 | Strict mode | No - application-wide |
 
-## Service-Level Security
+Functions and spawned processes both inherit the caller's security context. A spawned process starts on a frame forked from the spawner's, which carries the spawner's actor and scope, and the `security:` block on its own entry modifies that inherited context. When the entry declares no block, the process keeps the spawner's actor and scope unchanged; a spawner that has neither produces a child with neither, which strict mode denies. A declared block that names an `actor` replaces the inherited actor, and its `policies` and `groups` are merged into the inherited scope; a block that omits `actor` keeps the spawner's actor, and one that omits both `policies` and `groups` keeps the spawner's scope.
 
-Configure a default actor and policies for a service:
+## Declaring Security on Entries
+
+A security block is the same shape everywhere it appears:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `actor.id` | string | Actor identity; replaces the inherited actor |
+| `actor.meta` | map | Actor attributes policies evaluate |
+| `policies` | list | Policy registry IDs, merged into the scope |
+| `groups` | list | Policy group registry IDs, whose policies are merged into the scope |
+
+`policies` and `groups` are **registry IDs in `namespace:name` form**. A bare name does not resolve — unlike the `groups:` field on a policy entry, which defaults to the policy's own namespace, these references carry no default namespace.
+
+Resolution is atomic and fail-closed. Every listed policy and group is resolved before anything is installed; if any one of them is missing, empty, or contains no policies, the whole configuration fails and no actor and no partial scope is applied. A caller therefore never crosses a boundary holding half a context.
+
+### Process Entries
+
+`process.lua`, `process.lua.bc`, `function.lua`, and `function.lua.bc` entries take a top-level `security:` block that applies to every execution of that entry:
 
 ```yaml
-- name: worker_service
+- name: worker_process
   kind: process.lua
   source: file://worker.lua
+  method: main
+  security:
+    actor:
+      id: "service:worker"
+      meta:
+        role: worker
+        service: true
+    policies:
+      - app.security:worker_policy
+    groups:
+      - app.security:workers
+```
+
+The block is applied when the process starts, on both `process.host` and `terminal.host`. A resolution failure aborts the spawn rather than starting the process with a weaker context.
+
+### Service Lifecycle
+
+Supervised services take the same block under `lifecycle`, resolved once when the service controller is created and sealed for the life of the service:
+
+```yaml
+- name: worker
+  kind: process.service
+  process: app:worker_process
+  host: app:processes
   lifecycle:
     auto_start: true
     security:
       actor:
         id: "service:worker"
-        meta:
-          role: worker
-          service: true
-      policies:
-        - app.security:worker_policy
       groups:
-        - workers
+        - app.security:workers
 ```
+
+### CLI Commands
+
+A command entry declares `meta.command.security`, applied only when the entry is launched as a CLI command — the operator running `wippy run <name>` is the trust anchor for that context. It never affects an ordinary spawn of the same entry. The block is validated strictly: unknown fields are rejected, an empty block is rejected, and `security` without a command `name` is rejected. See [Command security](guides/cli.md#command-security).
 
 ## Strict Mode
 
-Strict mode is enabled by default and denies access when either actor or scope
-is missing. Set it to `false` only when a deployment intentionally needs the
-legacy permissive behavior:
+Strict mode decides what happens when a request carries no actor and no scope. It is **on by default**, so an incomplete context is denied. Turning it off is an explicit choice, made in the runtime config file (`.wippy.yaml`), not in the module manifest `wippy.yaml`:
 
 ```yaml
 # .wippy.yaml
 security:
-  strict_mode: true
+  strict_mode: false
 ```
 
 | `strict_mode` | Missing Context | Behavior |
 |------|-----------------|----------|
-| `false` | Actor or scope missing | Allow (permissive) |
-| `true` (default) | Actor or scope missing | Deny |
+| Strict (default) | No actor/scope | Deny |
+| Permissive (`strict_mode: false`) | No actor/scope | Allow |
 
-When both actor and scope are present, policies are always evaluated. An
-`undefined` result is not converted to allow by disabling strict mode;
-`security.can(...)` returns `false` unless evaluation returns `allow`.
+Strict mode changes nothing once an actor and a scope are present: evaluation is deny-by-default either way. It only governs the incomplete case, which is why a process that runs without a declared security context fails every check under the default. Give such a process a `security:` block, or start it through a path that supplies one.
 
 ## Authentication Flow
 
@@ -647,6 +674,22 @@ store:close()
 if token_err then return nil, token_err end
 return token
 ```
+
+## Runtime Trust Boundaries
+
+Policy evaluation governs what code may do. Three separate mechanisms govern what code is admitted and where a context may travel.
+
+### Module Integrity
+
+Every module in `wippy.lock` carries an artifact digest. At boot, a download is verified against both the digest pinned in the lock and the digest the hub served, and already-vendored packs are re-verified against the lock before they are loaded; a mismatch is a non-retryable integrity failure that is not worked around — the module is not loaded. `wippy install` verifies a fresh download only against the digest and size the hub served, deletes the file and fails on mismatch, and then writes the served digest back into the lock, so a pinned digest is re-established by install rather than enforced by it; only packs already in the vendor directory are checked against the lock's digest. Extracted module directories carry their own recorded digest and tree digest and are checked the same way, so a modified vendored tree is detected rather than trusted. See [Dependency Management](guides/dependency-management.md#integrity-verification).
+
+### Cluster Internode Identity
+
+Nodes in a cluster authenticate each other. Each node holds an ed25519 identity key and the map of peer public keys it trusts; the mesh handshake is mutual, binding an HMAC over the shared gossip secret to an ed25519 signature over a transcript covering both node IDs and both nonces. A peer that is not in the trusted map, or whose gossip-advertised key disagrees with the trusted entry, is rejected. There is no unauthenticated mode: a node without an identity cannot join the mesh. See [Internode identity](guides/cluster.md#internode-identity).
+
+### Temporal Propagation
+
+A security context that crosses into Temporal is carried as a signed header rather than as plain workflow input. The actor, its metadata, and the policy IDs are serialized into a `wippy-security` envelope and signed with the client's HMAC key, audienced to the specific workflow or activity ID. The receiving worker verifies the signature and the audience and resolves every named policy locally before the workflow or activity runs; any failure fails the execution. A workflow running under a security context also refuses unsigned signals, so an external Temporal client cannot drive it. See [Workflows](temporal/workflows.md#security-context) and [Temporal overview](temporal/overview.md#security-context-propagation).
 
 ## Best Practices
 

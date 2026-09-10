@@ -1,6 +1,6 @@
 ---
-title: "Funciones hash"
-description: "Calcula hashes criptográficos, valores HMAC, claves PBKDF2 y hashes FNV-1."
+title: "Funciones Hash"
+description: "Funciones hash criptograficas y autenticación de mensajes HMAC."
 ---
 
 # Funciones hash
@@ -177,36 +177,24 @@ local n = hash.fnv64("data")
 
 **Devuelve:** `number, error`
 
-Los números de Lua no pueden representar exactamente todos los enteros sin signo de 64 bits. No uses `fnv64` cuando el valor exacto de 64 bits deba realizar un recorrido de ida y vuelta a través de Lua; usa en su lugar una representación de bytes o cadena proporcionada por una implementación de protocolo adecuada.
+## Derivacion de Claves
 
-## Derivación de claves
-
-### PBKDF2-HMAC
-
-Deriva bytes de clave sin procesar con PBKDF2-HMAC-SHA256 o PBKDF2-HMAC-SHA512:
+### PBKDF2
 
 ```lua
-local key, err = hash.pbkdf2(password, salt, 600000, 32)
-if err then
-    return nil, err
-end
-local key512, err = hash.pbkdf2(password, salt, 600000, 32, "sha512")
-if err then
-    return nil, err
-end
+local key, err = hash.pbkdf2(password, salt, iterations, key_length)
+local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 ```
-
-Aquí, `password` se proporciona a través del límite de secretos de la aplicación y `salt` son bytes aleatorios nuevos almacenados con ese verificador. Los valores devueltos son bytes de clave sin procesar, no texto imprimible.
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `password` | string | Contraseña o entrada secreta no vacía |
-| `salt` | string | Bytes de sal no vacíos |
-| `iterations` | integer | Número positivo de iteraciones, como máximo 10 000 000 |
-| `key_length` | integer | Longitud de salida positiva en bytes |
-| `algo` | string? | `sha256` (predeterminado) o `sha512` |
+| `password` | string | Contraseña/frase de paso (no vacía) |
+| `salt` | string | Valor de salt (no vacío) |
+| `iterations` | integer | Cantidad de iteraciones (1 a 10.000.000) |
+| `key_length` | integer | Longitud deseada de la clave en bytes |
+| `hash` | string? | `sha256` o `sha512` (predeterminado: `sha256`) |
 
-**Devuelve:** `string, error` (bytes de clave derivados sin procesar)
+**Devuelve:** `string, error` (bytes crudos de la clave)
 
 ## Errores
 
@@ -214,6 +202,6 @@ Aquí, `password` se proporciona a través del límite de secretos de la aplicac
 |-----------|------|--------------|
 | Entrada no es string | `errors.INVALID` | no |
 | Secreto no es string (HMAC) | `errors.INVALID` | no |
-| Contraseña o sal PBKDF2 vacía, límites no válidos o algoritmo no compatible | `errors.INVALID` | no |
+| Contraseña/salt vacíos, iteraciones no positivas o excesivas, hash no soportado (PBKDF2) | `errors.INVALID` | no |
 
 Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

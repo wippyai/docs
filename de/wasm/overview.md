@@ -75,6 +75,8 @@ WASM-Ausführungen erben standardmäßig den Sicherheitskontext des Aufrufers:
 
 Host-Fähigkeiten werden durch explizite Imports einzeln aktiviert. Jeder Eintrag deklariert die benötigten Host-Profile, etwa `funcs`, `wasi1`, `wasi:cli` oder `wasi:filesystem`, und begrenzt damit die Zugriffsfläche des Moduls. Das Aktivieren eines Profils umgeht keine Sicherheitsprüfungen der Runtime für Operationen wie Funktionsaufrufe, Sockets oder ausgehende HTTP-Anfragen.
 
+Ein Guest, der `funcs` importiert, kann in die Registry zurueckrufen. Jeder Aufruf wird als `funcs.call` gegen die Ziel-ID per Policy geprueft, sodass die erreichbare Menge genau dem entspricht, was der geerbte Scope ohnehin erlaubt. Socket-Verbindungen werden auf dieselbe Weise vom [Netzwerkdienst](system/network.md) gegen die `socket.*`-Berechtigungen autorisiert.
+
 ## Siehe auch
 
 - [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionseinträgen

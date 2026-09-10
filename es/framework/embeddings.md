@@ -18,13 +18,7 @@ wippy add wippy/embeddings
 wippy install
 ```
 
-### Modelo y provider requeridos
-
-Antes de llamar a la API de embeddings, registre un `llm.model` cuyo `meta.name` sea `text-embedding-3-small`, cuyas capacidades incluyan `embed` y cuyo mapping de provider resuelva a un provider de embeddings. Configure las credenciales del provider, como `OPENAI_API_KEY`, mediante el almacenamiento de entorno usado por `wippy/llm`. Consulte la [configuración de modelos LLM](./llm.md#model-configuration).
-
-### Dependencia de base de datos
-
-Declare la dependencia y establezca su parámetro `target_db` en la base de datos de la aplicación:
+Declara la dependencia y apunta el requisito `target_db` a tu base de datos de aplicacion mediante los `parameters` de la dependencia:
 
 ```yaml
 version: "1.0"
@@ -44,7 +38,7 @@ entries:
         value: app:app_db
 ```
 
-Al iniciar, `wippy/migration` toma la migración `01_create_embeddings_table` y crea la tabla `embeddings_512` para el driver de base de datos configurado.
+Al iniciar, `wippy/migration` toma la migracion `01_create_embeddings_table` y crea la tabla `embeddings_512` con el indice vectorial apropiado para tu driver de base de datos.
 
 Si usa la ruta relativa de SQLite mostrada arriba, cree el directorio `data` antes de iniciar la aplicación.
 
@@ -95,10 +89,6 @@ Genera un embedding para `content` y lo persiste.
 | `meta` | table | no | Metadatos arbitrarios serializables a JSON |
 
 Retorna `{ entry_id, origin_id, content_type, context_id }` o `nil, err`.
-
-<warning>
-En la baseline fijada del framework, el helper de un solo elemento pasa al repositorio el resultado anidado de `llm.embed()` en lugar de su primer vector, por lo que `embeddings.add()` no puede persistir correctamente. Use `embeddings.add_batch()` con un elemento, o llame a `llm.embed()` y pase `response.result[1]` a `embedding_repo.add()`, hasta que se corrija la implementación del framework.
-</warning>
 
 ### add_batch
 
@@ -173,8 +163,10 @@ Use el repositorio directamente cuando ya tenga un vector y quiera omitir la gen
 
 La migracion crea el esquema apropiado para el driver de base de datos en `target_db`:
 
-- **PostgreSQL** — Tabla `embeddings_512` con una columna `vector(512)` y un índice IVFFlat de coseno. La migración intenta instalar la extensión `vector`, por lo que el role de base de datos debe poder crearla o la extensión debe existir ya. PostgreSQL almacena `origin_id` como `UUID`.
-- **SQLite** — Tabla virtual `vec0` `embeddings_512` con la columna vectorial `embedding float[512]` junto a las columnas de metadatos y contenido para búsqueda KNN.
+- **PostgreSQL** - Tabla `embeddings_512` con una columna `vector(512)` y un indice IVFFlat. Requiere la extension `pgvector`.
+- **SQLite** - Tabla virtual `vec0` `embeddings_512` que contiene la columna vectorial `embedding float[512]` junto con las columnas de metadatos y contenido para busqueda KNN.
+
+Los vectores siempre se transportan como un array JSON plano en la capa de API.
 
 ## Ver Tambien
 

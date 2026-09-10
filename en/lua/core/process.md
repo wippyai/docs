@@ -1,6 +1,6 @@
 ---
 title: "Process Management"
-description: "Spawn, monitor, link, message, name, and upgrade Wippy processes."
+description: "Spawn, monitor, and communicate with child processes. Implements actor-model patterns with message passing, supervision, and lifecycle management."
 ---
 
 # Process Management
@@ -135,7 +135,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | Field | Type | Description |
 |-------|------|-------------|
 | `kind` | string | Event type constant |
-| `from` | string | Source PID |
+| `from` | string | Source PID (absent for OUTDATED) |
 | `result` | table | For EXIT/LINK_DOWN: a {value, error} record; the process return value is at `result.value` and any error at `result.error` |
 | `reason` | string | For CANCEL: why the process is being cancelled |
 | `sources` | string[] | For OUTDATED: registry IDs that changed or were transitively affected |
@@ -167,8 +167,8 @@ The inbox and listeners configured with `{message = true}` return message object
 local msg = inbox:receive()
 
 msg:topic()            -- string: topic name
-msg:from()             -- string|nil: sender PID
-msg:payload()          -- Payload: wrapper (call :data() to extract)
+msg:from()             -- string: sender PID (empty string when unknown)
+msg:payload()          -- Payload: wrapper (call :data() to extract); nil when empty, table of wrappers for several values
 msg:payload():data()   -- any: actual payload value
 ```
 
@@ -221,8 +221,21 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 | Option | Type | Description |
 |--------|------|-------------|
 | `network` | string | Registry ID of a `network.*` entry to use for the child's outbound connections |
+| `terminal` | string | Viewport grant that attaches a virtual terminal to the child |
 
 **Permission:** `process.context` on "context"; selecting a network additionally requires `network.select` on that network ID.
+
+### Terminal Attachment
+
+A `terminal` grant comes from `viewport:grant()` and gives the child a terminal port of its own, so it can use the [TTY](lua/system/tty.md) module exactly as it would on a terminal host:
+
+```lua
+local view = assert(tty.viewport({width = 80, height = 24}))
+local child = assert(process.with_options({terminal = assert(view:grant())})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+The grant is one-shot and is consumed at admission: a rejected start leaves it unresolved and reusable, a child that resolves the port consumes it permanently, and a host that does not support terminal attachments rejects the spawn rather than dropping the option. The spawning process keeps reading the child's frames through the viewport it created. See [Terminal](system/terminal.md#composable-terminals).
 
 ### SpawnBuilder Methods
 
@@ -232,7 +245,7 @@ local spawner = process.with_options({network = "app:tor_proxy"})
 spawner:with_context(values)      -- Add context values
 spawner:with_actor(actor)         -- Set security actor
 spawner:with_scope(scope)         -- Set security scope
-spawner:with_name(name)           -- Set process name
+spawner:with_name(name)           -- Register name at start; if taken, spawn returns the existing PID and queued messages go to it
 spawner:with_message(topic, ...)  -- Queue message to send after spawn
 spawner:with_options(options)     -- Merge spawn-time options (e.g. network)
 ```
@@ -295,7 +308,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | no | self | PID to register; defaults to the calling process |
 | `scope` | number | no | `LOCAL` | One of the scope constants above |
 
-Returns `true` on success or `nil, error` on failure. A cluster-scope conflict, where the name belongs to a different PID, returns `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration waits until every live node acknowledges it or the reservation deadline expires.
+Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
 
 Registering on behalf of a different PID additionally requires the `process.registry.foreign` permission on the target PID.
 
@@ -344,7 +357,7 @@ Policies can allow or deny an operation based on:
 | `process.unmonitor` | `unmonitor()` | target PID |
 | `process.link` | `link()` | target PID |
 | `process.unlink` | `unlink()` | target PID |
-| `process.context` | `with_context()` | "context" |
+| `process.context` | `with_context()`, `with_options()` | "context" |
 | `process.security` | `:with_actor()`, `:with_scope()` | "security" |
 | `process.registry.register` | `registry.register()` | name |
 | `process.registry.unregister` | `registry.unregister()` | name |
@@ -377,6 +390,7 @@ Some operations require multiple permissions:
 | Frame context not found | `errors.INTERNAL` |
 | Missing required arguments | `errors.INVALID` |
 | Reserved topic prefix (`@`) | `errors.INVALID` |
+| Destination is neither a PID nor a registered name | `errors.NOT_FOUND` |
 | Name not registered | `errors.NOT_FOUND` |
 | Permission denied | `errors.PERMISSION_DENIED` |
 | Name already registered | `errors.ALREADY_EXISTS` |

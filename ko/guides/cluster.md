@@ -56,26 +56,60 @@ cluster:
   name: node-2
   membership:
     join_addrs: "node-1:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-2.identity
+    identity_key_file: /etc/wippy/node-2.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
 ```
 
 첫 노드는 `join_addrs`가 필요 없으며 시드로 시작합니다. 참여는 백오프로 재시도되고 격리된 노드는 주기적으로 재참여를 시도합니다. 이는 Kubernetes에서 흔한, 새 IP로 재시작하는 노드를 지원합니다.
 
-가십은 인라인 또는 파일의 공유 키로 암호화할 수 있습니다.
+Gossip은 항상 공유 키로 암호화됩니다. 인라인으로는 `membership.secret_key`로, 파일에서는 `membership.secret_file`로 제공합니다; 둘 중 어느 것도 없이 시작된 노드는 클러스터 컴포넌트를 기동하지 못합니다. 값은 base64로 인코딩되며 모든 노드에서 동일합니다.
+
+멤버십 변경(`NodeJoined`, `NodeLeft`, `NodeUpdated`)은 Raft 부트스트랩, voter 조정, 프로세스 그룹 동기화, 그리고 이탈한 노드가 소유한 이름의 자동 정리를 구동하는 이벤트입니다.
+
+## 노드 간 아이덴티티
+
+모든 노드는 ed25519 키 쌍을 보유하며, 모든 노드는 자신이 신뢰하는 공개 키 맵을 함께 가집니다. `cluster.enabled: true`일 때 두 가지 모두 필수입니다.
 
 ```yaml
 cluster:
-  membership:
-    secret_file: /etc/wippy/cluster.key
+  internode:
+    identity_key_file: /etc/wippy/node-1.key
+    trusted_peer_keys:
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
 ```
 
-가십 키는 멤버십 트래픽을 보호합니다. 노드 간 TCP 연결은 별도의 Ed25519 ID를 사용합니다. 모든 클러스터 노드는 `internode.identity_key` 또는 `internode.identity_key_file`을 제공해야 하며 `trusted_peer_keys`에는 로컬 노드와 연결 가능한 모든 피어의 공개 키가 있어야 합니다. `identity_key`는 base64 인코딩된 32바이트 시드 또는 64바이트 개인 키이며 신뢰 피어 값은 base64 공개 키입니다. 각 노드에 고유한 개인 키를 주고 모든 노드에 같은 신뢰 공개 키 맵을 배포하세요.
+| 키 | 내용 |
+|-----|---------|
+| `internode.identity_key` | 노드의 개인 키, 인라인 |
+| `internode.identity_key_file` | 해당 키를 담은 파일의 경로 |
+| `internode.trusted_peer_keys` | 자기 자신을 포함한 메시의 모든 노드에 대한 노드 이름 대 공개 키 |
 
-멤버십 변경(`NodeJoined`, `NodeLeft`, `NodeUpdated`)은 Raft 부트스트랩, 투표자 조정, 프로세스 그룹 동기화, 이탈 노드 소유 이름의 자동 정리를 구동합니다.
+키 형식: base64, 표준 또는 raw(패딩 없음) 인코딩. 개인 키는 32바이트 ed25519 시드 또는 전체 64바이트 ed25519 개인 키로 디코딩되며; 신뢰 피어 키는 32바이트 ed25519 공개 키로 디코딩됩니다. 키 생성 하위 명령은 없습니다 — 임의의 ed25519 도구로 키를 만들고 raw 바이트를 base64로 인코딩하세요:
+
+```bash
+# 32바이트 시드와 그 공개 키, base64 인코딩
+openssl genpkey -algorithm ed25519 -out node-1.pem
+openssl pkey -in node-1.pem -outform DER \
+  | tail -c 32 | base64 > node-1.key
+openssl pkey -in node-1.pem -pubout -outform DER \
+  | tail -c 32 | base64
+```
+
+`identity_key`와 `identity_key_file`은 상호 배타적이며, 둘 중 하나는 필수입니다. `trusted_peer_keys`에는 로컬 `cluster.name`에 대한 엔트리가 이 노드 자신의 공개 키를 값으로 하여 포함되어야 합니다; 자기 엔트리가 없거나 일치하지 않으면 시작이 중단됩니다. 덕분에 신뢰 맵은 모든 노드에 변경 없이 배포할 수 있는 단일 아티팩트가 됩니다.
+
+메시 핸드셰이크는 상호 인증입니다. 각 측은 양쪽 노드 ID와 양쪽 nonce를 바인딩하는 트랜스크립트에 대한 HMAC으로 공유 gossip 시크릿을 알고 있음을 증명하고, 자신의 아이덴티티 키로 그 트랜스크립트에 서명합니다; 피어는 해당 노드 ID에 대해 보유한 공개 키와 피어가 gossip에서 광고하는 키 양쪽에 대해 서명을 검증합니다. 둘 중 하나라도 검증에 실패하면 연결이 닫힙니다.
+
+계획에 반영해야 할 결과:
+
+- 메시는 아이덴티티가 없는 노드와 상호 운용되지 않습니다. 클러스터의 모든 노드에 아이덴티티가 구성되어야 합니다.
+- 노드 ID가 `trusted_peer_keys`에 없는 피어는 거부되며, gossip으로 광고된 공개 키가 신뢰 엔트리와 불일치하는 피어도 마찬가지입니다. 노드를 추가한다는 것은 기존 노드들에 그 공개 키를 배포한다는 뜻입니다.
+- 키가 해석되려면 노드 ID가 활성 gossip 멤버십에 존재해야 하므로, gossip에 참여하지 않은 피어는 메시 연결을 열 수 없습니다.
 
 ## 부트스트랩
 
@@ -131,7 +165,7 @@ Lua API는 [프로세스 그룹](lua/core/pg.md), 구성은 [`pg.scope` 엔트�
 
 ## 분산 잠금
 
-`system.lock`은 공유 키-값 저장소의 Raft 선형화 가능 조건부 쓰기로 구현된 클러스터 전체 상호 배제입니다. 잠금 획득은 `_sys:lock:<name>`에 보유자 PID를 조건부 생성하고, 해제는 호출자가 여전히 보유한 경우 엔트리를 삭제합니다. 조건부 쓰기는 Raft를 통하며 리더가 아닌 노드의 쓰기는 리더로 전달되므로 선형화 가능하고 클러스터 전체 보유자는 최대 하나입니다.
+`system.lock`은 공유 키-값 저장소의 raft-선형화 가능 조건부 쓰기 위에 구축된 클러스터 전체 상호 배제입니다. 잠금 획득은 `_sys:lock:<name>`에 보유자 PID를 set-if-absent로 기록합니다; 해제는 여전히 호출자가 보유 중인 경우 해당 엔트리를 삭제합니다. 조건부 쓰기가 Raft를 거치므로(리더가 아닌 노드의 쓰기는 리더로 전달됨) 선형화 가능하며, 따라서 클러스터 전체에 최대 하나의 보유자만 존재할 수 있습니다.
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
@@ -163,15 +197,17 @@ return released
 cluster:
   enabled: true
   name: dev
+  membership:
+    secret_key: "d2lwcHktZG9jcy1nb3NzaXAtc2VjcmV0LTMyYnl0ZXM="
   internode:
-    identity_key: "${env:DEV_PRIVATE_KEY}"
+    identity_key: "d2lwcHktZG9jcy1kZXYtbm9kZS1leGFtcGxlc2VlZCE="
     trusted_peer_keys:
-      dev: "${env:DEV_PUBLIC_KEY}"
+      dev: "rNqImcjOzef28dzvma80mSrCW1px5LBAc5TbaYqAgm0="
   raft:
     bootstrap_expect: 1
 ```
 
-3노드 투표 클러스터:
+3노드 voting 클러스터 (`node-2`와 `node-3`은 `name`, `identity_key_file`, `join_addrs`만 다릅니다):
 
 ```yaml
 cluster:
@@ -182,16 +218,16 @@ cluster:
     join_addrs: "node-2:7946,node-3:7946"
     secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/node-1.identity
+    identity_key_file: /etc/wippy/node-1.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      node-3: "${env:NODE_3_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
   raft:
     bootstrap_expect: 3
 ```
 
-가십 전용 클라이언트(이름 지정/메시징에는 참여하지만 Raft는 실행하지 않음):
+Gossip 전용 클라이언트 (명명/메시징을 위해 참여, Raft 실행 안 함). 여전히 아이덴티티가 필요하며, voter들의 맵에도 이 노드의 공개 키가 있어야 합니다:
 
 ```yaml
 cluster:
@@ -199,12 +235,14 @@ cluster:
   name: edge-7
   membership:
     join_addrs: "node-1:7946,node-2:7946"
+    secret_file: /etc/wippy/cluster.key
   internode:
-    identity_key_file: /etc/wippy/edge-7.identity
+    identity_key_file: /etc/wippy/edge-7.key
     trusted_peer_keys:
-      node-1: "${env:NODE_1_PUBLIC_KEY}"
-      node-2: "${env:NODE_2_PUBLIC_KEY}"
-      edge-7: "${env:EDGE_7_PUBLIC_KEY}"
+      node-1: "okmamN3PKkMpPwPBurknHy2Wi3dwp/rz+uTM2fF9aD0="
+      node-2: "PWX+oOYrFdtjUxbgmTkXCFI0KEvG++ZM52HOWfDkqP8="
+      node-3: "QfP0fgllbj4s95VAztTORhy3bv9mst1l0lwuUNvO/hE="
+      edge-7: "7lzP4jBAkC3P+0jq4vtMsC45571BlVXk3mSlOD/Z0SA="
   raft:
     role: client
 ```

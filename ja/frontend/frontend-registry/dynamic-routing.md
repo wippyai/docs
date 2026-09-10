@@ -1,28 +1,28 @@
 ---
 title: "動的ルーティング"
-description: "Web Host が backend の mount route を登録し、child navigation を同期し、runtime で link を分類する仕組み。"
+description: "Web ホストのルーターは静的に設定されているわけではありません。起動時にバックエンドから現在のページマウントルートの集合を取得し、それらを追加します…"
 ---
 
 # 動的ルーティング
 
-Web Host は静的に定義された system route と、起動時に backend から取得する page mount route を組み合わせます。そのため、`mountRoute` claim を持つ新しい `view.page` entry は Web Host bundle を変更せずに有効になります。
+Web ホストのルーターは静的に設定されているわけではありません。起動時にバックエンドから現在のページマウントルートの集合を取得し、Vue Router インスタンスへ追加します。つまり、`mountRoute` を主張する新しい `view.page` エントリは、Web ホストのバンドル自体を一切変更することなく有効になります。
 
 ![Mount route sync](../diagrams/mountroute-sync.svg)
 
-## 起動時の Mount Route 同期
+## 起動時のマウントルート同期
 
-Web Host application は初期化時、navigation を描画する前に次を呼び出します。
+Web ホストアプリケーションが初期化されるとき、ナビゲーションをレンダリングする前に次を呼び出します。
 
 ```
 GET /api/public/pages/routes
 ```
 
-response は `{ success, count, routes }` envelope で、`routes` は mount-route pattern → page id の map です（URL を claim する hidden/unannounced page も含みます）。host は各 entry について、宣言された path を page loader component へ map する Vue Router route を登録し、`'app'` parent route の child として追加します。
+レスポンスは `{ success, count, routes }` というエンベロープで、`routes` はマウントルートのパターン → ページ ID のマップです（URL を主張しているものの、非表示・未告知のページも含みます）。ホストは各エントリについて、宣言されたパスをページローダーコンポーネントへマッピングする Vue Router のルートを登録し、それを `'app'` 親ルートの子として追加します。
 
 ```typescript
-// Simplified from the Web Host bootstrap
-const { data } = await api.get('/api/public/pages/routes')
-for (const [mountRoute, pageId] of Object.entries(data.routes)) {
+// Web ホストのブートストラップを簡略化したもの
+const { routes } = await api.get('/api/public/pages/routes')
+for (const [mountRoute, pageId] of Object.entries(routes)) {
   router.addRoute('app', {
     path: mountRoute,
     component: MountRoutePage,
@@ -31,11 +31,11 @@ for (const [mountRoute, pageId] of Object.entries(data.routes)) {
 }
 ```
 
-これ以降、`/home/anything` へ移動すると選択された engine で `main` page が描画され、`/demo/anything` では `iframe-demo` page が同様に描画されます。host bundle にこれらの path をハードコードする必要はありません。
+この時点以降、`/home/anything` へ遷移すると、ルーターは `main` ページの iframe をレンダリングし、`/demo/anything` へ遷移すると `iframe-demo` ページの iframe をレンダリングします — ホストのバンドルにそれらのパスをハードコードした知識は一切ありません。
 
-## `mountRoute` で path を claim する
+## `mountRoute` によるパスの主張
 
-`view.page` entry は `_index.yaml` の `meta` block で `mountRoute` を設定し、host router path を claim します。
+`view.page` エントリは、`_index.yaml` の `meta` ブロックで `mountRoute` を設定することにより、ホストのルーターパスを主張します。
 
 ```yaml
 - name: main
@@ -43,61 +43,60 @@ for (const [mountRoute, pageId] of Object.entries(data.routes)) {
   meta:
     type: view.page
     mountRoute: /home/:part(.*)*
+    ...
 ```
 
-現在の registry schema は authored field を `mountRoute` として読み、registry 内部の `mount_route` field に保存し、API output では `mountRoute` を出力します。上記の lower-camel-case spelling を使用してください。
+`mountRoute` は、バックエンドのケーシングに関する不具合に対する現行の互換表記です。本来意図されているバックエンドのキーは `mount_route` です。バックエンドの修正が出るまでは `mountRoute` で記述し続けてください。
 
-`mountRoute` が受け付けるのは、catch-all form `/:part(.*)*`（root）または `/<literal-prefix>/:part(.*)*` だけです。prefix は 1 つ以上の lowercase-alphanumeric-plus-hyphen literal segment で、最後に必須 wildcard `:part(.*)*` が続きます。任意の Vue Router pattern（named param、custom regex、別の param name。例：`/home/:id`、`/users/:userId(\d+)`）は拒否されます。backend の `view.page` entry では `validate_mount_route_syntax` により `GET /api/public/pages/routes` が HTTP 500 を返すため、entry が router に届く前に Host startup が停止します。response と configuration merge が成功した後、Host は syntax および system route との conflict を含む最終 route set を別途検証します。wildcard segment `:part(.*)*` により、host が `/home` prefix を所有しながら、child application が独自 sub-route（例：`/settings`、`/profile/edit`）を管理できます。
+`mountRoute` はキャッチオール形式の `/:part(.*)*`（ルート）または `/<literal-prefix>/:part(.*)*` のみを受け付けます。プレフィックスは小文字英数字とハイフンからなるリテラルセグメント1つ以上で、末尾には必須のワイルドカード `:part(.*)*` が付きます。任意の Vue Router パターン — 名前付きパラメーター、カスタム正規表現、異なるパラメーター名（例: `/home/:id`、`/users/:userId(\d+)`）— は拒否されます。ホストは `syntax` のマウントルート競合を発生させ、バックエンドの `validate_mount_route_syntax` が失敗し、`GET /api/public/pages/routes` が HTTP 500 を返します（全画面の致命的エラーとして表示されます）。ワイルドカードセグメント `:part(.*)*` により、ホストが `/home` プレフィックスを所有したまま、子アプリケーションが自身のサブルート（例: `/home/settings`、`/home/profile/edit`）を管理できます。
 
-2 つの entry が同じ route を claim してはいけません。2 つの `view.page` entry が **同じ** `mountRoute` を claim すると、backend validator（`page_registry.lua` の `validate_mount_routes`）は syntax error と同じ issues list に duplicate-route conflict を記録します。`GET /api/public/pages/routes` は HTTP 500 を返し、Host startup は停止し、error は Host error handler を通じて relay されます。duplicate は暗黙に無視されません。
+2つのエントリが同じルートを主張してはなりません。2つの `view.page` エントリが**同じ** `mountRoute` を主張した場合、バックエンドのバリデーター（`page_registry.lua` の `validate_mount_routes`）が構文エラーと同じ issue リストにルート重複の競合を記録するため、`GET /api/public/pages/routes` は HTTP 500 を返し、Web ホストは全画面の致命的な `<wippy-error>` をレンダリングします — 不正な `mountRoute` の場合とまったく同じです。黙って無視されることは**ありません**。
 
-root catch-all（`/:part(.*)*`）と、より具体的な system route（`chat`、`c`、`web`、`page`、`keeper`、`login`、`logout`）またはより長い literal-prefix mount の間では、引き続き Vue Router の route-resolution precedence が適用され、より具体的な route が match します。この priority は duplicate-route handling ではありません。
+先勝ちの挙動が唯一存在するのは、ルートのキャッチオール（`/:part(.*)*`）と、より具体的なシステムルート（`chat`、`c`、`web`、`page`、`keeper`、`login`、`logout`）または、より長いリテラルプレフィックスのマウントとの間における Vue Router の実行時優先順位です — より具体的なルートが先にマッチします。これはルート解決の優先順位であり、ルート重複の扱いではありません。
 
 ## URL 同期ループ
 
-page が runtime context に読み込まれると、child application は独自 router で内部 navigation を行います。host は navigation を URL bar に反映し、browser の back button、bookmark、copy した URL が正しく動作するようにします。proxy bridge は両方の page engine について 2 つの router を同期します。
+ページが iframe 内にロードされると、子アプリケーションは自身のルーターを使って内部的に遷移します。ブラウザーの戻るボタン、ブックマーク、URL のコピーがすべて正しく機能するよう、これらの内部遷移はホストの URL バーへ反映される必要があります。これは PostMessage のペアによって行われます。
 
 ![Frontend Registry](../diagrams/frontend-registry.svg)
 
-### Child → Host：`CmdRouteChanged`
+### 子 → ホスト: `CmdRouteChanged`
 
-child application の router が navigation を commit すると（例：`/home` mount 配下で `/settings` から `/profile` へ移動）、proxy bridge を通じて internal route を報告します。iframe adapter は `window.parent` へ post し、Fragment adapter は同じ protocol を captured host window へ route します。
+子アプリケーションのルーターが遷移をコミットしたとき（例: ユーザーが `/home/settings` から `/home/profile` へ移動）、子は親ウィンドウへメッセージをポストします。
 
 ```typescript
-// In the child application, on internal route change.
-// App code must never post these messages directly — use the proxy API:
+// 子アプリケーション内、内部ルート変更時。
+// アプリコードがこれらのメッセージを直接ポストしてはならない。プロキシ API を使うこと:
 import { host } from '@wippy-fe/proxy'
 
-host.onRouteChanged('/profile', navId)   // internal route only; the host prepends the mount prefix. navId is an optional number
+host.onRouteChanged('/profile', navId)   // 内部ルートのみ。マウントプレフィックスはホストが前置する。navId は省略可能な数値
 ```
 
-proxy はこれを internal wire envelope へ serialize します。この protocol は application API ではありません。コピーしたり、`window.parent.postMessage` を直接呼び出したりしないでください。
+プロキシはこれを内部のワイヤーエンベロープ上でシリアライズします。そのプロトコルはアプリケーション API ではありません。コピーしたり `window.parent.postMessage` を直接呼んだりしないでください。
 
-host の message handler はこれを intercept し、`router.push(path)` を呼んで full page reload を起こさない SPA route change として URL bar を更新し（browser-history entry を追加）、次を返します。
+ホストのメッセージハンドラーはこれを傍受し、`router.push(path)` を呼んで SPA のルート変更経由で URL バーを更新し（ブラウザー履歴エントリを追加）、ページ全体のリロードを起こさずに、次を送り返します。
 
-### Host → Child：`UrlWasUpdatedInParent`
+### ホスト → 子: `UrlWasUpdatedInParent`
 
-host が URL bar を更新した後、proxy は child へ `@history` を emit します。`@wippy-fe/router` はその event を consume し、memory router を reconcile します。
+ホストが URL バーを更新した後、プロキシは子へ `@history` を送出します。`@wippy-fe/router` がそのイベントを受け取り、メモリールーターを整合させます。
 
-host が返すのは full host path ではなく、child の **internal** route（mount prefix より後の sub-path）です。そのため round-trip は対称です。child が `internalRoute: '/profile'` を post すると、host は URL bar を `/home/profile` に設定し、`path: '/profile'` を echo します。child の memory router はそれをそのまま push します。child は `@history` event channel で listen し、host URL と internal state が一致したことの confirmation として扱います。
+ホストが送り返すのは子の**内部**ルート（マウントプレフィックスより後のサブパス）であり、ホストの完全なパスではありません — したがって往復は対称です。子が `internalRoute: '/profile'` をポストし、ホストは URL バーを `/home/profile` に設定し、`path: '/profile'` をそのまま送り返し、子のメモリールーターがそれをそのまま push します。子は `@history` イベントチャネルで待ち受け、ホストの URL が自身の内部状態と一致したことの確認として扱います。
 
-この round-trip により、host が child の内部 routing structure を知ることなく、host URL bar、child router、browser history entry が同期します。
+この往復により、ホストが子の内部ルーティング構造について何も知る必要なく、ホストの URL バー、子のルーター、ブラウザーの履歴エントリが同期に保たれます。
 
 ## `classifyLink`
 
-iframe engine では、`preventLinkClicks: true` によって document-level hook が導入され、browser が処理する前に raw `<a>` click を intercept します（[view.page](./view-page.md)を参照）。Web Host 1.0.56 の Web Fragment adapter はこの raw-click hook を導入しません。portable な Vue navigation には `@wippy-fe/router` の `AutoRouterLink` を使用してください。どちらの engine でも同じ `classifyLink` API を呼び出します。
-
-classifier は次の 4 種類の結果を返します。
+ページのプロキシインジェクションに `preventLinkClicks: true` がある場合（[view.page](./view-page.md) を参照）、ホストは iframe 内の `<a>` クリックをブラウザーが処理する前に傍受します。傍受された各リンクは `classifyLink` へ渡され、そこで扱い方が決まります。
 
 | `LinkKind` | 条件 | アクション |
 |---|---|---|
-| `host-nav` | top path segment が既知の `mountRoute` literal、組み込み system route（`chat`、`c`、`web`、`page`、`keeper`、`login`、`logout`）、または root-mount catch-all に match | `preventDefault` + `host.navigate(normalizedPath)` |
-| `child-nav` | child router が path を実在する（catch-all ではない）route として resolve、または他の何も claim していない | subapp の router が in-app で決定。host は `preventDefault` も page context の reload も行わない |
-| `external` | origin が異なる、または非 `http` scheme（`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`） | browser default（例：new tab で開く） |
-| `ignore` | 空の `href` または pure hash（`#…`） | `preventDefault` |
+| `host-nav` | 先頭のパスセグメントが既知の `mountRoute` リテラル、組み込みのシステムルート（`chat`、`c`、`web`、`page`、`keeper`、`login`、`logout`）、またはルートマウントのキャッチオールに一致する | `preventDefault` + `host.navigate(normalizedPath)` |
+| `child-nav` | iframe 自身のルーターがそのパスを実在の（キャッチオールでない）ルートへ解決できる、または他の誰もそれを主張していない | サブアプリの `RouterLink` がアプリ内で判断する。ホストは `preventDefault` せず、iframe をリロードもしない |
+| `external` | オリジンが異なる、または `http` 以外のスキーム（`javascript`/`mailto`/`tel`/`sms`/`ftp`/`file`/`data`/`blob`） | ブラウザーのデフォルト（例: 新しいタブで開く） |
+| `ignore` | `href` が空、または純粋なハッシュ（`#…`） | `preventDefault` |
 
-classifier は最初に page の local router を確認するため、child 自身が resolve できる link は in-app に留まります。
+分類器は iframe 自身のローカルルーターを最初に確認するため、子が自力で解決できるリンクはアプリ内に留まります。
 
-`classifyLink` は起動時に取得したものと同じ routes list を参照します。child router が `/demo/step-2` を claim しない場合、`/demo/:part(.*)*` が登録済み mount route なので link は `host-nav` に分類されます。host は full page reload を行わず `iframe-demo` page へ navigation します。
+`classifyLink` は起動時に取得したのと同じルート一覧を参照します。`/demo/step-2` へのリンクは、`/demo/:part(.*)*` が登録済みのマウントルートであるため `host-nav` に分類されます — ホストはページ全体のリロードではなく `iframe-demo` ページへ遷移します。
 
-つまり、child application は system 内の他の page を知る必要がありません。`preventLinkClicks: true` の iframe では通常の `<a href="/demo/step-2">` が intercept され、分類されます。同じ navigation を両方の page engine で動作させる必要がある場合は `AutoRouterLink` を使用してください。
+つまり子アプリケーションは、システム内の他のページについて知る必要がありません。通常の `<a href="/demo/step-2">` リンクをレンダリングすれば、ホストのリンク分類器が遷移を正しく処理します。

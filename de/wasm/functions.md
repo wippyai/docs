@@ -128,7 +128,7 @@ pool:
   max_size: 16       # Upper scaling bound
 ```
 
-Der Standardwert von 100 Workern gilt nur für den implizit ausgewählten Pool, wenn kein `type` gesetzt ist. Wenn Sie `type: lazy` oder `type: adaptive` explizit ohne `max_size` setzen, beträgt das Standardmaximum 16 Worker.
+Der Standard von 100 Workern gilt nur fuer den implizit gewaehlten Pool (wenn kein `type` gesetzt ist). Wird `type: lazy` oder `type: adaptive` explizit ohne `max_size` gesetzt, betraegt das Standard-Maximum 16 Worker.
 
 ### Worker-Klassen und Core-Affinität
 
@@ -199,6 +199,8 @@ Der Transport `wasi-http` bildet HTTP-Anfragen auf WASM ab und schreibt die Erge
 
   - name: greet_endpoint
     kind: http.endpoint
+    meta:
+      router: myns:api
     method: POST
     path: /api/greet
     func: greet_wasm
@@ -206,22 +208,26 @@ Der Transport `wasi-http` bildet HTTP-Anfragen auf WASM ab und schreibt die Erge
 
 ## Ausführungslimits
 
-Begrenzen Sie die Ausführungszeit und ersetzen Sie warme Instanzen, die zu viel linearen Speicher beibehalten:
+Der `limits`-Block begrenzt die Ausfuehrungszeit einer Funktion, den Speicher ihres warmen Workers und die Sockets, die sie oeffnen darf:
 
 ```yaml
 limits:
   max_execution_ms: 5000
-  max_retained_memory_bytes: 67108864
-  retained_memory_check_interval: 16
+  max_retained_memory_bytes: 134217728
+  retained_memory_check_interval: 32
+  max_open_sockets: 8
+  socket_timeout_ms: 5000
 ```
 
 | Feld | Standard | Beschreibung |
 |------|----------|--------------|
-| `max_execution_ms` | `0` | Maximale Aufrufdauer in Millisekunden; `0` deaktiviert das Zeitlimit |
-| `max_retained_memory_bytes` | 64 MiB | Eine warme Worker-Instanz nach einem Aufruf ersetzen, wenn der beibehaltene Speicher diesen Wert überschreitet; ein explizites `0` deaktiviert das Ersetzen |
-| `retained_memory_check_interval` | Siehe unten | Anzahl abgeschlossener Aufrufe zwischen Prüfungen des beibehaltenen Speichers |
+| `max_execution_ms` | unbegrenzt | Wanduhr-Budget fuer einen Aufruf. Bei Ueberschreitung wird die Ausfuehrung abgebrochen und ein Fehler zurueckgegeben. |
+| `max_retained_memory_bytes` | `67108864` (64 MiB) | Ausloeser fuer das Recycling nach einem Aufruf. Ein warmer Worker, dessen linearer Speicher diesen Wert ueberschreitet, wird nach dem Aufruf ausgemustert statt wiederverwendet. Eine explizite `0` schaltet das Speicher-Recycling ab. |
+| `retained_memory_check_interval` | `16` beim eingebauten Limit, jeder Aufruf bei einem expliziten Limit | Anzahl der Aufrufe zwischen den Speicherpruefungen nach einem Aufruf. |
+| `max_open_sockets` | `16` | Gleichzeitig offene Verbindungen pro Instanz fuer den `socket`-Host. |
+| `socket_timeout_ms` | `30000` | Deadline fuer einen `socket`-Verbindungsaufbau und fuer jedes Senden/Empfangen. |
 
-Wenn das Ausführungszeitlimit überschritten wird, wird der Aufruf abgebrochen und gibt einen Fehler zurück. Das standardmäßige Limit von 64 MiB für beibehaltenen Speicher wird alle 16 Aufrufe geprüft. Wenn `max_retained_memory_bytes` explizit auf einen positiven Wert gesetzt und das Intervall weggelassen wird, prüft die Runtime nach jedem Aufruf. Mit einem positiven Intervall können Sie diese Prüfungen seltener ausführen.
+Negative Werte werden beim Boot abgelehnt.
 
 ## WASI-Konfiguration
 
@@ -307,7 +313,7 @@ if filter_err then return nil, filter_err end
 
 ### Asynchrones Sleep mit WASI Clocks
 
-WASM-Komponenten, die `wasi:clocks`, `wasi:io` und das separate Profil `wasi:poll` importieren, können Clocks und Polling verwenden. Der asynchrone Yield-Mechanismus integriert sich in den Wippy-Dispatcher:
+WASM-Komponenten, die `wasi:clocks`, `wasi:io` und `wasi:poll` importieren, koennen Clocks und Polling verwenden. Der asynchrone Yield-Mechanismus integriert sich in den Wippy-Dispatcher:
 
 ```yaml
   - name: sleep_ms

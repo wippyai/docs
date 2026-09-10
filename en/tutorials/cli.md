@@ -195,11 +195,11 @@ return { main = main }
 
 ## System Information
 
-System reads are guarded operations. Add this policy and replace the `app:cli`
-entry so the command has an actor, the policy, and the `system` module:
+Access runtime stats with the `system` module. Every read is guarded by the `system.read` action, so the process also needs a policy that allows it:
 
 ```yaml
-  - name: cli-system-read
+  # Add to entries
+  - name: system_read
     kind: security.policy
     policy:
       actions:
@@ -207,18 +207,17 @@ entry so the command has an actor, the policy, and the `system` module:
       resources: "*"
       effect: allow
 
+  # Update the CLI entry
   - name: cli
     kind: process.lua
     source: file://cli.lua
     method: main
+    security:
+      policies:
+        - app:system_read
     modules:
       - io
       - system
-    security:
-      actor:
-        id: app:cli
-      policies:
-        - app:cli-system-read
 ```
 
 Then replace `src/cli.lua`:

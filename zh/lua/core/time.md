@@ -1,6 +1,6 @@
 ---
 title: "时间与时长"
-description: "<secondary-label ref='function'/ <secondary-label ref='process'/ <secondary-label ref='workflow'/"
+description: "处理时间值、时长、时区和调度。创建定时器、休眠指定时间、解析和格式化时间戳。"
 ---
 
 # 时间与时长
@@ -278,7 +278,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -391,7 +391,7 @@ end
 |-----------|------|-------------|
 | `duration` | number/string/Duration | 等待时间 |
 
-**返回:** `Channel`
+**返回:** `Channel, error`
 
 ### timer
 
@@ -543,9 +543,9 @@ time.SATURDAY   -- 6
 | 条件 | 类型 | 可重试 |
 |-----------|------|-----------|
 | 无效时长格式 | `errors.INVALID` | 否 |
-| 解析失败 | `errors.INTERNAL` | 否 |
+| 解析失败 | `errors.INVALID` | 否 |
 | 空位置名称 | `errors.INVALID` | 否 |
-| 位置未找到 | `errors.INTERNAL` | 否 |
+| 位置未找到 | `errors.NOT_FOUND` | 否 |
 | 时长 <= 0（timer/ticker） | `errors.INVALID` | 否 |
 
 ```lua
@@ -559,7 +559,7 @@ end
 
 local loc, err = time.load_location("Unknown/Zone")
 if err then
-    if errors.is(err, errors.INTERNAL) then
+    if errors.is(err, errors.NOT_FOUND) then
         print("位置未找到:", err:message())
     end
     return nil, err

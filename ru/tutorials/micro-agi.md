@@ -71,7 +71,7 @@ sequenceDiagram
 ```
 micro-agi/
 ├── .wippy.yaml
-├── wippy.yaml
+├── wippy.lock
 └── src/
     ├── _index.yaml
     ├── README.md
@@ -138,7 +138,14 @@ entries:
     parameters:
       - name: process_host
         value: app:processes
+
+  - name: __dep.security
+    kind: ns.dependency
+    component: wippy/security
+    version: "*"
 ```
+
+`wippy/security` предоставляет группу политик `wippy.security:process`, под которой работают фоновые сервисы модуля LLM; без неё они не запускаются.
 
 ### Политики безопасности
 
@@ -165,6 +172,17 @@ entries:
 ```
 
 Эти политики загружаются как именованная область (`app:agent_security`) функцией `create_tool` и вычисляются перед любой записью в реестр. Агент может писать в `app.generated:*` (нет совпадающих deny-политик), но не может писать в `app:*` (основные записи, модели, определение агента) или `app.tools:*` (встроенные инструменты).
+
+Третья политика даёт самому процессу доступ к реестру. Процессу, запущенному без контекста безопасности, запрещено любое чтение реестра, поэтому команда `agent` несёт эту политику как собственную область:
+
+```yaml
+  - name: agent_policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+```
 
 См. [Модель безопасности](system/security.md) для подробностей о вычислении политик.
 
@@ -260,6 +278,11 @@ GPT-5.1 обрабатывает рассуждения и использова�
       command:
         name: agent
         short: Start dev assistant
+        security:
+          actor:
+            id: app:agent
+          policies:
+            - app:agent_policy
     source: file://agent.lua
     method: main
     modules: [io, json, process, funcs, registry, time, security]
@@ -269,7 +292,7 @@ GPT-5.1 обрабатывает рассуждения и использова�
       compress: wippy.llm.util:compress
 ```
 
-Процесс запускается как терминальная команда. Контроль безопасности выполняется внутри `create_tool`, который загружает группу политик `agent_security` и вычисляет её перед записью.
+Процесс запускается как терминальная команда. `meta.command.security` задаёт актора и область, под которыми он работает — без них `registry.get` завершается с ошибкой `not allowed to access entry`, и агент вообще не загружается. Контроль безопасности для записи выполняется внутри `create_tool`, который загружает группу политик `agent_security` и вычисляет её перед записью.
 
 Импорты:
 - `prompt` — построитель диалога
@@ -367,7 +390,7 @@ local MAX_NAME_LEN = 64
 local ALLOWED_MODULES = {
     time = true, json = true, http_client = true, expr = true,
     text = true, base64 = true, yaml = true, crypto = true,
-    hash = true, uuid = true, url = true,
+    hash = true, uuid = true,
 }
 ```
 

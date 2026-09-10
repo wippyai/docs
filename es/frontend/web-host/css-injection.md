@@ -1,57 +1,61 @@
 ---
 title: "Inyección de CSS"
-description: "Referencia de entrega de CSS entre motores de páginas de Web Host y shadow roots de componentes web."
+description: "El Web Host usa un pipeline de inyección por capas para dar a los iframes hijos el mismo tema visual que el propio host. Como los iframes no heredan CSS de…"
 ---
 
 # Inyección de CSS
 
-Esta es la referencia de configuración del CSS entregado por el Host. Los bloques JSON y TypeScript muestran ajustes individuales, no un paquete completo.
+El Web Host usa un pipeline de inyección por capas para dar a los iframes hijos el mismo tema visual que el propio host. Como los iframes no heredan CSS de su documento padre, el host reinyecta cada asset de estilo explícitamente en el `srcdoc` del hijo. Cada capa se puede activar o desactivar de forma independiente mediante `ProxyConfig`.
 
-Los iframe no heredan CSS del padre, por lo que Web Host inyecta recursos en `srcdoc`; `ProxyConfig` controla esas capas. Web Fragment usa una ruta separada. Esta página es la referencia canónica de flags `proxy.injections` y valores predeterminados. Para creación de temas, consulte [Temas](../micro-frontends/theming.md).
+Esta página documenta el pipeline de inyección, todos los flags disponibles y cómo personalizar los estilos a nivel global, del chrome del host o por página. Es la **referencia canónica de los flags CSS de `proxy.injections` y sus valores por defecto de runtime**: los documentos de autoría que muestran valores explícitos recomendados enlazan aquí. Para la guía de temas orientada al desarrollador (tokens de variables CSS, mapeo de Tailwind, patrones de web components), vea [Temas](../micro-frontends/theming.md).
 
-## Matriz de entrega de CSS :id=matriz-de-entrega-css
+## Matriz de entrega de CSS
 
-La fachada expone ámbitos **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`) y **children** (`children_custom_css`, `children_css_variables`). Dos reglas:
+El facade expone los temas mediante tres ámbitos: **global** (`custom_css`, `css_variables`, `icon_sets`), **host** (`host_custom_css`, `host_css_variables`, `host_icon_sets`) y **children** (`children_custom_css`, `children_css_variables`). El Web Host los compone por superficie. Dos reglas gobiernan todo lo que sigue:
 
-- Las propiedades CSS (`*_css_variables`) heredan a un host WC. WippyElement puentea nombres globales y children/page por su raíz interna de tema. Esto es independiente de `customCss`; los nombres solo host dependen de la herencia ordinaria.
-- Los selectores (`*_custom_css`) no cruzan por sí solos iframe o shadow. El runtime los inyecta en `view.page` y, desde Host 1.0.43, en shadow roots de `view.component`, salvo que el componente desactive `customCss`.
+- **Las propiedades personalizadas CSS (`*_css_variables`) se heredan hasta el host de un WC y se puentean a través de su raíz interna de tema forzado.** WippyElement enumera cada nombre configurado efectivo para que los valores por defecto locales del tema no puedan reiniciarlo. Esto es genérico e independiente de `customCss`.
+- **Las reglas de selector CSS (`*_custom_css`) no entran en cascada a través del límite del shadow.** Solo se aplican donde se inyectan: en cada documento de iframe para `view.page` y — **desde Web Host 1.0.43** — en cada shadow root de `view.component` (con opción de exclusión mediante el flag `customCss` del componente). Antes de 1.0.43, solo las variables llegaban hasta allí.
 
-| Ajuste de la fachada | Entrega | Documento del shell host | Realm hijo `view.page` | Shadow root de `view.component` |
-|----------------------|---------|---------------------------|-------------------------|---------------------------------|
-| `custom_css` (global) | Reglas de selectores | ✓ inyectadas | ✓ inyectadas¹ | ✓ inyectadas (1.0.43+, opt-out)¹ |
-| `css_variables` (global) | Propiedades personalizadas | ✓ bloques del modo efectivo | ✓ bloques del modo efectivo | ✓ heredadas y puenteadas |
-| `host_custom_css` (host) | Reglas de selectores | ✓ inyectadas | ✗ | ✗ |
-| `host_css_variables` (host) | Propiedades personalizadas | ✓ `:root` | ✗ | Solo WC montados en el host² |
-| `children_custom_css` (children) | Reglas de selectores | ✗ | ✓ inyectadas¹ | ✓ inyectadas (1.0.43+, opt-out)¹ |
-| `children_css_variables` (children) | Propiedades personalizadas | ✗ | ✓ `:root` | Solo WC de página² |
+| Parámetro del facade | Entrega | Documento del shell del host | Iframe de `view.page` | Shadow root de `view.component` |
+|---|---|---|---|---|
+| `custom_css` (global) | reglas de selector | ✓ inyectado | ✓ inyectado¹ | ✓ inyectado (1.0.43+, con exclusión)¹ |
+| `css_variables` (global) | propiedades personalizadas | ✓ bloques de modo efectivos | ✓ bloques de modo efectivos | ✓ heredado + puenteado |
+| `host_custom_css` (host) | reglas de selector | ✓ inyectado | ✗ | ✗ |
+| `host_css_variables` (host) | propiedades personalizadas | ✓ `:root` | ✗ | solo WCs montados en el host² |
+| `children_custom_css` (children) | reglas de selector | ✗ | ✓ inyectado¹ | ✓ inyectado (1.0.43+, con exclusión)¹ |
+| `children_css_variables` (children) | propiedades personalizadas | ✗ | ✓ `:root` | solo WCs de página² |
 
-¹ Para hijos se compone CSS global + children; los flags iframe/componente son gates. Fragment aplica la hoja compuesta sin el flag iframe.
+¹ El Web Host **compone** lo que recibe un hijo: tanto un iframe de `view.page` como un `view.component` reciben el CSS personalizado **global + children** fusionado en una sola hoja (`children_custom_css` añadido después de `custom_css`). El flag `customCss` es una compuerta, no una inyección literal de un único ámbito.
 
-² Un WC hereda propiedades del `:root` donde se monta: global+host en chrome, global+children en página. El CSS inyectado siempre es global+children. Mantenga estilos universales en `custom_css` / `css_variables`.
+² Un web component hereda sus **propiedades** personalizadas del `:root` del lugar donde está montado: un WC del chrome del host hereda las variables **global + host** del documento del host; un WC dentro de un `view.page` hereda las variables **global + children** de ese iframe. Su **CSS** personalizado inyectado es siempre el ámbito children (global + children). Mantenga el estilo compartido en `custom_css` / `css_variables` (global): esos llegan a todas las superficies independientemente de la ubicación de montaje.
 
-Los seis ajustes aceptan `fs://<path>` resuelto desde `content_fs`; `icon_sets`, `host_icon_sets` y JSON no temático son inline. Para muchos overrides, conserve CSS y JSON en archivos de `content_fs` y use `fs://`, no `file://`.
+**Soporte de archivos `fs://`:** los seis parámetros de temas anteriores aceptan un valor `fs://<path>` que se resuelve en el momento de la petición desde el filesystem `content_fs`; vea [Facade → Reutilizar los temas del facade en páginas fuera del Web Host](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` y todos los parámetros JSON ajenos a los temas son solo inline.
 
-## Pipeline iframe
+Para más de unas pocas anulaciones, mantenga el CSS y el JSON en archivos separados detrás de `content_fs` y referéncielos con `fs://`. Así los assets de tema siguen siendo revisables y reutilizables. No sustituya por `file://`: ese es un mecanismo de inlining en tiempo de carga, no el contrato de temas en tiempo de petición del facade.
 
-Orden lógico:
+## El pipeline de inyección
+
+Los estilos se inyectan en esta estratificación lógica. Las cuatro primeras capas son elementos `<style>`/`<link>` normales; las dos últimas (`customCSS` y `cssVariables`) no lo son: se colocan en los `adoptedStyleSheets` del documento del iframe (vea [Mecanismo de anulación](#override-mechanism-adopted-stylesheets) más abajo), de modo que siempre ganan independientemente del orden en el `<head>`:
+
+Respuesta breve para preguntas sobre el "orden de inyección de CSS": el pipeline de estilos del iframe de view.page es `themeConfig` → `primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss` en orden lógico de cascada. No lo confunda con las capas de precedencia de configuración como tema del facade → `config_overrides` de la página → anulación en runtime; esas deciden **qué valores** se convierten en `customVariables`/`customCss`, no dónde quedan los estilos resultantes dentro de la cascada del iframe.
 
 ```
-1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
-2. primevue.css          — PrimeVue component styles scoped via those variables
-   tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
-3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
-4. markdown.css          — .data-body rendering styles for Markdown content
-5. cssVariables          — effective base + Auto/forced mode blocks from AppConfig.theming.global.cssVariables (adopted stylesheet)
-6. customCSS             — Non-@import CSS in an adopted stylesheet; extracted @import rules use a head style
+1. theme-config.css      — Propiedades personalizadas CSS (--p-primary-*, --p-surface-*, --p-secondary-*)
+2. primevue.css          — Estilos de componentes de PrimeVue acotados mediante esas variables
+   tailwind.css          — Clases de utilidad de Tailwind (mismo bundle que primevue.css)
+3. iframe.css            — Estilo por defecto tematizado de las barras de desplazamiento (nombre histórico; sin reset de layout de iframe)
+4. markdown.css          — Estilos de renderizado .data-body para contenido Markdown
+5. cssVariables          — Base efectiva + bloques de modo Auto/forzado de AppConfig.theming.global.cssVariables (hoja adoptada)
+6. customCSS             — CSS en bruto del AppConfig.theming.global.customCSS proyectado a los hijos (hoja adoptada)
 ```
 
-Las primeras cuatro son `<style>`/`<link>`. `cssVariables` y declaraciones no `@import` de `customCSS` usan `adoptedStyleSheets`, por lo que ganan con independencia del orden de `<head>`. Los `@import` se extraen a un `<style>` normal en `<head>`. El pipeline de `view.page` es `themeConfig` → `primevue`/`tailwind` → `iframe` → `markdown` → `customVariables` → `customCss`. La precedencia de configuración —tema, `config_overrides`, override runtime— decide valores, no la posición de las capas.
+Esta lista muestra el orden lógico de anulación, no el orden literal de inserción en el `<head>`. En el proxy de producción, las dos capas de hojas adoptadas (`cssVariables` y luego `customCSS`) se insertan en realidad *antes* que `theme-config.css` y PrimeVue, y aun así los anulan, porque las hojas adoptadas entran en cascada después de todos los elementos `<style>`/`<link>` del documento. Vea [Mecanismo de anulación](#override-mechanism-adopted-stylesheets).
 
-Cada iframe recibe copias propias. Host, páginas, Fragments y shadows reciben personalización según su ámbito, por lo que sus conjuntos no son idénticos.
+Cada iframe hijo obtiene una copia independiente de todos los estilos, no herencia a través de la cascada. El host y todos los hijos se renderizan con el mismo tema visual porque reciben assets inyectados idénticos de la misma fuente.
 
-## Flags `ProxyConfig.injections.css`
+## Flags de `ProxyConfig.injections.css`
 
-Las claves anidadas son lower-camel-case en YAML y `package.json`, bajo `wippy.proxy.injections.css`; YAML gana por clave. Los nombres de requisitos de fachada usan snake_case y los objetos proxy anidados se transmiten sin convertir claves.
+Estos flags anidados están en lower camelCase tanto en el YAML del registry del backend como en el `package.json` del frontend bajo `wippy.proxy.injections.css`. Los nombres de requirement del facade usan sus nombres documentados en snake_case, mientras que los campos del registry siguen su esquema individual. Los objetos anidados del proxy se pasan tal cual, sin conversión de claves. El YAML gana por cada clave anidada. Vea [Aplicaciones Micro Frontend (view.page) § Anulación del proxy por el operador](../frontend-registry/view-page.md#operator-proxy-override-_indexyaml).
 
 ```yaml
 meta:
@@ -93,40 +97,38 @@ meta:
 }
 ```
 
-### Flags CSS
+### Flags de CSS
 
-| Flag | Predeterminado | Inyecta |
-|------|----------------|---------|
-| `themeConfig` | `true` | `theme-config.css`: `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`; desactivarlo no impide `customVariables`/`customCss` |
-| `iframe` | `true` | `iframe.css`: barras de desplazamiento temáticas; no reglas de layout |
-| `primevue` | `true` | `primevue.css` + `tailwind.css`: PrimeVue + Tailwind v3; desactive solo sin interfaz similar a PrimeVue |
-| `markdown` | `true` | `markdown.css`: estilos `.data-body` |
-| `customCss` | `true` | Cadena `customCSS` de `AppConfig.theming.global` proyectada al hijo |
-| `customVariables` | `true` | Mapa `cssVariables` compilado para Auto/Light/Dark |
+| Flag | Por defecto | Qué inyecta |
+|------|---------|-----------------|
+| `themeConfig` | `true` | `theme-config.css` — todas las variables `--p-primary-*`, `--p-surface-*`, `--p-secondary-*` y las variables semánticas de PrimeVue. Deshabilitarlo elimina por completo la herencia del tema. |
+| `iframe` | `true` | `iframe.css` — estilo por defecto tematizado de las barras de desplazamiento. El nombre es histórico y no implica reglas de layout de iframe. Manténgalo habilitado en todas las páginas por consistencia de las barras de desplazamiento. |
+| `primevue` | `true` | `primevue.css` + `tailwind.css` — estilos de componentes de PrimeVue y utilidades de Tailwind v3 (~455 KB combinados). Deshabilítelo solo mientras todo el artefacto no tenga UI de producto similar a PrimeVue. La sola elección de framework no es una excepción. |
+| `markdown` | `true` | `markdown.css` — estilos de renderizado de markdown `.data-body` usados por la visualización de artefactos de chat. |
+| `customCss` | `true` | La cadena `customCSS` del `AppConfig.theming.global` proyectado a los hijos. |
+| `customVariables` | `true` | El mapa `cssVariables` proyectado a los hijos, compilado como base efectiva, bloques Auto-light/dark y Light/Dark forzados para cada nombre de propiedad personalizada configurado. |
 
-No hay flag de fuentes; Google Fonts llega mediante el `customCSS` global, con un `@import` controlado por `customCss`.
+No existe un flag dedicado de fuentes. Google Fonts se entrega a través de `theming.global.customCSS` (una regla `@import`), que el iframe inyecta mediante el flag `customCss` existente.
 
-### Flags no CSS
+### Flags de inyección ajenos al CSS
 
-| Flag | Predeterminado | Función |
-|------|----------------|---------|
-| `tailwindConfig` | `true` | Expone `window.tailwind.config` para `<script src="https://cdn.tailwindcss.com">`, no Vite |
-| `resizeObserver` | `true` | Envía tamaño del body; no es polyfill |
-| `preventLinkClicks` | `true` | Intercepta `<a>` iframe y usa `host.classifyLink()` |
-| `iconifyIcons` | `true` | Inyecta colecciones Iconify para `<iconify-icon>` offline |
-| `refreshWhenVisible` | `true` | Recarga al pasar `@visibility` a `true` |
-| `historyPolyfill` | `true` | **No-op.** `window.location` no es configurable en `srcdoc`; el guard sustituye métodos de `window.history` y exige `createAppRouter` con historial en memoria |
-| `errorCapture` | `true` | Reenvía `window.onerror` y `window.onunhandledrejection` mediante `logger.captureException` |
+Estos flags están junto a `css` en el bloque `injections`:
 
-Si se omite, el proxy iframe activa la mayoría. Aun así, declare explícitamente lo esperado.
+| Flag | Por defecto | Qué hace |
+|------|---------|--------------|
+| `tailwindConfig` | `true` | Expone `window.tailwind.config` para aplicaciones que usan el runtime de Tailwind por CDN (`<script src="https://cdn.tailwindcss.com">`). No es necesario para builds con Vite que compilan Tailwind en tiempo de build. |
+| `resizeObserver` | `true` | Observa el body del documento hijo y envía actualizaciones de tamaño al host. Es un relé del tamaño del body, no un polyfill de una API del navegador. |
+| `preventLinkClicks` | `true` | Intercepta todos los clics en `<a>` dentro del iframe y los clasifica mediante `host.classifyLink()` antes de navegar. Útil para páginas con contenido Markdown externo que pueda contener enlaces navegables por el host. |
+| `iconifyIcons` | `true` | Inyecta los conjuntos de iconos de Iconify registrados para que los elementos `<iconify-icon>` funcionen sin conexión. |
+| `refreshWhenVisible` | `true` | Notifica al hijo cuando un iframe previamente oculto vuelve a ser visible. |
+| `historyPolyfill` | `true` | **Hoy no hace nada.** El polyfill de historial está deshabilitado intencionadamente para los iframes `srcdoc` (`window.location` no es configurable), así que este flag no tiene efecto en runtime. El runtime instala siempre en su lugar un *guard* de historial, que sustituye por stubs los métodos de `window.history` y advierte de que se use enrutamiento con historial en memoria: las aplicaciones deben usar el modo memoria (p. ej. el historial en memoria de `createAppRouter`). Activar este flag **no** hace que los cambios de ruta de la SPA sean observables por el host. |
+| `errorCapture` | `true` | Adjunta manejadores `window.onerror` y `window.onunhandledrejection` que reenvían los errores no capturados al host mediante `logger.captureException`. Habilítelo en producción para una recolección centralizada de errores. |
 
-### Entrega Web Fragment
+Si una página omite `wippy.proxy.injections`, el proxy del iframe tiene valores por defecto de runtime permisivos y habilita la mayoría de las inyecciones. Aun así, las aplicaciones micro frontend con Vite deberían declarar los valores explícitos de los que dependen, para que una revisión del paquete pueda ver si la aplicación espera CSS del host, interceptación de enlaces, informe del tamaño del body o captura de errores.
 
-Fragment no usa estos switches. El gateway añade recursos fijos y aplica `cssVariables` y `customCSS` como style después del handshake de AppConfig. `proxy.injections.css` no controla esos recursos; la captura de errores `errorCapture` es incondicional.
+### Deshabilitar inyecciones no deseadas
 
-### Desactivar inyecciones
-
-Solo desactive PrimeVue si no hay controles o superficies estándar; un gráfico puro es válido. En cuanto haya botón, input, tabla, diálogo, menú, tag, tooltip o feedback, use PrimeVue.
+Una página puede deshabilitar la inyección de PrimeVue solo mientras no contenga controles ni superficies estándar de producto que PrimeVue proporcione. Una página exclusivamente de canvas/SVG/gráficos es válida. En cuanto incorpora un botón, input, formulario, tabla, diálogo, menú, tag, tooltip o control de feedback, use PrimeVue y mantenga la inyección habilitada; la sola elección de framework no es razón para omitirla.
 
 ```json
 {
@@ -143,14 +145,14 @@ Solo desactive PrimeVue si no hay controles o superficies estándar; un gráfico
 }
 ```
 
-Aunque ambos estén desactivados, siguen `customCSS`, `cssVariables` e `iframe.css` salvo que también se apaguen. Proxy, estado y WebSocket no cambian.
+Con ambos deshabilitados, la página sigue recibiendo `customCSS`, `cssVariables` e `iframe.css` (reset de las barras de desplazamiento) salvo que también se desactiven. La API del proxy, el relé de estado y el puente de WebSocket no se ven afectados por los flags de CSS.
 
-## Componentes: CSS de fachada y `hostCssKeys`
+## Web Components: CSS personalizado del facade + `hostCssKeys`
 
-Dos canales llevan el tema al shadow root:
+Los web components no pasan por el pipeline de inyección del iframe. Dos canales llevan el tema al shadow root de un componente:
 
-- variables configuradas y CSS global+children; `@wippy-fe/webcomponent-core` puentea nombres bajo `@light` / `@dark`, y `customCss: false` solo desactiva selectores, no variables;
-- recursos estáticos de plataforma solicitados mediante `wippyConfig.hostCssKeys` o `loadCss()` desde `@wippy-fe/proxy`.
+- **Variables configuradas + CSS personalizado del facade.** `@wippy-fe/webcomponent-core` enumera cada nombre de propiedad personalizada global/children/página efectivo, incluidos los nombres bajo `@light` / `@dark`, e instala un puente de herencia genérico después de los valores por defecto del tema de la plataforma. A continuación instala el `customCSS` compuesto de global + children como capa final. `customCss: false` deshabilita únicamente la capa de reglas de selector; no deshabilita la propagación de variables configuradas.
+- **Assets CSS de la plataforma (`hostCssKeys`).** `theme-config.css`, PrimeVue, markdown y los estilos de iframe/barras de desplazamiento son **assets estáticos del bundle**, no el CSS configurado del facade. Un componente solicita por URL los que necesita mediante `wippyConfig.hostCssKeys` (o los obtiene puntualmente con `loadCss()` de `@wippy-fe/proxy`), y el runtime los inyecta en el shadow root.
 
 ```typescript
 static get wippyConfig() {
@@ -160,24 +162,30 @@ static get wippyConfig() {
 }
 ```
 
-Prefiera `hostCssKeys`; `loadCss()` es escape de integración y nunca debe reescribir `shadowRoot.innerHTML`.
+Use `hostCssKeys` de forma declarativa para la autoría normal de componentes. `loadCss()` es una vía de escape para integraciones; nunca reescriba un árbol shadow montado con `shadowRoot.innerHTML`.
 
-| Clave | Contenido | Impacto |
-|-------|-----------|---------|
-| `hostCss.themeConfigUrl` | Variables de tema | Pequeño |
-| `hostCss.primeVueCssUrl` | PrimeVue + Tailwind | Grande |
-| `hostCss.markdownCssUrl` | Markdown | Pequeño |
-| `hostCss.iframeCssUrl` | Scrollbars | Mínimo |
-| `hostCss.preflightCssUrl` | Reset base | Pequeño |
+Claves `hostCss` disponibles:
 
-El preflight del host no cruza shadow; si se necesita, obténgalo con `loadCss()` e inyéctelo con `injectInlineCss(shadow, css)`. Consulte [Temas de WC](../micro-frontends/web-component-theming.md).
+| Clave | Contenido | Impacto en el bundle |
+|-----|---------|---------------|
+| `hostCss.themeConfigUrl` | Variables CSS (`--p-primary-*`, claro + oscuro) | Pequeño (~5 KB) |
+| `hostCss.primeVueCssUrl` | Componentes de PrimeVue + utilidades de Tailwind | Grande (~455 KB) |
+| `hostCss.markdownCssUrl` | Estilos de renderizado de markdown `.data-body` | Pequeño |
+| `hostCss.iframeCssUrl` | Estilo de las barras de desplazamiento usando `--p-surface-*` | Mínimo |
+| `hostCss.preflightCssUrl` | Reset base de preflight de Tailwind/PrimeVue (normalize/reset) | Pequeño |
 
-## Proyección `AppConfig.theming`
+Un web component que busque un renderizado fiel al host puede necesitar obtener `hostCss.preflightCssUrl` explícitamente mediante `loadCss()`, porque el reset base de preflight del host **no** cruza el límite del shadow.
 
-La fachada expone `theming.global`, `theming.host` y `theming.children`. Antes de entregar una página, el host proyecta el tema hijo efectivo en `AppConfig.theming.global`.
+Para orientación sobre qué claves solicitar y cuándo — incluido el árbol de decisión para equilibrar la fidelidad de estilo frente al tamaño del bundle del Shadow DOM — vea [Temas de WC § árbol de decisión de hostCssKeys](../micro-frontends/web-component-theming.md).
+
+## Proyección de `AppConfig.theming`
+
+La configuración del facade expone tres ámbitos de temas: `theming.global`, `theming.host` y `theming.children`. Antes de que el iframe de una página reciba su configuración de hijo, el host proyecta el tema efectivo del hijo en `AppConfig.theming.global`. Ese ámbito global del hijo es lo que `customCss` y `customVariables` inyectan en el iframe.
+
+Las claves son nombres de variables CSS exactamente como deben aparecer en el CSS:
 
 ```typescript
-// In the facade configuration or SetConfig PostMessage payload.
+// En la configuración del facade o en el payload PostMessage de SetConfig.
 theming: {
   global: {
     cssVariables: {
@@ -189,23 +197,29 @@ theming: {
 }
 ```
 
-Iframe normaliza `--`, fusiona base con `@light`/`@dark` y emite bloques efectivos Auto y forzados. El proceso es agnóstico al nombre de variable y no depende del orden de `<head>`.
+El compilador normaliza el `--` inicial, fusiona la base de nivel superior con `@light` / `@dark` y emite bloques efectivos Auto-light, Auto-dark, Light forzado y Dark forzado en la hoja adoptada del iframe. Es agnóstico respecto a la variable: bases de paleta, tonos/alias directos, surfaces, tipografía, tokens del host y propiedades específicas de la aplicación siguen el mismo camino. La anulación no depende del orden en el `<head>`; vea [Mecanismo de anulación](#override-mechanism-adopted-stylesheets).
 
-### `adoptedStyleSheets`
+### Mecanismo de anulación: hojas de estilo adoptadas
 
-En iframe, `cssVariables` y el `customCSS` sin `@import` son hojas adoptadas, ordenadas después de hojas del documento. `@import` queda en `<head>` dentro de `<style>` y no recibe esa garantía. Por eso ganan sobre `theme-config.css`, `primevue.css`, `iframe.css` y `markdown.css`. El `customCSS` no importado va después de `cssVariables` y gana si define el mismo token `--p-*`. Fragment usa `<style>` normales.
+`customCSS` y `cssVariables` **no** son elementos `<style>`/`<link>` ordinarios del `<head>`. El proxy los coloca en los [`adoptedStyleSheets`](https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets) del documento del iframe (hojas de estilo construibles). Según la cascada CSS, las hojas adoptadas se ordenan siempre **después** de todas las hojas `<style>`/`<link>` del documento, independientemente del orden de inserción, así que siempre ganan sobre `theme-config.css`, `primevue.css`, `iframe.css` y `markdown.css`. En el proxy de producción, esas capas personalizadas se insertan de hecho *antes* que `theme-config.css` y PrimeVue; la anulación se mantiene igualmente porque proviene de la posición de las hojas adoptadas en la cascada, no del orden en el `<head>`.
 
-### Tres ámbitos
+Entre las dos capas personalizadas, **`customCSS` anula a `cssVariables`**: las hojas adoptadas se ordenan primero `cssVariables` y después `customCSS`, y las hojas adoptadas posteriores tienen mayor prioridad. Si el mismo token `--p-*` se establece en ambas, gana el valor de `customCSS`.
 
-| Ámbito | Se inyecta en | Uso |
-|--------|---------------|-----|
-| `theming.global` | Host y todas las páginas | Marca y tokens compartidos |
-| `theming.host` | Solo chrome | Sidebar, chat, título |
-| `theming.children` | Solo páginas | Overrides hijos |
+### Los tres ámbitos de temas
 
-Los hijos reciben el resultado fusionado como `config.theming.global`; no reciben `theming.host` ni `theming.children` como ámbitos separados.
+El facade soporta tres ámbitos de `cssVariables` para dirigirse a distintas capas de renderizado:
 
-### Overrides por página
+| Clave de ámbito | Inyectado en | Caso de uso |
+|-----------|---------------|----------|
+| `theming.global` | El chrome del host y todos los iframes hijos | Colores de marca, paleta primaria, conjuntos de iconos compartidos |
+| `theming.host` | Solo el chrome del host | Anulaciones de barra lateral, cabecera, chat y título de la aplicación |
+| `theming.children` | Solo los iframes hijos | Variables CSS y anulaciones de CSS exclusivas de los hijos |
+
+Los iframes hijos no reciben `theming.host` ni `theming.children` como ámbitos separados. Reciben el resultado fusionado orientado a hijos como `config.theming.global`.
+
+### Anulaciones por página
+
+Las páginas individuales pueden anular variables mediante `window.__WIPPY_CONFIG_OVERRIDES__` (establecido en la entrada de registry de la página como `meta.config_overrides`, o en `package.json` como `wippy.configOverrides`):
 
 ```typescript
 window.__WIPPY_CONFIG_OVERRIDES__ = {
@@ -218,44 +232,11 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-Se crea como `meta.config_overrides` o `wippy.configOverrides`. La superficie YAML `config_overrides.customization` proyecta sus claves `cssVariables` y `customCSS` a `theming.global.cssVariables` y `theming.global.customCSS`, reemplazando valores heredados. Como se fusiona en AppConfig, se propaga recursivamente a `<w-iframe>`, `<w-artifact>` y `html.inject` descendientes.
-
-En la matriz, una `view.page` recibe la hoja compuesta y otra `view.page`
-conserva el mismo orden; cada `view.component` recibe la capa de selectores y
-otro `view.component` puede excluirla. Un tercer `view.page` mantiene la misma
-separación entre la entrega del iframe y la del Fragment. En cada documento,
-`:root` recibe las variables efectivas; el `:root` del host combina global y
-host, mientras el `:root` de una página combina global y children.
-
-El flag `customCss` controla selectores en iframe. Con `customCss` desactivado
-no se desactivan variables; `customCss` tampoco modifica el bridge de un
-componente. En Fragment, `customCss` no controla la hoja fija; en un componente,
-`customCss` solo controla la última capa. Los overrides de `customCss` siguen la
-precedencia de configuración, y cada `customCss` declarado debe hacer visible
-esa expectativa. El runtime aplica finalmente el selector al ámbito elegido.
-
-El mapa `cssVariables` determina las propiedades; otro `cssVariables` se
-compila para el modo efectivo. Un tercer `cssVariables` se proyecta al hijo, y
-`cssVariables` precede a la hoja de selectores. Las reglas `@import` y el
-segundo `@import` se mantienen en estilos ordinarios de `<head>`; el otro
-`<head>` conserva también los `<link>` del documento.
-
-Los bundles vuelven a definir `theme-config.css`, `--p-primary-*`,
-`--p-surface-*` y `.data-body`. La composición añade `children_custom_css` al
-`custom_css`; `customVariables` sigue siendo una compuerta independiente. Los
-archivos grandes pueden resolverse con `fs://` y el manifiesto `package.json`
-declara `wippy.proxy.injections`; el objeto `injections` contiene la rama
-`css`.
-
-En componentes, `hostCssKeys` selecciona recursos del mapa `hostCss`, y
-`hostCss.preflightCssUrl` puede solicitarse de nuevo cuando el shadow necesita
-el reset. En overrides por página, `window.__WIPPY_CONFIG_OVERRIDES__` termina
-proyectándose a `theming.global`. Las variables `--wippy-host-*` quedan
-reservadas al chrome del host.
+`config_overrides.customization` del YAML del backend es la superficie de autoría por página. Sus claves `cssVariables` y `customCSS` se proyectan en `theming.global.cssVariables` y `customCSS` del frontend antes de que la página reciba AppConfig, reemplazando los valores heredados del hijo para esa página. Como la anulación se fusiona en `theming.global`, **se propaga por todo el subárbol anidado**: cada hijo que la página embebe — `<w-iframe>`, `<w-artifact>` y contenido `html.inject` — se construye a partir de la configuración ya fusionada de la página y hereda el tema, de forma recursiva. Así, una página (o un módulo que entrega varias de esas páginas) tematiza todo lo que hay por debajo de ella, no solo a sí misma.
 
 ## Variables `--wippy-host-*`
 
-Personalizan chrome sin afectar páginas. Use el ámbito host:
+El host expone un conjunto de variables CSS `--wippy-host-*` para personalizar los elementos del chrome del Web Host — barra lateral, burbujas de chat, barra de entrada, divisores de panel — sin tocar los estilos de los iframes hijos. Anúlelas mediante `customCSS` o `cssVariables` acotadas a `:root` (las variables ya llevan prefijo y no se filtran a los iframes hijos):
 
 ```typescript
 theming: {
@@ -268,69 +249,69 @@ theming: {
       --wippy-host-message-user-bg: var(--p-info-100);
       --wippy-host-message-agent-bg: var(--p-warn-100);
     }
-    /* Class selectors must be scoped to .wippy-host-app */
+    /* Los selectores de clase deben acotarse a .wippy-host-app */
     .wippy-host-app .chat-message__footer { display: none; }
   `
   }
 }
 ```
 
-### Layout
+### Variables de layout
 
-| Variable | Predeterminado | Descripción |
-|----------|----------------|-------------|
-| `--wippy-host-sidebar-width-open` | `16rem` | Ancho abierto |
-| `--wippy-host-sidebar-width-closed` | `3.5rem` | Ancho cerrado |
-| `--wippy-host-splitter-width` | `1px` | Línea |
-| `--wippy-host-splitter-hit-area` | `10px` | Área de drag |
-| `--wippy-host-splitter-color` | `surface-200/600` | Color |
-| `--wippy-host-chat-bg` | `surface-50/700` | Fondo de chat |
-| `--wippy-host-chat-padding-x` | `10px` | Padding horizontal |
-| `--wippy-host-meta-bar-border-color` | `surface-200/600` | Borde de barra agente/modelo |
+| Variable | Por defecto | Descripción |
+|----------|---------|-------------|
+| `--wippy-host-sidebar-width-open` | `16rem` | Ancho de la barra lateral cuando está expandida |
+| `--wippy-host-sidebar-width-closed` | `3.5rem` | Ancho de la barra lateral cuando está contraída |
+| `--wippy-host-splitter-width` | `1px` | Ancho de la línea divisoria de panel |
+| `--wippy-host-splitter-hit-area` | `10px` | Área de arrastre del divisor de panel |
+| `--wippy-host-splitter-color` | `surface-200/600` | Color del divisor de panel |
+| `--wippy-host-chat-bg` | `surface-50/700` | Fondo del contenedor de chat |
+| `--wippy-host-chat-padding-x` | `10px` | Padding horizontal de la lista de mensajes |
+| `--wippy-host-meta-bar-border-color` | `surface-200/600` | Borde de la barra de agente/modelo |
 
-### Mensajes
+### Variables de mensajes
 
-| Variable | Predeterminado | Descripción |
-|----------|----------------|-------------|
-| `--wippy-host-message-bg` | `surface-50/700` | Fondo |
-| `--wippy-host-message-border-color` | `surface-200/600` | Borde |
-| `--wippy-host-message-shadow` | `0 1px 2px 0 rgba(...)` | Sombra |
-| `--wippy-host-message-font-size` | `0.875rem` | Texto |
-| `--wippy-host-message-radius` | `1rem` | Radio |
-| `--wippy-host-message-padding-x` | `1rem` | Padding horizontal |
-| `--wippy-host-message-padding-y` | `0.5rem` | Padding vertical |
-| `--wippy-host-message-gap` | `0.5rem` | Separación interna |
-| `--wippy-host-message-spacing` | `1rem` | Separación entre mensajes |
-| `--wippy-host-message-user-bg` | `primary-50` | Usuario |
-| `--wippy-host-message-agent-bg` | `yellow-50/surface-800` | Agente |
-| `--wippy-host-tool-bg` | `help-50` | Fondo de herramienta |
-| `--wippy-host-tool-border` | `help-300` | Borde de herramienta |
-| `--wippy-host-avatar-size` | `2rem` | Avatar |
+| Variable | Por defecto | Descripción |
+|----------|---------|-------------|
+| `--wippy-host-message-bg` | `surface-50/700` | Fondo de mensaje por defecto |
+| `--wippy-host-message-border-color` | `surface-200/600` | Borde de la burbuja de mensaje |
+| `--wippy-host-message-shadow` | `0 1px 2px 0 rgba(...)` | Sombra de la burbuja de mensaje |
+| `--wippy-host-message-font-size` | `0.875rem` | Tamaño del texto del cuerpo del mensaje |
+| `--wippy-host-message-radius` | `1rem` | Esquinas de la burbuja de mensaje |
+| `--wippy-host-message-padding-x` | `1rem` | Padding horizontal del mensaje |
+| `--wippy-host-message-padding-y` | `0.5rem` | Padding vertical del mensaje |
+| `--wippy-host-message-gap` | `0.5rem` | Separación entre el avatar y la burbuja |
+| `--wippy-host-message-spacing` | `1rem` | Espaciado vertical entre mensajes |
+| `--wippy-host-message-user-bg` | `primary-50` | Fondo de los mensajes del usuario |
+| `--wippy-host-message-agent-bg` | `yellow-50/surface-800` | Fondo de los mensajes del agente |
+| `--wippy-host-tool-bg` | `help-50` | Fondo de las llamadas a herramientas |
+| `--wippy-host-tool-border` | `help-300` | Borde izquierdo de las llamadas a herramientas |
+| `--wippy-host-avatar-size` | `2rem` | Diámetro del avatar del mensaje |
 
-### Variables de input
+### Variables de entrada
 
-| Variable | Predeterminado | Descripción |
-|----------|----------------|-------------|
-| `--wippy-host-input-bg` | `surface-50/700` | Fondo barra |
-| `--wippy-host-input-border-color` | `surface-200/600` | Borde superior |
-| `--wippy-host-input-group-bg` | `surface-0/800` | Fondo campo |
-| `--wippy-host-input-group-border-color` | `surface-300/700` | Borde campo |
-| `--wippy-host-input-group-radius` | `0.375rem` | Radio |
+| Variable | Por defecto | Descripción |
+|----------|---------|-------------|
+| `--wippy-host-input-bg` | `surface-50/700` | Fondo de la barra de entrada |
+| `--wippy-host-input-border-color` | `surface-200/600` | Borde superior de la barra de entrada |
+| `--wippy-host-input-group-bg` | `surface-0/800` | Fondo del campo de entrada |
+| `--wippy-host-input-group-border-color` | `surface-300/700` | Borde del campo de entrada |
+| `--wippy-host-input-group-radius` | `0.375rem` | Esquinas del campo de entrada |
 | `--wippy-host-input-min-height` | `2.5rem` | Altura inicial del textarea |
 | `--wippy-host-input-max-height` | `10rem` | Altura máxima del textarea |
 
-### Variables de prompts
+### Variables de prompt
 
-| Variable | Predeterminado | Descripción |
-|----------|----------------|-------------|
-| `--wippy-host-prompt-bg` | `surface-100/800` | Fondo sugerencia |
-| `--wippy-host-prompt-border-color` | `surface-300/600` | Borde sugerencia |
-| `--wippy-host-prompt-radius` | `0.5rem` | Radio sugerencia |
+| Variable | Por defecto | Descripción |
+|----------|---------|-------------|
+| `--wippy-host-prompt-bg` | `surface-100/800` | Fondo de la sugerencia de prompt |
+| `--wippy-host-prompt-border-color` | `surface-300/600` | Borde de la sugerencia de prompt |
+| `--wippy-host-prompt-radius` | `0.5rem` | Esquinas de la sugerencia de prompt |
 
-Estas variables solo afectan al chrome del host. No afectan a los estilos de las páginas hijas.
+Estas variables solo afectan al chrome del host. Los estilos de los iframes hijos no se ven afectados: reciben únicamente el pipeline de inyección estándar descrito arriba.
 
-## Véase también
+## Vea También
 
-- [Temas](../micro-frontends/theming.md) — Referencia de tokens CSS, mapeo de Tailwind y patrones de estilo para web components
-- [Proxy y aislamiento](./proxy-isolation.md) — Cómo funciona el pipeline de inyección del proxy y qué controla `ProxyConfig` a nivel de protocolo
-- [Motores de renderizado](./render-engines.md) — El CSS del host llega tanto a iframes srcdoc como a shadow roots de Web Fragment
+- [Temas](../micro-frontends/theming.md) — referencia de tokens CSS, mapeo de Tailwind y patrones de estilo de web components
+- [Proxy y Aislamiento](./proxy-isolation.md) — cómo funciona el pipeline de inyección del proxy y qué controla `ProxyConfig` a nivel de protocolo
+- [Motores de Renderizado](./render-engines.md) — el CSS del host llega tanto a los iframes srcdoc como a los shadow roots de Web Fragment

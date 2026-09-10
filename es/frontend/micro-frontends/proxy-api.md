@@ -1,47 +1,46 @@
 ---
-title: "API Proxy"
-description: "Referencia de configuración, controles del host, acceso a API, eventos, estado, WebSocket, logging y utilidades expuestos por @wippy-fe/proxy."
+title: "API del Proxy"
+description: "Las aplicaciones hijas y los web components se comunican con el host de Wippy a través del runtime del proxy (proxy.js). Su código nunca habla directamente con ese runtime;…"
 ---
 
-# API Proxy
+# API del Proxy
 
-**Clasificación: referencia de API con fragmentos parciales de integración.**
-Los ejemplos presuponen un hijo entregado por el Host, URL y credenciales de
-despliegue válidas y valores de aplicación como `file`, `uuid`, handlers de
-eventos y rutas. Muestran una operación de API cada vez, no un proyecto independiente.
+Las aplicaciones hijas y los web components se comunican con el host de Wippy a través del runtime del proxy (`proxy.js`). Su código nunca habla directamente con ese runtime: usted importa getters con nombre de **`@wippy-fe/proxy`**, un facade síncrono y ligero sobre él. La misma importación funciona para ambas superficies:
 
-Las aplicaciones hijas y los componentes web se comunican con el host Wippy mediante el runtime proxy (`proxy.js`). El código de aplicación usa getters con nombre de **`@wippy-fe/proxy`**, su ligera fachada síncrona. Los mismos imports funcionan en ambas superficies:
+- Las **aplicaciones micro frontend (`view.page`)** se ejecutan dentro de un iframe srcdoc donde el host inyecta `proxy.js`.
+- Los **web components (`view.component`)** se ejecutan como módulos ESM en la página del host; el host proporciona `@wippy-fe/proxy` mediante el import map.
 
-- Las **aplicaciones micro frontend (`view.page`)** se ejecutan mediante el adaptador de iframe srcdoc o Web Fragment seleccionado, que proporciona el mismo contrato proxy.
-- Los **componentes web (`view.component`)** se ejecutan como módulos ESM en la página host; el host proporciona `@wippy-fe/proxy` mediante el mapa de importación.
-
-Para saber cómo se carga el runtime en cada contexto, consulte [Proxy y aislamiento](../web-host/proxy-isolation.md).
+Para saber cómo se carga el runtime en cada contexto, vea [Proxy y Aislamiento](../web-host/proxy-isolation.md).
 
 ## Inicialización
 
-`@wippy-fe/proxy` exporta getters síncronos: `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Importe lo necesario y úselo directamente. El host inyecta la configuración hija antes de cargar el runtime, tanto para aplicaciones `view.page` como para componentes web `view.component`; los getters están disponibles al ejecutar el código. No existe `getWippyApi` ni `instance`, y no hay que esperar ningún handshake `GetConfig`/`SetConfig`. Espere únicamente operaciones asíncronas reales como llamadas HTTP y lecturas de estado.
+`@wippy-fe/proxy` exporta getters síncronos: `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Importe lo que necesite y úselo directamente. **No** existe `getWippyApi`, ni `instance`, ni un handshake `GetConfig`/`SetConfig` que esperar.
+
+El patrón de getters síncronos lo comparten las aplicaciones micro frontend y los web components:
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
 
 host.navigate('/dashboard')
-const agents = await api.get('/api/v1/agents')   // api is axios; the await is the HTTP call, not obtaining `api`
+const agents = await api.get('/api/v1/agents')   // api es axios; el await es la llamada HTTP, no la obtención de `api`
 const token = config.auth.token
 ```
 
-Las aplicaciones iframe y Web Fragment reciben visibilidad del ciclo de vida
-mediante el topic proxy `@visibility`. Los componentes web directos no: use
-`useHostVisibility()` o `useHostVisibilityRefresh()` de
-`@wippy-fe/webcomponent-vue`, o las API equivalentes de `WippyElement`.
+Las aplicaciones de iframe y de Web Fragment reciben la visibilidad del ciclo de vida mediante el topic
+`@visibility` del proxy. Los web components directos no: use `useHostVisibility()`
+o `useHostVisibilityRefresh()` de `@wippy-fe/webcomponent-vue`, o las
+APIs equivalentes de `WippyElement`.
 
-Obtenga una vez durante el desarrollo el `import-map.json` de la versión
-objetivo de Web Host y use cada clave de `imports` como dependencia externa de
-Rollup. Esto incluye `@wippy-fe/proxy`; no mantenga una lista de un solo paquete
-ni limitada a imports usados. Vuelva a obtenerlo cuando cambie la etiqueta del
-Host o al añadir una dependencia, para comprobar si su specifier exacto puede ser externo:
+Estos getters son **síncronos**: `host`, `api`, `on`, `config`, etc. están disponibles en el momento en que se ejecuta su código. El host inyecta la configuración del hijo **de forma síncrona, antes** de que cargue el runtime (tanto para aplicaciones `view.page` como para web components `view.component`), de modo que el runtime se inicializa antes de que se ejecute su script. Nunca hace `await` para *obtener* un getter, y no hay handshake `GetConfig`/`SetConfig`. El único `await` que escribe es para una operación asíncrona real (una llamada HTTP mediante `api`, una lectura de `state`, etc.).
+
+Obtenga una vez, durante el desarrollo, el `import-map.json` de la release del Web Host de destino
+y use cada clave de su objeto `imports` como external de Rollup. Esto incluye
+`@wippy-fe/proxy`; no mantenga una lista de externals de un solo paquete o de solo
+lo importado. Vuelva a obtenerlo únicamente cuando cambie la etiqueta del Web Host o al añadir una dependencia,
+para comprobar si su specifier exacto puede ser external:
 
 ```typescript
-// vite.config.ts (after saving the fetched response as import-map.json)
+// vite.config.ts (después de guardar la respuesta obtenida como import-map.json)
 import { readFileSync } from 'node:fs'
 
 const hostImportMap = JSON.parse(
@@ -57,9 +56,9 @@ export default defineConfig({
 })
 ```
 
-### Tipos TypeScript
+### Tipos de TypeScript
 
-Los tipos proxy —`AppConfig`, `ProxyApiInstance`, `StateApi`, `ProxyWsApi` y los tipos de mensajes WebSocket— se distribuyen como **declaraciones ambientales** en `@wippy-fe/types-global-proxy`, no como exports con nombre. Añádalo a `types` de `tsconfig.json` —o use una referencia triple-slash— y estarán disponibles globalmente, sin import:
+Los tipos del proxy — `AppConfig`, `ProxyApiInstance`, `StateApi`, `ProxyWsApi` y los tipos de mensaje de WebSocket — se entregan como **declaraciones ambient** en `@wippy-fe/types-global-proxy`, no como exportaciones con nombre de ningún paquete. Añádalo a `types` en su `tsconfig.json` (o use una referencia triple-slash) y estarán disponibles globalmente, sin importaciones:
 
 ```jsonc
 // tsconfig.json
@@ -67,18 +66,23 @@ Los tipos proxy —`AppConfig`, `ProxyApiInstance`, `StateApi`, `ProxyWsApi` y l
 ```
 
 ```typescript
-// AppConfig, ProxyApiInstance, … are ambient globals — annotate with them directly, no import:
+// AppConfig, ProxyApiInstance, … son globales ambient: anote con ellos directamente, sin import:
 function render(cfg: AppConfig) { /* … */ }
-type HostApi = ProxyApiInstance['host']   // HostApi is this indexed type, not a separate export
+type HostApi = ProxyApiInstance['host']   // HostApi es este tipo indexado, no una exportación aparte
 ```
 
-No existe `import … from '@wippy-fe/shared'` para las API proxy anteriores. `@wippy-fe/shared` contiene tipos entre paquetes y constantes de nombres `GLOBAL_*`; desde `0.0.52` también exporta los helpers de runtime para WC retenidos `readWippyVisibility`, `setWippyVisibility` y `WIPPY_VISIBILITY_ATTRIBUTE`. Los autores de WC directos usan normalmente `useHostVisibility()` o `useHostVisibilityRefresh()` de `@wippy-fe/webcomponent-vue`; el evento proxy `@visibility` sigue siendo un canal de iframe y Web Fragment.
+**No** existe `import … from '@wippy-fe/shared'` para las APIs del proxy anteriores. `@wippy-fe/shared` lleva tipos entre paquetes y constantes de nombre `GLOBAL_*`; a partir de `0.0.52`, también exporta los helpers de runtime para WC retenidos
+`readWippyVisibility`, `setWippyVisibility` y
+`WIPPY_VISIBILITY_ATTRIBUTE`. Los autores de WC directos normalmente usan
+`useHostVisibility()` o `useHostVisibilityRefresh()` de
+`@wippy-fe/webcomponent-vue`; el evento `@visibility` del proxy sigue siendo un
+canal de iframe/Web Fragment.
 
 ### Internos (no usar)
 
-El runtime instala varias globales para uso interno: `window.$W`, `window.getWippyApi`, `window.initWippyApi` y el conjunto `window.__WIPPY_*`. **El código de aplicaciones y componentes nunca debe leerlas ni sobrescribirlas.** Use siempre `@wippy-fe/proxy`. Los nombres se enumeran para evitar colisiones; consulte [Proxy y aislamiento § Internos](../web-host/proxy-isolation.md#internos-no-leer-ni-sobrescribir).
+El runtime instala unas cuantas globales para su propio uso: `window.$W`, `window.getWippyApi`, `window.initWippyApi` y el conjunto `window.__WIPPY_*`. **El código de aplicaciones y componentes nunca debe leerlas ni sobrescribirlas.** Pase siempre por `@wippy-fe/proxy` en su lugar. Se enumeran solo para que no las sobrescriba por accidente; vea [Proxy y Aislamiento § Internos](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
 
-> `@wippy-fe/proxy`, documentado aquí, es la API que usa el código hijo. El arranque del host, `initWippyApp(config, rootContainer?)`, monta Web Host completo en la ruta de integración del módulo o fachada; el código de una aplicación hija nunca lo llama.
+> `@wippy-fe/proxy` (documentado aquí) es la API que usa el código de su hijo. El bootstrap propio del host, `initWippyApp(config, rootContainer?)`, monta el Web Host completo en la vía de embebido por módulo / facade; el código de una aplicación hija nunca lo llama.
 
 ---
 
@@ -86,7 +90,7 @@ El runtime instala varias globales para uso interno: `window.$W`, `window.getWip
 
 ### `config`
 
-Configuración de la aplicación hija entregada por el host. Es un objeto sencillo, no una función, importado directamente y listo para lectura síncrona. Esta página solo documenta el contrato actual `wippy-context-2.0`.
+La configuración de la aplicación hija entregada por el host. Es un objeto plano (no una función): se importa directamente y está lista para leerse de forma síncrona. Los documentos nuevos apuntan únicamente al contrato actual `wippy-context-2.0`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -131,8 +135,8 @@ interface ChildAppConfig {
 ```
 
 Para páginas dinámicas, si la URL del host es `/c/page-id/something/else?foo=1`:
-- `config.context?.route` contiene `/something/else?foo=1`.
-- `config.path` es un campo de compatibilidad obsoleto de payloads anteriores a `wippy-context-2.0`; no lo use en código nuevo.
+- `config.context?.route` lleva `/something/else?foo=1`.
+- `config.path` es un campo de compatibilidad obsoleto procedente de payloads anteriores a `wippy-context-2.0` y no debe usarse en código nuevo.
 
 ---
 
@@ -140,7 +144,7 @@ Para páginas dinámicas, si la URL del host es `/c/page-id/something/else?foo=1
 
 ### `host`
 
-API de comunicación con el host (`HostApi`). Se importa directamente y se usa de forma síncrona.
+La API de comunicación con el host (`HostApi`). Se importa directamente y se usa de forma síncrona.
 
 ```typescript
 import { host } from '@wippy-fe/proxy'
@@ -150,92 +154,80 @@ import { host } from '@wippy-fe/proxy'
 
 ### `host.setThemeMode(mode)` y `host.getThemeMode()`
 
-El modo de tema es estado del host transportado por AppConfig. Cámbielo solo mediante la API proxy pública:
+El modo de tema es estado del host transportado por AppConfig. Cámbielo únicamente a través de la
+API pública del proxy:
 
 ```typescript
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
-  if (host.getThemeMode() === mode) return
-
   await new Promise<void>((resolve, reject) => {
-    let settled = false
-    let unsubscribe = () => {}
-    const finish = (error?: unknown) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timeout)
-      unsubscribe()
-      if (error) reject(error)
-      else resolve()
-    }
-    const timeout = window.setTimeout(
-      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
-      5_000,
-    )
-
-    unsubscribe = on('@theme', (appliedMode) => {
+    const unsubscribe = on('@theme', (appliedMode) => {
       if (appliedMode !== mode) return
-      finish()
+      unsubscribe()
+      const currentMode = host.getThemeMode()
+      if (currentMode !== mode) {
+        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
+        return
+      }
+      resolve()
     })
 
-    // Subscribe before the command so a fast propagation event cannot be lost.
-    try {
-      host.setThemeMode(mode)
-    } catch (error) {
-      finish(error)
-    }
+    // Suscribirse antes del comando para que un evento de propagación rápido no pueda perderse.
+    host.setThemeMode(mode)
   })
 }
 
 await setThemeMode('dark')
 ```
 
-Los modos aceptados son `auto`, `light` y `dark`. `auto` sigue la preferencia
-del sistema operativo. El cambio se aplica al host, se escribe en AppConfig,
-se difunde a realms activos de páginas iframe y Web Fragment y a componentes
-web directos, y se reenvía por contenedores Wippy anidados. Suscríbase a
-`@theme` cuando deba esperar el estado hijo aplicado. Libere la suscripción al desmontar.
+Los modos aceptados son `auto`, `light` y `dark`. `auto` sigue la
+preferencia del sistema operativo. Un cambio se aplica al host, se escribe de vuelta en
+AppConfig, se difunde a los iframes de página y a los web components activos, y se reenvía
+a través de los contenedores de Wippy anidados. Suscríbase a `@theme` cuando el código necesite esperar
+al estado aplicado del hijo. Libere la suscripción durante el desmontaje
+del componente.
 
-El host no controla la persistencia. La fachada integradora escucha el evento
-de cambio de tema del host y conserva la elección como se describe en
-[Persistencia del tema](../web-host/theme-persistence.md).
+El host no es propietario de la persistencia. El facade embebedor escucha el evento
+de cambio de tema del host y persiste la elección del usuario como se describe en
+[Persistencia del Tema](../web-host/theme-persistence.md).
 
-No añada ni elimine clases `w-theme-dark` / `w-theme-light`, llame al
-`applyThemeMode` interno, mute stores de AppConfig, sintetice mensajes proxy ni
-use `window.getWippyApi`. Son detalles de implementación de Web Host, no API de
-aplicación o pruebas. Las pruebas de runtime deben usar `host.setThemeMode()`,
-esperar el evento `@theme` propagado y verificar `host.getThemeMode()` antes de
-capturar la apariencia. AppConfig es el transporte host-hijo; no mute su store
-interno ni use una instantánea importada anterior como señal de finalización.
+No añada ni elimine las clases `w-theme-dark` / `w-theme-light`, no llame al
+`applyThemeMode` interno, no mute los stores de AppConfig, no sintetice mensajes del proxy ni use
+`window.getWippyApi`. Son detalles de implementación del Web Host, no APIs de aplicación
+ni de pruebas de navegador. Las pruebas de runtime deben ejercitar `host.setThemeMode()`, esperar
+el evento `@theme` propagado y verificar `host.getThemeMode()` antes de
+capturar la apariencia. AppConfig es el transporte host-hijo; no mute
+su store interno ni dependa de un snapshot de configuración importado antes como señal de
+finalización.
 
-No existe ningún método `host.applyTheme()`.
+No existe un método `host.applyTheme()`.
 
 ---
 
 ### `host.startChat(agentToken, options?)`
 
-Abre una sesión de chat nueva con el token de inicio de agente proporcionado.
+Abre una nueva sesión de chat usando el token de inicio de agente proporcionado.
 
 ```typescript
 host.startChat(agentToken: string, options?: { sidebar?: boolean }): void
 ```
 
-| Parámetro | Tipo | Predeterminado | Descripción |
+| Parámetro | Tipo | Por defecto | Descripción |
 |-----------|------|---------|-------------|
-| `agentToken` | `string` | — | Token que identifica el agente que se iniciará |
-| `options.sidebar` | `boolean` | `false` | `true` abre el chat en el panel lateral derecho; `false` en el área principal |
+| `agentToken` | `string` | — | Token que identifica qué agente iniciar |
+| `options.sidebar` | `boolean` | `false` | `true` abre el chat en el panel lateral derecho; `false` lo abre en el área principal |
 
 ```typescript
-host.startChat('my-agent-token')                     // Main area
-host.startChat('my-agent-token', { sidebar: true })  // Right sidebar
+host.startChat('my-agent-token')                     // Área principal
+host.startChat('my-agent-token', { sidebar: true })  // Barra lateral derecha
 ```
 
 ---
 
 ### `host.openSession(sessionId, options?)`
 
-Abre una sesión de chat existente mediante UUID.
+Abre una sesión de chat existente por UUID.
 
 ```typescript
 host.openSession(sessionId: string, options?: { sidebar?: boolean }): void
@@ -249,12 +241,12 @@ host.openSession('abc-123-uuid', { sidebar: false })
 
 ### `host.navigate(url)`
 
-Solicita navegación SPA al host. Patrones admitidos:
+Solicita una navegación SPA al host. Patrones soportados:
 
-- `/c/<page-id>`: navegar a una página dinámica
-- `/c/<page-id>/<sub-path>`: página dinámica con subruta
-- `/chat/<session-id>`: abrir una sesión de chat
-- Cualquier ruta de montaje reclamada por una página mediante `mountRoute` en el registro
+- `/c/<page-id>` — navegar a una página dinámica
+- `/c/<page-id>/<sub-path>` — página dinámica con subruta
+- `/chat/<session-id>` — abrir una sesión de chat
+- Cualquier ruta de montaje reclamada por una página con `mountRoute` en su entrada de registry
 
 ```typescript
 host.navigate(url: string): void
@@ -266,31 +258,25 @@ host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
 
-> **Matiz del layout gestionado.** `startChat`, `openSession`, `openArtifact` y
-> `navigate` actúan directamente sobre el shell compat estándar. Con `fe_mode = managed`
-> publican mensajes tipados `@HOST/intent`. Declare el `@HOST/compat-coordinator`
-> incluido, o uno equivalente, para asignarlos a paneles declarados de chat,
-> artefacto, modal y ruta principal. El modo gestionado no tiene chrome compat
-> implícito; sin coordinador se publican los intents pero nada los renderiza.
-> Consulte [Layout multipanel § Qué funciona en cada modo](../web-host/multi-panel-layout.md#qué-funciona-en-cada-modo).
+> **Advertencia sobre managed-layout.** `startChat`, `openSession`, `openArtifact` y `navigate` apuntan al shell compat estándar (la vista de chat, el panel derecho y la ruta raíz). Con `fe_mode = managed` siguen despachándose, pero no tienen una superficie de renderizado integrada: renderice el chat, los artefactos y las subrutas mediante paneles declarados. Vea [Layout Multipanel § Qué funciona en cada modo](../web-host/multi-panel-layout.md#what-works-in-which-mode).
 
 ---
 
-### `host.onRouteChanged(internalRoute, navId?)`: integración de router de bajo nivel
+### `host.onRouteChanged(internalRoute, navId?)` — integración de router de bajo nivel
 
-Notifica al host los cambios de ruta interna. El host actualiza la barra de URL para incluir la ruta hija. Esta llamada es **obligatoria**; sin ella, la URL permanece en la raíz y el botón Atrás no funciona para navegación hija.
+Notifica al host cuando cambia la ruta interna de la página. El host actualiza la barra de URL del navegador para incluir la ruta del hijo. Esta llamada es **obligatoria**: sin ella, la URL del host se queda en la raíz de la página y el botón de retroceso del navegador no funciona para la navegación del hijo.
 
 ```typescript
 host.onRouteChanged(internalRoute: string, navId?: number): void
 ```
 
-Las aplicaciones Vue portables usan `createAppRouter()` de `@wippy-fe/router`; el paquete controla esta llamada, la suscripción `@history`, la normalización y la supresión de bucles de eco. No conecte esas piezas manualmente. El método se documenta para autores de adaptadores e integraciones no Vue.
+Las aplicaciones Vue portables usan `createAppRouter()` de `@wippy-fe/router`; el paquete es propietario de esta llamada, de la suscripción `@history` correspondiente, de la normalización y de la supresión del bucle de eco. No cablee esas piezas manualmente en el código de la aplicación. Este método permanece documentado para autores de adaptadores de plataforma e integraciones ajenas a Vue.
 
 ---
 
 ### `host.confirm(options)` → `Promise<boolean>`
 
-Muestra un diálogo de confirmación PrimeVue. Resuelve `true` si el usuario acepta y `false` si rechaza o cierra.
+Muestra un diálogo de confirmación de PrimeVue. Se resuelve a `true` si el usuario acepta, y a `false` si rechaza o descarta.
 
 ```typescript
 host.confirm(options: LimitedConfirmationOptions): Promise<boolean>
@@ -350,7 +336,7 @@ host.openArtifact(
 ): void
 ```
 
-El destino predeterminado es `'sidebar'`.
+El destino por defecto es `'sidebar'`.
 
 ```typescript
 host.openArtifact('artifact-uuid-123', { target: 'modal' })
@@ -360,7 +346,7 @@ host.openArtifact('artifact-uuid-123', { target: 'modal' })
 
 ### `host.setContext(context, sessionUUID?, source?)`
 
-Envía datos de contexto a la sesión de chat actual. Si aún no hay ninguna sesión abierta, el contexto se pone en cola y se aplica a la siguiente sesión abierta mediante `startChat` u `openSession`. Opcionalmente, limítelo a un UUID de sesión o márquelo con un descriptor de origen.
+Envía datos de contexto a la sesión de chat actual. Si aún no hay ninguna sesión abierta, el contexto se encola y se aplica a la siguiente sesión abierta mediante `startChat` u `openSession`. Opcionalmente, acote el contexto a un UUID de sesión concreto o márquelo con un descriptor de origen.
 
 ```typescript
 host.setContext(
@@ -381,7 +367,7 @@ host.setContext({
 
 ### `host.classifyLink(url)` → `LinkClassification`
 
-Clasifica un href como host-nav, child-nav, external o ignore. Usa `mountRoutes` y `routePrefix` de la configuración hija, además de segmentos de rutas del sistema integrados. Es una función pura, sin efectos secundarios.
+Clasifica un href como navegación del host, navegación del hijo, externo o ignorar. Usa `mountRoutes` y `routePrefix` de la configuración del hijo más los segmentos de ruta del sistema integrados. Función pura, sin efectos secundarios.
 
 ```typescript
 host.classifyLink(href: string): LinkClassification
@@ -390,12 +376,12 @@ interface LinkClassification {
   kind: 'host-nav' | 'child-nav' | 'external' | 'ignore'
   href: string
   normalizedPath?: string
-  targetPageId?: string  // set when host-nav matched a specific mountRoute
+  targetPageId?: string  // establecido cuando host-nav coincidió con un mountRoute concreto
 }
 ```
 
 ```typescript
-// Classifier-aware anchor handler
+// Manejador de anclas consciente del clasificador
 import { host } from '@wippy-fe/proxy'
 
 document.addEventListener('click', (ev) => {
@@ -407,17 +393,17 @@ document.addEventListener('click', (ev) => {
     ev.preventDefault()
     host.navigate(cls.normalizedPath ?? cls.href)
   }
-  // child-nav / external / ignore: let existing handlers run
+  // child-nav / external / ignore: dejar que se ejecuten los manejadores existentes
 })
 ```
 
-En aplicaciones Vue, sustituya el `RouterLink` de `vue-router` por el `RouterLink` de `@wippy-fe/router`: usa `classifyLink` internamente y sus props son compatibles con el `RouterLink` real.
+Para aplicaciones Vue, reemplace `RouterLink` de `vue-router` por `RouterLink` de `@wippy-fe/router`: usa `classifyLink` internamente y es compatible en props con el `RouterLink` real.
 
 ---
 
 ### `host.handleError(code, error)`
 
-Notifica un error al host para gestionarlo de forma centralizada.
+Informa de un error al host para su gestión centralizada.
 
 ```typescript
 host.handleError(
@@ -426,32 +412,26 @@ host.handleError(
 ): void
 ```
 
-- `'auth-expired'`: activa el flujo de reautenticación del host
-- `'other'`: error general; se registra y, si corresponde, se muestra al usuario
+- `'auth-expired'` — dispara el flujo de reautenticación del host
+- `'other'` — error general; se registra y se muestra al usuario si procede
 
 ```typescript
 try {
   await api.get('/protected-endpoint')
 } catch (error) {
-  // Same-origin 401 responses already trigger the proxy's single-flight
-  // auth-expired flow. Report only application-specific non-auth failures.
-  if ((error as any).response?.status !== 401) {
+  if ((error as any).response?.status === 401) {
+    host.handleError('auth-expired', error as Record<string, unknown>)
+  } else {
     host.handleError('other', error as Record<string, unknown>)
   }
 }
 ```
 
-El proxy añade el bearer token de Wippy a solicitudes del mismo origen e invoca
-una vez el flujo `auth-expired` del host cuando una devuelve 401. Defina
-`skipDefaultAuth: true` solo para una solicitud que eluda deliberadamente ambos
-comportamientos. Las solicitudes cross-origin completamente cualificadas los
-omiten automáticamente para no enviar el token Wippy a otro origen.
-
 ---
 
 ### `host.logout()`
 
-Cierra la sesión del usuario actual.
+Cierra la sesión del usuario actual y la finaliza.
 
 ```typescript
 host.logout(): void
@@ -461,61 +441,59 @@ host.logout(): void
 
 ### `host.bridge`
 
-Mensajería padre-hijo basada en canales cuando la página está integrada en `<w-iframe>`. Consulte [Proxy y aislamiento § Bridge padre-hijo](../web-host/proxy-isolation.md#bridge-padre-hijo) para conocer el protocolo completo.
+Mensajería padre-hijo basada en canales cuando la página está embebida dentro de un `<w-iframe>`. Vea [Proxy y Aislamiento § Puente padre-hijo](../web-host/proxy-isolation.md#parent-child-bridge) para el protocolo completo.
 
 ```typescript
-// Fire-and-forget to parent
+// Sin respuesta hacia el padre
 host.bridge.post(channel: string, payload?: unknown): void
 
-// Request/response (resolves with parent handler's return value)
+// Petición/respuesta (se resuelve con el valor devuelto por el manejador del padre)
 host.bridge.request<T>(
   channel: string,
   payload?: unknown,
   options?: { timeoutMs?: number }
 ): Promise<T>
 
-// Register a handler for incoming messages from parent
+// Registrar un manejador para los mensajes entrantes del padre
 host.bridge.on(
   channel: string,
   handler: (payload: unknown) => unknown | Promise<unknown>
-): () => void  // returns unsubscribe
+): () => void  // devuelve la función de cancelación de suscripción
 ```
 
-Si omite `options.timeoutMs`, `host.bridge.request()` usa un límite predeterminado de 10 segundos (`10000` ms). Al vencer, la promesa rechaza con un `Error` cuyo mensaje es `` Bridge request <id> timed out after <ms>ms ``. Una solicitud a un canal sin handler padre rechaza inmediatamente con `` No handler registered for channel "<channel>" `` en vez de agotar el plazo.
+Si omite `options.timeoutMs`, `host.bridge.request()` usa un plazo por defecto de 10 segundos (`10000` ms). Al agotarse el plazo, la promesa devuelta se rechaza con un `Error` cuyo mensaje es `` Bridge request <id> timed out after <ms>ms ``. Una petición a un canal para el que el padre no tiene manejador se rechaza inmediatamente con `` No handler registered for channel "<channel>" `` en lugar de esperar a que expire el plazo.
 
 ---
 
 ### `host.layout`
 
-Acceso a la API de layout gestionado. Solo está disponible si se define `hostConfig.layout`, es decir, con `fe_mode = managed`. Fuera de ese contexto, `host.layout.snapshot` es `null` y las mutaciones no tienen efecto.
+Acceso a la API de managed-layout. Solo está disponible cuando `hostConfig.layout` está definido (es decir, `fe_mode = managed`). Fuera de ese contexto, `host.layout.snapshot` es `null` y las llamadas de mutación no hacen nada.
 
 ```typescript
 const layout = host.layout
 
-// Read current snapshot
+// Leer el snapshot actual
 if (layout.snapshot) {
   console.log(layout.snapshot.activeBreakpoint)  // 'default' | 'sm' | ...
-  console.log(layout.snapshot.panels)             // panel definition map
-  console.log(layout.snapshot.layouts)            // breakpoint-keyed panel trees
+  console.log(layout.snapshot.panels)             // mapa de definiciones de panel
+  console.log(layout.snapshot.layouts)            // árboles de paneles indexados por breakpoint
 }
 
-// Subscribe to changes (the fresh snapshot is passed to the handler)
+// Suscribirse a los cambios (el snapshot fresco se pasa al manejador)
 import { on } from '@wippy-fe/proxy'
 
-const stopLayoutChanges = on('@layout-change', (snapshot) => {
+on('@layout-change', (snapshot) => {
   console.log(snapshot.activeBreakpoint)
 })
 
-// Call stopLayoutChanges() when the owning page or component tears down.
-
-// Mutations
+// Mutaciones
 layout.resizePanel('right', '40%')
 layout.collapsePanel('nav')
 layout.expandPanel('nav')
 layout.movePanel('right', { relativeTo: 'main', position: 'after' })
 layout.removePanel('right')
-layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} replaces content wholesale
-layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} shallow-merges into existing props
+layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} reemplaza el contenido por completo
+layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} se fusiona superficialmente con las props existentes
 
 layout.addFloating('flap', {
   kind: 'component',
@@ -527,17 +505,17 @@ layout.addFloating('flap', {
 layout.removeFloating('flap')
 layout.closeModal('confirm-discard')
 
-// In-tab bus
-layout.broadcast('open-chat', { token: 'abc' })       // 1:N (sender excluded)
-layout.send('right', 'open-chat', { token: 'abc' })   // 1:1 to named panel
+// Bus dentro de la pestaña
+layout.broadcast('open-chat', { token: 'abc' })       // 1:N (el emisor queda excluido)
+layout.send('right', 'open-chat', { token: 'abc' })   // 1:1 a un panel con nombre
 
 const off = layout.on('open-chat', ({ payload, sourcePanelId, targetPanelId }) => {
-  // handle
+  // gestionar
 })
-off()  // unsubscribe
+off()  // cancelar la suscripción
 ```
 
-Para conocer el modelo completo, consulte [Layout multipanel](../web-host/multi-panel-layout.md).
+Para el modelo completo de managed-layout, vea [Layout Multipanel](../web-host/multi-panel-layout.md).
 
 ---
 
@@ -545,9 +523,9 @@ Para conocer el modelo completo, consulte [Layout multipanel](../web-host/multi-
 
 ### `api`
 
-Una instancia axios preconfigurada con:
-- URL base procedente del entorno de despliegue
-- Inyección automática de `Authorization: Bearer <token>` para solicitudes del mismo origen, salvo `skipDefaultAuth: true`; las solicitudes cross-origin no reciben el token Wippy
+Una instancia de axios preconfigurada con:
+- URL base del entorno de despliegue
+- Inyección automática de `Authorization: Bearer <token>` en cada petición
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -556,7 +534,7 @@ const response = await api.get('/api/v1/users')
 const result   = await api.post('/api/v1/items', { name: 'New item' })
 ```
 
-### Carga de archivos
+### Subida de archivos
 
 ```typescript
 import { api, on } from '@wippy-fe/proxy'
@@ -578,26 +556,21 @@ const response = await api.post('/api/v1/uploads', formData, {
 
 const uploadedUuid = response.data.uuid  // { success: boolean, uuid: string }
 
-// Track processing status via WebSocket. Retain and call the unsubscribe on
-// completion, failure, cancellation, or component teardown.
-const stopUploadStatus = on(`upload:${uploadedUuid}`, (msg) => {
+// Seguir el estado de procesamiento mediante WebSocket
+on(`upload:${uploadedUuid}`, (msg) => {
   // msg.data.status: 'uploaded' | 'completed' | 'error' | 'processing'
 })
 
+// Cancelar una subida en curso
+abort.abort()
 ```
 
-Llame a `abort.abort()` desde la acción de cancelación mientras el POST siga
-pendiente. Un abort después de resolverse la respuesta no puede cancelar una
-carga completada. Llame a `stopUploadStatus()` al llegar a un estado terminal o al desmontar el componente propietario.
-
-La UI integrada de carga del Host rechaza archivos mayores de 100 MB. La
-instancia axios del proxy no impone ese límite; un endpoint o UI hija propios
-deben aplicar sus límites documentados de cliente y servidor.
+Tamaño máximo de archivo: 100 MB.
 
 ### Descarga de archivos
 
 ```typescript
-const response = await api.get(`/api/v1/uploads/${uuid}/download`, {
+const response = await api.get('/api/v1/uploads/{uuid}/download', {
   responseType: 'blob',
 })
 
@@ -609,25 +582,25 @@ a.click()
 URL.revokeObjectURL(url)
 ```
 
-### Consulta de información de carga
+### Obtener información de una subida
 
 ```typescript
-// Paginated list
+// Lista paginada
 const list = await api.get('/api/v1/uploads/list', {
   params: { limit: 10, offset: 0 },
 })
 // list.data.uploads: Array<{ uuid, mime_type, size, status, meta: { filename } }>
 
-// Single upload
+// Subida individual
 const upload = await api.get(`/api/v1/uploads/${uuid}`)
 // upload.data: { uuid, mime_type, size, status, meta: { filename, content_sample? } }
 ```
 
 ### Streaming SSE
 
-La `api` proxy admite streams de eventos enviados por el servidor mediante el adaptador fetch. Úselo para completions LLM token a token, streams de progreso largos o cualquier respuesta `text/event-stream`.
+El `api` del proxy soporta flujos de server-sent events mediante el adaptador fetch. Úselo para completaciones de LLM token a token, flujos de progreso de larga duración o cualquier respuesta `text/event-stream`.
 
-> No use `EventSource` nativo del navegador: no puede adjuntar headers personalizados y, por tanto, no transporta el token `Authorization: Bearer` del proxy.
+> No use el `EventSource` nativo del navegador: no puede adjuntar cabeceras personalizadas y, por tanto, no puede transportar el token `Authorization: Bearer` del proxy.
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -635,7 +608,7 @@ import { api } from '@wippy-fe/proxy'
 const abort = new AbortController()
 
 const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
-  adapter: 'fetch',          // required — the default xhr adapter buffers the full body
+  adapter: 'fetch',          // obligatorio: el adaptador xhr por defecto almacena en búfer el cuerpo completo
   responseType: 'stream',
   headers: { Accept: 'text/event-stream' },
   signal: abort.signal,
@@ -644,16 +617,13 @@ const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
 const reader = (response.data as ReadableStream<Uint8Array>).getReader()
 const decoder = new TextDecoder()
 let buffer = ''
-let endedByMarker = false
 
 try {
-  stream: while (true) {
+  while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-    // SSE permits CRLF. Normalize before looking for blank-line delimiters.
-    buffer = buffer.replace(/\r\n/g, '\n')
 
     while (true) {
       const sep = buffer.indexOf('\n\n')
@@ -668,38 +638,28 @@ try {
 
       if (dataLines.length === 0) continue
       const payload = dataLines.join('\n')
-      if (payload === '[DONE]') {
-        endedByMarker = true
-        break stream
-      }
+      if (payload === '[DONE]') return
 
-      let evt: unknown
       try {
-        evt = JSON.parse(payload)
+        const evt = JSON.parse(payload)
+        handleEvent(evt)
       } catch {
         handleText(payload)
-        continue
       }
-      handleEvent(evt)
     }
   }
 } finally {
-  try {
-    if (endedByMarker) await reader.cancel()
-  } finally {
-    reader.releaseLock()
-  }
+  reader.releaseLock()
 }
+
+// Cancelar el flujo
+abort.abort()
 ```
 
-Llame a `abort.abort()` desde la ruta propietaria de cancelación o teardown
-mientras el bucle de lectura esté activo. Trate el rechazo resultante como
-esperado solo cuando esa ruta lo inició; notifique normalmente los demás fallos.
-
-Para usar el adaptador fetch de forma predeterminada en todas las solicitudes:
+Para que todas las peticiones usen por defecto el adaptador fetch:
 
 ```jsonc
-// In package.json → wippy.configOverrides, or window.__WIPPY_CONFIG_OVERRIDES__
+// En package.json → wippy.configOverrides, o en window.__WIPPY_CONFIG_OVERRIDES__
 {
   "axiosDefaults": { "adapter": "fetch" }
 }
@@ -709,11 +669,11 @@ Para usar el adaptador fetch de forma predeterminada en todas las solicitudes:
 
 ## Superficie
 
-Geometría del área que Web Host asignó a la aplicación. Normalmente **no** es la ventana del navegador —puede ser uno de varios paneles—, así que `window.innerWidth` y las unidades de viewport no son una referencia de dimensionado correcta. Consulte [Portabilidad de superficies](./surface-portability.md) para el contrato y [Migración de superficies](./surface-migration.md) para recetas.
+Geometría del área que el Web Host asignó a esta aplicación. Esa área normalmente **no** es la ventana del navegador — la aplicación puede ser uno de varios paneles — así que `window.innerWidth` y las unidades de viewport no son las magnitudes correctas para dimensionarse. Vea [Portabilidad de Superficie](./surface-portability.md) para el contrato completo y [Migración a Superficie](./surface-migration.md) para recetas de conversión.
 
 ### `host.surface.snapshot`
 
-Geometría actual leída de las mismas propiedades personalizadas calculadas que resuelve el CSS de la aplicación; no puede divergir de lo que ven `@container wippy-surface (…)` y `cqw`.
+Geometría actual, leída de vuelta desde las mismas propiedades personalizadas computadas que resuelve el CSS de la aplicación, de modo que no puede desviarse de lo que ven `@container wippy-surface (…)` y `cqw`.
 
 ```typescript
 const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit } = host.surface.snapshot
@@ -722,15 +682,15 @@ const { contract, revision, engine, sizing, width, widthUnit, height, heightUnit
 | Campo | Tipo | Notas |
 |-------|------|-------|
 | `contract` | `1` | versión del contrato |
-| `revision` | `number` | monotónico; avanza al cambiar la geometría |
-| `engine` | `'iframe' \| 'fragment' \| 'host'` | `host` indica que no se asignó superficie |
+| `revision` | `number` | monótono; avanza cuando cambia la geometría |
+| `engine` | `'iframe' \| 'fragment' \| 'host'` | `host` significa que no se asignó ninguna superficie |
 | `sizing` | `'container' \| 'content'` | |
-| `width` / `widthUnit` | `number` | anchura completa y su 1 %, en píxeles CSS |
-| `height` / `heightUnit` | `number \| null` | `null` con dimensionado por contenido; el eje de bloque no está disponible |
+| `width` / `widthUnit` | `number` | ancho completo, y el 1% de él, en píxeles CSS |
+| `height` / `heightUnit` | `number \| null` | `null` en dimensionado por contenido: el eje de bloque realmente no está disponible |
 
 ### `host.surface.onChange(listener)` → `() => void`
 
-Suscríbase a cambios de geometría. Devuelve una función de cancelación idempotente que **debe** llamarse durante el teardown.
+Se suscribe a los cambios de geometría. Devuelve una función de cancelación idempotente que **debe** llamarse al desmontar.
 
 ```typescript
 const off = host.surface.onChange((snapshot) => {
@@ -742,19 +702,19 @@ const off = host.surface.onChange((snapshot) => {
 
 ```typescript
 if (host.surface.supports('block-size')) {
-  // the block axis is available (container sizing)
+  // el eje de bloque está disponible (dimensionado por contenedor)
 }
 ```
 
-Capacidades: `block-size` y `surface-scroll` se notifican fielmente. `registered-hit-testing`, `native-document-hit-testing` y `owner-visibility` son vocabulario reservado y siempre devuelven `false`.
+Capacidades: `block-size` y `surface-scroll` se responden con veracidad hoy. `registered-hit-testing`, `native-document-hit-testing` y `owner-visibility` son vocabulario reservado y siempre informan `false`.
 
-Prefiera `supports()` a ramificar por `engine`: importa la disponibilidad de una capacidad, no qué motor renderiza.
+Prefiera `supports()` a ramificar según `engine`: lo que importa es si una capacidad está disponible, no qué motor está renderizando.
 
 ### `host.surface.engine` y `host.surface.sizing`
 
-Accesos directos de solo lectura a los mismos valores. `engine: 'host'` significa que el código está montado directamente en el documento host —o bajo el proxy de desarrollo independiente— sin superficie; la instantánea devuelve deliberadamente `width: 0` y `sizing: 'content'`.
+Atajos de solo lectura para los mismos valores del snapshot. `engine: 'host'` significa que el código está montado directamente en el documento del host (o ejecutándose bajo el proxy de desarrollo independiente) sin superficie asignada; el snapshot informa `width: 0` y `sizing: 'content'` por diseño.
 
-`engine` no demuestra de forma fiable si se asignó superficie. Una página integrada mediante `<w-iframe>`/`<w-artifact>` tampoco recibe superficie —los embeds anidados renuncian hasta que exista soporte—, pero devuelve `engine: 'iframe'` con `width: 0`. Compruebe `snapshot.width` cuando importe la distinción.
+`engine` no es una prueba fiable de "se asignó una superficie". Una página embebida mediante `<w-iframe>`/`<w-artifact>` tampoco recibe superficie — los embebidos anidados quedan fuera hasta que llegue el soporte de superficies anidadas — y aun así informa `engine: 'iframe'` con `width: 0`. Compruebe `snapshot.width` cuando esa distinción importe.
 
 ---
 
@@ -762,28 +722,28 @@ Accesos directos de solo lectura a los mismos valores. `engine: 'host'` signific
 
 ### `on(topic, handler)` → `() => void`
 
-`on` se suscribe a eventos de la capa WebSocket del host o a eventos internos del proxy. Devuelve una función de cancelación.
+`on` se suscribe a eventos de la capa de WebSocket del host o a eventos internos del proxy. Devuelve una función de cancelación de suscripción.
 
 ```typescript
 on(topic: string, handler: (event: unknown) => void): () => void
 ```
 
-Los topics usan segmentos separados por dos puntos. `*` es un comodín de un solo segmento. El patrón debe tener el mismo número de segmentos que el topic.
+Los topics usan segmentos separados por dos puntos. `*` es un comodín de un solo segmento. El patrón debe tener el mismo número de segmentos que el topic con el que coincide.
 
 ```typescript
 import { on } from '@wippy-fe/proxy'
 
-// Unsubscribe when done
+// Cancelar la suscripción al terminar
 const unsub = on('session:abc:message:*', (msg) => {
   console.log(msg.data)
 })
 unsub()
 ```
 
-Cada llamada `on()` devuelve una función de cancelación. Llámela siempre al desmontar para evitar fugas. Al descargar un iframe se limpian automáticamente las restantes, pero los componentes que se montan y desmontan dentro de un iframe persistente requieren limpieza explícita.
+Cada llamada a `on()` devuelve una función de cancelación. Llámela siempre cuando el componente se desmonte para evitar fugas. Al descargarse el iframe, las suscripciones restantes se limpian automáticamente, pero la limpieza explícita sigue siendo necesaria para componentes que se montan y desmontan dentro de un iframe de larga vida.
 
 ```typescript
-// Vue Composition API
+// Composition API de Vue
 import { onUnmounted } from 'vue'
 
 const unsub1 = on('session:*:message:*', handler)
@@ -815,72 +775,71 @@ class MyEl extends HTMLElement {
 
 ### Topics integrados
 
-| Topic | Payload del handler | Descripción |
+| Topic | Payload del manejador | Descripción |
 |-------|-----------------|-------------|
-| `@history` | `{ path: string }` | Cambió la URL del Host; se dispara cuando el padre publica otra ruta. |
-| `@visibility` | `boolean` | Cambió la visibilidad iframe/Web Fragment. Los WC directos usan el contrato tipado de visibilidad. |
-| `@theme` | `'auto' \| 'light' \| 'dark'` | Modo aplicado propagado por el Host. |
-| `@message` | Mensaje WS completo | Todos los mensajes WebSocket. Internamente se suscribe a `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
-| `@state-error` | `{ error: string, key?: string }` | Falló el guardado de estado (cuota o serialización). |
-| `@layout-change` | `LayoutSnapshot` | Se actualizó el layout gestionado; se pasa la instantánea nueva. Equivale a leer `host.layout.snapshot`. |
-| `@layout-breakpoint` | `{ name: string, width: number }` | Cambió el breakpoint activo; `name` es el nuevo y `width` su umbral en px. |
+| `@history` | `{ path: string }` | La URL del host cambió (navegación SPA). Se dispara cuando el padre empuja una nueva ruta. |
+| `@visibility` | `boolean` | Cambió la visibilidad del iframe/Web Fragment. Los web components directos usan en su lugar el contrato tipado de visibilidad del host. |
+| `@message` | Mensaje WS completo | Todos los mensajes de WebSocket. Internamente se suscribe a `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
+| `@state-error` | `{ error: string, key?: string }` | Falló una operación de guardado de estado (cuota superada, error de serialización). |
+| `@layout-change` | `LayoutSnapshot` | Se actualizó el snapshot de managed-layout; el snapshot fresco se pasa al manejador. Equivale a leer `host.layout.snapshot`. |
+| `@layout-breakpoint` | `{ name: string, width: number }` | Cambió el breakpoint activo de managed-layout; `name` es el nuevo breakpoint y `width` su umbral (px). |
 
 ### Patrones con comodines
 
 ```typescript
-// Iframe/Web Fragment pages only; direct WCs use useHostVisibility().
-on('@visibility', (visible: boolean) => { /* shown or hidden */ })
+// Solo páginas de iframe/Web Fragment; los WC directos usan useHostVisibility().
+on('@visibility', (visible: boolean) => { /* mostrado u oculto */ })
 
-// All session messages in a specific session
+// Todos los mensajes de una sesión concreta
 on('session:abc-123:message:*', (msg) => { /* ... */ })
 
-// All messages across all sessions
+// Todos los mensajes de todas las sesiones
 on('@message', (msg) => { /* ... */ })
 
-// Topics whose parts contain ':' must be encoded
+// Los topics cuyas partes contienen ':' deben codificarse
 on(`session:${encodeURIComponent('id:with:colons')}:message:*`, handler)
 ```
 
-`@history` se enumera por integridad del protocolo. Las aplicaciones Vue portables deben dejar que `@wippy-fe/router` se suscriba; no añada otro handler de la aplicación.
+`@history` se enumera por completitud del protocolo. Las aplicaciones Vue portables deben dejar que `@wippy-fe/router` se suscriba a él; no añada un segundo manejador propiedad de la aplicación.
 
-Suscribirse varias veces al mismo topic desde un frame es seguro. El proxy deduplica a nivel del host; cada llamada `on()` conserva su cancelación independiente.
+Suscribirse varias veces al mismo topic desde el mismo frame es seguro. El proxy deduplica a nivel de host. Cada llamada a `on()` sigue obteniendo su propia función de cancelación independiente.
 
 ---
 
 ## Estado
 
-### `state`: persistencia clave-valor mediada por el host
+### `state` — persistencia clave-valor entre iframes
 
-`state` proporciona almacenamiento mediado por el host que sobrevive a la destrucción del realm de página. Se limita por UUID de página o artefacto; cada aplicación recibe un namespace aislado.
+`state` proporciona almacenamiento mediado por el host que sobrevive a la destrucción del iframe. El estado está acotado por UUID de página o de artefacto; cada aplicación obtiene un espacio de nombres aislado.
 
-Todos los métodos aceptan `{ scope?: string }` para reemplazar el ámbito predeterminado. Use `scope` cuando varias instancias necesiten depósitos separados.
+Todos los métodos aceptan una opción `{ scope?: string }` para anular el ámbito por defecto. Use `scope` cuando varias instancias del mismo componente necesiten cubos de estado separados.
 
-> **Unicidad del ámbito:** la API `state` transmite los valores sin modificar y deben ser globalmente únicos en la aplicación. `@wippy-fe/pinia-persist` antepone automáticamente `@custom:` a ámbitos personalizados para evitar colisiones con ámbitos del sistema.
+> **Unicidad del ámbito:** los valores de scope los pasa tal cual la API `state` en bruto y deben ser globalmente únicos en toda su aplicación. El plugin `@wippy-fe/pinia-persist` prefija automáticamente los ámbitos personalizados con `@custom:` para evitar colisiones con los ámbitos del sistema.
 
 ```typescript
 import { state } from '@wippy-fe/proxy'
 
-// Write (fire-and-forget; @state-error fires on quota exceeded)
+// Escritura (sin respuesta; @state-error se dispara si se supera la cuota)
 await state.set('filters', { search: 'john', status: 'active' })
 
-// Read (returns null if key not found)
+// Lectura (devuelve null si no se encuentra la clave)
 const filters = await state.get<{ search: string, status: string }>('filters')
 
-// Delete a key
+// Eliminar una clave
 await state.remove('filters')
 
-// Clear all state for this page
+// Limpiar todo el estado de esta página
 await state.clear()
 
-// Read all at once (useful for bulk hydration)
+// Leer todo de una vez (útil para hidratación masiva)
 const all = await state.getAll()
 
-// Custom scope
+// Ámbito personalizado
 await state.set('count', 42, { scope: 'my-widget-instance-1' })
 const count = await state.get<number>('count', { scope: 'my-widget-instance-1' })
 ```
 
-**Firmas de métodos:**
+**Firmas de los métodos:**
 
 ```typescript
 state.get<T = unknown>(key: string, options?: { scope?: string }): Promise<T | null>
@@ -890,24 +849,22 @@ state.clear(options?: { scope?: string }): Promise<void>
 state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 ```
 
-**Patrón recomendado de guardado para iframe/Web Fragment:** guarde al pasar la página a segundo plano, no en cada cambio. Los WC directos usan `useHostVisibility()` para la misma decisión:
+**Patrón de guardado recomendado para iframe/Web Fragment**: guarde cuando la página pase a segundo plano, en lugar de en cada cambio. Los WC directos usan `useHostVisibility()` para la misma decisión de ciclo de vida:
 
 ```typescript
-const stopVisibility = on('@visibility', async (visible) => {
+on('@visibility', async (visible) => {
   if (!visible) {
     await state.set('scrollY', document.documentElement.scrollTop)
     await state.set('formData', currentFormData)
   }
 })
-
-// Call stopVisibility() when the owning page or component tears down.
 ```
 
-**Límites:** 2 MB por página (serializado como JSON, configurable mediante `hostConfig.stateCache`). Vive en memoria del host: sobrevive a recargar el iframe, no a recargar toda la página.
+**Límites:** 2 MB por página (serializado a JSON, configurable por el host mediante `hostConfig.stateCache`). El estado vive en la memoria del host: sobrevive a una recarga del iframe, pero no a una recarga completa de la página del navegador.
 
 ### Integración con Pinia
 
-Para aplicaciones Vue con Pinia, `@wippy-fe/pinia-persist` automatiza la persistencia:
+Para aplicaciones Vue que usan Pinia, `@wippy-fe/pinia-persist` automatiza la persistencia:
 
 ```typescript
 import { createWippyPersist, preloadWippyState } from '@wippy-fe/pinia-persist'
@@ -926,7 +883,7 @@ const useMyStore = defineStore('my-store', () => {
   return { filters }
 }, {
   wippyPersist: true,
-  // or: wippyPersist: { pick: ['filters'], debounce: 500 }
+  // o: wippyPersist: { pick: ['filters'], debounce: 500 }
 })
 ```
 
@@ -936,11 +893,11 @@ const useMyStore = defineStore('my-store', () => {
 
 ### `ws`
 
-`ws` envía órdenes mediante la conexión WebSocket del host. Las respuestas llegan por suscripciones `on()`.
+`ws` envía comandos a través de la conexión WebSocket del host. Las respuestas llegan mediante suscripciones a topics con `on()`.
 
 ### `ws.send(command)`
 
-Envío sin espera. No entrega respuestas; suscríbase primero al topic pertinente.
+Sin respuesta. No hay entrega de respuesta: suscríbase primero al topic pertinente.
 
 ```typescript
 ws.send(command: WsCommand): void
@@ -949,7 +906,7 @@ ws.send(command: WsCommand): void
 ```typescript
 import { ws, on } from '@wippy-fe/proxy'
 
-const stopMessages = on('session:my-session:message:*', (msg) => {
+on('session:my-session:message:*', (msg) => {
   console.log('Response:', msg.data)
 })
 
@@ -961,11 +918,9 @@ ws.send({
 })
 ```
 
-Conserve `stopMessages` y llámelo al desmontar la página o componente; no cancele inmediatamente después de `send()` si aún necesita la respuesta.
-
 ### `ws.sendWithResponse(command)` → `Promise<WsMessage>`
 
-Envía una orden y espera la respuesta correspondiente del servidor. Vence a los 30 segundos.
+Envía un comando y espera la respuesta correspondiente del servidor. Expira a los 30 segundos.
 
 ```typescript
 ws.sendWithResponse(command: WsCommand): Promise<WsMessage>
@@ -981,7 +936,7 @@ console.log('Session opened:', response.data)
 
 ### `ws.sendCommand(sessionId, data)`
 
-Wrapper de conveniencia para órdenes de control de sesión.
+Envoltorio de conveniencia para los comandos de control de sesión.
 
 ```typescript
 ws.sendCommand(sessionId: string, data: { command: string, [key: string]: unknown }): void
@@ -995,13 +950,13 @@ ws.sendCommand('session-uuid', { command: 'agent', name: 'my-agent' })
 
 ---
 
-## Logging
+## Logger
 
 ### `logger`
 
-Logging estructurado que atraviesa los límites hijo-host. Los logs fluyen hijo → host → sitio padre, donde los procesan transports como Sentry, Graylog o consola. El contexto del hijo (`resourceId`, `resourceType`, profundidad) se adjunta automáticamente.
+Registro estructurado que atraviesa los límites de los iframes. Los logs fluyen hijo → host → sitio web padre, donde los transportes (Sentry, Graylog, consola) los procesan. El contexto de cada hijo (`resourceId`, `resourceType`, profundidad de anidamiento) se adjunta automáticamente a cada entrada de log.
 
-Use `logger` en vez de `console.log/error` para lo que deba aparecer en la monitorización de producción.
+Use `logger` en lugar de `console.log/error` para todo lo que quiera que aparezca en la monitorización de producción.
 
 ```typescript
 import { logger } from '@wippy-fe/proxy'
@@ -1014,7 +969,7 @@ logger.error('Failed to save', { endpoint: '/api/save' })
 
 ### `logger.captureException(error, context?)`
 
-Captura y reenvía una excepción. Los errores no gestionados (`window.onerror`, `unhandledrejection`) se capturan automáticamente si `ProxyConfig.injections.errorCapture` es `true`.
+Captura y reenvía una excepción. Los errores no gestionados (`window.onerror`, `unhandledrejection`) se capturan automáticamente cuando `ProxyConfig.injections.errorCapture` es `true`.
 
 ```typescript
 try {
@@ -1027,25 +982,25 @@ try {
 ### Breadcrumbs y contexto
 
 ```typescript
-// Breadcrumbs attach to the next exception for debugging context
+// Los breadcrumbs se adjuntan a la siguiente excepción como contexto de depuración
 logger.addBreadcrumb({ category: 'navigation', message: 'Navigated to /settings' })
 logger.addBreadcrumb({ category: 'ui', message: 'Clicked Save button' })
 
-// Persistent context — attached to all subsequent logs from this child
+// Contexto persistente: se adjunta a todos los logs posteriores de este hijo
 logger.setContext('user', { id: 'user-123', role: 'admin' })
 
-// Tags — key/value pairs for filtering and search
+// Tags: pares clave/valor para filtrado y búsqueda
 logger.setTag('version', '1.2.0')
 logger.setTag('feature', 'dashboard')
 ```
 
 ---
 
-## Componentes web
+## Web Components
 
 ### `loadByTagName(tagName, options?)` → `Promise<void>`
 
-Carga y registra un componente web peer mediante su etiqueta HTML. Resuelve después de `customElements.define`; entonces es seguro llamar a `document.createElement(tagName)`. Si tiene éxito, añade automáticamente la etiqueta a la allowlist de `sanitize`.
+Carga y registra un web component par por su nombre de etiqueta HTML. Se resuelve después de que se dispare `customElements.define`: es seguro llamar a `document.createElement(tagName)` inmediatamente después. La etiqueta se añade automáticamente a la lista de permitidos de `sanitize` en caso de éxito.
 
 ```typescript
 import { loadByTagName } from '@wippy-fe/proxy'
@@ -1053,15 +1008,15 @@ import { loadByTagName } from '@wippy-fe/proxy'
 await loadByTagName('wc-thread-picker')
 await loadByTagName('wc-slow-pkg', { timeoutMs: 60_000 })
 
-// Safe to use immediately
+// Seguro de usar inmediatamente
 document.body.appendChild(document.createElement('wc-thread-picker'))
 ```
 
-`options.timeoutMs` sustituye el límite predeterminado de 30 segundos para esperar `customElements.define` tras añadir el script. Expone componentes bloqueados o rotos —404, error de análisis o falta de `define`— como rechazo, no como espera indefinida.
+`options.timeoutMs` anula el plazo por defecto de 30 segundos de espera de `customElements.define` tras añadir el script. Expone los componentes bloqueados o rotos (404, error de análisis, falta la llamada a `define`) como un rechazo en lugar de un bloqueo indefinido.
 
 ### `loadWebComponent(componentId, tagName?)` → `Promise<void>`
 
-Carga un componente web mediante su id de artefacto del registro Wippy, no mediante su etiqueta. Resulta útil cuando el id procede de configuración o de una respuesta backend.
+Carga un web component por su id de artefacto en el registry de Wippy en lugar de por su nombre de etiqueta. Útil cuando tiene un id de registry procedente de un valor de configuración o de una respuesta del backend.
 
 ```typescript
 import { loadWebComponent } from '@wippy-fe/proxy'
@@ -1069,9 +1024,9 @@ import { loadWebComponent } from '@wippy-fe/proxy'
 await loadWebComponent('wippy.components:my-chart')
 ```
 
-### Loader por escaneo del DOM (`<script type="wippy-components-loader">`)
+### Cargador por escaneo del DOM (`<script type="wippy-components-loader">`)
 
-Para páginas que necesitan varios componentes, el proxy busca estas etiquetas al iniciar y carga cada entrada mediante `loadWebComponent`:
+Para las páginas que necesitan varios componentes, el proxy busca estas etiquetas de script en la inicialización y carga cada entrada mediante `loadWebComponent`:
 
 ```html
 <script type="wippy-components-loader">
@@ -1079,7 +1034,7 @@ Para páginas que necesitan varios componentes, el proxy busca estas etiquetas a
 </script>
 ```
 
-Aplica la misma deduplicación y actualización automática de allowlist que `loadByTagName`.
+Mismo comportamiento de deduplicación y de actualización automática de la lista de permitidos que `loadByTagName`.
 
 ---
 
@@ -1087,7 +1042,7 @@ Aplica la misma deduplicación y actualización automática de allowlist que `lo
 
 ### `sanitize(html, options?)` → `string`
 
-Sanitizador HTML con allowlist predeterminada limitado al contexto proxy actual. Combina los valores de renderizado de chat (`<p>`, `<a>`, `<code>`, `<table>`, etc.) con todas las etiquetas de componentes web registradas actualmente.
+Sanitizador de HTML con lista de permitidos por defecto, acotado al contexto de proxy actual. Combina los valores por defecto del renderizado de chat (`<p>`, `<a>`, `<code>`, `<table>`, etc.) con todas las etiquetas de web components registradas actualmente en este runtime.
 
 ```typescript
 import { sanitize, loadByTagName } from '@wippy-fe/proxy'
@@ -1095,20 +1050,20 @@ import { sanitize, loadByTagName } from '@wippy-fe/proxy'
 const safe = sanitize('<p>hi</p><script>alert(1)</script>')
 // → '<p>hi</p>'
 
-// After loadByTagName, the tag is automatically allowed:
+// Después de loadByTagName, la etiqueta se permite automáticamente:
 await loadByTagName('wc-thread-picker')
 sanitize('<wc-thread-picker thread-id="42"></wc-thread-picker>')
 // → '<wc-thread-picker thread-id="42"></wc-thread-picker>'
 
-// One-off extra tags
+// Etiquetas extra puntuales
 sanitize(dialogBody, { extraTags: { 'iconify-icon': ['icon'] } })
 ```
 
-`sanitize` vuelve a leer la allowlist en cada llamada, por lo que incluye etiquetas registradas después del import.
+`sanitize` vuelve a leer la lista de etiquetas permitidas en cada llamada, así que las etiquetas registradas después de la importación también se recogen.
 
 ### `html.inject(sourceHtml, options)` → `Promise<string>`
 
-Aplica la transformación de HTML fuente a srcdoc sin montar un elemento. Prefiera `<w-iframe>` para uso normal; úselo solo al construir infraestructura de alojamiento propia.
+Aplica la transformación de HTML fuente a srcdoc sin montar un elemento. Prefiera `<w-iframe>` para el uso normal; use esto solo cuando construya infraestructura de alojamiento a medida.
 
 ```typescript
 import { html } from '@wippy-fe/proxy'
@@ -1123,17 +1078,17 @@ const processed = await html.inject(sourceHtml, {
 
 ---
 
-## Overrides de configuración
+## Anulaciones de configuración
 
-Las páginas pueden sustituir determinados campos orientados a hijos por página sin otro despliegue. La forma sigue usando `customization` por compatibilidad, y el host proyecta los valores en el resultado hijo `theming.global` antes de entregar la configuración `wippy-context-2.0`.
+Las páginas pueden anular campos seleccionados de la configuración orientada a hijos por página, sin un despliegue aparte. La forma de la anulación sigue usando `customization` por compatibilidad, y el host proyecta esos valores en el resultado actual de `theming.global` del hijo antes de que la página reciba la configuración `wippy-context-2.0`.
 
-### Definición de overrides
+### Establecer anulaciones
 
-**Páginas del registro (recomendado):** defina `meta.config_overrides` en el `_index.yaml`. El host lo incluye en la respuesta de la API de contenido y lo inyecta automáticamente.
+**Páginas del registry (recomendado):** establezca `meta.config_overrides` en el `_index.yaml` de la página. El host lo incluye en la respuesta de la API de contenido y lo inyecta automáticamente.
 
-**Paquetes independientes:** defina `wippy.configOverrides` en `package.json`.
+**Paquetes independientes:** establezca `wippy.configOverrides` en el `package.json` de la página.
 
-**Manual o pruebas:** defina `window.__WIPPY_CONFIG_OVERRIDES__` en una etiqueta `<script>` ejecutada antes de `proxy.js`.
+**Manual / pruebas:** establezca `window.__WIPPY_CONFIG_OVERRIDES__` en una etiqueta `<script>` que se ejecute antes que `proxy.js`.
 
 ```typescript
 window.__WIPPY_CONFIG_OVERRIDES__ = {
@@ -1146,18 +1101,18 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 }
 ```
 
-### Reglas de combinación
+### Reglas de fusión
 
-| Campo | Comportamiento |
+| Campo | Comportamiento de fusión |
 |-------|---------------|
-| `cssVariables` | **Sustituye** los valores del host; la página proporciona su tema |
-| `customCSS` | **Sustituye** el valor del host |
-| `iconSets` | Se **combina** de forma aditiva |
-| `axiosDefaults` | **Combinación profunda** |
-| `routePrefix` | **Se sustituye** |
-| `apiRoutes` | **Combinación profunda** |
+| `cssVariables` | **Reemplaza** los valores del host: la página aporta su propio tema |
+| `customCSS` | **Reemplaza** el valor del host |
+| `iconSets` | **Fusionado** de forma aditiva |
+| `axiosDefaults` | **Fusión profunda** |
+| `routePrefix` | **Reemplazado** |
+| `apiRoutes` | **Fusión profunda** |
 
-Cada hijo anidado que integra la página —`<w-iframe>`, `<w-artifact>` y contenido `html.inject`— se construye desde su configuración ya combinada y la hereda recursivamente. Los overrides, especialmente de tema, se propagan a todo el subárbol.
+Cada hijo anidado que la página embebe — `<w-iframe>`, `<w-artifact>` y contenido `html.inject` — se construye a partir de la configuración ya fusionada de la página y la hereda automáticamente, de forma recursiva por todo el subárbol. Así, las anulaciones de una página (especialmente las de tema) se propagan a todo lo que hay por debajo de ella, no solo a la propia página.
 
 ---
 
@@ -1165,7 +1120,7 @@ Cada hijo anidado que integra la página —`<w-iframe>`, `<w-artifact>` y conte
 
 ### `installVueWarnSuppressor(app)`
 
-Disponible en la familia coherente actual de `@wippy-fe/proxy`. Silencia `[Vue warn]: Failed to resolve component: foo-bar` para etiquetas registradas mediante `customElements.define(...)`, no `app.component(...)`. El compilador de plantillas de Vue avisa sobre etiquetas que desconoce aunque se rendericen correctamente.
+Disponible en la familia coherente actual de `@wippy-fe/proxy`. Silencia `[Vue warn]: Failed to resolve component: foo-bar` para las etiquetas registradas mediante `customElements.define(...)` en lugar de `app.component(...)`. El compilador de plantillas de Vue emite estas advertencias para las etiquetas de web components que no reconoce: los elementos se renderizan correctamente, pero la consola se llena de ruido.
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/proxy'
@@ -1178,22 +1133,22 @@ app.use(router)
 app.mount('#app')
 ```
 
-Suprime:
+Qué suprime:
 
-- Etiquetas ya registradas mediante `customElements.define(...)`: etiquetas del sistema (`w-iframe`, `w-artifact`, `wippy-loading`, `wippy-error`) y las registradas por autoload (`loadByTagName`, scanner).
-- Etiquetas que cumplen la forma de nombre de elemento personalizado (`^[a-z][a-z0-9]*-[a-z0-9-]*$`) aún no registradas; cubre la carrera donde Vue renderiza antes del script de autoload.
+- Etiquetas ya registradas mediante `customElements.define(...)`: etiquetas del sistema (`w-iframe`, `w-artifact`, `wippy-loading`, `wippy-error`) y toda etiqueta registrada por el pipeline de autocarga (`loadByTagName`, escáner).
+- Etiquetas que coinciden con la forma de nombre de elemento personalizado (`^[a-z][a-z0-9]*-[a-z0-9-]*$`) que aún no están registradas: cubre la ventana de carrera en la que Vue renderiza antes de que llegue el script de autocarga.
 
-Sigue avisando sobre:
+Qué sigue advirtiendo:
 
-- **Errores de escritura en componentes PascalCase** (`<UsreCard />`). No coinciden con el patrón kebab y `customElements.get` devuelve `undefined`, por lo que llegan a consola y conservan la señal de errores reales.
+- **Erratas en componentes PascalCase** (`<UsreCard />`). El supresor no los hace coincidir con el patrón kebab y `customElements.get` devuelve `undefined`, así que pasan a la consola, preservando la señal que distingue los bugs reales del ruido.
 
-La función es idempotente: otra llamada sobre la misma `app` no hace nada. Se coloca un marcador `Symbol.for('@wippy-fe/proxy/vue-warn-suppressor-installed')` en `app.config`, exportado como `VUE_WARN_SUPPRESSOR_INSTALLED_MARKER` para setups que deban borrarlo entre recargas.
+La función es idempotente: una segunda llamada sobre la misma `app` no hace absolutamente nada. Se planta un marcador `Symbol.for('@wippy-fe/proxy/vue-warn-suppressor-installed')` en `app.config`; el marcador se exporta como `VUE_WARN_SUPPRESSOR_INSTALLED_MARKER` para configuraciones de pruebas que necesiten limpiarlo entre recargas.
 
-Si ya existía un `warnHandler`, se conserva como `previous` y se llama para avisos no silenciados.
+Si ya había un `warnHandler` instalado, se conserva como `previous` y se llama para las advertencias que el supresor no silencia.
 
 ### `createAppRouter(routes, options?)` de `@wippy-fe/router`
 
-Factory de router en memoria para aplicaciones `view.page` en ambos motores. Proporciona historial en memoria, sincronización `afterEach` con el host y suscripción `@history`:
+Factory canónica de router en memoria para subaplicaciones srcdoc. Sustituye el código repetitivo que todas las subaplicaciones duplican actualmente (historial en memoria, sincronización de ruta con el host mediante `afterEach`, suscripción a `@history`):
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'
@@ -1210,17 +1165,17 @@ app.use(router)
 
 ## Componentes de carga y error
 
-Dos componentes web se registran automáticamente mediante `loading.js`, inyectado antes de `proxy.js`. No requieren imports ni registro manual.
+Dos web components se registran automáticamente mediante `loading.js` (inyectado antes que `proxy.js`). No hacen falta importaciones ni registro manual.
 
 ### `<wippy-loading>`
 
-Spinner de carga a pantalla completa con colores del tema.
+Spinner de carga a pantalla completa con colores adaptados al tema.
 
 | Atributo | Descripción |
 |-----------|-------------|
-| `title` | Texto principal, por ejemplo "Loading..." |
+| `title` | Texto principal (p. ej., "Loading...") |
 | `subtitle` | Texto secundario |
-| `no-bg` | Boolean; fondo transparente para overlays |
+| `no-bg` | Booleano: fondo transparente para uso como overlay |
 
 ```html
 <wippy-loading title="Loading..." subtitle="Please wait"></wippy-loading>
@@ -1229,24 +1184,24 @@ Spinner de carga a pantalla completa con colores del tema.
 
 ### `<wippy-error>`
 
-Error a pantalla completa con color según severidad.
+Presentación de error a pantalla completa con coloreado según la severidad.
 
-| Atributo | Valores | Predeterminado |
+| Atributo | Valores | Por defecto |
 |-----------|--------|---------|
-| `title` | Cualquier string | "Something went wrong" |
-| `message` | Cualquier string | vacío |
+| `title` | Cualquier cadena | "Something went wrong" |
+| `message` | Cualquier cadena | (vacío) |
 | `icon` | `circle`, `triangle`, `sad` | `circle` |
 | `severity` | `danger`, `warning` | `danger` |
-| `no-bg` | Boolean | ausente |
+| `no-bg` | Booleano | (ausente) |
 
 ```html
 <wippy-error title="Failed to load" message="Server returned 500" severity="danger"></wippy-error>
 <wippy-error title="Connection Lost" message="Retrying..." icon="triangle" severity="warning"></wippy-error>
 ```
 
-Ambos usan Shadow DOM con variables CSS de `@wippy-fe/theme` e incluyen fallbacks fijos para contextos anteriores al tema.
+Ambos componentes usan Shadow DOM con variables CSS de `@wippy-fe/theme` e incluyen fallbacks codificados para contextos previos al tema.
 
-**Patrón recomendado para páginas HTML sin framework:**
+**Patrón recomendado para páginas HTML vanilla:**
 
 ```html
 <body>
@@ -1258,7 +1213,7 @@ Ambos usan Shadow DOM con variables CSS de `@wippy-fe/theme` e incluyen fallback
 
     async function init() {
       try {
-        // fetch data, set up page...
+        // obtener datos, preparar la página...
         document.getElementById('loader').remove()
         document.getElementById('content').style.display = 'block'
       } catch (error) {
@@ -1273,7 +1228,7 @@ Ambos usan Shadow DOM con variables CSS de `@wippy-fe/theme` e incluyen fallback
 </body>
 ```
 
-**Vue 3: entrada `app.html`:**
+**Vue 3 — punto de entrada `app.html`:**
 ```html
 <div id="app">
   <wippy-loading title="Loading..."></wippy-loading>
@@ -1281,4 +1236,4 @@ Ambos usan Shadow DOM con variables CSS de `@wippy-fe/theme` e incluyen fallback
 <script type="module" src="./src/app.ts"></script>
 ```
 
-Cuando Vue se monta en `#app`, sustituye automáticamente `<wippy-loading>`.
+Cuando Vue se monta en `#app`, reemplaza automáticamente el elemento `<wippy-loading>`.

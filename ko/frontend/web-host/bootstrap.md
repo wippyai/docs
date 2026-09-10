@@ -1,120 +1,115 @@
 ---
-title: "Bootstrap 순서"
-description: "Web Host가 AppConfig를 받고 store, 라우팅, 테마, 렌더링, 실시간 서비스를 초기화하는 방식입니다."
+title: "부트스트랩 시퀀스"
+description: "웹 호스트는 설정을 받은 뒤 어떤 UI도 렌더링하기 전에 고정된 초기화 시퀀스를 실행합니다. 이 시퀀스는 다음에 따라 약간 달라집니다…"
 ---
 
-# Bootstrap 순서
+# 부트스트랩 시퀀스
 
-이 페이지는 lifecycle 및 구성 참조입니다. 순서 다이어그램은 Host 초기화를 설명하며 복사할 애플리케이션 bootstrap 코드가 아닙니다.
+웹 호스트는 설정을 받은 뒤 어떤 UI도 렌더링하기 전에 고정된 초기화 시퀀스를 실행합니다. 이 시퀀스는 웹 호스트가 페이지를 인수하는 JS 모듈로 로드되었는지(표준 파사드 경로) iframe 안에서 실행되는지(수동, 파사드 없는 경로)에 따라 약간 달라지지만, 설정을 사용할 수 있게 된 이후의 내부 단계는 동일합니다.
 
-Web Host는 구성을 받은 뒤 전체 인터페이스를 렌더링하기 전에 고정된 초기화 순서를 실행합니다. 구성은 페이지를 장악하는 JS 모듈 또는 수동으로 삽입한 iframe을 통해 도착합니다. 구성을 사용할 수 있게 된 뒤 내부 단계는 동일합니다.
+## 경로 A — JS 모듈 (표준, 파사드 경로)
 
-## 경로 A — JS 모듈(표준 facade 경로)
+현재 `wippy/facade`가 사용하는 경로입니다. 파사드는 웹 호스트 JS 모듈 엔트리 — **compat** 모드는 `module.js`, **managed** 모드는 `managed-layout.js` — 를 로드하는 페이지를 서빙하고, 그 모듈이 페이지 전체와 브라우저 히스토리를 인수합니다.
 
-현재 `wippy/facade`가 이 경로를 사용합니다. **compat** 모드에서는 `module.js`, **managed** 모드에서는 `managed-layout.js`라는 Web Host JS 모듈 엔트리를 불러오는 페이지를 제공합니다. 모듈은 페이지와 브라우저 history를 장악합니다.
+1. **페이지가 모듈을 로드합니다.** 스크립트가 페이지의 `window`에 `window.initWippyApp`을 등록합니다.
 
-1. **페이지가 모듈을 불러옵니다.** script가 페이지 `window`에 `window.initWippyApp`을 등록합니다.
-
-2. **페이지가 `AppConfig`를 조립하고 `initWippyApp(appConfig, rootContainer?)`를 호출합니다.** shell이 `/facade/config`를 가져오고 `@wippy_token_info` localStorage 엔트리에서 bearer 토큰을 읽으며 `$schema`, `auth`, `context`를 추가하고 지원되는 응답 필드를 전달합니다. PostMessage handshake는 없습니다.
+2. **페이지가 `initWippyApp(config, rootContainer?)`를 호출합니다.** 페이지는 `/facade/config`를 이미 가져왔고 그 페이로드를 함수 인자로 직접 전달합니다. PostMessage 핸드셰이크는 없습니다.
    ```javascript
-   const events = window.initWippyApp(appConfig, '#app')
+   const events = window.initWippyApp(config, '#app')
    events.on('ready', () => console.log('App ready'))
    ```
 
-3. **초기화가 진행됩니다.** 아래 [내부 Init 순서](#내부-init-순서)를 참고하십시오.
+3. **초기화가 진행됩니다** — 아래 [내부 초기화 시퀀스](#internal-init-sequence)를 참고하세요.
 
-## 경로 B — Iframe(수동, facade 없음)
+## 경로 B — Iframe (수동, 파사드 없음)
 
-더 강한 격리와 부분 페이지 렌더링을 위해 전체 호스트를 iframe 안에 삽입할 때 이 경로를 사용합니다. `iframe.html?waitForCustomConfig`를 불러오고 `SetConfig` PostMessage를 통해 구성을 받습니다. 현재 facade는 이 삽입 방식을 만들지 않습니다.
+전체 호스트를 직접 iframe 안에 임베드할 때 — 더 강한 격리가 필요한 부분 페이지 임베딩을 위해 — 취하는 경로입니다. `iframe.html?waitForCustomConfig`를 로드하고 `SetConfig` PostMessage로 설정을 받습니다. 현재 파사드는 이를 만들지 않으며, 수동 삽입을 위해 존재합니다.
 
-1. **Iframe이 로드됩니다.** Web Host가 브라우저에서 로드됩니다. URL에 `?waitForCustomConfig`가 있으므로 앱은 최소 skeleton을 마운트하고 일시 중지됩니다. 아직 인증 토큰을 읽거나 API endpoint를 호출하지 않습니다.
+1. **iframe이 로드됩니다.** 웹 호스트가 브라우저에 로드됩니다. URL에 `?waitForCustomConfig`가 있으므로 앱은 최소한의 스켈레톤을 마운트하고 대기합니다 — 아직 인증 토큰을 읽거나 API 엔드포인트를 호출하지 않습니다.
 
-2. **부모가 `SetConfig`를 보냅니다.** 부모는 완전한 `AppConfig`를 제공합니다. `/facade/config` 응답에서 배포 설정을 얻을 수 있지만 응답하기 전에 부모가 `$schema`, `auth`, `context`를 추가해야 합니다.
+2. **부모가 `SetConfig`를 보냅니다.** 부모는 `/facade/config`를 가져왔거나(또는 동등한 페이로드를 제공하고) PostMessage로 전달합니다:
    ```javascript
    iframe.contentWindow.postMessage(
-     JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
-     cfg.iframe_origin
+     { type: '@gen2-chat', action: 'set-config', ...configPayload },
+     config.iframe_origin
    )
    ```
 
-3. **Web Host가 `AppConfig`를 받습니다.** 메시지 handler가 envelope type과 action을 검증한 뒤 구성 객체를 추출합니다. Web Host 1.0.56에서 inbound handler는 `event.origin`이나 `event.source`를 인증하지 않으며 이후 일치하는 `SetConfig`가 구성을 교체할 수 있습니다. 부모는 iframe에 메시지를 보낼 수 있는 주체를 제한하고 전체 메시지 환경을 신뢰 영역으로 취급해야 합니다. iframe DOM 및 스타일 격리가 구성 권한 격리를 의미하지는 않습니다.
+3. **웹 호스트가 `AppConfig`를 받습니다.** 메시지 핸들러가 엔벨로프 타입과 액션을 검증한 뒤 전체 설정 객체를 추출합니다.
 
-4. **초기화가 진행됩니다.** 이 시점부터 내부 경로는 경로 A와 동일합니다.
+4. **초기화가 진행됩니다** — 이 시점 이후 내부 경로는 경로 A와 동일합니다.
 
-## 내부 Init 순서
+## 내부 초기화 시퀀스
 
-어느 경로로든 `AppConfig`를 사용할 수 있게 되면 Web Host가 다음 시작 순서를 실행합니다.
+`AppConfig`를 사용할 수 있게 되면(어느 경로든), 웹 호스트는 다음 단계를 순서대로 실행합니다:
 
-**1. 구성을 해석하고 정규화합니다.** `resolveConfig()`가 제공된 구성을 초기화하고 병합하며 schema migration을 적용하고 session 정책을 정규화한 뒤 나머지 Host가 사용하는 구성·인증·환경 상태를 채웁니다.
+**1. Pinia 스토어 초기화.**
+루트 Pinia 인스턴스가 생성되고 모든 스토어 모듈이 등록됩니다. 인증 상태는 `AppConfig.auth`에서 로드되며, 토큰은 메모리에 저장됩니다(또는 `hostConfig.session.type = 'cookie'`이면 쿠키에). `AppConfig.env`의 환경 URL은 Axios와 WebSocket 클라이언트가 사용하도록 스토어에 기록됩니다.
 
-**2. 백엔드 페이지 경로를 가져옵니다.** Vue 애플리케이션을 만들거나 마운트하기 전에 Host는 `GET /api/public/pages/routes`를 기다립니다. 백엔드 구문 오류 또는 중복 경로 오류는 시작을 중단하고 Host 오류 경로로 전달됩니다. 마운트 후 경로를 설치하는 단계가 아닙니다.
+**2. Axios 설정.**
+Axios 인스턴스는 `APP_API_URL`을 `baseURL`로 하고 인증 토큰을 기본 헤더로 주입하여 구성됩니다. 설정의 `axiosDefaults`가 있으면 병합됩니다. 이 인스턴스가 자식 iframe이 프록시 API를 통해 받는 그 인스턴스입니다.
 
-**3. 애플리케이션과 router를 만듭니다.** Vue 애플리케이션을 생성합니다. router는 `AppConfig.hostConfig.history`의 history 모드를 사용하며 애플리케이션을 마운트하기 전에 정적 시스템 경로와 백엔드 마운트 경로를 모두 등록합니다.
+**3. Vue Router 초기화.**
+라우터는 `AppConfig.hostConfig.history`(`"hash"` 또는 `"browser"`)에 지정된 히스토리 모드로 생성됩니다. 시스템 라우트(`/c/:id`, `/chat/:id`, `/keeper/:id` 등)가 등록됩니다. 이는 정적 집합이며, 동적 마운트 라우트는 이후 단계에서 추가됩니다.
 
-**4. 애플리케이션 provider를 설치합니다.** `setupApp()`이 Pinia를 설치하고 Axios와 인증을 구성하며 PrimeVue 및 테마 provider와 나머지 애플리케이션 서비스를 연결합니다. 자식 애플리케이션은 proxy 계층을 통해 구성된 API surface를 받습니다.
+**4. PrimeVue 및 테마 주입.**
+PrimeVue가 Vue 앱에 설치됩니다. `AppConfig.theming.global`과 `AppConfig.theming.host`의 CSS 커스텀 프로퍼티가 해당 스코프에 대한 `:root { --key: value; }` 오버라이드로 주입됩니다. `theming.global`과 `theming.host`의 `customCSS` 문자열은 `<style>` 태그로 주입되고, `theming.global` / `theming.host`의 아이콘은 Iconify에 등록됩니다. 이 단계는 앱이 마운트되기 전에 적용되므로 첫 렌더링부터 올바른 테마가 적용됩니다.
 
-**5. 마운트하고 현재 URL을 해석합니다.** 구성, 경로 로드, router 생성, provider 설정이 완료된 뒤에만 모듈 엔트리가 `App.vue`를 마운트합니다. 이후 router가 완전한 경로 table에서 현재 브라우저 또는 hash URL을 해석합니다.
+**5. Vue 앱 마운트.**
+루트 `App.vue` 컴포넌트가 DOM에 마운트됩니다. 이 시점에 사용자는 크롬 — 사이드바, 채팅 패널, 레이아웃 스켈레톤 — 을 보게 되며, 페이지 콘텐츠는 아직 로딩 중일 수 있습니다.
 
-**6. 요청될 때 WebSocket client를 만듭니다.** WebSocket 설정은 고정된 마지막 bootstrap 단계가 아니라 소비자 주도입니다. 소비 컴포넌트 또는 composable이 요청하면 `useWsClientRaw()`가 client를 만듭니다. `hostConfig.lazyWS`가 true가 아니면 연결은 즉시 시작되고, lazy 모드에서는 subscription이 요구할 때 시작됩니다.
+**6. 동적 라우트 등록.**
+앱이 `GET /api/public/pages/routes`를 호출해 등록된 뷰 페이지 목록을 가져옵니다. 레지스트리 엔트리가 `mountRoute`를 선언한 각 페이지에 대해 `router.addRoute('app', ...)`를 호출하여 살아 있는 라우터에 라우트를 추가합니다. 이름 있는 `app` 라우트는 모든 콘텐츠를 감싸는 부모 레이아웃 라우트입니다.
+
+이 단계에서 마운트 라우트 충돌(중복 경로, 예약 세그먼트, 잘못된 구문)이 있으면 pages 스토어에 치명적 오류가 설정됩니다. `App.vue`가 이를 감지하여 정상 UI 대신 설명이 담긴 전체 화면 `<wippy-error>`를 렌더링합니다.
+
+**7. URL 해석.**
+라우터가 현재 URL을 해석합니다(브라우저 히스토리 모드에서는 `window.location`에서, 해시 모드에서는 해시에서). URL이 시스템 라우트나 등록된 마운트 라우트와 일치하면 해당 페이지가 렌더링됩니다. 어떤 라우트와도 일치하지 않으면 라우터는 채팅 홈 뷰로 폴백합니다.
+
+**8. WebSocket 연결.**
+WebSocket 클라이언트가 인증 토큰을 사용해 `APP_WEBSOCKET_URL`에 연결합니다. 실시간 이벤트(수신 메시지, 세션 업데이트, 아티팩트 상태 변경)가 흐르기 시작합니다. 연결은 페이지의 수명 동안 유지됩니다.
 
 ## AppConfig TypeScript 인터페이스
 
-다음 축약 선언은 `initWippyApp`과 `SetConfig`가 받는 주요 구성 필드를 보여 줍니다. 보조 유형과 덜 쓰이는 필드는 고정된 Web Host의 `app-config/types.ts`가 계속 권위 있습니다. 이 발췌를 제공 schema의 대체물로 취급하지 마십시오. `AppConfig`에는 `feature` 또는 `fe_mode` 필드가 없습니다. `fe_mode`는 모듈 엔트리를 선택하는 facade 요구 parameter이고 managed 모드는 `hostConfig.layout`을 통해 전달됩니다.
+`initWippyApp`과 `SetConfig`가 모두 받는 전체 설정 타입입니다. `AppConfig`에는 `feature` 필드도 `fe_mode` 필드도 없다는 점에 유의하세요 — `fe_mode`는 모듈 엔트리를 선택하는 파사드 요구 사항 파라미터이며, managed 모드는 `hostConfig.layout`을 통해 호스트에 전달됩니다:
 
 ```typescript
 interface AppConfig {
-  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.0.xsd
+  $schema: 'wippy-context-2.0'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: ApiRoutesOverride
-  tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
-  themeMode?: 'auto' | 'light' | 'dark'
+  tanstack?: TanstackConfig    // TanStack Query 기본값 (전역 + 역할 기반 카테고리별)
   theming: AppTheming
   hostConfig: HostConfig
   context: AppContext
 }
 
 interface AppAuthConfig {
-  token: string            // Bearer token
-  expiresAt: string        // ISO 8601 expiry timestamp
+  token: string            // Bearer 토큰
+  expiresAt: string        // ISO 8601 만료 타임스탬프
 }
 
 interface AppEnv {
   APP_API_URL: string
   APP_AUTH_API_URL: string
   APP_WEBSOCKET_URL: string
+  [key: string]: string | undefined
 }
 
 interface AppTheming {
   global?: ThemingScope
-  host?: HostThemingScope
-  children?: ChildrenThemingScope
-}
-
-interface CssVariablesMap {
-  [key: string]: string | Record<string, string> | undefined
-  '@dark'?: Record<string, string>
-  '@light'?: Record<string, string>
+  host?: ThemingScope
+  children?: ThemingScope
 }
 
 interface ThemingScope {
   customCSS?: string
-  cssVariables?: CssVariablesMap
-  fonts?: FontConfig[]
+  cssVariables?: Record<string, string>
   icons?: Record<string, unknown>
   iconSets?: Record<string, Record<string, unknown>>
-}
-
-interface HostThemingScope extends ThemingScope {
-  i18n?: Partial<I18NTextTypes>
-}
-
-interface ChildrenThemingScope {
-  customCSS?: string
-  cssVariables?: CssVariablesMap
-  fonts?: FontConfig[]
 }
 
 interface HostConfig {
@@ -126,11 +121,9 @@ interface HostConfig {
   hideNavBar?: boolean
   disableRightPanel?: boolean
   hideSessionSelector?: boolean
-  renderEngine?: 'iframe' | 'fragment'
-  lazyWS?: boolean
   additionalNavItems?: PageApi.Page[]
   stateCache?: { maxPages?: number; maxSizePerPage?: number }
-  allowAdditionalTags?: Record<string, string[]>   // tag → allowed attributes
+  allowAdditionalTags?: Record<string, string[]>   // 태그 → 허용 어트리뷰트
   chat?: {
     convertPasteToFile?: {
       enabled: boolean
@@ -141,16 +134,16 @@ interface HostConfig {
   layout?: HostLayoutDeclaration
 }
 
-// TanStack Query defaults. A top-level field (shared by host + children, like
-// apiRoutes). Default behavior (no config) is refetchOnWindowFocus: false so
-// alt-tabbing back doesn't reload in-flight content.
+// TanStack Query 기본값. 최상위 필드이며 호스트와 자식이 공유합니다
+// (apiRoutes와 동일). 설정이 없을 때의 기본 동작은 refetchOnWindowFocus: false로,
+// 다른 탭에 갔다 돌아와도 진행 중인 콘텐츠가 다시 로드되지 않습니다.
 interface TanstackConfig {
-  default?: TanstackQueryOptions   // overrides the global query defaults
-  content?: TanstackQueryOptions   // single-resource renders (page/artifact/session/entry/model/upload)
-  lists?: TanstackQueryOptions     // navigation / index / list queries
+  default?: TanstackQueryOptions   // 전역 쿼리 기본값을 오버라이드
+  content?: TanstackQueryOptions   // 단일 리소스 렌더링 (page/artifact/session/entry/model/upload)
+  lists?: TanstackQueryOptions     // 내비게이션 / 인덱스 / 목록 쿼리
 }
 
-// JSON-safe subset of TanStack query options (no functions — config is JSON).
+// TanStack 쿼리 옵션의 JSON 안전 부분집합 (함수 없음 — 설정은 JSON입니다).
 interface TanstackQueryOptions {
   refetchOnWindowFocus?: boolean
   refetchOnReconnect?: boolean
@@ -165,52 +158,46 @@ interface AppContext {
   resourceId: string
   resourceType: 'page' | 'artifact'
   route?: string
-  parentResourceId?: string
-  nestingDepth?: number
-  isNavOwner?: boolean
-  layoutPanelId?: string
-  layoutId?: string
-  layout?: unknown
-  extensions?: Record<string, unknown>
+  [key: string]: unknown
 }
 ```
 
-> **현재 facade 제한.** Web Host는 `AppConfig.tanstack`을 받고 facade 구성 endpoint도 설정된 `tanstack` 객체를 반환합니다. 표준 facade shell은 현재 `initWippyApp`에 전달하는 `AppConfig`에 이 필드를 복사하지 않습니다. 전달이 구현되기 전에는 표준 shell 경로에서 facade `tanstack` parameter에 의존하지 마십시오. 수동 embedder는 조립한 `AppConfig`에 이를 포함할 수 있습니다.
+## 설정 소스와 우선순위
 
-## 구성 소스와 우선순위
+웹 호스트는 여러 소스에서 설정을 해석하며, 우선순위는 낮은 것부터 높은 것 순으로 다음과 같습니다:
 
-Web Host는 낮은 우선순위부터 높은 순서로 여러 소스에서 구성을 해석합니다.
+1. **내장 기본값** — 웹 호스트 번들 자체에 정의되어 있습니다.
+2. **URL 쿼리 파라미터** — `?token=<token>`, `?expiresAt=<timestamp>`, 쿠키 세션용 `?persist`. 부모 페이지 없이 개발용으로 직접 접근할 때 유용합니다.
+3. **`initWippyApp()` 인자** — 표준 파사드(JS 모듈) 경로이며 URL 파라미터보다 우선합니다.
+4. **PostMessage `SetConfig`** — 수동, 파사드 없는 iframe 경로로 `?waitForCustomConfig`가 있을 때 사용됩니다.
 
-1. **내장 기본값** — Web Host 번들 자체에 정의됩니다.
-2. **URL query parameter** — cookie session용 `?token=<token>`, `?expiresAt=<timestamp>`, `?persist`. 부모 페이지 없이 직접 개발 접근할 때 유용합니다.
-3. **`initWippyApp()` 인자** — 표준 facade shell이 조립한 `AppConfig`. URL parameter보다 우선합니다.
-4. **PostMessage `SetConfig`** — `?waitForCustomConfig`가 있을 때 사용하는 수동 facade 없는 iframe 경로.
+실무에서 프로덕션 배포는 항상 `initWippyApp()`(파사드 경로) 또는 PostMessage(수동 iframe 임베딩)를 사용합니다. URL 파라미터는 토큰과 함께 호스트를 브라우저에서 직접 로드하기 위한 개발 편의 수단입니다.
 
-실제 production 배포는 항상 `initWippyApp()`(facade 경로) 또는 PostMessage(수동 iframe 삽입)를 사용합니다. URL parameter는 토큰으로 브라우저에서 호스트를 직접 불러오기 위한 개발 편의 기능입니다.
+## 부트스트랩 다이어그램
 
-## Bootstrap 다이어그램
-
-표준 facade(JS 모듈) 경로:
+표준 파사드(JS 모듈) 경로:
 
 ```
-module.js / managed-layout.js loaded on the page
+페이지에 module.js / managed-layout.js 로드
   │
-  ├─ shell assembles AppConfig from /facade/config + local auth
-  ├─ window.initWippyApp(appConfig, '#app')
-  │     appConfig = { $schema, auth, env, theming, hostConfig, context, ... }
+  ├─ window.initWippyApp(config, '#app')
+  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
   │
-  ├─ resolveConfig() → migrate, normalize, and populate config/auth/env state
-  ├─ await GET /api/public/pages/routes
-  ├─ create Vue app + router
-  │     static system routes + validated backend mount routes
-  ├─ setupApp() → Pinia, Axios, PrimeVue, theming, and other providers
-  ├─ mount App.vue → resolve the current URL
-  └─ consuming components request WebSocket clients
-        eager connection unless hostConfig.lazyWS is true
+  ├─ Pinia 초기화 (auth 스토어, config 스토어)
+  ├─ Axios 설정 (baseURL, 인증 헤더)
+  ├─ Vue Router 생성 (히스토리 모드, 시스템 라우트)
+  ├─ PrimeVue 설치, 테마 CSS 주입
+  ├─ App.vue 마운트
+  │
+  ├─ GET /api/public/pages/routes
+  │     각 백엔드 mountRoute마다 router.addRoute('app', ...)
+  │
+  ├─ 현재 URL 해석 → 일치하는 뷰 렌더링
+  └─ WebSocket 연결
 ```
 
 ## 함께 보기
 
-- [Facade 엔트리 포인트](./entry-point.md) — `wippy/facade`가 `AppConfig`를 구성하고 전달하는 방식
-- [멀티 패널 레이아웃](./multi-panel-layout.md) — `managed-layout.js`가 제공하는 managed-layout boot 경로
-- [렌더 엔진](./render-engines.md) — 불러온 페이지가 srcdoc iframe 또는 Web Fragment로 렌더링되는 방식
+- [파사드 엔트리 포인트](./entry-point.md) — `wippy/facade`가 `AppConfig`를 구성하고 전달하는 방식
+- [다중 패널 레이아웃](./multi-panel-layout.md) — `managed-layout.js`가 서빙하는 managed 레이아웃 부트 경로
+- [렌더 엔진](./render-engines.md) — 로드된 페이지가 렌더링되는 방식(srcdoc iframe vs Web Fragment)

@@ -1,17 +1,22 @@
 ---
 title: "Artefatos de build"
-description: "Declare, valide, publique e materialize artefatos de sistema de arquivos com formato definido para projetos consumidores."
+description: "Declarar um recurso de filesystem como um artefato ciente do formato, materializá-lo em um projeto consumidor e o que o runtime reconcilia automaticamente."
 ---
 
 # Artefatos de build
 
-Um módulo pode distribuir um diretório que os consumidores usam **durante o build**, e não durante a execução, como um pacote contra o qual outros módulos são compilados. O Wippy chama esses recursos de **artefatos**: recursos de sistema de arquivos WAPP marcados com `meta.artifact.format`.
+Um módulo pode entregar um diretório que os consumidores usam **em tempo de build** em vez de
+em tempo de execução — mais utilmente, um pacote contra o qual outros módulos compilam. O Wippy
+chama isso de **artefatos**: recursos de filesystem WAPP comuns marcados com
+`meta.artifact.format`.
 
-Os artefatos permitem que um pacote compartilhado acompanhe um módulo através dos limites entre repositórios, onde um alias de caminho local ao repositório não conseguiria resolvê-lo.
+É assim que um pacote compartilhado chega a um módulo em outro repositório. Um alias de
+caminho só resolve dentro de um repositório; um artefato viaja com o módulo.
 
-[A camada de design](../frontend/design-layer.md) explica *o que* pertence a esse tipo de pacote e o que não pertence; esta página descreve o mecanismo que o distribui.
+[A Camada de Design](../frontend/design-layer.md) explica *o que* pertence a tal
+pacote e o que não pertence; esta página é o mecanismo que o entrega.
 
-## Declarar um artefato
+## Declarando um artefato
 
 O produtor declara um `fs.directory` normal e o marca com um formato:
 
@@ -27,55 +32,80 @@ entries:
     directory: ./package
 ```
 
-O marcador sozinho não inclui o conteúdo do diretório. Selecione o entry `fs.directory` pela lista `embed:` do manifest do produtor ou pela opção `--embed` de publish/pack. Depois de selecionado, o entry é transformado em um recurso empacotado e o formato do artefato é validado; artefatos selecionados malformados falham antes da criação do WAPP.
+Nada mais muda: o recurso é embutido no WAPP como qualquer outro
+`fs.directory` — liste-o em `embed:` no `wippy.yaml` ou passe `--embed` para
+`wippy publish` e `wippy pack`; um diretório que não é embutido não é nem
+empacotado nem validado. Artefatos declarados são **validados durante a
+publicação do módulo e o pack da aplicação**, então um artefato malformado
+falha na publicação, não em um consumidor.
 
 ## Formatos
 
-Um adaptador de formato determina como um diretório é validado, qual é sua identidade e onde ele será gravado. O Wippy inclui um formato nativo:
+Um adaptador de formato decide como um diretório é validado, que identidade ele tem
+e onde ele é colocado. O Wippy entrega um formato integrado:
 
 | Formato | Subárvore própria | Valida |
 |---|---|---|
 | `node-package` | `npm/` | `package.json` |
 
-`node-package` exige `name` e uma `version` semântica e **rejeita scripts de ciclo de vida `preinstall`, `install`, `postinstall` e `prepare`** — um pacote materializado não pode executar nada durante a instalação. Ele é gravado em `npm/<package name>` dentro da raiz de materialização.
+`node-package` exige um `name` e uma `version` semântica, e **rejeita os scripts de
+ciclo de vida `preinstall`, `install`, `postinstall` e `prepare`** — um pacote
+materializado não pode executar nada na instalação. Ele escreve em
+`npm/<nome do pacote>` sob a raiz de materialização.
 
-O formato precisa estar registrado no binário que executa a operação. Hosts podem registrar formatos adicionais; nomes duplicados e raízes sobrepostas são rejeitados.
+O formato deve estar registrado no binário que faz o trabalho. Hosts podem registrar
+formatos adicionais; nomes duplicados e raízes sobrepostas são rejeitados.
 
-## Materialização
+## Materializando
 
-As saídas materializadas são reconciliadas automaticamente durante:
+Na maior parte do tempo você não executa nada. As saídas materializadas são reconciliadas
+automaticamente durante:
 
-- `wippy install` e `wippy update`, completos ou direcionados;
-- inicialização a frio;
-- instalação, atualização e desinstalação dinâmicas por meio do Hub.
+- `wippy install` e `wippy update` completos e direcionados
+- cold boot
+- instalação, atualização e desinstalação dinâmicas via Hub
 
-Instalação completa, atualização, inicialização a frio e reconciliação de dependências em runtime são *exatas*: saídas obsoletas são removidas. Uma instalação **direcionada** sobrepõe somente os módulos selecionados e preserva as saídas pertencentes aos módulos que não selecionou.
+Instalação completa, atualização, cold boot e reconciliação de dependências em tempo de execução são
+*exatas*: saídas obsoletas são removidas. Uma instalação **direcionada** sobrepõe apenas os
+módulos selecionados e preserva saídas pertencentes a módulos que ela não selecionou.
 
-Substituições de módulos locais passam pelo mesmo ciclo de validação e materialização que recursos empacotados; portanto, o artefato de um módulo substituído se comporta como um artefato publicado.
+Substituições locais de módulos passam pelo mesmo ciclo de validação e materialização
+que os recursos empacotados, então o artefato de um módulo substituído se comporta como um
+publicado.
 
-### Materialização explícita
+### Materializando explicitamente
 
-Para uma etapa de build que precisa do artefato antes do envolvimento da runtime, a CLI o expõe diretamente:
+Para uma etapa de build que precisa do artefato antes de o runtime entrar em cena, a
+CLI o expõe diretamente:
 
 ```bash
 wippy artifacts materialize <pack.wapp> <namespace:name> [--root <directory>]
 ```
 
-O valor padrão de `--root` é `.wippy`. O recurso deve declarar `meta.artifact.format`, e esse formato deve estar registrado nesta CLI.
+`--root` tem como padrão `.wippy`. O recurso deve declarar `meta.artifact.format`
+e esse formato deve estar registrado nesta CLI.
 
-Esse comando **não** resolve dependências de módulos, não altera `wippy.lock`, não invoca gerenciadores de pacotes e não participa da composição da runtime. Ele valida um artefato de um WAPP e o grava em disco.
+Seja claro sobre o que este comando deliberadamente **não** faz: ele não
+resolve dependências de módulos, não altera o `wippy.lock`, não invoca
+gerenciadores de pacotes e não participa da composição em tempo de execução. Ele valida
+um artefato de um WAPP e o escreve em disco.
 
-### Local da saída
+### Onde a saída é colocada
 
-`artifact.materialization_root` configura a raiz de saída controlada pela aplicação. O valor padrão é o diretório pai do diretório de dependências do vendor. Cada formato possui uma subárvore sem sobreposição dentro dessa raiz; portanto, a saída de `node-package` sempre fica em `<root>/npm/`.
+`artifact.materialization_root` configura a raiz de saída pertencente à aplicação.
+Seu padrão é o diretório pai do diretório vendor de dependências. Cada formato é dono de
+uma subárvore não sobreposta abaixo dela, então a saída de `node-package` fica sempre sob
+`<root>/npm/`.
 
-A materialização é transacional. O conteúdo é validado e preparado em staging; as raízes gerenciadas são trocadas atomicamente sob um lock de processo; uma falha provoca rollback junto com a transação de registry; e uma troca interrompida é recuperada na próxima execução.
+A materialização é transacional. O conteúdo é validado e preparado, as raízes gerenciadas
+são trocadas atomicamente sob um lock de processo, uma falha faz rollback junto com a
+transação de registro circundante, e uma troca interrompida é recuperada na
+execução seguinte.
 
-## Exemplo de integração: um pacote frontend compartilhado
+## Exemplo prático: um pacote de frontend compartilhado
 
-Os nomes `kickside/ui-kit`, targets de Make, variáveis de ambiente e caminhos de repositório desta seção ilustram um padrão de integração. Eles não são comandos ou scripts auxiliares fornecidos pelo Wippy; adapte-os ao produtor e ao sistema de build que controlam o artefato.
-
-Um módulo produtor pode publicar um pacote sem servir um recurso de runtime:
+Um módulo produtor cujo único trabalho é publicar um pacote — ele não serve nada em
+tempo de execução:
 
 ```yaml
 # platform/ui-kit/src/_index.yaml
@@ -91,14 +121,15 @@ entries:
     directory: ./package
 ```
 
-Um consumidor o materializa em sua própria árvore antes de instalar as dependências:
+Um consumidor o materializa em sua própria árvore antes de instalar dependências:
 
 ```bash
 wippy artifacts materialize kickside-ui-kit-1.5.0.wapp \
   kickside.ui_kit:package_fs --root ./.wippy
 ```
 
-Isso grava `./.wippy/npm/@kickside/ui-kit`. O consumidor o inclui com um glob comum de workspaces; a partir daí, a resolução é a resolução normal do Node:
+Isso escreve `./.wippy/npm/@kickside/ui-kit`. O consumidor o captura com um
+glob de workspaces comum, então a resolução dali em diante é resolução node pura:
 
 ```json
 {
@@ -110,33 +141,30 @@ Isso grava `./.wippy/npm/@kickside/ui-kit`. O consumidor o inclui com um glob co
 npm install
 ```
 
-Esse arranjo tem duas propriedades importantes:
+Duas coisas vale a pena copiar deste formato:
 
-- **O pacote é um módulo próprio, não um diretório dentro de um módulo maior.** O artefato carrega sua própria versão em `package.json`; vinculá-lo a um módulo que muda por motivos alheios obriga a publicar um sempre que o outro mudar.
-- **O consumidor o resolve como uma dependência normal.** Depois da materialização, não existe um caminho de importação específico do Wippy. Isso permite compilar o mesmo código-fonte dentro e fora do monorepo.
+- **O pacote é seu próprio módulo, não um diretório dentro de outro maior.** O
+  artefato carrega sua própria versão de `package.json`, e amarrá-lo a um módulo
+  que muda por razões não relacionadas força um release de um toda vez que o
+  outro se move.
+- **O consumidor o resolve como uma dependência normal.** Uma vez materializado, não
+  há caminho de import específico do Wippy, e é isso que permite que o mesmo código-fonte
+  seja compilado dentro do monorepo e fora dele.
 
-## Fluxo completo
+## De ponta a ponta: autoria, loop de desenvolvimento, CI
 
-### Autoria do produtor
+### Escrevendo o produtor
 
-Para um artefato de pacote, o próprio diretório pode ser o entregável. Um pacote de vocabulário CSS consiste em seus arquivos e manifest:
+Para um artefato de pacote geralmente **não há nada para compilar** — o diretório é
+o entregável. Um pacote de vocabulário CSS é apenas arquivos mais um manifesto:
 
 ```text
 platform/ui-kit/
-├── wippy.yaml           # selects package_fs for embedding
-├── src/_index.yaml      # declares package_fs as the artifact
-└── package/             # the directory that becomes the npm package
+├── src/_index.yaml      # declara package_fs como o artefato
+└── package/             # o diretório que se torna o pacote npm
     ├── package.json
     ├── kx-card.css
     └── kx-state.css
-```
-
-Mantenha a seleção de embed no manifest do produtor para que publicação, pack local e CI usem o mesmo conjunto de recursos:
-
-```yaml
-# platform/ui-kit/wippy.yaml
-embed:
-  - package_fs
 ```
 
 ```json
@@ -153,39 +181,50 @@ embed:
 }
 ```
 
-`sideEffects` é importante para um pacote apenas de CSS: sem esse campo, um bundler pode tratar uma folha de estilo importada como código morto e removê-la.
+`sideEffects` importa para um pacote somente-CSS: sem ele, um bundler fica livre para
+tratar uma folha de estilos importada como código morto e descartá-la.
 
-**A versão do pacote deve ser igual à versão do módulo.** `wippy publish` valida essa condição e rejeita divergências; portanto, incremente ambas ao mesmo tempo. Esse também é o motivo para dar a um pacote compartilhado seu *próprio* módulo em vez de aninhá-lo em um maior: do contrário, cada alteração não relacionada no módulo hospedeiro exige uma nova versão do pacote, e vice-versa.
+**A versão do pacote deve ser igual à versão do módulo.** O `wippy publish`
+valida isso e recusa uma divergência, então incremente ambas juntas. Essa é também a
+razão para dar a um pacote compartilhado seu *próprio* módulo em vez de aninhá-lo dentro de
+um maior — caso contrário, toda mudança não relacionada no módulo hospedeiro força um
+release do pacote, e vice-versa.
 
-### Publicação
+### Publicando
 
 ```bash
-# validate without publishing
-wippy publish --dry-run --version 1.5.0
+# valida sem publicar
+wippy publish --dry-run --version 1.5.0 --embed package_fs
 
-# publish
-wippy publish --create --module-type library --module-visibility public --version 1.5.0
+# publica
+wippy publish --create --module-type library --module-visibility public --version 1.5.0 --embed package_fs
 ```
 
-Como o manifest do produtor seleciona `package_fs` para embed, o artefato é incluído e validado durante a publicação. Um `package.json` que viole as regras do formato é rejeitado aqui, não durante o build de um consumidor.
+Artefatos declarados são validados como parte da publicação, então um package.json que
+falha nas regras do formato é rejeitado aqui e não no build de um consumidor.
 
-### Ciclo de desenvolvimento
+### O loop de desenvolvimento
 
-Durante o desenvolvimento, empacote o produtor localmente e aponte a etapa de materialização do consumidor para esse arquivo:
+Publicar a cada edição não é um loop de desenvolvimento. Empacote o produtor localmente e aponte
+a etapa de materialização do consumidor para esse arquivo:
 
 ```bash
-# from the producer module
-wippy pack /tmp/ui-kit-dev.wapp
+# a partir do módulo produtor
+wippy pack /tmp/ui-kit-dev.wapp --embed package_fs
 
-# consumers materialize from the local pack rather than the published one
+# consumidores materializam a partir do pack local em vez do publicado
 UI_KIT_WAPP=/tmp/ui-kit-dev.wapp make ui-kit MOD=workflows
 ```
 
-Mantenha a substituição do arquivo de pack como a única diferença entre desenvolvimento e CI. Uma variável de ambiente pode selecionar o pack local sem alterar as etapas posteriores de materialização e build.
+Mantenha esse override como a *única* diferença entre o caminho de desenvolvimento e o de CI — uma
+variável de ambiente que seleciona o arquivo de pack, com tudo mais abaixo dela idêntico.
+Um loop de desenvolvimento que materializa de forma diferente do CI deixa de prever
+o CI.
 
-### Integração com build e CI
+### Integrando ao make e ao CI
 
-Faça da materialização um **pré-requisito do build do consumidor**:
+Faça da etapa de materialização um **pré-requisito do build do consumidor**, não algo
+que uma pessoa precisa lembrar de executar:
 
 ```make
 UI_KIT_WAPP ?=
@@ -195,16 +234,28 @@ build:
 	cd $(call fe_dir,$(MOD)) && npm run build
 ```
 
-Assim, o CI pode executar o mesmo `make build` sem uma etapa de artefato adicional. `UI_KIT_WAPP` fica vazio, então o caminho de busca e materialização usa a versão publicada fixada em `build-inputs`. Um checkout novo não consegue compilar com um pacote ausente ou obsoleto, e um colaborador que nunca ouviu falar em artefatos ainda obtém um build correto.
+O CI então não precisa de nenhuma etapa específica de artefatos: ele roda o mesmo `make build`,
+`UI_KIT_WAPP` não está definida, então o caminho de buscar-e-materializar roda contra a
+versão publicada fixada em `build-inputs`. Um checkout novo não consegue compilar
+contra um pacote obsoleto ou ausente, e um contribuidor que nunca ouviu falar de
+artefatos ainda obtém um build correto.
 
-## Etapas de integração do consumidor
+## O que você ainda tem que montar à mão
 
-Como `wippy artifacts materialize` processa um recurso de um pack, o build consumidor precisa coordenar quatro etapas:
+`wippy artifacts materialize` é deliberadamente restrito, então um build que consome
+um artefato atualmente cola quatro etapas por conta própria. Saber quais são as quatro
+poupa redescobri-las:
 
-**1. Buscar o `.wapp`.** O comando recebe um *caminho de arquivo de pack*, não uma referência de módulo, e não resolve dependências. Uma opção é um pequeno projeto Wippy que fixa e baixa o produtor:
+**1. Obter o `.wapp`.** O comando recebe um *caminho de arquivo de pack*, não uma referência
+de módulo, e não resolve dependências — então algo tem que buscar o
+produtor primeiro. O padrão que funciona é um projeto Wippy minúsculo cujo único trabalho é
+fixá-lo e baixá-lo:
 
 ```yaml
-# build-inputs/wippy.lock — a project that exists only to fetch
+# build-inputs/wippy.lock — um projeto que existe só para buscar
+directories:
+  modules: .wippy
+  src: ./src
 modules:
   - name: kickside/ui-kit
     version: 1.5.0
@@ -216,15 +267,19 @@ modules:
 wapp=$(ls build-inputs/.wippy/vendor/kickside/ui-kit-*.wapp | grep -v sha256 | sort | tail -1)
 ```
 
-Fixar o módulo aqui, em vez de no lock da aplicação, mantém uma entrada de build fora do grafo de dependências da runtime.
+Fixá-lo aqui em vez de no lock da aplicação mantém uma entrada de tempo de build
+fora do grafo de dependências de tempo de execução.
 
-**2. Materializar uma vez por consumidor** em uma raiz visível ao gerenciador de pacotes do consumidor:
+**2. Materializar uma vez por consumidor**, em uma raiz que o gerenciador de pacotes do
+consumidor consiga ver:
 
 ```bash
 wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wippy
 ```
 
-**3. Configurar o `package.json` do consumidor.** A materialização grava arquivos; ela não edita manifests. O npm vincula o pacote apenas se o consumidor declarar **tanto** o glob de workspace quanto a dependência:
+**3. Ligar o `package.json` do consumidor.** Materializar escreve arquivos; não
+edita manifestos. O npm vincula o pacote apenas se o consumidor declarar
+*ambos*: o glob de workspace e a dependência:
 
 ```json
 {
@@ -233,11 +288,15 @@ wippy artifacts materialize "$wapp" kickside.ui_kit:package_fs --root ./ui/.wipp
 }
 ```
 
-A versão é `*` porque o pacote materializado contém sua própria versão. Automatize esta etapa e torne-a idempotente. Sem a configuração do manifest, o build pode depois relatar um `ENOENT` para uma folha de estilo em vez de identificar a dependência ausente.
+A versão é `*` porque o pacote materializado carrega a sua própria. Coloque isso em
+script e torne-o idempotente — se a ligação estiver faltando, o build falha muito
+mais tarde com um `ENOENT` seco em uma folha de estilos, o que se lê como arquivo ausente
+e não como ligação ausente.
 
-**4. Executar o gerenciador de pacotes.** `materialize` não o invoca; portanto, execute `npm install` depois da etapa 3.
+**4. Executar o gerenciador de pacotes.** O `materialize` não invoca nenhum, então
+`npm install` é sua responsabilidade, após a etapa 3.
 
-Em conjunto, em um target que recebe o módulo consumidor como parâmetro:
+Tudo junto, em um target que recebe o módulo consumidor como parâmetro:
 
 ```make
 ui-kit:
@@ -249,14 +308,20 @@ ui-kit:
 	cd $(DIR) && node ../../scripts/wire-ui-kit.mjs && npm install --no-audit --no-fund
 ```
 
-Faça do target completo um pré-requisito do build do consumidor para impedir que um checkout novo compile contra um pacote ausente ou obsoleto.
+Faça do target inteiro um pré-requisito do build do consumidor, para que um checkout
+novo não consiga compilar contra um pacote obsoleto ou ausente.
 
-## Fora do escopo
+## Fora de escopo
 
-Artefatos não introduzem um segundo resolver, registry de pacotes, formato de archive, schema de lock, API do Hub ou manifest de módulo. Semântica de dependências exclusivas de build, política de redistribuição e validação de ABI do host são assuntos separados e não são resolvidos aqui.
+Artefatos intencionalmente não introduzem um segundo resolvedor, registro de pacotes,
+formato de arquivo, esquema de lock, API de Hub ou manifesto de módulo. Semântica de dependência
+apenas de build, política de redistribuição e validação de ABI do host são preocupações separadas
+e não são resolvidas aqui.
 
-## Relacionados
+## Relacionado
 
-- [Gerenciamento de dependências](./dependency-management.md) — resolução de módulos e substituições locais
-- [Publicação](./publishing.md) — conteúdo de um módulo publicado
-- [A camada de design](../frontend/design-layer.md) — por que um vocabulário frontend compartilhado é distribuído como pacote
+- [Gerenciamento de Dependências](./dependency-management.md) — resolvendo módulos e
+  substituições locais
+- [Publicação](./publishing.md) — o que um módulo publicado contém
+- [A Camada de Design](../frontend/design-layer.md) — por que um vocabulário de frontend
+  compartilhado é entregue como pacote em primeiro lugar

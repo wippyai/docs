@@ -1,176 +1,291 @@
 ---
-title: "Die Designschicht"
-description: "Wie Frontend-Styles und -Komponenten im Theme, einem gemeinsamen Designpaket oder einem einzelnen Modul platziert werden."
+title: "Die Design-Schicht"
+description: "Theme, gemeinsame Design-Schicht, modul-lokal — was wohin gehört, wenn mehrere Module dasselbe brauchen und das Theme keinen Platz dafür hat, mit ausgearbeiteten guten und schlechten Beispielen."
 ---
 
-# Die Designschicht
+# Die Design-Schicht
 
-Diese Seite ist ein Entscheidungsleitfaden für Designverantwortung. Ihre CSS- und Komponentenausschnitte sind unvollständige Muster, die ein vorhandenes Wippy-Frontend-Paket und einen Build voraussetzen.
+Ein Wippy-Frontend besteht aus vielen unabhängig veröffentlichten Modulen, die
+in eine einzige Anwendung rendern. Zwei Orte sind offensichtlich: das **Theme**,
+das jede Surface konsumiert, und das **Modul**, das sich selbst gehört. Die
+Lücke dazwischen ist nicht offensichtlich, und dort sammelt sich Duplikation an
+— eine Idee, die mehrere Module tatsächlich teilen, für die das Theme aber
+keine Komponente hat.
 
-Ein Wippy-Frontend kann viele unabhängig veröffentlichte Module in einer Anwendung enthalten. Das **Theme** erreicht jede Oberfläche, während jedes **Modul** seine lokale Darstellung verwaltet. Eine **gemeinsame Designschicht** deckt den engeren Fall ab, in dem mehrere Module ein Konzept teilen, das das Theme nicht bereitstellt.
+Diese Seite benennt die drei Schichten, gibt einen Test für die Wahl zwischen
+ihnen und zeigt, wie jede Wahl aussieht, wenn sie gelingt und wenn sie
+misslingt.
 
 ## Die Schichten
 
-| Schicht | Erreicht | Verwaltet |
-|---------|----------|-----------|
-| **Theme** | *Jede* Oberfläche, auch nicht selbst verwaltete Module | PrimeVue-Komponenten, gemeinsame semantische Tokens, dokumentierte Klassen |
-| **Gemeinsame Designschicht** | Nur Module, die sie übernehmen | Gemeinsames Vokabular dieser Module, hinter dem keine Theme-Komponente steht |
-| **Modul** | Sich selbst | Was tatsächlich nur für eine Oberfläche gilt |
+| Schicht | Erreicht | Besitzt |
+|---|---|---|
+| **Theme** | *Jede* Surface, auch Module, die Ihnen nicht gehören | PrimeVue-Komponenten, die gemeinsamen semantischen Tokens, dokumentierte Klassen |
+| **Gemeinsame Design-Schicht** | Nur die Module, die sich dafür entscheiden | Vokabular, das diese Module teilen und hinter dem keine Theme-Komponente steht |
+| **Modul** | Sich selbst | Was wirklich spezifisch für eine Surface ist |
 
-### Das Theme ist universell — und genau das ist die Einschränkung
+### Das Theme ist universell, und genau das ist die Einschränkung
 
-Das Theme gestaltet Markup, das **Sie nicht verwalten**. Jedes Modul — auch ein Plugin eines Drittanbieters, dessen Autor Ihre Anwendung nie gesehen hat — rendert in denselben Host und wird vom selben Theme dargestellt. Dadurch ist das Theme die universelle Schicht, mit Folgen in beide Richtungen:
+Das Theme gestaltet Markup, **das Ihnen nicht gehört**. Jedes Modul — auch ein
+Drittanbieter-Plugin, geschrieben von jemandem, der Ihre App nie gesehen hat —
+rendert in denselben Host und wird vom selben Theme gestaltet. Das macht das
+Theme zur universellen Schicht, und das schneidet in beide Richtungen:
 
-**Nichts Anwendungsspezifisches darf in das Theme**, weil es jedem Modul aufgezwungen würde, das es nie angefordert hat.
+**Nichts App-Spezifisches darf ins Theme**, denn es würde jedem Modul
+aufgezwungen, das nie danach gefragt hat.
 
-**Ein Modul darf nicht davon abhängen, dass etwas Anwendungsspezifisches im Theme liegt.** Der Vertrag lautet *PrimeVue-Komponenten + gemeinsame semantische Wippy-Tokens + dokumentierte Klassen* — ohne anwendungseigene Ergänzungen. Auch PrimeVues eigene Presets sind nicht der Vertrag: Wippy führt PrimeVue mit `theme: 'none'` aus; verlassen Sie sich daher auf Wippys semantische Tokens.
+**Ein Modul darf sich nicht darauf verlassen, dass etwas App-Spezifisches im
+Theme liegt.** Der Vertrag lautet *PrimeVue-Komponenten + die gemeinsamen
+semantischen Wippy-Tokens + dokumentierte Klassen* — nichts, was eine Anwendung
+obendrauf gelegt hat. Beachten Sie: Auch PrimeVues eigene Presets sind nicht
+der Vertrag. Wippy betreibt PrimeVue mit `theme: 'none'`, also sind es die
+semantischen Wippy-Tokens, auf die Sie sich stützen.
 
 ```css
-/* GOOD — shared Wippy semantic tokens, present for every module */
+/* GUT — gemeinsame semantische Wippy-Tokens, für jedes Modul vorhanden */
 .my-panel {
   color: var(--p-text-color);
   background: var(--p-content-background);
   border: 1px solid var(--p-content-border-color);
 }
 
-/* BAD — an application-specific token. Your module now only works inside
-   one app, and silently loses the declaration anywhere else: an undefined
-   custom property makes the declaration invalid at computed-value time, so
-   it drops and the element quietly inherits instead. */
+/* SCHLECHT — ein anwendungsspezifisches Token. Ihr Modul funktioniert jetzt
+   nur noch innerhalb einer App und verliert die Deklaration anderswo
+   stillschweigend: eine undefinierte Custom Property macht die Deklaration
+   zum Zeitpunkt der Wertberechnung ungültig, sie fällt weg und das Element
+   erbt still stattdessen. */
 .my-panel { background: var(--kx-surface-2); }
 ```
 
-Dies beantwortet auch die Frage: *„Kann ich unser gemeinsames Vokabular in die Facade legen?“* Nur wenn es tatsächlich beliebiges, nicht selbst verwaltetes Markup erreichen muss. Ist es auf *Ihre* Modulmenge begrenzt, gehört es nicht in das Theme, sondern in die darunterliegende Schicht.
+Das ist zugleich die Antwort auf *"kann ich unser gemeinsames Vokabular in die
+Facade legen?"* Nur wenn es tatsächlich beliebiges, fremdes Markup erreichen
+muss. Ist es auf *Ihre* Menge von Modulen beschränkt, gehört es nicht ins Theme
+— es gehört in die Schicht darunter.
 
-### Das Rückgrat und wann eine Komponente darauf verzichten darf
+### Das Rückgrat, und wann eine Komponente aussteigen darf
 
-PrimeVue und Tailwind, wie vom Host ausgeliefert, sind das empfohlene Rückgrat jeder Komponente. Eine Komponente **darf** darauf verzichten — doch die Ausnahme wird enger, sobald sie etwas Konventionelles rendert, und die Leiter führt nur in eine Richtung:
+PrimeVue und Tailwind, so wie sie der Host ausliefert, sind das empfohlene
+Rückgrat für jede Komponente. Eine Komponente **darf** aussteigen — aber der
+Ausstieg verengt sich in dem Moment, in dem sie etwas Konventionelles rendert,
+und die Leiter geht nur in eine Richtung:
 
-| Die Komponente … | Dann muss sie laden |
-|------------------|---------------------|
-| ist darstellungsneutral — Canvas, SVG, Diagramm ohne Steuerelemente, Tokens, Utilities oder Scrolling | nichts: `hostCssKeys: []` |
-| verwendet semantische Tokens oder Dark Mode | `themeConfigUrl` |
+| Die Komponente… | Dann muss sie laden |
+|---|---|
+| ist darstellungsneutral — Canvas, SVG, ein Chart ohne Bedienelemente, ohne Tokens, ohne Utilities, ohne Scrollen | nichts: `hostCssKeys: []` |
+| konsumiert semantische Tokens oder Dark Mode | `themeConfigUrl` |
 | kann scrollen | `iframeCssUrl` |
 | rendert Markdown | `markdownCssUrl` |
-| verwendet Tailwind-Utilities für gewöhnliches Layout oder Abstände | `primeVueCssUrl` (der Host bündelt Tailwind mit diesem Asset) |
-| rendert etwas, für das **PrimeVue** eine Komponente liefert — Button, Eingabefeld, Formular, Tabelle, Dialog, Menü, Tag, Tooltip oder ein anderes Feedback-Steuerelement | `primeVueCssUrl` **und** `PrimeVuePlugin` |
+| rendert irgendetwas, das **Tailwind** ausdrücken kann | Tailwind — schreiben Sie Utilities, kein handgeschriebenes CSS |
+| rendert irgendetwas, wofür **PrimeVue** eine Komponente ausliefert — Button, Input, Formular, Tabelle, Dialog, Menü, Tag, Tooltip, jedes Feedback-Element | `primeVueCssUrl` **und** `PrimeVuePlugin` |
 
-Ein Diagramm auf einem Canvas ist der archetypische berechtigte Verzicht: Es besitzt keine klassische Oberfläche und benötigt deshalb nichts vom Rückgrat. Sobald dasselbe Diagramm eine Toolbar erhält, ist es nicht mehr darstellungsneutral — der Button ist ein PrimeVue-Button und bringt die gesamte Integration mit.
+Ein Chart auf einem Canvas ist der archetypische legitime Ausstieg: Es hat keine
+klassische UI und braucht daher nichts vom Rückgrat. Geben Sie demselben Chart
+eine Toolbar, und es ist nicht mehr darstellungsneutral — der Button ist ein
+PrimeVue-Button, und die gesamte Integration kommt mit.
 
-Beachten Sie die Kopplung: **Tailwind-Utilities werden mit `primeVueCssUrl` ausgeliefert.** Es gibt keinen separaten Tailwind-Host-CSS-Schlüssel; in der Praxis lädt eine Komponente, die Tailwind verwendet, deshalb auch das PrimeVue-Asset. Bevorzugen Sie Utilities für gewöhnliches Layout und Abstände, wenn sie die Komponente klar halten. Portables moduleigenes CSS bleibt gültig, wenn eine Utility nicht der beste Ausdruck des Designs ist. (`preflightCssUrl` gehört nicht zur Schlüsselunion; wenn Tailwind Preflight im Shadow Root tatsächlich erforderlich ist, laden Sie es imperativ — dies ist selten nötig.)
+Beachten Sie die Kopplung: **Tailwind-Utilities werden mit `primeVueCssUrl`
+ausgeliefert.** Es gibt keinen separaten Tailwind-Host-CSS-Key, in der Praxis
+lädt eine Komponente, die Tailwind braucht, also auch das PrimeVue-Asset.
+(`preflightCssUrl` ist nicht Teil der Key-Union; wird Tailwind-Preflight
+innerhalb des Shadow Roots wirklich benötigt, laden Sie es imperativ — selten
+nötig.)
 
-Die praktische Folge für diese Seite: **Das meiste, was ein Modul benötigt, ist bereits im Rückgrat vorhanden.** Die gemeinsame Designschicht ist ein schmales Band darüber, kein Ort, um PrimeVue und Tailwind erneut umzusetzen. Die Mechanik beschreibt [CSS-Injektion](./web-host/css-injection.md).
+Die praktische Konsequenz für diese Seite: **Das meiste, was ein Modul will,
+existiert bereits im Rückgrat.** Die gemeinsame Design-Schicht ist ein schmales
+Band darüber, kein Ort, um nachzubauen, was PrimeVue und Tailwind bereits
+abdecken. Siehe [CSS Injection](./web-host/css-injection.md) für die Mechanik.
 
-### Die gemeinsame Designschicht
+### Die gemeinsame Design-Schicht
 
-Manche Ideen wiederholen sich in einer bekannten Modulmenge und besitzen keinen anwendungsweiten Vertrag im Theme: eine domänenspezifische Match-Zusammenfassung, eine Oberflächen-Kopfzeile, ein Leerzustand oder ein projektspezifisches Vokabular für Tag-Größen. Diese Konzepte gehören in die gemeinsame Designschicht.
+Manche Ideen wiederholen sich über eine bekannte Menge von Modulen hinweg und
+haben keine Komponente im Theme: eine Content-Card, eine Kopfzeile für eine
+Surface, das, was eine Surface zeigt, wenn sie nichts hat, die Größen, in denen
+ein Tag kommt. Real, geteilt und heimatlos.
 
-Sie werden als **veröffentlichtes Paket** ausgeliefert und zur Buildzeit in jeden Konsumenten materialisiert. Es muss ein Paket statt eines Pfadalias sein, weil Konsumenten in unterschiedlichen Repositories liegen. Ein Modul in einem anderen Repository ohne Pfadzugriff auf den Produzenten muss das Vokabular konsumieren und bauen können.
+Sie werden als **veröffentlichtes Package** ausgeliefert und zur Build-Zeit in
+jeden Konsumenten materialisiert. Es muss ein Package sein und kein Pfad-Alias,
+denn Konsumenten leben in verschiedenen Repositories — der falsifizierbare Test
+für diese Schicht lautet: Ein Modul in einem *anderen Repo*, ohne Pfadzugriff
+auf den Produzenten, konsumiert das Vokabular und baut.
 
-Das produzierende Modul deklariert das Paket als **Buildzeit-Artefakt**; jeder Konsument materialisiert es in seinen eigenen Baum. [Buildzeit-Artefakte](../guides/artifacts.md) beschreibt Deklaration, Format `node-package`, den automatischen Laufzeitabgleich und die weiterhin vom Build bereitzustellende Verklebung.
+Das produzierende Modul deklariert das Package als **Build-Zeit-Artefakt**, und
+jeder Konsument materialisiert es in seinen eigenen Baum. Siehe
+[Build-time Artifacts](../guides/artifacts.md) für die Deklaration, das Format
+`node-package`, was die Runtime für Sie abgleicht und welchen Kitt ein Build
+weiterhin selbst liefern muss.
 
 ### Das Modul
 
-Alles Übrige sowie jede bewusste Abweichung vom gemeinsamen Vokabular.
+Alles Übrige, plus jede bewusste Abweichung vom gemeinsamen Vokabular.
 
-## Entscheiden, wo etwas hingehört
+## Entscheiden, wohin etwas gehört
 
-Fragen Sie in dieser Reihenfolge. Das erste Ja entscheidet.
+Fragen Sie der Reihe nach. Das erste Ja gewinnt.
 
-1. **Ist es ein Wert?** Farbe, Radius, Abstand, Elevation, Severity. → **Theme.** Lesen Sie ein semantisches Token, niemals ein Literal.
-2. **Liefert das Theme bereits eine Komponente dafür?** Button, Dialog, Select, Tag. → **Theme.** Verwenden Sie die Komponente. Gestalten Sie sie, indem Sie *auf ihr* eine Klasse setzen — bauen Sie sie niemals nach.
-3. **Benötigen zwei oder mehr eigene Module dasselbe Konzept, ohne dass eine Theme-Komponente dahintersteht?** → **Gemeinsame Designschicht.**
+1. **Ist es ein Wert?** Farbe, Radius, Abstand, Elevation, Severity.
+   → **Theme.** Lesen Sie ein semantisches Token. Niemals ein Literal.
+2. **Liefert das Theme bereits eine Komponente dafür?** Button, Dialog,
+   Select, Tag. → **Theme.** Verwenden Sie die Komponente. Gestalten Sie sie,
+   indem Sie eine Klasse *auf* sie setzen — bauen Sie sie niemals nach.
+3. **Brauchen zwei oder mehr Ihrer Module dasselbe Konzept, ohne dass eine
+   Theme-Komponente dahintersteht?** → **Gemeinsame Design-Schicht.**
 4. Andernfalls → **Modul.**
+
+Frage 2 ist die, über die Leute stolpern, und dahinter steckt eine scharfe
+Regel.
 
 ## Ausgearbeitete Beispiele
 
-Die Beispiele verwenden das Präfix `kx-` für anwendungsspezifische Klassen und Stylesheet-Namen. Die Platzierungsregeln gelten für jede Wippy-Anwendung.
+Die folgenden Beispiele stammen aus Kickside, einer Wippy-Anwendung, deren
+Modul-CSS zu 15,4 % aus exakten Klon-Duplikaten bestand, bevor diese Schicht
+entstand.
 
-### Theme-Komponenten niemals nachbauen
+### Bauen Sie niemals eine Theme-Komponente nach
 
-PrimeVue liefert `Button`. Ihn durch `.kx-btn` auf einem nativen `<button>` zu ersetzen, erzeugt eine zweite Implementierung, deren Interaktion und Erscheinungsbild von der Theme-Komponente abweichen können.
+PrimeVue liefert `Button`. Neun Kickside-Module verzichteten darauf und bauten
+`.kx-btn` auf einem nativen `<button>` von Hand; sieben andere Module nutzten
+die Komponente. Beide Dialekte waren lokal vernünftig — es gab schlicht keinen
+gemeinsamen Ort für einen Button, also erfand die halbe App einen. Aneinander
+gemessen stimmten sie in font-size und line-height überein und sonst in nichts.
 
-**Schlecht:** ein natives `button`-Element mit `.kx-btn .kx-btn-primary` — eine zweite Implementierung einer bereits vom Theme gelieferten Komponente.
+**Schlecht:** ein natives `button`-Element mit `.kx-btn .kx-btn-primary` — eine
+zweite Implementierung einer Komponente, die das Theme bereits liefert.
+(Hier absichtlich als Selektor geschrieben: Das Dokumentations-Gate weist native
+Produkt-Controls in Beispielcode zurück, das ist dieselbe Regel eine Schicht
+höher durchgesetzt.)
 
-**Gut:** die Theme-Komponente, bei Bedarf mit einer Klasse zur Anpassung.
+**Gut:** die Theme-Komponente, mit einer Klasse darauf, wenn Sie sie anpassen
+müssen.
 
 ```vue
 <Button label="Save" class="kx-save" />
 ```
 
-Wenn die Theme-Komponente nicht passt, ist das keine Erlaubnis, sie nachzubauen. Setzen Sie eine Klasse auf die Komponente und gestalten Sie diese Klasse — in der Facade für anwendungsweite, im Modul für lokale Anpassungen.
+Wenn die Theme-Komponente nicht passt, ist das keine Lizenz, sie nachzubauen.
+Setzen Sie eine Klasse auf die Komponente und gestalten Sie diese Klasse — in
+der Facade, wenn die Anpassung app-weit gilt, im Modul, wenn sie lokal ist.
+Kicksides Modul `knowledge` trägt weiterhin `.kn-btn` / `.kn-primary` auf
+nativen Buttons; das ist eine ausstehende Migration, kein Muster zum Nachahmen.
 
-### Severity gehört dem Theme, nicht dem Modul
+### Severity gehört dem Theme, nicht Ihnen
 
-Severity — `success`, `danger`, `warn`, `info` — ist Theme-Semantik mit veröffentlichten Skalen. Sie unter modullokalen Namen neu abzuleiten, erzeugt konkurrierende Definitionen, die zwischen Modulen auseinanderlaufen können.
+Severity — `success`, `danger`, `warn`, `info` — ist Theme-Semantik mit
+veröffentlichten Farbverläufen. Kickside leitete sie **sechzehnmal über vier
+Namensschemata hinweg** neu ab (`tone-gn`, `t-ok`, `kx-tone-success`,
+`tone-success`). Derselbe Klassenname bedeutete in drei Modulen drei
+verschiedene Farben, sodass die Veröffentlichung einer einzigen Definition die
+anderen stillschweigend umgefärbt hätte.
 
 ```css
-/* BAD — severity re-derived under a module-local name */
+/* SCHLECHT — Severity unter einem modul-lokalen Namen neu abgeleitet */
 .tone-gn { color: #16a34a; }
 
-/* GOOD — severity from the theme */
+/* GUT — Severity aus dem Theme */
 .status-dot.success { background: var(--p-success-500); }
 ```
 
-Ein *Farbton* darf in der gemeinsamen Schicht existieren, jedoch nur als **dekorative Kategoriefarbe**, niemals als Severity. Kann er „fehlgeschlagen“ bedeuten, ist er Severity und gehört dem Theme.
+Ein *Tone* darf durchaus in der gemeinsamen Schicht existieren — aber nur als
+**dekorative Kategoriefarbe**, niemals als Severity. Wenn es "das ist
+fehlgeschlagen" bedeuten kann, ist es Severity und gehört dem Theme.
 
-### Gemeinsames Vokabular ohne Platz im Theme
+### Gemeinsames Vokabular, für das das Theme keinen Platz hat
 
 ```css
-/* GOOD — this application-specific card contract and empty-state vocabulary
-   recur across modules. PrimeVue's generic Card does not define these domain
-   semantics, so the shared layer owns them. */
+/* GUT — PrimeVue liefert keine Card, keinen Surface-Header, keinen EmptyState.
+   Diese wiederholen sich über Module hinweg, ohne dass etwas aus dem Theme
+   dahintersteht, also sind sie genau das, wofür die gemeinsame Schicht da
+   ist. */
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-state.css";
 ```
 
-### Übernehmen bedeutet importieren *und löschen*
+### Übernehmen heißt importieren *und löschen*
 
-Ein CSS-`@import` muss jeder anderen Regel in einem Stylesheet vorausgehen. Das gemeinsame Stylesheet steht deshalb immer **zuerst**; alles, was das Modul danach mit gleicher Spezifität deklariert, hat Vorrang. Ein Modul, das das Paket importiert und seine eigene Kopie behält, hat nichts geändert.
+Ein CSS-`@import` muss jeder anderen Regel in einem Stylesheet vorangehen. Das
+gemeinsame Stylesheet landet daher immer **zuerst**, und alles, was das Modul
+danach deklariert, schlägt es bei gleicher Spezifität. Ein Modul, das das
+Package importiert und seine eigene Kopie behält, hat überhaupt nichts
+verändert.
 
 ```css
-/* BAD — the import is inert; the local copy still wins */
+/* SCHLECHT — der Import ist wirkungslos; die lokale Kopie gewinnt weiterhin */
 @import "@kickside/ui-kit/kx-card.css";
 .kx-card { border-radius: 14px; border: 1px solid var(--p-content-border-color); }
 
-/* GOOD — import, delete the local copy, keep only a documented delta */
+/* GUT — importieren, die lokale Kopie löschen, nur ein dokumentiertes Delta
+   behalten */
 @import "@kickside/ui-kit/kx-card.css";
-/* This surface's cards are inline in a dense list, so they lose the lift. */
+/* Die Cards dieser Surface stehen inline in einer dichten Liste, sie
+   verlieren daher den Lift. */
 .kx-card:hover { transform: none; }
 ```
 
-Behalten Sie **nur das Delta** — formulieren Sie niemals den gesamten Block erneut. Vereinen Sie außerdem nie zwei Absichten unter einem Namen: Wenn ein Klassenname in zwei Modulen Unterschiedliches bedeutet, sind es zwei Konzepte mit demselben Namen. Teilen Sie den Namen auf, statt einen Gewinner auszuwählen und den Verlierer umzugestalten.
+Behalten Sie **nur das Delta** — wiederholen Sie niemals den ganzen Rumpf. Und
+falten Sie niemals zwei Absichten in einen Namen: Wenn ein Klassenname in zwei
+Modulen Verschiedenes bedeutet, sind das zwei Konzepte unter einem Namen.
+Trennen Sie den Namen; küren Sie keinen Sieger und färben Sie den Verlierer
+nicht um.
 
-### Spezifität gegenüber dem Theme
+### Spezifität gegen das Theme
 
-Das CSS des Moduls wird zuerst in den Shadow Root injiziert; das PrimeVue-Stylesheet des Themes wird danach angehängt. Beide sind `<style>`-Elemente, deshalb entscheidet die **Dokumentreihenfolge und das Theme steht an zweiter Stelle**. Eine Modulregel, die eine Theme-Komponentenklasse überstimmen muss, benötigt mehr *Spezifität* — keine spätere Zeile in der Datei. (`adoptedStyleSheets` enthält das benutzerdefinierte CSS der Facade, nicht das Theme; der Griff zu einem Adopted Sheet gewinnt daher ebenfalls nicht.)
+Das CSS des Moduls wird zuerst in den Shadow Root injiziert; das
+PrimeVue-Stylesheet des Themes wird danach angehängt. Beide sind
+`<style>`-Elemente, also **entscheidet die Dokumentreihenfolge, und das Theme
+steht an zweiter Stelle**. Eine Modulregel, die eine Klasse einer
+Theme-Komponente schlagen muss, braucht mehr *Spezifität* — nicht eine spätere
+Zeile in der Datei. (`adoptedStyleSheets` trägt das eigene CSS der Facade, nicht
+das Theme, der Griff zu einem adoptierten Stylesheet gewinnt hier also auch
+nicht.)
 
-Dies ist bei Pass-through-Klassen besonders sichtbar, bei denen Ihre Klasse *auf* einem Theme-Element landet:
+Am stärksten trifft das Pass-Through-Klassen, bei denen Ihre Klasse *auf* einem
+Theme-Element landet:
 
 ```css
-/* BAD — this class is applied to PrimeVue's own footer element, so at equal
-   specificity the theme wins and the padding never applies. */
+/* SCHLECHT — diese Klasse wird auf PrimeVues eigenem Footer-Element
+   angewendet, bei gleicher Spezifität gewinnt also das Theme und das Padding
+   greift nie. */
 .kx-modal-foot { padding: 14px 18px; }
 
-/* GOOD — scoped under the dialog root, so it out-specifies the theme */
+/* GUT — unter dem Dialog-Root verschachtelt, schlägt damit das Theme in der
+   Spezifität */
 .kx-modal > .kx-modal-foot { padding: 14px 18px; }
 ```
 
 ## Was die gemeinsame Schicht enthalten darf
 
-Alles, was eine Modulmenge tatsächlich teilt und das Theme nicht verwaltet: CSS-Vokabular, abgeleitete Tokens, interne Komponenten, Hilfsfunktionen und Test-Harnesses.
+Alles, was eine Menge von Modulen tatsächlich teilt und das Theme nicht besitzt:
+CSS-Vokabular, abgeleitete Tokens, interne Komponenten, Helfer,
+Test-Harness. Die Duplikation ist von derselben Art — Kickside hatte neunzehn
+Kopien eines einzigen Test-Bootstraps neben seinem geklonten CSS.
 
-**Verwenden Sie semantische Einheiten.** Jede Einheit sollte ein benanntes Konzept sein, das ein Konsument verstehen kann — `kx-card`, `kx-state`, `kx-tag`. Bevorzugen Sie feingranulare Pakete, damit ein Konsument nur das Benötigte übernimmt. Ein einzelnes Paket mit mehreren klar benannten Einheiten ist praktikabel, aber nicht das anzustrebende Zielbild.
+**Liefern Sie es in semantischen Einheiten aus.** Jede Einheit sollte ein
+benanntes Konzept sein, über das ein Konsument nachdenken kann — `kx-card`,
+`kx-state`, `kx-tag`. Bevorzugen Sie feiner granulierte Packages, damit ein
+Konsument nur nimmt, was er braucht; ein einzelnes Package, das mehrere klar
+benannte Einheiten ausliefert, ist praktikabel, aber nicht die anzustrebende
+Form.
 
-**Verwenden Sie konkrete Namen.** Vermeiden Sie Sammelnamen wie `common`, `shared`, `misc` oder `utils`. Eine Einheit, deren Name den Inhalt nicht beschreibt, sammelt nicht verwandte Konzepte an und erzeugt erneut die Duplikation, die diese Schicht vermeiden soll.
+**Niemals ein Sammelbecken.** Kein `common`, kein `shared`, kein `misc`, kein
+`utils`. Eine Einheit, deren Name nicht sagt, was darin steckt, wird alles
+ansammeln, was sonst nirgendwo hinpasste, und Sie haben das Problem
+nachgebaut, für dessen Lösung diese Schicht existiert.
 
-## Normalisierung ist eine visuelle Änderung
+## Vereinheitlichen ist eine visuelle Änderung
 
-Das Zusammenführen auseinanderentwickelter Kopien kann die Darstellung verändern. Vergleichen Sie jede Definition, wählen Sie die kanonische Version, dokumentieren Sie den Grund, bewahren Sie bewusste Abweichungen als dokumentierte Überschreibung und prüfen Sie das Ergebnis visuell. Unit-Tests erkennen kein Layout.
+Das Zusammenführen auseinandergedrifteter Kopien verschiebt Pixel. Kickside
+hatte einen Selektor mit **neunzehn Definitionen in siebzehn unterschiedlichen
+Rümpfen**. Vergleichen Sie jeden Rumpf, wählen Sie den Kanon, halten Sie fest,
+warum Sie ihn gewählt haben, behalten Sie bewusste Abweichung als dokumentiertes
+Override — und sehen Sie sich das Ergebnis an. Unit-Tests können kein Layout
+sehen.
 
-## Verwandte Themen
+## Verwandt
 
-- [Theming](./micro-frontends/theming.md) — Token-Katalog und Theme-Auslieferung an Host sowie Kinder
-- [Konformitätscheckliste](./micro-frontends/compliance-checklist.md) — Regeln, gegen die ein Frontend pro Modul geprüft wird
-- [Buildzeit-Artefakte](../guides/artifacts.md) — Paket deklarieren und in einen Konsumenten materialisieren
-- [Abhängigkeitsverwaltung](../guides/dependency-management.md) — Konsumierte Inhalte deklarieren und auflösen
+- [Theming](./micro-frontends/theming.md) — der Token-Katalog und wie das Theme
+  sowohl Host als auch Children erreicht
+- [Compliance-Checkliste](./micro-frontends/compliance-checklist.md) — die
+  Regeln pro Modul, gegen die ein Frontend geprüft wird
+- [Build-time Artifacts](../guides/artifacts.md) — das Package deklarieren und
+  in einen Konsumenten materialisieren
+- [Dependency Management](../guides/dependency-management.md) — deklarieren und
+  auflösen, was ein Modul konsumiert

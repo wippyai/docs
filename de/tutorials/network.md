@@ -66,7 +66,7 @@ version: "1.0"
 namespace: app
 
 entries:
-  - name: probe_policy
+  - name: net_policy
     kind: security.policy
     policy:
       actions:
@@ -100,9 +100,9 @@ entries:
         short: Check outbound IP through overlays
         security:
           actor:
-            id: app:probe
+            id: system.probe
           policies:
-            - app:probe_policy
+            - app:net_policy
     source: file://probe.lua
     method: main
     modules:
@@ -112,6 +112,8 @@ entries:
 ```
 
 `isolate_streams: true` veranlasst den SOCKS5-Treiber, pro Verbindung zufällige Zugangsdaten zu generieren, damit Tor für jeden Verbindungsaufbau einen neuen Schaltkreis öffnet.
+
+Sicherheit ist standardmäßig strikt, daher trägt der Befehl den Actor und die Richtlinie, unter denen sein Start läuft. `http_client.request` deckt den ausgehenden Aufruf ab und `network.select` die explizite Overlay-Auswahl; ohne sie schlägt jede Prüfung fehl.
 
 ## Schritt 2: Ausgehende Aufrufe routen
 
@@ -205,10 +207,17 @@ Die verschachtelte Funktion oder der gestartete Prozess verwendet das Overlay be
 Tailscale kann auch HTTP-Listener annehmen. Hängen Sie das Overlay an den `http.service` statt an den Client:
 
 ```yaml
+  - name: bind_policy
+    kind: security.policy
+    policy:
+      actions: "network.bind"
+      resources: "*"
+      effect: allow
+
   - name: tailnet
     kind: network.tailscale
     hostname: wippy-node
-    auth_key_env: TS_AUTHKEY
+    auth_key: ${env:TS_AUTHKEY}
     ephemeral: true
 
   - name: gateway
@@ -217,9 +226,16 @@ Tailscale kann auch HTTP-Listener annehmen. Hängen Sie das Overlay an den `http
     network: app:tailnet
     lifecycle:
       auto_start: true
+      security:
+        actor:
+          id: system.gateway
+        policies:
+          - app:bind_policy
 ```
 
-Der Server bindet sich an das Tailnet-Interface; Clients erreichen ihn über die Tailscale-Adresse. SOCKS5 ist nur ausgehend — die Zuweisung an `http.service` wird abgelehnt.
+`auth_key` wird über die [Env-Registry](system/env.md) aufgelöst, `TS_AUTHKEY` ist also eine registrierte Variable — ein OS-Wert benötigt eine `env.variable`, die von `env.storage.os` gedeckt wird.
+
+Das Binden über ein Overlay wird durch `network.bind` abgesichert, geprüft beim Start des Listeners, daher deklariert der Service einen Scope, der es erlaubt. Der Server bindet sich an das Tailnet-Interface; Clients erreichen ihn über die Tailscale-Adresse. SOCKS5 ist nur ausgehend — die Zuweisung an `http.service` lässt den Listener mit `inbound listeners are not exposed over SOCKS5` fehlschlagen.
 
 ## Anwendungsweiter Standard
 

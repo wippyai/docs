@@ -1,6 +1,6 @@
 ---
 title: "Event-Bus"
-description: "Best-Effort-Events der Runtime und Anwendung veröffentlichen und beobachten."
+description: "Ereignisse veröffentlichen und abonnieren für Observability — Überwachen von Runtime- und Anwendungsaktivität und Reagieren darauf."
 ---
 
 # Event-Bus

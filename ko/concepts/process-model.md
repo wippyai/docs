@@ -78,7 +78,7 @@ return ok
 같은 발신자의 메시지는 순서대로 도착합니다. 다른 발신자의 메시지는 순서가 섞일 수 있습니다. 전달 방식은 fire-and-forget이므로 확인이 필요하면 요청-응답 패턴을 사용하세요.
 
 <note>
-프로세스는 local name registry에 등록하여 PID 대신 이름으로 address할 수 있습니다(예: `session_manager`). `process.registry`에서 EVENTUAL(gossip-based), CONSISTENT 또는 STRONG(둘 다 Raft-backed) scope를 사용해 cross-node addressing을 위한 cluster-wide name도 등록할 수 있습니다.
+프로세스는 로컬 이름 레지스트리에 등록하여 PID 대신 이름으로 주소를 지정할 수 있습니다(예: `session_manager`). 이름은 `process.registry`를 통해 EVENTUAL(가십 기반), CONSISTENT, STRONG(둘 다 Raft 기반) 스코프로 클러스터 전역에 등록하여 노드 간 주소 지정에도 사용할 수 있습니다.
 </note>
 
 ## 슈퍼비전
@@ -111,6 +111,8 @@ end
     restart:
       max_attempts: 5
       initial_delay: 1s
+      max_delay: 30s
+      backoff_factor: 2.0
 ```
 
 service는 자동으로 시작되고 runtime lifecycle management와 통합됩니다. 고정된 런타임에서 최초 failed start도 `max_attempts`에 포함되므로 `5`는 최대 네 번의 후속 start를 허용합니다. 각 retry는 jitter가 적용된 `initial_delay`만큼 기다리며 attempt 사이에 delay가 증가하지 않습니다.

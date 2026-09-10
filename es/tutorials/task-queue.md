@@ -100,7 +100,18 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Memory queue driver
+  # Política de acceso para manejadores, workers y la migración
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
+  # Driver de cola en memoria
   - name: queue_driver
     kind: queue.driver.memory
     lifecycle:
@@ -134,9 +145,9 @@ entries:
       - logger
     security:
       actor:
-        id: app:migrate
+        id: "service:migrate"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Migration service (auto-starts, exits on success)
   - name: migrate-service
@@ -163,9 +174,9 @@ entries:
       - uuid
     security:
       actor:
-        id: app:create_task
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -176,9 +187,9 @@ entries:
       - sql
     security:
       actor:
-        id: app:list_tasks
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Queue worker
   - name: process_task
@@ -191,9 +202,9 @@ entries:
       - json
     security:
       actor:
-        id: app:process_task
+        id: "service:worker"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -222,6 +233,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+El modo estricto está activado por defecto, por lo que una entrada que acceda a la base de datos o a la cola necesita un actor y un ámbito. El bloque `security:` de cada entrada Lua aporta ambos desde `app:task_policy`. Consulte [Security Model](system/security.md).
+</tip>
 
 ## Proceso de Migración
 

@@ -102,6 +102,17 @@ entries:
     lifecycle:
       auto_start: true
 
+  # Access policy for handlers, workers, and the migration
+  - name: task_policy
+    kind: security.policy
+    policy:
+      actions:
+        - db.get
+        - queue.publish
+        - queue.publish.queue
+      resources: "*"
+      effect: allow
+
   # Memory queue driver
   - name: queue_driver
     kind: queue.driver.memory
@@ -136,9 +147,9 @@ entries:
       - logger
     security:
       actor:
-        id: app:migrate
+        id: "service:migrate"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Migration service (auto-starts, exits on success)
   - name: migrate-service
@@ -165,9 +176,9 @@ entries:
       - uuid
     security:
       actor:
-        id: app:create_task
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   - name: list_tasks
     kind: function.lua
@@ -178,9 +189,9 @@ entries:
       - sql
     security:
       actor:
-        id: app:list_tasks
+        id: "service:api"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Queue worker
   - name: process_task
@@ -193,9 +204,9 @@ entries:
       - json
     security:
       actor:
-        id: app:process_task
+        id: "service:worker"
       policies:
-        - app:runtime_policy
+        - app:task_policy
 
   # Endpoints
   - name: create_task.endpoint
@@ -224,6 +235,10 @@ entries:
     lifecycle:
       auto_start: true
 ```
+
+<tip>
+Strict mode is on by default, so an entry that reaches the database or the queue needs an actor and a scope. The `security:` block on each Lua entry supplies both from `app:task_policy`. See [Security Model](system/security.md).
+</tip>
 
 ## Migration Process
 

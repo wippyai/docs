@@ -1,6 +1,6 @@
 ---
 title: "Streams"
-description: "Leia, escreva, reposicione, inspecione, escaneie e feche objetos stream retornados por módulos de I/O."
+description: "Operações de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.)."
 ---
 
 # Streams
@@ -33,7 +33,7 @@ local chunk, err = stream:read(size)
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `size` | integer | Bytes para ler (0 = chunk padrão de 32 KB) |
+| `size` | integer | Bytes para ler (0 = bloco padrão de 32KB) |
 
 **Retorna:** `string, error` — `nil, nil` em EOF
 
@@ -47,7 +47,7 @@ local bytes, err = stream:write(data)
 |-----------|------|-----------|
 | `data` | string | Dados para escrever |
 
-**Retorna:** `integer, error` - bytes escritos
+**Retorna:** `integer, error` — bytes escritos
 
 ## Seeking
 
@@ -60,7 +60,7 @@ local pos, err = stream:seek(whence, offset)
 | `whence` | string | `"set"`, `"cur"` ou `"end"` |
 | `offset` | integer | Offset em bytes |
 
-**Retorna:** `integer, error` - nova posicao
+**Retorna:** `integer, error` — nova posicao
 
 ## Flushing
 
@@ -107,20 +107,16 @@ local scanner, err = stream:scanner(split)
 ### Métodos do Scanner
 
 ```lua
-local has_more, err = scanner:scan()  -- advance to next token
-local token = scanner:text()           -- current token
-local err_msg = scanner:err()          -- scanner error if any
+local has_more, err = scanner:scan()  -- avancar para o proximo token
+local token = scanner:text()           -- token atual
+local err_msg = scanner:err()          -- erro do scanner, se houver
 ```
 
 ```lua
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then
-        local scan_err = scanner:err()
-        if scan_err then return nil, scan_err end  -- raw scanner error string
-        break  -- clean EOF
-    end
+    if not has_token then break end  -- EOF
     process(scanner:text())
 end
 ```
@@ -131,12 +127,7 @@ Quando `scan()` retorna `false`, verifique `scanner:err()` antes de tratar o res
 
 | Condição | Tipo |
 |----------|------|
-| Stream fechado | `errors.INTERNAL` |
-| Não legível/gravável | `errors.INTERNAL` |
-| Falha de leitura/escrita/seek | `errors.INTERNAL` |
-| Seek em stream não reposicionável | `errors.INTERNAL` |
-| Falha ao fechar, fazer flush ou obter stat | `errors.INTERNAL` |
-| Falha ao criar scanner ou despachar scan | `errors.INTERNAL` |
-| Falha de tokenização ou leitura subjacente do scanner | String não estruturada de `scanner:err()` |
-
-Um valor de `whence` ou split do scanner não suportado lança um erro de argumento Lua em vez de retornar um erro estruturado.
+| Tipo whence/split inválido | levantado como erro Lua (não retornado) |
+| Stream fechado | `INTERNAL` |
+| Não legivel/gravavel | `INTERNAL` |
+| Falha de leitura/escrita | `INTERNAL` |

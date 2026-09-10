@@ -1,6 +1,6 @@
 ---
 title: "계약"
-description: "타입화된 서비스 바인딩을 열고 계약을 검사하며 구현을 호출하고 호출 또는 보안 컨텍스트를 전파합니다."
+description: "타입화된 계약을 통해 서비스를 호출합니다. 스키마 검증과 비동기 실행 지원으로 원격 API, 워크플로우, 함수를 호출합니다."
 ---
 
 # 계약
@@ -88,10 +88,8 @@ end
 |------|------|------|
 | `name` | string | 메서드 이름 |
 | `description` | string | 메서드 설명 |
-| `input_schemas` | table[] 또는 nil | 입력 스키마 정의. 비어 있으면 생략 |
-| `output_schemas` | table[] 또는 nil | 출력 스키마 정의. 비어 있으면 생략 |
-
-각 스키마 요소에는 문자열 `format`이 포함되며 `definition` 값이 포함될 수 있습니다.
+| `input_schemas` | table[] | 입력 스키마 정의 (메서드가 선언하지 않으면 없음) |
+| `output_schemas` | table[] | 출력 스키마 정의 (메서드가 선언하지 않으면 없음) |
 
 ## 구현 찾기
 
@@ -247,7 +245,12 @@ local result, err = inst:call()
 | 옵션 | 타입 | 설명 |
 |--------|------|------|
 | `retry.max_attempts` | int | 첫 번째를 포함한 최대 시도 횟수 (1은 재시도 비활성화) |
-| `retry.initial_delay` | int/duration | 첫 번째 재시도 전 지연 (ms 또는 duration 문자열) |
+| `retry.initial_delay` | int/duration | 첫 번째 재시도 전 지연 (ms 또는 duration 문자열), 기본값 `100` |
+| `retry.max_delay` | int/duration | 백오프 지연의 상한 (ms 또는 duration 문자열), 기본값 `10s` |
+| `retry.backoff_factor` | number | 시도할 때마다 지연에 적용되는 배수, 기본값 `2.0` |
+| `retry.jitter` | number | 각 지연에 적용되는 무작위 지터 비율, 기본값 `0.1` |
+| `retry.retry_kinds` | string[] | 이 종류의 에러만 재시도; 기본적으로 `Invalid`, `PermissionDenied`, `Internal`을 제외한 모든 종류를 재시도 |
+| `retry.skip_kinds` | string[] | 이 종류의 에러는 재시도하지 않음 |
 
 ## 보안 컨텍스트
 
@@ -291,5 +294,4 @@ if err then return nil, err end
 | 메서드를 찾을 수 없음 | `errors.NOT_FOUND` |
 | 기본 바인딩 없음 | `errors.NOT_FOUND` |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` |
-| 계약 디스패처 또는 응답 변환 실패 | `errors.INTERNAL` |
-| 구현이 오류 반환 | 구현 오류 종류 유지 |
+| 호출 실패 | 구현체 에러의 종류가 보존됨; 디스패치 실패는 `errors.INTERNAL` |

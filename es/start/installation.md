@@ -42,25 +42,30 @@ wippy install
 ## Resumen de comandos
 
 | Comando | Descripción |
-| --------- | ------------- |
-| `wippy init` | Crea o actualiza `wippy.lock` |
-| `wippy run` | Inicia el runtime |
-| `wippy test` | Ejecuta el punto de entrada de pruebas |
-| `wippy lint` | Comprueba errores en el código |
-| `wippy add` | Añade una dependencia |
-| `wippy install` | Instala las dependencias |
-| `wippy update` | Actualiza las dependencias |
-| `wippy pack` | Crea un snapshot |
-| `wippy publish` | Publica en el Hub |
-| `wippy search` | Busca módulos |
-| `wippy readme` | Obtiene el README de un módulo desde el Hub |
-| `wippy registry` | Inspecciona las entradas cargadas del registro |
-| `wippy auth` | Gestiona la autenticación |
-| `wippy version` | Muestra información de la versión |
+|---------|-------------|
+| `wippy init` | Inicializar un nuevo proyecto |
+| `wippy run` | Iniciar el runtime |
+| `wippy test` | Ejecutar el punto de entrada de test |
+| `wippy lint` | Verificar código en busca de errores |
+| `wippy add` | Agregar una dependencia |
+| `wippy install` | Instalar dependencias |
+| `wippy update` | Actualizar dependencias |
+| `wippy artifacts` | Materializar artefactos de sistema de archivos en tiempo de build |
+| `wippy pack` | Crear un snapshot |
+| `wippy publish` | Publicar al hub |
+| `wippy search` | Buscar módulos |
+| `wippy readme` | Obtener el README de un módulo desde el hub |
+| `wippy registry` | Inspeccionar las entradas del registro cargadas |
+| `wippy auth` | Gestionar autenticación |
+| `wippy version` | Mostrar información de versión |
 
 Consulta la [Referencia de CLI](guides/cli.md) para ver la documentación completa.
 
-## Solución de problemas
+## Solución de Problemas
+
+Si `wippy version` no se encuentra tras la instalación, vuelva a abrir su shell o verifique que el directorio de instalación esté en su `PATH`.
+
+## Próximos Pasos
 
 Si el shell no encuentra `wippy` después de la instalación, vuelve a abrirlo y comprueba que el directorio de instalación esté en `PATH`.
 

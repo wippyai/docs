@@ -42,7 +42,7 @@ type Event struct {
 
 ## Estrutura
 
-O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker possui um deque local para acesso LIFO eficiente em cache e uma fila de injeção MPSC por worker para trabalhos reenfileirados que têm afinidade com ele, incluindo conclusões de yield e ativações por mensagem. Uma fila FIFO global recebe novas submissões e reenfileiramentos sem afinidade. Os processos são rastreados por PID para o roteamento de mensagens.
+O scheduler cria `GOMAXPROCS` workers por padrão. Cada worker tem um deque local para acesso LIFO amigável ao cache e uma fila de injeção MPSC por worker para completações assíncronas que têm afinidade com aquele worker. Uma fila global FIFO trata novas submissões e re-enfileiramentos sem afinidade. Processos são rastreados por PID para roteamento de mensagens.
 
 ## Busca de Trabalho
 
@@ -63,11 +63,11 @@ Workers verificam fontes em ordem de prioridade:
 | Prioridade | Fonte | Padrão |
 |------------|-------|--------|
 | 1 | Deque local | LIFO pop, sem lock, amigável ao cache |
-| 2 | Fila de injeção | Pop MPSC de eventos e reenfileiramentos com afinidade; drena até 16 para o deque local |
-| 3 | Fila global | Pop FIFO com transferência em lote |
-| 4 | Outros workers | Varredura a partir de um índice inicial rotativo; rouba até metade, limitado a 32 itens por tentativa |
+| 2 | Fila de injeção | MPSC pop de completações assíncronas afins, drena até 16 para o local |
+| 3 | Fila global | FIFO pop com transferência em batch |
+| 4 | Outros workers | Roubar metade do deque da vítima |
 
-Ao retirar um item da fila de injeção ou da fila global, o worker pega esse item e move até 16 adicionais para seu deque local.
+Ao fazer pop da fila de injeção ou da global, workers pegam um item e movem até 16 mais para seu deque local.
 
 ## Deque Chase-Lev
 
@@ -125,9 +125,25 @@ Cada processo tem uma fila de eventos MPSC (multi-producer, single-consumer):
 - **Produtores**: Handlers de comando (`CompleteYield`), remetentes de mensagem (`Send`)
 - **Consumidor**: Worker drena eventos em `Step()`
 
+Um contador de geração protege a fila. Todo produtor se vincula à geração que observou; `Reset` a incrementa, então um remetente remanescente de uma execução anterior não pode empurrar para uma fila reutilizada.
+
+O tráfego comum de eventos é ilimitado. A contabilização é opcional por mensagem: uma mensagem que carrega `MaxItems` ou `MaxBytes` é admitida contra um orçamento por tópico, e o limite mais restrito visto para um tópico vence. Uma mensagem mantém sua reserva até o processo consumidor liberá-la, e terminais nunca consomem capacidade de backlog.
+
+Quando o orçamento de um tópico se esgota, a fila anexa uma mensagem sintética no lugar da mensagem que transbordou, carregando `message queue limit exceeded` seguido de um payload terminal. O tráfego seguinte nesse tópico é descartado até a fila ser reiniciada, então uma inscrição limitada termina com um terminal de erro em vez de crescer sem limite.
+
 ## Roteamento de Mensagens
 
-O scheduler implementa `relay.Receiver` para rotear mensagens aos processos. Quando `Send()` é chamado, ele procura o PID de destino no mapa `byPID`, insere a mensagem como evento na fila do processo e o acorda se estiver idle ou blocked. O reenfileiramento usa injectOrGlobal: quando o processo tem afinidade conhecida, ele é inserido na fila de injeção do último worker; caso contrário, volta para a fila global.
+O scheduler implementa `relay.Receiver` para rotear mensagens para processos. `Send` delega para `SendContext` com um contexto de background; `SendContext` verifica o cancelamento antes da busca do alvo e antes da admissão, porque a admissão em si é não bloqueante e irreversível uma vez bem-sucedida.
+
+Ambos buscam o PID alvo no mapa `byPID` e empurram o pacote para a fila do processo sob a geração atual do processador. A admissão tem três resultados:
+
+| Resultado | Significado | Posse do pacote |
+|--------|---------|-------------------|
+| Aceito | A fila assumiu o pacote | Fila, liberado pelo scheduler após o processamento |
+| Descartado | Um orçamento por tópico transbordou e a fila não reteve nada além de seu próprio terminal de overflow | Chamador, liberado imediatamente |
+| Rejeitado | A fila está fechada ou a geração está obsoleta | Chamador; `SendContext` retorna `ErrProcessClosed` |
+
+Um push aceito ou descartado então acorda o processo se ele estiver ocioso ou bloqueado. Ele reenfileira via injectOrGlobal, que empurra para a fila de injeção do último worker quando o processo tem afinidade de worker conhecida, e recorre à fila global caso contrário.
 
 ## Encerramento :id=shutdown
 

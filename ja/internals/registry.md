@@ -15,14 +15,63 @@ description: "バージョン管理されたレジストリストレージ、変
 
 ```go
 type Entry struct {
-    ID   ID              // namespace:name
-    Kind Kind            // Entry type
-    Meta attrs.Bag       // Metadata
-    Data payload.Payload // Content
+    ID       ID              // namespace:name
+    Kind     Kind            // エントリタイプ
+    Meta     attrs.Bag       // 作者のメタデータ
+    Data     payload.Payload // コンテンツ
+    Registry EntryMetadata   // レジストリ所有の来歴
+}
+
+type EntryMetadata struct {
+    Owner string // エントリを供給したデプロイメントソース
+    Root  bool   // デプロイメントが選択した依存関係の宣言
 }
 ```
 
 エントリ ID は Go の `unique` パッケージを使用して intern されます。同一の ID はメモリを共有します。
+
+`Registry`はエントリの作者ではなくレジストリが所有。`Owner`はデプロイメントソースから割り当てられ、`Root`は`ns.dependency`エントリの書き込み側フィールド`dependency_root`から設定される。通常のエントリAPIが返すのは`ID`、`Kind`、`Meta`、`Data`のみ。来歴はスナップショットの状態APIを通じて読み取る。
+
+## スナップショット
+
+`Registry.Snapshot()`は1つのアトミックなビューを返す：バージョン、そのバージョンにおけるエントリ、そして同じバージョンに対するレジストリ所有の状態メタデータ。
+
+```go
+type Snapshot struct {
+    Registry StateMetadata
+    Version  Version
+    Entries  State
+}
+
+type StateMetadata struct {
+    Resolution *DependencyResolution
+}
+```
+
+バージョン、エントリ、解決結果を1つの値として読み取ることで、呼び出し側が別バージョンの解決結果とエントリを組み合わせることを防ぐ。選択されたモジュールグラフは、すべてのエントリに繰り返し持たせるのではなく、スナップショットごとに一度だけ格納される。
+
+## オーバーレイ
+
+`OverlayWriter`はプロセスローカルなエントリのためのオプションのレジストリ機能：
+
+```go
+type OverlayWriter interface {
+    ApplyOverlay(context.Context, string, uint64, ChangeSet) (uint64, error)
+    GetOverlay(string) (State, uint64, error)
+}
+```
+
+オーバーレイエントリは論理的なオーナー文字列の下にグループ化される。実効状態に参加し、永続エントリと同じトポロジーソートとハンドラ遷移を通過するため、サービスは通常どおり起動・停止するが、履歴バージョンを生成することはない。コールドブート後は空であり、所有する制御サービスによって整合される必要がある。
+
+書き込みは楽観的並行制御：`GetOverlay`はオーナーの現在の世代を返し、`ApplyOverlay`はその世代がまだ最新である場合にのみコミットし、そうでなければリトライ可能な`Conflict`を返す。適用が成功するたびにプロセス内で一意な新しい世代が発行され、変更を行ったオーナーにはトゥームストーンが保持されるため、ABAのような一連の操作が未変更のオーバーレイと誤認されることはない。
+
+適用のたびに検証される合成規則：
+
+- エントリを作成できるのは、そのIDを持つ永続エントリもオーバーレイエントリも存在しない場合のみ。
+- 自身のオーバーレイエントリを更新・削除できるのは所有するアイデンティティのみ。
+- オーバーレイエントリはレジストリ所有のメタデータを持てず、レジストリディレクティブが要求する種別を使用できない。
+- 削除は、生存する他のエントリが依存しているエントリを取り除けない。
+- 依存関係のエッジはオーナーの境界を越えられず、永続エントリはオーバーレイエントリに依存できない。
 
 ## バージョンチェーン
 
@@ -98,7 +147,9 @@ sequenceDiagram
 - `ns.dependency` - モジュール依存関係
 - `ns.definition` - モジュールメタデータ（readme、wiki、license、authors）
 
-`registry.dispatch_internal_kinds` はこのデフォルトリストを置き換えます。
+これはデフォルトの集合であり、ランタイム設定の`registry.dispatch_internal_kinds`がこれを置き換える。
+
+## 依存関係解決
 
 ## 依存関係の解決
 
@@ -112,6 +163,18 @@ resolver.RegisterPattern(registry.DependencyPattern{
 ```
 
 依存関係はエントリの Meta および Data フィールドから抽出され、状態遷移時のトポロジカルソートに使用されます。
+
+### 依存関係アクセスポリシー
+
+外部の依存関係へのアクセスはグローバルなフラグではなく、リクエストスコープのコンテキスト値：
+
+| ポリシー | 効果 |
+|--------|--------|
+| `DependencyAccessUnspecified` | 呼び出し側が選択。呼び出し側自身のデフォルトが適用される |
+| `DependencyAccessOnline` | 外部での解決とアーティファクトのダウンロードが許可される |
+| `DependencyAccessVerifiedOffline` | 外部アクセスは禁止。解決はロックされたマニフェストとローカルに存在するアーティファクトを使用する |
+
+`LoadState()`はコンテキストが何も指定しない場合、verified-offlineをデフォルトとする。そのためブートはネットワークに接続せず、保存済みのグラフをリプレイする。デプロイメントのベースラインを復元する場合は、そのベースラインが指すモジュールを取得しなければならないため、コンテキストをonlineに切り替える。verified-offlineでは、ロックされたモジュールのみを提供するマニフェストプロバイダがハブのプロバイダに取って代わり、欠けているアーティファクトはダウンロードを引き起こすのではなく、証跡の欠落として失敗する。
 
 ## バージョン履歴
 

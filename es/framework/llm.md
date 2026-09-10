@@ -129,7 +129,7 @@ local response, err = llm.generate(conversation, {
 | `:add_assistant(content, meta?)` | Agregar mensaje de asistente |
 | `:add_developer(content, meta?)` | Agregar mensaje de desarrollador |
 | `:add_message(role, content_parts, name?, meta?)` | Agregar mensaje con rol y partes de contenido |
-| `:add_function_call(name, arguments, id?, options?)` | Añadir una llamada a herramienta del asistente (`arguments` es la cadena JSON sin procesar) |
+| `:add_function_call(name, arguments, id?, options?)` | Agregar llamada a herramienta del asistente (`arguments` es la cadena JSON sin procesar) |
 | `:add_function_result(name, result, id?)` | Agregar resultado de ejecucion de herramienta |
 | `:add_cache_marker(id?)` | Marcar limite de cache (modelos Claude) |
 | `:get_messages()` | Obtener array de mensajes |

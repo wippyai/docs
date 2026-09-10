@@ -1,12 +1,11 @@
 ---
 title: "Logging"
-description: "Escribe mensajes de log estructurados y crea loggers hijos con contexto persistente."
+description: "Logging estructurado con niveles debug, info, warn y error."
 ---
 
 # Logging
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
-<secondary-label ref="workflow"/>
 <secondary-label ref="io"/>
 
 El módulo `logger` escribe mensajes estructurados en los niveles debug, info, warn y error.
@@ -105,4 +104,6 @@ named:info("message")
 
 Un nombre vacío genera un error de argumento Lua. No se devuelve como un valor estructurado `errors.INVALID`.
 
-Los métodos de logging no devuelven errores estructurados. Los tipos de argumento no válidos generan errores de argumento Lua. Si no hay un logger adjunto al contexto de ejecución, el módulo usa un logger no-op y descarta el mensaje.
+`logger:named("")` lanza un error de argumento de Lua (`name cannot be empty`) en lugar de devolver un valor de error. Los métodos de logging no devuelven nada.
+
+Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.

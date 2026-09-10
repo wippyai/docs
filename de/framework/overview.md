@@ -1,15 +1,11 @@
 ---
 title: "Framework"
-description: "Offizielle Wippy-Framework-Module aus dem Hub installieren, deklarieren und importieren."
+description: "Wippy stellt offizielle Framework-Module über den Hub bereit. Diese Module werden unter der Organisation wippy gepflegt und können jedem Projekt hinzugefügt werden."
 ---
 
 # Framework
 
-Offizielle Framework-Module werden über den Wippy Hub unter der Organisation `wippy` veröffentlicht.
-
-Diese Seite ist eine Referenz zur Modulverwaltung in einem bestehenden Wippy-Projekt.
-Die Befehle können im Projektstamm ausgeführt werden; die YAML- und Importblöcke sind
-unabhängige Referenz-Snippets und keine vollständige Anwendung.
+Wippy stellt offizielle Framework-Module über den Hub bereit. Diese Module werden unter der Organisation `wippy` gepflegt und können jedem Projekt hinzugefügt werden.
 
 ## Framework-Module hinzufügen
 
@@ -18,11 +14,11 @@ wippy add wippy/test
 wippy install
 ```
 
-Dadurch wird das Modul zur Lock-Datei hinzugefügt und nach `.wippy/vendor/` heruntergeladen.
+Das trägt das Modul in deine Lock-Datei ein und lädt es nach `.wippy/vendor/` herunter.
 
 ## Abhängigkeiten im Quellcode deklarieren
 
-Framework-Module können auch als Abhängigkeiten in `_index.yaml` deklariert werden:
+Framework-Module lassen sich auch als Abhängigkeiten in deiner `_index.yaml` deklarieren:
 
 ```yaml
 version: "1.0"
@@ -35,7 +31,7 @@ entries:
     version: "*"
 ```
 
-Lösen Sie anschließend die Abhängigkeiten auf und installieren Sie sie:
+Anschließend auflösen und installieren:
 
 ```bash
 wippy update
@@ -43,7 +39,7 @@ wippy update
 
 ## Framework-Bibliotheken importieren
 
-Importieren Sie installierte Framework-Bibliotheken in die jeweiligen Einträge:
+Nach der Installation importierst du Framework-Bibliotheken in deine Einträge:
 
 ```yaml
 entries:
@@ -58,28 +54,26 @@ entries:
       test: wippy.test:test
 ```
 
-Der Import ordnet `wippy.test:test` — den Eintrag `test` aus dem Namespace
-`wippy.test` — dem lokalen Namen `test` zu. In Lua wird er anschließend mit
-`require("test")` geladen.
+Der Import bildet `wippy.test:test` (den Eintrag `test` aus dem Namespace `wippy.test`) auf den lokalen Namen `test` ab, den du dann in Lua per `require("test")` einbindest.
 
 ## Verfügbare Module
 
 | Modul | Beschreibung |
 |--------|-------------|
-| `wippy/llm` | Einheitliche LLM-Schnittstelle für Generierung, Streaming, Tool-Aufrufe und strukturierte Ausgabe |
-| `wippy/agent` | Agenten-Framework mit Tools, Delegaten, Traits und Speicher |
+| `wippy/llm` | Einheitliche LLM-Schnittstelle mit Generierung, Streaming, Tool-Calling und strukturierter Ausgabe |
+| `wippy/agent` | Agent-Framework mit Tools, Delegates, Traits und Memory |
 | `wippy/embeddings` | Speicherung von Vektor-Embeddings und Ähnlichkeitssuche |
-| `wippy/test` | BDD-Testframework mit Assertions und Mocking |
-| `wippy/dataflow` | Workflow-Orchestrierung mit DAG-basierter Knotenausführung |
-| `wippy/relay` | WebSocket-Relay mit benutzerspezifischen Hubs und Plugin-Routing |
+| `wippy/test` | Test-Framework im BDD-Stil mit Assertions und Mocking |
+| `wippy/dataflow` | Workflow-Orchestrierung mit DAG-basierter Node-Ausführung |
+| `wippy/relay` | WebSocket-Relay mit Hubs pro Benutzer und Plugin-Routing |
 | `wippy/views` | Virtuelles Seiten- und Komponentensystem mit Template-Rendering |
-| `wippy/facade` | Konfiguration des Frontend-Hosts, Theming und Konfigurationsendpunkt |
-| `wippy/terminal` | Komponenten für Terminal-Oberflächen |
-| `wippy/migration` | Datenbankschema-Migrationen |
-| `wippy/security` | Akteurs-Scopes, Policy-Bundles und Sicherheitshelfer |
-| `wippy/usage` | Erfassung von Token-Verbrauch und Kosten für LLM-Aufrufe |
+| `wippy/facade` | Frontend-Host-Konfiguration, Theming und Config-Endpoint |
+| `wippy/terminal` | Terminal-UI-Komponenten |
+| `wippy/migration` | Datenbank-Schema-Migrationen |
+| `wippy/security` | Akteur-Scopes, Policy-Bundles und Sicherheits-Helfer |
+| `wippy/usage` | Token- und Kostenabrechnung für LLM-Aufrufe |
 
-Durchsuchen Sie den Hub nach dem aktuellen Modulkatalog:
+Es sind weitere Module verfügbar, und es werden regelmäßig neue veröffentlicht. Durchsuche den Hub:
 
 ```bash
 wippy search wippy
@@ -87,6 +81,6 @@ wippy search wippy
 
 ## Siehe auch
 
-- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien und Versionsbeschränkungen
-- [Veröffentlichen](guides/publishing.md) — Ein Modul veröffentlichen
-- [CLI-Referenz](guides/cli.md) — Befehle zur Modulverwaltung
+- [Dependency Management](guides/dependency-management.md) - Lock-Datei und Versionsbeschränkungen
+- [Publishing](guides/publishing.md) - Eigene Module veröffentlichen
+- [CLI-Referenz](guides/cli.md) - CLI-Befehle

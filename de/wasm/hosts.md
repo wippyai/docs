@@ -1,32 +1,35 @@
 ---
 title: "Host-Funktionen"
-description: "Wippy-Funktionsaufrufe, WASI-Preview-1-Kompatibilität oder ausgewählte WASI-Preview-2-Schnittstellen über Eintrags-Imports aktivieren."
+description: "WASM-Module greifen über Host-Funktions-Imports auf Runtime-Fähigkeiten zu. Jeder Import wird explizit pro Eintrag in der imports-Liste deklariert."
 ---
 
 # Host-Funktionen
 
-Jeder Eintrag aktiviert die unten aufgeführten Host-Schnittstellen über sein Feld `imports`.
-
-**Klassifizierung: Referenz der Host-Schnittstellen.** Der YAML-Block ist ein Teileintrag:
-Ersetzen Sie Dateisystem-ID, Pfad, Methode und Hash durch die Werte eines kompilierten
-Moduls. Der Digest muss dem tatsächlichen SHA-256-Wert des Moduls entsprechen.
+WASM-Module greifen über Host-Funktions-Imports auf Runtime-Fähigkeiten zu. Jeder Import wird explizit pro Eintrag in der `imports`-Liste deklariert.
 
 ## Import-Typen
 
-| Import | Beschreibung |
-|--------|--------------|
-| `funcs` | Wippy-Registry-Funktionen aus einem Component-Model-Modul aufrufen |
-| `wasi1` | WASI-Preview-1-Kompatibilität für Raw/Core-Module |
-| `wasi:cli` | Umgebung, Exit, stdin/stdout/stderr, Terminal |
-| `wasi:io` | Streams und Fehlerbehandlung |
-| `wasi:poll` | Asynchrones Polling / kooperatives Yielding (Schnittstelle `wasi:io/poll`) |
-| `wasi:clocks` | Wall Clock und Monotonic Clock |
-| `wasi:filesystem` | Dateisystemzugriff über eingehängte Verzeichnisse |
-| `wasi:random` | Kryptografisch sichere Zufallszahlen |
-| `wasi:sockets` | TCP/UDP-Netzwerk und DNS-Auflösung |
-| `wasi:http` | Ausgehende HTTP-Client-Anfragen |
+| Import | Namespace | Modultyp | Beschreibung |
+|--------|-----------|----------|-------------|
+| `wasi:cli` | `wasi:cli/*` | component | Umgebung, Exit, stdin/stdout/stderr, Terminal |
+| `wasi:io` | `wasi:io/error`, `wasi:io/streams` | component | Streams und Fehlerbehandlung |
+| `wasi:poll` | `wasi:io/poll` | component | Asynchrones Polling / kooperatives Yielding |
+| `wasi:clocks` | `wasi:clocks/*` | component | Wall Clock und Monotonic Clock |
+| `wasi:filesystem` | `wasi:filesystem/*` | component | Dateisystemzugriff über gemountete Verzeichnisse |
+| `wasi:random` | `wasi:random/*` | component | Kryptografisch sichere und unsichere Zufallszahlen |
+| `wasi:sockets` | `wasi:sockets/*` | component | TCP/UDP-Netzwerk und DNS-Auflösung |
+| `wasi:http` | `wasi:http/*` | component | Ausgehende HTTP-Client-Anfragen |
+| `funcs` | `wippy:runtime/funcs@0.1.0` | component | Aufruf von Registry-Funktionen aus dem Guest |
+| `wasi1` | `wasi_snapshot_preview1` | core | Kompatibilitäts-Imports für WASI Preview 1 |
+| `socket` | `wippy:runtime/socket@0.1.0` | core | Instanzeigenes ausgehendes TCP über rein ganzzahlige Imports |
 
-Aktivieren Sie Imports in Ihrer Eintragskonfiguration:
+Die acht `wasi:*`-Profile und `funcs` sind ausschließlich für Komponenten: Wird eines davon auf einem Core-Modul deklariert, schlägt der Eintrag fehl. `wasi1` und `socket` stellen Core-Imports bereit.
+
+Jedes Profil wird unter seinem Kurznamen, unter jedem der Interface-Namespaces, die es bereitstellt, und unter einem versionierten Namespace aufgelöst. Das Versionssuffix wird vor der Auflösung entfernt, sodass `wasi:io/poll`, `wasi:io/poll@0.2.3` und `wasi:poll` alle dasselbe Profil auswählen.
+
+Ein Import, der zu keinem Profil aufgelöst wird, lässt den Eintrag mit `unsupported wasm host import: <id>` fehlschlagen; ein nur für Komponenten verfügbares Profil auf einem Core-Modul schlägt mit `wasm host import requires component module: <id>` fehl.
+
+Aktivieren Sie Imports in Ihrer Entry-Konfiguration:
 
 ```yaml
   - name: my_function
@@ -46,54 +49,39 @@ Aktivieren Sie Imports in Ihrer Eintragskonfiguration:
 
 Deklarieren Sie nur die Imports, die Ihr Modul tatsächlich benötigt.
 
-`funcs` und die folgenden `wasi:*`-Profile erfordern ein Component-Model-Modul. Verwenden Sie `wasi1` für ein Raw/Core-Modul, das `wasi_snapshot_preview1` importiert; die Aliasse `wasi-preview1`, `preview1` und `wasi_snapshot_preview1` werden auf dasselbe Profil aufgelöst. Nicht unterstützte Imports oder Component-Model-exklusive Profile auf einem Core-Modul führen bei der Modulvorbereitung zu einem Fehler.
-
-## Wippy-Funktionsaufrufe
-
-Das Profil `funcs` registriert die Schnittstelle `wippy:runtime/funcs@0.1.0` für Component-Model-Module:
-
-```wit
-interface funcs {
-  call-string: func(target: string, input: string) -> result<string, string>;
-  call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
-}
-```
-
-Beide Methoden rufen das Ziel über Wippys Funktions-Registry auf. Der Aufruf erbt den Sicherheitskontext der Ausführung und benötigt die Berechtigung `funcs.call` für die Registry-ID des Ziels.
-
 ## WASI-Imports
 
-Jeder `wasi:*`-Import aktiviert eine Gruppe zusammengehöriger WASI-Preview-2-Schnittstellen.
+Jeder `wasi:*`-Import aktiviert eine Gruppe verwandter WASI Preview 2 Schnittstellen.
 
 ### wasi:clocks
 
-**Schnittstellen:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
+**Interfaces:** `wasi:clocks/wall-clock`, `wasi:clocks/monotonic-clock`
 
-Wall Clock und Monotonic Clock für Zeitoperationen. Die Monotonic Clock integriert sich für asynchrones Sleep in den Wippy-Dispatcher.
+Wall Clock und Monotonic Clock für Zeitoperationen. Die Monotonic Clock integriert sich in den Wippy-Dispatcher für asynchrones Sleep.
 
 ### wasi:io
 
-**Schnittstellen:** `wasi:io/error`, `wasi:io/streams`
+**Interfaces:** `wasi:io/error`, `wasi:io/streams`
 
-Stream-Lese- und -Schreiboperationen sowie Fehlerbehandlung. Die Schnittstelle `wasi:io/poll` wird separat durch den Import `wasi:poll` bereitgestellt.
+Stream-Lese-/Schreiboperationen und Fehlerbehandlung. Die Schnittstelle `wasi:io/poll` wird separat vom Import `wasi:poll` bereitgestellt.
 
 ### wasi:poll
 
-**Schnittstellen:** `wasi:io/poll`
+**Interfaces:** `wasi:io/poll`
 
 Asynchrones Polling. Die Poll-Schnittstelle ermöglicht kooperatives Yielding über den Dispatcher.
 
 ### wasi:cli
 
-**Schnittstellen:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
+**Interfaces:** `wasi:cli/environment`, `wasi:cli/exit`, `wasi:cli/stdin`, `wasi:cli/stdout`, `wasi:cli/stderr`, `wasi:cli/terminal-stdin`, `wasi:cli/terminal-stdout`, `wasi:cli/terminal-stderr`
 
 Zugriff auf Umgebungsvariablen, Prozess-Exit-Codes und Standard-I/O-Streams. Umgebungsvariablen werden über die WASI-Konfiguration aus der Wippy-Umgebungs-Registry abgebildet.
 
 ### wasi:filesystem
 
-**Schnittstellen:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
+**Interfaces:** `wasi:filesystem/types`, `wasi:filesystem/preopens`
 
-Dateisystemzugriff über eingehängte Verzeichnisse. Mounts werden pro Eintrag konfiguriert und bilden Wippy-Dateisystemeinträge auf Gastpfade ab.
+Dateisystemzugriff über gemountete Verzeichnisse. Mounts werden pro Eintrag konfiguriert und bilden Wippy-Dateisystem-Einträge auf Guest-Pfade ab.
 
 ```yaml
 wasi:
@@ -105,30 +93,79 @@ wasi:
 
 ### wasi:random
 
-**Schnittstellen:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
+**Interfaces:** `wasi:random/random`, `wasi:random/insecure`, `wasi:random/insecure-seed`
 
-Kryptografisch sichere und unsichere Erzeugung von Zufallszahlen.
+Kryptografisch sichere und unsichere Zufallszahlengenerierung.
 
 ### wasi:sockets
 
-**Schnittstellen:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
+**Interfaces:** `wasi:sockets/instance-network`, `wasi:sockets/ip-name-lookup`, `wasi:sockets/tcp`, `wasi:sockets/tcp-create-socket`, `wasi:sockets/udp`, `wasi:sockets/udp-create-socket`
 
-TCP- und UDP-Netzwerkzugriff mit DNS-Auflösung. Socket-Operationen integrieren sich für asynchrones I/O in den Dispatcher.
+TCP- und UDP-Netzwerk mit DNS-Auflösung. Socket-Operationen suspendieren den Guest und laufen über den Dispatcher, der jeden Dial, jedes Bind und jeden Lookup auf dem [Netzwerkdienst](system/network.md) ausführt.
 
 ### wasi:http
 
-**Schnittstellen:** `wasi:http/types`, `wasi:http/outgoing-handler`
+**Interfaces:** `wasi:http/types`, `wasi:http/outgoing-handler`
 
-Ausgehende HTTP-Client-Anfragen aus WASM-Modulen. Unterstützt die von der WASI-HTTP-Spezifikation definierten Request- und Response-Typen.
+Ausgehende HTTP-Client-Anfragen aus WASM-Modulen. Unterstützt Request/Response-Typen, die durch die WASI-HTTP-Spezifikation definiert sind.
 
-Ausgehende Anfragen benötigen die Berechtigung `http_client.request` für die URL. Anfragen an private IP-Adressen benötigen außerdem `http_client.private_ip` für die aufgelöste Adresse.
+## funcs
 
-## Socket-Berechtigungen
+**Namespace:** `wippy:runtime/funcs@0.1.0`
 
-Das Aktivieren von `wasi:sockets` stellt die Schnittstellen bereit, autorisiert aber keinen Netzwerkzugriff. DNS-Auflösung benötigt `socket.resolve` für den Namen, ausgehende TCP-Verbindungen benötigen `socket.connect` für die Adresse und das Binden von TCP oder UDP benötigt `socket.listen` für die Adresse.
+Ruft Registry-Funktionen aus einem Komponenten-Guest auf. Zwei Einstiegspunkte werden bereitgestellt:
+
+```wit
+interface funcs {
+  call-string: func(target: string, input: string) -> result<string, string>;
+  call-bytes: func(target: string, input: list<u8>) -> result<list<u8>, string>;
+}
+```
+
+`target` ist eine Registry-ID in der Form `namespace:name`. Jeder Aufruf wird als `funcs.call` gegen dieses Ziel policy-geprüft, sodass ein Guest nur Funktionen erreichen kann, die der Scope des Aufrufers ohnehin erlaubt.
+
+## wasi1
+
+**Namespace:** `wasi_snapshot_preview1`
+
+Deklariert, dass ein Core-Modul gegen WASI Preview 1 linkt. Das Profil wird auch unter `preview1` und `wasi-preview1` aufgelöst. Es registriert keine eigenen Hosts; Preview-1-Imports werden von der zugrunde liegenden WASM-Runtime bedient.
+
+## socket
+
+**Namespace:** `wippy:runtime/socket@0.1.0`
+
+Ausgehendes TCP für Core-Module (Nicht-Komponenten). Der Host exportiert vier rein ganzzahlige Funktionen, sodass ein Guest kein Komponenten-Tooling benötigt, um ihn zu verwenden:
+
+| Funktion | Signatur | Ergebnis |
+|----------|----------|----------|
+| `connect` | `(host_ptr: i32, host_len: i32, port: i32, timeout_ms: i32) -> i64` | `status << 32 \| handle` |
+| `send` | `(handle: i32, buf_ptr: i32, buf_len: i32) -> i64` | `status << 32 \| written` |
+| `recv` | `(handle: i32, out_ptr: i32, out_cap: i32) -> i64` | `status << 32 \| read` |
+| `close` | `(handle: i32) -> i32` | `status` |
+
+Die oberen 32 Bit des 64-Bit-Ergebnisses tragen den Status; die unteren 32 Bit tragen den Wert.
+
+| Status | Wert | Bedeutung |
+|--------|------|-----------|
+| `OK` | 0 | Operation erfolgreich |
+| `Invalid` | 1 | Falsche Argumente oder ein Speicherbereich außerhalb des gültigen Bereichs |
+| `Denied` | 2 | Der Netzwerkdienst hat den Dial verweigert |
+| `Failed` | 3 | Die Operation ist fehlgeschlagen |
+| `UnknownHandle` | 4 | Das Handle ist keine offene Verbindung dieser Instanz |
+| `Limit` | 5 | `max_open_sockets` erreicht |
+| `Timeout` | 6 | Der Dial oder die Lese-/Schreib-Deadline ist abgelaufen |
+
+`connect` liest den Hostnamen aus dem Guest-Speicher; `host_len` muss zwischen 1 und 253 Bytes liegen und `port` zwischen 1 und 65535. `timeout_ms` verengt die Dial-Deadline: Die effektive Deadline ist der kleinere Wert von `timeout_ms` und `socket_timeout_ms` des Eintrags. `send` und `recv` sind durch `socket_timeout_ms` begrenzt. `recv` meldet ein sauberes Stream-Ende als `OK` mit einer Lesezahl von 0.
+
+Verbindungen gehören der Instanz, die sie geöffnet hat. Ein Handle ist für eine andere Instanz bedeutungslos, die Zahl der offenen Sockets wird pro Instanz gezählt, und jede Verbindung wird geschlossen, wenn die Instanz geschlossen oder der warme Worker recycelt wird.
+
+## Netzwerkautorisierung
+
+Keiner der beiden Socket-Hosts entscheidet selbst über den Zugriff. Jeder Dial, jedes Bind und jeder Lookup läuft über den Netzwerkdienst der Runtime, der die Berechtigungen `socket.connect`, `socket.listen` und `socket.resolve` prüft, die Private-IP-Policy anwendet und über ein [Overlay-Netzwerk](system/network.md) routet, wenn eines ausgewählt ist. `wasi:sockets` prüft zusätzlich `socket.resolve` vor einem DNS-Lookup und `socket.listen` vor einem UDP-Bind.
 
 ## Siehe auch
 
-- [Übersicht](wasm/overview.md) - Übersicht über die WebAssembly-Runtime
-- [Funktionen](wasm/functions.md) - Konfiguration von WASM-Funktionen
+- [Übersicht](wasm/overview.md) - WebAssembly-Runtime-Übersicht
+- [Funktionen](wasm/functions.md) - WASM-Funktionskonfiguration
 - [Prozesse](wasm/processes.md) - WASM als Prozesse ausführen
+- [Netzwerk-Overlays](system/network.md) - Overlay-Auswahl und Socket-Berechtigungen

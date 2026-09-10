@@ -1,6 +1,6 @@
 ---
 title: "표준 Lua 라이브러리"
-description: "Wippy 엔트리에서 사용할 수 있는 기본 제공 Lua 전역, table, string, math, coroutine 및 구조화된 오류 API입니다."
+description: "모든 Wippy 프로세스에서 자동으로 사용 가능한 핵심 Lua 라이브러리. require() 불필요."
 ---
 
 # 표준 Lua 라이브러리
@@ -77,11 +77,14 @@ _VERSION  -- Lua version string
 `table` 라이브러리는 제자리 배열 작업, 정렬, 연결 및 unpack을 제공합니다.
 
 ```lua
-table.insert(t, [pos,] value)  -- Insert value at pos (default: end)
-table.remove(t [,pos])         -- Remove and return element at pos (default: last)
-table.concat(t [,sep [,i [,j]]]) -- Concatenate array elements with separator
-table.sort(t [,comp])          -- Sort in place, comp(a,b) returns true if a < b
-table.unpack(t [,i [,j]])      -- Unpack table elements as multiple values
+table.insert(t, [pos,] value)  -- pos에 값 삽입 (기본값: 끝)
+table.remove(t [,pos])         -- pos의 요소 제거 및 반환 (기본값: 마지막)
+table.concat(t [,sep [,i [,j]]]) -- 배열 요소를 구분자로 연결
+table.sort(t [,comp])          -- 제자리 정렬, comp(a,b)는 a < b이면 true 반환
+table.unpack(t [,i [,j]])      -- 테이블 요소를 다중 값으로 언팩
+table.create(narr, nhash)      -- 배열과 해시 용량을 미리 할당한 테이블 생성
+table.freeze(t)                -- 테이블을 불변으로 만들고 t 반환
+table.isfrozen(t)              -- 테이블이 불변이면 true
 ```
 
 ```lua
@@ -121,18 +124,21 @@ string.lower(s)   -- Convert to lowercase
 ### 부분 문자열과 문자
 
 ```lua
-string.sub(s, i [,j])      -- Substring from i to j (negative indexes from end)
-string.len(s)              -- String length (or use #s)
-string.byte(s [,i [,j]])   -- Numeric codes of characters
-string.char(...)           -- Create string from character codes
-string.rep(s, n)           -- Repeat string n times
-string.reverse(s)          -- Reverse string
+string.sub(s, i [,j])      -- i부터 j까지 부분 문자열 (음수 인덱스는 끝에서부터)
+string.len(s)              -- 문자열 길이 (또는 #s 사용)
+string.byte(s [,i [,j]])   -- 문자의 숫자 코드
+string.char(...)           -- 문자 코드에서 문자열 생성
+string.rep(s, n)           -- 문자열을 n번 반복
+string.reverse(s)          -- 문자열 뒤집기
 ```
 
 ### 포맷팅
 
 ```lua
-string.format(fmt, ...)    -- Printf-style formatting
+string.format(fmt, ...)    -- Printf 스타일 포맷팅
+string.pack(fmt, ...)      -- 값들을 바이너리 문자열로 패킹
+string.unpack(fmt, s [,pos]) -- 바이너리 문자열을 언팩, 값들과 다음 위치 반환
+string.packsize(fmt)       -- 패킹된 포맷의 바이트 크기
 ```
 
 포맷 지정자: `%d` (정수), `%f` (부동소수), `%s` (문자열), `%q` (인용), `%x` (16진수), `%o` (8진수), `%e` (과학적), `%%` (리터럴 %)
@@ -186,9 +192,9 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ```lua
 math.pi       -- 3.14159...
-math.huge     -- Infinity
-math.mininteger  -- Minimum integer
-math.maxinteger  -- Maximum integer
+math.huge     -- 표현 가능한 가장 큰 부동소수점 값
+math.mininteger  -- 최소 정수
+math.maxinteger  -- 최대 정수
 ```
 
 ### 기본 연산
@@ -209,28 +215,30 @@ math.fmod(x, y)       -- Floating-point remainder
 math.sqrt(x)          -- Square root
 math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
-math.log(x)           -- Natural log
-math.log10(x)         -- Base-10 log
+math.log(x)           -- 자연 로그
+math.log10(x)         -- 상용 로그 (밑 10)
+math.frexp(x)         -- 가수와 지수
+math.ldexp(m, e)      -- m * 2^e
 ```
 
 ### 삼각함수
 
 ```lua
-math.sin(x)   math.cos(x)   math.tan(x)    -- Radians
+math.sin(x)   math.cos(x)   math.tan(x)    -- 라디안
 math.asin(x)  math.acos(x)  math.atan(x)
-math.atan2(y, x)                            -- Arc tangent of y/x
-math.sinh(x)  math.cosh(x)  math.tanh(x)   -- Hyperbolic
-math.deg(r)   -- Radians to degrees
-math.rad(d)   -- Degrees to radians
+math.atan2(y, x)                            -- y/x의 아크탄젠트
+math.sinh(x)  math.cosh(x)  math.tanh(x)   -- 쌍곡선
+math.deg(r)   -- 라디안을 도로
+math.rad(d)   -- 도를 라디안으로
 ```
 
 ### 난수
 
 ```lua
-math.random()         -- Random float [0,1)
-math.random(n)        -- Random integer [1,n]
-math.random(m, n)     -- Random integer [m,n]
-math.randomseed(x)    -- Compatibility no-op; does not seed math.random
+math.random()         -- [0,1) 랜덤 부동소수
+math.random(n)        -- [1,n] 랜덤 정수
+math.random(m, n)     -- [m,n] 랜덤 정수
+math.randomseed(x)    -- 효과 없음; 생성기는 자동으로 시드됨
 ```
 
 `math.random`은 비결정적입니다. 워크플로우에서 동일하게 재생해야 하는 결정에는 사용하지 마세요. `math.randomseed`로도 결정론적으로 만들 수 없습니다.
@@ -330,11 +338,11 @@ local stack = errors.call_stack(err)
 ### 에러 메서드
 
 ```lua
-err:message()    -- Get error message string
-err:kind()       -- Get error kind (e.g., "NOT_FOUND")
-err:retryable()  -- true, false, or nil (unknown)
-err:details()    -- Get details table or nil
-err:stack()      -- Get stack trace as string
+err:message()    -- 에러 메시지 문자열 가져오기
+err:kind()       -- 에러 종류 가져오기 (예: "NOT_FOUND")
+err:retryable()  -- true, false, 또는 nil (알 수 없음)
+err:details()    -- 상세 테이블 또는 nil 가져오기
+err:stack()      -- 스택 트레이스를 문자열로 가져오기
 ```
 
 ## 제한된 기능
@@ -346,13 +354,11 @@ err:stack()      -- Get stack trace as string
 | `load`, `loadstring`, `loadfile`, `dofile` | [동적 평가](lua/dynamic/eval.md) 모듈 사용 |
 | `collectgarbage` | 자동 GC |
 | `rawlen` | `#` 연산자 사용 |
-| `string.dump` | 지원되지 않음 |
-| `io.*` | 파일에는 [파일 시스템](lua/storage/filesystem.md), 터미널 스트림에는 [터미널 I/O](../system/io.md) 사용 |
-| `os.execute` | [명령 실행](lua/dynamic/exec.md) 사용 |
-| `os.remove`, `os.rename` | [파일 시스템](../storage/filesystem.md) 사용 |
-| `os.exit`, `os.tmpname` | 직접 대응하는 표준 라이브러리 없음 |
-| `debug.*` | 사용할 수 없음 |
-| `utf8.*` | 사용할 수 없음 |
+| 표준 `io.*` 파일 라이브러리 | [파일 시스템](lua/storage/filesystem.md) 모듈 사용; Wippy의 `io` 모듈은 [터미널 I/O](lua/system/io.md)입니다 |
+| `os.execute`, `os.exit`, `os.getenv`, `os.remove`, `os.rename`, `os.tmpname` | [명령 실행](lua/dynamic/exec.md), [환경](lua/system/env.md) 모듈 사용 |
+| `string.dump` | 사용 불가 |
+| `debug.*` | 사용 불가 |
+| `utf8.*` | 사용 불가 |
 | `package.loadlib` | 네이티브 라이브러리 미지원 |
 
 ## 참고

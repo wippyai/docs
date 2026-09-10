@@ -1,6 +1,6 @@
 ---
 title: "E/S de Terminal"
-description: "Lee la entrada del terminal y escribe en la salida estándar y la salida de error estándar."
+description: "Leer desde stdin y escribir a stdout/stderr para aplicaciones CLI."
 ---
 
 # E/S de Terminal

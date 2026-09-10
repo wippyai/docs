@@ -11,9 +11,9 @@ description: "Wippy Hub를 통해 모듈을 준비, 검증, 게시, 설정, 사�
 
 ## 사전 요구사항
 
-1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정을 만듭니다.
-2. 조직을 만들거나 가입합니다.
-3. 모듈 이름을 선택합니다. 계정에 권한이 있으면 첫 게시 때 없는 이름을 등록할 수 있습니다. 업로드 전에 등록하고 속성을 명시적으로 설정하려면 `--create`를 사용하세요.
+1. [hub.wippy.ai](https://hub.wippy.ai)에서 계정 생성
+2. 조직 생성 또는 가입
+3. 해당 조직에서 모듈을 생성할 권한 보유 — 첫 `wippy publish`가 모듈을 자동으로 등록
 
 ## 모듈 구조
 
@@ -41,6 +41,19 @@ homepage: https://acme.dev
 keywords:
   - http
   - utilities
+authors:
+  - Acme Engineering <eng@acme.dev>
+embed:
+  - acme.http:assets
+exclude:
+  - test/**
+  - "*.test.lua"
+  - acme.http:debug_handler
+exclude_meta:
+  stage:
+    - experimental
+metadata:
+  support_url: https://acme.dev/support
 ```
 
 | 필드 | 필수 | 설명 |
@@ -53,6 +66,16 @@ keywords:
 | `repository` | 아니오 | 소스 저장소 URL |
 | `homepage` | 아니오 | 프로젝트 홈페이지 |
 | `keywords` | 아니오 | 검색 키워드 |
+| `authors` | 아니오 | 작성자 목록 |
+| `version` | 아니오 | 시맨틱 버전. `--version`이 이를 재정의합니다 |
+| `exclude` | 아니오 | 제외할 패턴: `:`를 포함하는 값은 엔트리 ID이고, 그 외는 소스 파일 glob입니다 |
+| `embed` | 아니오 | `--embed`가 전달되지 않았을 때 사용할 기본 `fs.directory` 임베드 패턴 |
+| `exclude_meta` | 아니오 | 메타데이터 필드와 값의 맵. 메타데이터가 일치하는 엔트리는 제외됩니다 |
+| `metadata` | 아니오 | 게시된 모듈과 함께 전달되는 임의의 키/값 메타데이터 |
+| `publish.profiles` | 아니오 | 패키지에 포함할 설정 프로파일 ([프로파일 게시](#publishing-profiles) 참조) |
+| `publish.runtime` | 아니오 | 패키지 기본값으로 포함할 런타임 설정 섹션. `type: application`에서만 사용 |
+
+`exclude`는 별도의 필드가 아니라 값의 형태로 구분됩니다. `_old/**`, `test/**`, `*.test.lua`는 소스 파일이 수집될 때 필터링하고, `acme.http:debug_handler`는 엔트리가 디코딩된 뒤 레지스트리 엔트리를 비활성화합니다. `**` 세그먼트는 임의 개수의 디렉토리 세그먼트에 걸칩니다.
 
 `type`은 Hub가 모듈을 분류하는 방식을 제어하며 이후 게시에서 변경할 수 있습니다. `--module-type` 플래그는 단일 게시에 한해 이를 재정의합니다. 생략하면 새로 생성되는 모듈은 사용 중단 경고와 함께 `application`을 기본값으로 사용합니다.
 
@@ -206,6 +229,15 @@ wippy lint
 wippy publish --dry-run
 ```
 
+게시는 `--dry-run` 여부와 관계없이 동일한 방식으로 패키지를 빌드하므로, 검증은 실제 게시가 만들어낼 모든 것을 포괄합니다:
+
+- `organization`과 `module`은 소문자 영숫자에 하이픈을 내부에만 포함해야 하고, `version`은 semver여야 하며, `type`은 네 가지 모듈 타입 중 하나여야 합니다.
+- `publish.runtime`은 애플리케이션 전용입니다: `type: application` 없이 그 아래에 `source`, `sections`, `vars`를 선언하면 실패합니다.
+- `meta.artifact.format`을 선언한 모든 리소스는 해당 포맷이 검사합니다. 잘못된 아티팩트는 소비자 쪽이 아니라 여기서 실패하며, 출력이 겹치는 디렉토리에 놓이게 되는 두 아티팩트는 거부됩니다.
+- `node-package` 포맷은 추가로 `package.json`이 **게시되는 모듈 버전과 동일한** 시맨틱 `version`과 유효한 패키지 `name`을 담을 것, 그리고 `preinstall`, `install`, `postinstall`, `prepare` 라이프사이클 스크립트가 없을 것을 요구합니다.
+
+릴리스 중에 발목을 잡는 것은 마지막 규칙입니다: `wippy.yaml`과 아티팩트의 `package.json`에서 `version`을 함께 올리지 않으면 게시가 중단됩니다.
+
 ### 4. 게시
 
 ```bash
@@ -233,14 +265,7 @@ wippy publish --version 1.0.0 --release-notes "Initial release"
 
 ### 정적 파일 임베딩
 
-`fs.directory` 엔트리를 임베드하려면 `--embed` 또는 프로젝트 매니페스트의 영구 `embed:` 목록으로 선택합니다. 선택한 엔트리는 `fs.embed` 리소스로 변환됩니다. 선택하지 않은 `fs.directory` 엔트리도 팩에는 남지만 참조하는 디렉토리 내용은 포함되지 않습니다.
-
-```yaml
-# wippy.yaml
-embed:
-  - app:public_files
-  - app:assets
-```
+`fs.directory` 엔트리(정적 자산, 템플릿, 공개 파일)가 있는 모듈은 게시된 패키지에 포함하려면 `--embed`를 사용해야 합니다. 그렇지 않으면 `fs.directory` 엔트리는 디렉터리 내용 없이 패킹됩니다.
 
 ```bash
 wippy publish --version 1.0.0 --embed app:public_files

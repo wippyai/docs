@@ -29,11 +29,15 @@ Entradas de sistema de arquivos expõem armazenamento baseado em diretórios ou 
 | `directory` | string | obrigatório | Caminho raiz |
 | `auto_init` | bool | false | Cria diretório se ausente |
 | `mode` | string | 0755 | Modo de permissão Unix (octal) |
-| `base` | string | inferido | Base de caminhos relativos: `project` (diretório de trabalho do processo) ou `module` (raiz de recursos do módulo proprietário) |
+| `base` | string | - | Base para caminhos relativos: `project` (diretório de trabalho do processo) ou `module` (raiz de carregamento do módulo proprietário) |
 
-Para uma entrada pertencente a um módulo, omitir `base` resolve um diretório relativo a partir da raiz de recursos desse módulo. Entradas criadas pelo host continuam relativas ao diretório de trabalho do processo. Defina `base: project` para forçar a resolução pelo diretório de trabalho em uma entrada de módulo, ou `base: module` para solicitar explicitamente a raiz do módulo. Se a propriedade do módulo ou sua raiz de recursos não estiver disponível, o runtime mantém o caminho relativo sem alterações.
+Caminhos absolutos são usados como fornecidos, independentemente do que `base` indicar.
 
-O modo configurado autoriza operações por seus bits de proprietário, e as permissões solicitadas para novos arquivos e diretórios são mascaradas por esse modo. Quando todos os bits de leitura estão presentes e nenhum bit de execução está definido, o runtime adiciona os bits de execução — por exemplo, `0444` se torna `0555`. As permissões do sistema operacional ainda se aplicam ao diretório subjacente.
+Para um caminho relativo, `base: project` o mantém relativo ao diretório de trabalho do processo. Tanto `base: module` quanto um `base` não definido o resolvem contra a raiz de carregamento do módulo que é dono da entrada, obtida através do proprietário da entrada no registry. Quando a entrada não tem módulo proprietário, ou esse módulo não tem uma raiz de recursos resolvível, o caminho permanece relativo ao diretório de trabalho do processo.
+
+Qualquer outro valor é rejeitado com `invalid directory base`.
+
+O modo restringe todas as operações de arquivo. Bits de execução são adicionados automaticamente quando todos os bits de leitura estão definidos e nenhum bit de execução está.
 
 <note>
 Caminhos são normalizados e validados. Não é possível acessar arquivos fora do diretório raiz configurado.
@@ -66,8 +70,6 @@ Ambos os tipos de sistema de arquivos implementam:
 | Remove | Sim | Não |
 | Mkdir | Sim | Não |
 | Rename | Sim | Não |
-| Truncate | Sim | Não |
-| Chtimes | Sim | Não |
 
 Operações de escrita em sistemas de arquivos embutidos retornam um erro.
 

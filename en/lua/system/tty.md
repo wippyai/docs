@@ -1,18 +1,16 @@
 ---
 title: "TTY"
-description: "Handle terminal input events and render styled terminal layouts."
+description: "Terminal input events, styled output, presentation surfaces, and local virtual viewports."
 ---
 
 # TTY
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 
-The `tty` module handles raw terminal input events and provides styled-output and layout utilities.
-
-This is an API reference. The input loop is a partial terminal-process recipe; the styling and layout snippets are independent examples.
+Terminal input events, styled output, presentation surfaces, and local virtual viewports.
 
 <note>
-This module is available only to processes running on a <a href="../../system/terminal.md">Terminal Host</a>, not to regular functions.
+Every function resolves the terminal port attached to the calling process frame. A process on a <a href="system/terminal.md">Terminal Host</a> owns the physical terminal; a <code>process.lua</code> on a regular <code>process.host</code> owns a virtual terminal when it is spawned with a viewport grant. Without either attachment the module returns "no terminal context".
 </note>
 
 ## Loading
@@ -21,23 +19,27 @@ This module is available only to processes running on a <a href="../../system/te
 local tty = require("tty")
 ```
 
+## Model
+
+A **Surface** is one process's exclusive presentation lease on its terminal port. It publishes complete row snapshots; the backend owns diffing and terminal recovery. Only one surface may be open on a port at a time.
+
+A **Canvas** is an in-process styled-cell composition buffer. It clips at cell boundaries and never emits terminal control commands of its own.
+
+A **Viewport** is a local, structured terminal boundary that lets one process host another process's surface without sharing byte streams. The shell decides where viewport content appears and translates input into the child's coordinates; the child sees an ordinary terminal port and does not know whether it is full-screen, tiled, tabbed, or hidden.
+
+Viewports are local to one runtime node. Grants and handles are opaque local capabilities, not serializable network references.
+
 ## Input Loop
 
-Start the raw input reader, subscribe to events, and process them in a loop:
+Start input delivery, subscribe to events, and process them in a loop:
 
 ```lua
 local tty = require("tty")
 local io = require("io")
 
 local function handler()
-    local events, events_err = tty.events()
-    if events_err then return nil, events_err end
-
-    -- Subscribe before starting so the initial start event cannot be missed.
-    local started, start_err = tty.start()
-    if start_err then return nil, start_err end
-
-    local loop_err
+    local events = tty.events()
+    tty.start()
 
     while true do
         local ev, open = events:receive()
@@ -63,11 +65,13 @@ local function handler()
 end
 ```
 
+Call `events()` before `start()` so a consumer is ready when the first events arrive. On a virtual port, `start()` opens viewer-to-producer event delivery and `stop()` closes it: a `Viewport:send()` outside that interval fails instead of silently dropping input. Resize delivery is independent of input state.
+
 ## Input Control
 
 ### `tty.start()`
 
-Enable raw terminal input mode. The terminal switches to raw mode and begins emitting events.
+Start input delivery for the current port. A physical terminal switches to raw mode.
 
 ```lua
 local ok, err = tty.start()
@@ -77,7 +81,7 @@ local ok, err = tty.start()
 
 ### `tty.stop()`
 
-Disable raw input and restore the terminal to normal mode.
+Stop input delivery and restore the terminal to normal mode.
 
 ```lua
 local ok, err = tty.stop()
@@ -87,15 +91,17 @@ local ok, err = tty.stop()
 
 ### `tty.events()`
 
-Subscribe to terminal events and return their channel. Each event is a table with a `type` field.
+Subscribe to the port's terminal events and return a channel. Events are delivered as tables with a `type` field. Subscribe once and reuse the channel.
 
 ```lua
-local events = tty.events()
+local events, err = tty.events()
 ```
 
 **Returns:** `EventChannel, error`
 
-### `tty.screen_size()`
+`EventChannel` has `receive()` and `case_receive()`, so it composes with `channel.select`.
+
+### tty.screen_size()
 
 Read the current terminal dimensions.
 
@@ -119,9 +125,223 @@ local ok, err = tty.mouse(true)
 
 **Returns:** `boolean, error`
 
+## Surface
+
+A surface is the port's presentation lease. Acquire one, publish complete frames, and close it when done.
+
+### tty.surface(options?)
+
+```lua
+local surface, err = tty.surface({
+    alternate_screen = true,
+    hide_cursor = true,
+    synchronized_output = true,
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `alternate_screen` | boolean | false | Present on the terminal's alternate screen buffer |
+| `hide_cursor` | boolean | false | Hide the terminal cursor while the surface is open |
+| `synchronized_output` | boolean | false | Wrap each frame in synchronized-output markers |
+
+**Returns:** `Surface, error`
+
+Opening a second surface on a port that already has one fails. A virtual port keeps the options as surface metadata; a physical port translates them into terminal modes and restores them on close.
+
+### surface:present(rows, options?)
+
+Publish a complete array of row strings. Row `1` is the top line.
+
+```lua
+local stats, err = surface:present(rows, {
+    cursor = {x = 12, y = 3, visible = true},
+})
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `rows` | string[] | Complete frame, at most 16384 rows |
+| `options.cursor` | table | `{x, y, visible}` in one-based surface coordinates |
+
+Omitting `cursor` preserves the last explicit cursor state. All three cursor fields are required when `cursor` is present.
+
+**Returns:** `stats, error` — an immutable record with `rows`, `changed_rows`, and `bytes_written`. A physical frame identical to the previous one writes nothing.
+
+### surface:invalidate()
+
+Forget backend presentation state without erasing the logical frame. The next `present` commits even when its rows are unchanged. Use it after an outer terminal resize or when another owner may have disturbed physical state.
+
+**Returns:** `boolean`
+
+### surface:close()
+
+Release the lease. Idempotent: later calls return the first close result. A physical backend restores terminal modes.
+
+**Returns:** `boolean, error`
+
+## Canvas
+
+A canvas is a bounded styled-cell buffer used to compose a frame before presenting it.
+
+### tty.canvas(width, height)
+
+```lua
+local canvas = tty.canvas(width, height)
+```
+
+Width is capped at 16384 columns, height at 16384 rows, and the area at 262,144 cells. Out-of-range arguments raise an argument error.
+
+**Returns:** `Canvas`
+
+Drawing accepts styled text, not terminal commands. SGR colors and OSC 8 links are preserved; erase, cursor-motion, and other control-only output is not emitted. Each placement is clipped independently at cell boundaries with grapheme-width awareness, so a clipped escape sequence cannot leak into neighboring content.
+
+### canvas:clear(fill?)
+
+Clear every cell. An optional styled `fill` string is repeated across each row.
+
+```lua
+canvas:clear()
+canvas:clear(tty.style():background("#1a1a1a"):render(" "))
+```
+
+**Returns:** `boolean`
+
+### canvas:put(x, y, text, width?)
+
+Place one styled row at one-based `x`, `y` and clip it to `width` cells (default: the canvas width). Coordinates may be negative or past the edge; the placement is clipped rather than rejected. A newline ends the row, so use `put_rows` for multi-row content.
+
+```lua
+canvas:put(3, 1, tty.style():bold():render("Title"), 40)
+```
+
+**Returns:** `boolean`
+
+### canvas:put_rows(x, y, rows, width?)
+
+Place an array of styled rows starting at `x`, `y`, one row per line downward. Every entry is validated before anything is drawn.
+
+```lua
+canvas:put_rows(2, 2, child_rows, inner_width)
+```
+
+**Returns:** `boolean`
+
+### canvas:rows()
+
+Render the complete row array, ready for `surface:present`.
+
+**Returns:** `string[]`
+
+## Viewport
+
+A viewport is a virtual terminal port. The creating process is its first viewer; the process admitted with its grant is its producer.
+
+### tty.viewport(options?)
+
+```lua
+local view, err = tty.viewport({width = 80, height = 24})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `width` | number | 80 | Columns, 1 to 65535 |
+| `height` | number | 24 | Rows, 1 to 65535 |
+
+The area is capped at 262,144 cells.
+
+**Returns:** `Viewport, error`
+
+### tty.attach(handle)
+
+Add another local viewer to an existing viewport. A handle grants viewing, never presentation ownership, and is not valid on another node.
+
+```lua
+local view, err = tty.attach(handle)
+```
+
+**Returns:** `Viewport, error`
+
+### viewport:grant()
+
+Return the one-shot producer capability. Pass it as the `terminal` spawn option:
+
+```lua
+local grant = assert(view:grant())
+local child = assert(process.with_options({terminal = grant})
+    :spawn_monitored("app:child", "app:workers"))
+```
+
+Admission consumes the grant transactionally: a rejected start restores an unresolved grant, while a process that has resolved the port consumes it permanently. A host that does not support terminal attachments rejects the spawn instead of dropping the option. See [Processes](lua/core/process.md#spawner-with-options).
+
+**Returns:** `string, error`
+
+### viewport:handle()
+
+Return the local viewer handle for `tty.attach`.
+
+**Returns:** `string`
+
+### viewport:snapshot(after_revision?)
+
+Read the current dimensions, rows, cursor, and revision. With `after_revision`, return `nil` when the revision is unchanged.
+
+```lua
+local frame = view:snapshot(revision)
+if frame then
+    revision = frame.revision
+    canvas:put_rows(2, 2, frame.rows, inner_width)
+end
+```
+
+**Returns:** `snapshot` or `nil`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `revision` | number | Monotonic revision of this frame |
+| `width` | number | Viewport columns |
+| `height` | number | Viewport rows |
+| `rows` | string[] | Rows last published by the producer |
+| `cursor` | table | `{x, y, visible}` in one-based coordinates, absent until the producer publishes explicit cursor state |
+
+### viewport:updates()
+
+Return a channel of coalesced revision watermarks. `receive()` yields the revision number; `case_receive()` composes with `channel.select`.
+
+```lua
+local updates = assert(view:updates())
+```
+
+Updates are bounded hints, not an event log. A slow viewer receives only the newest watermark and must call `snapshot()` for state. Presentation and resize never block on a slow viewer.
+
+**Returns:** `ViewportUpdateChannel, error`
+
+### viewport:send(event)
+
+Forward a validated event record to the producer. The producer must have called `tty.start()`; otherwise the call fails rather than dropping the event.
+
+```lua
+assert(view:send(event))
+assert(view:send({type = "close"}))
+```
+
+**Returns:** `boolean, error`
+
+### viewport:resize(width, height)
+
+Update the viewport geometry. When the size changes, viewers get a new revision and the producer receives a `resize` event.
+
+**Returns:** `boolean, error`
+
+### viewport:close()
+
+Detach this viewer only. Closing the last viewer does not kill a live producer, and closing the producer's port does not destroy state while viewers remain.
+
+**Returns:** `boolean, error`
+
 ## Event Types
 
-Events are tables with a `type` field that determines which other fields are present.
+Events are tables with a `type` field that determines which other fields are present. Coordinates are one-based. The same records are accepted by `viewport:send()`.
 
 ### Key Event
 
@@ -170,14 +390,32 @@ Emitted once after `tty.start()` with initial dimensions.
 
 ### Focus Event
 
+Reports keyboard ownership.
+
 ```lua
 {type = "focus", focused = true}
+```
+
+### Visibility Event
+
+Reports whether repainting is useful. It does not prescribe application lifecycle or background computation.
+
+```lua
+{type = "visibility", visible = true}
 ```
 
 ### Paste Event
 
 ```lua
 {type = "paste", text = "pasted content"}
+```
+
+### Close Event
+
+Asks the producer to shut down. A shell sends it through `viewport:send` to request a graceful child exit.
+
+```lua
+{type = "close"}
 ```
 
 ## Key Bindings
@@ -322,6 +560,19 @@ local h = tty.text.height("a\nb\nc")      -- line count
 local w, h = tty.text.size("hello\nworld") -- both
 ```
 
+### Clipping
+
+```lua
+-- Truncate to a printable width, with an optional tail
+local head = tty.text.truncate(line, 40)
+local head = tty.text.truncate(line, 40, "…")
+
+-- Take the printable cell range [left, right)
+local middle = tty.text.cut(line, 10, 30)
+```
+
+Both preserve ANSI state and grapheme boundaries, so styled text can be clipped and spliced without breaking escape sequences. `truncate` returns an empty string for a width of zero or less; `cut` returns an empty string when `right` is not greater than `left`.
+
 ### Joining
 
 ```lua
@@ -364,17 +615,14 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
-## Errors
+## Permissions
 
-The input-control functions return structured errors:
-
-| Condition | Kind | Retryable |
-|-----------|------|-----------|
-| No terminal context or input controller | `errors.UNAVAILABLE` | no |
-| Event subscription has no runtime or process context | `errors.INTERNAL` | no |
-| Terminal yield response is invalid | `errors.INTERNAL` | no |
+The module enforces no policy actions of its own. Access to a terminal comes from the frame: the terminal host attaches the physical port, and `process.with_options({terminal = grant})` attaches a viewport, which requires `process.context` on the spawning side.
 
 ## See Also
 
+- [Terminal UI](tutorials/tty.md) — build a shell that hosts a child in a viewport
 - [Terminal I/O](lua/system/io.md) — stdin/stdout/stderr operations
 - [Terminal Host](system/terminal.md) — Terminal host configuration
+- [Command Execution](lua/dynamic/exec.md) — PTY processes and terminal sessions
+- [Processes](lua/core/process.md) — spawn options, monitoring, lifecycle events

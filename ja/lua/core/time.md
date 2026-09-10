@@ -1,6 +1,6 @@
 ---
 title: "時間と期間"
-description: "時間値の作成、比較、解析、書式設定、期間とタイムゾーンの操作、スリープとタイマーのスケジュール。"
+description: "時間値、期間、タイムゾーン、スケジューリングを扱う。タイマーの作成、指定期間のスリープ、タイムスタンプの解析とフォーマット。"
 ---
 
 # 時間と期間
@@ -285,7 +285,7 @@ local d, err = time.parse_duration(5 * time.MINUTE)
 ```lua
 local d, _ = time.parse_duration("1h30m45s500ms")
 
-d:hours()         -- 1.5125...
+d:hours()         -- 1.5126...
 d:minutes()       -- 90.75...
 d:seconds()       -- 5445.5
 d:milliseconds()  -- 5445500
@@ -569,11 +569,11 @@ time.SATURDAY   -- 6
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| 無効な期間フォーマット | `errors.INVALID` | いいえ |
-| 解析失敗 | `errors.INVALID` | いいえ |
-| 空のlocation名 | `errors.INVALID` | いいえ |
-| Locationが見つからない | `errors.NOT_FOUND` | いいえ |
-| Duration <= 0（timer/ticker） | `errors.INVALID` | いいえ |
+| 無効な期間フォーマット | `errors.INVALID` | no |
+| 解析失敗 | `errors.INVALID` | no |
+| 空のlocation名 | `errors.INVALID` | no |
+| Locationが見つからない | `errors.NOT_FOUND` | no |
+| Duration <= 0（timer/ticker） | `errors.INVALID` | no |
 
 ```lua
 local t, err = time.parse(time.RFC3339, "invalid")

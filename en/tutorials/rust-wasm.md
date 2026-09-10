@@ -257,7 +257,20 @@ entries:
     kind: terminal.host
     lifecycle:
       auto_start: true
+
+  - name: policy
+    kind: security.policy
+    meta:
+      comment: Grants access to mounted filesystems and WASM functions
+    policy:
+      actions:
+        - fs.get
+        - funcs.call
+      resources: "*"
+      effect: allow
 ```
+
+Mounting a filesystem into a WASM module and calling a WASM function are both guarded actions. The policy grants them; entries that need them reference it.
 
 ### WASM Functions
 
@@ -371,10 +384,8 @@ entries:
         name: ls
         short: List files from mounted directory
         security:
-          actor:
-            id: demo.cli:ls
-          policies:
-            - demo.cli:wasm_cli_policy
+          actor: {id: demo.cli:ls}
+          policies: [demo:policy]
     fs: demo.wasm:assets
     path: /demo_component.wasm
     hash: sha256:YOUR_HASH_HERE
@@ -390,9 +401,7 @@ entries:
           guest: /data
 ```
 
-The `meta.command` block registers the WASM process as a named CLI command. `ls`
-uses WASI stdout and filesystem access, so it declares the corresponding host profiles
-and receives only the `/data` mount.
+The `meta.command` block registers the process as a named CLI command. The `greet` command needs no WASI imports since it only uses string operations. The `ls` command needs filesystem access, so it also carries the security context that grants the mount.
 
 ### HTTP Endpoint
 
@@ -440,9 +449,21 @@ wippy run list
 ```
 Available commands:
 
+  greet  Greet someone via WASM  (demo.cli:greet)
   ls  List files from mounted directory  (demo.cli:ls)
 
 Run with: wippy run <command>
+```
+
+Arguments after the command name are passed to the exported function as string parameters, so each command takes exactly the arguments its WIT signature declares:
+
+```bash
+# Run greet
+wippy run greet World
+```
+
+```
+Hello, World!
 ```
 
 ```bash
@@ -460,23 +481,19 @@ why the CLI example uses the Rust function that writes to WASI stdout.
 wippy run
 ```
 
-This starts the HTTP server on port 8090. Test the endpoint:
+This starts the HTTP server on port 8090. The `wasi-http` transport passes the request body as the function's single string argument:
 
 ```bash
-curl -X POST --data 'World' http://localhost:8090/greet
+curl -X POST http://localhost:8090/greet -d 'World'
 ```
 
-Expected response body:
-
-```text
+```
 Hello, World!
 ```
 
 ### Call from Lua
 
-WASM functions are called the same way as Lua functions. This is a reference snippet
-for an existing Lua entry that declares the `funcs` module; it is not another file
-required by the demo:
+WASM functions are called the same way as Lua functions. The calling process needs `funcs.call` on the target, which `demo:policy` grants:
 
 ```lua
 local funcs = require("funcs")

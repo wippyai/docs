@@ -19,7 +19,6 @@ description: "Пошаговое создание терминального ч�
 
 ```
 llm-agent/
-├── .wippy.yaml
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -51,6 +50,13 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: policy
+    kind: security.policy
+    policy:
+      actions: "*"
+      resources: "*"
+      effect: allow
+
   - name: os_env
     kind: env.storage.os
 
@@ -69,10 +75,26 @@ entries:
       - name: process_host
         value: app:processes
 
+  - name: dep.terminal
+    kind: ns.dependency
+    component: wippy/terminal
+    version: "*"
+
   - name: ask
-    kind: function.lua
+    kind: process.lua
+    meta:
+      command:
+        name: ask
+        short: Ask a single question
+        security:
+          actor:
+            id: app:ask
+          policies:
+            - app:policy
     source: file://ask.lua
-    method: handler
+    method: main
+    modules:
+      - io
     imports:
       llm: wippy.llm:llm
 ```
@@ -81,14 +103,19 @@ entries:
 - `env.storage.os` предоставляет API-ключи из переменных окружения
 - `process.host` предоставляет среду выполнения процессов, используемую модулем LLM
 
+Зависимость `wippy/terminal` предоставляет `terminal.host`, на котором выполняются команды и куда пишет `io.print`.
+
+`meta.command` даёт процессу имя, так что `wippy run ask` запускает его, передавая оставшиеся аргументы как строковые полезные нагрузки. Блок `security` устанавливает актора и скоуп политик для этого запуска: модуль LLM разрешает модели из реестра, а команда, запущенная без скоупа, ничего из него не прочитает.
+
 ### Код генерации
 
 Создайте `src/ask.lua`:
 
 ```lua
+local io = require("io")
 local llm = require("llm")
 
-local function handler(input)
+local function main(input)
     local response, err = llm.generate(input, {
         model = "gpt-4.1-nano",
         temperature = 0.7,
@@ -96,13 +123,15 @@ local function handler(input)
     })
 
     if err then
-        return nil, err
+        io.print("Error: " .. tostring(err))
+        return 1
     end
 
-    return response.result
+    io.print(response.result)
+    return 0
 end
 
-return { handler = handler }
+return { main = main }
 ```
 
 ### Определение модели
@@ -138,31 +167,31 @@ return { handler = handler }
 
 ```bash
 wippy init
-wippy run -x app:ask "What is the capital of France?"
+wippy run ask "What is the capital of France?"
 ```
 
-Это вызывает функцию напрямую и выводит результат. Определение модели указывает модулю LLM, какой провайдер использовать и какое имя модели отправлять в API.
+Это запускает процесс `ask` на терминальном хосте с вопросом в качестве аргумента и выводит результат. Определение модели указывает модулю LLM, какой провайдер использовать и какое имя модели отправлять в API.
 
 ## Фаза 2: Диалоги
 
-Переход от одиночного вызова к многоходовому диалогу с использованием построителя промптов. Запись меняется с функции на процесс с терминальным вводом-выводом.
+Переход от одиночного вызова к многоходовому диалогу с использованием построителя промптов. Процесс регистрируется как именованная команда.
 
 ### Обновление определений записей
 
-Замените запись `ask` на процесс `chat` и добавьте зависимость терминала:
+Замените запись `ask` на процесс `chat`:
 
 ```yaml
-  - name: dep.terminal
-    kind: ns.dependency
-    component: wippy/terminal
-    version: "*"
-
   - name: chat
     kind: process.lua
     meta:
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -281,6 +310,11 @@ wippy run chat
       command:
         name: chat
         short: Start a terminal chat
+        security:
+          actor:
+            id: app:chat
+          policies:
+            - app:policy
     source: file://chat.lua
     method: main
     modules:
@@ -750,11 +784,9 @@ Terminal Agent (type 'quit' to exit)
 > what time is it?
 [get_current_time] done
 The current time is 17:20 UTC on February 12, 2026.
-
 > what is 125 * 16?
 [calculate] done
 125 * 16 = 2000.
-
 > quit
 Bye!
 ```
