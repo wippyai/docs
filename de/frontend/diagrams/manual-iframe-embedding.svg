@@ -75,4 +75,3 @@ targetOrigin = iframe_origin" data-line-style="solid" data-arrow-head="filled" d
   <text x="684.102" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)"><tspan x="684.102" dy="-3.9000000000000012">iframe.html</tspan><tspan x="684.102" dy="16.900000000000002">(?waitForCustomConfig)</tspan></text>
 </g>
 </svg>
-
