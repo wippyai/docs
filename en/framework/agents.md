@@ -332,6 +332,80 @@ Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The 
 
 For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
 
+## Attention context and UI actions
+
+When a user message contains a validated `wippy.attention` version 1 attachment,
+the prompt builder renders bounded candidates into the same user-role turn. The
+rendered block is marked `untrusted_user_observation`; labels, accessible text,
+and values are data and cannot supply model instructions. Unknown attachment
+kinds or versions remain inert until a handler is registered. Prompt rendering
+has its own byte budget and does not mutate the persisted attachment.
+
+**Availability:** release availability remains phase-gated. Target projection,
+Host snapshot-registry validation, the targeted broker, and the framework tools
+are implemented, but deployments must keep them disabled until managed and
+compatibility E2E gates pass for the selected release.
+
+The framework defines three private, exclusive tools for
+clarifying a target through the current authenticated Host connection:
+
+| Registry ID | Purpose | Target requirement |
+|---|---|---|
+| `wippy.agent.tools:ui_action_highlight` | Highlight candidate rectangles | 1–32 targets |
+| `wippy.agent.tools:ui_action_confirm` | Ask whether a supplied candidate is intended | 1–32 targets |
+| `wippy.agent.tools:ui_action_select` | Ask the user to select a candidate, or select an arbitrary area with no targets and `capture_region: true` | 0–32 targets |
+
+Each target is an immutable reference containing the snapshot, target, Host
+instance, mount ID and generation, path digest, rectangle, and optional label.
+It contains no capability or bearer token. The prompt renderer exposes this
+object as the candidate's `action_ref`; the agent must copy that exact object
+verbatim as one tool `target_ref` entry in `targets`. Tool arguments can also
+include a prompt of at most 512 characters and independent pointer and keyboard
+permissions. A zero-target `select` request is valid only with
+`capture_region: true`. Here `capture_region` enables Host-owned arbitrary area
+selection; it does not authorize screenshot capture.
+
+The tools receive ephemeral `ui_action_runtime` context only at exact
+registered tool execution. The context is excluded from validated tool-call
+records, wrappers, persistence, history, and model-visible payloads. The session
+broker rejects a tool when the current turn has no eligible Host connection,
+when agent actions are disabled, or when its target belongs to another Host
+instance.
+
+The Session plugin is the sole WebSocket inbox owner. It validates incoming
+action results and routes each accepted result to a private per-call mailbox.
+Framework tools wait on that mailbox rather than subscribing to WebSocket
+topics themselves.
+
+The tool path waits for one terminal Host result: selected, confirmed, cancelled,
+rejected, expired, stale, disconnected, permission denied, unavailable, or
+error. The broker permits one pending action per session, caps expiry at 120
+seconds, and accepts only the first correctly correlated terminal result.
+
+For `wippy.attention.visual`, the session upload authorizer and byte resolver are
+implemented through the content-provider contract. Before persistence, the session
+layer validates reference structure, session binding, expiry, media type, size,
+and digest, then authorizes the reference and verifies the resolved bytes. An
+attached reference that cannot pass these checks rejects the complete send
+atomically; it is not silently removed to persist a semantic-only message.
+
+Capture denial before attachment composition is different: semantic Attention
+can remain available without adding a failed visual reference. When rendering an
+already accepted message, the framework emits image input only when an authorized
+`visual_resolver` returns bytes that pass media-type, size, and SHA-256 checks.
+Later expiry, denied access, an unavailable resolver, or invalid bytes omits the
+image and returns a render diagnostic without changing the persisted message;
+other valid semantic context remains renderable.
+
+Implemented reference authorization and byte reading do not establish production
+capture, redaction, multimodal, expiry, or orphan-cleanup acceptance. Keep visual
+capture disabled until those deployment paths are proven. In particular, a byte
+resolver is not evidence that abandoned uploads are deleted.
+
+See [Web Host Attention Context](../frontend/web-host/attention-context.md#agent-clarification-actions)
+for the overlay behavior and [Relay](./relay.md#attention-ui-action-routing) for
+connection targeting.
+
 ## Streaming
 
 Stream agent responses through `stream_target`:

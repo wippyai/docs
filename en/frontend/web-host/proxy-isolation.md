@@ -104,6 +104,23 @@ The child's own code is identical whether it runs at the top level or nested sev
 
 See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custom-element), and [Advanced HTML Injection](#advanced-html-injection) below for the mechanics.
 
+### Attention instrumentation across boundaries
+
+When Attention is enabled, the same injection chain installs Host-owned
+observation and recursive point-query capabilities at each Wippy boundary.
+Parents query children in mount-local CSS-pixel coordinates and compose the
+result back into the visible Host viewport. Capability negotiation binds an
+exact Host instance and parent/child mount generation; an unsupported child is
+an explicit partial boundary rather than a rendering failure.
+
+Web Fragments use both instrumented sides of the boundary. The reflected
+physical Host shadow tree supplies hit order, clipping, and rectangles, while
+the fragment runtime supplies semantic and package metadata. The package-facing
+`attention` export remains discovery-only; ordinary application code cannot
+register roots, query points, create snapshots, or mint target identities. See
+[Attention Context](./attention-context.md) and [Attention Context for micro
+frontends](../micro-frontends/attention-context.md).
+
 ## Internals — do not read or override
 
 `proxy.js` or `proxy-fragment.js` installs the following globals for its own use. **Application and

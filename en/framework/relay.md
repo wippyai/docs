@@ -235,6 +235,44 @@ end
 return { run = run }
 ```
 
+## Attention UI-action routing
+
+**Availability:** the targeted routing and private-mailbox path are implemented,
+but release availability remains phase-gated until managed and compatibility E2E
+gates pass for the selected release.
+
+Attention clarification uses the session plugin rather than a general broadcast
+topic. The private broker binds each action to the authenticated user, session,
+session process, current WebSocket connection process, Host instance, request
+ID, action ID, and expiry. It sends `session_ui_action_request` directly to that
+connection. The Host replies with the on-wire command
+`session_ui_action_result`; relay prefix handling delivers that command to the
+plugin as `ui_action_result`.
+
+The Session plugin is the sole WebSocket inbox owner. It verifies sender and
+request, action, session, Host, connection, and target correlation before routing
+an accepted result to the requesting tool's private per-call mailbox,
+`session_ui_action_result:<sha256(call_id)>`. Framework
+tools wait on that mailbox and never create a second WebSocket subscription.
+
+The broker never places its delivery handle, connection PID, capability token,
+or other live authority in persisted messages, history, model context, or the
+target reference. A target reference is correlation data only: snapshot and
+target IDs, Host instance, mount generation, path digest, rectangle, and an
+optional label.
+
+Only one action can be pending for a session. The first valid terminal result
+wins. A wrong connection, session, Host instance, request/action correlation,
+target, or status is rejected. Expiry is capped at 120 seconds; disconnect,
+session cancellation, navigation/remount staleness, and process exit terminate
+the pending action without rerouting it to another connection. Reconnect
+requires a fresh action request.
+
+This protocol is internal. Application relay plugins and micro frontends must
+not publish `session_ui_action_request` or `session_ui_action_result`
+themselves. See [Agents](./agents.md#attention-context-and-ui-actions)
+and [Web Host Attention Context](../frontend/web-host/attention-context.md#agent-clarification-actions).
+
 ## Error Handling
 
 The relay reports client errors using these codes:

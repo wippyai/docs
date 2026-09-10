@@ -19,7 +19,7 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 ## Initialization
 
-`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
+`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `attention`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
@@ -766,6 +766,40 @@ Prefer `supports()` over branching on `engine` — what matters is whether a cap
 Read-only shortcuts for the same values on the snapshot. `engine: 'host'` means the code is mounted directly into the host document (or running under the standalone dev proxy) with no allocated surface; the snapshot reports `width: 0` and `sizing: 'content'` by design.
 
 `engine` is not a reliable test for "was a surface allocated". A page embedded via `<w-iframe>`/`<w-artifact>` also receives no surface — nested embeds opt out until nested-surface support ships — yet reports `engine: 'iframe'` with `width: 0`. Check `snapshot.width` when that distinction matters.
+
+---
+
+## Attention
+
+### `attention.enabled` and `attention.supports(capability)`
+
+Attention is an opt-in Host capability. The public proxy surface is deliberately
+limited to discovery:
+
+```typescript
+import { attention } from '@wippy-fe/proxy'
+
+if (attention.enabled && attention.supports('message-context')) {
+  // The Host can offer Attention as a send-time message option.
+}
+```
+
+`supports()` accepts `message-context`, `agent-actions`, or `visual-capture`.
+Agent actions and visual capture can report false even when configured if their
+runtime providers are unavailable. Both are phase-gated and are not generally
+available until their release-specific integration and E2E gates pass.
+
+There are no public Attention methods for observation, root registration,
+point queries, snapshot creation, target resolution, visual capture, or
+disposal. Those operations are owned by the Host coordinator injected into
+iframes and Web Fragment runtimes. Package code cannot attach context to a
+message, open the clarification overlay, or synthesize the private recursive or
+WebSocket protocols.
+
+See [Attention Context for Micro Frontends](./attention-context.md) for semantic
+authoring and privacy annotations, and [Web Host Attention
+Context](../web-host/attention-context.md) for the recursive and message
+contracts.
 
 ---
 
