@@ -1,11 +1,11 @@
 ---
 title: "Linter"
-description: "Wippy incluye un linter integrado que realiza verificacion de tipos y analisis estatico en codigo Lua. Ejecutalo con wippy lint."
+description: "Usa el linter de Lua integrado para comprobación de tipos, análisis estático, filtrado, caché y salida para CI."
 ---
 
 # Linter
 
-Wippy incluye un linter integrado que realiza verificacion de tipos y analisis estatico en codigo Lua. Ejecutalo con `wippy lint`.
+Ejecuta `wippy lint` para comprobar los tipos y analizar estáticamente las entradas Lua.
 
 ## Uso
 
@@ -87,7 +87,7 @@ modules:
   - funcs                    # bare module name
 ```
 
-Los requires dinamicos (`require(variable)`) no se inspeccionan. El conjunto ambiental — modulos disponibles sin declaracion, como `process` en los tipos ejecutables — se comparte entre el linter y el runtime, por lo que la resolucion en tiempo de lint y en tiempo de ejecucion no puede divergir.
+Los requires dinámicos (`require(variable)`) no se inspeccionan. El linter y el runtime comparten el conjunto de módulos ambientales, que incluye módulos disponibles sin declaración, como `process` en los tipos ejecutables.
 
 ### Advertencias de Reglas de Lint (Serie W)
 
@@ -211,15 +211,21 @@ Limpia el cache si los resultados parecen desactualizados:
 wippy lint --cache-reset
 ```
 
-## Integracion CI/CD
+## Integración CI/CD
 
-Usa la salida JSON y codigos de salida para verificaciones automatizadas:
+En los modos tabla y resumen, el comando termina con un código distinto de cero cuando el resultado filtrado contiene errores. Las advertencias y sugerencias no afectan al código de salida, incluso cuando `--level warning` o `--level hint` las muestran.
+
+El modo JSON es diferente: después de codificar correctamente el resultado, `wippy lint --json` termina con código 0 aunque `error_count` no sea cero. Un trabajo de CI que use JSON debe analizar por sí mismo `error_count`. Para usar el estado de salida del comando como puerta, ejecuta una invocación sin JSON:
+
+```bash
+wippy lint --level error
+```
+
+Puedes generar un informe por separado sin tratar su código de salida como resultado del lint:
 
 ```bash
 wippy lint --json --level error > lint-results.json
 ```
-
-El linter termina con codigo 0 cuando no se encuentran errores, y con un valor distinto de cero cuando hay errores.
 
 Ejemplo de paso en GitHub Actions:
 
@@ -241,6 +247,8 @@ Ejemplo de paso en GitHub Actions:
 | `--no-color` | | false | Desactivar salida con colores |
 | `--rules` | | false | Activar reglas de lint (verificaciones de estilo/calidad serie W) |
 | `--cache-reset` | | false | Limpiar cache antes del analisis |
+| `--profile` | | | Aplicar un perfil del workspace desde la configuración combinada del runtime; se puede repetir para aplicar perfiles en orden |
+| `--set` | | | Sobrescribir un valor de configuración combinada como `section.path=value`; se puede repetir para varias sobrescrituras |
 | `--lock-file` | `-l` | wippy.lock | Ruta al archivo de bloqueo |
 | `--profile` | | | Aplicar un perfil de workspace desde la configuracion de runtime combinada (repetible, aplicado en orden) |
 | `--set` | | | Sobrescribir un valor de la configuracion de runtime combinada (`section.path=value`, repetible) |
@@ -248,5 +256,5 @@ Ejemplo de paso en GitHub Actions:
 ## Ver Tambien
 
 - [CLI](guides/cli.md) - Referencia completa del CLI
-- [Tipos](lua/types.md) - Documentacion del sistema de tipos
-- [LSP](guides/lsp.md) - Integracion con editores con diagnosticos en vivo
+- [Tipos](lua/types.md) - Documentación del sistema de tipos
+- [LSP](guides/lsp.md) - Integración con editores con diagnósticos en vivo

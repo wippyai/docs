@@ -33,9 +33,9 @@
   <line x1="199.04699999999994" y1="90" x2="429.34799999999996" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
   <text x="314.19749999999993" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">GET /facade/config</text>
 </g>
-<g class="message" data-from="FacadeAPI" data-to="Parent" data-label="{ iframe_url, iframe_origin, ...AppConfig }" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<g class="message" data-from="FacadeAPI" data-to="Parent" data-label="facade settings (no auth or context)" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="429.34799999999996" y1="130" x2="199.04699999999994" y2="130" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
-  <text x="314.19749999999993" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">{ iframe_url, iframe_origin, ...AppConfig }</text>
+  <text x="314.19749999999993" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">facade settings (no auth or context)</text>
 </g>
 <g class="message" data-from="Parent" data-to="Iframe" data-label="create &lt;iframe src=iframe_url&gt;" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="199.04699999999994" y1="170" x2="684.102" y2="170" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
@@ -45,10 +45,10 @@
   <line x1="684.102" y1="225" x2="199.04699999999994" y2="225" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
   <text x="441.57449999999994" y="215" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">postMessage { type:&#39;@gen2-chat&#39;, action:&#39;get-config&#39; }</text>
 </g>
-<g class="message" data-from="Parent" data-to="Iframe" data-label="postMessage { type:'@gen2-chat', action:'set-config', ...config }
+<g class="message" data-from="Parent" data-to="Iframe" data-label="postMessage { type:'@gen2-chat', action:'set-config', ...appConfig }
 targetOrigin = iframe_origin" data-line-style="solid" data-arrow-head="filled" data-self="false">
   <line x1="199.04699999999994" y1="265" x2="684.102" y2="265" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
-  <text x="441.57449999999994" y="255" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)"><tspan x="441.57449999999994" dy="-3.3000000000000007">postMessage { type:&#39;@gen2-chat&#39;, action:&#39;set-config&#39;, ...config }</tspan><tspan x="441.57449999999994" dy="14.3">targetOrigin = iframe_origin</tspan></text>
+  <text x="441.57449999999994" y="255" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)"><tspan x="441.57449999999994" dy="-3.3000000000000007">postMessage { type:&#39;@gen2-chat&#39;, action:&#39;set-config&#39;, ...appConfig }</tspan><tspan x="441.57449999999994" dy="14.3">targetOrigin = iframe_origin</tspan></text>
 </g>
 <g class="message" data-from="Iframe" data-to="Iframe" data-label="initialize with AppConfig (isolated, partial-page)" data-line-style="solid" data-arrow-head="filled" data-self="true">
   <polyline points="684.102,305 714.102,305 714.102,325 684.102,325" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
@@ -57,7 +57,7 @@ targetOrigin = iframe_origin" data-line-style="solid" data-arrow-head="filled" d
 <g class="note" data-position="over" data-actors="Parent">
   <polygon points="30,178 362.0939999999999,178 368.0939999999999,184 368.0939999999999,201 30,201" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
   <polygon points="362.0939999999999,178 368.0939999999999,184 362.0939999999999,184" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
-  <text x="199.04699999999994" y="189.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)"><tspan x="199.04699999999994" dy="-3.3000000000000007">addEventListener(&#39;message&#39;, …)</tspan><tspan x="199.04699999999994" dy="14.3">waiting for the @gen2-chat request</tspan></text>
+  <text x="199.04699999999994" y="189.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)"><tspan x="199.04699999999994" dy="-3.3000000000000007">assemble AppConfig with auth, schema, context</tspan><tspan x="199.04699999999994" dy="14.3">then wait for the @gen2-chat request</tspan></text>
 </g>
 <g class="actor" data-id="Parent" data-label="Your page
 (manual embed)" data-type="participant">

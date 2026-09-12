@@ -1,11 +1,13 @@
 ---
 title: "Embeddings"
-description: "El modulo wippy/embeddings proporciona almacenamiento de embeddings vectoriales y busqueda por similitud tanto para PostgreSQL (pgvector) como para…"
+description: "Genera, almacena y busca embeddings vectoriales con PostgreSQL pgvector o SQLite sqlite-vec."
 ---
 
 # Embeddings
 
-El modulo `wippy/embeddings` proporciona almacenamiento de embeddings vectoriales y busqueda por similitud tanto para PostgreSQL (pgvector) como para SQLite (sqlite-vec). Envuelve `wippy/llm` para generar embeddings y los persiste en una base de datos de la aplicacion.
+El módulo `wippy/embeddings` genera embeddings mediante `wippy/llm`, los almacena en una base de datos de la aplicación y realiza búsquedas vectoriales por similitud. Admite PostgreSQL con pgvector y SQLite con sqlite-vec.
+
+Esta página es una introducción a la API con fragmentos de referencia, no un tutorial independiente. Los fragmentos suponen un proyecto Wippy existente, una base de datos configurada y el modelo de embeddings, provider y credenciales descritos a continuación. Las llamadas remotas de embeddings pueden generar cargos del provider. Para una aplicación completa que indexa y busca contenido, siga [Construir un pipeline RAG](../tutorials/rag.md).
 
 ## Configuracion
 
@@ -38,9 +40,11 @@ entries:
 
 Al iniciar, `wippy/migration` toma la migracion `01_create_embeddings_table` y crea la tabla `embeddings_512` con el indice vectorial apropiado para tu driver de base de datos.
 
-## Constantes de Configuracion
+Si usa la ruta relativa de SQLite mostrada arriba, cree el directorio `data` antes de iniciar la aplicación.
 
-La configuracion por defecto esta incrustada en el modulo:
+## Constantes fijas actuales
+
+El módulo define actualmente estas constantes privadas; no son parámetros de la dependencia:
 
 | Constante | Valor por defecto | Descripcion |
 |-----------|-------------------|-------------|
@@ -49,7 +53,7 @@ La configuracion por defecto esta incrustada en el modulo:
 | `MAX_TOKENS_PER_REQUEST` | `8000` | Presupuesto de tokens por llamada; los lotes grandes se dividen |
 | `DEFAULT_SEARCH_LIMIT` | `10` | Numero por defecto de resultados retornados por `search` |
 
-Los tokens se estiman como `#text / 4`. Los lotes que exceden el presupuesto se dividen automaticamente.
+Los tokens se estiman como `ceil(#text / 4)`. Los lotes demasiado grandes se dividen entre elementos. Un elemento individual mayor que el presupuesto no se divide y hace que ese sublote falle antes de la llamada LLM.
 
 ## Importacion
 
@@ -79,14 +83,16 @@ Genera un embedding para `content` y lo persiste.
 | Parametro | Tipo | Requerido | Descripcion |
 |-----------|------|-----------|-------------|
 | `content` | string | si | Texto a incrustar |
-| `content_type` | string | si | Etiqueta libre, por ejemplo `"document_chunk"`, `"question"` |
-| `origin_id` | string | si | Identificador del documento o registro de origen |
+| `content_type` | string | si | Etiqueta como `"document_chunk"` o `"question"`; PostgreSQL la limita a 32 caracteres |
+| `origin_id` | string | si | Identificador del documento o registro de origen; debe ser un UUID cuando `target_db` es PostgreSQL |
 | `context_id` | string | no | Clave de ambito adicional (seccion, chat, tenant) |
 | `meta` | table | no | Metadatos arbitrarios serializables a JSON |
 
 Retorna `{ entry_id, origin_id, content_type, context_id }` o `nil, err`.
 
 ### add_batch
+
+El ejemplo siguiente usa ID de aplicación compatibles con SQLite. Para PostgreSQL, sustituya `doc-1` por un UUID porque el esquema PostgreSQL almacena `origin_id` como `UUID`.
 
 ```lua
 local result, err = embeddings.add_batch({
@@ -95,7 +101,9 @@ local result, err = embeddings.add_batch({
 })
 ```
 
-Incrusta y almacena muchos elementos en una sola llamada. Si el recuento total estimado de tokens excede `MAX_TOKENS_PER_REQUEST`, el lote se divide y se procesa en fragmentos. Retorna `{ count, items = { ... } }`.
+Genera y almacena embeddings para varios elementos en una sola llamada. Si el recuento total estimado de tokens supera `MAX_TOKENS_PER_REQUEST`, el método divide el lote en fragmentos. Cada fragmento del repositorio es transaccional, pero un lote de alto nivel dividido no es atómico entre fragmentos: los anteriores permanecen almacenados si falla uno posterior. Retorna `{ count, items = { ... } }`.
+
+Para eliminar registros creados durante las pruebas, use el método `delete_by_origin(origin_id)` de la API del repositorio para cada origen de ejemplo.
 
 ### search
 
@@ -110,34 +118,40 @@ local hits, err = embeddings.search("how do migrations work?", {
 
 Incrusta la cadena de consulta y realiza una busqueda por similitud contra los vectores almacenados. Todos los filtros son opcionales; los registros coincidentes se ordenan por similitud.
 
+`origin_id` puede ser un string o un array no vacío de strings. Cada resultado contiene `entry_id`, `origin_id`, `content_type`, `context_id`, `content`, `meta` decodificado, timestamps y `similarity`.
+
 ### find_by_type
 
 ```lua
-local hits, err = embeddings.find_by_type(query, content_type, { limit = 10 })
+local hits, err = embeddings.find_by_type(
+    "how do migrations work?",
+    "document_chunk",
+    { limit = 10 }
+)
 ```
 
-Envoltorio de conveniencia para `search` limitado a un solo `content_type`.
+Llama a `search` con un único `content_type`. El límite predeterminado es `10`.
 
 ### find_by_origin
 
 ```lua
-local hits, err = embeddings.find_by_origin(query, origin_id, {
+local hits, err = embeddings.find_by_origin("how do migrations work?", "doc-1", {
     content_type = "document_chunk",
     context_id   = "section-2",
     limit        = 5,
 })
 ```
 
-Envoltorio de conveniencia limitado a un solo `origin_id`, opcionalmente acotado aun mas.
+Llama a `search` con un único `origin_id` y filtros opcionales de `content_type` y `context_id`. El límite predeterminado es `5`.
 
 ## API del Repositorio (`wippy.embeddings:embedding_repo`)
 
-Usa el repositorio directamente cuando ya tengas un vector y quieras omitir la generacion del embedding:
+Use el repositorio directamente cuando ya tenga un vector y quiera omitir la generación del embedding. Los embeddings raw deben contener exactamente 512 valores numéricos:
 
 | Funcion | Descripcion |
 |---------|-------------|
 | `embedding_repo.add(content, content_type, origin_id, context_id, meta, embedding)` | Insertar un vector precomputado |
-| `embedding_repo.add_batch(batch)` | Insertar muchos vectores precomputados en una sola sentencia |
+| `embedding_repo.add_batch(batch)` | Insertar muchos vectores precomputados en una sola transacción |
 | `embedding_repo.get_by_origin(origin_id)` | Listar todos los registros para un origen dado |
 | `embedding_repo.delete_by_origin(origin_id)` | Eliminar todos los registros para un origen dado |
 | `embedding_repo.delete_by_entry(entry_id)` | Eliminar un solo registro por su id de fila |
@@ -156,6 +170,6 @@ Los vectores siempre se transportan como un array JSON plano en la capa de API.
 
 ## Ver Tambien
 
-- [LLM](framework/llm.md) - `llm.embed(...)` para generacion de embeddings cruda
-- [Migraciones](framework/migration.md) - Runner de migraciones que provisiona la tabla
-- [Vision General del Framework](framework/overview.md) - Uso de modulos del framework
+- [LLM](framework/llm.md) — `llm.embed(...)` para generación raw de embeddings
+- [Migraciones](framework/migration.md) — Ejecutor de migraciones que aprovisiona la tabla
+- [Visión general del framework](framework/overview.md) — Uso de módulos del framework

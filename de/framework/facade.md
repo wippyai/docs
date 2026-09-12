@@ -9,7 +9,9 @@ Das Modul `wippy/facade` stellt eine portable Facade bereit, die das Wippy-Front
 
 Die iframe-basierte Auslieferung (`iframe.html` plus `SetConfig`-PostMessage-Handshake) bleibt für manuelle, Facade-lose Einbettungen verfügbar, bei denen du den Host selbst zur Isolation oder für Teilseiten einbettest; die Facade selbst nutzt sie jedoch nicht mehr.
 
-## Setup
+Für isolierte oder teilweise Seitenintegrationen kann der Host weiterhin manuell über
+`iframe.html` und einen `SetConfig`-Handshake per `postMessage` eingebettet werden. Die
+Facade selbst verwendet diesen Auslieferungsmodus nicht.
 
 Füge das Modul zu deinem Projekt hinzu:
 
@@ -179,7 +181,8 @@ Diese drei werden als **oberste** `AppConfig`-Felder ausgegeben (Geschwister von
 | `axios_defaults` | `axiosDefaults` | `{}` | Standardwerte des Frontend-Axios-HTTP-Clients |
 | `tanstack` | `tanstack` | `{}` | TanStack-Query-Standardwerte: `{ default?, content?, lists? }`. `default` gilt für alle Queries; `content` zielt auf Renderings einzelner Ressourcen, `lists` auf Navigations- und Index-Queries. Host-Standard ist `refetchOnWindowFocus:false` |
 
-## Config Endpoint
+Diese drei Werte werden als Felder der obersten Ebene von `AppConfig` ausgegeben,
+nicht unter `hostConfig`:
 
 Die Facade registriert `GET /facade/config` auf dem konfigurierten Router. Dieser Pfad wird *auf* dem öffentlichen Router registriert, daher enthält die URL, die die Seite tatsächlich abruft, das Prefix des Routers — mit dem Beispiel-Prefix `/api/public` (siehe [Setup](#setup)) lautet sie `/api/public/facade/config`, und genau das ruft die mitgelieferte Facade-Seite ab. (Die Facade registriert eine weitere Route auf demselben Router — `GET /facade/variables.css`, die `css_variables` gerendert als `text/css`-Stylesheet für Seiten außerhalb des Web Host; siehe [Facade-Theming auf Seiten außerhalb des Web Host wiederverwenden](#reusing-facade-theming-on-non-web-host-pages).) Das Frontend ruft die Konfiguration beim Laden ab:
 
@@ -219,7 +222,7 @@ Die Facade registriert `GET /facade/config` auf dem konfigurierten Router. Diese
         "hideSessionSelector": false,
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }
@@ -229,7 +232,12 @@ Die API-URL wird aus der Umgebungsvariable `PUBLIC_API_URL` gelesen; `APP_WEBSOC
 
 Die Felder `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` und `module_file` sind **Shell-Ebene**-Felder, mit denen sich die einbettende Seite selbst aufbaut — sie gehören nicht zur untergeordneten `AppConfig`, mit der sich der Host initialisiert. Die Felder `iframe_origin`/`iframe_url` werden ausschließlich von manuellen, Facade-losen iframe-Einbettungen konsumiert (siehe [Facade-Einstiegspunkt](../frontend/web-host/entry-point.md)). Das Feld `mode` ist das normalisierte `fe_mode` (`compat` oder `managed`), und `module_file` ist der JS-Modul-Einstiegspunkt, den die Facade-Seite lädt — `/module.js` für compat, `/managed-layout.js` für managed.
 
-## Navigation Sidebar
+Die API-URL stammt aus `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` wird durch Ersetzen von
+`http://` durch `ws://` beziehungsweise `https://` durch `wss://` abgeleitet.
+`hostConfig` verwendet camelCase und enthält die Facade-Parameter einschließlich
+`render_engine` als `renderEngine` (siehe [Render-Engine](#render-engine)). `api_routes`, `axios_defaults` und `tanstack`
+werden als gleichrangige Top-Level-Felder `apiRoutes`, `axiosDefaults` und `tanstack`
+ausgegeben.
 
 Über `wippy/views` registrierte Seiten erscheinen anhand ihrer Metadaten automatisch in der Sidebar:
 

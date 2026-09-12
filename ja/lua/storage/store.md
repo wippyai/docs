@@ -9,9 +9,11 @@ description: "TTLサポート付きの高速キーバリューストレージ。
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-TTLサポート付きの高速キーバリューストレージ。キャッシュ、セッション、一時的な状態に最適。
+`store` モジュールは、必要に応じて TTL を指定できるキーバリューストレージを提供します。キャッシュデータ、セッション、その他の一時的な状態を保持できます。
 
-ストア設定については[ストア](system/store.md)を参照。
+このページは API リファレンスです。スニペットでは、構成済みのストア、後述する権限、アプリケーションが提供する `owner` や `new_value` などの値を前提としています。取得後のスニペットは既存の有効な `cache` ハンドルを使用するため、単独で実行できる関数ではありません。
+
+ストアの構成については、[ストア](system/store.md)を参照してください。
 
 ## ロード
 
@@ -29,10 +31,17 @@ if err then
     return nil, err
 end
 
-cache:set("user:123", {name = "Alice"}, 3600)
-local user = cache:get("user:123")
+local _, set_err = cache:set("user:123", {name = "Alice"}, 3600)
+if set_err then
+    cache:release()
+    return nil, set_err
+end
+
+local user, get_err = cache:get("user:123")
 
 cache:release()
+if get_err then return nil, get_err end
+return user
 ```
 
 | パラメータ | 型 | 説明 |
@@ -46,13 +55,14 @@ cache:release()
 オプションのTTL付きで値を保存:
 
 ```lua
-local cache = store.get("app:cache")
+-- Simple set
+local _, err = cache:set("user:123:name", "Alice")
+if err then return nil, err end
 
--- シンプルなset
-cache:set("user:123:name", "Alice")
-
--- TTL付きでset（300秒で期限切れ）
-cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+-- Set with TTL (expires in 300 seconds)
+local ok, ttl_err = cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+if ttl_err then return nil, ttl_err end
+return ok
 ```
 
 | パラメータ | 型 | 説明 |
@@ -68,10 +78,16 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 キーで値を取得:
 
 ```lua
-local user = cache:get("user:123")
-if not user then
-    -- キーが見つからないか期限切れ
+local errors = require("errors")
+
+local user, err = cache:get("user:123")
+if err then
+    if err:kind() == errors.NOT_FOUND then
+        return nil -- key missing or expired
+    end
+    return nil, err
 end
+return user
 ```
 
 | パラメータ | 型 | 説明 |
@@ -103,7 +119,9 @@ end
 ストアからキーを削除:
 
 ```lua
-cache:delete("session:" .. session_id)
+local deleted, err = cache:delete("session:" .. session_id)
+if err then return nil, err end
+return deleted
 ```
 
 | パラメータ | 型 | 説明 |
@@ -116,10 +134,11 @@ cache:delete("session:" .. session_id)
 
 ## エントリメタデータの読み取り
 
-`entry` は値とその `version` を返します。`version` は楽観的並行性制御に使われる不透明な文字列です:
+`entry` は値と、その楽観的並行性制御に使われる不透明なバージョン文字列 `version` を返します:
 
 ```lua
 local e, err = cache:entry("user:123")
+if err then return nil, err end
 if e then
     print(e.key, e.value, e.version)
 end
@@ -137,13 +156,16 @@ end
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
+if err then return nil, err end
 for _, e in ipairs(page.items) do
     print(e.key, e.value)
 end
 
--- 次のページ
+-- next page
 if page.has_more then
-    page = cache:list({ prefix = "session:", after = page.cursor })
+    local next_page, next_err = cache:list({ prefix = "session:", after = page.cursor })
+    if next_err then return nil, next_err end
+    page = next_page
 end
 ```
 
@@ -160,14 +182,17 @@ end
 `put` は値を書き込み、新しい `Entry` を返します。オプションで楽観的並行性制御が可能です:
 
 ```lua
--- キーが存在しない場合のみ作成
+local errors = require("errors")
+
+-- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
     -- 他の誰かが保持している
 end
 
--- compare-and-set: バージョンがまだ一致する場合のみ書き込み
-local cur = cache:entry("config")
+-- compare-and-set: write only if the version still matches
+local cur, read_err = cache:entry("config")
+if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
     -- 並行ライターが変更した。再読み取りして再試行
@@ -193,10 +218,11 @@ end
 `info` はバックエンドとそのサポート内容を報告します。これによりコードはバインドされたストアに適応できます:
 
 ```lua
-local info = cache:info()
--- info.backend      -> store.backend.* のいずれか（例: "kv.raft"）
--- info.consistency  -> store.consistency.* のいずれか（例: "linearizable"）
--- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  （ブール値）
+local info, err = cache:info()
+if err then return nil, err end
+-- info.backend      -> one of store.backend.* (e.g. "kv.raft")
+-- info.consistency  -> one of store.consistency.* (e.g. "linearizable")
+-- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleans)
 ```
 
 **戻り値:** `Info, error` — `{id, backend, consistency, durable, list, versioned, conditional_put, ttl}`
@@ -209,8 +235,10 @@ local info = cache:info()
 | `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
 
 ```lua
-if cache:info().consistency == store.consistency.LINEARIZABLE then
-    -- compare-and-set を安全に使用できる
+local info, err = cache:info()
+if err then return nil, err end
+if info.consistency == store.consistency.LINEARIZABLE then
+    -- safe to use compare-and-set
 end
 ```
 
@@ -258,3 +286,4 @@ end
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。

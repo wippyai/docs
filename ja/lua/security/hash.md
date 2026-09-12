@@ -9,7 +9,9 @@ description: "暗号学的ハッシュ関数とHMACメッセージ認証を提�
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-暗号学的ハッシュ関数とHMACメッセージ認証を提供します。
+`hash`モジュールは、暗号学的ハッシュ、HMAC値、PBKDF2で導出した鍵、非暗号学的なFNV-1ハッシュを計算します。このページは独立した呼び出しを示すAPIリファレンスです。リテラル入力は正常な使用例を示しています。データ、シークレット、パスワード、ソルトをアプリケーションから受け取る場合は、結果を使用する前に、文書化された2番目の`error`戻り値を取得して処理してください。
+
+ハッシュは暗号化ではなく、エントロピーの低い入力を秘匿しません。パスワード、HMAC鍵、導出鍵、シークレットに依存する生のダイジェストをログに記録しないでください。新しいメッセージ認証設計にはHMAC-SHA256またはHMAC-SHA512を使用し、パスワード検証子には一意なランダムソルトを指定したPBKDF2を使用してください。
 
 ## ロード
 
@@ -20,6 +22,8 @@ local hash = require("hash")
 ## 暗号学的ハッシュ
 
 ### MD5
+
+MD5には衝突耐性がありません。セキュリティ上の判断には使用せず、MD5を必要とするプロトコルとの互換性のためだけに使用してください。
 
 ```lua
 local hex = hash.md5("data")
@@ -34,6 +38,8 @@ local raw = hash.md5("data", true)
 **戻り値:** `string, error`
 
 ### SHA-1
+
+SHA-1には衝突耐性がありません。セキュリティ上の判断には使用せず、SHA-1を必要とするプロトコルとの互換性のためだけに使用してください。
 
 ```lua
 local hex = hash.sha1("data")
@@ -75,9 +81,11 @@ local raw = hash.sha512("data", true)
 
 **戻り値:** `string, error`
 
-## HMAC認証
+## HMAC
 
 ### HMAC-MD5
+
+HMAC-MD5は、それを必要とするプロトコルとの互換性のためだけに使用してください。新しい設計ではHMAC-SHA256またはHMAC-SHA512を推奨します。
 
 ```lua
 local hex = hash.hmac_md5("message", "secret")
@@ -93,6 +101,8 @@ local raw = hash.hmac_md5("message", "secret", true)
 **戻り値:** `string, error`
 
 ### HMAC-SHA1
+
+HMAC-SHA1は、それを必要とするプロトコルとの互換性のためだけに使用してください。新しい設計ではHMAC-SHA256またはHMAC-SHA512を推奨します。
 
 ```lua
 local hex = hash.hmac_sha1("message", "secret")
@@ -139,7 +149,7 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ## 非暗号学的ハッシュ
 
-### FNV-32
+### FNV-1 32-bit
 
 ハッシュテーブルとパーティショニング用の高速ハッシュです。
 
@@ -153,7 +163,7 @@ local n = hash.fnv32("data")
 
 **戻り値:** `number, error`
 
-### FNV-64
+### FNV-1 64-bit
 
 衝突を減らすための大きな出力を持つ高速ハッシュです。
 
@@ -196,3 +206,4 @@ local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
+エラーの扱いについては、[エラー処理](lua/core/errors.md)を参照してください。

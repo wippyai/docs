@@ -5,7 +5,9 @@ description: "El middleware WebSocket relay actualiza conexiones HTTP a WebSocke
 
 # WebSocket Relay
 
-El middleware WebSocket relay actualiza conexiones HTTP a WebSocket y retransmite mensajes a un proceso destino.
+El middleware `websocket_relay` actualiza conexiones HTTP a WebSocket y retransmite mensajes a un proceso destino.
+
+**Clasificación: referencia de protocolo con recetas parciales de integración.** Los bloques presuponen un servidor HTTP, un router, un host de procesos, un proceso de destino y un contexto de seguridad. Los handlers de mensajes de la aplicación y la limpieza del estado del cliente siguen siendo responsabilidad de la aplicación.
 
 ## Cómo Funciona
 
@@ -13,10 +15,6 @@ El middleware WebSocket relay actualiza conexiones HTTP a WebSocket y retransmit
 2. El middleware actualiza la conexión a WebSocket
 3. El relay se adjunta al proceso destino y lo monitorea
 4. Los mensajes fluyen bidireccionalmente entre cliente y proceso
-
-<warning>
-La conexión WebSocket está vinculada al proceso destino. Si el proceso termina, la conexión se cierra automáticamente.
-</warning>
 
 ## Semántica de Procesos
 
@@ -28,12 +26,14 @@ Las conexiones WebSocket son procesos completos con su propio PID. Se integran c
 - **Eventos EXIT** - Cuando la conexión se cierra, los monitores reciben notificaciones de salida
 
 ```lua
--- Monitorear una conexión WebSocket desde otro proceso
-process.monitor(websocket_pid)
+-- Monitor a WebSocket connection from another process
+local _, monitor_err = process.monitor(websocket_pid)
+if monitor_err then return nil, monitor_err end
 
--- Enviar mensaje a cliente WebSocket desde cualquier proceso.
--- El relay lo envuelve como JSON {topic, data}; el nombre del tópico es arbitrario.
-process.send(websocket_pid, "update", "hello")
+-- Send a message to the WebSocket client from any process.
+-- The relay wraps it as {topic, data} JSON; the topic name is arbitrary.
+local _, send_err = process.send(websocket_pid, "update", "hello")
+if send_err then return nil, send_err end
 ```
 
 <tip>
@@ -45,10 +45,11 @@ El relay monitorea el proceso destino. Si el destino termina, la conexión WebSo
 Las conexiones pueden transferirse a un proceso diferente enviando un mensaje de control:
 
 ```lua
-process.send(websocket_pid, "ws.control", {
+local _, transfer_err = process.send(websocket_pid, "ws.control", {
     target_pid = new_process_pid,
     message_topic = "ws.message"
 })
+if transfer_err then return nil, transfer_err end
 ```
 
 ## Configuración
@@ -84,11 +85,13 @@ local http = require("http")
 local json = require("json")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- Generar proceso manejador
-    local pid = process.spawn("app.ws:handler", "app:processes")
+    local user_id, query_err = req:query("user_id")
+    if query_err then return nil, query_err end
 
     -- Configurar relay
     res:set_header("X-WS-Relay", json.encode({
@@ -96,9 +99,19 @@ local function handler()
         message_topic = "ws.message",
         heartbeat_interval = "30s",
         metadata = {
-            user_id = req:query("user_id")
+            user_id = user_id
         }
-    }))
+    })
+    if encode_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or encode_err
+    end
+
+    local header_err = res:set_header("X-WS-Relay", relay_config)
+    if header_err then
+        local _, terminate_err = process.terminate(pid)
+        return nil, terminate_err or header_err
+    end
 end
 ```
 
@@ -118,15 +131,13 @@ El relay envía estos mensajes al proceso destino:
 | Tópico | Cuándo | Payload |
 |--------|--------|---------|
 | `ws.join` | Cliente conecta | JSON `{client_pid, metadata}` |
-| `ws.message` (o tu `message_topic`) | Cliente envía mensaje | Payload sin procesar del cliente (frame de texto -> string, frame binario -> bytes); el PID origen del paquete relay es el PID del cliente |
-| `ws.heartbeat` | Periódico (si configurado) | JSON `{client_pid, uptime, message_count, metadata}` |
+| `ws.message` (o tu `message_topic`) | Cliente envía mensaje | Payload sin procesar del cliente (frame de texto → formato String, frame binario → formato Bytes); `payload:data()` devuelve una cadena Lua para ambos formatos y el PID de origen es el PID del cliente |
+| `ws.heartbeat` | Periódico (cada 30 s de forma predeterminada; intervalo reemplazable mediante `heartbeat_interval`) | JSON `{client_pid, uptime, message_count, metadata}` |
 | `ws.leave` | Cliente desconecta | JSON `{client_pid, metadata}` |
 
 ## Recibir Mensajes
 
 ```lua
-local json = require("json")
-
 local function handler()
     local inbox = process.inbox()
 
@@ -135,21 +146,26 @@ local function handler()
         if not ok then break end
 
         local topic = msg:topic()
-        local from = msg:from()                -- PID de la conexión del cliente
+        local from = msg:from()                -- client connection PID
 
         if topic == "ws.join" then
-            -- Cliente conectado -- payload es {client_pid, metadata}
-            local data = msg:payload():data()
+            -- Client connected — payload is {client_pid, metadata}
+            local data, payload_err = msg:payload():data()
+            if payload_err then return nil, payload_err end
             local client_pid = data.client_pid
 
         elseif topic == "ws.message" then
-            -- Mensaje sin procesar del cliente; from() es el PID del cliente
-            local body = msg:payload():data()  -- string o bytes
-            handle_message(from, json.decode(body))
+            -- Raw client message; from() is the client PID
+            local incoming = msg:payload()
+            local frame_format = incoming:get_format()     -- "text/plain" or "application/octet-stream"
+            local body, payload_err = incoming:data()      -- Lua string in either case
+            if payload_err then return nil, payload_err end
+            -- Decode or dispatch `body` according to `frame_format` and the
+            -- application's protocol.
 
         elseif topic == "ws.leave" then
-            -- Cliente desconectado -- payload es {client_pid, metadata}
-            cleanup(from)
+            -- Client disconnected — payload is {client_pid, metadata}
+            -- Release application state associated with `from`.
         end
     end
 end
@@ -160,8 +176,9 @@ end
 Envíe mensajes de vuelta usando el PID del cliente. Cualquier tópico que elija se envuelve como JSON `{topic, data}` y se reenvía al WebSocket. Cada mensaje de servidor a cliente se envía como un único frame WebSocket TEXT que contiene el envoltorio JSON `{topic, data}`. Los payloads binarios se codifican en base64 dentro del campo `data`; NO se envían como frames binarios separados.
 
 ```lua
--- Enviar un mensaje estructurado (cualquier nombre de tópico)
-process.send(client_pid, "update", json.encode({event = "update", value = 42}))
+-- Send a structured message (any topic name)
+local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
+if send_err then return nil, send_err end
 
 -- Cerrar conexión (el payload es la cadena de motivo de cierre)
 process.send(client_pid, "ws.close", "Sesión terminada")
@@ -176,18 +193,19 @@ Rastree PIDs de clientes para hacer broadcast a múltiples clientes:
 ```lua
 local clients = {}
 
--- Al unirse
+-- On join
 clients[client_pid] = true
 
--- Al salir
+-- On leave
 clients[client_pid] = nil
 
 -- Broadcast
 local function broadcast(message)
-    local data = json.encode(message)
     for pid, _ in pairs(clients) do
-        process.send(pid, "broadcast", data)
+        local _, send_err = process.send(pid, "broadcast", message)
+        if send_err then return nil, send_err end
     end
+    return true
 end
 ```
 
@@ -195,7 +213,7 @@ end
 Para escenarios complejos con múltiples salas, genere un proceso manejador separado por sala o use un proceso administrador central que rastree membresías de salas.
 </tip>
 
-## Ver También
+## Véase también
 
 - [Middleware](http/middleware.md) - Configuración de middleware
 - [Procesos](lua/core/process.md) - Mensajería de procesos

@@ -8,7 +8,13 @@ description: "Realizar solicitudes HTTP a servicios externos. Soporta todos los 
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Realizar solicitudes HTTP a servicios externos. Soporta todos los metodos HTTP, cabeceras, parametros de consulta, datos de formulario, carga de archivos, respuestas en streaming y solicitudes por lotes concurrentes.
+El módulo `http_client` envía solicitudes HTTP con headers, query parameters,
+formularios, cargas de archivos, autenticación, opciones TLS, respuestas en streaming
+y lotes concurrentes.
+
+Esta es una referencia de API con recetas parciales. Las URLs, tokens, credenciales,
+datos y certificados proceden de la aplicación. Los ejemplos comprueban
+`Response, error` antes de consumir una respuesta y cierran los cuerpos en streaming.
 
 ## Carga
 
@@ -16,11 +22,16 @@ Realizar solicitudes HTTP a servicios externos. Soporta todos los metodos HTTP, 
 local http_client = require("http_client")
 ```
 
+Añade `http_client` a `modules:` antes de requerirlo. Las recetas de JSON y sistema
+de archivos también requieren `json` y `fs`.
+
 ## Metodos HTTP
 
 Todos los metodos comparten la misma firma: `method(url, options?)` devolviendo `Response, error`.
 
-### Solicitud GET
+### GET
+
+Envía una solicitud `GET`.
 
 ```lua
 local resp, err = http_client.get("https://api.example.com/users")
@@ -29,58 +40,81 @@ if err then
 end
 
 print(resp.status_code)  -- 200
-print(resp.body)         -- cuerpo de respuesta
+print(resp.body)         -- response body
 ```
 
-### Solicitud POST
+### POST
+
+Envía una solicitud `POST`.
 
 ```lua
+local json = require("json")
+
+local body, body_err = json.encode({name = "Alice", email = "alice@example.com"})
+if body_err then return nil, body_err end
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice", email = "alice@example.com"})
+    body = body
 })
+if err then return nil, err end
 ```
 
-### Solicitud PUT
+### PUT
+
+Envía una solicitud `PUT`.
 
 ```lua
+local body, body_err = json.encode({name = "Alice Smith"})
+if body_err then return nil, body_err end
 local resp, err = http_client.put("https://api.example.com/users/123", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice Smith"})
+    body = body
 })
+if err then return nil, err end
 ```
 
-### Solicitud PATCH
+### PATCH
+
+Envía una solicitud `PATCH`.
 
 ```lua
+local body, body_err = json.encode({status = "active"})
+if body_err then return nil, body_err end
 local resp, err = http_client.patch("https://api.example.com/users/123", {
-    body = json.encode({status = "active"})
+    headers = {["Content-Type"] = "application/json"},
+    body = body
 })
+if err then return nil, err end
 ```
 
-### Solicitud DELETE
+### DELETE
+
+Envía una solicitud `DELETE`.
 
 ```lua
 local resp, err = http_client.delete("https://api.example.com/users/123", {
     headers = {["Authorization"] = "Bearer " .. token}
 })
+if err then return nil, err end
 ```
 
-### Solicitud HEAD
+### HEAD
 
-Devuelve solo cabeceras, sin cuerpo.
+Una solicitud `HEAD` devuelve solo cabeceras, sin cuerpo.
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
+if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
-### Método Personalizado
+### Métodos personalizados
 
 ```lua
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
     headers = {["Depth"] = "1"}
 })
+if err then return nil, err end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -117,6 +151,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
         limit = "20"
     }
 })
+if err then return nil, err end
 ```
 
 ### Cabeceras y Autenticación
@@ -128,22 +163,28 @@ local resp, err = http_client.get("https://api.example.com/data", {
         ["Accept"] = "application/json"
     }
 })
+if err then return nil, err end
 
--- O usar autenticación basica
+-- Or use basic auth
 local resp, err = http_client.get("https://api.example.com/data", {
-    auth = {user = "admin", pass = "secret"}
+    auth = {user = service_user, pass = service_password}
 })
+if err then return nil, err end
 ```
+
+Carga los valores de autenticación desde almacenamiento secreto de la aplicación y
+envíalos únicamente mediante TLS.
 
 ### Datos de Formulario
 
 ```lua
 local resp, err = http_client.post("https://api.example.com/login", {
     form = {
-        username = "alice",
-        password = "secret123"
+        username = username,
+        password = password
     }
 })
+if err then return nil, err end
 ```
 
 ### Carga de Archivos
@@ -153,13 +194,14 @@ local resp, err = http_client.post("https://api.example.com/upload", {
     form = {title = "My Document"},
     files = {
         {
-            name = "attachment",      -- nombre de campo de formulario
-            filename = "report.pdf",  -- nombre de archivo original
-            content = pdf_data,       -- contenido del archivo
+            name = "attachment",      -- form field name
+            filename = "report.pdf",  -- original filename
+            content = pdf_data,       -- file content
             content_type = "application/pdf"
         }
     }
 })
+if err then return nil, err end
 ```
 
 | Campo de Archivo | Tipo | Requerido | Descripción |
@@ -172,16 +214,23 @@ local resp, err = http_client.post("https://api.example.com/upload", {
 
 *Se requiere `content` o `reader`.
 
+El runtime fijado lee por completo un `reader` en memoria antes del dispatch, no lo
+cierra y no informa por separado de fallos distintos de EOF; puede enviar los bytes
+acumulados antes del fallo. Prefiere `content` para datos ya limitados y cierra los
+readers propiedad del caller. En `v0.3.32a`, `content_type` se analiza pero no se reenvía.
+
+Los archivos respaldados por reader solo se admiten en llamadas individuales.
+`request_batch` reenvía `content` pero descarta un `reader`; las cargas en lote deben
+usar `content`.
+
 ### Timeout
 
 ```lua
--- Número: segundos
+-- Number: seconds
 local resp, err = http_client.get(url, {timeout = 30})
+if err then return nil, err end
 
--- String: formato de duración Go
-local resp, err = http_client.get(url, {timeout = "30s"})
-local resp, err = http_client.get(url, {timeout = "1m30s"})
-local resp, err = http_client.get(url, {timeout = "1h"})
+-- String alternatives use Go duration format: "30s", "1m30s", or "1h".
 ```
 
 ### Opciones TLS
@@ -201,8 +250,13 @@ Tanto `cert` como `key` deben proporcionarse juntos para mTLS. El campo `ca` ree
 #### Autenticacion mTLS
 
 ```lua
-local cert_pem = fs.read("/certs/client.crt")
-local key_pem = fs.read("/certs/client.key")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local cert_pem, cert_err = certs:readfile("client.crt")
+if cert_err then return nil, cert_err end
+local key_pem, key_err = certs:readfile("client.key")
+if key_err then return nil, key_err end
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -210,12 +264,17 @@ local resp, err = http_client.get("https://secure.example.com/api", {
         key = key_pem,
     }
 })
+if err then return nil, err end
 ```
 
 #### CA Personalizado
 
 ```lua
-local ca_pem = fs.read("/certs/internal-ca.crt")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local ca_pem, ca_err = certs:readfile("internal-ca.crt")
+if ca_err then return nil, ca_err end
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -223,11 +282,12 @@ local resp, err = http_client.get("https://internal.example.com/api", {
         server_name = "internal.example.com",
     }
 })
+if err then return nil, err end
 ```
 
 #### Omitir Verificacion Insegura
 
-Omitir verificacion TLS para entornos de desarrollo. Requiere el permiso de seguridad `http_client.insecure_tls`.
+Omitir verificacion TLS para entornos de desarrollo. `insecure_skip_verify` desactiva la verificación TLS y requiere el permiso de seguridad `http_client.insecure_tls`.
 
 ```lua
 local resp, err = http_client.get("https://localhost:8443/api", {
@@ -235,7 +295,11 @@ local resp, err = http_client.get("https://localhost:8443/api", {
         insecure_skip_verify = true,
     }
 })
+if err then return nil, err end
 ```
+
+Usa `insecure_skip_verify` solo para un endpoint de diagnóstico controlado. Desactiva
+la verificación tanto de la cadena del certificado como del hostname.
 
 ## Objeto Response
 
@@ -256,14 +320,15 @@ if err then
 end
 
 if resp.status_code == 200 then
-    local data = json.decode(resp.body)
+    local data, decode_err = json.decode(resp.body)
+    if decode_err then return nil, decode_err end
     print("Content-Type:", resp.headers["Content-Type"])
 end
 ```
 
 ## Respuestas en Streaming
 
-Para respuestas grandes, use streaming para evitar cargar todo el cuerpo en memoria.
+Para respuestas grandes, establezca `stream = true` para procesar la respuesta de forma incremental en lugar de cargar todo el cuerpo en memoria.
 
 ```lua
 local resp, err = http_client.get("https://cdn.example.com/large-file.zip", {
@@ -273,13 +338,17 @@ if err then
     return nil, err
 end
 
--- Procesar en fragmentos
+-- Process in chunks
+local read_err
 while true do
-    local chunk, err = resp.stream:read(65536)
-    if err or not chunk then break end
-    -- procesar fragmento
+    local chunk
+    chunk, read_err = resp.stream:read(65536)
+    if read_err or not chunk then break end
+    -- process chunk
 end
-resp.stream:close()
+local _, close_err = resp.stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
 | Método de Stream | Devuelve | Descripción |
@@ -287,29 +356,37 @@ resp.stream:close()
 | `read(n?)` | string, error | Leer hasta `n` bytes (predeterminado: buffer de implementación) |
 | `close()` | boolean, error | Cerrar el stream |
 
-`resp.stream` es un objeto [stream](lua/core/stream.md) completo — `seek`, `stat` y `scanner` también están disponibles.
+`resp.stream` es un objeto [stream](lua/core/stream.md) completo: también dispone de
+`seek`, `stat` y `scanner`. El caller es propietario del cuerpo y debe cerrarlo en
+todas las salidas; la limpieza de la tarea es solo un fallback.
 
 ## Solicitudes por Lotes
 
-Ejecutar multiples solicitudes concurrentemente.
+`request_batch` ejecuta varias solicitudes concurrentemente.
 
 ```lua
-local responses, errors = http_client.request_batch({
+local requests = {
     {"GET", "https://api.example.com/users"},
     {"GET", "https://api.example.com/products"},
     {"POST", "https://api.example.com/log", {body = "event"}}
-})
+}
+local responses, batch_errors = http_client.request_batch(requests)
 
-if errors then
-    for i, err in ipairs(errors) do
+if not responses then
+    return nil, batch_errors  -- whole-batch dispatch or validation failure
+end
+
+if batch_errors then
+    for i = 1, #requests do
+        local err = batch_errors[i]
         if err then
-            print("Solicitud " .. i .. " fallo:", err)
+            print("Request " .. i .. " failed:", err)
         end
     end
 else
-    -- Todas exitosas
+    -- All succeeded
     for i, resp in ipairs(responses) do
-        print("Respuesta " .. i .. ":", resp.status_code)
+        print("Response " .. i .. ":", resp.status_code)
     end
 end
 ```
@@ -323,11 +400,14 @@ end
 **Notas:**
 - Las solicitudes se ejecutan concurrentemente
 - Streaming (`stream = true`) no es soportado en lotes
+- Las cargas respaldadas por reader no se admiten en lote; usa `files[].content`
 - Los arrays de resultado coinciden con el orden de solicitud (indexado desde 1)
 
 ## Codificacion de URL
 
 ### Codificar
+
+Codifique valores con `http_client.encode_uri` antes de incorporarlos a una URL:
 
 ```lua
 local encoded = http_client.encode_uri("hello world")
@@ -340,6 +420,7 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
+if err then return nil, err end
 -- "hello world"
 ```
 
@@ -363,7 +444,8 @@ Las solicitudes HTTP estan sujetas a evaluacion de politica de seguridad.
 local security = require("security")
 
 if security.can("http_client.request", "https://api.example.com/users") then
-    local resp = http_client.get("https://api.example.com/users")
+    local resp, request_err = http_client.get("https://api.example.com/users")
+    if request_err then return nil, request_err end
 end
 ```
 
@@ -378,7 +460,7 @@ Los rangos de IP no publicos estan bloqueados por defecto. El acceso requiere el
 
 ```lua
 local resp, err = http_client.get("http://192.168.1.1/admin")
--- Error: no permitido: IP privada 192.168.1.1
+-- Error: not allowed: private IP 192.168.1.1
 ```
 
 La comprobacion ocurre al momento del dial, no sobre la cadena de la URL, y cubre todas las direcciones a las que resuelve el host. Un nombre de host que resuelve a varias direcciones se comprueba direccion por direccion: una direccion denegada se omite y se prueba la siguiente, y la solicitud falla solo cuando todas las candidatas estan denegadas o inalcanzables. Por lo tanto, un nombre de host publico que resuelve a una direccion privada se bloquea exactamente igual que un literal de IP privada.
@@ -399,21 +481,25 @@ Consulte [Modelo de Seguridad](system/security.md) para configuración de politi
 | IP privada bloqueada | `errors.PERMISSION_DENIED` | no |
 | Socket Unix denegado | `errors.PERMISSION_DENIED` | no |
 | TLS inseguro denegado | `errors.PERMISSION_DENIED` | no |
-| URL u opciones invalidas | `errors.INVALID` | no |
+| Elemento de lote, streaming en lote o escape URI no válido | `errors.INVALID` | no |
 | Sin contexto | `errors.INTERNAL` | no |
-| Fallo de red | `errors.INTERNAL` | si |
+| URL de transporte malformada o fallo de red | `errors.INTERNAL` | sí |
 | Timeout | `errors.INTERNAL` | si |
 
 ```lua
 local resp, err = http_client.get(url)
 if err then
     if errors.is(err, errors.PERMISSION_DENIED) then
-        print("Acceso denegado:", err:message())
+        print("Access denied:", err:message())
     elseif err:retryable() then
-        print("Error temporal:", err:message())
+        print("Temporary error:", err:message())
     end
     return nil, err
 end
 ```
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Muchos valores de opciones no compatibles se ignoran en lugar de producir errores
+estructurados. Los tipos de argumentos Lua no válidos y un lote vacío lanzan errores
+de argumento. Valida las tablas suministradas por la aplicación antes de llamar.
+
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

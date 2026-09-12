@@ -151,6 +151,9 @@ local surface, err = tty.surface({
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -158,6 +161,7 @@ local stats, err = surface:present(rows, {
 |------|------|------|
 | `rows` | string[] | 完整的一帧，最多 16384 行 |
 | `options.cursor` | table | 以 1 起始的 surface 坐标 `{x, y, visible}` |
+| `options.images` | table[] | 该帧完整的保留图像放置集合 |
 
 省略 `cursor` 会保留上一次显式设置的光标状态。存在 `cursor` 时，三个光标字段都是必填的。
 
@@ -174,6 +178,38 @@ local stats, err = surface:present(rows, {
 释放租约。幂等：后续调用返回首次关闭的结果。物理后端会恢复终端模式。
 
 **返回：** `boolean, error`
+
+### surface:capabilities()
+
+返回 `{images = "native" | "kitty" | "pending" | "none"}`。探测前请先启动终端输入。物理后端查询终端期间可能短暂返回 `pending`；虚拟 surface 会保留图像，无需探测。
+
+**返回：** `table, error`
+
+### surface:clipboard(text)
+
+在物理 surface 上写入 OSC 52 剪贴板请求。文本必须是有效的 UTF-8，且不超过 65,536 字节。成功表示终端输出已接受该请求；终端策略仍可能忽略它。虚拟 surface 返回不支持错误，API 不提供剪贴板读取或确认。
+
+**返回：** `boolean, error`
+
+## 保留图像
+
+将 PNG 导入有界的运行时存储，然后把其句柄放入完整的 surface 帧中：
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+
+assert(surface:present(rows, {images = {{
+    placement_id = "preview",
+    image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1,
+    alt = "Preview",
+}}}))
+```
+
+`tty.image()` 会异步校验 PNG 字节。`image:read()` 会显式导出编码后的字节，`image:close()` 会释放引用。源像素坐标从 0 开始；目标单元格坐标从 1 开始。后续调用 `present` 时省略 `images` 会清除之前的放置。不支持的物理终端会显示放置项的 `alt` 文本，而虚拟 surface 会为查看方保留图像资源。
 
 ## Canvas
 
@@ -235,13 +271,18 @@ viewport 是一个虚拟终端端口。创建它的进程是它的第一个查�
 ### tty.viewport(options?)
 
 ```lua
-local view, err = tty.viewport({width = 80, height = 24})
+local view, err = tty.viewport({
+    width = 80,
+    height = 24,
+    page = {foreground = "#e0def4", background = "#191724"},
+})
 ```
 
 | 选项 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `width` | number | 80 | 列数，1 到 65535 |
 | `height` | number | 24 | 行数，1 到 65535 |
+| `page` | table | 无 | 不透明的 `#RRGGBB` 前景色和背景色默认值 |
 
 面积上限为 262,144 个单元格。
 
@@ -298,6 +339,11 @@ end
 | `height` | number | viewport 行数 |
 | `rows` | string[] | 生产方最近发布的行 |
 | `cursor` | table | 以 1 起始的坐标 `{x, y, visible}`，在生产方发布显式光标状态之前不存在 |
+| `images` | table[] | 保留图像的放置元数据 |
+| `layers` | table[] | 有序的呈现层 |
+| `images_omitted` | boolean | 存在图像资源，但此普通快照未保留这些资源 |
+
+page 会将终端默认单元格和省略的行解析为明确的颜色。创建方可以使用 `viewport:set_page(page)` 修改它；传入 `nil` 会恢复生产方的原始行。page 变化会推进修订号，无需生产方重绘。
 
 ### viewport:updates()
 
@@ -333,6 +379,34 @@ assert(view:send({type = "close"}))
 仅分离当前这个查看方。关闭最后一个查看方不会杀死仍在运行的生产方，而在仍有查看方时关闭生产方的端口也不会销毁状态。
 
 **返回：** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+为本地或远程查看方签发与进程绑定的引用。权限彼此独立，默认为 false：
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- 在本节点或经过认证的 mesh 对等节点上的指定接收进程中：
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+mount 会绑定到接收方的完整 PID，只能兑换一次。已挂载的查看方不能创建生产方授权，也不能继续委托 mount。远程 mount 使用可续租约；重新连接需要新的 mount，且不能重放终端输入。使用 `viewport:revoke(reference)` 撤销已签发的 mount。关闭所有者 viewport 或结束所有者进程会撤销其 mount。
+
+### viewport:capture()
+
+以原子方式固定 viewport 修订号及其保留的图像资源：
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+普通的 `snapshot()` 不会保留图像字节。capture 会一直保留到关闭；已经从其中获取的图像句柄仍由各自的所有者独立持有。
 
 ## 事件类型
 
@@ -609,7 +683,14 @@ tty.text.position.RIGHT    -- 1
 
 ## 权限
 
-该模块本身不强制任何策略动作。终端访问权来自帧：终端宿主附加物理端口，而 `process.with_options({terminal = grant})` 附加 viewport，后者要求 spawn 发起方具备 `process.context`。
+物理终端的访问权来自进程帧。使用 `process.with_options({terminal = grant})` 附加生产方需要 spawn 发起方具备 `process.context`。委托 viewport 还会检查：
+
+| 操作 | 资源 | 描述 |
+|--------|----------|-------------|
+| `tty.mount` | 所有者 viewport 句柄 | 签发与进程绑定的 mount |
+| `tty.observe` | 所有者 viewport 句柄 | 读取快照、更新和 capture |
+| `tty.input` | 所有者 viewport 句柄 | 转发输入事件 |
+| `tty.resize` | 所有者 viewport 句柄 | 调整 viewport 尺寸 |
 
 ## 另见
 

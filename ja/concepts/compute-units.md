@@ -1,68 +1,79 @@
 ---
 title: "コンピュートユニット"
-description: "Wippyはコードを実行する3つの方法を提供します：関数、プロセス、ワークフロー。これらは同じ基盤メカニズムを共有しますが、存続期間、状態の保存場所、障害発生時の動作が異なります。"
+description: "Wippy の関数、プロセス、ワークフローを、存続期間、状態、通信、障害処理の観点から比較します。"
 ---
 
 # コンピュートユニット
 
-Wippyはコードを実行する3つの方法を提供します：関数、プロセス、ワークフロー。これらは同じ基盤メカニズムを共有しますが、存続期間、状態の保存場所、障害発生時の動作が異なります。
+Wippy にはコードを実行する方法として、関数、プロセス、ワークフローの 3 つがあります。基盤となる仕組みは共通していますが、存続期間、状態の保存先、障害発生時の動作が異なります。
 
 ## 関数
 
-関数は最もシンプルなモデルです。呼び出すと実行され、結果を返します。呼び出し間で状態は永続化されません。
+関数は呼び出されると実行され、結果を返します。各呼び出しは stateless として扱ってください。durable state や shared state は database または store に置きます。function pool は Lua state を再利用できるため、module global と closure upvalue は worker-local であり、呼び出しをまたぐ信頼できる store にはなりません。
 
 ```lua
-local result = funcs.call("app.math:add", 2, 3)
+local funcs = require("funcs")
+
+local result, err = funcs.call("app.math:add", 2, 3)
+if err then
+    return nil, err
+end
 ```
 
-関数は呼び出し元のコンテキストで実行されます。呼び出し元がキャンセルまたは終了すると、実行中の関数もキャンセルされます。これにより、クリーンアップについて考える必要がなくなり、シンプルになります。
+関数は呼び出し元の context で実行されます。呼び出し元が cancel または終了すると、実行中の関数呼び出しも cancel されます。
 
 <tip>
-関数はHTTPハンドラ、データ変換、および迅速に完了して結果を返すべきあらゆる処理に使用してください。
+関数は HTTP handler、data transformation、短時間で完了して結果を返す処理に使います。
 </tip>
 
 ## プロセス
 
-プロセスはアクターです。複数のメッセージにわたって状態を維持し、開始した人とは独立して実行され、メッセージパッシングを通じて通信します。
+プロセスは actor です。複数の message にまたがって状態を維持し、起動元とは独立して実行され、message passing で通信します。
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes")
-process.send(pid, "job", {task = "process_data"})
+local pid, err = process.spawn("app.workers:handler", "app:processes")
+if err then return nil, err end
+
+local ok, send_err = process.send(pid, "job", {task = "process_data"})
+if send_err then return nil, send_err end
+return ok
 ```
 
-プロセスを生成すると、コードが終了した後も実行を継続します。プロセスは互いにモニタリングしたり、リンクしたり、失敗した子を自動的に再起動するスーパービジョンツリーを形成できます。
+生成されたプロセスは、作成元のコードとは独立して実行されます。プロセス同士で monitor や link を設定でき、失敗した child を再起動する supervision tree に参加できます。
 
-スケジューラはワーカープール上で数千のプロセスを多重化します。各プロセスはI/O待機時にyieldし、他のプロセスの実行を許可します。
+scheduler は worker pool 上で数千のプロセスを多重化します。各プロセスは I/O の待機中に yield し、他のプロセスを実行可能にします。
 
 <tip>
-プロセスはバックグラウンドジョブ、サービスデーモン、および作成者より長く存続する必要があるものや、メッセージ間で状態を維持する必要があるものに使用してください。
+プロセスは background job、service daemon、作成元より長く存続する処理、message 間で状態を維持する処理に使います。
 </tip>
 
 ## ワークフロー
 
-ワークフローは絶対に失敗してはならない操作のためのものです。状態をワークフロープロバイダ（Temporalなど）に永続化し、クラッシュ、再起動、インフラストラクチャの変更後でも中断した場所から正確に再開できます。
+ワークフローは、中断から復旧する必要がある durable operation のためのものです。Temporal などの workflow provider が実行履歴を記録し、それを replay して crash、restart、infrastructure の変更後に状態を再構築します。
 
 ```lua
--- これは数日間実行でき、再起動を乗り越え、進捗を失うことはありません
-process.spawn("app.orders:process", "app:temporal_worker", order_id)
+-- The provider records this workflow so a worker restart can replay it.
+local pid, err = process.spawn("app.orders:process", "app:temporal_worker", order_id)
+if err then return nil, err end
+return pid
 ```
 
-トレードオフはレイテンシーです。すべてのステップが記録されるため、ワークフローは関数やプロセスより遅くなります。しかし、マルチステップのビジネスプロセスや長時間実行されるオーケストレーションには、その耐久性が価値があります。
+workflow operation は記録されるため、durability と引き換えに latency が増えます。multi-step business process や長時間の orchestration など、関数やプロセスの低 latency より recovery が重要な場合にワークフローを使います。
 
 <note>
-Wippyはワークフローの決定論を自動的に処理します。特別なテクニックを学ぶ必要はありません。通常のコードを書けば、ランタイムがリプレイ中に正しく動作することを保証します。
+Wippy はサポート対象の workflow operation を記録し、replay 中にも同じ結果を生成させます。workflow code でも、他の compute unit と同じ Lua 構文を使います。
 </note>
 
-## 比較
+## 比較 :id=how-they-compare
 
 | | 関数 | プロセス | ワークフロー |
 |---|---|---|---|
-| **状態** | なし | メモリ内 | 永続化 |
-| **存続期間** | 単一呼び出し | 終了またはクラッシュまで | すべてを乗り越える |
-| **通信** | 戻り値 + メッセージ | メッセージパッシング | アクティビティ呼び出し + メッセージ |
-| **障害処理** | 呼び出し元が処理 | スーパービジョンツリー | 自動リトライ |
-| **レイテンシー** | 最低 | 低 | 高め |
+| **状態** | 呼び出し内のみ。worker の再利用に依存しない | メモリ内 | 永続化された履歴から再構築 |
+| **存続期間** | 単一呼び出し | 終了または crash まで | restart をまたいで存続 |
+| **通信** | 戻り値 + message | message passing | activity call + message |
+| **障害処理** | 呼び出し元が処理 | supervision tree | provider が復旧。retry は policy に従う |
+| **レイテンシー** | 最低 | 低 | 高い |
 
 ## 同じコード、異なる動作
 
-多くのモジュールはコンテキストに応じて自動的に適応します。たとえば、`time.sleep()`は関数内ではワーカーをブロックし、プロセス内では他のプロセスの実行を許可するためにyieldし、ワークフロー内ではリカバリ時に正しくリプレイされるタイマーを記録します。
+多くの module は context に応じて自動的に動作を変えます。たとえば `time.sleep()` は関数とプロセスのどちらでも yield して他の処理を実行可能にします。ワークフローでは provider が timer も記録するため、replay によって 2 つ目の timer が開始されることはありません。

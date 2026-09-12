@@ -301,4 +301,3 @@ return nil, last_err
 | レジストリが利用不可 | `errors.INTERNAL` |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

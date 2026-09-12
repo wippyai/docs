@@ -1,6 +1,6 @@
 ---
 title: "Views"
-description: "Das Modul wippy/views bietet ein virtuelles Seiten- und Komponentensystem mit Template-Rendering, Ressourcenverwaltung und Mapping von…"
+description: "Serverseitig gerenderte Seiten, Frontend-Anwendungen, Web Components, Ressourcen und Umgebungs-Mappings mit wippy/views definieren."
 ---
 
 # Views
@@ -10,16 +10,32 @@ Das Modul `wippy/views` bietet ein virtuelles Seiten- und Komponentensystem mit 
 - **Jet-Template-Seiten** (`kind: template.jet`) — serverseitig gerendertes HTML. Die Daten und Ressourcen der Seite werden serverseitig zusammengestellt und injiziert, dann rendert die Jet-Engine das finale HTML. Das ist das ältere, serverseitig gerenderte Modell. Siehe [Template-Seiten](#template-pages).
 - **Registry-Entry-Frontends** (`kind: registry.entry`) — zwei Arten: Micro-Frontend-Apps (`view.page`, vollständige SPAs) und wiederverwendbare Web-Komponenten (`view.component`), ausgeliefert von einem CDN oder einem statischen Mount. Der Registry-Eintrag enthält nur Routing- und Deployment-Policy; Proxy-/CSS-Injektion wird in der `package.json` des Frontend-Pakets geschrieben. Siehe [Komponenten-Seiten](#component-pages) und [View-Komponenten](#view-components).
 
-## Setup
+- **Jet-Template-Seiten** (`kind: template.jet`) rendern HTML auf dem Server, nachdem
+  Seitendaten und Ressourcen zusammengestellt wurden. Siehe
+  [Template-Seiten](#template-seiten).
+- **Registry-Frontends** (`kind: registry.entry`) beschreiben Micro-Frontend-Anwendungen
+  (`view.page`) und wiederverwendbare Web Components (`view.component`), die von einem
+  CDN oder statischen Mount ausgeliefert werden. Der Registry-Eintrag enthält Routing-
+  und Deployment-Regeln. Frontend-eigene Metadaten stammen aus der generierten Datei
+  `wippy-meta.json` des Pakets; explizite Registry-Felder haben Vorrang. Siehe
+  [Komponenten-Seiten](#komponenten-seiten) und [View-Komponenten](#view-komponenten).
 
-Modul zum Projekt hinzufügen:
+Diese Seite ist eine Registry- und HTTP-API-Referenz. Die YAML-, HTML- und JSON-Blöcke
+sind unabhängige Referenz-Snippets und kein ausführbares Gesamtprojekt. Stellen Sie
+vor der Anpassung den von der Abhängigkeit referenzierten `http.router`, den
+Umgebungsspeicher und den HTTP-Service sowie alle im gewählten Beispiel genannten
+Template-Sets, Funktionen, Ressourcen oder Frontend-Bundles bereit.
+
+## Einrichtung
+
+Fügen Sie das Modul zum Projekt hinzu:
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-Abhängigkeit deklarieren:
+Deklarieren Sie die Abhängigkeit:
 
 ```yaml
 version: "1.0"
@@ -85,9 +101,9 @@ entries:
 | `meta.group_order` | number | `9999` | Gruppensortierreihenfolge |
 | `meta.group_placement` | string | `"default"` | Platzierung: `"default"`, `"sidebar"` |
 | `meta.secure` | boolean | `false` | Erfordert Authentifizierung |
-| `meta.public` | boolean | `false` | Öffentlich zugänglich |
-| `meta.announced` | boolean | `= public` | In Navigation anzeigen |
-| `meta.inline` | boolean | `false` | In der Benutzeroberfläche ausgeblendet |
+| `meta.public` | boolean | `false` | Macht die Seite bei `true` angekündigt; umgeht nicht die Zugriffskontrolle von `meta.secure` |
+| `meta.announced` | boolean | `false` | In der Navigation anzeigen. Der aktuelle Resolver verwendet `announced or public`; `public: true` überschreibt daher ein explizites `announced: false` |
+| `meta.inline` | boolean | `false` | Wird von `/pages/list` als numerischer Marker `hidden` zurückgegeben |
 | `meta.content_type` | string | `text/html` | MIME-Typ der Antwort |
 | `meta.parent` | string | — | ID der übergeordneten Seite |
 
@@ -95,11 +111,14 @@ entries:
 
 | Feld | Beschreibung |
 |-------|-------------|
-| `data.set` | Registry-ID des Template-Sets |
+| `data.set` | Erforderliche Registry-ID des Template-Sets |
 | `data.data_func` | Funktions-ID, die Seitendaten zurückgibt |
 | `data.resources` | Array von Ressourcen-Registry-IDs |
 
-Die `data_func` empfängt `{ params, query }` und gibt eine Tabelle zurück, die zum `data`-Kontext im Template wird.
+Die `data_func` erhält `{ params, query }` und gibt eine Tabelle zurück, die im Template
+zum Kontext `data` wird. Fehlt `data.data_func` oder gibt sie `nil` zurück, entsteht
+eine leere Tabelle. Kann eine konfigurierte Funktion nicht aufgelöst werden oder gibt
+sie einen Fehler zurück, wird das Rendering abgebrochen.
 
 ### Rendering-Pipeline
 
@@ -107,7 +126,7 @@ Die `data_func` empfängt `{ params, query }` und gibt eine Tabelle zurück, die
 2. Zugriff prüfen (Sicherheit)
 3. `data_func` aufrufen, falls definiert
 4. Ressourcen sammeln: globale + Template-Set-Ressourcen + seitenspezifische Ressourcen
-5. Umgebungsvariablen laden
+5. Umgebungsvariablen laden; Mapping-Fehler werden protokolliert und erzeugen eine leere Tabelle `env`
 6. Jet-Template mit Kontext rendern: `{ data, resources, query_params, route_params, env }`
 
 ## Komponenten-Seiten
@@ -151,7 +170,15 @@ Die API gibt einen Komponentendeskriptor mit der aufgelösten Basis-URL zurück.
 | `meta.secure` | boolean | `false` | Erfordert Authentifizierung |
 | `meta.config_overrides` | object | — | Seitenspezifische AppConfig-Overrides (camelCase), tief über die gebündelten Standardwerte gemerged |
 
-### Proxy-Konfiguration
+Beim Erstellen des Inhaltsdeskriptors fordert `wippy/views` für Komponenten-Seiten
+`wippy-meta.json` vom aufgelösten Bundle-Root an. Registry-YAML gewinnt Feld für Feld;
+gebündelte Metadaten ergänzen ausgelassene Frontend-Felder wie Paketversion,
+Einstiegspfad, Proxy-Einstellungen, Render-Engine und Konfigurationsüberschreibungen.
+Kann die Metadatendatei nicht verwendet werden, fällt das Modul auf den älteren
+YAML-Deskriptor zurück. Behalten Sie `meta.name` und `meta.title` in der Registry-YAML:
+`/pages/list` liest rohe Registry-Felder, ohne das Bundle abzurufen; fehlende Titel
+können die Sortierung bei gleichem `order` verhindern. `config_overrides` unterstützt
+`customization`, `axiosDefaults`, `routePrefix`, `apiRoutes` und `themeMode`.
 
 Die Proxy-Injektion für SPA-Seiten wird im Block `wippy.proxy.injections` der FE-`package.json` (camelCase) konfiguriert und zur Build-Zeit in `wippy-meta.json` eingebacken. Sie kann außerdem pro Deployment über einen camelCase-`proxy:`-Block unterhalb von `meta:` im Registry-Eintrag überschrieben werden (gleiche Form und gleicher `injections`-Wrapper wie der `wippy.proxy`-Block der `package.json`); der Host merged ihn tief über das gebündelte `wippy.proxy`, und der YAML-Wert gewinnt pro verschachteltem Schlüssel. Eine snake_case-Form gibt es nicht, ebenso wenig eine Normalisierung der Schreibweise. Beachten Sie, dass `config_overrides` nur `customization`, `axiosDefaults`, `routePrefix` und `apiRoutes` tief merged — es wirkt sich nie auf `proxy.injections` aus. Siehe [Micro-Frontend-Apps (view.page)](../frontend/frontend-registry/view-page.md) und [CSS-Injektion](../frontend/web-host/css-injection.md).
 
@@ -240,13 +267,15 @@ entries:
 
 ### Ressourcensammlung
 
-Ressourcen werden in drei Schichten gesammelt und in dieser Reihenfolge zusammengeführt:
+Ressourcen werden kumulativ aus drei Quellen ausgewählt:
 
 1. **Globale Ressourcen** — `global: true`, auf alle Seiten angewendet
 2. **Template-Set-Ressourcen** — über die `template_set`-ID zugeordnet
 3. **Seitenressourcen** — im `data.resources`-Array gelistet
 
-Innerhalb jeder Schicht werden Ressourcen nach `resource_type` gruppiert und nach `order` sortiert.
+Nach der Sammlung werden Ressourcen nach `resource_type` gruppiert und innerhalb
+jeder Gruppe nach `order` sortiert. Die drei Quellschichten legen keine eigene
+Ausgabereihenfolge fest.
 
 ## Mapping von Umgebungsvariablen
 
@@ -279,7 +308,9 @@ Jeder Mapping-Eintrag verknüpft Kontext-Schlüssel (in Templates als `env.api_e
 | 20–29 | Anwendungs-Mappings | Anwendungsspezifische Mappings |
 | 30–100 | Umgebungs-Overrides | Laufzeit-Overrides |
 
-Höhere Priorität gewinnt, wenn mehrere Mappings denselben Kontext-Schlüssel definieren.
+Höhere Priorität gewinnt, wenn mehrere Mappings denselben Kontextschlüssel definieren.
+Definieren Sie denselben Schlüssel nicht mehrfach mit derselben Priorität; deren
+Reihenfolge ist nicht festgelegt.
 
 ### Verwendung in Templates
 
@@ -307,7 +338,7 @@ Das Views-Modul registriert diese Endpunkte am konfigurierten Router:
 
 ### Render-Antwort
 
-Für Template-Seiten wird gerenderter HTML mit dem `content_type` der Seite zurückgegeben.
+Für Template-Seiten wird gerendertes HTML mit dem `content_type` der Seite zurückgegeben.
 
 Für Komponenten-Seiten wird ein Deskriptor zurückgegeben:
 

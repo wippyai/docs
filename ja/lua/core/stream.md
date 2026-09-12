@@ -7,17 +7,22 @@ description: "データを効率的に処理するためのストリーム読み
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-データを効率的に処理するためのストリーム読み書き操作。ストリームオブジェクトは他のモジュール（HTTP、ファイルシステムなど）から取得されます。
+ストリームは、HTTP、ファイルシステム、その他のモジュールに対する増分 I/O を提供します。基になるデータを所有するモジュールがストリームオブジェクトを作成します。このページは API リファレンスです。スキャナーループの `process(token)` はアプリケーション側で定義するコールバックです。
 
-## ロード
+## ストリームの取得
 
 ```lua
--- HTTPリクエストボディから
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- ファイルシステムから
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## 読み取り
@@ -63,7 +68,7 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-バッファリングされたデータを基礎となるストレージにフラッシュ。
+`flush` はバッファリングされたデータを基になる出力先へ書き込みます。
 
 ## ストリーム情報
 
@@ -85,11 +90,11 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-ストリームをクローズしてリソースを解放。複数回呼び出しても安全。
+`close` はストリームのリソースを解放します。複数回呼び出せます。
 
 ## スキャナ
 
-ストリームコンテンツ用のトークナイザを作成：
+ストリームの内容をトークン化するスキャナーを作成します。
 
 ```lua
 local scanner, err = stream:scanner(split)
@@ -116,6 +121,8 @@ while true do
 end
 ```
 
+`scan()` が `false` を返した場合は、EOF と判断する前に `scanner:err()` を確認してください。トークン化や基になる読み取りの失敗はスキャナーに保存され、`scan()` の第 2 戻り値には現れません。
+
 ## エラー
 
 | 条件 | 種別 |
@@ -125,3 +132,4 @@ end
 | 読み取り/書き込み不可 | `INTERNAL` |
 | 読み取り/書き込み失敗 | `INTERNAL` |
 
+未対応の `whence` またはスキャナー分割値を指定すると、構造化エラー値ではなく Lua の引数エラーが発生します。

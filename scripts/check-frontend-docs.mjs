@@ -79,7 +79,7 @@ function yamlCasingViolations(yaml) {
     if (parents.at(-1) === 'meta' && key === 'mount_route') {
       violations.push({
         index,
-        message: 'current backend compatibility field must be mountRoute until the mount_route fix ships',
+        message: 'current registry schema field must be authored as mountRoute, not mount_route',
       })
     }
 
@@ -392,8 +392,8 @@ const requiredPages = new Map([
   ['micro-frontends/configuration-casing.md', [
     'top-level `lower_case_with_underscore`',
     'Nested frontend configuration carried by backend YAML',
-    '`meta.mountRoute` is a current backend compatibility bug',
-    '`meta.mount_route`',
+    'The current view registry schema reads `meta.mountRoute`',
+    'internal `mount_route` field',
   ]],
   ['micro-frontends/custom-composites.md', [
     'Data-shape equivalence is not affordance equivalence',
@@ -416,12 +416,12 @@ const requiredPages = new Map([
     'unexpected console errors',
   ]],
   ['micro-frontends/quickstart.md', [
-    'Node.js 22 or newer',
-    'Vite 7',
+    'Node.js 22.12 or newer',
+    'Vite 7 for these examples',
   ]],
   ['micro-frontends/overview.md', [
-    'Node.js 22 or newer',
-    'Vite 7',
+    'Node.js 22.12 or newer',
+    'Vite 7 for this documentation baseline',
   ]],
   ['micro-frontends/unsupported-project-bound.md', [
     'Standard compliance returns exactly `UNSUPPORTED`',
@@ -601,7 +601,7 @@ if (!/%~dp0make\.ps1/.test(batFence) || /\bnpm(?:\.cmd)?\s+run\s+build\b/.test(b
   errors.push('micro-frontends/build-system.md: make.bat must only delegate to make.ps1')
 }
 if (!buildSystem.includes('https://web-host.wippy.ai/<release-tag>/import-map.json')
-  || !buildSystem.includes('https://web-host.wippy.ai/v1.2.3/import-map.json')) {
+  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json')) {
   errors.push('micro-frontends/build-system.md: canonical CDN import-map URL must be explicit')
 }
 
@@ -669,9 +669,9 @@ if (!/outside the Wippy portable-module contract/.test(themePersistence)) {
 }
 
 const viewPage = await readFile(join(root, 'frontend-registry/view-page.md'), 'utf8')
-if (!viewPage.includes('`meta.mountRoute` is a current backend')
-  || !viewPage.includes('`meta.mount_route`')) {
-  errors.push('frontend-registry/view-page.md: mountRoute must remain documented as a temporary backend casing bug')
+if (!viewPage.includes('current registry schema reads `meta.mountRoute`')
+  || !viewPage.includes('internal `mount_route` field')) {
+  errors.push('frontend-registry/view-page.md: mountRoute must remain documented as the current schema-defined casing exception')
 }
 
 if (errors.length) {

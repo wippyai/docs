@@ -9,7 +9,9 @@ description: "PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리�
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 플루언트 쿼리 빌더를 지원합니다.
+`sql` 모듈은 설정된 PostgreSQL, MySQL, SQLite 데이터베이스에서 쿼리를 실행합니다. 파라미터화된 쿼리, 트랜잭션, prepared statement, 쿼리 빌더를 지원합니다.
+
+이 페이지는 API 레퍼런스입니다. 코드 조각은 데이터베이스가 설정되어 있고, 이를 획득할 권한이 있으며, 쿼리에 명시된 테이블이 존재한다고 가정합니다. 독립 실행형 애플리케이션이 아니라 개별 호출을 보여 줍니다. 끝에 있는 결합된 레시피에는 추가 스키마 및 드라이버 가정이 명시되어 있습니다.
 
 데이터베이스 설정은 [데이터베이스](system/database.md)를 참조하세요.
 
@@ -19,9 +21,9 @@ PostgreSQL, MySQL, SQLite 데이터베이스에 대해 SQL 쿼리를 실행합�
 local sql = require("sql")
 ```
 
-## 연결 획득
+## `sql.get`
 
-리소스 레지스트리에서 데이터베이스 연결 가져오기:
+리소스 레지스트리에서 데이터베이스 연결을 획득합니다.
 
 ```lua
 local db, err = sql.get("app.db:main")
@@ -29,9 +31,19 @@ if err then
     return nil, err
 end
 
-local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
-db:release()
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    return finish(nil, err)
+end
+
+return finish(rows)
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -41,7 +53,7 @@ db:release()
 **반환:** `DB, error`
 
 <note>
-연결은 함수가 종료될 때 자동으로 풀로 반환되지만, 장기 실행 작업에서는 `db:release()`를 명시적으로 호출하는 것이 권장됩니다.
+데이터베이스 lease는 실행 프레임을 정리할 때 해제됩니다. 특히 장기 실행 작업에서는 데이터베이스 작업이 끝나는 즉시 `db:release()`를 명시적으로 호출하세요.
 </note>
 
 <note>
@@ -80,7 +92,9 @@ local insert = sql.builder.insert("users")
 
 ## 타입 변환
 
-### as.int
+### `sql.as.int`
+
+값을 SQL integer 타입으로 변환합니다.
 
 ```lua
 local value = sql.as.int(42)
@@ -88,7 +102,7 @@ local value = sql.as.int(42)
 
 **반환:** `userdata`
 
-## as.float
+### `sql.as.float`
 
 값을 SQL float 타입으로 변환합니다.
 
@@ -98,7 +112,7 @@ local value = sql.as.float(19.99)
 
 **반환:** `userdata`
 
-## as.text
+### `sql.as.text`
 
 값을 SQL text 타입으로 변환합니다.
 
@@ -108,7 +122,7 @@ local value = sql.as.text("hello")
 
 **반환:** `userdata`
 
-## as.binary
+### `sql.as.binary`
 
 값을 SQL binary 타입으로 변환합니다.
 
@@ -118,9 +132,9 @@ local value = sql.as.binary("binary data")
 
 **반환:** `userdata`
 
-## as.null
+### `sql.as.null`
 
-SQL NULL 마커를 반환합니다.
+SQL `NULL` 마커를 반환합니다.
 
 ```lua
 local value = sql.as.null()
@@ -130,7 +144,9 @@ local value = sql.as.null()
 
 ## 쿼리 빌더
 
-### 쿼리 생성
+### `sql.builder.select`
+
+`SELECT` 쿼리 빌더를 생성합니다.
 
 ```lua
 local query = sql.builder.select("id", "name")
@@ -144,9 +160,9 @@ local query = sql.builder.select("id", "name")
 
 **반환:** `SelectBuilder`
 
-## builder.insert
+### `sql.builder.insert`
 
-INSERT 쿼리 빌더를 생성합니다.
+`INSERT` 쿼리 빌더를 생성합니다.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -160,9 +176,9 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-## builder.update
+### `sql.builder.update`
 
-UPDATE 쿼리 빌더를 생성합니다.
+`UPDATE` 쿼리 빌더를 생성합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -176,9 +192,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-## builder.delete
+### `sql.builder.delete`
 
-DELETE 쿼리 빌더를 생성합니다.
+`DELETE` 쿼리 빌더를 생성합니다.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -192,9 +208,9 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-## builder.expr
+### `sql.builder.expr`
 
-where/having 절에서 사용할 raw SQL 표현식을 생성합니다.
+`WHERE` 또는 `HAVING` 절에서 사용할 raw SQL 표현식을 생성합니다.
 
 ```lua
 local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
@@ -207,7 +223,7 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 **반환:** `Sqlizer`
 
-## builder.eq
+### `sql.builder.eq`
 
 테이블에서 동등 조건을 생성합니다.
 
@@ -221,7 +237,7 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 **반환:** `Sqlizer`
 
-## builder.not_eq
+### `sql.builder.not_eq`
 
 테이블에서 부등 조건을 생성합니다.
 
@@ -235,7 +251,7 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 **반환:** `Sqlizer`
 
-## builder.lt
+### `sql.builder.lt`
 
 테이블에서 미만 조건을 생성합니다.
 
@@ -249,7 +265,7 @@ local cond = sql.builder.lt({age = 18})
 
 **반환:** `Sqlizer`
 
-## builder.lte
+### `sql.builder.lte`
 
 테이블에서 이하 조건을 생성합니다.
 
@@ -263,7 +279,7 @@ local cond = sql.builder.lte({price = 100})
 
 **반환:** `Sqlizer`
 
-## builder.gt
+### `sql.builder.gt`
 
 테이블에서 초과 조건을 생성합니다.
 
@@ -277,7 +293,7 @@ local cond = sql.builder.gt({score = 80})
 
 **반환:** `Sqlizer`
 
-## builder.gte
+### `sql.builder.gte`
 
 테이블에서 이상 조건을 생성합니다.
 
@@ -291,9 +307,9 @@ local cond = sql.builder.gte({age = 21})
 
 **반환:** `Sqlizer`
 
-## builder.like
+### `sql.builder.like`
 
-테이블에서 LIKE 조건을 생성합니다.
+테이블에서 `LIKE` 조건을 생성합니다.
 
 ```lua
 local cond = sql.builder.like({name = "john%"})
@@ -305,9 +321,9 @@ local cond = sql.builder.like({name = "john%"})
 
 **반환:** `Sqlizer`
 
-## builder.not_like
+### `sql.builder.not_like`
 
-테이블에서 NOT LIKE 조건을 생성합니다.
+테이블에서 `NOT LIKE` 조건을 생성합니다.
 
 ```lua
 local cond = sql.builder.not_like({email = "%@spam.com"})
@@ -319,9 +335,9 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 
 **반환:** `Sqlizer`
 
-## builder.and_
+### `sql.builder.and_`
 
-여러 조건을 AND로 결합합니다.
+여러 조건을 `AND`로 결합합니다.
 
 ```lua
 local cond = sql.builder.and_({
@@ -336,9 +352,9 @@ local cond = sql.builder.and_({
 
 **반환:** `Sqlizer`
 
-## builder.or_
+### `sql.builder.or_`
 
-여러 조건을 OR로 결합합니다.
+여러 조건을 `OR`로 결합합니다.
 
 ```lua
 local cond = sql.builder.or_({
@@ -365,7 +381,7 @@ local frag, args = sql.builder.eq({active = 1}):to_sql()
 
 ## builder.question
 
-? 플레이스홀더용 포맷 (기본값). `sql.builder.default_placeholder` 별칭으로 사용 가능합니다.
+`?` 플레이스홀더 형식을 사용합니다(기본값). `sql.builder.default_placeholder` 별칭으로도 사용할 수 있습니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -373,9 +389,9 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.question)
 ```
 
-## builder.dollar
+### `sql.builder.dollar`
 
-$1, $2, ... 플레이스홀더용 포맷.
+`$1, $2, ...` 플레이스홀더 형식을 사용합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -383,11 +399,11 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
-## builder.at
+### `sql.builder.at`
 
 `@p1, @p2, ...` 플레이스홀더용 포맷(SQL Server 스타일). 위 포맷들처럼 `placeholder_format`에 전달합니다.
 
-## builder.colon
+### `sql.builder.colon`
 
 `:1, :2, ...` 플레이스홀더용 포맷. 위 포맷들처럼 `placeholder_format`에 전달합니다.
 
@@ -395,7 +411,7 @@ local query = sql.builder.select("*")
 
 `sql.get()`에서 반환된 데이터베이스 연결 핸들.
 
-### db:type
+### `db:type`
 
 데이터베이스 타입 상수를 반환합니다.
 
@@ -405,9 +421,9 @@ local dbtype, err = db:type()
 
 **반환:** `string, error`
 
-### db:query
+### `db:query`
 
-SELECT 쿼리를 실행하고 행을 반환합니다.
+`SELECT` 쿼리를 실행하고 행을 반환합니다.
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -420,9 +436,9 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **반환:** `table[], error`
 
-### db:execute
+### `db:execute`
 
-INSERT/UPDATE/DELETE 쿼리를 실행합니다.
+`INSERT`, `UPDATE`, `DELETE` 쿼리를 실행합니다.
 
 ```lua
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -439,7 +455,7 @@ local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 - `last_insert_id` - 마지막 삽입된 ID
 - `rows_affected` - 영향받은 행 수
 
-### db:prepare
+### `db:prepare`
 
 반복 실행을 위한 prepared statement를 생성합니다.
 
@@ -453,7 +469,7 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 
 **반환:** `Statement, error`
 
-### db:begin
+### `db:begin`
 
 데이터베이스 트랜잭션을 시작합니다.
 
@@ -474,7 +490,7 @@ local tx, err = db:begin({
 
 **반환:** `Transaction, error`
 
-### db:release
+### `db:release`
 
 데이터베이스 리소스를 풀로 반환합니다.
 
@@ -484,7 +500,9 @@ local ok, err = db:release()
 
 **반환:** `boolean, error`
 
-### db:stats
+이 작업은 멱등적입니다.
+
+### `db:stats`
 
 연결 풀 통계를 반환합니다.
 
@@ -505,13 +523,13 @@ local stats, err = db:stats()
 - `max_idle_time_closed` - 유휴 타임아웃으로 닫힌 연결
 - `max_lifetime_closed` - 최대 수명으로 닫힌 연결
 
-## Prepared Statement
+## 준비된 문
 
-`db:prepare()`에서 반환된 prepared statement.
+`db:prepare()`가 반환한 prepared statement는 반복해서 쿼리하거나 실행할 수 있습니다.
 
-### stmt:query
+### `stmt:query`
 
-prepared statement를 SELECT로 실행합니다.
+prepared statement를 `SELECT` 쿼리로 실행합니다.
 
 ```lua
 local rows, err = stmt:query({123})
@@ -523,9 +541,9 @@ local rows, err = stmt:query({123})
 
 **반환:** `table[], error`
 
-### stmt:execute
+### `stmt:execute`
 
-prepared statement를 INSERT/UPDATE/DELETE로 실행합니다.
+prepared statement를 `INSERT`, `UPDATE`, `DELETE`로 실행합니다.
 
 ```lua
 local result, err = stmt:execute({"alice"})
@@ -541,7 +559,7 @@ local result, err = stmt:execute({"alice"})
 - `last_insert_id` - 마지막 삽입된 ID
 - `rows_affected` - 영향받은 행 수
 
-### stmt:close
+### `stmt:close`
 
 prepared statement를 닫습니다.
 
@@ -553,9 +571,11 @@ local ok, err = stmt:close()
 
 ## 트랜잭션
 
-`db:begin()`에서 반환된 데이터베이스 트랜잭션.
+`db:begin()`이 반환한 트랜잭션은 쿼리, statement, savepoint, commit, rollback 작업을 제공합니다.
 
-### tx:db_type
+활성 트랜잭션은 실행 프레임을 정리할 때 자동으로 rollback됩니다. 작업이 끝나는 즉시 명시적으로 commit하거나 rollback하세요.
+
+### `tx:db_type`
 
 데이터베이스 타입 상수를 반환합니다.
 
@@ -565,9 +585,9 @@ local dbtype, err = tx:db_type()
 
 **반환:** `string, error`
 
-### tx:query
+### `tx:query`
 
-트랜잭션 내에서 SELECT 쿼리를 실행합니다.
+트랜잭션 내에서 `SELECT` 쿼리를 실행합니다.
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -580,9 +600,9 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **반환:** `table[], error`
 
-### tx:execute
+### `tx:execute`
 
-트랜잭션 내에서 INSERT/UPDATE/DELETE를 실행합니다.
+트랜잭션 내에서 `INSERT`, `UPDATE`, `DELETE`를 실행합니다.
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -599,7 +619,7 @@ local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 - `last_insert_id` - 마지막 삽입된 ID
 - `rows_affected` - 영향받은 행 수
 
-### tx:prepare
+### `tx:prepare`
 
 트랜잭션 내에서 prepared statement를 생성합니다.
 
@@ -613,7 +633,7 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 
 **반환:** `Statement, error`
 
-### tx:commit
+### `tx:commit`
 
 트랜잭션을 커밋합니다.
 
@@ -623,7 +643,7 @@ local ok, err = tx:commit()
 
 **반환:** `boolean, error`
 
-### tx:rollback
+### `tx:rollback`
 
 트랜잭션을 롤백합니다.
 
@@ -633,7 +653,7 @@ local ok, err = tx:rollback()
 
 **반환:** `boolean, error`
 
-### tx:savepoint
+### `tx:savepoint`
 
 트랜잭션 내에 명명된 savepoint를 생성합니다.
 
@@ -647,7 +667,7 @@ local ok, err = tx:savepoint("sp1")
 
 **반환:** `boolean, error`
 
-### tx:rollback_to
+### `tx:rollback_to`
 
 명명된 savepoint로 롤백합니다.
 
@@ -661,7 +681,7 @@ local ok, err = tx:rollback_to("sp1")
 
 **반환:** `boolean, error`
 
-### tx:release
+### `tx:release`
 
 savepoint를 해제합니다.
 
@@ -677,11 +697,11 @@ local ok, err = tx:release("sp1")
 
 ## SELECT 빌더
 
-SELECT 쿼리 빌드를 위한 플루언트 인터페이스.
+`SELECT` 쿼리를 한 절씩 구성합니다.
 
-### select:from
+### `select:from`
 
-FROM 절을 설정합니다.
+`FROM` 절을 설정합니다.
 
 ```lua
 local query = sql.builder.select("id", "name"):from("users")
@@ -693,9 +713,9 @@ local query = sql.builder.select("id", "name"):from("users")
 
 **반환:** `SelectBuilder`
 
-### select:join
+### `select:join`
 
-JOIN 절을 추가합니다.
+`JOIN` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -710,9 +730,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:left_join
+### `select:left_join`
 
-LEFT JOIN 절을 추가합니다.
+`LEFT JOIN` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -727,9 +747,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:right_join
+### `select:right_join`
 
-RIGHT JOIN 절을 추가합니다.
+`RIGHT JOIN` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -744,9 +764,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:inner_join
+### `select:inner_join`
 
-INNER JOIN 절을 추가합니다.
+`INNER JOIN` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -761,9 +781,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:where
+### `select:where`
 
-WHERE 조건을 추가합니다.
+`WHERE` 조건을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -783,9 +803,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:order_by
+### `select:order_by`
 
-ORDER BY 절을 추가합니다.
+`ORDER BY` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -799,9 +819,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:group_by
+### `select:group_by`
 
-GROUP BY 절을 추가합니다.
+`GROUP BY` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*)")
@@ -815,9 +835,9 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 **반환:** `SelectBuilder`
 
-### select:having
+### `select:having`
 
-HAVING 조건을 추가합니다.
+`HAVING` 조건을 추가합니다.
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*) as cnt")
@@ -833,9 +853,9 @@ local query = sql.builder.select("status", "COUNT(*) as cnt")
 
 **반환:** `SelectBuilder`
 
-### select:limit
+### `select:limit`
 
-LIMIT을 설정합니다.
+`LIMIT` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -849,9 +869,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:offset
+### `select:offset`
 
-OFFSET을 설정합니다.
+`OFFSET` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.select("*")
@@ -865,9 +885,9 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:columns
+### `select:columns`
 
-SELECT에 컬럼을 추가합니다.
+`SELECT` 목록에 컬럼을 추가합니다.
 
 ```lua
 local query = sql.builder.select():columns("id", "name", "email")
@@ -879,9 +899,9 @@ local query = sql.builder.select():columns("id", "name", "email")
 
 **반환:** `SelectBuilder`
 
-### select:distinct
+### `select:distinct`
 
-DISTINCT 수정자를 추가합니다.
+`DISTINCT` 수정자를 추가합니다.
 
 ```lua
 local query = sql.builder.select("status")
@@ -891,7 +911,7 @@ local query = sql.builder.select("status")
 
 **반환:** `SelectBuilder`
 
-### select:suffix
+### `select:suffix`
 
 SQL 접미사를 추가합니다.
 
@@ -908,7 +928,7 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:placeholder_format
+### `select:placeholder_format`
 
 플레이스홀더 포맷을 설정합니다.
 
@@ -924,7 +944,7 @@ local query = sql.builder.select("*")
 
 **반환:** `SelectBuilder`
 
-### select:to_sql
+### `select:to_sql`
 
 SQL 문자열과 바인드 인자를 생성합니다.
 
@@ -932,14 +952,17 @@ SQL 문자열과 바인드 인자를 생성합니다.
 local sql_str, args = query:to_sql()
 ```
 
-**반환:** `string, table`
+**반환:** 성공 시 `string, table`, 잘못된 빌더 상태에서는 `nil, error`
 
-### select:run_with
+### `select:run_with`
 
 쿼리용 실행기를 생성합니다.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local rows, err = executor:query()
 ```
 
@@ -947,13 +970,13 @@ local rows, err = executor:query()
 |----------|------|------|
 | `db` | DB\|Transaction | 데이터베이스 또는 트랜잭션 핸들 |
 
-**반환:** `QueryExecutor`
+**반환:** `QueryExecutor, error`
 
 ## INSERT 빌더
 
-INSERT 쿼리 빌드를 위한 플루언트 인터페이스.
+`INSERT` 쿼리를 한 절씩 구성합니다.
 
-### insert:into
+### `insert:into`
 
 테이블 이름을 설정합니다.
 
@@ -967,7 +990,7 @@ local query = sql.builder.insert():into("users")
 
 **반환:** `InsertBuilder`
 
-### insert:columns
+### `insert:columns`
 
 컬럼 이름을 설정합니다.
 
@@ -981,7 +1004,7 @@ local query = sql.builder.insert("users"):columns("name", "email")
 
 **반환:** `InsertBuilder`
 
-### insert:values
+### `insert:values`
 
 행 값을 추가합니다.
 
@@ -997,7 +1020,7 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:set_map
+### `insert:set_map`
 
 테이블에서 컬럼과 값을 설정합니다.
 
@@ -1012,9 +1035,9 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:select
+### `insert:select`
 
-SELECT 쿼리에서 삽입합니다.
+`SELECT` 쿼리에서 행을 삽입합니다.
 
 ```lua
 local select_query = sql.builder.select("name", "email"):from("temp_users")
@@ -1029,13 +1052,13 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:prefix
+### `insert:prefix`
 
 SQL 접두사를 추가합니다.
 
 ```lua
 local query = sql.builder.insert("users")
-    :prefix("INSERT IGNORE INTO")
+    :prefix("/* audit import */")
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -1045,7 +1068,7 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:suffix
+### `insert:suffix`
 
 SQL 접미사를 추가합니다.
 
@@ -1063,9 +1086,9 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:options
+### `insert:options`
 
-INSERT 옵션을 추가합니다.
+`INSERT` 옵션을 추가합니다.
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1078,7 +1101,7 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:placeholder_format
+### `insert:placeholder_format`
 
 플레이스홀더 포맷을 설정합니다.
 
@@ -1093,7 +1116,7 @@ local query = sql.builder.insert("users")
 
 **반환:** `InsertBuilder`
 
-### insert:to_sql
+### `insert:to_sql`
 
 SQL 문자열과 바인드 인자를 생성합니다.
 
@@ -1101,14 +1124,17 @@ SQL 문자열과 바인드 인자를 생성합니다.
 local sql_str, args = query:to_sql()
 ```
 
-**반환:** `string, table`
+**반환:** 성공 시 `string, table`, 잘못된 빌더 상태에서는 `nil, error`
 
-### insert:run_with
+### `insert:run_with`
 
 쿼리용 실행기를 생성합니다.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1116,13 +1142,13 @@ local result, err = executor:exec()
 |----------|------|------|
 | `db` | DB\|Transaction | 데이터베이스 또는 트랜잭션 핸들 |
 
-**반환:** `QueryExecutor`
+**반환:** `QueryExecutor, error`
 
 ## UPDATE 빌더
 
-UPDATE 쿼리 빌드를 위한 플루언트 인터페이스.
+`UPDATE` 쿼리를 한 절씩 구성합니다.
 
-### update:table
+### `update:table`
 
 테이블 이름을 설정합니다.
 
@@ -1136,7 +1162,7 @@ local query = sql.builder.update():table("users")
 
 **반환:** `UpdateBuilder`
 
-### update:set
+### `update:set`
 
 컬럼 값을 설정합니다.
 
@@ -1153,7 +1179,7 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:set_map
+### `update:set_map`
 
 테이블에서 여러 컬럼을 설정합니다.
 
@@ -1168,9 +1194,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:where
+### `update:where`
 
-WHERE 조건을 추가합니다.
+`WHERE` 조건을 추가합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1185,9 +1211,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:order_by
+### `update:order_by`
 
-ORDER BY 절을 추가합니다.
+`ORDER BY` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1201,9 +1227,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:limit
+### `update:limit`
 
-LIMIT을 설정합니다.
+`LIMIT` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1217,9 +1243,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:offset
+### `update:offset`
 
-OFFSET을 설정합니다.
+`OFFSET` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1233,7 +1259,7 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:suffix
+### `update:suffix`
 
 SQL 접미사를 추가합니다.
 
@@ -1250,9 +1276,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:from
+### `update:from`
 
-FROM 절을 추가합니다.
+`FROM` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.update("users")
@@ -1266,9 +1292,9 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:from_select
+### `update:from_select`
 
-SELECT 쿼리에서 업데이트합니다.
+`SELECT` 쿼리에서 행을 업데이트합니다.
 
 ```lua
 local select_query = sql.builder.select("*"):from("temp_users")
@@ -1284,7 +1310,7 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:placeholder_format
+### `update:placeholder_format`
 
 플레이스홀더 포맷을 설정합니다.
 
@@ -1299,7 +1325,7 @@ local query = sql.builder.update("users")
 
 **반환:** `UpdateBuilder`
 
-### update:to_sql
+### `update:to_sql`
 
 SQL 문자열과 바인드 인자를 생성합니다.
 
@@ -1307,14 +1333,17 @@ SQL 문자열과 바인드 인자를 생성합니다.
 local sql_str, args = query:to_sql()
 ```
 
-**반환:** `string, table`
+**반환:** 성공 시 `string, table`, 잘못된 빌더 상태에서는 `nil, error`
 
-### update:run_with
+### `update:run_with`
 
 쿼리용 실행기를 생성합니다.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1322,13 +1351,13 @@ local result, err = executor:exec()
 |----------|------|------|
 | `db` | DB\|Transaction | 데이터베이스 또는 트랜잭션 핸들 |
 
-**반환:** `QueryExecutor`
+**반환:** `QueryExecutor, error`
 
 ## DELETE 빌더
 
-DELETE 쿼리 빌드를 위한 플루언트 인터페이스.
+`DELETE` 쿼리를 한 절씩 구성합니다.
 
-### delete:from
+### `delete:from`
 
 테이블 이름을 설정합니다.
 
@@ -1342,9 +1371,9 @@ local query = sql.builder.delete():from("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:where
+### `delete:where`
 
-WHERE 조건을 추가합니다.
+`WHERE` 조건을 추가합니다.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1358,9 +1387,9 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:order_by
+### `delete:order_by`
 
-ORDER BY 절을 추가합니다.
+`ORDER BY` 절을 추가합니다.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1374,9 +1403,9 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:limit
+### `delete:limit`
 
-LIMIT을 설정합니다.
+`LIMIT` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1390,9 +1419,9 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:offset
+### `delete:offset`
 
-OFFSET을 설정합니다.
+`OFFSET` 값을 설정합니다.
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1406,7 +1435,7 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:suffix
+### `delete:suffix`
 
 SQL 접미사를 추가합니다.
 
@@ -1423,7 +1452,7 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:placeholder_format
+### `delete:placeholder_format`
 
 플레이스홀더 포맷을 설정합니다.
 
@@ -1438,7 +1467,7 @@ local query = sql.builder.delete("users")
 
 **반환:** `DeleteBuilder`
 
-### delete:to_sql
+### `delete:to_sql`
 
 SQL 문자열과 바인드 인자를 생성합니다.
 
@@ -1446,14 +1475,17 @@ SQL 문자열과 바인드 인자를 생성합니다.
 local sql_str, args = query:to_sql()
 ```
 
-**반환:** `string, table`
+**반환:** 성공 시 `string, table`, 잘못된 빌더 상태에서는 `nil, error`
 
-### delete:run_with
+### `delete:run_with`
 
 쿼리용 실행기를 생성합니다.
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1461,15 +1493,15 @@ local result, err = executor:exec()
 |----------|------|------|
 | `db` | DB\|Transaction | 데이터베이스 또는 트랜잭션 핸들 |
 
-**반환:** `QueryExecutor`
+**반환:** `QueryExecutor, error`
 
 ## 쿼리 실행
 
 쿼리 실행기는 빌더가 생성한 쿼리를 실행합니다.
 
-### executor:query
+### `executor:query`
 
-쿼리를 실행하고 행을 반환합니다 (SELECT용).
+쿼리를 실행하고 `SELECT` 문의 행을 반환합니다.
 
 ```lua
 local rows, err = executor:query()
@@ -1477,9 +1509,9 @@ local rows, err = executor:query()
 
 **반환:** `table[], error`
 
-### executor:exec
+### `executor:exec`
 
-쿼리를 실행하고 결과를 반환합니다 (INSERT/UPDATE/DELETE용).
+쿼리를 실행하고 `INSERT`, `UPDATE`, `DELETE` 문의 결과를 반환합니다.
 
 ```lua
 local result, err = executor:exec()
@@ -1491,7 +1523,7 @@ local result, err = executor:exec()
 - `last_insert_id` - 마지막 삽입된 ID
 - `rows_affected` - 영향받은 행 수
 
-### executor:to_sql
+### `executor:to_sql`
 
 실행하지 않고 생성된 SQL과 인자를 반환합니다.
 
@@ -1524,30 +1556,36 @@ local sql_str, args = executor:to_sql()
 | 잘못된 savepoint 이름 | `errors.INVALID` | 아니오 |
 | 쿼리 실행 에러 | `errors.UNKNOWN` | nil |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+오류 처리 방법은 [오류 처리](lua/core/errors.md)를 참조하세요.
 
-## 예제
+## 결합된 부분 레시피
+
+이 레시피는 `app.db:main`이 설정된 SQLite 또는 MySQL 데이터베이스이며 참조하는 컬럼을 가진 `users`, `orders`, `logs` 테이블이 이미 있다고 가정합니다. `?` 플레이스홀더를 사용하며 PostgreSQL 리소스에서는 `$1`, `$2` 등을 사용해야 합니다. 반환되는 행은 애플리케이션 데이터에 따라 달라집니다. 주변 애플리케이션은 rollback 또는 close 실패가 최초 작업 오류를 대체하지 않으면서 관찰되도록 `report_cleanup_error(err)`를 제공합니다.
 
 ```lua
 local sql = require("sql")
 
--- 데이터베이스 연결 획득
 local db, err = sql.get("app.db:main")
-if err then error(err) end
+if err then return nil, err end
 
--- 데이터베이스 타입 확인
-local dbtype, _ = db:type()
-print("Database type:", dbtype)
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
--- 직접 쿼리
+-- Direct query
 local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 for _, user in ipairs(users) do
     print(user.id, user.name)
 end
 
--- 빌더 패턴
+-- Builder pattern
 local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :from("users u")
     :left_join("orders o ON o.user_id = u.id")
@@ -1560,56 +1598,52 @@ local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :order_by("order_count DESC")
     :limit(10)
 
-local executor = query:run_with(db)
+local executor, build_err = query:run_with(db)
+if build_err then
+    return finish(nil, build_err)
+end
 local results, err = executor:query()
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
--- savepoint가 있는 트랜잭션
+-- Transaction
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 if err then
-    tx:rollback()
-    error(err)
+    local _, rollback_err = tx:rollback()
+    if rollback_err then report_cleanup_error(rollback_err) end
+    return finish(nil, err)
 end
 
-tx:savepoint("sp1")
-
-local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
-if err then
-    tx:rollback_to("sp1")
-else
-    tx:release("sp1")
+local _, commit_err = tx:commit()
+if commit_err then
+    return finish(nil, commit_err)
 end
 
-local ok, err = tx:commit()
-if err then error(err) end
-
--- Prepared statement
+-- Prepared statements
 local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
-for i = 1, 100 do
+for i = 1, 3 do
     local _, err = stmt:execute({"log message " .. i, "info"})
     if err then
-        stmt:close()
-        error(err)
+        local _, close_err = stmt:close()
+        if close_err then report_cleanup_error(close_err) end
+        return finish(nil, err)
     end
 end
 
-stmt:close()
+local _, close_err = stmt:close()
+if close_err then
+    return finish(nil, close_err)
+end
 
--- NULL 및 타입화된 값
-local insert = sql.builder.insert("products")
-    :columns("name", "price", "description")
-    :values("Widget", sql.as.float(19.99), sql.NULL)
-
-local executor = insert:run_with(db)
-local result, err = executor:exec()
-if err then error(err) end
-
-print("Inserted ID:", result.last_insert_id)
-
-db:release()
+return finish({users = users, ranked_users = results})
 ```

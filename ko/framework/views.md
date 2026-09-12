@@ -12,14 +12,14 @@ description: "wippy/views 모듈은 템플릿 렌더링, 리소스 관리, 환�
 
 ## 설정
 
-프로젝트에 모듈 추가:
+프로젝트에 모듈을 추가합니다:
 
 ```bash
 wippy add wippy/views
 wippy install
 ```
 
-의존성 선언:
+의존성을 선언합니다:
 
 ```yaml
 version: "1.0"
@@ -75,7 +75,7 @@ entries:
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `meta.type` | string | — | `view.page`이어야 함 |
+| `meta.type` | string | — | `view.page`여야 합니다 |
 | `meta.name` | string | 엔트리 이름 | 페이지 식별자 |
 | `meta.title` | string | — | 표시 제목 |
 | `meta.icon` | string | — | 아이콘 식별자 |
@@ -83,11 +83,11 @@ entries:
 | `meta.group` | string | — | 그룹 카테고리 |
 | `meta.group_icon` | string | — | 그룹 아이콘 |
 | `meta.group_order` | number | `9999` | 그룹 정렬 순서 |
-| `meta.group_placement` | string | `"default"` | 배치: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | 인증 필요 |
-| `meta.public` | boolean | `false` | 공개 접근 가능 |
-| `meta.announced` | boolean | `= public` | 내비게이션에 표시 |
-| `meta.inline` | boolean | `false` | UI에서 숨김 |
+| `meta.group_placement` | string | `"default"` | 배치 위치: `"default"`, `"sidebar"` |
+| `meta.secure` | boolean | `false` | 인증 필요 여부 |
+| `meta.public` | boolean | `false` | true이면 페이지를 announced 상태로 만듭니다. `meta.secure` 접근 제어를 우회하지는 않습니다 |
+| `meta.announced` | boolean | `false` | 내비게이션에 표시합니다. 현재 리졸버는 `announced or public`을 사용하므로 `public: true`가 명시적인 `announced: false`보다 우선합니다 |
+| `meta.inline` | boolean | `false` | `/pages/list`가 숫자형 `hidden` 마커로 반환합니다 |
 | `meta.content_type` | string | `text/html` | 응답 MIME 타입 |
 | `meta.parent` | string | — | 상위 페이지 ID |
 
@@ -95,20 +95,20 @@ entries:
 
 | 필드 | 설명 |
 |-------|-------------|
-| `data.set` | 템플릿 세트 레지스트리 ID |
+| `data.set` | 필수 템플릿 세트 레지스트리 ID |
 | `data.data_func` | 페이지 데이터를 반환하는 함수 ID |
 | `data.resources` | 리소스 레지스트리 ID 배열 |
 
-`data_func`은 `{ params, query }`를 받고 템플릿에서 `data` 컨텍스트가 되는 테이블을 반환합니다.
+`data_func`은 `{ params, query }`를 받아 템플릿의 `data` 컨텍스트가 되는 테이블을 반환합니다. `data.data_func`를 생략하거나 함수가 `nil`을 반환하면 빈 테이블이 만들어집니다. 설정한 함수를 해석할 수 없거나 함수가 오류를 반환하면 렌더링이 중단됩니다.
 
 ### 렌더링 파이프라인
 
 1. 레지스트리에서 페이지 로드
-2. 접근 확인 (보안)
+2. 접근 권한 확인(보안)
 3. 정의된 경우 `data_func` 호출
 4. 리소스 수집: 전역 + 템플릿 세트 리소스 + 페이지별 리소스
-5. 환경 변수 로드
-6. 컨텍스트 `{ data, resources, query_params, route_params, env }`로 Jet 템플릿 렌더링
+5. 환경 변수 로드(매핑 실패는 로그에 기록되고 빈 `env` 테이블을 생성)
+6. `{ data, resources, query_params, route_params, env }` 컨텍스트로 Jet 템플릿 렌더링
 
 ## 컴포넌트 페이지
 
@@ -196,7 +196,7 @@ entries:
 
 ## 리소스
 
-리소스는 페이지와 연관된 CSS, JS, 폰트 파일입니다:
+리소스는 페이지와 연결된 CSS, JS, 폰트 파일입니다:
 
 ```yaml
 entries:
@@ -226,11 +226,11 @@ entries:
 
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
-| `meta.type` | string | `view.resource`이어야 함 |
-| `meta.resource_type` | string | 자유롭게 지정 가능(기본값 `"other"`); 일반적인 값은 `"style"`, `"script"`, `"font"` |
+| `meta.type` | string | `view.resource`여야 합니다 |
+| `meta.resource_type` | string | 자유 형식(기본값 `"other"`). 일반적인 값은 `"style"`, `"script"`, `"font"`입니다 |
 | `meta.order` | number | 타입 내 정렬 순서 |
 | `meta.global` | boolean | 모든 페이지에 적용 |
-| `meta.template_set` | string | 특정 템플릿 세트 전용 |
+| `meta.template_set` | string | 특정 템플릿 세트에 적용 |
 | `meta.url` | string | 리소스 URL |
 | `meta.integrity` | string | SRI 해시 |
 | `meta.crossorigin` | string | `"anonymous"` 또는 `"use-credentials"` |
@@ -240,13 +240,13 @@ entries:
 
 ### 리소스 수집
 
-리소스는 세 계층으로 수집되어 순서대로 병합됩니다:
+리소스는 다음 세 출처에서 누적해서 선택됩니다:
 
 1. **전역 리소스** — `global: true`, 모든 페이지에 적용
 2. **템플릿 세트 리소스** — `template_set` ID로 일치
-3. **페이지 리소스** — `data.resources` 배열에 나열됨
+3. **페이지 리소스** — `data.resources` 배열에 나열
 
-각 계층 내에서 리소스는 `resource_type`별로 그룹화되고 `order`로 정렬됩니다.
+수집 후 리소스는 `resource_type`별로 그룹화되며 각 그룹은 `order`로 정렬됩니다. 세 출처 계층은 별도의 출력 순서를 만들지 않습니다.
 
 ## 환경 변수 매핑
 
@@ -275,11 +275,11 @@ entries:
 | 범위 | 카테고리 | 설명 |
 |-------|----------|-------------|
 | 0–9 | 프레임워크 기본값 | 내장 프레임워크 매핑 |
-| 10–19 | 시스템 오버라이드 | 시스템 수준 설정 |
+| 10–19 | 시스템 재정의 | 시스템 수준 설정 |
 | 20–29 | 애플리케이션 매핑 | 애플리케이션별 매핑 |
-| 30–100 | 환경 오버라이드 | 런타임 오버라이드 |
+| 30–100 | 환경 재정의 | 런타임 재정의 |
 
-여러 매핑이 동일한 컨텍스트 키를 정의할 때 더 높은 우선순위가 우선합니다.
+여러 매핑이 동일한 컨텍스트 키를 정의하면 우선순위가 높은 값이 적용됩니다. 같은 우선순위에서 동일한 키를 두 번 이상 정의하지 마세요. 동일 우선순위의 순서는 정의되어 있지 않습니다.
 
 ### 템플릿에서 사용
 
@@ -307,9 +307,9 @@ views 모듈은 설정된 라우터에 다음 엔드포인트를 등록합니다
 
 ### 렌더 응답
 
-템플릿 페이지의 경우 페이지의 `content_type`으로 렌더링된 HTML을 반환합니다.
+템플릿 페이지는 페이지의 `content_type`으로 렌더링된 HTML을 반환합니다.
 
-컴포넌트 페이지의 경우 디스크립터를 반환합니다:
+컴포넌트 페이지는 다음 디스크립터를 반환합니다:
 
 ```json
 {
@@ -379,22 +379,22 @@ FE가 엔진을 선택하고 fragment를 마운트합니다 — [렌더 엔진](
 
 `secure: true`인 페이지는 인증이 필요합니다. 페이지 레지스트리는 현재 액터와 스코프에 대해 `security.can("view", "page:<page_id>")`를 확인합니다.
 
-비보안 페이지는 항상 접근 가능합니다. `announced` 플래그는 접근에 영향을 주지 않고 내비게이션 목록의 표시 여부를 제어합니다.
+보안이 설정되지 않은 페이지는 항상 접근할 수 있습니다. `announced` 플래그는 접근 권한에 영향을 주지 않고 내비게이션 목록의 표시 여부만 제어합니다.
 
 ## ID 한정
 
 페이지 정의의 상대 ID는 엔트리의 네임스페이스로 한정됩니다:
 
 ```yaml
-# 네임스페이스 "app" 내
+# In namespace "app"
 data:
-  data_func: my_data_func       # app:my_data_func로 해석됨
-  set: templates:default         # templates:default 그대로 (이미 한정됨)
+  data_func: my_data_func       # resolves to app:my_data_func
+  set: templates:default         # stays as templates:default (already qualified)
   resources:
-    - page_styles                # app:page_styles로 해석됨
+    - page_styles                # resolves to app:page_styles
 ```
 
-## 참고
+## 참고 항목
 
 - [Facade](./facade.md) - 프론트엔드 iframe 파사드 및 내비게이션 사이드바
 - [Template](../system/template.md) - Jet 템플릿 엔진

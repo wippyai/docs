@@ -30,13 +30,13 @@ options:
 </tip>
 
 ```yaml
-middleware:        # 매칭 전
+middleware:        # Before endpoint metadata
   - cors
   - compress
 options:
   cors.allow.origins: "*"
 
-post_middleware:   # 매칭 후
+post_middleware:   # Post-match
   - endpoint_firewall
 post_options:
   endpoint_firewall.action: "access"
@@ -292,7 +292,7 @@ post_options:
 
 ### OpenTelemetry {#otel}
 
-<warning>Pre-match</warning>
+<note>핸들러 전</note>
 
 수신 요청에 대한 OpenTelemetry 서버 스팬을 기록합니다. 항상 등록되며, OTel이나 그 HTTP 계측이 비활성화된 경우 no-op로 작동합니다.
 
@@ -311,15 +311,15 @@ middleware:
 
 ```yaml
 middleware:
-  - real_ip       # 1. 먼저 실제 IP 추출
-  - cors          # 2. CORS 프리플라이트 처리
-  - compress      # 3. 응답 압축 설정
-  - ratelimit     # 4. 레이트 제한 확인
-  - metrics       # 5. 메트릭 기록
-  - token_auth    # 6. 요청 인증
+  - real_ip       # 1. Extract real IP first
+  - cors          # 2. Handle CORS preflight
+  - compress      # 3. Set up response compression
+  - ratelimit     # 4. Check rate limits
+  - metrics       # 5. Record metrics
+  - token_auth    # 6. Authenticate requests
 
 post_middleware:
-  - endpoint_firewall  # 라우트 매칭 후 인가
+  - endpoint_firewall  # Authorize after route match
 ```
 
 ## 참고

@@ -1,24 +1,53 @@
 ---
 title: "Ticker de Criptomonedas"
-description: "Construya un ticker de criptomonedas en tiempo real con autenticación por API key y streaming WebSocket. Este tutorial demuestra seguridad basada en…"
+description: "Construye una demostración de ticker con intercambio de API key, autenticación por bearer token, WebSockets y mensajería de procesos."
 ---
 
 # Ticker de Criptomonedas
 
-Construya un ticker de criptomonedas en tiempo real con autenticación por API key y streaming WebSocket. Este tutorial demuestra seguridad basada en tokens, configuración de middleware, y manejo de WebSocket basado en procesos.
+Construye una demostración de ticker con autenticación por API key y entrega mediante
+WebSocket. El ejemplo cubre seguridad basada en tokens, configuración de middleware y
+manejo de conexiones mediante procesos.
+
+**Clasificación:** Tutorial local ejecutable. Incluye el registro, las fuentes Lua,
+el cliente de navegador, los comandos de inicio ordenados y la verificación en el
+navegador. Sus políticas permisivas y su almacén de tokens en memoria están limitados
+deliberadamente a una demostración en loopback.
 
 ## Resumen
 
-- **Intercambio de API key** — POST de una API key devuelve un token bearer firmado con HMAC
-- **Middleware de token** — Protege los upgrades WebSocket a través del token store
-- **Fan-out WebSocket** — Un proceso ticker transmite a múltiples handlers de conexión
-- **Recursos estáticos** — `http.static` sirve el cliente del navegador
-- **SQLite** — Almacena API keys; un memory store respalda el token store
+- **Intercambio de API key** — Envía una API key y recibe un bearer token firmado con HMAC
+- **Middleware de token** — Valida un bearer token y restaura su contexto de seguridad; el endpoint rechaza solicitudes sin actor
+- **Fan-out WebSocket** — Transmite desde un proceso ticker a múltiples handlers de conexión
+- **Recursos estáticos** — Sirve el cliente del navegador con `http.static`
+- **Almacenamiento** — Conserva las API keys en SQLite y los datos de token en memoria
+
+## Requisitos previos
+
+- El runtime Wippy `v0.3.32a`.
+- Un navegador compatible con WebSocket.
+- Un directorio de trabajo vacío. Crea los directorios del proyecto antes de añadir
+  los archivos siguientes:
+
+  ```bash
+  mkdir auth-ticker
+  cd auth-ticker
+  mkdir -p src/public data
+  ```
+
+  En PowerShell:
+
+  ```powershell
+  New-Item -ItemType Directory -Path auth-ticker\src\public -Force
+  New-Item -ItemType Directory -Path auth-ticker\data -Force
+  Set-Location auth-ticker
+  ```
 
 ## Estructura del Proyecto
 
 ```
 auth-ticker/
+├── data/
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -36,20 +65,20 @@ auth-ticker/
 ```mermaid
 flowchart TB
     subgraph Clients
-        Browser[Cliente Browser]
-        API[Cliente API]
+        Browser[Browser Client]
+        API[API Client]
     end
 
     subgraph "Capa HTTP"
         Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
-        subgraph "Router Público"
+        subgraph "Public Router"
             CORS1[cors middleware]
             AuthEndpoint[auth_token<br/>POST /auth/token]
         end
 
-        subgraph "Router WS /ws"
+        subgraph "WS Router /ws"
             CORS2[cors middleware]
             TokenAuth[token_auth middleware]
             WSEndpoint[ws_ticker<br/>GET /ws/ticker]
@@ -57,14 +86,14 @@ flowchart TB
         end
     end
 
-    subgraph "Capa Seguridad"
+    subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
         SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
-    subgraph "Almacenamiento"
+    subgraph "Storage"
         DB[db.sql.sqlite<br/>auth.db]
     end
 
@@ -79,12 +108,12 @@ flowchart TB
     API -->|"POST /auth/token"| CORS1
     Browser -->|"WS /ws/ticker"| CORS2
 
-    %% Flujo API
+    %% API flow
     CORS1 --> AuthEndpoint
     AuthEndpoint -->|validate| TokenStore
     AuthEndpoint -->|"issue token"| API
 
-    %% Flujo WS
+    %% WS flow
     CORS2 --> TokenAuth
     TokenAuth -->|validate| TokenStore
     TokenAuth --> WSEndpoint
@@ -93,16 +122,16 @@ flowchart TB
     WSEndpoint --> WSRelay
     WSRelay <-->|"messages"| WSHandler
 
-    %% Dependencias del almacén de tokens
+    %% Token store deps
     MemStore --> TokenStore
     Policy -->|attached to token| TokenStore
     SysPolicy -->|"actor + scope"| AuthEndpoint
     SysPolicy -->|"actor + scope"| Ticker
 
-    %% Auth usa DB para API keys
+    %% Auth uses DB for API keys
     AuthEndpoint -->|lookup API key| DB
 
-    %% Comunicación entre procesos
+    %% Process communication
     WSHandler -->|subscribe| Ticker
     Ticker -->|broadcast| WSHandler
     WSRelay <-->|"ws frames"| Browser
@@ -120,35 +149,35 @@ flowchart TB
 
 ## Configuración
 
-`_index.yaml` completo:
+Crea `src/_index.yaml`:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  # Base de datos para API keys
+  # Database for API keys
   - name: db
     kind: db.sql.sqlite
     file: "./data/auth.db"
     lifecycle:
       auto_start: true
 
-  # Almacén respaldo de tokens
+  # Token backing store
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # Almacén de tokens con firma HMAC
+  # Token store with HMAC signing
   - name: tokens
     kind: security.token_store
     store: app:token_data
     token_length: 32
     default_expiration: "1h"
-    token_key: "demo-secret-key-change-in-production"
+    token_key: "local-demo-signing-key-do-not-deploy"
 
-  # Política de seguridad para usuarios autenticados
+  # Security policy for authenticated users
   - name: user_policy
     kind: security.policy
     policy:
@@ -181,7 +210,13 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Migración de base de datos
+  # Terminal host used by `wippy run -x app:migrate`
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
+  # Database migration
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -193,14 +228,7 @@ entries:
       policies:
         - app:system_policy
 
-  - name: migrate-service
-    kind: process.service
-    process: app:migrate
-    host: app:processes
-    lifecycle:
-      auto_start: true
-
-  # Broadcaster del ticker
+  # Ticker broadcaster
   - name: ticker
     kind: process.lua
     source: file://ticker.lua
@@ -219,21 +247,23 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Handler WebSocket (generado por conexión)
+  # WebSocket handler (spawned per connection)
   - name: ws_handler
     kind: process.lua
     source: file://ws_handler.lua
     method: main
     modules: [logger, json]
 
-  # Servidor HTTP
+  # HTTP server
   - name: gateway
     kind: http.service
-    addr: ":8081"
+    addr: "127.0.0.1:8081"
     lifecycle:
       auto_start: true
+      requires:
+        - app:ticker-service
 
-  # Router público (sin auth)
+  # Public router (no auth)
   - name: public_router
     kind: http.router
     meta:
@@ -241,9 +271,9 @@ entries:
     middleware:
       - cors
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
 
-  # Router WebSocket (con auth)
+  # WebSocket router (with auth)
   - name: ws_router
     kind: http.router
     meta:
@@ -253,14 +283,14 @@ entries:
       - cors
       - token_auth
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
       token_auth.store: "app:tokens"
     post_middleware:
       - websocket_relay
     post_options:
-      wsrelay.allowed.origins: "*"
+      wsrelay.allowed.origins: "http://127.0.0.1:8081"
 
-  # Archivos estáticos
+  # Static files
   - name: public_fs
     kind: fs.directory
     directory: ./src/public
@@ -275,7 +305,7 @@ entries:
       spa: true
       index: index.html
 
-  # Intercambio de token de auth
+  # Auth token exchange
   - name: auth_token
     kind: function.lua
     source: file://auth_token.lua
@@ -295,7 +325,7 @@ entries:
     path: /auth/token
     func: app:auth_token
 
-  # Endpoint WebSocket ticker
+  # WebSocket ticker endpoint
   - name: ws_ticker
     kind: function.lua
     source: file://ws_ticker.lua
@@ -368,17 +398,17 @@ local function handler()
 
     local user = rows[1]
 
-    -- Crear actor con identidad de usuario
+    -- Create actor with user identity
     local actor = security.new_actor("user:" .. user.user_id, {
         role = user.role,
         user_id = user.user_id
     })
 
-    -- Adjuntar user_policy al scope
+    -- Attach user_policy to the scope
     local policy, _ = security.policy("app:user_policy")
     local scope = policy and security.new_scope({policy}) or security.new_scope()
 
-    -- Emitir token firmado HMAC
+    -- Issue HMAC-signed token
     local store, store_err = security.token_store("app:tokens")
     if store_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
@@ -429,7 +459,7 @@ local function handler()
         return
     end
 
-    -- Actor es establecido por middleware token_auth
+    -- Actor is set by token_auth middleware
     local actor = security.actor()
     if not actor then
         res:set_status(http.STATUS.UNAUTHORIZED)
@@ -439,7 +469,7 @@ local function handler()
 
     local user_id = actor:id()
 
-    -- Generar proceso handler (autorizado por user_policy en token)
+    -- Spawn handler process (authorized by user_policy in token)
     local pid, err = process.spawn("app:ws_handler", "app:processes", user_id)
     if err then
         logger:error("spawn failed", {error = tostring(err)})
@@ -448,7 +478,7 @@ local function handler()
         return
     end
 
-    -- Configurar websocket_relay para enrutar mensajes al handler
+    -- Configure websocket_relay to route messages to handler
     res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         metadata = {user_id = user_id, auth_time = os.time()}
@@ -490,11 +520,14 @@ local function main(user_id)
         if topic == "ws.join" then
             client_pid = data.client_pid
 
-            -- Suscribir con nuestro PID para monitoreo de crash
-            process.send("ticker", "subscribe", {
+            -- Subscribe with our PID for crash monitoring
+            local _, subscribe_err = process.send("ticker", "subscribe", {
                 client_pid = client_pid,
                 handler_pid = process.pid()
             })
+            if subscribe_err then
+                error("failed to subscribe to ticker: " .. tostring(subscribe_err))
+            end
             subscribed = true
 
             -- Enviar bienvenida
@@ -526,14 +559,15 @@ return { main = main }
 
 ## Broadcasting
 
-`ticker.lua` - mantiene suscripciones y hace broadcast de actualizaciones de precios:
+`ticker.lua` mantiene las suscripciones y transmite actualizaciones de precios
+simuladas localmente; el tutorial no llama a un servicio externo de datos de mercado:
 
 ```lua
 local logger = require("logger")
 local time = require("time")
 local crypto = require("crypto")
 
--- mapping handler_pid -> client_pid
+-- handler_pid -> client_pid mapping
 local subscriptions = {}
 
 local prices = {
@@ -550,7 +584,10 @@ end
 
 local function update_prices()
     for symbol, price in pairs(prices) do
-        local bytes = crypto.random.bytes(2)
+        local bytes, random_err = crypto.random.bytes(2)
+        if random_err then
+            error("failed to generate price movement: " .. tostring(random_err))
+        end
         local rand = (bytes:byte(1) * 256 + bytes:byte(2)) / 65535.0
         local factor = (rand - 0.5) * 0.002
         prices[symbol] = price * (1 + factor)
@@ -573,11 +610,14 @@ local function main()
     local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
-        return 1
+        error("failed to create ticker: " .. tostring(ticker_err))
     end
     local tick_ch = ticker:response()
 
-    process.registry.register("ticker")
+    local _, register_err = process.registry.register("ticker")
+    if register_err then
+        error("failed to register ticker: " .. tostring(register_err))
+    end
     logger:info("ticker started", {pid = process.pid()})
 
     while true do
@@ -647,7 +687,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -663,25 +703,37 @@ local function main()
     if exec_err then
         db:release()
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
-    -- Verificar si la clave demo existe
-    local rows, _ = db:query("SELECT api_key FROM api_keys WHERE user_id = ?", {"demo"})
+    -- Create one random local-demo key. It is printed only on first creation.
+    local rows, query_err = db:query(
+        "SELECT api_key FROM api_keys WHERE user_id = ?",
+        {"demo"}
+    )
+    if query_err then
+        db:release()
+        error("failed to query demo API key: " .. tostring(query_err))
+    end
+
     if #rows == 0 then
         local demo_key, key_err = crypto.random.string(32)
         if key_err then
             db:release()
-            return 1
+            error("failed to generate demo API key: " .. tostring(key_err))
         end
 
-        db:execute(
+        local _, insert_err = db:execute(
             "INSERT INTO api_keys (api_key, user_id, role, created_at) VALUES (?, ?, ?, ?)",
             {demo_key, "demo", "user", os.time()}
         )
+        if insert_err then
+            db:release()
+            error("failed to store demo API key: " .. tostring(insert_err))
+        end
         logger:info("demo API key created", {api_key = demo_key})
     else
-        logger:info("demo API key exists", {api_key = rows[1].api_key})
+        logger:info("demo API key already exists; use the value saved from its first creation")
     end
 
     db:release()
@@ -754,16 +806,57 @@ return { main = main }
 
 ## Ejecución
 
+Inicializa el lock, ejecuta la migración hasta que termine y después inicia los
+servicios de larga duración. Ejecutar la migración como comando independiente evita
+que el endpoint de tokens compita con la creación de la tabla.
+
 ```bash
 mkdir -p data
 wippy init
+wippy run -x app:migrate
 wippy run
 ```
 
-Abra http://localhost:8081 e ingrese el API key demo mostrado en los logs.
+Abre `http://127.0.0.1:8081` e introduce la API key de demostración del log de
+migración. La página debe mostrar `Connected as demo` y después los precios de BTC,
+ETH y SOL, que se actualizan una vez por segundo.
+
+También puedes verificar el intercambio antes de abrir el navegador:
+
+```bash
+curl -X POST http://127.0.0.1:8081/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"api_key":"<demo-key-from-migration>"}'
+```
+
+En PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:8081/auth/token `
+  -ContentType 'application/json' `
+  -Body '{"api_key":"<demo-key-from-migration>"}'
+```
+
+Una respuesta correcta contiene `token`, `user_id: "demo"`, `role: "user"` y
+`expires_in: 3600`. Una clave no válida devuelve HTTP 401.
+
+## Solución de problemas y limpieza
+
+- `no such table: api_keys` significa que se omitió o falló la migración. Detén el
+  runtime y vuelve a ejecutar `wippy run -x app:migrate` antes de iniciarlo de nuevo.
+- Un 401 de `/auth/token` significa que la API key no coincide con la fila de
+  `data/auth.db`. Restablece la base de datos si perdiste el valor del log único.
+- Un 401 o un cierre inmediato del WebSocket normalmente significa que se eliminó
+  el parámetro de query o que el reinicio del runtime restableció el almacén de tokens
+  en memoria. Intercambia de nuevo la API key después de cada reinicio.
+- Un rechazo de origen significa que la URL del navegador no coincide exactamente
+  con `http://127.0.0.1:8081`; usa esa URL o actualiza juntas ambas opciones de origen.
+- Detén el runtime con Ctrl+C. Elimina `data/auth.db` para borrar la API key de la
+  demostración.
 
 ## Siguientes Pasos
 
-- [WebSocket Relay](http/websocket-relay.md) - Configuración de middleware
-- [Módulo Security](lua/security/security.md) - Actores, políticas, almacenes de tokens
-- [Gestión de Procesos](lua/core/process.md) - Generación y mensajería
+- [WebSocket Relay](http/websocket-relay.md) — Configuración de middleware
+- [Módulo Security](lua/security/security.md) — Actores, políticas y almacenes de tokens
+- [Gestión de procesos](lua/core/process.md) — Generación y mensajería

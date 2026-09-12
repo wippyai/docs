@@ -5,7 +5,7 @@ description: "Los hosts de terminal ejecutan scripts Lua con acceso a stdin/stdo
 
 # Terminal
 
-Los hosts de terminal ejecutan scripts Lua con acceso a stdin/stdout/stderr.
+Un `terminal.host` ejecuta scripts Lua con streams de entrada, salida y error estándar. Esta página es una referencia de configuración; el bloque Lua es un fragmento de handler que presupone que se ejecuta mediante ese host.
 
 <note>
 Un host de terminal ejecuta exactamente un proceso a la vez. El proceso en sí es un proceso Lua regular con acceso al contexto de I/O del terminal.
@@ -29,7 +29,7 @@ Un host de terminal ejecuta exactamente un proceso a la vez. El proceso en sí e
 
 | Campo | Tipo | Por Defecto | Descripción |
 |-------|------|---------|-------------|
-| `hide_logs` | bool | false | Suprimir salida de logs al bus de eventos |
+| `hide_logs` | bool | false | Transmitir logs al bus de eventos y suprimir su propagación downstream |
 
 ## Contexto del Terminal
 
@@ -69,14 +69,19 @@ El [Módulo IO](lua/system/io.md) proporciona operaciones de terminal orientadas
 ```lua
 local io = require("io")
 
-io.write("Ingrese nombre: ")
-local name = io.readline()
-io.print("Hola, " .. name)
+local _, write_err = io.write("Enter name: ")
+if write_err then return nil, write_err end
+
+local name, read_err = io.readline()
+if read_err then return nil, read_err end
+
+local _, print_err = io.print("Hello, " .. name)
+if print_err then return nil, print_err end
 
 local args = io.args()
 ```
 
-Las funciones retornan errores si se llaman fuera de un contexto de terminal.
+`io.write`, `io.print` e `io.readline` devuelven errores fuera de un contexto de terminal. `io.args()` devuelve una tabla vacía cuando no hay disponible un contexto de terminal.
 
 Para eventos de entrada en bruto, renderizado estilizado, superficies y viewports, consulte [TTY](lua/system/tty.md). Para procesos PTY y sesiones de terminal, consulte [Ejecución de Comandos](lua/dynamic/exec.md).
 

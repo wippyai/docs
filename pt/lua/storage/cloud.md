@@ -12,7 +12,9 @@ description: "Acesse armazenamento de objetos compativel com S3. Faça upload, d
 
 Acesse armazenamento de objetos compativel com S3. Faça upload, download, listagem e gerenciamento de objetos, pré-assine URLs de download, upload e partes multipart, e leia objetos com acesso aleatorio.
 
-Para configuração de armazenamento, veja [Cloud Storage](system/cloudstorage.md).
+Esta página é uma referência de API. Seus trechos pressupõem uma entrada de storage configurada, acesso a qualquer volume de filesystem mencionado e as permissões listadas abaixo. Os blocos de multipart e URLs pré-assinadas são receitas parciais de integração do cliente; a aplicação deve executar as transferências HTTP e fornecer os ETags retornados. Quando uma operação e a limpeza do recurso podem falhar, a aplicação fornece `report_cleanup_error(err)` para registrar a falha de limpeza sem substituir o erro inicial.
+
+Para configurar o armazenamento, veja [Cloud Storage](system/cloudstorage.md).
 
 ## Carregamento
 
@@ -30,8 +32,10 @@ if err then
     return nil, err
 end
 
-storage:upload_object("data/file.txt", "content")
+local uploaded, upload_err = storage:upload_object("data/file.txt", "content")
 storage:release()
+if upload_err then return nil, upload_err end
+return uploaded
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -45,23 +49,49 @@ storage:release()
 Upload de conteudo de string ou arquivo:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local json = require("json")
 
--- Upload de conteudo string
-local ok, err = storage:upload_object("reports/daily.json", json.encode({
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+
+-- Upload string content
+local body, encode_err = json.encode({
     date = "2024-01-15",
     total = 1234
-}))
+})
+if encode_err then
+    storage:release()
+    return nil, encode_err
+end
+local ok, err = storage:upload_object("reports/daily.json", body)
+if err then
+    storage:release()
+    return nil, err
+end
 
--- Upload de arquivo
+-- Upload from file
 local fs = require("fs")
-local vol = fs.get("app:data")
-local file = vol:open("/large-file.bin", "r")
+local vol, fs_err = fs.get("app:data")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
+local file, open_err = vol:open("/large-file.bin", "r")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 
-storage:upload_object("backups/large-file.bin", file)
-file:close()
+local uploaded, file_upload_err = storage:upload_object("backups/large-file.bin", file)
+local _, close_err = file:close()
 
 storage:release()
+if file_upload_err then
+    if close_err then report_cleanup_error(close_err) end
+    return nil, file_upload_err
+end
+if close_err then return nil, close_err end
+return uploaded
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -77,12 +107,14 @@ storage:release()
 Anexe metadados ou proteja a escrita com uma tabela de opções:
 
 ```lua
-storage:upload_object("reports/daily.json", body, {
+local uploaded, err = storage:upload_object("reports/daily.json", body, {
     content_type = "application/json",
     cache_control = "max-age=3600",
-    metadata = { owner = "team-a", run_id = "1234" },  -- armazenado como x-amz-meta-*
-    only_if_absent = true                              -- falha se a chave já existir
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
 })
+if err then return nil, err end
+return uploaded
 ```
 
 | Opção | Tipo | Descrição |
@@ -104,22 +136,50 @@ Uma escrita condicional que falha sua pré-condição retorna um erro `precondit
 Baixar um objeto para um file writer:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
 local fs = require("fs")
-local vol = fs.get("app:temp")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+local vol, fs_err = fs.get("app:temp")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
 
-local file = vol:open("/downloaded.json", "w")
+local file, open_err = vol:open("/downloaded.json", "w")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 local ok, err = storage:download_object("reports/daily.json", file)
-file:close()
+local _, close_err = file:close()
+if err then
+    if close_err then report_cleanup_error(close_err) end
+    storage:release()
+    return nil, err
+end
+if close_err then
+    storage:release()
+    return nil, close_err
+end
 
--- Baixar conteudo parcial (primeiro 1KB)
-local partial = vol:open("/partial.bin", "w")
-storage:download_object("backups/large-file.bin", partial, {
+-- Download partial content (first 1KB)
+local partial, partial_open_err = vol:open("/partial.bin", "w")
+if partial_open_err then
+    storage:release()
+    return nil, partial_open_err
+end
+local partial_ok, partial_err = storage:download_object("backups/large-file.bin", partial, {
     range = "bytes=0-1023"
 })
-partial:close()
+local _, partial_close_err = partial:close()
 
 storage:release()
+if partial_err then
+    if partial_close_err then report_cleanup_error(partial_close_err) end
+    return nil, partial_err
+end
+if partial_close_err then return nil, partial_close_err end
+return partial_ok
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -139,30 +199,40 @@ Uma pré-condição que falha (`if_match`/`if_none_match`) retorna um erro `prec
 Listar objetos com filtragem opcional por prefixo:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local result, err = storage:list_objects({
     prefix = "reports/2024/",
     max_keys = 100
 })
+if err then
+    storage:release()
+    return nil, err
+end
 
 for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.etag)
 end
 
--- Paginar através de resultados grandes
+-- Paginate through large results
 local token = nil
 repeat
-    local result = storage:list_objects({
+    local page, page_err = storage:list_objects({
         prefix = "logs/",
         max_keys = 1000,
         continuation_token = token
     })
-    for _, obj in ipairs(result.objects) do
+    if page_err then
+        storage:release()
+        return nil, page_err
+    end
+    for _, obj in ipairs(page.objects) do
         process(obj)
     end
-    token = result.next_continuation_token
-until not result.is_truncated
+    token = page.next_continuation_token
+    if not page.is_truncated then break end
+until false
 
 storage:release()
 ```
@@ -188,10 +258,12 @@ Em resultados de listagem o <code>content_type</code> é sempre vazio — opera�
 Obtenha os metadados de um único objeto sem baixar seu corpo:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local meta, err = storage:head_object("reports/daily.json")
 if err then
+    storage:release()
     return nil, err
 end
 
@@ -232,15 +304,18 @@ Um objeto inexistente retorna um erro `not_found`.
 Remover multiplos objetos:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
-storage:delete_objects({
+local deleted, err = storage:delete_objects({
     "temp/file1.txt",
     "temp/file2.txt",
     "temp/file3.txt"
 })
 
 storage:release()
+if err then return nil, err end
+return deleted
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -271,7 +346,7 @@ if err then
     return nil, err
 end
 
--- Retornar URL ao cliente para download direto
+-- Return URL to client for direct download
 return {download_url = url}
 ```
 
@@ -304,7 +379,7 @@ if err then
     return nil, err
 end
 
--- Retornar URL ao cliente para upload direto
+-- Return URL to client for direct upload
 return {upload_url = url}
 ```
 
@@ -500,4 +575,4 @@ Operações de cloud storage estao sujeitas a avaliação de política de segura
 | Permissão negada | levantada como erro Lua, não retornada | - |
 | Operação do provedor falhou | `errors.UNKNOWN` | não definido |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

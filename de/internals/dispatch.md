@@ -1,11 +1,13 @@
 ---
 title: "Command-Dispatch"
-description: "Das Dispatch-System routet Commands von Prozessen zu Handlern. Prozesse yielden Commands mit Korrelationstags, Handler führen asynchrone Arbeit aus,…"
+description: "Wie Prozess-Yields an Command-Handler geleitet und korrelierte Ergebnisse über Prozess-Event-Queues zurückgegeben werden."
 ---
 
 # Command-Dispatch
 
-Das Dispatch-System routet Commands von Prozessen zu Handlern. Prozesse yielden Commands mit Korrelationstags, Handler führen asynchrone Arbeit aus, und Ergebnisse fließen über Event-Queues zurück.
+Der Command-Dispatch leitet Prozess-Yields an Handler und gibt korrelierte Ergebnisse über die Event-Queues der Prozesse zurück.
+
+Diese Seite ist eine Erweiterungs- und Implementierungsreferenz. Die Ausschnitte für eigene Commands und Dispatcher setzen ein vorhandenes Go-Paket, einen Boot-Graphen, eine Command-API und dienstspezifische Fehlerbehandlung voraus.
 
 ## Fluss
 
@@ -32,9 +34,9 @@ Die Registry speichert Handler in einer hybriden Struktur:
 
 ```go
 type Registry struct {
-    handlers [256]Handler         // System-Commands: O(1) Index
-    extended map[CommandID]Handler // Erweiterte Commands: Map-Lookup
-    frozen   atomic.Bool          // Lock-frei nach Boot
+    handlers [256]Handler         // System commands: O(1) index
+    extended map[CommandID]Handler // Extended commands: map lookup
+    frozen   atomic.Bool          // Lock-free after boot
 }
 ```
 
@@ -65,7 +67,7 @@ System-Commands (0-255) verwenden Array-Indexierung. Erweiterte Commands verwend
 | 200-211 | pg (Prozessgruppe) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | Benutzerdefinierte Services |
 
-Registrierung erfolgt während Boot via `MustRegisterCommands()`. Kollisionen verursachen Panic beim Start.
+Pakete reservieren die Eigentümerschaft ihrer Command-IDs aus `init()` heraus mit `MustRegisterCommands()`. Kollisionen führen bereits bei der Paketinitialisierung zu einer Panic. Während des Ladens der Komponenten bindet jeder Dienst seine Handler über `Registrar.Register`. Erst nachdem diese Handler installiert sind, wird der Dispatcher eingefroren.
 
 ## Commands definieren
 
@@ -79,18 +81,10 @@ type MyCmd struct {
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-Pool-Wiederverwendung eliminiert Allokationen in Hot-Paths. Registrierung bei Package-Init:
+Reservieren Sie die Command-ID bei der Paketinitialisierung:
 
 ```go
 func init() {
@@ -114,7 +108,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // Service-Zustand
+    // service state
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -157,7 +151,7 @@ Wenn ein Prozess asynchrone Arbeit benötigt, yieldet er einen Command mit einem
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // Prozess-lokaler Zähler für Korrelation
+    Tag uint64    // Process-local counter for correlation
 }
 ```
 
@@ -165,6 +159,6 @@ Der Worker extrahiert Yields aus `StepOutput` nach jedem Step und dispatcht sie 
 
 ## Siehe auch
 
-- [Scheduler](internals/scheduler.md) - Prozessausführung
-- [Module](internals/modules.md) - Lua-Modul-Integration
-- [Prozessmodell](concepts/process-model.md) - High-Level-Konzepte
+- [Scheduler](internals/scheduler.md) – Prozessausführung
+- [Module](internals/modules.md) – Integration von Lua-Modulen
+- [Prozessmodell](concepts/process-model.md) – übergeordnete Konzepte

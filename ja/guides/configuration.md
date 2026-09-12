@@ -1,13 +1,13 @@
 ---
 title: "設定リファレンス"
-description: "Wippyは.wippy.yamlファイルで設定されます。すべてのオプションには妥当なデフォルト値があります。"
+description: "ランタイム設定のフィールド、プロファイル、合成規則、環境変数参照、およびコマンドラインからの上書き。"
 ---
 
 # 設定リファレンス
 
-Wippyは`.wippy.yaml`ファイルで設定されます。すべてのオプションには妥当なデフォルト値があります。
+Wippy は `.wippy.yaml` ファイルからランタイム設定を読み取ります。
 
-以下の値はいずれも、起動時に `wippy run --set section.path=value` で上書きできます（繰り返し指定可能で、ファイルより優先されます）。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します — [エントリの上書き](guides/entry-kinds.md#overriding-entries)を参照してください。
+以下の設定フィールドは、繰り返し指定できる `wippy run --set section.path=value` オプションを使用して起動時に上書きできます。これらの設定セクションではなく個々のレジストリ*エントリ*を上書きするには、`override:` セクションまたは `-o` を使用します。[エントリの上書き](guides/entry-kinds.md#overriding-entries)を参照してください。
 
 ## 設定の合成 {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - 最初のファイルが、相対パスの解決に使われるディレクトリを決めます。
 - ファイル名に予約された意味はありません。デフォルト以外は何も自動探索されません。
 
-設定は次の順序で適用されます：ファイル合成、次に `--profile` の選択、最後に `--set` の上書き。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトがこれらすべての下に位置します（[ランタイムデフォルトの公開](guides/publishing.md#publishing-runtime-defaults)を参照）。
+設定は、合成されたファイル、選択された `--profile` オーバーレイ、`--set` の上書きの順に適用されます。パックから実行されるアプリケーションでは、パックされたランタイムデフォルトの優先順位はこれら 3 つより低くなります。[ランタイムデフォルトの公開](guides/publishing.md#publishing-runtime-defaults)を参照してください。
 
 ## プロファイル {#profiles}
 
@@ -76,7 +76,7 @@ logger:
 
 ## ログマネージャ
 
-ランタイムログルーティングを制御します。コンソール出力は[CLIフラグ](guides/cli.md)（`-v`, `-c`, `-s`）で設定します。
+ランタイムログルーティングを制御します。コンソール出力は [CLI フラグ](guides/cli.md)（`-v`, `-c`, `-s`）で設定します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -110,11 +110,11 @@ profiler:
   address: "localhost:6060"
 ```
 
-アクセス: `http://localhost:6060/debug/pprof/`
+デフォルトのアドレスで有効にすると、プロファイラは `http://localhost:6060/debug/pprof/` で利用できます。
 
 ## セキュリティ
 
-グローバルセキュリティ動作。個別のポリシーは[security.policyエントリ](guides/entry-kinds.md)として定義されます。
+グローバルなセキュリティ動作です。個別のポリシーは [security.policy エントリ](guides/entry-kinds.md)として定義されます。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -222,7 +222,7 @@ supervisor:
 参照: [スーパービジョンガイド](guides/supervision.md)
 
 <note>
-`process.host`ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](system/process-host.md)エントリ種別を参照してください。
+`process.host` ごとのワーカーとキューは、このグローバルセクションではなく、エントリ自体（`workers`、`queue_size`、`local_queue_size`）で設定します。[Process Host](system/process-host.md) エントリ種別を参照してください。
 </note>
 
 ## Luaランタイム
@@ -305,11 +305,11 @@ OTLPによる分散トレーシングとメトリクスエクスポート。
 | `metrics_enabled` | bool | false | メトリクスをエクスポート |
 | `http.enabled` | bool | true | HTTPリクエストをトレース |
 | `http.extract_headers` | bool | true | 受信ヘッダからトレースコンテキストを抽出 |
-| `http.inject_headers` | bool | true | 送信ヘッダにトレースコンテキストを注入 |
+| `http.inject_headers` | bool | true | HTTP レスポンスにトレースコンテキストを注入 |
 | `process.enabled` | bool | true | プロセスライフサイクルをトレース |
 | `process.trace_lifecycle` | bool | true | spawn/terminate の span を発行 |
 | `interceptor.enabled` | bool | true | 関数呼び出しをトレース |
-| `interceptor.order` | int | 100 | インターセプタの優先度 |
+| `interceptor.order` | int | 100 | デコードされる互換性フィールド。ランタイム v0.3.32a は、この値にかかわらずインターセプタを順序 100 で登録 |
 | `queue.enabled` | bool | true | キューの publish/consume をトレース |
 | `temporal.enabled` | bool | false | Temporal ワークフローをトレース |
 
@@ -378,9 +378,9 @@ Prometheusスクレイピング用の`/metrics`エンドポイントに加え、
 
 参照: [可観測性ガイド](guides/observability.md)
 
-## クラスタ
+## クラスタ {#cluster}
 
-マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](guides/cluster.md)を参照。このセクションは設定キーのリファレンスです。
+マルチノードクラスタリング: ゴシップメンバーシップと有界 Raft コンセンサスコア。アーキテクチャと運用モデルについては[クラスタガイド](guides/cluster.md)を参照してください。このセクションは設定キーのリファレンスです。
 
 ### トップレベル
 
@@ -437,17 +437,17 @@ memberlist による SWIM ゴシップ。ノード探索、障害検出、メタ
 
 ### Raft（コンセンサス）
 
-有界 Raft。Raft の状態はデフォルトで fs 永続化され、`raft.data_dir`（デフォルト `~/.wippy/store`）の下に保存されます。再起動したノードでもピアからクォーラムに再参加します。[`store.kv.raft`](system/store.md#cluster-kv-stores) エントリはこれを通じてレプリケートされます。ブートストラップはゴシップ駆動（Consul/Nomad の `bootstrap_expect` スタイル）です。
+有界 Raft コアは、デフォルトで `raft.data_dir`（`~/.wippy/store`）の下に永続状態を保存します。再起動したノードはピアからクォーラムに再参加します。[`store.kv.raft`](system/store.md#cluster-kv-stores) エントリはこのコアを通じてレプリケートされ、ゴシップが `bootstrap_expect` モデルによるブートストラップを調整します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
 | `raft.data_dir` | string | `~/.wippy/store` | fs 永続化された Raft 状態と永続 CRDT スナップショットのディレクトリ（`<data_dir>/_sys/` の下）。パスが解決されない場合（ホームディレクトリがなく未設定）のみディスクレス |
 | `raft.enabled` | bool | true | Raft ノードを実行。`false` にするとゴシップのみのクライアントになる |
 | `raft.role` | string | server | `server` は Raft ノードを実行。`client` はゴシップのみ |
-| `raft.eligible` | bool | true | このノードが投票ノードとして選択される可能性があるかどうか |
+| `raft.eligible` | bool | true | このノードが投票ノードまたはスタンバイとして選択されるかどうか。false の場合は Raft 外のクライアントとなる |
 | `raft.priority` | int | 100 | 投票ノード選択の優先度（値が小さいほど優先） |
-| `raft.bootstrap_expect` | int | 1 | 初期クォーラムサイズ: `0`=既存クラスタに参加のみ、`1`=単一ノード、`N`=N個の適格ピアを待ってからクォーラムを形成 |
-| `raft.max_voters` | int | 5 | 投票ノードの上限（奇数でなければならない）。それ以上の適格ノードはスタンバイになる |
+| `raft.bootstrap_expect` | int | 1 | 初期クォーラムサイズ: `0`=既存クラスタに参加、`1`=単一ノード、`N`=ローカルノードを含む N 個の適格ノードを待ってからクォーラムを形成 |
+| `raft.max_voters` | int | 5 | 投票ノードの上限（奇数でなければならない）。さらに最大 `max_standbys` 個の適格ノードがスタンバイとなり、残りはクライアントとなる |
 | `raft.max_standbys` | int | 4 | 昇格に備えて保持する非投票メンバー数。投票ノード+スタンバイを超えたノードは Raft メンバーではない |
 | `raft.reconcile_debounce` | duration | 2s | ゴシップイベント後、投票ノード調整ロジックが実行されるまでの集約ウィンドウ |
 | `raft.reconcile_timeout` | duration | 2s | 調整パスごとの上限時間 |
@@ -528,7 +528,7 @@ cluster:
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
-| `enabled` | bool | false | TCPサーバーを有効化 |
+| `enabled` | bool | false | LSP サービスと TCP サーバーを有効化。HTTP トランスポートにも必要 |
 | `address` | string | :7777 | TCPリッスンアドレス |
 | `http_enabled` | bool | false | HTTPトランスポートを有効化 |
 | `http_address` | string | :7778 | HTTPリッスンアドレス |
@@ -614,11 +614,11 @@ extensions:
 
 | 変数 | 説明 |
 |------|------|
-| `GOMEMLIMIT` | メモリ制限（`--memory-limit`フラグをオーバーライド） |
+| `GOMEMLIMIT` | `--memory-limit` フラグが未設定の場合のメモリ制限フォールバック（優先順位: `--memory-limit` フラグ > `GOMEMLIMIT` > デフォルト 1G） |
 
 ## 関連項目
 
-- [CLIリファレンス](guides/cli.md) - コマンドラインオプション
-- [クラスタガイド](guides/cluster.md) - クラスタリングのアーキテクチャと運用
-- [エントリ種別](guides/entry-kinds.md) - すべてのエントリタイプ
-- [可観測性ガイド](guides/observability.md) - ロギング、メトリクス、トレーシング
+- [CLIリファレンス](guides/cli.md) — コマンドラインオプション
+- [クラスタガイド](guides/cluster.md) — クラスタリングのアーキテクチャと運用
+- [エントリ種別](guides/entry-kinds.md) — エントリの種類とフィールド
+- [可観測性ガイド](guides/observability.md) — ロギング、メトリクス、トレーシング

@@ -5,7 +5,9 @@ description: "Comparta código reutilizable en el Wippy Hub."
 
 # Publicación de Módulos
 
-Comparta código reutilizable en el Wippy Hub.
+La publicación empaqueta un módulo y hace que una versión o etiqueta mutable esté disponible mediante Wippy Hub.
+
+Este documento es un flujo de publicación y una referencia. Los módulos `acme/*`, las URL, los tokens, las credenciales y el código fuente de ejemplo son ilustrativos; sustitúyelos por recursos que pertenezcan a tu organización.
 
 ## Requisitos Previos
 
@@ -17,16 +19,16 @@ Comparta código reutilizable en el Wippy Hub.
 
 ```
 mymodule/
-├── wippy.yaml      # Manifiesto del módulo
+├── wippy.yaml      # Module manifest
 ├── src/
-│   ├── _index.yaml # Definiciones de entradas
-│   └── *.lua       # Archivos fuente
-└── README.md       # Documentación (opcional)
+│   ├── _index.yaml # Entry definitions
+│   └── *.lua       # Source files
+└── README.md       # Documentation (optional)
 ```
 
 ## wippy.yaml
 
-Manifiesto del módulo:
+Define los metadatos del módulo en `wippy.yaml`:
 
 ```yaml
 organization: acme
@@ -168,9 +170,9 @@ Referencie otras entradas:
   modules:
     - json
   imports:
-    client: acme.http:client           # Mismo namespace
-    utils: acme.utils:helpers          # Namespace diferente
-    base_registry: :registry           # Integrado
+    client: acme.http:client           # Same namespace
+    utils: acme.utils:helpers          # Different namespace
+    base_registry: :registry           # Built-in
 ```
 
 En Lua:
@@ -269,7 +271,7 @@ wippy publish --version 1.0.0 --embed app:public_files
 wippy publish --version 1.0.0 --embed app:assets,app:templates
 ```
 
-La bandera `--embed` acepta IDs de entrada o nombres que coincidan con entradas `fs.directory`. La misma bandera está disponible en `wippy pack`.
+La lista del manifiesto y la bandera `--embed` aceptan IDs de entrada o nombres que coincidan con entradas `fs.directory`. La bandera puede repetirse y cada valor puede ser una lista separada por comas. La misma bandera de CLI está disponible en `wippy pack`; una selección explícita mediante CLI sustituye la lista del manifiesto para esa invocación.
 
 ### Primera Publicación
 
@@ -299,7 +301,7 @@ El registro y el token también pueden provenir de las variables de entorno `WIP
 
 Si la cuota de módulos privados de la organización está agotada, la publicación falla con un mensaje como `cannot publish: Private-module quota exhausted (5 of 5)...`. Haz el módulo público o pide a un administrador de la organización que aumente la cuota. Las cargas y descargas se reintentan automáticamente ante errores de red transitorios.
 
-## Publicar Valores por Defecto de Runtime {#publishing-runtime-defaults}
+## Publicar Valores por Defecto de Runtime :id=publishing-runtime-defaults
 
 Las aplicaciones (solo `type: application`) pueden distribuir valores por defecto de configuración de runtime dentro de sus packs mediante `publish.runtime` en `wippy.yaml`:
 
@@ -327,7 +329,7 @@ Reglas:
 
 En el destino, la configuración se aplica de menor a mayor: valores por defecto del pack de la app, valores por defecto integrados del runtime, archivos de configuración locales, perfiles seleccionados, sobrescrituras de CLI.
 
-## Publicar Perfiles {#publishing-profiles}
+## Publicar Perfiles :id=publishing-profiles
 
 Los perfiles de la aplicación raíz se exportan a los metadatos `runtime.profiles` del pack. Publicar no selecciona ni fija un perfil — los consumidores eligen uno en tiempo de ejecución con `wippy run --profile <name>`:
 
@@ -369,7 +371,7 @@ override:
 ### Importar en Su Código
 
 ```yaml
-# su src/_index.yaml
+# your src/_index.yaml
 entries:
   - name: __dependency.acme.http
     kind: ns.dependency
@@ -389,6 +391,7 @@ entries:
 ```yaml
 organization: acme
 module: cache
+type: library
 description: In-memory caching with TTL
 license: MIT
 keywords:
@@ -407,19 +410,8 @@ entries:
     meta:
       title: Cache Module
 
-  - name: max_size
-    kind: ns.requirement
-    meta:
-      description: Maximum cache entries
-    targets:
-      - entry: acme.cache:cache
-        path: ".meta.max_size"
-    default: 1000
-
   - name: cache
     kind: library.lua
-    meta:
-      max_size: 1000
     source: file://cache.lua
     modules:
       - time
@@ -431,12 +423,8 @@ local time = require("time")
 
 local cache = {}
 local store = {}
-local max_size = 1000
 
 function cache.set(key, value, ttl)
-    if #store >= max_size then
-        cache.evict_oldest()
-    end
     store[key] = {
         value = value,
         expires = ttl and (time.now():unix() + ttl) or nil
@@ -459,7 +447,9 @@ return cache
 Publicar:
 
 ```bash
-wippy init && wippy update && wippy lint
+wippy init
+wippy update
+wippy lint
 wippy publish --version 1.0.0
 ```
 

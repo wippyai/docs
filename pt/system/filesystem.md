@@ -1,11 +1,11 @@
 ---
 title: "Sistema de Arquivos"
-description: "Acesso a diretórios e sistemas de arquivos embutidos."
+description: "Configure sistemas de arquivos baseados em diretórios e sistemas embutidos somente leitura."
 ---
 
 # Sistema de Arquivos
 
-Acesso a diretórios e sistemas de arquivos embutidos.
+Entradas de sistema de arquivos expõem armazenamento baseado em diretórios ou armazenamento embutido somente leitura aos módulos do runtime. Esta página é uma referência de configuração; os blocos YAML são fragmentos de entradas individuais, e não projetos completos.
 
 ## Tipos de Entradas
 
@@ -64,6 +64,7 @@ Ambos os tipos de sistema de arquivos implementam:
 |----------|-----------|-------|
 | Open/Read | Sim | Sim |
 | Stat | Sim | Sim |
+| Lstat | Sim | Sim |
 | ReadDir | Sim | Sim |
 | OpenFile (escrita) | Sim | Não |
 | Remove | Sim | Não |
@@ -74,10 +75,10 @@ Operações de escrita em sistemas de arquivos embutidos retornam um erro.
 
 ## API Lua
 
-Veja [Módulo Filesystem](lua/storage/filesystem.md) para operações de arquivo.
+Consulte o [módulo Filesystem](lua/storage/filesystem.md) para as operações de arquivo.
 
-## Veja Também
+## Consulte também
 
-- [Módulo Filesystem](lua/storage/filesystem.md) - Referência da API Lua
-- [Cloud Storage](system/cloudstorage.md) - Armazenamento de objetos compatível com S3
-- [Template](system/template.md) - Templates carregados de filesystems
+- [Módulo Filesystem](lua/storage/filesystem.md) — Referência da API Lua
+- [Cloud Storage](system/cloudstorage.md) — Armazenamento de objetos compatível com S3
+- [Template](system/template.md) — Templates carregados de sistemas de arquivos

@@ -5,7 +5,9 @@ description: "Wippy integrates with Temporal.io for durable workflow execution, 
 
 # Temporal Integration
 
-Wippy integrates with [Temporal.io](https://temporal.io) for durable workflow execution, automatic replay, and long-running processes that survive restarts.
+This page is a configuration reference for Temporal clients and workers. The final registry fragment shows how the entries connect; it is not a standalone project.
+
+The `temporal.client` and `temporal.worker` entry kinds connect Wippy workflows and activities to [Temporal](https://temporal.io).
 
 ## Client Configuration
 
@@ -164,7 +166,7 @@ The `temporal.worker` entry kind defines a worker that executes workflows and ac
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -177,7 +179,7 @@ The `temporal.worker` entry kind defines a worker that executes workflows and ac
 
 ### Worker Options
 
-Fine-tune worker behavior:
+Configure worker behavior:
 
 ```yaml
 - name: worker
@@ -221,7 +223,6 @@ Fine-tune worker behavior:
 
     # Versioning
     deployment_name: ""
-    build_id: ""
     build_id: ${env:BUILD_ID}              # Read from env registry
     use_versioning: false
     default_versioning_behavior: "pinned" # or "auto_upgrade"
@@ -256,7 +257,9 @@ Credential and identifier fields resolve `${env:NAME}` placeholders through the 
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## Complete Example
+## Configuration Example
+
+This registry fragment connects one workflow and one activity to a worker. It assumes a reachable Temporal server at `localhost:7233` and the two referenced Lua source files; see the workflow and activity pages for their implementations.
 
 ```yaml
 version: "1.0"
@@ -276,7 +279,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -296,6 +299,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:

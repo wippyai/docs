@@ -1,11 +1,13 @@
 ---
 title: "정적 파일"
-description: "http.static을 사용하여 모든 파일시스템에서 정적 파일을 서빙합니다. 정적 핸들러는 서버에 직접 마운트되며 모든 경로에서 SPA, 에셋, 또는 사용자 업로드를 서빙할 수 있습니다."
+description: "filesystem entry와 http.static을 사용해 SPA, asset 및 user upload를 제공합니다."
 ---
 
 # 정적 파일
 
-`http.static`을 사용하여 모든 파일시스템에서 정적 파일을 서빙합니다. 정적 핸들러는 서버에 직접 마운트되며 모든 경로에서 SPA, 에셋, 또는 사용자 업로드를 서빙할 수 있습니다.
+`http.static` handler는 server에 직접 mount되어 filesystem entry의 SPA, asset 또는 user upload를 제공합니다.
+
+**분류: static-handler reference.** YAML block은 지정된 HTTP server가 존재한다고 가정합니다. host-authored example에서 relative `fs.directory` path는 project working directory에서 resolve됩니다. module-owned entry는 `base: project`로 구성하지 않으면 owning module의 source root에서 relative path를 resolve합니다. referenced file은 별도로 생성해야 합니다.
 
 ## 설정
 
@@ -28,7 +30,7 @@ description: "http.static을 사용하여 모든 파일시스템에서 정적 �
 | `path` | string | URL 마운트 경로 (`/`로 시작해야 함) |
 | `fs` | 레지스트리 ID | 서빙할 파일시스템 엔트리 |
 | `static_options.spa` | bool | SPA 모드 - 매칭되지 않는 경로에 인덱스 서빙 |
-| `static_options.index` | string | 인덱스 파일 (spa=true일 때 필수) |
+| `static_options.index` | string | 인덱스 파일 (`spa=true`일 때 필수) |
 | `static_options.cache` | string | Cache-Control 헤더 값 |
 | `middleware` | []string | 미들웨어 체인 |
 | `options` | map | 미들웨어 옵션 (점 표기법) |
@@ -43,12 +45,12 @@ description: "http.static을 사용하여 모든 파일시스템에서 정적 �
 
 ```yaml
 entries:
-  # 로컬 디렉토리
+  # Local directory
   - name: public
     kind: fs.directory
     directory: ./public
 
-  # 정적 핸들러
+  # Static handler
   - name: static
     kind: http.static
     meta:
@@ -111,7 +113,7 @@ entries:
     kind: fs.directory
     directory: ./dist
 
-  # 버전화된 에셋 - 영구 캐시
+  # Versioned assets - cache forever
   - name: assets
     kind: http.static
     meta:
@@ -121,7 +123,7 @@ entries:
     static_options:
       cache: "public, max-age=31536000, immutable"
 
-  # HTML - 짧은 캐시, 재검증 필수
+  # HTML - short cache, must revalidate
   - name: app
     kind: http.static
     meta:
@@ -166,7 +168,7 @@ entries:
 
 ## 참고
 
-- [서버](http/server.md) - HTTP 서버 설정
-- [라우팅](http/router.md) - 라우터와 엔드포인트
-- [파일시스템](lua/storage/filesystem.md) - 파일시스템 모듈
-- [미들웨어](http/middleware.md) - 사용 가능한 미들웨어
+- [서버](http/server.md) - HTTP server configuration
+- [라우팅](http/router.md) - router 및 endpoint
+- [파일시스템](lua/storage/filesystem.md) - Filesystem module
+- [미들웨어](http/middleware.md) - available middleware

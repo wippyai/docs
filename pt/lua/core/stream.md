@@ -7,17 +7,22 @@ description: "Operações de leitura/escrita de stream para manipular dados efic
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Operações de leitura/escrita de stream para manipular dados eficientemente. Objetos stream sao obtidos de outros modulos (HTTP, filesystem, etc.).
+Streams fornecem I/O incremental para HTTP, filesystem e outros módulos. Os módulos proprietários dos dados subjacentes criam os objetos stream. Esta página é uma referência de API; o loop do scanner usa um callback `process(token)` definido pela aplicação.
 
-## Carregamento
+## Obtendo um Stream
 
 ```lua
--- De corpo de requisição HTTP
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- De filesystem
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Leitura
@@ -63,9 +68,9 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Flush de dados em buffer para armazenamento subjacente.
+`flush` grava os dados em buffer no destino subjacente.
 
-## Informacoes do Stream
+## Informações do Stream
 
 ```lua
 local info, err = stream:stat()
@@ -85,11 +90,11 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Fechar stream e liberar recursos. Seguro chamar multiplas vezes.
+`close` libera os recursos do stream e pode ser chamado mais de uma vez.
 
 ## Scanner
 
-Criar um tokenizador para conteudo do stream:
+Crie um scanner que tokeniza o conteúdo do stream:
 
 ```lua
 local scanner, err = stream:scanner(split)
@@ -115,6 +120,8 @@ while true do
     process(scanner:text())
 end
 ```
+
+Quando `scan()` retorna `false`, verifique `scanner:err()` antes de tratar o resultado como EOF. Falhas de tokenização e de leitura subjacente ficam armazenadas no scanner e não aparecem no segundo valor retornado por `scan()`.
 
 ## Erros
 

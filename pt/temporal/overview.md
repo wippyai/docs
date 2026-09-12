@@ -1,11 +1,13 @@
 ---
 title: "Integração Temporal"
-description: "O Wippy integra com Temporal.io para execução de workflow durável, replay automático e processos de longa duração que sobrevivem a reinicializações."
+description: "Configure clientes e workers do Temporal para executar workflows duráveis e atividades no Wippy."
 ---
 
 # Integração Temporal
 
-O Wippy integra com [Temporal.io](https://temporal.io) para execução de workflow durável, replay automático e processos de longa duração que sobrevivem a reinicializações.
+Esta página é uma referência de configuração para clientes e workers do Temporal. O fragmento final do registro mostra como conectar as entradas; ele não é um projeto independente.
+
+Os tipos de entrada `temporal.client` e `temporal.worker` conectam workflows e atividades do Wippy ao [Temporal](https://temporal.io).
 
 ## Configuração do Cliente
 
@@ -53,7 +55,7 @@ O tipo de entrada `temporal.client` define uma conexão com um servidor Temporal
 Forneça a chave de API via um destes métodos:
 
 ```yaml
-# Valor direto
+# Direct value
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -62,7 +64,7 @@ Forneça a chave de API via um destes métodos:
     type: api_key
     api_key: "your-api-key"
 
-# De variável de ambiente
+# From environment variable
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -71,7 +73,7 @@ Forneça a chave de API via um destes métodos:
     type: api_key
     api_key: ${env:TEMPORAL_API_KEY}
 
-# De arquivo
+# From file
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -117,8 +119,8 @@ auth:
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # Sobrescreve verificação do nome do servidor
-  insecure_skip_verify: false            # Pula verificação (apenas dev)
+  server_name: "temporal.example.com"    # Override server name verification
+  insecure_skip_verify: false            # Skip verification (dev only)
 ```
 
 ### Verificações de Saúde
@@ -164,7 +166,7 @@ O tipo de entrada `temporal.worker` define um worker que executa workflows e ati
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -177,7 +179,7 @@ O tipo de entrada `temporal.worker` define um worker que executa workflows e ati
 
 ### Opções do Worker
 
-Ajuste fino do comportamento do worker:
+Configure o comportamento do worker:
 
 ```yaml
 - name: worker
@@ -199,8 +201,8 @@ Ajuste fino do comportamento do worker:
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # Limitação de taxa
-    worker_activities_per_second: 0        # 0 = ilimitado
+    # Rate limiting
+    worker_activities_per_second: 0        # 0 = unlimited
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
 
@@ -219,12 +221,12 @@ Ajuste fino do comportamento do worker:
     disable_eager_activities: false
     disable_registration_aliasing: false
 
-    # Versionamento
+    # Versioning
     deployment_name: ""
     build_id: ""
     build_id: ${env:BUILD_ID}              # Lê do registro env
     use_versioning: false
-    default_versioning_behavior: "pinned" # ou "auto_upgrade"
+    default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
 Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` através do [registro de ambiente](system/env.md) no momento da decodificação. A diretiva legada `build_id_env` resolve da mesma forma, mas está obsoleta; prefira `build_id: ${env:NAME}`.
@@ -238,7 +240,7 @@ Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` atra
 | `pinned` | O workflow permanece no build ID em que iniciou durante toda a sua execução |
 | `auto_upgrade` | O workflow pode ser retomado no build ID compatível mais recente após cada tarefa |
 
-`build_id_env` lê o build ID da variável de ambiente indicada quando `build_id` está vazio.
+`build_id: ${env:NAME}` lê o build ID do registro de ambiente quando um `build_id` literal não é fornecido.
 
 ### Session Worker
 
@@ -256,7 +258,9 @@ Campos de credenciais e identificadores resolvem placeholders `${env:NAME}` atra
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## Exemplo Completo
+## Exemplo de configuração
+
+Este fragmento do registro conecta um workflow e uma atividade a um worker. Ele pressupõe um servidor Temporal acessível em `localhost:7233` e os dois arquivos de origem Lua referenciados; consulte as páginas de workflows e atividades para ver suas implementações.
 
 ```yaml
 version: "1.0"
@@ -276,7 +280,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -296,6 +300,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:

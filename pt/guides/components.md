@@ -1,6 +1,6 @@
 ---
 title: "Construindo Componentes"
-description: "Criando módulos reutilizáveis: declarando interfaces de requirements com ns.requirement e como os hosts fornecem valores através de parâmetros de dependência."
+description: "Declare requirements de módulos reutilizáveis com ns.requirement e forneça-os pelo host por meio de parâmetros de dependência."
 ---
 
 # Construindo Componentes
@@ -24,14 +24,14 @@ Um por módulo, obrigatório para publicação. Carrega o nome de exibição do 
 ```yaml
 - name: definition
   kind: ns.definition
-  module: jobs                # optional; defaults to the entry name
+  module: jobs                # optional module metadata
   readme: file://README.md    # path to the module's documentation
   meta:
     title: Durable Jobs
     description: Leased job queue with retry and dead-lettering.
 ```
 
-Apenas `module` e `readme` são dados do componente; `meta` é metadado comum de entrada para UIs de gestão. Notas de release são fornecidas no momento da publicação, não aqui.
+`module`, `readme` e `wiki` são dados da definição; todos são opcionais. `meta` contém metadados comuns da entrada para interfaces de gerenciamento. Notas de release são fornecidas no momento da publicação, não aqui.
 
 ## ns.requirement
 
@@ -61,7 +61,7 @@ O campo `default` decide se o host *deve* fornecer um valor:
 Um default explicitamente vazio (<code>default: ""</code>) é distinto de nenhum default. String vazia significa "opcional, recai em nada"; ausente significa "o host deve fornecer isto." Use um default para infraestrutura que tem uma convenção interna sensata (<code>app:db</code>, <code>app:processes</code>); omita-o para valores que só o host pode conhecer.
 </note>
 
-### targets — onde o valor aterrissa
+### `targets`: locais de injeção
 
 Cada alvo é um par `{entry, path}`:
 

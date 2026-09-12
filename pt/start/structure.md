@@ -5,8 +5,6 @@ description: "Layout do projeto, arquivos de definição YAML e convenções de 
 
 # YAML e Estrutura do Projeto
 
-Layout do projeto, arquivos de definição YAML e convenções de nomenclatura.
-
 ## Layout de Diretórios
 
 ```
@@ -27,10 +25,10 @@ myapp/
 ## Arquivos de Definição YAML
 
 <note>
-Definições YAML são carregadas no registro na inicialização. O registro é a fonte da verdade — arquivos YAML são uma forma de populá-lo. Entradas também podem vir de outras fontes ou ser criadas programaticamente.
+As definições YAML são carregadas no registro durante a inicialização. O registro é a fonte da verdade; os arquivos YAML são uma forma de preenchê-lo. As entradas também podem vir de outras fontes ou ser criadas por código.
 </note>
 
-### Estrutura do Arquivo
+### Formato do Arquivo de Definição
 
 Qualquer arquivo YAML com um `namespace` mais um array `entries` ou um `name`+`kind` no nível raiz é um arquivo de definição válido. `version` é opcional:
 
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Busca usuário por ID
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint da API de usuários
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -66,25 +64,25 @@ entries:
 
 ### Convenção de Nomenclatura
 
-Use pontos (`.`) para separação semântica e underscores (`_`) para palavras:
+Use pontos (`.`) para separação semântica e sublinhados (`_`) para separar palavras:
 
 ```yaml
-# Função e seu endpoint
-- name: get_user              # A função
-- name: get_user.endpoint     # Seu endpoint HTTP
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# Múltiplos endpoints para a mesma função
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# Roteadores
-- name: api.public            # Roteador da API pública
-- name: api.admin             # Roteador da API admin
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
-Padrão: <code>nome_base.variante</code> — pontos separam partes semânticas, underscores separam palavras dentro de uma parte.
+Padrão: <code>base_name.variant</code> — pontos separam partes semânticas, enquanto sublinhados separam palavras dentro de uma parte.
 </tip>
 
 ### Namespaces
@@ -98,7 +96,7 @@ app.api.v2
 app.workers
 ```
 
-O ID completo da entrada combina namespace e nome: `app.api:get_user`
+O ID completo de uma entrada combina namespace e nome: `app.api:get_user`
 
 ### O Arquivo de Lock
 
@@ -132,14 +130,14 @@ Uma seção `replacements:` em `wippy.lock` está obsoleta. Ela ainda carrega, c
 
 ## Definições de Entradas
 
-Cada entrada no array `entries`. Propriedades estão no nível raiz (sem wrapper `data:`):
+Cada item do array `entries` define uma entrada. Os campos específicos do kind podem aparecer junto de `name`, `kind` e `meta`, como neste exemplo:
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Retorna hello world
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -149,36 +147,48 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint hello
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
 ```
 
+Um campo `data:` explícito também é aceito. Quando presente, seu valor é o payload completo e específico do kind; portanto, não o misture com campos específicos do kind no mesmo nível:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
+```
+
 ### Metadados
 
-Use `meta` para informações amigáveis para interface:
+Use `meta` para informações adequadas à interface:
 
 ```yaml
 - name: payment_handler
   kind: function.lua
   meta:
-    title: Processador de Pagamentos
-    comment: Processa pagamentos Stripe
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-Convenção: `meta.title` e `meta.comment` renderizam bem em interfaces de gerenciamento.
+Use `meta.title` e `meta.comment` para informações descritivas que consumidores do registro e interfaces de gerenciamento podem exibir.
 
-### Entradas de Aplicação
+### Entradas da Aplicação
 
-Use o kind `registry.entry` para configuração em nível de aplicação:
+Use o kind `registry.entry` para configurações no nível da aplicação:
 
 ```yaml
 - name: config
   kind: registry.entry
   meta:
-    title: Configurações da Aplicação
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -186,19 +196,19 @@ Use o kind `registry.entry` para configuração em nível de aplicação:
     beta_access: false
 ```
 
-## Tipos Comuns de Entradas
+## Kinds de Entrada Comuns
 
-| Tipo | Propósito |
-|------|-----------|
-| `registry.entry` | Dados de propósito geral |
-| `function.lua` | Função Lua executável |
+| Tipo | Finalidade |
+|------|------------|
+| `registry.entry` | Dados de uso geral armazenados sem o despacho normal de eventos |
+| `function.lua` | Função Lua invocável |
 | `process.lua` | Processo de longa duração |
 | `http.service` | Servidor HTTP |
 | `http.router` | Grupo de rotas |
 | `http.endpoint` | Handler HTTP |
-| `process.host` | Supervisor de processos |
+| `process.host` | Host de execução de processos |
 
-Consulte o [Guia de Tipos de Entradas](guides/entry-kinds.md) para referência completa.
+Consulte o [Guia de Kinds de Entrada](guides/entry-kinds.md) para ver a referência de kinds de entrada.
 
 ## Arquivos de Configuração
 
@@ -220,7 +230,7 @@ supervisor:
     worker_count: 16
 ```
 
-Consulte o [Guia de Configuração](guides/configuration.md) para todas as opções.
+Consulte o [Guia de Configuração](guides/configuration.md) para conhecer os campos de configuração do runtime.
 
 ### wippy.lock
 
@@ -248,7 +258,7 @@ Referencie entradas pelo ID completo ou nome relativo. Filhos se vinculam ao pai
   func: app.api:get_user
 ```
 
-## Exemplo de Projeto
+## Projeto de Exemplo
 
 ```
 myapp/
@@ -268,9 +278,9 @@ myapp/
         └── email_sender.lua
 ```
 
-## Veja Também
+## Consulte Também
 
-- [Arquitetura de Aplicações](concepts/architecture.md) - Como dividir uma aplicação em slices e camadas
-- [Guia de Tipos de Entradas](guides/entry-kinds.md) - Tipos de entradas disponíveis
-- [Guia de Configuração](guides/configuration.md) - Opções do runtime
-- [Tipos de Entradas Personalizados](internals/kinds.md) - Implementando handlers (avançado)
+- [Arquitetura de Aplicações](concepts/architecture.md) — Organize uma aplicação em partes e camadas
+- [Guia de Kinds de Entrada](guides/entry-kinds.md) — Consulte os kinds de entrada disponíveis
+- [Guia de Configuração](guides/configuration.md) — Configure as opções do runtime
+- [Kinds de Entrada Personalizados](internals/kinds.md) — Implemente handlers (avançado)

@@ -1,11 +1,13 @@
 ---
 title: "Agents"
-description: "The wippy/agent module provides a framework for building AI agents with tool use, streaming, delegation, traits, and memory. Agents are defined…"
+description: "Define and run Wippy agents with tools, streaming, delegates, traits, memory, and custom resolution."
 ---
 
 # Agents
 
-The `wippy/agent` module provides a framework for building AI agents with tool use, streaming, delegation, traits, and memory. Agents are defined declaratively and executed through a context/runner pattern.
+The `wippy/agent` module defines agents declaratively and runs them through a context and runner. Agents can use tools, stream responses, delegate work, apply traits, and recall memory.
+
+This page is an API primer with composable reference snippets, not a standalone tutorial. The snippets assume an existing Wippy project, a registered LLM model and provider, configured provider credentials, and the agent, tool, or resolver entries referenced by each example. Later snippets build on variables such as `ctx`, `runner`, and `conversation` created in earlier sections. For a complete runnable project, follow [Build an LLM Agent](tutorials/llm-agent.md).
 
 ## Setup
 
@@ -16,38 +18,18 @@ wippy add wippy/agent
 wippy install
 ```
 
-The agent module requires `wippy/llm` and a process host. Declare both dependencies:
+The agent module declares its `wippy/llm` dependency itself. Add the agent
+dependency to source when it is not already present:
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  - name: os_env
-    kind: env.storage.os
-
-  - name: processes
-    kind: process.host
-    lifecycle:
-      auto_start: true
-
-  - name: dep.llm
-    kind: ns.dependency
-    component: wippy/llm
-    version: "*"
-    parameters:
-      - name: env_storage
-        value: app:os_env
-      - name: process_host
-        value: app:processes
-
   - name: dep.agent
     kind: ns.dependency
     component: wippy/agent
     version: "*"
-    parameters:
-      - name: process_host
-        value: app:processes
 ```
 
 ## Agent Definitions
@@ -80,7 +62,7 @@ entries:
 | `prompt` | string | System prompt |
 | `model` | string | Model name or class |
 | `max_tokens` | number | Maximum output tokens (default `512`) |
-| `temperature` | number | Sampling temperature (default `0`; range provider-dependent) |
+| `temperature` | number | Optional sampling temperature; omitted by default, with range and support determined by the provider |
 | `thinking_effort` | number | Forwarded to the model only when `> 0` (provider-defined scale) |
 | `tools` | array | Tool registry IDs |
 | `traits` | array | Trait references |
@@ -90,11 +72,12 @@ entries:
 
 ## Agent Context
 
-The agent context is the main entry point. Create a context, optionally configure it, then load an agent:
+Create an agent context, configure it as needed, and then load an agent:
 
 ```yaml
 imports:
   agent_context: wippy.agent:context
+  prompt: wippy.llm:prompt
 ```
 
 ```lua
@@ -138,7 +121,7 @@ local ctx = agent_context.new({
 |--------|-------------|
 | `context` | Base runtime context forwarded to tools and delegates |
 | `delegate_tools` | Default delegate-tool configuration (overridden by `configure_delegate_tools`) |
-| `enable_cache` | Enable prompt cache markers (Claude models). Defaults to `true`. |
+| `enable_cache` | Prompt cache marker setting for Claude models. The current implementation always enables markers, including when this option is `false`. |
 
 ### Loading by Inline Spec
 
@@ -157,7 +140,7 @@ local runner, err = ctx:load_agent({
 
 ## Running Steps
 
-The runner executes a single reasoning step. Pass a prompt builder with the conversation:
+The runner executes one agent step from a prompt-builder conversation:
 
 ```lua
 local prompt = require("prompt")
@@ -176,11 +159,19 @@ print(response.result)
 ### Step Options
 
 ```lua
+local self_pid, pid_err = process.pid()
+if pid_err then
+    error("Failed to get process PID: " .. tostring(pid_err))
+end
+
 local response, err = runner:step(conversation, {
     context = { session_id = "abc" },
-    stream_target = { reply_to = process.pid(), topic = "stream" },
+    stream_target = { reply_to = self_pid, topic = "stream" },
     tool_call = "auto",
 })
+if err then
+    error("Agent step failed: " .. tostring(err))
+end
 ```
 
 | Option | Type | Description |
@@ -294,7 +285,7 @@ Tools can also be referenced with custom aliases and context:
 
 ## Tool Execution
 
-When an agent step returns `tool_calls`, execute them and feed results back:
+When an agent step returns `tool_calls`, execute the calls and add their results to the conversation:
 
 ```lua
 local json = require("json")
@@ -319,7 +310,7 @@ local function execute_and_continue(runner, conversation)
                 result_str = json.encode(result)
             end
 
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -343,19 +334,42 @@ For how agent tool access and observability are secured, see the [Security Model
 
 ## Streaming
 
-Stream agent responses in real-time using `stream_target`:
+Stream agent responses through `stream_target`:
 
 ```lua
 local TOPIC = "agent_stream"
 
 local function stream_step(runner, conversation)
-    local stream_ch = process.listen(TOPIC)
+    local stream_ch, listen_err = process.listen(TOPIC)
+    if listen_err then
+        return nil, nil, listen_err
+    end
+
+    local function finish(text, response, err)
+        local ok, cleanup_err = process.unlisten(stream_ch)
+        if not ok then
+            cleanup_err = cleanup_err or "Failed to remove agent stream listener"
+            if err then
+                return text, nil, tostring(err) .. "; cleanup failed: " .. tostring(cleanup_err)
+            end
+            return text, nil, cleanup_err
+        end
+        if err then
+            return text, nil, err
+        end
+        return text, response, nil
+    end
+
+    local self_pid, pid_err = process.pid()
+    if pid_err then
+        return finish("", nil, pid_err)
+    end
 
     local done_ch = channel.new(1)
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
-                reply_to = process.pid(),
+                reply_to = self_pid,
                 topic = TOPIC,
             },
         })
@@ -363,36 +377,50 @@ local function stream_step(runner, conversation)
     end)
 
     local full_text = ""
+    local step_result = nil
+    local stream_done = false
+    local stream_err = nil
+
     while true do
-        local result = channel.select({
-            stream_ch:case_receive(),
-            done_ch:case_receive(),
-        })
-        if not result.ok then break end
+        local cases = {}
+        if not stream_done then
+            table.insert(cases, stream_ch:case_receive())
+        end
+        if not step_result then
+            table.insert(cases, done_ch:case_receive())
+        end
+
+        local result = channel.select(cases)
+        if not result.ok then
+            return finish(full_text, nil, "Agent stream closed before completion")
+        end
 
         if result.channel == done_ch then
-            process.unlisten(stream_ch)
-            local r = result.value
-            return full_text, r.response, r.err
-        end
-
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            -- wait for the step to complete
-            local r, ok = done_ch:receive()
-            process.unlisten(stream_ch)
-            if ok and r then
-                return full_text, r.response, r.err
+            step_result = result.value
+            if step_result.err then
+                return finish(full_text, nil, step_result.err)
             end
-            return full_text, nil, nil
+            if stream_done then
+                return finish(full_text, step_result.response, stream_err)
+            end
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                local content = chunk.content or ""
+                print(content)
+                full_text = full_text .. content
+            elseif chunk.type == "error" then
+                stream_done = true
+                stream_err = chunk.error and chunk.error.message or "Agent stream failed"
+            elseif chunk.type == "done" then
+                stream_done = true
+            end
+
+            if stream_done and step_result then
+                return finish(full_text, step_result.response, stream_err)
+            end
         end
     end
-
-    process.unlisten(stream_ch)
-    return full_text, nil, nil
 end
 ```
 
@@ -427,7 +455,10 @@ Agents can delegate to other agents. Delegates appear as tools to the parent age
 Delegate calls appear in `response.delegate_calls`:
 
 ```lua
-local response = runner:step(conversation)
+local response, err = runner:step(conversation)
+if err then
+    error("Delegate step failed: " .. tostring(err))
+end
 
 if response.delegate_calls then
     for _, dc in ipairs(response.delegate_calls) do
@@ -448,7 +479,7 @@ ctx:add_delegates({
 
 ## Traits
 
-Traits are reusable capabilities that contribute prompts, tools, and behavior to agents:
+Traits are reusable definitions that contribute prompts, tools, and behavior to agents:
 
 ```yaml
   - name: assistant
@@ -493,7 +524,7 @@ Traits are registry entries with `meta.type: agent.trait`. They can contribute:
 
 ### Static Memory
 
-Simple memory items appended to the system prompt:
+Static memory items are appended to the system prompt:
 
 ```yaml
   - name: assistant
@@ -510,7 +541,7 @@ Simple memory items appended to the system prompt:
 
 ### Dynamic Memory Contract
 
-Configure dynamic memory recall from an external source:
+Configure dynamic memory recall through an external implementation:
 
 ```yaml
     memory_contract:
@@ -612,10 +643,10 @@ return {
 3. Try registry lookup by name
 4. Return error if not found
 
-This pattern enables multi-tenant applications where agents are configured per-user or per-workspace and stored outside the framework's registry.
+Custom resolution can load agent definitions outside the framework registry, including definitions scoped by user or workspace.
 
 ## See Also
 
-- [LLM](framework/llm.md) - Underlying LLM module
-- [Building an LLM Agent](tutorials/llm-agent.md) - Step-by-step tutorial
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [LLM](framework/llm.md) — Underlying model interface
+- [Building an LLM Agent](../tutorials/llm-agent.md) — Build an agent step by step
+- [Framework Overview](framework/overview.md) — Install and import framework modules

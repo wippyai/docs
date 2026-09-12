@@ -1,11 +1,13 @@
 ---
 title: "Scheduler"
-description: "El scheduler ejecuta procesos usando un diseño de work-stealing. Los workers mantienen deques locales y roban de otros cuando están idle."
+description: "Cómo Wippy programa el trabajo de los procesos, enruta eventos, administra colas de workers y apaga procesos."
 ---
 
 # Scheduler
 
-El scheduler ejecuta procesos usando un diseño de work-stealing. Los workers mantienen deques locales y roban de otros cuando están idle.
+El scheduler ejecuta procesos en workers con deques locales, colas de inyección, una cola global y work stealing.
+
+Esta es una referencia de implementación. Sus estructuras Go y diagramas describen el scheduler del entorno de ejecución fijado, no API implementadas por el código de la aplicación.
 
 ## Interfaz de Proceso
 
@@ -25,16 +27,16 @@ type Process interface {
 | `Step` | Avanzar máquina de estados con eventos entrantes, escribir yields a salida |
 | `Close` | Liberar recursos |
 
-El parámetro `method` en `Init` especifica qué punto de entrada invocar. Una instancia de proceso puede exponer múltiples puntos de entrada, y el llamador selecciona cuál ejecutar. Esto también sirve como verificación de que el scheduler está iniciando el proceso correctamente.
+El parámetro `method` en `Init` especifica qué punto de entrada invocar. Una instancia de proceso puede exponer múltiples puntos de entrada, y el llamador selecciona cuál ejecutar.
 
 El scheduler llama `Step()` repetidamente, pasando eventos (completaciones de yield, mensajes) y recolectando yields (comandos a despachar). El proceso escribe su estado y cualquier yield al buffer `StepOutput`.
 
 ```go
 type Event struct {
-    Type  EventType  // EventYieldComplete o EventMessage
-    Tag   uint64     // Tag de correlación para completaciones de yield
-    Data  any        // Datos de resultado o payload de mensaje
-    Error error      // Error si yield falló
+    Type  EventType  // EventYieldComplete or EventMessage
+    Tag   uint64     // Correlation tag for yield completions
+    Data  any        // Result data or message payload
+    Error error      // Error if yield failed
 }
 ```
 
@@ -74,14 +76,14 @@ Cada worker posee un deque Chase-Lev de work-stealing:
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // Ladrones roban desde aquí (CAS)
-    bottom atomic.Int64  // Dueño push/pop aquí
+    top    atomic.Int64  // Thieves steal from here (CAS)
+    bottom atomic.Int64  // Owner pushes/pops here
 }
 ```
 
-El dueño hace push y pop desde el fondo (LIFO) sin sincronización. Los ladrones roban desde arriba (FIFO) usando CAS. Esto da al dueño acceso amigable con cache a items recientemente pusheados mientras distribuye trabajo más viejo a stealers.
+El dueño hace push y pop desde el fondo (LIFO) sin mutex; extraer el último elemento usa CAS para coordinarse con los ladrones. Los ladrones roban desde arriba (FIFO) usando CAS. Esto da al dueño acceso amigable con la caché a elementos añadidos recientemente mientras distribuye trabajo más antiguo a otros workers.
 
-`StealHalfInto` toma la mitad de los items en una operación CAS, reduciendo contención.
+`StealHalfInto` toma hasta la mitad de los elementos disponibles en una operación CAS, limitado por el buffer de destino. Los intentos de robo del worker usan un buffer de 32 elementos.
 
 ## Spinning Adaptativo
 
@@ -98,12 +100,12 @@ Antes de bloquear en la variable de condición, workers giran adaptativamente:
 ```mermaid
 stateDiagram-v2
     [*] --> Ready: Submit
-    Ready --> Running: CAS por worker
+    Ready --> Running: CAS by worker
     Running --> Complete: done
-    Running --> Blocked: yields comandos
-    Running --> Idle: esperando mensajes
+    Running --> Blocked: yields commands
+    Running --> Idle: waiting for messages
     Blocked --> Ready: CompleteYield
-    Idle --> Ready: Send llega
+    Idle --> Ready: Send arrives
 ```
 
 | Estado | Descripción |
@@ -143,9 +145,9 @@ Ambos buscan el PID destino en el mapa `byPID` y pushean el paquete a la cola de
 
 Un push aceptado o descartado despierta luego el proceso si está idle o bloqueado. Se re-encola mediante injectOrGlobal, que pushea a la cola de inyección del último worker cuando el proceso tiene afinidad de worker conocida, y recurre a la cola global en caso contrario.
 
-## Shutdown
+## Apagado :id=shutdown
 
-En shutdown, el scheduler envía eventos de cancelación a todos los procesos en ejecución y espera que completen o timeout. Workers salen una vez que no queda trabajo.
+Durante el apagado, el scheduler envía eventos de cancelación a todos los procesos rastreados y espera a que terminen o venza el tiempo límite. Los workers salen cuando ya no queda trabajo.
 
 ## Ver También
 

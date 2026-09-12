@@ -1,36 +1,26 @@
 ---
-title: "Contribuindo"
-description: "O Wippy é desenvolvido pela Spiral Scout. Nós o usamos em produção para sistemas internos e projetos de clientes. O lançamento público está em alfa."
+title: "Como contribuir"
+description: "Escopo das contribuições, expectativas de estabilidade, relato de segurança e contatos de suporte."
 ---
 
-# Contribuindo
+# Como contribuir
 
-O Wippy é desenvolvido pela [Spiral Scout](https://spiralscout.com). Nós o usamos em produção para sistemas internos e projetos de clientes. O lançamento público está em alfa.
+O Wippy é desenvolvido publicamente na [organização wippyai no GitHub](https://github.com/wippyai). A linha atual de versões do runtime está em alfa.
 
 ## Estabilidade
 
-- **API Lua**: Estável
-- **Comportamento externo**: Estável
-- **Definições de entradas do registro**: Estável, com pequenas exceções. Caminho de migração fornecido se alterações forem necessárias.
-- **APIs internas do runtime**: Podem mudar
-- **Mecanismos de baixo nível**: Podem mudar
+A linha de versões do runtime está em alfa, e os repositórios públicos não publicam uma política separada de compatibilidade ou migração. Fixe as versões do runtime e dos módulos usadas por uma aplicação e consulte as notas de versão e a documentação antes de atualizar.
 
-## Pull Requests
+## Issues e pull requests
 
-Aceitamos pull requests para melhorias de módulos Lua, estabilização de API e documentação.
+Abra issues e pull requests de documentação no [repositório da documentação](https://github.com/wippyai/docs). O repositório público do runtime aceita atualmente [pull requests](https://github.com/wippyai/runtime/pulls), mas não issues. Para relatar um defeito ou propor uma mudança no runtime sem enviar um patch, use o contato publicado da organização: [support@wippy.ai](mailto:support@wippy.ai).
 
-Não estamos aceitando pull requests para mudanças arquiteturais de alto nível ou decisões de design do núcleo. Precisamos manter controle sobre a direção principal durante esta fase.
-
-Issues e feedback são sempre bem-vindos.
-
-## Outros Projetos
-
-A Spiral Scout mantém vários projetos open source incluindo [RoadRunner](https://github.com/roadrunner-server/roadrunner), [Spiral Framework](https://github.com/spiral/framework) e [Cycle ORM](https://github.com/cycle/orm).
+As contribuições devem seguir o [Código de Conduta](https://github.com/wippyai/.github/blob/main/.github/CODE_OF_CONDUCT.md) da organização.
 
 ## Segurança
 
-Para vulnerabilidades de segurança, envie email diretamente para security@wippy.dev.
+Os repositórios da documentação e do runtime não publicam atualmente uma política de segurança dedicada. Relate problemas sensíveis de segurança em particular para [support@wippy.ai](mailto:support@wippy.ai), em vez de abrir uma issue pública.
 
-## Suporte Comercial
+## Suporte
 
-Para suporte comercial ou acesso antecipado, entre em contato com wippy@spiralscout.com.
+Entre em contato com [support@wippy.ai](mailto:support@wippy.ai).

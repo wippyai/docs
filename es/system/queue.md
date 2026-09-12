@@ -1,21 +1,23 @@
 ---
 title: "Cola"
-description: "Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables."
+description: "Configure drivers de cola en memoria, AMQP o SQS, colas lógicas, consumidores, reconocimientos y publicación."
 ---
 
 # Cola
 
-Wippy proporciona un sistema de colas para procesamiento asíncrono de mensajes con drivers y consumidores configurables.
+El sistema de colas conecta publicadores de mensajes asíncronos, drivers, colas, consumidores y funciones handler.
+
+Esta página es una referencia de configuración y comportamiento. Los fences YAML son fragmentos para una lista de entradas existente salvo cuando muestran un documento completo; los ejemplos de drivers externos presuponen que ya existe el broker o servicio compatible con AWS.
 
 ## Arquitectura
 
 ```mermaid
 flowchart LR
-    P[Publicador] --> D[Driver]
-    D --> Q[Cola]
-    Q --> C[Consumidor]
-    C --> W[Pool de Workers]
-    W --> F[Función]
+    P[Publisher] --> D[Driver]
+    D --> Q[Queue]
+    Q --> C[Consumer]
+    C --> W[Worker Pool]
+    W --> F[Function]
 ```
 
 - **Driver** - Implementación de backend (memory, AMQP, SQS)
@@ -79,15 +81,15 @@ Para RabbitMQ y brokers compatibles con AMQP 0-9-1.
 | `connection_timeout` | duration | - | Timeout de conexión |
 | `reconnect_delay` | duration | `1s` | Backoff inicial de reconexión |
 | `reconnect_max_delay` | duration | `30s` | Backoff máximo de reconexión |
-| `default_message_ttl` | duration | - | TTL de mensaje por defecto aplicado a colas declaradas |
-| `default_queue_ttl` | duration | - | TTL por defecto aplicado a colas declaradas |
-| `default_queue_expiry` | duration | - | Expiración de cola por defecto para colas declaradas |
+| `default_message_ttl` | duration | - | Expiración por mensaje usada cuando el publicador no establece una |
+| `default_queue_ttl` | duration | - | TTL predeterminado de mensajes a nivel de cola (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Expiración predeterminada de colas sin usar (`x-expires`) |
 | `prefetch_count` | int | - | Tope de prefetch a nivel de canal |
 | `frame_size` | int | - | Límite de tamaño de frame AMQP |
 | `channel_max` | int | - | Máximo de canales por conexión |
 | `tls` | object | - | Configuración TLS (ver abajo) |
 
-Bloque TLS:
+Configure TLS bajo `tls`:
 
 ```yaml
   tls:
@@ -167,7 +169,7 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 
 | Clave | Descripción |
 |-------|-------------|
-| `max_length` | Tamaño de buffer acotado (0 = sin límite) |
+| `max_length` | Tamaño del buffer acotado (0 o ausente = valor predeterminado 1000) |
 
 **amqp:**
 
@@ -179,7 +181,7 @@ Las claves bajo `driver_options` están agrupadas por nombre de driver. Un drive
 | `queue_expiry` | Expiración de colas no utilizadas |
 | `max_length` | Máximo de mensajes retenidos |
 
-### Códecs {id="codecs"}
+### Códecs :id=codecs
 
 El `codec` selecciona cómo se serializa el cuerpo de un mensaje antes de entregarlo al broker. Es una cadena de formato de payload y por defecto es `json/plain`:
 
@@ -206,7 +208,7 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,8 +217,8 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
 | `queue` | requerido | ID de registro de la cola |
 | `func` | requerido | ID de registro de la función handler |
 | `concurrency` | 1 | Conteo de workers paralelos |
-| `prefetch` | 10 | Tamaño del buffer por worker |
-| `auto_ack` | false | Cuando es true, el runtime no llama al ack del broker; el éxito/fallo del handler es la única señal de settle |
+| `prefetch` | 10 | Tamaño compartido del buffer de entregas; AMQP también lo aplica como recuento de prefetch QoS del canal |
+| `auto_ack` | false | Opción de auto-ack propia del backend; en AMQP, `true` pide al broker que confirme al entregar |
 | `driver_options` | - | Sub-bag por driver (misma estructura que la cola) |
 
 **Opciones de consumidor amqp:**
@@ -229,20 +231,20 @@ El driver AMQP establece un `content-type` correspondiente (`application/json` o
 | `consumer_tag` | Identificador para esta suscripción |
 
 <tip>
-Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure actor y políticas a nivel de ciclo de vida. Ver <a href="system/security.md">Seguridad</a>.
+Los consumidores respetan el contexto de llamada y pueden estar sujetos a políticas de seguridad. Configure el actor y las políticas a nivel de lifecycle. Consulte <a href="./security.md">Seguridad</a>.
 </tip>
 
 ### Pool de Workers
 
-Los workers se ejecutan como goroutines concurrentes:
+Los workers se ejecutan de forma concurrente:
 
 ```
 concurrency: 3, prefetch: 10
 
-1. El driver entrega hasta 10 mensajes al buffer
-2. 3 workers extraen del buffer concurrentemente
-3. A medida que los workers terminan, el buffer se rellena
-4. Backpressure cuando todos los workers están ocupados y el buffer lleno
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
+3. As workers finish, buffer refills
+4. Backpressure when all workers busy and buffer full
 ```
 
 ## Función Handler
@@ -254,10 +256,16 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
     local ok, err = process_task(body)
@@ -282,7 +290,7 @@ return { main = main }
 
 ### Reconocimiento
 
-El runtime hace settle automáticamente según el retorno del handler:
+Salvo que el handler resuelva explícitamente el mensaje, el consumidor lo resuelve según el resultado de la invocación de la función:
 
 | Resultado del Handler | Acción |
 |-----------------------|--------|
@@ -290,7 +298,7 @@ El runtime hace settle automáticamente según el retorno del handler:
 | Retorno `nil, err` | Nack (reentrega o dead-letter según el driver) |
 | Error lanzado | Nack |
 
-Llame `msg:ack()` o `msg:nack()` explícitamente solo para hacer settle anticipado. El settlement es de un solo disparo: gana la primera llamada que llega.
+Los valores de retorno normales, incluido `false`, no seleccionan el comportamiento de reconocimiento. Llame a `msg:ack()` o `msg:nack()` para resolver el mensaje explícitamente. La resolución es de un solo disparo: gana la primera llamada que llega.
 
 ### Enrutamiento Dead-Letter
 
@@ -303,14 +311,16 @@ Desde código Lua:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-Ver [Módulo Queue](lua/storage/queue.md) para la API completa.
+Consulte el [módulo Queue](lua/storage/queue.md) para la API Lua de publicación y mensajes.
 
 ## Apagado Graceful
 
@@ -324,5 +334,5 @@ Al detener el consumidor:
 ## Ver También
 
 - [Módulo Queue](lua/storage/queue.md) - Referencia de API Lua
-- [Guía de Consumidores de Cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
-- [Supervisión](guides/supervision.md) - Gestión del ciclo de vida del consumidor
+- [Guía de consumidores de cola](guides/queue-consumers.md) - Patrones de consumidor y pools de workers
+- [Supervisión](guides/supervision.md) - Gestión del lifecycle del consumidor

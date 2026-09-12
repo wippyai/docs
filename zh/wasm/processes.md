@@ -20,7 +20,18 @@ entries:
     fs: myns:wasm_binaries
     path: /worker.wasm
     hash: sha256:292b796376f8b4cc360acf2ea6b82d1084871c3607a079f30b446da8e5c984a4
-    method: compute
+    method: run
+    imports:
+      - wippy:actor
+      - wasi:io
+      - wasi:poll
+    options:
+      limits:
+        memory_bytes: 67108864
+      mailbox:
+        capacity: 128
+        bytes: 8388608
+        message_bytes: 1048576
 ```
 
 ### 配置字段
@@ -35,11 +46,15 @@ entries:
 | `wit` | 否 | 用于 raw/core 模块的 WIT 签名 |
 | `imports` | 否 | 要启用的宿主导入 |
 | `wasi` | 否 | WASI 配置（args、env、mounts） |
-| `limits` | 否 | 执行限制 |
+| `options` | 否 | Actor 控制项：`worker_class`、`limits` 和 `mailbox` |
 
 <note>
-`process.wasm` 与 `function.wasm` 共享其配置结构体，因此模式接受 `pool` 块但会忽略 — 进程在进程宿主下运行，而不是函数池。
+`process.wasm` Actor 在整个 PID 生命周期内拥有一个模块实例，并在消息之间保留 guest 状态。因此函数池不适用，`pool` 块会被拒绝。Actor 限制应放在 `options.limits` 下；旧的 `limits` 和 `meta.options` 写法会暂时接受并产生弃用警告。
 </note>
+
+### 有状态 WASM Actor
+
+组件导入 `wippy:actor` 通过 `wippy:actor/process@0.1.0` 提供 `self`、`send`、`try-receive`、`receive` 和 `subscribe`。每个 PID 都有受限邮箱（默认 128 条消息、总计 8 MiB、每条消息 1 MiB）。`send` 会按目标 PID 的 `process.send` 权限进行授权。支持的 payload 格式为 `bytes`、UTF-8 `text` 和 UTF-8 `json`。默认 worker class 为 `wasm`；内存上限默认为 64 MiB，以 64 KiB 为倍数，最大 4 GiB。
 
 ## CLI 命令
 
@@ -92,6 +107,7 @@ WASM 进程遵循 Init/Step/Close 生命周期模型：
 ```lua
 local process = require("process")
 local time = require("time")
+local errors = require("errors")
 
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
@@ -114,7 +130,9 @@ end
 
 ## 异步执行
 
-导入 WASI 接口的 WASM 进程可以执行异步操作。调度器在 I/O 期间挂起进程，并在操作完成时恢复：
+WASM actor 可以在运行时通过 dispatcher 桥接的 host 操作中让出执行权，包括
+mailbox 接收和发送、polling、时钟、socket、DNS、文件系统 stream 和出站
+HTTP。调度器会挂起进程直到操作完成，然后恢复同一个 guest instance：
 
 ```yaml
   - name: http_worker
@@ -134,7 +152,8 @@ end
           required: true
 ```
 
-yield/resume 机制对 WASM 代码透明。客户端中的标准阻塞调用（sleep、read、write、HTTP 请求）自动让出给调度器。
+对于经过 asyncify 的 core module，或使用受支持 pollable 接口的 component，
+yield/resume 机制是透明的。
 
 ## WASI 配置
 

@@ -1,18 +1,22 @@
 ---
 title: "Entry Kinds Reference"
-description: "Complete reference of all entry kinds available in Wippy."
+description: "Reference for Wippy entry kinds across runtime, storage, networking, security, execution, and lifecycle systems."
 ---
 
 # Entry Kinds Reference
 
-Complete reference of all entry kinds available in Wippy.
+This page summarizes the available entry kinds and links to their detailed module and system references.
 
-> Entries reference each other using `namespace:name` format. The registry automatically wires dependencies together based on these references, ensuring resources are initialized in the correct order.
+The YAML and Lua blocks are reference fragments, not one application. Registry IDs,
+credentials, data objects, and helpers such as `get_users` or `delete_user` are
+illustrative; use the linked module pages for complete return and error contracts.
+
+> Entries reference one another using `namespace:name`. The registry uses these references to resolve dependencies and initialization order.
 
 ## See Also
 
-- [Registry](concepts/registry.md) - How entries are stored and resolved
-- [Configuration](guides/configuration.md) - YAML configuration format
+- [Registry](concepts/registry.md) — How entries are stored and resolved
+- [Configuration](guides/configuration.md) — YAML configuration format
 
 ## Lua Runtime
 
@@ -161,8 +165,8 @@ See [Database](system/database.md) for `${env:NAME}` secret references, TLS opti
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -713,23 +717,21 @@ The `ns.*` kinds are authored like any other entry: a component declares `ns.def
 
 ## Lifecycle Configuration
 
-Most entries support lifecycle configuration:
+Supervisor-managed service entries expose lifecycle configuration. The block below belongs inside a service entry that supports it:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # Start automatically
-    start_timeout: 10s        # Max startup time
-    stop_timeout: 10s         # Max shutdown time
-    stable_threshold: 5s      # Time to consider stable
-    depends_on:
-      - app:database
-    restart:                  # Retry policy
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = infinite
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>

@@ -1,13 +1,15 @@
 ---
 title: "엔트리 종류 참조"
-description: "Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입니다."
+description: "런타임, 스토리지, 네트워킹, 보안, 실행, 라이프사이클 시스템의 Wippy 엔트리 종류를 설명합니다."
 ---
 
 # 엔트리 종류 참조
 
-Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입니다.
+이 페이지는 사용 가능한 엔트리 종류를 요약하고 자세한 모듈 및 시스템 레퍼런스로 연결합니다.
 
-> 엔트리는 `namespace:name` 형식으로 서로 참조합니다. 레지스트리는 이 참조를 기반으로 의존성을 자동으로 연결하여 리소스가 올바른 순서로 초기화되도록 합니다.
+YAML과 Lua 블록은 하나의 애플리케이션이 아니라 레퍼런스 조각입니다. 레지스트리 ID, 자격 증명, 데이터 객체, `get_users`나 `delete_user` 같은 헬퍼는 예시입니다. 완전한 반환값과 오류 계약은 연결된 모듈 페이지를 확인하세요.
+
+> 엔트리는 `namespace:name` 형식으로 서로 참조합니다. 레지스트리는 이 참조를 사용해 의존성과 초기화 순서를 결정합니다.
 
 ## 참고
 
@@ -16,7 +18,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
 
 ## Lua 런타임
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `function.lua` | Lua 함수 진입점 |
 | `process.lua` | 장기 실행 Lua 프로세스 |
@@ -37,7 +39,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
     - http
     - json
   imports:
-    utils: app.lib:helpers  # 다른 엔트리를 모듈로 가져오기
+    utils: app.lib:helpers  # Import another entry as module
 ```
 
 <tip>
@@ -46,7 +48,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
 
 ## HTTP 서비스
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `http.service` | HTTP 서버 (포트 바인딩) |
 | `http.router` | 라우트 프리픽스와 미들웨어 |
@@ -54,14 +56,14 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
 | `http.static` | 정적 파일 서빙 |
 
 ```yaml
-# HTTP 서버
+# HTTP server
 - name: gateway
   kind: http.service
   addr: ":8080"
   lifecycle:
     auto_start: true
 
-# 미들웨어가 있는 라우터
+# Router with middleware
 - name: api
   kind: http.router
   meta:
@@ -71,7 +73,7 @@ Wippy에서 사용 가능한 모든 엔트리 종류에 대한 참조 문서입�
     - cors
     - ratelimit
 
-# 엔드포인트
+# Endpoint
 - name: users_list
   kind: http.endpoint
   meta:
@@ -94,7 +96,7 @@ resp:write_json({users = get_users()})
 
 ## 데이터베이스
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `db.sql.sqlite` | SQLite 데이터베이스 |
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
@@ -111,7 +113,7 @@ resp:write_json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# 테스트용 인메모리
+# In-memory for testing
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -161,14 +163,14 @@ resp:write_json({users = get_users()})
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
 ## 키-값 스토어
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `store.memory` | 인메모리 키-값 스토어 |
 | `store.sql` | SQL 기반 키-값 스토어 |
@@ -176,13 +178,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 | `store.kv.crdt` | 클러스터 복제, 최종 일관성 KV (gossip/CRDT) |
 
 ```yaml
-# 메모리 스토어
+# Memory store
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# SQL 기반 스토어
+# SQL-backed store
 - name: persistent_store
   kind: store.sql
   database: app:database
@@ -190,13 +192,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   lifecycle:
     auto_start: true
 
-# 클러스터 복제 스토어 (클러스터링 필요)
+# Cluster-replicated store (requires clustering)
 - name: deployments
   kind: store.kv.raft
   namespace: deploy
 ```
 
-`store.kv.*` 종류는 [클러스터링](guides/cluster.md)이 활성화되어 있어야 합니다. 일관성 트레이드오프는 [스토어](system/store.md#cluster-kv-stores)를 참조하세요.
+`store.kv.*` 종류는 [클러스터링](guides/cluster.md)이 활성화되어 있어야 합니다. 일관성 트레이드오프는 [스토어](system/store.md#cluster-kv-stores)를 참고하세요.
 
 **Lua API:** [Store 모듈](lua/storage/store.md) 참조
 
@@ -204,13 +206,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 local store = require("store")
 local s, err = store.get("app:cache")
 
-s:set("user:123", user_data, 3600)  -- TTL(초)
+s:set("user:123", user_data, 3600)  -- TTL in seconds
 local data = s:get("user:123")
 ```
 
 ## 큐
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `queue.driver.memory` | 인메모리 큐 드라이버 |
 | `queue.driver.amqp` | AMQP (RabbitMQ) 드라이버 |
@@ -219,18 +221,18 @@ local data = s:get("user:123")
 | `queue.consumer` | 큐 컨슈머 |
 
 ```yaml
-# 드라이버
+# Driver
 - name: queue_driver
   kind: queue.driver.memory
   lifecycle:
     auto_start: true
 
-# 큐
+# Queue
 - name: jobs
   kind: queue.queue
   driver: queue_driver
 
-# 컨슈머
+# Consumer
 - name: job_consumer
   kind: queue.consumer
   queue: app:jobs
@@ -246,7 +248,7 @@ local data = s:get("user:123")
 ```lua
 local queue = require("queue")
 
--- 메시지 발행
+-- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
 -- 컨슈머 핸들러에서: 메시지 본문이 핸들러의 인자로 전달됨
@@ -265,7 +267,7 @@ end
 
 ## 프로세스 관리
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `process.host` | 프로세스 실행 호스트 |
 | `process.service` | 슈퍼바이즈드 프로세스 (process.lua 래핑) |
@@ -273,23 +275,23 @@ end
 | `pg.scope` | 프로세스 그룹 스코프 ([프로세스 그룹](system/process-groups.md) 참조) |
 
 ```yaml
-# 프로세스 호스트 (프로세스가 실행되는 곳)
+# Process host (where processes run)
 - name: processes
   kind: process.host
   host:
-    workers: 32             # 워커 고루틴 (기본값: NumCPU)
-    queue_size: 1024        # 글로벌 큐 용량
-    local_queue_size: 256   # 워커별 큐
+    workers: 32             # Worker goroutines (default: NumCPU)
+    queue_size: 1024        # Global queue capacity
+    local_queue_size: 256   # Per-worker queue
   lifecycle:
     auto_start: true
 
-# 프로세스 정의
+# Process definition
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# 슈퍼바이즈드 프로세스 서비스
+# Supervised process service
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -347,7 +349,7 @@ end
 
 ## Temporal (워크플로우)
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `temporal.client` | Temporal 클라이언트 연결 |
 | `temporal.worker` | Temporal 워커 |
@@ -372,7 +374,7 @@ end
 
 ## 클라우드 스토리지
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `config.aws` | AWS 설정 |
 | `cloudstorage.s3` | S3 버킷 접근 |
@@ -388,7 +390,7 @@ end
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # 선택적, S3 호환 서비스용
+  endpoint: ""  # Optional, for S3-compatible services
 ```
 
 **Lua API:** [클라우드 스토리지 모듈](lua/storage/cloud.md) 참조
@@ -407,7 +409,7 @@ MinIO나 DigitalOcean Spaces 같은 S3 호환 서비스에 연결하려면 <code
 
 ## 파일 시스템
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `fs.directory` | 디렉토리 접근 |
 | `fs.embed` | 읽기 전용 내장 파일 시스템 |
@@ -416,8 +418,8 @@ MinIO나 DigitalOcean Spaces 같은 S3 호환 서비스에 연결하려면 <code
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # 없으면 생성
-  mode: "0755"      # 권한
+  auto_init: true   # Create if not exists
+  mode: "0755"      # Permissions
 ```
 
 **Lua API:** [파일시스템 모듈](lua/storage/filesystem.md) 참조
@@ -433,7 +435,7 @@ file:close()
 
 ## 환경
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `env.storage.memory` | 인메모리 환경 스토리지 |
 | `env.storage.file` | 파일 기반 환경 스토리지 |
@@ -480,13 +482,13 @@ env.set("CACHE_TTL", "3600")
 
 ## 템플릿
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `template.jet` | 개별 Jet 템플릿 |
 | `template.set` | 템플릿 세트 설정 |
 
 ```yaml
-# 엔진 설정이 있는 템플릿 세트
+# Template set with engine configuration
 - name: templates
   kind: template.set
   engine:
@@ -495,7 +497,7 @@ env.set("CACHE_TTL", "3600")
       - ".jet"
       - ".html.jet"
 
-# 개별 템플릿
+# Individual template
 - name: email_template
   kind: template.jet
   source: file://templates/email.jet
@@ -516,14 +518,14 @@ local html = set:render("email", {
 
 ## 보안
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `security.policy` | 조건이 있는 보안 정책 |
 | `security.policy.expr` | 표현식 기반 정책 |
 | `security.token_store` | 토큰 스토리지 |
 
 ```yaml
-# 조건 기반 정책
+# Condition-based policy
 - name: admin_policy
   kind: security.policy
   policy:
@@ -535,7 +537,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# 표현식 기반 정책
+# Expression-based policy
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -554,12 +556,12 @@ local html = set:render("email", {
 ```lua
 local security = require("security")
 
--- 액션 전 권한 확인
+-- Check permission before action
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- 현재 액터 가져오기
+-- Get current actor
 local actor = security.actor()
 ```
 
@@ -569,20 +571,20 @@ local actor = security.actor()
 
 ## 계약 (의존성 주입)
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `contract.definition` | 메서드 명세가 있는 인터페이스 |
 | `contract.binding` | 계약 메서드를 함수 구현에 매핑 |
 
 ```yaml
-# 계약 인터페이스 정의
+# Define the contract interface
 - name: greeter
   kind: contract.definition
   methods:
     - name: greet
-      description: 인사 메시지 반환
+      description: Returns a greeting message
     - name: greet_with_name
-      description: 개인화된 인사 반환
+      description: Returns a personalized greeting
       input_schemas:
         - format: "application/schema+json"
           definition: {"type": "string"}
@@ -590,7 +592,7 @@ local actor = security.actor()
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# 구현 함수
+# Implementation functions
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -601,7 +603,7 @@ local actor = security.actor()
   source: file://greeter_greet_name.lua
   method: main
 
-# 계약 메서드를 구현에 바인딩
+# Bind contract methods to implementations
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -617,14 +619,14 @@ Lua에서 사용:
 ```lua
 local contract = require("contract")
 
--- ID로 바인딩 열기
+-- Open binding by ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- 메서드 호출
+-- Call methods
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- 인스턴스가 계약을 구현하는지 확인
+-- Check if instance implements contract
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
@@ -636,7 +638,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 실행
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `exec.native` | 네이티브 명령 실행 |
 | `exec.docker` | Docker 컨테이너 실행 |
@@ -661,7 +663,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## WASM 런타임
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `function.wat` | WebAssembly 함수 (WAT 텍스트 형식) |
 | `function.wasm` | WebAssembly 함수 (바이너리) |
@@ -691,18 +693,18 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 네트워크
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `network` | 기본 네트워크 오버레이 |
 | `network.socks5` | SOCKS5 프록시 오버레이 |
 | `network.i2p` | I2P 네트워크 오버레이 |
 | `network.tailscale` | Tailscale 오버레이 |
 
-`http.service`에서는 `network:`를 통해, `funcs`/`process`에서는 `network` 옵션을 통해, `http_client`에서는 `overlay_network` 옵션을 통해 참조됩니다. [네트워크](system/network.md) 참조.
+`http.service`에서는 `network:`를 통해, `funcs`/`process`에서는 `network` 옵션을 통해, `http_client`에서는 `overlay_network` 옵션을 통해 참조됩니다. [네트워크](system/network.md)를 참고하세요.
 
 ## 레지스트리 프리미티브
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `registry.entry` | 뒤에 서비스가 없는 순수 데이터 엔트리 (앱 고유 설정) |
 | `ns.definition` | 네임스페이스 정의 |
@@ -713,23 +715,21 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## 라이프사이클 설정
 
-대부분의 엔트리는 라이프사이클 설정을 지원합니다:
+슈퍼바이저가 관리하는 서비스 엔트리는 라이프사이클 설정을 제공합니다. 아래 블록은 이를 지원하는 서비스 엔트리 안에 둡니다:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # 자동 시작
-    start_timeout: 10s        # 최대 시작 시간
-    stop_timeout: 10s         # 최대 종료 시간
-    stable_threshold: 5s      # 안정으로 간주되는 시간
-    depends_on:
-      - app:database
-    restart:                  # 재시도 정책
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = 무한 재시도
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
@@ -741,13 +741,13 @@ local is_greeter = contract.is(greeter, "app:greeter")
 엔트리는 `namespace:name` 형식을 사용하여 참조됩니다:
 
 ```yaml
-# 정의
+# Definition
 namespace: app.users
 entries:
   - name: handler
     kind: function.lua
 
-# 다른 엔트리에서 참조
+# Reference from another entry
 func: app.users:handler
 ```
 

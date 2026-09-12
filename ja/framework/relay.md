@@ -1,11 +1,13 @@
 ---
-title: "リレー"
-description: "wippy/relay モジュールは、2 階層ハブアーキテクチャを持つ WebSocket リレーインフラストラクチャを提供します。中央ハブはユーザーごとのハブを管理し、それらが WebSocket クライアント接続を管理し、メッセージをプラグインへルーティングします。"
+title: "Relay"
+description: "Wippy Relay の hub、WebSocket client、prefix 付き plugin、user isolation、connection lifecycle を設定します。"
 ---
 
-# リレー
+# Relay
 
-`wippy/relay` モジュールは、2 階層ハブアーキテクチャを持つ WebSocket リレーインフラストラクチャを提供します。中央ハブはユーザーごとのハブを管理し、それらが WebSocket クライアント接続を管理し、メッセージをプラグインへルーティングします。
+`wippy/relay` モジュールは WebSocket connection を central hub と user ごとの hub を通じてルーティングします。user hub は client connection を管理し、prefix 付き plugin へメッセージを dispatch します。
+
+このページは部分的な integration recipe と protocol リファレンスであり、独立した WebSocket アプリケーションではありません。setup と plugin の block は、既存の Wippy プロジェクト、設定済みの `user_security_scope` に存在する実際の security scope、[WebSocket Relay](http/websocket-relay.md)で説明する Relay へ接続された HTTP WebSocket endpoint を前提としています。protocol payload と lifecycle block はリファレンスの形です。
 
 ## アーキテクチャ
 
@@ -22,7 +24,7 @@ Central Hub
 └── ...
 ```
 
-中央ハブはサービスとして実行されます。WebSocket クライアントが接続すると、中央ハブはそのユーザー用のユーザーハブを検索または作成します。ユーザーハブはクライアントのライフタイムを管理し、コマンドプレフィックスに基づいてプラグインへメッセージをルーティングします。
+central hub は service として実行されます。WebSocket client が接続すると、その user の hub を検索または作成します。user hub は connection lifecycle を管理し、command prefix によってメッセージをルーティングします。
 
 ## セットアップ
 
@@ -90,7 +92,7 @@ entries:
 }
 ```
 
-プラグインの `status` は `"not_started"`（登録済み、未起動）、`"pending"`（起動中）、`"running"`、`"failed"`、`"stopped"` のいずれかです。
+plugin の `status` は `"not_started"`（登録済みだが一度も生成されていない）、`"pending"`（生成中）、`"running"`、`"failed"`、`"stopped"` のいずれかです。
 
 ## メッセージルーティング
 
@@ -100,7 +102,7 @@ entries:
 { "type": "session_get_state", "data": { "key": "value" } }
 ```
 
-`session_` プレフィックスはセッションプラグインに一致します。ハブはプレフィックスを取り除き、取り除いたタイプをトピックとしてプラグインプロセスにメッセージを送信します：
+`session_` prefix は session plugin を選択します。hub は prefix を取り除き、残りの type を topic として plugin process へメッセージを送信します。
 
 ```lua
 -- process topic: "get_state"
@@ -144,7 +146,7 @@ entries:
 
 ### プラグインのライフサイクル
 
-プラグインはユーザーハブによって生成されます。起動時、プラグインは以下を受け取ります：
+user hub は各 plugin を次の起動引数で生成します。
 
 ```lua
 function run(args)
@@ -166,18 +168,32 @@ end
 
 ### プラグイン実装
 
-プラグインはプロセスインボックスでメッセージを受け取ります。各メッセージはトピック（取り除かれたコマンドプレフィックス）と、元のメッセージデータと、クライアントへのレスポンス送信用の `conn_pid` を含むペイロードを持ちます。
+plugin は process inbox を通じてメッセージを受け取ります。各メッセージは command type から派生した topic と、元の message data および応答用の `conn_pid` を含む payload を持ちます。
 
 ```lua
 local json = require("json")
 
 local function handle_message(topic, payload)
     if topic == "get_state" then
-        process.send(payload.conn_pid, "ws.message", json.encode({
+        if not payload.conn_pid then
+            return nil, "Relay message is missing conn_pid"
+        end
+
+        local encoded, encode_err = json.encode({
             type = "session_state",
             data = { status = "active" }
-        }))
+        })
+        if encode_err then
+            return nil, encode_err
+        end
+
+        local sent, send_err = process.send(payload.conn_pid, "ws.message", encoded)
+        if not sent then
+            return nil, send_err or "Relay response was not sent"
+        end
     end
+
+    return true
 end
 
 local function run(args)
@@ -198,11 +214,14 @@ local function run(args)
             local payload = msg:payload():data()
 
             if topic == "resume" then
-                -- 最初のクライアントが接続した
+                -- first client connected
             elseif topic == "shutdown" then
-                -- 最後のクライアントが切断した
+                -- last client disconnected
             else
-                handle_message(topic, payload)
+                local ok, err = handle_message(topic, payload)
+                if not ok then
+                    error("Failed to handle relay message: " .. tostring(err))
+                end
             end
         elseif result.channel == events then
             local event = result.value
@@ -218,7 +237,7 @@ return { run = run }
 
 ## エラー処理
 
-リレーは構造化されたエラーメッセージをクライアントへ送信します：
+Relay は次の code で client error を報告します。
 
 | エラーコード | 説明 |
 |------------|-------------|
@@ -234,7 +253,7 @@ return { run = run }
 
 ### ユーザーハブの作成
 
-ユーザーハブは、ユーザーの最初のクライアントが接続したときにオンデマンドで作成されます。ハブはユーザーのセキュリティアクターとスコープで生成されます。
+user の最初の client connection が、その user の hub を作成します。hub は user の security actor と scope で実行されます。
 
 ### ガベージコレクション
 
@@ -259,7 +278,7 @@ GC のチェック間隔は自動的に導出されます：`inactivity_timeout 
 
 ## 関連項目
 
-- [WebSocket Relay](http/websocket-relay.md) - HTTP WebSocket エンドポイント設定
-- [プロセスモデル](concepts/process-model.md) - プロセスのライフサイクルとメッセージング
-- [セキュリティ](system/security.md) - セキュリティアクターとスコープ
-- [フレームワーク概要](framework/overview.md) - フレームワークモジュールの利用
+- [WebSocket Relay](../http/websocket-relay.md) — HTTP WebSocket endpoint の設定
+- [プロセスモデル](concepts/process-model.md) — process lifecycle と messaging
+- [セキュリティ](system/security.md) — security actor と scope
+- [Framework 概要](framework/overview.md) — Framework モジュールのインストールと import

@@ -8,7 +8,7 @@ description: "Wippy에서 다른 함수를 호출하는 주요 방법. 컨텍스
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-Wippy에서 다른 함수를 호출하는 주요 방법. 컨텍스트 전파, 보안 자격 증명, 타임아웃을 완벽하게 지원하여 프로세스 간에 등록된 함수를 동기 또는 비동기로 실행합니다. 이 모듈은 컴포넌트가 통신해야 하는 분산 애플리케이션 구축의 핵심입니다.
+`funcs` 모듈은 등록된 함수를 동기 또는 비동기로 호출합니다. executor는 요청 컨텍스트, 보안 신원 및 구현별 호출 옵션을 전파할 수 있습니다. 이 페이지는 API 참조이며, 대상 ID, 인수 및 애플리케이션 데이터는 주변 코드를 나타냅니다.
 
 ## 로딩
 
@@ -16,7 +16,7 @@ Wippy에서 다른 함수를 호출하는 주요 방법. 컨텍스트 전파, �
 local funcs = require("funcs")
 ```
 
-## call
+## `call`
 
 등록된 함수를 동기적으로 호출합니다. 즉각적인 결과가 필요하고 대기할 수 있을 때 사용합니다.
 
@@ -37,25 +37,32 @@ print(result.name)
 
 target 문자열은 `namespace:name` 패턴을 따르며 namespace는 모듈을 식별하고 name은 특정 함수를 식별합니다.
 
-## async
+## `async`
 
-비동기 함수 호출을 시작하고 Future와 함께 즉시 반환합니다. 블록하고 싶지 않은 장기 실행 작업이나 여러 작업을 병렬로 실행하고 싶을 때 사용합니다.
+함수 호출을 시작하고 `Future`를 즉시 반환합니다. Future를 사용하면 호출이 실행되는 동안 다른 작업을 계속하고 여러 호출을 동시에 수행할 수 있습니다.
 
 ```lua
--- 블로킹 없이 무거운 계산 시작
+-- Start heavy computation without blocking
 local future, err = funcs.async("app.process:analyze_data", large_dataset)
 if err then
     return nil, err
 end
 
--- 계산 실행 중 다른 작업 수행...
+-- Do other work while computation runs...
 
--- 준비되면 결과 대기
+-- Wait for result when ready
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -65,9 +72,9 @@ end
 
 **반환:** `Future, error`
 
-## new
+## `new`
 
-커스텀 컨텍스트로 함수 호출을 빌드하기 위한 새 Executor를 생성합니다. 요청 컨텍스트 전파, 보안 자격 증명 설정, 타임아웃 구성이 필요할 때 사용합니다.
+커스텀 컨텍스트, 보안 신원 또는 호출 옵션이 필요한 호출을 위한 `Executor`를 만듭니다.
 
 ```lua
 local exec = funcs.new()
@@ -79,18 +86,25 @@ local exec = funcs.new()
 
 커스텀 컨텍스트 옵션이 있는 함수 호출 빌더. 메서드는 새 Executor 인스턴스를 반환하므로 (불변 체이닝) 기본 설정을 재사용할 수 있습니다.
 
-### with_context
+### `with_context`
 
 호출된 함수에서 사용 가능한 컨텍스트 값을 추가합니다. 트레이스 ID, 사용자 세션, 기능 플래그와 같은 요청 범위 데이터를 전파할 때 사용합니다.
 
 ```lua
--- 다운스트림 서비스로 요청 컨텍스트 전파
-local exec = funcs.new():with_context({
-    request_id = ctx.get("request_id"),
+local ctx = require("ctx")
+
+-- Propagate request context to downstream services
+local request_id, ctx_err = ctx.get("request_id")
+if ctx_err then return nil, ctx_err end
+
+local exec, err = funcs.new():with_context({
+    request_id = request_id,
     feature_flags = {dark_mode = true}
 })
+if err then return nil, err end
 
 local user, err = exec:call("app.api:get_user", user_id)
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -99,16 +113,17 @@ local user, err = exec:call("app.api:get_user", user_id)
 
 **반환:** `Executor, error`
 
-### with_actor
+### `with_actor`
 
 호출된 함수의 인가 검사를 위한 보안 액터를 설정합니다. 특정 사용자를 대신하여 함수를 호출할 때 사용합니다.
 
 ```lua
 local security = require("security")
-local actor = security.actor()  -- 현재 사용자의 액터 가져오기
+local actor = security.actor()  -- Get current user's actor
 
--- 사용자의 자격 증명으로 admin 함수 호출
-local exec = funcs.new():with_actor(actor)
+-- Call admin function with user's credentials
+local exec, err = funcs.new():with_actor(actor)
+if err then return nil, err end
 local result, err = exec:call("app.admin:delete_record", record_id)
 if err and err:kind() == errors.PERMISSION_DENIED then
     return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "User cannot delete records"})
@@ -121,7 +136,7 @@ end
 
 **반환:** `Executor, error`
 
-### with_scope
+### `with_scope`
 
 호출된 함수의 보안 스코프를 설정합니다. 스코프는 호출에 사용 가능한 권한을 정의합니다.
 
@@ -129,7 +144,8 @@ end
 local security = require("security")
 local scope = security.new_scope()
 
-local exec = funcs.new():with_scope(scope)
+local exec, err = funcs.new():with_scope(scope)
+if err then return nil, err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -138,7 +154,7 @@ local exec = funcs.new():with_scope(scope)
 
 **반환:** `Executor, error`
 
-### with_options
+### `with_options`
 
 재시도 정책이나 오버레이 네트워크 같은 호출 옵션을 설정합니다. 옵션은 대상 함수 엔트리의 프리셋 옵션 위에 병합됩니다.
 
@@ -170,11 +186,19 @@ end
 
 재시도 가능한 에러만 재시도를 유발하며, 재시도할 수 없는 에러는 즉시 표면화됩니다. Temporal 액티비티 옵션은 [액티비티](temporal/activities.md)에서 설명합니다.
 
+런타임이 정의하는 옵션은 다음과 같습니다.
+
+| 인식되는 옵션 | 타입 | 설명 |
+|---------------|------|------|
+| `network` | string | 아웃바운드 `network.*` 엔트리의 레지스트리 ID |
+
 **반환:** `Executor, error`
 
-### call / async
+네트워크를 선택하려면 해당 네트워크 ID에 대한 `network.select` 권한이 필요합니다.
 
-설정된 컨텍스트를 사용하는 Executor 버전의 call과 async.
+### `call`과 `async`
+
+executor 버전의 `call`과 `async`는 구성된 컨텍스트와 옵션을 사용합니다.
 
 ```lua
 -- 컨텍스트가 있는 재사용 가능한 executor 빌드
@@ -182,22 +206,34 @@ local exec = funcs.new()
     :with_context({trace_id = "abc-123"})
     :with_options({retry = {max_attempts = 3}})
 
--- 같은 컨텍스트로 여러 호출
-local users, _ = exec:call("app.api:list_users")
-local posts, _ = exec:call("app.api:list_posts")
+-- Make multiple calls with same context
+local users, users_err = exec:call("app.api:list_users")
+if users_err then return nil, users_err end
+local posts, posts_err = exec:call("app.api:list_posts")
+if posts_err then return nil, posts_err end
 ```
 
-## Future
+## Future 호출 요약
 
-`async()` 호출에서 반환됩니다. 진행 중인 비동기 작업을 나타냅니다.
+`async()`는 진행 중인 호출을 나타내는 future를 반환합니다. 아래 메서드는 호출자가 호출을 수신, 검사 또는 취소하는 단계를 다룹니다. Future 객체 참조는 [Future](./future.md)를 참조하세요.
 
-### response / channel
+### `response`와 `channel`
 
 결과를 받기 위한 기본 채널을 반환합니다.
 
 ```lua
-local future, _ = funcs.async("app.api:slow_operation", data)
-local ch = future:response()  -- 또는 future:channel()
+local time = require("time")
+
+local future, err = funcs.async("app.api:slow_operation", data)
+if err then
+    return nil, err
+end
+local ch = future:response()  -- or future:channel()
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local result = channel.select {
     ch:case_receive(),
@@ -207,23 +243,26 @@ local result = channel.select {
 
 **반환:** `Channel`
 
-### is_complete
+응답 채널은 완료를 알립니다. 준비된 후 `future:result()`를 호출해 캐시된 값이나 호출된 함수의 오류를 가져오세요.
+
+### `is_complete`
 
 future가 완료되었는지 논블로킹 검사.
 
 ```lua
 while not future:is_complete() do
-    -- 다른 작업 수행
-    time.sleep("100ms")
+    -- do other work
+    local _, sleep_err = time.sleep("100ms")
+    if sleep_err then return nil, sleep_err end
 end
 local result, err = future:result()
 ```
 
 **반환:** `boolean`
 
-### is_canceled
+### `is_canceled`
 
-이 future에 `cancel()`이 호출되었으면 true 반환.
+future가 provider에 의해 취소된 것으로 표시되었으면 `true`를 반환합니다. 아래의 취소 제한을 참조하세요.
 
 ```lua
 if future:is_canceled() then
@@ -233,22 +272,24 @@ end
 
 **반환:** `boolean`
 
-### result
+### `result`
 
-완료되면 캐시된 결과 반환, 진행 중이면 nil.
+완료되면 캐시된 결과를 반환하고 작업이 대기 중이면 `nil`을 반환합니다.
 
 ```lua
 local value, err = future:result()
 if err then
     print("Failed:", err:message())
 elseif value then
-    print("Got:", value:data())
+    local data, data_err = value:data()
+    if data_err then return nil, data_err end
+    print("Got:", data)
 end
 ```
 
-**반환:** `Payload|nil, error|nil`
+**반환:** `Payload|table|nil, error|nil`
 
-### error
+### `error`
 
 future가 실패했으면 에러 반환.
 
@@ -261,45 +302,66 @@ end
 
 **반환:** `error|nil, boolean`
 
-### cancel
+이 메서드는 실패한 작업에 대해 재시도할 수 없는 `INTERNAL` 래퍼를 반환합니다. 호출된 함수의 원래 오류 메타데이터를 보존하려면 `result()`를 사용하세요.
+
+### `cancel`
 
 비동기 작업을 취소합니다.
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
+if err then return nil, err end
 ```
 
 **반환:** `boolean, error`
 
+<warning>
+런타임 v0.3.32a에서 함수와 계약 future는 하나의 프로세스 전역 취소 콜백을 공유합니다. 두 provider가 모두 로드된 경우 <code>cancel()</code>과 <code>is_canceled()</code>은 안정적인 교차 provider 계약이 아닙니다. 애플리케이션 정확성을 위해 취소에 의존하지 마세요. 런타임이 provider 취소를 분리할 때까지 로컬에서 타임아웃하고 늦은 결과를 무시하세요.
+</warning>
+
 ## 병렬 작업
 
-async와 channel.select를 사용하여 여러 작업을 동시에 실행합니다.
+`async`와 `channel.select`를 결합해 여러 호출을 동시에 실행하고 수집합니다.
 
 ```lua
--- 여러 작업을 병렬로 시작
-local f1, _ = funcs.async("app.api:get_user", user_id)
-local f2, _ = funcs.async("app.api:get_orders", user_id)
-local f3, _ = funcs.async("app.api:get_preferences", user_id)
+-- Start multiple operations in parallel
+local f1, err = funcs.async("app.api:get_user", user_id)
+if err then return nil, err end
+local f2, err = funcs.async("app.api:get_orders", user_id)
+if err then return nil, err end
+local f3, err = funcs.async("app.api:get_preferences", user_id)
+if err then return nil, err end
 
--- 채널을 사용하여 모두 완료 대기
+-- Wait for all to complete using channels
 local user_ch = f1:channel()
 local orders_ch = f2:channel()
 local prefs_ch = f3:channel()
 
+local pending = {
+    [user_ch] = {name = "user", future = f1},
+    [orders_ch] = {name = "orders", future = f2},
+    [prefs_ch] = {name = "preferences", future = f3}
+}
 local results = {}
-for i = 1, 3 do
-    local r = channel.select {
-        user_ch:case_receive(),
-        orders_ch:case_receive(),
-        prefs_ch:case_receive()
-    }
-    if r.channel == user_ch then
-        results.user = r.value:data()
-    elseif r.channel == orders_ch then
-        results.orders = r.value:data()
-    else
-        results.prefs = r.value:data()
+while next(pending) do
+    local cases = {}
+    for ch in pairs(pending) do
+        cases[#cases + 1] = ch:case_receive()
     end
+
+    local r = channel.select(cases)
+    local completed = pending[r.channel]
+    pending[r.channel] = nil
+
+    local payload, result_err = completed.future:result()
+    if result_err then
+        return nil, result_err
+    end
+    local data, data_err = payload:data()
+    if data_err then
+        return nil, data_err
+    end
+    results[completed.name] = data
 end
 ```
 
@@ -324,6 +386,7 @@ end
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 | 프로세스 밖에서의 async | `errors.INTERNAL` | 아니오 |
 | 구독 실패 | `errors.INTERNAL` | 아니오 |
+| 비동기 시작 디스패치 실패 | `errors.INTERNAL` | 아니오 |
 | 함수 에러 | 다양함 | 다양함 |
 
 에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.

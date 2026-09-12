@@ -1,19 +1,21 @@
 ---
 title: "データベースシステム"
-description: "SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。"
+description: "SQL データベースの接続プールと設定。PostgreSQL、MySQL、SQLite をサポートします。"
 ---
 
 # データベースシステム
 
-SQL データベース接続プーリングと設定。PostgreSQL、MySQL、SQLiteをサポート。
+Wippy は、PostgreSQL と MySQL 用の接続プール付き SQL データベースエントリ、および単一接続の SQLite エントリを提供します。
+
+このページは設定リファレンスです。コードブロックに `version`、`namespace`、`entries` が含まれていない場合は、既存のエントリリスト内に配置する断片として扱ってください。
 
 ## エントリ種別
 
 | 種別 | 説明 |
 |------|------|
-| `db.sql.postgres` | PostgreSQLデータベース |
-| `db.sql.mysql` | MySQLデータベース |
-| `db.sql.sqlite` | SQLiteデータベース |
+| `db.sql.postgres` | PostgreSQL データベース |
+| `db.sql.mysql` | MySQL データベース |
+| `db.sql.sqlite` | SQLite データベース |
 
 ## 設定
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,7 +49,7 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # インメモリには:memory:を使用
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
       max_open: 4
       max_idle: 2
@@ -66,16 +68,16 @@ entries:
 
 | フィールド | 型 | 説明 |
 |------------|-----|------|
-| `host` | string | データベースホストアドレス |
-| `port` | int | データベースポート番号 |
+| `host` | string | データベースホストのアドレス |
+| `port` | int | データベースのポート番号 |
 | `database` | string | データベース名 |
 | `username` | string | データベースユーザー |
 | `password` | string | データベースパスワード |
-| `pool` | object | 接続プール設定 |
+| `pool` | object | 接続プールの設定 |
 | `options` | map | データベース固有のオプション |
 | `lifecycle` | object | ライフサイクル設定 |
 
-### SQLiteフィールド
+### SQLite フィールド
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|-----------|------|
@@ -112,7 +114,7 @@ entries:
 
 ## 接続プール
 
-接続プーリング動作を設定。プール設定はGoの[database/sql接続プール](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns)にマップされます。
+接続プールの動作を設定します。プール設定は Go の [database/sql 接続プール](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns)に対応します。
 
 | フィールド | 型 | デフォルト | 説明 |
 |------------|-----|------------|------|
@@ -122,16 +124,16 @@ entries:
 
 ```yaml
 pool:
-  max_open: 25      # 同時接続を制限
-  max_idle: 5       # 5接続を準備状態に維持
-  max_lifetime: "30m"  # 30分ごとに接続をリサイクル
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
-<code>max_idle</code>は<code>max_open</code>以下に設定してください。<code>max_lifetime</code>を超えた接続は閉じられて置き換えられ、古い接続からの回復に役立ちます。
+<code>max_idle</code> は <code>max_open</code> 以下に設定してください。<code>max_lifetime</code> を超えた接続は閉じられて置き換えられるため、古くなった接続からの回復に役立ちます。
 </tip>
 
-## DSN形式
+## DSN 形式
 
 各データベースタイプは設定からDSNを構築します。`options`はすべて（キー順にソートして）付加されます。デフォルトで含まれるものはありません。
 
@@ -158,14 +160,14 @@ file:/path/to/database.db?mode=rwc
 
 ## データベースオプション
 
-一般的なデータベース固有のオプション：
+一般的なデータベース固有のオプション:
 
 ### PostgreSQL {id="options-postgresql"}
 
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # 接続タイムアウト（秒）
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -174,8 +176,8 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # 時間値をtime.Timeにパース
-  loc: "Local"            # タイムゾーン
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -184,7 +186,7 @@ SQLiteは`options`マップをDSNに適用しません。ファイルデータ�
 
 ## 例
 
-### SSL付きPostgreSQL
+### SSL を使用する PostgreSQL
 
 ```yaml
 - name: secure_postgres
@@ -207,7 +209,7 @@ SQLiteは`options`マップをDSNに適用しません。ファイルデータ�
     auto_start: true
 ```
 
-### MySQLリードレプリカ
+### MySQL 読み取りレプリカ
 
 ```yaml
 - name: mysql_replica
@@ -227,7 +229,7 @@ SQLiteは`options`マップをDSNに適用しません。ファイルデータ�
     readTimeout: "30s"
 ```
 
-### SQLiteインメモリ
+### SQLite インメモリ
 
 ```yaml
 - name: test_db
@@ -235,11 +237,11 @@ SQLiteは`options`マップをDSNに適用しません。ファイルデータ�
   file: ":memory:"
 ```
 
-### 複数データベースセットアップ
+### 複数データベースの設定
 
 ```yaml
 entries:
-  # プライマリデータベース
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
     host: ${env:USERS_DB_HOST}
@@ -250,7 +252,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # 分析データベース
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
     host: ${env:ANALYTICS_DB_HOST}
@@ -261,7 +263,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # ローカルキャッシュ
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -271,11 +273,11 @@ entries:
 
 ## ランタイム登録
 
-データベースは[レジストリモジュール](lua/core/registry.md)を使用してランタイムで登録でき、アプリケーション状態や外部設定に基づいた動的なデータベース設定が可能です。
+データベースは、[レジストリモジュール](lua/core/registry.md)を使用して実行時に登録できます。
 
 ## Lua API
 
-データベース操作APIについては[SQLモジュール](lua/storage/sql.md)を参照してください。
+クエリ、トランザクション、接続の操作については、[SQL モジュール](lua/storage/sql.md)を参照してください。
 
 ## 関連項目
 

@@ -5,7 +5,7 @@ description: "Referencia completa de todos los tipos de entrada disponibles en W
 
 # Referencia de Tipos de Entrada
 
-Referencia completa de todos los tipos de entrada disponibles en Wippy.
+Esta página resume los tipos de entrada disponibles y enlaza sus referencias detalladas de módulos y sistema.
 
 > Las entradas se referencian entre sí usando el formato `namespace:name`. El registro conecta automáticamente las dependencias basándose en estas referencias, asegurando que los recursos se inicialicen en el orden correcto.
 
@@ -37,7 +37,7 @@ Referencia completa de todos los tipos de entrada disponibles en Wippy.
     - http
     - json
   imports:
-    utils: app.lib:helpers  # Importar otra entrada como módulo
+    utils: app.lib:helpers  # Import another entry as module
 ```
 
 <tip>
@@ -54,14 +54,14 @@ Use <code>imports</code> para referenciar otras entradas Lua. Se vuelven disponi
 | `http.static` | Servicio de archivos estáticos |
 
 ```yaml
-# Servidor HTTP
+# HTTP server
 - name: gateway
   kind: http.service
   addr: ":8080"
   lifecycle:
     auto_start: true
 
-# Router con middleware
+# Router with middleware
 - name: api
   kind: http.router
   meta:
@@ -111,7 +111,7 @@ resp:write_json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# En memoria para pruebas
+# In-memory for testing
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -161,8 +161,8 @@ Consulta [Database](system/database.md) para referencias a secretos `${env:NAME}
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -176,13 +176,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 | `store.kv.crdt` | KV replicado en cluster, eventualmente consistente (gossip/CRDT) |
 
 ```yaml
-# Almacén en memoria
+# Memory store
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# Almacén respaldado por SQL
+# SQL-backed store
 - name: persistent_store
   kind: store.sql
   database: app:database
@@ -190,7 +190,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   lifecycle:
     auto_start: true
 
-# Almacén replicado en cluster (requiere clustering)
+# Cluster-replicated store (requires clustering)
 - name: deployments
   kind: store.kv.raft
   namespace: deploy
@@ -204,7 +204,7 @@ Los tipos `store.kv.*` requieren que el [clustering](guides/cluster.md) esté ha
 local store = require("store")
 local s, err = store.get("app:cache")
 
-s:set("user:123", user_data, 3600)  -- TTL en segundos
+s:set("user:123", user_data, 3600)  -- TTL in seconds
 local data = s:get("user:123")
 ```
 
@@ -225,12 +225,12 @@ local data = s:get("user:123")
   lifecycle:
     auto_start: true
 
-# Cola
+# Queue
 - name: jobs
   kind: queue.queue
   driver: queue_driver
 
-# Consumidor
+# Consumer
 - name: job_consumer
   kind: queue.consumer
   queue: app:jobs
@@ -246,7 +246,7 @@ local data = s:get("user:123")
 ```lua
 local queue = require("queue")
 
--- Publicar un mensaje
+-- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
 -- En un handler de consumidor: el cuerpo del mensaje es el argumento del handler
@@ -273,23 +273,23 @@ El <code>func</code> del consumidor se invoca una vez por mensaje con el cuerpo 
 | `pg.scope` | Scope de grupo de procesos (ver [Grupos de Procesos](system/process-groups.md)) |
 
 ```yaml
-# Host de procesos (donde se ejecutan los procesos)
+# Process host (where processes run)
 - name: processes
   kind: process.host
   host:
-    workers: 32             # Goroutines worker (por defecto: NumCPU)
-    queue_size: 1024        # Capacidad de cola global
-    local_queue_size: 256   # Cola por worker
+    workers: 32             # Worker goroutines (default: NumCPU)
+    queue_size: 1024        # Global queue capacity
+    local_queue_size: 256   # Per-worker queue
   lifecycle:
     auto_start: true
 
-# Definición de proceso
+# Process definition
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# Servicio de proceso supervisado
+# Supervised process service
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -388,7 +388,7 @@ Ver [Security](system/security.md).
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # Opcional, para servicios compatibles con S3
+  endpoint: ""  # Optional, for S3-compatible services
 ```
 
 **API Lua:** Ver [Módulo Cloud Storage](lua/storage/cloud.md)
@@ -416,8 +416,8 @@ Use <code>endpoint</code> para conectarse a servicios compatibles con S3 como Mi
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # Crear si no existe
-  mode: "0755"      # Permisos
+  auto_init: true   # Create if not exists
+  mode: "0755"      # Permissions
 ```
 
 **API Lua:** Ver [Módulo Filesystem](lua/storage/filesystem.md)
@@ -486,7 +486,7 @@ El router intenta los almacenes en orden. La primera coincidencia gana para lect
 | `template.set` | Configuración de conjunto de plantillas |
 
 ```yaml
-# Conjunto de plantillas con configuración del motor
+# Template set with engine configuration
 - name: templates
   kind: template.set
   engine:
@@ -495,7 +495,7 @@ El router intenta los almacenes en orden. La primera coincidencia gana para lect
       - ".jet"
       - ".html.jet"
 
-# Plantilla individual
+# Individual template
 - name: email_template
   kind: template.jet
   source: file://templates/email.jet
@@ -523,7 +523,7 @@ local html = set:render("email", {
 | `security.token_store` | Almacén de tokens |
 
 ```yaml
-# Política basada en condiciones
+# Condition-based policy
 - name: admin_policy
   kind: security.policy
   policy:
@@ -535,7 +535,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# Política basada en expresiones
+# Expression-based policy
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -554,12 +554,12 @@ Los grupos de políticas los forman las propias políticas: una política lista 
 ```lua
 local security = require("security")
 
--- Verificar permiso antes de acción
+-- Check permission before action
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- Obtener actor actual
+-- Get current actor
 local actor = security.actor()
 ```
 
@@ -575,7 +575,7 @@ Se evalúan todas las políticas en el ámbito. Un <code>deny</code> de cualquie
 | `contract.binding` | Mapea métodos de contrato a implementaciones de funciones |
 
 ```yaml
-# Definir la interfaz del contrato
+# Define the contract interface
 - name: greeter
   kind: contract.definition
   methods:
@@ -590,7 +590,7 @@ Se evalúan todas las políticas en el ámbito. Un <code>deny</code> de cualquie
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# Funciones de implementación
+# Implementation functions
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -601,7 +601,7 @@ Se evalúan todas las políticas en el ámbito. Un <code>deny</code> de cualquie
   source: file://greeter_greet_name.lua
   method: main
 
-# Enlazar métodos del contrato a implementaciones
+# Bind contract methods to implementations
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -617,14 +617,14 @@ Uso desde Lua:
 ```lua
 local contract = require("contract")
 
--- Abrir binding por ID
+-- Open binding by ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- Llamar métodos
+-- Call methods
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- Verificar si instancia implementa contrato
+-- Check if instance implements contract
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
@@ -698,7 +698,7 @@ Ver [Resumen de WASM](wasm/overview.md).
 | `network.i2p` | Overlay de red I2P |
 | `network.tailscale` | Overlay de Tailscale |
 
-Referenciado por `http.service` mediante `network:`, por `funcs`/`process` mediante la opcion `network` y por `http_client` mediante la opcion `overlay_network`. Ver [Red](system/network.md).
+Referenciado por `http.service` mediante `network:`, por `funcs`/`process` mediante la opción `network` y por `http_client` mediante la opción `overlay_network`. Ver [Red](system/network.md).
 
 ## Primitivas del Registro
 
@@ -713,23 +713,21 @@ Los tipos `ns.*` se escriben como cualquier otra entrada: un componente declara 
 
 ## Configuración de Ciclo de Vida
 
-La mayoría de las entradas soportan configuración de ciclo de vida:
+Las entradas de servicio gestionadas por el supervisor exponen configuración de ciclo de vida. El bloque siguiente pertenece dentro de una entrada de servicio que la admita:
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # Iniciar automáticamente
-    start_timeout: 10s        # Tiempo máximo de inicio
-    stop_timeout: 10s         # Tiempo máximo de apagado
-    stable_threshold: 5s      # Tiempo para considerar estable
-    depends_on:
-      - app:database
-    restart:                  # Política de reintento
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = infinito
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
@@ -741,26 +739,26 @@ Use <code>depends_on</code> para asegurar que las entradas inicien en el orden c
 Las entradas se referencian usando el formato `namespace:name`:
 
 ```yaml
-# Definición
+# Definition
 namespace: app.users
 entries:
   - name: handler
     kind: function.lua
 
-# Referencia desde otra entrada
+# Reference from another entry
 func: app.users:handler
 ```
 
-## Sobrescribir entradas {id="overriding-entries"}
+## Sobrescribir entradas :id=overriding-entries
 
 Cualquier campo de una entrada — incluido su `kind` — puede sobrescribirse en el arranque sin editar el YAML de origen, usando la sección de configuración `override:` o el flag de CLI `-o`. Las claves usan el formato `namespace:entry:path`:
 
 ```yaml
 override:
-  app:gateway:addr: ":9090"        # campo de datos (una ruta simple apunta a data.*)
-  app:worker:meta.priority: high    # campo meta
-  app:db:kind: db.sql.postgres      # el kind tipado de la entrada
-  app:db:data.kind: custom          # un campo de payload llamado literalmente "kind"
+  app:gateway:addr: ":9090"        # data field (a bare path targets data.*)
+  app:worker:meta.priority: high    # meta field
+  app:db:kind: db.sql.postgres      # the entry's typed kind
+  app:db:data.kind: custom          # a payload field literally named "kind"
 ```
 
 | Ruta | Apunta a |

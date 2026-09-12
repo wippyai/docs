@@ -1,6 +1,6 @@
 ---
 title: "Views"
-description: "El módulo wippy/views proporciona un sistema de páginas y componentes virtuales con renderizado de plantillas, gestión de recursos y mapeo de variables…"
+description: "Define páginas renderizadas en servidor, aplicaciones frontend, web components, recursos y mappings de entorno con wippy/views."
 ---
 
 # Views
@@ -85,9 +85,9 @@ entries:
 | `meta.group_order` | number | `9999` | Orden del grupo |
 | `meta.group_placement` | string | `"default"` | Ubicación: `"default"`, `"sidebar"` |
 | `meta.secure` | boolean | `false` | Requiere autenticación |
-| `meta.public` | boolean | `false` | Accesible públicamente |
-| `meta.announced` | boolean | `= public` | Mostrar en navegación |
-| `meta.inline` | boolean | `false` | Oculto de la UI |
+| `meta.public` | boolean | `false` | Hace que la página se anuncie cuando es true; no evita el control `meta.secure` |
+| `meta.announced` | boolean | `false` | Mostrar en navegación. El resolver usa `announced or public`, por lo que `public: true` vence a `announced: false` |
+| `meta.inline` | boolean | `false` | Se devuelve en `/pages/list` como marcador numérico `hidden` |
 | `meta.content_type` | string | `text/html` | Tipo MIME de la respuesta |
 | `meta.parent` | string | — | ID de la página padre |
 
@@ -95,11 +95,11 @@ entries:
 
 | Campo | Descripción |
 |-------|-------------|
-| `data.set` | ID del registro del conjunto de plantillas |
+| `data.set` | ID obligatorio del registro del conjunto de templates |
 | `data.data_func` | ID de la función que retorna los datos de la página |
 | `data.resources` | Array de IDs del registro de recursos |
 
-La función `data_func` recibe `{ params, query }` y retorna una tabla que se convierte en el contexto `data` en la plantilla.
+La función `data_func` configurada mediante `data.data_func` recibe `{ params, query }` y retorna una tabla que se convierte en el contexto `data` del template. Omitirla o devolver `nil` produce una tabla vacía. Una función configurada que no se pueda resolver o devuelva un error interrumpe el renderizado.
 
 ### Pipeline de Renderizado
 
@@ -107,7 +107,7 @@ La función `data_func` recibe `{ params, query }` y retorna una tabla que se co
 2. Verificar acceso (seguridad)
 3. Llamar a `data_func` si está definido
 4. Recolectar recursos: globales + recursos del conjunto de plantillas + recursos específicos de la página
-5. Cargar variables de entorno
+5. Cargar variables de entorno; los fallos de mapping se registran y producen una tabla `env` vacía
 6. Renderizar plantilla Jet con contexto: `{ data, resources, query_params, route_params, env }`
 
 ## Páginas de Componente
@@ -151,7 +151,7 @@ La API retorna un descriptor de componente con la URL base resuelta. El Web Host
 | `meta.secure` | boolean | `false` | Requiere autenticación |
 | `meta.config_overrides` | object | — | Anulaciones de AppConfig por página (camelCase), fusionadas en profundidad sobre los valores predeterminados del bundle |
 
-### Configuración del Proxy
+Al construir el descriptor, `wippy/views` solicita `wippy-meta.json` desde la raíz del bundle. El YAML vence campo por campo; los metadatos del bundle completan campos propios del frontend omitidos. Si no puede usar el archivo, recurre al descriptor YAML heredado. Mantenga `meta.name` y `meta.title` en YAML: `/pages/list` consume los campos raw del registro sin obtener los metadatos del bundle. `config_overrides` admite `customization`, `axiosDefaults`, `routePrefix`, `apiRoutes` y `themeMode`.
 
 La inyección de proxy para páginas SPA se configura en el bloque `wippy.proxy.injections` del package.json del FE (camelCase) y se integra en `wippy-meta.json` en tiempo de compilación. También puede anularse por despliegue mediante un bloque `proxy:` en camelCase anidado bajo `meta:` en la entrada del registro (con la misma forma y el mismo envoltorio `injections` que el bloque `wippy.proxy` del package.json); el host lo fusiona en profundidad sobre el `wippy.proxy` del bundle, y el valor del YAML gana por cada clave anidada. No existe una forma en snake_case ni normalización de mayúsculas. Note que `config_overrides` solo fusiona en profundidad `customization`, `axiosDefaults`, `routePrefix` y `apiRoutes` — nunca afecta a `proxy.injections`. Vea [Aplicaciones Micro Frontend (view.page)](../frontend/frontend-registry/view-page.md) e [Inyección de CSS](../frontend/web-host/css-injection.md).
 
@@ -240,13 +240,13 @@ entries:
 
 ### Recolección de Recursos
 
-Los recursos se recolectan en tres capas, fusionados en orden:
+Los recursos se seleccionan acumulativamente de tres fuentes:
 
 1. **Recursos globales** — `global: true`, aplicados a todas las páginas
 2. **Recursos del conjunto de plantillas** — coincidentes por ID de `template_set`
 3. **Recursos de página** — listados en el array `data.resources`
 
-Dentro de cada capa, los recursos se agrupan por `resource_type` y se ordenan por `order`.
+Después de reunirlos, se agrupan por `resource_type` y cada grupo se ordena por `order`. Las tres fuentes no establecen un orden de salida independiente.
 
 ## Mapeo de Variables de Entorno
 
@@ -279,7 +279,7 @@ Cada entrada de mapeo asocia claves de contexto (usadas en plantillas como `env.
 | 20–29 | Mapeos de aplicación | Mapeos específicos de la aplicación |
 | 30–100 | Anulaciones de entorno | Anulaciones en tiempo de ejecución |
 
-Mayor prioridad gana cuando múltiples mapeos definen la misma clave de contexto.
+La prioridad mayor gana. No defina la misma clave más de una vez con la misma prioridad: el orden entre mappings de igual prioridad no está definido.
 
 ### Uso en Plantillas
 
@@ -386,12 +386,12 @@ Las páginas no seguras siempre son accesibles. La bandera `announced` controla 
 Los IDs relativos en las definiciones de página se califican con el namespace de la entrada:
 
 ```yaml
-# En el namespace "app"
+# In namespace "app"
 data:
-  data_func: my_data_func       # se resuelve a app:my_data_func
-  set: templates:default         # permanece como templates:default (ya calificado)
+  data_func: my_data_func       # resolves to app:my_data_func
+  set: templates:default         # stays as templates:default (already qualified)
   resources:
-    - page_styles                # se resuelve a app:page_styles
+    - page_styles                # resolves to app:page_styles
 ```
 
 ## Véase También

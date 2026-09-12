@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | Working directory |
 | `options.env` | table | Environment variables |
 | `options.pty` | table | Allocate a pseudo-terminal for the child |
+| `options.process_group` | boolean | Start the child in its own process group so signals also reach descendants; unsupported on Windows |
 
 **Returns:** `Process, error`
 
@@ -203,7 +204,42 @@ proc:wait()
 stdout:close()
 ```
 
-Each call writes the given bytes and returns. There is no method that closes stdin: it stays open for the life of the process, so a command that reads until end of input, such as `sort`, never sees EOF and finishes only when the process is signalled or closed. Pick a command that stops reading on its own, as `head -n 3` does, or run one that needs EOF behind a shell pipeline that supplies its input.
+Each call writes the given bytes and returns. Call `close_stdin()` when the child
+must see EOF:
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()` is idempotent. Later writes fail because the input side is
+closed. PTY-backed processes do not expose this pipe operation.
+
+## done
+
+Use `done()` to observe exit without consuming the process handle:
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+The returned channel delivers one exit record and then closes. Repeated calls
+return the same channel. The record contains `code`, optional `signal`, and an
+`error` only when the runtime could not observe the exit. A signal exit uses
+`128 + signal` as its code. Unlike `wait()`, `done()` leaves the handle usable,
+so streams, `signal()`, and `close()` remain available. `wait()` after delivery
+returns the recorded code.
 
 ## signal / close
 
@@ -226,9 +262,12 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)` signals a started child with `SIGTERM`, or `SIGKILL` when `force` is true, then reaps it in the background so the call does not block. A child still running after a grace period is killed so the reap always completes. An unstarted handle is simply invalidated, and closing twice is not an error.
+`close(force?)` signals a started child with `SIGTERM`, or `SIGKILL` when `force` is true, then reaps it in the background so the call does not block. A child still running after a grace period is killed so the reap always completes. An unstarted handle is simply invalidated, and closing twice is not an error. When `process_group` is enabled, signals target the group and still reach descendants after the leader exits.
 
-Reaping closes the child's stdout and stderr pipes, so read any output you need before calling `close()`. After it every method on the process, `wait()` included, reports `process closed` — use `signal()` and `wait()` instead when the exit code matters.
+Streams acquired before reaping remain readable until their last writer closes,
+including a descendant that inherited the pipe. After `close()`, process methods
+report `process closed`; use `done()` when the exit matters and the handle must
+remain usable.
 
 ## resize
 
@@ -339,4 +378,3 @@ See [Error Handling](lua/core/errors.md) for working with errors.
 - [Executor](system/exec.md) — executor configuration
 - [TTY](lua/system/tty.md) — terminal events, surfaces, and viewports
 - [Terminal UI](tutorials/tty.md) — a shell that hosts a PTY child in a viewport
-

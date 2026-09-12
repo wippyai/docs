@@ -1,15 +1,17 @@
 ---
 title: "Netzwerk-Overlays"
-description: "Leite ausgehenden Verkehr weiter und binde Listener über Overlay-Netzwerke an (SOCKS5-Proxies, Tor, Tailscale-Mesh, I2P). Die Overlay-Auswahl erfolgt…"
+description: "Leiten Sie ausgehende Verbindungen und Listener über SOCKS5-, Tor-, Tailscale- oder I2P-Overlays."
 ---
 
 # Netzwerk-Overlays
 
-Leite ausgehenden Verkehr weiter und binde Listener über Overlay-Netzwerke an (SOCKS5-Proxies, Tor, Tailscale-Mesh, I2P). Die Overlay-Auswahl erfolgt opt-in pro Aufruf und wird über Funktions-, Prozess- und HTTP-Grenzen hinweg vererbt.
+Netzwerk-Overlay-Einträge leiten ausgehende Verbindungen oder Listener über SOCKS5, Tor, Tailscale oder I2P. Ein ausgewähltes Overlay wird über Funktions-, Prozess- und HTTP-Grenzen hinweg weitergegeben.
+
+Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder Anwendungskonfigurationsfragmente und setzen voraus, dass der externe Proxy, das Tailnet oder der I2P-SAM-Dienst bereits existiert.
 
 ## Entry-Kinds
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|-------------|
 | `network.socks5` | Generischer SOCKS5-Proxy (deckt auch den SOCKS5-Listener von Tor ab) |
 | `network.tailscale` | Tailscale-tsnet-Overlay-Knoten |
@@ -34,6 +36,8 @@ Leite ausgehenden Verkehr weiter und binde Listener über Overlay-Netzwerke an (
 | `username` | string | Optionale SOCKS5-Authentifizierung |
 | `password` | string | Optionale SOCKS5-Authentifizierung |
 | `isolate_streams` | bool | Pro-Verbindung zufällige Credentials (Tor-Stream-Isolation) |
+
+`host` und `port` sind erforderlich. `isolate_streams` ist standardmäßig `false`. Wenn Isolation aktiviert ist, erzeugt die Runtime für jeden Dial einen neuen Benutzernamen und ein neues Passwort, statt die konfigurierten Zugangsdaten zu verwenden.
 
 ## Tailscale
 
@@ -72,11 +76,13 @@ Leite ausgehenden Verkehr weiter und binde Listener über Overlay-Netzwerke an (
 | `port` | int | SAM-v3-Bridge-Port |
 | `session_name` | string | Optionaler Session-Identifier |
 
+`host` und `port` sind erforderlich. `session_name` ist standardmäßig `wippy` und dient als Präfix für die SAM-Session-IDs jedes Dials und Listeners.
+
 ## Overlay auswählen
 
-### Auf http.service
+### Auf `http.service`
 
-Binde den Server-Listener über ein Overlay (Tailscale, I2P):
+Binden Sie den Server-Listener über ein Overlay (Tailscale, I2P):
 
 ```yaml
 - name: gateway
@@ -85,30 +91,36 @@ Binde den Server-Listener über ein Overlay (Tailscale, I2P):
   network: app.net:tailnet
 ```
 
-SOCKS5 unterstützt kein eingehendes Listening — verwende es nur für ausgehende Verbindungen.
+SOCKS5 unterstützt kein eingehendes Listening — verwenden Sie es nur für ausgehende Verbindungen.
 
 ### Aus Lua
 
-Leite eine aufgerufene Funktion oder einen erzeugten Prozess über ein Overlay mittels `with_options`:
+Leiten Sie eine aufgerufene Funktion oder einen erzeugten Prozess mit `with_options` über ein Overlay:
 
 ```lua
 local funcs = require("funcs")
 
-local result, err = funcs.new()
-    :with_options({ network = "app.net:proxy" })
-    :call("app.api:fetch_data")
+local caller, err = funcs.new():with_options({ network = "app.net:proxy" })
+if err then return nil, err end
+local result, call_err = caller:call("app.api:fetch_data")
+if call_err then return nil, call_err end
 ```
 
 ```lua
+local process = require("process")
+
 local pid, err = process.with_options({ network = "app.net:tailnet" })
     :spawn_monitored("app.workers:probe", "app:processes")
+if err then return nil, err end
 ```
 
 Das `http_client`-Modul akzeptiert dieselbe Overlay-Auswahl in den Per-Call-Optionen unter dem Schlüssel `overlay_network`.
 
 ## Vererbung
 
-Die Overlay-Auswahl fließt durch den Call-Stack. Eine Funktion, die über `funcs.new():with_options({network=...})` aufgerufen wird, sieht das Overlay bei jeder inneren Verbindung, jedem verschachtelten `funcs.call` und jedem `process.spawn`, den sie ausführt — bis ein Nachkomme explizit ein anderes Overlay auswählt oder es löscht.
+Die Overlay-Auswahl wird durch den Aufrufstapel weitergegeben. Eine über `funcs.new():with_options({network=...})` aufgerufene Funktion verwendet das Overlay für innere Dials, verschachtelte Aufrufe und erzeugte Prozesse, sofern nicht eine neue Grenze ein anderes Overlay auswählt. Eine leere `network`-Option bedeutet „keine Überschreibung“; sie löscht weder ein geerbtes Overlay noch den Anwendungsstandard.
+
+Bei einem Funktionsaufruf überschreiben Laufzeitoptionen die `meta.options` des Funktionseintrags, bevor das Netzwerk ausgewählt wird. An einer neuen Funktions- oder Prozessgrenze wird zuerst ein nicht leeres `options.network` ausgewählt. Fehlt es, wird das konfigurierte `network_service.default_network` gewählt; ist auch dieses nicht vorhanden, bleibt die geerbte Frame-Auswahl bestehen. Eine ausgewählte ID muss bereits registriert sein. Eine unbekannte ID lässt den Aufruf oder Spawn fehlschlagen, statt auf das Host-Netzwerk zurückzufallen.
 
 Die Ambient-Vererbung umgeht die eigenen `network.select`-Deny-Regeln des Nachkommen. Nur die explizite Auswahl an einer Lua-Grenze wird überprüft.
 
@@ -137,7 +149,7 @@ Ist ein Overlay ausgewählt, der Kontext trägt aber keine Netzwerk-Registry, sc
 
 ## Overlays aktualisieren
 
-Overlay-Einträge werden bei einer Registry-Aktualisierung im laufenden Betrieb ausgetauscht. Wenn sich die Konfiguration eines Overlays ändert, baut der Treiber zuerst den Ersatzdienst und tauscht ihn erst ein, sobald er erfolgreich erstellt wurde; schlägt die neue Konfiguration fehl, läuft das bestehende Overlay weiter. Gleichzeitige Aufrufer sehen entweder den alten oder den neuen Dienst, niemals eine Lücke.
+Overlay-Einträge werden bei einer Registry-Aktualisierung ersetzt. Der Treiber erstellt den Ersatz, bevor er darauf umschaltet; schlägt die Erstellung fehl, läuft das bestehende Overlay weiter. Ein erfolgreicher Austausch ist für neue Lookups atomar, anschließend wird der vorherige Dienst geschlossen. Bereits mit dem vorherigen Dienst ausgeführte Arbeit kann daher dessen Schließung beobachten.
 
 ## Berechtigungen
 
@@ -150,13 +162,13 @@ Overlay-Einträge werden bei einer Registry-Aktualisierung im laufenden Betrieb 
 | `socket.resolve` | Hostname | DNS-Auflösung über den Netzwerkdienst |
 | `socket.private_ip` | IP-Adresse | Erreichen einer Loopback-, privaten, Link-Local- oder unspezifizierten Adresse |
 
-Verweigere `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert. `network.bind` wird geprüft, wenn ein Server mit einem `network:`-Overlay seinen Listener startet.
+Verweigern Sie `network.select` für einen Scope, um Code innerhalb davon daran zu hindern, explizit ein Overlay zu wählen. Geerbte Overlays sind nicht betroffen — sie wurden beim Aufrufer autorisiert. `network.bind` wird geprüft, wenn ein Server mit einem `network:`-Overlay seinen Listener startet.
 
 Die `socket.*`-Berechtigungen werden vom Netzwerkdienst selbst geprüft. `socket.connect`, `socket.listen` und `socket.resolve` werden vor jedem Overlay-Routing geprüft und gelten damit gleichermaßen für Clearnet- und Overlay-Verkehr; `socket.private_ip` verengt sich auf literale Adressen, sobald ein Overlay ausgewählt ist, wie unter [Rohe Verbindungsaufbauten](system/network.md#rohe-verbindungsaufbauten) beschrieben.
 
 ## Siehe auch
 
-- [Sicherheit](system/security.md) - Richtlinien und Akteure
+- [Sicherheit](system/security.md) - Richtlinien und Actors
 - [HTTP-Service](http/server.md) - Server-Binding
 - [HTTP-Client](lua/http/client.md) - Overlay-Auswahl pro Aufruf
 - [Host-Funktionen](wasm/hosts.md) - WASM-Socket-Imports

@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -433,10 +438,12 @@ end
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `keys` | string[] | Zu vergleichende Tastenmuster (z. B. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Erforderlich. Zu vergleichende Tastenmuster, zum Beispiel `"a"`, `"ctrl+c"`, `"enter"` |
 | `help` | table | Optional. `{key = "...", desc = "..."}` für Hilfetext |
 
 **Rückgabe:** `KeyBinding`
+
+Das Typschema verlangt `keys`. Zur Laufzeit erzeugt eine fehlende oder leere `keys`-Tabelle eine Bindung, die nie zutrifft.
 
 ### KeyBinding-Methoden
 
@@ -466,7 +473,8 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
 ### tty.style()
@@ -568,18 +576,18 @@ Beide erhalten den ANSI-Zustand und Graphem-Grenzen, sodass gestalteter Text gec
 ### Verbinden
 
 ```lua
--- Side-by-side verbinden, oben ausgerichtet
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Vertikal stapeln, zentriert
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### Maximale Dimensionen
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- breitestes
-local h = tty.text.max_height({"one\ntwo", "single"})         -- höchstes
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### Platzierung
@@ -587,13 +595,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- höchstes
 Platziert einen String in einer Box mit gegebenen Dimensionen:
 
 ```lua
--- Zentrieren in einer 80x24-Box
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Nur horizontal
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Nur vertikal
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -607,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Bilder, Seiten und delegierte Viewports
+
+`surface:present(rows, options)` akzeptiert unter `options.images` die komplette
+Menge beizubehaltender Bildplatzierungen. Eine Platzierung enthält
+`placement_id`, ein mit `tty.image(png_bytes)` importiertes PNG-Handle,
+Zielkoordinaten und -größe sowie optional `src`, `z` und `alt`. `image:info()`,
+`image:read()` und `image:close()` stellen Metadaten, expliziten PNG-Export und
+Freigabe bereit. Ein späteres `present` ohne `images` entfernt die Platzierungen.
+
+`surface:capabilities()` meldet den Bildmodus `native`, `kitty`, `pending` oder
+`none`. `surface:clipboard(text)` sendet auf physischen Surfaces eine OSC-52-
+Zwischenablageanforderung für höchstens 65.536 UTF-8-Bytes; virtuelle Surfaces
+unterstützen sie nicht.
+
+`tty.viewport()` akzeptiert `page = {foreground, background}` mit deckenden
+`#RRGGBB`-Farben. `viewport:set_page(page)` ändert die Seitendarstellung.
+Snapshots enthalten `images`, `layers` und `images_omitted`. Ein
+`viewport:capture()` hält Revision und Bildressourcen bis `capture:close()` fest;
+`capture:image(image_id)` gibt ein unabhängig besessenes Handle zurück.
+
+Mit `viewport:mount(recipient_pid, rights)` wird eine einmalig einlösbare,
+prozessgebundene Referenz für lokale oder authentifizierte Mesh-Empfänger
+erstellt. Die Rechte `observe`, `input` und `resize` sind unabhängig und
+standardmäßig falsch. `viewport:revoke(reference)` widerruft eine Referenz;
+gemountete Viewer können nicht weiter delegieren.
+
 ## Berechtigungen
 
-Das Modul erzwingt keine eigenen Policy-Aktionen. Der Zugang zu einem Terminal kommt aus dem Frame: Der Terminal-Host hängt den physischen Port an, und `process.with_options({terminal = grant})` hängt einen Viewport an, was auf der spawnenden Seite `process.context` erfordert.
+Ein physisches Terminal kommt aus dem Prozess-Frame. Das Anhängen eines
+Producers mit `process.with_options({terminal = grant})` erfordert beim Spawn
+`process.context`. Delegierte Viewports prüfen außerdem `tty.mount`,
+`tty.observe`, `tty.input` und `tty.resize` gegen das Owner-Viewport-Handle.
 
 ## Siehe auch
 

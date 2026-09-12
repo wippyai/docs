@@ -1,13 +1,13 @@
 ---
 title: "Grupos de Processos"
-description: "Grupos de processos permitem que processos entrem em grupos nomeados e recebam broadcasts endereçados a um grupo, com associação rastreada em todos os…"
+description: "Configure grupos de processos nomeados e cientes do cluster, com associação descentralizada, broadcasts, monitoramento e reconciliação."
 ---
 
 # Grupos de Processos
 
-Grupos de processos permitem que processos entrem em grupos nomeados e recebam broadcasts endereçados a um grupo, com associação rastreada em todos os nós do cluster. O modelo segue o `pg` do Erlang/OTP: grupos são criados no primeiro join, um processo pode pertencer a muitos grupos (e entrar em um grupo múltiplas vezes), e a associação é descentralizada — cada nó mantém seu próprio estado e reconcilia com peers pela malha internode.
+Um `pg.scope` permite que processos entrem em grupos nomeados e recebam broadcasts destinados a um grupo. O modelo segue o `pg` do Erlang/OTP: grupos são criados no primeiro join, um processo pode pertencer a vários grupos e entrar no mesmo grupo mais de uma vez, e cada nó do cluster mantém seu próprio estado de associação e o reconcilia com os peers pela malha internode. Esta página é uma referência de configuração e comportamento; os blocos YAML são fragmentos de entradas.
 
-A API Lua está documentada em [Grupos de Processos](lua/core/pg.md); esta página cobre o tipo de entrada de escopo e sua configuração. Veja o [Guia de Cluster](guides/cluster.md) para o modelo de associação ao redor.
+A API Lua está documentada em [Grupos de Processos](lua/core/pg.md); esta página cobre o tipo de entrada do escopo e sua configuração. Consulte o [Guia de cluster](guides/cluster.md) para o modelo de associação circundante.
 
 ## Tipo de Entrada
 
@@ -26,16 +26,16 @@ Cada escopo é isolado: grupos e membros em um escopo são invisíveis para outr
 
 ## Configuração
 
-Todos os campos são opcionais e têm padrões ajustados para um cluster típico.
+Todos os campos são opcionais. A tabela mostra seus valores padrão.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `protocol_timeout` | duration | 5s | Timeout para operações de sync/discover entre nós |
 | `broadcast_timeout` | duration | 5s | Timeout para entregar um broadcast a um único membro |
-| `anti_entropy_interval` | duration | 30s | Cadência do loop de reconciliação; um peer é sincronizado por tick (0 desabilita) |
+| `anti_entropy_interval` | duration | 30s | Cadência do loop de reconciliação; um peer é sincronizado por tick |
 | `circuit_breaker_failures` | int | 3 | Falhas de envio consecutivas para um nó antes de seu circuito abrir |
 | `circuit_breaker_reset_time` | duration | 10s | Espera antes de um circuito aberto mover para half-open para um envio de teste |
-| `max_retries` | int | 3 | Tentativas de retry para um broadcast falho (0 desabilita retries) |
+| `max_retries` | int | 3 | Tentativas de retry para um broadcast que falhou |
 | `retry_base_delay` | duration | 100ms | Atraso inicial de backoff entre retries |
 | `retry_max_delay` | duration | 1s | Atraso máximo de backoff |
 | `action_queue_size` | int | 256 | Profundidade em que um aviso de "aproximando capacidade" é registrado |
@@ -70,10 +70,10 @@ Todos os campos são opcionais e têm padrões ajustados para um cluster típico
 
 ## Observabilidade
 
-Uma verificação de liveness (`pg.broadcast_recent.<scope>`) reporta não saudável se um escopo não vê tráfego de broadcast por um período prolongado, detectando um loop de eventos travado ou uma partição persistente. Veja o [Guia de Observabilidade](guides/observability.md).
+Uma verificação de liveness (`pg.broadcast_recent.<scope>`) reporta estado não saudável se um escopo não observar tráfego de broadcast por um período prolongado, revelando um loop de eventos travado ou uma partição persistente. Consulte o [Guia de observabilidade](guides/observability.md).
 
-## Veja Também
+## Consulte também
 
-- [Grupos de Processos](lua/core/pg.md) - A API Lua
-- [Cluster](guides/cluster.md) - Associação e o modelo de clustering
-- [Modelo de Processos](concepts/process-model.md) - Processos, PIDs e mensagens
+- [Grupos de Processos](lua/core/pg.md) — A API Lua
+- [Cluster](guides/cluster.md) — Associação e o modelo de clustering
+- [Modelo de Processos](concepts/process-model.md) — Processos, PIDs e mensagens

@@ -7,34 +7,46 @@ description: "Asynchronous operation results. Futures are returned by funcs.asyn
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Asynchronous operation results. Futures are returned by `funcs.async()` and contract async calls.
+Futures represent asynchronous operation results. They are returned by `funcs.async()` and asynchronous contract calls. This page is an API reference; the target IDs and arguments in its patterns are application-defined.
 
 ## Loading
 
-Not a loadable module. Futures are created by async operations:
+Futures are not loaded as a module; asynchronous operations create them:
 
 ```lua
 local funcs = require("funcs")
 local future, err = funcs.async("app.compute:task", data)
+if err then
+    return nil, err
+end
 ```
 
 ## Response Channel
 
-Get channel for receiving result:
+Use the response channel to wait for completion, then read the cached result from the future:
 
 ```lua
 local ch = future:response()
-local payload, ok = ch:receive()
-if ok then
-    local result = payload:data()
+local _, open = ch:receive()
+if not open then
+    return nil, errors.new("future response channel closed")
 end
+
+local payload, err = future:result()
+if err then
+    return nil, err
+end
+local result, data_err = payload:data()
+if data_err then return nil, data_err end
 ```
 
 `channel()` is an alias for `response()`.
 
+The channel value is the operation's payload, payload table, or error. Calling `result()` after the channel becomes ready provides one consistent success/error interface and returns the cached value even after the channel is drained.
+
 ## Completion Check
 
-Non-blocking check if future completed:
+Check whether the future has completed without blocking:
 
 ```lua
 if future:is_complete() then
@@ -44,7 +56,7 @@ end
 
 ## Cancellation Check
 
-Check if `cancel()` was called:
+Check whether the future has been marked canceled by its provider:
 
 ```lua
 if future:is_canceled() then
@@ -54,13 +66,14 @@ end
 
 ## Getting Result
 
-Get cached result (non-blocking):
+Read the cached result without blocking:
 
 ```lua
 local val, err = future:result()
 ```
 
 **Returns:**
+
 - Not complete: `nil, nil`
 - Canceled: `nil, error` (kind `CANCELED`)
 - Error: `nil, error`
@@ -68,7 +81,7 @@ local val, err = future:result()
 
 ## Getting Error
 
-Get error if future failed:
+Read the error when the future has failed:
 
 ```lua
 local err, has_error = future:error()
@@ -79,12 +92,14 @@ end
 
 **Returns:** `error, boolean`
 
+When an operation fails, `error()` returns a non-retryable `INTERNAL` wrapper. Use `result()` when the called function's original error kind and retryability must be preserved.
+
 ## Canceling
 
-Cancel async operation (best-effort):
+Request cancellation of the asynchronous operation on a best-effort basis:
 
 ```lua
-future:cancel()
+local canceled, err = future:cancel()
 ```
 
 **Returns:** `boolean, error`
@@ -94,8 +109,17 @@ Operation may still complete if already in progress.
 ## Timeout Pattern
 
 ```lua
-local future = funcs.async("app.compute:slow", data)
-local timeout = time.after("5s")
+local time = require("time")
+
+local future, err = funcs.async("app.compute:slow", data)
+if err then
+    return nil, err
+end
+
+local timeout, err = time.after("5s")
+if err then
+    return nil, err
+end
 
 local r = channel.select {
     future:channel():case_receive(),
@@ -107,28 +131,50 @@ if r.channel == timeout then
     return nil, errors.new({ kind = errors.TIMEOUT, message = "Operation timed out" })
 end
 
-return r.value:data()
+local payload, result_err = future:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## First-to-Complete
 
 ```lua
-local f1 = funcs.async("app.cache:get", key)
-local f2 = funcs.async("app.db:get", key)
-
-local r = channel.select {
-    f1:channel():case_receive(),
-    f2:channel():case_receive()
-}
-
--- Cancel the slower one
-if r.channel == f1:channel() then
-    f2:cancel()
-else
-    f1:cancel()
+local f1, err = funcs.async("app.cache:get", key)
+if err then
+    return nil, err
+end
+local f2, err = funcs.async("app.db:get", key)
+if err then
+    return nil, err
 end
 
-return r.value:data()
+local ch1 = f1:channel()
+local ch2 = f2:channel()
+
+local r = channel.select {
+    ch1:case_receive(),
+    ch2:case_receive()
+}
+
+-- The slower operation may still complete; this caller ignores its result.
+local winner
+if r.channel == ch1 then
+    winner = f1
+else
+    winner = f2
+end
+
+local payload, result_err = winner:result()
+if result_err then
+    return nil, result_err
+end
+local value, data_err = payload:data()
+if data_err then return nil, data_err end
+return value
 ```
 
 ## Errors

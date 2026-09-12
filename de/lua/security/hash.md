@@ -9,7 +9,9 @@ description: "Kryptografische Hash-Funktionen und HMAC-Nachrichtenauthentifizier
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Kryptografische Hash-Funktionen und HMAC-Nachrichtenauthentifizierung.
+Das Modul `hash` berechnet kryptografische Hashes, HMAC-Werte, mit PBKDF2 abgeleitete Schlüssel und nicht kryptografische FNV-1-Hashes. Diese Seite ist eine API-Referenz mit einzelnen Aufrufen. Literale Eingaben veranschaulichen erfolgreiche Verwendung; wenn Daten, Geheimnisse, Passwörter oder Salts aus der Anwendung stammen, behandeln Sie den dokumentierten zweiten Rückgabewert `error`, bevor Sie das Ergebnis verwenden.
+
+Ein Hash ist keine Verschlüsselung und verbirgt keine Eingaben mit geringer Entropie. Protokollieren Sie keine Passwörter, HMAC-Schlüssel, abgeleiteten Schlüssel oder rohen, geheimnisabhängigen Digests. Verwenden Sie HMAC-SHA256 oder HMAC-SHA512 für neue Nachrichtenauthentifizierungsverfahren und PBKDF2 mit einem eindeutigen zufälligen Salt für Passwortprüfwerte.
 
 ## Laden
 
@@ -20,6 +22,8 @@ local hash = require("hash")
 ## Kryptografische Hashes
 
 ### MD5
+
+MD5 ist nicht kollisionsresistent. Verwenden Sie es nur zur Kompatibilität mit Protokollen, die MD5 verlangen, und nicht für Sicherheitsentscheidungen.
 
 ```lua
 local hex = hash.md5("data")
@@ -34,6 +38,8 @@ local raw = hash.md5("data", true)
 **Gibt zurück:** `string, error`
 
 ### SHA-1
+
+SHA-1 ist nicht kollisionsresistent. Verwenden Sie es nur zur Kompatibilität mit Protokollen, die SHA-1 verlangen, und nicht für Sicherheitsentscheidungen.
 
 ```lua
 local hex = hash.sha1("data")
@@ -75,9 +81,11 @@ local raw = hash.sha512("data", true)
 
 **Gibt zurück:** `string, error`
 
-## HMAC-Authentifizierung
+## HMACs
 
 ### HMAC-MD5
+
+Verwenden Sie HMAC-MD5 nur zur Kompatibilität mit einem Protokoll, das es verlangt; bevorzugen Sie für neue Verfahren HMAC-SHA256 oder HMAC-SHA512.
 
 ```lua
 local hex = hash.hmac_md5("message", "secret")
@@ -93,6 +101,8 @@ local raw = hash.hmac_md5("message", "secret", true)
 **Gibt zurück:** `string, error`
 
 ### HMAC-SHA1
+
+Verwenden Sie HMAC-SHA1 nur zur Kompatibilität mit einem Protokoll, das es verlangt; bevorzugen Sie für neue Verfahren HMAC-SHA256 oder HMAC-SHA512.
 
 ```lua
 local hex = hash.hmac_sha1("message", "secret")
@@ -139,9 +149,9 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ## Nicht-kryptografische Hashes
 
-### FNV-32
+### FNV-1 32 Bit
 
-Schneller Hash für Hash-Tabellen und Partitionierung.
+Berechnen Sie einen Hash für Anwendungen wie Hash-Tabellen und Partitionierung.
 
 ```lua
 local n = hash.fnv32("data")
@@ -153,9 +163,9 @@ local n = hash.fnv32("data")
 
 **Gibt zurück:** `number, error`
 
-### FNV-64
+### FNV-1 64 Bit
 
-Schneller Hash mit größerer Ausgabe für reduzierte Kollisionen.
+Berechnen Sie einen breiteren Hash für Anwendungen wie Hash-Tabellen und Partitionierung, um die Kollisionswahrscheinlichkeit zu verringern.
 
 ```lua
 local n = hash.fnv64("data")
@@ -194,4 +204,4 @@ local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 | Secret ist kein String (HMAC) | `errors.INVALID` | nein |
 | Leeres Passwort/Salt, nicht positive oder zu hohe Iterationszahl, nicht unterstützter Hash (PBKDF2) | `errors.INVALID` | nein |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

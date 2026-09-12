@@ -1,15 +1,17 @@
 ---
 title: "Temporal統合"
-description: "WippyはTemporal.ioと統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動を乗り越える長時間実行プロセスを提供します。"
+description: "WippyはTemporal.ioと統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動後も継続する長時間実行プロセスを提供します。"
 ---
 
 # Temporal統合
 
-Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワークフロー実行、自動リプレイ、再起動を乗り越える長時間実行プロセスを提供します。
+このページは、Temporalクライアントとワーカーの設定リファレンスです。最後のレジストリ断片はエントリ同士の接続方法を示すものであり、単独で完結するプロジェクトではありません。
+
+`temporal.client`と`temporal.worker`のエントリ種別は、Wippyのワークフローとアクティビティを[Temporal](https://temporal.io)に接続します。
 
 ## クライアント設定
 
-`temporal.client`エントリ種別はTemporalサーバーへの接続を定義します。
+`temporal.client`エントリ種別は、Temporalサーバーへの接続を定義します。
 
 ```yaml
 - name: temporal_client
@@ -50,10 +52,10 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
 
 #### APIキー（Temporal Cloud）
 
-以下のいずれかの方法でAPIキーを提供：
+次のいずれかの方法でAPIキーを指定します。
 
 ```yaml
-# 直接値
+# Direct value
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -62,7 +64,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     type: api_key
     api_key: "your-api-key"
 
-# 環境変数から
+# From environment variable
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -71,7 +73,7 @@ Wippyは[Temporal.io](https://temporal.io)と統合し、耐久性のあるワ�
     type: api_key
     api_key: ${env:TEMPORAL_API_KEY}
 
-# ファイルから
+# From file
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -117,8 +119,8 @@ auth:
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # サーバー名検証をオーバーライド
-  insecure_skip_verify: false            # 検証をスキップ（開発のみ）
+  server_name: "temporal.example.com"    # Override server name verification
+  insecure_skip_verify: false            # Skip verification (dev only)
 ```
 
 ### ヘルスチェック
@@ -155,7 +157,7 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
 
 ## ワーカー設定
 
-`temporal.worker`エントリ種別はワークフローとアクティビティを実行するワーカーを定義します。
+`temporal.worker`エントリ種別は、ワークフローとアクティビティを実行するワーカーを定義します。
 
 ```yaml
 - name: worker
@@ -164,7 +166,7 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -177,7 +179,7 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
 
 ### ワーカーオプション
 
-ワーカー動作を微調整：
+ワーカーの動作を設定します。
 
 ```yaml
 - name: worker
@@ -195,23 +197,23 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
     max_concurrent_session_execution_size: 1000
     max_concurrent_eager_activity_execution_size: 0
 
-    # ポーラー
+    # Pollers
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # レート制限
-    worker_activities_per_second: 0        # 0 = 無制限
+    # Rate limiting
+    worker_activities_per_second: 0        # 0 = unlimited
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
 
-    # タイムアウト
+    # Timeouts
     sticky_schedule_to_start_timeout: "5s"
     worker_stop_timeout: "0s"
     deadlock_detection_timeout: "0s"
     max_heartbeat_throttle_interval: "0s"
     default_heartbeat_throttle_interval: "0s"
 
-    # 機能フラグ
+    # Feature flags
     enable_logging_in_replay: false
     enable_session_worker: false
     disable_workflow_worker: false
@@ -219,32 +221,32 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
     disable_eager_activities: false
     disable_registration_aliasing: false
 
-    # バージョニング
+    # Versioning
     deployment_name: ""
     build_id: ""
     build_id: ${env:BUILD_ID}              # 環境レジストリから読み取り
     use_versioning: false
-    default_versioning_behavior: "pinned" # または "auto_upgrade"
+    default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
 認証情報および識別子フィールドは、デコード時に`${env:NAME}`プレースホルダを[環境変数システム](system/env.md)経由で解決します。従来の`build_id_env`ディレクティブも同じように解決されますが非推奨です。`build_id: ${env:NAME}`を使用してください。
 
 ### バージョニング動作
 
-`default_versioning_behavior`は、`use_versioning`が有効な場合に新しいワークフロー実行がワーカーのビルドIDを選ぶ方法を制御します:
+`default_versioning_behavior`は、`use_versioning`が有効な場合に、新しいワークフロー実行がワーカーのビルドIDを選択する方法を制御します。
 
 | 値 | 動作 |
 |----|------|
-| `pinned` | ワークフローは実行中、開始時のビルドIDに固定されます |
+| `pinned` | ワークフローは実行全体を通して、開始時のビルドIDを使用し続けます |
 | `auto_upgrade` | ワークフローは各タスク後に互換性のある最新のビルドIDで再開できます |
 
 `build_id: ${env:NAME}`は、リテラルの`build_id`が指定されていない場合に環境レジストリからビルドIDを読み取ります。
 
 ### セッションワーカー
 
-`enable_session_worker: true`を設定すると、ワーカーはTemporalセッションを実行できます: これは単一のワーカーに固定された一連のアクティビティです（アクティビティが一時ディレクトリやオープン接続などのローカル状態を共有する場合に便利です）。`max_concurrent_session_execution_size`はワーカー上の同時セッション数を制限します。
+`enable_session_worker: true`を設定すると、ワーカーはTemporal Sessionsを実行できます。これは、単一のワーカーに固定された一連のアクティビティです（一時ディレクトリや開かれた接続などのローカル状態をアクティビティ間で共有する場合に便利です）。`max_concurrent_session_execution_size`は、ワーカー上の同時セッション数を制限します。
 
-### 並行性デフォルト
+### 並行性のデフォルト値
 
 | オプション | デフォルト |
 |-----------|-----------|
@@ -256,7 +258,9 @@ Wippyは、呼び出し元のアクターとスコープを、署名されたTem
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## 完全な例
+## 設定例
+
+このレジストリ断片は、1つのワークフローと1つのアクティビティをワーカーに接続します。`localhost:7233`でTemporalサーバーに到達でき、参照される2つのLuaソースファイルが存在することを前提としています。実装については、ワークフローとアクティビティのページを参照してください。
 
 ```yaml
 version: "1.0"
@@ -276,7 +280,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -296,6 +300,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:
@@ -306,5 +312,5 @@ entries:
 
 ## 関連項目
 
-- [アクティビティ](temporal/activities.md) - アクティビティ定義
-- [ワークフロー](temporal/workflows.md) - ワークフロー実装
+- [アクティビティ](temporal/activities.md) - アクティビティの定義
+- [ワークフロー](temporal/workflows.md) - ワークフローの実装

@@ -9,7 +9,7 @@ Wippy se configura mediante archivos `.wippy.yaml`. Todas las opciones tienen va
 
 Cualquier valor a continuación puede sobrescribirse en el arranque con `wippy run --set section.path=value` (repetible, tiene prioridad sobre el archivo). Para sobrescribir *entradas* individuales del registro en lugar de estas secciones de configuración, usa la sección `override:` o `-o` — consulta [Sobrescribir entradas](guides/entry-kinds.md#overriding-entries).
 
-## Composición de Configuración {#config-composition}
+## Composición de Configuración :id=config-composition
 
 `--config` es repetible; los archivos se componen de izquierda a derecha usando el mismo esquema:
 
@@ -22,9 +22,9 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - El primer archivo ancla el directorio usado para resolver rutas relativas.
 - Los nombres de archivo no tienen significado reservado; nada aparte del archivo por defecto se descubre automáticamente.
 
-La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar Valores por Defecto de Runtime](guides/publishing.md#publishing-runtime-defaults)).
+La configuración se aplica en orden: composición de archivos, luego las selecciones de `--profile`, luego las sobrescrituras de `--set`. Para aplicaciones ejecutadas desde packs, los valores por defecto de runtime empaquetados se sitúan por debajo de todos estos (ver [Publicar valores por defecto del runtime](guides/publishing.md#publishing-runtime-defaults)).
 
-## Perfiles {#profiles}
+## Perfiles :id=profiles
 
 Un archivo de configuración puede declarar overlays con nombre bajo `profiles:`. Cada cuerpo de perfil refleja las secciones normales de configuración; seleccionarlo con `--profile <name>` superpone esos valores sobre la configuración base fusionada:
 
@@ -127,7 +127,7 @@ security:
 
 Ver: [Sistema de Seguridad](system/security.md), [Módulo de Seguridad](lua/security/security.md)
 
-## Registro
+## Registro :id=registry
 
 Almacenamiento de entradas e historial de versiones. El registro almacena todas las entradas de configuración.
 
@@ -420,6 +420,8 @@ Las cuatro claves de sondeo heredan los valores por defecto de red local de memb
 
 Malla TCP que transporta el tráfico de relay y Raft entre nodos. Raft viaja por esta malla mediante request/reply internodo; no hay un puerto Raft separado.
 
+Cada nodo del cluster necesita su propia identidad privada internodo y un mapa de claves públicas de confianza. Configura exactamente una fuente de clave privada. Tanto los valores inline como los archivos de clave deben contener una semilla de 32 bytes o una clave de 64 bytes codificada en base64; los valores de confianza son claves públicas codificadas en base64.
+
 | Campo | Tipo | Por defecto | Descripción |
 |-------|------|---------|-------------|
 | `internode.bind_addr` | string | 0.0.0.0 | Dirección de enlace de la malla |
@@ -447,7 +449,7 @@ Raft acotado. El estado de Raft es durable en disco por defecto, almacenado bajo
 | `raft.eligible` | bool | true | Si este nodo puede ser seleccionado como votante |
 | `raft.priority` | int | 100 | Prioridad de selección de votante (valor menor es preferido) |
 | `raft.bootstrap_expect` | int | 1 | Tamaño inicial del quórum: `0`=unirse a uno existente, `1`=nodo único, `N`=esperar N peers elegibles para formar quórum |
-| `raft.max_voters` | int | 5 | Límite de votantes (debe ser impar); los nodos elegibles adicionales se convierten en standbys |
+| `raft.max_voters` | int | 5 | Límite de votantes (debe ser impar); hasta `max_standbys` nodos elegibles adicionales se convierten en standbys y el resto permanece como clients |
 | `raft.max_standbys` | int | 4 | Miembros no votantes mantenidos en espera para promoción; los nodos más allá de voters+standbys no son miembros Raft |
 | `raft.reconcile_debounce` | duration | 2s | Ventana de consolidación tras un evento de gossip antes de que se ejecute el reconciliador de votantes |
 | `raft.reconcile_timeout` | duration | 2s | Límite por pasada de reconciliación |

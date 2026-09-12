@@ -46,9 +46,9 @@ HTTP 서버(`http.service`)는 포트에서 리스닝하고 라우터, 엔드포
 
 ```yaml
 timeouts:
-  read: "10s"    # 요청 헤더 읽기 최대 시간
-  write: "60s"   # 응답 쓰기 최대 시간
-  idle: "120s"   # Keep-alive 타임아웃
+  read: "10s"    # Max time to read the entire request (headers + body)
+  write: "60s"   # Max time to write response
+  idle: "120s"   # Keep-alive timeout
 ```
 
 - `read` - API는 짧게 (5-10초), 업로드는 길게
@@ -103,7 +103,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +112,7 @@ lifecycle:
 | `auto_start` | 애플리케이션 시작 시 시작 |
 | `start_timeout` | 서버 시작 대기 최대 시간 |
 | `stop_timeout` | 그레이스풀 셧다운 최대 시간 |
-| `depends_on` | 이 엔트리들이 준비된 후 시작 |
+| `requires` | 이 엔트리들이 준비된 후 시작 (`depends_on`은 레거시 표기) |
 
 ## 컴포넌트 연결
 
@@ -144,14 +144,14 @@ entries:
 
 ```yaml
 entries:
-  # 퍼블릭 API
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # 관리자 (localhost 전용)
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"

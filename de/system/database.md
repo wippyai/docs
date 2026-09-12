@@ -5,11 +5,13 @@ description: "SQL-Datenbankverbindungs-Pooling und Konfiguration. Unterstützt P
 
 # Datenbanksystem
 
-SQL-Datenbankverbindungs-Pooling und Konfiguration. Unterstützt PostgreSQL, MySQL und SQLite.
+Wippy stellt gepoolte SQL-Datenbankeinträge für PostgreSQL und MySQL sowie einen SQLite-Eintrag mit einer einzelnen Verbindung bereit.
+
+Diese Seite ist eine Konfigurationsreferenz. Wenn ein Block nicht `version`, `namespace` und `entries` enthält, behandeln Sie ihn als Fragment für eine bestehende Entry-Liste.
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `db.sql.postgres` | PostgreSQL-Datenbank |
 | `db.sql.mysql` | MySQL-Datenbank |
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,7 +49,7 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # :memory: für In-Memory verwenden
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
       max_open: 4
       max_idle: 2
@@ -112,7 +114,7 @@ Vermeiden Sie das Hardcodieren von Passwörtern in der Konfiguration. Verwenden 
 
 ## Connection-Pool
 
-Konfigurieren Sie das Connection-Pooling-Verhalten. Pool-Einstellungen werden auf Gos [database/sql Connection-Pool](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) abgebildet.
+Konfigurieren Sie das Connection-Pooling-Verhalten. Pool-Einstellungen werden auf den [database/sql-Connection-Pool](https://pkg.go.dev/database/sql#DB.SetMaxOpenConns) von Go abgebildet.
 
 | Feld | Typ | Standard | Beschreibung |
 |------|-----|----------|--------------|
@@ -122,9 +124,9 @@ Konfigurieren Sie das Connection-Pooling-Verhalten. Pool-Einstellungen werden au
 
 ```yaml
 pool:
-  max_open: 25      # Gleichzeitige Verbindungen begrenzen
-  max_idle: 5       # 5 Verbindungen bereithalten
-  max_lifetime: "30m"  # Verbindungen alle 30 Minuten recyceln
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
@@ -165,7 +167,7 @@ Häufige datenbankspezifische Optionen:
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Verbindungs-Timeout in Sekunden
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -174,8 +176,8 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # Zeitwerte zu time.Time parsen
-  loc: "Local"            # Zeitzone
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -239,7 +241,7 @@ SQLite wendet die `options`-Map nicht auf seinen DSN an. Dateidatenbanken öffne
 
 ```yaml
 entries:
-  # Primäre Datenbank
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
     host: ${env:USERS_DB_HOST}
@@ -250,7 +252,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Analytics-Datenbank
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
     host: ${env:ANALYTICS_DB_HOST}
@@ -261,7 +263,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Lokaler Cache
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -271,11 +273,11 @@ entries:
 
 ## Laufzeitregistrierung
 
-Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua/core/registry.md) registriert werden, was dynamische Datenbankkonfiguration basierend auf Anwendungszustand oder externer Konfiguration ermöglicht.
+Datenbanken können zur Laufzeit mit dem [Registry-Modul](lua/core/registry.md) registriert werden.
 
 ## Lua-API
 
-Siehe [SQL-Modul](lua/storage/sql.md) für die Datenbankoperationen-API.
+Siehe [SQL-Modul](lua/storage/sql.md) für Abfragen, Transaktionen und Verbindungsoperationen.
 
 ## Siehe auch
 

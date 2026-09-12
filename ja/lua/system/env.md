@@ -8,7 +8,9 @@ description: "設定値、シークレット、ランタイム設定のための
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-設定値、シークレット、ランタイム設定のための環境変数へのアクセス。
+`env` モジュールは、ランタイムが公開する環境変数を読み取り、更新します。
+
+このページは API リファレンスです。各スニペットは独立した操作であり、指定した変数とセキュリティポリシーがすでに存在することを前提とします。
 
 変数にアクセスする前に[環境システム](system/env.md)で定義する必要がある。システムは値を提供するストレージバックエンド（OS、ファイル、メモリ）と変数が読み取り専用かどうかを制御。
 
@@ -29,17 +31,8 @@ if not db_url then
     return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
--- フォールバック付きで取得
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- シークレットを取得
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- 設定
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -55,16 +48,10 @@ local debug_mode = env.get("DEBUG") == "true"
 環境変数を設定。
 
 ```lua
--- ランタイム設定を設定
-env.set("APP_MODE", "production")
-
--- テスト用にオーバーライド
-env.set("API_URL", "http://localhost:8080")
-
--- 条件に基づいて設定
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | パラメータ | 型 | 説明 |
@@ -79,16 +66,18 @@ end
 アクセス可能なすべての環境変数を取得。
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- 設定をログ（シークレットはログしないよう注意）
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- 必須変数を確認
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
@@ -128,13 +117,12 @@ end
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| キーが空 | `errors.INVALID` | no |
-| 変数が見つからない | `errors.NOT_FOUND` | no |
-| 権限拒否 | `errors.PERMISSION_DENIED` | no |
+| キーが空 | `errors.INVALID` | いいえ |
+| 変数が見つからない | `errors.NOT_FOUND` | いいえ |
+| 権限拒否 | `errors.PERMISSION_DENIED` | いいえ |
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
 
 ## 関連項目
 
 - [環境システム](system/env.md) - ストレージバックエンドと変数定義の設定
-

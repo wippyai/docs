@@ -5,6 +5,10 @@ description: "The difference between utility names, compiled values, runtime-bac
 
 # Tailwind Contract
 
+**Classification: generated contract reference.** The prose explains how to
+interpret the catalogue; the generated rows report the pinned theme package's
+compiled evidence and are not a Tailwind setup tutorial.
+
 “Tailwind token” is ambiguous. Use these four terms instead.
 
 | Layer | Example | Theme behavior |
@@ -66,9 +70,9 @@ The checked-in snapshot is generated from:
 Each generated row contains the utility, emitted property, resolved value, runtime dependency, intended use, allowed consumer, stability, package compatibility tuple, and source hashes.
 
 <!-- GENERATED:TAILWIND-CONTRACT:BEGIN -->
-Generated from @wippy-fe/theme 0.0.46. Every representative mapping below is checked against CSS compiled by Tailwind 3.4.19 with tailwindcss-primeui 0.6.1.
+Generated from @wippy-fe/theme 0.0.56. Every representative mapping below is checked against CSS compiled by Tailwind 3.4.19 with tailwindcss-primeui 0.6.1.
 
-Source hashes: theme contract `853a01257988861e208b6f7523de25cd329717763d064e4f2c5920cff7f7778a`; theme config `129f1591fd657416b75e913f554329924bade319c38e62f5b72dcc5f72bd8295`; Tailwind config `f1e862105254f082a78823ea685e3c6dc3ff5822516b7434a1e1141c976adc1d`; reference theme sources `aura/index.mjs=d1a1a574cf1a15aad8aee4cb3fa169aa97bf4029e9f858b84245e7f0b933d5ca; aura/base/index.mjs=9fec80a7ffbd5fb0229da666c1472c27c9a0a6a7ef3bb0a84bd7b070601e4198; aura/inputtext/index.mjs=5c5a4af9bacf0d585120b119bb7bfb02c7deedd9714b131d7009ff6e95f818e8; aura/toggleswitch/index.mjs=1e068fd0ede48eeeca4d10571940d65dadb3450b2ee51a39d09b33dda9da6e66; aura/button/index.mjs=44d8fd7f7ae163ce2653de8c6eb8af097fc453b4c60f702fcf76845be6ec9393`.
+Source hashes: theme contract `b910b2d9fd11d82747da7adb13067deefb4319f8d88cf7551ce7a84e5e20b76a`; theme config `9b484e9da76871d11edda5a555b0d0443a262acd80fb42c74c4fd78e2b23b5ae`; Tailwind config `f1e862105254f082a78823ea685e3c6dc3ff5822516b7434a1e1141c976adc1d`; reference theme sources `aura/index.mjs=d1a1a574cf1a15aad8aee4cb3fa169aa97bf4029e9f858b84245e7f0b933d5ca; aura/base/index.mjs=9fec80a7ffbd5fb0229da666c1472c27c9a0a6a7ef3bb0a84bd7b070601e4198; aura/inputtext/index.mjs=5c5a4af9bacf0d585120b119bb7bfb02c7deedd9714b131d7009ff6e95f818e8; aura/toggleswitch/index.mjs=1e068fd0ede48eeeca4d10571940d65dadb3450b2ee51a39d09b33dda9da6e66; aura/button/index.mjs=44d8fd7f7ae163ce2653de8c6eb8af097fc453b4c60f702fcf76845be6ec9393`.
 
 ### Runtime-backed semantic utilities
 

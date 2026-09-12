@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -343,9 +348,9 @@ assert(view:send({type = "close"}))
 ```lua
 {
     type = "key",
-    key = "a",           -- 印刷可能文字またはキー名
-    key_type = "runes",  -- 印刷可能の場合は "runes"、または特殊キー名
-    action = "press",    -- "press" または "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -359,8 +364,8 @@ assert(view:send({type = "close"}))
 ```lua
 {
     type = "mouse",
-    action = "press",    -- "press"、"release"、"motion"、"wheel"
-    button = "left",     -- ボタン名
+    action = "press",    -- "press", "release", "motion", "wheel"
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -423,7 +428,7 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- イベントループ内
+-- In event loop
 if quit:matches(ev) then
     break
 end
@@ -433,10 +438,12 @@ end
 
 | フィールド | 型 | 説明 |
 |-------|------|-------------|
-| `keys` | string[] | 一致させるキーパターン（例：`"a"`、`"ctrl+c"`、`"enter"`） |
+| `keys` | string[] | 必須。一致させるキーパターン（例：`"a"`、`"ctrl+c"`、`"enter"`） |
 | `help` | table | 任意。ヘルプテキスト用の `{key = "...", desc = "..."}` |
 
 **戻り値:** `KeyBinding`
+
+型スキーマでは `keys` が必須です。実行時に `keys` を省略するか空のテーブルを指定すると、どの入力にも一致しないバインディングが作成されます。
 
 ### KeyBinding メソッド
 
@@ -466,7 +473,8 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
 ### tty.style()
@@ -547,9 +555,9 @@ tty.align.RIGHT   -- 1
 ### 計測
 
 ```lua
-local w = tty.text.width("hello")         -- 印刷可能幅（ANSI 対応）
-local h = tty.text.height("a\nb\nc")      -- 行数
-local w, h = tty.text.size("hello\nworld") -- 両方
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### クリッピング
@@ -568,18 +576,18 @@ local middle = tty.text.cut(line, 10, 30)
 ### 結合
 
 ```lua
--- 横並びに結合、上揃え
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- 縦に積む、中央揃え
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### 最大寸法
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- 最も広いもの
-local h = tty.text.max_height({"one\ntwo", "single"})         -- 最も高いもの
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### 配置
@@ -587,13 +595,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- 最も高いも
 指定された寸法のボックス内に文字列を配置します：
 
 ```lua
--- 80x24 のボックスの中央に配置
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- 水平方向のみ
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- 垂直方向のみ
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -607,9 +615,19 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## 画像、ページ、委譲された Viewport
+
+`surface:present(rows, options)` の `options.images` には、保持する画像配置の完全な集合を指定します。各配置には `placement_id`、`tty.image(png_bytes)` で import した PNG handle、配置先の座標とサイズが含まれ、`src`、`z`、`alt` は省略できます。`image:info()`、`image:read()`、`image:close()` は metadata、明示的な PNG export、参照の解放を提供します。後続の `present` で `images` を省略すると、以前の配置は消去されます。
+
+`surface:capabilities()` は画像 mode として `native`、`kitty`、`pending`、`none` のいずれかを返します。`surface:clipboard(text)` は physical surface で最大 65,536 byte の UTF-8 text を OSC 52 clipboard request として送信します。virtual surface では未対応です。
+
+`tty.viewport()` は不透明な `#RRGGBB` 色を持つ `page = {foreground, background}` を受け付け、`viewport:set_page(page)` で page を変更できます。snapshot には `images`、`layers`、`images_omitted` が含まれます。`viewport:capture()` は `capture:close()` まで revision と画像 resource を保持し、`capture:image(image_id)` は独立所有の handle を返します。
+
+`viewport:mount(recipient_pid, rights)` は local process または認証済み mesh peer の process に結び付いた、一度だけ引き換え可能な参照を発行します。`observe`、`input`、`resize` の各権限は独立しており、既定値は false です。`viewport:revoke(reference)` で参照を無効化できます。mount された viewer は再委譲できません。
+
 ## 権限
 
-このモジュール自体はポリシーアクションを強制しません。ターミナルへのアクセスはフレームから得られます。ターミナルホストが物理ポートをアタッチし、`process.with_options({terminal = grant})` がビューポートをアタッチします。後者はスポーンする側に `process.context` を必要とします。
+physical terminal は process frame から与えられます。`process.with_options({terminal = grant})` で producer を接続するには、spawn 側に `process.context` が必要です。委譲された viewport は owner viewport handle に対して `tty.mount`、`tty.observe`、`tty.input`、`tty.resize` も検査します。
 
 ## 関連項目
 

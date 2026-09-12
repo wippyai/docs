@@ -5,11 +5,14 @@ description: "SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL
 
 # 데이터베이스 시스템
 
-SQL 데이터베이스 연결 풀링 및 설정. PostgreSQL, MySQL, SQLite를 지원합니다.
+Wippy는 PostgreSQL과 MySQL용 풀링 SQL 데이터베이스 엔트리와 단일 연결 SQLite 엔트리를 제공합니다.
+
+이 페이지는 설정 레퍼런스입니다. 펜스에 `version`, `namespace`, `entries`가 모두
+포함되지 않았다면 기존 엔트리 목록 안에 배치할 조각으로 취급하세요.
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `db.sql.postgres` | PostgreSQL 데이터베이스 |
 | `db.sql.mysql` | MySQL 데이터베이스 |
@@ -31,7 +34,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,7 +50,7 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # 인메모리는 :memory: 사용
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
       max_open: 4
       max_idle: 2
@@ -122,9 +125,9 @@ entries:
 
 ```yaml
 pool:
-  max_open: 25      # 동시 연결 제한
-  max_idle: 5       # 5개 연결 준비 상태 유지
-  max_lifetime: "30m"  # 30분마다 연결 재활용
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
@@ -165,7 +168,7 @@ file:/path/to/database.db?mode=rwc
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # 연결 타임아웃(초)
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -174,8 +177,8 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # 시간 값을 time.Time으로 파싱
-  loc: "Local"            # 시간대
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -239,7 +242,7 @@ SQLite는 `options` 맵을 DSN에 적용하지 않습니다. 파일 데이터베
 
 ```yaml
 entries:
-  # 기본 데이터베이스
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
     host: ${env:USERS_DB_HOST}
@@ -250,7 +253,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # 분석 데이터베이스
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
     host: ${env:ANALYTICS_DB_HOST}
@@ -261,7 +264,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # 로컬 캐시
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -271,11 +274,11 @@ entries:
 
 ## 런타임 등록
 
-[레지스트리 모듈](lua/core/registry.md)을 사용하여 런타임에 데이터베이스를 등록할 수 있으며, 애플리케이션 상태나 외부 설정에 따라 동적으로 데이터베이스를 구성할 수 있습니다.
+[레지스트리 모듈](lua/core/registry.md)을 사용하여 런타임에 데이터베이스를 등록할 수 있습니다.
 
 ## Lua API
 
-데이터베이스 작업 API는 [SQL 모듈](lua/storage/sql.md)을 참조하세요.
+쿼리, 트랜잭션, 연결 작업은 [SQL 모듈](lua/storage/sql.md)을 참조하세요.
 
 ## 참고
 

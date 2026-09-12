@@ -1,13 +1,13 @@
 ---
 title: "설정 레퍼런스"
-description: "Wippy는 .wippy.yaml 파일로 설정됩니다. 모든 옵션에는 합리적인 기본값이 있습니다."
+description: "런타임 설정 필드, 프로파일, 합성 규칙, 환경 변수 참조, 명령줄 오버라이드를 설명합니다."
 ---
 
 # 설정 레퍼런스
 
-Wippy는 `.wippy.yaml` 파일로 설정됩니다. 모든 옵션에는 합리적인 기본값이 있습니다.
+Wippy는 `.wippy.yaml` 파일에서 런타임 설정을 읽습니다.
 
-아래의 모든 값은 실행 시 `wippy run --set section.path=value`로 재정의할 수 있습니다(반복 가능하며, 파일보다 우선합니다). 이러한 설정 섹션이 아니라 개별 레지스트리 *엔트리*를 재정의하려면 `override:` 섹션이나 `-o`를 사용하세요 — [엔트리 재정의](guides/entry-kinds.md#overriding-entries)를 참고하세요.
+아래 설정 필드는 실행 시 반복 가능한 `wippy run --set section.path=value` 옵션으로 재정의할 수 있습니다. 설정 섹션이 아니라 개별 레지스트리 *엔트리*를 재정의하려면 `override:` 섹션이나 `-o`를 사용하세요. [엔트리 재정의](guides/entry-kinds.md#overriding-entries)를 참고하세요.
 
 ## 설정 합성 {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - 첫 번째 파일이 상대 경로 해석에 사용되는 디렉토리를 고정합니다.
 - 파일 이름에는 예약된 의미가 없습니다; 기본값 외에는 아무것도 자동 발견되지 않습니다.
 
-설정은 파일 합성, `--profile` 선택, `--set` 재정의 순서로 적용됩니다. 팩에서 실행되는 애플리케이션의 경우, 팩된 런타임 기본값이 이 모든 것 아래에 위치합니다 ([런타임 기본값 게시](guides/publishing.md#publishing-runtime-defaults) 참조).
+설정은 파일 합성, `--profile` 선택, `--set` 재정의 순서로 적용됩니다. 팩에서 실행되는 애플리케이션의 경우 팩된 런타임 기본값은 이 세 단계보다 우선순위가 낮습니다. [런타임 기본값 게시](guides/publishing.md#publishing-runtime-defaults)를 참고하세요.
 
 ## 프로파일 {#profiles}
 
@@ -76,7 +76,7 @@ logger:
 
 ## 로그 매니저
 
-런타임 로그 라우팅 제어. 콘솔 출력은 [CLI 플래그](guides/cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
+런타임 로그 라우팅을 제어합니다. 콘솔 출력은 [CLI 플래그](guides/cli.md) (`-v`, `-c`, `-s`)로 설정됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -110,11 +110,11 @@ profiler:
   address: "localhost:6060"
 ```
 
-`http://localhost:6060/debug/pprof/`에서 접근
+기본 주소로 활성화하면 `http://localhost:6060/debug/pprof/`에서 프로파일러에 접근할 수 있습니다.
 
 ## 보안
 
-전역 보안 동작. 개별 정책은 [security.policy 엔트리](guides/entry-kinds.md)로 정의됩니다.
+전역 보안 동작입니다. 개별 정책은 [security.policy 엔트리](guides/entry-kinds.md)로 정의됩니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
@@ -309,7 +309,7 @@ OTLP를 통한 분산 트레이싱 및 메트릭 익스포트.
 | `process.enabled` | bool | true | 프로세스 라이프사이클 트레이싱 |
 | `process.trace_lifecycle` | bool | true | spawn/terminate에 대한 span 발행 |
 | `interceptor.enabled` | bool | true | 함수 호출 트레이싱 |
-| `interceptor.order` | int | 100 | 인터셉터 우선순위 |
+| `interceptor.order` | int | 100 | 디코딩되는 호환성 필드. 런타임 v0.3.32a는 이 값과 관계없이 인터셉터를 순서 100에 등록 |
 | `queue.enabled` | bool | true | 큐 publish/consume 트레이싱 |
 | `temporal.enabled` | bool | false | Temporal 워크플로우 트레이싱 |
 
@@ -380,7 +380,7 @@ Prometheus 스크레이핑을 위해 `/metrics` 엔드포인트와 함께 `/live
 
 ## 클러스터
 
-멀티 노드 클러스터링: gossip 멤버십과 제한된 Raft 합의 코어. 아키텍처와 운영 모델은 [클러스터 가이드](guides/cluster.md)를 참조하세요. 이 섹션은 설정 키 레퍼런스입니다.
+멀티 노드 클러스터링은 gossip 멤버십과 제한된 Raft 합의 코어로 구성됩니다. 아키텍처와 운영 모델은 [클러스터 가이드](guides/cluster.md)를 참고하세요. 이 섹션은 설정 키 레퍼런스입니다.
 
 ### 최상위
 
@@ -437,17 +437,17 @@ Gossip 시크릿은 필수입니다. `membership.secret_key` 또는 `membership.
 
 ### Raft (합의)
 
-제한된 Raft. Raft 상태는 기본적으로 fs-durable이며 `raft.data_dir`(기본값 `~/.wippy/store`) 아래에 저장됩니다. 재시작된 노드는 여전히 피어로부터 쿼럼에 다시 참여합니다. [`store.kv.raft`](system/store.md#cluster-kv-stores) 엔트리는 이를 통해 복제됩니다. 부트스트랩은 gossip 기반(Consul/Nomad의 `bootstrap_expect` 방식)입니다.
+제한된 Raft 코어는 기본적으로 `raft.data_dir`(`~/.wippy/store`) 아래에 내구성 상태를 저장합니다. 재시작된 노드는 피어를 통해 쿼럼에 다시 참여합니다. [`store.kv.raft`](system/store.md#cluster-kv-stores) 엔트리는 이 코어를 통해 복제되며, gossip은 `bootstrap_expect` 모델로 부트스트랩을 조정합니다.
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
 | `raft.data_dir` | string | `~/.wippy/store` | fs-durable Raft 상태와 durable CRDT 스냅샷용 디렉터리(`<data_dir>/_sys/` 아래). 경로가 해석되지 않을 때만 디스크 없음(홈 디렉터리가 없고 설정도 없는 경우) |
 | `raft.enabled` | bool | true | Raft 노드 실행; `false`이면 gossip 전용 클라이언트 |
 | `raft.role` | string | server | `server`는 Raft 노드를 실행하고, `client`는 gossip 전용 |
-| `raft.eligible` | bool | true | 이 노드가 voter로 선택될 수 있는지 여부 |
+| `raft.eligible` | bool | true | 이 노드가 voter 또는 standby로 선택될 수 있는지 여부. false면 Raft 밖의 client로 유지 |
 | `raft.priority` | int | 100 | Voter 선택 우선순위 (낮을수록 선호) |
-| `raft.bootstrap_expect` | int | 1 | 초기 쿼럼 크기: `0`=기존 클러스터에 참여, `1`=단일 노드, `N`=N개의 eligible 피어를 기다린 후 쿼럼 형성 |
-| `raft.max_voters` | int | 5 | Voter 상한선 (홀수여야 함); 초과하는 eligible 노드는 standby가 됨 |
+| `raft.bootstrap_expect` | int | 1 | 초기 쿼럼 크기: `0`=기존 클러스터 참여, `1`=단일 노드, `N`=로컬 노드를 포함한 N개의 eligible 노드를 기다린 뒤 쿼럼 형성 |
+| `raft.max_voters` | int | 5 | Voter 상한선 (홀수여야 함). 최대 `max_standbys`개의 추가 eligible 노드는 standby가 되고 나머지는 client로 유지 |
 | `raft.max_standbys` | int | 4 | 승격을 위해 준비 상태로 유지되는 비투표 멤버; voters+standbys를 초과하는 노드는 Raft 멤버가 아님 |
 | `raft.reconcile_debounce` | duration | 2s | voter 조정자 실행 전 gossip 이벤트 이후 집계 창 |
 | `raft.reconcile_timeout` | duration | 2s | 조정 패스당 상한 |
@@ -528,7 +528,7 @@ cluster:
 
 | 필드 | 타입 | 기본값 | 설명 |
 |-------|------|---------|-------------|
-| `enabled` | bool | false | TCP 서버 활성화 |
+| `enabled` | bool | false | LSP 서비스와 TCP 서버 활성화. HTTP 전송에도 이 설정이 필요 |
 | `address` | string | :7777 | TCP 리슨 주소 |
 | `http_enabled` | bool | false | HTTP 전송 활성화 |
 | `http_address` | string | :7778 | HTTP 리슨 주소 |
@@ -614,11 +614,11 @@ extensions:
 
 | 변수 | 설명 |
 |----------|-------------|
-| `GOMEMLIMIT` | 메모리 제한 (`--memory-limit` 플래그 재정의) |
+| `GOMEMLIMIT` | `--memory-limit` 플래그가 설정되지 않았을 때의 메모리 제한 폴백 (우선순위: `--memory-limit` 플래그 > `GOMEMLIMIT` > 1G 기본값) |
 
 ## 참고
 
 - [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션
 - [클러스터 가이드](guides/cluster.md) - 클러스터링 아키텍처 및 운영
-- [엔트리 종류](guides/entry-kinds.md) - 모든 엔트리 타입
+- [엔트리 종류](guides/entry-kinds.md) - 엔트리 타입과 필드
 - [관측성 가이드](guides/observability.md) - 로깅, 메트릭, 트레이싱

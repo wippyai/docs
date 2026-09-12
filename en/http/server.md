@@ -5,7 +5,11 @@ description: "The HTTP server (http.service) listens on a port and hosts routers
 
 # HTTP Server
 
-The HTTP server (`http.service`) listens on a port and hosts routers, endpoints, and static file handlers.
+An `http.service` owns a listener and hosts routers, endpoints, and static file handlers.
+
+**Classification: server configuration reference.** Blocks are partial registry
+fragments unless they define every referenced network, environment, filesystem,
+router, certificate, actor, and policy entry.
 
 ## Configuration
 
@@ -51,9 +55,9 @@ timeouts:
   idle: "120s"   # Keep-alive timeout
 ```
 
-- `read` - Short (5-10s) for APIs, longer for uploads
-- `write` - Match expected response generation time
-- `idle` - Balance connection reuse vs resource usage
+- `read` — Short (5–10 seconds) for APIs, longer for uploads
+- `write` — Match the expected response generation time
+- `idle` — Balance connection reuse against resource usage
 
 <note>
 Duration format: <code>30s</code>, <code>1m</code>, <code>2h15m</code>. Use <code>0</code> to disable.
@@ -103,7 +107,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +116,7 @@ lifecycle:
 | `auto_start` | Start when application starts |
 | `start_timeout` | Max time to wait for server to start |
 | `stop_timeout` | Max time for graceful shutdown |
-| `depends_on` | Start after these entries are ready |
+| `requires` | Start after these entries are ready (`depends_on` is the legacy spelling) |
 
 ## Connecting Components
 

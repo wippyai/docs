@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | 作業ディレクトリ |
 | `options.env` | table | 環境変数 |
 | `options.pty` | table | 子プロセス用の疑似ターミナルを割り当てる |
+| `options.process_group` | boolean | 子プロセスを独自のプロセスグループで開始し、シグナルが子孫にも届くようにする。Windowsでは非対応 |
 
 **戻り値:** `Process, error`
 
@@ -203,7 +204,35 @@ proc:wait()
 stdout:close()
 ```
 
-各呼び出しは指定されたバイト列を書き込んで戻ります。stdinを閉じるメソッドはありません。stdinはプロセスの生存期間中ずっと開いたままなので、`sort`のように入力の終端まで読み取るコマンドはEOFを受け取ることがなく、プロセスにシグナルが送られるかクローズされた時点でのみ終了します。`head -n 3`のように自ら読み取りを止めるコマンドを選ぶか、EOFを必要とするコマンドは入力を供給するシェルパイプラインの背後で実行してください。
+各呼び出しは指定されたバイト列を書き込んで戻ります。子プロセスにEOFを認識させる必要がある場合は、`close_stdin()`を呼び出します：
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()`は冪等です。入力側を閉じた後の書き込みは失敗します。PTYベースのプロセスではこのパイプ操作を利用できません。
+
+## done
+
+プロセスハンドルを消費せずに終了を監視するには、`done()`を使用します：
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+返されるチャネルは終了レコードを1件送信した後に閉じます。繰り返し呼び出すと同じチャネルが返されます。レコードには`code`、任意の`signal`が含まれ、ランタイムが終了を監視できなかった場合のみ`error`が含まれます。シグナルによる終了では、コードは`128 + signal`になります。`wait()`と異なり、`done()`はハンドルを引き続き使用可能にするため、ストリーム、`signal()`、`close()`を利用できます。通知後に`wait()`を呼び出すと、記録されたコードを返します。
 
 ## signal / close
 
@@ -226,9 +255,9 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)`は、開始済みの子プロセスに`SIGTERM`を（`force`がtrueの場合は`SIGKILL`を）送信し、その後バックグラウンドで回収するため、呼び出しはブロックしません。猶予期間を過ぎても実行中の子プロセスはkillされ、回収が必ず完了します。開始されていないハンドルは単に無効化され、二重にクローズしてもエラーにはなりません。
+`close(force?)`は、開始済みの子プロセスに`SIGTERM`を（`force`がtrueの場合は`SIGKILL`を）送信し、その後バックグラウンドで回収するため、呼び出しはブロックしません。猶予期間を過ぎても実行中の子プロセスはkillされ、回収が必ず完了します。開始されていないハンドルは単に無効化され、二重にクローズしてもエラーにはなりません。`process_group`を有効にすると、シグナルはグループを対象とし、リーダーの終了後も子孫に届きます。
 
-回収時に子プロセスのstdoutとstderrのパイプが閉じられるため、必要な出力は`close()`を呼び出す前に読み取ってください。クローズ後は`wait()`を含むプロセスのすべてのメソッドが`process closed`を報告します。終了コードが必要な場合は、代わりに`signal()`と`wait()`を使用してください。
+回収前に取得したストリームは、最後の書き込み側が閉じるまで読み取り可能です。パイプを継承した子孫プロセスも含まれます。`close()`後はプロセスのメソッドが`process closed`を報告します。終了が重要でハンドルを引き続き使用する必要がある場合は、`done()`を使用してください。
 
 ## resize
 
@@ -339,4 +368,3 @@ Exec操作はセキュリティポリシー評価の対象です。
 - [エグゼキュータ](system/exec.md) — エグゼキュータの設定
 - [TTY](lua/system/tty.md) — ターミナルイベント、サーフェス、ビューポート
 - [ターミナルUI](tutorials/tty.md) — ビューポートでPTY子プロセスをホストするシェル
-

@@ -1,11 +1,13 @@
 ---
 title: "Scheduler"
-description: "Der Scheduler führt Prozesse mit einem Work-Stealing-Design aus. Worker pflegen lokale Deques und stehlen voneinander, wenn sie untätig sind."
+description: "Wie Wippy Prozessarbeit plant, Events weiterleitet, Worker-Queues verwaltet und Prozesse herunterfährt."
 ---
 
 # Scheduler
 
-Der Scheduler führt Prozesse mit einem Work-Stealing-Design aus. Worker pflegen lokale Deques und stehlen voneinander, wenn sie untätig sind.
+Der Scheduler führt Prozesse auf Workern mit lokalen Deques, Inject-Queues, einer globalen Queue und Work-Stealing aus.
+
+Diese Seite ist eine Implementierungsreferenz. Ihre Go-Strukturen und Diagramme beschreiben den Scheduler der festgelegten Runtime, keine von Anwendungscode zu implementierenden APIs.
 
 ## Process-Interface
 
@@ -25,16 +27,16 @@ type Process interface {
 | `Step` | Zustandsmaschine mit eingehenden Events vorantreiben, Yields in Output schreiben |
 | `Close` | Ressourcen freigeben |
 
-Der `method`-Parameter in `Init` spezifiziert welchen Einstiegspunkt aufgerufen werden soll. Eine Prozessinstanz kann mehrere Einstiegspunkte exponieren, und der Aufrufer wählt welchen er ausführen möchte. Dies dient auch als Verifikation, dass der Scheduler den Prozess korrekt initiiert.
+Der Parameter `method` von `Init` legt den aufzurufenden Einstiegspunkt fest. Eine Prozessinstanz kann mehrere Einstiegspunkte bereitstellen; der Aufrufer wählt den auszuführenden aus.
 
 Der Scheduler ruft `Step()` wiederholt auf, übergibt Events (Yield-Completions, Nachrichten) und sammelt Yields (Commands zum Dispatchen). Der Prozess schreibt seinen Status und alle Yields in den `StepOutput`-Buffer.
 
 ```go
 type Event struct {
-    Type  EventType  // EventYieldComplete oder EventMessage
-    Tag   uint64     // Korrelationstag für Yield-Completions
-    Data  any        // Ergebnisdaten oder Nachrichten-Payload
-    Error error      // Fehler wenn Yield fehlgeschlagen
+    Type  EventType  // EventYieldComplete or EventMessage
+    Tag   uint64     // Correlation tag for yield completions
+    Data  any        // Result data or message payload
+    Error error      // Error if yield failed
 }
 ```
 
@@ -74,14 +76,14 @@ Jeder Worker besitzt eine Chase-Lev Work-Stealing-Deque:
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // Diebe stehlen hier (CAS)
-    bottom atomic.Int64  // Besitzer pusht/poppt hier
+    top    atomic.Int64  // Thieves steal from here (CAS)
+    bottom atomic.Int64  // Owner pushes/pops here
 }
 ```
 
-Der Besitzer pusht und poppt von unten (LIFO) ohne Synchronisation. Diebe stehlen von oben (FIFO) per CAS. Dies gibt dem Besitzer cache-freundlichen Zugriff auf kürzlich gepushte Items während ältere Arbeit an Stealer verteilt wird.
+Der Besitzer pusht und poppt ohne Mutex von unten (LIFO); beim Poppen des letzten Elements koordiniert er sich per CAS mit Dieben. Diebe stehlen per CAS von oben (FIFO). So erhält der Besitzer cachefreundlichen Zugriff auf zuletzt hinzugefügte Elemente, während ältere Arbeit an Diebe verteilt wird.
 
-`StealHalfInto` nimmt die Hälfte der Items in einer CAS-Operation und reduziert Contention.
+`StealHalfInto` übernimmt in einer CAS-Operation höchstens die Hälfte der verfügbaren Elemente, begrenzt durch den Zielpuffer. Die Steal-Versuche der Worker verwenden einen Puffer für 32 Elemente.
 
 ## Adaptives Spinning
 
@@ -143,11 +145,11 @@ Beide schlagen die Ziel-PID in der `byPID`-Map nach und pushen das Package unter
 
 Ein zugelassener oder verworfener Push weckt anschließend den Prozess, wenn er idle oder blockiert ist. Die Neueinreihung läuft über injectOrGlobal, das in die Worker-eigene Inject-Queue des letzten Workers pusht, wenn der Prozess eine bekannte Worker-Affinität hat, und sonst auf die globale Queue zurückfällt.
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Bei Shutdown sendet der Scheduler Cancel-Events an alle laufenden Prozesse und wartet auf deren Abschluss oder Timeout. Worker beenden sich sobald keine Arbeit mehr übrig ist.
 
 ## Siehe auch
 
-- [Command-Dispatch](internals/dispatch.md) - Wie Yields Handler erreichen
-- [Prozessmodell](concepts/process-model.md) - High-Level-Konzepte
+- [Command-Dispatch](internals/dispatch.md) – wie Yields Handler erreichen
+- [Prozessmodell](concepts/process-model.md) – übergeordnete Konzepte

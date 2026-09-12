@@ -108,8 +108,7 @@ export default {
 
 The snapshot must include its provenance and hash. A dependency absent from the snapshot is bundled unless another documented build rule applies.
 
-For example, if the selected release tag is `v1.2.3`, the only canonical
-snapshot URL is
-`https://web-host.wippy.ai/v1.2.3/import-map.json`. Do not substitute the local
+For the Web Host 1.0.56 baseline, the canonical snapshot URL is
+`https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`. Do not substitute the local
 application URL, an unpinned `latest` URL, or a manually reconstructed package
 list.

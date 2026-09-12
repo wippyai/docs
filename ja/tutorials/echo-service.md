@@ -1,36 +1,51 @@
 ---
 title: "Echoサービス"
-description: "プロセス、チャネル、コルーチン、メッセージパッシング、スーパービジョンを実演する分散Echoサービスを構築します。"
+description: "チャネル、コルーチン、メッセージパッシング、プロセス監視を使うマルチプロセスEchoサービスを構築します。"
 ---
 
 # Echoサービス
 
-プロセス、チャネル、コルーチン、メッセージパッシング、スーパービジョンを実演する分散Echoサービスを構築します。
+複数のWippyプロセス、チャネル、コルーチン、メッセージパッシング、プロセス監視を使うCLI Echoサービスを構築します。
+
+**分類:** 実行可能なチュートリアルです。ローカルの単一ノードCLIアプリケーションに必要な
+レジストリとLuaソース一式に加え、起動・検証手順も掲載しています。
 
 ## 概要
 
 このチュートリアルでは、リレーサービスにメッセージを送信するCLIクライアントを作成し、リレーは各メッセージを処理するワーカーを生成します。以下を実演します：
 
-- **プロセス生成** - 子プロセスを動的に作成
-- **メッセージパッシング** - send/receiveによるプロセス間通信
-- **チャネルとselect** - 複数のイベントソースの多重化
-- **コルーチン** - プロセス内での並行実行
-- **プロセス登録** - 名前でプロセスを検索
-- **モニタリング** - 子プロセスのライフサイクル追跡
+- **プロセス生成** — 子プロセスを動的に作成
+- **メッセージパッシング** — send/receive操作でプロセス間通信
+- **チャネルとselect** — 複数のイベントソースを待機
+- **コルーチン** — プロセス内で並行処理を実行
+- **プロセス登録** — 名前でプロセスを検索
+- **モニタリング** — 子プロセスのライフサイクルを追跡
+
+## 前提条件
+
+- `wippy`として実行できるWippyランタイム`v0.3.32a`。`wippy version --short`で確認してください。
+- 対話型ターミナル。
+- 空の作業ディレクトリ。以下のファイルを追加する前に、プロジェクトとソースディレクトリを作成します：
+
+  ```bash
+  mkdir echo-service
+  cd echo-service
+  mkdir src
+  ```
 
 ## アーキテクチャ
 
 ```mermaid
 flowchart TB
     subgraph terminal["terminal.host"]
-        CLI["CLIプロセス"]
+        CLI["CLI Process"]
     end
 
     subgraph processes["process.host"]
-        Relay["リレープロセス<br/>(+ statsコルーチン)"]
-        W1["ワーカー1"]
-        W2["ワーカー2"]
-        W3["ワーカーN"]
+        Relay["Relay Process<br/>(+ stats coroutine)"]
+        W1["Worker 1"]
+        W2["Worker 2"]
+        W3["Worker N"]
     end
 
     CLI -->|"send('relay', 'echo', msg)"| Relay
@@ -90,7 +105,6 @@ entries:
     method: main
     modules:
       - io
-      - process
       - time
     security:
       policies: [app:policy]
@@ -100,7 +114,6 @@ entries:
     source: file://relay.lua
     method: main
     modules:
-      - process
       - logger
       - time
     security:
@@ -118,7 +131,6 @@ entries:
     source: file://worker.lua
     method: main
     modules:
-      - process
       - time
     security:
       policies: [app:policy]
@@ -155,7 +167,10 @@ local function main()
     local inbox = process.inbox()
     local events = process.events()
 
-    process.registry.register("relay")
+    local _, register_err = process.registry.register("relay")
+    if register_err then
+        error("cannot register relay: " .. tostring(register_err))
+    end
     logger:info("relay started", {pid = process.pid()})
 
     coroutine.spawn(stats_reporter)
@@ -191,7 +206,7 @@ local function main()
                 )
 
                 if err then
-                    logger:error("spawn failed", {error = err})
+                    logger:error("spawn failed", {error = tostring(err)})
                 else
                     stats.workers_spawned = stats.workers_spawned + 1
                 end
@@ -211,7 +226,7 @@ return { main = main }
 coroutine.spawn(stats_reporter)
 ```
 
-メイン関数とメモリを共有する並行コルーチンを作成します。コルーチンは`time.sleep`のようなI/O操作でyieldします。
+メイン関数とメモリを共有するコルーチンを起動します。コルーチンは`time.sleep`などのI/O操作でyieldします。
 
 **チャネルselect**
 
@@ -238,7 +253,7 @@ local echo = msg:payload():data()
 local worker_pid, err = process.spawn_monitored("app:worker", "app:processes", ...)
 ```
 
-spawnとmonitorを組み合わせます。ワーカーが終了すると、EXITイベントを受信します。
+ワーカーを生成して監視を開始します。ワーカーが終了すると、リレーが`EXIT`イベントを受信します。
 
 ## ワーカープロセス
 
@@ -253,7 +268,10 @@ local function main(sender_pid, data)
         worker = process.pid()
     }
 
-    process.send(sender_pid, "echo_response", response)
+    local _, send_err = process.send(sender_pid, "echo_response", response)
+    if send_err then
+        error("cannot send echo response: " .. tostring(send_err))
+    end
 
     return 0
 end
@@ -263,7 +281,7 @@ return { main = main }
 
 ## CLIプロセス
 
-CLIは登録名でメッセージを送信し、タイムアウト付きでレスポンスを待機します。
+CLIはリレーの登録名にメッセージを送信し、各レスポンスをタイムアウト付きで待機します。
 
 `src/cli.lua`を作成：
 
@@ -280,7 +298,7 @@ local function cyan(s) return "\027[36m" .. s .. reset end
 local function main()
     local inbox = process.inbox()
 
-    -- リレーが名前を登録するまで待機
+    -- Wait for relay to register its name
     local deadline = time.after("5s")
     while not process.registry.lookup("relay") do
         local tick = time.after("50ms")
@@ -295,8 +313,23 @@ local function main()
     io.print(dim("Type messages to echo. Ctrl+C to exit.\n"))
 
     while true do
-        io.write(yellow("> "))
-        local input = io.readline()
+        local _, write_err = io.write(yellow("> "))
+        if write_err then
+            io.eprint("cannot write prompt:", write_err)
+            return 1
+        end
+
+        local _, flush_err = io.flush()
+        if flush_err then
+            io.eprint("cannot flush prompt:", flush_err)
+            return 1
+        end
+
+        local input, read_err = io.readline()
+        if read_err then
+            io.eprint("cannot read input:", read_err)
+            return 1
+        end
 
         if not input or #input == 0 then
             break
@@ -306,9 +339,9 @@ local function main()
             sender = process.pid(),
             data = input
         }
-        local ok, err = process.send("relay", "echo", msg)
+        local _, err = process.send("relay", "echo", msg)
         if err then
-            io.print(dim("  error: relay not available"))
+            io.print(dim("  error: " .. tostring(err)))
         else
             local timeout = time.after("2s")
             local r = channel.select {
@@ -344,7 +377,7 @@ return { main = main }
 process.send("relay", "echo", msg)
 ```
 
-`process.send`は登録名を直接受け付けます。見つからない場合はエラーを返します。
+`process.send`は登録名を送信先として受け付け、その名前を解決できない場合はエラーを返します。
 
 **タイムアウトパターン**
 
@@ -355,7 +388,7 @@ local r = channel.select {
     timeout:case_receive()
 }
 if r.channel == timeout then
-    -- タイムアウト
+    -- timed out
 end
 ```
 
@@ -377,9 +410,24 @@ Type messages to echo. Ctrl+C to exit.
   from worker: {c49e0627-fcdf-53ec-a95d-6f84bc3715f3@app:processes|0x00005}
 ```
 
+ワーカーPIDは実行時に生成されるため、表示される値は異なります。複数行を入力し、各レスポンスが
+大文字になることを確認してください。空行を送信すると正常に終了します。
+
+## トラブルシューティングとクリーンアップ
+
+- `relay not ready`は、自動起動したリレーが5秒以内に登録されなかったことを示します。
+  ランタイムログでリレーの起動、ポリシー、レジストリエラーを確認してください。
+- `not allowed to spawn`または`not allowed to send`は、プロセスエントリに上記の
+  `app:process-policy`セキュリティコンテキストがないことを示します。
+- `no terminal host found`は`terminal.host`エントリがないことを示します。複数のターミナルホストがある場合は、
+  実行コマンドに`--host app:terminal`を追加してください。
+- 送信後のタイムアウトは、ワーカーがレスポンスを返さなかったことを示します。リレーログで生成エラーを確認し、
+  `app:worker`と`app:processes`がエントリ名と一致していることを確認してください。
+- 空行を送信するとCLIが終了します。ランタイムが動作し続ける場合はCtrl+Cを押してください。
+  使い捨ての演習であれば、ディレクトリを離れた後に`echo-service/`を削除してください。
+
 ## 次のステップ
 
-- [プロセス管理](lua/core/process.md)
-- [チャネル](lua/core/channel.md)
-- [時間とDuration](lua/core/time.md)
-
+- [プロセス管理](lua/core/process.md) — プロセスAPIリファレンス
+- [チャネル](lua/core/channel.md) — チャネルAPIリファレンス
+- [時間とDuration](lua/core/time.md) — 時間APIリファレンス

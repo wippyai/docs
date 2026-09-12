@@ -9,7 +9,9 @@ description: "TTL 지원이 있는 빠른 키-값 스토리지. 캐싱, 세션, 
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-TTL 지원이 있는 빠른 키-값 스토리지. 캐싱, 세션, 임시 상태에 이상적입니다.
+`store` 모듈은 선택적 TTL을 지원하는 키-값 스토리지를 제공합니다. 캐시 데이터, 세션 및 기타 임시 상태를 보관할 수 있습니다.
+
+이 페이지는 API 참조입니다. 코드 조각은 구성된 스토어, 아래에 나열된 권한, `owner` 또는 `new_value` 같은 애플리케이션 제공 값을 가정합니다. 획득 이후의 코드 조각은 기존의 활성 `cache` 핸들을 사용하며 독립 실행 함수가 아닙니다.
 
 스토어 설정은 [스토어](system/store.md)를 참조하세요.
 
@@ -29,10 +31,17 @@ if err then
     return nil, err
 end
 
-cache:set("user:123", {name = "Alice"}, 3600)
-local user = cache:get("user:123")
+local _, set_err = cache:set("user:123", {name = "Alice"}, 3600)
+if set_err then
+    cache:release()
+    return nil, set_err
+end
+
+local user, get_err = cache:get("user:123")
 
 cache:release()
+if get_err then return nil, get_err end
+return user
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -46,13 +55,14 @@ cache:release()
 선택적 TTL과 함께 값 저장:
 
 ```lua
-local cache = store.get("app:cache")
+-- Simple set
+local _, err = cache:set("user:123:name", "Alice")
+if err then return nil, err end
 
--- 단순 설정
-cache:set("user:123:name", "Alice")
-
--- TTL과 함께 설정 (300초 후 만료)
-cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+-- Set with TTL (expires in 300 seconds)
+local ok, ttl_err = cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+if ttl_err then return nil, ttl_err end
+return ok
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -68,10 +78,16 @@ cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
 키로 값 가져오기:
 
 ```lua
-local user = cache:get("user:123")
-if not user then
-    -- 키를 찾을 수 없거나 만료됨
+local errors = require("errors")
+
+local user, err = cache:get("user:123")
+if err then
+    if err:kind() == errors.NOT_FOUND then
+        return nil -- key missing or expired
+    end
+    return nil, err
 end
+return user
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -103,7 +119,9 @@ end
 스토어에서 키 제거:
 
 ```lua
-cache:delete("session:" .. session_id)
+local deleted, err = cache:delete("session:" .. session_id)
+if err then return nil, err end
+return deleted
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -116,10 +134,11 @@ cache:delete("session:" .. session_id)
 
 ## 엔트리 메타데이터 읽기
 
-`entry`는 값과 함께 그 `version`을 반환합니다. `version`은 낙관적 동시성에 사용되는 불투명한 문자열입니다:
+`entry`는 값과 함께 낙관적 동시성에 사용되는 불투명한 문자열인 `version`을 반환합니다.
 
 ```lua
 local e, err = cache:entry("user:123")
+if err then return nil, err end
 if e then
     print(e.key, e.value, e.version)
 end
@@ -137,13 +156,16 @@ end
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
+if err then return nil, err end
 for _, e in ipairs(page.items) do
     print(e.key, e.value)
 end
 
--- 다음 페이지
+-- next page
 if page.has_more then
-    page = cache:list({ prefix = "session:", after = page.cursor })
+    local next_page, next_err = cache:list({ prefix = "session:", after = page.cursor })
+    if next_err then return nil, next_err end
+    page = next_page
 end
 ```
 
@@ -160,14 +182,17 @@ end
 `put`은 값을 쓰고 새 `Entry`를 반환합니다. 옵션으로 낙관적 동시성을 활성화합니다:
 
 ```lua
--- 키가 존재하지 않을 때만 생성
+local errors = require("errors")
+
+-- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
     -- 다른 누군가가 보유 중
 end
 
--- compare-and-set: 버전이 여전히 일치할 때만 쓰기
-local cur = cache:entry("config")
+-- compare-and-set: write only if the version still matches
+local cur, read_err = cache:entry("config")
+if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
     -- 동시 쓰기가 이를 변경함; 다시 읽고 재시도
@@ -193,10 +218,11 @@ end
 `info`는 백엔드와 지원하는 기능을 보고하므로, 코드가 바인딩된 스토어에 맞춰 적응할 수 있습니다:
 
 ```lua
-local info = cache:info()
--- info.backend      -> store.backend.* 중 하나 (예: "kv.raft")
--- info.consistency  -> store.consistency.* 중 하나 (예: "linearizable")
--- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (불리언)
+local info, err = cache:info()
+if err then return nil, err end
+-- info.backend      -> one of store.backend.* (e.g. "kv.raft")
+-- info.consistency  -> one of store.consistency.* (e.g. "linearizable")
+-- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleans)
 ```
 
 **반환:** `Info, error` — `{id, backend, consistency, durable, list, versioned, conditional_put, ttl}`
@@ -209,8 +235,10 @@ local info = cache:info()
 | `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
 
 ```lua
-if cache:info().consistency == store.consistency.LINEARIZABLE then
-    -- compare-and-set 사용 안전
+local info, err = cache:info()
+if err then return nil, err end
+if info.consistency == store.consistency.LINEARIZABLE then
+    -- safe to use compare-and-set
 end
 ```
 

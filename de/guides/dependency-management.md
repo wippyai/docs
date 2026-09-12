@@ -1,17 +1,19 @@
 ---
-title: "Abhangigkeitsverwaltung"
-description: "Wippy verwendet ein Lock-Datei-basiertes Abhangigkeitssystem. Module werden im Hub veroffentlicht, als Abhangigkeiten in Ihrem Quellcode deklariert und…"
+title: "Abhängigkeitsverwaltung"
+description: "Deklarieren, lösen, installieren, aktualisieren, ersetzen und prüfen Sie Wippy-Modulabhängigkeiten mit einer Lock-Datei."
 ---
 
-# Abhangigkeitsverwaltung
+# Abhängigkeitsverwaltung
 
-Wippy verwendet ein Lock-Datei-basiertes Abhangigkeitssystem. Module werden im Hub veroffentlicht, als Abhangigkeiten in Ihrem Quellcode deklariert und in einer `wippy.lock`-Datei aufgelost, die exakte Versionen verfolgt.
+Wippy löst Modulabhängigkeiten aus Quelldeklarationen auf und zeichnet exakte Versionen in `wippy.lock` auf. Veröffentlichte Module werden vom Hub in das Modulverzeichnis des Projekts heruntergeladen.
+
+Die folgenden Modulnamen, Versionen, Hashes und lokalen Pfade unter `acme/*` dienen nur als Beispiele. Verwenden Sie Module und geprüfte Digests aus Ihrem eigenen Projekt oder dem Hub.
 
 ## Projektdateien
 
 ### wippy.lock
 
-Die Lock-Datei verfolgt die Verzeichnisstruktur Ihres Projekts und die fixierten Abhangigkeiten:
+Die Lock-Datei verfolgt die Verzeichnisstruktur Ihres Projekts und die fixierten Abhängigkeiten:
 
 ```yaml
 directories:
@@ -28,7 +30,7 @@ modules:
 
 | Feld | Beschreibung |
 |------|--------------|
-| `directories.modules` | Speicherort fur heruntergeladene Module (Standard: `.wippy`) |
+| `directories.modules` | Speicherort für heruntergeladene Module (Standard: `.wippy`) |
 | `directories.src` | Speicherort Ihres Quellcodes (Standard: `./src`) |
 | `modules[].name` | Modulbezeichner im Format `org/module` |
 | `modules[].version` | Fixierte semantische Version |
@@ -38,7 +40,7 @@ modules:
 
 ### wippy.yaml
 
-Modul-Metadaten fur die Veroffentlichung. Nur erforderlich, wenn Sie ein eigenes Modul veroffentlichen:
+Modul-Metadaten für die Veröffentlichung. Nur erforderlich, wenn Sie ein eigenes Modul veröffentlichen:
 
 ```yaml
 organization: acme
@@ -56,17 +58,17 @@ keywords:
 |------|--------------|--------------|
 | `organization` | Ja | Kleinbuchstaben, alphanumerisch mit Bindestrichen |
 | `module` | Ja | Kleinbuchstaben, alphanumerisch mit Bindestrichen |
-| `version` | Nein | Semantische Version (wird beim Veroffentlichen gesetzt) |
+| `version` | Nein | Semantische Version (wird beim Veröffentlichen gesetzt) |
 | `description` | Nein | Modulbeschreibung |
 | `license` | Nein | SPDX-Lizenzbezeichner |
 | `repository` | Nein | URL des Quell-Repositorys |
 | `homepage` | Nein | Projekt-Homepage |
-| `keywords` | Nein | Schlusselworter zur Auffindbarkeit |
+| `keywords` | Nein | Schlüsselwörter zur Auffindbarkeit |
 | `authors` | Nein | Autorenliste |
 
-## Abhangigkeiten deklarieren
+## Abhängigkeiten deklarieren
 
-Fugen Sie `ns.dependency`-Eintrage in Ihrer `_index.yaml` hinzu:
+Fügen Sie `ns.dependency`-Einträge in Ihrer `_index.yaml` hinzu:
 
 ```yaml
 version: "1.0"
@@ -94,7 +96,7 @@ entries:
 | Platzhalter | `*` | Jede Version (wahlt die hochste) |
 | Kombiniert | `>=1.0.0 <2.0.0` | Zwischen 1.0.0 und 2.0.0 |
 
-### Auflosungsregeln
+### Auflösungsregeln
 
 - Jedes Modul wird gegen die **Schnittmenge aller deklarierten Bereiche** im Abhangigkeitsgraphen aufgelost. Inkompatible Bereiche (Diamond-Konflikte) lassen die Auflosung mit einem expliziten Fehler fehlschlagen, statt stillschweigend eine Seite zu wahlen.
 - Ein vollständiges `wippy update` löst jedes Modul aus seinen deklarierten Bereichen auf; ein gezieltes Update und die Reparatur beim Start behalten eine gepinnte Version, die weiterhin jeden aktiven Bereich erfüllt.
@@ -103,7 +105,7 @@ entries:
 
 Zwei Auflösungsfehler werden unterschiedlich gemeldet. Ein Constraint-Ausdruck, den kein jemals veröffentlichtes Release erfüllen kann — die Schnittmenge der aktiven Bereiche ist leer — ist ein Konflikt, und der Fehler nennt das Modul und jeden Anforderer, der einen Bereich beigesteuert hat. Eine gültige Bereichsmenge, für die der Hub derzeit keine passende Version veröffentlicht, ist dagegen ein Verfügbarkeitsfehler: Ein späteres Release kann sie auflösbar machen, ohne dass sich an den Deklarationen etwas ändert.
 
-Die Runtime persistiert jeden aufgelosten Graphen in ihrer Registry-Historie und spielt ihn beim Start wieder ab, statt neu aufzulosen, sodass eine deployte Anwendung mit genau den Versionen bootet, die beim Anwenden der Abhangigkeitsanderung aufgelost wurden. `wippy.lock` bleibt der portable Snapshot fur Quellprojekte.
+Die Runtime persistiert jeden aufgelösten Graphen in ihrer Registry-Historie und spielt ihn beim Start wieder ab, statt neu aufzulösen, sodass eine deployte Anwendung mit genau den Versionen bootet, die beim Anwenden der Abhängigkeitsänderung aufgelöst wurden. `wippy.lock` bleibt der portable Snapshot für Quellprojekte.
 
 ### Herkunft von Eintragen
 
@@ -126,7 +128,7 @@ wippy init
 
 Erstellt eine `wippy.lock` mit Standardverzeichnissen.
 
-### Abhangigkeiten hinzufugen
+### Abhängigkeiten hinzufügen
 
 ```bash
 wippy add acme/http               # Latest version
@@ -140,9 +142,9 @@ Dies aktualisiert die Lock-Datei. Dann installieren:
 wippy install
 ```
 
-### Aus dem Quellcode auflosen
+### Aus dem Quellcode auflösen
 
-Wenn Ihr Quellcode bereits `ns.dependency`-Eintrage deklariert:
+Wenn Ihr Quellcode bereits `ns.dependency`-Einträge deklariert:
 
 ```bash
 wippy update
@@ -150,7 +152,7 @@ wippy update
 
 Dies durchsucht Ihr Quellverzeichnis, lost alle Abhangigkeitsbeschrankungen auf, aktualisiert die Lock-Datei und installiert die Module.
 
-### Abhangigkeiten aktualisieren
+### Abhängigkeiten aktualisieren
 
 ```bash
 wippy update                       # Re-resolve all dependencies
@@ -158,13 +160,13 @@ wippy update acme/http             # Update only acme/http
 wippy update acme/http acme/sql    # Update specific modules
 ```
 
-Beim Aktualisieren bestimmter Module bleiben andere Module auf ihren aktuellen Versionen fixiert. Falls die Aktualisierung Anderungen an nicht ausgewahlten Modulen erfordert, werden Sie zur Bestatigung aufgefordert.
+Beim Aktualisieren bestimmter Module bleiben andere Module auf ihren aktuellen Versionen fixiert. Falls die Aktualisierung Änderungen an nicht ausgewählten Modulen erfordert, werden Sie zur Bestätigung aufgefordert.
 
 ### Aus der Lock-Datei installieren
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # Jedes Modul erneut herunterladen (--force und --repair sind Aliase)
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## Modulspeicher
@@ -211,7 +213,7 @@ Module, die aus einer [Workspace-Ersetzung](#local-development-with-replacements
 
 ## Lokale Entwicklung mit Ersetzungen
 
-Uberschreiben Sie Hub-Module mit lokalen Verzeichnissen fur die Entwicklung. Ersetzungen werden im `workspace`-Abschnitt einer Runtime-Konfigurationsdatei deklariert — typischerweise einer privaten, git-ignorierten, die auf `.wippy.yaml` komponiert wird:
+Ordnen Sie Hub-Module für die lokale Entwicklung lokalen Verzeichnissen im Abschnitt `workspace` einer Runtime-Konfigurationsdatei zu. Üblicherweise ist dies eine private, ignorierte Datei, die über `.wippy.yaml` gelegt wird:
 
 ```yaml
 # .wippy.workspace.yaml
@@ -232,19 +234,19 @@ Der Pfad muss nur fur ein Modul existieren und ein Verzeichnis sein, das der Loc
 
 Eine Ersetzung ändert, woher der Quellcode eines Moduls kommt, nicht welches Release gewählt wurde. Der Ladepfad behält die Version und den Digest, die der Lock fur dieses Modul ausgewählt hat, und wird als Ersetzung markiert; daraus geladene Eintrage überschatten die vendorierten mit derselben ID. Ist eine Ersetzung fur ein Modul deklariert, fur das der Lock keine Version fixiert, fragt die Auflösung den Hub nach einer Release-Version und hält bis zu einem stärkeren Beleg eine nur lokal gültige Null-Version.
 
-Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Anderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch fur Ersetzungsverzeichnisse, sowohl beim Laden von Eintragen als auch beim Hashen des Inhalts.
+Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Änderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch für Ersetzungsverzeichnisse, sowohl beim Laden von Einträgen als auch beim Hashen des Inhalts.
 
-Ein `replacements:`-Abschnitt in `wippy.lock` ist veraltet: Er wird noch geladen, gibt aber eine Warnung aus. Verschieben Sie diese Eintrage nach `workspace.replacements` in einer Konfigurationsdatei.
+Der Abschnitt `replacements:` in `wippy.lock` ist veraltet. Er wird weiterhin mit einer Warnung geladen; verschieben Sie diese Einträge nach `workspace.replacements` in einer Konfigurationsdatei.
 
 ## Ladereihenfolge
 
-Beim Start ladt Wippy Eintrage aus Verzeichnissen in dieser Reihenfolge:
+Beim Start lädt Wippy Einträge aus Verzeichnissen in dieser Reihenfolge:
 
 1. Quellverzeichnis (`src`)
 2. Ersetzungsverzeichnisse
 3. Herstellergebundene Modulverzeichnisse
 
-Module mit aktiven Ersetzungen uberspringen ihren Vendor-Pfad.
+Module mit aktiven Ersetzungen überspringen ihren Vendor-Pfad.
 
 ## Integritatsprufung
 

@@ -9,7 +9,11 @@ description: "Codifique dados binarios para strings base64 e decodifique base64 
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Codifique dados binarios para strings base64 e decodifique base64 de volta para binario. Usa codificação base64 padrão conforme RFC 4648.
+O módulo `base64` codifica strings e dados binários usando o Base64 padrão da RFC 4648 e os decodifica novamente em bytes.
+
+Esta é uma referência de API. Expressões que mostram apenas a saída representam valores de sucesso; os exemplos de sistema de arquivos e transporte verificam o segundo retorno opcional `error` antes de consumir os dados. Nomes como `username`, `password`, `encoded_image` e `user_input` são strings fornecidas pela aplicação.
+
+Base64 é uma codificação, não criptografia nem autenticação. Não a use para ocultar segredos ou verificar se os dados foram alterados. Envie credenciais de autenticação Basic apenas por TLS e obtenha-as do armazenamento de segredos da aplicação, não de valores literais.
 
 ## Carregamento
 
@@ -17,57 +21,63 @@ Codifique dados binarios para strings base64 e decodifique base64 de volta para 
 local base64 = require("base64")
 ```
 
+Adicione `base64` à lista `modules:` da entrada executável antes de importá-lo. Os exemplos de sistema de arquivos e JSON também exigem `fs` e `json`, respectivamente.
+
 ## Codificação
 
-### Codificar Dados
+### `encode`
 
-Codifica uma string (incluindo dados binarios) para base64.
+Codifica uma string, inclusive dados binários, como Base64.
 
 ```lua
--- Codificar texto
-local encoded = base64.encode("Hello, World!")
+-- Encode text
+local encoded, err = base64.encode("Hello, World!")
+if err then return nil, err end
 print(encoded)  -- "SGVsbG8sIFdvcmxkIQ=="
 
 -- Codificar dados binarios (ex: de arquivo)
 local image_data = fs.get("app:data"):readfile("photo.jpg")
 local image_b64 = base64.encode(image_data)
 
--- Codificar JSON para transporte
+-- Encode JSON for transport
 local json = require("json")
-local payload = json.encode({user = "alice", action = "login"})
-local token_part = base64.encode(payload)
+local payload, json_err = json.encode({user = "alice", action = "login"})
+if json_err then return nil, json_err end
+local token_part, token_err = base64.encode(payload)
+if token_err then return nil, token_err end
 
--- Codificar credenciais
-local credentials = base64.encode("username:password")
+-- Encode credentials
+local credentials, credentials_err = base64.encode(username .. ":" .. password)
+if credentials_err then return nil, credentials_err end
 local auth_header = "Basic " .. credentials
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `data` | string | Dados para codificar (texto ou binario) |
+| `data` | string | Dados a codificar (texto ou binário) |
 
-**Retorna:** `string, error` - Entrada de string vazia retorna string vazia.
+**Retorna:** `string, error` — uma entrada vazia retorna uma string vazia
 
 ## Decodificação
 
-### Decodificar Dados
+### `decode`
 
-Decodifica uma string base64 de volta para dados originais.
+Decodifica uma string Base64 em seus bytes originais.
 
 ```lua
--- Decodificar texto
-local decoded = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+-- Decode text
+local decoded, decode_err = base64.decode("SGVsbG8sIFdvcmxkIQ==")
+if decode_err then return nil, decode_err end
 print(decoded)  -- "Hello, World!"
 
--- Decodificar com tratamento de erro
+-- Decode with error handling
 local data, err = base64.decode(user_input)
 if err then
     return nil, errors.new("Invalid base64 data"):kind(errors.INVALID)
 end
 
--- Decodificar dados binarios
-local image_b64 = request.body
-local image_data, err = base64.decode(image_b64)
+-- Decode binary data
+local image_data, err = base64.decode(encoded_image)
 if err then
     return nil, err
 end
@@ -78,18 +88,20 @@ local json = require("json")
 local doc = json.decode(base64.decode(encoded_json))
 ```
 
+O bloco final demonstra apenas o tratamento de delimitadores. Ele não analisa nem verifica um formato de token assinado.
+
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `data` | string | String codificada em base64 |
+| `data` | string | String codificada em Base64 |
 
-**Retorna:** `string, error` - Entrada de string vazia retorna string vazia.
+**Retorna:** `string, error` — uma entrada vazia retorna uma string vazia
 
 ## Erros
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
-| Entrada não e string | `errors.INVALID` | não |
-| Caracteres base64 inválidos | `errors.INVALID` | não |
+| Entrada não é uma string | `errors.INVALID` | não |
+| Caracteres Base64 inválidos | `errors.INVALID` | não |
 | Padding corrompido | `errors.INVALID` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.

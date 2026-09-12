@@ -28,7 +28,7 @@ entries:
   - name: dependency.test
     kind: ns.dependency
     component: wippy/test
-    version: "^0.3.0"
+    version: "*"
 ```
 
 Luego resuelva e instale:

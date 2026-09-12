@@ -9,6 +9,8 @@ description: "Wippy incluye un sistema de tipos gradual con verificación sensib
 
 Wippy incluye un sistema de tipos gradual con verificación sensible al flujo. Los tipos no son anulables por defecto.
 
+Esta página es una referencia del lenguaje, no un programa completo. Cada bloque de código es un ejemplo aislado de comprobación de tipos, y las alternativas dentro de un bloque no están pensadas necesariamente para combinarse. Nombres como `get_data`, `get_user`, `call` y `User` representan código de la aplicación; las líneas marcadas `ERROR` muestran diagnósticos intencionadamente. Estos ejemplos usan sintaxis del lenguaje y valores de tipo integrados, por lo que no requieren módulos del runtime.
+
 ## Primitivos
 
 ```lua
@@ -16,16 +18,17 @@ local n: number = 3.14
 local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- dynamic member and method access
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
-### any vs unknown
+### `any` y `unknown`
 
 ```lua
--- any: opt-out of type checking
+-- any: dynamic member and method access
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
+local s: string = a          -- ERROR: any is not assignable to string
 
 -- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
@@ -203,7 +206,7 @@ local function render(state: LoadState): string
 end
 ```
 
-## El Tipo never
+## El tipo `never`
 
 `never` es el tipo de fondo — no existen valores:
 
@@ -215,7 +218,7 @@ end
 
 ## Patrón de Manejo de Errores
 
-El verificador entiende el modismo de error de Lua:
+El checker entiende el patrón habitual de retorno `value, error` de Lua:
 
 ```lua
 local value, err = call()
@@ -254,17 +257,19 @@ Funciona con primitivos y tipos personalizados:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- requires an existing string
+local n = integer(x)                 -- requires an existing integer
+local b = boolean(x)                 -- requires an existing boolean
 
 type Point = {x: number, y: number}
 local p = Point(data)                -- validates record structure
 ```
 
+Por ejemplo, `string(42)` genera un error de validación; usa `tostring(42)` cuando quieras convertir el valor.
+
 ### Método Type:is()
 
-Valida sin lanzar excepción, retorna `(value, nil)` o `(nil, error)`:
+`Type:is` valida sin lanzar una excepción y devuelve `(value, nil)` o `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -373,6 +378,8 @@ end
 print(Predicate:ret():kind())        -- "boolean"
 ```
 
+`typeof(expression)` es sintaxis de tipos, no una función de reflexión durante la ejecución. Úsala en un alias como `type Config = typeof(default_config)`; el alias resultante es el valor de tipo durante la ejecución.
+
 ### Comparación de Tipos
 
 ```lua
@@ -418,11 +425,12 @@ type StringMap = {[string]: number}
 
 ## Validadores de Tipo
 
-Agregue restricciones de validación en tiempo de ejecución a los tipos usando anotaciones:
+Adjunta restricciones de validación a alias de tipo mediante anotaciones y después llama al tipo o usa `Type:is()` para aplicarlas durante la ejecución:
 
 ```lua
--- Single validator
-local x: number @min(0) = 1
+type NonNegative = number @min(0)
+type Percentage = number @min(0) @max(100)
+type Email = string @pattern("^.+@.+$")
 
 -- Multiple validators
 local x: number @min(0) @max(100) = 50
@@ -435,11 +443,11 @@ local email: string @pattern("^.+@.+$") = "test@example.com"
 
 | Validador | Aplica a | Ejemplo |
 |-----------|----------|---------|
-| `@min(n)` | number | `local x: number @min(0) = 1` |
-| `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
-| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+| `@min(n)` | number | `type Positive = number @min(1)` |
+| `@max(n)` | number | `type Percentage = number @max(100)` |
+| `@min_len(n)` | string, array | `type NonEmpty = string @min_len(1)` |
+| `@max_len(n)` | string, array | `type ShortName = string @max_len(10)` |
+| `@pattern(regex)` | string | `type Email = string @pattern("^.+@.+$")` |
 
 ### Validadores de Campo de Registro
 

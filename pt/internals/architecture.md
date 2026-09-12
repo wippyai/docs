@@ -5,11 +5,9 @@ description: "Wippy é um sistema em camadas construído em Go. Componentes inic
 
 # Arquitetura
 
-<note>
-Esta página está em construção. O conteúdo pode estar incompleto ou mudar.
-</note>
-
 Wippy é um sistema em camadas construído em Go. Componentes inicializam em ordem de dependência, comunicam-se através de um barramento de eventos e executam processos Lua via um scheduler de work-stealing.
+
+Esta é uma referência de implementação. Os diagramas e tipos Go descrevem internals do runtime, e não entradas do registro da aplicação ou APIs de extensão.
 
 ## Camadas
 
@@ -44,21 +42,22 @@ Cria infraestrutura central antes de qualquer componente carregar:
 
 O Loader resolve dependências via ordenação topológica e carrega componentes nível por nível, um componente por vez.
 
-Os componentes core (PIDGen, Dispatcher, Registry, Finder, Supervisor) inicializam primeiro, seguidos pelos componentes de sistema (Topology, Lifecycle, Factory, Functions, Contracts). Os níveis concretos são calculados em tempo de execução a partir do grafo de dependências, então a ordenação se adapta à medida que componentes são adicionados ou removidos.
+As arestas de dependência determinam os níveis; grupos de pacotes como Core e System não impõem uma ordem global separada. Portanto, componentes sem uma aresta de dependência podem ficar no mesmo nível, independentemente do grupo de pacotes.
 
 Cada componente se anexa ao contexto durante Load, disponibilizando serviços para componentes dependentes.
 
 ### Fase 3: Ativação
 
-Após todos os componentes carregarem:
+Depois que todos os componentes são carregados:
 
-1. **Congelar Dispatcher** - Bloqueia registro de handlers de comando para lookups sem lock
-2. **Selar AppContext** - Nenhuma escrita mais permitida, habilita leituras sem lock
-3. **Iniciar Componentes** - Chama `Start()` em cada componente com interface `Starter`
+1. **Iniciar serviços do runtime** — Chama `StartRuntimeServices(ctx)`
+2. **Congelar o Dispatcher** — Bloqueia o registro de handlers de comandos para consultas sem lock
+3. **Selar o AppContext** — Impede novas escritas e habilita leituras sem lock
+4. **Iniciar componentes** — Chama `Start()` em cada componente que implementa `Starter`
 
 ### Fase 4: Carregamento de Entradas
 
-Entradas do registro (de arquivos YAML) são carregadas e validadas:
+As entradas do registro provenientes dos manifests `_index.json`, `_index.yaml` e `_index.yml` do projeto são carregadas e validadas:
 
 1. Entradas parseadas dos arquivos do projeto
 2. Estágios de pipeline transformam entradas (override, link, bytecode)
@@ -75,9 +74,9 @@ Componentes são serviços Go que participam do ciclo de vida da aplicação.
 |------|--------|-----------|
 | Load | `Load(ctx) (ctx, error)` | Inicializar e anexar ao contexto |
 | Start | `Start(ctx) error` | Iniciar operação ativa |
-| Stop | `Stop(ctx) error` | Shutdown gracioso |
+| Stop | `Stop(ctx) error` | Encerramento gracioso |
 
-Componentes declaram dependências. O loader constrói um grafo acíclico direcionado e executa em ordem topológica. Shutdown ocorre em ordem reversa.
+Os componentes declaram dependências. O carregador constrói um grafo acíclico direcionado e executa em ordem topológica. O encerramento ocorre em ordem reversa.
 
 ### Componentes Padrão
 
@@ -88,20 +87,20 @@ Componentes declaram dependências. O loader constrói um grafo acíclico direci
 | Registry | Artifact | Armazenamento e versionamento de entradas |
 | Finder | Registry | Lookup e busca de entradas |
 | Supervisor | Registry | Políticas de reinício de serviço |
-| Topology | Supervisor | Árvore pai/filho de processos |
+| Topology | nenhuma | Árvore pai/filho de processos |
 | Lifecycle | Topology | Gerenciamento de ciclo de vida de serviços |
-| Factory | Lifecycle | Spawn de processos |
-| Functions | Factory | Chamadas de funções stateless |
+| Factory | nenhuma | Criação de processos |
+| Functions | Registry | Execução de funções em pool |
 
-## Event Bus
+## Barramento de eventos :id=event-bus
 
 Pub/sub assíncrono para comunicação entre componentes.
 
 ### Design
 
 - Goroutine única de dispatcher processa todos os eventos
-- Entrega de ações baseada em fila previne bloqueio de publishers
-- Pattern matching suporta tópicos exatos e wildcards (`*`)
+- Publishers enfileiram ações sem aguardar a entrega aos subscribers
+- O pattern matching aceita valores exatos, `*`, `**` e alternância de segmentos
 - Ciclo de vida baseado em contexto vincula inscrições a cancelamento
 
 ### Fluxo de Eventos
@@ -112,9 +111,9 @@ sequenceDiagram
     participant B as EventBus
     participant S as Subscribers
 
-    P->>B: Publish(topic, data)
+    P->>B: Send(ctx, Event)
     B->>B: Match patterns
-    B->>S: Queue action
+    B->>S: Deliver on subscriber channel
     S->>S: Execute callback
 ```
 
@@ -122,7 +121,7 @@ sequenceDiagram
 
 Cada evento carrega um `System` e um `Kind`. Os sistemas integrados publicam:
 
-| Sistema | Kind | Propósito |
+| Sistema | Tipo | Propósito |
 |---------|------|-----------|
 | `registry` | `entry.create`, `entry.update`, `entry.delete`, `entry.accept`, `entry.reject` | Mutações de entradas |
 | `registry` | `registry.begin`, `registry.commit`, `registry.discard` | Limites de transação |
@@ -155,7 +154,7 @@ Estágios de pipeline transformam entradas:
 | Estágio | Propósito |
 |---------|-----------|
 | Override | Aplicar overrides de config |
-| Disable | Remover entradas por padrão |
+| Desativar | Remover entradas por padrão |
 | Link | Resolver requirements e dependências |
 | Bytecode | Compilar Lua para bytecode |
 | EmbedFS | Coletar entradas de filesystem |
@@ -169,7 +168,7 @@ Roteamento de mensagens entre processos através de nós.
 ```mermaid
 flowchart LR
     subgraph Router
-        Local[Local Node] --> Peer[Peer Nodes]
+        Local[Local Node] --> Peer[Registered Peers]
         Peer --> Inter[Internode]
     end
 
@@ -200,13 +199,13 @@ Dicionário selado para referências de componentes.
 | Antes de selar | Escritas de thread única durante a inicialização |
 | Após selar | Leituras sem lock, panic em escrita |
 | Chaves duplicadas | Panic |
-| Type safety | Funções getter tipadas |
+| Segurança de tipos | Funções de acesso tipadas |
 
-Componentes anexam serviços durante a fase Load. Após boot completar, AppContext é selado para performance ótima de leitura.
+Os componentes anexam serviços durante a fase Load. Quando o boot termina, o AppContext é selado, permitindo leituras sem lock e impedindo novas escritas.
 
-## Shutdown
+## Encerramento :id=shutdown
 
-Shutdown gracioso prossegue em ordem reversa de dependência:
+Encerramento gracioso prossegue em ordem reversa de dependência:
 
 1. SIGINT/SIGTERM aciona shutdown
 2. Supervisor para serviços gerenciados
@@ -215,9 +214,9 @@ Shutdown gracioso prossegue em ordem reversa de dependência:
 
 Segundo sinal força saída imediata.
 
-## Veja Também
+## Consulte também
 
-- [Scheduler](internals/scheduler.md) - Execução de processos
-- [Event Bus](internals/events.md) - Sistema pub/sub
-- [Registry](internals/registry.md) - Gerenciamento de estado
-- [Command Dispatch](internals/dispatch.md) - Tratamento de yields
+- [Scheduler](internals/scheduler.md) — Execução de processos
+- [Event bus](internals/events.md) — Sistema pub/sub
+- [Registro](internals/registry.md) — Gerenciamento de estado
+- [Despacho de comandos](internals/dispatch.md) — Tratamento de yields

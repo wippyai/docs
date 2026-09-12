@@ -5,8 +5,6 @@ description: "Projektlayout, YAML-Definitionsdateien und Namenskonventionen."
 
 # YAML & Projektstruktur
 
-Projektlayout, YAML-Definitionsdateien und Namenskonventionen.
-
 ## Verzeichnisstruktur
 
 ```
@@ -27,10 +25,10 @@ myapp/
 ## YAML-Definitionsdateien
 
 <note>
-YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die maßgebliche Datenquelle — YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
+YAML-Definitionen werden beim Start in die Registry geladen. Die Registry ist die maßgebliche Datenquelle; YAML-Dateien sind eine Möglichkeit, sie zu befüllen. Einträge können auch aus anderen Quellen stammen oder programmatisch erstellt werden.
 </note>
 
-### Dateistruktur
+### Format einer Definitionsdatei
 
 Jede YAML-Datei mit einem `namespace` plus entweder einem `entries`-Array oder einem `name`+`kind` auf oberster Ebene ist eine gültige Definitionsdatei. `version` ist optional:
 
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Ruft Benutzer nach ID ab
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Benutzer-API-Endpunkt
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -69,18 +67,18 @@ entries:
 Verwenden Sie Punkte (`.`) zur semantischen Trennung und Unterstriche (`_`) für Wörter:
 
 ```yaml
-# Funktion und ihr Endpunkt
-- name: get_user              # Die Funktion
-- name: get_user.endpoint     # Ihr HTTP-Endpunkt
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# Mehrere Endpunkte für dieselbe Funktion
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# Router
-- name: api.public            # Öffentlicher API-Router
-- name: api.admin             # Admin-API-Router
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
@@ -132,14 +130,14 @@ Ein `replacements:`-Abschnitt in `wippy.lock` ist veraltet. Er wird weiterhin ge
 
 ## Entry-Definitionen
 
-Jeder Eintrag steht im `entries`-Array. Eigenschaften befinden sich auf oberster Ebene (kein `data:`-Wrapper):
+Jedes Element des `entries`-Arrays definiert einen Eintrag. Kind-spezifische Felder können wie in diesem Beispiel neben `name`, `kind` und `meta` stehen:
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Gibt Hello World zurück
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -149,10 +147,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Hello-Endpunkt
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+Ein explizites `data:`-Feld wird ebenfalls unterstützt. Ist es vorhanden, bildet sein Wert den vollständigen Kind-spezifischen Payload; mischen Sie ihn daher nicht mit Kind-spezifischen Geschwisterfeldern:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### Metadaten
@@ -163,12 +173,12 @@ Verwenden Sie `meta` für benutzerfreundliche Informationen:
 - name: payment_handler
   kind: function.lua
   meta:
-    title: Zahlungsprozessor
-    comment: Verarbeitet Stripe-Zahlungen
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-Konvention: `meta.title` und `meta.comment` werden in Verwaltungsoberflächen ansprechend dargestellt.
+Verwenden Sie `meta.title` und `meta.comment` für beschreibende Informationen, die Registry-Verbraucher und Verwaltungsoberflächen anzeigen können.
 
 ### Anwendungseinträge
 
@@ -178,7 +188,7 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 - name: config
   kind: registry.entry
   meta:
-    title: Anwendungseinstellungen
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -188,17 +198,17 @@ Verwenden Sie `registry.entry`-Kind für Konfiguration auf Anwendungsebene:
 
 ## Häufige Entry-Typen
 
-| Kind | Zweck |
+| Art | Zweck |
 |------|-------|
-| `registry.entry` | Allgemeine Daten |
+| `registry.entry` | Allgemeine Daten, die ohne normalen Event-Versand gespeichert werden |
 | `function.lua` | Aufrufbare Lua-Funktion |
 | `process.lua` | Langlebiger Prozess |
 | `http.service` | HTTP-Server |
 | `http.router` | Routengruppe |
 | `http.endpoint` | HTTP-Handler |
-| `process.host` | Prozess-Supervisor |
+| `process.host` | Host für die Prozessausführung |
 
-Siehe [Entry-Typen-Anleitung](guides/entry-kinds.md) für vollständige Referenz.
+Die Entry-Kinds beschreibt der [Leitfaden zu Entry-Kinds](guides/entry-kinds.md).
 
 ## Konfigurationsdateien
 
@@ -220,7 +230,7 @@ supervisor:
     worker_count: 16
 ```
 
-Siehe [Konfigurationsanleitung](guides/configuration.md) für alle Optionen.
+Die Runtime-Konfigurationsfelder beschreibt der [Konfigurationsleitfaden](guides/configuration.md).
 
 ### wippy.lock
 
@@ -270,7 +280,7 @@ myapp/
 
 ## Siehe auch
 
-- [Anwendungsarchitektur](concepts/architecture.md) - Wie eine App in Slices und Schichten zerlegt wird
-- [Entry-Typen-Anleitung](guides/entry-kinds.md) - Verfügbare Entry-Typen
-- [Konfigurationsanleitung](guides/configuration.md) - Runtime-Optionen
-- [Benutzerdefinierte Entry-Typen](internals/kinds.md) - Handler implementieren (fortgeschritten)
+- [Anwendungsarchitektur](concepts/architecture.md) — Anwendung in Slices und Schichten organisieren
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — Verfügbare Entry-Kinds
+- [Konfigurationsleitfaden](guides/configuration.md) — Runtime-Optionen konfigurieren
+- [Benutzerdefinierte Entry-Kinds](internals/kinds.md) — Handler implementieren (fortgeschritten)

@@ -1,17 +1,17 @@
 ---
 title: "Komponenten bauen"
-description: "Wiederverwendbare Module verfassen: Requirement-Schnittstellen mit ns.requirement deklarieren und wie Hosts Werte über Dependency-Parameter liefern."
+description: "Deklarieren Sie Anforderungen wiederverwendbarer Module mit ns.requirement und stellen Sie sie aus einem Host über Dependency-Parameter bereit."
 ---
 
 # Komponenten bauen
 
-Eine **Komponente** ist ein wiederverwendbares Wippy-Modul — ein Funktionalitäts-Slice, im Hub veröffentlicht und in eine Host-Anwendung montiert. Die Herausforderung einer Komponente ist, dass sie die Dinge, von denen sie abhängt, nicht benennen kann: Sie braucht *eine* Datenbank, *einen* Prozess-Host, *einen* Router, weiß aber nicht, welche der Host ihr geben wird. Wippy löst das mit einer **Requirement-Schnittstelle** — die Komponente deklariert Löcher, der Host füllt sie.
+Eine **Komponente** ist ein wiederverwendbares Wippy-Modul, das im Hub veröffentlicht und in eine Host-Anwendung eingebunden wird. Eine Komponente kann von einer Datenbank, einem Process Host oder einem Router abhängen, ohne die Entry-IDs des Hosts zu kennen. Sie deklariert diese Abhängigkeiten über eine **Requirement-Schnittstelle**, und der Host stellt ihre Werte bereit.
 
-Diese Anleitung behandelt die Autorenseite: das Deklarieren dieser Schnittstelle und das Verständnis, wie Werte in Ihre Einträge fließen. Für die Konsumentenseite (Lock-Dateien, Versions-Constraints, `wippy add`/`update`) siehe [Abhängigkeitsverwaltung](guides/dependency-management.md). Für die interne Struktur einer Komponente siehe [Anwendungsarchitektur](concepts/architecture.md).
+Dieser Leitfaden behandelt die Autorenseite: die Deklaration dieser Schnittstelle und den Wertefluss in Einträge. Die Verbraucherseite mit Lock-Dateien, Versionsbeschränkungen und `wippy add`/`update` beschreibt die [Abhängigkeitsverwaltung](guides/dependency-management.md). Die interne Struktur einer Komponente behandelt die [Anwendungsarchitektur](concepts/architecture.md).
 
-## Die drei Kinds
+## Die drei Entry-Kinds
 
-| Kind | Seite | Rolle |
+| Art | Seite | Rolle |
 |------|-------|-------|
 | `ns.definition` | Komponente | Modul-Metadaten; erforderlich zum Veröffentlichen. |
 | `ns.requirement` | Komponente | Ein Loch, das der Host füllen muss, und wohin der Wert injiziert wird. |
@@ -19,23 +19,23 @@ Diese Anleitung behandelt die Autorenseite: das Deklarieren dieser Schnittstelle
 
 ## ns.definition
 
-Eines pro Modul, erforderlich für die Veröffentlichung. Es trägt den Anzeigenamen des Moduls und den README-Pfad — nicht mehr.
+Jedes veröffentlichte Modul muss genau eine Definition besitzen. Sie kann Modulmetadaten sowie Referenzen auf README- und Wiki-Seiten enthalten.
 
 ```yaml
 - name: definition
   kind: ns.definition
-  module: jobs                # optional; defaults to the entry name
+  module: jobs                # optional module metadata
   readme: file://README.md    # path to the module's documentation
   meta:
     title: Durable Jobs
     description: Leased job queue with retry and dead-lettering.
 ```
 
-Nur `module` und `readme` sind Komponentendaten; `meta` sind gewöhnliche Entry-Metadaten für Management-UIs. Release Notes werden zur Veröffentlichungszeit geliefert, nicht hier.
+`module`, `readme` und `wiki` sind Definitionsdaten; alle drei sind optional. `meta` enthält gewöhnliche Entry-Metadaten für Verwaltungsoberflächen. Release Notes werden beim Veröffentlichen angegeben, nicht hier.
 
 ## ns.requirement
 
-Ein Requirement ist ein **benanntes Loch mit einer Liste von Injektionszielen**. Der Host liefert einen Wert; die Runtime schreibt diesen Wert in jeden Ziel-Eintrag am angegebenen Pfad.
+Ein Requirement ist ein **benannter Wert mit einer Liste von Injektionszielen**. Der Host stellt den Wert bereit, und die Runtime schreibt ihn am angegebenen Pfad in jeden Zieleintrag.
 
 ```yaml
 - name: target_db
@@ -54,11 +54,11 @@ Ein Requirement ist ein **benanntes Loch mit einer Liste von Injektionszielen**.
 
 Das Feld `default` entscheidet, ob der Host einen Wert liefern *muss*:
 
-- **`default` vorhanden** (beliebiger Wert, auch ein leerer String) → das Requirement ist **optional**. Liefert der Host nichts, wird der Default verwendet.
+- **`default` mit einem Wert ungleich null vorhanden** (auch ein leerer String) → das Requirement ist **optional**. Liefert der Host nichts, wird der Default verwendet.
 - **`default` fehlt** → das Requirement ist **verpflichtend**. Ohne gelieferten Wert schlägt das Linken im Strict-Modus fehl (und warnt andernfalls).
 
 <note>
-Ein explizit leerer Default (<code>default: ""</code>) ist etwas anderes als gar kein Default. Leerer String bedeutet "optional, fällt auf nichts zurück"; fehlend bedeutet "der Host muss dies liefern." Verwenden Sie einen Default für Infrastruktur mit einer vernünftigen In-App-Konvention (<code>app:db</code>, <code>app:processes</code>); lassen Sie ihn weg für Werte, die nur der Host kennen kann.
+Ein explizit leerer Default (<code>default: ""</code>) unterscheidet sich von einem fehlenden oder null gesetzten Default. Ein leerer String bedeutet „optional, fällt auf nichts zurück“; fehlend und <code>default: null</code> bedeuten beide „der Host muss dies bereitstellen“. Verwenden Sie einen nicht-null Default für Infrastruktur mit einer sinnvollen Anwendungskonvention wie <code>app:db</code> oder <code>app:processes</code>; lassen Sie ihn bei Werten weg, die nur der Host kennen kann.
 </note>
 
 ### targets — wo der Wert landet
@@ -68,7 +68,7 @@ Jedes Target ist ein `{entry, path}`-Paar:
 - **`entry`** — der Eintrag, in den der Wert injiziert wird. Ein bloßer Name (`schema`) löst innerhalb des eigenen Namespace des Requirements auf; eine vollqualifizierte ID (`app.jobs.migrations:schema`) trifft genau diesen Eintrag, über Namespaces hinweg.
 - **`path`** — ein Punktpfad in den Ziel-Eintrag, z.B. `.meta.target_db`, `.host`, `.database.url`. Der führende Punkt ist Konvention.
 
-Ein Requirement ohne Targets ist ein Fehler — ein Loch, das nirgendwohin injiziert, ist sinnlos.
+Ein Requirement muss mindestens ein Ziel deklarieren.
 
 Anhängen statt Setzen mit dem `+=`-Suffix am Pfad — nützlich, wenn mehrere Requirements zu einer Liste beitragen (z.B. Middleware):
 
@@ -80,7 +80,7 @@ targets:
 
 ### Ein Requirement, viele Targets
 
-Gruppieren Sie alles, was denselben Wert braucht, unter einem einzigen Requirement. Das ist das idiomatische Muster: ein `target_db`-Requirement, das in `.meta.target_db` jeder Migration und `.db` jeder Persistenzbibliothek injiziert, ein `process_host`, das in `.host` jedes überwachten `service` injiziert, ein `api_router`, das in `.meta.router` jedes Endpoints injiziert:
+Gruppieren Sie Ziele, die denselben Wert benötigen, unter einem Requirement. Beispielsweise kann `target_db` `.meta.target_db` jeder Migration und `.db` jeder Persistenzbibliothek versorgen, `process_host` die `.host`-Felder überwachter Services und `api_router` die `.meta.router`-Felder der Endpoints:
 
 ```yaml
 - name: process_host
@@ -91,7 +91,7 @@ Gruppieren Sie alles, was denselben Wert braucht, unter einem einzigen Requireme
     - { entry: app.jobs.service:sweeper.service, path: .host }
 ```
 
-Der Host füllt ein Loch; die Runtime fächert den Wert auf jedes Target auf. Nichts wird in einen parallelen Config-Eintrag gespiegelt — der Requirement-Eintrag *ist* die Verdrahtung.
+Der Host stellt einen Wert bereit, und die Runtime schreibt ihn in jedes deklarierte Ziel. Der Requirement-Eintrag enthält diese Verdrahtung direkt.
 
 ## Eine Komponente konsumieren
 
@@ -135,19 +135,19 @@ Die Injektion geschieht in der **Link-Phase** der Build-Pipeline — bei der Ver
 
 Unter **Strict Requirements** lässt ein unaufgelöstes verpflichtendes Requirement den Build fehlschlagen; andernfalls wird eine Warnung geloggt und fortgefahren. Wenn die Einträge die Runtime erreichen, ist jedes gefüllte Requirement bereits in seine Targets eingebacken.
 
-## Die Nähte prüfen: ein Mount-Test
+## Integration mit einem Mount-Test prüfen
 
-Unit-Tests üben einen Slice in Isolation aus; sie können nicht sehen, ob das *zusammengesetzte* Modul kohärent ist. Fügen Sie einen Packaging-/Mount-Test hinzu, der das Modul als Ganzes gegen die live, requirement-injizierte Registry auditiert:
+Unit-Tests prüfen nicht die Registry-Beziehungen des zusammengesetzten Moduls. Fügen Sie einen Packaging- oder Mount-Test gegen die mit Requirements injizierte Registry hinzu und prüfen Sie:
 
 - jeder überwachte `service` zeigt auf einen existierenden Prozess-Eintrag,
 - jede gespawnte oder geplante ID löst zu einem realen Eintrag auf,
 - der Speicher jeder `env.variable` ist registriert.
 
-Das sind die Integrationsnähte, die die isolierten Unit-Suites verdecken — die Lücken, die einen Supervisor einen nie registrierten Worker referenzieren lassen oder eine Test-Fixture eine Harness-only-Storage-ID in einen montierten Boot durchsickern lassen. Siehe [Supervision](guides/supervision.md) und das [Test-Framework](framework/testing.md).
+Damit werden unaufgelöste Beziehungen sichtbar, etwa ein Supervisor, der einen nicht registrierten Worker referenziert, oder ein Test-Fixture mit einer nur im Harness vorhandenen Storage-ID. Siehe [Supervision](guides/supervision.md) und das [Test-Framework](framework/testing.md).
 
 ## Siehe auch
 
-- [Anwendungsarchitektur](concepts/architecture.md) — wie eine Komponente intern strukturiert ist
-- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien, Versionen, der Konsumenten-Workflow
-- [Module veröffentlichen](guides/publishing.md) — eine Komponente in den Hub bringen
-- [Entry-Typen-Anleitung](guides/entry-kinds.md) — Referenz zu `ns.definition`, `ns.requirement`, `ns.dependency`
+- [Anwendungsarchitektur](concepts/architecture.md) — interne Struktur einer Komponente
+- [Abhängigkeitsverwaltung](guides/dependency-management.md) — Lock-Dateien, Versionen und Verbraucher-Workflow
+- [Module veröffentlichen](guides/publishing.md) — eine Komponente im Hub veröffentlichen
+- [Leitfaden zu Entry-Kinds](guides/entry-kinds.md) — Referenz für `ns.definition`, `ns.requirement` und `ns.dependency`

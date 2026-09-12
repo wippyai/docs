@@ -1,20 +1,23 @@
 ---
 title: "Event-Bus"
-description: "Der Event-Bus ist ein Pub/Sub-System mit einer einzelnen Dispatcher-Goroutine. Publisher reihen Actions ein, der Dispatcher verarbeitet sie…"
+description: "Actions, Wildcard-Abonnements, Zustellung, Lua-Prozess-Bridge, Request-Response-Helfer und Shutdown des Event-Bus."
 ---
 
 # Event-Bus
 
-Der Event-Bus ist ein Pub/Sub-System mit einer einzelnen Dispatcher-Goroutine. Publisher reihen Actions ein, der Dispatcher verarbeitet sie sequentiell, und Subscriber empfangen passende Events auf Channels.
+Der Event-Bus verarbeitet eingereihte Pub/Sub-Aktionen in einer Dispatcher-Goroutine und stellt passende Events über Subscriber-Channels zu.
+
+Die Go-Ausschnitte sind Implementierungs- und Erweiterungsfragmente. Sie setzen einen vorhandenen Komponentenkontext, Logger, Handler und Ereignistypen der Anwendung voraus.
 
 ## Event-Struktur
 
 ```go
 type Event struct {
-    System string  // Komponente/Modul (z.B. "registry", "process")
-    Kind   string  // Event-Typ (z.B. "create", "update", "exit")
-    Path   string  // Entitäts-Identifier
+    System string  // Component/module (e.g., "registry", "process")
+    Kind   string  // Event type (e.g., "create", "update", "exit")
+    Path   string  // Entity identifier
     Data   any     // Payload
+    Aux    any     // In-process dispatcher context; not propagated to processes
 }
 ```
 
@@ -23,8 +26,8 @@ type Event struct {
 ```mermaid
 flowchart LR
     subgraph Publishers
-        P1[Komponente]
-        P2[Komponente]
+        P1[Component]
+        P2[Component]
     end
 
     subgraph Bus
@@ -74,7 +77,7 @@ Vier Action-Typen fließen durch die Queue:
 | Send | Liefert Event an passende Subscriber |
 | Stop | Leert Subscriber, draint Queue, beendet Loop |
 
-Subscribe und Unsubscribe blockieren bis der Dispatcher bestätigt. Send ist Fire-and-Forget.
+Subscribe und Unsubscribe blockieren, bis der Dispatcher bestätigt. Send arbeitet nach dem Fire-and-Forget-Prinzip. Der Bus akzeptiert höchstens `DefaultMaxSubscribers` Abonnements, standardmäßig 4096; darüber hinaus schlägt das Abonnement mit `ErrSubscribersCapReached` fehl.
 
 `Subscribe` wird mit `ErrSubscribersCapReached` abgelehnt, sobald der Bus `DefaultMaxSubscribers` (4096) aktive Subscriptions hält.
 
@@ -97,7 +100,7 @@ func (b *Bus) processActions() bool {
     b.actionMu.Unlock()
 
     for i := range actions {
-        // action verarbeiten
+        // process action
     }
 
     clear(actions)
@@ -133,7 +136,7 @@ Das Wildcard-Paket unterstützt drei Pattern-Typen:
 | `**` | Null oder mehr Segmente |
 | `(a\|b)` | Alternation innerhalb Segment |
 
-Patterns splitten auf `.`, also matched `registry.*` `registry.create` aber nicht `registry.entry.create`. Das Pattern `registry.**` matched alle drei: `registry`, `registry.create` und `registry.entry.create`.
+Muster werden an `.` in Segmente geteilt. Daher trifft `registry.*` auf `registry.create`, aber nicht auf `registry.entry.create`. Das Muster `registry.**` trifft auf alle drei Werte: `registry`, `registry.create` und `registry.entry.create`.
 
 ## Event-Zustellung
 
@@ -213,10 +216,13 @@ func (d *Dispatcher) routeEvent(evt event.Event) {
 Wrappt Channel-Subscription mit einem Callback:
 
 ```go
-handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "*.created",
+handler, err := eventbus.NewSubscriber(ctx, bus, "registry", "entry.*",
     func(evt Event) {
         // handle
     })
+if err != nil {
+    return err
+}
 defer handler.Close()
 ```
 
@@ -230,6 +236,9 @@ Verwaltet mehrere Handler mit zentralisiertem Lebenszyklus:
 router, err := eventbus.StartRouter(ctx, bus,
     WithHandlers(handler1, handler2),
     WithLogger(log))
+if err != nil {
+    return err
+}
 defer router.Stop()
 ```
 
@@ -254,7 +263,7 @@ result := waiter.Wait()  // liefert AwaitResult{Event, Accepted, Error}
 
 `Prepare` registriert den Waiter, bevor das auslösende Event gesendet wird, und vermeidet so die Race-Condition, bei der die Antwort eintrifft, bevor das Warten registriert ist. `Wait` blockiert, bis ein passendes `Path`-Event eintrifft oder der Timeout abläuft (Standard `DefaultAwaitTimeout`, 30s, wenn nicht positiv). `Accepted` ist true, wenn die Event-Kind `accept`, `*.accept` oder `*.accepted` ist; andernfalls gilt die Kind als Ablehnung und ein `error` in `Data` erscheint als `Error`. Die Komfortfunktion `Await(ctx, system, kind, path, timeout)` kombiniert Prepare und Wait. Die Boot-Infrastruktur registriert einen AwaitService im Kontext (`event.GetAwaitService`).
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 1. `Stop()` setzt atomar closed-Flag und reiht Stop-Action ein
 2. Dispatcher leert Subscriber-Map
@@ -266,5 +275,5 @@ result := waiter.Wait()  // liefert AwaitResult{Event, Accepted, Error}
 
 ## Siehe auch
 
-- [Registry](internals/registry.md) - Primärer Event-Producer
-- [Command-Dispatch](internals/dispatch.md) - Prozess-zu-Handler-Routing
+- [Registry](internals/registry.md) – primärer Event-Produzent
+- [Command-Dispatch](internals/dispatch.md) – Routing vom Prozess zum Handler

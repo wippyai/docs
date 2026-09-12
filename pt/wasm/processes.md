@@ -1,13 +1,15 @@
 ---
 title: "Processos WASM"
-description: "Modulos WASM podem ser executados como processos atraves do tipo de entrada process.wasm. Processos sao executados dentro do host de processos do Wippy…"
+description: "Execute módulos WASM sob um host de processos do Wippy com process.wasm."
 ---
 
 # Processos WASM
 
-Modulos WASM podem ser executados como processos atraves do tipo de entrada `process.wasm`. Processos sao executados dentro do host de processos do Wippy e suportam o ciclo de vida completo do processo: criacao, monitoramento e encerramento supervisionado.
+Uma entrada `process.wasm` executa um módulo WASM sob um host de processos do Wippy, com criação, monitoramento e encerramento supervisionado.
 
-## Configuracao da Entrada
+**Classificação: referência de configuração e ciclo de vida de processos.** Blocos baseados em binários pressupõem um build externo do componente e entradas pertencentes à aplicação para sistema de arquivos, host de processos, ambiente e políticas. Hashes de placeholder devem ser substituídos pelo digest exato do binário.
+
+## Configuração da entrada
 
 ```yaml
 entries:
@@ -20,26 +22,51 @@ entries:
     fs: myns:wasm_binaries
     path: /worker.wasm
     hash: sha256:292b796376f8b4cc360acf2ea6b82d1084871c3607a079f30b446da8e5c984a4
-    method: compute
+    method: run
+    imports:
+      - wippy:actor
+      - wasi:io
+      - wasi:poll
+    options:
+      limits:
+        memory_bytes: 67108864
+      mailbox:
+        capacity: 128
+        bytes: 8388608
+        message_bytes: 1048576
 ```
 
-### Campos de Configuracao
+### Campos de configuração
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `fs` | Sim | ID da entrada de sistema de arquivos contendo o binario |
+| `fs` | Sim | ID da entrada de sistema de arquivos que contém o binário |
 | `path` | Sim | Caminho para o arquivo `.wasm` dentro do sistema de arquivos |
-| `hash` | Sim | Hash SHA-256 para verificacao de integridade |
-| `method` | Sim | Nome da funcao exportada a ser executada |
-| `transport` | Nao | Transporte de invocacao: `payload` (padrao) ou `wasi-http` |
-| `wit` | Nao | Assinatura WIT para modulos raw/core |
-| `imports` | Nao | Imports do host a habilitar |
-| `wasi` | Nao | Configuracao WASI (args, env, mounts) |
-| `limits` | Nao | Limites de execucao |
+| `hash` | Sim | Hash SHA-256 para verificação de integridade |
+| `method` | Sim | Nome da função exportada a ser executada |
+| `transport` | Não | Transporte de invocação: `payload` (padrão) ou `wasi-http` |
+| `wit` | Não | Assinatura WIT para módulos raw/core |
+| `imports` | Não | Imports do host a habilitar |
+| `wasi` | Não | Configuração WASI (`args`, `cwd`, `env` e `mounts`) |
+| `options` | Não | Controles do ator: `worker_class`, `limits` e `mailbox` |
 
 <note>
-`process.wasm` compartilha sua estrutura de configuracao com `function.wasm`, portanto um bloco `pool` e aceito pelo esquema mas ignorado — processos sao executados sob o host de processos, nao sob um pool de funcoes.
+Um ator `process.wasm` possui uma instância do módulo durante toda a vida do PID
+e preserva o estado do guest entre mensagens. Portanto, pooling de funções não
+se aplica e um bloco `pool` é rejeitado. Os limites do ator ficam em
+`options.limits`; as grafias antigas `limits` e `meta.options` são aceitas
+temporariamente com um aviso de depreciação.
 </note>
+
+### Atores WASM com estado
+
+O import de componente `wippy:actor` expõe `self`, `send`, `try-receive`,
+`receive` e `subscribe` por `wippy:actor/process@0.1.0`. Cada PID tem uma caixa
+de mensagens limitada (por padrão, 128 mensagens, 8 MiB no total e 1 MiB por
+mensagem). `send` é autorizado como `process.send` para o PID de destino. Os
+formatos de payload suportados são `bytes`, `text` UTF-8 e `json` UTF-8. A
+classe de worker padrão é `wasm`; o limite de memória é 64 MiB, até 4 GiB em
+múltiplos de 64 KiB.
 
 ## Comandos CLI
 
@@ -64,16 +91,19 @@ Execute com:
 wippy run greet
 ```
 
-Liste os comandos disponiveis:
+Liste os comandos disponíveis:
 
 ```bash
 wippy run list
 ```
 
-| Campo | Obrigatorio | Descricao |
+| Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
 | `name` | Sim | Nome do comando usado com `wippy run <name>` |
-| `short` | Nao | Descricao curta mostrada em `wippy run list` |
+| `short` | Não | Descrição curta mostrada em `wippy run list` |
+| `main` | Não | Marca a entrada como comando padrão de um pack ou módulo do Hub |
+| `use_case` | Não | Categoria do entrypoint; o padrão é `run` |
+| `security` | Não | Contexto de segurança aplicado apenas quando o launcher confiável do terminal inicia o comando |
 
 Um `terminal.host` deve estar presente para que comandos CLI funcionem; ele e o host de processos que executa o comando.
 
@@ -81,40 +111,47 @@ Um `terminal.host` deve estar presente para que comandos CLI funcionem; ele e o 
 
 Processos WASM seguem o modelo de ciclo de vida Init/Step/Close:
 
-1. **Init** - O modulo e instanciado, argumentos de entrada sao capturados
-2. **Step** - A execucao avanca. Para modulos assincronos, o agendador conduz ciclos de yield/resume. Para modulos sincronos, a execucao e concluida em um unico passo.
-3. **Close** - Recursos da instancia sao liberados
+1. **Init** - O contexto da chamada, o método e os argumentos de entrada são capturados.
+2. **Step** - O primeiro passo instancia e inicia o módulo. Passos posteriores avançam operações com bridge do dispatcher; uma execução síncrona pode terminar no primeiro passo.
+3. **Close** - Os recursos da instância são liberados.
 
-## Criando a partir de Lua
+## Iniciando a partir de Lua
 
-Crie um processo WASM e monitore-o ate a conclusao:
+Inicie um processo WASM e monitore-o até a conclusão:
 
 ```lua
-local process = require("process")
-local time = require("time")
+local errors = require("errors")
 
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
+while true do
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 end
 ```
 
-## Execucao Assincrona
+## Execução assíncrona
 
-Processos WASM que importam interfaces WASI podem realizar operacoes assincronas. O agendador suspende o processo durante I/O e o retoma quando a operacao e concluida:
+Actors WASM podem ceder a execução em operações de host que o runtime conecta
+ao dispatcher, incluindo recebimento e envio pela mailbox, polling, relógios,
+sockets, DNS, streams do sistema de arquivos e HTTP de saída. O agendador
+suspende o processo até a operação terminar e então retoma a mesma instância
+guest:
 
 ```yaml
   - name: http_worker
@@ -134,11 +171,12 @@ Processos WASM que importam interfaces WASI podem realizar operacoes assincronas
           required: true
 ```
 
-O mecanismo de yield/resume e transparente para o codigo WASM. Chamadas bloqueantes padrao no guest (sleep, read, write, requisicoes HTTP) cedem controle automaticamente ao dispatcher.
+O mecanismo de yield/resume é transparente para um módulo core asyncificado ou
+um componente que use as interfaces pollable compatíveis.
 
-## Configuracao WASI
+## Configuração WASI
 
-Processos suportam a mesma configuracao WASI que funcoes:
+Processos aceitam a mesma configuração WASI que funções:
 
 ```yaml
   - name: file_processor
@@ -166,10 +204,10 @@ Processos suportam a mesma configuracao WASI que funcoes:
           guest: /output
 ```
 
-## Veja Tambem
+## Veja também
 
-- [Visao Geral](wasm/overview.md) - Visao geral do runtime WebAssembly
-- [Funcoes](wasm/functions.md) - Configuracao de funcoes WASM
-- [Funcoes Host](wasm/hosts.md) - Interfaces host disponiveis
-- [Modelo de Processos](concepts/process-model.md) - Ciclo de vida de processos
-- [Supervisao](guides/supervision.md) - Arvores de supervisao de processos
+- [Visão geral](wasm/overview.md) - Visão geral do runtime WebAssembly
+- [Funções](wasm/functions.md) - Configuração de funções WASM
+- [Funções do host](wasm/hosts.md) - Interfaces de host disponíveis
+- [Modelo de processos](concepts/process-model.md) - Ciclo de vida de processos
+- [Supervisão](guides/supervision.md) - Árvores de supervisão de processos

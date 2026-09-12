@@ -3,14 +3,16 @@ title: "Variaveis de Ambiente"
 description: "Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime."
 ---
 
-# Variaveis de Ambiente
+# Variáveis de Ambiente
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Acesse variaveis de ambiente para valores de configuração, secrets e configuracoes de runtime.
+O módulo `env` lê e atualiza variáveis de ambiente expostas pelo runtime.
 
-Variaveis devem ser definidas no [Environment System](system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (OS, arquivo, memoria) fornecem valores e se variaveis sao somente leitura.
+Esta é uma referência de API. Seus exemplos são operações isoladas e pressupõem que as variáveis e políticas de segurança mencionadas já existam.
+
+As variáveis devem ser definidas no [Sistema de Ambiente](system/env.md) antes de poderem ser acessadas. O sistema controla quais backends de armazenamento (SO, arquivo, memória) fornecem valores e se as variáveis são somente leitura.
 
 ## Carregamento
 
@@ -18,9 +20,9 @@ Variaveis devem ser definidas no [Environment System](system/env.md) antes de po
 local env = require("env")
 ```
 
-## get
+## `get`
 
-Obtem um valor de variavel de ambiente.
+Obtém uma variável de ambiente.
 
 ```lua
 -- Obter string de conexão do banco
@@ -29,66 +31,53 @@ if not db_url then
     return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
--- Obter com fallback
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- Obter secrets
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- Configuração
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `key` | string | Nome da variavel |
+| `key` | string | Nome da variável |
 
 **Retorna:** `string, error`
 
-Retorna `nil, error` se variavel não existe.
+A função retorna `nil, error` quando a variável não existe.
 
-## set
+## `set`
 
-Define uma variavel de ambiente.
+Define uma variável de ambiente.
 
 ```lua
--- Definir configuração de runtime
-env.set("APP_MODE", "production")
-
--- Sobrescrever para testes
-env.set("API_URL", "http://localhost:8080")
-
--- Definir baseado em condicoes
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `key` | string | Nome da variavel |
+| `key` | string | Nome da variável |
 | `value` | string | Valor a definir |
 
 **Retorna:** `boolean, error`
 
-## get_all
+## `get_all`
 
-Obtem todas as variaveis de ambiente acessiveis.
+Obtém todas as variáveis de ambiente acessíveis ao chamador.
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- Logar configuração (cuidado para não logar secrets)
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- Verificar variaveis obrigatorias
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
@@ -101,9 +90,9 @@ end
 
 ## Permissões
 
-Acesso a ambiente está sujeito a avaliação de política de segurança.
+O acesso ao ambiente está sujeito à avaliação de políticas de segurança.
 
-### Acoes de Segurança
+### Ações de Segurança
 
 | Ação | Recurso | Descrição |
 |------|---------|-----------|
@@ -122,18 +111,18 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-Veja [Security Model](system/security.md) para configuração de políticas.
+Consulte o [Modelo de Segurança](system/security.md) para configurar políticas.
 
 ## Erros
 
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | Chave vazia | `errors.INVALID` | não |
-| Variavel não encontrada | `errors.NOT_FOUND` | não |
+| Variável não encontrada | `errors.NOT_FOUND` | não |
 | Permissão negada | `errors.PERMISSION_DENIED` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Consulte [Tratamento de erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Environment System](system/env.md) - Configurar backends de armazenamento e definicoes de variaveis
+- [Sistema de Ambiente](system/env.md) - Configurar backends de armazenamento e definições de variáveis

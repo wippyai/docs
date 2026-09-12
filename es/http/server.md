@@ -5,7 +5,9 @@ description: "El servidor HTTP (http.service) escucha en un puerto y aloja route
 
 # Servidor HTTP
 
-El servidor HTTP (`http.service`) escucha en un puerto y aloja routers, endpoints y manejadores de archivos estáticos.
+Un `http.service` posee un listener y aloja routers, endpoints y handlers de archivos estáticos.
+
+**Clasificación: referencia de configuración de servidor.** Los bloques son fragmentos parciales de registro salvo que definan cada red, entorno, sistema de archivos, router, certificado, actor y entrada de política referenciados.
 
 ## Configuración
 
@@ -37,7 +39,7 @@ El servidor HTTP (`http.service`) escucha en un puerto y aloja routers, endpoint
 | `timeouts.idle` | duration | - | Timeout de conexión keep-alive |
 | `host.buffer_size` | int | 1024 | Tamaño del buffer del relay de mensajes |
 | `host.worker_count` | int | NumCPU | Workers del relay de mensajes |
-| `network` | ID de Registro | - | Vincula el listener a través de una [red overlay](system/network.md) (ej. Tailscale, I2P) |
+| `network` | ID de Registro | - | Vincula el listener a través de una [red superpuesta](system/network.md) (p. ej., Tailscale o I2P) |
 | `tls` | object | - | Terminación TLS (ver [TLS](#tls)) |
 
 ## Timeouts
@@ -46,9 +48,9 @@ Configure timeouts para prevenir el agotamiento de recursos:
 
 ```yaml
 timeouts:
-  read: "10s"    # Tiempo máximo para leer headers de solicitud
-  write: "60s"   # Tiempo máximo para escribir respuesta
-  idle: "120s"   # Timeout keep-alive
+  read: "10s"    # Max time to read the entire request (headers + body)
+  write: "60s"   # Max time to write response
+  idle: "120s"   # Keep-alive timeout
 ```
 
 - `read` - Corto (5-10s) para APIs, mayor para uploads
@@ -92,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Esto establece un actor y políticas base para todas las solicitudes. Para solicitudes autenticadas, el [middleware token_auth](http/middleware.md) sobrescribe el actor basándose en el token validado, permitiendo políticas de seguridad por usuario.
+Esto establece un actor y políticas de base para todas las solicitudes. Para las solicitudes autenticadas, el [middleware token_auth](http/middleware.md) sustituye el actor según el token validado, lo que permite políticas de seguridad por usuario.
 
 ## Lifecycle
 
@@ -103,7 +105,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -111,8 +113,8 @@ lifecycle:
 |-------|-------------|
 | `auto_start` | Iniciar cuando arranca la aplicación |
 | `start_timeout` | Tiempo máximo de espera para que el servidor inicie |
-| `stop_timeout` | Tiempo máximo para shutdown graceful |
-| `depends_on` | Iniciar después de que estas entradas estén listas |
+| `stop_timeout` | Tiempo máximo para el apagado ordenado |
+| `requires` | Iniciar después de que estas entradas estén listas (`depends_on` es la forma heredada) |
 
 ## Conectando Componentes
 
@@ -144,14 +146,14 @@ Ejecute servidores separados para distintos propósitos:
 
 ```yaml
 entries:
-  # API pública
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # Admin (solo localhost)
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"
@@ -226,10 +228,10 @@ tls:
 
 `verify_if_given` y `require_and_verify` requieren una CA. `request` y `require_any` aceptan cualquier certificado de cliente sin verificación de CA.
 
-## Ver También
+## Véase también
 
-- [Routing](http/router.md) - Routers y endpoints
-- [Archivos Estáticos](http/static.md) - Servicio de archivos estáticos
+- [Enrutamiento](http/router.md) - Routers y endpoints
+- [Archivos estáticos](http/static.md) - Servicio de archivos estáticos
 - [Middleware](http/middleware.md) - Middleware disponible
 - [Seguridad](system/security.md) - Políticas de seguridad
-- [WebSocket Relay](http/websocket-relay.md) - Mensajería WebSocket
+- [Relay WebSocket](http/websocket-relay.md) - Mensajería WebSocket

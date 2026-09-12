@@ -5,7 +5,9 @@ description: "Pool de conexiones y configuración de bases de datos SQL. Soporta
 
 # Sistema de Base de Datos
 
-Pool de conexiones y configuración de bases de datos SQL. Soporta PostgreSQL, MySQL y SQLite.
+Wippy proporciona entradas SQL con pool de conexiones para PostgreSQL y MySQL, además de una entrada SQLite de una sola conexión.
+
+Esta página es una referencia de configuración. Salvo que un fence incluya `version`, `namespace` y `entries`, trátelo como un fragmento para colocarlo dentro de una lista de entradas existente.
 
 ## Tipos de Entrada
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -122,9 +124,9 @@ Configure el comportamiento del pool de conexiones. La configuración del pool s
 
 ```yaml
 pool:
-  max_open: 25      # Limitar conexiones concurrentes
-  max_idle: 5       # Mantener 5 conexiones listas
-  max_lifetime: "30m"  # Reciclar conexiones cada 30 minutos
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
@@ -165,7 +167,7 @@ Opciones comunes específicas de base de datos:
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Timeout de conexión en segundos
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -174,8 +176,8 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # Parsear valores de tiempo a time.Time
-  loc: "Local"            # Zona horaria
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -239,7 +241,7 @@ SQLite no aplica el mapa `options` a su DSN. Las bases de datos en archivo siemp
 
 ```yaml
 entries:
-  # Base de datos principal
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
     host: ${env:USERS_DB_HOST}
@@ -250,7 +252,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Base de datos de analíticas
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
     host: ${env:ANALYTICS_DB_HOST}
@@ -261,7 +263,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Cache local
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -271,11 +273,11 @@ entries:
 
 ## Registro en Tiempo de Ejecución
 
-Las bases de datos pueden registrarse en tiempo de ejecución usando el [módulo registry](lua/core/registry.md), habilitando configuración dinámica de base de datos basada en el estado de la aplicación o configuración externa.
+Las bases de datos pueden registrarse en tiempo de ejecución mediante el [módulo registry](lua/core/registry.md).
 
 ## API Lua
 
-Consulte el [Módulo SQL](lua/storage/sql.md) para la API de operaciones de base de datos.
+Consulte el [módulo SQL](lua/storage/sql.md) para las operaciones de consulta, transacción y conexión.
 
 ## Ver También
 

@@ -8,40 +8,42 @@ description: "すべてのWippyプロセスで自動的に利用可能なコアL
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 
-すべてのWippyプロセスで自動的に利用可能なコアLuaライブラリ。`require()`不要。
+これらのコアLuaライブラリは、すべての実行可能Luaエントリで `require()` なしに利用できます。
 
-## グローバル関数
+このページはAPIリファレンスです。シグネチャのブロックは利用可能な関数を列挙し、長いブロックは完全なエントリではなく、独立した例または部分的なパターンです。`check_health` や `process_request` などの名前はアプリケーションのコールバックを表します。
+
+## 組み込みグローバル関数
 
 ### 型と変換
 
 ```lua
-type(value)         -- 戻り値: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
-tonumber(s [,base]) -- 数値に変換、オプションで基数(2-36)
-tostring(value)     -- 文字列に変換、__tostringメタメソッドを呼び出し
+type(value)         -- Returns: "nil", "number", "string", "boolean", "table", "function", "thread", "userdata"
+tonumber(s [,base]) -- Convert to number, optional base (2-36)
+tostring(value)     -- Convert to string, calls __tostring metamethod
 ```
 
 ### アサーションとエラー
 
 ```lua
-assert(v [,msg])    -- vがfalse/nilの場合エラーを発生、それ以外はvを返す
-error(msg [,level]) -- 指定されたスタックレベルでエラーを発生（デフォルト1）
-pcall(fn, ...)      -- 保護された呼び出し、ok, result_or_errorを返す
-xpcall(fn, errh)    -- エラーハンドラ関数付き保護された呼び出し
+assert(v [,msg])    -- Raises error if v is false/nil, returns v otherwise
+error(msg [,level]) -- Raises error at specified stack level (default 1)
+pcall(fn, ...)      -- Protected call, returns ok, result_or_error
+xpcall(fn, errh)    -- Protected call with error handler function
 ```
 
 ### テーブルイテレーション
 
 ```lua
-pairs(t)            -- すべてのキー/値ペアをイテレート
-ipairs(t)           -- 配列部分をイテレート（1, 2, 3, ...）
-next(t [,index])    -- indexの後の次のキー/値ペアを取得
+pairs(t)            -- Iterate all key-value pairs
+ipairs(t)           -- Iterate array portion (1, 2, 3, ...)
+next(t [,index])    -- Get next key-value pair after index
 ```
 
 ### メタテーブル
 
 ```lua
-getmetatable(obj)       -- メタテーブルを取得（保護されている場合は__metatableフィールド）
-setmetatable(t, mt)     -- メタテーブルを設定、tを返す
+getmetatable(obj)       -- Get metatable (or __metatable field if protected)
+setmetatable(t, mt)     -- Set metatable, returns t
 ```
 
 ### 生テーブルアクセス
@@ -49,30 +51,30 @@ setmetatable(t, mt)     -- メタテーブルを設定、tを返す
 メタメソッドをバイパスして直接テーブルアクセス：
 
 ```lua
-rawget(t, k)        -- __indexなしでt[k]を取得
-rawset(t, k, v)     -- __newindexなしでt[k]=vを設定
-rawequal(a, b)      -- __eqなしで比較
+rawget(t, k)        -- Get t[k] without __index
+rawset(t, k, v)     -- Set t[k]=v without __newindex
+rawequal(a, b)      -- Compare without __eq
 ```
 
 ### ユーティリティ
 
 ```lua
-select(index, ...)  -- index以降の引数を返す
-select("#", ...)    -- 引数の数を返す
-unpack(t [,i [,j]]) -- t[i]からt[j]を複数の値として返す
-print(...)          -- 値を出力（Wippyでは構造化ロギングを使用）
+select(index, ...)  -- Return args from index onwards
+select("#", ...)    -- Return number of args
+unpack(t [,i [,j]]) -- Return t[i] through t[j] as multiple values
+print(...)          -- Print values (uses structured logging in Wippy)
 ```
 
 ### グローバル変数
 
 ```lua
-_G        -- グローバル環境テーブル
-_VERSION  -- Luaバージョン文字列
+_G        -- The global environment table
+_VERSION  -- Lua version string
 ```
 
 ## テーブル操作
 
-テーブルを変更する関数：
+`table` ライブラリは、配列のインプレース操作、ソート、連結、展開を提供します。
 
 ```lua
 table.insert(t, [pos,] value)  -- pos位置に値を挿入（デフォルト: 末尾）
@@ -90,33 +92,33 @@ local items = {"a", "b", "c"}
 
 table.insert(items, "d")           -- {"a", "b", "c", "d"}
 table.insert(items, 2, "x")        -- {"a", "x", "b", "c", "d"}
-table.remove(items, 2)             -- {"a", "b", "c", "d"}, "x"を返す
+table.remove(items, 2)             -- {"a", "b", "c", "d"}, returns "x"
 
 local csv = table.concat(items, ",")  -- "a,b,c,d"
 
 table.sort(items, function(a, b)
-    return a > b  -- 降順
+    return a > b  -- Descending order
 end)
 ```
 
 ## 文字列操作
 
-文字列操作関数。文字列値のメソッドとしても利用可能：
+文字列関数は、文字列値のメソッドとしても利用できます。
 
 ### パターンマッチング
 
 ```lua
-string.find(s, pattern [,init [,plain]])   -- パターンを検索、start, end, capturesを返す
-string.match(s, pattern [,init])           -- マッチするサブ文字列を抽出
-string.gmatch(s, pattern)                  -- すべてのマッチに対するイテレータ
-string.gsub(s, pattern, repl [,n])         -- マッチを置換、string, countを返す
+string.find(s, pattern [,init [,plain]])   -- Find pattern, returns start, end, captures
+string.match(s, pattern [,init])           -- Extract matching substring
+string.gmatch(s, pattern)                  -- Iterator over all matches
+string.gsub(s, pattern, repl [,n])         -- Replace matches, returns string, count
 ```
 
 ### 大文字/小文字変換
 
 ```lua
-string.upper(s)   -- 大文字に変換
-string.lower(s)   -- 小文字に変換
+string.upper(s)   -- Convert to uppercase
+string.lower(s)   -- Convert to lowercase
 ```
 
 ### サブ文字列と文字
@@ -144,14 +146,14 @@ string.packsize(fmt)       -- パックされたフォーマットのバイト�
 ```lua
 local s = "Hello, World!"
 
--- パターンマッチング
+-- Pattern matching
 local start, stop = string.find(s, "World")  -- 8, 12
 local word = string.match(s, "%w+")          -- "Hello"
 
--- 置換
+-- Substitution
 local new = string.gsub(s, "World", "Wippy") -- "Hello, Wippy!"
 
--- メソッド構文
+-- Method syntax
 local upper = s:upper()                       -- "HELLO, WORLD!"
 local part = s:sub(1, 5)                      -- "Hello"
 ```
@@ -184,7 +186,7 @@ local part = s:sub(1, 5)                      -- "Hello"
 
 ## Math関数
 
-数学関数と定数：
+`math` ライブラリは、数値定数と一般的な数学演算を提供します。
 
 ### 定数 {id="math-constants"}
 
@@ -198,20 +200,20 @@ math.maxinteger  -- 最大整数
 ### 基本操作
 
 ```lua
-math.abs(x)           -- 絶対値
-math.min(...)         -- 引数の最小値
-math.max(...)         -- 引数の最大値
-math.floor(x)         -- 切り捨て
-math.ceil(x)          -- 切り上げ
-math.modf(x)          -- 整数部と小数部
-math.fmod(x, y)       -- 浮動小数点剰余
+math.abs(x)           -- Absolute value
+math.min(...)         -- Minimum of arguments
+math.max(...)         -- Maximum of arguments
+math.floor(x)         -- Round down
+math.ceil(x)          -- Round up
+math.modf(x)          -- Integer and fractional parts
+math.fmod(x, y)       -- Floating-point remainder
 ```
 
 ### べき乗と平方根
 
 ```lua
-math.sqrt(x)          -- 平方根
-math.pow(x, y)        -- x^y（またはx^y演算子を使用）
+math.sqrt(x)          -- Square root
+math.pow(x, y)        -- x^y (or use x^y operator)
 math.exp(x)           -- e^x
 math.log(x)           -- 自然対数
 math.log10(x)         -- 10を底とする対数
@@ -239,37 +241,41 @@ math.random(m, n)     -- ランダム整数 [m,n]
 math.randomseed(x)    -- 効果なし。ジェネレータは自動的にシードされる
 ```
 
+`math.random` は非決定的です。ワークフローで同一にリプレイする必要がある判断には使用しないでください。`math.randomseed` で決定的にすることはできません。
+
 ### 型変換
 
 ```lua
-math.tointeger(x)     -- 整数に変換またはnil
-math.type(x)          -- "integer"、"float"、またはnil
-math.ult(m, n)        -- 符号なし小なり比較
+math.tointeger(x)     -- Convert to integer or nil
+math.type(x)          -- "integer", "float", or nil
+math.ult(m, n)        -- Unsigned less-than comparison
 ```
 
 ## コルーチン
 
-コルーチンの作成と制御。チャネルと並行パターンについては[チャネルとコルーチン](lua/core/channel.md)を参照：
+`coroutine` ライブラリは、コルーチンの作成と制御を提供します。チャネルを使った並行処理パターンについては[チャネルとコルーチン](lua/core/channel.md)を参照してください。
 
 ```lua
-coroutine.create(fn)        -- 関数からコルーチンを作成
-coroutine.resume(co, ...)   -- コルーチンを開始/続行
-coroutine.yield(...)        -- コルーチンを中断、resumeに値を返す
-coroutine.status(co)        -- "running"、"suspended"、"normal"、"dead"
-coroutine.running()         -- 現在のコルーチン（メインスレッドならnil）
-coroutine.wrap(fn)          -- 呼び出し可能な関数としてコルーチンを作成
+coroutine.create(fn)        -- Create coroutine from function
+coroutine.resume(co, ...)   -- Start/continue coroutine
+coroutine.yield(...)        -- Suspend coroutine, return values to resume
+coroutine.status(co)        -- "running", "suspended", "normal", "dead"
+coroutine.running()         -- Current coroutine (nil if main thread)
+coroutine.wrap(fn)          -- Create coroutine as callable function
 ```
 
 ### 並行コルーチンのスポーン
 
-独立して実行される並行コルーチンをスポーン（Wippy固有）：
+Wippyは、スケジューラが管理する並行処理のために `coroutine.spawn` を追加しています。
 
 ```lua
-coroutine.spawn(fn)         -- 関数を並行コルーチンとしてスポーン
+coroutine.spawn(fn)         -- Spawn function as concurrent coroutine
 ```
 
 ```lua
--- バックグラウンドタスクをスポーン
+local time = require("time")
+
+-- Spawn background task
 coroutine.spawn(function()
     while true do
         check_health()
@@ -277,37 +283,39 @@ coroutine.spawn(function()
     end
 end)
 
--- メイン実行を即座に続行
+-- Continue main execution immediately
 process_request()
 ```
 
+この部分的なパターンでは、エントリの `modules:` に `time` が含まれ、`check_health` と `process_request` がアプリケーションから提供されるものとします。スポーンされたコルーチンは同じLuaプロセス内で並行して実行されるため、`process_request()` には直ちに到達し、各ヘルスチェック後に30秒間スリープします。
+
 ## エラー処理
 
-構造化エラーの作成と分類。完全なドキュメントについては[エラー処理](lua/core/errors.md)を参照：
+グローバルな `errors` テーブルは、構造化エラーを作成し、分類します。完全なAPIについては[エラー処理](lua/core/errors.md)を参照してください。
 
 ### 定数 {id="error-constants"}
 
 ```lua
-errors.UNKNOWN           -- 未分類エラー
-errors.INVALID           -- 無効な引数または入力
-errors.NOT_FOUND         -- リソースが見つからない
-errors.ALREADY_EXISTS    -- リソースが既に存在
-errors.PERMISSION_DENIED -- 権限拒否
-errors.TIMEOUT           -- 操作がタイムアウト
-errors.CANCELED          -- 操作がキャンセル
-errors.UNAVAILABLE       -- サービス利用不可
-errors.INTERNAL          -- 内部エラー
-errors.CONFLICT          -- コンフリクト（例：並行変更）
-errors.RATE_LIMITED      -- レート制限超過
+errors.UNKNOWN           -- Unclassified error
+errors.INVALID           -- Invalid argument or input
+errors.NOT_FOUND         -- Resource not found
+errors.ALREADY_EXISTS    -- Resource already exists
+errors.PERMISSION_DENIED -- Permission denied
+errors.TIMEOUT           -- Operation timed out
+errors.CANCELED          -- Operation cancelled
+errors.UNAVAILABLE       -- Service unavailable
+errors.INTERNAL          -- Internal error
+errors.CONFLICT          -- Conflict (e.g., concurrent modification)
+errors.RATE_LIMITED      -- Rate limit exceeded
 ```
 
 ### 関数 {id="error-functions"}
 
 ```lua
--- 文字列からエラーを作成
+-- Create error from string
 local err = errors.new("something went wrong")
 
--- メタデータ付きエラーを作成
+-- Create error with metadata
 local err = errors.new({
     message = "User not found",
     kind = errors.NOT_FOUND,
@@ -315,15 +323,15 @@ local err = errors.new({
     details = {user_id = 123}
 })
 
--- 既存のエラーをコンテキスト付きでラップ
+-- Wrap existing error with context
 local wrapped = errors.wrap(err, "failed to load profile")
 
--- エラー種別をチェック
+-- Check error kind
 if errors.is(err, errors.NOT_FOUND) then
-    -- not foundを処理
+    -- handle not found
 end
 
--- エラーからコールスタックを取得
+-- Get call stack from error
 local stack = errors.call_stack(err)
 ```
 
@@ -339,7 +347,7 @@ err:stack()      -- スタックトレースを文字列として取得
 
 ## 制限された機能
 
-セキュリティのため以下の標準Lua機能は利用不可：
+次の標準Lua機能は、Wippyプロセスでは利用できません。
 
 | 機能 | 代替 |
 |---------|-------------|
@@ -358,4 +366,3 @@ err:stack()      -- スタックトレースを文字列として取得
 - [チャネルとコルーチン](lua/core/channel.md) - 並行処理のためのGo形式チャネル
 - [エラー処理](lua/core/errors.md) - 構造化エラーの作成と処理
 - [OS Time](lua/system/ostime.md) - システム時間関数
-

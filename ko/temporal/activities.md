@@ -1,11 +1,13 @@
 ---
 title: "액티비티"
-description: "액티비티는 비결정론적 작업을 실행하는 함수입니다. 모든 function.lua 또는 process.lua 엔트리는 메타데이터를 추가하여 Temporal 액티비티로 등록할 수 있습니다."
+description: "function.lua 또는 process.lua 엔트리를 비결정론적 작업을 위한 Temporal 액티비티로 등록합니다."
 ---
 
 # 액티비티
 
-액티비티는 비결정론적 작업을 실행하는 함수입니다. 모든 `function.lua` 또는 `process.lua` 엔트리는 메타데이터를 추가하여 Temporal 액티비티로 등록할 수 있습니다.
+Temporal 액티비티는 비결정론적 작업을 실행합니다. `function.lua` 또는 `process.lua` 엔트리의 메타데이터를 통해 액티비티로 등록하세요.
+
+이 페이지의 코드 조각은 API 사용법을 보여 주는 예시입니다. 결제 예제를 실제로 사용하려면 애플리케이션이 소유하는 환경 엔트리, 자격 증명에 대한 `env.get` 권한, 결제 공급자 URL에 대한 `http_client.request` 권한, 그리고 결제 공급자 계약이 필요합니다.
 
 ## 액티비티 등록
 
@@ -17,6 +19,8 @@ description: "액티비티는 비결정론적 작업을 실행하는 함수입�
   source: file://payment.lua
   method: charge
   modules:
+    - env
+    - errors
     - http_client
     - json
   meta:
@@ -35,31 +39,56 @@ description: "액티비티는 비결정론적 작업을 실행하는 함수입�
 
 ## 구현
 
-액티비티는 일반 Lua 함수입니다:
+액티비티는 일반 Lua 함수입니다. Temporal은 워크플로우 입력을 워크플로우 이력에 저장하므로 자격 증명을 입력에 포함하지 마세요. 이 예제는 액티비티 안에서 환경 레지스트리의 결제 키를 읽습니다. 예시 공급자는 JSON 결제 요청을 받고 JSON 응답을 반환합니다. 상태 매핑은 애플리케이션이 소유하는 정책입니다. URL, 요청 필드, 응답 필드, 실패 매핑을 실제 공급자 계약에 맞게 바꾸세요.
 
 ```lua
 -- payment.lua
 local http = require("http_client")
 local json = require("json")
+local env = require("env")
+local errors = require("errors")
+
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
 
 local function charge(input)
-    local response, err = http.post("https://api.stripe.com/v1/charges", {
+    local api_key, env_err = env.get("PAYMENTS_API_KEY")
+    if env_err then return nil, env_err end
+
+    local body, encode_err = json.encode({
+        amount = input.amount,
+        currency = input.currency,
+        payment_token = input.payment_token
+    })
+    if encode_err then
+        return nil, encode_err
+    end
+
+    local response, err = http.post("https://payments.example.com/v1/charges", {
         headers = {
-            ["Authorization"] = "Bearer " .. input.api_key,
+            ["Authorization"] = "Bearer " .. api_key,
             ["Content-Type"] = "application/json"
         },
-        body = json.encode({
-            amount = input.amount,
-            currency = input.currency,
-            source = input.token
-        })
+        body = body
     })
 
     if err then
         return nil, err
     end
 
-    return json.decode(response:body())
+    if response.status_code >= 400 then
+        return nil, payment_error(response.status_code)
+    end
+
+    return json.decode(response.body)
 end
 
 return { charge = charge }
@@ -75,8 +104,7 @@ local funcs = require("funcs")
 local result, err = funcs.call("app:charge_payment", {
     amount = 5000,
     currency = "usd",
-    token = "tok_visa",
-    api_key = ctx.stripe_key
+    payment_token = "payment-token-123"
 })
 
 if err then
@@ -120,7 +148,13 @@ local reliable = funcs.new():with_options({
 })
 
 local a, err = reliable:call("app:step_one", input)
+if err then
+    return nil, err
+end
 local b, err = reliable:call("app:step_two", a)
+if err then
+    return nil, err
+end
 ```
 
 ### 옵션 레퍼런스
@@ -143,19 +177,34 @@ local b, err = reliable:call("app:step_two", a)
 
 duration 값은 문자열 (`"5s"`, `"10m"`, `"1h"`) 또는 밀리초 숫자를 허용합니다.
 
+새 코드에는 표준 `activity.*` 이름을 사용하세요. 기존 `temporal.activity.*` 별칭도 호환성을 위해 계속 지원됩니다.
+
+```lua
+local executor = funcs.new():with_options({
+    ["activity.summary"] = "Charge the order payment",
+    ["activity.priority"] = {
+        priority_key = 10,
+        fairness_key = "customer-123",
+        fairness_weight = 1.0,
+    },
+    ["activity.name"] = "charge-payment",
+    ["activity.versioning_intent"] = "use_assignment_rules",
+})
+```
+
 ### 재시도 정책
 
 실패한 액티비티의 자동 재시도 동작을 설정합니다:
 
 ```lua
 ["activity.retry_policy"] = {
-    initial_interval = 1000,         -- 첫 재시도 전 ms
-    backoff_coefficient = 2.0,       -- 재시도마다 적용되는 승수
-    maximum_interval = 300000,       -- 재시도 간격 최대값 (ms)
-    maximum_attempts = 10,           -- 최대 재시도 횟수 (0 = 무제한)
-    non_retryable_error_types = {    -- 재시도를 건너뛰는 에러
-        "INVALID",
-        "PERMISSION_DENIED"
+    initial_interval = 1000,         -- ms before first retry
+    backoff_coefficient = 2.0,       -- multiplier for each retry
+    maximum_interval = 300000,       -- max interval between retries (ms)
+    maximum_attempts = 10,           -- max retry attempts (0 = unlimited)
+    non_retryable_error_types = {    -- errors that skip retries
+        "Invalid",
+        "PermissionDenied"
     }
 }
 ```
@@ -183,7 +232,7 @@ duration 값은 문자열 (`"5s"`, `"10m"`, `"1h"`) 또는 밀리초 숫자를 �
 
 ## 로컬 액티비티
 
-로컬 액티비티는 별도의 태스크 큐 폴링 없이 워크플로우 워커 프로세스에서 실행됩니다:
+액티비티는 `local` 필드를 허용합니다:
 
 ```yaml
 - name: validate_input
@@ -225,7 +274,10 @@ local spawner = process.with_context({
     user_id = "user-1",
     tenant = "tenant-1",
 })
-local pid = spawner:spawn("app:order_workflow", "app:worker", order)
+local pid, err = spawner:spawn("app:order_workflow", "app:worker", order)
+if err then
+    return nil, err
+end
 ```
 
 ```lua
@@ -233,8 +285,10 @@ local pid = spawner:spawn("app:order_workflow", "app:worker", order)
 local ctx = require("ctx")
 
 local function process_order(input)
-    local user_id = ctx.get("user_id")   -- "user-1"
-    local tenant = ctx.get("tenant")     -- "tenant-1"
+    local user_id, user_err = ctx.get("user_id")   -- "user-1"
+    if user_err then return nil, user_err end
+    local tenant, tenant_err = ctx.get("tenant")   -- "tenant-1"
+    if tenant_err then return nil, tenant_err end
     -- use context for authorization, logging, etc.
 end
 ```
@@ -262,6 +316,18 @@ local result, err = executor:call("app:charge_payment", input)
 ```lua
 local errors = require("errors")
 
+-- Replace this mapping with the payment provider's documented error contract.
+local function payment_error(status)
+    if status == 408 then
+        return errors.new({kind = errors.TIMEOUT, message = "payment provider timed out", retryable = true})
+    elseif status == 429 then
+        return errors.new({kind = errors.RATE_LIMITED, message = "payment provider rate limited the request", retryable = true})
+    elseif status >= 500 then
+        return errors.new({kind = errors.UNAVAILABLE, message = "payment provider is unavailable", retryable = true})
+    end
+    return errors.new({kind = errors.INVALID, message = "payment request was rejected", retryable = false})
+end
+
 local function charge(input)
     if not input.amount or input.amount <= 0 then
         return nil, errors.new({ kind = errors.INVALID, message = "amount must be positive" })
@@ -276,7 +342,7 @@ local function charge(input)
         return nil, errors.new({ kind = errors.INVALID, message = "payment declined" })
     end
 
-    return json.decode(response:body())
+    return json.decode(response.body)
 end
 ```
 

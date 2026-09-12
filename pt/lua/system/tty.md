@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -64,7 +69,7 @@ Chame `events()` antes de `start()` para que um consumidor esteja pronto quando 
 
 ## Controle de Entrada
 
-### tty.start()
+### `tty.start()`
 
 Inicia a entrega de entrada para a porta atual. Um terminal físico alterna para o modo raw.
 
@@ -74,7 +79,7 @@ local ok, err = tty.start()
 
 **Retorna:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Interrompe a entrega de entrada e restaura o terminal ao modo normal.
 
@@ -84,7 +89,7 @@ local ok, err = tty.stop()
 
 **Retorna:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 Inscreve-se nos eventos de terminal da porta e retorna um channel. Eventos são entregues como tabelas com um campo `type`. Inscreva-se uma vez e reutilize o channel.
 
@@ -106,7 +111,7 @@ local width, height, err = tty.screen_size()
 
 **Retorna:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Habilita ou desabilita o rastreamento de eventos de mouse.
 
@@ -343,9 +348,9 @@ Eventos são tabelas com um campo `type` que determina quais outros campos estã
 ```lua
 {
     type = "key",
-    key = "a",           -- caractere imprimível ou nome da tecla
-    key_type = "runes",  -- "runes" para imprimível, ou nome de tecla especial
-    action = "press",    -- "press" ou "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -360,7 +365,7 @@ Requer `tty.mouse(true)`.
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- nome do botão
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -423,20 +428,22 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- No loop de eventos
+-- In event loop
 if quit:matches(ev) then
     break
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Campo | Tipo | Descrição |
 |-------|------|-------------|
-| `keys` | string[] | Padrões de tecla a corresponder (ex: `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Obrigatório. Padrões de tecla a corresponder (por exemplo, `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Opcional. `{key = "...", desc = "..."}` para texto de ajuda |
 
 **Retorna:** `KeyBinding`
+
+O schema de tipo exige `keys`. Em runtime, a ausência de `keys` ou uma tabela vazia cria uma vinculação que nunca corresponde.
 
 ### Métodos de KeyBinding
 
@@ -449,7 +456,7 @@ end
 
 ## Estilos
 
-Crie saída de texto estilizada usando estilização baseada em lipgloss. Todos os métodos de estilo retornam um novo estilo (imutável).
+Crie saída estilizada para o terminal. Os valores de estilo são imutáveis, portanto cada método de estilo retorna um novo valor.
 
 ```lua
 local tty = require("tty")
@@ -466,10 +473,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 Cria um novo estilo vazio.
 
@@ -547,9 +555,9 @@ Funções de layout e medição para texto estilizado. Disponíveis sob `tty.tex
 ### Medição
 
 ```lua
-local w = tty.text.width("hello")         -- largura imprimível (ciente de ANSI)
-local h = tty.text.height("a\nb\nc")      -- contagem de linhas
-local w, h = tty.text.size("hello\nworld") -- ambos
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### Recorte
@@ -568,18 +576,18 @@ Ambos preservam o estado ANSI e os limites de grafema, de modo que texto estiliz
 ### Junção
 
 ```lua
--- Junta lado a lado, alinhado no topo
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- Empilha verticalmente, centralizado
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### Dimensões Máximas
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- mais largo
-local h = tty.text.max_height({"one\ntwo", "single"})         -- mais alto
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### Posicionamento
@@ -587,13 +595,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- mais alto
 Posiciona uma string dentro de uma caixa de dimensões dadas:
 
 ```lua
--- Centraliza em uma caixa 80x24
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- Apenas horizontal
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- Apenas vertical
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -607,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Imagens, páginas e viewports delegados
+
+`surface:present(rows, options)` aceita em `options.images` o conjunto completo
+de posicionamentos de imagens retidas. Cada posicionamento inclui
+`placement_id`, um handle PNG importado com `tty.image(png_bytes)`, coordenadas e
+tamanho de destino e, opcionalmente, `src`, `z` e `alt`. `image:info()`,
+`image:read()` e `image:close()` fornecem metadados, exportação explícita do PNG
+e liberação. Um `present` posterior sem `images` remove os posicionamentos.
+
+`surface:capabilities()` informa o modo de imagem `native`, `kitty`, `pending`
+ou `none`. `surface:clipboard(text)` envia em uma surface física uma solicitação
+de clipboard OSC 52 com até 65.536 bytes UTF-8; surfaces virtuais não oferecem
+suporte.
+
+`tty.viewport()` aceita `page = {foreground, background}` com cores opacas
+`#RRGGBB`; `viewport:set_page(page)` altera a página. Snapshots incluem `images`,
+`layers` e `images_omitted`. `viewport:capture()` fixa atomicamente a revisão e
+os recursos de imagem até `capture:close()`; `capture:image(image_id)` devolve
+um handle de propriedade independente.
+
+`viewport:mount(recipient_pid, rights)` emite uma referência de uso único,
+vinculada ao processo, para um destinatário local ou peer mesh autenticado. Os
+direitos `observe`, `input` e `resize` são independentes e falsos por padrão.
+`viewport:revoke(reference)` revoga a referência; um viewer montado não pode
+delegá-la novamente.
+
 ## Permissões
 
-O módulo não impõe ações de política próprias. O acesso a um terminal vem do frame: o terminal host anexa a porta física, e `process.with_options({terminal = grant})` anexa um viewport, o que requer `process.context` do lado que faz o spawn.
+O terminal físico vem do frame do processo. Anexar um produtor por meio de
+`process.with_options({terminal = grant})` requer `process.context` no spawn.
+Viewports delegados também verificam `tty.mount`, `tty.observe`, `tty.input` e
+`tty.resize` contra o handle do viewport proprietário.
 
 ## Veja Também
 

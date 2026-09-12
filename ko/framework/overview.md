@@ -3,7 +3,7 @@ title: "Framework"
 description: "Wippy는 허브를 통해 공식 프레임워크 모듈을 제공합니다. 이 모듈들은 wippy 조직에서 관리되며 어떤 프로젝트에도 추가할 수 있습니다."
 ---
 
-# Framework
+# 프레임워크
 
 Wippy는 허브를 통해 공식 프레임워크 모듈을 제공합니다. 이 모듈들은 `wippy` 조직에서 관리되며 어떤 프로젝트에도 추가할 수 있습니다.
 
@@ -28,7 +28,7 @@ entries:
   - name: dependency.test
     kind: ns.dependency
     component: wippy/test
-    version: "^0.3.0"
+    version: "*"
 ```
 
 그다음 해석하고 설치합니다:

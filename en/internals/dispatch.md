@@ -1,11 +1,13 @@
 ---
 title: "Command Dispatch"
-description: "The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and…"
+description: "How process yields are routed to command handlers and returned through correlated completion events."
 ---
 
 # Command Dispatch
 
-The dispatch system routes commands from processes to handlers. Processes yield commands with correlation tags, handlers execute async work, and results flow back via event queues.
+Command dispatch routes process yields to handlers and returns correlated results through process event queues.
+
+This is an extension and implementation reference. The custom command and dispatcher fragments assume an existing Go package, boot graph, command API, and service-specific error handling.
 
 ## Flow
 
@@ -65,7 +67,11 @@ System commands (0-255) use array indexing. Extended commands use map lookup. Af
 | 200-211 | pg (process group) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | User-defined services |
 
-Registration happens during boot via `MustRegisterCommands()`. Collisions panic at startup.
+Packages reserve command-ID ownership from `init()` with
+`MustRegisterCommands()`; ownership collisions panic while packages initialize.
+During component loading, each service binds its handlers through
+`Registrar.Register`. The dispatcher is frozen only after those handlers have
+been installed.
 
 ## Defining Commands
 
@@ -79,18 +85,10 @@ type MyCmd struct {
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-Pool reuse eliminates allocation in hot paths. Register at package init:
+Reserve the command ID at package initialization:
 
 ```go
 func init() {

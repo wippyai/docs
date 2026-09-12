@@ -6,7 +6,9 @@ description: "Template rendering using CloudyKit Jet."
 # Template Engine
 <secondary-label ref="external"/>
 
-Template rendering using [CloudyKit Jet](https://github.com/CloudyKit/jet).
+Template entries configure [CloudyKit Jet](https://github.com/CloudyKit/jet) sets and template sources.
+
+This page is a configuration reference. Its YAML fences are fragments for an existing entry list; combine each template with the referenced `template.set` in the same project or installed module graph.
 
 ## Entry Kinds
 
@@ -24,7 +26,7 @@ A set is a namespace containing related templates. Templates within a set share 
   kind: template.set
 ```
 
-All configuration is optional with sensible defaults:
+All template-set configuration is optional:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -35,6 +37,11 @@ All configuration is optional with sensible defaults:
 | `engine.delimiters.comment_right` | string | `*}` | Validated only; comments always use Jet's `*}` |
 | `engine.extensions` | string[] | `[.jet, .html.jet, .jet.html]` | Validated only; name lookup always tries Jet's built-in `.jet`, `.html.jet`, `.jet.html` |
 | `engine.globals` | map | - | Variables available to all templates |
+
+At runtime `development_mode`, the left and right expression delimiters, and
+`globals` configure the Jet set. The comment-delimiter and extension fields are
+accepted and validated in this release, but are not applied by the in-memory
+Jet loader. Changing them does not alter parsing or discover templates.
 
 ## Templates
 
@@ -62,11 +69,16 @@ Templates belong to a set and are identified by name for internal resolution.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `set` | reference | Yes | Parent template set |
-| `source` | string | Yes | Template content |
+| `source` | string | Yes | Inline template content or a manifest-relative `file://` reference |
+
+A relative `file://` reference is loaded relative to the manifest containing
+the entry and cannot escape that manifest filesystem. Environment placeholders
+inside the resulting template source are preserved as template text rather than
+resolved by the environment system.
 
 ## Template Resolution
 
-Templates reference each other using names, not registry IDs. The resolution works like a virtual filesystem within the set:
+Templates reference one another by name rather than registry ID. Names are resolved within the set:
 
 1. By default, the registry entry name (`entry.ID.Name`) becomes the template name
 2. Override with `meta.name` for custom naming:

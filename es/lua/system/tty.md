@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -64,7 +69,7 @@ Llame a `events()` antes de `start()` para que haya un consumidor listo cuando l
 
 ## Control de Entrada
 
-### tty.start()
+### `tty.start()`
 
 Inicia la entrega de entrada para el puerto actual. Un terminal físico cambia al modo en bruto.
 
@@ -74,7 +79,7 @@ local ok, err = tty.start()
 
 **Retorna:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Detiene la entrega de entrada y restaura el terminal al modo normal.
 
@@ -84,7 +89,7 @@ local ok, err = tty.stop()
 
 **Retorna:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 Suscríbase a los eventos de terminal del puerto y retorna un canal. Los eventos se entregan como tablas con un campo `type`. Suscríbase una vez y reutilice el canal.
 
@@ -106,7 +111,7 @@ local width, height, err = tty.screen_size()
 
 **Retorna:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Habilita o deshabilita el seguimiento de eventos del ratón.
 
@@ -429,14 +434,16 @@ if quit:matches(ev) then
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `keys` | string[] | Patrones de tecla a coincidir (ej. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Obligatorio. Patrones de tecla a coincidir (ej. `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Opcional. `{key = "...", desc = "..."}` para texto de ayuda |
 
 **Retorna:** `KeyBinding`
+
+El esquema de tipos exige `keys`. En tiempo de ejecución, una tabla `keys` omitida o vacía crea un binding que nunca coincide.
 
 ### Métodos de KeyBinding
 
@@ -449,7 +456,7 @@ end
 
 ## Estilos
 
-Cree salida de texto estilizada usando estilizado basado en lipgloss. Todos los métodos de estilo retornan un nuevo estilo (inmutable).
+Cree salida de terminal con estilo. Los valores de estilo son inmutables, por lo que cada método devuelve un valor nuevo.
 
 ```lua
 local tty = require("tty")
@@ -466,10 +473,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 Crea un nuevo estilo vacío.
 
@@ -542,7 +550,7 @@ tty.align.RIGHT   -- 1
 
 ## Utilidades de Texto
 
-Funciones de diseño y medición para texto estilizado. Disponibles bajo `tty.text`.
+La subtabla `tty.text` proporciona funciones de diseño y medición para texto estilizado.
 
 ### Medición
 
@@ -584,7 +592,7 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 
 ### Colocación
 
-Coloca una cadena dentro de una caja de dimensiones dadas:
+Coloca una cadena dentro de una caja con las dimensiones indicadas:
 
 ```lua
 -- Center in a 80x24 box
@@ -607,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Imágenes, páginas y viewports delegados
+
+`surface:present(rows, options)` acepta en `options.images` el conjunto completo
+de ubicaciones de imágenes retenidas. Una ubicación incluye `placement_id`, un
+handle PNG importado con `tty.image(png_bytes)`, coordenadas y tamaño de destino,
+y los campos opcionales `src`, `z` y `alt`. `image:info()`, `image:read()` e
+`image:close()` ofrecen metadatos, exportación explícita del PNG y liberación.
+Un `present` posterior sin `images` elimina las ubicaciones.
+
+`surface:capabilities()` informa el modo de imagen `native`, `kitty`, `pending`
+o `none`. `surface:clipboard(text)` envía en una surface física una solicitud de
+portapapeles OSC 52 de hasta 65.536 bytes UTF-8; las surfaces virtuales no la
+admiten.
+
+`tty.viewport()` acepta `page = {foreground, background}` con colores opacos
+`#RRGGBB`; `viewport:set_page(page)` cambia la página. Los snapshots incluyen
+`images`, `layers` e `images_omitted`. `viewport:capture()` fija atómicamente la
+revisión y los recursos de imagen hasta `capture:close()`;
+`capture:image(image_id)` devuelve un handle con propiedad independiente.
+
+`viewport:mount(recipient_pid, rights)` emite una referencia de un solo uso,
+vinculada al proceso, para un destinatario local o de un peer mesh autenticado.
+Los derechos `observe`, `input` y `resize` son independientes y por defecto
+falsos. `viewport:revoke(reference)` revoca la referencia; un viewer montado no
+puede delegarla otra vez.
+
 ## Permisos
 
-El módulo no aplica acciones de política propias. El acceso a un terminal proviene del frame: el terminal host asocia el puerto físico, y `process.with_options({terminal = grant})` asocia un viewport, lo que requiere `process.context` en el lado que hace el spawn.
+El terminal físico procede del frame del proceso. Asociar un productor mediante
+`process.with_options({terminal = grant})` requiere `process.context` al hacer
+spawn. Los viewports delegados comprueban además `tty.mount`, `tty.observe`,
+`tty.input` y `tty.resize` contra el handle del viewport propietario.
 
 ## Véase También
 

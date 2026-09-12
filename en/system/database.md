@@ -5,7 +5,9 @@ description: "SQL database connection pooling and configuration. Supports Postgr
 
 # Database System
 
-SQL database connection pooling and configuration. Supports PostgreSQL, MySQL, and SQLite.
+Wippy provides pooled SQL database entries for PostgreSQL and MySQL, plus a single-connection SQLite entry.
+
+This page is a configuration reference. Unless a fence includes `version`, `namespace`, and `entries`, treat it as a fragment to place inside an existing entry list.
 
 ## Entry Kinds
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -96,7 +98,7 @@ Pull connection values from the [environment registry](system/env.md) with `${en
 - name: prod_db
   kind: db.sql.postgres
   host: ${env:DB_HOST}
-  port: ${env:DB_PORT}
+  port: ${env:DB_PORT|5432}
   database: ${env:DB_NAME}
   username: ${env:DB_USER}
   password: ${env:app.secrets:db_password}
@@ -107,7 +109,7 @@ Older configurations use a sibling <code>&lt;field&gt;_env</code> directive (<co
 </note>
 
 <warning>
-Avoid hardcoding passwords in configuration. Use <code>env.variable</code> entries for credentials. See <a href="system/env.md">Environment</a> for secure secret management.
+Avoid hardcoding passwords in configuration. Use <code>env.variable</code> entries for credentials. See <a href="./env.md">Environment</a> for secret configuration.
 </warning>
 
 ## Connection Pool
@@ -271,11 +273,11 @@ entries:
 
 ## Runtime Registration
 
-Databases can be registered at runtime using the [registry module](lua/core/registry.md), enabling dynamic database configuration based on application state or external configuration.
+Databases can be registered at runtime using the [registry module](lua/core/registry.md).
 
 ## Lua API
 
-See [SQL Module](lua/storage/sql.md) for database operations API.
+See [SQL Module](lua/storage/sql.md) for query, transaction, and connection operations.
 
 ## See Also
 

@@ -98,5 +98,5 @@ export default {
 
 快照必须包含其来源和哈希。快照中不存在的依赖会被打包进产物，除非另有成文的构建规则适用。
 
-例如，如果所选发布标签是 `v1.2.3`，唯一的标准快照 URL 就是
-`https://web-host.wippy.ai/v1.2.3/import-map.json`。不要替换为本地应用 URL、未固定版本的 `latest` URL，或手工重建的包列表。
+对于 Web Host 1.0.56 基线，唯一的标准快照 URL 是
+`https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`。不要替换为本地应用 URL、未固定版本的 `latest` URL，或手工重建的包列表。

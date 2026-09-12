@@ -5,7 +5,9 @@ description: "Configuración para entradas basadas en Lua: funciones, procesos, 
 
 # Tipos de Entrada Lua
 
-Configuración para entradas basadas en Lua: funciones, procesos, flujos de trabajo y bibliotecas.
+Los tipos de entrada Lua definen cómo se carga y ejecuta el código fuente como función, proceso, workflow o biblioteca.
+
+Esta página es una referencia de configuración. Los bloques YAML son definiciones parciales de entradas pensadas para colocarse bajo un mapping `entries:` en un índice de Wippy; no son aplicaciones completas por sí solas. Los archivos fuente, imports, dependencias, hosts de procesos y políticas de seguridad referenciados deben existir en el proyecto que los rodea.
 
 ## Tipos de Entrada
 
@@ -15,7 +17,6 @@ Configuración para entradas basadas en Lua: funciones, procesos, flujos de trab
 | `process.lua` | Actor de larga duración con estado |
 | `workflow.lua` | Flujo de trabajo durable (Temporal) |
 | `library.lua` | Código compartido importado por otras entradas |
-| `module.lua` | Superficie de módulo (biblioteca con múltiples métodos) |
 
 Cada tipo tiene una contraparte de bytecode precompilado (`function.lua.bc`, `library.lua.bc`, `process.lua.bc`, `workflow.lua.bc`) producida por `wippy pack --bytecode '**'` (o un patrón como `--bytecode 'app:**'`). Los autores escriben entradas `.lua`; los tipos de bytecode se emiten al empaquetar con esa bandera.
 
@@ -27,15 +28,17 @@ Todas las entradas Lua comparten estos campos:
 |-------|----------|-------------|
 | `name` | sí | Nombre único dentro del namespace |
 | `kind` | sí | Uno de los tipos Lua anteriores |
-| `source` | sí | Ruta del archivo Lua (`file://path.lua`) |
+| `source` | sí | Código fuente Lua inline o una referencia `file://path.lua` resuelta al cargar el registro |
 | `method` | function/process/workflow | Función a exportar (las bibliotecas no la usan) |
 | `modules` | no | Módulos permitidos para `require()` |
 | `imports` | no | Otras entradas como módulos locales |
 | `meta` | no | Metadatos buscables |
 
-## function.lua
+`pool` solo se aplica a `function.lua`. `security` se aplica a `function.lua` y `process.lua`.
 
-Función sin estado llamada bajo demanda. Cada invocación es independiente.
+## `function.lua`
+
+Una entrada `function.lua` se ejecuta bajo demanda y cada invocación se gestiona de forma independiente.
 
 ```yaml
 - name: handler
@@ -49,9 +52,9 @@ Función sin estado llamada bajo demanda. Cada invocación es independiente.
 
 Usar para: Manejadores HTTP, transformaciones de datos, utilidades.
 
-## process.lua
+## `process.lua`
 
-Actor de larga duración que mantiene estado entre mensajes. Se comunica mediante paso de mensajes.
+Una entrada `process.lua` es un actor de larga duración que conserva estado y se comunica mediante mensajes.
 
 ```yaml
 - name: worker
@@ -59,7 +62,6 @@ Actor de larga duración que mantiene estado entre mensajes. Se comunica mediant
   source: file://worker.lua
   method: main
   modules:
-    - process
     - sql
 ```
 
@@ -78,9 +80,9 @@ Para ejecutar como servicio supervisado:
       max_attempts: 10
 ```
 
-## workflow.lua
+## `workflow.lua`
 
-Flujo de trabajo durable que sobrevive a reinicios. El estado se persiste en Temporal.
+Una entrada `workflow.lua` define un workflow durable cuyo estado se conserva en Temporal.
 
 ```yaml
 - name: order_processor
@@ -94,9 +96,9 @@ Flujo de trabajo durable que sobrevive a reinicios. El estado se persiste en Tem
 
 Usar para: Procesos de negocio de múltiples pasos, orquestaciones de larga duración.
 
-## library.lua
+## `library.lua`
 
-Código compartido que puede ser importado por otras entradas.
+Una entrada `library.lua` proporciona código compartido que otras entradas pueden importar.
 
 ```yaml
 - name: helpers
@@ -134,17 +136,13 @@ modules:
   - http
   - json
   - sql
-  - process
 ```
 
-`channel`, `print`, `subscribe` y `unsubscribe` se cargan como globales de Lua y no necesitan aparecer en `modules:`.
+`channel`, `payload`, `print`, `process`, `subscribe` y `unsubscribe` se cargan como globales de Lua y no necesitan aparecer en `modules:`. `require("process")` también está permitido sin una declaración `modules:`.
 
-Solo los módulos listados están disponibles. Esto proporciona:
-- Seguridad: Prevenir acceso a módulos del sistema
-- Dependencias explícitas: Claro qué necesita el código
-- Determinismo: Los flujos de trabajo solo obtienen módulos determinísticos
+Solo están disponibles los módulos integrados incluidos en la lista y los aliases declarados en `imports`. La allowlist de módulos limita el acceso a capacidades del runtime, hace explícitas las dependencias y restringe los workflows a clases de módulos compatibles con workflows.
 
-Consulte [Runtime de Lua](lua/overview.md) para módulos disponibles.
+Consulta [Runtime de Lua](lua/overview.md) para ver los módulos disponibles.
 
 ## Imports
 
@@ -158,9 +156,9 @@ imports:
 
 La clave se convierte en el nombre del módulo en código Lua. El valor es el ID de entrada (`namespace:name`).
 
-## Configuración de Pool
+## Pools de funciones
 
-Configure el pool de ejecución para funciones:
+Usa `pool` para configurar cómo se ejecuta una entrada de función:
 
 ```yaml
 - name: handler
@@ -182,7 +180,7 @@ Configure el pool de ejecución para funciones:
 
 | Tipo | Comportamiento |
 |------|----------------|
-| `inline` | Ejecución síncrona en la goroutine del llamador. Mínima latencia, sin aislamiento entre llamadas. |
+| `inline` | Ejecución síncrona en la goroutine del llamador. Sin aislamiento entre llamadas. |
 | `lazy` | Cero workers en reposo, se crean bajo demanda y se eliminan cuando están inactivos. |
 | `static` | Pool de tamaño fijo basado en canales. Predecible bajo carga estable. |
 | `adaptive` | Pool auto-escalable — crece bajo carga, se reduce cuando está inactivo. |
@@ -191,7 +189,7 @@ Cuando se omite `type`, el pool se auto-selecciona a partir de los demás campos
 
 ## Metadatos
 
-Use `meta` para enrutamiento y descubrimiento:
+Usa `meta` para adjuntar campos buscables de routing y discovery:
 
 ```yaml
 - name: api_handler
@@ -205,6 +203,7 @@ Use `meta` para enrutamiento y descubrimiento:
   modules:
     - http
     - json
+    - registry
 ```
 
 Los metadatos son buscables vía el registro:
@@ -214,8 +213,10 @@ local registry = require("registry")
 local handlers = registry.find({["meta.type"] = "handler"})
 ```
 
+La consulta devuelve todas las entradas coincidentes del registro. El código Lua pertenece a una entrada ejecutable cuya lista `modules` incluye `registry`, como la entrada `api_handler` anterior.
+
 ## Vea También
 
-- [Tipos de Entrada](guides/entry-kinds.md) - Referencia de todos los tipos de entrada
-- [Unidades de Cómputo](concepts/compute-units.md) - Funciones vs procesos vs flujos de trabajo
+- [Tipos de entrada](guides/entry-kinds.md) - Referencia de todos los tipos de entrada
+- [Unidades de cómputo](concepts/compute-units.md) - Funciones vs. procesos vs. workflows
 - [Runtime de Lua](lua/overview.md) - Módulos disponibles

@@ -1,15 +1,20 @@
 ---
 title: "WASM Functions"
-description: "WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: function.wat for inline WAT source and function.wasm…"
+description: "Configure inline WAT functions and precompiled WASM functions as registry entries."
 ---
 
 # WASM Functions
 
-WASM functions are registry entries that execute WebAssembly code. Two entry kinds are available: `function.wat` for inline WAT source and `function.wasm` for precompiled binaries.
+Use `function.wat` for inline WebAssembly Text source and `function.wasm` for precompiled binaries.
+
+**Classification: function configuration reference.** WAT blocks are small
+registry examples. Precompiled examples assume an external component build, a
+filesystem entry, exported methods matching the guest WIT, and a SHA-256 digest
+calculated from the exact binary. Real-looking sample hashes are illustrative.
 
 ## Inline WAT Functions
 
-Define small WASM functions directly in your `_index.yaml` using WebAssembly Text format:
+Define a WAT function directly in `_index.yaml`:
 
 ```yaml
 entries:
@@ -52,7 +57,7 @@ For larger WAT sources, use a file reference:
 | `transport` | No | Input/output mapping (default: `payload`) |
 | `imports` | No | Host imports to enable (e.g., `wasi:cli`, `wasi:io`) |
 | `wasi` | No | WASI configuration (args, env, mounts) |
-| `limits` | No | Execution limits |
+| `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
 ## Precompiled WASM Functions
 
@@ -88,7 +93,7 @@ entries:
 | `transport` | No | Input/output mapping (default: `payload`) |
 | `imports` | No | Host imports to enable |
 | `wasi` | No | WASI configuration |
-| `limits` | No | Execution limits |
+| `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
 ## Worker Pools
 
@@ -96,7 +101,7 @@ Each WASM function uses a pool of pre-compiled instances. The pool type controls
 
 | Type | Description |
 |------|-------------|
-| `inline` | Synchronous, single-threaded. New instance per call. |
+| `inline` | Mutex-serialized. Synchronous and asyncified calls reuse one warm instance; retained-memory policy or an execution failure can trigger replacement. |
 | `lazy` | Zero idle workers. Scales on demand up to `max_size`. |
 | `static` | Fixed number of workers with request queue. |
 | `adaptive` | Auto-scaling elastic pool. |
@@ -173,6 +178,7 @@ The default transport passes arguments directly. Lua values are transcoded to Go
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
@@ -202,15 +208,16 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-The `limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
+The `options.limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | Field | Default | Description |
@@ -222,6 +229,10 @@ limits:
 | `socket_timeout_ms` | `30000` | Deadline for a `socket` dial and for each send/receive. |
 
 Negative values are rejected at boot.
+
+The root `limits` and `meta.options.limits` spellings are accepted temporarily
+with a deprecation warning. Keep `pool` at the entry root; it has not moved
+under `options`.
 
 ## WASI Configuration
 
@@ -298,9 +309,11 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### Async Sleep with WASI Clocks

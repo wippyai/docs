@@ -1,13 +1,15 @@
 ---
 title: "Type System"
-description: "Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default."
+description: "Syntax and runtime behavior for Wippy's gradual type system, including unions, records, generics, validation, and reflection."
 ---
 
 # Type System
 
-> **Experimental.** Some limitations are expected.
+> **Experimental.** The type system is still evolving, and some limitations are expected.
 
-Wippy includes a gradual type system with flow-sensitive checking. Types are non-nullable by default.
+Wippy's gradual type system supports incremental annotations and flow-sensitive checking. Types are non-nullable by default.
+
+This page is a language reference, not a complete program. Each code block is an isolated type-checking example, and alternatives within a block are not necessarily meant to be combined. Names such as `get_data`, `get_user`, `call`, and `User` represent application code; lines marked `ERROR` intentionally demonstrate diagnostics. These examples use language syntax and built-in type values, so they do not require runtime modules.
 
 ## Primitives
 
@@ -16,16 +18,17 @@ local n: number = 3.14
 local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- explicit dynamic (opt-out of checking)
-local u: unknown = something  -- must narrow before use
+local a: any = "anything"     -- dynamic member and method access
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
-### any vs unknown
+### `any` and `unknown`
 
 ```lua
--- any: opt-out of type checking
+-- any: dynamic member and method access
 local a: any = get_data()
 a.foo.bar.baz()              -- no error, may crash at runtime
+local s: string = a          -- ERROR: any is not assignable to string
 
 -- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
@@ -203,9 +206,9 @@ local function render(state: LoadState): string
 end
 ```
 
-## The never Type
+## The `never` Type
 
-`never` is the bottom type - no values exist:
+`never` is the bottom type: it has no possible values.
 
 ```lua
 function fail(msg: string): never
@@ -215,7 +218,7 @@ end
 
 ## Error Handling Pattern
 
-The checker understands the Lua error idiom:
+The checker understands the common Lua `value, error` return pattern:
 
 ```lua
 local value, err = call()
@@ -240,9 +243,9 @@ local name = (user!).name            -- assert user is non-nil
 
 ## Type Casts
 
-### Safe Cast (Validation)
+### Runtime Validation
 
-Call a type as a function to validate and cast:
+Call a type as a function to validate a value. Validation returns the original value with the requested static type; it does not convert or coerce the value:
 
 ```lua
 local data: any = get_json()
@@ -250,21 +253,23 @@ local user = User(data)              -- validates and returns User
 local name = user.name               -- safe field access
 ```
 
-Works with primitives and custom types:
+This works with primitives and custom types:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- cast to string
-local n = integer(x)                 -- cast to integer
-local b = boolean(x)                 -- cast to boolean
+local s = string(x)                  -- requires an existing string
+local n = integer(x)                 -- requires an existing integer
+local b = boolean(x)                 -- requires an existing boolean
 
 type Point = {x: number, y: number}
 local p = Point(data)                -- validates record structure
 ```
 
+For example, `string(42)` raises a validation error; use `tostring(42)` when conversion is intended.
+
 ### Type:is() Method
 
-Validate without throwing, returns `(value, nil)` or `(nil, error)`:
+`Type:is` validates without throwing and returns either `(value, nil)` or `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -300,7 +305,7 @@ Use sparingly. Unsafe casts bypass validation and can cause runtime errors if th
 
 ## Type Reflection
 
-Types are first-class values with introspection methods.
+Types are first-class values that provide introspection methods.
 
 ### Kind and Name
 
@@ -373,6 +378,8 @@ end
 print(Predicate:ret():kind())        -- "boolean"
 ```
 
+`typeof(expression)` is type syntax, not a runtime reflection function. Use it in an alias such as `type Config = typeof(default_config)`; the resulting alias is the runtime type value.
+
 ### Type Comparison
 
 ```lua
@@ -418,28 +425,29 @@ type StringMap = {[string]: number}
 
 ## Type Validators
 
-Add runtime validation constraints to types using annotations:
+Attach validation constraints to type aliases with annotations, then call the type or use `Type:is()` to enforce them at runtime:
 
 ```lua
--- Single validator
-local x: number @min(0) = 1
+type NonNegative = number @min(0)
+type Percentage = number @min(0) @max(100)
+type Email = string @pattern("^.+@.+$")
 
--- Multiple validators
-local x: number @min(0) @max(100) = 50
-
--- String pattern
-local email: string @pattern("^.+@.+$") = "test@example.com"
+local x = NonNegative(1)
+local percent, err = Percentage:is(50)
+local email = Email("test@example.com")
 ```
+
+An annotation on a local variable is checked statically by the linter. It does not insert an automatic runtime check at assignment; runtime enforcement occurs when a type value validates a value.
 
 ### Built-in Validators
 
 | Validator | Applies to | Example |
 |-----------|------------|---------|
-| `@min(n)` | number | `local x: number @min(0) = 1` |
-| `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
-| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+| `@min(n)` | number | `type Positive = number @min(1)` |
+| `@max(n)` | number | `type Percentage = number @max(100)` |
+| `@min_len(n)` | string, array | `type NonEmpty = string @min_len(1)` |
+| `@max_len(n)` | string, array | `type ShortName = string @max_len(10)` |
+| `@pattern(regex)` | string | `type Email = string @pattern("^.+@.+$")` |
 
 ### Record Field Validators
 
@@ -467,7 +475,7 @@ local id: number @min(1) | string @min_len(1) = 1
 | Position | Variance | Description |
 |----------|----------|-------------|
 | Readonly field | Covariant | Can use subtype |
-| Mutable field | Invariant | Must match exactly |
+| Mutable field | Quasi-invariant | Normally invariant; fresh literals and refinements may widen to their base type |
 | Function parameter | Contravariant | Can use supertype |
 | Function return | Covariant | Can use subtype |
 
@@ -480,7 +488,7 @@ local id: number @min(1) | string @min_len(1) = 1
 
 ## Gradual Adoption
 
-Add types incrementally - untyped code continues to work:
+Types can be added incrementally; untyped code continues to work:
 
 ```lua
 -- Existing code works unchanged
@@ -494,17 +502,18 @@ function new_function(x: number): number
 end
 ```
 
-Start by adding types to:
+Useful starting points include:
+
 1. Function signatures at API boundaries
 2. HTTP handlers and queue consumers
 3. Critical business logic
 
 ## Type Checking
 
-Run the type checker:
+Run the type checker with:
 
 ```bash
 wippy lint
 ```
 
-Reports type errors without executing code.
+The command reports type errors without executing the code.

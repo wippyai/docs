@@ -1,15 +1,15 @@
 ---
 title: "Dateisystem"
-description: "Verzeichnis- und eingebetteter Dateisystemzugriff."
+description: "Konfigurieren Sie verzeichnisbasierte und schreibgeschützte eingebettete Dateisysteme."
 ---
 
 # Dateisystem
 
-Verzeichnis- und eingebetteter Dateisystemzugriff.
+Dateisystem-Einträge stellen Laufzeitmodulen verzeichnisbasierten oder schreibgeschützten eingebetteten Speicher bereit. Diese Seite ist eine Konfigurationsreferenz; ihre YAML-Blöcke sind einzelne Entry-Fragmente und keine vollständigen Projekte.
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `fs.directory` | Verzeichnisbasiertes Dateisystem |
 | `fs.embed` | Schreibgeschütztes eingebettetes Dateisystem |
@@ -64,6 +64,7 @@ Beide Dateisystemtypen implementieren:
 |-----------|-----------|-------|
 | Open/Read | Ja | Ja |
 | Stat | Ja | Ja |
+| Lstat | Ja | Ja |
 | ReadDir | Ja | Ja |
 | OpenFile (write) | Ja | Nein |
 | Remove | Ja | Nein |

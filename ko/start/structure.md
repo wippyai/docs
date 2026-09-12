@@ -5,8 +5,6 @@ description: "프로젝트 레이아웃, YAML 정의 파일, 명명 규칙."
 
 # YAML 및 프로젝트 구조
 
-프로젝트 레이아웃, YAML 정의 파일, 명명 규칙.
-
 ## 디렉토리 레이아웃
 
 ```
@@ -30,7 +28,7 @@ myapp/
 YAML 정의는 시작 시 레지스트리에 로드됩니다. 레지스트리가 실제 데이터의 원본입니다. YAML 파일은 레지스트리를 채우는 방법 중 하나이며, 엔트리는 다른 소스에서 가져오거나 프로그래밍 방식으로 생성할 수도 있습니다.
 </note>
 
-### 파일 구조
+### 정의 파일 형식
 
 `namespace`와 함께 `entries` 배열 또는 최상위 `name`+`kind`가 있는 모든 YAML 파일이 유효한 정의 파일입니다. `version`은 선택적입니다:
 
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: ID로 사용자 조회
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: 사용자 API 엔드포인트
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -69,18 +67,18 @@ entries:
 의미 단위 구분에는 점(`.`)을, 단어 구분에는 밑줄(`_`)을 사용합니다:
 
 ```yaml
-# 함수와 엔드포인트
-- name: get_user              # 함수
-- name: get_user.endpoint     # HTTP 엔드포인트
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# 같은 함수에 대한 여러 엔드포인트
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# 라우터
-- name: api.public            # 퍼블릭 API 라우터
-- name: api.admin             # 관리자 API 라우터
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
@@ -132,14 +130,14 @@ vendor된 팩은 `.wapp` 파일로 보관됩니다. `unpack_modules: true`이면
 
 ## 엔트리 정의
 
-`entries` 배열의 각 엔트리입니다. 속성은 루트 레벨에 위치합니다 (`data:` 래퍼 없음):
+`entries` 배열의 각 item은 하나의 엔트리를 정의합니다. 다음 예와 같이 kind-specific field는 `name`, `kind`, `meta` 옆에 둘 수 있습니다.
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: hello world 반환
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -149,10 +147,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Hello 엔드포인트
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+명시적 `data:` 필드도 지원됩니다. 이 필드가 있으면 그 값이 kind-specific payload 전체이므로 sibling kind-specific field와 함께 사용하지 마십시오.
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### 메타데이터
@@ -163,12 +173,12 @@ UI 표시용 정보는 `meta`에 지정합니다:
 - name: payment_handler
   kind: function.lua
   meta:
-    title: 결제 프로세서
-    comment: Stripe 결제 처리
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-`meta.title`과 `meta.comment`는 관리 UI에 표시됩니다.
+`meta.title`과 `meta.comment`는 registry consumer와 management interface가 표시할 수 있는 설명 정보에 사용합니다.
 
 ### 애플리케이션 엔트리
 
@@ -178,7 +188,7 @@ UI 표시용 정보는 `meta`에 지정합니다:
 - name: config
   kind: registry.entry
   meta:
-    title: 애플리케이션 설정
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -188,17 +198,17 @@ UI 표시용 정보는 `meta`에 지정합니다:
 
 ## 일반적인 엔트리 종류
 
-| Kind | 목적 |
+| 종류 | 목적 |
 |------|---------|
-| `registry.entry` | 범용 데이터 |
+| `registry.entry` | 일반 event dispatch 없이 저장되는 범용 데이터 |
 | `function.lua` | 호출 가능한 Lua 함수 |
 | `process.lua` | 장기 실행 프로세스 |
 | `http.service` | HTTP 서버 |
 | `http.router` | 라우트 그룹 |
 | `http.endpoint` | HTTP 핸들러 |
-| `process.host` | 프로세스 슈퍼바이저 |
+| `process.host` | 프로세스 실행 host |
 
-전체 레퍼런스는 [엔트리 종류 가이드](guides/entry-kinds.md)를 참조하세요.
+엔트리 kind 레퍼런스는 [엔트리 종류 가이드](guides/entry-kinds.md)를 참조하십시오.
 
 ## 설정 파일
 
@@ -220,7 +230,7 @@ supervisor:
     worker_count: 16
 ```
 
-모든 옵션은 [설정 가이드](guides/configuration.md)를 참조하세요.
+런타임 설정 필드는 [설정 가이드](guides/configuration.md)를 참조하십시오.
 
 ### wippy.lock
 
@@ -270,7 +280,7 @@ myapp/
 
 ## 참고
 
-- [애플리케이션 아키텍처](concepts/architecture.md) - 앱을 슬라이스와 레이어로 나누는 방법
-- [엔트리 종류 가이드](guides/entry-kinds.md) - 사용 가능한 엔트리 종류
-- [설정 가이드](guides/configuration.md) - 런타임 옵션
-- [커스텀 엔트리 종류](internals/kinds.md) - 핸들러 구현 (고급)
+- [애플리케이션 아키텍처](concepts/architecture.md) — 애플리케이션을 slice와 layer로 구성하기
+- [엔트리 종류 가이드](guides/entry-kinds.md) — 사용 가능한 엔트리 kind 검토하기
+- [설정 가이드](guides/configuration.md) — 런타임 옵션 설정하기
+- [커스텀 엔트리 종류](internals/kinds.md) — handler 구현하기(고급)

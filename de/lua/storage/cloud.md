@@ -12,7 +12,9 @@ description: "Zugriff auf S3-kompatiblen Objektspeicher. Objekte hochladen, heru
 
 Zugriff auf S3-kompatiblen Objektspeicher. Objekte hochladen, herunterladen, auflisten und verwalten, URLs für Download, Upload und Multipart-Teile vorsignieren sowie Objekte mit wahlfreiem Zugriff lesen.
 
-Für Speicherkonfiguration siehe [Cloud-Speicher](system/cloudstorage.md).
+Diese Seite ist eine API-Referenz. Ihre Ausschnitte setzen einen konfigurierten Speichereintrag, Zugriff auf jedes von ihnen genannte Dateisystem-Volume und die unten aufgeführten Berechtigungen voraus. Die Blöcke zu mehrteiligen Uploads und vorsignierten URLs sind Teilrezepte für die Client-Integration; die Anwendung muss die HTTP-Übertragungen ausführen und die zurückgegebenen ETags bereitstellen. Wenn sowohl eine Operation als auch die Ressourcenbereinigung fehlschlagen können, stellt die umgebende Anwendung `report_cleanup_error(err)` bereit. Die Funktion zeichnet den Bereinigungsfehler auf, ohne den ursprünglichen Fehler zu ersetzen.
+
+Informationen zur Speicherkonfiguration finden Sie unter [Cloud-Speicher](system/cloudstorage.md).
 
 ## Laden
 
@@ -22,7 +24,7 @@ local cloudstorage = require("cloudstorage")
 
 ## Speicher abrufen
 
-Holen Sie eine Cloud-Speicherressource anhand der Registry-ID:
+Rufen Sie eine Cloud-Speicherressource anhand ihrer Registry-ID ab:
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -30,8 +32,10 @@ if err then
     return nil, err
 end
 
-storage:upload_object("data/file.txt", "content")
+local uploaded, upload_err = storage:upload_object("data/file.txt", "content")
 storage:release()
+if upload_err then return nil, upload_err end
+return uploaded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -45,23 +49,49 @@ storage:release()
 Inhalt aus String oder Datei hochladen:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local json = require("json")
 
--- String-Inhalt hochladen
-local ok, err = storage:upload_object("reports/daily.json", json.encode({
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+
+-- Upload string content
+local body, encode_err = json.encode({
     date = "2024-01-15",
     total = 1234
-}))
+})
+if encode_err then
+    storage:release()
+    return nil, encode_err
+end
+local ok, err = storage:upload_object("reports/daily.json", body)
+if err then
+    storage:release()
+    return nil, err
+end
 
--- Aus Datei hochladen
+-- Upload from file
 local fs = require("fs")
-local vol = fs.get("app:data")
-local file = vol:open("/large-file.bin", "r")
+local vol, fs_err = fs.get("app:data")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
+local file, open_err = vol:open("/large-file.bin", "r")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 
-storage:upload_object("backups/large-file.bin", file)
-file:close()
+local uploaded, file_upload_err = storage:upload_object("backups/large-file.bin", file)
+local _, close_err = file:close()
 
 storage:release()
+if file_upload_err then
+    if close_err then report_cleanup_error(close_err) end
+    return nil, file_upload_err
+end
+if close_err then return nil, close_err end
+return uploaded
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -77,12 +107,14 @@ storage:release()
 Hängen Sie Metadaten an oder schützen Sie das Schreiben mit einer Optionstabelle:
 
 ```lua
-storage:upload_object("reports/daily.json", body, {
+local uploaded, err = storage:upload_object("reports/daily.json", body, {
     content_type = "application/json",
     cache_control = "max-age=3600",
-    metadata = { owner = "team-a", run_id = "1234" },  -- gespeichert als x-amz-meta-*
-    only_if_absent = true                              -- schlägt fehl, wenn der Schlüssel bereits existiert
+    metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
+    only_if_absent = true                              -- fail if the key already exists
 })
+if err then return nil, err end
+return uploaded
 ```
 
 | Option | Typ | Beschreibung |
@@ -97,29 +129,57 @@ storage:upload_object("reports/daily.json", body, {
 | `if_none_match` | string | Nur schreiben, wenn kein Objekt mit dem ETag übereinstimmt (`"*"` bedeutet beliebig) |
 | `only_if_absent` | boolean | Nur schreiben, wenn der Schlüssel nicht existiert (Alias für `if_none_match = "*"`) |
 
-Ein bedingtes Schreiben, dessen Vorbedingung fehlschlägt, gibt einen `precondition_failed`-Fehler zurück.
+Ein bedingter Schreibvorgang mit nicht erfüllter Vorbedingung gibt einen `precondition_failed`-Fehler zurück.
 
 ## Objekte herunterladen
 
 Objekt in einen Datei-Writer herunterladen:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
 local fs = require("fs")
-local vol = fs.get("app:temp")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+local vol, fs_err = fs.get("app:temp")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
 
-local file = vol:open("/downloaded.json", "w")
+local file, open_err = vol:open("/downloaded.json", "w")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 local ok, err = storage:download_object("reports/daily.json", file)
-file:close()
+local _, close_err = file:close()
+if err then
+    if close_err then report_cleanup_error(close_err) end
+    storage:release()
+    return nil, err
+end
+if close_err then
+    storage:release()
+    return nil, close_err
+end
 
--- Teilinhalt herunterladen (erste 1KB)
-local partial = vol:open("/partial.bin", "w")
-storage:download_object("backups/large-file.bin", partial, {
+-- Download partial content (first 1KB)
+local partial, partial_open_err = vol:open("/partial.bin", "w")
+if partial_open_err then
+    storage:release()
+    return nil, partial_open_err
+end
+local partial_ok, partial_err = storage:download_object("backups/large-file.bin", partial, {
     range = "bytes=0-1023"
 })
-partial:close()
+local _, partial_close_err = partial:close()
 
 storage:release()
+if partial_err then
+    if partial_close_err then report_cleanup_error(partial_close_err) end
+    return nil, partial_err
+end
+if partial_close_err then return nil, partial_close_err end
+return partial_ok
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -139,30 +199,40 @@ Eine fehlgeschlagene Vorbedingung (`if_match`/`if_none_match`) gibt einen `preco
 Objekte mit optionaler Präfix-Filterung auflisten:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local result, err = storage:list_objects({
     prefix = "reports/2024/",
     max_keys = 100
 })
+if err then
+    storage:release()
+    return nil, err
+end
 
 for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.etag)
 end
 
--- Durch große Ergebnisse paginieren
+-- Paginate through large results
 local token = nil
 repeat
-    local result = storage:list_objects({
+    local page, page_err = storage:list_objects({
         prefix = "logs/",
         max_keys = 1000,
         continuation_token = token
     })
-    for _, obj in ipairs(result.objects) do
+    if page_err then
+        storage:release()
+        return nil, page_err
+    end
+    for _, obj in ipairs(page.objects) do
         process(obj)
     end
-    token = result.next_continuation_token
-until not result.is_truncated
+    token = page.next_continuation_token
+    if not page.is_truncated then break end
+until false
 
 storage:release()
 ```
@@ -188,10 +258,12 @@ In Listenergebnissen ist <code>content_type</code> immer leer — S3-Listenopera
 Die Metadaten eines einzelnen Objekts abrufen, ohne dessen Body herunterzuladen:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local meta, err = storage:head_object("reports/daily.json")
 if err then
+    storage:release()
     return nil, err
 end
 
@@ -232,15 +304,18 @@ Ein fehlendes Objekt gibt einen `not_found`-Fehler zurück.
 Mehrere Objekte entfernen:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
-storage:delete_objects({
+local deleted, err = storage:delete_objects({
     "temp/file1.txt",
     "temp/file2.txt",
     "temp/file3.txt"
 })
 
 storage:release()
+if err then return nil, err end
+return deleted
 ```
 
 | Parameter | Typ | Beschreibung |
@@ -271,7 +346,7 @@ if err then
     return nil, err
 end
 
--- URL an Client für direkten Download zurückgeben
+-- Return URL to client for direct download
 return {download_url = url}
 ```
 
@@ -304,7 +379,7 @@ if err then
     return nil, err
 end
 
--- URL an Client für direkten Upload zurückgeben
+-- Return URL to client for direct upload
 return {upload_url = url}
 ```
 
@@ -474,7 +549,7 @@ Der Reader wird am Ende des Task-Scopes automatisch geschlossen, wenn er nicht e
 
 ## Berechtigungen
 
-Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
+Cloud-Speicheroperationen unterliegen der Auswertung der Sicherheitsrichtlinien.
 
 | Aktion | Ressource | Beschreibung |
 |--------|----------|-------------|
@@ -500,4 +575,4 @@ Cloud-Speicheroperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | Berechtigung verweigert | wird als Lua-Fehler ausgelöst, nicht zurückgegeben | - |
 | Provider-Operation fehlgeschlagen | `errors.UNKNOWN` | nicht gesetzt |
 
-Siehe [Fehlerbehandlung](lua/core/errors.md) für die Arbeit mit Fehlern.
+Informationen zum Umgang mit Fehlern finden Sie unter [Fehlerbehandlung](lua/core/errors.md).

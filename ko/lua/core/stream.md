@@ -7,17 +7,22 @@ description: "효율적인 데이터 처리를 위한 스트림 읽기/쓰기 �
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-효율적인 데이터 처리를 위한 스트림 읽기/쓰기 작업. 스트림 객체는 다른 모듈(HTTP, 파일시스템 등)에서 얻습니다.
+stream은 HTTP, filesystem 및 기타 module에 incremental I/O를 제공합니다. underlying data를 소유한 module이 stream object를 생성합니다. 이 페이지는 API reference이며 scanner loop는 application-defined `process(token)` callback을 사용합니다.
 
-## 로딩
+## Stream 가져오기
 
 ```lua
--- HTTP 요청 본문에서
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- 파일시스템에서
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## 읽기
@@ -63,6 +68,8 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
+`flush`는 버퍼링된 데이터를 기본 대상으로 기록합니다.
+
 버퍼된 데이터를 기본 스토리지로 플러시합니다.
 
 ## 스트림 정보
@@ -85,7 +92,7 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-스트림을 닫고 리소스를 해제합니다. 여러 번 호출해도 안전합니다.
+`close`는 stream resource를 release하며 두 번 이상 호출할 수 있습니다.
 
 ## 스캐너
 
@@ -115,6 +122,8 @@ while true do
     process(scanner:text())
 end
 ```
+
+`scan()`이 `false`를 반환하면 EOF로 처리하기 전에 `scanner:err()`를 확인하십시오. tokenization과 underlying read failure는 scanner에 저장되며 `scan()`의 second return value에는 나타나지 않습니다.
 
 ## 에러
 

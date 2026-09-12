@@ -1,11 +1,13 @@
 ---
 title: "Fila"
-description: "O Wippy fornece um sistema de filas para processamento assíncrono de mensagens com drivers e consumidores configuráveis."
+description: "Configure drivers de fila em memória, AMQP ou SQS, filas lógicas, consumidores, acknowledgments e publicação."
 ---
 
 # Fila
 
-O Wippy fornece um sistema de filas para processamento assíncrono de mensagens com drivers e consumidores configuráveis.
+O sistema de filas conecta publicadores assíncronos, drivers, filas, consumidores e funções handler.
+
+Esta página é uma referência de configuração e comportamento. Os blocos YAML são fragmentos de uma lista de entradas, salvo quando mostram um documento completo; exemplos de drivers externos pressupõem que o broker ou serviço compatível com AWS já exista.
 
 ## Arquitetura
 
@@ -79,15 +81,15 @@ Para RabbitMQ e brokers compatíveis com AMQP 0-9-1.
 | `connection_timeout` | duration | - | Timeout de conexão |
 | `reconnect_delay` | duration | `1s` | Backoff inicial de reconexão |
 | `reconnect_max_delay` | duration | `30s` | Backoff máximo de reconexão |
-| `default_message_ttl` | duration | - | TTL de mensagem padrão aplicado a filas declaradas |
-| `default_queue_ttl` | duration | - | TTL padrão aplicado a filas declaradas |
-| `default_queue_expiry` | duration | - | Expiração de fila padrão para filas declaradas |
+| `default_message_ttl` | duration | - | Expiração por mensagem quando o publicador não define uma |
+| `default_queue_ttl` | duration | - | TTL de mensagens no nível da fila (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Expiração padrão de fila não utilizada (`x-expires`) |
 | `prefetch_count` | int | - | Limite de prefetch no nível do canal |
 | `frame_size` | int | - | Limite de tamanho de frame AMQP |
 | `channel_max` | int | - | Máximo de canais por conexão |
 | `tls` | object | - | Configurações TLS (ver abaixo) |
 
-Bloco TLS:
+Configure TLS em `tls`:
 
 ```yaml
   tls:
@@ -167,7 +169,7 @@ As chaves sob `driver_options` são agrupadas por nome do driver. Um driver lê 
 
 | Chave | Descrição |
 |-------|-----------|
-| `max_length` | Tamanho de buffer limitado (0 = ilimitado) |
+| `max_length` | Buffer limitado; 0 ou ausente usa o padrão 1000 |
 
 **amqp:**
 
@@ -206,7 +208,7 @@ O driver AMQP define um `content-type` correspondente (`application/json` ou `ap
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,8 +217,8 @@ O driver AMQP define um `content-type` correspondente (`application/json` ou `ap
 | `queue` | obrigatório | ID do registro da fila |
 | `func` | obrigatório | ID do registro da função handler |
 | `concurrency` | 1 | Contagem de workers paralelos |
-| `prefetch` | 10 | Tamanho do buffer por worker |
-| `auto_ack` | false | Quando true, o runtime não chama ack do broker; sucesso/falha do handler é o único sinal de settle |
+| `prefetch` | 10 | Tamanho do buffer compartilhado; no AMQP também é o prefetch de QoS do canal |
+| `auto_ack` | false | Opção específica do backend; no AMQP, `true` pede ao broker que confirme na entrega |
 | `driver_options` | - | Sub-bag por driver (mesma estrutura da fila) |
 
 **Opções de consumidor amqp:**
@@ -229,7 +231,7 @@ O driver AMQP define um `content-type` correspondente (`application/json` ou `ap
 | `consumer_tag` | Identificador para esta inscrição |
 
 <tip>
-Consumidores respeitam contexto de chamada e podem estar sujeitos a políticas de segurança. Configure ator e políticas no nível de ciclo de vida. Veja <a href="system/security.md">Segurança</a>.
+Consumidores respeitam contexto de chamada e podem estar sujeitos a políticas de segurança. Configure ator e políticas no nível de ciclo de vida. Veja <a href="./security.md">Segurança</a>.
 </tip>
 
 ### Pool de Workers
@@ -239,10 +241,10 @@ Workers executam como goroutines concorrentes:
 ```
 concurrency: 3, prefetch: 10
 
-1. Driver entrega até 10 mensagens para o buffer
-2. 3 workers pegam do buffer concorrentemente
-3. Conforme workers terminam, buffer reabastece
-4. Contrapressão quando todos workers ocupados e buffer cheio
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
+3. As workers finish, buffer refills
+4. Backpressure when all workers busy and buffer full
 ```
 
 ## Função Handler
@@ -254,10 +256,16 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
     local ok, err = process_task(body)
@@ -282,7 +290,7 @@ return { main = main }
 
 ### Reconhecimento
 
-O runtime faz settle automaticamente baseado no retorno do handler:
+Salvo quando o handler faz settle explícito, o consumidor decide pelo resultado da invocação da função:
 
 | Resultado do Handler | Ação |
 |----------------------|------|
@@ -290,7 +298,7 @@ O runtime faz settle automaticamente baseado no retorno do handler:
 | Retorno `nil, err` | Nack (redelivery conforme o driver) |
 | Erro lançado | Nack |
 
-Chame `msg:ack()` ou `msg:nack()` explicitamente apenas para fazer settle antecipadamente. O settlement é de disparo único: vence a primeira chamada que chega.
+Valores de retorno comuns, inclusive `false`, não selecionam o reconhecimento. Chame `msg:ack()` ou `msg:nack()` para fazer settle explícito. O settlement ocorre uma única vez: vence a primeira chamada.
 
 ### Roteamento Dead-Letter
 
@@ -303,14 +311,16 @@ A partir de código Lua:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-Veja [Módulo Queue](lua/storage/queue.md) para API completa.
+Consulte o [Módulo Queue](lua/storage/queue.md) para a API de publicação e mensagens em Lua.
 
 ## Encerramento Gracioso
 

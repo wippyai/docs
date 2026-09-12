@@ -8,7 +8,9 @@ description: "外部サービスへのHTTPリクエストを行う。すべて�
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-外部サービスへのHTTPリクエストを行う。すべてのHTTPメソッド、ヘッダー、クエリパラメータ、フォームデータ、ファイルアップロード、ストリーミングレスポンス、並行バッチリクエストをサポート。
+`http_client` モジュールは、ヘッダー、クエリパラメータ、フォーム、ファイルアップロード、認証、TLS オプション、ストリーミングレスポンス、並行バッチを使用して HTTP リクエストを送信します。
+
+このページは部分的なリクエストレシピを含む API リファレンスです。URL、トークン、認証情報、リクエストデータ、証明書素材は周囲のアプリケーションから与えられます。例ではレスポンスを使用する前に `Response, error` を確認し、ストリームボディを明示的に閉じます。
 
 ## ロード
 
@@ -29,33 +31,45 @@ if err then
 end
 
 print(resp.status_code)  -- 200
-print(resp.body)         -- レスポンスボディ
+print(resp.body)         -- response body
 ```
 
 ### POSTリクエスト
 
 ```lua
+local json = require("json")
+
+local body, body_err = json.encode({name = "Alice", email = "alice@example.com"})
+if body_err then return nil, body_err end
 local resp, err = http_client.post("https://api.example.com/users", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice", email = "alice@example.com"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PUTリクエスト
 
 ```lua
+local body, body_err = json.encode({name = "Alice Smith"})
+if body_err then return nil, body_err end
 local resp, err = http_client.put("https://api.example.com/users/123", {
     headers = {["Content-Type"] = "application/json"},
-    body = json.encode({name = "Alice Smith"})
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### PATCHリクエスト
 
 ```lua
+local body, body_err = json.encode({status = "active"})
+if body_err then return nil, body_err end
 local resp, err = http_client.patch("https://api.example.com/users/123", {
-    body = json.encode({status = "active"})
+    headers = {["Content-Type"] = "application/json"},
+    body = body
 })
+if err then return nil, err end
 ```
 
 ### DELETEリクエスト
@@ -64,6 +78,7 @@ local resp, err = http_client.patch("https://api.example.com/users/123", {
 local resp, err = http_client.delete("https://api.example.com/users/123", {
     headers = {["Authorization"] = "Bearer " .. token}
 })
+if err then return nil, err end
 ```
 
 ### HEADリクエスト
@@ -72,6 +87,7 @@ local resp, err = http_client.delete("https://api.example.com/users/123", {
 
 ```lua
 local resp, err = http_client.head("https://cdn.example.com/file.zip")
+if err then return nil, err end
 local size = resp.headers["Content-Length"]
 ```
 
@@ -81,6 +97,7 @@ local size = resp.headers["Content-Length"]
 local resp, err = http_client.request("PROPFIND", "https://dav.example.com/folder", {
     headers = {["Depth"] = "1"}
 })
+if err then return nil, err end
 ```
 
 | パラメータ | 型 | 説明 |
@@ -117,6 +134,7 @@ local resp, err = http_client.get("https://api.example.com/search", {
         limit = "20"
     }
 })
+if err then return nil, err end
 ```
 
 ### ヘッダーと認証
@@ -128,11 +146,13 @@ local resp, err = http_client.get("https://api.example.com/data", {
         ["Accept"] = "application/json"
     }
 })
+if err then return nil, err end
 
--- またはBasic認証を使用
+-- Or use basic auth
 local resp, err = http_client.get("https://api.example.com/data", {
-    auth = {user = "admin", pass = "secret"}
+    auth = {user = service_user, pass = service_password}
 })
+if err then return nil, err end
 ```
 
 ### フォームデータ
@@ -140,10 +160,11 @@ local resp, err = http_client.get("https://api.example.com/data", {
 ```lua
 local resp, err = http_client.post("https://api.example.com/login", {
     form = {
-        username = "alice",
-        password = "secret123"
+        username = username,
+        password = password
     }
 })
+if err then return nil, err end
 ```
 
 ### ファイルアップロード
@@ -153,35 +174,38 @@ local resp, err = http_client.post("https://api.example.com/upload", {
     form = {title = "My Document"},
     files = {
         {
-            name = "attachment",      -- フォームフィールド名
-            filename = "report.pdf",  -- 元のファイル名
-            content = pdf_data,       -- ファイル内容
+            name = "attachment",      -- form field name
+            filename = "report.pdf",  -- original filename
+            content = pdf_data,       -- file content
             content_type = "application/pdf"
         }
     }
 })
+if err then return nil, err end
 ```
 
 | ファイルフィールド | 型 | 必須 | 説明 |
 |------------|------|----------|-------------|
-| `name` | string | yes | フォームフィールド名 |
-| `filename` | string | no | 元のファイル名 |
+| `name` | string | はい | フォームフィールド名 |
+| `filename` | string | いいえ | 元のファイル名 |
 | `content` | string | yes* | ファイル内容 |
 | `reader` | userdata | yes* | 代替: 内容用のio.Reader |
 | `content_type` | string | no | 現在は無視されます: アップロードされる各パートは、このフィールドに関わらず常に `Content-Type: application/octet-stream` で送信されます |
 
 *`content`または`reader`のいずれかが必須。
 
+固定されたランタイムはディスパッチ前に `reader` 全体をメモリへ読み込み、閉じず、EOF 以外の読み取り失敗を個別には公開しません。その失敗までに蓄積したバイトを送信することがあります。サイズが制限済みのデータには `content` を優先し、呼び出し元所有の reader はリクエスト後に閉じてください。`content_type` は解析されますがランタイム `v0.3.32a` では転送されないため、アップロード part は transport のデフォルトを使用します。
+
+reader ベースのファイルは、このリリースでは単一リクエスト呼び出しだけでサポートされます。`request_batch` は `content` を転送しますが解析済み `reader` を破棄するため、バッチファイルアップロードでは `content` を指定してください。
+
 ### タイムアウト
 
 ```lua
--- 数値: 秒
+-- Number: seconds
 local resp, err = http_client.get(url, {timeout = 30})
+if err then return nil, err end
 
--- 文字列: Go duration形式
-local resp, err = http_client.get(url, {timeout = "30s"})
-local resp, err = http_client.get(url, {timeout = "1m30s"})
-local resp, err = http_client.get(url, {timeout = "1h"})
+-- String alternatives use Go duration format: "30s", "1m30s", or "1h".
 ```
 
 ### TLSオプション
@@ -201,8 +225,13 @@ mTLSには`cert`と`key`の両方を一緒に指定する必要がある。`ca`�
 #### mTLS認証
 
 ```lua
-local cert_pem = fs.read("/certs/client.crt")
-local key_pem = fs.read("/certs/client.key")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local cert_pem, cert_err = certs:readfile("client.crt")
+if cert_err then return nil, cert_err end
+local key_pem, key_err = certs:readfile("client.key")
+if key_err then return nil, key_err end
 
 local resp, err = http_client.get("https://secure.example.com/api", {
     tls = {
@@ -210,12 +239,19 @@ local resp, err = http_client.get("https://secure.example.com/api", {
         key = key_pem,
     }
 })
+if err then return nil, err end
 ```
+
+`insecure_skip_verify` は管理下の診断 endpoint にのみ使用してください。証明書チェーン検証と hostname 検証の両方を無効にします。
 
 #### カスタムCA
 
 ```lua
-local ca_pem = fs.read("/certs/internal-ca.crt")
+local fs = require("fs")
+local certs, volume_err = fs.get("app:certs")
+if volume_err then return nil, volume_err end
+local ca_pem, ca_err = certs:readfile("internal-ca.crt")
+if ca_err then return nil, ca_err end
 
 local resp, err = http_client.get("https://internal.example.com/api", {
     tls = {
@@ -223,6 +259,7 @@ local resp, err = http_client.get("https://internal.example.com/api", {
         server_name = "internal.example.com",
     }
 })
+if err then return nil, err end
 ```
 
 #### 安全でない検証スキップ
@@ -235,6 +272,7 @@ local resp, err = http_client.get("https://localhost:8443/api", {
         insecure_skip_verify = true,
     }
 })
+if err then return nil, err end
 ```
 
 ## レスポンスオブジェクト
@@ -256,7 +294,8 @@ if err then
 end
 
 if resp.status_code == 200 then
-    local data = json.decode(resp.body)
+    local data, decode_err = json.decode(resp.body)
+    if decode_err then return nil, decode_err end
     print("Content-Type:", resp.headers["Content-Type"])
 end
 ```
@@ -273,16 +312,20 @@ if err then
     return nil, err
 end
 
--- チャンクで処理
+-- Process in chunks
+local read_err
 while true do
-    local chunk, err = resp.stream:read(65536)
-    if err or not chunk then break end
-    -- チャンクを処理
+    local chunk
+    chunk, read_err = resp.stream:read(65536)
+    if read_err or not chunk then break end
+    -- process chunk
 end
-resp.stream:close()
+local _, close_err = resp.stream:close()
+if read_err then return nil, read_err end
+if close_err then return nil, close_err end
 ```
 
-| Streamメソッド | 戻り値 | 説明 |
+| Stream メソッド | 戻り値 | 説明 |
 |---------------|---------|-------------|
 | `read(n?)` | string, error | 最大`n`バイトを読み取り（デフォルト: 実装のバッファ） |
 | `close()` | boolean, error | ストリームを閉じる |
@@ -294,20 +337,26 @@ resp.stream:close()
 複数のリクエストを並行して実行。
 
 ```lua
-local responses, errors = http_client.request_batch({
+local requests = {
     {"GET", "https://api.example.com/users"},
     {"GET", "https://api.example.com/products"},
     {"POST", "https://api.example.com/log", {body = "event"}}
-})
+}
+local responses, batch_errors = http_client.request_batch(requests)
 
-if errors then
-    for i, err in ipairs(errors) do
+if not responses then
+    return nil, batch_errors  -- whole-batch dispatch or validation failure
+end
+
+if batch_errors then
+    for i = 1, #requests do
+        local err = batch_errors[i]
         if err then
             print("Request " .. i .. " failed:", err)
         end
     end
 else
-    -- すべて成功
+    -- All succeeded
     for i, resp in ipairs(responses) do
         print("Response " .. i .. ":", resp.status_code)
     end
@@ -340,6 +389,7 @@ local url = "https://api.example.com/search?q=" .. http_client.encode_uri(query)
 
 ```lua
 local decoded, err = http_client.decode_uri("hello+world")
+if err then return nil, err end
 -- "hello world"
 ```
 
@@ -363,7 +413,8 @@ HTTPリクエストはセキュリティポリシー評価の対象。
 local security = require("security")
 
 if security.can("http_client.request", "https://api.example.com/users") then
-    local resp = http_client.get("https://api.example.com/users")
+    local resp, request_err = http_client.get("https://api.example.com/users")
+    if request_err then return nil, request_err end
 end
 ```
 
@@ -395,14 +446,14 @@ local resp, err = http_client.get("http://192.168.1.1/admin")
 
 | 条件 | 種別 | 再試行可能 |
 |-----------|------|-----------|
-| セキュリティポリシーが拒否 | `errors.PERMISSION_DENIED` | no |
-| プライベートIPがブロック | `errors.PERMISSION_DENIED` | no |
-| Unixソケットが拒否 | `errors.PERMISSION_DENIED` | no |
-| 安全でないTLSが拒否 | `errors.PERMISSION_DENIED` | no |
-| 無効なURLまたはオプション | `errors.INVALID` | no |
-| コンテキストがない | `errors.INTERNAL` | no |
-| ネットワーク障害 | `errors.INTERNAL` | yes |
-| タイムアウト | `errors.INTERNAL` | yes |
+| セキュリティポリシーが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| プライベートIPがブロック | `errors.PERMISSION_DENIED` | いいえ |
+| Unixソケットが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| 安全でないTLSが拒否 | `errors.PERMISSION_DENIED` | いいえ |
+| 無効なURLまたはオプション | `errors.INVALID` | いいえ |
+| コンテキストがない | `errors.INTERNAL` | いいえ |
+| ネットワーク障害 | `errors.INTERNAL` | はい |
+| タイムアウト | `errors.INTERNAL` | はい |
 
 ```lua
 local resp, err = http_client.get(url)
@@ -417,4 +468,3 @@ end
 ```
 
 エラーの処理については[エラー処理](lua/core/errors.md)を参照。
-

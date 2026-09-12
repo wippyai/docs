@@ -1,13 +1,13 @@
 ---
 title: "Konfigurationsreferenz"
-description: "Wippy wird über .wippy.yaml-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte."
+description: "Runtime-Konfigurationsfelder, Profile, Kompositionsregeln, Umgebungsreferenzen und CLI-Überschreibungen."
 ---
 
 # Konfigurationsreferenz
 
-Wippy wird über `.wippy.yaml`-Dateien konfiguriert. Alle Optionen haben sinnvolle Standardwerte.
+Wippy liest seine Runtime-Konfiguration aus `.wippy.yaml`-Dateien.
 
-Jeder Wert unten kann beim Start mit `wippy run --set section.path=value` überschrieben werden (wiederholbar, hat Vorrang vor der Datei). Um einzelne Registry-*Einträge* statt dieser Konfigurationsabschnitte zu überschreiben, verwenden Sie den Abschnitt `override:` oder `-o` — siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
+Verwenden Sie die wiederholbare Option `wippy run --set section.path=value`, um die folgenden Konfigurationsfelder beim Start zu überschreiben. Für einzelne Registry-*Einträge* statt Konfigurationsabschnitte verwenden Sie `override:` oder `-o`; siehe [Einträge überschreiben](guides/entry-kinds.md#overriding-entries).
 
 ## Konfigurations-Komposition {#config-composition}
 
@@ -22,7 +22,7 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - Die erste Datei verankert das Verzeichnis, gegen das relative Pfade aufgelöst werden.
 - Dateinamen tragen keine reservierte Bedeutung; nichts außer dem Standard wird automatisch entdeckt.
 
-Die Konfiguration wird in dieser Reihenfolge angewendet: Datei-Komposition, dann `--profile`-Auswahlen, dann `--set`-Überschreibungen. Für aus Packs ausgeführte Anwendungen liegen die gepackten Runtime-Defaults unter all diesen (siehe [Runtime-Defaults veröffentlichen](guides/publishing.md#publishing-runtime-defaults)).
+Die Konfiguration wird in dieser Reihenfolge angewendet: komponierte Dateien, ausgewählte `--profile`-Overlays und anschließend `--set`-Überschreibungen. Bei Anwendungen aus Packs haben gepackte Runtime-Defaults eine niedrigere Priorität; siehe [Runtime-Defaults veröffentlichen](guides/publishing.md#publishing-runtime-defaults).
 
 ## Profile {#profiles}
 
@@ -305,11 +305,11 @@ Verteiltes Tracing und Metrik-Export über OTLP.
 | `metrics_enabled` | bool | false | Metriken exportieren |
 | `http.enabled` | bool | true | HTTP-Anfragen tracen |
 | `http.extract_headers` | bool | true | Trace-Context aus eingehenden Headern extrahieren |
-| `http.inject_headers` | bool | true | Trace-Context in ausgehende Header einfügen |
+| `http.inject_headers` | bool | true | Trace-Kontext in die HTTP-Antwort einfügen |
 | `process.enabled` | bool | true | Prozess-Lebenszyklus tracen |
 | `process.trace_lifecycle` | bool | true | Spans für spawn/terminate ausgeben |
 | `interceptor.enabled` | bool | true | Funktionsaufrufe tracen |
-| `interceptor.order` | int | 100 | Interceptor-Priorität |
+| `interceptor.order` | int | 100 | Dekodiertes Kompatibilitätsfeld; Runtime v0.3.32a registriert den Interceptor unabhängig von diesem Wert mit Reihenfolge 100 |
 | `queue.enabled` | bool | true | Queue publish/consume tracen |
 | `temporal.enabled` | bool | false | Temporal-Workflows tracen |
 
@@ -326,7 +326,7 @@ Standard-OTEL-Umgebungsvariablen (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_ENDPO
 
 Siehe: [Observability-Anleitung](guides/observability.md)
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Verhalten beim kontrollierten Herunterfahren.
 
@@ -444,10 +444,10 @@ Begrenztes Raft. Der Raft-Zustand ist standardmäßig fs-dauerhaft und wird unte
 | `raft.data_dir` | string | `~/.wippy/store` | Verzeichnis für fs-dauerhaften Raft-Zustand und dauerhafte CRDT-Snapshots (unter `<data_dir>/_sys/`). Festplatten-los nur, wenn kein Pfad aufgelöst wird (kein Home-Verzeichnis und keiner gesetzt) |
 | `raft.enabled` | bool | true | Raft-Knoten betreiben; `false` macht diesen zum reinen Gossip-Client |
 | `raft.role` | string | server | `server` betreibt einen Raft-Knoten; `client` ist nur Gossip |
-| `raft.eligible` | bool | true | Ob dieser Knoten als Voter ausgewählt werden darf |
+| `raft.eligible` | bool | true | Ob dieser Knoten als Voter oder Standby ausgewählt werden darf; `false` hält ihn als Client außerhalb von Raft |
 | `raft.priority` | int | 100 | Voter-Auswahlpriorität (niedrigerer Wert wird bevorzugt) |
-| `raft.bootstrap_expect` | int | 1 | Initiale Quorumgröße: `0`=bestehendem beitreten, `1`=Einzelknoten, `N`=auf N berechtigte Peers warten, dann Quorum bilden |
-| `raft.max_voters` | int | 5 | Voter-Obergrenze (muss ungerade sein); zusätzliche berechtigte Knoten werden Standbys |
+| `raft.bootstrap_expect` | int | 1 | Initiale Quorumgröße: `0`=bestehendem beitreten, `1`=Einzelknoten, `N`=auf N berechtigte Knoten einschließlich des lokalen warten, dann Quorum bilden |
+| `raft.max_voters` | int | 5 | Voter-Obergrenze (muss ungerade sein); bis zu `max_standbys` weitere berechtigte Knoten werden Standbys, der Rest bleibt Client |
 | `raft.max_standbys` | int | 4 | Nicht-abstimmende Mitglieder, warm gehalten für Beförderung; Knoten jenseits voters+standbys sind keine Raft-Mitglieder |
 | `raft.reconcile_debounce` | duration | 2s | Koaleszenzfenster nach einem Gossip-Ereignis, bevor der Voter-Reconciler läuft |
 | `raft.reconcile_timeout` | duration | 2s | Schranke pro Reconcile-Durchlauf |
@@ -618,7 +618,7 @@ extensions:
 
 ## Siehe auch
 
-- [CLI-Referenz](guides/cli.md) - Kommandozeilenoptionen
-- [Cluster-Leitfaden](guides/cluster.md) - Clustering-Architektur und Betrieb
-- [Entry-Typen](guides/entry-kinds.md) - Alle Entry-Typen
-- [Observability-Anleitung](guides/observability.md) - Logging, Metriken, Tracing
+- [CLI-Referenz](guides/cli.md) — Kommandozeilenoptionen
+- [Cluster-Leitfaden](guides/cluster.md) — Clustering-Architektur und Betrieb
+- [Entry-Kinds](guides/entry-kinds.md) — Entry-Kinds und Felder
+- [Observability](guides/observability.md) — Logging, Metriken und Tracing

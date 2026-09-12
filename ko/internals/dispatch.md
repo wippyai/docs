@@ -1,29 +1,31 @@
 ---
 title: "명령 디스패치"
-description: "디스패치 시스템은 프로세스에서 핸들러로 명령을 라우팅합니다. 프로세스는 상관 태그와 함께 명령을 yield하고, 핸들러는 비동기 작업을 실행하고, 결과는 이벤트 큐를 통해 돌아옵니다."
+description: "process yield가 command handler로 route되고 correlated completion event를 통해 반환되는 방식을 설명합니다."
 ---
 
 # 명령 디스패치
 
-디스패치 시스템은 프로세스에서 핸들러로 명령을 라우팅합니다. 프로세스는 상관 태그와 함께 명령을 yield하고, 핸들러는 비동기 작업을 실행하고, 결과는 이벤트 큐를 통해 돌아옵니다.
+command dispatch는 process yield를 handler로 route하고 correlated result를 process event queue를 통해 반환합니다.
+
+이 페이지는 extension 및 implementation reference입니다. custom command와 dispatcher fragment는 기존 Go package, boot graph, command API, service-specific error handling을 가정합니다.
 
 ## 흐름
 
 ```mermaid
 sequenceDiagram
-    participant P as 프로세스
-    participant W as 워커
-    participant R as 레지스트리
-    participant H as 핸들러
+    participant P as Process
+    participant W as Worker
+    participant R as Registry
+    participant H as Handler
 
     P->>W: yield(command, tag)
     W->>R: getHandler(cmdID)
     R-->>W: handler
     W->>H: Handle(cmd, tag, receiver)
-    H-->>H: 비동기 작업
+    H-->>H: async work
     H->>W: CompleteYield(tag, result)
-    W->>P: 이벤트 큐잉, 웨이크
-    P->>P: 결과로 재개
+    W->>P: queue event, wake
+    P->>P: resume with result
 ```
 
 ## 명령 레지스트리
@@ -32,9 +34,9 @@ sequenceDiagram
 
 ```go
 type Registry struct {
-    handlers [256]Handler         // 시스템 명령: O(1) 인덱스
-    extended map[CommandID]Handler // 확장 명령: 맵 조회
-    frozen   atomic.Bool          // 부트 후 락 프리
+    handlers [256]Handler         // System commands: O(1) index
+    extended map[CommandID]Handler // Extended commands: map lookup
+    frozen   atomic.Bool          // Lock-free after boot
 }
 ```
 
@@ -65,7 +67,7 @@ type Registry struct {
 | 200-211 | pg (프로세스 그룹) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | 사용자 정의 서비스 |
 
-등록은 `MustRegisterCommands()`를 통해 부트 중에 발생합니다. 충돌은 시작 시 패닉을 발생시킵니다.
+package는 `init()`에서 `MustRegisterCommands()`로 command-ID ownership을 reserve합니다. ownership collision은 package initialization 중 panic합니다. component load 중 각 service는 `Registrar.Register`를 통해 handler를 bind합니다. dispatcher는 handler가 설치된 뒤에만 freeze됩니다.
 
 ## 명령 정의
 
@@ -79,18 +81,10 @@ type MyCmd struct {
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-풀 재사용은 핫 패스에서 할당을 제거합니다. 패키지 init에서 등록:
+package initialization에서 command ID를 reserve합니다.
 
 ```go
 func init() {
@@ -114,7 +108,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // 서비스 상태
+    // service state
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -157,7 +151,7 @@ func MyDispatcher() boot.Component {
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // 상관관계를 위한 프로세스 로컬 카운터
+    Tag uint64    // Process-local counter for correlation
 }
 ```
 
@@ -165,6 +159,6 @@ type Yield struct {
 
 ## 참고
 
-- [스케줄러](internals/scheduler.md) - 프로세스 실행
-- [모듈](internals/modules.md) - Lua 모듈 통합
-- [프로세스 모델](concepts/process-model.md) - 상위 수준 개념
+- [스케줄러](internals/scheduler.md) - process execution
+- [모듈](internals/modules.md) - Lua module integration
+- [프로세스 모델](concepts/process-model.md) - high-level concept

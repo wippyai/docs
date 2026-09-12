@@ -104,6 +104,4 @@ export default {
 
 스냅샷에는 출처와 해시가 포함되어야 합니다. 스냅샷에 없는 의존성은, 문서화된 다른 빌드 규칙이 적용되지 않는 한 번들에 포함됩니다.
 
-예를 들어 선택한 릴리스 태그가 `v1.2.3`이라면 유일한 정식 스냅샷 URL은
-`https://web-host.wippy.ai/v1.2.3/import-map.json`입니다. 로컬 애플리케이션 URL,
-핀 고정되지 않은 `latest` URL, 수작업으로 재구성한 패키지 목록으로 대체하지 마세요.
+Web Host 1.0.56 기준의 정식 스냅샷 URL은 `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`입니다. 로컬 애플리케이션 URL, 고정되지 않은 `latest` URL, 수동으로 재구성한 패키지 목록으로 바꾸지 마세요.

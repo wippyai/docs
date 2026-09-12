@@ -1,15 +1,17 @@
 ---
-title: "엔트리 핸들러"
-description: "엔트리 핸들러는 종류별로 레지스트리 엔트리를 처리합니다. 엔트리가 추가, 업데이트 또는 삭제되면 레지스트리는 매칭하는 핸들러에 이벤트를 디스패치합니다."
+title: "엔트리 리스너와 옵저버"
+description: "listener와 observer가 matching entry-kind pattern의 registry mutation을 처리하는 방식을 설명합니다."
 ---
 
-# 엔트리 핸들러
+# 엔트리 리스너와 옵저버
 
-엔트리 핸들러는 종류별로 레지스트리 엔트리를 처리합니다. 엔트리가 추가, 업데이트 또는 삭제되면 레지스트리는 매칭하는 핸들러에 이벤트를 디스패치합니다.
+entry listener와 observer는 matching entry-kind pattern의 registry mutation을 처리합니다.
+
+이 페이지는 Go extension reference입니다. registration 및 configuration snippet은 기존 boot component, manager, transcoder, application config type을 가정합니다.
 
 ## 작동 방식
 
-레지스트리는 종류 패턴에서 핸들러로의 맵을 유지합니다. 엔트리가 변경되면:
+boot는 kind pattern과 함께 listener와 observer를 수집합니다. entry가 변경되면:
 
 1. 레지스트리가 이벤트 발생 (`entry.create`, `entry.update`, `entry.delete`)
 2. 핸들러 레지스트리가 등록된 패턴에 대해 엔트리 종류 매칭
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-`Add`에서 에러를 반환하면 엔트리가 거부됩니다.
+`Add`, `Update`, `Delete`에서 error를 반환하면 해당 operation이 거부됩니다.
 
 ## 리스너 vs 옵저버
 
@@ -51,6 +53,8 @@ type EntryListener interface {
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+observer의 `Add`, `Update`, `Delete` error는 무시되며 accept 또는 reject event를 emit하지 않습니다. `TransactionListener`도 구현하는 listener 또는 observer는 transaction barrier에 참여하며 `Begin`, `Commit`, `Discard`의 error가 해당 transaction phase를 reject합니다.
 
 ## 핸들러 등록
 
@@ -80,7 +84,7 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // cfg 처리...
+    // Process cfg...
     return nil
 }
 ```
@@ -134,5 +138,5 @@ type TransactionListener interface {
 
 ## 참고
 
-- [레지스트리](internals/registry.md) - 엔트리 저장
-- [아키텍처](internals/architecture.md) - 부트 시퀀스
+- [레지스트리](internals/registry.md) - entry storage
+- [아키텍처](internals/architecture.md) - boot sequence

@@ -8,9 +8,11 @@ description: "Acceder a variables de entorno para valores de configuración, sec
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Acceder a variables de entorno para valores de configuración, secretos y ajustes de tiempo de ejecución.
+El módulo `env` lee y actualiza las variables de entorno expuestas por el entorno de ejecución.
 
-Las variables deben definirse en el [Sistema de Entorno](system/env.md) antes de poder acceder a ellas. El sistema controla que backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
+Esta es una referencia de API. Sus fragmentos son operaciones aisladas y suponen que las variables y políticas de seguridad indicadas ya existen.
+
+Las variables deben definirse en el [Sistema de Entorno](system/env.md) antes de poder acceder a ellas. El sistema controla qué backends de almacenamiento (OS, archivo, memoria) proporcionan valores y si las variables son de solo lectura.
 
 ## Carga
 
@@ -18,7 +20,7 @@ Las variables deben definirse en el [Sistema de Entorno](system/env.md) antes de
 local env = require("env")
 ```
 
-## get
+## `get`
 
 Obtiene el valor de una variable de entorno.
 
@@ -29,17 +31,8 @@ if not db_url then
     return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
--- Obtener con valor predeterminado
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- Obtener secretos
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- Configuración
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -50,21 +43,15 @@ local debug_mode = env.get("DEBUG") == "true"
 
 Devuelve `nil, error` si la variable no existe.
 
-## set
+## `set`
 
 Establece una variable de entorno.
 
 ```lua
--- Establecer configuración de tiempo de ejecución
-env.set("APP_MODE", "production")
-
--- Sobrescribir para pruebas
-env.set("API_URL", "http://localhost:8080")
-
--- Establecer basado en condiciones
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -74,21 +61,23 @@ end
 
 **Devuelve:** `boolean, error`
 
-## get_all
+## `get_all`
 
 Obtiene todas las variables de entorno accesibles.
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- Registrar configuración (cuidado de no registrar secretos)
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- Verificar variables requeridas
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then

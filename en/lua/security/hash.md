@@ -9,7 +9,9 @@ description: "Cryptographic hash functions and HMAC message authentication."
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Cryptographic hash functions and HMAC message authentication.
+The `hash` module computes cryptographic hashes, HMAC values, PBKDF2-derived keys, and non-cryptographic FNV-1 hashes. This page is an API reference of isolated calls. Literal inputs illustrate successful use; when data, secrets, passwords, or salts come from the application, capture and handle the documented second `error` return before consuming the result.
+
+A hash is not encryption and does not conceal low-entropy input. Do not log passwords, HMAC keys, derived keys, or raw secret-dependent digests. Use HMAC-SHA256 or HMAC-SHA512 for new message-authentication designs and PBKDF2 with a unique random salt for password verifiers.
 
 ## Loading
 
@@ -20,6 +22,8 @@ local hash = require("hash")
 ## Cryptographic Hashes
 
 ### MD5
+
+MD5 is not collision-resistant. Use it only for compatibility with protocols that require MD5, not for security decisions.
 
 ```lua
 local hex = hash.md5("data")
@@ -34,6 +38,8 @@ local raw = hash.md5("data", true)
 **Returns:** `string, error`
 
 ### SHA-1
+
+SHA-1 is not collision-resistant. Use it only for compatibility with protocols that require SHA-1, not for security decisions.
 
 ```lua
 local hex = hash.sha1("data")
@@ -75,9 +81,11 @@ local raw = hash.sha512("data", true)
 
 **Returns:** `string, error`
 
-## HMAC Authentication
+## HMACs
 
 ### HMAC-MD5
+
+Use HMAC-MD5 only for compatibility with a protocol that requires it; prefer HMAC-SHA256 or HMAC-SHA512 for new designs.
 
 ```lua
 local hex = hash.hmac_md5("message", "secret")
@@ -93,6 +101,8 @@ local raw = hash.hmac_md5("message", "secret", true)
 **Returns:** `string, error`
 
 ### HMAC-SHA1
+
+Use HMAC-SHA1 only for compatibility with a protocol that requires it; prefer HMAC-SHA256 or HMAC-SHA512 for new designs.
 
 ```lua
 local hex = hash.hmac_sha1("message", "secret")
@@ -139,9 +149,9 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 ## Non-Cryptographic Hashes
 
-### FNV-32
+### FNV-1 32-bit
 
-Fast hash for hash tables and partitioning.
+Compute a hash for uses such as hash tables and partitioning.
 
 ```lua
 local n = hash.fnv32("data")
@@ -153,9 +163,9 @@ local n = hash.fnv32("data")
 
 **Returns:** `number, error`
 
-### FNV-64
+### FNV-1 64-bit
 
-Fast hash with larger output for reduced collisions.
+Compute a wider hash for uses such as hash tables and partitioning, reducing collision probability.
 
 ```lua
 local n = hash.fnv64("data")

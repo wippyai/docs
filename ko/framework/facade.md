@@ -3,13 +3,13 @@ title: "Facade"
 description: "wippy/facade 모듈은 CDN에서 Wippy 프런트엔드를 로드하고 구성하는 이식 가능한 facade를 제공합니다. Web Host JS 모듈 엔트리를 로드하는 얇은 HTML 페이지를 서빙하며…"
 ---
 
-# Facade
+# 파사드
 
 `wippy/facade` 모듈은 CDN에서 Wippy 프런트엔드를 로드하고 구성하는 이식 가능한 facade를 제공합니다. Web Host JS 모듈 엔트리(기본 compat 셸의 경우 `module.js`, managed 모드의 경우 `managed-layout.js`)를 로드하는 얇은 HTML 페이지를 서빙하고, 인증을 처리하며, 백엔드와 프런트엔드 사이의 구성을 중계합니다. 로드된 모듈은 페이지 전체와 브라우저 히스토리를 인계받습니다.
 
 iframe 기반 전달 방식(`iframe.html` + `SetConfig` PostMessage 핸드셰이크)은 격리나 페이지 일부 임베딩을 위해 호스트를 직접 임베드하는 수동·facade 없는 임베딩용으로 여전히 제공되지만, facade 자체는 더 이상 이를 사용하지 않습니다.
 
-## Setup
+분리되거나 부분적인 페이지 통합에서는 `iframe.html`과 `SetConfig` postMessage handshake를 통해 host를 직접 embed할 수 있습니다. facade 자체는 이 전달 모드를 사용하지 않습니다.
 
 프로젝트에 모듈을 추가합니다:
 
@@ -179,7 +179,7 @@ content_fs:    app:app_fs
 | `axios_defaults` | `axiosDefaults` | `{}` | 프런트엔드 axios HTTP 클라이언트 기본값 |
 | `tanstack` | `tanstack` | `{}` | TanStack Query 기본값: `{ default?, content?, lists? }`. `default`는 모든 쿼리에, `content`는 단일 리소스 렌더링에, `lists`는 내비게이션/인덱스 쿼리에 적용됩니다. 호스트 기본값은 `refetchOnWindowFocus:false`입니다 |
 
-## Config Endpoint
+아래 세 개는 `hostConfig` 아래가 아니라 **최상위** `AppConfig` 필드로 방출됩니다.
 
 facade는 구성된 라우터에 `GET /facade/config`를 등록합니다. 이 경로는 공개 라우터 *위에* 등록되므로 페이지가 실제로 가져오는 URL에는 라우터의 prefix가 포함됩니다. 예시 prefix `/api/public`([Setup](#setup) 참조)에서는 `/api/public/facade/config`가 되며, 이는 배포된 facade 페이지가 가져오는 경로와 정확히 같습니다. (facade는 같은 라우터에 라우트를 하나 더 등록합니다 — `GET /facade/variables.css`로, `css_variables`를 Web Host 외부 페이지를 위한 `text/css` 스타일시트로 렌더링합니다. [Web Host 외부 페이지에서 facade 테마 재사용](#reusing-facade-theming-on-non-web-host-pages)을 참조하세요.) 프런트엔드는 로드 시 이 구성을 가져옵니다:
 
@@ -219,7 +219,7 @@ facade는 구성된 라우터에 `GET /facade/config`를 등록합니다. 이 �
         "hideSessionSelector": false,
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }
@@ -229,7 +229,7 @@ API URL은 `PUBLIC_API_URL` 환경 변수에서 읽어옵니다. `APP_WEBSOCKET_
 
 `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, `module_file` 필드는 임베딩 페이지가 스스로를 구성하는 데 사용하는 **셸 수준** 필드로, 호스트가 초기화에 사용하는 자식 `AppConfig`의 일부가 아닙니다. `iframe_origin`/`iframe_url` 필드는 수동·facade 없는 iframe 임베딩에서만 사용됩니다([Facade 진입점](../frontend/web-host/entry-point.md) 참조). `mode` 필드는 정규화된 `fe_mode`(`compat` 또는 `managed`)이며, `module_file`은 facade 페이지가 로드하는 JS 모듈 엔트리로 compat에서는 `/module.js`, managed에서는 `/managed-layout.js`입니다.
 
-## Navigation Sidebar
+`facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, `module_file`은 embedding 페이지가 자체 구성을 위해 사용하는 shell 수준 필드이며 host가 초기화하는 자식 `AppConfig`의 일부가 아닙니다. `iframe_origin`/`iframe_url`은 facade 없는 수동 iframe embedding에서만 사용됩니다([Facade Entry Point](../frontend/web-host/entry-point.md) 참고). `mode`는 정규화된 `fe_mode`(`compat` 또는 `managed`)이고, `module_file`은 facade 페이지가 로드하는 JS module entry로 compat에서는 `/module.js`, managed에서는 `/managed-layout.js`입니다.
 
 `wippy/views`로 등록된 페이지는 메타데이터에 따라 사이드바에 자동으로 표시됩니다:
 

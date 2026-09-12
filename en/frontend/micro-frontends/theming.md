@@ -5,7 +5,11 @@ description: "How the facade authors a PrimeVue theme and how modules remain por
 
 # Theme Authoring
 
-The facade authors a PrimeVue theme. Modules consume that theme; they do not create parallel mini design systems.
+**Classification: theme ownership and runtime contract reference.** The mode
+switching block demonstrates one public API flow; it assumes a running Host and
+does not configure a facade or build a module by itself.
+
+The facade authors a PrimeVue theme. Modules consume it rather than defining an independent design system.
 
 Wippy currently runs PrimeVue with `theme: 'none'`. Component appearance is supplied by Wippy’s Tailwind-authored PrimeVue CSS, public runtime variables, and facade customization.
 
@@ -30,7 +34,7 @@ Moving duplicated module CSS into facade CSS does not eliminate the dependency. 
 
 Semantically equivalent controls should look equivalent. Prefer PrimeVue components directly. When a genuinely custom control is needed, identify its PrimeVue visual sibling and use the same public runtime properties for color, border, focus, state, and any geometry classified theme-variable.
 
-The custom part may own only the novel structure that the sibling does not provide. Reuse documented theme padding, dimensions, typography, radius, shadow, focus, and motion contracts wherever they exist. Do not copy a current literal from generated component CSS and call it inheritance.
+The custom part may own only the novel structure that the sibling does not provide. Reuse documented theme padding, dimensions, typography, radius, shadow, focus, and motion contracts wherever they exist. A literal copied from generated component CSS does not inherit future theme changes.
 
 ## Runtime versus invariant properties
 
@@ -39,11 +43,16 @@ Each shared appearance property has one policy:
 - `theme-variable`: it must resolve through a documented public runtime variable.
 - `platform-invariant`: the shared compiled Tailwind value is deliberately stable across every compliant theme.
 
-Do not add runtime tokens for theoretical flexibility. Add or adopt a token only after the effective-contract ledger proves a real runtime gap, an exact supported path, a real consumer, and mutation evidence.
+Do not add runtime tokens for theoretical flexibility. Add or adopt a token only when a real runtime gap, an exact supported path, a real consumer, and mutation evidence are documented.
 
 ## CSS transport is not permission
 
-Pages receive styles in an iframe. Web components may receive styles inside a shadow root. This explains where CSS can take effect; it does not authorize a module to depend on arbitrary facade selectors.
+Page style transport follows the selected rendering engine: iframe pages use
+the proxy injection pipeline, while Web Fragment pages receive platform CSS
+from the fragment gateway and page overrides in the reflected head. Web
+components may receive styles inside a shadow root. These mechanisms explain
+where CSS can take effect; they do not authorize a module to depend on
+arbitrary facade selectors.
 
 ## Runtime mode switching
 
@@ -53,18 +62,34 @@ The public theme-mode contract is AppConfig plus `@wippy-fe/proxy`:
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
+  if (host.getThemeMode() === mode) return
+
   await new Promise<void>((resolve, reject) => {
-    const stop = on('@theme', (appliedMode) => {
-      if (appliedMode !== mode) return
+    let settled = false
+    let stop = () => {}
+    const finish = (error?: unknown) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
       stop()
-      const currentMode = host.getThemeMode()
-      if (currentMode !== mode) {
-        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
-        return
-      }
-      resolve()
+      if (error) reject(error)
+      else resolve()
+    }
+    const timeout = window.setTimeout(
+      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
+      5_000,
+    )
+
+    stop = on('@theme', (appliedMode) => {
+      if (appliedMode !== mode) return
+      finish()
     })
-    host.setThemeMode(mode)
+
+    try {
+      host.setThemeMode(mode)
+    } catch (error) {
+      finish(error)
+    }
   })
 }
 

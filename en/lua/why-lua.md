@@ -1,85 +1,70 @@
 ---
-title: "Why Wippy Uses Lua - Embedded Runtime Language Decision"
-description: "Wippy uses Lua as its primary runtime language. Here is why: memory footprint, full sandboxability, clean Go embedding, deterministic module loading, and LLM-friendly syntax."
+title: "Why Wippy Uses Lua"
+description: "The runtime constraints, tradeoffs, and complementary roles of Lua and WebAssembly in Wippy."
 ---
 
 # Why Wippy Uses Lua
 
-Every technical evaluator asks this question, so here's the direct answer.
+Wippy uses Lua as its primary runtime language because it fits the platform's process-isolation and embedding requirements. This page explains that design choice and its tradeoffs; it is not a general ranking of programming languages.
+
+This is a conceptual design note rather than a runnable tutorial. It describes runtime properties and points to the reference pages that define the concrete APIs.
 
 ## Runtime Requirements
 
-Wippy runs user-defined logic inside isolated processes. Each process needs its own memory space, its own set of available capabilities, and no way to reach outside its boundary unless the runtime explicitly allows it. The platform runs thousands of these processes concurrently on a single instance, each one potentially executing different code for different tenants.
+Wippy runs user-defined logic in isolated processes. Each process has its own memory and receives only the capabilities exposed by the runtime. Because many processes can run concurrently, the embedded language must support:
 
-This means the language runtime embedded inside each process must be:
+- **Low per-process overhead.** Memory use must remain practical as process counts grow.
+- **Capability isolation.** The runtime must control the modules, functions, and system operations available to each process.
+- **In-process embedding.** Wippy's Go core must be able to create, configure, and stop a language environment for each process.
+- **Controlled module loading.** Modules must come from the runtime's allowlist or declared registry imports rather than arbitrary file-system paths.
+- **A small language surface.** Application code should remain readable and straightforward to generate, review, and lint.
 
-- **Tiny.** Each process runs in its own isolated environment. At thousands of concurrent processes, memory per process matters. Wippy targets a baseline overhead of ~13 KB per process.
-- **Fully sandboxable.** The runtime must control exactly which modules, functions, and system calls each process can access. No ambient authority. No global state leaking between processes.
-- **Embeddable.** The language runtime must be a library that Wippy's core (written in Go) can instantiate, configure, and tear down per process. It cannot be an external process or a separate binary.
-- **Deterministic in module loading.** When a process starts, the runtime decides what code it can see. No file system access. No `require` that reaches into arbitrary paths. Dependencies come from the registry, scoped per process.
-- **LLM-friendly syntax.** Agents generate and modify code. The language must be simple enough that an LLM can read, write, and reason about it reliably without hallucinating syntax.
-
-## Languages Evaluated: Python, JavaScript, Go, and WASM
+## Alternatives Considered
 
 ### Python
 
-The default choice for AI workloads. We ruled it out because CPython's memory footprint is 10-30 MB per interpreter, orders of magnitude larger than a Lua process. Python's import system gives code ambient access to the file system, network, and OS. Sandboxing Python requires either WASM compilation (which breaks most libraries) or heavy patching of the interpreter. Python's concurrency model (the GIL) also conflicts with our per-process isolation model. The ecosystem is a strength for standalone scripts, but a liability for a sandboxed runtime where you need deterministic control over what code can access.
+Python offers a large application and data ecosystem, but its interpreter, import model, and package assumptions do not match Wippy's per-process embedding and capability model. Python services can still integrate with Wippy over explicit service boundaries.
 
-### JavaScript (V8/QuickJS)
+### JavaScript
 
-V8 is fast but enormous (tens of MB per isolate). QuickJS is small enough to embed, but JavaScript's prototype chain and dynamic module system make sandboxing harder than it looks. `import` and `require` want to reach the file system. The ecosystem expects npm, which assumes network access and a writable file system, neither of which exist inside a Wippy process. We'd spend more time fighting the language's assumptions than building the product.
+JavaScript runtimes offer several embedding options. Their module and package ecosystems, however, require a separate integration layer to provide the registry-scoped loading model Wippy uses. Wippy chose Lua's smaller host-controlled runtime surface for application code.
 
 ### Go
 
-Wippy's core is written in Go, so this was tempting. But Go doesn't embed. You can't instantiate a Go runtime as a library inside another Go program. Go plugins exist but they're fragile, share memory with the host process, and can't be sandboxed. Go is right for the runtime itself; it's wrong for user code.
+Go is used for Wippy's core runtime. Compiled Go code and plugins do not provide the same isolated, per-process embedded environment required for user-defined application logic.
 
-### WASM
+### WebAssembly
 
-Genuinely strong for sandboxing, and we've built it as Wippy's second runtime (see below). But WASM alone isn't sufficient as the primary language for agent development. The developer experience for writing and debugging WASM directly is still rough, and LLMs generate WASM-targeted code less reliably than they generate Lua. WASM is the right choice when you need to run compiled code from other languages inside the Wippy sandbox. Lua is the right choice for the primary development and agent-authoring experience.
+WebAssembly fills a complementary role rather than replacing Lua as the primary authoring language. Its division of responsibilities is described in [Lua and WebAssembly](#lua-and-webassembly).
 
-## Why Lua Meets All Five Requirements
+## Why Lua Fits
 
-Lua was built for exactly this use case. It is the most embedded scripting language in production, running inside World of Warcraft, Roblox, Redis, Nginx/OpenResty, Cisco and Juniper networking equipment, Adobe Lightroom, and hundreds of game engines. It has been embedded in hostile environments (games where users run untrusted code) for over 25 years.
+### Host-Controlled Embedding
 
-### Memory
+Lua is designed to run inside a host application. Wippy creates an environment for each process, connects it to the scheduler and registry, and controls its globals and module loader. `require` reads only modules already installed in that environment: the always-available base modules and standard libraries, the executable entry's ambient `process` module, built-in runtime modules allowed by `modules:`, and registry libraries declared through `imports:`. It does not search file-system paths or install packages from the network. Different entries can therefore receive different module sets without application-level loading rules.
 
-A Wippy Lua process has a baseline overhead of ~13 KB. At 10,000 concurrent processes, that is roughly 130 MB of baseline process overhead. In Python, the same count would require 100-300 GB. This isn't a theoretical concern; it's the difference between running on a single machine and needing a cluster.
+### Language Surface
 
-### Sandboxing
+Lua has a compact syntax and a small standard environment. Wippy adds type annotations and linting so code can be checked incrementally without changing the underlying execution model.
 
-Lua's module system is a single function (`require`) that the host controls completely. Replace it with a custom loader that resolves only what the process is granted, and the process sees only what you allow. There is no `import os`, no `subprocess`, no ambient file system access; those functions are not present in a process's environment. The sandbox is the default state, not a patch on top of an open system.
+### Cooperative Scheduling
 
-### Embedding
+Lua coroutines map to Wippy's cooperative scheduling model. A process can yield during channel or I/O operations while the scheduler runs other work.
 
-Lua's interface is famously small. The canonical C API is around 60 functions, and pure-Go implementations make embedding it in Wippy's Go core straightforward, with no cgo. Creating and tearing down a process's Lua environment is cheap; Wippy does it on every process start with no measurable overhead.
+## Tradeoffs
 
-### Deterministic module control
+Lua does not provide an in-process package ecosystem comparable to pip or npm. Wippy supplies built-in runtime modules through an allowlist and application libraries through registry imports rather than installing packages from the network. Workloads that depend on large external libraries can run as services or as WebAssembly components.
 
-In Wippy, the code a process can load is determined by its registry scope. The Lua loader resolves modules from the registry, not the file system. If a process is not granted a module, that module does not exist from the process's perspective. This is how multi-tenant isolation works at the code level: different tenants can have different modules available, enforced by the runtime, not by application logic.
+Lua may also be unfamiliar to developers coming from other languages. The syntax is compact, but teams still need conventions, review, and linting for production code.
 
-### LLM-friendly
+## Lua and WebAssembly
 
-Lua's syntax is minimal: no classes, no decorators, no type annotations baked into the language, no async/await, no complex module resolution. An LLM that has seen Lua can generate correct Lua on the first try far more reliably than it can generate correct Python (with its decorator patterns, context managers, and type system) or JavaScript (with its prototype chain, `this` binding, and module flavors). For a platform where agents write and modify their own tools, this matters. Wippy extends Lua with a type annotation system (generics, unions, channel types) and a built-in linter, so you get type safety without the syntax complexity.
+Wippy provides two complementary runtimes:
 
-### Coroutines
+- **Lua** is the primary runtime for application logic, tools, and agents.
+- **WebAssembly** runs compiled workloads and existing code that can target WASM.
 
-Lua has native coroutine support, which maps directly to Wippy's concurrent process model. Each process runs in a coroutine that yields to the scheduler. No threads. No locks. No race conditions between processes. Thousands of concurrent processes cooperate without the complexity of thread-based concurrency.
-
-## What You Lose
-
-Lua's ecosystem is small. There is no equivalent of pip or npm with tens of thousands of packages. This is intentional: in Wippy, dependencies are registry entries with declared capabilities and security policies, not arbitrary packages pulled from the internet. But it means you can't `pip install pandas` inside a Wippy process. Data processing that requires heavy library support (ML model inference, complex numerical computation) should either run as external services that Wippy agents call via tools, or run as WASM functions inside the Wippy sandbox.
-
-Lua is also unfamiliar to most developers. The learning curve is real, though short; Lua's entire language reference is about 30 pages. Most developers who know any programming language can write Lua within a day. The unfamiliarity is a friction cost, but the architectural benefits (sandboxing, memory, embedding) outweigh it for a runtime platform where most user code is short, tool-oriented, and increasingly AI-generated.
-
-## Lua + WASM: The Full Picture
-
-Wippy is not a Lua-only platform. It ships two runtimes:
-
-**Lua** is the primary runtime for agent development, tool authoring, and application logic. It's where most Wippy code is written and where agents generate code. The small footprint, full sandboxability, and LLM-friendly syntax make it the right default.
-
-**WASM** is the secondary runtime for compiled workloads. If you have existing code in Rust, Go, C, or any language that compiles to WebAssembly, you can run it inside Wippy with the same process isolation and registry integration as Lua. WASM functions and processes integrate with WASI for clocks, I/O, filesystem (via mounted Wippy filesystem entries), and environment access. This means you can bring existing business logic into the Wippy sandbox without rewriting it in Lua.
-
-The two runtimes share the same process model, the same registry, and the same security policies. A Lua agent can call a WASM function. A WASM process can call Lua functions through the registry. They are peers in the same system.
+Lua and WASM process entries use Wippy's process model; Lua and WASM functions are exposed through registered function entries. Both integrations are configured through the registry and runtime security policies. Lua code can call registered WASM functions, and WASM processes can call registered Lua functions.
 
 ## See Also
 

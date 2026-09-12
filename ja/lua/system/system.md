@@ -8,7 +8,9 @@ description: "メモリ使用量、ガベージコレクション統計、CPU詳
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-メモリ使用量、ガベージコレクション統計、CPU詳細、プロセスメタデータを含むランタイムシステム情報のクエリ。
+`system` モジュールは、ランタイム、メモリ、プロセス、ホスト、スーパーバイザー、およびクラスターの状態を報告します。また、選択されたランタイム制御も公開します。
+
+このページは API リファレンスです。ほとんどのスニペットは独立した操作を示します。シャットダウン、ランタイム調整、分散ロックなどの制御には、明示的なポリシー認可とアプリケーション固有の失敗処理が必要です。
 
 ## ロード
 
@@ -201,10 +203,10 @@ local count, err = system.runtime.goroutines()
 GOMAXPROCS値を取得または設定:
 
 ```lua
--- 現在の値を取得
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- 新しい値を設定
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -350,8 +352,8 @@ local states, err = system.supervisor.states()
 `system.node` はクラスタ内のこのノード自身のアイデンティティを報告します。
 
 ```lua
-local id, err = system.node.id()      -- このノードのID
-local addr, err = system.node.addr()  -- 通知されたネットワークアドレス
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -368,9 +370,9 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 `system.cluster` はクラスタ全体のビューを報告します: メンバーと誰がリーダーかを報告します。
 
 ```lua
-local members, err = system.cluster.members()  -- ノードテーブルの配列
-local leader, err = system.cluster.leader()    -- リーダーノードID、不明な場合は ""
-local n, err = system.cluster.size()           -- 見えているメンバー数
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()` はノードテーブルの配列を返します。ローカルノードは一度含まれ先頭にソートされます。
@@ -396,11 +398,11 @@ local n, err = system.cluster.size()           -- 見えているメンバー数
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: 投票ノードまたはスタンバイ
-local role, err = system.raft.role()             -- system.node.role() と同じ値
-local term, err = system.raft.term()             -- 現在の Raft ターム
-local idx, err = system.raft.commit_index()      -- 最高コミット済みログインデックス
-local stats, err = system.raft.stats()           -- 生の統計マップ（文字列 -> 文字列）
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | 関数 | 戻り値 | 備考 |
@@ -420,10 +422,18 @@ local stats, err = system.raft.stats()           -- 生の統計マップ（文�
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- クリティカルセクション: クラスタ全体で保持者は1つだけ
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 取得はフェイルファスト: ロックが既に保持されている場合はブロックせず即座に `false` を返します。呼び出し側は独自のリトライとバックオフを実装します。現在の保持者のみが解放できます。保持していないロックを解放しても安全なno-opです。
@@ -485,4 +495,4 @@ end
 | ロックが既に保持中 | `errors.ALREADY_EXISTS` | no |
 | ロックサービスが利用不可（このノードに Raft がない） | `errors.INTERNAL` | no |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については[エラー処理](lua/core/errors.md)を参照してください。

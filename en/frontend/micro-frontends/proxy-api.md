@@ -1,22 +1,25 @@
 ---
 title: "Proxy API"
-description: "Child apps and web components communicate with the Wippy host through the proxy runtime (proxy.js). Your code never talks to that runtime directly —…"
+description: "Reference for the configuration, host controls, API access, events, state, WebSocket, logging, and utilities exposed by @wippy-fe/proxy."
 ---
 
 # Proxy API
 
-Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Your code never talks to that runtime directly — you import named getters from **`@wippy-fe/proxy`**, a thin synchronous facade over it. The same import works for both surfaces:
+**Classification: API reference with partial integration snippets.** The
+examples assume a Host-delivered child, valid deployment URLs and credentials,
+and application values such as `file`, `uuid`, event handlers, and routes. They
+show one API operation at a time rather than a standalone project.
 
-- **Micro Frontend Apps (`view.page`)** run inside a srcdoc iframe where the host injects `proxy.js`.
+Child apps and web components communicate with the Wippy host through the proxy runtime (`proxy.js`). Application code uses named getters from **`@wippy-fe/proxy`**, its thin synchronous facade. The same imports work for both surfaces:
+
+- **Micro Frontend Apps (`view.page`)** run through the selected srcdoc iframe or Web Fragment adapter, which provides the same proxy contract.
 - **Web components (`view.component`)** run as ESM modules in the host page; the host provides `@wippy-fe/proxy` through the import map.
 
 For how the runtime is loaded into each context, see [Proxy & Isolation](../web-host/proxy-isolation.md).
 
 ## Initialization
 
-`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on.
-
-The synchronous getter pattern is shared by micro frontend apps and web components:
+`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
@@ -30,8 +33,6 @@ Iframe and Web Fragment apps receive lifecycle visibility through the proxy
 `@visibility` topic. Direct web components do not: use `useHostVisibility()`
 or `useHostVisibilityRefresh()` from `@wippy-fe/webcomponent-vue`, or the
 equivalent `WippyElement` APIs.
-
-These getters are **synchronous** — `host`, `api`, `on`, `config`, etc. are available the moment your code runs. The host injects the child config **synchronously, before** the runtime loads (for both `view.page` apps and `view.component` web components), so the runtime initializes before your script executes. You never `await` to *obtain* a getter, and there is no `GetConfig`/`SetConfig` handshake. The only `await` you write is for an actual async operation (an HTTP call via `api`, a `state` read, etc.).
 
 Fetch the target Web Host release's `import-map.json` once during development
 and use every key in its `imports` object as a Rollup external. This includes
@@ -80,7 +81,7 @@ iframe/Web Fragment channel.
 
 ### Internals (do not use)
 
-The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. They are listed only so you do not accidentally clobber them — see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals--do-not-read-or-override).
+The runtime installs a handful of globals for its own use — `window.$W`, `window.getWippyApi`, `window.initWippyApi`, and the `window.__WIPPY_*` set. **Application and component code must never read or override them.** Always go through `@wippy-fe/proxy` instead. The names are listed to prevent collisions; see [Proxy & Isolation § Internals](../web-host/proxy-isolation.md#internals-do-not-read-or-override).
 
 > `@wippy-fe/proxy` (documented here) is the API your child code uses. The host's own bootstrap, `initWippyApp(config, rootContainer?)`, mounts the whole Web Host on the module-embed / facade path — child app code never calls it.
 
@@ -90,7 +91,7 @@ The runtime installs a handful of globals for its own use — `window.$W`, `wind
 
 ### `config`
 
-The child application configuration delivered by the host. It is a plain object (not a function) — imported directly and ready to read synchronously. New docs target only the current `wippy-context-2.0` contract.
+The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents only the current `wippy-context-2.0` contract.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -161,20 +162,35 @@ public proxy API:
 import { host, on } from '@wippy-fe/proxy'
 
 async function setThemeMode(mode: 'auto' | 'light' | 'dark') {
+  if (host.getThemeMode() === mode) return
+
   await new Promise<void>((resolve, reject) => {
-    const unsubscribe = on('@theme', (appliedMode) => {
-      if (appliedMode !== mode) return
+    let settled = false
+    let unsubscribe = () => {}
+    const finish = (error?: unknown) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
       unsubscribe()
-      const currentMode = host.getThemeMode()
-      if (currentMode !== mode) {
-        reject(new Error(`Theme propagation mismatch: ${currentMode}`))
-        return
-      }
-      resolve()
+      if (error) reject(error)
+      else resolve()
+    }
+    const timeout = window.setTimeout(
+      () => finish(new Error(`Timed out waiting for theme mode: ${mode}`)),
+      5_000,
+    )
+
+    unsubscribe = on('@theme', (appliedMode) => {
+      if (appliedMode !== mode) return
+      finish()
     })
 
     // Subscribe before the command so a fast propagation event cannot be lost.
-    host.setThemeMode(mode)
+    try {
+      host.setThemeMode(mode)
+    } catch (error) {
+      finish(error)
+    }
   })
 }
 
@@ -183,10 +199,10 @@ await setThemeMode('dark')
 
 The accepted modes are `auto`, `light`, and `dark`. `auto` follows the
 operating-system preference. A change is applied to the host, written back to
-AppConfig, broadcast to live page iframes and web components, and forwarded
-through nested Wippy containers. Subscribe to `@theme` when code needs to wait
-for the applied child state. Release the subscription during component
-unmount.
+AppConfig, broadcast to live iframe and Web Fragment page realms and direct web
+components, and forwarded through nested Wippy containers. Subscribe to
+`@theme` when code needs to wait for the applied child state. Release the
+subscription during component unmount.
 
 The host does not own persistence. The embedding facade listens for the host
 theme-change event and persists the user choice as described in
@@ -258,7 +274,13 @@ host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
 
-> **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and `navigate` target the standard compat shell (the chat view, right panel, and root route). In `fe_mode = managed` they still dispatch but have no built-in rendering surface — render chat, artifacts, and sub-routes through declared panels instead. See [Multi-Panel Layout § What works in which mode](../web-host/multi-panel-layout.md#what-works-in-which-mode).
+> **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and
+> `navigate` act directly on the standard compat shell. In `fe_mode = managed`
+> they publish typed `@HOST/intent` messages. Declare the shipped
+> `@HOST/compat-coordinator`, or an equivalent coordinator, to map those intents
+> to declared chat, artifact, modal, and main-route panels. Managed mode has no
+> implicit compat chrome; without a coordinator the intents are published but
+> nothing renders them. See [Multi-Panel Layout § What works in which mode](../web-host/multi-panel-layout.md#what-works-in-which-mode).
 
 ---
 
@@ -419,13 +441,19 @@ host.handleError(
 try {
   await api.get('/protected-endpoint')
 } catch (error) {
-  if ((error as any).response?.status === 401) {
-    host.handleError('auth-expired', error as Record<string, unknown>)
-  } else {
+  // Same-origin 401 responses already trigger the proxy's single-flight
+  // auth-expired flow. Report only application-specific non-auth failures.
+  if ((error as any).response?.status !== 401) {
     host.handleError('other', error as Record<string, unknown>)
   }
 }
 ```
+
+The proxy adds the Wippy bearer token to same-origin requests and invokes the
+host's `auth-expired` flow once when such a request returns 401. Set
+`skipDefaultAuth: true` only for a request that intentionally bypasses both
+behaviors. Fully qualified cross-origin requests skip them automatically so the
+Wippy token is not sent to another origin.
 
 ---
 
@@ -482,9 +510,11 @@ if (layout.snapshot) {
 // Subscribe to changes (the fresh snapshot is passed to the handler)
 import { on } from '@wippy-fe/proxy'
 
-on('@layout-change', (snapshot) => {
+const stopLayoutChanges = on('@layout-change', (snapshot) => {
   console.log(snapshot.activeBreakpoint)
 })
+
+// Call stopLayoutChanges() when the owning page or component tears down.
 
 // Mutations
 layout.resizePanel('right', '40%')
@@ -525,7 +555,9 @@ For the full managed-layout model, see [Multi-Panel Layout](../web-host/multi-pa
 
 A pre-configured axios instance with:
 - Base URL from the deployment environment
-- Automatic `Authorization: Bearer <token>` injection on every request
+- Automatic `Authorization: Bearer <token>` injection for same-origin requests
+  unless `skipDefaultAuth: true`; cross-origin requests do not receive the
+  Wippy token
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
@@ -556,21 +588,27 @@ const response = await api.post('/api/v1/uploads', formData, {
 
 const uploadedUuid = response.data.uuid  // { success: boolean, uuid: string }
 
-// Track processing status via WebSocket
-on(`upload:${uploadedUuid}`, (msg) => {
+// Track processing status via WebSocket. Retain and call the unsubscribe on
+// completion, failure, cancellation, or component teardown.
+const stopUploadStatus = on(`upload:${uploadedUuid}`, (msg) => {
   // msg.data.status: 'uploaded' | 'completed' | 'error' | 'processing'
 })
 
-// Cancel in-flight upload
-abort.abort()
 ```
 
-Maximum file size: 100 MB.
+Call `abort.abort()` from the application's cancel action while the POST is
+still pending. An abort after the awaited response has settled cannot cancel
+the completed upload. Call `stopUploadStatus()` when processing reaches a
+terminal status or when the owning component tears down.
+
+The Host's built-in upload UI rejects files larger than 100 MB. The proxy
+axios instance does not enforce that limit; a custom endpoint or child UI must
+apply its own documented client and server limits.
 
 ### File download
 
 ```typescript
-const response = await api.get('/api/v1/uploads/{uuid}/download', {
+const response = await api.get(`/api/v1/uploads/${uuid}/download`, {
   responseType: 'blob',
 })
 
@@ -617,13 +655,16 @@ const response = await api.post('/api/v1/agents/stream', { prompt: 'Hello' }, {
 const reader = (response.data as ReadableStream<Uint8Array>).getReader()
 const decoder = new TextDecoder()
 let buffer = ''
+let endedByMarker = false
 
 try {
-  while (true) {
+  stream: while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
+    // SSE permits CRLF. Normalize before looking for blank-line delimiters.
+    buffer = buffer.replace(/\r\n/g, '\n')
 
     while (true) {
       const sep = buffer.indexOf('\n\n')
@@ -638,23 +679,33 @@ try {
 
       if (dataLines.length === 0) continue
       const payload = dataLines.join('\n')
-      if (payload === '[DONE]') return
+      if (payload === '[DONE]') {
+        endedByMarker = true
+        break stream
+      }
 
+      let evt: unknown
       try {
-        const evt = JSON.parse(payload)
-        handleEvent(evt)
+        evt = JSON.parse(payload)
       } catch {
         handleText(payload)
+        continue
       }
+      handleEvent(evt)
     }
   }
 } finally {
-  reader.releaseLock()
+  try {
+    if (endedByMarker) await reader.cancel()
+  } finally {
+    reader.releaseLock()
+  }
 }
-
-// Cancel the stream
-abort.abort()
 ```
+
+Call `abort.abort()` from the owning cancel or teardown path while the read
+loop is active. The resulting abort rejection should be treated as expected
+only when that path initiated it; report other stream failures normally.
 
 To default all requests to the fetch adapter:
 
@@ -779,6 +830,7 @@ class MyEl extends HTMLElement {
 |-------|-----------------|-------------|
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
 | `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
+| `@theme` | `'auto' \| 'light' \| 'dark'` | Applied theme mode propagated by the Host. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -808,9 +860,9 @@ Subscribing to the same topic multiple times from the same frame is safe. The pr
 
 ## State
 
-### `state` — cross-iframe key-value persistence
+### `state` — host-mediated key-value persistence
 
-`state` provides host-mediated storage that survives iframe destruction. State is scoped per page or artifact UUID; each app gets an isolated namespace.
+`state` provides host-mediated storage that survives page-realm destruction. State is scoped per page or artifact UUID; each app gets an isolated namespace.
 
 All methods accept an optional `{ scope?: string }` option to override the default scope. Use `scope` when multiple instances of the same component need separate state buckets.
 
@@ -852,12 +904,14 @@ state.getAll(options?: { scope?: string }): Promise<Record<string, unknown>>
 **Recommended iframe/Web Fragment save pattern** — save when the page goes to background rather than on every change. Direct WCs use `useHostVisibility()` for the same lifecycle decision:
 
 ```typescript
-on('@visibility', async (visible) => {
+const stopVisibility = on('@visibility', async (visible) => {
   if (!visible) {
     await state.set('scrollY', document.documentElement.scrollTop)
     await state.set('formData', currentFormData)
   }
 })
+
+// Call stopVisibility() when the owning page or component tears down.
 ```
 
 **Limits:** 2 MB per page (JSON-serialized, configurable by the host through `hostConfig.stateCache`). State lives in host memory — survives iframe reload but not a full browser page refresh.
@@ -906,7 +960,7 @@ ws.send(command: WsCommand): void
 ```typescript
 import { ws, on } from '@wippy-fe/proxy'
 
-on('session:my-session:message:*', (msg) => {
+const stopMessages = on('session:my-session:message:*', (msg) => {
   console.log('Response:', msg.data)
 })
 
@@ -917,6 +971,9 @@ ws.send({
   data: { text: 'Hello from child app' },
 })
 ```
+
+Keep `stopMessages` and call it when the owning component or page tears down;
+do not unsubscribe immediately after `send()` if the response is still needed.
 
 ### `ws.sendWithResponse(command)` → `Promise<WsMessage>`
 
@@ -954,7 +1011,7 @@ ws.sendCommand('session-uuid', { command: 'agent', name: 'my-agent' })
 
 ### `logger`
 
-Structured logging that traverses iframe boundaries. Logs flow child → host → parent website where transports (Sentry, Graylog, console) process them. Each child's context (`resourceId`, `resourceType`, nesting depth) is automatically attached to every log entry.
+Structured logging that traverses child-to-host boundaries. Logs flow child → host → parent website where transports (Sentry, Graylog, console) process them. Each child's context (`resourceId`, `resourceType`, nesting depth) is automatically attached to every log entry.
 
 Use `logger` instead of `console.log/error` for anything you want to appear in production monitoring.
 
@@ -1120,7 +1177,7 @@ Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.i
 
 ### `installVueWarnSuppressor(app)`
 
-Available in the current coherent `@wippy-fe/proxy` family. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize — the elements render correctly, but the console fills with noise.
+Available in the current coherent `@wippy-fe/proxy` family. Silences `[Vue warn]: Failed to resolve component: foo-bar` for tags registered via `customElements.define(...)` rather than `app.component(...)`. Vue's template compiler emits these warnings for web component tags it does not recognize; the elements render correctly, but the console receives non-actionable warnings.
 
 ```typescript
 import { installVueWarnSuppressor } from '@wippy-fe/proxy'
@@ -1148,7 +1205,7 @@ If a `warnHandler` was already installed, it is preserved as `previous` and call
 
 ### `createAppRouter(routes, options?)` from `@wippy-fe/router`
 
-Canonical memory-router factory for srcdoc subapps. Replaces the boilerplate every subapp currently duplicates (memory history, `afterEach` route sync to host, `@history` subscription):
+Memory-router factory for `view.page` applications in either render engine. It provides memory history, `afterEach` route synchronization with the host, and an `@history` subscription:
 
 ```typescript
 import { createAppRouter } from '@wippy-fe/router'

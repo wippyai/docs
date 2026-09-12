@@ -1,17 +1,19 @@
 ---
 title: "Process Model"
-description: "Wippy executes code in isolated processes—lightweight state machines that communicate through message passing. This actor-model approach eliminates…"
+description: "How Wippy processes execute, communicate, isolate capabilities, and recover through supervision."
 ---
 
 # Process Model
 
-Wippy executes code in isolated processes—lightweight state machines that communicate through message passing. This actor-model approach eliminates shared-state bugs and makes concurrent programming predictable.
+Wippy executes code in isolated processes: lightweight state machines that communicate through messages rather than shared memory. This actor model gives each process its own state and lifecycle.
+
+This page explains the lifecycle and isolation model. Use the [Process Management reference](../lua/core/process.md) for spawn, messaging, monitoring, registry, and upgrade APIs. See [Process Host and Services](../system/process-host.md) for runtime-managed service fields.
 
 ## State Machine Execution
 
-Every process follows the same pattern: initialize, step through execution yielding on blocking operations, and close when complete. The scheduler multiplexes thousands of processes across a worker pool, running other processes while one waits for I/O.
+Each process initializes, advances through execution, yields on blocking operations, and closes when complete. The scheduler multiplexes processes across a worker pool and runs other work while a process waits for I/O.
 
-Processes support multiple concurrent yields—you can start several async operations and wait for any or all to complete. This enables efficient parallel I/O without spawning additional processes.
+Processes support multiple concurrent yields, allowing code to start several asynchronous operations and wait for any or all of them without spawning additional processes.
 
 ```mermaid
 flowchart LR
@@ -23,7 +25,7 @@ flowchart LR
     Running --> Complete
 ```
 
-Processes aren't limited to Lua. The runtime already supports WebAssembly modules via the `process.wasm` kind, and the architecture admits any state machine implementation.
+Processes are not limited to Lua. The runtime also supports WebAssembly modules through the `process.wasm` kind, and its process architecture can support other state-machine implementations.
 
 <warning>
 Processes are lightweight but not free. Each process carries a small baseline cost for its state, inbox, and scheduler bookkeeping, and dynamic allocations grow that footprint during execution.
@@ -31,15 +33,18 @@ Processes are lightweight but not free. Each process carries a small baseline co
 
 ## Process Hosts
 
-Wippy runs multiple process hosts within a single runtime, each with different capabilities and security boundaries. System processes running privileged functions can live in one host, isolated from hosts running user sessions. Hosts can restrict what processes are allowed to do—in Erlang you'd need separate nodes for this level of isolation.
+Wippy can run multiple process hosts within one runtime, each with its own capabilities and security boundaries. Privileged system processes can run in a host separate from hosts that execute user sessions.
 
-Some hosts are specialized. The Terminal host, for example, runs a single process but grants it access to IO operations that other hosts deny. This lets you mix trust levels in one deployment—system services with full access alongside sandboxed user code.
+Some hosts are specialized. The Terminal host, for example, uses one scheduler
+worker and supplies terminal I/O context to accepted processes; it does not
+enforce a one-process lifetime limit. Separate hosts allow one deployment to
+run processes with different trust levels.
 
 ## Security Model
 
-Every process executes under an actor identity and security policy. Typically this is the user who initiated the call, but system processes run under a system actor with different privileges.
+Each process executes under an actor identity and security policy. This is typically the user who initiated the call, while system processes use a system actor with different privileges.
 
-Access control works at multiple levels. Individual processes have their own access levels. Message sending between hosts can be forbidden based on security policy—a sandboxed user process might not be allowed to send messages to system hosts at all. The policy attached to the current actor determines what operations are permitted.
+Access control applies at multiple levels. Security policy can restrict individual process operations and message delivery between hosts. The policy attached to the current actor determines which operations are permitted.
 
 For the security implications of process isolation, see the [Security Model](concepts/security-model.md).
 
@@ -48,7 +53,9 @@ For the security implications of process isolation, see the [Security Model](con
 Create background processes with `process.spawn()`:
 
 ```lua
-local pid = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+local pid, err = process.spawn("app.workers:handler", "app:processes", arg1, arg2)
+if err then return nil, err end
+return pid
 ```
 
 The first argument is the registry entry, the second is the process host, and remaining arguments pass to the process.
@@ -57,16 +64,18 @@ Spawn variants control lifecycle relationships:
 
 | Function | Behavior |
 |----------|----------|
-| `spawn` | Fire and forget |
+| `spawn` | Start an independent process |
 | `spawn_monitored` | Receive EXIT events when child exits |
-| `spawn_linked` | Bidirectional—either crash notifies the other |
+| `spawn_linked` | Abnormal exit propagates in either direction; with `trap_links: true`, the peer receives `LINK_DOWN` instead of failing |
 
 ## Message Passing
 
-Processes communicate through messages, never shared memory:
+Processes communicate through messages rather than shared memory:
 
 ```lua
-process.send(target_pid, "topic", payload)
+local ok, err = process.send(target_pid, "topic", payload)
+if err then return nil, err end
+return ok
 ```
 
 Messages from the same sender arrive in order. Messages from different senders may interleave. Delivery is fire-and-forget—use request-response patterns when you need confirmation.
@@ -77,18 +86,23 @@ Processes can register in a local name registry and be addressed by name instead
 
 ## Supervision
 
-Any process can supervise others by monitoring them. A process spawns children with monitoring, watches for EXIT events, and restarts them on failure. This follows Erlang's "let it crash" philosophy: processes crash on unexpected conditions, and the monitoring process handles recovery.
+Any process can supervise other processes by monitoring them. A supervisor starts monitored children, watches for EXIT events, and decides whether to restart them after failure.
 
 ```lua
-local worker = process.spawn_monitored("app.workers:handler", "app:processes")
-local event = process.events():receive()
+local worker, spawn_err = process.spawn_monitored("app.workers:handler", "app:processes")
+if spawn_err then return nil, spawn_err end
+
+local event, open = process.events():receive()
+if not open then return nil, errors.new("process event channel closed") end
 
 if event.kind == process.event.EXIT and event.result.error then
-    worker = process.spawn_monitored("app.workers:handler", "app:processes")
+    local replacement, restart_err = process.spawn_monitored("app.workers:handler", "app:processes")
+    if restart_err then return nil, restart_err end
+    worker = replacement
 end
 ```
 
-At the root level, the runtime provides services that start and supervise long-running processes—similar to systemd in Linux. Define a `process.service` entry to have the runtime manage a process:
+At the runtime level, services can start and supervise long-running processes. Define a `process.service` entry to have the runtime manage a process:
 
 ```yaml
 - name: worker.service
@@ -100,11 +114,9 @@ At the root level, the runtime provides services that start and supervise long-r
     restart:
       max_attempts: 5
       initial_delay: 1s
-      max_delay: 30s
-      backoff_factor: 2.0
 ```
 
-The service starts automatically, restarts on crash with backoff, and integrates with the runtime's lifecycle management.
+The service starts automatically and integrates with the runtime's lifecycle management. At the pinned runtime, the initial failed start counts toward `max_attempts`, so `5` permits at most four follow-up starts. Each retry waits for `initial_delay` with jitter; the delay does not increase between attempts.
 
 ## Process Upgrading
 
@@ -116,8 +128,8 @@ process.upgrade("app.workers:v2", current_state)
 
 The first argument is the new registry entry (or nil to reload the current definition). Additional arguments pass to the new version, letting you carry state across the upgrade. The process resumes execution with the new code immediately.
 
-This enables hot code reload during development and zero-downtime updates in production. The runtime caches compiled protos, so upgrades don't pay compilation cost repeatedly. If an upgrade fails for any reason, the process crashes and normal supervision semantics apply—a monitoring parent can restart it with the previous version or escalate the failure.
+The runtime caches compiled prototypes to avoid repeated compilation. If an upgrade fails, the process crashes and normal supervision behavior applies; a monitoring parent can restart it or escalate the failure.
 
 ## Scheduling
 
-The actor scheduler uses work-stealing across CPU cores. Each worker has a local queue for cache locality, with a global queue for distribution. Processes yield on blocking operations, allowing thousands to run concurrently on a handful of threads.
+The actor scheduler uses work-stealing across CPU cores. Each worker has a local queue for cache locality, plus a global queue for distributing work. Processes yield on blocking operations so other processes can run on the worker pool.

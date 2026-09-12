@@ -9,9 +9,11 @@ description: "PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエ
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエリを実行。パラメータ化クエリ、トランザクション、プリペアドステートメント、流暢なクエリビルダーをサポート。
+`sql` モジュールは、構成済みの PostgreSQL、MySQL、SQLite データベースに対してクエリを実行します。パラメータ化クエリ、トランザクション、プリペアドステートメント、クエリビルダーをサポートします。
 
-データベース設定については[データベース](system/database.md)を参照。
+このページは API リファレンスです。スニペットでは、構成済みのデータベース、それを取得する権限、クエリで参照するテーブルが存在することを前提としています。各スニペットは単独のアプリケーションではなく、個別の呼び出しを示します。末尾の統合レシピには、追加のスキーマとドライバーに関する前提を記載しています。
+
+データベースの構成については、[データベース](system/database.md)を参照してください。
 
 ## ロード
 
@@ -19,7 +21,7 @@ PostgreSQL、MySQL、SQLiteデータベースに対してSQLクエリを実行�
 local sql = require("sql")
 ```
 
-## 接続の取得
+## `sql.get`
 
 リソースレジストリからデータベース接続を取得:
 
@@ -29,9 +31,19 @@ if err then
     return nil, err
 end
 
-local rows = db:query("SELECT * FROM users WHERE active = ?", {1})
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
-db:release()
+local rows, err = db:query("SELECT * FROM users WHERE active = ?", {1})
+if err then
+    return finish(nil, err)
+end
+
+return finish(rows)
 ```
 
 | パラメータ | 型 | 説明 |
@@ -41,7 +53,7 @@ db:release()
 **戻り値:** `DB, error`
 
 <note>
-接続は関数が終了すると自動的にプールに返される。長時間実行される操作では明示的に`db:release()`を呼び出すことを推奨。
+データベースのリースは、実行フレームのクリーンアップ時に解放されます。データベースの処理が完了したら、特に長時間実行される操作では `db:release()` を明示的に呼び出してください。
 </note>
 
 <note>
@@ -70,7 +82,7 @@ sql.isolation.REPEATABLE_READ   -- "repeatable_read"
 sql.isolation.SERIALIZABLE      -- "serializable"
 ```
 
-### NULL値
+### NULL 値
 
 ```lua
 local insert = sql.builder.insert("users")
@@ -80,7 +92,9 @@ local insert = sql.builder.insert("users")
 
 ## 型変換
 
-### as.int
+### `sql.as.int`
+
+値を SQL integer 型に変換します。
 
 ```lua
 local value = sql.as.int(42)
@@ -88,9 +102,9 @@ local value = sql.as.int(42)
 
 **戻り値:** `userdata`
 
-## as.float
+### `sql.as.float`
 
-値をSQL float型に変換。
+値を SQL float 型に変換します。
 
 ```lua
 local value = sql.as.float(19.99)
@@ -98,9 +112,9 @@ local value = sql.as.float(19.99)
 
 **戻り値:** `userdata`
 
-## as.text
+### `sql.as.text`
 
-値をSQL text型に変換。
+値を SQL text 型に変換します。
 
 ```lua
 local value = sql.as.text("hello")
@@ -108,9 +122,9 @@ local value = sql.as.text("hello")
 
 **戻り値:** `userdata`
 
-## as.binary
+### `sql.as.binary`
 
-値をSQL binary型に変換。
+値を SQL binary 型に変換します。
 
 ```lua
 local value = sql.as.binary("binary data")
@@ -118,9 +132,9 @@ local value = sql.as.binary("binary data")
 
 **戻り値:** `userdata`
 
-## as.null
+### `sql.as.null`
 
-SQL NULLマーカーを返す。
+SQL `NULL` マーカーを返します。
 
 ```lua
 local value = sql.as.null()
@@ -130,7 +144,9 @@ local value = sql.as.null()
 
 ## クエリビルダー
 
-### クエリの作成
+### `sql.builder.select`
+
+`SELECT` クエリビルダーを作成します。
 
 ```lua
 local query = sql.builder.select("id", "name")
@@ -144,9 +160,9 @@ local query = sql.builder.select("id", "name")
 
 **戻り値:** `SelectBuilder`
 
-## builder.insert
+### `sql.builder.insert`
 
-INSERTクエリビルダーを作成。
+`INSERT` クエリビルダーを作成します。
 
 ```lua
 local query = sql.builder.insert("users")
@@ -160,9 +176,9 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-## builder.update
+### `sql.builder.update`
 
-UPDATEクエリビルダーを作成。
+`UPDATE` クエリビルダーを作成します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -176,9 +192,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-## builder.delete
+### `sql.builder.delete`
 
-DELETEクエリビルダーを作成。
+`DELETE` クエリビルダーを作成します。
 
 ```lua
 local query = sql.builder.delete("users")
@@ -192,9 +208,9 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-## builder.expr
+### `sql.builder.expr`
 
-where/having句で使用する生のSQL式を作成。
+`WHERE` または `HAVING` 句で使用する生の SQL 式を作成します。
 
 ```lua
 local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
@@ -207,7 +223,7 @@ local expr = sql.builder.expr("score BETWEEN ? AND ?", 80, 90)
 
 **戻り値:** `Sqlizer`
 
-## builder.eq
+### `sql.builder.eq`
 
 テーブルから等価条件を作成。
 
@@ -221,7 +237,7 @@ local cond = sql.builder.eq({active = 1, status = "open"})
 
 **戻り値:** `Sqlizer`
 
-## builder.not_eq
+### `sql.builder.not_eq`
 
 テーブルから不等価条件を作成。
 
@@ -235,7 +251,7 @@ local cond = sql.builder.not_eq({status = "closed"})
 
 **戻り値:** `Sqlizer`
 
-## builder.lt
+### `sql.builder.lt`
 
 テーブルから小なり条件を作成。
 
@@ -249,7 +265,7 @@ local cond = sql.builder.lt({age = 18})
 
 **戻り値:** `Sqlizer`
 
-## builder.lte
+### `sql.builder.lte`
 
 テーブルから以下条件を作成。
 
@@ -263,7 +279,7 @@ local cond = sql.builder.lte({price = 100})
 
 **戻り値:** `Sqlizer`
 
-## builder.gt
+### `sql.builder.gt`
 
 テーブルから大なり条件を作成。
 
@@ -277,7 +293,7 @@ local cond = sql.builder.gt({score = 80})
 
 **戻り値:** `Sqlizer`
 
-## builder.gte
+### `sql.builder.gte`
 
 テーブルから以上条件を作成。
 
@@ -291,9 +307,9 @@ local cond = sql.builder.gte({age = 21})
 
 **戻り値:** `Sqlizer`
 
-## builder.like
+### `sql.builder.like`
 
-テーブルからLIKE条件を作成。
+テーブルから `LIKE` 条件を作成します。
 
 ```lua
 local cond = sql.builder.like({name = "john%"})
@@ -305,9 +321,9 @@ local cond = sql.builder.like({name = "john%"})
 
 **戻り値:** `Sqlizer`
 
-## builder.not_like
+### `sql.builder.not_like`
 
-テーブルからNOT LIKE条件を作成。
+テーブルから `NOT LIKE` 条件を作成します。
 
 ```lua
 local cond = sql.builder.not_like({email = "%@spam.com"})
@@ -319,9 +335,9 @@ local cond = sql.builder.not_like({email = "%@spam.com"})
 
 **戻り値:** `Sqlizer`
 
-## builder.and_
+### `sql.builder.and_`
 
-複数の条件をANDで結合。
+複数の条件を `AND` で結合します。
 
 ```lua
 local cond = sql.builder.and_({
@@ -336,9 +352,9 @@ local cond = sql.builder.and_({
 
 **戻り値:** `Sqlizer`
 
-## builder.or_
+### `sql.builder.or_`
 
-複数の条件をORで結合。
+複数の条件を `OR` で結合します。
 
 ```lua
 local cond = sql.builder.or_({
@@ -365,7 +381,7 @@ local frag, args = sql.builder.eq({active = 1}):to_sql()
 
 ## builder.question
 
-?プレースホルダー用のプレースホルダーフォーマット（デフォルト）。`sql.builder.default_placeholder` のエイリアスとして利用可能です。
+`?` プレースホルダーを使用します（デフォルト）。この形式は `sql.builder.default_placeholder` としても利用できます。
 
 ```lua
 local query = sql.builder.select("*")
@@ -373,9 +389,9 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.question)
 ```
 
-## builder.dollar
+### `sql.builder.dollar`
 
-$1, $2, ...プレースホルダー用のプレースホルダーフォーマット。
+`$1, $2, ...` プレースホルダーを使用します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -383,11 +399,11 @@ local query = sql.builder.select("*")
     :placeholder_format(sql.builder.dollar)
 ```
 
-## builder.at
+### `sql.builder.at`
 
 `@p1, @p2, ...`プレースホルダー用のプレースホルダーフォーマット（SQL Server スタイル）。上記のフォーマットと同様に `placeholder_format` に渡します。
 
-## builder.colon
+### `sql.builder.colon`
 
 `:1, :2, ...`プレースホルダー用のプレースホルダーフォーマット。上記のフォーマットと同様に `placeholder_format` に渡します。
 
@@ -395,7 +411,7 @@ local query = sql.builder.select("*")
 
 `sql.get()`が返すデータベース接続ハンドル。
 
-### db:type
+### `db:type`
 
 データベースタイプ定数を返す。
 
@@ -405,9 +421,9 @@ local dbtype, err = db:type()
 
 **戻り値:** `string, error`
 
-### db:query
+### `db:query`
 
-SELECTクエリを実行し行を返す。
+`SELECT` クエリを実行し、その行を返します。
 
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -420,9 +436,9 @@ local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **戻り値:** `table[], error`
 
-### db:execute
+### `db:execute`
 
-INSERT/UPDATE/DELETEクエリを実行。
+`INSERT`、`UPDATE`、`DELETE` ステートメントを実行します。
 
 ```lua
 local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -439,7 +455,7 @@ local result, err = db:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 - `last_insert_id` - 最後に挿入されたID
 - `rows_affected` - 影響を受けた行数
 
-### db:prepare
+### `db:prepare`
 
 繰り返し実行用のプリペアドステートメントを作成。
 
@@ -453,7 +469,7 @@ local stmt, err = db:prepare("SELECT * FROM users WHERE id = ?")
 
 **戻り値:** `Statement, error`
 
-### db:begin
+### `db:begin`
 
 データベーストランザクションを開始。
 
@@ -474,7 +490,7 @@ local tx, err = db:begin({
 
 **戻り値:** `Transaction, error`
 
-### db:release
+### `db:release`
 
 データベースリソースをプールに戻す。
 
@@ -484,7 +500,9 @@ local ok, err = db:release()
 
 **戻り値:** `boolean, error`
 
-### db:stats
+この操作は冪等です。
+
+### `db:stats`
 
 接続プール統計を返す。
 
@@ -509,9 +527,9 @@ local stats, err = db:stats()
 
 `db:prepare()`が返すプリペアドステートメント。
 
-### stmt:query
+### `stmt:query`
 
-プリペアドステートメントをSELECTとして実行。
+プリペアドステートメントを `SELECT` クエリとして実行します。
 
 ```lua
 local rows, err = stmt:query({123})
@@ -523,9 +541,9 @@ local rows, err = stmt:query({123})
 
 **戻り値:** `table[], error`
 
-### stmt:execute
+### `stmt:execute`
 
-プリペアドステートメントをINSERT/UPDATE/DELETEとして実行。
+プリペアドステートメントを `INSERT`、`UPDATE`、`DELETE` ステートメントとして実行します。
 
 ```lua
 local result, err = stmt:execute({"alice"})
@@ -541,7 +559,7 @@ local result, err = stmt:execute({"alice"})
 - `last_insert_id` - 最後に挿入されたID
 - `rows_affected` - 影響を受けた行数
 
-### stmt:close
+### `stmt:close`
 
 プリペアドステートメントを閉じる。
 
@@ -553,9 +571,11 @@ local ok, err = stmt:close()
 
 ## トランザクション
 
-`db:begin()`が返すデータベーストランザクション。
+`db:begin()` が返すトランザクションは、クエリ、ステートメント、セーブポイント、コミット、ロールバックの操作を提供します。
 
-### tx:db_type
+有効なトランザクションは、実行フレームのクリーンアップ時に自動的にロールバックされます。処理が完了したら、できるだけ早く明示的にコミットまたはロールバックしてください。
+
+### `tx:db_type`
 
 データベースタイプ定数を返す。
 
@@ -565,9 +585,9 @@ local dbtype, err = tx:db_type()
 
 **戻り値:** `string, error`
 
-### tx:query
+### `tx:query`
 
-トランザクション内でSELECTクエリを実行。
+トランザクション内で `SELECT` クエリを実行します。
 
 ```lua
 local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
@@ -580,9 +600,9 @@ local rows, err = tx:query("SELECT id, name FROM users WHERE active = ?", {1})
 
 **戻り値:** `table[], error`
 
-### tx:execute
+### `tx:execute`
 
-トランザクション内でINSERT/UPDATE/DELETEを実行。
+トランザクション内で `INSERT`、`UPDATE`、`DELETE` ステートメントを実行します。
 
 ```lua
 local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
@@ -599,7 +619,7 @@ local result, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 - `last_insert_id` - 最後に挿入されたID
 - `rows_affected` - 影響を受けた行数
 
-### tx:prepare
+### `tx:prepare`
 
 トランザクション内でプリペアドステートメントを作成。
 
@@ -613,7 +633,7 @@ local stmt, err = tx:prepare("SELECT * FROM users WHERE id = ?")
 
 **戻り値:** `Statement, error`
 
-### tx:commit
+### `tx:commit`
 
 トランザクションをコミット。
 
@@ -623,7 +643,7 @@ local ok, err = tx:commit()
 
 **戻り値:** `boolean, error`
 
-### tx:rollback
+### `tx:rollback`
 
 トランザクションをロールバック。
 
@@ -633,7 +653,7 @@ local ok, err = tx:rollback()
 
 **戻り値:** `boolean, error`
 
-### tx:savepoint
+### `tx:savepoint`
 
 トランザクション内に名前付きセーブポイントを作成。
 
@@ -647,7 +667,7 @@ local ok, err = tx:savepoint("sp1")
 
 **戻り値:** `boolean, error`
 
-### tx:rollback_to
+### `tx:rollback_to`
 
 名前付きセーブポイントにロールバック。
 
@@ -661,7 +681,7 @@ local ok, err = tx:rollback_to("sp1")
 
 **戻り値:** `boolean, error`
 
-### tx:release
+### `tx:release`
 
 セーブポイントを解放。
 
@@ -677,11 +697,11 @@ local ok, err = tx:release("sp1")
 
 ## SELECTビルダー
 
-SELECTクエリを構築するための流暢なインターフェース。
+`SELECT` クエリを句ごとに構築します。
 
-### select:from
+### `select:from`
 
-FROM句を設定。
+`FROM` 句を設定します。
 
 ```lua
 local query = sql.builder.select("id", "name"):from("users")
@@ -693,9 +713,9 @@ local query = sql.builder.select("id", "name"):from("users")
 
 **戻り値:** `SelectBuilder`
 
-### select:join
+### `select:join`
 
-JOIN句を追加。
+`JOIN` 句を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -710,9 +730,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:left_join
+### `select:left_join`
 
-LEFT JOIN句を追加。
+`LEFT JOIN` 句を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -727,9 +747,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:right_join
+### `select:right_join`
 
-RIGHT JOIN句を追加。
+`RIGHT JOIN` 句を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -744,9 +764,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:inner_join
+### `select:inner_join`
 
-INNER JOIN句を追加。
+`INNER JOIN` 句を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -761,9 +781,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:where
+### `select:where`
 
-WHERE条件を追加。
+`WHERE` 条件を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -783,9 +803,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:order_by
+### `select:order_by`
 
-ORDER BY句を追加。
+`ORDER BY` 句を追加します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -799,9 +819,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:group_by
+### `select:group_by`
 
-GROUP BY句を追加。
+`GROUP BY` 句を追加します。
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*)")
@@ -815,9 +835,9 @@ local query = sql.builder.select("status", "COUNT(*)")
 
 **戻り値:** `SelectBuilder`
 
-### select:having
+### `select:having`
 
-HAVING条件を追加。
+`HAVING` 条件を追加します。
 
 ```lua
 local query = sql.builder.select("status", "COUNT(*) as cnt")
@@ -833,9 +853,9 @@ local query = sql.builder.select("status", "COUNT(*) as cnt")
 
 **戻り値:** `SelectBuilder`
 
-### select:limit
+### `select:limit`
 
-LIMITを設定。
+`LIMIT` の値を設定します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -849,9 +869,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:offset
+### `select:offset`
 
-OFFSETを設定。
+`OFFSET` の値を設定します。
 
 ```lua
 local query = sql.builder.select("*")
@@ -865,9 +885,9 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:columns
+### `select:columns`
 
-SELECTにカラムを追加。
+`SELECT` リストにカラムを追加します。
 
 ```lua
 local query = sql.builder.select():columns("id", "name", "email")
@@ -879,9 +899,9 @@ local query = sql.builder.select():columns("id", "name", "email")
 
 **戻り値:** `SelectBuilder`
 
-### select:distinct
+### `select:distinct`
 
-DISTINCT修飾子を追加。
+`DISTINCT` 修飾子を追加します。
 
 ```lua
 local query = sql.builder.select("status")
@@ -891,7 +911,7 @@ local query = sql.builder.select("status")
 
 **戻り値:** `SelectBuilder`
 
-### select:suffix
+### `select:suffix`
 
 SQLサフィックスを追加。
 
@@ -908,7 +928,7 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:placeholder_format
+### `select:placeholder_format`
 
 プレースホルダーフォーマットを設定。
 
@@ -924,7 +944,7 @@ local query = sql.builder.select("*")
 
 **戻り値:** `SelectBuilder`
 
-### select:to_sql
+### `select:to_sql`
 
 SQL文字列とバインド引数を生成。
 
@@ -932,14 +952,17 @@ SQL文字列とバインド引数を生成。
 local sql_str, args = query:to_sql()
 ```
 
-**戻り値:** `string, table`
+**戻り値:** 成功時は `string, table`、ビルダーの状態が無効な場合は `nil, error`
 
-### select:run_with
+### `select:run_with`
 
 クエリ用のエグゼキュータを作成。
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local rows, err = executor:query()
 ```
 
@@ -947,13 +970,13 @@ local rows, err = executor:query()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | データベースまたはトランザクションハンドル |
 
-**戻り値:** `QueryExecutor`
+**戻り値:** `QueryExecutor, error`
 
 ## INSERTビルダー
 
-INSERTクエリを構築するための流暢なインターフェース。
+`INSERT` クエリを句ごとに構築します。
 
-### insert:into
+### `insert:into`
 
 テーブル名を設定。
 
@@ -967,7 +990,7 @@ local query = sql.builder.insert():into("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:columns
+### `insert:columns`
 
 カラム名を設定。
 
@@ -981,7 +1004,7 @@ local query = sql.builder.insert("users"):columns("name", "email")
 
 **戻り値:** `InsertBuilder`
 
-### insert:values
+### `insert:values`
 
 行の値を追加。
 
@@ -997,7 +1020,7 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:set_map
+### `insert:set_map`
 
 テーブルからカラムと値を設定。
 
@@ -1012,9 +1035,9 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:select
+### `insert:select`
 
-SELECTクエリから挿入。
+`SELECT` クエリの行を挿入します。
 
 ```lua
 local select_query = sql.builder.select("name", "email"):from("temp_users")
@@ -1029,13 +1052,13 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:prefix
+### `insert:prefix`
 
 SQLプレフィックスを追加。
 
 ```lua
 local query = sql.builder.insert("users")
-    :prefix("INSERT IGNORE INTO")
+    :prefix("/* audit import */")
 ```
 
 | パラメータ | 型 | 説明 |
@@ -1045,7 +1068,7 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:suffix
+### `insert:suffix`
 
 SQLサフィックスを追加。
 
@@ -1063,9 +1086,9 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:options
+### `insert:options`
 
-INSERTオプションを追加。
+`INSERT` オプションを追加します。
 
 ```lua
 local query = sql.builder.insert("users")
@@ -1078,7 +1101,7 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:placeholder_format
+### `insert:placeholder_format`
 
 プレースホルダーフォーマットを設定。
 
@@ -1093,7 +1116,7 @@ local query = sql.builder.insert("users")
 
 **戻り値:** `InsertBuilder`
 
-### insert:to_sql
+### `insert:to_sql`
 
 SQL文字列とバインド引数を生成。
 
@@ -1101,14 +1124,17 @@ SQL文字列とバインド引数を生成。
 local sql_str, args = query:to_sql()
 ```
 
-**戻り値:** `string, table`
+**戻り値:** 成功時は `string, table`、ビルダーの状態が無効な場合は `nil, error`
 
-### insert:run_with
+### `insert:run_with`
 
 クエリ用のエグゼキュータを作成。
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1116,13 +1142,13 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | データベースまたはトランザクションハンドル |
 
-**戻り値:** `QueryExecutor`
+**戻り値:** `QueryExecutor, error`
 
 ## UPDATEビルダー
 
-UPDATEクエリを構築するための流暢なインターフェース。
+`UPDATE` クエリを句ごとに構築します。
 
-### update:table
+### `update:table`
 
 テーブル名を設定。
 
@@ -1136,7 +1162,7 @@ local query = sql.builder.update():table("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:set
+### `update:set`
 
 カラム値を設定。
 
@@ -1153,7 +1179,7 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:set_map
+### `update:set_map`
 
 テーブルから複数のカラムを設定。
 
@@ -1168,9 +1194,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:where
+### `update:where`
 
-WHERE条件を追加。
+`WHERE` 条件を追加します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -1185,9 +1211,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:order_by
+### `update:order_by`
 
-ORDER BY句を追加。
+`ORDER BY` 句を追加します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -1201,9 +1227,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:limit
+### `update:limit`
 
-LIMITを設定。
+`LIMIT` の値を設定します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -1217,9 +1243,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:offset
+### `update:offset`
 
-OFFSETを設定。
+`OFFSET` の値を設定します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -1233,7 +1259,7 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:suffix
+### `update:suffix`
 
 SQLサフィックスを追加。
 
@@ -1250,9 +1276,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:from
+### `update:from`
 
-FROM句を追加。
+`FROM` 句を追加します。
 
 ```lua
 local query = sql.builder.update("users")
@@ -1266,9 +1292,9 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:from_select
+### `update:from_select`
 
-SELECTクエリから更新。
+`SELECT` クエリの行から更新します。
 
 ```lua
 local select_query = sql.builder.select("*"):from("temp_users")
@@ -1284,7 +1310,7 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:placeholder_format
+### `update:placeholder_format`
 
 プレースホルダーフォーマットを設定。
 
@@ -1299,7 +1325,7 @@ local query = sql.builder.update("users")
 
 **戻り値:** `UpdateBuilder`
 
-### update:to_sql
+### `update:to_sql`
 
 SQL文字列とバインド引数を生成。
 
@@ -1307,14 +1333,17 @@ SQL文字列とバインド引数を生成。
 local sql_str, args = query:to_sql()
 ```
 
-**戻り値:** `string, table`
+**戻り値:** 成功時は `string, table`、ビルダーの状態が無効な場合は `nil, error`
 
-### update:run_with
+### `update:run_with`
 
 クエリ用のエグゼキュータを作成。
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1322,13 +1351,13 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | データベースまたはトランザクションハンドル |
 
-**戻り値:** `QueryExecutor`
+**戻り値:** `QueryExecutor, error`
 
 ## DELETEビルダー
 
-DELETEクエリを構築するための流暢なインターフェース。
+`DELETE` クエリを句ごとに構築します。
 
-### delete:from
+### `delete:from`
 
 テーブル名を設定。
 
@@ -1342,9 +1371,9 @@ local query = sql.builder.delete():from("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:where
+### `delete:where`
 
-WHERE条件を追加。
+`WHERE` 条件を追加します。
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1358,9 +1387,9 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:order_by
+### `delete:order_by`
 
-ORDER BY句を追加。
+`ORDER BY` 句を追加します。
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1374,9 +1403,9 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:limit
+### `delete:limit`
 
-LIMITを設定。
+`LIMIT` の値を設定します。
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1390,9 +1419,9 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:offset
+### `delete:offset`
 
-OFFSETを設定。
+`OFFSET` の値を設定します。
 
 ```lua
 local query = sql.builder.delete("users")
@@ -1406,7 +1435,7 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:suffix
+### `delete:suffix`
 
 SQLサフィックスを追加。
 
@@ -1423,7 +1452,7 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:placeholder_format
+### `delete:placeholder_format`
 
 プレースホルダーフォーマットを設定。
 
@@ -1438,7 +1467,7 @@ local query = sql.builder.delete("users")
 
 **戻り値:** `DeleteBuilder`
 
-### delete:to_sql
+### `delete:to_sql`
 
 SQL文字列とバインド引数を生成。
 
@@ -1446,14 +1475,17 @@ SQL文字列とバインド引数を生成。
 local sql_str, args = query:to_sql()
 ```
 
-**戻り値:** `string, table`
+**戻り値:** 成功時は `string, table`、ビルダーの状態が無効な場合は `nil, error`
 
-### delete:run_with
+### `delete:run_with`
 
 クエリ用のエグゼキュータを作成。
 
 ```lua
-local executor = query:run_with(db)
+local executor, err = query:run_with(db)
+if err then
+    return nil, err
+end
 local result, err = executor:exec()
 ```
 
@@ -1461,15 +1493,15 @@ local result, err = executor:exec()
 |-----------|------|-------------|
 | `db` | DB\|Transaction | データベースまたはトランザクションハンドル |
 
-**戻り値:** `QueryExecutor`
+**戻り値:** `QueryExecutor, error`
 
 ## クエリの実行
 
 クエリエグゼキュータはビルダーが生成したクエリを実行。
 
-### executor:query
+### `executor:query`
 
-クエリを実行し行を返す（SELECT用）。
+クエリを実行し、`SELECT` ステートメントの行を返します。
 
 ```lua
 local rows, err = executor:query()
@@ -1477,9 +1509,9 @@ local rows, err = executor:query()
 
 **戻り値:** `table[], error`
 
-### executor:exec
+### `executor:exec`
 
-クエリを実行し結果を返す（INSERT/UPDATE/DELETE用）。
+クエリを実行し、`INSERT`、`UPDATE`、`DELETE` ステートメントの結果を返します。
 
 ```lua
 local result, err = executor:exec()
@@ -1491,7 +1523,7 @@ local result, err = executor:exec()
 - `last_insert_id` - 最後に挿入されたID
 - `rows_affected` - 影響を受けた行数
 
-### executor:to_sql
+### `executor:to_sql`
 
 実行せずに生成されたSQLと引数を返す。
 
@@ -1524,30 +1556,36 @@ local sql_str, args = executor:to_sql()
 | 無効なセーブポイント名 | `errors.INVALID` | no |
 | クエリ実行エラー | `errors.UNKNOWN` | nil |
 
-エラーの処理については[エラー処理](lua/core/errors.md)を参照。
+エラーの処理については、[エラー処理](lua/core/errors.md)を参照してください。
 
-## 例
+## 統合部分レシピ
+
+このレシピでは、`app.db:main` が構成済みの SQLite または MySQL データベースで、参照する列を持つ `users`、`orders`、`logs` テーブルがすでに存在することを前提としています。`?` プレースホルダーを使用しています。PostgreSQL リソースでは `$1`、`$2` などを使用してください。返される行はアプリケーションのデータによって異なります。周囲のアプリケーションは `report_cleanup_error(err)` を提供し、起点となった操作エラーを置き換えずに、ロールバックまたはクローズの失敗を観測できるようにします。
 
 ```lua
 local sql = require("sql")
 
--- データベース接続を取得
 local db, err = sql.get("app.db:main")
-if err then error(err) end
+if err then return nil, err end
 
--- データベースタイプを確認
-local dbtype, _ = db:type()
-print("Database type:", dbtype)
+local function finish(value, primary_err)
+    local _, release_err = db:release()
+    if primary_err then return nil, primary_err end
+    if release_err then return nil, release_err end
+    return value
+end
 
--- 直接クエリ
+-- Direct query
 local users, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 for _, user in ipairs(users) do
     print(user.id, user.name)
 end
 
--- ビルダーパターン
+-- Builder pattern
 local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :from("users u")
     :left_join("orders o ON o.user_id = u.id")
@@ -1560,57 +1598,52 @@ local query = sql.builder.select("u.id", "u.name", "COUNT(o.id) as order_count")
     :order_by("order_count DESC")
     :limit(10)
 
-local executor = query:run_with(db)
+local executor, build_err = query:run_with(db)
+if build_err then
+    return finish(nil, build_err)
+end
 local results, err = executor:query()
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
--- セーブポイント付きトランザクション
+-- Transaction
 local tx, err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
 local _, err = tx:execute("INSERT INTO users (name) VALUES (?)", {"alice"})
 if err then
-    tx:rollback()
-    error(err)
+    local _, rollback_err = tx:rollback()
+    if rollback_err then report_cleanup_error(rollback_err) end
+    return finish(nil, err)
 end
 
-tx:savepoint("sp1")
-
-local _, err = tx:execute("UPDATE users SET status = ? WHERE id = ?", {"active", 1})
-if err then
-    tx:rollback_to("sp1")
-else
-    tx:release("sp1")
+local _, commit_err = tx:commit()
+if commit_err then
+    return finish(nil, commit_err)
 end
 
-local ok, err = tx:commit()
-if err then error(err) end
-
--- プリペアドステートメント
+-- Prepared statements
 local stmt, err = db:prepare("INSERT INTO logs (message, level) VALUES (?, ?)")
-if err then error(err) end
+if err then
+    return finish(nil, err)
+end
 
-for i = 1, 100 do
+for i = 1, 3 do
     local _, err = stmt:execute({"log message " .. i, "info"})
     if err then
-        stmt:close()
-        error(err)
+        local _, close_err = stmt:close()
+        if close_err then report_cleanup_error(close_err) end
+        return finish(nil, err)
     end
 end
 
-stmt:close()
+local _, close_err = stmt:close()
+if close_err then
+    return finish(nil, close_err)
+end
 
--- NULLと型付き値
-local insert = sql.builder.insert("products")
-    :columns("name", "price", "description")
-    :values("Widget", sql.as.float(19.99), sql.NULL)
-
-local executor = insert:run_with(db)
-local result, err = executor:exec()
-if err then error(err) end
-
-print("Inserted ID:", result.last_insert_id)
-
-db:release()
+return finish({users = users, ranked_users = results})
 ```
-

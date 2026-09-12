@@ -1,13 +1,13 @@
 ---
 title: "Referência de Configuração"
-description: "O Wippy é configurado via arquivos .wippy.yaml. Todas as opções têm padrões sensíveis."
+description: "Campos de configuração do runtime, profiles, regras de composição, referências de ambiente e sobrescritas pela linha de comando."
 ---
 
 # Referência de Configuração
 
-O Wippy é configurado via arquivos `.wippy.yaml`. Todas as opções têm padrões sensíveis.
+O Wippy lê a configuração do runtime em arquivos `.wippy.yaml`.
 
-Qualquer valor abaixo pode ser sobrescrito na inicialização com `wippy run --set section.path=value` (repetível, tem precedência sobre o arquivo). Para sobrescrever *entradas* individuais do registro em vez destas seções de configuração, use a seção `override:` ou `-o` — veja [Sobrescrevendo Entradas](guides/entry-kinds.md#overriding-entries).
+Use a opção repetível `wippy run --set section.path=value` para sobrescrever na inicialização os campos de configuração abaixo. Para sobrescrever *entradas* individuais do registro em vez de seções de configuração, use a seção `override:` ou `-o`; consulte [Sobrescrevendo Entradas](./entry-kinds.md#sobrescrevendo-entradas).
 
 ## Composição de Configuração {#config-composition}
 
@@ -22,11 +22,11 @@ wippy run --config .wippy.yaml --config .wippy.local.yaml
 - O primeiro arquivo ancora o diretório usado para resolver caminhos relativos.
 - Nomes de arquivo não carregam significado reservado; nada além do padrão é descoberto automaticamente.
 
-A configuração aplica-se nesta ordem: composição de arquivos, depois seleções de `--profile`, depois overrides de `--set`. Para aplicações executadas a partir de packs, os defaults de runtime empacotados ficam abaixo de todos esses (veja [Publicando Defaults de Runtime](guides/publishing.md#publishing-runtime-defaults)).
+A configuração é aplicada nesta ordem: arquivos compostos, overlays selecionados com `--profile` e, por fim, sobrescritas `--set`. Para aplicações executadas a partir de packs, os padrões de runtime empacotados têm precedência menor que os três; consulte [Padrões de Runtime na Publicação](guides/publishing.md#publishing-runtime-defaults).
 
 ## Perfis {#profiles}
 
-Um arquivo de configuração pode declarar overlays nomeados sob `profiles:`. Cada corpo de profile espelha as seções normais de configuração; selecioná-lo com `--profile <name>` sobrepõe esses valores à configuração base mesclada:
+Um arquivo de configuração pode declarar overlays nomeados sob `profiles:`. Cada corpo de profile espelha as seções padrão de configuração. Selecioná-lo com `--profile <name>` aplica esses valores sobre a configuração-base mesclada:
 
 ```yaml
 version: "1.0"
@@ -63,7 +63,7 @@ wippy run --profile pg
 
 ## Logger
 
-Controla o encoder do logger zap. Flags do CLI (`-v`, `-c`, `-s`) sobrescrevem nível/saída; a única opção controlada por yaml é a codificação.
+Controla o encoder do logger zap. As flags do CLI (`-v`, `-c`, `-s`) sobrescrevem o nível e a saída; a codificação é a única opção configurada por YAML.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -76,7 +76,7 @@ logger:
 
 ## Gerenciador de Log
 
-Controla o roteamento de logs do runtime. A saída do console é configurada via [flags do CLI](guides/cli.md) (`-v`, `-c`, `-s`).
+Controla o roteamento de logs do runtime. A saída do console é configurada por [flags do CLI](guides/cli.md) (`-v`, `-c`, `-s`).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -110,11 +110,11 @@ profiler:
   address: "localhost:6060"
 ```
 
-Acesse em `http://localhost:6060/debug/pprof/`
+Quando habilitado com o endereço padrão, o profiler fica disponível em `http://localhost:6060/debug/pprof/`.
 
 ## Segurança
 
-Comportamento de segurança global. Políticas individuais são definidas como [entradas security.policy](guides/entry-kinds.md).
+Comportamento global de segurança. Políticas individuais são definidas como [entradas security.policy](guides/entry-kinds.md).
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
@@ -222,7 +222,7 @@ supervisor:
 Veja: [Guia de Supervisão](guides/supervision.md)
 
 <note>
-Workers e filas por `process.host` são configurados na própria entrada (`workers`, `queue_size`, `local_queue_size`), não nesta seção global. Veja o tipo de entrada [Process Host](system/process-host.md).
+Workers e filas de cada `process.host` são configurados na própria entrada (`workers`, `queue_size`, `local_queue_size`), não nesta seção global. Consulte o kind de entrada [Process Host](system/process-host.md).
 </note>
 
 ## Runtime Lua
@@ -305,11 +305,11 @@ Tracing distribuído e exportação de métricas via OTLP.
 | `metrics_enabled` | bool | false | Exporta métricas |
 | `http.enabled` | bool | true | Rastreia requisições HTTP |
 | `http.extract_headers` | bool | true | Extrai contexto de trace dos cabeçalhos de entrada |
-| `http.inject_headers` | bool | true | Injeta contexto de trace nos cabeçalhos de saída |
+| `http.inject_headers` | bool | true | Injeta o contexto de trace na resposta HTTP |
 | `process.enabled` | bool | true | Rastreia ciclo de vida de processos |
 | `process.trace_lifecycle` | bool | true | Emite spans para spawn/terminate |
 | `interceptor.enabled` | bool | true | Rastreia chamadas de funções |
-| `interceptor.order` | int | 100 | Prioridade do interceptor |
+| `interceptor.order` | int | 100 | Campo de compatibilidade decodificado; o runtime v0.3.32a registra o interceptor na ordem 100 independentemente deste valor |
 | `queue.enabled` | bool | true | Rastreia publicação/consumo de filas |
 | `temporal.enabled` | bool | false | Rastreia workflows do Temporal |
 
@@ -326,7 +326,7 @@ Variáveis de ambiente OTEL padrão (`OTEL_SDK_DISABLED`, `OTEL_EXPORTER_OTLP_EN
 
 Veja: [Guia de Observabilidade](guides/observability.md)
 
-## Shutdown
+## Encerramento :id=shutdown
 
 Comportamento de encerramento gracioso.
 
@@ -380,7 +380,7 @@ Veja: [Guia de Observabilidade](guides/observability.md)
 
 ## Cluster
 
-Clustering multi-nó: associação gossip mais um núcleo Raft de consenso limitado. Consulte o [Guia de Cluster](guides/cluster.md) para a arquitetura e modelo operacional; esta seção é a referência de chaves de configuração.
+Clustering multinó: associação por gossip e um núcleo de consenso Raft limitado. Consulte o [Guia de Cluster](guides/cluster.md) para conhecer a arquitetura e o modelo operacional; esta seção é a referência das chaves de configuração.
 
 ### Nível superior
 
@@ -437,17 +437,17 @@ A identidade internós é obrigatória sempre que o clustering está habilitado.
 
 ### Raft (consenso)
 
-Raft limitado. O estado do Raft é durável em disco por padrão, armazenado sob `raft.data_dir` (padrão `~/.wippy/store`); um nó reiniciado ainda rejoina o quórum a partir dos peers. As entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) replicam através dele. O bootstrap é conduzido por gossip (estilo `bootstrap_expect` do Consul/Nomad).
+O núcleo Raft limitado armazena estado durável em `raft.data_dir` por padrão (`~/.wippy/store`). Um nó reiniciado volta a participar do quórum a partir de seus peers. As entradas [`store.kv.raft`](system/store.md#cluster-kv-stores) são replicadas por esse núcleo, e o gossip coordena o bootstrap usando um modelo `bootstrap_expect`.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `raft.data_dir` | string | `~/.wippy/store` | Diretório para o estado durável do Raft em disco e snapshots duráveis do CRDT (sob `<data_dir>/_sys/`). Sem disco apenas quando nenhum caminho é resolvido (sem diretório home e nenhum definido) |
 | `raft.enabled` | bool | true | Executa um nó Raft; `false` torna este um cliente apenas gossip |
 | `raft.role` | string | server | `server` executa um nó Raft; `client` é apenas gossip |
-| `raft.eligible` | bool | true | Se este nó pode ser selecionado como voter |
+| `raft.eligible` | bool | true | Se este nó pode ser selecionado como voter ou standby; false o mantém fora do Raft como cliente |
 | `raft.priority` | int | 100 | Prioridade de seleção de voter (menor é preferido) |
-| `raft.bootstrap_expect` | int | 1 | Tamanho inicial do quórum: `0`=apenas se juntar a um existente, `1`=nó único, `N`=aguardar N peers elegíveis antes de formar quórum |
-| `raft.max_voters` | int | 5 | Teto de voters (deve ser ímpar); nós elegíveis extras tornam-se standbys |
+| `raft.bootstrap_expect` | int | 1 | Tamanho inicial do quórum: `0`=entrar em um existente, `1`=nó único, `N`=aguardar N nós elegíveis incluindo o nó local e então formar o quórum |
+| `raft.max_voters` | int | 5 | Limite de voters (deve ser ímpar); até `max_standbys` nós elegíveis adicionais tornam-se standbys, e os demais permanecem clientes |
 | `raft.max_standbys` | int | 4 | Membros não-votantes mantidos prontos para promoção; nós além de voters+standbys não são membros Raft |
 | `raft.reconcile_debounce` | duration | 2s | Janela de coalescência após um evento gossip antes do reconciliador de voters executar |
 | `raft.reconcile_timeout` | duration | 2s | Limite por passagem de reconciliação |
@@ -528,7 +528,7 @@ Servidor do Language Server Protocol para integrações com editores.
 
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
-| `enabled` | bool | false | Habilitar o servidor TCP |
+| `enabled` | bool | false | Habilitar o serviço LSP e o servidor TCP; o transporte HTTP também exige esta opção |
 | `address` | string | :7777 | Endereço de escuta TCP |
 | `http_enabled` | bool | false | Habilitar o transporte HTTP |
 | `http_address` | string | :7778 | Endereço de escuta HTTP |
@@ -616,9 +616,9 @@ extensions:
 |----------|-----------|
 | `GOMEMLIMIT` | Limite de memória (sobrescreve flag `--memory-limit`) |
 
-## Veja Também
+## Consulte Também
 
-- [Referência do CLI](guides/cli.md) - Opções de linha de comando
-- [Guia de Cluster](guides/cluster.md) - Arquitetura e operações de clustering
-- [Tipos de Entradas](guides/entry-kinds.md) - Todos os tipos de entradas
-- [Guia de Observabilidade](guides/observability.md) - Logging, métricas, tracing
+- [Referência do CLI](guides/cli.md) — Opções da linha de comando
+- [Guia de Cluster](guides/cluster.md) — Arquitetura e operações de clustering
+- [Kinds de Entrada](guides/entry-kinds.md) — Kinds de entrada e seus campos
+- [Guia de Observabilidade](guides/observability.md) — Logs, métricas e tracing

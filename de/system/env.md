@@ -1,13 +1,15 @@
 ---
 title: "Umgebungssystem"
-description: "Verwaltet Umgebungsvariablen durch konfigurierbare Speicher-Backends."
+description: "Definieren Sie Umgebungsvariablen auf Basis von Speicher, Dateien, dem Betriebssystem, statischen Werten oder Speicher-Routern."
 ---
 
 # Umgebungssystem
 
-Verwaltet Umgebungsvariablen durch konfigurierbare Speicher-Backends.
+Umgebungseinträge ermöglichen es Laufzeitcode, Konfiguration über einen öffentlichen Variablennamen oder eine Registry-Entry-ID zu referenzieren.
 
-## Übersicht
+Diese Seite ist eine Konfigurationsreferenz. Ihre YAML-Blöcke sind Entry-Fragmente, sofern sie kein umschließendes Dokument zeigen.
+
+## Speicherung und Zugriff
 
 Das Umgebungssystem trennt Speicherung von Zugriff:
 
@@ -15,21 +17,21 @@ Das Umgebungssystem trennt Speicherung von Zugriff:
 - **Variablen** - Benannte Referenzen zu Werten in Speichern
 
 Variablen können referenziert werden durch:
-- **Öffentlichen Namen** - Der `variable`-Feldwert (muss systemweit eindeutig sein)
+- **Öffentlichen Namen** - Der Wert des Feldes `variable`
 - **Entry-ID** - Vollständige `namespace:name`-Referenz
 
-Wenn Sie nicht möchten, dass eine Variable öffentlich über den Namen zugänglich ist, lassen Sie das `variable`-Feld weg.
+Lassen Sie das Feld `variable` weg, wenn eine Variable nur über ihre Entry-ID zugänglich sein soll. Die erste Variable, die einen öffentlichen Namen beansprucht, behält diese Kurzform. Eine spätere Variable mit demselben öffentlichen Namen wird weiterhin registriert und bleibt über ihre Entry-ID erreichbar, ersetzt die bestehende Kurzform jedoch nicht.
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `env.storage.memory` | In-Memory-Key-Value-Speicher |
 | `env.storage.file` | Dateibasierter Speicher (.env-Format) |
 | `env.storage.os` | Schreibgeschützter OS-Umgebungszugriff |
 | `env.storage.static` | Schreibgeschützter statischer Key-Value-Speicher |
 | `env.storage.router` | Verkettet mehrere Speicher |
-| `env.variable` | Benannte Variable die auf einen Speicher referenziert |
+| `env.variable` | Benannte Variable, die auf einen Speicher referenziert |
 
 ## Speicher-Backends
 
@@ -44,7 +46,7 @@ Flüchtiger In-Memory-Speicher.
 
 ### Datei-Speicher
 
-Persistenter Speicher im `.env`-Dateiformat (`KEY=VALUE` mit `#`-Kommentaren).
+Persistenter Speicher in einem einfachen `KEY=VALUE`-Format. Leerzeilen und Zeilen, die mit `#` beginnen, werden ignoriert; Text nach `#` in einer Wertzeile wird als Kommentar behandelt. Werte in Anführungszeichen und Escape-Sequenzen werden nicht speziell geparst.
 
 ```yaml
 - name: app_config
@@ -94,24 +96,24 @@ Immer schreibgeschützt. Set-Operationen geben `PERMISSION_DENIED` zurück.
 
 ### Router-Speicher
 
-Verkettet mehrere Speicher. Lesevorgänge durchsuchen diese der Reihe nach, bis ein Wert gefunden wird. Schreibvorgänge gehen nur an den ersten Speicher.
+Ein Router verkettet mehrere Speicher. Bei einem Cache-Miss durchsuchen Lesevorgänge sie der Reihe nach, bis ein Wert gefunden wird; ein erfolgreicher Wert wird vom Router zwischengespeichert, sodass direkte Änderungen an einem dahinterliegenden Speicher anschließend nicht über diesen Router sichtbar sind. Ein anderer Fehler als `NOT_FOUND` beendet die Fallback-Suche. Schreibvorgänge gehen ausschließlich an den ersten Speicher.
 
 ```yaml
 - name: config
   kind: env.storage.router
   storages:
-    - app.config:memory    # Primär (Schreibvorgänge hierhin)
+    - app.config:memory    # Primary (writes here)
     - app.config:file      # Fallback
     - app.config:os        # Fallback
 ```
 
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|
-| `storages` | array | Geordnete Liste von Speicherreferenzen |
+| `storages` | array | Erforderliche, nicht leere, geordnete Liste von Speicherreferenzen |
 
 ## Variablen
 
-Variablen bieten benannten Zugriff auf Speicherwerte.
+Variablen ordnen öffentliche Namen oder Entry-IDs Werten in einem Speicher-Backend zu.
 
 ```yaml
 - name: DATABASE_URL
@@ -124,8 +126,8 @@ Variablen bieten benannten Zugriff auf Speicherwerte.
 
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|
-| `variable` | string | Öffentlicher Variablenname (optional, muss eindeutig sein) |
-| `storage` | string | Speicherreferenz (`namespace:name`) |
+| `variable` | string | Optionaler öffentlicher Variablenname |
+| `storage` | string | Erforderliche Speicherreferenz (`namespace:name`) |
 | `default` | string | Standardwert wenn nicht gefunden |
 | `readonly` | boolean | Änderungen verhindern |
 
@@ -136,14 +138,14 @@ Variablennamen dürfen nur enthalten: `a-z`, `A-Z`, `0-9`, `_`
 ### Zugriffsmuster
 
 ```yaml
-# Öffentliche Variable - zugänglich über Namen "PORT"
+# Public variable - accessible by name "PORT"
 - name: port_var
   kind: env.variable
   variable: PORT
   storage: app.config:os
   default: "8080"
 
-# Private Variable - nur über ID "app.config:internal_key" zugänglich
+# Private variable - accessible only by ID "app.config:internal_key"
 - name: internal_key
   kind: env.variable
   storage: app.config:secrets

@@ -5,7 +5,9 @@ description: "라우터는 URL 프리픽스 아래에 엔드포인트를 그룹�
 
 # 라우팅
 
-라우터는 URL 프리픽스 아래에 엔드포인트를 그룹화하고 공유 미들웨어를 적용합니다. 엔드포인트는 HTTP 핸들러를 정의합니다.
+`http.router`는 URL 프리픽스 아래에 엔드포인트를 그룹화하고 공유 미들웨어를 적용합니다. 각 `http.endpoint`는 HTTP 핸들러를 정의합니다.
+
+**분류: 라우팅 참조.** 구성 블록은 네임스페이스와 참조되는 모든 엔트리를 포함하지 않는 한 부분적인 레지스트리 조각입니다. 핸들러 블록은 데이터 계층을 정의하는 대신 애플리케이션이 소유한 함수 ID를 사용합니다.
 
 ## 아키텍처
 
@@ -92,11 +94,14 @@ URL 파라미터에 `{param}` 구문 사용:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("user_id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
 
-    -- ...
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -120,7 +125,7 @@ end
 local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 ```
 
-와일드카드는 경로의 마지막 세그먼트여야 합니다.
+와일드카드는 경로의 마지막 세그먼트여야 합니다. 예를 들어 `GET /api/v1/files/docs/guides/readme.md` 요청은 `req:param("filepath")` 값이 `docs/guides/readme.md`인 상태로 전달됩니다.
 
 ## 라우트 우선순위
 
@@ -141,11 +146,15 @@ local filepath = req:param("filepath")  -- "docs/guides/readme.md"
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user = get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
     res:set_status(http.STATUS.OK)
     res:write_json(user)
@@ -181,49 +190,51 @@ post_options:
   endpoint_firewall.action: "access"
 ```
 
-## 매칭 전 vs 매칭 후 미들웨어
+## 사전 핸들러 및 매칭 후 미들웨어
 
-**매칭 전** (`middleware`)은 라우트 매칭 전에 실행:
+**사전 핸들러** (`middleware`)는 서버가 라우트를 선택한 뒤, 라우트 파라미터와 엔드포인트 메타데이터가 요청 컨텍스트에 연결되기 전에 실행됩니다:
 - CORS (OPTIONS 프리플라이트 처리)
 - 압축
 - 레이트 리미팅
 - 실제 IP 감지
 - 토큰 인증 (컨텍스트 보강)
 
-**매칭 후** (`post_middleware`)는 라우트 매칭 후에 실행:
+**매칭 후** (`post_middleware`)는 라우트 파라미터와 엔드포인트 메타데이터가 연결된 뒤 실행됩니다:
 - 엔드포인트 방화벽 (인가에 라우트 정보 필요)
 - 리소스 방화벽
 - WebSocket 릴레이
 
 ```yaml
-middleware:        # 매칭 전: 이 라우터로의 모든 요청
+middleware:        # Before endpoint metadata: matched routes only
   - cors
   - compress
-  - token_auth     # 액터/스코프로 컨텍스트 보강
+  - token_auth     # Enriches context with actor/scope
 
-post_middleware:   # 매칭 후: 매칭된 라우트만
-  - endpoint_firewall  # token_auth의 액터 사용
+post_middleware:   # Post-match: matched routes only
+  - endpoint_firewall  # Uses actor from token_auth
 ```
 
 <tip>
-토큰 인증은 컨텍스트만 보강하고 요청을 차단하지 않으므로 매칭 전에 실행할 수 있습니다. 인가는 <code>token_auth</code>가 설정한 액터를 사용하는 <code>endpoint_firewall</code> 같은 매칭 후 미들웨어에서 처리합니다.
+토큰 인증은 인가 전에 요청 컨텍스트를 보강하므로 사전 핸들러 체인에 둡니다. <code>endpoint_firewall</code> 같은 인가 미들웨어는 매칭된 엔드포인트 ID가 필요하므로 매칭 후 체인에 둡니다. 매칭되지 않은 요청은 어느 라우터 체인도 실행하지 않습니다.
 </tip>
 
 ## 전체 예제
+
+이 예제는 목록 handler 엔트리를 정의합니다. `app:get_user_by_id`와 `app:create_user` 함수 ID는 같은 namespace의 다른 위치에 정의된 handler를 가리킵니다.
 
 ```yaml
 version: "1.0"
 namespace: app
 
 entries:
-  # 서버
+  # Server
   - name: gateway
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # API 라우터
+  # API Router
   - name: api
     kind: http.router
     meta:
@@ -238,7 +249,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # 핸들러 함수
+  # Handler function
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -248,7 +259,7 @@ entries:
       - json
       - sql
 
-  # 엔드포인트
+  # Endpoints
   - name: list_users
     kind: http.endpoint
     meta:
@@ -280,7 +291,7 @@ entries:
 
 ```yaml
 entries:
-  # 퍼블릭 라우트 (인증 없음)
+  # Public routes (no auth)
   - name: public
     kind: http.router
     meta:
@@ -289,7 +300,7 @@ entries:
     middleware:
       - cors
 
-  # 보호된 라우트
+  # Protected routes
   - name: protected
     kind: http.router
     meta:

@@ -1,31 +1,44 @@
 ---
-title: What Is Wippy - Concepts and Runtime Overview
-description: Understand how Wippy works before you install it. Covers the actor model, the registry, durable workflows, and why the system is designed to change while it runs.
+title: What Is Wippy? Concepts and Runtime Overview
+description: Learn how Wippy uses actors, a central registry, and durable workflows to support applications that change while running.
 ---
 
 # About Wippy
 
-Wippy is an open-source actor-model runtime for software that needs to change while it is running: automation systems, AI agents, plugin architectures, and similar applications where the core gets engineered once and then adapted repeatedly without rebuilding or redeploying.
+Wippy is an open-source actor-model runtime for applications whose behavior changes while they run. It is designed for automation systems, AI agents, plugin architectures, and other applications that need to evolve without rebuilding or redeploying the runtime.
 
-For a full product overview including what Wippy replaces, what it is not, and who builds it, see the [About page](https://wippy.ai/about).
-
-The foundation is the actor model. Code runs in isolated processes that communicate through messages, each managing its own state. When something fails, it fails in isolation. Supervision trees handle recovery automatically, restarting processes when they crash.
+The foundation is the actor model. Code runs in isolated processes that communicate through messages, with each process managing its own state. Supervised process services can be restarted according to their lifecycle policy.
 
 ```lua
-local worker = process.spawn("app.workers:handler", "app:processes")
-process.send(worker, "task", {id = 1, data = payload})
-process.monitor(worker)
+local worker, err = process.spawn("app.workers:handler", "app:processes")
+if not worker then
+    return nil, err
+end
+
+local ok, monitor_err = process.monitor(worker)
+if not ok then
+    return nil, monitor_err
+end
+
+return process.send(worker, "task", {id = 1, data = payload})
 ```
 
-Configuration lives in a central registry that propagates changes as events. Update a config file, and running processes receive the changes. They adapt without restarts. New connections, updated behavior, whatever you need, while the system keeps running.
+Runtime definitions live in a central registry. For entry kinds dispatched through the event bus, registered handlers reconcile accepted changes without restarting the entire application. Some internal entry kinds intentionally bypass event dispatch.
 
 ```lua
-local db = registry.get("app.db:postgres")
-local cache = registry.get("app.cache:redis")
+local db, err = registry.get("app.db:postgres")
+if not db then
+    return nil, err
+end
+
+local cache, cache_err = registry.get("app.cache:redis")
+if not cache then
+    return nil, cache_err
+end
 ```
 
-For operations that must survive infrastructure failures, the runtime persists state automatically: payment flows, multi-step workflows, and long-running agent tasks. Server dies mid-operation? The workflow resumes on another machine, right where it stopped.
+For operations that must recover from infrastructure failures, durable workflows persist execution state. This model suits payment flows, multi-step processes, and long-running agent tasks that may need to resume after a restart.
 
-The whole system runs from a single file. No containers to orchestrate, no services to coordinate. One binary, one config, and the runtime handles the rest.
+The runtime is distributed as a single binary and configured through project files.
 
-For the full story of why Wippy was built, see [Why We Built Wippy](https://wippy.ai/about#why-we-built-wippy).
+For the project overview and design notes, see [About Wippy](https://wippy.ai/about).

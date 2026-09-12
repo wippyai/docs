@@ -16,12 +16,13 @@ Subscribe to Change Data Capture streams from [`db.cdc.postgres`](system/cdc.md)
 local cdc = require("cdc")
 ```
 
-## list_sources
+## `list_sources`
 
 List the configured CDC sources the caller is allowed to see:
 
 ```lua
 local sources, err = cdc.list_sources()
+if err then return nil, err end
 for _, s in ipairs(sources) do
     print(s.id, s.kind, s.state, s.capabilities.before_images)
 end
@@ -31,12 +32,13 @@ Sources the caller lacks `cdc.source` on are omitted rather than reported as an 
 
 **Returns:** `table, error`
 
-## source
+## `source`
 
-Get a single source by name (its entry ID):
+Retrieve one source by its registry entry ID or replication slot name:
 
 ```lua
 local info, err = cdc.source("app:pg_cdc")
+if err then return nil, err end
 if info == nil then
     -- no such source
 end
@@ -44,9 +46,9 @@ end
 
 **Returns:** `table, error` (source info, or `nil` if not found)
 
-## stream
+## `stream`
 
-Open a change stream on a source. Returns a `cdc.Stream` whose channel delivers change events:
+Open a change stream on a source. The returned `cdc.Stream` exposes a channel that delivers change events:
 
 ```lua
 local stream, err = cdc.stream("app:pg_cdc", {
@@ -54,6 +56,9 @@ local stream, err = cdc.stream("app:pg_cdc", {
     ops    = { "insert", "update" },
     buffer = 128,
 })
+if err then return nil, err end
+
+-- The caller owns stream until close(), release(), or task cleanup.
 ```
 
 | Parameter | Type | Default | Description |
@@ -74,19 +79,26 @@ Filters narrow delivery only. Access to a source is granted by the `cdc.subscrib
 
 **Returns:** `Stream, error`
 
+The Lua delivery channel has a separate fixed capacity of 64. The `buffer` option controls the PostgreSQL source subscription, not that channel.
+
 ## Stream Methods
 
-### channel
+### `channel`
 
-Return the channel that receives change events. The first call subscribes to the source (yields); subsequent calls return the same channel. `:receive()` blocks until the next change arrives, or returns `nil` when the stream ends:
+Return the channel that receives change events. The first call subscribes to the source and yields; subsequent calls return the same channel. The first call can return a subscription error. Channel `:receive()` returns `value, true` for a change or `nil, false` when the stream ends:
 
 ```lua
-local stream = cdc.stream("app:pg_cdc")
-local ch = stream:channel()
+local stream, stream_err = cdc.stream("app:pg_cdc")
+if stream_err then return nil, stream_err end
+local ch, subscribe_err = stream:channel()
+if subscribe_err then
+    stream:close()
+    return nil, subscribe_err
+end
 
 while true do
-    local change = ch:receive()
-    if change == nil then break end   -- stream closed
+    local change, ok = ch:receive()
+    if not ok then break end
 
     if change.op == "snapshot" then
         seed_row(change.table, change.after)
@@ -98,18 +110,22 @@ while true do
         handle_delete(change.table, change.before)
     end
 end
+
+local _, close_err = stream:close()
+if close_err then return nil, close_err end
 ```
 
 The stream is lazy: construct it, then call `channel()` before generating the writes it should observe. This is live observation, not replay of changes made before the subscription.
 
 When a source terminates a stream with a failure, the channel delivers an error value before it closes. `receive` is an alias for `channel`.
 
-### close
+### `close`
 
-Stop the subscription and release the stream. Idempotent; also auto-closed at task scope. `release` is an alias for `close`.
+Stop the subscription and release the stream. The method is idempotent, and the runtime also closes the stream at the end of the task scope. `release` is an alias for `close`.
 
 ```lua
-stream:close()
+local _, err = stream:close()
+if err then return nil, err end
 ```
 
 ## Change Event

@@ -342,4 +342,3 @@ wb:close()
 ## 関連項目
 
 - [ファイルシステム](lua/storage/filesystem.md) - Excelファイルの読み書き用ファイル操作
-

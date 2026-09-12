@@ -219,7 +219,7 @@ content_fs:    app:app_fs
         "hideSessionSelector": false,
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }

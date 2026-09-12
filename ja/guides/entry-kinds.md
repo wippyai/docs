@@ -1,18 +1,20 @@
 ---
 title: "エントリ種別リファレンス"
-description: "Wippyで利用可能なすべてのエントリ種別の完全なリファレンス。"
+description: "ランタイム、ストレージ、ネットワーク、セキュリティ、実行、ライフサイクル各システムの Wippy エントリ種別リファレンス。"
 ---
 
 # エントリ種別リファレンス
 
-Wippyで利用可能なすべてのエントリ種別の完全なリファレンス。
+このページでは利用可能なエントリ種別をまとめ、各モジュールとシステムの詳細リファレンスへのリンクを示します。
+
+YAML と Lua のブロックは、単一アプリケーションの全体ではなくリファレンス用の断片です。レジストリ ID、認証情報、データオブジェクト、`get_users` や `delete_user` などのヘルパーは説明用です。完全な戻り値とエラーの契約については、リンク先のモジュールページを参照してください。
 
 > エントリは`namespace:name`形式で相互参照します。レジストリはこれらの参照に基づいて依存関係を自動的に接続し、リソースが正しい順序で初期化されることを保証します。
 
 ## 関連項目
 
-- [レジストリ](concepts/registry.md) - エントリの保存と解決方法
-- [設定](guides/configuration.md) - YAML設定形式
+- [レジストリ](concepts/registry.md) — エントリの保存と解決方法
+- [設定](guides/configuration.md) — YAML 設定形式
 
 ## Luaランタイム
 
@@ -37,7 +39,7 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
     - http
     - json
   imports:
-    utils: app.lib:helpers  # 別のエントリをモジュールとしてインポート
+    utils: app.lib:helpers  # Import another entry as module
 ```
 
 <tip>
@@ -54,14 +56,14 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
 | `http.static` | 静的ファイル配信 |
 
 ```yaml
-# HTTPサーバー
+# HTTP server
 - name: gateway
   kind: http.service
   addr: ":8080"
   lifecycle:
     auto_start: true
 
-# ミドルウェア付きルーター
+# Router with middleware
 - name: api
   kind: http.router
   meta:
@@ -71,7 +73,7 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
     - cors
     - ratelimit
 
-# エンドポイント
+# Endpoint
 - name: users_list
   kind: http.endpoint
   meta:
@@ -81,7 +83,7 @@ Wippyで利用可能なすべてのエントリ種別の完全なリファレン
   func: list_handler
 ```
 
-**Lua API:** [HTTPモジュール](lua/http/http.md)を参照
+**Lua API:** [HTTP モジュール](lua/http/http.md)を参照
 
 ```lua
 local http = require("http")
@@ -111,7 +113,7 @@ resp:write_json({users = get_users()})
   lifecycle:
     auto_start: true
 
-# テスト用インメモリ
+# In-memory for testing
 - name: testdb
   kind: db.sql.sqlite
   file: ":memory:"
@@ -153,16 +155,16 @@ resp:write_json({users = get_users()})
     auto_start: true
 ```
 
-`${env:NAME}`シークレット参照、TLSオプション、接続プールの調整については[Database](system/database.md)を参照してください。データベースエントリの背後にあるenvベースの値が変更されると、プールはライブで入れ替わります — アクティブな貸出は古い接続設定のまま完了します。
+`${env:NAME}` シークレット参照、TLS オプション、接続プールの調整については[データベース](system/database.md)を参照してください。データベースエントリの背後にある env ベースの値が変更されると、プールはライブで入れ替わり、使用中の接続は古い設定のまま処理を完了します。
 
-**Lua API:** [SQLモジュール](lua/storage/sql.md)を参照
+**Lua API:** [SQL モジュール](lua/storage/sql.md)を参照
 
 ```lua
 local sql = require("sql")
 local db, err = sql.get("app:database")
 
-local rows, err = db:query("SELECT * FROM users WHERE id = ?", user_id)
-db:execute("INSERT INTO logs (msg) VALUES (?)", message)
+local rows, err = db:query("SELECT * FROM users WHERE id = ?", {user_id})
+db:execute("INSERT INTO logs (msg) VALUES (?)", {message})
 ```
 
 
@@ -176,13 +178,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 | `store.kv.crdt` | クラスタレプリケート、最終的整合性 KV（ゴシップ/CRDT） |
 
 ```yaml
-# メモリストア
+# Memory store
 - name: cache
   kind: store.memory
   lifecycle:
     auto_start: true
 
-# SQLバックエンドストア
+# SQL-backed store
 - name: persistent_store
   kind: store.sql
   database: app:database
@@ -190,13 +192,13 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
   lifecycle:
     auto_start: true
 
-# クラスタレプリケートストア（クラスタリングが必要）
+# Cluster-replicated store (requires clustering)
 - name: deployments
   kind: store.kv.raft
   namespace: deploy
 ```
 
-`store.kv.*` 種別は[クラスタリング](guides/cluster.md)が有効である必要があります。整合性のトレードオフについては[ストア](system/store.md#cluster-kv-stores)を参照。
+`store.kv.*` 種別では[クラスタリング](guides/cluster.md)を有効にする必要があります。整合性のトレードオフについては[ストア](system/store.md#cluster-kv-stores)を参照してください。
 
 **Lua API:** [ストアモジュール](lua/storage/store.md)を参照
 
@@ -204,7 +206,7 @@ db:execute("INSERT INTO logs (msg) VALUES (?)", message)
 local store = require("store")
 local s, err = store.get("app:cache")
 
-s:set("user:123", user_data, 3600)  -- TTL（秒）
+s:set("user:123", user_data, 3600)  -- TTL in seconds
 local data = s:get("user:123")
 ```
 
@@ -219,18 +221,18 @@ local data = s:get("user:123")
 | `queue.consumer` | キューコンシューマ |
 
 ```yaml
-# ドライバ
+# Driver
 - name: queue_driver
   kind: queue.driver.memory
   lifecycle:
     auto_start: true
 
-# キュー
+# Queue
 - name: jobs
   kind: queue.queue
   driver: queue_driver
 
-# コンシューマ
+# Consumer
 - name: job_consumer
   kind: queue.consumer
   queue: app:jobs
@@ -246,7 +248,7 @@ local data = s:get("user:123")
 ```lua
 local queue = require("queue")
 
--- メッセージを公開
+-- Publish a message
 queue.publish("app:jobs", {task = "process", id = 123})
 
 -- コンシューマハンドラ内: メッセージ本体がハンドラの引数になります
@@ -273,23 +275,23 @@ end
 | `pg.scope` | プロセスグループのスコープ（[プロセスグループ](system/process-groups.md)を参照） |
 
 ```yaml
-# プロセスホスト（プロセスが実行される場所）
+# Process host (where processes run)
 - name: processes
   kind: process.host
   host:
-    workers: 32             # ワーカーgoroutine（デフォルト: NumCPU）
-    queue_size: 1024        # グローバルキュー容量
-    local_queue_size: 256   # ワーカーごとのキュー
+    workers: 32             # Worker goroutines (default: NumCPU)
+    queue_size: 1024        # Global queue capacity
+    local_queue_size: 256   # Per-worker queue
   lifecycle:
     auto_start: true
 
-# プロセス定義
+# Process definition
 - name: worker_process
   kind: process.lua
   source: file://worker.lua
   method: main
 
-# 監督されたプロセスサービス
+# Supervised process service
 - name: worker
   kind: process.service
   process: app:worker_process
@@ -388,7 +390,7 @@ end
   kind: cloudstorage.s3
   config: app:aws
   bucket: "my-uploads"
-  endpoint: ""  # オプション、S3互換サービス用
+  endpoint: ""  # Optional, for S3-compatible services
 ```
 
 **Lua API:** [クラウドストレージモジュール](lua/storage/cloud.md)を参照
@@ -416,8 +418,8 @@ MinIOやDigitalOcean SpacesなどのS3互換サービスに接続するには<co
 - name: data_dir
   kind: fs.directory
   directory: "./data"
-  auto_init: true   # 存在しない場合は作成
-  mode: "0755"      # パーミッション
+  auto_init: true   # Create if not exists
+  mode: "0755"      # Permissions
 ```
 
 **Lua API:** [ファイルシステムモジュール](lua/storage/filesystem.md)を参照
@@ -465,7 +467,7 @@ file:close()
     - app:defaults
 ```
 
-**Lua API:** [Envモジュール](lua/system/env.md)を参照
+**Lua API:** [Env モジュール](lua/system/env.md)を参照
 
 ```lua
 local env = require("env")
@@ -486,7 +488,7 @@ env.set("CACHE_TTL", "3600")
 | `template.set` | テンプレートセット設定 |
 
 ```yaml
-# エンジン設定付きテンプレートセット
+# Template set with engine configuration
 - name: templates
   kind: template.set
   engine:
@@ -495,7 +497,7 @@ env.set("CACHE_TTL", "3600")
       - ".jet"
       - ".html.jet"
 
-# 個別テンプレート
+# Individual template
 - name: email_template
   kind: template.jet
   source: file://templates/email.jet
@@ -523,7 +525,7 @@ local html = set:render("email", {
 | `security.token_store` | トークンストレージ |
 
 ```yaml
-# 条件ベースのポリシー
+# Condition-based policy
 - name: admin_policy
   kind: security.policy
   policy:
@@ -535,7 +537,7 @@ local html = set:render("email", {
         operator: eq
         value: "admin"
 
-# 式ベースのポリシー
+# Expression-based policy
 - name: owner_policy
   kind: security.policy.expr
   policy:
@@ -554,12 +556,12 @@ local html = set:render("email", {
 ```lua
 local security = require("security")
 
--- アクション前に権限をチェック
+-- Check permission before action
 if security.can("delete", "users", {user_id = id}) then
     delete_user(id)
 end
 
--- 現在のアクターを取得
+-- Get current actor
 local actor = security.actor()
 ```
 
@@ -575,7 +577,7 @@ local actor = security.actor()
 | `contract.binding` | コントラクトメソッドを関数実装にマップ |
 
 ```yaml
-# コントラクトインターフェースを定義
+# Define the contract interface
 - name: greeter
   kind: contract.definition
   methods:
@@ -590,7 +592,7 @@ local actor = security.actor()
         - format: "application/schema+json"
           definition: {"type": "string"}
 
-# 実装関数
+# Implementation functions
 - name: greeter_greet
   kind: function.lua
   source: file://greeter_greet.lua
@@ -601,7 +603,7 @@ local actor = security.actor()
   source: file://greeter_greet_name.lua
   method: main
 
-# コントラクトメソッドを実装にバインド
+# Bind contract methods to implementations
 - name: greeter_impl
   kind: contract.binding
   contracts:
@@ -617,14 +619,14 @@ Luaからの使用：
 ```lua
 local contract = require("contract")
 
--- IDでバインディングを開く
+-- Open binding by ID
 local greeter, err = contract.open("app:greeter_impl")
 
--- メソッドを呼び出す
+-- Call methods
 local result = greeter:greet()
 local personalized = greeter:greet_with_name("Alice")
 
--- インスタンスがコントラクトを実装しているかチェック
+-- Check if instance implements contract
 local is_greeter = contract.is(greeter, "app:greeter")
 ```
 
@@ -698,7 +700,7 @@ local is_greeter = contract.is(greeter, "app:greeter")
 | `network.i2p` | I2Pネットワークオーバーレイ |
 | `network.tailscale` | Tailscaleオーバーレイ |
 
-`http.service` からは `network:` 経由で、`funcs`/`process` からは `network` オプション経由で、`http_client` からは `overlay_network` オプション経由で参照されます。[ネットワーク](system/network.md)を参照。
+`http.service` からは `network:`、`funcs`/`process` からは `network` オプション、`http_client` からは `overlay_network` オプションで参照されます。[ネットワーク](system/network.md)を参照してください。
 
 ## レジストリプリミティブ
 
@@ -713,23 +715,21 @@ local is_greeter = contract.is(greeter, "app:greeter")
 
 ## ライフサイクル設定
 
-ほとんどのエントリはライフサイクル設定をサポートします：
+スーパーバイザが管理するサービスエントリは、ライフサイクル設定を公開します。次のブロックは、それをサポートするサービスエントリ内に記述します：
 
 ```yaml
-- name: service
-  kind: some.kind
-  lifecycle:
-    auto_start: true          # 自動起動
-    start_timeout: 10s        # 最大起動時間
-    stop_timeout: 10s         # 最大シャットダウン時間
-    stable_threshold: 5s      # 安定とみなす時間
-    depends_on:
-      - app:database
-    restart:                  # リトライポリシー
-      initial_delay: 1s
-      max_delay: 90s
-      backoff_factor: 2.0
-      max_attempts: 0         # 0 = 無限
+lifecycle:
+  auto_start: true          # Start automatically
+  start_timeout: 10s        # Max startup time
+  stop_timeout: 10s         # Max shutdown time
+  stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
+  requires:
+    - app:database
+  restart:                  # Retry policy
+    initial_delay: 1s
+    max_delay: 90s
+    backoff_factor: 2.0
+    max_attempts: 0         # 0 = infinite
 ```
 
 <note>
@@ -741,17 +741,17 @@ local is_greeter = contract.is(greeter, "app:greeter")
 エントリは`namespace:name`形式で参照されます：
 
 ```yaml
-# 定義
+# Definition
 namespace: app.users
 entries:
   - name: handler
     kind: function.lua
 
-# 別のエントリからの参照
+# Reference from another entry
 func: app.users:handler
 ```
 
-## エントリの上書き {id="overriding-entries"}
+## エントリの上書き {#overriding-entries}
 
 任意のエントリのフィールド（その `kind` を含む）は、ソース YAML を編集することなく、`override:` 設定セクションまたは `-o` CLI フラグを使って起動時に上書きできます。キーは `namespace:entry:path` 形式を使用します。
 

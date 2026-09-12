@@ -5,7 +5,9 @@ description: "Pool de conexões e configuração de banco de dados SQL. Suporta 
 
 # Sistema de Banco de Dados
 
-Pool de conexões e configuração de banco de dados SQL. Suporta PostgreSQL, MySQL e SQLite.
+O Wippy fornece entradas SQL com pool de conexões para PostgreSQL e MySQL, além de uma entrada SQLite de conexão única.
+
+Esta página é uma referência de configuração. A menos que um bloco inclua `version`, `namespace` e `entries`, trate-o como um fragmento a inserir em uma lista de entradas existente.
 
 ## Tipos de Entradas
 
@@ -31,7 +33,7 @@ entries:
     port: 5432
     database: "myapp"
     username: "dbuser"
-    password: "dbpass"
+    password: ${env:app.secrets:db_password}
     pool:
       max_open: 25
       max_idle: 5
@@ -47,7 +49,7 @@ entries:
 ```yaml
   - name: cache_db
     kind: db.sql.sqlite
-    file: "/var/data/cache.db"  # Use :memory: para em memória
+    file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
       max_open: 4
       max_idle: 2
@@ -122,9 +124,9 @@ Configure o comportamento de pool de conexões. Configurações de pool mapeiam 
 
 ```yaml
 pool:
-  max_open: 25      # Limita conexões concorrentes
-  max_idle: 5       # Mantém 5 conexões prontas
-  max_lifetime: "30m"  # Recicla conexões a cada 30 minutos
+  max_open: 25      # Limit concurrent connections
+  max_idle: 5       # Keep 5 connections ready
+  max_lifetime: "30m"  # Recycle connections every 30 minutes
 ```
 
 <tip>
@@ -165,7 +167,7 @@ Opções comuns específicas de cada banco de dados:
 ```yaml
 options:
   sslmode: "require"      # disable, require, verify-ca, verify-full
-  connect_timeout: "10"   # Timeout de conexão em segundos
+  connect_timeout: "10"   # Connection timeout in seconds
   application_name: "myapp"
 ```
 
@@ -174,8 +176,8 @@ options:
 ```yaml
 options:
   charset: "utf8mb4"
-  parseTime: "true"       # Analisa valores de tempo para time.Time
-  loc: "Local"            # Fuso horário
+  parseTime: "true"       # Parse time values to time.Time
+  loc: "Local"            # Timezone
 ```
 
 ### SQLite {id="options-sqlite"}
@@ -239,7 +241,7 @@ O SQLite não aplica o mapa `options` ao seu DSN. Bancos de dados em arquivo sem
 
 ```yaml
 entries:
-  # Banco de dados principal
+  # Primary database
   - name: users_db
     kind: db.sql.postgres
     host: ${env:USERS_DB_HOST}
@@ -250,7 +252,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Banco de dados de analytics
+  # Analytics database
   - name: analytics_db
     kind: db.sql.mysql
     host: ${env:ANALYTICS_DB_HOST}
@@ -261,7 +263,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # Cache local
+  # Local cache
   - name: cache
     kind: db.sql.sqlite
     file: "/var/cache/app.db"
@@ -271,11 +273,11 @@ entries:
 
 ## Registro em Tempo de Execução
 
-Bancos de dados podem ser registrados em tempo de execução usando o [módulo registry](lua/core/registry.md), permitindo configuração dinâmica de banco de dados baseada no estado da aplicação ou configuração externa.
+Bancos de dados podem ser registrados em runtime com o [módulo registry](lua/core/registry.md).
 
 ## API Lua
 
-Veja [Módulo SQL](lua/storage/sql.md) para API de operações de banco de dados.
+Consulte o [Módulo SQL](lua/storage/sql.md) para consultas, transações e operações de conexão.
 
 ## Veja Também
 

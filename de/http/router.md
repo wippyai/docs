@@ -5,7 +5,9 @@ description: "Router gruppieren Endpunkte unter URL-Präfixen und wenden gemeins
 
 # Routing
 
-Router gruppieren Endpunkte unter URL-Präfixen und wenden gemeinsame Middleware an. Endpunkte definieren HTTP-Handler.
+Ein `http.router` gruppiert Endpunkte unter einem URL-Präfix und wendet gemeinsame Middleware an. Jeder `http.endpoint` definiert einen HTTP-Handler.
+
+**Klassifikation: Routing-Referenz.** Konfigurationsblöcke sind Registry-Teilfragmente, sofern sie nicht einen Namespace und jeden referenzierten Eintrag enthalten. Handler-Blöcke verwenden Funktions-IDs der Anwendung, anstatt eine Datenschicht zu definieren.
 
 ## Architektur
 
@@ -92,11 +94,14 @@ Zugriff im Handler:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("user_id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
 
-    -- ...
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -135,17 +140,21 @@ Zwei Muster können auch unmittelbar in Konflikt geraten: Keines ist spezifische
 
 ## Handler-Funktionen
 
-Endpunkt-Handler verwenden das `http`-Modul für Zugriff auf Request- und Response-Objekte. Siehe [HTTP-Modul](lua/http/http.md) für die vollständige API.
+Endpunkt-Handler verwenden das Modul `http`, um auf Request- und Response-Objekte zuzugreifen. Die API-Referenz finden Sie unter [HTTP-Modul](lua/http/http.md).
 
 ```lua
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user = get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
     res:set_status(http.STATUS.OK)
     res:write_json(user)
@@ -181,35 +190,37 @@ post_options:
   endpoint_firewall.action: "access"
 ```
 
-## Pre-Match vs Post-Match Middleware
+## Pre-Handler- und Post-Match-Middleware
 
-**Pre-Match** (`middleware`) läuft vor dem Routen-Matching:
+**Pre-Handler** (`middleware`) läuft, nachdem der Server eine Route ausgewählt hat, aber bevor Routenparameter und Endpunktmetadaten an den Request-Kontext angefügt werden:
 - CORS (behandelt OPTIONS-Preflight)
 - Komprimierung
 - Rate-Limiting
 - Real-IP-Erkennung
 - Token-Authentifizierung (Kontext-Anreicherung)
 
-**Post-Match** (`post_middleware`) läuft nachdem Route gematcht ist:
+**Post-Match** (`post_middleware`) läuft, nachdem Routenparameter und Endpunktmetadaten angefügt wurden:
 - Endpoint-Firewall (benötigt Routen-Info für Autorisierung)
 - Ressourcen-Firewall
 - WebSocket-Relay
 
 ```yaml
-middleware:        # Pre-Match: alle Anfragen an diesen Router
+middleware:        # Before endpoint metadata: matched routes only
   - cors
   - compress
-  - token_auth     # Reichert Kontext mit Actor/Scope an
+  - token_auth     # Enriches context with actor/scope
 
-post_middleware:   # Post-Match: nur gematchte Routen
-  - endpoint_firewall  # Verwendet Actor von token_auth
+post_middleware:   # Post-match: matched routes only
+  - endpoint_firewall  # Uses actor from token_auth
 ```
 
 <tip>
-Token-Authentifizierung kann Pre-Match sein, da sie nur Kontext anreichert - sie blockiert keine Anfragen. Autorisierung erfolgt in Post-Match-Middleware wie <code>endpoint_firewall</code>, die den von <code>token_auth</code> gesetzten Actor verwendet.
+Token-Authentifizierung gehört in die Pre-Handler-Kette, weil sie den Request-Kontext vor der Autorisierung anreichert. Autorisierungs-Middleware wie <code>endpoint_firewall</code> gehört in die Post-Match-Kette, weil sie die ID des abgeglichenen Endpunkts benötigt. Bei nicht abgeglichenen Anfragen läuft keine der beiden Router-Ketten.
 </tip>
 
-## Vollständiges Beispiel
+## Router- und Endpunktverdrahtung
+
+Dieses Beispiel definiert den Handler-Eintrag für die Liste. Die Funktions-IDs `app:get_user_by_id` und `app:create_user` verweisen auf Handler, die an anderer Stelle im selben Namespace definiert sind.
 
 ```yaml
 version: "1.0"
@@ -223,7 +234,7 @@ entries:
     lifecycle:
       auto_start: true
 
-  # API-Router
+  # API Router
   - name: api
     kind: http.router
     meta:
@@ -238,7 +249,7 @@ entries:
       ratelimit.requests: "100"
       ratelimit.window: "1m"
 
-  # Handler-Funktion
+  # Handler function
   - name: get_users
     kind: function.lua
     source: file://handlers/users.lua
@@ -248,7 +259,7 @@ entries:
       - json
       - sql
 
-  # Endpunkte
+  # Endpoints
   - name: list_users
     kind: http.endpoint
     meta:
@@ -276,11 +287,11 @@ entries:
 
 ## Geschützte Routen
 
-Gängiges Muster mit Authentifizierung:
+Die folgende Konfiguration trennt öffentliche Routen von Routen, die Authentifizierung und Autorisierung erfordern:
 
 ```yaml
 entries:
-  # Öffentliche Routen (keine Auth)
+  # Public routes (no auth)
   - name: public
     kind: http.router
     meta:
@@ -289,7 +300,7 @@ entries:
     middleware:
       - cors
 
-  # Geschützte Routen
+  # Protected routes
   - name: protected
     kind: http.router
     meta:
@@ -306,7 +317,7 @@ entries:
 
 ## Siehe auch
 
-- [Server](http/server.md) - HTTP-Server-Konfiguration
-- [Statische Dateien](http/static.md) - Statische Datei-Bereitstellung
-- [Middleware](http/middleware.md) - Verfügbare Middleware
-- [HTTP-Modul](lua/http/http.md) - Lua-HTTP-API
+- [Server](http/server.md) – HTTP-Server-Konfiguration
+- [Statische Dateien](http/static.md) – Bereitstellung statischer Dateien
+- [Middleware](http/middleware.md) – Verfügbare Middleware
+- [HTTP-Modul](lua/http/http.md) – Lua-HTTP-API

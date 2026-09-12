@@ -1,38 +1,41 @@
 ---
 title: "Sistema de Tipos"
-description: "O Wippy inclui um sistema de tipos gradual com verificação sensível ao fluxo. Tipos são não-anuláveis por padrão."
+description: "Sintaxe e comportamento em runtime do sistema de tipos gradual do Wippy, incluindo unions, records, genéricos, validação e reflexão."
 ---
 
 # Sistema de Tipos
 
-> **Experimental.** Algumas limitações são esperadas.
+> **Experimental.** O sistema de tipos ainda está evoluindo, e algumas limitações são esperadas.
 
-O Wippy inclui um sistema de tipos gradual com verificação sensível ao fluxo. Tipos são não-anuláveis por padrão.
+O sistema de tipos gradual do Wippy aceita anotações incrementais e verificação sensível ao fluxo. Os tipos são não anuláveis por padrão.
+
+Esta página é uma referência da linguagem, não um programa completo. Cada bloco de código é um exemplo isolado de verificação de tipos, e as alternativas dentro de um bloco não precisam ser combinadas. Nomes como `get_data`, `get_user`, `call` e `User` representam código da aplicação; linhas marcadas como `ERROR` demonstram diagnósticos intencionalmente. Esses exemplos usam a sintaxe da linguagem e valores de tipos integrados, portanto não exigem módulos do runtime.
 
 ## Primitivos
 
 ```lua
 local n: number = 3.14
-local i: integer = 42         -- integer é subtipo de number
+local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
-local a: any = "anything"     -- dinâmico explícito (opt-out da verificação)
-local u: unknown = something  -- deve ser estreitado antes do uso
+local a: any = "anything"     -- dynamic member and method access
+local u: unknown = { source = "example" }  -- must narrow before use
 ```
 
-### any vs unknown
+### `any` e `unknown`
 
 ```lua
--- any: opt-out da verificação de tipos
+-- any: dynamic member and method access
 local a: any = get_data()
-a.foo.bar.baz()              -- sem erro, pode falhar em tempo de execução
+a.foo.bar.baz()              -- no error, may crash at runtime
+local s: string = a          -- ERROR: any is not assignable to string
 
--- unknown: desconhecido seguro, deve ser estreitado antes do uso
+-- unknown: safe unknown, must narrow before use as a concrete type
 local u: unknown = get_data()
 u.foo                        -- sem erro: acesso a membro em unknown se comporta como any
 local n: number = u          -- ERRO: unknown não atribuível a number, estreite primeiro
 if type(u) == "table" then
-    -- u estreitado para table aqui
+    -- u narrowed to table here
 end
 ```
 
@@ -41,8 +44,8 @@ end
 Tipos são não-anuláveis por padrão. Use `?` para valores opcionais:
 
 ```lua
-local x: number = nil         -- ERRO: nil não atribuível a number
-local y: number? = nil        -- OK: number? significa "number ou nil"
+local x: number = nil         -- ERROR: nil not assignable to number
+local y: number? = nil        -- OK: number? means "number or nil"
 local z: number? = 42         -- OK
 ```
 
@@ -53,17 +56,17 @@ O verificador de tipos rastreia o fluxo de controle:
 ```lua
 local function process(x: number?): number
     if x ~= nil then
-        return x              -- x é number aqui
+        return x              -- x is number here
     end
     return 0
 end
 
--- Padrão de retorno antecipado
+-- Early return pattern
 local user, err = get_user(123)
 if err then return nil, err end
--- user estreitado para não-nil aqui
+-- user narrowed to non-nil here
 
--- Ou padrão
+-- Or default
 local val = get_value() or 0  -- val: number
 ```
 
@@ -85,7 +88,7 @@ end
 type Status = "pending" | "active" | "done"
 
 local s: Status = "pending"   -- OK
-local s: Status = "invalid"   -- ERRO
+local s: Status = "invalid"   -- ERROR
 ```
 
 ## Tipos de Função
@@ -95,17 +98,17 @@ local function add(a: number, b: number): number
     return a + b
 end
 
--- Múltiplos retornos
+-- Multiple returns
 local function div_mod(a: number, b: number): (number, number)
     return math.floor(a / b), a % b
 end
 
--- Retornos de erro (idioma Lua)
+-- Error returns (Lua idiom)
 local function fetch(url: string): (string?, error?)
-    -- retorna (data, nil) ou (nil, error)
+    -- returns (data, nil) or (nil, error)
 end
 
--- Tipos de função de primeira classe
+-- First-class function types
 local double: (number) -> number = function(x: number): number
     return x * 2
 end
@@ -165,7 +168,7 @@ local function greet<T: HasName>(obj: T): string
 end
 
 greet({name = "Alice"})       -- OK
-greet({age = 30})             -- ERRO: 'name' ausente
+greet({age = 30})             -- ERROR: missing 'name'
 ```
 
 ## Tipos Interseção
@@ -203,7 +206,7 @@ local function render(state: LoadState): string
 end
 ```
 
-## O Tipo never
+## O Tipo `never`
 
 `never` é o tipo bottom — nenhum valor existe:
 
@@ -215,15 +218,15 @@ end
 
 ## Padrão de Tratamento de Erros
 
-O verificador entende o idioma de erro do Lua:
+O verificador entende o padrão comum de retorno Lua `value, error`:
 
 ```lua
 local value, err = call()
 if err then
-    -- value é nil aqui
+    -- value is nil here
     return nil, err
 end
--- value é não-nil aqui, err é nil
+-- value is non-nil here, err is nil
 print(value)
 ```
 
@@ -240,31 +243,33 @@ local name = (user!).name            -- afirma que user é não-nil
 
 ## Conversões de Tipo
 
-### Conversão Segura (Validação)
+### Validação em Runtime
 
-Chame um tipo como uma função para validar e converter:
+Chame um tipo como função para validar um valor. A validação retorna o valor original com o tipo estático solicitado; ela não converte nem faz coerção do valor:
 
 ```lua
 local data: any = get_json()
-local user = User(data)              -- valida e retorna User
-local name = user.name               -- acesso seguro a campo
+local user = User(data)              -- validates and returns User
+local name = user.name               -- safe field access
 ```
 
 Funciona com primitivos e tipos personalizados:
 
 ```lua
 local x: any = get_value()
-local s = string(x)                  -- converte para string
-local n = integer(x)                 -- converte para integer
-local b = boolean(x)                 -- converte para boolean
+local s = string(x)                  -- requires an existing string
+local n = integer(x)                 -- requires an existing integer
+local b = boolean(x)                 -- requires an existing boolean
 
 type Point = {x: number, y: number}
-local p = Point(data)                -- valida estrutura do record
+local p = Point(data)                -- validates record structure
 ```
 
-### Método Type:is()
+Por exemplo, `string(42)` lança um erro de validação; use `tostring(42)` quando a intenção for converter.
 
-Valida sem lançar exceção, retorna `(value, nil)` ou `(nil, error)`:
+### Método `Type:is()`
+
+`Type:is` valida sem lançar exceção e retorna `(value, nil)` ou `(nil, error)`:
 
 ```lua
 type Point = {x: number, y: number}
@@ -272,9 +277,9 @@ local data: any = get_input()
 
 local p, err = Point:is(data)
 if p then
-    local sum = p.x + p.y            -- p é Point válido
+    local sum = p.x + p.y            -- p is valid Point
 else
-    return nil, err                  -- validação falhou
+    return nil, err                  -- validation failed
 end
 ```
 
@@ -282,7 +287,7 @@ O resultado é estreitado em condicionais:
 
 ```lua
 if Point:is(data) then
-    local p: Point = data            -- data estreitado para Point
+    local p: Point = data            -- data narrowed to Point
 end
 ```
 
@@ -292,8 +297,8 @@ Use `::` ou `as` para conversões não verificadas:
 
 ```lua
 local data: any = get_data()
-local user = data :: User            -- sem verificação em tempo de execução
-local user = data as User            -- igual a ::
+local user = data :: User            -- no runtime check
+local user = data as User            -- same as ::
 ```
 
 Use com moderação. Conversões inseguras ignoram a validação e podem causar erros em tempo de execução se o valor não corresponder ao tipo.
@@ -329,7 +334,7 @@ end
 Acessa tipos de campos individuais:
 
 ```lua
-local nameType = User.name           -- tipo do campo 'name'
+local nameType = User.name           -- type of 'name' field
 print(nameType:kind())               -- "string"
 ```
 
@@ -373,6 +378,8 @@ end
 print(Predicate:ret():kind())        -- "boolean"
 ```
 
+`typeof(expression)` é sintaxe de tipo, não uma função de reflexão em runtime. Use-a em um alias como `type Config = typeof(default_config)`; o alias resultante é o valor de tipo em runtime.
+
 ### Comparação de Tipos
 
 ```lua
@@ -403,26 +410,27 @@ if h then h() end
 Adicione tipos a assinaturas de função:
 
 ```lua
--- Tipos de parâmetro e retorno
+-- Parameter and return types
 local function process(input: string): number
     return #input
 end
 
--- Tipos de variáveis locais
+-- Local variable types
 local count: number = 0
 
--- Aliases de tipo
+-- Type aliases
 type StringArray = {string}
 type StringMap = {[string]: number}
 ```
 
 ## Validadores de Tipo
 
-Adicione restrições de validação em tempo de execução aos tipos usando anotações:
+Associe restrições de validação a aliases de tipos com anotações e chame o tipo ou use `Type:is()` para aplicá-las em runtime:
 
 ```lua
--- Validador único
-local x: number @min(0) = 1
+type NonNegative = number @min(0)
+type Percentage = number @min(0) @max(100)
+type Email = string @pattern("^.+@.+$")
 
 -- Múltiplos validadores
 local x: number @min(0) @max(100) = 50
@@ -431,15 +439,17 @@ local x: number @min(0) @max(100) = 50
 local email: string @pattern("^.+@.+$") = "test@example.com"
 ```
 
+Uma anotação em uma variável local é verificada estaticamente pelo linter. Ela não insere uma verificação automática em runtime durante a atribuição; a aplicação em runtime ocorre quando um valor de tipo valida um valor.
+
 ### Validadores Embutidos
 
 | Validador | Aplica-se a | Exemplo |
 |-----------|------------|---------|
-| `@min(n)` | number | `local x: number @min(0) = 1` |
-| `@max(n)` | number | `local x: number @max(100) = 50` |
-| `@min_len(n)` | string, array | `local s: string @min_len(1) = "hi"` |
-| `@max_len(n)` | string, array | `local s: string @max_len(10) = "hi"` |
-| `@pattern(regex)` | string | `local email: string @pattern("^.+@.+$") = "a@b.com"` |
+| `@min(n)` | number | `type Positive = number @min(1)` |
+| `@max(n)` | number | `type Percentage = number @max(100)` |
+| `@min_len(n)` | string, array | `type NonEmpty = string @min_len(1)` |
+| `@max_len(n)` | string, array | `type ShortName = string @max_len(10)` |
+| `@pattern(regex)` | string | `type Email = string @pattern("^.+@.+$")` |
 
 ### Validadores de Campos de Record
 
@@ -467,7 +477,7 @@ local id: number @min(1) | string @min_len(1) = 1
 | Posição | Variância | Descrição |
 |----------|----------|-------------|
 | Campo somente leitura | Covariante | Pode usar subtipo |
-| Campo mutável | Invariante | Deve corresponder exatamente |
+| Campo mutável | Quase invariante | Normalmente invariante; literais novos e refinamentos podem ampliar para o tipo base |
 | Parâmetro de função | Contravariante | Pode usar supertipo |
 | Retorno de função | Covariante | Pode usar subtipo |
 
@@ -483,12 +493,12 @@ local id: number @min(1) | string @min_len(1) = 1
 Adicione tipos incrementalmente — código sem tipos continua funcionando:
 
 ```lua
--- Código existente funciona inalterado
+-- Existing code works unchanged
 function old_function(x)
     return x + 1
 end
 
--- Novo código recebe tipos
+-- New code gets types
 function new_function(x: number): number
     return x + 1
 end

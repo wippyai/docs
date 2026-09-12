@@ -1,6 +1,6 @@
 ---
 title: "Views"
-description: "O módulo wippy/views fornece um sistema de páginas e componentes virtuais com renderização de templates, gerenciamento de recursos e mapeamento de…"
+description: "Defina páginas renderizadas no servidor, aplicações frontend, componentes web, recursos e mapeamentos de ambiente com wippy/views."
 ---
 
 # Views
@@ -12,7 +12,7 @@ O módulo `wippy/views` fornece um sistema de páginas e componentes virtuais co
 
 ## Configuração
 
-Adicione o módulo ao seu projeto:
+Adicione o módulo ao projeto:
 
 ```bash
 wippy add wippy/views
@@ -43,7 +43,7 @@ entries:
 | `env_storage` | sim | — | Armazenamento de ambiente que respalda a variavel `PUBLIC_API_URL` |
 | `server` | não | `app:gateway` | Serviço HTTP ao qual o roteador do [gateway de Web Fragments](#web-fragments-gateway) auto-montado (`/@fragment`) se vincula. Sobrescreva apenas se o id do seu `http.service` for diferente de `app:gateway`. |
 
-## Páginas Template
+## Páginas de Template
 
 > **Modelo renderizado no servidor.** Páginas template são o mecanismo legado de renderização no lado do servidor: `wippy/views` monta os dados e recursos da página no servidor e renderiza o HTML final com o motor de templates Jet. Não há proxy de iframe nem micro-frontend no cliente — a resposta é HTML puro. Para SPAs e componentes externos, veja [Páginas de Componente](#component-pages).
 
@@ -74,41 +74,41 @@ entries:
 ### Metadados da Página
 
 | Campo | Tipo | Padrão | Descrição |
-|-------|------|---------|-------------|
+|-------|------|--------|-----------|
 | `meta.type` | string | — | Deve ser `view.page` |
 | `meta.name` | string | nome da entrada | Identificador da página |
-| `meta.title` | string | — | Título de exibição |
+| `meta.title` | string | — | Título exibido |
 | `meta.icon` | string | — | Identificador do ícone |
-| `meta.order` | number | `9999` | Ordem de classificação dentro do grupo |
+| `meta.order` | number | `9999` | Ordem dentro do grupo |
 | `meta.group` | string | — | Categoria do grupo |
 | `meta.group_icon` | string | — | Ícone do grupo |
-| `meta.group_order` | number | `9999` | Ordem de classificação do grupo |
+| `meta.group_order` | number | `9999` | Ordem do grupo |
 | `meta.group_placement` | string | `"default"` | Posicionamento: `"default"`, `"sidebar"` |
-| `meta.secure` | boolean | `false` | Requer autenticação |
-| `meta.public` | boolean | `false` | Acessível publicamente |
-| `meta.announced` | boolean | `= public` | Mostrar na navegação |
-| `meta.inline` | boolean | `false` | Oculto da UI |
+| `meta.secure` | boolean | `false` | Exige autenticação |
+| `meta.public` | boolean | `false` | Torna a página anunciada quando verdadeiro; não ignora o controle de acesso de `meta.secure` |
+| `meta.announced` | boolean | `false` | Exibe na navegação. O resolvedor atual usa `announced or public`, portanto `public: true` prevalece sobre `announced: false` explícito |
+| `meta.inline` | boolean | `false` | Retornado por `/pages/list` como o marcador numérico `hidden` |
 | `meta.content_type` | string | `text/html` | Tipo MIME da resposta |
 | `meta.parent` | string | — | ID da página pai |
 
 ### Dados do Template
 
 | Campo | Descrição |
-|-------|-------------|
-| `data.set` | ID do registro do conjunto de templates |
-| `data.data_func` | ID da função que retorna dados da página |
-| `data.resources` | Array de IDs de registro de recursos |
+|-------|-----------|
+| `data.set` | ID obrigatório da entrada do conjunto de templates |
+| `data.data_func` | ID da função que retorna os dados da página |
+| `data.resources` | Array de IDs de entradas de recurso |
 
-A `data_func` recebe `{ params, query }` e retorna uma tabela que se torna o contexto `data` no template.
+A `data_func` recebe `{ params, query }` e retorna uma tabela que se torna o contexto `data` do template. Omitir `data.data_func`, ou retornar `nil`, produz uma tabela vazia. Uma função configurada que não possa ser resolvida, ou que retorne erro, interrompe a renderização.
 
 ### Pipeline de Renderização
 
-1. Carrega a página do registro
-2. Verifica acesso (segurança)
-3. Chama `data_func` se definida
-4. Coleta recursos: globais + recursos do conjunto de templates + recursos específicos da página
-5. Carrega variáveis de ambiente
-6. Renderiza o template Jet com o contexto: `{ data, resources, query_params, route_params, env }`
+1. Carregar a página do registro
+2. Verificar o acesso
+3. Chamar `data_func`, se definida
+4. Coletar recursos globais, do conjunto de templates e específicos da página
+5. Carregar variáveis de ambiente; falhas de mapeamento são registradas e produzem uma tabela `env` vazia
+6. Renderizar o template Jet com o contexto `{ data, resources, query_params, route_params, env }`
 
 ## Páginas de Componente
 
@@ -196,7 +196,7 @@ Componentes usam `meta.type: view.component` em vez de `view.page`, se identific
 
 ## Recursos
 
-Recursos são arquivos CSS, JS e fontes associados a páginas:
+Recursos são arquivos CSS, JS e fontes associados às páginas:
 
 ```yaml
 entries:
@@ -225,32 +225,32 @@ entries:
 ### Campos de Recurso
 
 | Campo | Tipo | Descrição |
-|-------|------|-------------|
+|-------|------|-----------|
 | `meta.type` | string | Deve ser `view.resource` |
-| `meta.resource_type` | string | Livre para escolher (padrao `"other"`); valores comuns sao `"style"`, `"script"`, `"font"` |
-| `meta.order` | number | Ordem de classificação dentro do tipo |
+| `meta.resource_type` | string | Livre, com padrão `"other"`; valores comuns são `"style"`, `"script"` e `"font"` |
+| `meta.order` | number | Ordem dentro do tipo |
 | `meta.global` | boolean | Aplicado a todas as páginas |
-| `meta.template_set` | string | Específico para um conjunto de templates |
+| `meta.template_set` | string | Específico de um conjunto de templates |
 | `meta.url` | string | URL do recurso |
 | `meta.integrity` | string | Hash SRI |
 | `meta.crossorigin` | string | `"anonymous"` ou `"use-credentials"` |
 | `meta.media` | string | Media query CSS |
-| `meta.defer` | boolean | Carregamento de script com defer |
-| `meta.async` | boolean | Carregamento de script assíncrono |
+| `meta.defer` | boolean | Carregamento de script adiado |
+| `meta.async` | boolean | Carregamento assíncrono de script |
 
 ### Coleta de Recursos
 
-Recursos são coletados em três camadas, mescladas em ordem:
+Os recursos são selecionados cumulativamente de três fontes:
 
 1. **Recursos globais** — `global: true`, aplicados a todas as páginas
-2. **Recursos do conjunto de templates** — combinados pelo ID de `template_set`
+2. **Recursos do conjunto de templates** — correspondentes ao ID de `template_set`
 3. **Recursos da página** — listados no array `data.resources`
 
-Dentro de cada camada, recursos são agrupados por `resource_type` e ordenados por `order`.
+Após a coleta, os recursos são agrupados por `resource_type` e cada grupo é ordenado por `order`. As três fontes não estabelecem uma ordem de saída separada.
 
 ## Mapeamento de Variáveis de Ambiente
 
-O carregador de env mapeia variáveis de ambiente para chaves de contexto do template através de um sistema baseado em prioridade.
+O carregador de ambiente mapeia variáveis para chaves do contexto do template por um sistema de prioridades.
 
 ### Definindo Mapeamentos
 
@@ -268,22 +268,22 @@ entries:
         debug_mode: DEBUG_ENABLED
 ```
 
-Cada entrada de mapeamento associa chaves de contexto (usadas em templates como `env.api_endpoint`) com nomes de variáveis de ambiente.
+Cada entrada associa chaves de contexto, usadas como `env.api_endpoint`, a nomes de variáveis de ambiente.
 
-### Sistema de Prioridade
+### Sistema de Prioridades
 
 | Faixa | Categoria | Descrição |
-|-------|----------|-------------|
-| 0–9 | Padrões do framework | Mapeamentos embutidos do framework |
-| 10–19 | Sobrescritas do sistema | Configuração a nível de sistema |
+|-------|-----------|-----------|
+| 0–9 | Padrões do framework | Mapeamentos integrados |
+| 10–19 | Sobrescritas do sistema | Configuração do sistema |
 | 20–29 | Mapeamentos da aplicação | Mapeamentos específicos da aplicação |
-| 30–100 | Sobrescritas de ambiente | Sobrescritas em tempo de execução |
+| 30–100 | Sobrescritas de ambiente | Sobrescritas em runtime |
 
-A maior prioridade vence quando múltiplos mapeamentos definem a mesma chave de contexto.
+A prioridade maior vence quando vários mapeamentos definem a mesma chave. Não defina a mesma chave mais de uma vez na mesma prioridade: a ordem entre prioridades iguais é indefinida.
 
 ### Usando em Templates
 
-Valores de ambiente resolvidos estão disponíveis no objeto de contexto `env`:
+Os valores resolvidos ficam disponíveis no objeto de contexto `env`:
 
 ```html
 <script>
@@ -292,12 +292,12 @@ Valores de ambiente resolvidos estão disponíveis no objeto de contexto `env`:
 </script>
 ```
 
-## Endpoints HTTP da API
+## Endpoints da API HTTP
 
-O módulo views registra estes endpoints no roteador configurado:
+O módulo registra estes endpoints no roteador configurado:
 
 | Método | Caminho | Descrição |
-|--------|------|-------------|
+|--------|---------|-----------|
 | GET | `/pages/list` | Lista páginas anunciadas e acessíveis |
 | GET | `/components/list` | Lista componentes de view anunciados e acessíveis |
 | GET | `/pages/content/{id}` | Renderiza a página ou retorna o descritor do componente |
@@ -307,7 +307,7 @@ O módulo views registra estes endpoints no roteador configurado:
 
 ### Resposta de Renderização
 
-Para páginas template, retorna o HTML renderizado com o `content_type` da página.
+Para páginas de template, retorna o HTML renderizado com o `content_type` da página.
 
 Para páginas de componente, retorna um descritor:
 
@@ -377,21 +377,21 @@ O FE seleciona o engine e monta o fragment — veja [Render Engines](../frontend
 
 ## Controle de Acesso
 
-Páginas com `secure: true` exigem autenticação. O registro de páginas verifica `security.can("view", "page:<page_id>")` contra o ator e escopo atuais.
+Páginas com `secure: true` exigem autenticação. O registro verifica `security.can("view", "page:<page_id>")` com o ator e o escopo atuais.
 
 Páginas não seguras estão sempre acessíveis. A flag `announced` controla a visibilidade nas listagens de navegação sem afetar o acesso.
 
 ## Qualificação de IDs
 
-IDs relativos em definições de páginas são qualificados com o namespace da entrada:
+IDs relativos nas definições de página são qualificados com o namespace da entrada:
 
 ```yaml
-# No namespace "app"
+# In namespace "app"
 data:
-  data_func: my_data_func       # resolve para app:my_data_func
-  set: templates:default         # permanece como templates:default (já qualificado)
+  data_func: my_data_func       # resolves to app:my_data_func
+  set: templates:default         # stays as templates:default (already qualified)
   resources:
-    - page_styles                # resolve para app:page_styles
+    - page_styles                # resolves to app:page_styles
 ```
 
 ## Veja Também

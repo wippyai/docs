@@ -9,9 +9,11 @@ description: "Publique e consuma mensagens de filas distribuidas. Suporta multip
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Publique e consuma mensagens de filas distribuidas. Suporta multiplos backends incluindo RabbitMQ e outros brokers compativeis com AMQP.
+O módulo `queue` publica mensagens e processa entregas de filas distribuídas configuradas, incluindo RabbitMQ e outros brokers compatíveis com AMQP.
 
-Para configuração de fila, veja [Queue](system/queue.md).
+Esta página é uma referência de API. Os exemplos de publicação pressupõem que as entradas e permissões já existam. A seção de consumer é uma receita parcial para um handler invocado por `queue.consumer`, não um deployment de fila independente.
+
+Para configurar a fila, veja [Fila](system/queue.md).
 
 ## Carregamento
 
@@ -44,16 +46,19 @@ end
 
 ### Headers de Mensagem
 
+Consumers recebem todos os valores de headers como strings. As chaves `x_original_queue`, `x_dead_letter_reason`, `x_dead_letter_time` e `attempts` são reservadas para controle de entrega e dead letter e não devem ser definidas pelos publishers.
+
 Headers habilitam roteamento, prioridade e rastreamento:
 
 ```lua
-queue.publish("app:notifications", {
+local ok, err = queue.publish("app:notifications", {
     type = "order_shipped",
     order_id = order.id
 }, {
-    priority = "high",
+    priority = 5,
     correlation_id = request_id
 })
+if err then return nil, err end
 ```
 
 ## Acessando Contexto de Entrega
@@ -66,9 +71,12 @@ if err then
     return nil, err
 end
 
-local msg_id = msg:id()
-local priority = msg:header("priority")
-local all_headers = msg:headers()
+local msg_id, id_err = msg:id()
+if id_err then return nil, id_err end
+local priority, header_err = msg:header("priority")
+if header_err then return nil, header_err end
+local all_headers, headers_err = msg:headers()
+if headers_err then return nil, headers_err end
 ```
 
 **Retorna:** `Message, error`
@@ -76,6 +84,8 @@ local all_headers = msg:headers()
 Disponível apenas ao processar mensagens de fila em contexto de consumer.
 
 ## Métodos de Message
+
+Uma `Message` é válida somente durante a execução do handler do consumer; o runtime faz ack automático em sucesso e nack automático em erro.
 
 | Método | Retorna | Descrição |
 |--------|---------|-----------|
@@ -91,7 +101,8 @@ O runtime faz auto-ack no sucesso do handler e auto-nack no erro do handler. Cha
 
 ```lua
 local stats, err = queue.info("app:tasks")
--- stats pode conter: message_count, consumer_count, ready (depende do driver)
+if err then return nil, err end
+-- stats may contain: message_count, consumer_count, ready (driver-dependent)
 ```
 
 **Retorna:** `table, error`
@@ -114,15 +125,16 @@ function handle_email(payload)
     local msg = queue.message()
 
     logger:info("Processing", {
-        message_id = msg:id(),
+        message_id = message_id,
         to = payload.to
     })
 
-    local ok, err = email.send(payload.to, payload.template, payload.data)
-    if err then
-        return nil, err  -- Mensagem sera reenfileirada ou dead-lettered
-    end
+    local ok, send_err = deliver_email(payload)
+    if send_err then return nil, send_err end
+    return ok
 end
+
+return {main = main}
 ```
 
 ## Permissões
@@ -141,17 +153,19 @@ Ambas as permissões sao verificadas: primeiro a permissão geral, depois a espe
 | Condição | Tipo | Retentável |
 |----------|------|------------|
 | ID da fila vazio | `errors.INVALID` | não |
-| Dados da mensagem vazios | `errors.INVALID` | não |
+| Argumento da mensagem ausente ou uma tabela vazia | `errors.INVALID` | não |
 | Sem contexto de entrega | `errors.INVALID` | não |
+| Mensagem liberada ou já finalizada | `errors.INVALID` | não |
 | Publicação não permitida | `errors.INVALID` | não |
 | Publicação falhou | `errors.INTERNAL` | não |
+| Fila ou driver não encontrado por `info` | `errors.INTERNAL` | não |
 
-Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
+Veja [Tratamento de Erros](lua/core/errors.md) para trabalhar com erros.
 
 ## Veja Também
 
-- [Queue Configuration](system/queue.md) - Drivers de fila e definicoes de entrada
-- [Queue Consumers Guide](guides/queue-consumers.md) - Padroes de consumer e pools de workers
-- [Process Management](lua/core/process.md) - Criação de processos e comunicação
-- [Channels](lua/core/channel.md) - Padroes de comunicação entre processos
-- [Functions](lua/core/funcs.md) - Invocação de funções assíncronas
+- [Configuração de Filas](system/queue.md) - Drivers de fila e definições de entrada
+- [Guia de Consumidores de Fila](guides/queue-consumers.md) - Padrões de consumer e pools de workers
+- [Gerenciamento de Processos](lua/core/process.md) - Criação de processos e comunicação
+- [Channels](lua/core/channel.md) - Padrões de comunicação entre processos
+- [Funções](lua/core/funcs.md) - Invocação de funções assíncronas

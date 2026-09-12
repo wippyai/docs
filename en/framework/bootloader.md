@@ -1,11 +1,13 @@
 ---
 title: "Bootloader"
-description: "The wippy/bootloader module orchestrates application initialization by discovering and running bootloader functions in a defined order at startup.…"
+description: "Discover and run ordered application initialization functions at startup with wippy/bootloader."
 ---
 
 # Bootloader
 
-The `wippy/bootloader` module orchestrates application initialization by discovering and running bootloader functions in a defined order at startup. Other framework modules (migrations, encryption, index refresh) register bootloaders to run their own initialization steps.
+The `wippy/bootloader` module discovers and runs application initialization functions in a defined order at startup. Framework modules use bootloaders for tasks such as encryption-key setup and database migrations.
+
+This page is a partial integration recipe and API reference, not a standalone application. The definition below is structurally complete, but `apply_seed()` represents application code that must implement the actual seed operation and its idempotency check. Any persistent cleanup or reversal depends on that application-specific operation.
 
 ## Setup
 
@@ -42,7 +44,7 @@ entries:
         value: app:os_env
 ```
 
-The bootloader itself runs as `wippy.bootloader:bootloader.service` (a `process.service` with `auto_start: true`). Nothing else is required to activate it.
+The dependency activates `wippy.bootloader:bootloader.service`, a `process.service` with `auto_start: true`.
 
 ## How It Works
 
@@ -51,14 +53,14 @@ At startup the bootloader:
 1. Discovers every entry with `meta.type: bootloader` from the registry.
 2. Sorts them by `meta.order` ascending (lowest first).
 3. Executes each one sequentially as a Lua function.
-4. Stops on the first error that returns `status = "error"`.
-5. Reports total / success / failed / skipped counts when finished.
+4. Stops the remaining bootloader sequence on the first result with `status = "error"`.
+5. Reports total, successful, failed, and skipped counts when finished.
 
-Bootloaders are autonomous — each one checks its own conditions, does its work, and reports a structured result.
+Each bootloader checks its own conditions, performs its work, and reports a structured result.
 
 ## Defining a Bootloader
 
-A bootloader is any `function.lua` entry with `meta.type: bootloader`:
+A bootloader is any `function.*` entry with `meta.type: bootloader`. Most application bootloaders use `function.lua`:
 
 ```yaml
 - name: seed_defaults
@@ -80,7 +82,9 @@ A bootloader is any `function.lua` entry with `meta.type: bootloader`:
 | `meta.type` | Yes | Must be `bootloader` |
 | `meta.order` | No | Execution order (default `999`); lower runs first |
 | `meta.description` | No | Human-readable summary |
-| `meta.requires` | No | Bootloader IDs and/or service IDs that must complete/be available first; the runtime waits for services and fails the bootloader (stopping the boot sequence) if a requirement is unmet |
+| `meta.requires` | No | One ID or an array of bootloader/service IDs. Earlier bootloaders must have returned `success` or `skipped`; service requirements must exist in the registry. An unmet requirement stops the remaining sequence. |
+
+Dependency type is determined from the referenced registry entry: `meta.type: bootloader` identifies a bootloader, while other resolved entries are treated as services. If an ID cannot be resolved, the fallback treats a dotted namespace as a bootloader ID and another colon-qualified ID as a service ID. A service check waits up to 20 attempts at 500 ms intervals, but it checks registry presence, not runtime health.
 
 ### Return Contract
 
@@ -116,9 +120,11 @@ return { run = run }
 |--------|---------|
 | `success` | Work completed |
 | `skipped` | No-op (already done, precondition unmet) |
-| `error` | Failure — stops the boot sequence |
+| `error` | Failure — stops the remaining bootloader sequence |
 
-A bootloader that raises a Lua error is treated as `error`.
+A bootloader that raises a Lua error, returns an execution error, or returns a non-table value is converted to an `error` result. The orchestrator measures and overwrites `duration`; a returned `details` value is preserved for logging.
+
+Use the three status strings exactly. Another value is logged as `UNKNOWN`, is not included in a status counter, and does not currently stop later bootloaders.
 
 ## Execution Order
 
@@ -137,7 +143,7 @@ When two bootloaders share an order, they run in alphabetical order by their ful
 
 ### Encryption Key (order `10`)
 
-Generates a 256-bit `ENCRYPTION_KEY` and stores it through the configured `env_storage` if no value is present. Other modules (security, usage tracking) read this variable for envelope encryption. Skipped when the variable already exists.
+Generates 32 random bytes, encodes them as a 64-character hexadecimal `ENCRYPTION_KEY`, and stores the value through the configured `env_storage` if no value is present. Skipped when the variable already exists.
 
 ### Migration Bootloader (order `20`)
 
@@ -145,14 +151,14 @@ Provided by `wippy/migration`. Discovers every entry with `meta.type: migration`
 
 ## Observing Boot Status
 
-The service logs one line per bootloader (`SUCCESS`, `FAILED`, `SKIPPED`) with the entry ID, order, and duration. The final summary line reports aggregate counts. A failed bootloader aborts startup — the supervisor's restart policy then applies to `bootloader.service`.
+The service logs the discovery count, then one result line per executed bootloader (`SUCCESS`, `FAILED`, `SKIPPED`) with the entry ID, order, and duration. The final summary reports executed and per-status counts. A failed bootloader stops later bootloaders and makes the orchestrator return `false` with its statistics; it does not raise a Lua process error by itself.
 
 <tip>
-Keep bootloaders idempotent. They may run again after a crash restart, so check preconditions (row exists, file present, env var set) before doing work.
+Keep bootloaders idempotent. They run again whenever `bootloader.service` is started again, so check preconditions (row exists, file present, env var set) before doing work.
 </tip>
 
 ## See Also
 
-- [Migrations](framework/migration.md) - Migration bootloader and DSL
-- [Supervision](guides/supervision.md) - Service lifecycle and restart policy
-- [Framework Overview](framework/overview.md) - Framework module usage
+- [Migrations](framework/migration.md) — Migration bootloader and DSL
+- [Supervision](guides/supervision.md) — Service lifecycle and restart policy
+- [Framework Overview](framework/overview.md) — Framework module usage

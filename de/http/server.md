@@ -5,7 +5,9 @@ description: "Der HTTP-Server (http.service) lauscht auf einem Port und hostet R
 
 # HTTP-Server
 
-Der HTTP-Server (`http.service`) lauscht auf einem Port und hostet Router, Endpunkte und statische Datei-Handler.
+Ein `http.service` besitzt einen Listener und hostet Router, Endpunkte und Handler für statische Dateien.
+
+**Klassifikation: Server-Konfigurationsreferenz.** Blöcke sind Registry-Teilfragmente, sofern sie nicht jeden referenzierten Netzwerk-, Umgebungs-, Dateisystem-, Router-, Zertifikat-, Actor- und Richtlinieneintrag definieren.
 
 ## Konfiguration
 
@@ -37,12 +39,12 @@ Der HTTP-Server (`http.service`) lauscht auf einem Port und hostet Router, Endpu
 | `timeouts.idle` | duration | - | Keep-Alive-Verbindungs-Timeout |
 | `host.buffer_size` | int | 1024 | Nachrichten-Relay-Puffergröße |
 | `host.worker_count` | int | NumCPU | Nachrichten-Relay-Worker |
-| `network` | Registry-ID | - | Listener über ein [Netzwerk-Overlay](system/network.md) binden (z. B. Tailscale, I2P) |
+| `network` | Registry-ID | - | Listener über ein [Netzwerk-Overlay](system/network.md) binden, etwa Tailscale oder I2P |
 | `tls` | object | - | TLS-Terminierung (siehe [TLS](#tls)) |
 
 ## Timeouts
 
-Konfigurieren Sie Timeouts um Ressourcenerschöpfung zu verhindern:
+Konfigurieren Sie Timeouts, um Ressourcenerschöpfung zu verhindern:
 
 ```yaml
 timeouts:
@@ -51,9 +53,9 @@ timeouts:
   idle: "120s"   # Keep-Alive-Timeout
 ```
 
-- `read` - Kurz (5-10s) für APIs, länger für Uploads
-- `write` - Entsprechend der erwarteten Response-Generierungszeit anpassen
-- `idle` - Balance zwischen Verbindungswiederverwendung und Ressourcennutzung
+- `read` — Für APIs kurz (5–10 Sekunden), für Uploads länger
+- `write` — An die erwartete Dauer der Response-Erzeugung anpassen
+- `idle` — Verbindungswiederverwendung gegen Ressourcenverbrauch abwägen
 
 <note>
 Dauer-Format: <code>30s</code>, <code>1m</code>, <code>2h15m</code>. <code>0</code> zum Deaktivieren verwenden.
@@ -92,7 +94,7 @@ lifecycle:
       - app:http_access_policy
 ```
 
-Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Für authentifizierte Anfragen überschreibt die [token_auth-Middleware](http/middleware.md) den Actor basierend auf dem validierten Token, was benutzerspezifische Sicherheitsrichtlinien ermöglicht.
+Dies setzt einen Basis-Actor und Richtlinien für alle Anfragen. Bei authentifizierten Anfragen überschreibt die [token_auth-Middleware](http/middleware.md) den Actor anhand des validierten Tokens und ermöglicht damit benutzerspezifische Sicherheitsrichtlinien.
 
 ## Lebenszyklus
 
@@ -103,7 +105,7 @@ lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
@@ -112,7 +114,7 @@ lifecycle:
 | `auto_start` | Beim Anwendungsstart starten |
 | `start_timeout` | Max Wartezeit für Server-Start |
 | `stop_timeout` | Max Zeit für kontrolliertes Herunterfahren |
-| `depends_on` | Nach diesen Einträgen starten |
+| `requires` | Starten, nachdem diese Einträge bereit sind (`depends_on` ist die veraltete Schreibweise) |
 
 ## Komponenten verbinden
 
@@ -144,14 +146,14 @@ Separate Server für verschiedene Zwecke betreiben:
 
 ```yaml
 entries:
-  # Öffentliche API
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # Admin (nur localhost)
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"
@@ -228,8 +230,8 @@ tls:
 
 ## Siehe auch
 
-- [Routing](http/router.md) - Router und Endpunkte
-- [Statische Dateien](http/static.md) - Statische Datei-Bereitstellung
-- [Middleware](http/middleware.md) - Verfügbare Middleware
-- [Sicherheit](system/security.md) - Sicherheitsrichtlinien
-- [WebSocket-Relay](http/websocket-relay.md) - WebSocket-Messaging
+- [Routing](http/router.md) – Router und Endpunkte
+- [Statische Dateien](http/static.md) – Bereitstellung statischer Dateien
+- [Middleware](http/middleware.md) – Verfügbare Middleware
+- [Sicherheit](system/security.md) – Sicherheitsrichtlinien
+- [WebSocket-Relay](http/websocket-relay.md) – WebSocket-Nachrichten

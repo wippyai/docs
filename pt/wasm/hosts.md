@@ -20,10 +20,11 @@ Modulos WASM acessam capacidades do runtime atraves de imports de funcoes host. 
 | `wasi:sockets` | `wasi:sockets/*` | component | Rede TCP/UDP e resolucao DNS |
 | `wasi:http` | `wasi:http/*` | component | Requisicoes HTTP de saida |
 | `funcs` | `wippy:runtime/funcs@0.1.0` | component | Chamada de funcoes do registro a partir do guest |
+| `wippy:actor` | `wippy:actor/process@0.1.0` | component | Identidade PID e caixa de mensagens limitada do ator |
 | `wasi1` | `wasi_snapshot_preview1` | core | Imports de compatibilidade com WASI Preview 1 |
 | `socket` | `wippy:runtime/socket@0.1.0` | core | TCP de saida pertencente a instancia atraves de imports somente inteiros |
 
-Os oito perfis `wasi:*` e `funcs` sao exclusivos de component: declarar um deles em um modulo core faz a entrada falhar. `wasi1` e `socket` expoem imports core.
+Os oito perfis `wasi:*`, `funcs` e `wippy:actor` sao exclusivos de component: declarar um deles em um modulo core faz a entrada falhar. `wasi1` e `socket` expoem imports core.
 
 Cada perfil resolve pelo seu nome curto, por qualquer um dos namespaces de interface que fornece, e por um namespace versionado. O sufixo de versao e removido antes da busca, entao `wasi:io/poll`, `wasi:io/poll@0.2.3` e `wasi:poll` selecionam todos o mesmo perfil.
 

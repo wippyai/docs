@@ -1,11 +1,13 @@
 ---
 title: "Queue"
-description: "Wippy bietet ein Queue-System für asynchrone Nachrichtenverarbeitung mit konfigurierbaren Treibern und Konsumenten."
+description: "Konfigurieren Sie Memory-, AMQP- oder SQS-Queue-Treiber, logische Queues, Consumer, Bestätigungen und Publishing."
 ---
 
 # Queue
 
-Wippy bietet ein Queue-System für asynchrone Nachrichtenverarbeitung mit konfigurierbaren Treibern und Konsumenten.
+Das Queue-System verbindet asynchrone Message-Publisher, Treiber, Queues, Consumer und Handler-Funktionen.
+
+Diese Seite ist eine Konfigurations- und Verhaltensreferenz. YAML-Blöcke sind Fragmente für eine bestehende Entry-Liste, sofern sie kein vollständiges Dokument zeigen; Beispiele mit externen Treibern setzen voraus, dass der Broker oder AWS-kompatible Dienst bereits vorhanden ist.
 
 ## Architektur
 
@@ -27,19 +29,19 @@ Mehrere Queues können einen Driver teilen. Mehrere Consumer können aus derselb
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `queue.driver.memory` | In-Memory-Queue-Treiber |
 | `queue.driver.amqp` | AMQP (RabbitMQ) Treiber |
 | `queue.driver.sqs` | AWS-SQS-Treiber (auch LocalStack, ElasticMQ) |
 | `queue.queue` | Queue-Deklaration mit Driver-Referenz |
-| `queue.consumer` | Consumer der Nachrichten verarbeitet |
+| `queue.consumer` | Consumer, der Nachrichten verarbeitet |
 
 ## Driver-Konfiguration
 
 ### Memory-Driver
 
-In-Process-Driver für Entwicklung und Single-Node-Deployments. Keine externen Abhängigkeiten.
+Der In-Process-Treiber ist für Entwicklung und Single-Node-Deployments vorgesehen und besitzt keine externen Abhängigkeiten.
 
 ```yaml
 - name: memory_driver
@@ -79,15 +81,15 @@ Für RabbitMQ und AMQP-0-9-1-kompatible Broker.
 | `connection_timeout` | duration | - | Dial-Timeout |
 | `reconnect_delay` | duration | `1s` | Initialer Reconnect-Backoff |
 | `reconnect_max_delay` | duration | `30s` | Maximaler Reconnect-Backoff |
-| `default_message_ttl` | duration | - | Standard-Message-TTL für deklarierte Queues |
-| `default_queue_ttl` | duration | - | Standard-TTL für deklarierte Queues |
-| `default_queue_expiry` | duration | - | Standard-Queue-Expiry für deklarierte Queues |
+| `default_message_ttl` | duration | - | Ablaufzeit pro Nachricht, wenn ein Publisher keine angibt |
+| `default_queue_ttl` | duration | - | Standardmäßige Queue-weite Nachrichten-TTL (`x-message-ttl`) |
+| `default_queue_expiry` | duration | - | Standardmäßiger Ablauf ungenutzter Queues (`x-expires`) |
 | `prefetch_count` | int | - | Channel-weite Prefetch-Obergrenze |
 | `frame_size` | int | - | AMQP-Frame-Size-Limit |
 | `channel_max` | int | - | Maximale Channels pro Verbindung |
 | `tls` | object | - | TLS-Einstellungen (siehe unten) |
 
-TLS-Block:
+Konfigurieren Sie TLS unter `tls`:
 
 ```yaml
   tls:
@@ -167,7 +169,7 @@ Schlüssel unter `driver_options` sind nach Driver-Name geordnet. Ein Driver lie
 
 | Schlüssel | Beschreibung |
 |-----------|--------------|
-| `max_length` | Begrenzte Puffergröße (0 = unbegrenzt) |
+| `max_length` | Begrenzte Puffergröße (0 oder nicht gesetzt = Standardwert 1000) |
 
 **amqp:**
 
@@ -206,7 +208,7 @@ Der AMQP-Driver setzt einen passenden `content-type` (`application/json` oder `a
       exclusive: false
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app.queue:tasks
 ```
 
@@ -215,8 +217,8 @@ Der AMQP-Driver setzt einen passenden `content-type` (`application/json` oder `a
 | `queue` | erforderlich | Queue-Registry-ID |
 | `func` | erforderlich | Handler-Funktions-Registry-ID |
 | `concurrency` | 1 | Parallele Worker-Anzahl |
-| `prefetch` | 10 | Per-Worker-Puffergröße |
-| `auto_ack` | false | Wenn true, ruft die Runtime kein Broker-Ack auf; Handler-Erfolg/-Fehler ist das einzige Settle-Signal |
+| `prefetch` | 10 | Größe des gemeinsamen Delivery-Puffers; AMQP verwendet den Wert außerdem als QoS-Prefetch-Anzahl des Channels |
+| `auto_ack` | false | Backend-spezifische Auto-Ack-Option; bei AMQP fordert `true` den Broker auf, bei der Zustellung zu bestätigen |
 | `driver_options` | - | Per-Driver-Sub-Bag (gleiche Struktur wie Queue) |
 
 **amqp-Consumer-Optionen:**
@@ -229,20 +231,20 @@ Der AMQP-Driver setzt einen passenden `content-type` (`application/json` oder `a
 | `consumer_tag` | Kennung für dieses Abonnement |
 
 <tip>
-Consumer respektieren Aufrufkontext und können Sicherheitsrichtlinien unterliegen. Konfigurieren Sie Actor und Richtlinien auf Lebenszyklus-Ebene. Siehe <a href="system/security.md">Sicherheit</a>.
+Consumer berücksichtigen den Aufrufkontext und können Sicherheitsrichtlinien unterliegen. Konfigurieren Sie Actor und Richtlinien auf Lebenszyklusebene. Siehe <a href="./security.md">Sicherheit</a>.
 </tip>
 
 ### Worker-Pool
 
-Worker laufen als nebenläufige Goroutinen:
+Worker werden nebenläufig ausgeführt:
 
 ```
 concurrency: 3, prefetch: 10
 
-1. Driver liefert bis zu 10 Nachrichten in den Puffer
-2. 3 Worker holen nebenläufig aus dem Puffer
-3. Wenn Worker fertig sind, füllt sich der Puffer nach
-4. Gegendruck wenn alle Worker beschäftigt und Puffer voll
+1. Driver delivers up to 10 messages to the shared buffer
+2. 3 workers pull from the buffer and can each hold an active delivery
+3. As workers finish, buffer refills
+4. Backpressure when all workers busy and buffer full
 ```
 
 ## Handler-Funktion
@@ -254,10 +256,16 @@ local queue = require("queue")
 local logger = require("logger")
 
 local function main(body)
-    local msg = queue.message()
+    local msg, msg_err = queue.message()
+    if msg_err then return nil, msg_err end
+    local message_id, id_err = msg:id()
+    if id_err then return nil, id_err end
+    local correlation_id, header_err = msg:header("correlation_id")
+    if header_err then return nil, header_err end
+
     logger:info("processing", {
-        id = msg:id(),
-        correlation_id = msg:header("correlation_id")
+        id = message_id,
+        correlation_id = correlation_id
     })
 
     local ok, err = process_task(body)
@@ -282,7 +290,7 @@ return { main = main }
 
 ### Bestätigung
 
-Die Runtime settled basierend auf der Handler-Rückgabe automatisch:
+Sofern der Handler die Nachricht nicht ausdrücklich bestätigt oder ablehnt, entscheidet der Consumer anhand des Ergebnisses des Funktionsaufrufs:
 
 | Handler-Ergebnis | Aktion |
 |------------------|--------|
@@ -290,7 +298,7 @@ Die Runtime settled basierend auf der Handler-Rückgabe automatisch:
 | Rückgabe `nil, err` | Nack (Redelivery je nach Driver) |
 | Geworfener Fehler | Nack |
 
-Rufen Sie `msg:ack()` oder `msg:nack()` explizit nur auf, um vorzeitig zu settlen. Settlement ist Single-Shot: der zuerst eintreffende Aufruf gewinnt.
+Gewöhnliche Rückgabewerte, einschließlich `false`, wählen das Bestätigungsverhalten nicht aus. Rufen Sie `msg:ack()` oder `msg:nack()` auf, um ausdrücklich zu bestätigen oder abzulehnen. Settlement ist einmalig: Der erste eintreffende Aufruf gewinnt.
 
 ### Dead-Letter-Routing
 
@@ -303,14 +311,16 @@ Aus Lua-Code:
 ```lua
 local queue = require("queue")
 
-queue.publish("app.queue:tasks", {
+local published, publish_err = queue.publish("app.queue:tasks", {
     id = "task-123",
     action = "process",
     data = payload
 })
+if publish_err then return nil, publish_err end
+return published
 ```
 
-Siehe [Queue-Modul](lua/storage/queue.md) für vollständige API.
+Siehe [Queue-Modul](lua/storage/queue.md) für die Lua-API zum Publishing und für Nachrichten.
 
 ## Kontrolliertes Herunterfahren
 
@@ -324,5 +334,5 @@ Beim Stoppen des Consumers:
 ## Siehe auch
 
 - [Queue-Modul](lua/storage/queue.md) - Lua-API-Referenz
-- [Queue-Konsumenten-Anleitung](guides/queue-consumers.md) - Consumer-Muster und Worker-Pools
-- [Supervision](guides/supervision.md) - Consumer-Lebenszyklus-Verwaltung
+- [Queue-Consumer-Anleitung](guides/queue-consumers.md) - Consumer-Muster und Worker-Pools
+- [Supervision](guides/supervision.md) - Consumer-Lebenszyklusverwaltung

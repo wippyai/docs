@@ -1,17 +1,19 @@
 ---
-title: "Gestion de Dependencias"
-description: "Wippy usa un sistema de dependencias basado en archivos de bloqueo. Los modulos se publican en el hub, se declaran como dependencias en tu codigo…"
+title: "Gestión de dependencias"
+description: "Declara, resuelve, instala, actualiza, reemplaza y verifica dependencias de módulos Wippy mediante un lock file."
 ---
 
-# Gestion de Dependencias
+# Gestión de dependencias
 
-Wippy usa un sistema de dependencias basado en archivos de bloqueo. Los modulos se publican en el hub, se declaran como dependencias en tu codigo fuente y se resuelven en un archivo `wippy.lock` que rastrea las versiones exactas.
+Wippy resuelve las dependencias de módulos a partir de declaraciones de source y registra versiones exactas en `wippy.lock`. Los módulos publicados se descargan del Hub al directorio de módulos del proyecto.
 
-## Archivos del Proyecto
+Los nombres de módulos `acme/*`, versiones, hashes y paths locales siguientes son ilustrativos. Sustitúyelos por módulos y digests verificados de tu proyecto o del Hub.
+
+## Archivos del proyecto
 
 ### wippy.lock
 
-El archivo de bloqueo rastrea la estructura de directorios de tu proyecto y las dependencias fijadas:
+El lock file registra la estructura de directorios del proyecto y sus dependencias fijadas:
 
 ```yaml
 directories:
@@ -26,7 +28,7 @@ modules:
     hash: b3f9c8e12a456d7890abcdef1234567890abcdef1234567890abcdef12345678
 ```
 
-| Campo | Descripcion |
+| Campo | Descripción |
 |-------|-------------|
 | `directories.modules` | Donde se almacenan los modulos descargados (por defecto: `.wippy`) |
 | `directories.src` | Donde reside tu codigo fuente (por defecto: `./src`) |
@@ -38,7 +40,7 @@ modules:
 
 ### wippy.yaml
 
-Metadatos del modulo para publicacion. Solo es necesario cuando publicas tu propio modulo:
+Metadatos del módulo para publicarlo. Solo son obligatorios al publicar tu propio módulo:
 
 ```yaml
 organization: acme
@@ -52,21 +54,21 @@ keywords:
   - web
 ```
 
-| Campo | Requerido | Descripcion |
-|-------|-----------|-------------|
-| `organization` | Si | Minusculas, alfanumerico con guiones |
-| `module` | Si | Minusculas, alfanumerico con guiones |
-| `version` | No | Version semantica (se establece al publicar) |
-| `description` | No | Descripcion del modulo |
+| Campo | Obligatorio | Descripción |
+|-------|----------|-------------|
+| `organization` | Sí | Minúsculas, alfanumérico con guiones |
+| `module` | Sí | Minúsculas, alfanumérico con guiones |
+| `version` | No | Versión semántica (se establece al publicar) |
+| `description` | No | Descripción del módulo |
 | `license` | No | Identificador de licencia SPDX |
 | `repository` | No | URL del repositorio fuente |
-| `homepage` | No | Pagina principal del proyecto |
-| `keywords` | No | Palabras clave para descubrimiento |
-| `authors` | No | Lista de autores |
+| `homepage` | No | Página principal del proyecto |
+| `keywords` | No | Palabras clave de descubrimiento |
+| `authors` | No | Lista de authors |
 
-## Declaracion de Dependencias
+## Declarar dependencias
 
-Agrega entradas `ns.dependency` en tu `_index.yaml`:
+Añade entradas `ns.dependency` a `_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -83,18 +85,18 @@ entries:
     version: ">=2.0.0"
 ```
 
-### Restricciones de Version
+### Constraints de versión
 
-| Restriccion | Ejemplo | Coincide con |
-|-------------|---------|--------------|
+| Constraint | Ejemplo | Coincide con |
+|------------|---------|---------|
 | Exacta | `1.2.3` | Solo 1.2.3 |
 | Caret | `^1.2.0` | >=1.2.0, <2.0.0 |
 | Tilde | `~1.2.0` | >=1.2.0, <1.3.0 |
-| Rango | `>=1.0.0` | 1.0.0 y superior |
-| Comodin | `*` | Cualquier version (elige la mas alta) |
+| Rango | `>=1.0.0` | 1.0.0 y posteriores |
+| Wildcard | `*` | Cualquier versión (elige la más alta) |
 | Combinada | `>=1.0.0 <2.0.0` | Entre 1.0.0 y 2.0.0 |
 
-### Reglas de Resolucion
+### Reglas de resolución
 
 - Cada modulo se resuelve contra la **interseccion de todos los rangos declarados** en el grafo de dependencias. Los rangos incompatibles (conflictos de diamante) hacen fallar la resolucion con un error explicito en lugar de elegir silenciosamente un lado.
 - Un `wippy update` completo resuelve cada modulo a partir de sus rangos declarados; una actualizacion dirigida y la reparacion en el arranque conservan una version fijada que siga satisfaciendo todos los rangos vivos.
@@ -103,7 +105,7 @@ entries:
 
 Dos fallos de resolucion se reportan de forma distinta. Una expresion de restriccion que ninguna release podria satisfacer jamas — la interseccion de los rangos vivos esta vacia — es un conflicto, y el error nombra el modulo y cada solicitante que aporto un rango. Un conjunto de rangos valido para el que el hub no publica actualmente ninguna version coincidente es en cambio un fallo de disponibilidad: una release posterior puede volverlo resoluble sin cambiar ninguna declaracion.
 
-El runtime persiste cada grafo resuelto en su historial del registro y lo reproduce en el arranque en lugar de volver a resolver, de modo que una aplicacion desplegada arranca exactamente con las versiones que se resolvieron cuando se aplico el cambio de dependencias. `wippy.lock` sigue siendo la instantanea portable para proyectos fuente.
+El runtime persiste cada grafo resuelto en su historial del registro y lo reproduce durante boot en vez de volver a resolverlo, por lo que una aplicación desplegada arranca con exactamente las versiones resueltas cuando se aplicó el cambio. `wippy.lock` sigue siendo el snapshot portable para proyectos fuente.
 
 ### Procedencia de las entradas
 
@@ -118,15 +120,15 @@ Los autores de entradas nunca escriben estos campos; se asignan durante la carga
 
 ## Flujo de Trabajo
 
-### Iniciar un Nuevo Proyecto
+### Iniciar un proyecto nuevo
 
 ```bash
 wippy init
 ```
 
-Crea un `wippy.lock` con los directorios por defecto.
+Crea un `wippy.lock` con directorios predeterminados.
 
-### Agregar Dependencias
+### Añadir dependencias
 
 ```bash
 wippy add acme/http               # Latest version
@@ -134,23 +136,23 @@ wippy add acme/http@1.2.3         # Exact version
 wippy add acme/http@latest         # Latest label
 ```
 
-Esto actualiza el archivo de bloqueo. Luego instala:
+Esto actualiza el lock file. Después instala:
 
 ```bash
 wippy install
 ```
 
-### Resolver desde el Codigo Fuente
+### Resolver desde source
 
-Si tu codigo fuente ya declara entradas `ns.dependency`:
+Si el source ya declara entradas `ns.dependency`:
 
 ```bash
 wippy update
 ```
 
-Esto escanea tu directorio fuente, resuelve todas las restricciones de dependencias, actualiza el archivo de bloqueo e instala los modulos.
+Esto examina el directorio source, resuelve todos los constraints, actualiza el lock file e instala los módulos.
 
-### Actualizar Dependencias
+### Actualizar dependencias
 
 ```bash
 wippy update                       # Re-resolve all dependencies
@@ -158,18 +160,18 @@ wippy update acme/http             # Update only acme/http
 wippy update acme/http acme/sql    # Update specific modules
 ```
 
-Al actualizar modulos especificos, los demas modulos permanecen fijados en sus versiones actuales. Si la actualizacion requiere cambiar modulos que no son objetivo, se solicita confirmacion.
+Al actualizar módulos concretos, los demás permanecen fijados en sus versiones actuales. Si la actualización requiere cambiar módulos no target, se pide confirmación.
 
-### Instalar desde el Archivo de Bloqueo
+### Instalar desde el lock file
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # Volver a descargar cada módulo (--force y --repair son alias)
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
-## Almacenamiento de Modulos
+## Almacenamiento de módulos
 
-Los modulos descargados se almacenan en el directorio `.wippy/vendor/`:
+Los módulos descargados se guardan en `.wippy/vendor/`:
 
 ```
 project/
@@ -183,7 +185,7 @@ project/
         sql-v2.0.1.wapp
 ```
 
-Por defecto, los modulos se mantienen como archivos `.wapp`. Para extraerlos en directorios:
+De forma predeterminada se conservan como archivos `.wapp`. Para extraerlos a directorios:
 
 ```yaml
 # wippy.lock
@@ -191,7 +193,7 @@ options:
   unpack_modules: true
 ```
 
-Con la extraccion habilitada:
+Con unpacking habilitado:
 
 ```
 .wippy/
@@ -211,7 +213,7 @@ Los modulos resueltos desde un [reemplazo de workspace](#local-development-with-
 
 ## Desarrollo Local con Reemplazos
 
-Sustituye modulos del hub con directorios locales para desarrollo. Los reemplazos se declaran en la seccion `workspace` de un archivo de configuracion de runtime — tipicamente uno privado, ignorado por git y compuesto sobre `.wippy.yaml`:
+Para desarrollo local, asigna módulos del Hub a directorios locales en la sección `workspace` de un archivo de configuración del runtime. Normalmente es un archivo privado e ignorado que se compone sobre `.wippy.yaml`:
 
 ```yaml
 # .wippy.workspace.yaml
@@ -232,21 +234,21 @@ Se exige que la ruta exista, y que sea un directorio, solo para un modulo que el
 
 Un reemplazo cambia de donde proviene el codigo fuente de un modulo, no que release se eligio. La ruta de carga conserva la version y el digest que el lock selecciono para ese modulo y se marca como reemplazo; las entradas cargadas desde ella eclipsan a las vendorizadas con el mismo ID. Cuando se declara un reemplazo para un modulo del que el lock no fija version, la resolucion le pide al hub una version de release, y hasta que una evidencia mas fuerte seleccione una, mantiene una version cero solo local.
 
-Los reemplazos de workspace afectan el grafo de carga en el arranque y nunca se escriben en `wippy.lock`. Los cambios en el codigo fuente local se reconcilian directamente, sin contactar al hub. Los globs `exclude:` del `wippy.yaml` fuente del modulo tambien se aplican a los directorios de reemplazo, tanto al cargar entradas como al calcular el hash del contenido.
+Los workspace replacements afectan al grafo de carga en boot y nunca se escriben en `wippy.lock`. Los cambios del source local se reconcilian directamente, sin contactar con el Hub. Los globs `exclude:` del source del módulo en `wippy.yaml` también se aplican a los directorios replacement, tanto al cargar entradas como al calcular hashes.
 
-Una seccion `replacements:` en `wippy.lock` esta deprecada: aun se carga pero imprime una advertencia. Mueve esas entradas a `workspace.replacements` en un archivo de configuracion.
+La sección `replacements:` de `wippy.lock` está deprecated. Aún se carga con un warning; mueve esas entradas a `workspace.replacements` en un archivo de configuración.
 
-## Orden de Carga
+## Orden de carga
 
-Al iniciar, Wippy carga las entradas desde los directorios en este orden:
+Durante boot, Wippy carga entradas de directorios en este orden:
 
-1. Directorio fuente (`src`)
-2. Directorios de reemplazo
-3. Directorios de modulos vendorizados
+1. Directorio source (`src`)
+2. Directorios replacement
+3. Directorios de módulos vendorizados
 
-Los modulos con reemplazos activos omiten su ruta de vendor.
+Los módulos con replacements activos omiten su path de vendor.
 
-## Verificacion de Integridad
+## Verificación de integridad
 
 Cada modulo del archivo de bloqueo lleva un digest de artefacto. El arranque se niega a cargar un modulo cuya entrada del lock no tiene ninguno; `wippy install` acepta esa entrada y registra el digest que el hub sirve con la descarga.
 
@@ -264,7 +266,7 @@ Las fuentes de reemplazo tambien estan direccionadas por contenido. El runtime c
 
 Un modulo puede incluir un recurso de sistema de archivos marcado con `meta.artifact.format` que los consumidores materializan en disco en lugar de leerlo en tiempo de ejecucion. Las variantes completas y dirigidas de `wippy install` y `wippy update`, el arranque en frio y las operaciones de dependencias en runtime reconcilian esas salidas como parte de la misma transaccion que cambia el grafo de modulos; `artifact.materialization_root` establece la raiz de salida. Ver [Artefactos de tiempo de construccion](guides/artifacts.md).
 
-## Ver Tambien
+## Véase también
 
 - [Artefactos de tiempo de construccion](guides/artifacts.md) - Declaracion, materializacion y reconciliacion de recursos de artefactos
 - [Construccion de Componentes](guides/components.md) - El lado del autor: `ns.requirement` y el suministro de valores via `parameters`

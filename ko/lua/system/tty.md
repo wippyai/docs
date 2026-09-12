@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -64,7 +69,7 @@ end
 
 ## 입력 제어
 
-### tty.start()
+### `tty.start()`
 
 현재 포트의 입력 전달을 시작합니다. 물리 터미널은 원시 모드로 전환됩니다.
 
@@ -74,7 +79,7 @@ local ok, err = tty.start()
 
 **반환:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 입력 전달을 중지하고 터미널을 일반 모드로 복원합니다.
 
@@ -84,7 +89,7 @@ local ok, err = tty.stop()
 
 **반환:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 포트의 터미널 이벤트를 구독하고 채널을 반환합니다. 이벤트는 `type` 필드가 있는 테이블로 전달됩니다. 한 번 구독하고 채널을 재사용하세요.
 
@@ -106,7 +111,7 @@ local width, height, err = tty.screen_size()
 
 **반환:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 마우스 이벤트 추적을 활성화하거나 비활성화합니다.
 
@@ -343,9 +348,9 @@ assert(view:send({type = "close"}))
 ```lua
 {
     type = "key",
-    key = "a",           -- 인쇄 가능한 문자 또는 키 이름
-    key_type = "runes",  -- 인쇄 가능한 경우 "runes", 또는 특수 키 이름
-    action = "press",    -- "press" 또는 "release"
+    key = "a",           -- printable character or key name
+    key_type = "runes",  -- "runes" for printable, or special key name
+    action = "press",    -- "press" or "release"
     alt = false,
     ctrl = false,
     shift = false
@@ -360,7 +365,7 @@ assert(view:send({type = "close"}))
 {
     type = "mouse",
     action = "press",    -- "press", "release", "motion", "wheel"
-    button = "left",     -- 버튼 이름
+    button = "left",     -- button name
     x = 10,
     y = 5,
     alt = false,
@@ -423,20 +428,22 @@ local quit = tty.bind({
     help = {key = "q/ctrl+c", desc = "quit"}
 })
 
--- 이벤트 루프에서
+-- In event loop
 if quit:matches(ev) then
     break
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | 필드 | 타입 | 설명 |
 |-------|------|-------------|
-| `keys` | string[] | 매칭할 키 패턴 (예: `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | 필수. 매칭할 키 패턴 (예: `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | 선택. 도움말 텍스트용 `{key = "...", desc = "..."}` |
 
 **반환:** `KeyBinding`
+
+타입 스키마에서는 `keys`가 필수입니다. 런타임에서 생략되거나 빈 `keys` 테이블은 어떤 이벤트와도 일치하지 않는 바인딩을 만듭니다.
 
 ### KeyBinding 메서드
 
@@ -466,10 +473,11 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
 새 빈 스타일을 생성합니다.
 
@@ -547,9 +555,9 @@ tty.align.RIGHT   -- 1
 ### 측정
 
 ```lua
-local w = tty.text.width("hello")         -- 인쇄 가능한 너비 (ANSI 인식)
-local h = tty.text.height("a\nb\nc")      -- 줄 수
-local w, h = tty.text.size("hello\nworld") -- 둘 다
+local w = tty.text.width("hello")         -- printable width (ANSI-aware)
+local h = tty.text.height("a\nb\nc")      -- line count
+local w, h = tty.text.size("hello\nworld") -- both
 ```
 
 ### 클리핑
@@ -568,18 +576,18 @@ local middle = tty.text.cut(line, 10, 30)
 ### 결합
 
 ```lua
--- 위쪽으로 정렬하여 나란히 결합
+-- Join side by side, aligned at top
 local row = tty.text.join_horizontal(tty.text.position.TOP, left, right)
 
--- 가운데 정렬로 수직 스택
+-- Stack vertically, centered
 local col = tty.text.join_vertical(tty.text.position.CENTER, top, bottom)
 ```
 
 ### 최대 크기
 
 ```lua
-local w = tty.text.max_width({"short", "a longer string"})   -- 가장 넓은
-local h = tty.text.max_height({"one\ntwo", "single"})         -- 가장 높은
+local w = tty.text.max_width({"short", "a longer string"})   -- widest
+local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 ```
 
 ### 배치
@@ -587,13 +595,13 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- 가장 높은
 주어진 크기의 박스 내에 문자열을 배치합니다:
 
 ```lua
--- 80x24 박스의 가운데
+-- Center in a 80x24 box
 local out = tty.text.place(80, 24, tty.text.position.CENTER, tty.text.position.CENTER, content)
 
--- 수평만
+-- Horizontal only
 local out = tty.text.place_horizontal(80, tty.text.position.RIGHT, content)
 
--- 수직만
+-- Vertical only
 local out = tty.text.place_vertical(24, tty.text.position.BOTTOM, content)
 ```
 
@@ -607,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## 이미지, 페이지 및 위임된 뷰포트
+
+`surface:present(rows, options)`의 `options.images`에는 유지할 이미지 배치의
+전체 집합을 지정합니다. 각 배치에는 `placement_id`,
+`tty.image(png_bytes)`로 가져온 PNG handle, 대상 좌표와 크기가 있으며
+`src`, `z`, `alt`는 선택 사항입니다. `image:info()`, `image:read()`,
+`image:close()`는 metadata, 명시적인 PNG 내보내기, 참조 해제를 제공합니다.
+이후 `present`에서 `images`를 생략하면 이전 배치가 지워집니다.
+
+`surface:capabilities()`는 이미지 mode로 `native`, `kitty`, `pending`,
+`none` 중 하나를 반환합니다. `surface:clipboard(text)`는 physical surface에서
+최대 65,536바이트의 UTF-8 text를 OSC 52 clipboard 요청으로 보냅니다.
+virtual surface에서는 지원되지 않습니다.
+
+`tty.viewport()`는 불투명한 `#RRGGBB` 색상의
+`page = {foreground, background}`를 받고, `viewport:set_page(page)`로 page를
+변경합니다. snapshot에는 `images`, `layers`, `images_omitted`가 포함됩니다.
+`viewport:capture()`는 `capture:close()`까지 revision과 이미지 resource를
+유지하며, `capture:image(image_id)`는 독립적으로 소유되는 handle을 반환합니다.
+
+`viewport:mount(recipient_pid, rights)`는 local process 또는 인증된 mesh
+peer의 process에 바인딩된 일회용 참조를 발급합니다. `observe`, `input`,
+`resize` 권한은 서로 독립적이며 기본값은 false입니다.
+`viewport:revoke(reference)`로 참조를 취소할 수 있고, mount된 viewer는
+다시 위임할 수 없습니다.
+
 ## 권한
 
-이 모듈은 자체 정책 액션을 강제하지 않습니다. 터미널 접근은 프레임에서 옵니다: 터미널 호스트가 물리 포트를 연결하고, `process.with_options({terminal = grant})`가 뷰포트를 연결하며, 후자는 스폰하는 쪽에 `process.context`를 요구합니다.
+physical terminal은 process frame에서 제공됩니다.
+`process.with_options({terminal = grant})`로 producer를 연결하려면 spawn
+측에 `process.context`가 필요합니다. 위임된 viewport는 owner viewport
+handle에 대해 `tty.mount`, `tty.observe`, `tty.input`, `tty.resize`도 검사합니다.
 
 ## 참고
 

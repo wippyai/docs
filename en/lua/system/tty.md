@@ -42,21 +42,26 @@ local function handler()
     tty.start()
 
     while true do
-        local ev = events:receive()
-        if not ev then break end
+        local ev, open = events:receive()
+        if not open then break end
 
         if ev.type == "key" then
             if ev.key == "q" or (ev.ctrl and ev.key == "c") then
                 break
             end
-            io.print("Key: " .. ev.key)
+            local _, print_err = io.print("Key: " .. ev.key)
+            if print_err then loop_err = print_err; break end
 
         elseif ev.type == "resize" then
-            io.print("Size: " .. ev.width .. "x" .. ev.height)
+            local _, print_err = io.print("Size: " .. ev.width .. "x" .. ev.height)
+            if print_err then loop_err = print_err; break end
         end
     end
 
-    tty.stop()
+    local _, stop_err = tty.stop()
+    if loop_err then return nil, loop_err end
+    if stop_err then return nil, stop_err end
+    return started
 end
 ```
 
@@ -64,7 +69,7 @@ Call `events()` before `start()` so a consumer is ready when the first events ar
 
 ## Input Control
 
-### tty.start()
+### `tty.start()`
 
 Start input delivery for the current port. A physical terminal switches to raw mode.
 
@@ -74,7 +79,7 @@ local ok, err = tty.start()
 
 **Returns:** `boolean, error`
 
-### tty.stop()
+### `tty.stop()`
 
 Stop input delivery and restore the terminal to normal mode.
 
@@ -84,7 +89,7 @@ local ok, err = tty.stop()
 
 **Returns:** `boolean, error`
 
-### tty.events()
+### `tty.events()`
 
 Subscribe to the port's terminal events and return a channel. Events are delivered as tables with a `type` field. Subscribe once and reuse the channel.
 
@@ -98,7 +103,7 @@ local events, err = tty.events()
 
 ### tty.screen_size()
 
-Query current terminal dimensions.
+Read the current terminal dimensions.
 
 ```lua
 local width, height, err = tty.screen_size()
@@ -106,7 +111,7 @@ local width, height, err = tty.screen_size()
 
 **Returns:** `number, number, error`
 
-### tty.mouse(enable)
+### `tty.mouse(enable)`
 
 Enable or disable mouse event tracking.
 
@@ -151,6 +156,9 @@ Publish a complete array of row strings. Row `1` is the top line.
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -158,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|------|-------------|
 | `rows` | string[] | Complete frame, at most 16384 rows |
 | `options.cursor` | table | `{x, y, visible}` in one-based surface coordinates |
+| `options.images` | table[] | Complete retained-image placement set for the frame |
 
 Omitting `cursor` preserves the last explicit cursor state. All three cursor fields are required when `cursor` is present.
 
@@ -174,6 +183,49 @@ Forget backend presentation state without erasing the logical frame. The next `p
 Release the lease. Idempotent: later calls return the first close result. A physical backend restores terminal modes.
 
 **Returns:** `boolean, error`
+
+### surface:capabilities()
+
+Return `{images = "native" | "kitty" | "pending" | "none"}`. Start terminal
+input before probing. A physical backend may briefly return `pending` while it
+queries the terminal; virtual surfaces retain images without probing.
+
+**Returns:** `table, error`
+
+### surface:clipboard(text)
+
+Write an OSC 52 clipboard request on a physical surface. Text must be valid
+UTF-8 and at most 65,536 bytes. Success means the terminal output accepted the
+request; terminal policy may still ignore it. Virtual surfaces return an
+unsupported error, and the API provides no clipboard read or acknowledgement.
+
+**Returns:** `boolean, error`
+
+## Retained Images
+
+Import a PNG into bounded runtime storage, then place its handle in a complete
+surface frame:
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+
+assert(surface:present(rows, {images = {{
+    placement_id = "preview",
+    image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1,
+    alt = "Preview",
+}}}))
+```
+
+`tty.image()` validates PNG bytes asynchronously. `image:read()` explicitly
+exports the encoded bytes and `image:close()` releases the reference. Source
+pixel coordinates are zero-based; destination cell coordinates are one-based.
+Omitting `images` from a later `present` clears prior placements. Unsupported
+physical terminals display the placement's `alt` text, while virtual surfaces
+keep the image resource for viewers.
 
 ## Canvas
 
@@ -235,13 +287,18 @@ A viewport is a virtual terminal port. The creating process is its first viewer;
 ### tty.viewport(options?)
 
 ```lua
-local view, err = tty.viewport({width = 80, height = 24})
+local view, err = tty.viewport({
+    width = 80,
+    height = 24,
+    page = {foreground = "#e0def4", background = "#191724"},
+})
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `width` | number | 80 | Columns, 1 to 65535 |
 | `height` | number | 24 | Rows, 1 to 65535 |
+| `page` | table | none | Opaque `#RRGGBB` foreground and background defaults |
 
 The area is capped at 262,144 cells.
 
@@ -298,6 +355,14 @@ end
 | `height` | number | Viewport rows |
 | `rows` | string[] | Rows last published by the producer |
 | `cursor` | table | `{x, y, visible}` in one-based coordinates, absent until the producer publishes explicit cursor state |
+| `images` | table[] | Retained image placement metadata |
+| `layers` | table[] | Ordered presentation layers |
+| `images_omitted` | boolean | Image resources exist but are not retained by this plain snapshot |
+
+A page resolves terminal-default cells and omitted rows to explicit colors. The
+creator can change it with `viewport:set_page(page)`; passing `nil` restores the
+producer's original rows. Page changes advance the revision without requiring
+the producer to repaint.
 
 ### viewport:updates()
 
@@ -333,6 +398,41 @@ Update the viewport geometry. When the size changes, viewers get a new revision 
 Detach this viewer only. Closing the last viewer does not kill a live producer, and closing the producer's port does not destroy state while viewers remain.
 
 **Returns:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+Issue a process-bound reference for a local or remote viewer. Rights are
+independent and default to false:
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- In the exact recipient process, on this node or an authenticated mesh peer:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+A mount is bound to the recipient's full PID and can be redeemed only once.
+Mounted viewers cannot create producer grants or delegate further mounts.
+Remote mounts use a renewable lease; reconnecting requires a fresh mount and
+cannot replay terminal input. Use `viewport:revoke(reference)` to revoke an
+issued mount. Closing the owner viewport or ending the owner process revokes
+its mounts.
+
+### viewport:capture()
+
+Atomically pin a viewport revision and its retained image resources:
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+A plain `snapshot()` does not retain image bytes. A capture does until closed;
+image handles already acquired from it remain independently owned.
 
 ## Event Types
 
@@ -429,14 +529,16 @@ if quit:matches(ev) then
 end
 ```
 
-### tty.bind(config)
+### `tty.bind(config)`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `keys` | string[] | Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
+| `keys` | string[] | Required. Key patterns to match (e.g. `"a"`, `"ctrl+c"`, `"enter"`) |
 | `help` | table | Optional. `{key = "...", desc = "..."}` for help text |
 
 **Returns:** `KeyBinding`
+
+The type schema requires `keys`. At runtime, an omitted or empty `keys` table creates a binding that never matches.
 
 ### KeyBinding Methods
 
@@ -449,7 +551,7 @@ end
 
 ## Styles
 
-Create styled text output using lipgloss-based styling. All style methods return a new style (immutable).
+Create styled terminal output. Style values are immutable, so each style method returns a new value.
 
 ```lua
 local tty = require("tty")
@@ -466,12 +568,13 @@ local box = tty.style()
     :width(40)
     :padding(1, 2)
 
-io.print(box:render(title:render("Hello"), "World"))
+local _, print_err = io.print(box:render(title:render("Hello"), "World"))
+if print_err then return nil, print_err end
 ```
 
-### tty.style()
+### `tty.style()`
 
-Create a new empty style.
+Create an empty style.
 
 **Returns:** `Style`
 
@@ -542,7 +645,7 @@ tty.align.RIGHT   -- 1
 
 ## Text Utilities
 
-Layout and measurement functions for styled text. Available under `tty.text`.
+The `tty.text` subtable provides layout and measurement functions for styled text.
 
 ### Measurement
 
@@ -584,7 +687,7 @@ local h = tty.text.max_height({"one\ntwo", "single"})         -- tallest
 
 ### Placement
 
-Place a string within a box of given dimensions:
+Place a string within a box with the given dimensions:
 
 ```lua
 -- Center in a 80x24 box
@@ -609,7 +712,16 @@ tty.text.position.RIGHT    -- 1
 
 ## Permissions
 
-The module enforces no policy actions of its own. Access to a terminal comes from the frame: the terminal host attaches the physical port, and `process.with_options({terminal = grant})` attaches a viewport, which requires `process.context` on the spawning side.
+Access to a physical terminal comes from the process frame. Attaching a
+producer with `process.with_options({terminal = grant})` requires
+`process.context` on the spawning side. Delegated viewports additionally check:
+
+| Action | Resource | Description |
+|--------|----------|-------------|
+| `tty.mount` | Owner viewport handle | Issue a process-bound mount |
+| `tty.observe` | Owner viewport handle | Read snapshots, updates, and captures |
+| `tty.input` | Owner viewport handle | Forward input events |
+| `tty.resize` | Owner viewport handle | Resize the viewport |
 
 ## See Also
 

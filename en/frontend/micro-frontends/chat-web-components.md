@@ -1,13 +1,26 @@
 ---
 title: "Chat Web Components"
-description: "The Wippy chat UI is available as a set of composable custom elements, so any micro frontend (or any page running in a child context) can drop in a…"
+description: "Reference for embedding the host-provided chat, message list, composer, and session selector custom elements."
 ---
 
 # Chat Web Components
 
-The Wippy chat UI is available as a set of **composable custom elements**, so any micro frontend (or any page running in a child context) can drop in a live Wippy chat by tag — no Vue, no imports, no registration. They wrap the same components the host's own chat uses (a single source of truth), backed by the same `ChatTransport` → `SessionManager` data layer.
+**Classification: API reference with partial embedding examples.** The HTML
+and JavaScript blocks assume a hosted child where the chat element shell is
+available, a valid session UUID or agent start token, and application-owned
+mount and teardown code.
 
-These are ready-made elements you *consume* — unlike a [Web Component](./web-component.md) you build yourself, you do not author or register them. The host makes them available by tag in every child (see [How they load](#how-they-load)).
+The Wippy chat UI is available as **composable custom elements** in contexts
+where the Host injects the chat shell. A srcdoc iframe child can embed live
+chat by tag without Vue imports or registration. The elements use the same chat
+components and `ChatTransport` → `SessionManager` data layer as the host.
+
+These are host-provided elements to consume. Unlike a
+[Web Component](./web-component.md) that you build yourself, you do not author
+or register them. The srcdoc iframe injector makes them available by tag. The
+Web Fragment gateway in the pinned Framework release deliberately omits
+`chat.js`, so a Fragment page cannot assume these tags exist; use the host chat
+controls there instead (see [How they load](#how-they-load)).
 
 > Use these when you want a chat surface *inside your own page or panel*. To open the host's own chat panel imperatively instead, use `host.startChat(token)` / `host.openSession(sessionUUID)` from `@wippy-fe/proxy` (see [Proxy API](./proxy-api.md)).
 
@@ -24,15 +37,26 @@ Every element also accepts two per-instance theming attributes — **`custom-css
 
 ## How they load
 
-The chat elements ship exactly like [`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a tiny shell, `@wippy-fe/chat.js` (~21 KB), auto-registers all four tags and is injected into every child context via the host `scripts` array (alongside `loading.js` and `proxy.js`). So the tags are available by name in any child micro frontend with **zero per-app registration** — you do not install a package or call `customElements.define()`.
+The chat elements ship like
+[`<wippy-loading>`](../web-host/packages.md#wippy-feloading): a small
+`@wippy-fe/chat.js` shell auto-registers all four tags. The srcdoc iframe
+injector includes it in the host `scripts` array alongside `loading.js` and
+`proxy.js`, so iframe-delivered pages do not install a package or call
+`customElements.define()`.
 
-The heavy internals — the Vue tree plus PrimeVue, Shiki, and the markdown renderer (~2 MB) — are code-split into a separate `chat-internals.[hash].js` chunk and **lazy-loaded on first mount**. While the chunk downloads, the element shows a `<wippy-loading>` placeholder; if the load fails it shows `<wippy-error>`. Pages that never use a chat tag never pay for the internals.
+The Framework's Web Fragment gateway injects `loading.js` and
+`proxy-fragment.js`, but not `chat.js`. Fragment-delivered pages should use
+`host.startChat()` or `host.openSession()` unless a later platform contract
+adds an explicit chat-shell opt-in. Direct web components mounted in the host
+document must likewise not assume that another child realm registered the tags.
+
+The implementation dependencies are code-split into a separate `chat-internals.[hash].js` chunk and **lazy-loaded on first mount**. While the chunk downloads, the element shows a `<wippy-loading>` placeholder; if the load fails it shows `<wippy-error>`. Pages that never mount a chat tag do not load the internals.
 
 ## `<wippy-chat>`
 
-Reactive session control requires Web Host `1.0.51` or newer. Pin the matching
-`@wippy-fe/*` `0.0.51+` package family; older injected chat elements only
-support the initial mount reliably.
+Reactive session control requires Web Host `1.0.51` or newer. The element shell
+is a Host-injected asset rather than a public `@wippy-fe/chat` package; older
+Host releases only support the initial mount reliably.
 
 The full chat surface: header, scrollable message list, and composer.
 
@@ -101,7 +125,7 @@ input, scroll position, and element-owned lifecycle state across panel updates.
 
 ## `<wippy-chat-messages>` and `<wippy-chat-input>`
 
-The message list and the composer as separate elements, so you can lay them out yourself. Each takes a single `session-id`; with no explicit `session-id` they follow the [shared active session](#composition--shared-session) set by a `<wippy-session-selector>`. Neither emits events.
+The message list and the composer as separate elements, so you can lay them out yourself. Each takes a single `session-id`; with no explicit `session-id` they follow the [shared active session](#composition-and-shared-session) set by a `<wippy-session-selector>`. Neither emits events.
 
 ```html
 <!-- Custom layout: messages above, composer below -->
@@ -136,7 +160,7 @@ document.querySelector('wippy-session-selector')
   })
 ```
 
-## Composition & shared session
+## Composition and shared session
 
 Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`'s pick via the manager's shared `activeSessionId`. So a selector plus a chat (or a selector plus a separate messages + input) on one page stay in sync — pick a session in the selector and the others update. Elements that **do** carry an explicit `session-id` (or `start-token`) are pinned and ignore the selector.
 
@@ -159,13 +183,17 @@ Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`
 
 Each element renders in a shadow root, so host page styles do not leak in or out. Two mechanisms apply theme:
 
-- **Inherited CSS variables.** Theme custom properties (`--p-primary-*`, `--p-text-color`, …) inherit across the shadow boundary from the host theme, so the chat picks up the active palette and dark/light mode for free. Selector-based styles (PrimeVue, markdown, Tailwind) are bundled into a `chat-elements.css` sheet and injected into the shadow root. `PrimeVuePlugin` redirects the default body/null Portal target to a pinned overlay layer inside the owning shadow root. Do not set `appendTo: 'self'` routinely: that is an explicit inline-placement opt-in and can clip inside scrolling Dialog or Drawer content. Toasts are delegated to the **host's native toast** over the proxy rather than rendered in-shadow.
+- **Inherited CSS variables.** Theme custom properties (`--p-primary-*`, `--p-text-color`, …) inherit across the shadow boundary from the host theme, so the chat follows the active palette and dark/light mode. Selector-based styles (PrimeVue, markdown, Tailwind) are bundled into a `chat-elements.css` sheet and injected into the shadow root. `PrimeVuePlugin` redirects the default body/null Portal target to a pinned overlay layer inside the owning shadow root. Do not set `appendTo: 'self'` routinely: that is an explicit inline-placement opt-in and can clip inside scrolling Dialog or Drawer content. Toasts are delegated to the **host's native toast** over the proxy rather than rendered in-shadow.
 - **Per-instance overrides.** Every element accepts two attributes:
 
 | Attribute | Type | Effect |
 |-----------|------|--------|
 | `custom-css` | string | Raw CSS appended **last** into the element's shadow root, so it wins by order. |
 | `css-variables` | object (JSON) | Per-instance CSS variable overrides applied to `:host`. Keys may omit the leading `--`. |
+
+Treat both attributes as trusted application configuration. Do not copy
+untrusted user input into raw CSS or variable values; CSS can alter or obscure
+the embedded interface and can initiate external resource requests.
 
 ```html
 <wippy-chat
@@ -180,7 +208,12 @@ For the full theming model — semantic variables, dark/light flipping, and how 
 
 ## Runtime wiring
 
-Inside a Web Host child the elements need no setup. Auth and config come from the proxy globals the host already injects (`window.__WIPPY_APP_CONFIG__` / `window.__WIPPY_APP_API__`); REST and WebSocket use the config's env URLs. Dropping a chat tag onto the page is enough — the shell registers it, the internals lazy-load, and the chat connects with the child's existing session.
+Inside a srcdoc iframe child, the elements require no additional setup. Auth
+and config come from the injected proxy runtime; REST and WebSocket use the
+config's environment URLs. When a chat tag mounts, the already-registered
+shell loads the internals on demand and connects with the child's existing
+session. Web Fragment and direct-host contexts have the availability limits
+described in [How they load](#how-they-load).
 
 ## See Also
 

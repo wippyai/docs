@@ -85,9 +85,9 @@ entries:
 | `meta.group_order` | number | `9999` | グループのソート順 |
 | `meta.group_placement` | string | `"default"` | 配置：`"default"`、`"sidebar"` |
 | `meta.secure` | boolean | `false` | 認証が必要 |
-| `meta.public` | boolean | `false` | 公開アクセス可能 |
-| `meta.announced` | boolean | `= public` | ナビゲーションに表示 |
-| `meta.inline` | boolean | `false` | UI から非表示 |
+| `meta.public` | boolean | `false` | true の場合にページを announced にする。`meta.secure` のアクセス制御は迂回しない |
+| `meta.announced` | boolean | `false` | ナビゲーションに表示。現在の resolver は `announced or public` を使うため、`public: true` は明示した `announced: false` より優先 |
+| `meta.inline` | boolean | `false` | `/pages/list` が数値の `hidden` マーカーとして返す |
 | `meta.content_type` | string | `text/html` | レスポンスの MIME タイプ |
 | `meta.parent` | string | — | 親ページ ID |
 
@@ -95,11 +95,11 @@ entries:
 
 | フィールド | 説明 |
 |-------|-------------|
-| `data.set` | テンプレートセットのレジストリ ID |
+| `data.set` | 必須のテンプレートセットレジストリ ID |
 | `data.data_func` | ページデータを返す関数 ID |
 | `data.resources` | リソースレジストリ ID の配列 |
 
-`data_func` は `{ params, query }` を受け取り、テンプレート内の `data` コンテキストとなるテーブルを返します。
+`data_func` は `{ params, query }` を受け取り、テンプレート内の `data` コンテキストとなるテーブルを返します。`data.data_func` を省略した場合、または関数が `nil` を返した場合は空テーブルになります。設定済み関数を解決できない場合や、関数がエラーを返した場合はレンダリングを中止します。
 
 ### レンダリングパイプライン
 
@@ -107,7 +107,7 @@ entries:
 2. アクセス（セキュリティ）をチェックする
 3. 定義されていれば `data_func` を呼び出す
 4. リソースを収集する：グローバル + テンプレートセットのリソース + ページ固有のリソース
-5. 環境変数をロードする
+5. 環境変数をロードする（マッピング失敗はログに記録され、空の `env` テーブルになる）
 6. コンテキスト `{ data, resources, query_params, route_params, env }` で Jet テンプレートをレンダリングする
 
 ## コンポーネントページ
@@ -240,13 +240,13 @@ entries:
 
 ### リソース収集
 
-リソースは 3 層で収集され、順番にマージされます：
+リソースは次の 3 つのソースから累積的に選択されます。
 
 1. **グローバルリソース** — `global: true`、すべてのページに適用される
 2. **テンプレートセットリソース** — `template_set` ID で一致するもの
 3. **ページリソース** — `data.resources` 配列にリストされたもの
 
-各層の中で、リソースは `resource_type` でグループ化され、`order` でソートされます。
+収集後、リソースを `resource_type` でグループ化し、各グループ内を `order` でソートします。3 つのソース層が別の出力順序を作るわけではありません。
 
 ## 環境変数マッピング
 
@@ -279,7 +279,7 @@ entries:
 | 20–29 | アプリケーションマッピング | アプリケーション固有のマッピング |
 | 30–100 | 環境オーバーライド | ランタイムオーバーライド |
 
-複数のマッピングが同じコンテキストキーを定義する場合、優先度の高いほうが勝ちます。
+複数のマッピングが同じコンテキストキーを定義する場合、優先度の高いほうが勝ちます。同じ優先度で同じキーを複数回定義しないでください。同一優先度の順序は未定義です。
 
 ### テンプレートでの使用
 
@@ -386,12 +386,12 @@ FE がエンジンを選択してフラグメントをマウントします — 
 ページ定義内の相対 ID は、エントリの名前空間で修飾されます：
 
 ```yaml
-# 名前空間 "app" 内
+# In namespace "app"
 data:
-  data_func: my_data_func       # app:my_data_func に解決される
-  set: templates:default         # templates:default のまま（既に修飾済み）
+  data_func: my_data_func       # resolves to app:my_data_func
+  set: templates:default         # stays as templates:default (already qualified)
   resources:
-    - page_styles                # app:page_styles に解決される
+    - page_styles                # resolves to app:page_styles
 ```
 
 ## 関連項目

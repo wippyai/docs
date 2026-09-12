@@ -7,17 +7,22 @@ description: "Stream read/write operations for handling data efficiently. Stream
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Stream read/write operations for handling data efficiently. Stream objects are obtained from other modules (HTTP, filesystem, etc.).
+Streams provide incremental I/O for HTTP, filesystem, and other modules. The modules that own the underlying data create stream objects. This page is an API reference; the scanner loop uses an application-defined `process(token)` callback.
 
-## Loading
+## Obtaining a Stream
 
 ```lua
 -- From HTTP request body
-local stream = req:stream()
+local stream, err = req:stream()
+if err then return nil, err end
 
 -- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Reading
@@ -63,9 +68,9 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Flush buffered data to underlying storage.
+`flush` writes buffered data to the underlying destination.
 
-## Stream Info
+## Stream Information
 
 ```lua
 local info, err = stream:stat()
@@ -85,11 +90,11 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Close stream and release resources. Safe to call multiple times.
+`close` releases the stream's resources and can be called more than once.
 
 ## Scanner
 
-Create a tokenizer for stream content:
+Create a scanner that tokenizes stream content:
 
 ```lua
 local scanner, err = stream:scanner(split)
@@ -111,10 +116,18 @@ local err_msg = scanner:err()          -- scanner error if any
 while true do
     local has_token, err = scanner:scan()
     if err then return nil, err end
-    if not has_token then break end  -- EOF
+    if not has_token then
+        local scan_err = scanner:err()
+        if scan_err then return nil, scan_err end  -- raw scanner error string
+        break  -- clean EOF
+    end
     process(scanner:text())
 end
 ```
+
+When `scan()` returns `false`, check `scanner:err()` before treating the result
+as EOF. Tokenization and underlying read failures are stored on the scanner and
+do not appear in `scan()`'s second return value.
 
 ## Errors
 

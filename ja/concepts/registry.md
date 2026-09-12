@@ -1,24 +1,24 @@
 ---
 title: "レジストリ"
-description: "レジストリはWippyの中央設定ストアです。すべての定義（エントリポイント、サービス、リソース）がここに存在し、変更はシステム全体にリアクティブに伝播されます。"
+description: "Wippy が型付き entry を保存し、runtime resource を初期化し、configuration change を伝播する仕組み。"
 ---
 
 # レジストリ
 
-レジストリはWippyの中央設定ストアです。すべての定義（エントリポイント、サービス、リソース）がここに存在し、変更はシステム全体にリアクティブに伝播されます。
+registry は、entry point、service、resource、その他の runtime definition を保持する Wippy の versioned store です。多くの runtime entry kind は event-bus transaction を介して reconcile されます。`registry.entry` や namespace metadata などの internal kind は、既定では event dispatch を迂回します。
 
 ## エントリ
 
-レジストリは**エントリ**（一意のIDを持つ型付き定義）を保持します：
+registry は、一意の ID を持つ型付き definition である **entry** を保持します。
 
 ```
-app.api:get_user          → HTTPハンドラ
-app.workers:email_sender  → バックグラウンドプロセス
-app:database              → データベース接続
-app:templates             → テンプレートセット
+app.api:get_user          → HTTP handler
+app.workers:email_sender  → Background process
+app:database              → Database connection
+app:templates             → Template set
 ```
 
-各エントリには`ID`（namespace:name形式）、そのハンドラを決定する`kind`、任意の`meta`フィールド、およびkind固有の`data`があります。
+各 entry には `ID`（namespace:name 形式）、handler を決定する `kind`、任意の `meta` field、kind 固有の `data` があります。
 
 こうした作成者が記述するコンテンツとは別に、レジストリは各エントリについて独自の来歴情報を保持します。エントリの出自であるデプロイメントソースを示す`owner`と、デプロイメントが選択した依存関係宣言を示す`root`です。この状態はレジストリが割り当てるものであり、エントリの作成者が記述するものではありません。両者が混同されることのないよう、`meta`とは分離して保持されます。この情報は通常のエントリAPIではなく、スナップショット状態APIを通じて読み取ります — [レジストリモジュール](lua/core/registry.md#snapshot-state)を参照してください。
 
@@ -28,12 +28,14 @@ app:templates             → テンプレートセット
 
 ## ライブ更新
 
-レジストリはランタイムでの変更をサポートします。システムの実行中にエントリを追加、更新、または削除できます。変更はイベントバスを通じて流れ、リスナーはそれらを検証または拒否できます。トランザクションはアトミック性を保証します。バージョン履歴によりロールバックが可能です。
+system の実行中に entry を追加、更新、削除できます。dispatch 対象 kind では、registry transaction が commit 前に参加 handler へ各 operation の accept または reject を求めます。reject されると transaction を破棄し、逆向きの transition を適用します。関連する topology change からは、1 つの新しい registry version が生成されます。
 
-YAML定義ファイルは起動時にロードされるレジストリスナップショットのシリアライズです。プログラムによるアクセスについては[レジストリモジュール](lua/core/registry.md)を参照してください。
+history が有効な場合、version history により backward transition と forward transition ができます。既定の memory history は process lifetime の間だけ存続します。SQLite backend と PostgreSQL backend では restart 後も history が永続化されます。
 
-## 関連項目
+YAML および JSON definition file は、boot loader が entry に変換する source manifest です。serialized registry snapshot ではありません。programmatic access については[Registry module](lua/core/registry.md)を参照してください。
 
-- [YAML & プロジェクト構造](start/structure.md) - 定義ファイル
-- [カスタムエントリ種別](internals/kinds.md) - 種別ハンドラの実装
-- [プロセスモデル](concepts/process-model.md) - プロセスの動作
+## 関連項目 :id=see-also
+
+- [YAML とプロジェクト構造](start/structure.md) — definition file
+- [カスタムエントリ種別](internals/kinds.md) — kind handler の実装
+- [プロセスモデル](concepts/process-model.md) — process execution の理解

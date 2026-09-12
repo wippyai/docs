@@ -3,13 +3,15 @@ title: "Funciones Hash"
 description: "Funciones hash criptograficas y autenticación de mensajes HMAC."
 ---
 
-# Funciones Hash
+# Funciones hash
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="workflow"/>
 <secondary-label ref="encoding"/>
 
-Funciones hash criptograficas y autenticación de mensajes HMAC.
+El módulo `hash` calcula hashes criptográficos, valores HMAC, claves derivadas mediante PBKDF2 y hashes FNV-1 no criptográficos. Esta página es una referencia de API de llamadas aisladas. Las entradas literales ilustran usos correctos; cuando los datos, secretos, contraseñas o sales procedan de la aplicación, captura y maneja el segundo retorno `error` documentado antes de consumir el resultado.
+
+Un hash no es cifrado y no oculta entradas de baja entropía. No registres contraseñas, claves HMAC, claves derivadas ni resúmenes sin procesar que dependan de secretos. Usa HMAC-SHA256 o HMAC-SHA512 para nuevos diseños de autenticación de mensajes y PBKDF2 con una sal aleatoria única para verificadores de contraseñas.
 
 ## Carga
 
@@ -17,9 +19,11 @@ Funciones hash criptograficas y autenticación de mensajes HMAC.
 local hash = require("hash")
 ```
 
-## Hashes Criptograficos
+## Hashes criptográficos
 
 ### MD5
+
+MD5 no es resistente a colisiones. Úsalo solo por compatibilidad con protocolos que requieran MD5, no para tomar decisiones de seguridad.
 
 ```lua
 local hex = hash.md5("data")
@@ -34,6 +38,8 @@ local raw = hash.md5("data", true)
 **Devuelve:** `string, error`
 
 ### SHA-1
+
+SHA-1 no es resistente a colisiones. Úsalo solo por compatibilidad con protocolos que requieran SHA-1, no para tomar decisiones de seguridad.
 
 ```lua
 local hex = hash.sha1("data")
@@ -75,9 +81,11 @@ local raw = hash.sha512("data", true)
 
 **Devuelve:** `string, error`
 
-## Autenticación HMAC
+## HMAC
 
 ### HMAC-MD5
+
+Usa HMAC-MD5 solo por compatibilidad con un protocolo que lo requiera; prefiere HMAC-SHA256 o HMAC-SHA512 para nuevos diseños.
 
 ```lua
 local hex = hash.hmac_md5("message", "secret")
@@ -93,6 +101,8 @@ local raw = hash.hmac_md5("message", "secret", true)
 **Devuelve:** `string, error`
 
 ### HMAC-SHA1
+
+Usa HMAC-SHA1 solo por compatibilidad con un protocolo que lo requiera; prefiere HMAC-SHA256 o HMAC-SHA512 para nuevos diseños.
 
 ```lua
 local hex = hash.hmac_sha1("message", "secret")
@@ -137,11 +147,11 @@ local raw = hash.hmac_sha512("message", "secret", true)
 
 **Devuelve:** `string, error`
 
-## Hashes No Criptograficos
+## Hashes no criptográficos
 
-### FNV-32
+### FNV-1 de 32 bits
 
-Hash rapido para tablas hash y particionamiento.
+Calcula un hash para usos como tablas hash y particionamiento.
 
 ```lua
 local n = hash.fnv32("data")
@@ -153,9 +163,9 @@ local n = hash.fnv32("data")
 
 **Devuelve:** `number, error`
 
-### FNV-64
+### FNV-1 de 64 bits
 
-Hash rapido con salida mas grande para reducir colisiones.
+Calcula un hash más ancho para usos como tablas hash y particionamiento, lo que reduce la probabilidad de colisiones.
 
 ```lua
 local n = hash.fnv64("data")
@@ -194,4 +204,4 @@ local key, err = hash.pbkdf2(password, salt, iterations, key_length, "sha512")
 | Secreto no es string (HMAC) | `errors.INVALID` | no |
 | Contraseña/salt vacíos, iteraciones no positivas o excesivas, hash no soportado (PBKDF2) | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

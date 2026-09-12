@@ -3,15 +3,17 @@ title: "Almacen Clave-Valor"
 description: "Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal."
 ---
 
-# Almacen Clave-Valor
+# Almacén clave-valor
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 <secondary-label ref="io"/>
 <secondary-label ref="permissions"/>
 
-Almacenamiento clave-valor rapido con soporte de TTL. Ideal para cache, sesiones y estado temporal.
+El módulo `store` proporciona almacenamiento clave-valor con TTL opcionales. Puede contener datos en caché, sesiones y otro estado temporal.
 
-Para configuración del almacen, consulte [Almacen](system/store.md).
+Esta página es una referencia de API. Sus fragmentos presuponen un almacén configurado, los permisos indicados abajo y valores proporcionados por la aplicación, como `owner` o `new_value`. Los fragmentos posteriores a la adquisición usan un handle `cache` existente y activo; no son funciones independientes.
+
+Para configurar el almacén, consulta [Almacén](system/store.md).
 
 ## Carga
 
@@ -19,9 +21,9 @@ Para configuración del almacen, consulte [Almacen](system/store.md).
 local store = require("store")
 ```
 
-## Adquirir un Almacen
+## Adquisición de un almacén
 
-Obtener un recurso de almacen por ID de registro:
+Adquiere un recurso de almacén por su ID de registro:
 
 ```lua
 local cache, err = store.get("app:cache")
@@ -29,49 +31,63 @@ if err then
     return nil, err
 end
 
-cache:set("user:123", {name = "Alice"}, 3600)
-local user = cache:get("user:123")
+local _, set_err = cache:set("user:123", {name = "Alice"}, 3600)
+if set_err then
+    cache:release()
+    return nil, set_err
+end
+
+local user, get_err = cache:get("user:123")
 
 cache:release()
+if get_err then return nil, get_err end
+return user
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `id` | string | ID de recurso del almacen |
+| `id` | string | ID del recurso de almacén |
 
 **Devuelve:** `Store, error`
 
-## Almacenar Valores
+## Almacenamiento de valores
 
-Almacenar un valor con TTL opcional:
+Almacena un valor con un TTL opcional:
 
 ```lua
-local cache = store.get("app:cache")
+-- Simple set
+local _, err = cache:set("user:123:name", "Alice")
+if err then return nil, err end
 
--- Set simple
-cache:set("user:123:name", "Alice")
-
--- Set con TTL (expira en 300 segundos)
-cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+-- Set with TTL (expires in 300 seconds)
+local ok, ttl_err = cache:set("session:abc", {user_id = 123, role = "admin"}, 300)
+if ttl_err then return nil, ttl_err end
+return ok
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | `key` | string | Clave |
-| `value` | any | Valor (tablas, strings, numeros, booleanos) |
-| `ttl` | number | TTL en segundos (opcional, 0 = sin expiracion) |
+| `value` | any | Valor (tablas, cadenas, números, booleanos) |
+| `ttl` | number | TTL en segundos (opcional; 0 = sin expiración) |
 
 **Devuelve:** `boolean, error`
 
-## Recuperar Valores
+## Recuperación de valores
 
-Obtener un valor por clave:
+Recupera un valor por su clave:
 
 ```lua
-local user = cache:get("user:123")
-if not user then
-    -- Clave no encontrada o expirada
+local errors = require("errors")
+
+local user, err = cache:get("user:123")
+if err then
+    if err:kind() == errors.NOT_FOUND then
+        return nil -- key missing or expired
+    end
+    return nil, err
 end
+return user
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -82,9 +98,9 @@ end
 
 Devuelve `nil` y un error `errors.NOT_FOUND` si la clave no existe o ha expirado.
 
-## Verificar Existencia
+## Comprobación de existencia
 
-Verificar si una clave existe sin recuperar:
+Comprueba si una clave existe sin recuperar su valor:
 
 ```lua
 if cache:has("lock:" .. resource_id) then
@@ -98,12 +114,14 @@ end
 
 **Devuelve:** `boolean, error`
 
-## Eliminar Claves
+## Eliminación de claves
 
-Eliminar una clave del almacen:
+Elimina una clave del almacén:
 
 ```lua
-cache:delete("session:" .. session_id)
+local deleted, err = cache:delete("session:" .. session_id)
+if err then return nil, err end
+return deleted
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -112,7 +130,7 @@ cache:delete("session:" .. session_id)
 
 **Devuelve:** `boolean, error`
 
-Devuelve `true` si se elimino, `false` si la clave no existia.
+El método devuelve `true` cuando elimina la clave y `false` cuando la clave no existe.
 
 ## Lectura de Metadatos de Entrada
 
@@ -120,6 +138,7 @@ Devuelve `true` si se elimino, `false` si la clave no existia.
 
 ```lua
 local e, err = cache:entry("user:123")
+if err then return nil, err end
 if e then
     print(e.key, e.value, e.version)
 end
@@ -137,13 +156,16 @@ Lista entradas en orden determinista de claves, con paginación:
 
 ```lua
 local page, err = cache:list({ prefix = "session:", limit = 100 })
+if err then return nil, err end
 for _, e in ipairs(page.items) do
     print(e.key, e.value)
 end
 
--- siguiente página
+-- next page
 if page.has_more then
-    page = cache:list({ prefix = "session:", after = page.cursor })
+    local next_page, next_err = cache:list({ prefix = "session:", after = page.cursor })
+    if next_err then return nil, next_err end
+    page = next_page
 end
 ```
 
@@ -160,14 +182,17 @@ end
 `put` escribe un valor y devuelve su nueva `Entry`. Las opciones habilitan concurrencia optimista:
 
 ```lua
--- crear solo si la clave no existe
+local errors = require("errors")
+
+-- create only if the key does not exist
 local e, err = cache:put("lock:job-1", owner, { only_if_absent = true })
 if err and err:kind() == errors.ALREADY_EXISTS then
     -- otro la tiene
 end
 
--- compare-and-set: escribir solo si la versión aún coincide
-local cur = cache:entry("config")
+-- compare-and-set: write only if the version still matches
+local cur, read_err = cache:entry("config")
+if read_err then return nil, read_err end
 local e2, err2 = cache:put("config", new_value, { if_version = cur.version })
 if err2 and err2:kind() == errors.CONFLICT then
     -- un escritor concurrente la cambió; volver a leer y reintentar
@@ -193,10 +218,11 @@ Las escrituras condicionales requieren un almacén cuyo <code>info().conditional
 `info` reporta el backend y lo que soporta, de modo que el código puede adaptarse al almacén que esté vinculado:
 
 ```lua
-local info = cache:info()
--- info.backend      -> uno de store.backend.* (p. ej. "kv.raft")
--- info.consistency  -> uno de store.consistency.* (p. ej. "linearizable")
--- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleanos)
+local info, err = cache:info()
+if err then return nil, err end
+-- info.backend      -> one of store.backend.* (e.g. "kv.raft")
+-- info.consistency  -> one of store.consistency.* (e.g. "linearizable")
+-- info.durable / info.list / info.versioned / info.conditional_put / info.ttl  (booleans)
 ```
 
 **Devuelve:** `Info, error` — `{id, backend, consistency, durable, list, versioned, conditional_put, ttl}`
@@ -209,12 +235,14 @@ local info = cache:info()
 | `store.consistency` | `LINEARIZABLE`, `EVENTUAL`, `LOCAL`, `UNKNOWN` |
 
 ```lua
-if cache:info().consistency == store.consistency.LINEARIZABLE then
-    -- seguro usar compare-and-set
+local info, err = cache:info()
+if err then return nil, err end
+if info.consistency == store.consistency.LINEARIZABLE then
+    -- safe to use compare-and-set
 end
 ```
 
-## Metodos de Store
+## Métodos de Store
 
 | Método | Devuelve | Descripción |
 |--------|----------|-------------|
@@ -226,13 +254,13 @@ end
 | `has(key)` | `boolean, error` | Verificar si clave existe |
 | `delete(key)` | `boolean, error` | Eliminar clave |
 | `info()` | `Info, error` | Backend, consistencia y banderas de capacidad |
-| `release()` | `boolean` | Liberar almacen de vuelta al pool |
+| `release()` | `boolean` | Devolver el almacén al pool |
 
 ## Permisos
 
-Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
+La evaluación de políticas de seguridad se aplica a las operaciones del almacén.
 
-| Accion | Recurso | Atributos | Descripción |
+| Acción | Recurso | Atributos | Descripción |
 |--------|---------|-----------|-------------|
 | `store.get` | ID de Store | - | Adquirir un recurso de almacen |
 | `store.info` | ID de Store | - | Inspeccionar las capacidades del almacen |
@@ -246,7 +274,7 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 
 `store.get()` y todos los métodos del manejador de store (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) devuelven errores estructurados (usa `err:kind()`), salvo que una denegación de permiso en `store.get`, `get`, `set`, `has` y `delete` lanza un error de Lua en su lugar.
 
-| Condición | Tipo | Reintentable |
+| Condición | Clase | Reintentable |
 |-----------|------|--------------|
 | ID de recurso vacio | `errors.INVALID` | no |
 | Recurso no encontrado | `errors.INTERNAL` | no |
@@ -256,4 +284,4 @@ Las operaciones de almacen estan sujetas a evaluacion de politica de seguridad.
 | Discrepancia de `if_version` | `errors.CONFLICT` | sí |
 | Escritura condicional en un almacén sin soporte | `errors.INVALID` | no |
 
-Consulte [Manejo de Errores](lua/core/errors.md) para trabajar con errores.
+Consulta [Manejo de errores](lua/core/errors.md) para trabajar con errores.

@@ -20,10 +20,11 @@ WASM 모듈은 호스트 함수 임포트를 통해 런타임 기능에 접근�
 | `wasi:sockets` | `wasi:sockets/*` | component | TCP/UDP 네트워킹 및 DNS 확인 |
 | `wasi:http` | `wasi:http/*` | component | 아웃바운드 HTTP 클라이언트 요청 |
 | `funcs` | `wippy:runtime/funcs@0.1.0` | component | 게스트에서 레지스트리 함수 호출 |
+| `wippy:actor` | `wippy:actor/process@0.1.0` | component | PID 식별 및 제한된 Actor mailbox |
 | `wasi1` | `wasi_snapshot_preview1` | core | WASI Preview 1 호환 임포트 |
 | `socket` | `wippy:runtime/socket@0.1.0` | core | 정수 전용 임포트를 통한 인스턴스 소유 아웃바운드 TCP |
 
-여덟 개의 `wasi:*` 프로파일과 `funcs`는 component 전용입니다: core 모듈에 선언하면 엔트리가 실패합니다. `wasi1`과 `socket`은 core 임포트를 노출합니다.
+여덟 개의 `wasi:*` 프로파일, `funcs`, `wippy:actor`는 component 전용입니다: core 모듈에 선언하면 엔트리가 실패합니다. `wasi1`과 `socket`은 core 임포트를 노출합니다.
 
 각 프로파일은 짧은 이름으로도, 자신이 제공하는 인터페이스 네임스페이스 중 어느 것으로도, 그리고 버전이 붙은 네임스페이스로도 해석됩니다. 조회 전에 버전 접미사가 제거되므로 `wasi:io/poll`, `wasi:io/poll@0.2.3`, `wasi:poll`은 모두 같은 프로파일을 선택합니다.
 

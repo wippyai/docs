@@ -1,22 +1,24 @@
 ---
 title: "Sicherheitsmodell"
-description: "Wippy implementiert attributbasierte Zugriffskontrolle. Jede Anfrage trägt einen Actor (wer) und einen Scope (welche Richtlinien gelten). Richtlinien…"
+description: "Konfigurieren Sie attributbasierte Zugriffskontrolle mit Actors, Policy-Scopes, Bedingungen, Token-Stores und Strict Mode."
 ---
 
 # Sicherheitsmodell
 
-Wippy implementiert attributbasierte Zugriffskontrolle. Jede Anfrage trägt einen Actor (wer) und einen Scope (welche Richtlinien gelten). Richtlinien evaluieren Zugriff basierend auf Aktion, Ressource und Metadaten von Actor und Ressource.
+Wippy implementiert attributbasierte Zugriffskontrolle mit Actors und Policy-Scopes. Richtlinien bewerten Aktionen und Ressourcen anhand der Metadaten von Actor und Ressource.
+
+Diese Seite ist eine Konfigurations- und API-Referenz. Vollständige Beispiele benennen die benötigten Registry-Einträge; kürzere Lua- und YAML-Blöcke veranschaulichen eine einzelne Operation oder ein Konfigurationsfragment in einem bestehenden Sicherheitskontext.
 
 ```mermaid
 flowchart LR
-    A[Actor + Scope] --> PE[Richtlinien-Evaluierung] --> AD[Erlauben/Verweigern]
-    A -.->|Identität<br/>Metadaten| PE
-    PE -.->|Bedingungen<br/>actor, resource, action| AD
+    A[Actor + Scope] --> PE[Policy Evaluation] --> AD[Allow/Deny]
+    A -.->|Identity<br/>Metadata| PE
+    PE -.->|Conditions<br/>actor, resource, action| AD
 ```
 
 ## Entry-Typen
 
-| Kind | Beschreibung |
+| Art | Beschreibung |
 |------|--------------|
 | `security.policy` | Deklarative Richtlinie mit Bedingungen |
 | `security.policy.expr` | Expression-basierte Richtlinie |
@@ -24,12 +26,12 @@ flowchart LR
 
 ## Actors
 
-Ein Actor repräsentiert, wer eine Aktion ausführt.
+Ein Actor identifiziert die handelnde Identität.
 
 ```lua
 local security = require("security")
 
--- Actor mit Metadaten erstellen
+-- Create actor with metadata
 local actor = security.new_actor("user:123", {
     role = "admin",
     team = "backend",
@@ -37,7 +39,7 @@ local actor = security.new_actor("user:123", {
     clearance = 3
 })
 
--- Actor-Eigenschaften abrufen
+-- Access actor properties
 local id = actor:id()        -- "user:123"
 local meta = actor:meta()    -- {role="admin", ...}
 ```
@@ -45,7 +47,9 @@ local meta = actor:meta()    -- {role="admin", ...}
 ### Actor im Kontext
 
 ```lua
--- Aktuellen Actor aus Kontext abrufen
+-- Get current actor from context
+local errors = require("errors")
+
 local actor = security.actor()
 if not actor then
     return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Kein Actor im Kontext" })
@@ -64,7 +68,7 @@ version: "1.0"
 namespace: app.security
 
 entries:
-  # Admin-Vollzugriff
+  # Admin full access
   - name: admin_policy
     kind: security.policy
     policy:
@@ -78,7 +82,7 @@ entries:
     groups:
       - admin
 
-  # Nur-Lese-Zugriff
+  # Read-only access
   - name: readonly_policy
     kind: security.policy
     policy:
@@ -91,7 +95,7 @@ entries:
     groups:
       - default
 
-  # Ressourcen-Eigentümer-Zugriff
+  # Resource owner access
   - name: owner_policy
     kind: security.policy
     policy:
@@ -108,7 +112,7 @@ entries:
     groups:
       - default
 
-  # Vertraulich ohne Freigabe verweigern
+  # Deny confidential without clearance
   - name: deny_confidential
     kind: security.policy
     policy:
@@ -128,7 +132,7 @@ entries:
 
 ### Richtlinienstruktur
 
-```yaml
+```text
 policy:
   actions: "*" | "action" | ["action1", "action2"]
   resources: "*" | "resource" | ["res1", "res2"]
@@ -137,7 +141,7 @@ policy:
     - field: "field.path"
       operator: "eq"
       value: "static_value"
-      # ODER
+      # OR
       value_from: "other.field.path"
 ```
 
@@ -164,7 +168,7 @@ Für komplexe Logik verwenden Sie Expression-Richtlinien:
 
 ## Bedingungen
 
-Bedingungen ermöglichen dynamische Richtlinien-Evaluierung basierend auf Actor, Aktion, Ressource und Metadaten.
+Bedingungen werten zur Laufzeit Actor-, Aktions-, Ressourcen- und Metadatenfelder aus.
 
 ### Feldpfade
 
@@ -198,25 +202,25 @@ Bedingungen ermöglichen dynamische Richtlinien-Evaluierung basierend auf Actor,
 ### Bedingungsbeispiele
 
 ```yaml
-# Actor-Rolle matchen
+# Match actor role
 conditions:
   - field: actor.meta.role
     operator: eq
     value: admin
 
-# Felder vergleichen
+# Compare fields
 conditions:
   - field: meta.owner
     operator: eq
     value_from: actor.id
 
-# Numerischer Vergleich
+# Numeric comparison
 conditions:
   - field: actor.meta.clearance
     operator: gte
     value: 3
 
-# Array-Mitgliedschaft
+# Array membership
 conditions:
   - field: actor.meta.role
     operator: in
@@ -224,13 +228,13 @@ conditions:
       - admin
       - moderator
 
-# Muster-Matching
+# Pattern matching
 conditions:
   - field: resource
     operator: matches
     value: "^api:/v[0-9]+/admin/.*"
 
-# Mehrere Bedingungen (UND)
+# Multiple conditions (AND)
 conditions:
   - field: actor.meta.department
     operator: eq
@@ -242,21 +246,23 @@ conditions:
 
 ## Scopes
 
-Scopes kombinieren mehrere Richtlinien zu einem Sicherheitskontext.
+Ein Scope kombiniert Richtlinien zu einem Sicherheitskontext.
 
 ```lua
 local security = require("security")
 
--- Richtlinien abrufen
-local admin_policy = security.policy("app.security:admin_policy")
-local readonly_policy = security.policy("app.security:readonly_policy")
+-- Get policies
+local admin_policy, admin_err = security.policy("app.security:admin_policy")
+if admin_err then return nil, admin_err end
+local readonly_policy, readonly_err = security.policy("app.security:readonly_policy")
+if readonly_err then return nil, readonly_err end
 
--- Scope mit Richtlinien erstellen
+-- Create scope with policies
 local scope = security.new_scope()
 scope = scope:with(admin_policy)
 scope = scope:with(readonly_policy)
 
--- Scopes sind unveränderlich - :with() gibt neuen Scope zurück
+-- Scopes are immutable - :with() returns new scope
 ```
 
 ### Benannte Scopes (Richtliniengruppen)
@@ -264,8 +270,9 @@ scope = scope:with(readonly_policy)
 Alle Richtlinien aus einer Gruppe laden:
 
 ```lua
--- Scope mit allen Richtlinien in Gruppe laden
+-- Load scope with all policies in group
 local scope, err = security.named_scope("app.security:admin")
+if err then return nil, err end
 ```
 
 Richtlinien werden Gruppen über das `groups`-Feld zugewiesen:
@@ -276,25 +283,38 @@ Richtlinien werden Gruppen über das `groups`-Feld zugewiesen:
   policy:
     # ...
   groups:
-    - admin      # Diese Richtlinie ist in "admin"-Gruppe
-    - default    # Kann in mehreren Gruppen sein
+    - admin      # This policy is in "admin" group
+    - default    # Can be in multiple groups
 ```
 
 ### Scope-Operationen
 
 ```lua
--- Richtlinie hinzufügen
+-- Add policy
 local new_scope = scope:with(policy)
 
--- Richtlinie entfernen
+-- Remove policy
 local new_scope = scope:without("app.security:temp_policy")
 
--- Prüfen ob Richtlinie im Scope ist
+-- Check if policy is in scope
 local has = scope:contains("app.security:admin_policy")
 
--- Alle Richtlinien abrufen
+-- Get all policies
 local policies = scope:policies()
 ```
+
+### Modulberechtigungen
+
+Im Strict Mode werden Berechtigungsprüfungen sowohl auf die Erstellung von Actors, Richtlinien und Scopes als auch auf Token-Operationen angewendet:
+
+| Aktion | Ressource | Verwendet von | Verhalten bei Verweigerung |
+|--------|-----------|---------------|----------------------------|
+| `security.actor.create` | Actor-ID | `security.new_actor` | Löst einen Lua-Fehler aus |
+| `security.policy.get` | Policy-Registry-ID | `security.policy` | Gibt `nil, error` zurück |
+| `security.policy_group.get` | Policy-Gruppen-ID | `security.named_scope` | Gibt `nil, error` zurück |
+| `security.scope.create` | `custom`, `with` oder `without` | `security.new_scope`, `scope:with` beziehungsweise `scope:without` | Löst einen Lua-Fehler aus |
+
+Gewähren Sie ausschließlich die Operationen und IDs, die ein Aufrufer benötigt. Die Actor-, Scope- und Token-Beispiele auf dieser Seite setzen diese Berechtigungen zusätzlich zu ihren operationsspezifischen Token-Berechtigungen voraus.
 
 ## Richtlinien-Evaluierung
 
@@ -319,7 +339,9 @@ Eine Zugriffsprüfung besteht nur bei `Allow`. `Undefined` verweigert den Zugrif
 | `undefined` | Keine Richtlinie passte |
 
 ```lua
--- Direkt evaluieren
+local errors = require("errors")
+
+-- Evaluate directly
 local result = scope:evaluate(actor, "read", "document:123", {
     owner = "user:456",
     classification = "internal"
@@ -335,7 +357,9 @@ end
 ### Schnelle Berechtigungsprüfung
 
 ```lua
--- Gegen Actor und Scope des aktuellen Kontexts prüfen
+local errors = require("errors")
+
+-- Check against current context's actor and scope
 local allowed = security.can("read", "document:123", {
     owner = "user:456"
 })
@@ -347,7 +371,9 @@ end
 
 ## Token-Stores
 
-Token-Stores bieten sichere Token-Erstellung, -Validierung und -Widerruf.
+Token-Stores erstellen, validieren und widerrufen Authentifizierungs-Tokens.
+
+Die Lua-Operationen sind berechtigungsgeschützt. Der aktive Scope muss `security.token_store.get` für den Zugriff sowie `security.token.create`, `security.token.validate` beziehungsweise `security.token.revoke` für die jeweilige Operation erlauben. Dies gilt sowohl im standardmäßigen Strict Mode als auch in ausdrücklich konfigurierten Sicherheitskontexten. Beispiele, die einen Actor erstellen oder einen benannten Scope laden, benötigen außerdem `security.actor.create` und `security.policy_group.get`.
 
 ### Konfiguration
 
@@ -357,7 +383,7 @@ version: "1.0"
 namespace: app.auth
 
 entries:
-  # Umgebungsvariable registrieren
+  # Register environment variable
   - name: os_env
     kind: env.storage.os
 
@@ -366,13 +392,13 @@ entries:
     variable: AUTH_SECRET_KEY
     storage: app.auth:os_env
 
-  # Backing-Store für Tokens
+  # Backing store for tokens
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # Token-Store
+  # Token store
   - name: tokens
     kind: security.token_store
     store: app.auth:token_data
@@ -397,82 +423,95 @@ Verwende `token_key: ${env:NAME}` in Produktion, um Geheimnisse nicht in Einträ
 ```lua
 local security = require("security")
 
--- Token-Store abrufen
+-- Get token store
 local store, err = security.token_store("app.auth:tokens")
 if err then
     return nil, err
 end
 
--- Actor und Scope erstellen
+-- Create actor and scope
 local actor = security.new_actor("user:123", {
     role = "user",
     email = "user@example.com"
 })
 
-local scope, _ = security.named_scope("app.security:default")
+local scope, scope_err = security.named_scope("app.security:default")
+if scope_err then
+    store:close()
+    return nil, scope_err
+end
 
--- Token erstellen
-local token, err = store:create(actor, scope, {
-    expiration = "7d",  -- Standard-Ablauf überschreiben
+-- Create token
+local token, create_err = store:create(actor, scope, {
+    expiration = "7d",  -- Override default expiration
     meta = {
         device = "mobile",
         ip = "192.168.1.1"
     }
 })
+store:close()
+if create_err then return nil, create_err end
+return token
 
-if err then
-    return nil, err
-end
-
--- Token-Format: base64_token.hmac_signature (wenn token_key gesetzt)
--- Beispiel: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
+-- Token format: base64_token.hmac_signature (if token_key set)
+-- Example: "dGVzdHRva2VuMTIz.a1b2c3d4e5f6"
 ```
 
 ### Tokens validieren
 
 ```lua
--- Token validieren
+local errors = require("errors")
+
+-- Validate token
 local actor, scope, err = store:validate(token)
+store:close()
 if err then
     return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Ungültiges Token" })
 end
 
--- Actor und Scope werden aus gespeicherten Daten rekonstruiert
+-- Actor and scope are reconstructed from stored data
 print(actor:id())  -- "user:123"
 ```
 
 ### Tokens widerrufen
 
 ```lua
--- Einzelnes Token widerrufen
+-- Revoke single token
 local ok, err = store:revoke(token)
+if err then
+    store:close()
+    return nil, err
+end
 
--- Store schließen wenn fertig
+-- Close store when done
 store:close()
+return ok
 ```
 
 ## Kontextfluss
 
-Sicherheitskontext propagiert durch Funktionsaufrufe.
+Actor und Scope sind vererbbarer Frame-Kontext. Funktionsaufrufe und erzeugte Prozesse erben beide, sofern der Aufrufer keinen Ersatzkontext bereitstellt. Das ausdrückliche Ändern des Actors oder Scopes eines erzeugten Prozesses erfordert die Berechtigung `process.security`. Das Ändern des Sicherheitskontexts eines Funktionsaufrufs über `funcs.new():with_actor(...)` oder `:with_scope(...)` erfordert stattdessen `funcs.security` für `security`.
 
 ### Kontext setzen
 
 ```lua
 local funcs = require("funcs")
 
--- Funktion mit Sicherheitskontext aufrufen
-local result, err = funcs.new()
-    :with_actor(actor)
-    :with_scope(scope)
-    :call("app.api:protected_endpoint", data)
+-- Call function with security context
+local caller, err = funcs.new():with_actor(actor)
+if err then return nil, err end
+caller, err = caller:with_scope(scope)
+if err then return nil, err end
+local result, call_err = caller:call("app.api:protected_endpoint", data)
+if call_err then return nil, call_err end
 ```
 
 ### Kontextvererbung
 
 | Komponente | Vererbt |
 |------------|---------|
-| Actor | Ja - wird an Kindaufrufe weitergegeben |
-| Scope | Ja - wird an Kindaufrufe weitergegeben |
+| Actor | Ja - wird an Kindaufrufe und erzeugte Prozesse weitergegeben |
+| Scope | Ja - wird an Kindaufrufe und erzeugte Prozesse weitergegeben |
 | Strikter Modus | Nein - anwendungsweit |
 
 Funktionen und gestartete Prozesse erben beide den Sicherheitskontext des Aufrufers. Ein gestarteter Prozess beginnt auf einem Frame, der vom Frame des Starters abgezweigt ist und dessen Actor und Scope trägt, und der `security:`-Block seines eigenen Entries modifiziert diesen geerbten Kontext. Deklariert der Entry keinen Block, behält der Prozess Actor und Scope des Starters unverändert; ein Starter, der keines von beiden hat, erzeugt ein Kind ohne beides, was der strikte Modus verweigert. Ein deklarierter Block, der einen `actor` benennt, ersetzt den geerbten Actor, und seine `policies` und `groups` werden in den geerbten Scope gemergt; ein Block, der `actor` weglässt, behält den Actor des Starters, und einer, der sowohl `policies` als auch `groups` weglässt, behält dessen Scope.
@@ -563,28 +602,49 @@ local http = require("http")
 local security = require("security")
 
 local function protected_handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- Token extrahieren und validieren
-    local auth = req:header("Authorization")
+    local function respond(status, body)
+        local content_type_err = res:set_header("Content-Type", "application/json")
+        if content_type_err then return nil, content_type_err end
+        local status_err = res:set_status(status)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json(body)
+        if write_err then return nil, write_err end
+        return true
+    end
+
+    -- Extract and validate token
+    local auth, header_err = req:header("Authorization")
+    if header_err then return nil, header_err end
     if not auth then
-        return res:set_status(401):write_json({error = "Autorisierung fehlt"})
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Missing authorization"})
     end
 
-    local token = auth:gsub("^Bearer%s+", "")
-    local store, _ = security.token_store("app.auth:tokens")
-    local actor, scope, err = store:validate(token)
-    if err then
-        return res:set_status(401):write_json({error = "Ungültiges Token"})
+    local token = auth:match("^Bearer%s+(.+)$")
+    if not token then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Expected a bearer token"})
+    end
+    local store, store_err = security.token_store("app.auth:tokens")
+    if store_err then
+        return respond(http.STATUS.INTERNAL_ERROR, {error = "Token store unavailable"})
     end
 
-    -- Berechtigung prüfen
-    if not security.can("api.users.read", "users") then
-        return res:set_status(403):write_json({error = "Verboten"})
+    local actor, scope, validate_err = store:validate(token)
+    store:close()
+    if validate_err then
+        return respond(http.STATUS.UNAUTHORIZED, {error = "Invalid token"})
     end
 
-    res:write_json({user = actor:id()})
+    -- Evaluate the actor and scope reconstructed from this token.
+    if scope:evaluate(actor, "api.users.read", "users") ~= "allow" then
+        return respond(http.STATUS.FORBIDDEN, {error = "Forbidden"})
+    end
+
+    return respond(http.STATUS.OK, {user = actor:id()})
 end
 
 return { handler = protected_handler }
@@ -594,10 +654,15 @@ Token-Erstellung beim Login:
 
 ```lua
 local actor = security.new_actor("user:" .. user.id, {role = user.role})
-local scope, _ = security.named_scope("app.security:" .. user.role)
+local scope, scope_err = security.named_scope("app.security:" .. user.role)
+if scope_err then return nil, scope_err end
 
-local store, _ = security.token_store("app.auth:tokens")
-local token, err = store:create(actor, scope, {expiration = "24h"})
+local store, store_err = security.token_store("app.auth:tokens")
+if store_err then return nil, store_err end
+local token, token_err = store:create(actor, scope, {expiration = "24h"})
+store:close()
+if token_err then return nil, token_err end
+return token
 ```
 
 ## Vertrauensgrenzen der Runtime

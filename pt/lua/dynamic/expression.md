@@ -32,7 +32,11 @@ local result = expr.eval("1 + 2 * 3")  -- 7
 local total = expr.eval("price * quantity", {
     price = 29.99,
     quantity = 3
-})  -- 89.97
+})
+if total_err then
+    return nil, total_err
+end
+-- total == 89.97
 
 -- Expressões booleanas
 local is_adult = expr.eval("age >= 18", {age = 21})  -- true
@@ -46,12 +50,11 @@ local greeting = expr.eval('name + " is " + status', {
 -- Operador ternário
 local label = expr.eval('score > 90 ? "A" : score > 80 ? "B" : "C"', {
     score = 85
-})  -- "B"
-
--- Operações com array
-local has_admin = expr.eval('"admin" in roles', {
-    roles = {"user", "admin", "viewer"}
-})  -- true
+})
+if label_err then
+    return nil, label_err
+end
+-- label == "B"
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -66,16 +69,23 @@ local has_admin = expr.eval('"admin" in roles', {
 Compilar uma expressão em um objeto Program reutilizável para avaliação repetida:
 
 ```lua
--- Compilar uma vez para uso repetido
+-- Compile once for repeated use
 local discount_calc, err = expr.compile("price * (1 - discount_rate)")
 if err then
     return nil, err
 end
 
--- Reutilizar com diferentes inputs
-local price1 = discount_calc:run({price = 100, discount_rate = 0.1})  -- 90
-local price2 = discount_calc:run({price = 50, discount_rate = 0.2})   -- 40
-local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
+-- Reuse with different inputs
+local price1, run_err = discount_calc:run({price = 100, discount_rate = 0.1})
+if run_err then
+    return nil, run_err
+end
+
+local price2, second_run_err = discount_calc:run({price = 50, discount_rate = 0.2})
+if second_run_err then
+    return nil, second_run_err
+end
+-- price1 == 90 and price2 == 40
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -90,23 +100,36 @@ local price3 = discount_calc:run({price = 200, discount_rate = 0.15}) -- 170
 Executar uma expressão compilada com ambiente fornecido:
 
 ```lua
--- Regra de validação
-local validator, _ = expr.compile("len(password) >= 8 and len(password) <= 128")
+-- Validation rule
+local validator, compile_err = expr.compile("len(password) >= 8 and len(password) <= 128")
+if compile_err then
+    return nil, compile_err
+end
 
-local valid1 = validator:run({password = "short"})       -- false
-local valid2 = validator:run({password = "securepass123"}) -- true
+local valid, run_err = validator:run({password = "securepass123"})
+if run_err then
+    return nil, run_err
+end
+-- valid == true
 
--- Regra de precificação
-local pricer, _ = expr.compile([[
+-- Pricing rule
+local pricer, pricing_compile_err = expr.compile([[
     base_price * quantity * (1 - bulk_discount) + shipping
 ]])
+if pricing_compile_err then
+    return nil, pricing_compile_err
+end
 
-local order_total = pricer:run({
+local order_total, pricing_run_err = pricer:run({
     base_price = 25.00,
     quantity = 10,
     bulk_discount = 0.15,
     shipping = 12.50
-})  -- 225.00
+})
+if pricing_run_err then
+    return nil, pricing_run_err
+end
+-- order_total == 225.00
 ```
 
 | Parâmetro | Tipo | Descrição |
@@ -134,10 +157,14 @@ expr.eval('lower("HELLO")')      -- "hello"
 expr.eval('trim("  hi  ")')      -- "hi"
 expr.eval('"hello" contains "ell"')  -- true
 
--- Funções de array
-expr.eval("len(items)", {items = {1,2,3}})  -- 3
-expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
+local total, sum_err = expr.eval("sum(values)", {values = {1, 2, 3, 4}})
+if sum_err then
+    return nil, sum_err
+end
+-- maximum == 5, uppercase == "HELLO", and total == 10
 ```
+
+Outras funções integradas incluem `min`, `abs`, `ceil`, `floor`, `len`, `lower` e `trim`. Expr-lang também oferece operadores como `contains` para strings e `in` para testes de pertencimento.
 
 ## Erros
 
@@ -149,4 +176,3 @@ expr.eval("sum(values)", {values = {1,2,3,4}})  -- 10
 | Conversão de resultado falhou | `errors.INTERNAL` | não |
 
 Veja [Error Handling](lua/core/errors.md) para trabalhar com erros.
-

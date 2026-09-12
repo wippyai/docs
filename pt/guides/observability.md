@@ -1,6 +1,6 @@
 ---
 title: "Observabilidade"
-description: "Configure logging, métricas e tracing distribuído para aplicações Wippy."
+description: "Configure logs do Wippy, métricas Prometheus, tracing OpenTelemetry e estatísticas do runtime."
 ---
 
 # Observabilidade
@@ -23,7 +23,7 @@ O Wippy fornece três pilares de observabilidade configurados no boot:
 
 ```yaml
 logger:
-  encoding: json       # json ou console
+  encoding: json       # json or console
 ```
 
 O nível e a saída são controlados por flags da CLI (`-v`, `-c`, `-s`) — apenas `encoding` é lido do yaml.
@@ -40,6 +40,8 @@ logmanager:
 ```
 
 Quando `stream_to_events` está habilitado, entradas de log se tornam eventos que processos podem assinar via barramento de eventos.
+
+O padrão incorporado do gerenciador de logs é `-1`, mas `wippy run` aplica sua escolha de logging do CLI na inicialização: info (`0`) por padrão e debug (`-1`) com `-v` ou `--very-verbose`.
 
 ### Contexto Automático
 
@@ -81,11 +83,11 @@ OTEL fornece tracing distribuído e exportação opcional de métricas.
 otel:
   enabled: true
   endpoint: "localhost:4318"
-  protocol: http/protobuf      # grpc ou http/protobuf
+  protocol: http/protobuf      # grpc or http/protobuf
   service_name: my-app
   service_version: "1.0.0"
-  insecure: false              # Permite conexões sem TLS
-  sample_rate: 1.0             # 0.0 a 1.0
+  insecure: true               # Use plaintext for a local collector
+  sample_rate: 1.0             # 0.0 to 1.0
   traces_enabled: true
   metrics_enabled: false
   propagators:
@@ -103,26 +105,28 @@ otel:
   endpoint: "localhost:4318"
   service_name: my-app
 
-  # Tracing de requisições HTTP
+  # HTTP request tracing
   http:
     enabled: true
-    extract_headers: true      # Lê contexto de trace de entrada
-    inject_headers: true       # Escreve contexto de trace de saída
+    extract_headers: true      # Read incoming trace context
+    inject_headers: true       # Write trace context to the HTTP response
 
-  # Tracing de ciclo de vida de processos
+  # Process lifecycle tracing
   process:
     enabled: true
-    trace_lifecycle: true      # Rastreia eventos spawn/exit
+    trace_lifecycle: true      # Trace spawn/exit events
 
-  # Tracing de mensagens de fila
+  # Queue message tracing
   queue:
     enabled: true
 
-  # Tracing de chamadas de função
+  # Function call tracing
   interceptor:
     enabled: true
     order: 100                 # Ordem de execução do interceptador
 ```
+
+Quando OTEL está habilitado, tracing e propagação HTTP, tracing de processos e spans de ciclo de vida, interceptação de funções, tracing de filas e exportação de traces ficam habilitados por padrão. Tracing Temporal e exportação de métricas ficam desabilitados por padrão. O runtime fixado registra o interceptor de funções na ordem 100; embora um valor `interceptor.order` possa ser decodificado da configuração, ele não altera essa ordem de registro.
 
 ### Workflows Temporal
 
@@ -172,10 +176,12 @@ OTEL pode ser configurado via ambiente:
 | Variável | Descrição |
 |----------|-----------|
 | `OTEL_SDK_DISABLED` | Defina como `true` para desabilitar OTEL |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint do coletor |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint do coletor; um schema `http://` ou `https://` é removido antes da configuração do exporter |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` ou `http/protobuf` |
+| `OTEL_EXPORTER_OTLP_INSECURE` | Defina como `true` para usar uma conexão sem criptografia com o coletor |
 | `OTEL_SERVICE_NAME` | Nome do serviço |
 | `OTEL_SERVICE_VERSION` | Versão do serviço |
+| `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` ou `parentbased_traceidratio` |
 | `OTEL_TRACES_SAMPLER_ARG` | Taxa de amostragem (0.0-1.0) |
 | `OTEL_TRACES_SAMPLER` | `always_on`, `always_off`, `traceidratio` ou `parentbased_traceidratio` (razão vinda de `OTEL_TRACES_SAMPLER_ARG`) |
 | `OTEL_EXPORTER_OTLP_INSECURE` | Defina como `true` para permitir conexões sem TLS |
@@ -188,16 +194,18 @@ O módulo `system` fornece estatísticas internas do runtime:
 ```lua
 local system = require("system")
 
--- Estatísticas de memória
-local mem = system.memory.stats()
+-- Memory statistics
+local mem, mem_err = system.memory.stats()
 -- mem.alloc, mem.heap_alloc, mem.heap_objects, etc.
 
--- Contagem de goroutines
-local count = system.runtime.goroutines()
+-- Goroutine count
+local count, count_err = system.runtime.goroutines()
 
--- Estados do supervisor
-local states = system.supervisor.states()
+-- Supervisor states
+local states, states_err = system.supervisor.states()
 ```
+
+Essas funções retornam `value, error`. Elas exigem a permissão `system.read` no escopo de segurança atual.
 
 ## Veja Também
 

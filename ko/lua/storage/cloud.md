@@ -22,7 +22,7 @@ local cloudstorage = require("cloudstorage")
 
 ## 스토리지 획득
 
-레지스트리 ID로 클라우드 스토리지 리소스 가져오기:
+레지스트리 ID로 클라우드 스토리지 리소스를 획득합니다:
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -30,8 +30,10 @@ if err then
     return nil, err
 end
 
-storage:upload_object("data/file.txt", "content")
+local uploaded, upload_err = storage:upload_object("data/file.txt", "content")
 storage:release()
+if upload_err then return nil, upload_err end
+return uploaded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -42,26 +44,52 @@ storage:release()
 
 ## 오브젝트 업로드
 
-문자열 또는 파일에서 콘텐츠 업로드:
+문자열 또는 파일에서 콘텐츠를 업로드합니다:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local json = require("json")
 
--- 문자열 콘텐츠 업로드
-local ok, err = storage:upload_object("reports/daily.json", json.encode({
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+
+-- Upload string content
+local body, encode_err = json.encode({
     date = "2024-01-15",
     total = 1234
-}))
+})
+if encode_err then
+    storage:release()
+    return nil, encode_err
+end
+local ok, err = storage:upload_object("reports/daily.json", body)
+if err then
+    storage:release()
+    return nil, err
+end
 
--- 파일에서 업로드
+-- Upload from file
 local fs = require("fs")
-local vol = fs.get("app:data")
-local file = vol:open("/large-file.bin", "r")
+local vol, fs_err = fs.get("app:data")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
+local file, open_err = vol:open("/large-file.bin", "r")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 
-storage:upload_object("backups/large-file.bin", file)
-file:close()
+local uploaded, file_upload_err = storage:upload_object("backups/large-file.bin", file)
+local _, close_err = file:close()
 
 storage:release()
+if file_upload_err then
+    if close_err then report_cleanup_error(close_err) end
+    return nil, file_upload_err
+end
+if close_err then return nil, close_err end
+return uploaded
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -77,12 +105,14 @@ storage:release()
 옵션 테이블로 메타데이터를 첨부하거나 쓰기를 보호할 수 있습니다:
 
 ```lua
-storage:upload_object("reports/daily.json", body, {
+local uploaded, err = storage:upload_object("reports/daily.json", body, {
     content_type = "application/json",
     cache_control = "max-age=3600",
     metadata = { owner = "team-a", run_id = "1234" },  -- stored as x-amz-meta-*
     only_if_absent = true                              -- fail if the key already exists
 })
+if err then return nil, err end
+return uploaded
 ```
 
 | 옵션 | 타입 | 설명 |
@@ -101,25 +131,53 @@ storage:upload_object("reports/daily.json", body, {
 
 ## 오브젝트 다운로드
 
-파일 writer로 오브젝트 다운로드:
+파일 writer로 오브젝트를 다운로드합니다:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
 local fs = require("fs")
-local vol = fs.get("app:temp")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+local vol, fs_err = fs.get("app:temp")
+if fs_err then
+    storage:release()
+    return nil, fs_err
+end
 
-local file = vol:open("/downloaded.json", "w")
+local file, open_err = vol:open("/downloaded.json", "w")
+if open_err then
+    storage:release()
+    return nil, open_err
+end
 local ok, err = storage:download_object("reports/daily.json", file)
-file:close()
+local _, close_err = file:close()
+if err then
+    if close_err then report_cleanup_error(close_err) end
+    storage:release()
+    return nil, err
+end
+if close_err then
+    storage:release()
+    return nil, close_err
+end
 
--- 부분 콘텐츠 다운로드 (처음 1KB)
-local partial = vol:open("/partial.bin", "w")
-storage:download_object("backups/large-file.bin", partial, {
+-- Download partial content (first 1KB)
+local partial, partial_open_err = vol:open("/partial.bin", "w")
+if partial_open_err then
+    storage:release()
+    return nil, partial_open_err
+end
+local partial_ok, partial_err = storage:download_object("backups/large-file.bin", partial, {
     range = "bytes=0-1023"
 })
-partial:close()
+local _, partial_close_err = partial:close()
 
 storage:release()
+if partial_err then
+    if partial_close_err then report_cleanup_error(partial_close_err) end
+    return nil, partial_err
+end
+if partial_close_err then return nil, partial_close_err end
+return partial_ok
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -139,30 +197,40 @@ storage:release()
 선택적 접두사 필터링으로 오브젝트 목록 조회:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local result, err = storage:list_objects({
     prefix = "reports/2024/",
     max_keys = 100
 })
+if err then
+    storage:release()
+    return nil, err
+end
 
 for _, obj in ipairs(result.objects) do
     print(obj.key, obj.size, obj.etag)
 end
 
--- 대용량 결과 페이징
+-- Paginate through large results
 local token = nil
 repeat
-    local result = storage:list_objects({
+    local page, page_err = storage:list_objects({
         prefix = "logs/",
         max_keys = 1000,
         continuation_token = token
     })
-    for _, obj in ipairs(result.objects) do
+    if page_err then
+        storage:release()
+        return nil, page_err
+    end
+    for _, obj in ipairs(page.objects) do
         process(obj)
     end
-    token = result.next_continuation_token
-until not result.is_truncated
+    token = page.next_continuation_token
+    if not page.is_truncated then break end
+until false
 
 storage:release()
 ```
@@ -188,10 +256,12 @@ storage:release()
 본문을 다운로드하지 않고 단일 오브젝트의 메타데이터를 가져옵니다:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
 local meta, err = storage:head_object("reports/daily.json")
 if err then
+    storage:release()
     return nil, err
 end
 
@@ -232,15 +302,18 @@ storage:release()
 여러 오브젝트 제거:
 
 ```lua
-local storage = cloudstorage.get("app.infra:files")
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
 
-storage:delete_objects({
+local deleted, err = storage:delete_objects({
     "temp/file1.txt",
     "temp/file2.txt",
     "temp/file3.txt"
 })
 
 storage:release()
+if err then return nil, err end
+return deleted
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -253,7 +326,7 @@ storage:release()
 
 ## 다운로드 URL
 
-자격 증명 없이 오브젝트를 다운로드할 수 있는 임시 URL을 생성합니다. 외부 사용자와 파일을 공유하거나 애플리케이션을 통해 콘텐츠를 제공하는 데 유용합니다.
+스토리지 자격 증명 없이 오브젝트를 다운로드할 수 있는 임시 URL을 생성합니다. 클라이언트는 만료될 때까지 이 URL을 사용할 수 있습니다.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -271,7 +344,7 @@ if err then
     return nil, err
 end
 
--- 직접 다운로드를 위해 클라이언트에 URL 반환
+-- Return URL to client for direct download
 return {download_url = url}
 ```
 
@@ -284,7 +357,7 @@ return {download_url = url}
 
 ## 업로드 URL
 
-자격 증명 없이 오브젝트를 업로드할 수 있는 임시 URL을 생성합니다. 클라이언트가 서버를 프록시하지 않고 스토리지에 직접 파일을 업로드할 수 있게 합니다.
+스토리지 자격 증명 없이 오브젝트를 업로드할 수 있는 임시 URL을 생성합니다. 클라이언트는 만료될 때까지 스토리지에 직접 업로드할 수 있습니다.
 
 ```lua
 local storage, err = cloudstorage.get("app.infra:files")
@@ -304,7 +377,7 @@ if err then
     return nil, err
 end
 
--- 직접 업로드를 위해 클라이언트에 URL 반환
+-- Return URL to client for direct upload
 return {upload_url = url}
 ```
 
@@ -474,7 +547,7 @@ storage:release()
 
 ## 권한
 
-클라우드 스토리지 작업은 보안 정책 평가 대상입니다.
+클라우드 스토리지 작업에는 보안 정책 평가가 적용됩니다.
 
 | 액션 | 리소스 | 설명 |
 |------|--------|------|

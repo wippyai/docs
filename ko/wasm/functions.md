@@ -1,15 +1,17 @@
 ---
 title: "WASM 함수"
-description: "WASM 함수는 WebAssembly 코드를 실행하는 레지스트리 엔트리입니다. 인라인 WAT 소스용 function.wat과 사전 컴파일된 바이너리용 function.wasm, 두 가지 엔트리 종류를 사용할 수 있습니다."
+description: "인라인 WAT 함수와 사전 컴파일된 WASM 함수를 레지스트리 엔트리로 설정합니다."
 ---
 
 # WASM 함수
 
-WASM 함수는 WebAssembly 코드를 실행하는 레지스트리 엔트리입니다. 인라인 WAT 소스용 `function.wat`과 사전 컴파일된 바이너리용 `function.wasm`, 두 가지 엔트리 종류를 사용할 수 있습니다.
+인라인 WebAssembly Text 소스에는 `function.wat`, 사전 컴파일된 바이너리에는 `function.wasm`을 사용합니다.
+
+**분류: 함수 설정 레퍼런스.** WAT 블록은 작은 레지스트리 예제입니다. 사전 컴파일 예제는 외부 컴포넌트 빌드, 파일 시스템 엔트리, guest WIT와 일치하는 export 메서드, 정확한 바이너리에서 계산한 SHA-256 digest를 전제로 합니다. 실제처럼 보이는 sample hash는 예시입니다.
 
 ## 인라인 WAT 함수
 
-WebAssembly Text 형식을 사용하여 `_index.yaml`에서 직접 작은 WASM 함수를 정의합니다:
+`_index.yaml`에서 WAT 함수를 직접 정의합니다.
 
 ```yaml
 entries:
@@ -43,16 +45,16 @@ entries:
 
 ### WAT 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `source` | Yes | 인라인 WAT 소스 또는 `file://` 참조 |
-| `method` | Yes | 호출할 내보내기된 함수 이름 |
-| `wit` | No | Raw/Core 모듈용 WIT 시그니처 |
-| `pool` | No | 워커 풀 설정 |
-| `transport` | No | 입출력 매핑 (기본값: `payload`) |
-| `imports` | No | 활성화할 호스트 임포트 (예: `wasi:cli`, `wasi:io`) |
-| `wasi` | No | WASI 설정 (args, env, mounts) |
-| `limits` | No | 실행 제한 |
+| `source` | 예 | 인라인 WAT 소스 또는 `file://` 참조 |
+| `method` | 예 | 호출할 내보내기된 함수 이름 |
+| `wit` | 아니요 | Raw/Core 모듈용 WIT 시그니처 |
+| `pool` | 아니요 | 워커 풀 설정 |
+| `transport` | 아니요 | 입출력 매핑 (기본값: `payload`) |
+| `imports` | 아니요 | 활성화할 호스트 임포트 (예: `wasi:cli`, `wasi:io`) |
+| `wasi` | 아니요 | WASI 설정 (args, env, mounts) |
+| `limits` | 아니요 | 실행 제한 |
 
 ## 사전 컴파일된 WASM 함수
 
@@ -77,26 +79,26 @@ entries:
 
 ### WASM 설정 필드
 
-| Field | Required | Description |
+| 필드 | 필수 | 설명 |
 |-------|----------|-------------|
-| `fs` | Yes | 바이너리가 포함된 파일시스템 엔트리 ID |
-| `path` | Yes | 파일시스템 내 `.wasm` 파일 경로 |
-| `hash` | Yes | 무결성 검증을 위한 SHA-256 해시 (`sha256:...`) |
-| `method` | Yes | 호출할 내보내기된 함수 이름 |
-| `wit` | No | Raw/Core 모듈용 WIT 시그니처 |
-| `pool` | No | 워커 풀 설정 |
-| `transport` | No | 입출력 매핑 (기본값: `payload`) |
-| `imports` | No | 활성화할 호스트 임포트 |
-| `wasi` | No | WASI 설정 |
-| `limits` | No | 실행 제한 |
+| `fs` | 예 | 바이너리가 포함된 파일시스템 엔트리 ID |
+| `path` | 예 | 파일시스템 내 `.wasm` 파일 경로 |
+| `hash` | 예 | 무결성 검증을 위한 SHA-256 해시 (`sha256:...`) |
+| `method` | 예 | 호출할 내보내기된 함수 이름 |
+| `wit` | 아니요 | Raw/Core 모듈용 WIT 시그니처 |
+| `pool` | 아니요 | 워커 풀 설정 |
+| `transport` | 아니요 | 입출력 매핑 (기본값: `payload`) |
+| `imports` | 아니요 | 활성화할 호스트 임포트 |
+| `wasi` | 아니요 | WASI 설정 |
+| `limits` | 아니요 | 실행 제한 |
 
 ## 워커 풀
 
 각 WASM 함수는 사전 컴파일된 인스턴스 풀을 사용합니다. 풀 타입은 동시성과 리소스 사용을 제어합니다.
 
-| Type | Description |
+| 타입 | 설명 |
 |------|-------------|
-| `inline` | 동기, 단일 스레드. 호출마다 새 인스턴스 생성. |
+| `inline` | mutex 직렬화. 동기 및 asyncified 호출은 하나의 warm instance를 재사용하며 retained-memory 정책 또는 실행 실패가 교체를 유발할 수 있음. |
 | `lazy` | 유휴 워커 없음. 요청 시 `max_size`까지 확장. |
 | `static` | 고정된 수의 워커와 요청 큐. |
 | `adaptive` | 자동 스케일링 탄력적 풀. |
@@ -150,7 +152,7 @@ scheduler:
 
 트랜스포트는 런타임과 WASM 모듈 간의 입출력 매핑 방식을 제어합니다.
 
-| Transport | Description |
+| 트랜스포트 | 설명 |
 |-----------|-------------|
 | `payload` | 런타임 페이로드를 WASM 호출 인자에 직접 매핑 (기본값) |
 | `wasi-http` | HTTP 요청/응답 컨텍스트를 WASM 인자 및 결과에 매핑 |
@@ -173,6 +175,7 @@ scheduler:
 ```lua
 -- Arguments passed directly as WASM function parameters
 local result, err = funcs.call("myns:compute", 6, 7)
+if err then return nil, err end
 -- result: 42
 ```
 
@@ -202,15 +205,16 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 실행 제한
 
-`limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
+`options.limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | 필드 | 기본값 | 설명 |
@@ -245,7 +249,7 @@ wasi:
       guest: /output
 ```
 
-| Field | Description |
+| 필드 | 설명 |
 |-------|-------------|
 | `args` | 게스트에 전달되는 커맨드라인 인자 |
 | `cwd` | 게스트 내부의 작업 디렉터리 (절대 경로여야 함) |
@@ -298,9 +302,11 @@ local users = {
 
 -- Transform: adds display field and tag count
 local transformed, err = funcs.call("myns:transform_users", users)
+if err then return nil, err end
 
 -- Filter: returns only active users
-local active, err = funcs.call("myns:filter_active", users)
+local active, filter_err = funcs.call("myns:filter_active", users)
+if filter_err then return nil, filter_err end
 ```
 
 ### WASI Clocks를 사용한 비동기 슬립

@@ -1,11 +1,13 @@
 ---
 title: "Integración Temporal"
-description: "Wippy se integra con Temporal.io para ejecución de workflows durables, replay automático, y procesos de larga duración que sobreviven reinicios."
+description: "Wippy se integra con Temporal.io para ejecutar workflows duraderos, reproducirlos automáticamente y mantener procesos de larga duración que sobreviven a reinicios."
 ---
 
 # Integración Temporal
 
-Wippy se integra con [Temporal.io](https://temporal.io) para ejecución de workflows durables, replay automático, y procesos de larga duración que sobreviven reinicios.
+Esta página es una referencia de configuración para clientes y workers de Temporal. El fragmento final del registro muestra cómo se conectan las entradas; no es un proyecto independiente.
+
+Los tipos de entrada `temporal.client` y `temporal.worker` conectan los workflows y activities de Wippy con [Temporal](https://temporal.io).
 
 ## Configuración del Cliente
 
@@ -53,7 +55,7 @@ El tipo de entrada `temporal.client` define una conexión a un servidor Temporal
 Proporcione la API key mediante uno de estos métodos:
 
 ```yaml
-# Valor directo
+# Direct value
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -62,7 +64,7 @@ Proporcione la API key mediante uno de estos métodos:
     type: api_key
     api_key: "your-api-key"
 
-# Desde variable de entorno
+# From environment variable
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -71,7 +73,7 @@ Proporcione la API key mediante uno de estos métodos:
     type: api_key
     api_key: ${env:TEMPORAL_API_KEY}
 
-# Desde archivo
+# From file
 - name: temporal_client
   kind: temporal.client
   address: "your-namespace.tmprl.cloud:7233"
@@ -117,8 +119,8 @@ auth:
 tls:
   enabled: true
   ca_file: "/path/to/ca.pem"
-  server_name: "temporal.example.com"    # Sobrescribir verificación de nombre de servidor
-  insecure_skip_verify: false            # Omitir verificación (solo dev)
+  server_name: "temporal.example.com"    # Override server name verification
+  insecure_skip_verify: false            # Skip verification (dev only)
 ```
 
 ### Health Checks
@@ -164,7 +166,7 @@ El tipo de entrada `temporal.worker` define un worker que ejecuta workflows y ac
   task_queue: "my-app-queue"
   lifecycle:
     auto_start: true
-    depends_on:
+    requires:
       - app:temporal_client
 ```
 
@@ -199,8 +201,8 @@ Ajuste fino del comportamiento del worker:
     max_concurrent_activity_task_pollers: 20
     max_concurrent_workflow_task_pollers: 20
 
-    # Limitación de tasa
-    worker_activities_per_second: 0        # 0 = ilimitado
+    # Rate limiting
+    worker_activities_per_second: 0        # 0 = unlimited
     worker_local_activities_per_second: 0
     task_queue_activities_per_second: 0
 
@@ -219,12 +221,12 @@ Ajuste fino del comportamiento del worker:
     disable_eager_activities: false
     disable_registration_aliasing: false
 
-    # Versionado
+    # Versioning
     deployment_name: ""
     build_id: ""
     build_id: ${env:BUILD_ID}              # Leer desde el registro env
     use_versioning: false
-    default_versioning_behavior: "pinned" # o "auto_upgrade"
+    default_versioning_behavior: "pinned" # or "auto_upgrade"
 ```
 
 Los campos de credenciales e identificadores resuelven los placeholders `${env:NAME}` a través del [registro de entorno](system/env.md) en el momento de la decodificación. La directiva heredada `build_id_env` se resuelve de la misma forma pero está obsoleta; prefiera `build_id: ${env:NAME}`.
@@ -256,7 +258,9 @@ Los campos de credenciales e identificadores resuelven los placeholders `${env:N
 | `max_concurrent_workflow_task_pollers` | 20 |
 | `sticky_schedule_to_start_timeout` | 5s |
 
-## Ejemplo Completo
+## Ejemplo de configuración
+
+Este fragmento del registro conecta un workflow y una activity a un worker. Presupone un servidor Temporal accesible en `localhost:7233` y los dos archivos Lua referenciados; consulte las páginas de workflows y activities para ver sus implementaciones.
 
 ```yaml
 version: "1.0"
@@ -276,7 +280,7 @@ entries:
     task_queue: "orders"
     lifecycle:
       auto_start: true
-      depends_on:
+      requires:
         - app:temporal_client
 
   - name: order_workflow
@@ -296,6 +300,8 @@ entries:
     source: file://payment.lua
     method: charge
     modules:
+      - env
+      - errors
       - http_client
       - json
     meta:

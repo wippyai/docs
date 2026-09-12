@@ -1,49 +1,51 @@
 ---
 title: "コマンドディスパッチ"
-description: "ディスパッチシステムはプロセスからハンドラにコマンドをルーティングします。プロセスは相関タグ付きでコマンドをyieldし、ハンドラが非同期作業を実行し、結果がイベントキュー経由で戻ります。"
+description: "プロセスの yield がコマンドハンドラへルーティングされ、相関付けられた完了イベントを通じて返される仕組み。"
 ---
 
 # コマンドディスパッチ
 
-ディスパッチシステムはプロセスからハンドラにコマンドをルーティングします。プロセスは相関タグ付きでコマンドをyieldし、ハンドラが非同期作業を実行し、結果がイベントキュー経由で戻ります。
+コマンドディスパッチは、プロセスの yield をハンドラへルーティングし、相関付けられた結果をプロセスイベントキュー経由で返します。
+
+これは拡張および実装リファレンスです。カスタムコマンドとディスパッチャーの断片は、既存の Go パッケージ、ブートグラフ、コマンド API、およびサービス固有のエラー処理を前提としています。
 
 ## フロー
 
 ```mermaid
 sequenceDiagram
-    participant P as プロセス
-    participant W as ワーカー
-    participant R as レジストリ
-    participant H as ハンドラ
+    participant P as Process
+    participant W as Worker
+    participant R as Registry
+    participant H as Handler
 
     P->>W: yield(command, tag)
     W->>R: getHandler(cmdID)
     R-->>W: handler
     W->>H: Handle(cmd, tag, receiver)
-    H-->>H: 非同期作業
+    H-->>H: async work
     H->>W: CompleteYield(tag, result)
-    W->>P: イベントをキュー、ウェイク
-    P->>P: 結果で再開
+    W->>P: queue event, wake
+    P->>P: resume with result
 ```
 
 ## コマンドレジストリ
 
-レジストリはハイブリッド構造でハンドラを格納：
+レジストリはハンドラをハイブリッド構造で格納します。
 
 ```go
 type Registry struct {
-    handlers [256]Handler         // システムコマンド: O(1)インデックス
-    extended map[CommandID]Handler // 拡張コマンド: マップルックアップ
-    frozen   atomic.Bool          // ブート後はロックフリー
+    handlers [256]Handler         // System commands: O(1) index
+    extended map[CommandID]Handler // Extended commands: map lookup
+    frozen   atomic.Bool          // Lock-free after boot
 }
 ```
 
-システムコマンド（0-255）は配列インデックスを使用。拡張コマンドはマップルックアップを使用。`Freeze()`後、すべてのルックアップはロックフリー。
+システムコマンド（0～255）は配列インデックスを使用します。拡張コマンドはマップ検索を使用します。`Freeze()` 後は、すべての検索がロックフリーになります。
 
-### コマンドID範囲
+### コマンド ID の範囲
 
 | 範囲 | モジュール | 例 |
-|-----|---------|-----|
+|-------|--------|----------|
 | 1-9 | process | Send, Spawn, Terminate, Cancel, Monitor, Unmonitor, Link, Unlink, Exec |
 | 10-29 | clock | Sleep, Ticker, Timer |
 | 30-39 | socket | Dial, Listen, Accept, Close |
@@ -65,11 +67,11 @@ type Registry struct {
 | 200-211 | pg (プロセスグループ) | Join, Leave, GetMembers, GetLocalMembers, WhichGroups, Broadcast, BroadcastLocal, WhichLocalGroups, Monitor, Events, JoinGroups, LeaveGroups |
 | 256+ | custom | ユーザー定義サービス |
 
-登録は`MustRegisterCommands()`経由でブート時に行われます。衝突はスタートアップ時にパニック。
+パッケージは `init()` から `MustRegisterCommands()` を使用してコマンド ID の所有権を予約します。所有権の衝突は、パッケージの初期化中に panic を発生させます。コンポーネントのロード中、各サービスは `Registrar.Register` を通じてハンドラをバインドします。ディスパッチャーが freeze されるのは、それらのハンドラがインストールされた後です。
 
 ## コマンドの定義
 
-コマンドは一意の`CommandID`を持つデータ構造です：
+コマンドは一意の `CommandID` を持つデータ構造です。
 
 ```go
 const MyCommand dispatcher.CommandID = 256
@@ -79,18 +81,10 @@ type MyCmd struct {
     Option int
 }
 
-var myCmdPool = sync.Pool{New: func() any { return &MyCmd{} }}
-
 func (c *MyCmd) CmdID() dispatcher.CommandID { return MyCommand }
-
-func (c *MyCmd) Release() {
-    c.Input = ""
-    c.Option = 0
-    myCmdPool.Put(c)
-}
 ```
 
-プール再利用でホットパスでのアロケーションを排除。パッケージinitで登録：
+パッケージ初期化時にコマンド ID を予約します。
 
 ```go
 func init() {
@@ -100,7 +94,7 @@ func init() {
 
 ## ディスパッチャー
 
-ディスパッチャーは関連ハンドラをグループ化します。`RegisterAll`でハンドラを登録し、セットアップ/ティアダウン用のライフサイクルメソッドを実装：
+ディスパッチャーは関連するハンドラをグループ化します。ハンドラを登録する `RegisterAll` と、セットアップ/ティアダウン用のライフサイクルメソッドを実装します。
 
 ```go
 type Handler interface {
@@ -114,7 +108,7 @@ type ResultReceiver interface {
 
 ```go
 type Dispatcher struct {
-    // サービス状態
+    // service state
 }
 
 func (d *Dispatcher) RegisterAll(register func(id dispatcher.CommandID, h dispatcher.Handler)) {
@@ -133,7 +127,7 @@ func (d *Dispatcher) handleMyCommand(ctx context.Context, cmd Command, tag uint6
 }
 ```
 
-ブートコンポーネントとして登録：
+ブートコンポーネントとして登録します。
 
 ```go
 func MyDispatcher() boot.Component {
@@ -150,22 +144,21 @@ func MyDispatcher() boot.Component {
 }
 ```
 
-## Yieldと相関
+## Yield と相関
 
-プロセスが非同期作業を必要とする場合、相関タグ付きでコマンドをyield：
+プロセスが非同期処理を必要とする場合、相関タグ付きのコマンドを yield します。
 
 ```go
 type Yield struct {
     Cmd Command
-    Tag uint64    // 相関用のプロセスローカルカウンター
+    Tag uint64    // Process-local counter for correlation
 }
 ```
 
-ワーカーは各ステップ後に`StepOutput`からyieldを抽出し、ハンドラにディスパッチします。各タグはリクエストを一意に識別し、結果をマッチバック可能にします。
+ワーカーは各ステップの後に `StepOutput` から yield を取り出し、ハンドラへディスパッチします。各タグはリクエストを一意に識別するため、結果を対応付けて戻すことができます。
 
 ## 関連項目
 
-- [スケジューラ](internals/scheduler.md) - プロセス実行
-- [モジュール](internals/modules.md) - Luaモジュール統合
-- [プロセスモデル](concepts/process-model.md) - 高レベルコンセプト
-
+- [スケジューラ](internals/scheduler.md) - プロセスの実行
+- [モジュール](internals/modules.md) - Lua モジュールの統合
+- [プロセスモデル](concepts/process-model.md) - 高レベルの概念

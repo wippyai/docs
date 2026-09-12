@@ -96,7 +96,7 @@ entries:
 
 | 类型 | 描述 |
 |------|-------------|
-| `inline` | 同步，单线程。每次调用创建新实例。 |
+| `inline` | 由互斥锁串行化。同步调用和 asyncified 调用会复用同一个热实例；保留内存策略或执行失败可能触发实例替换。 |
 | `lazy` | 零空闲工作者。按需扩展至 `max_size`。 |
 | `static` | 固定数量的工作者，带请求队列。 |
 | `adaptive` | 自动伸缩的弹性池。 |
@@ -202,15 +202,16 @@ local result, err = funcs.call("myns:compute", 6, 7)
 
 ## 执行限制
 
-`limits` 块限定函数的执行时间、其热 worker 的内存，以及它可以打开的 socket：
+`options.limits` 块限定函数的执行时间、其热 worker 的内存，以及它可以打开的 socket：
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | 字段 | 默认值 | 描述 |

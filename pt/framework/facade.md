@@ -9,7 +9,7 @@ O módulo `wippy/facade` fornece uma facade portátil que carrega e configura o 
 
 A entrega baseada em iframe (`iframe.html` + o handshake PostMessage `SetConfig`) continua disponível para embeddings manuais, sem facade, nos quais você mesmo incorpora o host para isolamento ou uso parcial da página, mas a própria facade não a utiliza mais.
 
-## Setup
+Em integrações isoladas ou de página parcial, o host também pode ser incorporado manualmente por `iframe.html` e um handshake `SetConfig` via postMessage. A própria facade não usa esse modo de entrega.
 
 Adicione o módulo ao seu projeto:
 
@@ -82,7 +82,10 @@ Somente a string exata `fragment` ativa a opção; **qualquer outro valor — in
 | `app_name` | `Wippy AI` | Nome completo da aplicação |
 | `app_icon` | `wippy:logo` | Referência de ícone Iconify |
 
-### Feature Flags
+| Valor | Efeito |
+|-------|--------|
+| `iframe` _(padrão)_ | Páginas são renderizadas como iframes srcdoc, o mecanismo principal. |
+| `fragment` | Páginas são renderizadas como [Web Fragments](../frontend/web-host/render-engines.md), um realm `reframed` refletido em shadow root. |
 
 | Parâmetro | Padrão | Descrição |
 |-----------|---------|-------------|
@@ -179,7 +182,7 @@ Estes três são emitidos como campos de **nível superior** do `AppConfig` (irm
 | `axios_defaults` | `axiosDefaults` | `{}` | Padrões do cliente HTTP axios do frontend |
 | `tanstack` | `tanstack` | `{}` | Padrões do TanStack Query: `{ default?, content?, lists? }`. `default` se aplica a todas as queries; `content` mira renderizações de recurso único, `lists` mira queries de navegação/índice. O padrão do host é `refetchOnWindowFocus:false` |
 
-## Config Endpoint
+### Flags de Funcionalidade
 
 A facade registra `GET /facade/config` no router configurado. Esse caminho é registrado *no* router público, então a URL que a página realmente busca inclui o prefixo do router — com o prefixo de exemplo `/api/public` (veja [Setup](#setup)), ela é `/api/public/facade/config`, que é exatamente o que a página da facade distribuída busca. (A facade registra mais uma rota no mesmo router — `GET /facade/variables.css`, as `css_variables` renderizadas como folha de estilo `text/css` para páginas fora do Web Host; veja [Reutilizando a tematização da facade em páginas fora do Web Host](#reusing-facade-theming-on-non-web-host-pages).) O frontend busca a config no carregamento:
 
@@ -219,7 +222,7 @@ A facade registra `GET /facade/config` no router configurado. Esse caminho é re
         "hideSessionSelector": false,
         "additionalNavItems": [],
         "stateCache":        { "...": "..." },
-        "allowAdditionalTags": [],
+        "allowAdditionalTags": { "w-chart": ["data", "type"] },
         "chat":              { "...": "..." }
     }
 }
@@ -229,7 +232,7 @@ A URL da API é lida da variável de ambiente `PUBLIC_API_URL`; `APP_WEBSOCKET_U
 
 Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` são campos de **nível de shell** usados pela página de embedding para se construir — eles não fazem parte do `AppConfig` filho com o qual o host se inicializa. Os campos `iframe_origin`/`iframe_url` são consumidos apenas por embeddings manuais por iframe, sem facade (veja [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md)). O campo `mode` é o `fe_mode` normalizado (`compat` ou `managed`), e `module_file` é a entrada JS-module que a página da facade carrega — `/module.js` para compat, `/managed-layout.js` para managed.
 
-## Navigation Sidebar
+Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` pertencem ao nível do shell usado pela página de incorporação; não fazem parte do `AppConfig` filho com que o host é inicializado. `iframe_origin` e `iframe_url` são usados apenas por incorporações manuais de iframe sem facade (consulte [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md)). `mode` é o `fe_mode` normalizado (`compat` ou `managed`), e `module_file` é a entrada de módulo JavaScript carregada pela página da facade: `/module.js` no modo compat e `/managed-layout.js` no modo managed.
 
 Páginas registradas via `wippy/views` aparecem automaticamente na sidebar com base em seus metadados:
 

@@ -1,28 +1,30 @@
 ---
-title: "Entry Handlers"
-description: "Entry handlers processam entradas do registro por tipo. Quando entradas são adicionadas, atualizadas ou deletadas, o registro despacha eventos para…"
+title: "Listeners e Observers de Entradas"
+description: "Como listeners e observers tratam mutações do registro para padrões de tipos de entrada correspondentes."
 ---
 
-# Entry Handlers
+# Listeners e Observers de Entradas
 
-Entry handlers processam entradas do registro por tipo. Quando entradas são adicionadas, atualizadas ou deletadas, o registro despacha eventos para handlers correspondentes.
+Listeners e observers de entradas processam mutações do registro para padrões de tipos de entrada correspondentes.
+
+Esta é uma referência de extensão em Go. Os exemplos de registro e configuração pressupõem um componente de boot, um manager, um transcoder e um tipo de configuração da aplicação já existentes.
 
 ## Como Funciona
 
-O registro mantém um mapa de padrões de tipo para handlers. Quando uma entrada muda:
+O boot coleta listeners e observers com seus padrões de tipo. Quando uma entrada muda:
 
-1. Registry emite evento (`entry.create`, `entry.update`, `entry.delete`)
-2. Registry de handlers faz match do tipo da entrada contra padrões registrados
-3. Handlers correspondentes recebem a entrada
-4. Handlers processam ou rejeitam a entrada
+1. O registro emite um evento (`entry.create`, `entry.update`, `entry.delete`)
+2. Cada wrapper de listener compara o tipo da entrada ao padrão registrado
+3. Os handlers correspondentes recebem a entrada
+4. Os handlers processam ou rejeitam a entrada
 
 ## Padrões de Tipo
 
-Handlers se inscrevem usando padrões:
+Os handlers se inscrevem usando padrões:
 
 | Padrão | Corresponde |
 |--------|-------------|
-| `http.service` | Apenas match exato |
+| `http.service` | Apenas correspondência exata |
 | `http.*` | `http.service`, `http.router`, `http.endpoint` |
 | `function.**` | `function.lua`, `function.lua.bc` |
 
@@ -38,7 +40,7 @@ type EntryListener interface {
 }
 ```
 
-Retornar erro de `Add` rejeita a entrada.
+Retornar um erro de `Add`, `Update` ou `Delete` rejeita a operação.
 
 ## Listener vs Observer
 
@@ -51,6 +53,8 @@ Retornar erro de `Add` rejeita a entrada.
 handlers.RegisterListener("http.*", httpManager)
 handlers.RegisterObserver("function.*", metricsCollector)
 ```
+
+Erros de observers em `Add`, `Update` e `Delete` são ignorados e não emitem um evento de aceitação ou rejeição. Um listener ou observer que também implemente `TransactionListener` participa das barreiras de transação, nas quais um erro de `Begin`, `Commit` ou `Discard` rejeita essa fase da transação.
 
 ## Registrando Handlers
 
@@ -80,7 +84,7 @@ func (m *Manager) Add(ctx context.Context, ent registry.Entry) error {
     if err != nil {
         return err
     }
-    // Processar cfg...
+    // Process cfg...
     return nil
 }
 ```
@@ -92,9 +96,9 @@ O decoder:
 4. Chama `InitDefaults()` se implementado
 5. Chama `Validate()` se implementado
 
-## Estrutura de Config
+## Estrutura de configuração
 
-Configs de entrada tipicamente incluem:
+As configurações de entrada normalmente incluem:
 
 ```go
 type ComponentConfig struct {
@@ -130,9 +134,9 @@ type TransactionListener interface {
 }
 ```
 
-O registry chama `Begin` antes de processar um batch, depois `Commit` em sucesso ou `Discard` em falha.
+O registro chama `Begin` antes de processar um lote e, depois, `Commit` em caso de sucesso ou `Discard` em caso de falha.
 
-## Veja Também
+## Consulte também
 
-- [Registry](internals/registry.md) - Armazenamento de entradas
-- [Architecture](internals/architecture.md) - Sequência de boot
+- [Registro](internals/registry.md) — Armazenamento de entradas
+- [Arquitetura](internals/architecture.md) — Sequência de boot

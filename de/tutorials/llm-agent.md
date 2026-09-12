@@ -1,19 +1,25 @@
 ---
 title: "LLM-Agent"
-description: "Erstelle Schritt für Schritt einen Terminal-Chat-Agenten, von einem einfachen LLM-Aufruf bis zu einem Streaming-Agenten mit Tools."
+description: "Schrittweise einen Terminal-Chat-Agenten bauen, vom einfachen LLM-Aufruf bis zum Streaming-Agenten mit Tools."
 ---
 
 # LLM-Agent
 
-Erstelle Schritt für Schritt einen Terminal-Chat-Agenten, von einem einfachen LLM-Aufruf bis zu einem Streaming-Agenten mit Tools.
+Bauen Sie in fünf Phasen einen Terminal-Chat-Agenten, vom einzelnen LLM-Aufruf bis zu Streaming-Antworten und Tool-Ausführung.
+
+**Klassifizierung: ausführbares Tutorial mit externem Provider.** Jede Phase ist eine
+kumulative Änderung desselben Projekts und kann ausgeführt werden, bevor Sie fortfahren.
+Die Wippy-Verträge und der lokale Kontrollfluss lassen sich ohne Zugangsdaten prüfen;
+die Generierung benötigt Netzwerkzugriff und einen gültigen `OPENAI_API_KEY`.
 
 ## Was wir erstellen
 
 Einen Terminal-Chat-Agenten, der:
-- Text mit einem LLM generiert
-- Konversationen über mehrere Durchgänge führt
-- Antworten in Echtzeit streamt
-- Tools für externe Fähigkeiten nutzt
+
+- Text mit einem LLM generiert.
+- Konversationen über mehrere Durchgänge führt.
+- Antworten schrittweise streamt.
+- Registrierte Tools aufruft.
 
 ## Projektstruktur
 
@@ -32,18 +38,16 @@ llm-agent/
 
 ## Phase 1: Einfache Generierung
 
-Beginne mit einer einfachen Funktion, die `llm.generate()` mit einem String-Prompt aufruft.
+Beginnen Sie mit einer einfachen Funktion, die `llm.generate()` mit einem String-Prompt aufruft.
 
-### Projekt erstellen
-
-```bash
-mkdir llm-agent && cd llm-agent
-mkdir -p src
-```
+Beginnen Sie in einem Wippy-Projekt mit dem Quellverzeichnis `./src`. Setzen Sie
+`OPENAI_API_KEY` in der Umgebung, die Wippy startet. Dieses Tutorial deklariert sein
+Modell explizit; kopieren Sie nicht zusätzlich einen zweiten Eintrag mit demselben
+Modellnamen aus einer anderen Anwendung.
 
 ### Eintragsdefinitionen
 
-Erstelle `src/_index.yaml`:
+Erstellen Sie `src/_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -100,8 +104,9 @@ entries:
 ```
 
 Das LLM-Modul benötigt zwei Infrastruktur-Einträge:
-- `env.storage.os` stellt API-Schlüssel aus Umgebungsvariablen bereit
-- `process.host` stellt die Prozess-Laufzeitumgebung bereit, die das LLM-Modul intern nutzt
+
+- `env.storage.os` stellt API-Keys aus Umgebungsvariablen bereit.
+- `process.host` stellt die Prozess-Runtime bereit, die das LLM-Modul intern verwendet.
 
 Die Abhängigkeit `wippy/terminal` stellt den `terminal.host` bereit, auf dem Befehle ausgeführt werden und wohin `io.print` schreibt.
 
@@ -109,7 +114,7 @@ Die Abhängigkeit `wippy/terminal` stellt den `terminal.host` bereit, auf dem Be
 
 ### Generierungscode
 
-Erstelle `src/ask.lua`:
+Erstellen Sie `src/ask.lua`:
 
 ```lua
 local io = require("io")
@@ -136,15 +141,15 @@ return { main = main }
 
 ### Modelldefinition
 
-Das LLM-Modul löst Modelle aus der Registry auf. Füge einen Modelleintrag zur `_index.yaml` hinzu:
+Das LLM-Modul löst Modelle aus der Registry auf. Fügen Sie einen Modelleintrag zu `_index.yaml` hinzu:
 
 ```yaml
-  - name: gpt-4.1-nano
+  - name: gpt-4o-mini
     kind: registry.entry
     meta:
-      name: gpt-4.1-nano
+      name: gpt-4o-mini
       type: llm.model
-      title: GPT-4.1 Nano
+      title: GPT-4o mini
       comment: Fast, affordable model
       capabilities:
         - generate
@@ -153,14 +158,14 @@ Das LLM-Modul löst Modelle aus der Registry auf. Füge einen Modelleintrag zur 
       class:
         - fast
       priority: 100
-    max_tokens: 1047576
-    output_tokens: 32768
+    max_tokens: 128000
+    output_tokens: 16384
     pricing:
-      input: 0.1
-      output: 0.4
+      input: 0.15
+      output: 0.6
     providers:
       - id: wippy.llm.openai:provider
-        provider_model: gpt-4.1-nano
+        provider_model: gpt-4o-mini
 ```
 
 ### Initialisieren und testen
@@ -196,15 +201,17 @@ Ersetze den `ask`-Eintrag durch einen `chat`-Prozess:
     method: main
     modules:
       - io
-      - process
     imports:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt
 ```
 
+Ausführbare Lua-Einträge erhalten `process` als ambientes Runtime-Modul. Der folgende
+Code verwendet es daher direkt; es gehört nicht in die Liste `modules` des Eintrags.
+
 ### Chat-Prozess
 
-Erstelle `src/chat.lua`:
+Erstellen Sie `src/chat.lua`:
 
 ```lua
 local io = require("io")
@@ -228,7 +235,7 @@ local function main()
         conversation:add_user(input)
 
         local response, err = llm.generate(conversation, {
-            model = "gpt-4.1-nano",
+            model = "gpt-4o-mini",
             temperature = 0.7,
             max_tokens = 1024,
         })
@@ -255,6 +262,7 @@ return { main = main }
 
 ```bash
 wippy update
+wippy install
 wippy run chat
 ```
 
@@ -266,7 +274,7 @@ Das Agent-Modul bietet eine höhere Abstraktionsebene über direkte LLM-Aufrufe.
 
 ### Agent-Abhängigkeit hinzufügen
 
-Füge zur `_index.yaml` hinzu:
+Fügen Sie Folgendes zu `_index.yaml` hinzu:
 
 ```yaml
   - name: dep.agent
@@ -280,7 +288,7 @@ Füge zur `_index.yaml` hinzu:
 
 ### Einen Agenten definieren
 
-Füge einen Agent-Eintrag hinzu:
+Fügen Sie einen Agent-Eintrag hinzu:
 
 ```yaml
   - name: assistant
@@ -294,14 +302,14 @@ Füge einen Agent-Eintrag hinzu:
       You are a helpful terminal assistant. Be concise and direct.
       Answer questions clearly. If you don't know something, say so.
       Do not use emoji in responses.
-    model: gpt-4.1-nano
+    model: gpt-4o-mini
     max_tokens: 1024
     temperature: 0.7
 ```
 
 ### Chat-Prozess aktualisieren
 
-Wechsle zum Agent-Framework. Aktualisiere die Eintrag-Imports:
+Wechseln Sie zum Agent-Framework und aktualisieren Sie die Imports des Eintrags:
 
 ```yaml
   - name: chat
@@ -319,13 +327,12 @@ Wechsle zum Agent-Framework. Aktualisiere die Eintrag-Imports:
     method: main
     modules:
       - io
-      - process
     imports:
       prompt: wippy.llm:prompt
       agent_context: wippy.agent:context
 ```
 
-Aktualisiere `src/chat.lua`:
+Aktualisieren Sie `src/chat.lua`:
 
 ```lua
 local io = require("io")
@@ -373,15 +380,23 @@ end
 return { main = main }
 ```
 
-Das Agent-Framework trennt die Agent-Definition (Prompt, Modell, Parameter) von der Ausführungslogik. Derselbe Agent kann zur Laufzeit mit verschiedenen Contexts, Tools und Modellen geladen werden.
+Das Agent-Framework trennt die Agentendefinition (Prompt, Modell und Parameter) von der Ausführungslogik. Derselbe Agent kann zur Laufzeit mit verschiedenen Kontexten, Tools und Modellen geladen werden.
+
+Lösen Sie die neu hinzugefügte Agent-Abhängigkeit auf und führen Sie diese Phase aus:
+
+```bash
+wippy update
+wippy install
+wippy run chat
+```
 
 ## Phase 4: Streaming
 
-Streame Antworten Token für Token, anstatt auf die vollständige Antwort zu warten.
+Streamen Sie Antworten Token für Token, anstatt auf die vollständige Antwort zu warten.
 
 ### Streaming-Implementierung
 
-Aktualisiere `src/chat.lua`:
+Aktualisieren Sie `src/chat.lua`:
 
 ```lua
 local io = require("io")
@@ -389,21 +404,32 @@ local prompt = require("prompt")
 local agent_context = require("agent_context")
 
 local STREAM_TOPIC = "stream"
+local stream_sequence = 0
 
-local function stream_response(runner, conversation, stream_ch)
+local function stream_response(runner, conversation)
+    stream_sequence = stream_sequence + 1
+    local topic = STREAM_TOPIC .. ":" .. tostring(stream_sequence)
+    local stream_ch = process.listen(topic)
     local done_ch = channel.new(1)
 
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
                 reply_to = process.pid(),
-                topic = STREAM_TOPIC,
+                topic = topic,
             },
         })
         done_ch:send({ response = response, err = err })
     end)
 
     local full_text = ""
+    local response_result = nil
+    local stream_done = false
+
+    local function finish(text, response, err)
+        process.unlisten(stream_ch)
+        return text, response, err
+    end
 
     while true do
         local result = channel.select({
@@ -413,26 +439,29 @@ local function stream_response(runner, conversation, stream_ch)
         if not result.ok then break end
 
         if result.channel == done_ch then
-            local r = result.value
-            return full_text, r.response, r.err
+            response_result = result.value
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                io.write(chunk.content or "")
+                full_text = full_text .. (chunk.content or "")
+            elseif chunk.type == "done" then
+                stream_done = true
+            elseif chunk.type == "error" then
+                return finish(nil, nil, chunk.error and chunk.error.message or "stream error")
+            end
         end
 
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            local r, ok = done_ch:receive()
-            if ok and r then
-                return full_text, r.response, r.err
-            end
-            return full_text, nil, nil
-        elseif chunk.type == "error" then
-            return nil, nil, chunk.error and chunk.error.message or "stream error"
+        if response_result and response_result.err then
+            return finish(full_text, response_result.response, response_result.err)
+        end
+
+        if response_result and stream_done then
+            return finish(full_text, response_result.response, response_result.err)
         end
     end
 
-    return full_text, nil, nil
+    return finish(full_text, nil, nil)
 end
 
 local function main()
@@ -447,8 +476,6 @@ local function main()
     end
 
     local conversation = prompt.new()
-    local stream_ch = process.listen(STREAM_TOPIC)
-
     while true do
         io.write("> ")
         io.flush()
@@ -458,7 +485,7 @@ local function main()
 
         conversation:add_user(input)
 
-        local text, _, gen_err = stream_response(runner, conversation, stream_ch)
+        local text, _, gen_err = stream_response(runner, conversation)
         if gen_err then
             io.print("Error: " .. tostring(gen_err))
             goto continue
@@ -472,7 +499,6 @@ local function main()
         ::continue::
     end
 
-    process.unlisten(stream_ch)
     io.print("Bye!")
 end
 
@@ -480,18 +506,26 @@ return { main = main }
 ```
 
 Zentrale Muster:
-- `coroutine.spawn` führt `runner:step()` in einer separaten Coroutine aus, damit die Haupt-Coroutine Stream-Chunks verarbeiten kann
-- `channel.select` multiplext den Stream-Channel und den Done-Channel
-- Ein einzelnes `process.listen()` wird einmal erstellt und über alle Durchgänge wiederverwendet
-- Text wird akkumuliert, um ihn dem Konversationsverlauf hinzuzufügen
+
+- `coroutine.spawn` führt `runner:step()` separat aus, damit die Haupt-Coroutine Stream-Chunks verarbeiten kann.
+- `channel.select` wartet auf Stream- und Completion-Channel.
+- Jeder Durchgang verwendet ein eindeutiges Topic und entfernt seinen Listener, nachdem
+  sowohl der Runner als auch der Stream dieses Durchgangs abgeschlossen sind.
+- Der Prozess sammelt den gestreamten Text für den Konversationsverlauf.
+
+Führen Sie die Streaming-Phase mit demselben Befehl aus:
+
+```bash
+wippy run chat
+```
 
 ## Phase 5: Tools
 
-Gib dem Agenten Tools, die er aufrufen kann, um auf externe Fähigkeiten zuzugreifen.
+Geben Sie dem Agenten Tools, die er für externe Fähigkeiten aufrufen kann.
 
 ### Tools definieren
 
-Erstelle `src/tools/_index.yaml`:
+Erstellen Sie `src/tools/_index.yaml`:
 
 ```yaml
 version: "1.0"
@@ -542,7 +576,7 @@ Tool-Metadaten teilen dem LLM mit, was das Tool tut:
 
 ### Tools implementieren
 
-Erstelle `src/tools/current_time.lua`:
+Erstellen Sie `src/tools/current_time.lua`:
 
 ```lua
 local time = require("time")
@@ -558,7 +592,7 @@ end
 return { handler = handler }
 ```
 
-Erstelle `src/tools/calculate.lua`:
+Erstellen Sie `src/tools/calculate.lua`:
 
 ```lua
 local expr = require("expr")
@@ -576,7 +610,7 @@ return { handler = handler }
 
 ### Tools beim Agenten registrieren
 
-Aktualisiere den Agent-Eintrag in `src/_index.yaml`, um die Tools zu referenzieren:
+Aktualisieren Sie den Agent-Eintrag in `src/_index.yaml`, sodass er die Tools referenziert:
 
 ```yaml
   - name: assistant
@@ -591,7 +625,7 @@ Aktualisiere den Agent-Eintrag in `src/_index.yaml`, um die Tools zu referenzier
       Answer questions clearly. If you don't know something, say so.
       Use tools when they help answer the question.
       Do not use emoji in responses.
-    model: gpt-4.1-nano
+    model: gpt-4o-mini
     max_tokens: 1024
     temperature: 0.7
     tools:
@@ -601,17 +635,16 @@ Aktualisiere den Agent-Eintrag in `src/_index.yaml`, um die Tools zu referenzier
 
 ### Tool-Ausführung hinzufügen
 
-Aktualisiere die Prozess-Module des Chat-Prozesses um `json` und `funcs`:
+Ergänzen Sie die Prozessmodule des Chat-Prozesses um `json` und `funcs`:
 
 ```yaml
     modules:
       - io
       - json
-      - process
       - funcs
 ```
 
-Aktualisiere `src/chat.lua` mit Tool-Ausführung:
+Ergänzen Sie `src/chat.lua` um die Tool-Ausführung:
 
 ```lua
 local io = require("io")
@@ -621,21 +654,32 @@ local prompt = require("prompt")
 local agent_context = require("agent_context")
 
 local STREAM_TOPIC = "stream"
+local stream_sequence = 0
 
-local function stream_response(runner, conversation, stream_ch)
+local function stream_response(runner, conversation)
+    stream_sequence = stream_sequence + 1
+    local topic = STREAM_TOPIC .. ":" .. tostring(stream_sequence)
+    local stream_ch = process.listen(topic)
     local done_ch = channel.new(1)
 
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
             stream_target = {
                 reply_to = process.pid(),
-                topic = STREAM_TOPIC,
+                topic = topic,
             },
         })
         done_ch:send({ response = response, err = err })
     end)
 
     local full_text = ""
+    local response_result = nil
+    local stream_done = false
+
+    local function finish(text, response, err)
+        process.unlisten(stream_ch)
+        return text, response, err
+    end
 
     while true do
         local result = channel.select({
@@ -645,26 +689,29 @@ local function stream_response(runner, conversation, stream_ch)
         if not result.ok then break end
 
         if result.channel == done_ch then
-            local r = result.value
-            return full_text, r.response, r.err
+            response_result = result.value
+        else
+            local chunk = result.value
+            if chunk.type == "chunk" then
+                io.write(chunk.content or "")
+                full_text = full_text .. (chunk.content or "")
+            elseif chunk.type == "done" then
+                stream_done = true
+            elseif chunk.type == "error" then
+                return finish(nil, nil, chunk.error and chunk.error.message or "stream error")
+            end
         end
 
-        local chunk = result.value
-        if chunk.type == "chunk" then
-            io.write(chunk.content or "")
-            full_text = full_text .. (chunk.content or "")
-        elseif chunk.type == "done" then
-            local r, ok = done_ch:receive()
-            if ok and r then
-                return full_text, r.response, r.err
-            end
-            return full_text, nil, nil
-        elseif chunk.type == "error" then
-            return nil, nil, chunk.error and chunk.error.message or "stream error"
+        if response_result and response_result.err then
+            return finish(full_text, response_result.response, response_result.err)
+        end
+
+        if response_result and stream_done then
+            return finish(full_text, response_result.response, response_result.err)
         end
     end
 
-    return full_text, nil, nil
+    return finish(full_text, nil, nil)
 end
 
 local function execute_tools(tool_calls)
@@ -690,9 +737,9 @@ local function execute_tools(tool_calls)
     return results
 end
 
-local function run_turn(runner, conversation, stream_ch)
+local function run_turn(runner, conversation)
     while true do
-        local text, response, err = stream_response(runner, conversation, stream_ch)
+        local text, response, err = stream_response(runner, conversation)
         if err then
             io.print("")
             return nil, err
@@ -734,8 +781,6 @@ local function main()
     end
 
     local conversation = prompt.new()
-    local stream_ch = process.listen(STREAM_TOPIC)
-
     while true do
         io.write("> ")
         io.flush()
@@ -745,7 +790,7 @@ local function main()
 
         conversation:add_user(input)
 
-        local text, gen_err = run_turn(runner, conversation, stream_ch)
+        local text, gen_err = run_turn(runner, conversation)
         if gen_err then
             io.print("Error: " .. tostring(gen_err))
             goto continue
@@ -757,7 +802,6 @@ local function main()
         ::continue::
     end
 
-    process.unlisten(stream_ch)
     io.print("Bye!")
 end
 
@@ -765,16 +809,18 @@ return { main = main }
 ```
 
 Die Tool-Ausführungsschleife:
-1. `runner:step()` mit Streaming aufrufen
-2. Wenn die Antwort `tool_calls` enthält, jedes Tool über `funcs.call()` ausführen
-3. Tool-Aufrufe und Ergebnisse zur Konversation hinzufügen
-4. Zurück zu Schritt 1, damit der Agent die Ergebnisse einbeziehen kann
-5. Wenn keine weiteren Tool-Aufrufe vorhanden sind, den finalen Text zurückgeben
+
+1. `runner:step()` mit Streaming aufrufen.
+2. Wenn die Antwort `tool_calls` enthält, jedes Tool über `funcs.call()` ausführen.
+3. Tool-Aufrufe und Ergebnisse zur Konversation hinzufügen.
+4. Den Runner erneut aufrufen, damit er die Ergebnisse berücksichtigen kann.
+5. Den endgültigen Text zurückgeben, wenn die Antwort keine weiteren Tool-Aufrufe enthält.
 
 ### Agenten ausführen
 
 ```bash
 wippy update
+wippy install
 wippy run chat
 ```
 
@@ -791,9 +837,19 @@ The current time is 17:20 UTC on February 12, 2026.
 Bye!
 ```
 
+## Vollständigkeit und Grenzen
+
+- Die Seite enthält alle Lua-Dateien und Registry-Einträge, die für die fünf Phasen
+  verfasst werden müssen. `wippy.lock` und installierte Module entstehen durch die oben gezeigten Befehle.
+- Modellausgabe, Token-Nutzung, Reihenfolge der Tool-Auswahl und Wortlaut hängen vom
+  Provider ab; die dargestellte Interaktion ist ein Beispiel und keine Zusage exakten Textes.
+- Der Rechner ist bewusst ein kleiner Parser für Arithmetik und kein allgemeiner
+  Ausdrucksauswerter. Behandeln Sie jedes echte Tool als Autoritätsgrenze und weisen
+  Sie eng begrenzte Sicherheits-Policies zu, bevor Sie Seiteneffekte bereitstellen.
+
 ## Nächste Schritte
 
-- [LLM-Modul](framework/llm.md) - Vollständige LLM-API-Referenz
-- [Agent-Modul](framework/agents.md) - Agent-Framework-Referenz
-- [CLI-Anwendungen](tutorials/cli.md) - Terminal-I/O-Muster
-- [Prozesse](tutorials/processes.md) - Prozessmodell und Kommunikation
+- [LLM-Modul](framework/llm.md) — Referenz der LLM-API
+- [Agent-Modul](framework/agents.md) — Referenz des Agent-Frameworks
+- [CLI-Anwendungen](tutorials/cli.md) — Muster für Terminal-I/O
+- [Prozesse](tutorials/processes.md) — Prozessmodell und Kommunikation

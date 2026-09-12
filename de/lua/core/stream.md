@@ -7,17 +7,22 @@ description: "Stream-Lese-/Schreiboperationen zur effizienten Datenverarbeitung.
 <secondary-label ref="function"/>
 <secondary-label ref="process"/>
 
-Stream-Lese-/Schreiboperationen zur effizienten Datenverarbeitung. Stream-Objekte werden von anderen Modulen (HTTP, Dateisystem, etc.) bezogen.
+Streams bieten inkrementelles I/O für HTTP-, Dateisystem- und andere Module. Die Module, denen die zugrunde liegenden Daten gehören, erstellen die Stream-Objekte. Diese Seite ist eine API-Referenz; die Scanner-Schleife verwendet einen anwendungsdefinierten Callback `process(token)`.
 
-## Laden
+## Einen Stream beziehen
 
 ```lua
--- Vom HTTP-Request-Body
-local stream = req:stream()
+-- From HTTP request body
+local stream, err = req:stream()
+if err then return nil, err end
 
--- Vom Dateisystem
+-- From filesystem
 local fs = require("fs")
-local stream = fs.get("app:data"):open("/file.txt", "r")
+local volume, err = fs.get("app:data")
+if err then return nil, err end
+
+local stream, err = volume:open("/file.txt", "r")
+if err then return nil, err end
 ```
 
 ## Lesen
@@ -63,7 +68,7 @@ local pos, err = stream:seek(whence, offset)
 local ok, err = stream:flush()
 ```
 
-Gepufferte Daten in den zugrunde liegenden Speicher schreiben.
+`flush` schreibt gepufferte Daten in das zugrunde liegende Ziel.
 
 ## Stream-Info
 
@@ -85,7 +90,7 @@ local info, err = stream:stat()
 local ok, err = stream:close()
 ```
 
-Stream schließen und Ressourcen freigeben. Sicher mehrfach aufzurufen.
+`close` gibt die Ressourcen des Streams frei und kann mehrfach aufgerufen werden.
 
 ## Scanner
 
@@ -115,6 +120,8 @@ while true do
     process(scanner:text())
 end
 ```
+
+Wenn `scan()` den Wert `false` zurückgibt, prüfen Sie `scanner:err()`, bevor Sie das Ergebnis als EOF behandeln. Tokenisierungsfehler und Fehler beim zugrunde liegenden Lesen werden im Scanner gespeichert und erscheinen nicht im zweiten Rückgabewert von `scan()`.
 
 ## Fehler
 

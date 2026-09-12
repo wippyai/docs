@@ -1,11 +1,11 @@
 ---
 title: "言語サーバー"
-description: "Wippyには、LuaコードのIDE機能を提供するビルトインLSP (Language Server Protocol) サーバーが含まれています。サーバーはWippyランタイムの一部として動作し、TCPまたはHTTP経由でエディタに接続します。"
+description: "TCP または HTTP 経由で Lua エディタ機能を提供する、Wippy 組み込みの Language Server Protocol サーバーを設定します。"
 ---
 
 # 言語サーバー
 
-Wippyには、LuaコードのIDE機能を提供するビルトインLSP (Language Server Protocol) サーバーが含まれています。サーバーはWippyランタイムの一部として動作し、TCPまたはHTTP経由でエディタに接続します。
+Wippy には、Lua エディタ機能を提供する Language Server Protocol（LSP）サーバーが含まれています。このサーバーは Wippy ランタイムの一部として動作し、TCP または HTTP 経由のエディタ接続を受け付けます。
 
 ## 機能
 
@@ -15,7 +15,7 @@ Wippyには、LuaコードのIDE機能を提供するビルトインLSP (Languag
 - 参照の検索
 - ドキュメントおよびワークスペースシンボル
 - コール階層 (呼び出し元と呼び出し先)
-- リアルタイム診断 (パースエラー、型エラー)
+- パースに成功した後、現在のエディタオーバーレイにある型エラーを取得する pull diagnostics
 - 関数パラメータのシグネチャヘルプ
 
 ## 設定
@@ -23,12 +23,6 @@ Wippyには、LuaコードのIDE機能を提供するビルトインLSP (Languag
 `.wippy.yaml` でLSPサーバーを有効にします:
 
 ```yaml
-version: "1.0"
-
-lua:
-  type_system:
-    enabled: true
-
 lsp:
   enabled: true
   address: ":7777"
@@ -38,7 +32,7 @@ lsp:
 
 | フィールド | デフォルト | 説明 |
 |------------|------------|------|
-| `enabled` | false | TCPサーバーを有効化 |
+| `enabled` | false | LSP サービスと TCP サーバーを有効化 |
 | `address` | :7777 | TCPリッスンアドレス |
 | `http_enabled` | false | HTTPトランスポートを有効化 |
 | `http_address` | :7778 | HTTPリッスンアドレス |
@@ -52,7 +46,7 @@ TCPサーバーは、標準的なLSPメッセージフレーミング (Content-L
 
 ### HTTPトランスポート
 
-HTTPトランスポートはJSON-RPCペイロードを持つPOSTリクエストを受け付けます。ブラウザベースのエディタやWebツールに便利です。クロスオリジンアクセスのためにCORSヘッダーが含まれます。
+HTTP トランスポートは、JSON-RPC ペイロードを含む POST リクエストを受け付けます。ブラウザベースのエディタや Web ツールをサポートし、CORS プリフライトの `OPTIONS` リクエストに応答するとともに、クロスオリジンアクセス用の CORS ヘッダーを付与します。
 
 ```yaml
 lsp:
@@ -75,7 +69,7 @@ wippy://namespace:entry_name
 
 ## インデクシング
 
-LSPサーバーは高速な検索のためにすべてのコードエントリのインデックスを維持します。インデクシングは複数のワーカーを使用してバックグラウンドで行われます。
+LSP サーバーはコードエントリのインデックスを維持します。複数のワーカーがバックグラウンドでインデックスを更新します。
 
 主な動作:
 
@@ -89,6 +83,9 @@ LSPサーバーは高速な検索のためにすべてのコードエントリ�
 | メソッド | 説明 |
 |----------|------|
 | `initialize` | 機能ネゴシエーション |
+| `initialized` | 初期化完了通知 |
+| `shutdown` | プロトコルセッションを終了 |
+| `exit` | 終了通知 |
 | `textDocument/didOpen` | 開いたドキュメントの追跡 |
 | `textDocument/didChange` | ドキュメント全体の同期 |
 | `textDocument/didClose` | ドキュメントの解放 |
@@ -115,16 +112,12 @@ LSPサーバーは高速な検索のためにすべてのコードエントリ�
 
 ## 診断
 
-診断はインデクシング中に計算され、以下を含みます:
+ドキュメントのパースに成功すると、インデックス処理によって型の不一致や未定義シンボルなどの型チェック診断が保存されます。診断には、標準の error、warning、information、hint の重大度が使用されます。
 
-- パースエラー (構文の問題)
-- 型チェックエラー (不一致、未定義のシンボル)
-- 重大度レベル: error、warning、information、hint
-
-診断はドキュメントオーバーレイシステムを通じて入力中にリアルタイムで更新されます。
+ドキュメント全体の変更通知によって、診断に使用するオーバーレイが更新されます。クライアントは `textDocument/diagnostic` で現在保存されている結果を取得します。このサーバーは `textDocument/publishDiagnostics` 通知をプッシュしません。パースに失敗すると、新しい診断が保存される前に再インデックス処理が中止されるため、pull 結果にはその構文エラーが含まれず、直前に成功した結果が残る場合があります。
 
 ## 関連項目
 
-- [リンター](guides/linter.md) - CLIベースのコードチェック
-- [型](lua/types.md) - 型システムのドキュメント
-- [設定](guides/configuration.md) - ランタイム設定
+- [リンター](guides/linter.md) — CLI ベースのコードチェック
+- [型](lua/types.md) — 型システムのドキュメント
+- [設定](guides/configuration.md) — ランタイム設定

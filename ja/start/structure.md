@@ -30,7 +30,7 @@ myapp/
 YAML定義は起動時にレジストリにロードされます。レジストリが真のソースであり、YAMLファイルはそれを設定する一つの方法です。エントリは他のソースから来ることも、プログラムで作成することもできます。
 </note>
 
-### ファイル構造
+### Definition file の形式 :id=definition-file-format
 
 `namespace`に加えて、`entries`配列またはトップレベルの`name`+`kind`のいずれかを持つYAMLファイルは有効な定義ファイルです。`version`は省略可能です：
 
@@ -42,7 +42,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: IDでユーザーを取得
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +52,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: ユーザーAPIエンドポイント
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -69,18 +69,18 @@ entries:
 意味的な区切りにはドット（`.`）を、単語の区切りにはアンダースコア（`_`）を使用します：
 
 ```yaml
-# 関数とそのエンドポイント
-- name: get_user              # 関数
-- name: get_user.endpoint     # そのHTTPエンドポイント
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# 同じ関数に対する複数のエンドポイント
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
-# ルーター
-- name: api.public            # パブリックAPIルーター
-- name: api.admin             # 管理者用APIルーター
+# Routers
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
@@ -132,14 +132,14 @@ modules:
 
 ## エントリ定義
 
-各エントリは`entries`配列内に定義します。プロパティはルートレベルにあります（`data:`ラッパーなし）：
+`entries` array の各 item が 1 つの entry を定義します。kind 固有 field は、次のように `name`、`kind`、`meta` と同じ level に置けます。
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Hello Worldを返す
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -149,10 +149,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Helloエンドポイント
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+明示的な `data:` field も利用できます。指定した場合、その value が kind 固有 payload 全体になるため、sibling の kind 固有 field と混在させないでください。
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### メタデータ
@@ -163,8 +175,8 @@ UI向けの情報には`meta`を使用します：
 - name: payment_handler
   kind: function.lua
   meta:
-    title: 決済プロセッサ
-    comment: Stripe決済を処理
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
@@ -178,7 +190,7 @@ UI向けの情報には`meta`を使用します：
 - name: config
   kind: registry.entry
   meta:
-    title: アプリケーション設定
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -190,15 +202,15 @@ UI向けの情報には`meta`を使用します：
 
 | 種別 | 目的 |
 |------|------|
-| `registry.entry` | 汎用データ |
+| `registry.entry` | 通常の event dispatch を行わず保存する汎用 data |
 | `function.lua` | 呼び出し可能なLua関数 |
 | `process.lua` | 長時間実行プロセス |
 | `http.service` | HTTPサーバー |
 | `http.router` | ルートグループ |
 | `http.endpoint` | HTTPハンドラ |
-| `process.host` | プロセススーパーバイザ |
+| `process.host` | process execution host |
 
-完全なリファレンスは[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
+entry-kind reference は[エントリ種別ガイド](guides/entry-kinds.md)を参照してください。
 
 ## 設定ファイル
 
@@ -220,7 +232,7 @@ supervisor:
     worker_count: 16
 ```
 
-すべてのオプションについては[設定ガイド](guides/configuration.md)を参照してください。
+runtime configuration field は[設定ガイド](guides/configuration.md)を参照してください。
 
 ### wippy.lock
 
@@ -270,7 +282,7 @@ myapp/
 
 ## 関連項目
 
-- [アプリケーションアーキテクチャ](concepts/architecture.md) - アプリをスライスとレイヤーに分割する方法
-- [エントリ種別ガイド](guides/entry-kinds.md) - 利用可能なエントリ種別
-- [設定ガイド](guides/configuration.md) - ランタイムオプション
-- [カスタムエントリ種別](internals/kinds.md) - ハンドラの実装（上級）
+- [アプリケーションアーキテクチャ](concepts/architecture.md) — application を slice と layer に整理
+- [エントリ種別ガイド](guides/entry-kinds.md) — 利用可能な entry kind
+- [設定ガイド](guides/configuration.md) — runtime option
+- [カスタムエントリ種別](internals/kinds.md) — handler の実装（上級）

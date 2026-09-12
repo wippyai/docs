@@ -1,11 +1,13 @@
 ---
 title: "의존성 관리"
-description: "Wippy는 잠금 파일 기반의 의존성 시스템을 사용합니다. 모듈은 허브에 게시되고, 소스에서 의존성으로 선언되며, 정확한 버전을 추적하는 wippy.lock 파일로 해석됩니다."
+description: "잠금 파일로 Wippy 모듈 의존성을 선언, 해석, 설치, 업데이트, 교체, 검증합니다."
 ---
 
 # 의존성 관리
 
-Wippy는 잠금 파일 기반의 의존성 시스템을 사용합니다. 모듈은 허브에 게시되고, 소스에서 의존성으로 선언되며, 정확한 버전을 추적하는 `wippy.lock` 파일로 해석됩니다.
+Wippy는 소스 선언에서 모듈 의존성을 해석하고 정확한 버전을 `wippy.lock`에 기록합니다. 게시된 모듈은 Hub에서 프로젝트의 모듈 디렉토리로 다운로드됩니다.
+
+아래 `acme/*` 모듈 이름, 버전, 해시, 로컬 경로는 예시입니다. 자체 프로젝트 또는 Hub에서 가져온 모듈과 검증된 다이제스트로 바꾸세요.
 
 ## 프로젝트 파일
 
@@ -164,7 +166,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # 모든 모듈 다시 가져오기 (--force와 --repair는 별칭)
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## 모듈 저장소

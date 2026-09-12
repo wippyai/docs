@@ -8,7 +8,9 @@ description: "Consultar información del sistema en tiempo de ejecución incluye
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Consultar información del sistema en tiempo de ejecución incluyendo uso de memoria, estadísticas de recolección de basura, detalles de CPU y metadatos de proceso.
+El módulo `system` informa del estado del runtime, memoria, proceso, host, supervisor y clúster. También expone controles seleccionados del runtime.
+
+Esta es una referencia de API. La mayoría de fragmentos muestran una operación aislada; controles como el apagado, los ajustes del runtime y los locks distribuidos requieren autorización explícita de políticas y un tratamiento de errores específico de la aplicación.
 
 ## Carga
 
@@ -18,7 +20,7 @@ local system = require("system")
 
 ## Apagado
 
-Desencadenar el apagado del sistema con código de salida. Útil para aplicaciones de terminal; llamar desde actores en ejecución terminará todo el sistema:
+Solicita el apagado del sistema con un código de salida. Llamar a esta función desde cualquier proceso o actor termina todo el sistema:
 
 ```lua
 local ok, err = system.exit(0)
@@ -32,7 +34,7 @@ local ok, err = system.exit(0)
 
 ## Listar Módulos
 
-Obtener todos los módulos Lua cargados con metadatos:
+Lista los módulos Lua cargados y sus metadatos:
 
 ```lua
 local mods, err = system.modules()
@@ -198,13 +200,13 @@ local count, err = system.runtime.goroutines()
 
 ## GOMAXPROCS
 
-Obtener o establecer el valor de GOMAXPROCS:
+Obtener o establecer el valor de GOMAXPROCS mediante el selector `gomaxprocs`:
 
 ```lua
--- Obtener valor actual
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- Establecer nuevo valor
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -339,19 +341,19 @@ local states, err = system.supervisor.states()
 
 Cada tabla de estado tiene el mismo formato que `system.supervisor.state()`.
 
-## Primitivas del Cluster
+## Primitivas del clúster
 
 Las sub-tablas `system.node`, `system.cluster`, `system.raft` y `system.lock` exponen la capa de clustering. Son más útiles cuando el [clustering está habilitado](guides/cluster.md); en un nodo independiente degradan de forma predecible — `system.raft.*` reporta "raft not available", `system.cluster` reporta solo el nodo local, y `system.lock` requiere el almacén KV respaldado por Raft que proporciona el clustering.
 
-Todas las llamadas de lectura son locales y baratas: reportan la vista de este nodo del estado confirmado, sin bloquear nunca en la red.
+Las llamadas de lectura informan de la vista local del estado confirmado de este nodo y no bloquean en la red.
 
 ### Identidad del nodo
 
 `system.node` reporta la propia identidad de este nodo en el cluster.
 
 ```lua
-local id, err = system.node.id()      -- ID de este nodo
-local addr, err = system.node.addr()  -- dirección de red anunciada
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -365,12 +367,12 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 
 ### Membresía del cluster
 
-`system.cluster` reporta la vista a nivel de cluster: quiénes son los miembros y quién lidera.
+`system.cluster` informa de los miembros del clúster y del líder actual.
 
 ```lua
-local members, err = system.cluster.members()  -- array de tablas de nodo
-local leader, err = system.cluster.leader()    -- ID del nodo líder, o "" si desconocido
-local n, err = system.cluster.size()           -- recuento de miembros visibles
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()` devuelve un array de tablas de nodo. El nodo local se incluye una vez y aparece primero.
@@ -396,11 +398,11 @@ local n, err = system.cluster.size()           -- recuento de miembros visibles
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: voter o standby
-local role, err = system.raft.role()             -- mismos valores que system.node.role()
-local term, err = system.raft.term()             -- término Raft actual
-local idx, err = system.raft.commit_index()      -- índice de log confirmado más alto
-local stats, err = system.raft.stats()           -- mapa de estadísticas raw (string -> string)
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | Función | Devuelve | Notas |
@@ -420,13 +422,21 @@ local stats, err = system.raft.stats()           -- mapa de estadísticas raw (s
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- sección crítica: solo un titular en todo el cluster
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
-Acquire es fail-fast: si el bloqueo ya está tomado devuelve `false` inmediatamente en lugar de bloquear, por lo que los callers implementan su propio retry y backoff. Solo el titular actual puede liberar; liberar un bloqueo que no se posee es un no-op seguro.
+La adquisición es fail-fast: cuando el lock ya está tomado, la llamada devuelve `false` inmediatamente en lugar de bloquear. Los callers proporcionan las políticas de retry y backoff necesarias. Solo el holder actual puede liberar un lock; un intento de liberación por otro proceso es un no-op.
 
 | Función | Devuelve | Resultados |
 |---------|---------|------------|
@@ -466,7 +476,7 @@ Las operaciones del sistema están sujetas a evaluación de política de segurid
 | `system.read` | `cluster` | Leer membresía del cluster y líder |
 | `system.read` | `raft` | Leer estado de Raft |
 | `system.read` | `raft_stats` | Leer el mapa de estadísticas raw de Raft |
-| `system.lock` | `<nombre del bloqueo>` | Adquirir o liberar un bloqueo distribuido |
+| `system.lock` | `<lock name>` | Adquirir o liberar un bloqueo distribuido |
 | `system.exit` | - | Desencadenar apagado del sistema |
 
 ## Errores

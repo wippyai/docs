@@ -1,11 +1,13 @@
 ---
 title: "HTTPサーバー"
-description: "HTTPサーバー（http.service）はポートをリッスンし、ルーター、エンドポイント、静的ファイルハンドラをホストします。"
+description: "HTTPサーバー（http.service）はポートで待ち受け、ルーター、エンドポイント、静的ファイルハンドラをホストします。"
 ---
 
 # HTTPサーバー
 
-HTTPサーバー（`http.service`）はポートをリッスンし、ルーター、エンドポイント、静的ファイルハンドラをホストします。
+`http.service`はリスナーを所有し、ルーター、エンドポイント、静的ファイルハンドラをホストします。
+
+**分類：サーバー設定リファレンス。** すべての参照先となるネットワーク、環境、ファイルシステム、ルーター、証明書、アクター、ポリシーの各エントリを定義していないブロックは、レジストリの一部分です。
 
 ## 設定
 
@@ -30,38 +32,38 @@ HTTPサーバー（`http.service`）はポートをリッスンし、ルータ�
 ```
 
 | フィールド | 型 | デフォルト | 説明 |
-|------------|-----|-----------|------|
-| `addr` | string | 必須 | リッスンアドレス（`:8080`、`0.0.0.0:443`） |
+|-------|------|---------|-------------|
+| `addr` | string | 必須 | 待受アドレス（`:8080`、`0.0.0.0:443`） |
 | `timeouts.read` | duration | - | リクエスト読み取りタイムアウト |
 | `timeouts.write` | duration | - | レスポンス書き込みタイムアウト |
-| `timeouts.idle` | duration | - | Keep-alive接続タイムアウト |
+| `timeouts.idle` | duration | - | Keep-Alive接続のタイムアウト |
 | `host.buffer_size` | int | 1024 | メッセージリレーのバッファサイズ |
 | `host.worker_count` | int | NumCPU | メッセージリレーのワーカー数 |
-| `network` | Registry ID | - | [ネットワークオーバーレイ](system/network.md)（例: Tailscale、I2P）経由でリスナーをバインド |
+| `network` | Registry ID | - | [ネットワークオーバーレイ](system/network.md)（Tailscale、I2Pなど）を介してリスナーをバインド |
 | `tls` | object | - | TLS終端（[TLS](#tls)を参照） |
 
 ## タイムアウト
 
-リソース枯渇を防ぐためにタイムアウトを設定します：
+リソースの枯渇を防ぐためにタイムアウトを設定します：
 
 ```yaml
 timeouts:
-  read: "10s"    # リクエストヘッダ読み取りの最大時間
-  write: "60s"   # レスポンス書き込みの最大時間
-  idle: "120s"   # Keep-aliveタイムアウト
+  read: "10s"    # Max time to read the entire request (headers + body)
+  write: "60s"   # Max time to write response
+  idle: "120s"   # Keep-alive timeout
 ```
 
-- `read` - API向けは短め（5-10秒）、アップロードは長め
-- `write` - 想定されるレスポンス生成時間に合わせる
-- `idle` - 接続再利用とリソース使用のバランス
+- `read` — APIでは短く（5～10秒）、アップロードでは長く設定
+- `write` — 想定されるレスポンス生成時間に合わせて設定
+- `idle` — 接続の再利用とリソース使用量のバランスを取って設定
 
 <note>
-Duration形式: <code>30s</code>、<code>1m</code>、<code>2h15m</code>。無効化には<code>0</code>を使用。
+期間の形式：<code>30s</code>、<code>1m</code>、<code>2h15m</code>。無効にするには<code>0</code>を使用します。
 </note>
 
-## Host設定
+## ホスト設定
 
-`host`セクションは、WebSocketリレーなどのコンポーネントが使用するサーバー内部のメッセージリレーを設定します：
+`host`セクションは、WebSocketリレーなどのコンポーネントが使用する、サーバー内部のメッセージリレーを設定します：
 
 ```yaml
 host:
@@ -70,17 +72,17 @@ host:
 ```
 
 | フィールド | デフォルト | 説明 |
-|------------|-----------|------|
+|-------|---------|-------------|
 | `buffer_size` | 1024 | ワーカーごとのメッセージキュー容量 |
-| `worker_count` | NumCPU | メッセージ処理の並列goroutine数 |
+| `worker_count` | NumCPU | メッセージを並列処理するgoroutine数 |
 
 <tip>
-高スループットのWebSocketアプリケーションではこれらの値を増やしてください。メッセージリレーはHTTPコンポーネントとプロセス間の非同期配信を処理します。
+高スループットのWebSocketアプリケーションでは、これらの値を増やしてください。メッセージリレーは、HTTPコンポーネントとプロセス間の非同期配信を処理します。
 </tip>
 
 ## セキュリティ
 
-HTTPサーバーにはlifecycle設定を通じてデフォルトのセキュリティコンテキストを適用できます：
+HTTPサーバーには、ライフサイクル設定を通じてデフォルトのセキュリティコンテキストを適用できます：
 
 ```yaml
 lifecycle:
@@ -92,31 +94,31 @@ lifecycle:
       - app:http_access_policy
 ```
 
-これにより、すべてのリクエストに対するベースラインのアクターとポリシーが設定されます。認証されたリクエストでは、[token_authミドルウェア](http/middleware.md)が検証済みトークンに基づいてアクターを上書きし、ユーザーごとのセキュリティポリシーを可能にします。
+これにより、すべてのリクエストに基本となるアクターとポリシーが設定されます。認証されたリクエストでは、[token_authミドルウェア](http/middleware.md)が検証済みトークンに基づいてアクターを上書きし、ユーザーごとのセキュリティポリシーを適用できるようにします。
 
-## Lifecycle
+## ライフサイクル
 
-サーバーはsupervisorによって管理されます：
+サーバーはスーパーバイザーによって管理されます：
 
 ```yaml
 lifecycle:
   auto_start: true
   start_timeout: 30s
   stop_timeout: 60s
-  depends_on:
+  requires:
     - app:database
 ```
 
 | フィールド | 説明 |
-|------------|------|
+|-------|-------------|
 | `auto_start` | アプリケーション起動時に開始 |
-| `start_timeout` | サーバー起動待機の最大時間 |
-| `stop_timeout` | グレースフルシャットダウンの最大時間 |
-| `depends_on` | これらのエントリが準備完了後に開始 |
+| `start_timeout` | サーバーの起動を待機する最大時間 |
+| `stop_timeout` | 正常終了にかけられる最大時間 |
+| `requires` | これらのエントリの準備完了後に開始（`depends_on`は従来の表記） |
 
 ## コンポーネントの接続
 
-ルーターと静的ハンドラはメタデータ経由でサーバーを参照します：
+ルーターと静的ハンドラは、メタデータを介してサーバーを参照します：
 
 ```yaml
 entries:
@@ -140,18 +142,18 @@ entries:
 
 ## 複数のサーバー
 
-異なる目的のために別々のサーバーを実行します：
+目的ごとに別のサーバーを実行できます：
 
 ```yaml
 entries:
-  # パブリックAPI
+  # Public API
   - name: public
     kind: http.service
     addr: ":8080"
     lifecycle:
       auto_start: true
 
-  # 管理用（localhostのみ）
+  # Admin (localhost only)
   - name: admin
     kind: http.service
     addr: "127.0.0.1:9090"
@@ -161,7 +163,7 @@ entries:
 
 ## TLS
 
-サーバーは直接TLS終端を行えます。`tls.mode`を`manual`（自身の証明書を提供）または`auto`（オーバーレイネットワークドライバが証明書を提供、例: `network.tailscale`）に設定します。通常のclearnetリスナーは`auto`をサポートしません。プレーンHTTPで実行するには`tls`を省略するかmodeを空のままにします。
+サーバーはTLSを直接終端できます。独自の証明書を指定する場合は`tls.mode`を`manual`に、オーバーレイネットワークドライバーから証明書を取得する場合は`auto`（`network.tailscale`など）に設定します。通常のクリアネットリスナーでは`auto`を使用できません。平文HTTPで実行するには、`tls`を省略するかモードを空のままにします。
 
 `auto`モードではサーバーは`cert`/`key`を指定してはいけません — ネットワークドライバが提供します。
 
@@ -204,9 +206,9 @@ entries:
 | `mode` | `""`（オフ）、`auto`、または`manual` |
 | `cert` / `key` | PEMコンテンツ — インライン、`file://`参照、または`${env:NAME}`プレースホルダ |
 
-### Mutual TLS (mTLS)
+### 相互TLS（mTLS）
 
-`mode: manual`ではサーバーはさらにクライアント証明書を検証できます：
+`mode: manual`では、クライアント証明書も検証できます：
 
 ```yaml
 tls:
@@ -224,12 +226,17 @@ tls:
 | `client_auth` | `request`、`require_any`、`verify_if_given`、`require_and_verify` |
 | `client_ca` | 信頼するクライアントCAのPEMバンドル（インライン、`file://`、または`${env:NAME}`） |
 
-`verify_if_given`と`require_and_verify`はCAが必要です。`request`と`require_any`はCA検証なしで任意のクライアント証明書を受け入れます。
+| フィールド | 説明 |
+|-------|-------------|
+| `client_auth` | `request`、`require_any`、`verify_if_given`、`require_and_verify`のいずれか |
+| `client_ca` | 信頼するクライアントCAのPEMバンドル（インライン、`file://`、または`${env:NAME}`） |
+
+`verify_if_given`と`require_and_verify`にはCAが必要です。`request`と`require_any`は、CA検証なしですべてのクライアント証明書を受け入れます。
 
 ## 関連項目
 
 - [ルーティング](http/router.md) - ルーターとエンドポイント
-- [静的ファイル](http/static.md) - 静的ファイル配信
+- [静的ファイル](http/static.md) - 静的ファイルの配信
 - [ミドルウェア](http/middleware.md) - 利用可能なミドルウェア
 - [セキュリティ](system/security.md) - セキュリティポリシー
 - [WebSocketリレー](http/websocket-relay.md) - WebSocketメッセージング

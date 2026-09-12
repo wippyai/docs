@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | Arbeitsverzeichnis |
 | `options.env` | table | Umgebungsvariablen |
 | `options.pty` | table | Ein Pseudoterminal für den Kindprozess allokieren |
+| `options.process_group` | boolean | Kindprozess in einer eigenen Prozessgruppe starten, damit Signale auch Nachkommen erreichen; unter Windows nicht unterstützt |
 
 **Gibt zurück:** `Process, error`
 
@@ -203,7 +204,43 @@ proc:wait()
 stdout:close()
 ```
 
-Jeder Aufruf schreibt die angegebenen Bytes und kehrt zurück. Es gibt keine Methode, die stdin schließt: Es bleibt für die Lebensdauer des Prozesses offen, sodass ein Befehl, der bis zum Eingabeende liest, wie etwa `sort`, nie ein EOF sieht und erst endet, wenn der Prozess ein Signal erhält oder geschlossen wird. Wählen Sie einen Befehl, der von sich aus aufhört zu lesen, wie es `head -n 3` tut, oder führen Sie einen Befehl, der EOF braucht, hinter einer Shell-Pipeline aus, die seine Eingabe liefert.
+Jeder Aufruf schreibt die angegebenen Bytes und kehrt zurück. Rufen Sie
+`close_stdin()` auf, wenn der Kindprozess EOF erhalten muss:
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()` ist idempotent. Spätere Schreibversuche schlagen fehl, weil die
+Eingabeseite geschlossen ist. PTY-gestützte Prozesse bieten diese Pipe-Operation
+nicht an.
+
+## done
+
+Mit `done()` lässt sich das Ende beobachten, ohne das Prozess-Handle zu verbrauchen:
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+Der zurückgegebene Kanal liefert einen Exit-Datensatz und schließt danach.
+Wiederholte Aufrufe geben denselben Kanal zurück. Der Datensatz enthält `code`,
+optional `signal` und nur dann `error`, wenn die Runtime das Ende nicht
+beobachten konnte. Bei einem Signal ist der Code `128 + signal`. Anders als
+`wait()` lässt `done()` das Handle nutzbar; `wait()` nach der Zustellung gibt den
+gespeicherten Code zurück.
 
 ## signal / close
 
@@ -226,9 +263,12 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)` sendet einem gestarteten Kindprozess `SIGTERM`, oder `SIGKILL`, wenn `force` wahr ist, und reapt ihn dann im Hintergrund, sodass der Aufruf nicht blockiert. Ein Kindprozess, der nach einer Gnadenfrist noch läuft, wird gekillt, damit das Reaping immer abschließt. Ein nicht gestartetes Handle wird einfach ungültig gemacht, und zweimaliges Schließen ist kein Fehler.
+`close(force?)` sendet einem gestarteten Kindprozess `SIGTERM`, oder `SIGKILL`, wenn `force` wahr ist, und reapt ihn dann im Hintergrund, sodass der Aufruf nicht blockiert. Ein Kindprozess, der nach einer Gnadenfrist noch läuft, wird gekillt, damit das Reaping immer abschließt. Ein nicht gestartetes Handle wird einfach ungültig gemacht, und zweimaliges Schließen ist kein Fehler. Mit `process_group` richten sich Signale an die Gruppe und erreichen Nachkommen auch nach dem Ende des führenden Prozesses.
 
-Das Reaping schließt die stdout- und stderr-Pipes des Kindprozesses, also sollte jede benötigte Ausgabe vor dem Aufruf von `close()` gelesen werden. Danach meldet jede Methode des Prozesses, `wait()` eingeschlossen, `process closed` — wenn der Exit-Code wichtig ist, stattdessen `signal()` und `wait()` verwenden.
+Vor dem Reaping bezogene Streams bleiben lesbar, bis ihr letzter Writer schließt,
+auch wenn ein Nachkomme die Pipe geerbt hat. Nach `close()` melden
+Prozessmethoden `process closed`; verwenden Sie `done()`, wenn das Ende wichtig
+ist und das Handle nutzbar bleiben muss.
 
 ## resize
 

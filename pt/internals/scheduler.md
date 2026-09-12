@@ -1,11 +1,13 @@
 ---
 title: "Scheduler"
-description: "O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos."
+description: "Como o Wippy agenda processos, roteia eventos, gerencia filas de workers e encerra processos."
 ---
 
 # Scheduler
 
-O scheduler executa processos usando um design de work-stealing. Workers mantêm deques locais e roubam uns dos outros quando ociosos.
+O scheduler executa processos em workers com deques locais, filas de injeção, uma fila global e work stealing.
+
+Esta é uma referência de implementação. As estruturas Go e os diagramas descrevem o scheduler da versão fixada do runtime, e não APIs implementadas pelo código da aplicação.
 
 ## Interface Process
 
@@ -25,16 +27,16 @@ type Process interface {
 | `Step` | Avançar máquina de estado com eventos de entrada, escrever yields na saída |
 | `Close` | Liberar recursos |
 
-O parâmetro `method` em `Init` especifica qual ponto de entrada invocar. Uma instância de processo pode expor múltiplos pontos de entrada, e o chamador seleciona qual executar. Isso também serve como verificação de que o scheduler está iniciando o processo corretamente.
+O parâmetro `method` de `Init` especifica qual ponto de entrada invocar. Uma instância de processo pode expor vários pontos de entrada, e o chamador escolhe qual executar.
 
 O scheduler chama `Step()` repetidamente, passando eventos (completações de yield, mensagens) e coletando yields (comandos para despachar). O processo escreve seu status e quaisquer yields no buffer `StepOutput`.
 
 ```go
 type Event struct {
-    Type  EventType  // EventYieldComplete ou EventMessage
-    Tag   uint64     // Tag de correlação para completações de yield
-    Data  any        // Dados de resultado ou payload de mensagem
-    Error error      // Erro se yield falhou
+    Type  EventType  // EventYieldComplete or EventMessage
+    Tag   uint64     // Correlation tag for yield completions
+    Data  any        // Result data or message payload
+    Error error      // Error if yield failed
 }
 ```
 
@@ -52,8 +54,8 @@ flowchart TD
     I -->|has items| IP[Pop + drain up to 16 to local]
     I -->|empty| G{Global queue?}
     G -->|has items| GP[Pop + batch transfer up to 16]
-    G -->|empty| S[Steal from random victim]
-    S --> SH[StealHalfInto victim's deque]
+    G -->|empty| S[Scan other workers from rotating start]
+    S --> SH[Steal up to half, capped at 32]
 ```
 
 Workers verificam fontes em ordem de prioridade:
@@ -74,14 +76,14 @@ Cada worker possui um deque de work-stealing Chase-Lev:
 ```go
 type Deque struct {
     buffer atomic.Pointer[dequeBuffer]
-    top    atomic.Int64  // Ladrões roubam daqui (CAS)
-    bottom atomic.Int64  // Dono faz push/pop aqui
+    top    atomic.Int64  // Thieves steal from here (CAS)
+    bottom atomic.Int64  // Owner pushes/pops here
 }
 ```
 
-O dono faz push e pop do fundo (LIFO) sem sincronização. Ladrões roubam do topo (FIFO) usando CAS. Isso dá ao dono acesso amigável ao cache para itens recentemente empurrados enquanto distribui trabalho mais antigo para ladrões.
+O proprietário insere e remove itens pelo fundo (LIFO) sem mutex; a remoção do último item usa CAS para coordenar com os workers que tentam roubá-lo. Esses workers roubam pelo topo (FIFO) usando CAS. Isso dá ao proprietário acesso eficiente em cache aos itens inseridos recentemente e distribui o trabalho mais antigo entre os demais workers.
 
-`StealHalfInto` pega metade dos itens em uma operação CAS, reduzindo contenção.
+`StealHalfInto` retira até metade dos itens disponíveis em uma operação CAS, limitado pelo buffer de destino. As tentativas de roubo dos workers usam um buffer de 32 itens.
 
 ## Spinning Adaptativo
 
@@ -89,8 +91,8 @@ Antes de bloquear na variável de condição, workers fazem spinning adaptativo:
 
 | Contagem de Spin | Ação |
 |------------------|------|
-| < 4 | Loop tight |
-| 4-15 | Yield de thread (`runtime.Gosched`) |
+| < 4 | Loop apertado |
+| 4-15 | Cede a thread (`runtime.Gosched`) |
 | >= 16 | Bloquear na variável de condição |
 
 ## Estados de Processo
@@ -143,11 +145,11 @@ Ambos buscam o PID alvo no mapa `byPID` e empurram o pacote para a fila do proce
 
 Um push aceito ou descartado então acorda o processo se ele estiver ocioso ou bloqueado. Ele reenfileira via injectOrGlobal, que empurra para a fila de injeção do último worker quando o processo tem afinidade de worker conhecida, e recorre à fila global caso contrário.
 
-## Shutdown
+## Encerramento :id=shutdown
 
-No shutdown, o scheduler envia eventos de cancelamento para todos os processos em execução e aguarda eles completarem ou timeout. Workers saem quando não há mais trabalho.
+Durante o encerramento, o scheduler envia eventos de cancelamento a todos os processos rastreados e aguarda que terminem ou que o timeout expire. Os workers saem quando não há mais trabalho.
 
-## Veja Também
+## Consulte também
 
-- [Command Dispatch](internals/dispatch.md) - Como yields chegam aos handlers
-- [Process Model](concepts/process-model.md) - Conceitos de alto nível
+- [Despacho de comandos](internals/dispatch.md) — Como os yields chegam aos handlers
+- [Modelo de processos](concepts/process-model.md) — Conceitos de alto nível

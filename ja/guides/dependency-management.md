@@ -1,11 +1,14 @@
 ---
 title: "依存関係管理"
-description: "Wippyはロックファイルベースの依存関係システムを使用します。モジュールはハブに公開され、ソース内で依存関係として宣言され、正確なバージョンを追跡する wippy.lock ファイルに解決されます。"
+description: "ロックファイルを使用して Wippy モジュールの依存関係を宣言、解決、インストール、更新、置換、検証します。"
 ---
 
 # 依存関係管理
 
-Wippyはロックファイルベースの依存関係システムを使用します。モジュールはハブに公開され、ソース内で依存関係として宣言され、正確なバージョンを追跡する `wippy.lock` ファイルに解決されます。
+Wippy はソースの宣言からモジュール依存関係を解決し、正確なバージョンを `wippy.lock` に記録します。公開済みモジュールは Hub からプロジェクトのモジュールディレクトリへダウンロードされます。
+
+以下の `acme/*` モジュール名、バージョン、ハッシュ、ローカルパスは例です。
+実際のプロジェクトまたは Hub にあるモジュールと検証済みダイジェストに置き換えてください。
 
 ## プロジェクトファイル
 
@@ -164,7 +167,7 @@ wippy update acme/http acme/sql    # Update specific modules
 
 ```bash
 wippy install                      # Install all from lock
-wippy install --refresh            # すべてのモジュールを再取得（--force と --repair はエイリアス）
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## モジュールストレージ

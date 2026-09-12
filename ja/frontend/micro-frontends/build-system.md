@@ -97,4 +97,4 @@ export default {
 
 スナップショットには出所とハッシュを含めなければなりません。スナップショットに存在しない依存関係は、別のドキュメント化されたビルドルールが当てはまらない限りバンドルされます。
 
-例えば、選択したリリースタグが `v1.2.3` なら、正典のスナップショット URL は `https://web-host.wippy.ai/v1.2.3/import-map.json` のみです。ローカルのアプリケーション URL、ピン留めされていない `latest` の URL、手作業で再構成したパッケージ一覧で代用しないでください。
+Web Host 1.0.56 baseline の canonical URL は `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json` です。local application URL、unpinned `latest` URL、手動再構成 list に置換しないでください。

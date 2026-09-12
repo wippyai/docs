@@ -1,15 +1,15 @@
 ---
 title: "파일시스템"
-description: "디렉토리 및 임베디드 파일시스템 접근."
+description: "directory-backed 및 read-only embedded 파일 시스템을 설정합니다."
 ---
 
 # 파일시스템
 
-디렉토리 및 임베디드 파일시스템 접근.
+파일 시스템 엔트리는 directory-backed 또는 read-only embedded storage를 런타임 모듈에 노출합니다. 이 페이지는 설정 레퍼런스이며 YAML 블록은 완전한 프로젝트가 아닌 개별 entry fragment입니다.
 
 ## 엔트리 종류
 
-| Kind | 설명 |
+| 종류 | 설명 |
 |------|-------------|
 | `fs.directory` | 디렉토리 기반 파일시스템 |
 | `fs.embed` | 읽기 전용 임베디드 파일시스템 |
@@ -64,6 +64,7 @@ description: "디렉토리 및 임베디드 파일시스템 접근."
 |-----------|-----------|-------|
 | Open/Read | 예 | 예 |
 | Stat | 예 | 예 |
+| Lstat | 예 | 예 |
 | ReadDir | 예 | 예 |
 | OpenFile (쓰기) | 예 | 아니오 |
 | Remove | 예 | 아니오 |
@@ -74,10 +75,10 @@ description: "디렉토리 및 임베디드 파일시스템 접근."
 
 ## Lua API
 
-파일 작업은 [파일시스템 모듈](lua/storage/filesystem.md)을 참조하세요.
+파일 작업은 [파일시스템 모듈](lua/storage/filesystem.md)을 참조하십시오.
 
 ## 참고
 
 - [파일시스템 모듈](lua/storage/filesystem.md) - Lua API 레퍼런스
 - [클라우드 스토리지](system/cloudstorage.md) - S3 호환 객체 스토리지
-- [템플릿](system/template.md) - 파일시스템에서 로드되는 템플릿
+- [템플릿](system/template.md) - 파일시스템에서 로드되는 template

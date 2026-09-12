@@ -7,6 +7,10 @@ description: "APIキー認証とWebSocketストリーミングを備えたリア
 
 APIキー認証とWebSocketストリーミングを備えたリアルタイム暗号通貨ティッカーを構築します。このチュートリアルでは、トークンベースのセキュリティ、ミドルウェア設定、プロセスベースのWebSocket処理を実演します。
 
+**分類:** 実行可能なローカルチュートリアルです。レジストリ、Luaソース、ブラウザクライアント、
+順序付きの起動コマンド、ブラウザでの検証を掲載しています。寛容なポリシーとインメモリの
+トークンストアは、ループバック上のデモだけを対象としています。
+
 ## 概要
 
 - **APIキー交換** — APIキーをPOSTして、HMAC署名されたbearerトークンを取得
@@ -15,10 +19,31 @@ APIキー認証とWebSocketストリーミングを備えたリアルタイム�
 - **静的アセット** — `http.static`がブラウザクライアントを配信
 - **SQLite** — APIキーを保存; memory storeがtoken storeのバックエンドとして機能
 
+## 前提条件
+
+- Wippyランタイム`v0.3.32a`。
+- WebSocket対応ブラウザ。
+- 空の作業ディレクトリ。以下のファイルを追加する前にプロジェクトディレクトリを作成します：
+
+  ```bash
+  mkdir auth-ticker
+  cd auth-ticker
+  mkdir -p src/public data
+  ```
+
+  PowerShellの場合：
+
+  ```powershell
+  New-Item -ItemType Directory -Path auth-ticker\src\public -Force
+  New-Item -ItemType Directory -Path auth-ticker\data -Force
+  Set-Location auth-ticker
+  ```
+
 ## プロジェクト構造
 
 ```
 auth-ticker/
+├── data/
 ├── wippy.lock
 └── src/
     ├── _index.yaml
@@ -36,35 +61,35 @@ auth-ticker/
 ```mermaid
 flowchart TB
     subgraph Clients
-        Browser[ブラウザクライアント]
-        API[APIクライアント]
+        Browser[Browser Client]
+        API[API Client]
     end
 
     subgraph "HTTPレイヤー"
         Server[http.service<br/>gateway :8081]
         Static[http.static<br/>public/]
 
-        subgraph "パブリックルーター"
-            CORS1[corsミドルウェア]
+        subgraph "Public Router"
+            CORS1[cors middleware]
             AuthEndpoint[auth_token<br/>POST /auth/token]
         end
 
-        subgraph "WSルーター /ws"
-            CORS2[corsミドルウェア]
-            TokenAuth[token_authミドルウェア]
+        subgraph "WS Router /ws"
+            CORS2[cors middleware]
+            TokenAuth[token_auth middleware]
             WSEndpoint[ws_ticker<br/>GET /ws/ticker]
             WSRelay[websocket_relay]
         end
     end
 
-    subgraph "セキュリティレイヤー"
+    subgraph "Security Layer"
         TokenStore[security.token_store<br/>tokens]
         Policy[security.policy<br/>user_policy]
         SysPolicy[security.policy<br/>system_policy]
         MemStore[store.memory<br/>token_data]
     end
 
-    subgraph "ストレージ"
+    subgraph "Storage"
         DB[db.sql.sqlite<br/>auth.db]
     end
 
@@ -78,24 +103,28 @@ flowchart TB
     API -->|"POST /auth/token"| CORS1
     Browser -->|"WS /ws/ticker"| CORS2
 
+    %% API flow
     CORS1 --> AuthEndpoint
-    AuthEndpoint -->|検証| TokenStore
-    AuthEndpoint -->|"トークン発行"| API
+    AuthEndpoint -->|validate| TokenStore
+    AuthEndpoint -->|"issue token"| API
 
+    %% WS flow
     CORS2 --> TokenAuth
-    TokenAuth -->|検証| TokenStore
+    TokenAuth -->|validate| TokenStore
     TokenAuth --> WSEndpoint
     WSEndpoint -->|spawn| Supervisor
     Supervisor --> WSHandler
     WSEndpoint --> WSRelay
-    WSRelay <-->|"メッセージ"| WSHandler
+    WSRelay <-->|"messages"| WSHandler
 
+    %% Token store deps
     MemStore --> TokenStore
     Policy -->|トークンに付与| TokenStore
     SysPolicy -->|"アクター＋スコープ"| AuthEndpoint
     SysPolicy -->|"アクター＋スコープ"| Ticker
 
-    AuthEndpoint -->|APIキー検索| DB
+    %% Auth uses DB for API keys
+    AuthEndpoint -->|lookup API key| DB
 
     WSHandler -->|購読| Ticker
     Ticker -->|ブロードキャスト| WSHandler
@@ -121,28 +150,28 @@ version: "1.0"
 namespace: app
 
 entries:
-  # APIキー用データベース
+  # Database for API keys
   - name: db
     kind: db.sql.sqlite
     file: "./data/auth.db"
     lifecycle:
       auto_start: true
 
-  # トークンバッキングストア
+  # Token backing store
   - name: token_data
     kind: store.memory
     lifecycle:
       auto_start: true
 
-  # HMAC署名付きトークンストア
+  # Token store with HMAC signing
   - name: tokens
     kind: security.token_store
     store: app:token_data
     token_length: 32
     default_expiration: "1h"
-    token_key: "demo-secret-key-change-in-production"
+    token_key: "local-demo-signing-key-do-not-deploy"
 
-  # 認証ユーザー用セキュリティポリシー
+  # Security policy for authenticated users
   - name: user_policy
     kind: security.policy
     policy:
@@ -175,7 +204,13 @@ entries:
     lifecycle:
       auto_start: true
 
-  # データベースマイグレーション
+  # Terminal host used by `wippy run -x app:migrate`
+  - name: terminal
+    kind: terminal.host
+    lifecycle:
+      auto_start: true
+
+  # Database migration
   - name: migrate
     kind: process.lua
     source: file://migrate.lua
@@ -187,14 +222,7 @@ entries:
       policies:
         - app:system_policy
 
-  - name: migrate-service
-    kind: process.service
-    process: app:migrate
-    host: app:processes
-    lifecycle:
-      auto_start: true
-
-  # ティッカーブロードキャスター
+  # Ticker broadcaster
   - name: ticker
     kind: process.lua
     source: file://ticker.lua
@@ -213,21 +241,23 @@ entries:
     lifecycle:
       auto_start: true
 
-  # WebSocketハンドラ（接続ごとに生成）
+  # WebSocket handler (spawned per connection)
   - name: ws_handler
     kind: process.lua
     source: file://ws_handler.lua
     method: main
     modules: [logger, json]
 
-  # HTTPサーバー
+  # HTTP server
   - name: gateway
     kind: http.service
-    addr: ":8081"
+    addr: "127.0.0.1:8081"
     lifecycle:
       auto_start: true
+      requires:
+        - app:ticker-service
 
-  # パブリックルーター（認証なし）
+  # Public router (no auth)
   - name: public_router
     kind: http.router
     meta:
@@ -235,9 +265,9 @@ entries:
     middleware:
       - cors
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
 
-  # WebSocketルーター（認証あり）
+  # WebSocket router (with auth)
   - name: ws_router
     kind: http.router
     meta:
@@ -247,14 +277,14 @@ entries:
       - cors
       - token_auth
     options:
-      cors.allow.origins: "*"
+      cors.allow.origins: "http://127.0.0.1:8081"
       token_auth.store: "app:tokens"
     post_middleware:
       - websocket_relay
     post_options:
-      wsrelay.allowed.origins: "*"
+      wsrelay.allowed.origins: "http://127.0.0.1:8081"
 
-  # 静的ファイル
+  # Static files
   - name: public_fs
     kind: fs.directory
     directory: ./src/public
@@ -269,7 +299,7 @@ entries:
       spa: true
       index: index.html
 
-  # 認証トークン交換
+  # Auth token exchange
   - name: auth_token
     kind: function.lua
     source: file://auth_token.lua
@@ -289,7 +319,7 @@ entries:
     path: /auth/token
     func: app:auth_token
 
-  # WebSocketティッカーエンドポイント
+  # WebSocket ticker endpoint
   - name: ws_ticker
     kind: function.lua
     source: file://ws_ticker.lua
@@ -362,17 +392,17 @@ local function handler()
 
     local user = rows[1]
 
-    -- ユーザーIDでアクターを作成
+    -- Create actor with user identity
     local actor = security.new_actor("user:" .. user.user_id, {
         role = user.role,
         user_id = user.user_id
     })
 
-    -- スコープにuser_policyを付与
+    -- Attach user_policy to the scope
     local policy, _ = security.policy("app:user_policy")
     local scope = policy and security.new_scope({policy}) or security.new_scope()
 
-    -- HMAC署名付きトークンを発行
+    -- Issue HMAC-signed token
     local store, store_err = security.token_store("app:tokens")
     if store_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
@@ -423,7 +453,7 @@ local function handler()
         return
     end
 
-    -- アクターはtoken_authミドルウェアによって設定される
+    -- Actor is set by token_auth middleware
     local actor = security.actor()
     if not actor then
         res:set_status(http.STATUS.UNAUTHORIZED)
@@ -433,7 +463,7 @@ local function handler()
 
     local user_id = actor:id()
 
-    -- ハンドラプロセスを生成（トークン内のuser_policyによって許可）
+    -- Spawn handler process (authorized by user_policy in token)
     local pid, err = process.spawn("app:ws_handler", "app:processes", user_id)
     if err then
         logger:error("spawn failed", {error = tostring(err)})
@@ -442,7 +472,7 @@ local function handler()
         return
     end
 
-    -- メッセージをハンドラにルーティングするようwebsocket_relayを設定
+    -- Configure websocket_relay to route messages to handler
     res:set_header("X-WS-Relay", json.encode({
         target_pid = tostring(pid),
         metadata = {user_id = user_id, auth_time = os.time()}
@@ -484,11 +514,14 @@ local function main(user_id)
         if topic == "ws.join" then
             client_pid = data.client_pid
 
-            -- クラッシュモニタリング用に自身のPIDで購読
-            process.send("ticker", "subscribe", {
+            -- Subscribe with our PID for crash monitoring
+            local _, subscribe_err = process.send("ticker", "subscribe", {
                 client_pid = client_pid,
                 handler_pid = process.pid()
             })
+            if subscribe_err then
+                error("failed to subscribe to ticker: " .. tostring(subscribe_err))
+            end
             subscribed = true
 
             -- ウェルカムメッセージを送信
@@ -520,14 +553,15 @@ return { main = main }
 
 ## ブロードキャスト
 
-`ticker.lua` - 購読を管理し、価格更新をブロードキャスト：
+`ticker.lua`は購読を管理し、ローカルでシミュレートした価格更新をブロードキャストします。
+このチュートリアルは外部の市場データサービスを呼び出しません：
 
 ```lua
 local logger = require("logger")
 local time = require("time")
 local crypto = require("crypto")
 
--- handler_pid -> client_pid マッピング
+-- handler_pid -> client_pid mapping
 local subscriptions = {}
 
 local prices = {
@@ -544,7 +578,10 @@ end
 
 local function update_prices()
     for symbol, price in pairs(prices) do
-        local bytes = crypto.random.bytes(2)
+        local bytes, random_err = crypto.random.bytes(2)
+        if random_err then
+            error("failed to generate price movement: " .. tostring(random_err))
+        end
         local rand = (bytes:byte(1) * 256 + bytes:byte(2)) / 65535.0
         local factor = (rand - 0.5) * 0.002
         prices[symbol] = price * (1 + factor)
@@ -567,11 +604,14 @@ local function main()
     local ticker, ticker_err = time.ticker("1s")
     if ticker_err then
         logger:error("failed to create ticker", {error = tostring(ticker_err)})
-        return 1
+        error("failed to create ticker: " .. tostring(ticker_err))
     end
     local tick_ch = ticker:response()
 
-    process.registry.register("ticker")
+    local _, register_err = process.registry.register("ticker")
+    if register_err then
+        error("failed to register ticker: " .. tostring(register_err))
+    end
     logger:info("ticker started", {pid = process.pid()})
 
     while true do
@@ -641,7 +681,7 @@ local function main()
     local db, err = sql.get("app:db")
     if err then
         logger:error("failed to connect", {error = tostring(err)})
-        return 1
+        error("failed to connect: " .. tostring(err))
     end
 
     local _, exec_err = db:execute([[
@@ -657,25 +697,37 @@ local function main()
     if exec_err then
         db:release()
         logger:error("migration failed", {error = tostring(exec_err)})
-        return 1
+        error("migration failed: " .. tostring(exec_err))
     end
 
-    -- デモキーが存在するかチェック
-    local rows, _ = db:query("SELECT api_key FROM api_keys WHERE user_id = ?", {"demo"})
+    -- Create one random local-demo key. It is printed only on first creation.
+    local rows, query_err = db:query(
+        "SELECT api_key FROM api_keys WHERE user_id = ?",
+        {"demo"}
+    )
+    if query_err then
+        db:release()
+        error("failed to query demo API key: " .. tostring(query_err))
+    end
+
     if #rows == 0 then
         local demo_key, key_err = crypto.random.string(32)
         if key_err then
             db:release()
-            return 1
+            error("failed to generate demo API key: " .. tostring(key_err))
         end
 
-        db:execute(
+        local _, insert_err = db:execute(
             "INSERT INTO api_keys (api_key, user_id, role, created_at) VALUES (?, ?, ?, ?)",
             {demo_key, "demo", "user", os.time()}
         )
+        if insert_err then
+            db:release()
+            error("failed to store demo API key: " .. tostring(insert_err))
+        end
         logger:info("demo API key created", {api_key = demo_key})
     else
-        logger:info("demo API key exists", {api_key = rows[1].api_key})
+        logger:info("demo API key already exists; use the value saved from its first creation")
     end
 
     db:release()
@@ -748,17 +800,51 @@ return { main = main }
 
 ## 実行
 
+ロックを初期化し、マイグレーションを最後まで実行してから長時間稼働するサービスを起動します。
+マイグレーションを別コマンドにすると、トークンエンドポイントとテーブル作成の競合を防げます。
+
 ```bash
 mkdir -p data
 wippy init
+wippy run -x app:migrate
 wippy run
 ```
 
-http://localhost:8081 を開き、ログに表示されるデモAPIキーを入力します。
+`http://127.0.0.1:8081`を開き、マイグレーションログのデモAPIキーを入力します。
+ページに`Connected as demo`と表示され、その後BTC、ETH、SOLの価格が毎秒更新されます。
+
+ブラウザを開く前に交換処理だけを確認することもできます：
+
+```bash
+curl -X POST http://127.0.0.1:8081/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"api_key":"<demo-key-from-migration>"}'
+```
+
+PowerShellの場合：
+
+```powershell
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:8081/auth/token `
+  -ContentType 'application/json' `
+  -Body '{"api_key":"<demo-key-from-migration>"}'
+```
+
+成功レスポンスには`token`、`user_id: "demo"`、`role: "user"`、`expires_in: 3600`が含まれます。
+無効なキーはHTTP 401を返します。
+
+## トラブルシューティングとクリーンアップ
+
+- `no such table: api_keys`はマイグレーションコマンドを省略したか失敗したことを示します。
+  ランタイムを停止し、`wippy run -x app:migrate`を再実行してからもう一度起動してください。
+- `/auth/token`の401はAPIキーが`data/auth.db`の行と一致しないことを示します。1回だけ表示された値を紛失した場合はデータベースをリセットしてください。
+- WebSocketの401または即時切断は通常、クエリパラメータが削除されたか、ランタイム再起動でメモリトークンストアがリセットされたことを示します。
+  再起動のたびにAPIキーをもう一度交換してください。
+- origin拒否はブラウザURLが`http://127.0.0.1:8081`と完全に一致しないことを示します。そのURLを使うか、両方のorigin設定を同時に更新してください。
+- Ctrl+Cでランタイムを停止します。デモAPIキーを削除するには`data/auth.db`を削除してください。
 
 ## 次のステップ
 
-- [WebSocketリレー](http/websocket-relay.md) - ミドルウェア設定
-- [セキュリティモジュール](lua/security/security.md) - アクター、ポリシー、トークンストア
-- [プロセス管理](lua/core/process.md) - 生成とメッセージング
-
+- [WebSocketリレー](http/websocket-relay.md) — ミドルウェア設定
+- [セキュリティモジュール](lua/security/security.md) — アクター、ポリシー、トークンストア
+- [プロセス管理](lua/core/process.md) — 生成とメッセージング

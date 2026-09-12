@@ -8,9 +8,11 @@ description: "설정 값, 비밀, 런타임 설정을 위한 환경 변수에 �
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-설정 값, 비밀, 런타임 설정을 위한 환경 변수에 접근합니다.
+`env` 모듈은 runtime이 노출하는 environment variable을 읽고 업데이트합니다.
 
-변수는 접근하기 전에 [환경 시스템](system/env.md)에서 정의되어야 합니다. 시스템은 어떤 스토리지 백엔드(OS, 파일, 메모리)가 값을 제공하고 변수가 읽기 전용인지 여부를 제어합니다.
+이 페이지는 API reference입니다. snippet은 독립된 operation이며 이름이 지정된 variable과 security policy가 이미 존재한다고 가정합니다.
+
+variable은 접근하기 전에 [환경 시스템](system/env.md)에서 정의해야 합니다. system은 value를 제공할 storage backend(OS, file, memory)와 variable의 read-only 여부를 제어합니다.
 
 ## 로딩
 
@@ -18,7 +20,7 @@ description: "설정 값, 비밀, 런타임 설정을 위한 환경 변수에 �
 local env = require("env")
 ```
 
-## get
+## `get`
 
 환경 변수 값을 가져옵니다.
 
@@ -29,17 +31,8 @@ if not db_url then
     return nil, errors.new({ kind = errors.INVALID, message = "DATABASE_URL not configured" })
 end
 
--- 기본값과 함께 가져오기
-local port = env.get("PORT") or "8080"
-local host = env.get("HOST") or "localhost"
-
--- 비밀 가져오기
-local api_key = env.get("API_SECRET_KEY")
-local jwt_secret = env.get("JWT_SECRET")
-
--- 설정
-local log_level = env.get("LOG_LEVEL") or "info"
-local debug_mode = env.get("DEBUG") == "true"
+local port, port_err = get_or("PORT", "8080")
+if port_err then return nil, port_err end
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -50,21 +43,15 @@ local debug_mode = env.get("DEBUG") == "true"
 
 변수가 존재하지 않으면 `nil, error` 반환.
 
-## set
+## `set`
 
 환경 변수를 설정합니다.
 
 ```lua
--- 런타임 설정
-env.set("APP_MODE", "production")
-
--- 테스트용 오버라이드
-env.set("API_URL", "http://localhost:8080")
-
--- 조건에 따라 설정
-if is_development then
-    env.set("LOG_LEVEL", "debug")
-end
+-- Set runtime configuration
+local updated, set_err = env.set("APP_MODE", "production")
+if set_err then return nil, set_err end
+return updated
 ```
 
 | 파라미터 | 타입 | 설명 |
@@ -74,21 +61,23 @@ end
 
 **반환:** `boolean, error`
 
-## get_all
+## `get_all`
 
 접근 가능한 모든 환경 변수를 가져옵니다.
 
 ```lua
-local vars = env.get_all()
+local logger = require("logger")
 
--- 설정 로깅 (비밀 로깅 주의)
-for key, value in pairs(vars) do
-    if not key:match("SECRET") and not key:match("KEY") then
-        logger.debug("env", {[key] = value})
-    end
-end
+local vars, vars_err = env.get_all()
+if vars_err then return nil, vars_err end
 
--- 필수 변수 확인
+-- Log names only. Values such as connection URLs may contain credentials even
+-- when their keys do not include words like SECRET or KEY.
+local accessible_keys = {}
+for key in pairs(vars) do table.insert(accessible_keys, key) end
+logger:debug("accessible environment variables", {keys = accessible_keys})
+
+-- Check required variables
 local required = {"DATABASE_URL", "REDIS_URL", "API_KEY"}
 for _, key in ipairs(required) do
     if not vars[key] then
@@ -122,7 +111,7 @@ if security.can("env.get", "DATABASE_URL") then
 end
 ```
 
-정책 설정은 [보안 모델](system/security.md)을 참조하세요.
+policy configuration은 [보안 모델](system/security.md)을 참조하십시오.
 
 ## 에러
 
@@ -132,8 +121,8 @@ end
 | 변수를 찾을 수 없음 | `errors.NOT_FOUND` | 아니오 |
 | 권한 거부됨 | `errors.PERMISSION_DENIED` | 아니오 |
 
-에러 처리는 [에러 처리](lua/core/errors.md)를 참조하세요.
+[에러 처리](lua/core/errors.md)에서 error 사용법을 확인하십시오.
 
 ## 참고
 
-- [환경 시스템](system/env.md) - 스토리지 백엔드 및 변수 정의 설정
+- [환경 시스템](system/env.md) - storage backend와 variable definition 구성

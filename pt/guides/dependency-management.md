@@ -1,11 +1,13 @@
 ---
-title: "Gerenciamento de Dependencias"
-description: "O Wippy utiliza um sistema de dependencias baseado em arquivo de lock. Modulos sao publicados no hub, declarados como dependencias no seu codigo-fonte…"
+title: "Gerenciamento de Dependências"
+description: "Declare, resolva, instale, atualize, substitua e verifique dependências de módulos Wippy com um arquivo de lock."
 ---
 
-# Gerenciamento de Dependencias
+# Gerenciamento de Dependências
 
-O Wippy utiliza um sistema de dependencias baseado em arquivo de lock. Modulos sao publicados no hub, declarados como dependencias no seu codigo-fonte e resolvidos em um arquivo `wippy.lock` que rastreia versoes exatas.
+O Wippy resolve dependências de módulos a partir das declarações no código-fonte e registra versões exatas em `wippy.lock`. Os módulos publicados são baixados do Hub para o diretório de módulos do projeto.
+
+Os nomes de módulos `acme/*`, versões, hashes e caminhos locais abaixo são ilustrativos. Substitua-os por módulos e digests verificados do seu projeto ou do Hub.
 
 ## Arquivos do Projeto
 
@@ -129,9 +131,9 @@ Cria um `wippy.lock` com diretorios padrao.
 ### Adicionando Dependencias
 
 ```bash
-wippy add acme/http               # Versao mais recente
-wippy add acme/http@1.2.3         # Versao exata
-wippy add acme/http@latest         # Label latest
+wippy add acme/http               # Latest version
+wippy add acme/http@1.2.3         # Exact version
+wippy add acme/http@latest         # Latest label
 ```
 
 Isso atualiza o arquivo de lock. Em seguida, instale:
@@ -153,9 +155,9 @@ Isso escaneia seu diretorio de codigo-fonte, resolve todas as restricoes de depe
 ### Atualizando Dependencias
 
 ```bash
-wippy update                       # Resolve novamente todas as dependencias
-wippy update acme/http             # Atualiza apenas acme/http
-wippy update acme/http acme/sql    # Atualiza modulos especificos
+wippy update                       # Re-resolve all dependencies
+wippy update acme/http             # Update only acme/http
+wippy update acme/http acme/sql    # Update specific modules
 ```
 
 Ao atualizar modulos especificos, os demais modulos permanecem fixados em suas versoes atuais. Se a atualizacao exigir alteracao de modulos que nao sao alvo, uma confirmacao e solicitada.
@@ -163,8 +165,8 @@ Ao atualizar modulos especificos, os demais modulos permanecem fixados em suas v
 ### Instalando a Partir do Arquivo de Lock
 
 ```bash
-wippy install                      # Instala tudo a partir do lock
-wippy install --refresh            # Rebaixar cada módulo (--force e --repair são aliases)
+wippy install                      # Install all from lock
+wippy install --refresh            # Re-fetch every module (--force and --repair are aliases)
 ```
 
 ## Armazenamento de Modulos

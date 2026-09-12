@@ -8,7 +8,9 @@ description: "Abfragen von Laufzeit-Systeminformationen einschließlich Speicher
 <secondary-label ref="process"/>
 <secondary-label ref="permissions"/>
 
-Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Garbage-Collection-Statistiken, CPU-Details und Prozess-Metadaten.
+Das Modul `system` meldet Runtime-, Speicher-, Prozess-, Host-, Supervisor- und Cluster-Zustand und stellt ausgewählte Runtime-Steuerungen bereit.
+
+Diese Seite ist eine API-Referenz. Die meisten Ausschnitte zeigen eine einzelne Operation. Shutdown, Runtime-Tuning und verteilte Sperren erfordern eine ausdrückliche Richtlinienautorisierung und anwendungsspezifische Fehlerbehandlung.
 
 ## Laden
 
@@ -16,7 +18,7 @@ Abfragen von Laufzeit-Systeminformationen einschließlich Speicherverbrauch, Gar
 local system = require("system")
 ```
 
-## Shutdown
+## Herunterfahren :id=shutdown
 
 Systemshutdown mit Exit-Code auslösen. Nützlich für Terminal-Apps; Aufruf aus laufenden Actors beendet das gesamte System:
 
@@ -40,7 +42,7 @@ local mods, err = system.modules()
 
 **Gibt zurück:** `table[], error`
 
-Jede Modul-Tabelle enthält:
+Jede Modultabelle enthält:
 
 | Feld | Typ | Beschreibung |
 |------|-----|--------------|
@@ -201,10 +203,10 @@ local count, err = system.runtime.goroutines()
 GOMAXPROCS-Wert abrufen oder setzen:
 
 ```lua
--- Aktuellen Wert abrufen
+-- Get current value
 local current, err = system.runtime.max_procs()
 
--- Neuen Wert setzen
+-- Set new value
 local prev, err = system.runtime.max_procs(4)
 ```
 
@@ -350,8 +352,8 @@ Alle Leseaufrufe sind lokal und günstig: sie melden die Sicht dieses Knotens au
 `system.node` meldet die eigene Identität dieses Knotens im Cluster.
 
 ```lua
-local id, err = system.node.id()      -- ID dieses Knotens
-local addr, err = system.node.addr()  -- beworbene Netzwerkadresse
+local id, err = system.node.id()      -- this node's ID
+local addr, err = system.node.addr()  -- advertised network address
 local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-member"
 ```
 
@@ -368,9 +370,9 @@ local role, err = system.node.role()  -- "leader" | "voter" | "standby" | "non-m
 `system.cluster` meldet die clusterweite Sicht: wer die Mitglieder sind und wer führt.
 
 ```lua
-local members, err = system.cluster.members()  -- Array von Knoten-Tabellen
-local leader, err = system.cluster.leader()    -- Leader-Knoten-ID oder "" wenn unbekannt
-local n, err = system.cluster.size()           -- Anzahl sichtbarer Mitglieder
+local members, err = system.cluster.members()  -- array of node tables
+local leader, err = system.cluster.leader()    -- leader node ID, or "" if unknown
+local n, err = system.cluster.size()           -- count of visible members
 ```
 
 `system.cluster.members()` gibt ein Array von Knoten-Tabellen zurück. Der lokale Knoten ist einmal enthalten und sortiert zuerst.
@@ -396,11 +398,11 @@ local n, err = system.cluster.size()           -- Anzahl sichtbarer Mitglieder
 
 ```lua
 local leader, err = system.raft.is_leader()      -- boolean
-local member, err = system.raft.is_member()      -- boolean: Voter oder Standby
-local role, err = system.raft.role()             -- gleiche Werte wie system.node.role()
-local term, err = system.raft.term()             -- aktueller Raft-Term
-local idx, err = system.raft.commit_index()      -- höchster committierter Log-Index
-local stats, err = system.raft.stats()           -- rohe Stats-Map (string -> string)
+local member, err = system.raft.is_member()      -- boolean: voter or standby
+local role, err = system.raft.role()             -- same values as system.node.role()
+local term, err = system.raft.term()             -- current Raft term
+local idx, err = system.raft.commit_index()      -- highest committed log index
+local stats, err = system.raft.stats()           -- raw stats map (string -> string)
 ```
 
 | Funktion | Gibt zurück | Hinweise |
@@ -420,10 +422,18 @@ local stats, err = system.raft.stats()           -- rohe Stats-Map (string -> st
 
 ```lua
 local ok, err = system.lock.acquire("orders.migration")
-if ok then
-  -- kritischer Abschnitt: nur ein Halter clusterweit
-  system.lock.release("orders.migration")
+if not ok then
+  -- err has kind errors.ALREADY_EXISTS when another process holds the lock.
+  -- Apply the caller's retry and backoff policy for that case if needed.
+  return nil, err
 end
+
+-- critical section: only one holder cluster-wide
+local released, release_err = system.lock.release("orders.migration")
+if release_err then
+  return nil, release_err
+end
+return released
 ```
 
 Erwerben ist fail-fast: wenn die Sperre bereits gehalten wird, gibt es sofort `false` zurück statt zu blockieren, sodass Aufrufer eigenes Retry und Backoff implementieren. Nur der aktuelle Halter kann freigeben; eine Sperre freizugeben, die man nicht hält, ist ein sicheres No-Op.
@@ -467,7 +477,7 @@ Systemoperationen unterliegen der Sicherheitsrichtlinienauswertung.
 | `system.read` | `raft` | Raft-Zustand lesen |
 | `system.read` | `raft_stats` | Rohe Raft-Stats-Map lesen |
 | `system.lock` | `<Sperrenname>` | Eine verteilte Sperre erwerben oder freigeben |
-| `system.exit` | - | System-Shutdown auslösen |
+| `system.exit` | - | Herunterfahren des Systems auslösen |
 
 ## Fehler
 

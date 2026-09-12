@@ -1,11 +1,11 @@
 ---
 title: "Sistema de Archivos"
-description: "Acceso a directorio y sistema de archivos embebido."
+description: "Configure sistemas de archivos respaldados por directorios y sistemas de archivos embebidos de solo lectura."
 ---
 
 # Sistema de Archivos
 
-Acceso a directorio y sistema de archivos embebido.
+Las entradas de sistema de archivos exponen almacenamiento respaldado por directorios o almacenamiento embebido de solo lectura a los módulos en tiempo de ejecución. Esta página es una referencia de configuración; sus bloques YAML son fragmentos de entradas individuales, no proyectos completos.
 
 ## Tipos de Entrada
 
@@ -64,6 +64,7 @@ Ambos tipos de sistema de archivos implementan:
 |-----------|-----------|-------|
 | Open/Read | Sí | Sí |
 | Stat | Sí | Sí |
+| Lstat | Sí | Sí |
 | ReadDir | Sí | Sí |
 | OpenFile (escribir) | Sí | No |
 | Remove | Sí | No |
@@ -74,7 +75,7 @@ Las operaciones de escritura en sistemas de archivos embebidos retornan un error
 
 ## API Lua
 
-Ver [Módulo Filesystem](lua/storage/filesystem.md) para operaciones de archivo.
+Consulte el [módulo Filesystem](lua/storage/filesystem.md) para las operaciones de archivos.
 
 ## Ver También
 

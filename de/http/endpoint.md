@@ -5,7 +5,9 @@ description: "Endpunkte (http.endpoint) definieren HTTP-Routen-Handler, die Lua-
 
 # HTTP-Endpunkte
 
-Endpunkte (`http.endpoint`) definieren HTTP-Routen-Handler, die Lua-Funktionen ausführen.
+Ein `http.endpoint` ordnet eine HTTP-Methode und einen Pfad einer Lua-Handler-Funktion zu.
+
+**Klassifikation: Konfigurations- und API-Referenz.** YAML-Blöcke sind Registry-Fragmente und setzen voraus, dass die referenzierten Server-, Router-, Middleware-, Funktions- und Sicherheitsrichtlinieneinträge bereits vorhanden sind. Lua-Blöcke konzentrieren sich auf Handler-Verträge und kennzeichnen Anwendungsaufrufe ausdrücklich.
 
 ## Definition
 
@@ -67,12 +69,16 @@ Verwenden Sie `{param}`-Syntax für URL-Parameter:
 ```yaml
 - name: get_user
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{id}
   func: get_user
 
 - name: get_user_post
   kind: http.endpoint
+  meta:
+    router: api
   method: GET
   path: /users/{user_id}/posts/{post_id}
   func: get_user_post
@@ -84,9 +90,13 @@ Zugriff im Handler:
 local http = require("http")
 
 local function handler()
-    local req = http.request()
-    local user_id = req:param("id")
-    local post_id = req:param("post_id")
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local user_id, user_err = req:param("user_id")
+    if user_err then return nil, user_err end
+    local post_id, post_err = req:param("post_id")
+    if post_err then return nil, post_err end
+    return {user_id = user_id, post_id = post_id}
 end
 ```
 
@@ -115,25 +125,27 @@ Endpunkt-Funktionen erhalten Request- und Response-Objekte aus dem `http`-Modul:
 
 ```lua
 local http = require("http")
-local json = require("json")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    -- Request lesen
-    local body = req:body()
-    local user_id = req:param("id")
-    local page = req:query("page")
-    local auth = req:header("Authorization")
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
 
-    -- Verarbeiten
-    local user = get_user(user_id)
+    local user, call_err = funcs.call("app.users:get_user", user_id)
+    if call_err then return nil, call_err end
 
-    -- Response schreiben
-    res:set_content_type(http.CONTENT.JSON)
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local type_err = res:set_content_type(http.CONTENT.JSON)
+    if type_err then return nil, type_err end
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -167,37 +179,46 @@ return { handler = handler }
 
 | Methode | Beschreibung |
 |---------|--------------|
-| `res:set_status(code)` | HTTP-Statuscode setzen |
-| `res:set_header(name, value)` | Response-Header setzen |
-| `res:set_content_type(type)` | Content-Type setzen |
-| `res:write(data)` | Raw-Body schreiben |
-| `res:write_json(data)` | JSON-Response schreiben |
-| `res:write_event(data)` | SSE-Event senden |
-| `res:set_transfer(encoding)` | Transfer-Modus setzen (SSE, chunked) |
-| `res:flush()` | Response an Client übertragen |
+| `res:set_status(code)` | HTTP-Statuscode setzen; gibt einen Fehler zurück, wenn die Header bereits gesendet wurden |
+| `res:set_header(name, value)` | Response-Header setzen; gibt einen Fehler zurück, wenn die Header bereits gesendet wurden |
+| `res:set_content_type(type)` | Content-Type setzen; gibt einen Fehler zurück, wenn die Header bereits gesendet wurden |
+| `res:write(data)` | Rohdaten in den Body schreiben; gibt bei einem Fehlschlag einen Fehler zurück |
+| `res:write_json(data)` | JSON-Response schreiben; gibt bei einem Fehlschlag einen Fehler zurück |
+| `res:write_event(data)` | SSE-Ereignis senden und flushen; gibt bei einem Fehlschlag einen Fehler zurück |
+| `res:set_transfer(encoding)` | Transfermodus `chunked` oder `sse` setzen; gibt einen Fehler zurück, wenn die Header bereits gesendet wurden |
+| `res:flush()` | Response flushen; gibt einen Fehlerwert zurück |
 
 ## JSON-API-Muster
 
-Gängiges Muster für JSON-APIs:
+Ein JSON-API-Handler kann den Request-Body parsen, ungültige Eingaben zurückweisen und ein JSON-Ergebnis schreiben:
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
     local data, err = req:body_json()
     if err then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({error = "Invalid JSON"})
-        return
+        local status_err = res:set_status(http.STATUS.BAD_REQUEST)
+        if status_err then return nil, status_err end
+        local write_err = res:write_json({error = "Invalid JSON"})
+        if write_err then return nil, write_err end
+        return true
     end
 
-    local result = process(data)
+    local result, process_err = funcs.call("app.api:process_request", data)
+    if process_err then return nil, process_err end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(result)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(result)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -207,23 +228,30 @@ return { handler = handler }
 
 ```lua
 local http = require("http")
+local funcs = require("funcs")
 
 local function api_error(res, status, code, message)
-    res:set_status(status)
-    res:write_json({
+    local status_err = res:set_status(status)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json({
         error = {
             code = code,
             message = message
         }
     })
+    if write_err then return nil, write_err end
+    return true
 end
 
 local function handler()
-    local req = http.request()
-    local res = http.response()
+    local req, req_err = http.request()
+    if req_err then return nil, req_err end
+    local res, res_err = http.response()
+    if res_err then return nil, res_err end
 
-    local user_id = req:param("id")
-    local user, err = db.get_user(user_id)
+    local user_id, param_err = req:param("id")
+    if param_err then return nil, param_err end
+    local user, err = funcs.call("app.users:get_user", user_id)
 
     if err then
         if errors.is(err, errors.NOT_FOUND) then
@@ -232,8 +260,11 @@ local function handler()
         return api_error(res, http.STATUS.INTERNAL_ERROR, "INTERNAL_ERROR", "Server error")
     end
 
-    res:set_status(http.STATUS.OK)
-    res:write_json(user)
+    local status_err = res:set_status(http.STATUS.OK)
+    if status_err then return nil, status_err end
+    local write_err = res:write_json(user)
+    if write_err then return nil, write_err end
+    return true
 end
 
 return { handler = handler }
@@ -247,6 +278,8 @@ return { handler = handler }
 entries:
   - name: users_router
     kind: http.router
+    meta:
+      server: gateway
     prefix: /api/users
     middleware:
       - cors
@@ -322,6 +355,6 @@ Autorisierungs-Middleware wird auf dem übergeordneten Router konfiguriert, nich
 
 ## Siehe auch
 
-- [Router](http/router.md) - Routen-Gruppierung
-- [HTTP-Modul](lua/http/http.md) - Request/Response-API
-- [Middleware](http/middleware.md) - Request-Verarbeitung
+- [Router](http/router.md) – Routengruppierung
+- [HTTP-Modul](lua/http/http.md) – Request-/Response-API
+- [Middleware](http/middleware.md) – Request-Verarbeitung

@@ -5,8 +5,6 @@ description: "Organización del proyecto, archivos de definición YAML y convenc
 
 # YAML y Estructura del Proyecto
 
-Organización del proyecto, archivos de definición YAML y convenciones de nomenclatura.
-
 ## Estructura de Directorios
 
 ```
@@ -30,7 +28,7 @@ myapp/
 Las definiciones YAML se cargan en el registro al iniciar. El registro es la fuente de verdad; los archivos YAML son una forma de poblarlo. Las entradas también pueden provenir de otras fuentes o crearse programáticamente.
 </note>
 
-### Estructura del Archivo
+### Formato del archivo de definición
 
 Cualquier archivo YAML con un `namespace` más un array `entries` o un `name`+`kind` de nivel superior es un archivo de definición válido. `version` es opcional:
 
@@ -42,7 +40,7 @@ entries:
   - name: get_user
     kind: function.lua
     meta:
-      comment: Obtiene usuario por ID
+      comment: Fetches user by ID
     source: file://get_user.lua
     method: handler
     modules:
@@ -52,7 +50,7 @@ entries:
   - name: get_user.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint de API de usuario
+      comment: User API endpoint
     method: GET
     path: /users/{id}
     func: get_user
@@ -69,22 +67,22 @@ entries:
 Use puntos (`.`) para separación semántica y guiones bajos (`_`) para palabras:
 
 ```yaml
-# Función y su endpoint
-- name: get_user              # La función
-- name: get_user.endpoint     # Su endpoint HTTP
+# Function and its endpoint
+- name: get_user              # The function
+- name: get_user.endpoint     # Its HTTP endpoint
 
-# Múltiples endpoints para la misma función
+# Multiple endpoints for same function
 - name: list_orders
 - name: list_orders.endpoint.get
 - name: list_orders.endpoint.post
 
 # Routers
-- name: api.public            # Router de API pública
-- name: api.admin             # Router de API admin
+- name: api.public            # Public API router
+- name: api.admin             # Admin API router
 ```
 
 <tip>
-Patrón: <code>nombre_base.variante</code> - los puntos separan partes semánticas, los guiones bajos separan palabras dentro de una parte.
+Patrón: <code>base_name.variant</code> — los puntos separan partes semánticas, mientras que los guiones bajos separan palabras dentro de una parte.
 </tip>
 
 ### Namespaces
@@ -132,14 +130,14 @@ Una sección `replacements:` en `wippy.lock` está obsoleta. Todavía se carga, 
 
 ## Definiciones de Entrada
 
-Cada entrada en el array `entries`. Las propiedades están al nivel raíz (sin envoltorio `data:`):
+Cada elemento del array `entries` define una entrada. Los campos específicos del kind pueden aparecer junto a `name`, `kind` y `meta`, como en este ejemplo:
 
 ```yaml
 entries:
   - name: hello
     kind: function.lua
     meta:
-      comment: Retorna hola mundo
+      comment: Returns hello world
     source: file://hello.lua
     method: handler
     modules:
@@ -149,10 +147,22 @@ entries:
   - name: hello.endpoint
     kind: http.endpoint
     meta:
-      comment: Endpoint hello
+      comment: Hello endpoint
     method: GET
     path: /hello
     func: hello
+```
+
+También se admite un campo `data:` explícito. Cuando está presente, su valor es la carga útil completa específica del kind, por lo que no debes mezclarlo con campos específicos del kind al mismo nivel:
+
+```yaml
+entries:
+  - name: config
+    kind: registry.entry
+    data:
+      environment: production
+      features:
+        dark_mode: true
 ```
 
 ### Metadatos
@@ -163,12 +173,12 @@ Use `meta` para información amigable para la UI:
 - name: payment_handler
   kind: function.lua
   meta:
-    title: Procesador de Pagos
-    comment: Maneja pagos de Stripe
+    title: Payment Processor
+    comment: Handles Stripe payments
   source: file://payment.lua
 ```
 
-Convención: `meta.title` y `meta.comment` se renderizan bien en interfaces de gestión.
+Usa `meta.title` y `meta.comment` para información descriptiva que puedan mostrar los consumidores del registro y las interfaces de gestión.
 
 ### Entradas de Aplicación
 
@@ -178,7 +188,7 @@ Use el kind `registry.entry` para configuración a nivel de aplicación:
 - name: config
   kind: registry.entry
   meta:
-    title: Configuración de Aplicación
+    title: Application Settings
     type: application
   environment: production
   features:
@@ -190,15 +200,15 @@ Use el kind `registry.entry` para configuración a nivel de aplicación:
 
 | Tipo | Propósito |
 |------|---------|
-| `registry.entry` | Datos de propósito general |
+| `registry.entry` | Datos de propósito general almacenados sin el despacho normal de eventos |
 | `function.lua` | Función Lua invocable |
 | `process.lua` | Proceso de larga duración |
 | `http.service` | Servidor HTTP |
 | `http.router` | Grupo de rutas |
 | `http.endpoint` | Manejador HTTP |
-| `process.host` | Supervisor de procesos |
+| `process.host` | Host de ejecución de procesos |
 
-Consulte la [Guía de Tipos de Entrada](guides/entry-kinds.md) para la referencia completa.
+Consulta la [Guía de tipos de entrada](guides/entry-kinds.md) para la referencia de tipos de entrada.
 
 ## Archivos de Configuración
 
@@ -220,7 +230,7 @@ supervisor:
     worker_count: 16
 ```
 
-Consulte la [Guía de Configuración](guides/configuration.md) para todas las opciones.
+Consulta la [Guía de configuración](guides/configuration.md) para los campos de configuración del runtime.
 
 ### wippy.lock
 
@@ -270,7 +280,7 @@ myapp/
 
 ## Ver También
 
-- [Arquitectura de Aplicaciones](concepts/architecture.md) - Cómo dividir una app en slices y capas
-- [Guía de Tipos de Entrada](guides/entry-kinds.md) - Tipos de entrada disponibles
-- [Guía de Configuración](guides/configuration.md) - Opciones del runtime
-- [Tipos de Entrada Personalizados](internals/kinds.md) - Implementar manejadores (avanzado)
+- [Arquitectura de aplicaciones](concepts/architecture.md) — organiza una aplicación en slices y capas
+- [Guía de tipos de entrada](guides/entry-kinds.md) — revisa los tipos de entrada disponibles
+- [Guía de configuración](guides/configuration.md) — configura las opciones del runtime
+- [Tipos de entrada personalizados](internals/kinds.md) — implementa handlers (avanzado)
