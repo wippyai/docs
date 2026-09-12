@@ -1,11 +1,16 @@
 ---
 title: "WASM 进程"
-description: "WASM 模块可以通过 process.wasm 条目类型作为进程运行。进程在 Wippy 进程宿主中执行，支持完整的进程生命周期：生成、监控和受管关闭。"
+description: "使用 process.wasm 在 Wippy 进程宿主中运行有状态 WASM actor。"
 ---
 
 # WASM 进程
 
-WASM 模块可以通过 `process.wasm` 条目类型作为进程运行。进程在 Wippy 进程宿主中执行，支持完整的进程生命周期：生成、监控和受管关闭。
+`process.wasm` 条目会在 Wippy 进程宿主下创建持久、隔离的 WASM actor。一个
+模块实例在整个 PID 生命周期内存在，在消息之间保留 guest 状态，并参与生成、
+监控、消息传递和受监管关闭。
+
+**分类：进程配置和生命周期参考。** 二进制条目假定组件在外部构建，并由应用
+提供文件系统、进程宿主、环境和策略条目。占位哈希必须替换为二进制文件的确切摘要。
 
 ## 条目配置
 
@@ -45,7 +50,7 @@ entries:
 | `transport` | 否 | 调用传输：`payload`（默认）或 `wasi-http` |
 | `wit` | 否 | 用于 raw/core 模块的 WIT 签名 |
 | `imports` | 否 | 要启用的宿主导入 |
-| `wasi` | 否 | WASI 配置（args、env、mounts） |
+| `wasi` | 否 | WASI 配置（`args`、`cwd`、`env` 和 `mounts`） |
 | `options` | 否 | Actor 控制项：`worker_class`、`limits` 和 `mailbox` |
 
 <note>
@@ -54,7 +59,71 @@ entries:
 
 ### 有状态 WASM Actor
 
-组件导入 `wippy:actor` 通过 `wippy:actor/process@0.1.0` 提供 `self`、`send`、`try-receive`、`receive` 和 `subscribe`。每个 PID 都有受限邮箱（默认 128 条消息、总计 8 MiB、每条消息 1 MiB）。`send` 会按目标 PID 的 `process.send` 权限进行授权。支持的 payload 格式为 `bytes`、UTF-8 `text` 和 UTF-8 `json`。默认 worker class 为 `wasm`；内存上限默认为 64 MiB，以 64 KiB 为倍数，最大 4 GiB。
+组件 guest 导入 `wippy:actor` 后，可以访问当前 PID 及其受限邮箱。
+`wippy:actor/process@0.1.0` 接口提供以下功能：
+
+| 函数 | 行为 |
+|------|------|
+| `self()` | 以字符串返回当前 actor PID |
+| `send(target, topic, payloads)` | 向另一个 PID 发送经过策略检查的消息 |
+| `try-receive()` | 立即返回下一条消息；没有消息时返回 `none` |
+| `receive()` | 挂起，直到有消息可用 |
+| `subscribe()` | 返回用于邮箱就绪通知的 `wasi:io/poll` pollable |
+
+消息包含发送方 PID、topic 和最多 16 个 payload。payload 格式为 `bytes`、
+UTF-8 `text` 和 UTF-8 `json`。发送会针对目标 PID 按 `process.send` 授权。
+格式错误、超出大小或容量的消息会在 guest 接收前被邮箱拒绝。
+
+guest 通常导出长时间运行的 `run` 函数，例如：
+
+```wit
+package example:worker;
+
+world worker {
+  import wippy:actor/process@0.1.0;
+  import wasi:io/poll@0.2.8;
+  export run: func() -> result<_, string>;
+}
+```
+
+在 `run` 中循环调用 `receive()`，更新 guest 状态，并使用 `send()` 回复
+`message.from`。`run` 返回后进程退出。
+
+## Actor 控制
+
+在 `options` 下配置持久的资源和邮箱预算：
+
+```yaml
+options:
+  worker_class: wasm
+  limits:
+    memory_bytes: 67108864
+    host_buffer_bytes: 8388608
+    asyncify_stack_bytes: 65536
+    max_execution_ms: 0
+    max_open_sockets: 16
+    socket_timeout_ms: 30000
+  mailbox:
+    capacity: 128
+    bytes: 8388608
+    message_bytes: 1048576
+```
+
+| 字段 | 默认值 | 描述 |
+|------|--------|------|
+| `worker_class` | `wasm` | 专用调度器 worker 类；当前仅支持 `wasm` |
+| `limits.memory_bytes` | 64 MiB | guest 线性内存上限；必须为正的 64 KiB 倍数，最大 4 GiB |
+| `limits.host_buffer_bytes` | 无限制 | 计费的常驻宿主缓冲区上限；`0` 禁用此字节上限 |
+| `limits.asyncify_stack_bytes` | 运行时默认值（64 KiB） | core module 的专用挂起存储 |
+| `limits.max_execution_ms` | 无限制 | actor 的墙钟生命周期；`0` 表示无截止时间 |
+| `limits.max_open_sockets` | 16 | actor 同时拥有的开放 socket 数量 |
+| `limits.socket_timeout_ms` | 30000 | socket 操作超时时间（毫秒） |
+| `mailbox.capacity` | 128 | 排队消息的最大数量 |
+| `mailbox.bytes` | 8 MiB | 排队消息的总预算 |
+| `mailbox.message_bytes` | 1 MiB | 每条消息的预算，包括 framing 开销 |
+
+`mailbox.message_bytes` 不能超过 `mailbox.bytes`。capacity 还必须符合每条
+排队消息至少 256 字节的计费。未知字段和无效值会导致条目接纳失败。
 
 ## CLI 命令
 
@@ -89,6 +158,9 @@ wippy run list
 |-------|----------|-------------|
 | `name` | 是 | 与 `wippy run <name>` 配合使用的命令名 |
 | `short` | 否 | 在 `wippy run list` 中显示的简短描述 |
+| `main` | 否 | 将条目标记为 pack 或 hub 模块的默认命令 |
+| `use_case` | 否 | 入口类别；默认值为 `run` |
+| `security` | 否 | 仅当受信任的终端启动器启动此命令时应用的安全上下文 |
 
 CLI 命令需要存在 `terminal.host` 才能工作；它就是运行该命令的进程宿主。
 
@@ -96,8 +168,8 @@ CLI 命令需要存在 `terminal.host` 才能工作；它就是运行该命令�
 
 WASM 进程遵循 Init/Step/Close 生命周期模型：
 
-1. **Init** - 模块被实例化，捕获输入参数
-2. **Step** - 执行推进。对于异步模块，调度器驱动 yield/resume 循环。对于同步模块，执行在单步内完成。
+1. **Init** - 捕获调用上下文、方法和输入参数
+2. **Step** - 第一步实例化并启动模块。后续步骤推进由 dispatcher 桥接的操作；同步执行可能在第一步完成。
 3. **Close** - 释放实例资源
 
 ## 从 Lua 生成进程
@@ -105,27 +177,27 @@ WASM 进程遵循 Init/Step/Close 生命周期模型：
 生成 WASM 进程并监控其完成：
 
 ```lua
-local process = require("process")
-local time = require("time")
 local errors = require("errors")
 
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
-end
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 ```
 
 ## 异步执行

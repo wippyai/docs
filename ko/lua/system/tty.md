@@ -156,6 +156,9 @@ local surface, err = tty.surface({
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -163,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|------|-------------|
 | `rows` | string[] | 완성된 프레임, 최대 16384행 |
 | `options.cursor` | table | 1부터 시작하는 서피스 좌표의 `{x, y, visible}` |
+| `options.images` | table[] | 프레임에 대한 전체 retained-image 배치 집합 |
 
 `cursor`를 생략하면 마지막으로 명시된 커서 상태가 유지됩니다. `cursor`가 있으면 세 필드 모두 필수입니다.
 
@@ -179,6 +183,43 @@ local stats, err = surface:present(rows, {
 리스를 해제합니다. 멱등입니다: 이후 호출은 첫 번째 close 결과를 반환합니다. 물리 백엔드는 터미널 모드를 복원합니다.
 
 **반환:** `boolean, error`
+
+### surface:capabilities()
+
+`{images = "native" | "kitty" | "pending" | "none"}`를 반환합니다. 조회하기
+전에 터미널 입력을 시작하세요. 물리 backend는 터미널 조회 중 잠시 `pending`을
+반환할 수 있으며 virtual surface는 조회 없이 이미지를 유지합니다.
+
+**반환:** `table, error`
+
+### surface:clipboard(text)
+
+물리 surface에 OSC 52 clipboard 요청을 씁니다. 텍스트는 유효한 UTF-8이며 최대
+65,536바이트여야 합니다. 성공은 출력이 요청을 수락했다는 뜻이며 터미널 정책이
+무시할 수도 있습니다. virtual surface는 unsupported 오류를 반환하고 API는 읽기나
+확인을 제공하지 않습니다.
+
+**반환:** `boolean, error`
+
+## Retained Images
+
+PNG를 제한된 runtime 저장소로 가져온 뒤 handle을 전체 surface 프레임에 배치합니다.
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+assert(surface:present(rows, {images = {{
+    placement_id = "preview", image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1, alt = "Preview",
+}}}))
+```
+
+`tty.image()`는 PNG 바이트를 비동기로 검증하고 `image:read()`는 인코딩된 바이트를
+내보냅니다. `image:close()`는 참조를 해제합니다. 원본 픽셀 좌표는 0부터, 대상 셀
+좌표는 1부터 시작합니다. 이후 `present`에서 `images`를 생략하면 이전 배치를 지우며,
+지원하지 않는 물리 터미널은 `alt` 텍스트를 표시합니다.
 
 ## Canvas
 
@@ -247,6 +288,7 @@ local view, err = tty.viewport({width = 80, height = 24})
 |--------|------|---------|-------------|
 | `width` | number | 80 | 열 수, 1에서 65535 |
 | `height` | number | 24 | 행 수, 1에서 65535 |
+| `page` | table | 없음 | 불투명한 `#RRGGBB` 전경 및 배경 기본값 |
 
 면적은 262,144셀로 제한됩니다.
 
@@ -303,6 +345,13 @@ end
 | `height` | number | 뷰포트 행 수 |
 | `rows` | string[] | 생산자가 마지막으로 발행한 행 |
 | `cursor` | table | 1부터 시작하는 좌표의 `{x, y, visible}`, 생산자가 명시적 커서 상태를 발행하기 전에는 없음 |
+| `images` | table[] | retained image 배치 메타데이터 |
+| `layers` | table[] | 순서가 있는 presentation layer |
+| `images_omitted` | boolean | 이미지 리소스는 있지만 이 일반 snapshot에는 유지되지 않음 |
+
+page는 터미널 기본 셀과 생략된 행을 명시적 색으로 해석합니다. 생성자는
+`viewport:set_page(page)`로 변경할 수 있고 `nil`은 producer의 원래 행을 복원합니다.
+page 변경은 producer가 다시 그리지 않아도 revision을 증가시킵니다.
 
 ### viewport:updates()
 
@@ -338,6 +387,42 @@ assert(view:send({type = "close"}))
 이 뷰어만 분리합니다. 마지막 뷰어를 닫아도 살아 있는 생산자가 종료되지 않으며, 생산자의 포트를 닫아도 뷰어가 남아 있는 한 상태가 파괴되지 않습니다.
 
 **반환:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+로컬 또는 원격 viewer를 위한 process-bound reference를 발급합니다. 권한은 독립적이며
+기본값은 false입니다.
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- 정확한 recipient process에서, 이 노드 또는 인증된 mesh peer에서:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+mount는 recipient의 전체 PID에 묶이고 한 번만 redeem할 수 있습니다. mounted viewer는
+producer grant나 추가 mount를 만들 수 없습니다. `viewport:revoke(reference)`로 발급된
+mount를 revoke하며 owner viewport를 닫거나 owner process가 끝나면 해당 mount도 revoke됩니다.
+원격 mount는 갱신 가능한 lease를 사용하고 재연결에는 새 mount가 필요합니다. 터미널
+입력은 다시 재생할 수 없습니다.
+
+### viewport:capture()
+
+viewport revision과 retained image 리소스를 원자적으로 고정합니다.
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+일반 `snapshot()`은 image bytes를 유지하지 않습니다. capture는 닫을 때까지 유지하며,
+여기서 얻은 image handle은 독립적으로 소유됩니다.
+
+**반환:** `Capture, error`
 
 ## 이벤트 타입
 
@@ -614,32 +699,6 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
-
-## 이미지, 페이지 및 위임된 뷰포트
-
-`surface:present(rows, options)`의 `options.images`에는 유지할 이미지 배치의
-전체 집합을 지정합니다. 각 배치에는 `placement_id`,
-`tty.image(png_bytes)`로 가져온 PNG handle, 대상 좌표와 크기가 있으며
-`src`, `z`, `alt`는 선택 사항입니다. `image:info()`, `image:read()`,
-`image:close()`는 metadata, 명시적인 PNG 내보내기, 참조 해제를 제공합니다.
-이후 `present`에서 `images`를 생략하면 이전 배치가 지워집니다.
-
-`surface:capabilities()`는 이미지 mode로 `native`, `kitty`, `pending`,
-`none` 중 하나를 반환합니다. `surface:clipboard(text)`는 physical surface에서
-최대 65,536바이트의 UTF-8 text를 OSC 52 clipboard 요청으로 보냅니다.
-virtual surface에서는 지원되지 않습니다.
-
-`tty.viewport()`는 불투명한 `#RRGGBB` 색상의
-`page = {foreground, background}`를 받고, `viewport:set_page(page)`로 page를
-변경합니다. snapshot에는 `images`, `layers`, `images_omitted`가 포함됩니다.
-`viewport:capture()`는 `capture:close()`까지 revision과 이미지 resource를
-유지하며, `capture:image(image_id)`는 독립적으로 소유되는 handle을 반환합니다.
-
-`viewport:mount(recipient_pid, rights)`는 local process 또는 인증된 mesh
-peer의 process에 바인딩된 일회용 참조를 발급합니다. `observe`, `input`,
-`resize` 권한은 서로 독립적이며 기본값은 false입니다.
-`viewport:revoke(reference)`로 참조를 취소할 수 있고, mount된 viewer는
-다시 위임할 수 없습니다.
 
 ## 권한
 

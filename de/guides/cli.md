@@ -268,6 +268,10 @@ Der Modultyp wird normalerweise als `type:` in `wippy.yaml` deklariert (siehe [V
 
 Module im Hub suchen.
 
+Die Suche verwendet, sofern vorhanden, das gespeicherte Authentifizierungstoken
+der ausgewählten Registry. Mit `wippy auth login` suchen Sie mit Ihrer
+Registry-Identität; `--registry` bestimmt, welche Zugangsdaten verwendet werden.
+
 ```bash
 wippy search http
 wippy search "sql driver" --limit 20

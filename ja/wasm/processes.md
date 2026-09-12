@@ -1,6 +1,6 @@
 ---
 title: "WASM プロセス"
-description: "process.wasm を使用して、Wippy プロセスホスト配下で WASM モジュールを実行します。"
+description: "process.wasm を使用して、Wippy プロセスホスト配下でステートフルな WASM Actor を実行します。"
 ---
 
 # WASM プロセス
@@ -81,6 +81,43 @@ world worker {
 ```
 
 `run` の中でループして `receive()` を呼び出し、guest の状態を更新します。応答するには `message.from` に対して `send()` を使用します。`run` から戻るとプロセスが終了します。
+
+## Actor の制御
+
+永続的なリソースと mailbox の予算は `options` で設定します。
+
+```yaml
+options:
+  worker_class: wasm
+  limits:
+    memory_bytes: 67108864
+    host_buffer_bytes: 8388608
+    asyncify_stack_bytes: 65536
+    max_execution_ms: 0
+    max_open_sockets: 16
+    socket_timeout_ms: 30000
+  mailbox:
+    capacity: 128
+    bytes: 8388608
+    message_bytes: 1048576
+```
+
+| フィールド | デフォルト | 説明 |
+|------------|------------|------|
+| `worker_class` | `wasm` | 専用スケジューラのワーカークラス。現在サポートされる値は `wasm` のみ |
+| `limits.memory_bytes` | 64 MiB | guest の線形メモリ上限。64 KiB の正の倍数で、最大 4 GiB |
+| `limits.host_buffer_bytes` | 無制限 | 使用量を計上する常駐ホストバッファ上限。`0` でこのバイト上限を無効化 |
+| `limits.asyncify_stack_bytes` | ランタイムのデフォルト（64 KiB） | core モジュール用の専用サスペンド領域 |
+| `limits.max_execution_ms` | 無制限 | Actor の実時間の存続期間。`0` は期限なし |
+| `limits.max_open_sockets` | 16 | Actor が同時に開けるソケット数 |
+| `limits.socket_timeout_ms` | 30000 | ソケット操作のタイムアウト（ミリ秒） |
+| `mailbox.capacity` | 128 | キューに入れられるメッセージの最大数 |
+| `mailbox.bytes` | 8 MiB | キューに入ったメッセージ全体の予算 |
+| `mailbox.message_bytes` | 1 MiB | フレーミングのオーバーヘッドを含む、1 メッセージの予算 |
+
+`mailbox.message_bytes` は `mailbox.bytes` を超えられません。capacity は
+キュー内の各メッセージに最低 256 バイトを計上するバイト予算にも収まる
+必要があります。不明なフィールドや無効な値はエントリの受け入れを失敗させます。
 
 ## CLI コマンド
 

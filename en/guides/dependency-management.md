@@ -233,7 +233,7 @@ Keys are `org/module`, values are directories (relative paths resolve against th
 
 The path is required to exist, and to be a directory, only for a module the lock graph actually selects. A replacement declared for a module that nothing depends on is a resolution input, not a boot input: it can point at a directory that is not checked out on this machine without failing validation.
 
-A replacement changes where a module's source comes from, not which release was chosen. The load path keeps the version and digest the lock selected for that module and is flagged as a replacement; entries loaded from it shadow the vendored ones with the same ID. When a replacement is declared for a module the lock does not pin a version for, resolution asks the hub for a release version, and until stronger evidence selects one it holds a local-only zero version.
+A replacement changes where a module's source comes from, not which release was chosen. It keeps the selected version, while reconciliation snapshots the current local tree and records its digest and size as the replacement identity. Entries loaded from it shadow the vendored ones with the same ID. When a replacement is declared for a module the lock does not pin a version for, resolution asks the hub for a release version, and until stronger evidence selects one it holds a local-only zero version.
 
 Workspace replacements affect the load graph at boot and are never written to `wippy.lock`. Changes to the local source are reconciled directly, without contacting the hub. The module's source `exclude:` globs from `wippy.yaml` apply to replacement directories too, both when loading entries and when hashing content.
 
@@ -261,7 +261,17 @@ The same check guards resolution. When the hub serves a manifest whose digest di
 
 Extracted directories carry their own recorded digest, size, and tree digest, and are re-verified against the recorded values, so a modified vendored tree is detected rather than loaded.
 
-Replacement sources are content-addressed too. The runtime digests the replacement tree and rejects it when the resolved graph already pins a different digest or size for that module, so a replacement cannot silently stand in for content it does not match.
+Replacement sources are content-addressed per reconciliation attempt. The runtime
+snapshots the current local tree, then verifies that same digest and size before
+loading it. A concurrent change fails validation instead of mixing two source
+generations. A later reconciliation can accept a new local tree; its old recorded
+digest is a checkpoint, not an immutable Hub artifact identity.
+
+On restart, immutable historical artifacts are prefetched separately. Historical
+local replacements are reconciled against the final dependency declarations
+before loading, so a removed replacement does not require its old directory to
+remain on disk. A replacement still selected by the final graph must be present
+and valid.
 
 ## Build-time Artifacts
 

@@ -156,6 +156,9 @@ Publica un array completo de cadenas de fila. La fila `1` es la línea superior.
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -163,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|------|-------------|
 | `rows` | string[] | Frame completo, como máximo 16384 filas |
 | `options.cursor` | table | `{x, y, visible}` en coordenadas de surface con base 1 |
+| `options.images` | table[] | Conjunto completo de colocaciones de imágenes retenidas para el frame |
 
 Omitir `cursor` preserva el último estado explícito del cursor. Los tres campos del cursor son obligatorios cuando `cursor` está presente.
 
@@ -179,6 +183,48 @@ Olvida el estado de presentación del backend sin borrar el frame lógico. El si
 Libera el lease. Idempotente: las llamadas posteriores devuelven el resultado del primer cierre. Un backend físico restaura los modos del terminal.
 
 **Retorna:** `boolean, error`
+
+### surface:capabilities()
+
+Devuelve `{images = "native" | "kitty" | "pending" | "none"}`. Inicia la
+entrada del terminal antes de consultar. Una surface física puede devolver
+brevemente `pending` mientras consulta el terminal; las surfaces virtuales
+retienen imágenes sin sondear.
+
+**Retorna:** `table, error`
+
+### surface:clipboard(text)
+
+Escribe una solicitud de portapapeles OSC 52 en una surface física. El texto
+debe ser UTF-8 válido y tener como máximo 65.536 bytes. El éxito indica que la
+salida aceptó la solicitud; la política del terminal aún puede ignorarla. Las
+surfaces virtuales devuelven un error de no soportado y la API no ofrece lectura
+ni confirmación del portapapeles.
+
+**Retorna:** `boolean, error`
+
+## Imágenes retenidas
+
+Importa un PNG en el almacenamiento acotado del runtime y coloca su handle en
+un frame completo:
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+assert(surface:present(rows, {images = {{
+    placement_id = "preview", image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1, alt = "Preview",
+}}}))
+```
+
+`tty.image()` valida los bytes PNG de forma asíncrona. `image:read()` exporta
+explícitamente los bytes codificados y `image:close()` libera la referencia.
+Las coordenadas de píxel de origen empiezan en cero y las coordenadas de celdas
+de destino en uno. Omitir `images` en un `present` posterior borra las
+colocaciones anteriores. Los terminales físicos no compatibles muestran el
+texto `alt`; las surfaces virtuales conservan el recurso para sus viewers.
 
 ## Canvas
 
@@ -247,6 +293,7 @@ local view, err = tty.viewport({width = 80, height = 24})
 |--------|------|-------------|-------------|
 | `width` | number | 80 | Columnas, de 1 a 65535 |
 | `height` | number | 24 | Filas, de 1 a 65535 |
+| `page` | table | ninguna | Valores opacos predeterminados de primer plano y fondo en `#RRGGBB` |
 
 El área está limitada a 262.144 celdas.
 
@@ -303,6 +350,14 @@ end
 | `height` | number | Filas del viewport |
 | `rows` | string[] | Filas publicadas por última vez por el productor |
 | `cursor` | table | `{x, y, visible}` en coordenadas con base 1, ausente hasta que el productor publica un estado de cursor explícito |
+| `images` | table[] | Metadatos de las colocaciones de imágenes retenidas |
+| `layers` | table[] | Capas de presentación ordenadas |
+| `images_omitted` | boolean | Existen recursos de imagen, pero este snapshot simple no los retiene |
+
+Una página resuelve las celdas predeterminadas del terminal y las filas omitidas
+en colores explícitos. El creador puede cambiarla con `viewport:set_page(page)`;
+pasar `nil` restaura las filas originales del productor. Los cambios de página
+avanzan la revisión sin exigir que el productor vuelva a pintar.
 
 ### viewport:updates()
 
@@ -338,6 +393,43 @@ Actualiza la geometría del viewport. Cuando el tamaño cambia, los viewers obti
 Desasocia solo a este viewer. Cerrar el último viewer no mata a un productor vivo, y cerrar el puerto del productor no destruye el estado mientras queden viewers.
 
 **Retorna:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+Emite una referencia vinculada a un proceso para un viewer local o remoto. Los
+permisos son independientes y por defecto son `false`:
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- En el proceso receptor exacto, en este nodo o en un peer mesh autenticado:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+El mount queda vinculado a la PID completa del destinatario y solo puede
+canjearse una vez. Un viewer montado no puede crear grants de productor ni
+delegar otros mounts. Los mounts remotos usan una concesión renovable; al
+reconectar se necesita un mount nuevo y no se puede reproducir la entrada del
+terminal. `viewport:revoke(reference)` revoca una referencia; cerrar el
+viewport propietario o terminar su proceso revoca sus mounts.
+
+### viewport:capture()
+
+Fija atómicamente una revisión del viewport y sus recursos de imagen retenidos:
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+Un `snapshot()` normal no conserva bytes de imagen. Un capture los conserva
+hasta cerrarse; los handles obtenidos de él mantienen su propiedad independiente.
+
+**Retorna:** `Capture, error`
 
 ## Tipos de Evento
 
@@ -614,32 +706,6 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
-
-## Imágenes, páginas y viewports delegados
-
-`surface:present(rows, options)` acepta en `options.images` el conjunto completo
-de ubicaciones de imágenes retenidas. Una ubicación incluye `placement_id`, un
-handle PNG importado con `tty.image(png_bytes)`, coordenadas y tamaño de destino,
-y los campos opcionales `src`, `z` y `alt`. `image:info()`, `image:read()` e
-`image:close()` ofrecen metadatos, exportación explícita del PNG y liberación.
-Un `present` posterior sin `images` elimina las ubicaciones.
-
-`surface:capabilities()` informa el modo de imagen `native`, `kitty`, `pending`
-o `none`. `surface:clipboard(text)` envía en una surface física una solicitud de
-portapapeles OSC 52 de hasta 65.536 bytes UTF-8; las surfaces virtuales no la
-admiten.
-
-`tty.viewport()` acepta `page = {foreground, background}` con colores opacos
-`#RRGGBB`; `viewport:set_page(page)` cambia la página. Los snapshots incluyen
-`images`, `layers` e `images_omitted`. `viewport:capture()` fija atómicamente la
-revisión y los recursos de imagen hasta `capture:close()`;
-`capture:image(image_id)` devuelve un handle con propiedad independiente.
-
-`viewport:mount(recipient_pid, rights)` emite una referencia de un solo uso,
-vinculada al proceso, para un destinatario local o de un peer mesh autenticado.
-Los derechos `observe`, `input` y `resize` son independientes y por defecto
-falsos. `viewport:revoke(reference)` revoca la referencia; un viewer montado no
-puede delegarla otra vez.
 
 ## Permisos
 

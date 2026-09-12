@@ -232,7 +232,9 @@ Schlussel sind `org/module`, Werte sind Verzeichnisse (relative Pfade werden geg
 
 Der Pfad muss nur fur ein Modul existieren und ein Verzeichnis sein, das der Lock-Graph tatsächlich auswählt. Eine Ersetzung, die fur ein Modul deklariert ist, von dem nichts abhängt, ist eine Auflösungseingabe, keine Boot-Eingabe: Sie darf auf ein Verzeichnis zeigen, das auf dieser Maschine nicht ausgecheckt ist, ohne die Validierung scheitern zu lassen.
 
-Eine Ersetzung ändert, woher der Quellcode eines Moduls kommt, nicht welches Release gewählt wurde. Der Ladepfad behält die Version und den Digest, die der Lock fur dieses Modul ausgewählt hat, und wird als Ersetzung markiert; daraus geladene Eintrage überschatten die vendorierten mit derselben ID. Ist eine Ersetzung fur ein Modul deklariert, fur das der Lock keine Version fixiert, fragt die Auflösung den Hub nach einer Release-Version und hält bis zu einem stärkeren Beleg eine nur lokal gültige Null-Version.
+Eine Ersetzung ändert, woher der Quellcode eines Moduls kommt, nicht welches Release gewählt wurde. Der Ladepfad behält die Version, die der Lock fur dieses Modul ausgewählt hat, und wird als Ersetzung markiert; daraus geladene Eintrage überschatten die vendorierten mit derselben ID. Ist eine Ersetzung fur ein Modul deklariert, fur das der Lock keine Version fixiert, fragt die Auflösung den Hub nach einer Release-Version und hält bis zu einem stärkeren Beleg eine nur lokal gültige Null-Version.
+
+Bei der Abstimmung wird der aktuelle lokale Baum zusätzlich aufgenommen; sein Digest und seine Größe werden als Identität dieser Ersetzung festgehalten. Der alte Digest ist dabei ein Prüfpunkt der Abstimmung und keine unveränderliche Hub-Artefaktidentität.
 
 Workspace-Ersetzungen wirken auf den Ladegraphen beim Start und werden nie in `wippy.lock` geschrieben. Änderungen an der lokalen Quelle werden direkt abgeglichen, ohne den Hub zu kontaktieren. Die `exclude:`-Globs aus der `wippy.yaml` des Moduls gelten auch für Ersetzungsverzeichnisse, sowohl beim Laden von Einträgen als auch beim Hashen des Inhalts.
 
@@ -260,7 +262,7 @@ Dieselbe Prüfung sichert die Auflösung ab. Liefert der Hub ein Manifest, desse
 
 Entpackte Verzeichnisse tragen ihren eigenen aufgezeichneten Digest, ihre Größe und ihren Baum-Digest und werden gegen die aufgezeichneten Werte erneut verifiziert, sodass ein veränderter vendorierter Baum erkannt statt geladen wird.
 
-Auch Ersetzungsquellen sind inhaltsadressiert. Die Runtime bildet den Digest des Ersetzungsbaums und lehnt ihn ab, wenn der aufgelöste Graph bereits einen anderen Digest oder eine andere Größe fur dieses Modul fixiert, sodass eine Ersetzung nicht stillschweigend fur Inhalt einstehen kann, dem sie nicht entspricht.
+Ersetzungsquellen werden pro Abstimmungsversuch adressiert: Die Runtime nimmt den aktuellen lokalen Baum auf und prüft denselben Digest und dieselbe Größe vor dem Laden. Eine gleichzeitige Änderung lässt die Validierung scheitern, statt zwei Quellgenerationen zu mischen. Eine spätere Abstimmung kann einen neuen lokalen Baum akzeptieren; der alte Digest ist ein Prüfpunkt, keine unveränderliche Hub-Artefaktidentität. Beim Neustart werden historische unveränderliche Artefakte separat vorab geladen und historische lokale Ersetzungen vor dem Laden gegen die endgültigen Abhängigkeitsdeklarationen abgestimmt. Eine entfernte Ersetzung benötigt ihr altes Verzeichnis nicht mehr. Eine weiterhin ausgewählte Ersetzung muss vorhanden und gültig sein.
 
 ## Build-Zeit-Artefakte
 

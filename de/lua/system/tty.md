@@ -156,6 +156,9 @@ Veröffentlicht ein vollständiges Array von Zeilen-Strings. Zeile `1` ist die o
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -163,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|-----|--------------|
 | `rows` | string[] | Vollständiger Frame, höchstens 16384 Zeilen |
 | `options.cursor` | table | `{x, y, visible}` in einsbasierten Surface-Koordinaten |
+| `options.images` | table[] | Vollständiger Satz beibehaltener Bildplatzierungen für den Frame |
 
 Wird `cursor` weggelassen, bleibt der letzte explizite Cursor-Zustand erhalten. Ist `cursor` vorhanden, sind alle drei Cursor-Felder erforderlich.
 
@@ -179,6 +183,48 @@ Verwirft den Präsentationszustand des Backends, ohne den logischen Frame zu lö
 Gibt die Lease frei. Idempotent: Spätere Aufrufe geben das Ergebnis des ersten Schließens zurück. Ein physisches Backend stellt die Terminal-Modi wieder her.
 
 **Rückgabe:** `boolean, error`
+
+### surface:capabilities()
+
+Gibt `{images = "native" | "kitty" | "pending" | "none"}` zurück. Starten Sie
+die Terminal-Eingabe vor der Abfrage. Ein physisches Backend kann kurzzeitig
+`pending` zurückgeben, während es das Terminal abfragt; virtuelle Surfaces
+behalten Bilder ohne Abfrage.
+
+**Rückgabe:** `table, error`
+
+### surface:clipboard(text)
+
+Schreibt eine OSC-52-Zwischenablageanforderung auf eine physische Surface. Der
+Text muss gültiges UTF-8 und höchstens 65.536 Byte lang sein. Erfolg bedeutet,
+dass die Terminalausgabe die Anforderung angenommen hat; die Terminalrichtlinie
+kann sie dennoch ignorieren. Virtuelle Surfaces geben einen Nichtunterstützt-
+Fehler zurück; die API bietet weder Zwischenablage-Lesen noch Bestätigung.
+
+**Rückgabe:** `boolean, error`
+
+## Beibehaltene Bilder
+
+Importieren Sie ein PNG in den begrenzten Laufzeitspeicher und platzieren Sie
+sein Handle in einem vollständigen Surface-Frame:
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+assert(surface:present(rows, {images = {{
+    placement_id = "preview", image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1, alt = "Preview",
+}}}))
+```
+
+`tty.image()` prüft PNG-Bytes asynchron. `image:read()` exportiert die
+codierten Bytes ausdrücklich und `image:close()` gibt die Referenz frei.
+Quellpixelkoordinaten beginnen bei null, Zielzellkoordinaten bei eins. Wird
+`images` bei einem späteren `present` weggelassen, werden frühere Platzierungen
+gelöscht. Nicht unterstützte physische Terminals zeigen den `alt`-Text; virtuelle
+Surfaces behalten die Bildressource für Betrachter.
 
 ## Canvas
 
@@ -247,6 +293,7 @@ local view, err = tty.viewport({width = 80, height = 24})
 |--------|-----|----------|--------------|
 | `width` | number | 80 | Spalten, 1 bis 65535 |
 | `height` | number | 24 | Zeilen, 1 bis 65535 |
+| `page` | table | keine | Undurchsichtige Standardwerte für Vorder- und Hintergrund in `#RRGGBB` |
 
 Die Fläche ist auf 262.144 Zellen begrenzt.
 
@@ -303,6 +350,14 @@ end
 | `height` | number | Viewport-Zeilen |
 | `rows` | string[] | Zuletzt vom Produzenten veröffentlichte Zeilen |
 | `cursor` | table | `{x, y, visible}` in einsbasierten Koordinaten, fehlt, bis der Produzent einen expliziten Cursor-Zustand veröffentlicht |
+| `images` | table[] | Metadaten der beibehaltenen Bildplatzierungen |
+| `layers` | table[] | Geordnete Präsentations-Layer |
+| `images_omitted` | boolean | Bildressourcen existieren, werden aber in diesem einfachen Snapshot nicht beibehalten |
+
+Eine Seite löst Terminal-Standardzellen und ausgelassene Zeilen in explizite
+Farben auf. Der Ersteller kann sie mit `viewport:set_page(page)` ändern; `nil`
+stellt die ursprünglichen Zeilen des Produzenten wieder her. Seitenänderungen
+erhöhen die Revision, ohne dass der Produzent neu zeichnen muss.
 
 ### viewport:updates()
 
@@ -338,6 +393,44 @@ Aktualisiert die Viewport-Geometrie. Ändert sich die Größe, erhalten Betracht
 Löst nur diesen Betrachter ab. Das Schließen des letzten Betrachters beendet keinen lebenden Produzenten, und das Schließen des Produzenten-Ports zerstört den Zustand nicht, solange Betrachter verbleiben.
 
 **Rückgabe:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+Stellt eine an einen Prozess gebundene Referenz für einen lokalen oder entfernten
+Betrachter aus. Rechte sind unabhängig und standardmäßig deaktiviert:
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- Im genauen Empfängerprozess auf diesem Knoten oder einem authentifizierten Mesh-Peer:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+Die Referenz ist an die vollständige PID des Empfängers gebunden und kann nur
+einmal eingelöst werden. Montierte Betrachter können keine Producer-Grants oder
+weiteren Mounts erzeugen. Remote-Mounts verwenden eine erneuerbare Lease; nach
+einer Wiederverbindung ist ein neuer Mount erforderlich und Terminaleingaben
+können nicht wiedergegeben werden. Mit `viewport:revoke(reference)` widerrufen
+Sie eine ausgestellte Referenz; das Schließen des Besitzer-Viewports oder das
+Ende seines Prozesses widerruft seine Mounts.
+
+### viewport:capture()
+
+Fixiert atomar eine Viewport-Revision und ihre beibehaltenen Bildressourcen:
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+Ein gewöhnlicher `snapshot()` hält keine Bildbytes. Ein Capture hält sie bis zum
+Schließen; daraus erworbene Bild-Handles bleiben unabhängig im Besitz.
+
+**Rückgabe:** `Capture, error`
 
 ## Ereignistypen
 
@@ -614,32 +707,6 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
-
-## Bilder, Seiten und delegierte Viewports
-
-`surface:present(rows, options)` akzeptiert unter `options.images` die komplette
-Menge beizubehaltender Bildplatzierungen. Eine Platzierung enthält
-`placement_id`, ein mit `tty.image(png_bytes)` importiertes PNG-Handle,
-Zielkoordinaten und -größe sowie optional `src`, `z` und `alt`. `image:info()`,
-`image:read()` und `image:close()` stellen Metadaten, expliziten PNG-Export und
-Freigabe bereit. Ein späteres `present` ohne `images` entfernt die Platzierungen.
-
-`surface:capabilities()` meldet den Bildmodus `native`, `kitty`, `pending` oder
-`none`. `surface:clipboard(text)` sendet auf physischen Surfaces eine OSC-52-
-Zwischenablageanforderung für höchstens 65.536 UTF-8-Bytes; virtuelle Surfaces
-unterstützen sie nicht.
-
-`tty.viewport()` akzeptiert `page = {foreground, background}` mit deckenden
-`#RRGGBB`-Farben. `viewport:set_page(page)` ändert die Seitendarstellung.
-Snapshots enthalten `images`, `layers` und `images_omitted`. Ein
-`viewport:capture()` hält Revision und Bildressourcen bis `capture:close()` fest;
-`capture:image(image_id)` gibt ein unabhängig besessenes Handle zurück.
-
-Mit `viewport:mount(recipient_pid, rights)` wird eine einmalig einlösbare,
-prozessgebundene Referenz für lokale oder authentifizierte Mesh-Empfänger
-erstellt. Die Rechte `observe`, `input` und `resize` sind unabhängig und
-standardmäßig falsch. `viewport:revoke(reference)` widerruft eine Referenz;
-gemountete Viewer können nicht weiter delegieren.
 
 ## Berechtigungen
 

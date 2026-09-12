@@ -268,6 +268,10 @@ wippy publish --dry-run
 
 ハブでモジュールを検索する。
 
+検索では、利用可能な場合、選択したレジストリに保存された認証トークンを
+使用します。`wippy auth login` で認証するとレジストリの ID で検索でき、
+`--registry` で使用するレジストリの資格情報を選択できます。
+
 ```bash
 wippy search http
 wippy search "sql driver" --limit 20

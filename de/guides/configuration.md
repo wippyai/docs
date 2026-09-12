@@ -616,6 +616,24 @@ extensions:
 |----------|--------------|
 | `GOMEMLIMIT` | Speicherlimit-Fallback, wenn das Flag `--memory-limit` nicht gesetzt ist (Vorrang: Flag `--memory-limit` > `GOMEMLIMIT` > Standard 1G) |
 
+## Internode-TLS
+
+Aktivieren Sie gegenseitiges TLS für das Internode-TCP-Mesh mit `cluster.internode.tls`. Damit wird auch der darüber transportierte Relay- und Raft-Verkehr geschützt. Ergänzen Sie die bestehende Cluster-Konfiguration:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS ist standardmäßig deaktiviert. Bei `enabled: true` sind alle drei nicht leeren Dateipfade erforderlich: ein PEM-Zertifikat, der passende private Schlüssel und ein PEM-CA-Bundle zur Prüfung von Server- und Client-Zertifikaten. Die Mindestversion ist TLS 1.2. Alle Peers benötigen kompatible Zertifikate und Vertrauenswurzeln. Die ed25519-Identität und die Liste vertrauenswürdiger Peer-Schlüssel bleiben erforderlich.
+
+Unbekannte TLS-Einstellungen, ungültige Typen, fehlende oder ungültige Zugangsdaten, fehlerhafte CA-Bundles und Dateipfade ohne `enabled: true` verhindern den Start. Eine ungültige explizite Konfiguration fällt niemals stillschweigend auf Klartext zurück.
+
 ## Siehe auch
 
 - [CLI-Referenz](guides/cli.md) — Kommandozeilenoptionen

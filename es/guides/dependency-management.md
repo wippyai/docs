@@ -232,7 +232,9 @@ Las claves son `org/module`, los valores son directorios (las rutas relativas se
 
 Se exige que la ruta exista, y que sea un directorio, solo para un modulo que el grafo del lock realmente selecciona. Un reemplazo declarado para un modulo del que nada depende es una entrada de resolucion, no de arranque: puede apuntar a un directorio que no esta descargado en esta maquina sin hacer fallar la validacion.
 
-Un reemplazo cambia de donde proviene el codigo fuente de un modulo, no que release se eligio. La ruta de carga conserva la version y el digest que el lock selecciono para ese modulo y se marca como reemplazo; las entradas cargadas desde ella eclipsan a las vendorizadas con el mismo ID. Cuando se declara un reemplazo para un modulo del que el lock no fija version, la resolucion le pide al hub una version de release, y hasta que una evidencia mas fuerte seleccione una, mantiene una version cero solo local.
+Un reemplazo cambia de donde proviene el codigo fuente de un modulo, no que release se eligio. La ruta de carga conserva la version que el lock selecciono para ese modulo y se marca como reemplazo; las entradas cargadas desde ella eclipsan a las vendorizadas con el mismo ID. Cuando se declara un reemplazo para un modulo del que el lock no fija version, la resolucion le pide al hub una version de release, y hasta que una evidencia mas fuerte seleccione una, mantiene una version cero solo local.
+
+Durante la reconciliación se toma una instantánea del árbol local actual y se registran su digest y tamaño como identidad de ese reemplazo. El digest anterior es un punto de control, no una identidad inmutable de artefacto del Hub.
 
 Los workspace replacements afectan al grafo de carga en boot y nunca se escriben en `wippy.lock`. Los cambios del source local se reconcilian directamente, sin contactar con el Hub. Los globs `exclude:` del source del módulo en `wippy.yaml` también se aplican a los directorios replacement, tanto al cargar entradas como al calcular hashes.
 
@@ -260,7 +262,7 @@ La misma comprobacion protege la resolucion. Cuando el hub sirve un manifiesto c
 
 Los directorios extraidos llevan su propio digest, tamano y digest de arbol registrados, y se reverifican contra los valores registrados, de modo que un arbol vendorizado modificado se detecta en lugar de cargarse.
 
-Las fuentes de reemplazo tambien estan direccionadas por contenido. El runtime calcula el digest del arbol de reemplazo y lo rechaza cuando el grafo resuelto ya fija un digest o un tamano distinto para ese modulo, de modo que un reemplazo no puede sustituir silenciosamente contenido con el que no coincide.
+Cada intento de reconciliación toma una instantánea del árbol local y verifica ese mismo digest y tamaño antes de cargarlo. Un cambio simultáneo hace fallar la validación en lugar de mezclar generaciones de fuentes. Tras reiniciar, los artefactos históricos inmutables se precargan por separado y los reemplazos locales históricos se reconcilian con las declaraciones finales; un reemplazo eliminado no necesita conservar su directorio, mientras que uno aún seleccionado debe existir y ser válido.
 
 ## Artefactos de Tiempo de Construccion
 

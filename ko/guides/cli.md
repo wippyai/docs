@@ -268,6 +268,10 @@ wippy publish --dry-run
 
 허브에서 모듈을 검색합니다.
 
+검색은 사용 가능한 경우 선택한 레지스트리에 저장된 인증 토큰을 사용합니다.
+`wippy auth login`으로 인증하면 레지스트리 ID로 검색할 수 있으며,
+`--registry`로 사용할 레지스트리 자격 증명을 선택합니다.
+
 ```bash
 wippy search http
 wippy search "sql driver" --limit 20

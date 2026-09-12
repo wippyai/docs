@@ -264,6 +264,10 @@ wippy publish --dry-run
 
 在 Hub 中搜索模块。
 
+搜索会在可用时使用所选注册中心保存的认证令牌。使用 `wippy auth login`
+完成认证后即可用你的注册中心身份搜索；`--registry` 用于选择要使用其凭据的
+注册中心。
+
 ```bash
 wippy search http
 wippy search "sql driver" --limit 20

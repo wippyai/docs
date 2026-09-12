@@ -286,6 +286,24 @@ Raft 상태는 파일 시스템에 내구적으로 저장되지만 클러스터�
 - 리더는 하트비트가 없고 가십에서 죽은 투표자를 능동적으로 제거하여 대기 노드 승격 중 죽은 투표자가 쿼럼을 영구적으로 막지 않도록 합니다.
 - 쿼럼을 잃은 클러스터를 복구하려면 실패한 노드를 재시작합니다. 노드는 가십에 재참여하고 살아남은 멤버가 다시 편입합니다. 투표자를 `failure_domain`에 분산하면 단일 영역 실패로 쿼럼을 잃을 가능성이 줄어듭니다.
 
+## 노드 간 TLS
+
+`cluster.internode.tls`로 노드 간 TCP mesh의 상호 TLS를 활성화합니다. 해당 mesh를 통해 전달되는 relay 및 Raft 트래픽도 보호합니다. 기존 cluster 설정에 다음을 추가합니다:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS는 기본적으로 비활성화됩니다. `enabled: true`이면 비어 있지 않은 파일 경로 세 개가 모두 필요합니다. PEM 인증서, 일치하는 개인 키, server 및 client 인증서를 검증할 PEM CA bundle을 지정합니다. 최소 버전은 TLS 1.2입니다. 연결할 모든 peer에 호환되는 인증서와 신뢰 루트를 구성해야 합니다. ed25519 identity와 신뢰할 peer key map도 계속 필요합니다.
+
+알 수 없는 TLS 설정, 잘못된 타입, 누락되거나 잘못된 인증 정보, 잘못된 CA bundle, `enabled: true` 없이 제공된 경로는 시작을 실패하게 합니다. 잘못된 명시적 설정이 평문 통신으로 자동 전환되지는 않습니다.
+
 ## 함께 보기
 
 - [구성](guides/configuration.md#클러스터) — 관련 클러스터 설정

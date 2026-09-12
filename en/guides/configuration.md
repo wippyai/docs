@@ -430,10 +430,19 @@ TCP mesh carrying the relay and Raft traffic between nodes. Raft rides this mesh
 | `internode.identity_key` | string | | Base64-encoded ed25519 private key identifying this node (inline) |
 | `internode.identity_key_file` | string | | Path to a file holding that key |
 | `internode.trusted_peer_keys` | map | | Base64-encoded ed25519 public key per node name, including this node |
+| `internode.tls.enabled` | bool | false | Enable mutual TLS on the internode TCP mesh |
+| `internode.tls.cert_file` | string | | PEM node certificate; required with TLS |
+| `internode.tls.key_file` | string | | Matching private key; required with TLS |
+| `internode.tls.ca_file` | string | | PEM CA bundle for client and server verification; required with TLS |
 
 `advertise_addr`/`advertise_port` publish an additive endpoint in node metadata while the bind endpoint stays advertised unchanged, so mixed-version clusters keep connecting during a rolling upgrade.
 
 Internode identity is mandatory whenever clustering is enabled. `identity_key` and `identity_key_file` are mutually exclusive and one of them must be present; the value decodes (standard or raw base64) to either a 32-byte ed25519 seed or a 64-byte ed25519 private key. `trusted_peer_keys` maps each node name to that node's 32-byte ed25519 public key, and must contain an entry for the local `cluster.name` whose value matches the local identity — otherwise startup fails. See the [Cluster Guide](guides/cluster.md#internode-identity).
+
+TLS requires all three credential paths and TLS 1.2 or later. Unknown settings,
+invalid values, unreadable or invalid credentials, and credential paths supplied
+while TLS is disabled fail startup. The ed25519 identity configuration remains
+required. See [Internode TLS](guides/cluster.md#internode-tls) for an example.
 
 ### Raft (consensus)
 

@@ -616,6 +616,24 @@ extensions:
 |----------|-------------|
 | `GOMEMLIMIT` | `--memory-limit` 플래그가 설정되지 않았을 때의 메모리 제한 폴백 (우선순위: `--memory-limit` 플래그 > `GOMEMLIMIT` > 1G 기본값) |
 
+## 노드 간 TLS
+
+`cluster.internode.tls`로 노드 간 TCP mesh의 상호 TLS를 활성화합니다. 해당 mesh를 통해 전달되는 relay 및 Raft 트래픽도 보호합니다. 기존 cluster 설정에 다음을 추가합니다:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS는 기본적으로 비활성화됩니다. `enabled: true`이면 비어 있지 않은 파일 경로 세 개가 모두 필요합니다. PEM 인증서, 일치하는 개인 키, server 및 client 인증서를 검증할 PEM CA bundle을 지정합니다. 최소 버전은 TLS 1.2입니다. 연결할 모든 peer에 호환되는 인증서와 신뢰 루트를 구성해야 합니다. ed25519 identity와 신뢰할 peer key map도 계속 필요합니다.
+
+알 수 없는 TLS 설정, 잘못된 타입, 누락되거나 잘못된 인증 정보, 잘못된 CA bundle, `enabled: true` 없이 제공된 경로는 시작을 실패하게 합니다. 잘못된 명시적 설정이 평문 통신으로 자동 전환되지는 않습니다.
+
 ## 참고
 
 - [CLI 레퍼런스](guides/cli.md) - 커맨드라인 옵션

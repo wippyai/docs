@@ -286,6 +286,24 @@ El estado de Raft es persistente en disco, pero la durabilidad principal del clu
 - El líder desaloja proactivamente un voter que está silente en heartbeat y muerto en gossip, de modo que un voter muerto no bloquee permanentemente el quórum mientras se promueve un standby.
 - Para recuperar un cluster que ha perdido quórum, reiniciar los nodos fallidos. Se reintegran al gossip y los miembros supervivientes los incorporan de nuevo. Distribuir voters entre `failure_domain`s es lo que previene que un fallo en una sola zona cause pérdida de quórum.
 
+## TLS internodo
+
+Active TLS mutuo para la malla TCP internodo mediante `cluster.internode.tls`. También protege el tráfico de relay y Raft que circula por esa malla. Añada lo siguiente a la configuración de clúster existente:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS está desactivado por defecto. Con `enabled: true` se requieren las tres rutas de archivo no vacías: un certificado PEM, su clave privada y un conjunto de CA en PEM para verificar certificados de servidor y cliente. La versión mínima es TLS 1.2. Configure certificados y raíces de confianza compatibles en todos los peers. La identidad ed25519 y el mapa de claves de peers de confianza siguen siendo obligatorios.
+
+Las opciones TLS desconocidas, los tipos inválidos, las credenciales ausentes o inválidas, los conjuntos de CA malformados y las rutas sin `enabled: true` impiden el inicio. Una configuración explícita inválida nunca vuelve silenciosamente a texto sin cifrar.
+
 ## Ver también
 
 - [Configuración](guides/configuration.md#cluster) — ajustes relacionados con el cluster
