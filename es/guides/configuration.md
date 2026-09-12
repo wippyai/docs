@@ -618,6 +618,24 @@ extensions:
 |----------|-------------|
 | `GOMEMLIMIT` | Límite de memoria de respaldo cuando no se establece el flag `--memory-limit` (precedencia: flag `--memory-limit` > `GOMEMLIMIT` > 1G por defecto) |
 
+## TLS internodo
+
+Active TLS mutuo para la malla TCP internodo mediante `cluster.internode.tls`. También protege el tráfico de relay y Raft que circula por esa malla. Añada lo siguiente a la configuración de clúster existente:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS está desactivado por defecto. Con `enabled: true` se requieren las tres rutas de archivo no vacías: un certificado PEM, su clave privada y un conjunto de CA en PEM para verificar certificados de servidor y cliente. La versión mínima es TLS 1.2. Configure certificados y raíces de confianza compatibles en todos los peers. La identidad ed25519 y el mapa de claves de peers de confianza siguen siendo obligatorios.
+
+Las opciones TLS desconocidas, los tipos inválidos, las credenciales ausentes o inválidas, los conjuntos de CA malformados y las rutas sin `enabled: true` impiden el inicio. Una configuración explícita inválida nunca vuelve silenciosamente a texto sin cifrar.
+
 ## Ver También
 
 - [Referencia de CLI](guides/cli.md) - Opciones de línea de comandos

@@ -111,6 +111,33 @@ Consequences to plan for:
 - A peer whose node ID is absent from `trusted_peer_keys` is rejected, as is one whose gossip-advertised public key disagrees with the trusted entry. Adding a node means distributing its public key to the existing nodes.
 - A node ID must be present in the live gossip membership before its key resolves, so a peer that has not joined gossip cannot open a mesh connection.
 
+## Internode TLS
+
+Enable mutual TLS for the internode TCP mesh under `cluster.internode.tls`.
+This also protects the relay and Raft traffic carried by that mesh. Add the
+following settings to your existing cluster configuration:
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS is disabled by default. Enabling it requires all three nonempty file paths:
+a PEM certificate and matching private key, and a PEM CA bundle used to verify
+both server and client certificates. The minimum protocol version is TLS 1.2.
+Configure compatible certificates and trust roots on every connecting peer.
+The ed25519 internode identity and trusted peer map described above are still
+required; TLS adds transport protection to the existing mesh authentication.
+
+Unknown TLS settings, invalid types, missing credentials, malformed CA bundles,
+and credential paths supplied without `enabled: true` fail startup. An invalid
+explicit configuration never silently falls back to plaintext.
+
 ## Bootstrap
 
 The initial cluster forms through gossip rather than a static peer list. With the Consul/Nomad-style `bootstrap_expect` setting, each starting node waits until the configured number of eligible nodes, including itself, is visible before forming quorum.

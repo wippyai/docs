@@ -232,7 +232,7 @@ As chaves sao `org/module`, os valores sao diretorios (caminhos relativos resolv
 
 O caminho e obrigado a existir, e a ser um diretorio, apenas para um modulo que o grafo do lock realmente seleciona. Uma substituicao declarada para um modulo do qual nada depende e uma entrada de resolucao, nao uma entrada de boot: ela pode apontar para um diretorio que nao esta presente nesta maquina sem falhar a validacao.
 
-Uma substituicao muda de onde vem o codigo-fonte de um modulo, nao qual release foi escolhido. O caminho de carga mantem a versao e o digest que o lock selecionou para aquele modulo e e marcado como uma substituicao; entradas carregadas dele sombreiam as vendorizadas com o mesmo ID. Quando uma substituicao e declarada para um modulo para o qual o lock nao fixa uma versao, a resolucao pede ao hub uma versao de release, e ate que uma evidencia mais forte selecione uma, ela mantem uma versao zero apenas local.
+Uma substituicao muda de onde vem o codigo-fonte de um modulo, nao qual release foi escolhido. O caminho de carga mantem a versao que o lock selecionou para aquele modulo e e marcado como uma substituicao; entradas carregadas dele sombreiam as vendorizadas com o mesmo ID. A reconciliacao captura a arvore local atual e registra seu digest e tamanho como identidade da substituicao. Quando uma substituicao e declarada para um modulo para o qual o lock nao fixa uma versao, a resolucao pede ao hub uma versao de release, e ate que uma evidencia mais forte selecione uma, ela mantem uma versao zero apenas local.
 
 Substituicoes de workspace afetam o grafo de carga no boot e nunca sao gravadas no `wippy.lock`. Mudancas no codigo-fonte local sao reconciliadas diretamente, sem contatar o hub. Os globs `exclude:` do `wippy.yaml` do modulo aplicam-se tambem a diretorios de substituicao, tanto ao carregar entradas quanto ao calcular o hash do conteudo.
 
@@ -260,7 +260,7 @@ A mesma verificacao protege a resolucao. Quando o hub serve um manifesto cujo di
 
 Diretorios extraidos carregam seu proprio digest, tamanho e digest de arvore registrados, e sao reverificados contra os valores registrados, entao uma arvore vendorizada modificada e detectada em vez de carregada.
 
-Fontes de substituicao tambem sao enderecadas por conteudo. O runtime calcula o digest da arvore de substituicao e a rejeita quando o grafo resolvido ja fixa um digest ou tamanho diferente para aquele modulo, entao uma substituicao nao pode silenciosamente ocupar o lugar de um conteudo que nao corresponde.
+Cada tentativa de reconciliacao captura a arvore local e verifica o mesmo digest e tamanho antes de carrega-la. Uma mudanca concorrente faz a validacao falhar em vez de misturar geracoes da fonte. Em reinicializacoes, artefatos historicos imutaveis sao pre-buscados separadamente e substituicoes locais historicas sao reconciliadas com as declaracoes finais; uma substituicao removida nao precisa manter o diretorio antigo, mas uma ainda selecionada deve existir e ser valida.
 
 ## Artefatos de Build
 

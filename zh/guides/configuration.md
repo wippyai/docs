@@ -616,6 +616,24 @@ extensions:
 |------|------|
 | `GOMEMLIMIT` | 未设置 `--memory-limit` 参数时的内存限制回退值（优先级：`--memory-limit` 参数 > `GOMEMLIMIT` > 默认 1G） |
 
+## 节点间 TLS
+
+在 `cluster.internode.tls` 下启用节点间 TCP mesh 的双向 TLS。它也保护通过该 mesh 传输的 relay 和 Raft 流量。将以下设置添加到现有集群配置中：
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS 默认禁用。设置 `enabled: true` 时，必须提供三个非空文件路径：PEM 证书、匹配的私钥，以及用于验证服务器和客户端证书的 PEM CA bundle。最低协议版本为 TLS 1.2。所有连接的 peer 都应配置兼容的证书和信任根。ed25519 身份和受信任 peer 公钥映射仍然是必需的。
+
+未知的 TLS 设置、无效类型、缺失或无效的凭据、格式错误的 CA bundle，以及未设置 `enabled: true` 却提供的凭据路径，都会导致启动失败。无效的显式配置绝不会静默回退到明文通信。
+
 ## 另请参阅
 
 - [CLI 参考](guides/cli.md) - 命令行选项

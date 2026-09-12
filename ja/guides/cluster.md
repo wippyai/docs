@@ -286,6 +286,24 @@ Raft 状態はファイルシステムに永続化されますが、クラスタ
 - リーダーはハートビート無音かつゴシップデッドの投票ノードを積極的に排除するため、スタンバイが昇格している間にデッドな投票ノードがクォーラムを永続的にブロックしません。
 - クォーラムを失ったクラスタを回復するには、失敗したノードを再起動します。ゴシップに再参加し、生き残ったメンバーが折りたたみます。投票ノードを `failure_domain` にまたがって分散させることが、単一ゾーン障害でクォーラムを失うことを防ぐ手段です。
 
+## ノード間 TLS
+
+`cluster.internode.tls` でノード間 TCP mesh の相互 TLS を有効にできます。この mesh 上の relay と Raft の通信も保護されます。既存の cluster 設定に次の設定を追加します。
+
+```yaml
+cluster:
+  internode:
+    tls:
+      enabled: true
+      cert_file: /etc/wippy/node.crt
+      key_file: /etc/wippy/node.key
+      ca_file: /etc/wippy/cluster-ca.pem
+```
+
+TLS は既定で無効です。`enabled: true` の場合、空でない 3 つのファイルパスがすべて必要です。PEM 証明書、対応する秘密鍵、server と client の証明書検証に使用する PEM CA bundle を指定します。最小バージョンは TLS 1.2 です。接続するすべての peer に互換性のある証明書と信頼ルートを設定してください。ed25519 identity と trusted peer key map も引き続き必要です。
+
+不明な TLS 設定、不正な型、欠落または不正な認証情報、不正な CA bundle、`enabled: true` を指定しないファイルパスは起動エラーになります。不正な明示的設定から平文通信へ暗黙にフォールバックすることはありません。
+
 ## 関連項目
 
 - [設定](./configuration.md#cluster) — 関連するクラスタ設定

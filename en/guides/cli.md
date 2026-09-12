@@ -272,6 +272,10 @@ The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing
 
 Search for modules in the hub.
 
+Search uses the stored authentication token for the selected registry, when
+available. Authenticate with `wippy auth login` to search with your registry
+identity; `--registry` selects which registry's credentials are used.
+
 ```bash
 wippy search http
 wippy search "sql driver" --limit 20
