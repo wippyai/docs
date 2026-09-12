@@ -1,6 +1,6 @@
 ---
 title: "WASM 프로세스"
-description: "process.wasm을 사용하여 Wippy 프로세스 호스트 아래에서 WASM 모듈을 실행합니다."
+description: "process.wasm을 사용하여 Wippy 프로세스 호스트 아래에서 상태 유지 WASM Actor를 실행합니다."
 ---
 
 # WASM 프로세스
@@ -81,6 +81,43 @@ world worker {
 ```
 
 `run`에서 반복적으로 `receive()`를 호출하고 guest 상태를 업데이트합니다. 응답하려면 `message.from`으로 `send()`를 사용합니다. `run`이 반환되면 프로세스가 종료됩니다.
+
+## Actor 제어
+
+지속적인 리소스 및 mailbox 예산을 `options` 아래에서 구성합니다:
+
+```yaml
+options:
+  worker_class: wasm
+  limits:
+    memory_bytes: 67108864
+    host_buffer_bytes: 8388608
+    asyncify_stack_bytes: 65536
+    max_execution_ms: 0
+    max_open_sockets: 16
+    socket_timeout_ms: 30000
+  mailbox:
+    capacity: 128
+    bytes: 8388608
+    message_bytes: 1048576
+```
+
+| 필드 | 기본값 | 설명 |
+|------|--------|------|
+| `worker_class` | `wasm` | 전용 scheduler worker 클래스. 현재 지원되는 값은 `wasm`뿐 |
+| `limits.memory_bytes` | 64 MiB | guest 선형 메모리 상한. 양의 64 KiB 배수이며 최대 4 GiB |
+| `limits.host_buffer_bytes` | 무제한 | 계산되는 상주 host buffer 상한. `0`은 이 바이트 상한을 비활성화 |
+| `limits.asyncify_stack_bytes` | 런타임 기본값 (64 KiB) | core module을 위한 소유 suspension 저장 공간 |
+| `limits.max_execution_ms` | 무제한 | actor의 wall-clock 수명. `0`은 deadline 없음 |
+| `limits.max_open_sockets` | 16 | actor가 소유할 수 있는 동시 열린 socket 수 |
+| `limits.socket_timeout_ms` | 30000 | socket 작업 시간 제한(밀리초) |
+| `mailbox.capacity` | 128 | 큐에 넣을 수 있는 최대 메시지 수 |
+| `mailbox.bytes` | 8 MiB | 큐에 있는 메시지 전체 예산 |
+| `mailbox.message_bytes` | 1 MiB | framing overhead를 포함한 메시지별 예산 |
+
+`mailbox.message_bytes`는 `mailbox.bytes`를 초과할 수 없습니다. capacity는
+큐에 넣은 메시지마다 최소 256바이트를 계산하는 바이트 예산에도 맞아야 합니다.
+알 수 없는 필드와 잘못된 값은 엔트리 승인을 실패시킵니다.
 
 ## CLI 명령
 

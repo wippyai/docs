@@ -156,6 +156,9 @@ local surface, err = tty.surface({
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -163,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|------|-------------|
 | `rows` | string[] | 完全なフレーム。最大 16384 行 |
 | `options.cursor` | table | 1始まりのサーフェス座標での `{x, y, visible}` |
+| `options.images` | table[] | フレームで保持する画像配置の完全なセット |
 
 `cursor` を省略すると、最後に明示されたカーソル状態が維持されます。`cursor` を指定する場合、3つのフィールドすべてが必要です。
 
@@ -179,6 +183,44 @@ local stats, err = surface:present(rows, {
 リースを解放します。冪等で、以降の呼び出しは最初のクローズ結果を返します。物理バックエンドはターミナルモードを復元します。
 
 **戻り値:** `boolean, error`
+
+### surface:capabilities()
+
+`{images = "native" | "kitty" | "pending" | "none"}` を返します。検査の前に
+ターミナル入力を開始してください。物理バックエンドは問い合わせ中に一時的に
+`pending` を返すことがあり、仮想サーフェスは検査なしで画像を保持します。
+
+**戻り値:** `table, error`
+
+### surface:clipboard(text)
+
+物理サーフェスに OSC 52 クリップボード要求を書き込みます。テキストは有効な
+UTF-8 で最大 65,536 バイトです。成功は出力が要求を受け付けたことを示すだけで、
+ターミナルのポリシーにより無視されることがあります。仮想サーフェスは未サポート
+エラーを返し、読み取りや確認 API はありません。
+
+**戻り値:** `boolean, error`
+
+## 保持された画像
+
+PNG を上限付きランタイムストレージへ取り込み、ハンドルを完全なフレームに配置します。
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+assert(surface:present(rows, {images = {{
+    placement_id = "preview", image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1, alt = "Preview",
+}}}))
+```
+
+`tty.image()` は PNG バイトを非同期に検証します。`image:read()` はエンコード済み
+バイトを明示的にエクスポートし、`image:close()` は参照を解放します。元画像の
+ピクセル座標は 0 始まり、宛先セル座標は 1 始まりです。後続の `present` で
+`images` を省略すると以前の配置が消去されます。未対応の物理ターミナルでは
+`alt` テキストを表示し、仮想サーフェスではビューア向けに画像を保持します。
 
 ## キャンバス
 
@@ -247,6 +289,7 @@ local view, err = tty.viewport({width = 80, height = 24})
 |-----------|------|-----------|------|
 | `width` | number | 80 | カラム数（1〜65535）|
 | `height` | number | 24 | 行数（1〜65535）|
+| `page` | table | なし | 不透明な `#RRGGBB` の前景色・背景色のデフォルト |
 
 面積は 262,144 セルが上限です。
 
@@ -303,6 +346,13 @@ end
 | `height` | number | ビューポートの行数 |
 | `rows` | string[] | プロデューサーが最後に公開した行 |
 | `cursor` | table | 1始まり座標での `{x, y, visible}`。プロデューサーが明示的なカーソル状態を公開するまでは存在しない |
+| `images` | table[] | 保持された画像配置のメタデータ |
+| `layers` | table[] | 順序付けられたプレゼンテーションレイヤー |
+| `images_omitted` | boolean | 画像リソースは存在するが、通常のスナップショットでは保持されていない |
+
+ページはターミナルのデフォルトセルと省略行を明示的な色へ解決します。
+`viewport:set_page(page)` で変更でき、`nil` を渡すとプロデューサーの元の行を
+復元します。ページ変更は再描画なしにリビジョンを進めます。
 
 ### viewport:updates()
 
@@ -338,6 +388,42 @@ assert(view:send({type = "close"}))
 このビューアのみをデタッチします。最後のビューアを閉じても稼働中のプロデューサーは終了せず、プロデューサーのポートを閉じてもビューアが残っている限り状態は破棄されません。
 
 **戻り値:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+ローカルまたはリモートのビューア向けに、プロセスにバインドされた参照を発行します。
+権限は独立しており、デフォルトは `false` です。
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- 正確な受信プロセスで、このノードまたは認証済み mesh peer 上:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+マウントは宛先の完全な PID にバインドされ、一度だけ引き換えられます。マウントされた
+ビューアはプロデューサーグラントや追加のマウントを作成できません。発行済み参照は
+`viewport:revoke(reference)` で取り消せます。所有者のビューポートを閉じるか所有者
+プロセスが終了すると、そのマウントも取り消されます。リモートマウントは更新可能な
+リースを使い、再接続時には新しいマウントが必要です。端末入力を再生することはできません。
+
+### viewport:capture()
+
+ビューポートのリビジョンと保持された画像リソースをアトミックに固定します。
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+通常の `snapshot()` は画像バイトを保持しません。Capture は閉じるまで保持し、そこから
+取得した画像ハンドルは独立して所有されます。
+
+**戻り値:** `Capture, error`
 
 ## イベント種別
 
@@ -614,16 +700,6 @@ tty.text.position.CENTER   -- 0.5
 tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
-
-## 画像、ページ、委譲された Viewport
-
-`surface:present(rows, options)` の `options.images` には、保持する画像配置の完全な集合を指定します。各配置には `placement_id`、`tty.image(png_bytes)` で import した PNG handle、配置先の座標とサイズが含まれ、`src`、`z`、`alt` は省略できます。`image:info()`、`image:read()`、`image:close()` は metadata、明示的な PNG export、参照の解放を提供します。後続の `present` で `images` を省略すると、以前の配置は消去されます。
-
-`surface:capabilities()` は画像 mode として `native`、`kitty`、`pending`、`none` のいずれかを返します。`surface:clipboard(text)` は physical surface で最大 65,536 byte の UTF-8 text を OSC 52 clipboard request として送信します。virtual surface では未対応です。
-
-`tty.viewport()` は不透明な `#RRGGBB` 色を持つ `page = {foreground, background}` を受け付け、`viewport:set_page(page)` で page を変更できます。snapshot には `images`、`layers`、`images_omitted` が含まれます。`viewport:capture()` は `capture:close()` まで revision と画像 resource を保持し、`capture:image(image_id)` は独立所有の handle を返します。
-
-`viewport:mount(recipient_pid, rights)` は local process または認証済み mesh peer の process に結び付いた、一度だけ引き換え可能な参照を発行します。`observe`、`input`、`resize` の各権限は独立しており、既定値は false です。`viewport:revoke(reference)` で参照を無効化できます。mount された viewer は再委譲できません。
 
 ## 権限
 

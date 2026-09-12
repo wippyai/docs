@@ -1,11 +1,19 @@
 ---
 title: "Процессы WASM"
-description: "WASM-модули могут запускаться как процессы через вид записи process.wasm. Процессы выполняются внутри хоста процессов Wippy и поддерживают полный…"
+description: "Запускайте постоянных WASM-акторов в хосте процессов Wippy с помощью process.wasm."
 ---
 
 # Процессы WASM
 
-WASM-модули могут запускаться как процессы через вид записи `process.wasm`. Процессы выполняются внутри хоста процессов Wippy и поддерживают полный жизненный цикл: порождение, мониторинг и контролируемое завершение.
+Запись `process.wasm` создаёт постоянный изолированный WASM-актор в хосте
+процессов Wippy. Один экземпляр модуля живёт всё время существования PID,
+сохраняет состояние гостя между сообщениями и участвует в порождении,
+мониторинге, обмене сообщениями и контролируемом завершении.
+
+**Классификация: справочник конфигурации и жизненного цикла процесса.** Блоки с
+бинарниками предполагают внешнюю сборку компонента и принадлежащие приложению
+записи файловой системы, хоста процессов, окружения и политик. Хеши-заполнители
+нужно заменить точным дайджестом бинарника.
 
 ## Конфигурация записи
 
@@ -45,7 +53,7 @@ entries:
 | `transport` | No | Транспорт вызова: `payload` (по умолчанию) или `wasi-http` |
 | `wit` | No | WIT-сигнатура для raw/core-модулей |
 | `imports` | No | Хост-импорты для подключения |
-| `wasi` | No | Конфигурация WASI (args, env, mounts) |
+| `wasi` | No | Конфигурация WASI (`args`, `cwd`, `env` и `mounts`) |
 | `options` | No | Параметры актора: `worker_class`, `limits` и `mailbox` |
 
 <note>
@@ -54,7 +62,73 @@ entries:
 
 ### Акторы WASM с состоянием
 
-Компонентный импорт `wippy:actor` предоставляет `self`, `send`, `try-receive`, `receive` и `subscribe` через `wippy:actor/process@0.1.0`. У каждого PID есть ограниченный почтовый ящик (по умолчанию 128 сообщений, 8 МиБ суммарно и 1 МиБ на сообщение). `send` авторизуется как `process.send` для целевого PID. Поддерживаются форматы payload `bytes`, UTF-8 `text` и UTF-8 `json`. Класс воркера по умолчанию — `wasm`; лимит памяти — 64 МиБ, максимум 4 ГиБ с шагом 64 КиБ.
+Для component guest импорт `wippy:actor` предоставляет текущий PID и его
+ограниченный mailbox. Интерфейс `wippy:actor/process@0.1.0` включает:
+
+| Функция | Поведение |
+|---------|-----------|
+| `self()` | Возвращает текущий PID актора как строку |
+| `send(target, topic, payloads)` | Отправляет проверенное политикой сообщение другому PID |
+| `try-receive()` | Немедленно возвращает следующее сообщение или `none` |
+| `receive()` | Приостанавливается до появления сообщения |
+| `subscribe()` | Возвращает pollable `wasi:io/poll` для готовности mailbox |
+
+Сообщение содержит PID отправителя, topic и до 16 payload. Форматы payload —
+`bytes`, UTF-8 `text` и UTF-8 `json`. Отправка авторизуется как `process.send`
+для целевого PID. Некорректные, слишком большие сообщения и сообщения сверх
+ёмкости mailbox отклоняются до передачи гостю.
+
+Обычно guest экспортирует долгоживущую функцию `run`:
+
+```wit
+package example:worker;
+
+world worker {
+  import wippy:actor/process@0.1.0;
+  import wasi:io/poll@0.2.8;
+  export run: func() -> result<_, string>;
+}
+```
+
+В `run` вызывайте `receive()` в цикле, обновляйте состояние guest и отвечайте
+через `send()` на `message.from`. Возврат из `run` завершает процесс.
+
+## Управление актором
+
+Постоянные лимиты ресурсов и mailbox задаются внутри `options`:
+
+```yaml
+options:
+  worker_class: wasm
+  limits:
+    memory_bytes: 67108864
+    host_buffer_bytes: 8388608
+    asyncify_stack_bytes: 65536
+    max_execution_ms: 0
+    max_open_sockets: 16
+    socket_timeout_ms: 30000
+  mailbox:
+    capacity: 128
+    bytes: 8388608
+    message_bytes: 1048576
+```
+
+| Поле | По умолчанию | Описание |
+|------|--------------|----------|
+| `worker_class` | `wasm` | Выделенный класс worker планировщика; сейчас поддерживается только `wasm` |
+| `limits.memory_bytes` | 64 МиБ | Ограничение линейной памяти guest; положительное кратное 64 КиБ, максимум 4 ГиБ |
+| `limits.host_buffer_bytes` | без ограничений | Учитываемый лимит резидентных буферов хоста; `0` отключает этот лимит |
+| `limits.asyncify_stack_bytes` | по умолчанию среды (64 КиБ) | Собственное хранилище приостановки для core-модуля |
+| `limits.max_execution_ms` | без ограничений | Время жизни актора по часам; `0` означает отсутствие срока |
+| `limits.max_open_sockets` | 16 | Одновременно открытые сокеты актора |
+| `limits.socket_timeout_ms` | 30000 | Тайм-аут операций с сокетами в миллисекундах |
+| `mailbox.capacity` | 128 | Максимум сообщений в очереди |
+| `mailbox.bytes` | 8 МиБ | Совокупный лимит сообщений в очереди |
+| `mailbox.message_bytes` | 1 МиБ | Лимит одного сообщения с учётом framing overhead |
+
+`mailbox.message_bytes` не может превышать `mailbox.bytes`. Ёмкость также
+должна укладываться в минимальный учёт 256 байт на сообщение. Неизвестные поля
+и недопустимые значения приводят к отклонению записи.
 
 ## CLI-команды
 
@@ -89,6 +163,9 @@ wippy run list
 |-------|----------|----------|
 | `name` | Yes | Имя команды для использования с `wippy run <name>` |
 | `short` | No | Краткое описание, отображаемое в `wippy run list` |
+| `main` | No | Назначить запись командой по умолчанию для pack или hub-модуля |
+| `use_case` | No | Категория точки входа; по умолчанию `run` |
+| `security` | No | Контекст безопасности, применяемый только при запуске этой команды доверенным терминальным launcher |
 
 Для работы CLI-команд необходим `terminal.host` — именно он является хостом процессов, выполняющим команду.
 
@@ -97,7 +174,7 @@ wippy run list
 WASM-процессы следуют модели жизненного цикла Init/Step/Close:
 
 1. **Init** - Модуль инстанцируется, входные аргументы захватываются
-2. **Step** - Выполнение продвигается. Для асинхронных модулей планировщик управляет циклами yield/resume. Для синхронных модулей выполнение завершается за один шаг.
+2. **Step** - На первом шаге модуль инстанцируется и запускается. Последующие шаги продвигают операции, связанные с диспетчером; синхронное выполнение может завершиться на первом шаге.
 3. **Close** - Ресурсы экземпляра освобождаются
 
 ## Порождение из Lua
@@ -105,27 +182,27 @@ WASM-процессы следуют модели жизненного цикл�
 Порождение WASM-процесса с мониторингом завершения:
 
 ```lua
-local process = require("process")
-local time = require("time")
 local errors = require("errors")
 
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
-    "myns:processes",        -- process group
+    "myns:processes",        -- process host
     6, 7                     -- arguments passed to the WASM function
 )
 
 if err then
-    error("spawn failed: " .. tostring(err))
+    return nil, err
 end
 
 -- Wait for the process to complete
 local events = process.events()
-local event = events:receive()
-if event and event.kind == process.event.EXIT then
-    local result = event.result.value  -- return value from the WASM function
-end
+    local event, open = events:receive()
+    if not open then return nil, errors.new("process event channel closed") end
+    if event.kind == process.event.EXIT and event.from == pid then
+        local result = event.result.value  -- return value from the WASM function
+        return result, event.result.error
+    end
 ```
 
 ## Асинхронное выполнение

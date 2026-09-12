@@ -1,6 +1,6 @@
 ---
 title: "Processos WASM"
-description: "Execute módulos WASM sob um host de processos do Wippy com process.wasm."
+description: "Execute atores WASM com estado sob um host de processos do Wippy com process.wasm."
 ---
 
 # Processos WASM
@@ -60,13 +60,73 @@ temporariamente com um aviso de depreciação.
 
 ### Atores WASM com estado
 
-O import de componente `wippy:actor` expõe `self`, `send`, `try-receive`,
-`receive` e `subscribe` por `wippy:actor/process@0.1.0`. Cada PID tem uma caixa
-de mensagens limitada (por padrão, 128 mensagens, 8 MiB no total e 1 MiB por
-mensagem). `send` é autorizado como `process.send` para o PID de destino. Os
-formatos de payload suportados são `bytes`, `text` UTF-8 e `json` UTF-8. A
-classe de worker padrão é `wasm`; o limite de memória é 64 MiB, até 4 GiB em
-múltiplos de 64 KiB.
+Importe `wippy:actor` em um guest de componente para acessar o PID atual e sua
+mailbox limitada. A interface `wippy:actor/process@0.1.0` fornece:
+
+| Função | Comportamento |
+|--------|---------------|
+| `self()` | Retorna o PID atual do ator como string |
+| `send(target, topic, payloads)` | Envia uma mensagem verificada pela política a outro PID |
+| `try-receive()` | Retorna imediatamente a próxima mensagem ou `none` |
+| `receive()` | Suspende até que uma mensagem esteja disponível |
+| `subscribe()` | Retorna um pollable `wasi:io/poll` para prontidão da mailbox |
+
+As mensagens contêm o PID do remetente, um tópico e até 16 payloads. Os formatos
+são `bytes`, `text` UTF-8 e `json` UTF-8. O envio é autorizado como
+`process.send` contra o PID de destino. Mensagens malformadas, grandes demais ou
+acima da capacidade da mailbox são rejeitadas antes de chegar ao guest.
+
+O guest normalmente exporta uma função `run` de longa duração:
+
+```wit
+package example:worker;
+
+world worker {
+  import wippy:actor/process@0.1.0;
+  import wasi:io/poll@0.2.8;
+  export run: func() -> result<_, string>;
+}
+```
+
+Em `run`, chame `receive()` em um loop, atualize o estado do guest e use
+`send()` para responder a `message.from`. Retornar de `run` encerra o processo.
+
+## Controles do ator
+
+Configure os orçamentos persistentes de recursos e mailbox em `options`:
+
+```yaml
+options:
+  worker_class: wasm
+  limits:
+    memory_bytes: 67108864
+    host_buffer_bytes: 8388608
+    asyncify_stack_bytes: 65536
+    max_execution_ms: 0
+    max_open_sockets: 16
+    socket_timeout_ms: 30000
+  mailbox:
+    capacity: 128
+    bytes: 8388608
+    message_bytes: 1048576
+```
+
+| Campo | Padrão | Descrição |
+|-------|--------|-----------|
+| `worker_class` | `wasm` | Classe de worker do agendador dedicado; atualmente apenas `wasm` é suportado |
+| `limits.memory_bytes` | 64 MiB | Teto da memória linear do guest; múltiplo positivo de 64 KiB, no máximo 4 GiB |
+| `limits.host_buffer_bytes` | ilimitado | Teto contabilizado de buffers residentes do host; `0` desativa esse teto de bytes |
+| `limits.asyncify_stack_bytes` | padrão do runtime (64 KiB) | Armazenamento de suspensão próprio para um módulo core |
+| `limits.max_execution_ms` | ilimitado | Vida útil em tempo de parede do ator; `0` significa sem prazo |
+| `limits.max_open_sockets` | 16 | Sockets abertos simultaneamente pelo ator |
+| `limits.socket_timeout_ms` | 30000 | Timeout de operações de socket em milissegundos |
+| `mailbox.capacity` | 128 | Máximo de mensagens enfileiradas |
+| `mailbox.bytes` | 8 MiB | Orçamento agregado de mensagens enfileiradas |
+| `mailbox.message_bytes` | 1 MiB | Orçamento por mensagem, incluindo overhead de framing |
+
+`mailbox.message_bytes` não pode exceder `mailbox.bytes`. A capacidade também
+deve caber no mínimo de 256 bytes contabilizados por mensagem enfileirada. Campos
+desconhecidos e valores inválidos fazem a admissão da entrada falhar.
 
 ## Comandos CLI
 
