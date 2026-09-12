@@ -615,9 +615,19 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## 画像、ページ、委譲された Viewport
+
+`surface:present(rows, options)` の `options.images` には、保持する画像配置の完全な集合を指定します。各配置には `placement_id`、`tty.image(png_bytes)` で import した PNG handle、配置先の座標とサイズが含まれ、`src`、`z`、`alt` は省略できます。`image:info()`、`image:read()`、`image:close()` は metadata、明示的な PNG export、参照の解放を提供します。後続の `present` で `images` を省略すると、以前の配置は消去されます。
+
+`surface:capabilities()` は画像 mode として `native`、`kitty`、`pending`、`none` のいずれかを返します。`surface:clipboard(text)` は physical surface で最大 65,536 byte の UTF-8 text を OSC 52 clipboard request として送信します。virtual surface では未対応です。
+
+`tty.viewport()` は不透明な `#RRGGBB` 色を持つ `page = {foreground, background}` を受け付け、`viewport:set_page(page)` で page を変更できます。snapshot には `images`、`layers`、`images_omitted` が含まれます。`viewport:capture()` は `capture:close()` まで revision と画像 resource を保持し、`capture:image(image_id)` は独立所有の handle を返します。
+
+`viewport:mount(recipient_pid, rights)` は local process または認証済み mesh peer の process に結び付いた、一度だけ引き換え可能な参照を発行します。`observe`、`input`、`resize` の各権限は独立しており、既定値は false です。`viewport:revoke(reference)` で参照を無効化できます。mount された viewer は再委譲できません。
+
 ## 権限
 
-このモジュール自体はポリシーアクションを強制しません。ターミナルへのアクセスはフレームから得られます。ターミナルホストが物理ポートをアタッチし、`process.with_options({terminal = grant})` がビューポートをアタッチします。後者はスポーンする側に `process.context` を必要とします。
+physical terminal は process frame から与えられます。`process.with_options({terminal = grant})` で producer を接続するには、spawn 側に `process.context` が必要です。委譲された viewport は owner viewport handle に対して `tty.mount`、`tty.observe`、`tty.input`、`tty.resize` も検査します。
 
 ## 関連項目
 

@@ -20,10 +20,11 @@ WASM 模块通过宿主函数导入访问运行时能力。每个导入在条目
 | `wasi:sockets` | `wasi:sockets/*` | component | TCP/UDP 网络和 DNS 解析 |
 | `wasi:http` | `wasi:http/*` | component | 外发 HTTP 客户端请求 |
 | `funcs` | `wippy:runtime/funcs@0.1.0` | component | 从客户端调用注册表函数 |
+| `wippy:actor` | `wippy:actor/process@0.1.0` | component | PID 身份和受限 Actor 邮箱消息传递 |
 | `wasi1` | `wasi_snapshot_preview1` | core | WASI Preview 1 兼容导入 |
 | `socket` | `wippy:runtime/socket@0.1.0` | core | 通过纯整数导入实现实例自有的出站 TCP |
 
-八个 `wasi:*` 配置档和 `funcs` 仅适用于 component：在 core 模块上声明其中之一会使该条目失败。`wasi1` 和 `socket` 暴露 core 导入。
+八个 `wasi:*` 配置档、`funcs` 和 `wippy:actor` 仅适用于 component：在 core 模块上声明其中之一会使该条目失败。`wasi1` 和 `socket` 暴露 core 导入。
 
 每个配置档都可以通过其短名称、它所提供的任一接口命名空间，以及带版本的命名空间进行解析。查找前会去掉版本后缀，因此 `wasi:io/poll`、`wasi:io/poll@0.2.3` 和 `wasi:poll` 都会选中同一个配置档。
 

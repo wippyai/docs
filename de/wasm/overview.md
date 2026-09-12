@@ -19,7 +19,7 @@ bereits registriert sind. Das Rust/WASM-Tutorial zeigt ein Projekt mit einer kom
 |-----|--------------|
 | `function.wat` | In YAML definierte Inline-Funktion im WebAssembly-Textformat |
 | `function.wasm` | Vorkompiliertes WASM-Binary, das aus einem Dateisystemeintrag geladen wird |
-| `process.wasm` | Als Prozess ausgeführtes WASM-Binary (CLI-Befehl oder langlebiger Prozess) |
+| `process.wasm` | Zustandsbehafteter WASM-Actor mit einer Modulinstanz pro PID |
 
 ## Funktionsweise
 

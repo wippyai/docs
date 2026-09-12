@@ -22,7 +22,18 @@ entries:
     fs: myns:wasm_binaries
     path: /worker.wasm
     hash: sha256:292b796376f8b4cc360acf2ea6b82d1084871c3607a079f30b446da8e5c984a4
-    method: compute
+    method: run
+    imports:
+      - wippy:actor
+      - wasi:io
+      - wasi:poll
+    options:
+      limits:
+        memory_bytes: 67108864
+      mailbox:
+        capacity: 128
+        bytes: 8388608
+        message_bytes: 1048576
 ```
 
 ### Campos de configuração
@@ -37,11 +48,25 @@ entries:
 | `wit` | Não | Assinatura WIT para módulos raw/core |
 | `imports` | Não | Imports do host a habilitar |
 | `wasi` | Não | Configuração WASI (`args`, `cwd`, `env` e `mounts`) |
-| `limits` | Não | Limites de execução |
+| `options` | Não | Controles do ator: `worker_class`, `limits` e `mailbox` |
 
 <note>
-`process.wasm` compartilha sua estrutura de configuração com `function.wasm`, portanto um bloco `pool` é aceito pelo esquema, mas ignorado: processos são executados sob o host de processos, não sob um pool de funções.
+Um ator `process.wasm` possui uma instância do módulo durante toda a vida do PID
+e preserva o estado do guest entre mensagens. Portanto, pooling de funções não
+se aplica e um bloco `pool` é rejeitado. Os limites do ator ficam em
+`options.limits`; as grafias antigas `limits` e `meta.options` são aceitas
+temporariamente com um aviso de depreciação.
 </note>
+
+### Atores WASM com estado
+
+O import de componente `wippy:actor` expõe `self`, `send`, `try-receive`,
+`receive` e `subscribe` por `wippy:actor/process@0.1.0`. Cada PID tem uma caixa
+de mensagens limitada (por padrão, 128 mensagens, 8 MiB no total e 1 MiB por
+mensagem). `send` é autorizado como `process.send` para o PID de destino. Os
+formatos de payload suportados são `bytes`, `text` UTF-8 e `json` UTF-8. A
+classe de worker padrão é `wasm`; o limite de memória é 64 MiB, até 4 GiB em
+múltiplos de 64 KiB.
 
 ## Comandos CLI
 
@@ -95,6 +120,8 @@ Processos WASM seguem o modelo de ciclo de vida Init/Step/Close:
 Inicie um processo WASM e monitore-o até a conclusão:
 
 ```lua
+local errors = require("errors")
+
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
@@ -120,7 +147,11 @@ end
 
 ## Execução assíncrona
 
-Processos WASM podem ceder a execução em operações de host que o runtime conecta ao dispatcher, incluindo polling de relógio e HTTP de saída. O agendador suspende o processo até a operação pendente terminar e então o retoma:
+Actors WASM podem ceder a execução em operações de host que o runtime conecta
+ao dispatcher, incluindo recebimento e envio pela mailbox, polling, relógios,
+sockets, DNS, streams do sistema de arquivos e HTTP de saída. O agendador
+suspende o processo até a operação terminar e então retoma a mesma instância
+guest:
 
 ```yaml
   - name: http_worker
@@ -140,7 +171,8 @@ Processos WASM podem ceder a execução em operações de host que o runtime con
           required: true
 ```
 
-O mecanismo de yield/resume é transparente para o guest nessas operações asyncificadas. Não suponha que toda chamada WASI bloqueante ceda a execução: leituras e escritas de streams são síncronas no runtime fixado.
+O mecanismo de yield/resume é transparente para um módulo core asyncificado ou
+um componente que use as interfaces pollable compatíveis.
 
 ## Configuração WASI
 

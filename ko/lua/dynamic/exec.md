@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | 작업 디렉토리 |
 | `options.env` | table | 환경 변수 |
 | `options.pty` | table | 자식 프로세스에 의사 터미널 할당 |
+| `options.process_group` | boolean | 자식 프로세스를 자체 프로세스 그룹에서 시작하여 시그널이 하위 프로세스에도 전달되도록 함. Windows에서는 지원되지 않음 |
 
 **반환:** `Process, error`
 
@@ -203,7 +204,35 @@ proc:wait()
 stdout:close()
 ```
 
-각 호출은 주어진 바이트를 쓰고 반환합니다. stdin을 닫는 메서드는 없습니다. stdin은 프로세스 수명 동안 열려 있으므로, `sort`처럼 입력 끝까지 읽는 명령은 EOF를 받지 못하고 프로세스에 시그널이 전달되거나 프로세스가 닫힐 때에만 종료됩니다. `head -n 3`처럼 스스로 읽기를 멈추는 명령을 선택하거나, EOF가 필요한 명령은 입력을 공급하는 셸 파이프라인 뒤에서 실행하세요.
+각 호출은 주어진 바이트를 쓰고 반환합니다. 자식 프로세스가 EOF를 보아야 할 때는 `close_stdin()`을 호출하세요:
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()`은 멱등적입니다. 입력 측을 닫은 뒤의 쓰기는 실패합니다. PTY 기반 프로세스에서는 이 파이프 연산을 사용할 수 없습니다.
+
+## done
+
+프로세스 핸들을 소비하지 않고 종료를 관찰하려면 `done()`을 사용하세요:
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+반환된 채널은 종료 레코드 하나를 전달한 뒤 닫힙니다. 반복 호출은 같은 채널을 반환합니다. 레코드에는 `code`, 선택적인 `signal`이 포함되고, 런타임이 종료를 관찰하지 못한 경우에만 `error`가 포함됩니다. 시그널로 종료되면 코드는 `128 + signal`입니다. `wait()`과 달리 `done()`은 핸들을 계속 사용할 수 있게 하므로 스트림, `signal()`, `close()`를 계속 사용할 수 있습니다. 전달 후 `wait()`을 호출하면 기록된 코드를 반환합니다.
 
 ## signal / close
 
@@ -226,9 +255,9 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)`는 시작된 자식에 `SIGTERM`을, `force`가 true이면 `SIGKILL`을 보낸 뒤 백그라운드에서 회수하므로 호출이 블로킹되지 않습니다. 유예 기간 후에도 실행 중인 자식은 강제 종료되어 회수가 항상 완료됩니다. 시작되지 않은 핸들은 단순히 무효화되며, 두 번 닫아도 에러가 아닙니다.
+`close(force?)`는 시작된 자식에 `SIGTERM`을, `force`가 true이면 `SIGKILL`을 보낸 뒤 백그라운드에서 회수하므로 호출이 블로킹되지 않습니다. 유예 기간 후에도 실행 중인 자식은 강제 종료되어 회수가 항상 완료됩니다. 시작되지 않은 핸들은 단순히 무효화되며, 두 번 닫아도 에러가 아닙니다. `process_group`을 활성화하면 시그널이 그룹을 대상으로 하며 리더가 종료된 뒤에도 하위 프로세스에 전달됩니다.
 
-회수는 자식의 stdout과 stderr 파이프를 닫으므로, `close()`를 호출하기 전에 필요한 출력을 모두 읽으세요. 그 이후에는 `wait()`을 포함한 프로세스의 모든 메서드가 `process closed`를 보고합니다 — 종료 코드가 중요하다면 대신 `signal()`과 `wait()`을 사용하세요.
+회수 전에 얻은 스트림은 마지막 기록자가 닫을 때까지 읽을 수 있으며, 파이프를 상속한 하위 프로세스도 포함됩니다. `close()` 후에는 프로세스 메서드가 `process closed`를 보고합니다. 종료가 중요하고 핸들을 계속 사용해야 한다면 `done()`을 사용하세요.
 
 ## resize
 

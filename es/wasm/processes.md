@@ -22,7 +22,18 @@ entries:
     fs: myns:wasm_binaries
     path: /worker.wasm
     hash: sha256:292b796376f8b4cc360acf2ea6b82d1084871c3607a079f30b446da8e5c984a4
-    method: compute
+    method: run
+    imports:
+      - wippy:actor
+      - wasi:io
+      - wasi:poll
+    options:
+      limits:
+        memory_bytes: 67108864
+      mailbox:
+        capacity: 128
+        bytes: 8388608
+        message_bytes: 1048576
 ```
 
 ### Campos de configuración
@@ -37,11 +48,25 @@ entries:
 | `wit` | No | Firma WIT para módulos raw/core |
 | `imports` | No | Imports del host a habilitar |
 | `wasi` | No | Configuración WASI (`args`, `cwd`, `env` y `mounts`) |
-| `limits` | No | Límites de ejecución |
+| `options` | No | Controles del actor: `worker_class`, `limits` y `mailbox` |
 
 <note>
-`process.wasm` comparte su estructura de configuración con `function.wasm`, por lo que el esquema acepta un bloque `pool` pero lo ignora: los procesos se ejecutan bajo el host de procesos y no bajo un pool de funciones.
+Un actor `process.wasm` posee una instancia del módulo durante toda la vida de
+su PID y conserva el estado del guest entre mensajes. Por ello no se aplica el
+pool de funciones y un bloque `pool` se rechaza. Los límites del actor van en
+`options.limits`; las formas antiguas `limits` y `meta.options` se aceptan
+temporalmente con una advertencia de obsolescencia.
 </note>
+
+### Actores WASM con estado
+
+El import de componente `wippy:actor` expone `self`, `send`, `try-receive`,
+`receive` y `subscribe` mediante `wippy:actor/process@0.1.0`. Cada PID tiene un
+buzón limitado (128 mensajes, 8 MiB en total y 1 MiB por mensaje de forma
+predeterminada). `send` se autoriza como `process.send` contra el PID de destino.
+Los formatos de payload admitidos son `bytes`, `text` UTF-8 y `json` UTF-8. La
+clase de worker predeterminada es `wasm`; el límite de memoria es 64 MiB, hasta
+4 GiB en múltiplos de 64 KiB.
 
 ## Comandos CLI
 
@@ -95,6 +120,8 @@ Los procesos WASM siguen el modelo de ciclo de vida Init/Step/Close:
 Crea un proceso WASM y supervísalo hasta que termine:
 
 ```lua
+local errors = require("errors")
+
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
@@ -120,7 +147,11 @@ end
 
 ## Ejecución asíncrona
 
-Los procesos WASM pueden ceder el control para las operaciones del host que el entorno de ejecución enlaza al dispatcher, incluidos el sondeo de relojes compatible y HTTP saliente. El planificador suspende el proceso hasta que termina la operación pendiente y después lo reanuda:
+Los actores WASM pueden ceder el control para las operaciones del host que el
+entorno de ejecución enlaza al dispatcher, incluidos la recepción y el envío
+del buzón, el sondeo, los relojes, los sockets, DNS, los streams del sistema de
+archivos y HTTP saliente. El planificador suspende el proceso hasta que termina
+la operación y después reanuda la misma instancia invitada:
 
 ```yaml
   - name: http_worker
@@ -140,7 +171,9 @@ Los procesos WASM pueden ceder el control para las operaciones del host que el e
           required: true
 ```
 
-El mecanismo de cesión y reanudación es transparente para el invitado en esas operaciones transformadas en asíncronas. No presupongas que todas las llamadas WASI bloqueantes ceden el control: las lecturas y escrituras de streams son síncronas en el entorno de ejecución fijado.
+El mecanismo de cesión y reanudación es transparente para un módulo core
+transformado en asíncrono o un componente que use las interfaces sondeables
+compatibles.
 
 ## Configuración WASI
 

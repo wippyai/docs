@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | Directorio de trabajo |
 | `options.env` | table | Variables de entorno |
 | `options.pty` | table | Asignar un pseudo-terminal al hijo |
+| `options.process_group` | boolean | Iniciar el hijo en su propio grupo de procesos para que las señales alcancen también a sus descendientes; no compatible con Windows |
 
 **Devuelve:** `Process, error`
 
@@ -203,7 +204,42 @@ proc:wait()
 stdout:close()
 ```
 
-Cada llamada escribe los bytes indicados y retorna. No hay ningún método que cierre stdin: permanece abierto durante toda la vida del proceso, así que un comando que lee hasta el fin de la entrada, como `sort`, nunca ve EOF y termina solo cuando el proceso recibe una señal o se cierra. Elija un comando que deje de leer por sí solo, como hace `head -n 3`, o ejecute uno que necesite EOF detrás de una tubería de shell que le suministre su entrada.
+Cada llamada escribe los bytes indicados y retorna. Llame a `close_stdin()`
+cuando el hijo deba recibir EOF:
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()` es idempotente. Las escrituras posteriores fallan porque la
+entrada está cerrada. Los procesos respaldados por PTY no ofrecen esta operación
+de pipe.
+
+## done
+
+Use `done()` para observar la salida sin consumir el handle del proceso:
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+El canal entrega un registro de salida y después se cierra. Las llamadas
+repetidas devuelven el mismo canal. El registro contiene `code`, `signal`
+opcional y `error` solo si el runtime no pudo observar la salida. Una salida por
+señal usa `128 + signal` como código. A diferencia de `wait()`, `done()` mantiene
+utilizable el handle; un `wait()` posterior devuelve el código registrado.
 
 ## signal / close
 
@@ -226,9 +262,12 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)` envía a un hijo iniciado `SIGTERM`, o `SIGKILL` cuando `force` es verdadero, y luego lo recolecta en segundo plano para que la llamada no bloquee. Un hijo que sigue ejecutándose tras un periodo de gracia se mata para que la recolección siempre se complete. Un handle no iniciado simplemente se invalida, y cerrar dos veces no es un error.
+`close(force?)` envía a un hijo iniciado `SIGTERM`, o `SIGKILL` cuando `force` es verdadero, y luego lo recolecta en segundo plano para que la llamada no bloquee. Un hijo que sigue ejecutándose tras un periodo de gracia se mata para que la recolección siempre se complete. Un handle no iniciado simplemente se invalida, y cerrar dos veces no es un error. Cuando se activa `process_group`, las señales se dirigen al grupo y siguen alcanzando a los descendientes después de que termina el líder.
 
-La recolección cierra las tuberías stdout y stderr del hijo, así que lea toda la salida que necesite antes de llamar a `close()`. Después de eso, cada método del proceso, `wait()` incluido, informa `process closed` — use `signal()` y `wait()` en su lugar cuando el código de salida importe.
+Los streams obtenidos antes de la recolección siguen siendo legibles hasta que
+se cierra su último writer, incluido un descendiente que heredó el pipe. Después
+de `close()`, los métodos del proceso informan `process closed`; use `done()` si
+la salida importa y el handle debe seguir utilizable.
 
 ## resize
 

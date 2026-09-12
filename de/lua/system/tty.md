@@ -615,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Bilder, Seiten und delegierte Viewports
+
+`surface:present(rows, options)` akzeptiert unter `options.images` die komplette
+Menge beizubehaltender Bildplatzierungen. Eine Platzierung enthält
+`placement_id`, ein mit `tty.image(png_bytes)` importiertes PNG-Handle,
+Zielkoordinaten und -größe sowie optional `src`, `z` und `alt`. `image:info()`,
+`image:read()` und `image:close()` stellen Metadaten, expliziten PNG-Export und
+Freigabe bereit. Ein späteres `present` ohne `images` entfernt die Platzierungen.
+
+`surface:capabilities()` meldet den Bildmodus `native`, `kitty`, `pending` oder
+`none`. `surface:clipboard(text)` sendet auf physischen Surfaces eine OSC-52-
+Zwischenablageanforderung für höchstens 65.536 UTF-8-Bytes; virtuelle Surfaces
+unterstützen sie nicht.
+
+`tty.viewport()` akzeptiert `page = {foreground, background}` mit deckenden
+`#RRGGBB`-Farben. `viewport:set_page(page)` ändert die Seitendarstellung.
+Snapshots enthalten `images`, `layers` und `images_omitted`. Ein
+`viewport:capture()` hält Revision und Bildressourcen bis `capture:close()` fest;
+`capture:image(image_id)` gibt ein unabhängig besessenes Handle zurück.
+
+Mit `viewport:mount(recipient_pid, rights)` wird eine einmalig einlösbare,
+prozessgebundene Referenz für lokale oder authentifizierte Mesh-Empfänger
+erstellt. Die Rechte `observe`, `input` und `resize` sind unabhängig und
+standardmäßig falsch. `viewport:revoke(reference)` widerruft eine Referenz;
+gemountete Viewer können nicht weiter delegieren.
+
 ## Berechtigungen
 
-Das Modul erzwingt keine eigenen Policy-Aktionen. Der Zugang zu einem Terminal kommt aus dem Frame: Der Terminal-Host hängt den physischen Port an, und `process.with_options({terminal = grant})` hängt einen Viewport an, was auf der spawnenden Seite `process.context` erfordert.
+Ein physisches Terminal kommt aus dem Prozess-Frame. Das Anhängen eines
+Producers mit `process.with_options({terminal = grant})` erfordert beim Spawn
+`process.context`. Delegierte Viewports prüfen außerdem `tty.mount`,
+`tty.observe`, `tty.input` und `tty.resize` gegen das Owner-Viewport-Handle.
 
 ## Siehe auch
 

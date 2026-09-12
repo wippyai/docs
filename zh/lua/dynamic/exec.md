@@ -81,6 +81,7 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | 工作目录 |
 | `options.env` | table | 环境变量 |
 | `options.pty` | table | 为子进程分配伪终端 |
+| `options.process_group` | boolean | 将子进程置于独立进程组，使信号也能传递给后代进程；Windows 不支持 |
 
 **返回值:** `Process, error`
 
@@ -203,7 +204,35 @@ proc:wait()
 stdout:close()
 ```
 
-每次调用写入给定的字节后返回。没有关闭 stdin 的方法：它在进程的整个生命周期内保持打开，因此像 `sort` 这样读取直到输入结束的命令永远不会看到 EOF，只有在进程被发送信号或被关闭时才会结束。请选择会自行停止读取的命令，如 `head -n 3`；或者把需要 EOF 的命令放在一个为其提供输入的 shell 管道之后运行。
+每次调用写入给定的字节后返回。当子进程需要看到 EOF 时，调用 `close_stdin()`：
+
+```lua
+local proc = assert(executor:exec("sort"))
+local stdout = assert(proc:stdout_stream())
+assert(proc:start())
+assert(proc:write_stdin("banana\napple\n"))
+assert(proc:close_stdin())
+local sorted = assert(stdout:read())
+```
+
+`close_stdin()` 是幂等的。输入端关闭后，后续写入会失败。基于 PTY 的进程不提供此管道操作。
+
+## done
+
+使用 `done()` 观察退出，而不消耗进程句柄：
+
+```lua
+local proc = assert(executor:exec("./worker"))
+assert(proc:start())
+local exits = assert(proc:done())
+
+local status, open = exits:receive()
+if open then
+    print(status.code, status.signal, status.error)
+end
+```
+
+返回的通道会投递一条退出记录，然后关闭。重复调用会返回同一个通道。记录包含 `code`、可选的 `signal`，以及仅在运行时无法观察到退出时才有的 `error`。因信号退出时，`code` 为 `128 + signal`。与 `wait()` 不同，`done()` 不会使句柄失效，因此流、`signal()` 和 `close()` 仍然可用。投递完成后调用 `wait()` 会返回记录中的退出码。
 
 ## signal / close
 
@@ -226,9 +255,9 @@ local SIGINT = 2
 proc:signal(SIGINT)
 ```
 
-`close(force?)` 会向已启动的子进程发送 `SIGTERM`，当 `force` 为真时发送 `SIGKILL`，然后在后台回收它，因此该调用不会阻塞。在宽限期后仍在运行的子进程会被终止，以保证回收总能完成。未启动的句柄只是被作废，重复关闭不算错误。
+`close(force?)` 会向已启动的子进程发送 `SIGTERM`，当 `force` 为真时发送 `SIGKILL`，然后在后台回收它，因此该调用不会阻塞。在宽限期后仍在运行的子进程会被终止，以保证回收总能完成。未启动的句柄只是被作废，重复关闭不算错误。启用 `process_group` 后，信号会发送给进程组；即使组长已经退出，也仍会传递给后代进程。
 
-回收会关闭子进程的 stdout 和 stderr 管道，因此请在调用 `close()` 之前读取所需的全部输出。此后进程上的每个方法（包括 `wait()`）都会报告 `process closed`——当退出码重要时，请改用 `signal()` 和 `wait()`。
+在回收前获取的流会一直可读，直到其最后一个写入方关闭，包括继承了该管道的后代进程。调用 `close()` 后，进程方法会报告 `process closed`；当退出信息重要且句柄必须继续可用时，请使用 `done()`。
 
 ## resize
 

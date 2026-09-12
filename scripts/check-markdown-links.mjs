@@ -66,11 +66,39 @@ function linksOutsideFences(markdown) {
   return links
 }
 
+function manifestPaths(value, paths = []) {
+  if (Array.isArray(value)) {
+    for (const item of value) manifestPaths(item, paths)
+    return paths
+  }
+  if (!value || typeof value !== 'object') return paths
+  if (typeof value.path === 'string') paths.push(value.path)
+  for (const child of Object.values(value)) manifestPaths(child, paths)
+  return paths
+}
+
 const files = (await Promise.all(
   [...localeRoots].map((locale) => markdownFiles(resolve(root, locale))),
 )).flat()
 const existingPaths = new Set(files.map(repositoryPath))
 let checkedLinks = 0
+
+for (const locale of localeRoots) {
+  const manifestFile = resolve(root, locale, 'manifest.json')
+  const manifest = JSON.parse(await readFile(manifestFile, 'utf8'))
+  const seen = new Set()
+  for (const pagePath of manifestPaths(manifest)) {
+    if (seen.has(pagePath)) {
+      failures.push(`${locale}/manifest.json duplicate page path: ${pagePath}`)
+      continue
+    }
+    seen.add(pagePath)
+    const markdownPath = `${locale}/${pagePath}.md`
+    if (!existingPaths.has(markdownPath)) {
+      failures.push(`${locale}/manifest.json missing page: ${markdownPath}`)
+    }
+  }
+}
 
 for (const file of files) {
   const markdown = await readFile(file, 'utf8')

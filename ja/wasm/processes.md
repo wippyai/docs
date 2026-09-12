@@ -22,7 +22,18 @@ entries:
     fs: myns:wasm_binaries
     path: /worker.wasm
     hash: sha256:292b796376f8b4cc360acf2ea6b82d1084871c3607a079f30b446da8e5c984a4
-    method: compute
+    method: run
+    imports:
+      - wippy:actor
+      - wasi:io
+      - wasi:poll
+    options:
+      limits:
+        memory_bytes: 67108864
+      mailbox:
+        capacity: 128
+        bytes: 8388608
+        message_bytes: 1048576
 ```
 
 ### 設定フィールド
@@ -37,11 +48,39 @@ entries:
 | `wit` | いいえ | raw/core モジュール向けの WIT シグネチャ |
 | `imports` | いいえ | 有効にするホストインポート |
 | `wasi` | いいえ | WASI 設定（`args`、`cwd`、`env`、`mounts`） |
-| `limits` | いいえ | 実行制限 |
+| `options` | いいえ | Actor 制御: `worker_class`、`limits`、`mailbox` |
 
 <note>
-`process.wasm` は `function.wasm` と設定構造体を共有するため、スキーマは `pool` ブロックを受け付けますが無視されます。プロセスは関数プールではなくプロセスホスト配下で実行されます。
+`process.wasm` Actor は PID の存続期間全体で 1 つのモジュールインスタンスを所有し、メッセージ間で guest の状態を保持します。そのため関数プールは適用されず、`pool` ブロックは拒否されます。Actor の制限は `options.limits` に記述します。従来の `limits` と `meta.options` は、非推奨の警告付きで一時的に受け付けられます。
 </note>
+
+## ステートフルな Actor とメッセージング
+
+component guest で `wippy:actor` を import すると、現在の PID と制限付き mailbox にアクセスできます。`wippy:actor/process@0.1.0` インターフェースは次の機能を提供します。
+
+| 関数 | 動作 |
+|----------|----------|
+| `self()` | 現在の actor PID を文字列として返す |
+| `send(target, topic, payloads)` | ポリシーで許可されたメッセージを別の PID に送信する |
+| `try-receive()` | 次のメッセージをすぐに返す。なければ `none` を返す |
+| `receive()` | メッセージが利用可能になるまで中断する |
+| `subscribe()` | mailbox の準備完了を通知する `wasi:io/poll` pollable を返す |
+
+メッセージには送信元 PID、topic、最大 16 個の payload が含まれます。payload の形式は `bytes`、UTF-8 の `text`、UTF-8 の `json` です。送信は宛先 PID に対する `process.send` として認可されます。形式不正、サイズ超過、容量超過のメッセージは、guest が受け取る前に mailbox への受け入れが拒否されます。
+
+guest は通常、長時間実行する `run` 関数をエクスポートします。例:
+
+```wit
+package example:worker;
+
+world worker {
+  import wippy:actor/process@0.1.0;
+  import wasi:io/poll@0.2.8;
+  export run: func() -> result<_, string>;
+}
+```
+
+`run` の中でループして `receive()` を呼び出し、guest の状態を更新します。応答するには `message.from` に対して `send()` を使用します。`run` から戻るとプロセスが終了します。
 
 ## CLI コマンド
 
@@ -95,6 +134,8 @@ WASM プロセスは Init/Step/Close ライフサイクルモデルに従いま�
 WASM プロセスを生成し、完了まで監視します。
 
 ```lua
+local errors = require("errors")
+
 -- Spawn with monitoring
 local pid, err = process.spawn_monitored(
     "myns:compute_worker",   -- entry ID
@@ -120,7 +161,7 @@ end
 
 ## 非同期実行
 
-WASM プロセスは、対応するクロックのポーリングや送信 HTTP など、ランタイムがディスパッチャーを通じてブリッジするホスト操作で yield できます。スケジューラは保留中の操作が完了するまでプロセスを一時停止し、その後再開します。
+WASM プロセスは、mailbox の送受信、ポーリング、クロック、ソケット、DNS、ファイルシステムストリーム、送信 HTTP など、ランタイムがディスパッチャーを通じてブリッジするホスト操作で yield できます。スケジューラは保留中の操作が完了するまでプロセスを一時停止し、その後同じ guest インスタンスを再開します。
 
 ```yaml
   - name: http_worker
@@ -140,7 +181,7 @@ WASM プロセスは、対応するクロックのポーリングや送信 HTTP 
           required: true
 ```
 
-これら asyncify された操作では、yield/resume メカニズムはゲストから透過的です。すべてのブロッキング WASI 呼び出しが yield するとは限りません。固定されたランタイムでは、ストリームの読み書きは同期処理です。
+yield/resume の仕組みは、asyncify された core モジュールや、サポートされている pollable インターフェースを使用する component からは透過的です。
 
 ## WASI 設定
 

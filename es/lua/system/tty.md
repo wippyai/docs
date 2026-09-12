@@ -615,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Imágenes, páginas y viewports delegados
+
+`surface:present(rows, options)` acepta en `options.images` el conjunto completo
+de ubicaciones de imágenes retenidas. Una ubicación incluye `placement_id`, un
+handle PNG importado con `tty.image(png_bytes)`, coordenadas y tamaño de destino,
+y los campos opcionales `src`, `z` y `alt`. `image:info()`, `image:read()` e
+`image:close()` ofrecen metadatos, exportación explícita del PNG y liberación.
+Un `present` posterior sin `images` elimina las ubicaciones.
+
+`surface:capabilities()` informa el modo de imagen `native`, `kitty`, `pending`
+o `none`. `surface:clipboard(text)` envía en una surface física una solicitud de
+portapapeles OSC 52 de hasta 65.536 bytes UTF-8; las surfaces virtuales no la
+admiten.
+
+`tty.viewport()` acepta `page = {foreground, background}` con colores opacos
+`#RRGGBB`; `viewport:set_page(page)` cambia la página. Los snapshots incluyen
+`images`, `layers` e `images_omitted`. `viewport:capture()` fija atómicamente la
+revisión y los recursos de imagen hasta `capture:close()`;
+`capture:image(image_id)` devuelve un handle con propiedad independiente.
+
+`viewport:mount(recipient_pid, rights)` emite una referencia de un solo uso,
+vinculada al proceso, para un destinatario local o de un peer mesh autenticado.
+Los derechos `observe`, `input` y `resize` son independientes y por defecto
+falsos. `viewport:revoke(reference)` revoca la referencia; un viewer montado no
+puede delegarla otra vez.
+
 ## Permisos
 
-El módulo no aplica acciones de política propias. El acceso a un terminal proviene del frame: el terminal host asocia el puerto físico, y `process.with_options({terminal = grant})` asocia un viewport, lo que requiere `process.context` en el lado que hace el spawn.
+El terminal físico procede del frame del proceso. Asociar un productor mediante
+`process.with_options({terminal = grant})` requiere `process.context` al hacer
+spawn. Los viewports delegados comprueban además `tty.mount`, `tty.observe`,
+`tty.input` y `tty.resize` contra el handle del viewport propietario.
 
 ## Véase También
 

@@ -7,7 +7,11 @@ description: "Run WAT and WASM functions or WASM processes alongside Lua through
 
 > The WASM runtime is an experimental extension. Configuration is stable, but runtime internals may change between releases.
 
-Wippy registers WebAssembly modules alongside Lua code. Function entries join the function registry and run through function pools; process entries register process factories and run under process hosts. Both use the runtime scheduler and security model.
+Wippy registers WebAssembly modules alongside Lua code. Function entries join
+the function registry and run through function pools. Process entries register
+factories for persistent WASM actors: each PID owns one isolated module
+instance and bounded mailbox until it exits. Both use the runtime scheduler and
+security model.
 
 **Classification: conceptual overview.** The Lua block contains independent call
 patterns and assumes the named WASM entries and their WIT contracts are already
@@ -19,14 +23,14 @@ registered. See the Rust/WASM tutorial for a project with a compiled component.
 |------|-------------|
 | `function.wat` | Inline WebAssembly Text format function defined in YAML |
 | `function.wasm` | Precompiled WASM binary loaded from a filesystem entry |
-| `process.wasm` | WASM binary executed as a process (CLI commands or long-running) |
+| `process.wasm` | Stateful WASM actor with one module instance per PID |
 
 ## How It Works
 
 1. WASM modules are declared as registry entries in `_index.yaml`
 2. At boot, `function.wat` and `function.wasm` entries are compiled, registered as functions, and placed into their configured function pools
 3. Lua calls those function entries through `funcs.call()`
-4. `process.wasm` entries instead register process factories and are spawned under a process host
+4. `process.wasm` entries register actor factories and are spawned under a process host; each PID keeps its module state across messages
 5. Function arguments and return values are mapped between Lua tables and WIT types
 6. Supported dispatcher-bridged operations, including clock polling and outgoing HTTP, yield so the scheduler can run other work
 
@@ -73,7 +77,7 @@ WASM executions inherit the caller's security context by default:
 - Scope is inherited
 - Request context is inherited
 
-Host capabilities are opt-in through explicit imports. Each entry declares the host profiles it needs, such as `funcs`, `wasi1`, `wasi:cli`, or `wasi:filesystem`, limiting the module's access surface. Enabling a profile does not bypass runtime security checks on operations such as function calls, sockets, or outgoing HTTP.
+Host capabilities are opt-in through explicit imports. Each entry declares the host profiles it needs, such as `funcs`, `wippy:actor`, `wasi1`, `wasi:cli`, or `wasi:filesystem`, limiting the module's access surface. Enabling a profile does not bypass runtime security checks on operations such as process messaging, function calls, sockets, or outgoing HTTP.
 
 A guest that imports `funcs` can call back into the registry. Each call is policy-checked as `funcs.call` against the target ID, so the reachable set is exactly what the inherited scope already permits. Socket dials are authorized the same way, by the [network service](system/network.md), against the `socket.*` permissions.
 

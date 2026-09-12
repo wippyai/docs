@@ -17,7 +17,7 @@ O Wippy registra módulos WebAssembly junto com código Lua. Entradas de funçã
 |------|-----------|
 | `function.wat` | Função em formato WebAssembly Text inline definida em YAML |
 | `function.wasm` | Binário WASM pré-compilado carregado de uma entrada de sistema de arquivos |
-| `process.wasm` | Binário WASM executado como processo, para comandos CLI ou tarefas de longa duração |
+| `process.wasm` | Ator WASM com estado e uma instância de módulo por PID |
 
 ## Como Funciona
 

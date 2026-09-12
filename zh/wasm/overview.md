@@ -15,7 +15,7 @@ Wippy 将 WebAssembly 模块作为一等注册表条目运行，与 Lua 代码�
 |------|-------------|
 | `function.wat` | 在 YAML 中以内联 WebAssembly Text 格式定义的函数 |
 | `function.wasm` | 从文件系统条目加载的预编译 WASM 二进制文件 |
-| `process.wasm` | 作为进程执行的 WASM 二进制文件（CLI 命令或长期运行） |
+| `process.wasm` | 每个 PID 拥有一个模块实例的有状态 WASM Actor |
 
 ## 工作原理
 

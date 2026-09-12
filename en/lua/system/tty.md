@@ -156,6 +156,9 @@ Publish a complete array of row strings. Row `1` is the top line.
 ```lua
 local stats, err = surface:present(rows, {
     cursor = {x = 12, y = 3, visible = true},
+    images = {
+        {placement_id = "logo", image = logo, x = 2, y = 2, cols = 20, rows = 8, alt = "Logo"},
+    },
 })
 ```
 
@@ -163,6 +166,7 @@ local stats, err = surface:present(rows, {
 |-----------|------|-------------|
 | `rows` | string[] | Complete frame, at most 16384 rows |
 | `options.cursor` | table | `{x, y, visible}` in one-based surface coordinates |
+| `options.images` | table[] | Complete retained-image placement set for the frame |
 
 Omitting `cursor` preserves the last explicit cursor state. All three cursor fields are required when `cursor` is present.
 
@@ -179,6 +183,49 @@ Forget backend presentation state without erasing the logical frame. The next `p
 Release the lease. Idempotent: later calls return the first close result. A physical backend restores terminal modes.
 
 **Returns:** `boolean, error`
+
+### surface:capabilities()
+
+Return `{images = "native" | "kitty" | "pending" | "none"}`. Start terminal
+input before probing. A physical backend may briefly return `pending` while it
+queries the terminal; virtual surfaces retain images without probing.
+
+**Returns:** `table, error`
+
+### surface:clipboard(text)
+
+Write an OSC 52 clipboard request on a physical surface. Text must be valid
+UTF-8 and at most 65,536 bytes. Success means the terminal output accepted the
+request; terminal policy may still ignore it. Virtual surfaces return an
+unsupported error, and the API provides no clipboard read or acknowledgement.
+
+**Returns:** `boolean, error`
+
+## Retained Images
+
+Import a PNG into bounded runtime storage, then place its handle in a complete
+surface frame:
+
+```lua
+local image = assert(tty.image(png_bytes))
+local info = image:info() -- id, format, width, height, bytes
+
+assert(surface:present(rows, {images = {{
+    placement_id = "preview",
+    image = image,
+    x = 1, y = 1, cols = 40, rows = 12,
+    src = {x = 0, y = 0, width = info.width, height = info.height},
+    z = 1,
+    alt = "Preview",
+}}}))
+```
+
+`tty.image()` validates PNG bytes asynchronously. `image:read()` explicitly
+exports the encoded bytes and `image:close()` releases the reference. Source
+pixel coordinates are zero-based; destination cell coordinates are one-based.
+Omitting `images` from a later `present` clears prior placements. Unsupported
+physical terminals display the placement's `alt` text, while virtual surfaces
+keep the image resource for viewers.
 
 ## Canvas
 
@@ -240,13 +287,18 @@ A viewport is a virtual terminal port. The creating process is its first viewer;
 ### tty.viewport(options?)
 
 ```lua
-local view, err = tty.viewport({width = 80, height = 24})
+local view, err = tty.viewport({
+    width = 80,
+    height = 24,
+    page = {foreground = "#e0def4", background = "#191724"},
+})
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `width` | number | 80 | Columns, 1 to 65535 |
 | `height` | number | 24 | Rows, 1 to 65535 |
+| `page` | table | none | Opaque `#RRGGBB` foreground and background defaults |
 
 The area is capped at 262,144 cells.
 
@@ -303,6 +355,14 @@ end
 | `height` | number | Viewport rows |
 | `rows` | string[] | Rows last published by the producer |
 | `cursor` | table | `{x, y, visible}` in one-based coordinates, absent until the producer publishes explicit cursor state |
+| `images` | table[] | Retained image placement metadata |
+| `layers` | table[] | Ordered presentation layers |
+| `images_omitted` | boolean | Image resources exist but are not retained by this plain snapshot |
+
+A page resolves terminal-default cells and omitted rows to explicit colors. The
+creator can change it with `viewport:set_page(page)`; passing `nil` restores the
+producer's original rows. Page changes advance the revision without requiring
+the producer to repaint.
 
 ### viewport:updates()
 
@@ -338,6 +398,41 @@ Update the viewport geometry. When the size changes, viewers get a new revision 
 Detach this viewer only. Closing the last viewer does not kill a live producer, and closing the producer's port does not destroy state while viewers remain.
 
 **Returns:** `boolean, error`
+
+### viewport:mount(recipient_pid, rights)
+
+Issue a process-bound reference for a local or remote viewer. Rights are
+independent and default to false:
+
+```lua
+local observation = assert(view:mount(agent_pid, {observe = true}))
+local control = assert(view:mount(agent_pid, {input = true, resize = true}))
+
+-- In the exact recipient process, on this node or an authenticated mesh peer:
+local observer = assert(tty.attach(observation))
+local controller = assert(tty.attach(control))
+```
+
+A mount is bound to the recipient's full PID and can be redeemed only once.
+Mounted viewers cannot create producer grants or delegate further mounts.
+Remote mounts use a renewable lease; reconnecting requires a fresh mount and
+cannot replay terminal input. Use `viewport:revoke(reference)` to revoke an
+issued mount. Closing the owner viewport or ending the owner process revokes
+its mounts.
+
+### viewport:capture()
+
+Atomically pin a viewport revision and its retained image resources:
+
+```lua
+local capture = assert(view:capture())
+local snapshot = capture:snapshot()
+local image = assert(capture:image(snapshot.images[1].image_id))
+assert(capture:close())
+```
+
+A plain `snapshot()` does not retain image bytes. A capture does until closed;
+image handles already acquired from it remain independently owned.
 
 ## Event Types
 
@@ -617,7 +712,16 @@ tty.text.position.RIGHT    -- 1
 
 ## Permissions
 
-The module enforces no policy actions of its own. Access to a terminal comes from the frame: the terminal host attaches the physical port, and `process.with_options({terminal = grant})` attaches a viewport, which requires `process.context` on the spawning side.
+Access to a physical terminal comes from the process frame. Attaching a
+producer with `process.with_options({terminal = grant})` requires
+`process.context` on the spawning side. Delegated viewports additionally check:
+
+| Action | Resource | Description |
+|--------|----------|-------------|
+| `tty.mount` | Owner viewport handle | Issue a process-bound mount |
+| `tty.observe` | Owner viewport handle | Read snapshots, updates, and captures |
+| `tty.input` | Owner viewport handle | Forward input events |
+| `tty.resize` | Owner viewport handle | Resize the viewport |
 
 ## See Also
 

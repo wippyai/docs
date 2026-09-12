@@ -59,8 +59,8 @@ node scripts/check-markdown-links.mjs
 
 The checker follows the production documentation engine's URL rules: explicit
 `./` and `../` links are page-relative, while established bare paths may resolve
-from the locale root. It rejects local Markdown targets that do not exist under
-either supported form.
+from the locale root. It rejects unresolved local Markdown targets, manifest
+paths without pages, and duplicate page paths in a locale's navigation tree.
 
 ## Contributing
 

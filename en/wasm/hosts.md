@@ -20,10 +20,13 @@ WASM modules access runtime capabilities through host function imports. Each imp
 | `wasi:sockets` | `wasi:sockets/*` | component | TCP/UDP networking and DNS resolution |
 | `wasi:http` | `wasi:http/*` | component | Outgoing HTTP client requests |
 | `funcs` | `wippy:runtime/funcs@0.1.0` | component | Calling registry functions from the guest |
+| `wippy:actor` | `wippy:actor/process@0.1.0` | component | PID identity and bounded actor mailbox messaging |
 | `wasi1` | `wasi_snapshot_preview1` | core | WASI Preview 1 compatibility imports |
 | `socket` | `wippy:runtime/socket@0.1.0` | core | Instance-owned outbound TCP through integer-only imports |
 
-The eight `wasi:*` profiles and `funcs` are component-only: declaring one on a core module fails the entry. `wasi1` and `socket` expose core imports.
+The eight `wasi:*` profiles, `funcs`, and `wippy:actor` are component-only:
+declaring one on a core module fails the entry. `wasi1` and `socket` expose core
+imports.
 
 Each profile resolves under its short name, under any of the interface namespaces it provides, and under a versioned namespace. The version suffix is stripped before lookup, so `wasi:io/poll`, `wasi:io/poll@0.2.3` and `wasi:poll` all select the same profile.
 
@@ -123,6 +126,35 @@ interface funcs {
 ```
 
 `target` is a registry ID in `namespace:name` form. Every call is policy-checked as `funcs.call` against that target, so a guest can only reach functions the caller's scope already permits.
+
+## wippy:actor
+
+**Namespace:** `wippy:actor/process@0.1.0`
+
+Provides messaging for a component running as `process.wasm`:
+
+```wit
+interface process {
+  use wasi:io/poll@0.2.8.{pollable};
+
+  type pid = string;
+  record payload { format: string, data: list<u8> }
+  record message { %from: pid, topic: string, payloads: list<payload> }
+
+  self: func() -> pid;
+  send: func(target: pid, topic: string, payloads: list<payload>)
+    -> result<bool, string>;
+  try-receive: func() -> result<option<message>, string>;
+  receive: func() -> result<message, string>;
+  subscribe: func() -> pollable;
+}
+```
+
+`receive` suspends the actor until its mailbox has a message; `try-receive`
+never waits. `subscribe` lets a guest wait on mailbox readiness together with
+other pollables. `send` accepts `bytes`, `text`, and `json` payload formats and
+is policy-checked as `process.send` against the target PID. The profile requires
+an actor context and is intended for `process.wasm` entries.
 
 ## wasi1
 

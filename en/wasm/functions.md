@@ -57,7 +57,7 @@ For larger WAT sources, use a file reference:
 | `transport` | No | Input/output mapping (default: `payload`) |
 | `imports` | No | Host imports to enable (e.g., `wasi:cli`, `wasi:io`) |
 | `wasi` | No | WASI configuration (args, env, mounts) |
-| `limits` | No | Execution limits |
+| `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
 ## Precompiled WASM Functions
 
@@ -93,7 +93,7 @@ entries:
 | `transport` | No | Input/output mapping (default: `payload`) |
 | `imports` | No | Host imports to enable |
 | `wasi` | No | WASI configuration |
-| `limits` | No | Execution limits |
+| `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
 ## Worker Pools
 
@@ -101,7 +101,7 @@ Each WASM function uses a pool of pre-compiled instances. The pool type controls
 
 | Type | Description |
 |------|-------------|
-| `inline` | Mutex-serialized. Sequential synchronous calls reuse one warm instance; asyncified calls close it after each call, and retained-memory policy can also trigger replacement. |
+| `inline` | Mutex-serialized. Synchronous and asyncified calls reuse one warm instance; retained-memory policy or an execution failure can trigger replacement. |
 | `lazy` | Zero idle workers. Scales on demand up to `max_size`. |
 | `static` | Fixed number of workers with request queue. |
 | `adaptive` | Auto-scaling elastic pool. |
@@ -208,15 +208,16 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-The `limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
+The `options.limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | Field | Default | Description |
@@ -228,6 +229,10 @@ limits:
 | `socket_timeout_ms` | `30000` | Deadline for a `socket` dial and for each send/receive. |
 
 Negative values are rejected at boot.
+
+The root `limits` and `meta.options.limits` spellings are accepted temporarily
+with a deprecation warning. Keep `pool` at the entry root; it has not moved
+under `options`.
 
 ## WASI Configuration
 

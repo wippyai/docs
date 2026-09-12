@@ -98,7 +98,7 @@ entries:
 
 | 種類 | 説明 |
 |------|-------------|
-| `inline` | ミューテックスで直列化されます。同期呼び出しは 1 つのウォームインスタンスを順次再利用します。asyncify された呼び出しでは毎回インスタンスを閉じ、保持メモリポリシーによっても置換される場合があります。 |
+| `inline` | ミューテックスで直列化されます。同期呼び出しと asyncify された呼び出しは 1 つのウォームインスタンスを再利用します。保持メモリポリシーまたは実行エラーによって置換される場合があります。 |
 | `lazy` | アイドルワーカーはゼロです。必要に応じて `max_size` までスケールします。 |
 | `static` | リクエストキューを備えた固定数のワーカーです。 |
 | `adaptive` | 自動スケーリングするエラスティックプールです。 |
@@ -205,15 +205,16 @@ if err then return nil, err end
 
 ## 実行制限
 
-`limits`ブロックは、関数の実行時間、ウォームワーカーのメモリ、および開けるソケット数を制限します:
+`options.limits`ブロックは、関数の実行時間、ウォームワーカーのメモリ、および開けるソケット数を制限します:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | フィールド | デフォルト | 説明 |

@@ -98,7 +98,7 @@ entries:
 
 | 타입 | 설명 |
 |------|-------------|
-| `inline` | mutex 직렬화. 순차 동기 호출은 하나의 warm instance를 재사용하고, asyncified 호출은 매 호출 후 닫히며 retained-memory 정책도 교체를 유발할 수 있음. |
+| `inline` | mutex 직렬화. 동기 및 asyncified 호출은 하나의 warm instance를 재사용하며 retained-memory 정책 또는 실행 실패가 교체를 유발할 수 있음. |
 | `lazy` | 유휴 워커 없음. 요청 시 `max_size`까지 확장. |
 | `static` | 고정된 수의 워커와 요청 큐. |
 | `adaptive` | 자동 스케일링 탄력적 풀. |
@@ -205,15 +205,16 @@ if err then return nil, err end
 
 ## 실행 제한
 
-`limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
+`options.limits` 블록은 함수의 실행 시간, 웜 워커 메모리, 열 수 있는 소켓 수를 제한합니다:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | 필드 | 기본값 | 설명 |

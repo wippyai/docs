@@ -615,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## 이미지, 페이지 및 위임된 뷰포트
+
+`surface:present(rows, options)`의 `options.images`에는 유지할 이미지 배치의
+전체 집합을 지정합니다. 각 배치에는 `placement_id`,
+`tty.image(png_bytes)`로 가져온 PNG handle, 대상 좌표와 크기가 있으며
+`src`, `z`, `alt`는 선택 사항입니다. `image:info()`, `image:read()`,
+`image:close()`는 metadata, 명시적인 PNG 내보내기, 참조 해제를 제공합니다.
+이후 `present`에서 `images`를 생략하면 이전 배치가 지워집니다.
+
+`surface:capabilities()`는 이미지 mode로 `native`, `kitty`, `pending`,
+`none` 중 하나를 반환합니다. `surface:clipboard(text)`는 physical surface에서
+최대 65,536바이트의 UTF-8 text를 OSC 52 clipboard 요청으로 보냅니다.
+virtual surface에서는 지원되지 않습니다.
+
+`tty.viewport()`는 불투명한 `#RRGGBB` 색상의
+`page = {foreground, background}`를 받고, `viewport:set_page(page)`로 page를
+변경합니다. snapshot에는 `images`, `layers`, `images_omitted`가 포함됩니다.
+`viewport:capture()`는 `capture:close()`까지 revision과 이미지 resource를
+유지하며, `capture:image(image_id)`는 독립적으로 소유되는 handle을 반환합니다.
+
+`viewport:mount(recipient_pid, rights)`는 local process 또는 인증된 mesh
+peer의 process에 바인딩된 일회용 참조를 발급합니다. `observe`, `input`,
+`resize` 권한은 서로 독립적이며 기본값은 false입니다.
+`viewport:revoke(reference)`로 참조를 취소할 수 있고, mount된 viewer는
+다시 위임할 수 없습니다.
+
 ## 권한
 
-이 모듈은 자체 정책 액션을 강제하지 않습니다. 터미널 접근은 프레임에서 옵니다: 터미널 호스트가 물리 포트를 연결하고, `process.with_options({terminal = grant})`가 뷰포트를 연결하며, 후자는 스폰하는 쪽에 `process.context`를 요구합니다.
+physical terminal은 process frame에서 제공됩니다.
+`process.with_options({terminal = grant})`로 producer를 연결하려면 spawn
+측에 `process.context`가 필요합니다. 위임된 viewport는 owner viewport
+handle에 대해 `tty.mount`, `tty.observe`, `tty.input`, `tty.resize`도 검사합니다.
 
 ## 참고
 

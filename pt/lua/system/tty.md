@@ -615,9 +615,38 @@ tty.text.position.BOTTOM   -- 1
 tty.text.position.RIGHT    -- 1
 ```
 
+## Imagens, páginas e viewports delegados
+
+`surface:present(rows, options)` aceita em `options.images` o conjunto completo
+de posicionamentos de imagens retidas. Cada posicionamento inclui
+`placement_id`, um handle PNG importado com `tty.image(png_bytes)`, coordenadas e
+tamanho de destino e, opcionalmente, `src`, `z` e `alt`. `image:info()`,
+`image:read()` e `image:close()` fornecem metadados, exportação explícita do PNG
+e liberação. Um `present` posterior sem `images` remove os posicionamentos.
+
+`surface:capabilities()` informa o modo de imagem `native`, `kitty`, `pending`
+ou `none`. `surface:clipboard(text)` envia em uma surface física uma solicitação
+de clipboard OSC 52 com até 65.536 bytes UTF-8; surfaces virtuais não oferecem
+suporte.
+
+`tty.viewport()` aceita `page = {foreground, background}` com cores opacas
+`#RRGGBB`; `viewport:set_page(page)` altera a página. Snapshots incluem `images`,
+`layers` e `images_omitted`. `viewport:capture()` fixa atomicamente a revisão e
+os recursos de imagem até `capture:close()`; `capture:image(image_id)` devolve
+um handle de propriedade independente.
+
+`viewport:mount(recipient_pid, rights)` emite uma referência de uso único,
+vinculada ao processo, para um destinatário local ou peer mesh autenticado. Os
+direitos `observe`, `input` e `resize` são independentes e falsos por padrão.
+`viewport:revoke(reference)` revoga a referência; um viewer montado não pode
+delegá-la novamente.
+
 ## Permissões
 
-O módulo não impõe ações de política próprias. O acesso a um terminal vem do frame: o terminal host anexa a porta física, e `process.with_options({terminal = grant})` anexa um viewport, o que requer `process.context` do lado que faz o spawn.
+O terminal físico vem do frame do processo. Anexar um produtor por meio de
+`process.with_options({terminal = grant})` requer `process.context` no spawn.
+Viewports delegados também verificam `tty.mount`, `tty.observe`, `tty.input` e
+`tty.resize` contra o handle do viewport proprietário.
 
 ## Veja Também
 

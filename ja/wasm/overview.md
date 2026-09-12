@@ -17,7 +17,7 @@ Wippy は WebAssembly モジュールを Lua コードとともに登録しま�
 |------|-------------|
 | `function.wat` | YAML 内で定義されたインライン WebAssembly Text 形式の関数 |
 | `function.wasm` | ファイルシステムエントリから読み込むコンパイル済み WASM バイナリ |
-| `process.wasm` | プロセスとして実行する WASM バイナリ（CLI コマンドまたは長時間実行） |
+| `process.wasm` | PID ごとに 1 つのモジュールインスタンスを持つステートフル WASM Actor |
 
 ## 動作の仕組み
 

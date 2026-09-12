@@ -98,7 +98,7 @@ Cada função WASM usa um pool de instâncias pré-compiladas. O tipo do pool co
 
 | Tipo | Descrição |
 |------|-----------|
-| `inline` | Serializado por mutex. Chamadas síncronas sequenciais reutilizam uma instância aquecida; chamadas asyncificadas a fecham depois de cada chamada, e a política de memória retida também pode provocar sua substituição. |
+| `inline` | Serializado por mutex. Chamadas síncronas e asyncificadas reutilizam uma instância aquecida; a política de memória retida ou uma falha de execução pode provocar sua substituição. |
 | `lazy` | Nenhum worker ocioso. Escala sob demanda até `max_size`. |
 | `static` | Número fixo de workers com fila de requisições. |
 | `adaptive` | Pool elástico com escalonamento automático. |
@@ -205,15 +205,16 @@ O transporte `wasi-http` mapeia requisições HTTP para WASM e escreve os result
 
 ## Limites de execução
 
-O bloco `limits` limita o tempo de execucao de uma funcao, a memoria de seus workers quentes e os sockets que ela pode abrir:
+O bloco `options.limits` limita o tempo de execucao de uma funcao, a memoria de seus workers quentes e os sockets que ela pode abrir:
 
 ```yaml
-limits:
-  max_execution_ms: 5000
-  max_retained_memory_bytes: 134217728
-  retained_memory_check_interval: 32
-  max_open_sockets: 8
-  socket_timeout_ms: 5000
+options:
+  limits:
+    max_execution_ms: 5000
+    max_retained_memory_bytes: 134217728
+    retained_memory_check_interval: 32
+    max_open_sockets: 8
+    socket_timeout_ms: 5000
 ```
 
 | Campo | Padrao | Descricao |

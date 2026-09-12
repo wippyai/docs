@@ -20,10 +20,11 @@ WASMモジュールはホスト関数インポートを通じてランタイム�
 | `wasi:sockets` | `wasi:sockets/*` | component | TCP/UDPネットワーキングとDNS解決 |
 | `wasi:http` | `wasi:http/*` | component | 送信HTTPクライアントリクエスト |
 | `funcs` | `wippy:runtime/funcs@0.1.0` | component | ゲストからのレジストリ関数呼び出し |
+| `wippy:actor` | `wippy:actor/process@0.1.0` | component | PID ID と制限付き Actor mailbox |
 | `wasi1` | `wasi_snapshot_preview1` | core | WASI Preview 1互換インポート |
 | `socket` | `wippy:runtime/socket@0.1.0` | core | 整数のみのインポートによる、インスタンス所有の送信TCP |
 
-8つの`wasi:*`プロファイルと`funcs`はcomponent専用です。coreモジュールでこれらを宣言するとエントリは失敗します。`wasi1`と`socket`はcoreインポートを公開します。
+8つの`wasi:*`プロファイル、`funcs`、`wippy:actor`はcomponent専用です。coreモジュールでこれらを宣言するとエントリは失敗します。`wasi1`と`socket`はcoreインポートを公開します。
 
 各プロファイルは、短縮名、そのプロファイルが提供する任意のインターフェース名前空間、およびバージョン付き名前空間のいずれでも解決されます。ルックアップ前にバージョンサフィックスは取り除かれるため、`wasi:io/poll`、`wasi:io/poll@0.2.3`、`wasi:poll`はすべて同じプロファイルを選択します。
 
