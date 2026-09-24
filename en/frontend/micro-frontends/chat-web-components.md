@@ -179,6 +179,47 @@ Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`
 <wippy-chat></wippy-chat>                            <!-- follows the selector -->
 ```
 
+## Live steering and delivery state
+
+The composer follows the session's public `interaction` state when the server
+provides it:
+
+```ts
+interaction?: {
+  can_send: boolean
+  revision: number
+}
+```
+
+When `can_send` is true during generation, the composer shows Send beside
+Stop. Stop still follows the session status. A newer revision replaces the
+current interaction state, including an explicit `false`. Older revisions are
+ignored. A malformed interaction update leaves the last valid state in place.
+A full REST response with no `interaction` clears the cached value and restores
+the legacy status-based behavior. A partial WebSocket update that omits it does
+not clear the current value.
+
+The steering-aware session command path uses a request-scoped acknowledgement.
+The server assigns the message ID, and a successful matching response clears
+the draft and attachments. A
+WebSocket message receipt updates history, but does not clear an unconfirmed
+draft. History gains the sent message only after the client receives its
+canonical server message ID in the matched response or a server receipt.
+Rejected, malformed, and uncertain responses keep the draft and attachments
+and do not create a local pending message.
+
+If delivery cannot be confirmed because the acknowledgement is lost, malformed,
+or times out, the composer keeps the draft and reports that the message may
+have been accepted. Refresh the session before sending it again. There is no
+automatic retry or client-side deduplication, so resending may create a
+duplicate.
+
+Steering messages are displayed as pending until the session applies them to a
+model prompt. Applied state always wins if events arrive out of order. Pending
+messages outside the current history page are merged by their server message
+ID. Reload and WebSocket reconnect refresh the selected session and history.
+If that refresh fails, the current visible state is preserved.
+
 ## Theming
 
 Each element renders in a shadow root, so host page styles do not leak in or out. Two mechanisms apply theme:
