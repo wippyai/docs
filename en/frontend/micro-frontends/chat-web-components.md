@@ -199,12 +199,12 @@ A full REST response with no `interaction` clears the cached value and restores
 the legacy status-based behavior. A partial WebSocket update that omits it does
 not clear the current value.
 
-The steering-aware session command path uses a request-scoped acknowledgement.
-The server assigns the message ID, and a successful matching response clears
-the draft and attachments. A
-WebSocket message receipt updates history, but does not clear an unconfirmed
-draft. History gains the sent message only after the client receives its
-canonical server message ID in the matched response or a server receipt.
+The steering-aware session command path uses the existing WebSocket
+`request_id` response mechanism. The server assigns the message ID and returns
+the existing `received` event after persistence. A valid receipt matching the
+send request clears the draft and attachments. Other receipts update history
+without clearing an unconfirmed draft. The acknowledgement and broadcast use
+the same message merge path and server message ID.
 Rejected, malformed, and uncertain responses keep the draft and attachments
 and do not create a local pending message.
 
@@ -215,10 +215,16 @@ automatic retry or client-side deduplication, so resending may create a
 duplicate.
 
 Steering messages are displayed as pending until the session applies them to a
-model prompt. Applied state always wins if events arrive out of order. Pending
+model prompt. The existing message topic carries a `type: "update"` patch with
+the changed `input` metadata. Applied state always wins if events arrive out of
+order. Pending
 messages outside the current history page are merged by their server message
 ID. Reload and WebSocket reconnect refresh the selected session and history.
 If that refresh fails, the current visible state is preserved.
+
+Stop is confirmed by a session `update` carrying its request ID after the stop
+state is committed. Rejected commands return an `error` event with the same
+request ID. The built-in chat and the chat web components share these handlers.
 
 ## Theming
 

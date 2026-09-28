@@ -151,12 +151,27 @@ pending messages are included when the user starts the next turn.
 
 ## Delivery confirmation
 
-On the session command path, the client correlates a send command with
-`request_id`. The server generates the message ID. Only a successful, matching
-command response confirms the send and allows the sender to clear its draft
-and attachments. WebSocket receipts update history but do not confirm the
-sender's request. Older fire and forget transports may retain a random message
-ID. That legacy ID has no retry or deduplication meaning.
+The client uses the existing WebSocket `request_id` correlation mechanism.
+After persisting a message, the server publishes its existing `received` event
+on `session:<session_id>:message:<message_id>` with the original `request_id`,
+server message ID, text, attachments, and optional `input` metadata. Only a
+valid receipt matching the send request confirms delivery and lets the sender
+clear its draft and attachments. Receipts without that request ID update
+history without clearing the draft.
+
+Stop returns a session `update` with the original `request_id` after committing
+its state. Rejections use the existing `error` event with the request ID and
+error details. Opening or recovering a session while handling a send must not
+confirm that send before the message is persisted.
+
+When steering enters the model prompt, the server publishes `type: "update"`
+on the message topic with `message_id` and the changed `input` metadata.
+Clients merge this patch into the message and preserve applied state when a
+delayed pending receipt arrives. A patch received before its message must not
+create an empty chat row.
+
+Older fire and forget transports may retain a random message ID. That legacy
+ID has no retry or deduplication meaning.
 
 Admission, validation, and definite database failures return a request-matched
 error and write no message. If the database commit succeeds but the
