@@ -181,6 +181,12 @@ Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`
 
 ## Live steering and delivery state
 
+Available with Web Host 1.0.59 and `wippy/session` 0.6.3. The built-in chat,
+`<wippy-chat>`, and the separate input and message elements share the same
+handlers. Enable steering on the session or agent; no frontend flag is needed.
+See [Sessions](../../framework/sessions.md) for the traits, policy tool, and
+Stop lifecycle.
+
 The composer follows the session's public `interaction` state when the server
 provides it:
 
@@ -217,8 +223,7 @@ duplicate.
 Steering messages are displayed as pending until the session applies them to a
 model prompt. The existing message topic carries a `type: "update"` patch with
 the changed `input` metadata. Applied state always wins if events arrive out of
-order. Pending
-messages outside the current history page are merged by their server message
+order. Pending messages outside the current history page are merged by their server message
 ID. Reload and WebSocket reconnect refresh the selected session and history.
 If that refresh fails, the current visible state is preserved.
 

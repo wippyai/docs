@@ -10,12 +10,24 @@ accepting user input. A session blocks new messages during an active turn by
 default. Steering lets an enabled session accept input during generation and
 apply it before the next model step in the same turn.
 
+## Availability
+
+Session steering is available in `wippy/session` 0.6.3. The built-in chat and
+chat web components support it in Web Host 1.0.59, with public npm packages at
+0.0.59 and facade 0.6.41 pointing to that Host release. No frontend feature flag
+is required.
+
+A new client connected to an older Session server keeps the legacy status-based
+sending behavior when `interaction` is absent. An older client connected to a
+new Session server can keep using normal chat and Stop, but it does not gain
+steering controls or pending-message presentation.
+
 ## Setup
 
 Add the module to the project:
 
 ```bash
-wippy add wippy/session
+wippy add wippy/session@0.6.3
 wippy install
 ```
 
@@ -143,6 +155,12 @@ If a steering message commits before Stop, it remains pending. If Stop commits
 first, a later send is rejected. The current provider operation or a tool batch
 that is already running may finish. The session suppresses new tools and any
 further continuation at the next operation boundary.
+
+The existing Stop supervisor also bounds a stuck operation. If the session has
+not stopped after 10 seconds, it requests cancellation of the session process.
+After another 10 seconds, it requests termination if the process is still
+running. These are process-level safeguards, not a guarantee that an external
+provider request or a tool's side effects are cancelled immediately.
 
 Unused steering remains pending after Stop, recovery, or handoff. Recovery and
 handoff clear the temporary policy, retain the persistent policy and pending

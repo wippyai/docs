@@ -512,7 +512,7 @@ The `time_aware` trait accepts context options:
           time_interval: 15
 ```
 
-The `wippy/session` module provides two traits for live session input:
+The `wippy/session` module, version 0.6.3 or newer, provides two traits for live session input:
 
 | Trait | Description |
 |-------|-------------|
