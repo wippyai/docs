@@ -179,6 +179,58 @@ Elements with **no explicit `session-id`** follow the `<wippy-session-selector>`
 <wippy-chat></wippy-chat>                            <!-- follows the selector -->
 ```
 
+## Live steering and delivery state
+
+Available with Web Host 1.0.59 and `wippy/session` 0.6.3. The built-in chat,
+`<wippy-chat>`, and the separate input and message elements share the same
+handlers. Enable steering on the session or agent; no frontend flag is needed.
+See [Sessions](../../framework/sessions.md) for the traits, policy tool, and
+Stop lifecycle.
+
+The composer follows the session's public `interaction` state when the server
+provides it:
+
+```ts
+interaction?: {
+  can_send: boolean
+  revision: number
+}
+```
+
+When `can_send` is true during generation, the composer shows Send beside
+Stop. Stop still follows the session status. A newer revision replaces the
+current interaction state, including an explicit `false`. Older revisions are
+ignored. A malformed interaction update leaves the last valid state in place.
+A full REST response with no `interaction` clears the cached value and restores
+the legacy status-based behavior. A partial WebSocket update that omits it does
+not clear the current value.
+
+The steering-aware session command path uses the existing WebSocket
+`request_id` response mechanism. The server assigns the message ID and returns
+the existing `received` event after persistence. A valid receipt matching the
+send request clears the draft and attachments. Other receipts update history
+without clearing an unconfirmed draft. The acknowledgement and broadcast use
+the same message merge path and server message ID.
+Rejected, malformed, and uncertain responses keep the draft and attachments
+and do not create a local pending message.
+
+If delivery cannot be confirmed because the acknowledgement is lost, malformed,
+or times out, the composer keeps the draft and reports that the message may
+have been accepted. Refresh the session before sending it again. There is no
+automatic retry or client-side deduplication, so resending may create a
+duplicate.
+
+Steering messages are displayed as pending until the session applies them to a
+model prompt. The existing message topic carries a `type: "update"` patch with
+the changed `input` metadata. Applied state always wins if events arrive out of
+order. Pending messages outside the current history page are merged by their server message
+ID. Reload and WebSocket reconnect refresh the selected session and history.
+If that refresh fails, the current visible state is preserved.
+
+Stop is confirmed by a session `update` carrying its request ID after the stop
+state is committed. Rejected commands return an `error` event with the same
+request ID. The built-in chat and the chat web components share these handlers.
+
 ## Theming
 
 Each element renders in a shadow root, so host page styles do not leak in or out. Two mechanisms apply theme:
