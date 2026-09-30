@@ -34,11 +34,12 @@ form.
 | `density` | `string` | `"compact"` | `"compact"` or `"comfortable"` sizing. Read purely through a `:host([density="comfortable"])` CSS selector. |
 
 The component owns its own data loading (`GET` on mount, reload on
-visibility change, a session-message event, or an artifact-update event),
-submission (client-generated `request_id` reuse, one automatic retry on a
-no-response network failure, and handling for a 422 field-error response and
-a 409 already-submitted response), and offline detection. A host only needs
-to mount the tag with these attributes.
+visibility change, a session-message event, an artifact-update event, the
+Host's `@reconnect` event after a WebSocket reconnect, or the browser's
+`online` event), submission (client-generated `request_id` reuse, one
+automatic retry on a no-response network failure, and handling for a 422
+field-error response and a 409 already-submitted response), and offline
+detection. A host only needs to mount the tag with these attributes.
 
 ### Behavior
 
@@ -216,10 +217,10 @@ for the assistant."
 | Status | Meaning |
 | --- | --- |
 | 200 | Accepted (or an exact replay of an already-accepted submission, `replayed: true`) |
-| 400 | Malformed JSON, missing/invalid envelope fields, or a missing/invalid artifact id |
+| 400 | Malformed JSON, missing/invalid envelope fields, a missing/invalid artifact id, or `not_a_form` for an artifact that exists but is not a session form |
 | 401 | No authenticated actor |
 | 403 | Authenticated, but no read/write permission on the form's session |
-| 404 | Artifact or session not found, not owned by the caller, or not a form |
+| 404 | Artifact or session not found, or not owned by the caller |
 | 409 `request_conflict` | Same `request_id`, different normalized answers than the first attempt with that id |
 | 409 `already_submitted` | The form was already answered by a different request |
 | 409 `version_conflict` | `expected_content_version` no longer matches the current revision |
@@ -279,12 +280,12 @@ harder-to-get-wrong spelling.)
 ### `artifactState` and the deprecated `instance.form`
 
 `instance.form.get()` / `.submit(data)` is a thin backward-compatibility
-shim over `artifactState(appConfig.context.resourceId)`. It no longer
-fabricates data on failure: a 422 still maps to the legacy `{ success: false,
-errors }` shape, but every other failure (401, 404, 409, 5xx, network) now
-rethrows instead of returning a randomized mock success or failure. New code
-should call `instance.artifactState(artifactId)` directly rather than the
-deprecated shim.
+shim over `artifactState(appConfig.context.resourceId)`. A 422 maps to the
+legacy `{ success: false, errors }` shape. Every other failure (401, 404,
+409, 5xx, network) rethrows the same error `artifactState` would throw,
+rather than returning a mock success or failure. New code should call
+`instance.artifactState(artifactId)` directly rather than this deprecated
+shim.
 
 ## Styling API
 
@@ -301,38 +302,46 @@ styling API at all — hiding the record is its entire purpose.
 
 ## Accessibility
 
-Each question has an accessible group label (`role="radiogroup"` for a
-single-selection field with `aria-required` when required, `role="group"`
-for a multiple-selection field). Field-level errors are connected with
-`aria-describedby` rather than a generic alert role, and a single polite
-live region announces submission-result banners and validation-summary text
-so a screen reader user hears the outcome without focus being yanked around.
+Each question has an accessible group label: `role="radiogroup"` with
+`aria-required` when required for a single-selection field, or `role="group"`
+for a multiple-selection field. A single-selection group is one Tab stop,
+with a roving `tabindex` that arrow keys move between its rows (the
+WAI-ARIA radio group pattern). A multiple-selection group leaves every row
+its own Tab stop instead, since each is an independent checkbox.
+Field-level errors render as a `role="alert"` element, linked to its group
+or text box through `aria-describedby`, so a screen reader announces the
+error text as soon as it appears. A single polite live region announces
+question and review navigation (for example "Question 2 of 4" or "Review
+your answers"), tick/untick changes, and submission-result and
+validation-summary text, without moving focus.
+
 The keyboard behavior described [above](#behavior) covers answering,
-navigation, and notes without a pointer.
+navigation, and notes without a pointer, including that Escape in a note or
+the Other box only closes the editor. The typed draft stays saved with that
+answer and is not discarded. After a full submission is accepted, focus
+moves to the read-only summary's status text, so it is not lost when the
+card swaps from the active view to the answered one.
 
 ## Known gaps
 
-- **D27: unchecked-control contrast.** The tick boxes, radio marks, and
-  input edges use the theme's existing surface-300/700 border colors as-is
-  (roughly 1.3–1.4:1 contrast), with no local override. This is deferred to
-  a theme-level fix, not specific to this component.
+- **Unchecked-control contrast.** The tick boxes, radio marks, and input
+  edges use the theme's existing surface-300/700 border colors as-is
+  (roughly 1.3 to 1.4:1 contrast), with no local override. This needs a
+  theme-level fix, not one specific to this component.
 - **The four action buttons are unstyled PrimeVue defaults.** The two "Send"
   buttons and the two composer send buttons follow the theme's own primary
-  button color, not `--wippy-form-accent`; an inline-style workaround that
-  routed them through the token was tried and reverted (it re-implemented
-  the theme's own button look by hand). Retinting `--wippy-form-accent`
+  button color, not `--wippy-form-accent`. Retinting `--wippy-form-accent`
   alone leaves these four on the old color while rows, the counter, key
   badges, and the focus ring follow the new one.
 - **Notes and Other text-box color are the theme's own `.p-textarea`
-  default** — no `--wippy-form-input-bg` / `--wippy-form-input-border`
+  default.** No `--wippy-form-input-bg` / `--wippy-form-input-border`
   tokens exist yet.
-- **A handful of V1 UI defaults were shipped without an explicit product
-  decision** and are revisited after V1: the note answer shape
-  (`{value, note}` vs. a separate field), that a newly opened card never
-  steals keyboard focus, that only backticks render as inline code (nothing
-  else gets Markdown-style formatting), and that only the first nine rows of
-  a question get a number-key badge with no cap on how many options a
-  question can have.
+- **A few V1 defaults, revisited after V1:** the note answer shape
+  (`{value, note}` vs. a separate field), a newly opened card does not take
+  keyboard focus on its own, only backticks render as inline code (no other
+  Markdown-style formatting), and only the first nine rows of a question
+  get a number-key badge, with no cap on how many options a question can
+  have.
 
 ## See Also
 
