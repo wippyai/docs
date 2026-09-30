@@ -226,6 +226,14 @@ an artifact-update event and wakes the owning session process. The row
 itself, not the wake-up, is what makes delivery durable — a missed wake-up
 does not lose the answer.
 
+A form answer is never steered into a running turn. It stays pending until
+the turn ends, no matter how the session is configured. Typed input, by
+contrast, follows the session's own steering setting. It can be admitted
+mid-turn when the agent has the `wippy.session.traits:steering` trait, or
+the session sets a `steer` input-policy override. Once a turn ends, pending
+answers and any steered input the session held are admitted together, in
+the order they were durably accepted.
+
 Admission order follows the order answers were durably accepted, and depends
 on what the session is doing:
 
@@ -243,6 +251,21 @@ on what the session is doing:
   crash, restart).** The answer stays pending. The next time the session
   process starts, it scans for pending answers before anything else and
   queues their admission — recovery needs no external retry.
+
+The user's session plugin also drives this recovery from outside any one
+session. It starts a stopped session that still holds an unadmitted answer,
+once right after the plugin itself starts and again on every periodic scan
+after that, so an answer is still delivered even if its original wake-up was
+lost. The same plugin start also settles any of the user's sessions left
+stored as "running" with no live process, for example after a runtime
+restart, back to idle, so their form answers read as interrupted rather than
+perpetually running.
+
+Once admitted, the answer's message row is re-dated to the moment of
+admission rather than the moment it was accepted, so its place in the
+visible history follows admission order. The `submitted_at` the
+artifact-state API returns (see the frontend page) is unaffected and keeps
+the original acceptance time.
 
 The agent must never treat an `answer_pending` form as answered, and must
 never guess its content before the real answer message arrives.
