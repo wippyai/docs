@@ -67,7 +67,7 @@ case, and the agent can retry in the same turn.
 | `title` | Required plain text, 1 to 160 characters |
 | `description` | Optional plain text, at most 1,000 characters |
 | `submit_label` | Optional plain text, at most 40 characters |
-| `answered_message` | Optional plain text, at most 200 characters. The user's chat message once they answer, written in the user's own voice by the agent that asks (see [What the agent receives](#what-the-agent-receives)). Never shown on the form. A form asked without it falls back to `Answered "<title>".` |
+| `answered_message` | Optional plain text, at most 200 characters. The user's chat message once they answer, written in the user's own voice by the agent that asks (see [What the agent receives](#what-the-agent-receives)). Never shown on the form. A form asked without it falls back to `Answered “<title>”.` |
 | `fields` | 1 to 20 entries |
 | `fields[].id` | Unique key matching `^[a-z][a-z0-9_]{0,39}$` |
 | `fields[].type` | `"choice"` (the only V1 type) |
@@ -132,7 +132,7 @@ Answered questions about the delivery of your order.
 ```
 
 The user sees only the first line: the `answered_message` the agent supplied
-when it called `ask_user` (or the `Answered "<title>".` fallback). The
+when it called `ask_user` (or the `Answered “<title>”.` fallback). The
 `wippy-form-answers` component the Session ships renders nothing, so the
 record never appears in the chat, but the raw message text — including the
 record attribute — is what the agent reads on its next turn. The answered
