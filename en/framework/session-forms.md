@@ -12,16 +12,15 @@ The `wippy/session` module owns the feature. It provides a trait that adds the
 in the chat, and an HTTP endpoint that accepts the answer and delivers it to
 the session as an ordinary user message.
 
-This release supports choice questions only. A choice question allows a single
-or a multiple selection, can be required or optional, and can offer a
-free-text "Other" answer. Other field types are planned for a later release.
-A renderer that meets a field type it does not support shows a fallback form
-and never drops the question silently.
+Only choice questions are supported. A choice question takes one or several
+selections, can be required or optional, and can offer a free-text "Other"
+answer.
 
-This page documents the trait, the tool contracts, and how an answer reaches
-the conversation. For the `wippy-form` / `wippy-form-answers` components and
-the HTTP contract from the browser side, see
-[Session Forms (frontend)](../frontend/micro-frontends/session-forms.md).
+For the `wippy-form` and `wippy-form-answers` components and the browser side
+of the HTTP contract, see
+[Session Forms (frontend)](../frontend/micro-frontends/session-forms.md). The
+Web Host version that the question card needs is listed under
+[Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement).
 
 ## Enabling the trait
 
@@ -43,9 +42,9 @@ Add `wippy.session.forms:ask_user` to an agent's `traits`:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait requires a `wippy/session` version that ships session forms. With
-an older one, an agent definition that references the trait fails to resolve
-at lint time rather than silently doing nothing.
+The trait needs a `wippy/session` release that ships Session Forms. With an
+older release, an agent that references the trait fails to resolve at lint
+time.
 
 The trait contributes two tools and a block of prompt text. The prompt tells
 the model the following.
@@ -57,11 +56,12 @@ the model the following.
 - Treat an answer with `"late": true` as context only, and confirm with the
   user before acting on the earlier request.
 - Call `read_form` with a `form_id` to see an earlier form, and never write a
-  `<wippy-form-answers>` element by hand.
+  `<wippy-form-answers>` element by hand, because the element carries meaning
+  only in the exact format the server writes.
 
 An agent without the trait cannot call `ask_user`, but its prompt still
-includes the deterministic form index described below, and it can read a
-submitted answer like any other user message.
+includes the form index described below, and it can read a submitted answer
+like any other user message.
 
 ## The `ask_user` tool
 
@@ -82,29 +82,25 @@ agent can retry in the same turn.
 | `fields[].label` | The question, 1 to 240 characters |
 | `fields[].description` | Optional help text, at most 1,000 characters |
 | `fields[].required` | Boolean, default `false` |
-| `fields[].options` | 1 to 20 distinct choices. A plain string is both the value and the label. Use `{ "value", "label", "description"? }` when the stored value should differ from the shown text |
-| `fields[].multiple` | Boolean, default `false`: allow selecting several options |
-| `fields[].allow_other` | Boolean, default `false`: offer a free-text "Other" answer |
+| `fields[].options` | 1 to 20 distinct choices. A plain string is both the value and the label. Use `{ "value", "label", "description"? }` when the stored value should differ from the shown text. Value and label are at most 240 characters, and `description` is at most 1,000 |
+| `fields[].multiple` | Boolean, default `false`. Allows selecting several options |
+| `fields[].allow_other` | Boolean, default `false`. Offers a free-text "Other" answer |
 
 The normalized definition is bounded to 32 KiB. The size is measured after
 normalization, where a plain string option expands to `{"value": .., "label":
 ..}`, so a definition with many short string options can be well over the
 limit even when it looks compact. In that case the tool error reports the
-actual normalized size. Labels and descriptions are rendered as plain text and
-are never parsed as Markdown or HTML. Control characters other than tabs and
-newlines (in multi-line fields) are rejected.
+actual normalized size. Labels and descriptions are never parsed as Markdown or
+HTML, and the card shows only text in backticks as inline code. Control
+characters other than tabs and newlines (in multi-line fields) are rejected.
 
-A successful call ends the agent's turn. The tool result is a factual,
-past-tense sentence:
+A successful call ends the agent's turn and returns the text below. The trait
+prompt tells the agent not to add a follow-up, because the form is already
+visible.
 
 ```text
 Form "Delivery preference" was created as <artifact-id>. Its answer will arrive as a user message.
 ```
-
-The agent should not run a further model step to say "please fill in the
-form", because the form is already visible. A short continuation costs an
-extra model step and does not affect correctness, because the form is already
-stored.
 
 ### One form per turn
 
@@ -116,8 +112,8 @@ This turn already asked the user with a form. No second form was created; wait f
 ```
 
 A session can hold up to 100 unresolved (unanswered) forms at once. Above
-that, `ask_user` is rejected with `too_many_forms` and the agent is asked to
-resolve or supersede older forms. Nothing is deleted automatically.
+that, `ask_user` is rejected with `too_many_forms` until the user answers
+older forms. Nothing is deleted automatically.
 
 A form's definition is immutable once created. There is no edit operation, and
 an attempt to update a form artifact through the general artifact-update path
@@ -126,11 +122,10 @@ instead.` To change a question, ask a new form.
 
 ## What the agent receives
 
-The user answers on a question card (see the frontend page for the UI). The
-accepted answer becomes one ordinary user message, built entirely on the
-server, and the browser never supplies its text. The message has exactly one
-visible line, followed by an invisible carrier element that holds the full
-answer as JSON:
+The user answers on a question card. The accepted answer becomes one ordinary
+user message, built entirely on the server, and the browser never supplies its
+text. The message has exactly one visible line, followed by an invisible
+carrier element that holds the full answer as JSON:
 
 ```text
 Answered questions about the delivery of your order.
@@ -141,11 +136,9 @@ Answered questions about the delivery of your order.
 
 The user sees only the first line, which is the `answered_message` the agent
 supplied when it called `ask_user` (or the `Answered “<title>”.` fallback).
-The `wippy-form-answers` component that the Session ships renders nothing, so
-the record never appears in the chat. The agent reads the raw message text,
-including the record attribute, on its next turn. The answered form card shown
-above the message is the summary for the user, and the record is the summary
-for the agent.
+The `wippy-form-answers` element renders nothing, so the record never appears
+in the chat. The agent reads the raw message text, including the record
+attribute, on its next turn.
 
 ### Record shape
 
@@ -157,8 +150,8 @@ question id, `answers[id]` has a `question` (the field's label) and an
 | Answer shape | When |
 | --- | --- |
 | `{"value": "courier", "label": "Courier"}` | A chosen option |
-| `{"value": "courier", "label": "Courier", "note": "…"}` | A chosen option with the user's own note |
-| `{"other": "…"}` | The user's own free-text answer |
+| `{"value": "courier", "label": "Courier", "note": "…"}` | A chosen option with the user's own note, at most 1,000 characters |
+| `{"other": "…"}` | The user's own free-text answer, at most 2,000 characters |
 | `[ ...one of the above... ]` | A multiple-selection question, in definition order, with an "Other" entry (if any) last |
 | `null` | The question was left unanswered (only possible when not required) |
 
@@ -203,15 +196,16 @@ chose.
 returns the state of one form belonging to the calling session. A form from
 another session is not visible. The result depends on the form's state:
 
-| `status` | Meaning |
+| `status` | Result |
 | --- | --- |
-| `unanswered` | Returns the form's `title` and `questions` (each with its options), so an agent that lost the original `ask_user` result can restate them |
-| `answer_pending` | The user answered, but the answer has not been admitted into this session's history yet (see below). No answer values are returned, and the agent must wait for the answer to arrive as a user message |
-| `answered` | Returns the same self-contained record described above, plus `answered_at` |
+| `unanswered` | `{ status, form_id, title, questions }`, where each question carries its options, so an agent that lost the original `ask_user` result can restate them |
+| `answer_pending` | `{ status, form_id, title, note }`. The user answered, but the answer has not been admitted into the session's history yet (see below). No answer values are returned, and the `note` tells the agent to wait for the answer to arrive as a user message |
+| `answered` | `{ status, answered_at, form }`, where `form` is the self-contained record described above |
 
 Every agent, with or without the trait, also gets a bounded, deterministic
-index of the session's forms in its prompt. The index is computed fresh on
-every prompt build, so it cannot drift from the stored forms:
+index of the session's forms in its prompt. The index is rebuilt from the
+stored forms on every prompt build, so it cannot drift from them, and it does
+not depend on a checkpoint having kept any form ids or values.
 
 ```text
 Session forms (index; exact answers are in the answer messages and can be read with read_form when available):
@@ -223,153 +217,52 @@ Session forms (index; exact answers are in the answer messages and can be read w
 
 The index lists up to 8 unanswered or pending forms (newest first) and up to 4
 answered forms (most recently answered first), bounded to 8 KiB, and it
-reports how many were omitted. A summarizing checkpoint is free text and may
-drop form ids or values. The index is rebuilt from the stored artifacts on
-every prompt, so it does not depend on the checkpoint having preserved
-anything.
+reports how many were omitted.
 
 ## How answers are admitted
 
-Submitting a form's answer (see the frontend page for the HTTP contract)
-commits the answer and the user message in one transaction, then publishes an
-artifact-update event and wakes the owning session process. The stored row,
-and not the wake-up, makes delivery durable, so a missed wake-up does not lose
-the answer.
+Submitting an answer commits it together with the user message in one
+transaction, so the stored row, and not the wake-up of the session process,
+makes delivery durable. A form answer is never steered into a running turn,
+whatever the steering setting. Typed input follows the session's steering
+setting.
 
-A form answer is never steered into a running turn. It stays pending until the
-turn ends, no matter how the session is configured. Typed input follows the
-session's own steering setting instead. It can be admitted mid-turn when the
-agent has the `wippy.session.traits:steering` trait, or when the session sets
-a `steer` input-policy override. Once a turn ends, pending answers and any
-steered input the session held are admitted together, in the order they were
-durably accepted.
+| When the answer is accepted | What happens |
+| --- | --- |
+| The session is idle | The answer is admitted at once, and a new turn starts |
+| A turn is running | The answer is pending, and `read_form` reports `answer_pending`. It is admitted when the turn ends, in acceptance order together with any typed input the session held during the turn |
+| The user pressed Stop | The answer is admitted into the history and no turn starts. The same happens when the session plugin has to cancel or terminate a session that does not stop in time |
+| The session is finishing, or its process is not running | The answer stays pending until the process starts again. The session plugin starts stopped sessions that hold pending answers |
 
-Admission order follows the order in which answers were durably accepted, and
-the rest depends on what the session is doing:
-
-- If the session is idle, the answer is admitted immediately and a new turn
-  starts to answer it.
-- If a turn is running, the answer stays out of that turn's prompt. It is
-  marked pending, and `read_form` reports `answer_pending` for it. It is
-  admitted once the turn ends, in acceptance order together with any typed
-  input the session held during the turn, and the next turn answers the latest
-  admitted message.
-- If the user pressed Stop, the answer is still admitted and becomes ordinary
-  visible history, but no new turn starts for it. The form reads as delivered,
-  and the user continues by sending a message. The same holds when the session
-  plugin has to enforce the Stop itself. If a turn does not stop within 10
-  seconds, the plugin cancels and then terminates the session process, and the
-  pending answers are admitted with no turn exactly as an honored Stop's would
-  be. They do not wait for the next session start to run an unattended turn.
-- If the session is finishing, or the process is not running (idle timeout,
-  crash, restart), the answer stays pending. The next time the session process
-  starts, it scans for pending answers before anything else and queues their
-  admission, so recovery needs no external retry.
-
-The user's session plugin also drives this recovery from outside any one
-session. It starts a stopped session that still holds an unadmitted answer,
-once right after the plugin itself starts and again on every periodic scan
-after that. An answer is therefore still delivered when its original wake-up
-was lost, and the start admits the answer and runs a turn for it, like any
-other session start with a pending answer.
-
-The same plugin start also settles any of the user's sessions left stored as
-"running" with no live process, for example after a runtime restart, back to
-idle. The settling changes only how an already-admitted answer reads. An
-answer that the turn had picked up before the process disappeared now reads as
-interrupted ("send a message to continue") and no longer reads as running. A
-pending answer is not affected by the settling, because it is unrelated to the
-session's stored status. It is admitted with a turn the next time the session
-starts, as described above.
-
-Once admitted, the answer's message row is re-dated to the moment of
-admission rather than the moment it was accepted, so its place in the visible
-history follows admission order. The `submitted_at` that the artifact-state API
-returns (see the frontend page) is unaffected and keeps the original
-acceptance time.
-
-The agent must never treat an `answer_pending` form as answered, and must
-never guess its content before the real answer message arrives.
+Once admitted, the answer's message is dated at the moment of admission, so
+its place in the visible history follows admission order. The `submitted_at`
+value that the artifact-state API returns keeps the original acceptance time.
 
 ## Security notes
 
-The text of the answer message, which is the sentence and the record, is built
-entirely by the server from the immutable definition and the validated,
-normalized answers. The browser sends only structured `answers` keyed by field
-id and never sends message text. User-supplied text (an "Other" answer or a
-note) is JSON-escaped data inside the record's `answer` object and is never raw
-markup. The server escapes `'`, `<`, `>`, and `&` inside the record, so user
-text cannot end the attribute, close the tag, or add markup.
-
-The trait's prompt tells the agent never to write a `<wippy-form-answers>`
-element itself. The tag carries meaning only in the exact wire format the
-server writes, and an agent-authored one would not match a real accepted
-answer.
-
-Every state read or write checks authentication, then that the artifact
-belongs to the caller and its session, then read (GET) or write (POST)
-permission on that session, before doing anything with the form. A missing
-artifact, another user's artifact, and an artifact whose session is gone or
-not the caller's all return the same 404, so the endpoint does not reveal that
-a foreign form exists.
+The server builds the answer message from the immutable definition and the
+validated, normalized answers. The browser sends only answers keyed by field
+id, never message text. User text (an "Other" answer or a note) is
+JSON-escaped data inside the record, and the server escapes `'`, `<`, `>`, and
+`&` in the record, so user text cannot end the attribute, close the tag, or
+add markup. The checks that the state endpoint applies to every request are
+listed in [The artifact-state HTTP API](../frontend/micro-frontends/session-forms.md#the-artifact-state-http-api).
 
 ## Disabling and rolling back
 
-Disabling new form creation is a config-only change. Remove
-`wippy.session.forms:ask_user` from an agent's `traits:` list. There is no
-deploy step, no feature flag, and no separate kill switch.
+To stop new forms, remove `wippy.session.forms:ask_user` from an agent's
+`traits` list.
 
 - Open (unanswered) forms stay answerable. The state API's read and write
   checks are session-ownership checks and not trait checks, so a form asked
   before the trait was removed can still be submitted afterward.
 - Answered forms stay readable, with or without the trait on any agent. An
   answered form is an ordinary artifact plus an ordinary user chat message,
-  and `read_form` and the prompt's form index work the same for every agent.
-- Do not downgrade the `wippy/session` module below the release that shipped
-  Session Forms while any form artifacts exist. Rendering `wippy-form` and
-  `wippy-form-answers` needs their `view.component` registry entries to be
-  registered and served by the running module version. A consumer that
-  registers its own forms-related entries can fail to boot on an older module,
-  because one of those entries stays unresolved and the runtime refuses to
-  start with `failed to load state: unresolved dependencies after retry: …`.
-  The boot behavior of an older module is not defined for a consumer whose
-  only reference is an agent's `wippy.session.forms:ask_user` trait, so treat
-  that case as a risk too. Removing the trait is the supported way to stop new
-  forms. Downgrading the module is a separate action with this failure mode.
-
-## Compatibility
-
-- The question card submits through the `artifactState` client, which only
-  Web Host 1.0.61 or later provides (see
-  [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement)).
-  On an older Host the card shows the questions with disabled options and a
-  notice that the form needs a newer Web Host, and nothing can be submitted.
-  The user's answer message and the agent's reply stay readable in the chat.
-- A form whose `form_version` is not `1` shows a notice and never a submit
-  control.
-- When the component bundle is missing, the Host shows its load-failure
-  fallback in place of the card, and reloading the page recovers it.
-
-## Limits at a glance
-
-| Limit | Value |
-| --- | --- |
-| Form title | 160 characters |
-| Description (form or field) | 1,000 characters |
-| `submit_label` | 40 characters |
-| `answered_message` | 200 characters |
-| Fields per form | 1 to 20 |
-| Field label | 240 characters |
-| Options per field | 1 to 20 |
-| Option text | 240 characters |
-| "Other" answer text | 2,000 characters |
-| Note text | 1,000 characters |
-| Normalized definition size | 32 KiB |
-| Submission request body | 64 KiB |
-| Unresolved forms per session | 100 |
-| Form index (prompt injection) | 8 unanswered/pending + 4 answered, 8 KiB total |
-
-Form submission has no rate limit.
+  and `read_form` and the form index work the same for every agent.
+- Do not downgrade `wippy/session` below the release that shipped Session
+  Forms while form artifacts exist. The module registers the `wippy-form` and
+  `wippy-form-answers` components, and an older module can fail to start with
+  `failed to load state: unresolved dependencies after retry: …`.
 
 ## Verifying
 
