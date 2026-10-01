@@ -162,11 +162,10 @@ answer record never appears, and nothing is mocked.
 On the published Web Host 1.0.59 with the current Session, a newly asked form
 shows the questions with disabled radio buttons, no buttons in the card,
 `card-state="unsupported"`, and the "needs a newer Web Host" notice with no
-placeholder rows. An older chat of answered forms shows the same notice on
-each card and keeps its answer messages and agent replies readable. The
-sentence about the answer being in the chat, and the "This form was answered"
-variant, are covered by the component's unit tests. Both are planned to be
-verified in a browser on a published 1.0.59 Host.
+placeholder rows, and the notice reads "This form needs a newer Web Host. If
+you already answered it, your answer is in the chat." In a chat of answered
+forms, each card reads "This form was answered. Your answer is in the chat.",
+and the answer messages and agent replies stay readable.
 
 ## The artifact-state HTTP API
 
