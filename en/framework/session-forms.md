@@ -246,7 +246,12 @@ on what the session is doing:
   admitted message.
 - **The user pressed Stop.** The answer is still admitted (it becomes
   ordinary visible history), but no new turn starts for it. The form reads
-  as delivered; the user continues normally by sending a message.
+  as delivered; the user continues normally by sending a message. The same
+  holds when the session plugin has to enforce the Stop itself: if a turn
+  does not stop within 10 seconds, the plugin cancels, and then terminates,
+  the session process. Its pending answers are admitted with no turn exactly
+  as an honored Stop's would be — they do not wait for the next session
+  start to run an unattended turn.
 - **The session is finishing, or the process is not running (idle timeout,
   crash, restart).** The answer stays pending. The next time the session
   process starts, it scans for pending answers before anything else and
@@ -256,10 +261,17 @@ The user's session plugin also drives this recovery from outside any one
 session. It starts a stopped session that still holds an unadmitted answer,
 once right after the plugin itself starts and again on every periodic scan
 after that, so an answer is still delivered even if its original wake-up was
-lost. The same plugin start also settles any of the user's sessions left
-stored as "running" with no live process, for example after a runtime
-restart, back to idle, so their form answers read as interrupted rather than
-perpetually running.
+lost — that start admits the answer and runs a turn for it, like any other
+session start with a pending answer.
+
+The same plugin start also settles any of the user's sessions left stored as
+"running" with no live process, for example after a runtime restart, back to
+idle. This settling only changes how an **already-admitted** answer reads:
+one the turn had already picked up before the process disappeared now reads
+as interrupted ("send a message to continue"), instead of perpetually
+running. A **pending** answer is not affected by this settling at all — it
+is unrelated to the session's stored status, and simply gets admitted with a
+turn the next time the session starts, as described above.
 
 Once admitted, the answer's message row is re-dated to the moment of
 admission rather than the moment it was accepted, so its place in the
@@ -291,6 +303,34 @@ permission on that session, before doing anything with the form. A missing
 artifact, another user's artifact, or an artifact whose session is gone or
 not the caller's all return the same 404 — the endpoint does not reveal that
 a foreign form exists.
+
+## Disabling and rolling back
+
+Disabling new form creation is a config-only change: remove
+`wippy.session.forms:ask_user` from an agent's `traits:` list. There is no
+deploy step, no feature flag, and no separate kill switch for V1.
+
+- **Open (unanswered) forms stay answerable.** The state API's read/write
+  checks are session-ownership checks, not trait checks, so a form asked
+  before the trait was removed can still be submitted afterward.
+- **Answered forms stay readable**, with or without the trait on any agent:
+  an answered form is an ordinary artifact plus an ordinary user chat
+  message, and `read_form` and the prompt's form index work the same for
+  every agent.
+- **Do not downgrade the `wippy/session` module below the release that
+  shipped Session Forms while any form artifacts exist.** Rendering
+  `wippy-form` / `wippy-form-answers` needs their `view.component` registry
+  entries to still be registered and served by the running module version.
+  A consumer that also registers its own forms-related entries can fail to
+  boot entirely on an older module — confirmed in testing: pointing a demo
+  consumer at the last pre-forms Session release left one of its own
+  registry entries unresolved, and the whole runtime refused to start
+  (`failed to load state: unresolved dependencies after retry: …`). Whether
+  an agent's `wippy.session.forms:ask_user` trait reference alone (with no
+  consumer-side forms entries) would also block a boot on an older module
+  was not tested — treat it as an open risk, not a cleared case. Removing
+  the trait is the supported way to stop new forms; downgrading the module
+  itself is a separate, riskier action with this failure mode.
 
 ## Limits at a glance
 
