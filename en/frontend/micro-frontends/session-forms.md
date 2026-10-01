@@ -6,10 +6,11 @@ description: "The wippy-form question card and fields form and the wippy-form-an
 # Session Forms
 
 `wippy/session` ships two `view.component` web components that render a
-Session `ask_user` form (see
-[Session Forms (framework)](../../framework/session-forms.md) for the
-`ask_user` tool and the answer contract). `<wippy-form>` is the interactive
-question card or form of fields. `<wippy-form-answers>` is an invisible
+Session form that an agent asked with the `ask_user` or `ask_user_fields` tool
+(see [Session Forms (framework)](../../framework/session-forms.md) for the
+tools and the answer contract). Both tools create the same kind of form, so the
+components render a form the same way whichever tool asked it.
+`<wippy-form>` is the interactive question card or form of fields. `<wippy-form-answers>` is an invisible
 carrier that keeps a form's answer record reachable to the agent without
 showing it to the user twice. Like the chat elements in
 [Chat Web Components](./chat-web-components.md), both are host-provided
@@ -24,7 +25,9 @@ one field is a standard field (`text`, `textarea`, `number`, `email`, `date`
 or `checkbox`, which makes it a version 2 form), it renders the
 [fields form](#fields-form), one form of labelled controls with a single Submit
 button. A version 2 form that also holds choices shows those choices in the
-fields form, as plain radio or checkbox groups.
+fields form, as plain radio or checkbox groups. Only an agent with the
+`ask_user_fields` tool can ask a version 2 form, because the `ask_user` tool
+takes choice fields only.
 
 | Prop (HTML attribute) | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -739,8 +742,8 @@ that tried to mount the tag. Reload the page to recover.
 ## See also
 
 - [Session Forms (framework)](../../framework/session-forms.md): the
-  `ask_user` and `read_form` tools, the trait, and how an answer is admitted
-  into the conversation
+  `ask_user`, `ask_user_fields` and `read_form` tools, the two traits, and how
+  an answer is admitted into the conversation
 - [Chat Web Components](./chat-web-components.md): other host-provided,
   auto-registered elements delivered the same way
 - [Proxy API](./proxy-api.md): the rest of `@wippy-fe/proxy` and

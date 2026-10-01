@@ -1,26 +1,29 @@
 ---
 title: "Session Forms"
-description: "Ask the user structured questions from an agent with the ask_user tool (choices, text, numbers, email addresses, dates and checkboxes), and read the answer back as a self-contained record."
+description: "Ask the user structured questions from an agent with the ask_user tool (choices) or the ask_user_fields tool (choices, text, numbers, email addresses, dates and checkboxes), and read the answer back as a self-contained record."
 ---
 
 # Session Forms
 
 Session forms let an agent ask the user one or more structured questions and
 get a structured answer back, without leaving a tool call waiting on human
-input. The `wippy/session` module owns the feature. It provides a trait that
-adds the `ask_user` and `read_form` tools, an artifact that renders in the chat
-as a question card or as a form of labelled fields, and an HTTP endpoint that
-accepts the answer and delivers it to the session as an ordinary user message.
+input. The `wippy/session` module owns the feature. It provides two traits,
+and each adds a tool that asks a form plus the `read_form` tool. It also
+provides an artifact that renders in the chat as a question card or as a form
+of labelled fields, and an HTTP endpoint that accepts the answer and delivers
+it to the session as an ordinary user message.
 
 A question is a field of one of seven types. A `choice` field offers options
 for a single or multiple selection, with an optional free-text "Other"
 answer. The standard fields are `text`, `textarea`, `number`, `email`, `date`
-and `checkbox`. A form made only of choice fields is a version 1 form and
-renders as a question card. A form with at least one standard field is a
-version 2 form and renders as one form of labelled controls with a single
-Submit button (see [Form versions](#form-versions)). A renderer that does not
-know a form version or a field type shows a notice and never drops a question
-silently.
+and `checkbox`. The `ask_user` tool asks choice questions only, and the
+`ask_user_fields` tool asks questions of all seven types (see
+[Enabling a trait](#enabling-a-trait)). A form made only of choice fields is a
+version 1 form and renders as a question card. A form with at least one
+standard field is a version 2 form and renders as one form of labelled controls
+with a single Submit button (see [Form versions](#form-versions)). A renderer
+that does not know a form version or a field type shows a notice and never
+drops a question silently.
 
 For the `wippy-form` and `wippy-form-answers` components and the browser side
 of the HTTP contract, see
@@ -28,9 +31,18 @@ of the HTTP contract, see
 Web Host version that the question card and the form of fields need is listed
 under [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement).
 
-## Enabling the trait
+## Enabling a trait
 
-Add `wippy.session.forms:ask_user` to an agent's `traits`:
+Add one of the two Session Forms traits to an agent's `traits`. The traits
+differ only in the field types that their form tool accepts.
+
+| Trait | Tool | Field types |
+| --- | --- | --- |
+| `wippy.session.forms:ask_user` | `ask_user` | `choice` |
+| `wippy.session.forms:ask_user_fields` | `ask_user_fields` | `choice`, `text`, `textarea`, `number`, `email`, `date` and `checkbox` |
+
+Both traits also add the `read_form` tool. The following agent asks choice
+questions:
 
 ```yaml
   - name: assistant
@@ -48,20 +60,43 @@ Add `wippy.session.forms:ask_user` to an agent's `traits`:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait needs a `wippy/session` release that ships Session Forms. With an
-older release, an agent that references the trait fails to resolve at lint
-time.
+To let the agent also ask for text, numbers, email addresses, dates and
+checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
 
-The trait contributes two tools and a block of prompt text. The prompt tells
-the model the following.
+```yaml
+    traits:
+      - id: wippy.session.forms:ask_user_fields
+```
+
+Each tool's input schema lists only its own field types. The server applies
+the same limit, so when a model ignores the schema and sends a standard field
+to `ask_user`, the call fails with `unsupported_type` and the message
+`Supported types: choice.`, and no form is created. Upgrading the
+`wippy/session` module does not give an agent that has `ask_user` the standard
+fields. To use them, switch the agent to `ask_user_fields`.
+
+Attach one of the two traits. The two tools have different names because the
+agent compiler keeps only the last tool of a given name. With one shared name,
+an agent with both traits would get whichever tool the compiler read last.
+With the different names, an agent with both traits gets both tools and both
+prompts. It works, but the prompt repeats most of its instructions.
+
+A trait needs a `wippy/session` release that ships it, and `ask_user_fields`
+ships only in the releases that support the standard fields. With an older
+release, an agent that references the trait fails to resolve at lint time.
+
+Each trait contributes its form tool, `read_form` and a block of prompt text.
+Both prompts tell the model the following, and the `ask_user_fields` prompt
+also tells it how to define fields.
 
 - How to ask:
-  - Use `ask_user` when it needs a decision or specific details from the user
-    before it can continue, and ask at most one form per turn with all the
-    questions it needs in it.
+  - Use the form tool when it needs input from the user before it can
+    continue. For `ask_user` the input is a decision between concrete options,
+    and for `ask_user_fields` it is a decision or specific details. Ask at most
+    one form per turn, with all the questions it needs in it.
   - Set `answered_message` to a short sentence in the user's voice. It becomes
     the user's chat message when they answer.
-- How to define fields:
+- How to define fields, in the `ask_user_fields` prompt only:
   - A default only prefills a field and is not the user's answer. A checkbox
     never starts checked, so a required checkbox is the way to ask for consent.
   - Keep the form to the questions it needs, because the text fields of one
@@ -73,16 +108,17 @@ the model the following.
     `<wippy-form-answers>` element by hand, because the element carries meaning
     only in the exact format the server writes.
 
-An agent without the trait cannot call `ask_user`, but its prompt still
-includes the form index described below, and it can read a submitted answer
-like any other user message.
+An agent without either trait cannot call `ask_user` or `ask_user_fields`, but
+its prompt still includes the form index described below, and it can read a
+submitted answer like any other user message.
 
-## The `ask_user` tool
+## The `ask_user` and `ask_user_fields` tools
 
-`ask_user` validates and normalizes the definition, then asks the session to
-create the form. An invalid definition is a tool error. The call returns no
-result and a message that describes what to fix, nothing is stored, and the
-agent can retry in the same turn.
+The two tools take the same definition and differ only in the field types they
+accept. Each tool validates and normalizes the definition, then asks the
+session to create the form. An invalid definition is a tool error. The call
+returns no result and a message that describes what to fix, nothing is stored,
+and the agent can retry in the same turn.
 
 | Key | Contract |
 | --- | --- |
@@ -92,7 +128,7 @@ agent can retry in the same turn.
 | `answered_message` | Optional plain text, at most 200 characters. The user's chat message once they answer, written in the user's own voice by the agent that asks (see [What the agent receives](#what-the-agent-receives)). Never shown on the form. A form asked without it falls back to `Answered “<title>”.` |
 | `fields` | 1 to 20 entries |
 | `fields[].id` | Unique key matching `^[a-z][a-z0-9_]{0,39}$` |
-| `fields[].type` | `"choice"`, `"text"`, `"textarea"`, `"number"`, `"email"`, `"date"` or `"checkbox"` (see [Field types](#field-types)) |
+| `fields[].type` | `"choice"` for `ask_user`. `"choice"`, `"text"`, `"textarea"`, `"number"`, `"email"`, `"date"` or `"checkbox"` for `ask_user_fields` (see [Field types](#field-types)) |
 | `fields[].label` | The question, 1 to 240 characters |
 | `fields[].description` | Optional help text, at most 1,000 characters |
 | `fields[].required` | Boolean, default `false` |
@@ -102,11 +138,11 @@ agent can retry in the same turn.
 
 The keys that only some types take (lengths, `pattern`, `min`, `max`, `step`,
 `integer`, `placeholder` and `default`) are listed per type under
-[Field types](#field-types). The tool's input schema is flat, so a model sees
-the keys of every type in one object. The server decides which keys each type
-takes and rejects any other with `unknown_key`. For example, `placeholder`
-belongs to `text` and `textarea` only, and the server rejects it on `number`,
-`email` and every other type.
+[Field types](#field-types), and only `ask_user_fields` takes them. Its input
+schema is flat, so a model sees the keys of every type in one object. The
+server decides which keys each type takes and rejects any other with
+`unknown_key`. For example, `placeholder` belongs to `text` and `textarea`
+only, and the server rejects it on `number`, `email` and every other type.
 
 The normalized definition is bounded to 32 KiB. The size is measured after
 normalization, where a plain string option expands to `{"value": .., "label":
@@ -117,9 +153,9 @@ HTML. The question card shows text in backticks as inline code, and the form of
 fields shows all of it as plain text. Control characters other than tabs and
 newlines (in multi-line fields) are rejected.
 
-A successful call ends the agent's turn and returns the text below. The trait
-prompt tells the agent not to add a follow-up, because the form is already
-visible.
+A successful call of either tool ends the agent's turn and returns the text
+below. Both trait prompts tell the agent not to add a follow-up, because the
+form is already visible.
 
 ```text
 Form "Delivery preference" was created as <artifact-id>. Its answer will arrive as a user message.
@@ -127,16 +163,16 @@ Form "Delivery preference" was created as <artifact-id>. Its answer will arrive 
 
 ### One form per turn
 
-At most one form can be created per agent turn. A second `ask_user` call in
-the same turn is rejected before anything is written:
+At most one form can be created per agent turn. A second call of either tool
+in the same turn is rejected before anything is written:
 
 ```text
 This turn already asked the user with a form. No second form was created; wait for the answer to the first one.
 ```
 
 A session can hold up to 100 unresolved (unanswered) forms at once. Above
-that, `ask_user` is rejected with `too_many_forms` until the user answers
-older forms. Nothing is deleted automatically.
+that, a call of either tool is rejected with `too_many_forms` until the user
+answers older forms. Nothing is deleted automatically.
 
 A form's definition is immutable once created. There is no edit operation, and
 an attempt to update a form artifact through the general artifact-update path
@@ -147,7 +183,8 @@ instead.` To change a question, ask a new form.
 
 Every field has an `id`, a `type` and a `label`, and optionally a
 `description` and `required`, as listed in the table above. Each type then
-adds its own keys, which are listed in this section. A key that a type does
+adds its own keys, which are listed in this section. `ask_user` takes only the
+`choice` type, and `ask_user_fields` takes every type in this section. A key that a type does
 not take is rejected with `unknown_key`, for example `min_length` on a
 `number` or `default` on a `choice`. A form can mix types in any order.
 Lengths count characters (Unicode code points), not bytes.
@@ -254,7 +291,7 @@ it, so a mismatch is reported on the field after the user submits.
 
 The server runs patterns with RE2, which takes time proportional to the length
 of the answer. The accepted syntax is a small part of the RE2 syntax, small
-enough that the `ask_user` tool description lists it in full.
+enough that the input schema of the `ask_user_fields` tool lists it in full.
 
 - Literal characters, `.`, `^` and `$`. Outside a class, a literal `{`, `}` or
   `]` needs a backslash (`\{`, `\}` or `\]`), and the server rejects an
@@ -393,6 +430,12 @@ also holds choices. The version is stored with the form, returned as
 version 1 form is stored, answered and recorded exactly as it was before the
 standard fields existed, so existing forms are unchanged.
 
+The version does not depend on the tool that asked the form. `ask_user` always
+creates a version 1 form, because it takes only choice fields. `ask_user_fields`
+creates a version 1 form when every field is a choice, and a version 2 form
+otherwise. The Host, the `wippy-form` component and the answer record work the
+same way for forms from both tools.
+
 A submission names the version of the form it answers. Sending
 `form_version: 1` for a version 2 form, or `form_version: 2` for a version 1
 form, is rejected with 400 `invalid_request` before any answer is validated.
@@ -429,7 +472,8 @@ Answered questions about the delivery of your order.
 ```
 
 The user sees only the first line, which is the `answered_message` the agent
-supplied when it called `ask_user` (or the `Answered “<title>”.` fallback).
+supplied when it called `ask_user` or `ask_user_fields` (or the
+`Answered “<title>”.` fallback).
 The `wippy-form-answers` element renders nothing, so the record never appears
 in the chat. The agent reads the raw message text, including the record
 attribute, on its next turn.
@@ -437,7 +481,7 @@ attribute, on its next turn.
 ### Record shape
 
 The record is self-contained, so an agent can act on it without the original
-`ask_user` call, which a checkpoint may have summarized away. For each
+tool call, which a checkpoint may have summarized away. For each
 question id, `answers[id]` has a `question` (the field's label) and an
 `answer`:
 
@@ -519,7 +563,7 @@ another session is not visible. The result depends on the form's state:
 
 | `status` | Result |
 | --- | --- |
-| `unanswered` | `{ status, form_id, title, questions }`, where each question carries its options, and in a version 2 form also its `type`, limits and default, so an agent that lost the original `ask_user` result can restate them |
+| `unanswered` | `{ status, form_id, title, questions }`, where each question carries its options, and in a version 2 form also its `type`, limits and default, so an agent that lost the original tool result can restate them |
 | `answer_pending` | `{ status, form_id, title, note }`. The user answered, but the answer has not been admitted into the session's history yet (see below). No answer values are returned, and the `note` tells the agent to wait for the answer to arrive as a user message |
 | `answered` | `{ status, answered_at, form }`, where `form` is the self-contained record described above |
 
@@ -544,10 +588,10 @@ definition sets it:
 }
 ```
 
-Every agent, with or without the trait, also gets a bounded, deterministic
-index of the session's forms in its prompt. The index is rebuilt from the
-stored forms on every prompt build, so it cannot drift from them, and it does
-not depend on a checkpoint having kept any form ids or values.
+Every agent, with or without a Session Forms trait, also gets a bounded,
+deterministic index of the session's forms in its prompt. The index is rebuilt
+from the stored forms on every prompt build, so it cannot drift from them, and
+it does not depend on a checkpoint having kept any form ids or values.
 
 ```text
 Session forms (index; exact answers are in the answer messages and can be read with read_form when available):
@@ -593,9 +637,10 @@ state endpoint applies to every request are listed in
 
 ## Disabling and rolling back
 
-To stop new forms, remove `wippy.session.forms:ask_user` from an agent's
-`traits` list. No setting limits agents to choice fields, so an agent with the
-trait can ask any field type.
+To stop new forms, remove `wippy.session.forms:ask_user` or
+`wippy.session.forms:ask_user_fields` from an agent's `traits` list. To stop
+new forms with standard fields and keep choice questions, replace
+`ask_user_fields` with `ask_user`.
 
 - Open (unanswered) forms stay answerable. The state API's read and write
   checks are session-ownership checks and not trait checks, so a form asked
@@ -616,9 +661,11 @@ trait can ask any field type.
   until the module is upgraded again. Version 1 forms keep working. Answers
   that were already accepted stay in the chat as ordinary messages, and the
   prompt's form index keeps listing every form by title, because it reads only
-  titles and ids. The rollback does not convert version 2 forms, so before a
-  rollback remove the trait from the agents that ask forms and have users
-  answer the open version 2 forms.
+  titles and ids. The rollback does not convert version 2 forms. Before a
+  rollback, have users answer the open version 2 forms, and switch every agent
+  with `ask_user_fields` to `ask_user` or remove the trait. A release from
+  before version 2 has no `ask_user_fields` trait, so an agent that still
+  references it fails to resolve at lint time.
 
 ## Error codes
 
@@ -630,8 +677,8 @@ fault, as `duplicate_id`, `duplicate_option` and `unknown_key` do.
 
 ### Definition errors
 
-`ask_user` returns the problems of a definition as a tool error with one line
-for each, in the form `path: code: message`. Array positions in a path start
+`ask_user` and `ask_user_fields` return the problems of a definition as a tool
+error with one line for each, in the form `path: code: message`. Array positions in a path start
 at 0, and a problem with the whole definition has the path `(definition)`.
 Nothing is stored when any problem is found.
 
@@ -646,7 +693,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label` |
 | `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
 | `unknown_key` | A key the form or the field's type does not take |
-| `unsupported_type` | `type` is not one of the seven names. Names are case sensitive. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
+| `unsupported_type` | `type` is not one of the seven names, or the tool does not take it, because `ask_user` takes only `choice`. Names are case sensitive. The message lists the types that the tool takes, such as `Supported types: choice.` for a standard field sent to `ask_user`. A name that is not a type at all gets the list of all seven from either tool. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
 | `invalid_id`, `duplicate_id` | A field id breaks the id rule, or is used twice |
 | `blank` | A required text, `submit_label` or `answered_message` has no visible character |
 | `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
@@ -682,10 +729,16 @@ created and before answering it, and then answer. The record should carry
 `"late": true`, and the agent should ask for confirmation before acting on the
 original request.
 
-To check the standard fields, prompt the agent for a form with a name (`text`
-with a `pattern`), an email address, a whole number with a minimum and a
-maximum, a date with a range, a `textarea`, and a required `checkbox`. Then
-confirm each of the following.
+To check that `ask_user` stays limited to choices, prompt the same agent to ask
+for an email address. It can ask with a choice question or in plain text, but
+no form of fields should appear. If the agent sends a standard field anyway,
+the tool error names `unsupported_type` and `Supported types: choice.`.
+
+To check the standard fields, give an agent the
+`wippy.session.forms:ask_user_fields` trait, and prompt it for a form with a
+name (`text` with a `pattern`), an email address, a whole number with a minimum
+and a maximum, a date with a range, a `textarea`, and a required `checkbox`.
+Then confirm each of the following.
 
 1. The form of fields appears with one control for each question and one
    Submit button. Submitting it empty names the required questions and focuses
