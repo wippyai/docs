@@ -257,7 +257,7 @@ const client = (await $W.artifactState())('artifact-uuid')
 
 const state = await client.get()
 const result = await client.submit({
-  form_version: 1,
+  form_version: state.form_version,
   request_id: crypto.randomUUID(),
   expected_content_version: state.content_version,
   answers: { color: 'blue' },
@@ -271,7 +271,8 @@ const result = await client.submit({
   synchronously.
 - Every failure, whether an HTTP status or a network error, rejects with a
   typed `ArtifactStateError` (`status`, `code`, and, for a 422, `errors` keyed
-  by field id plus `formErrors`).
+  by field id plus `formErrors`). An entry in a 422 body that lacks a string
+  `code` or `message` is left out of `errors` and `formErrors`.
 
 ```typescript
 try {
@@ -285,13 +286,12 @@ catch (error) {
 }
 ```
 
-Prefer `isArtifactStateError(error)` over `error instanceof
-ArtifactStateError`. It is `$W.isArtifactStateError` in an iframe, and a named
-export of `@wippy-fe/proxy` in a web component. Each proxy entry point and the
-published `@wippy-fe/proxy` package bundles its own copy of the class, and
-`isArtifactStateError` checks a brand that is the same in every copy. The class
-overrides `Symbol.hasInstance` to run the same check, so `instanceof` also
-matches an error that another copy threw.
+Use `isArtifactStateError(error)` and not `error instanceof
+ArtifactStateError`. It is `$W.isArtifactStateError` in an iframe page, and a
+named export of `@wippy-fe/proxy` in a web component. Each proxy bundle carries
+its own copy of the class, so `instanceof` can fail for an error that another
+bundle threw, while `isArtifactStateError` checks a brand that is the same in
+every copy.
 
 ### `artifactState` and the deprecated `instance.form`
 
@@ -355,9 +355,9 @@ A missing or failed component bundle never reaches any `card-state` above. The
 own component loader shows "This part of the page could not load. Reload to
 try again." in its place. The cause goes only to the browser console, as
 "Component tag script failed to load" for a script error or "Component tag
-failed to load in time" for a registration timeout. Each is logged once per
-failed tag and not once per card that tried to mount it. Reload the page to
-recover.
+failed to load in time" for a registration timeout. A script error is logged
+once per failed tag, and a registration timeout is logged once for each card
+that tried to mount the tag. Reload the page to recover.
 
 ## See also
 
