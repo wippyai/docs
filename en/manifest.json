@@ -150,6 +150,7 @@
       {"title": "Overview", "path": "framework/overview"},
       {"title": "LLM", "path": "framework/llm"},
       {"title": "Agents", "path": "framework/agents"},
+      {"title": "Sessions", "path": "framework/sessions"},
       {"title": "Testing", "path": "framework/testing"},
       {"title": "Dataflow", "path": "framework/dataflow"},
       {"title": "Relay", "path": "framework/relay"},

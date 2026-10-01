@@ -512,6 +512,16 @@ The `time_aware` trait accepts context options:
           time_interval: 15
 ```
 
+The `wippy/session` module, version 0.6.3 or newer, provides two traits for live session input:
+
+| Trait | Description |
+|-------|-------------|
+| `wippy.session.traits:steering` | Defaults the active agent to accepting messages while a turn is running. |
+| `wippy.session.traits:input_control` | Grants `set_session_input_policy`, which can change the current turn or persistent session policy. It does not enable steering by itself. |
+
+See [Sessions](./sessions.md) for policy order, tool scopes, Stop behavior, and
+the public interaction state.
+
 ### Custom Traits
 
 Traits are registry entries with `meta.type: agent.trait`. They can contribute:
