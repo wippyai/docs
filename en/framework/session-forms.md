@@ -332,6 +332,24 @@ deploy step, no feature flag, and no separate kill switch for V1.
   the trait is the supported way to stop new forms; downgrading the module
   itself is a separate, riskier action with this failure mode.
 
+## Compatibility
+
+- **Web Host.** The question card submits through the `artifactState` client,
+  which only a Web Host release that includes Session Forms provides (see
+  [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement)).
+  On an older Host the card shows the questions with disabled options and a
+  notice that the form needs a newer Web Host, and nothing can be submitted.
+  The user's answer message and the agent's reply stay readable in the chat.
+- **Unknown form version.** A form whose `form_version` is not `1` shows a
+  notice and never a submit control.
+- **Missing component bundle.** The Host shows its load-failure fallback in
+  place of the card. Reloading the page is the way to recover.
+- **Consumer applications on runtime v0.3.43a.** Sign-in needs
+  `userspace/users` 0.1.9 or later. A consumer whose lock pins 0.1.8 answers
+  the sign-in request with a 500 error from `user_groups_repo`, because 0.1.9
+  adds the login security policies that 0.1.8 lacks. This was observed with
+  a consumer that has no Session Forms and does not depend on this feature.
+
 ## Limits at a glance
 
 | Limit | Value |

@@ -139,28 +139,34 @@ None of the paths below fabricate a success or a mock answer — see
 [`instance.form` (deprecated)](#artifactstate-and-the-deprecated-instanceform)
 below for the related history on the older adapter this replaced.
 
+The component checks the conditions in the order of this table, and the first
+one that applies decides what the card shows.
+
 | Condition | What the card shows |
 | --- | --- |
-| No artifact id is available in the element's context | The questions rendered read-only, with "This form cannot be submitted here." |
-| An artifact id is available, but the Host has no `artifactState` export | "This form needs a newer Web Host." |
-| `form-version` prop or loaded state's `form_version` is not `1` | "This form needs a newer version of the app." |
+| `form-version` prop or loaded state's `form_version` is not `1` | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
+| The Host has no `artifactState` export (every Web Host release before Session Forms) | The questions with their options disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. |
+| The Host exports `artifactState`, but no artifact id is available in the element's context | The questions rendered read-only, with "This form cannot be submitted here." |
 
-**Known gap, confirmed in testing against the published Host 1.0.59.** Every
-Web Host release that predates Session Forms also predates the
-`data-wippy-artifact-id` attribute the component reads its artifact id from,
-so in practice an old Host always hits the first row above — "This form
-cannot be submitted here.", with every option rendered but disabled and no
-accepted values shown — and never the second: the component checks for an
-artifact id before it checks for the Host capability, and no real Host sets
-one without the other. On the published 1.0.59 release, this was confirmed
-harmless but unhelpful: the chat message's one visible sentence still read
-correctly, there was no mock data and no crash, but neither an open nor an
-already-answered form showed a useful message (an answered form's card
-showed "—" in place of its accepted values). A fix to check the Host
-capability directly, independent of the artifact id, is in progress and not
-in this release yet. Until it lands, treat "This form cannot be submitted
-here." on an old Host as the practical equivalent of "needs a newer Web
-Host," not as a configuration problem to debug.
+### Behavior on a Web Host that predates Session Forms
+
+A Web Host from before Session Forms has neither the `artifactState` export
+nor the `data-wippy-artifact-id` attribute, so the component checks for the
+export first. The card shows the real questions with disabled options, and
+nothing on it can be submitted. Every option is unselected, because the saved
+answer cannot be read without the artifact-state API, so the card cannot show
+what was chosen. The notice therefore points to the chat, where the user's
+one-line answer message and the agent's reply stay readable. The hidden
+answer record never appears, and nothing is mocked.
+
+On the published Web Host 1.0.59 with the current Session, a newly asked form
+shows the questions with disabled radio buttons, no buttons in the card,
+`card-state="unsupported"`, and the "needs a newer Web Host" notice with no
+placeholder rows. An older chat of answered forms shows the same notice on
+each card and keeps its answer messages and agent replies readable. The
+sentence about the answer being in the chat, and the "This form was answered"
+variant, are covered by the component's unit tests. Both are planned to be
+verified in a browser on a published 1.0.59 Host.
 
 ## The artifact-state HTTP API
 
@@ -376,7 +382,7 @@ component is doing from the DOM or an end-to-end test:
 | `active` | Answerable: a question, the review step, or briefly, the submitting state. |
 | `review` | The review step of a several-question form, before "Send answers". |
 | `answered` | The read-only summary of an accepted submission. |
-| `unsupported` | An unrecognized `form-version` (from the prop or the loaded state). Takes priority over every other value — never an interactive or submittable card. |
+| `unsupported` | An unrecognized `form-version` (from the prop or the loaded state), or a Web Host without the `artifactState` export. Takes priority over every other value — never an interactive or submittable card. |
 
 A missing or failed component bundle — the `wippy-form` script never
 registers, or registration times out — never reaches any `card-state`
@@ -385,8 +391,10 @@ not load. Reload to try again." in its place. The real cause goes only to
 the browser console, as one of two load-failure log lines: a script error
 ("script failed to load") or a registration timeout ("failed to load in
 time"), logged once per failed tag rather than once per card that tried to
-mount it. A later retry that successfully registers the tag updates every
-card still waiting on it.
+mount it. The way to recover is to reload the page. The browser keeps a
+failed script load for the life of the page, so the Host cannot fetch the
+same bundle URL again, and a retry in the page does not help. Once the tag is
+defined, every card still waiting on it updates without further action.
 
 A reload is also triggered by the proxy's `@reconnect` event — fired with no
 payload after the Host's WebSocket reconnects following a drop — so a form
