@@ -25,7 +25,6 @@ For a version 1 definition the component renders a question card.
 | `form-version` | `number` | `1` | Definition schema version. A value other than `1`, whether it comes from this prop or from the loaded state's own `form_version`, shows a compatibility notice and no submit control. |
 | `definition` | `object` | `null` | The immutable form definition: `title`, optional `description`, optional `submit_label`, optional `answered_message` (never displayed), and `fields`. |
 | `state` | `string` | `"active"` | Package-tag lifecycle: `"active"` (answerable) or `"idle"` (already answered, read-only). Changing it reloads canonical state from the Host. |
-| `density` | `string` | `"compact"` | `"compact"` or `"comfortable"` sizing. Read purely through a `:host([density="comfortable"])` CSS selector. |
 
 The component owns its own data loading, submission, and offline detection. A
 host only needs to mount the tag with these attributes.
@@ -74,11 +73,18 @@ intercept typing in the surrounding chat composer.
 
 ### Events
 
+The component adds no events of its own. These come from the shared web
+component base, bubble, and cross the shadow boundary.
+
 | Event | Payload | When |
 | --- | --- | --- |
-| `answer-submitted` | `{ requestId, answerMessageId, late }` | After a submission is durably accepted, including an exact replay |
-| `error` | `{ message, error }` | An unrecoverable component-level error |
-| `invalid` | `{ message }` | Invalid props/config |
+| `load` | none | The component finished mounting |
+| `unload` | none | The element was removed from the page |
+| `error` | `{ message, error }` | Mounting failed |
+| `invalid` | `{ message }` | A prop failed validation |
+
+To react to a submission, watch the `card-state` attribute for `answered` (see
+[Diagnostics](#diagnostics)).
 
 ## `<wippy-form-answers>`: the answer carrier
 
@@ -112,7 +118,7 @@ by the Session module at `/wippy-session-forms` (`wippy-form`) and
 `/wippy-session-form-answers` (`wippy-form-answers`). The Web Host auto-loads
 every `auto_register: true` component at boot and allows its tag, plus its
 declared prop attribute names, through the chat message sanitizer. The names
-are `definition`, `form-version`, `state` and `density` for `wippy-form`, and
+are `definition`, `form-version` and `state` for `wippy-form`, and
 `record` for `wippy-form-answers`. `record` is declared as a `wippy.props`
 entry so that the sanitizer's allowed-attribute list includes it. Without that
 declaration the attribute is stripped even when the tag itself is allowed
@@ -305,7 +311,7 @@ deprecated shim.
 ## Styling API
 
 `<wippy-form>` exposes `--wippy-form-*` custom properties, `::part()`
-selectors and the host attributes `density`, `card-state` and `collapsed`. The
+selectors and the host attributes `card-state` and `collapsed`. The
 full token, part, and host-attribute tables, plus a restyle example, are in the
 package's own README (`frontend/wippy-form/README.md` in the `wippy/session`
 source). `<wippy-form-answers>` exposes no styling API because it renders
