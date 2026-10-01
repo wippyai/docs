@@ -1,27 +1,32 @@
 ---
 title: "Session Forms"
-description: "Ask the user structured choice questions from an agent with the ask_user tool, and read the answer back as a self-contained record."
+description: "Ask the user structured questions from an agent with the ask_user tool (choices, text, numbers, email addresses, dates and checkboxes), and read the answer back as a self-contained record."
 ---
 
 # Session Forms
 
-Session forms let an agent ask the user one or more choice questions and get
-a structured answer back, without leaving a tool call waiting on human input.
-The `wippy/session` module owns the feature: a trait that adds the `ask_user`
-and `read_form` tools, an artifact that renders as a question card in the
-chat, and an HTTP endpoint that accepts the answer and delivers it to the
-session as an ordinary user message.
+Session forms let an agent ask the user one or more structured questions and
+get a structured answer back, without leaving a tool call waiting on human
+input. The `wippy/session` module owns the feature: a trait that adds the
+`ask_user` and `read_form` tools, an artifact that renders in the chat as a
+question card or as a form of labelled fields, and an HTTP endpoint that
+accepts the answer and delivers it to the session as an ordinary user
+message.
 
-V1 supports choice questions only: single selection, multiple selection,
-optional required/optional, and an optional free-text "Other" answer. Plain
-text, number, date, and other field types are a later release; a V1 renderer
-detects an unsupported field type and shows a fallback rather than dropping
-the question silently.
+A question is a field of one of seven types. A `choice` field offers options
+for a single or multiple selection, with an optional free-text "Other"
+answer. The standard fields are `text`, `textarea`, `number`, `email`, `date`
+and `checkbox`. A form made only of choice fields is a version 1 form and
+renders as a question card. A form with at least one standard field is a
+version 2 form and renders as one form of labelled controls with a single
+Submit button (see [Form versions](#form-versions)). A renderer that does not
+know a form version or a field type shows a notice and never drops a question
+silently.
 
-This page documents the trait, the tool contracts, and how an answer reaches
-the conversation. For the `wippy-form` / `wippy-form-answers` components and
-the HTTP contract from the browser side, see
-[Session Forms (frontend)](../frontend/micro-frontends/session-forms.md).
+This page documents the trait, the field types, the tool contracts, and how
+an answer reaches the conversation. For the `wippy-form` /
+`wippy-form-answers` components and the HTTP contract from the browser side,
+see [Session Forms (frontend)](../frontend/micro-frontends/session-forms.md).
 
 ## Enabling the trait
 
@@ -70,13 +75,19 @@ case, and the agent can retry in the same turn.
 | `answered_message` | Optional plain text, at most 200 characters. The user's chat message once they answer, written in the user's own voice by the agent that asks (see [What the agent receives](#what-the-agent-receives)). Never shown on the form. A form asked without it falls back to `Answered “<title>”.` |
 | `fields` | 1 to 20 entries |
 | `fields[].id` | Unique key matching `^[a-z][a-z0-9_]{0,39}$` |
-| `fields[].type` | `"choice"` (the only V1 type) |
+| `fields[].type` | `"choice"`, `"text"`, `"textarea"`, `"number"`, `"email"`, `"date"` or `"checkbox"` (see [Field types](#field-types)) |
 | `fields[].label` | The question, 1 to 240 characters |
 | `fields[].description` | Optional help text, at most 1,000 characters |
 | `fields[].required` | Boolean, default `false` |
-| `fields[].options` | 1 to 20 distinct choices. A plain string is both the value and the label; use `{ "value", "label", "description"? }` when the stored value should differ from the shown text |
-| `fields[].multiple` | Boolean, default `false`: allow selecting several options |
-| `fields[].allow_other` | Boolean, default `false`: offer a free-text "Other" answer |
+| `fields[].options` | `choice` only, and required there. 1 to 20 distinct choices. A plain string is both the value and the label; use `{ "value", "label", "description"? }` when the stored value should differ from the shown text |
+| `fields[].multiple` | `choice` only. Boolean, default `false`: allow selecting several options |
+| `fields[].allow_other` | `choice` only. Boolean, default `false`: offer a free-text "Other" answer |
+
+The keys that only some types take (lengths, `pattern`, `min`, `max`, `step`,
+`integer`, `placeholder` and `default`) are listed per type under
+[Field types](#field-types). The tool's input schema is flat, so a model sees
+the keys of every type in one object. The server decides which keys each type
+takes and rejects any other with `unknown_key`.
 
 The normalized definition is bounded to 32 KiB. That size is measured after
 normalization, where a plain string option expands to `{"value": .., "label":
@@ -116,13 +127,267 @@ attempting to update a form artifact through the general artifact-update path
 is rejected (`session_form: Session forms cannot be edited. Ask a new form
 instead.`). To change a question, ask a new form.
 
+## Field types
+
+Every field has an `id`, a `type` and a `label`, and optionally a
+`description` and `required`, as listed in the table above. Each type then
+adds its own keys, which are listed in this section. A key that a type does
+not take is rejected with `unknown_key`, for example `min_length` on a
+`number` or `default` on a `choice`. A form can mix types in any order.
+Lengths count characters (Unicode code points), not bytes.
+
+### `choice`
+
+Takes `options`, `multiple` and `allow_other` as described in the table
+above, and no other keys. A choice has no `default`.
+
+### `text`
+
+One line of text.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `min_length` | `0` | Whole number from 0 to 2,000, not above `max_length` |
+| `max_length` | `500` | Whole number from 1 to 2,000 |
+| `pattern` | none | A regular expression that the whole answer must match, at most 200 characters (see [Patterns](#patterns)) |
+| `placeholder` | none | Plain text of at most 200 characters with no control character or line break, shown in the empty box and never submitted |
+| `default` | none | A string that is a valid answer for the field (see [Defaults](#defaults)) |
+
+### `textarea`
+
+Several lines of text. A textarea takes the same keys as `text`, except
+`pattern`, with larger limits.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `min_length` | `0` | Whole number from 0 to 8,000, not above `max_length` |
+| `max_length` | `8000` | Whole number from 1 to 8,000 |
+| `placeholder` | none | Plain text of at most 200 characters with no control character or line break |
+| `default` | none | A string that is a valid answer for the field |
+
+### `number`
+
+A finite number. The server checks `step` with exact decimal arithmetic and
+never with floating point arithmetic.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `min` | none | The smallest allowed value, from -1,000,000,000,000 to 1,000,000,000,000 with at most 6 decimals |
+| `max` | none | The largest allowed value, with the same limits as `min` and not below it |
+| `step` | none | A number above 0 and at most 1,000,000,000,000, with at most 6 decimals. The allowed values are `min` (or 0 when there is no `min`) plus whole multiples of `step` |
+| `integer` | `false` | Boolean. When `true` only whole numbers are accepted, `step` must be a whole number, and so must `min` when there is a `step`. At least one whole number must lie between `min` and `max` |
+| `default` | none | A number that is a valid answer for the field |
+
+### `email`
+
+An email address. An email takes no keys besides `default`. Its limits are
+fixed at 254 characters in all and 64 before the `@`.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `default` | none | A valid address, stored without surrounding whitespace |
+
+### `date`
+
+A calendar date written `YYYY-MM-DD`, with no time and no time zone. The bounds
+are fixed dates, and values such as `today` are not supported.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `min` | none | The earliest allowed date, inclusive. A real calendar day from `0001-01-01` to `9999-12-31` |
+| `max` | none | The latest allowed date, inclusive, with the same limits and not before `min` |
+| `default` | none | A date that is a valid answer for the field |
+
+### `checkbox`
+
+A box the user ticks. Use `required: true` for consent, which makes the user
+tick the box before the form can be submitted.
+
+| Key | Default | Rule |
+| --- | --- | --- |
+| `default` | none | Only `false` |
+
+### Defaults
+
+A `default` is the value a control starts with. The server validates it when
+the form is created, as an answer to the same field with `required` ignored,
+so a default that breaks `min_length`, `pattern`, `min`, `max`, `step` or any
+other rule of the field is rejected with `invalid_default`. The message
+names the rule that failed and never repeats the value. A blank default is
+rejected as well, because it would not be an answer. The definition stores
+the default in normalized form, so an `email` default is trimmed and a whole
+`number` default becomes an integer.
+
+A default only prefills the control. The server never submits it for the
+user, so an answer exists only when the user submits the form, and a
+question whose prefilled value the user clears is unanswered. Because a default
+must never agree to something on the user's behalf, a `checkbox` can only have
+the default `false`. A default of `true` is rejected with
+`default_not_allowed`, and a `choice` field with a `default` is rejected with
+`unknown_key`.
+
+### Patterns
+
+A `pattern` on a `text` field is a regular expression that the whole answer
+must match. The server compiles it as `^(?:pattern)$`, so an alternation such
+as `a|b` applies to the whole answer and the pattern needs no anchors, although
+`^` and `$` are accepted. For example, `[A-Z]{2}\d{6}` accepts `AB123456`.
+The server checks the pattern when the form is created and checks every
+answer against it when the form is submitted. The browser never evaluates
+it, so a mismatch is reported on the field after the user submits.
+
+The server runs patterns with RE2, which takes time proportional to the length
+of the answer. The accepted syntax is the part of RE2 that also means the same
+thing in JavaScript.
+
+- Literal characters, `.`, `^` and `$`.
+- Classes `[abc]`, `[^abc]` and ranges such as `[a-z]`. Put `-` first or last
+  in a class, or write `\-`. Write a `[` inside a class as `\[`. POSIX classes
+  such as `[[:alpha:]]` are not accepted.
+- The escapes `\d` (ASCII digits) and `\w` (ASCII letters, digits and
+  underscore), which cannot start or end a range, and a backslash before one
+  of `^ $ \ . * + ? ( ) [ ] { } | /`.
+- Groups `( )` and `(?: )`, and alternation with `|`. Groups nest at most 3
+  deep.
+- The repeats `*`, `+`, `?`, `{n}`, `{n,}` and `{n,m}`, each with an optional
+  lazy `?`. A repeat count is at most 100, and a group that repeats without end
+  (`*`, `+` or `{n,}`) cannot hold a repeat without end, as in `(a+)+`.
+
+Anything else is rejected when the form is created, including lookahead and
+lookbehind, backreferences, named groups, flags such as `(?i)`, and the
+escapes `\s`, `\S`, `\D`, `\W`, `\b`, `\B`, `\p`, `\x`, `\A`, `\z` and every
+other letter escape. A pattern is at most 200 characters. A malformed pattern
+(empty, an unclosed group, class or repeat, a repeat with nothing to repeat,
+a range out of order, or a control character) is rejected with
+`invalid_pattern`. A well-formed pattern outside the accepted syntax or bounds
+is rejected with `unsupported_pattern`. The message says what to change.
+
+### Text budget
+
+The `text`, `textarea` and `email` fields of one form can hold at most 16,000
+characters together. Each field counts at the most it allows, so a field
+without `max_length` counts its default (500 for `text`, 8,000 for
+`textarea`), and an `email` counts 254. A definition over the budget is
+rejected with `text_budget_exceeded` at the path `fields`, and the message
+gives the total. The budget keeps every valid submission inside the 64 KiB
+request body limit. For example, two textareas that keep their default use the
+whole budget, so a third text field cannot be added without lowering their
+`max_length`.
+
+## Answer values
+
+A client sends one JSON value for each answered question, keyed by field id,
+and the server normalizes it before storing it. A question that the user
+leaves unanswered is left out, and a value of `null` counts as not sent.
+
+| Type | Sent as | Stored and recorded as |
+| --- | --- | --- |
+| `choice` | An option value, `{ "value", "note" }`, `{ "other" }`, or a list of those for `multiple` | Unchanged from version 1 (see [Record shape](#record-shape)) |
+| `text`, `textarea` | A string | The string exactly as sent |
+| `email` | A string | The string without surrounding whitespace, in the case it was typed |
+| `number` | A JSON number | An integer when the value is whole (`3.0` becomes `3`), otherwise the shortest decimal that reads back as the same number, written without an exponent (`0.0000001`) |
+| `date` | A string `YYYY-MM-DD` | The same string |
+| `checkbox` | `true` or `false` | The same boolean |
+
+### Rules by type
+
+An answer that breaks a rule is refused with the code in the right column, and
+the whole submission is then rejected with a 422 response and nothing is
+stored. The rules of a type run in the order of its rows, and the first
+failure is the one reported for the question.
+
+| Type | Rule | Code |
+| --- | --- | --- |
+| `text`, `textarea` | The value is a string | `invalid_type` |
+| `text`, `textarea` | The value is valid UTF-8 and has no control character. A `text` answer allows no tab or line break. A `textarea` answer allows tabs and line feeds (`\n`) and refuses carriage returns | `invalid_text` |
+| `text`, `textarea` | At most `max_length` characters, counted as sent | `too_long` |
+| `text`, `textarea` | At least `min_length` characters, checked only when the question is answered | `too_short` |
+| `text` | The whole value matches `pattern` | `pattern_mismatch` |
+| `email` | The value is a string | `invalid_type` |
+| `email` | The value is a valid address (see below), at most 254 characters in all and 64 before the `@` | `invalid_email` |
+| `number` | The value is a JSON number. A numeric string such as `"3"` is refused | `invalid_type` |
+| `number` | The value is between -1,000,000,000,000 and 1,000,000,000,000 | `invalid_number` |
+| `number` | The value is whole when `integer` is `true` | `not_integer` |
+| `number` | The value is not below `min` | `below_min` |
+| `number` | The value is not above `max` | `above_max` |
+| `number` | The value is on the `step` grid | `not_on_step` |
+| `date` | The value is a string | `invalid_type` |
+| `date` | The value is a real date written exactly `YYYY-MM-DD` in ASCII digits, from year 0001 to 9999. A space, a one digit month or a time is refused | `invalid_date` |
+| `date` | The value is not before `min` | `below_min` |
+| `date` | The value is not after `max` | `above_max` |
+| `checkbox` | The value is `true` or `false`. The text `"true"`, `1` and `"on"` are refused | `invalid_type` |
+| `checkbox` | The value is `true` when the field is `required` | `required` |
+
+Text is never trimmed, so an answer keeps its leading and trailing spaces, and
+in a `textarea` its blank lines. A control character is an ASCII control
+character or DEL, a C1 control (U+0080 to U+009F), a bidirectional override or
+isolate (U+202A to U+202E and U+2066 to U+2069), or the line and paragraph
+separators U+2028 and U+2029.
+
+An `email` answer is trimmed first. A valid address is ASCII only, and the part
+before the `@` is made of letters, digits and ``! # $ % & ' * + / = ? ^ _ ` { | } ~ -``
+in groups separated by single dots, with no leading, trailing or doubled dot.
+The domain has at least two labels separated by dots, and each label is
+letters, digits and hyphens, does not start or end with a hyphen, and has at
+most 63 characters. Quoted local parts, comments, address literals, display
+names, several addresses and non-ASCII characters are refused, and so is a
+control character or line break anywhere. The check says nothing about whether
+the mailbox exists.
+
+The `step` check works on the decimal digits of the numbers, with no floating
+point arithmetic and no tolerance. With a `step` of 0.1 the value 0.3 is
+accepted and 0.25 is refused, and with `min` 0.5 and `step` 0.25 the value
+0.75 is accepted. A value cannot have more decimals than its `step` and `min`
+allow.
+
+### Unanswered and required questions
+
+An optional `text`, `textarea`, `email` or `date` question is unanswered when
+its value is missing, `null`, empty or only whitespace. Whitespace here is
+what JavaScript's `String.prototype.trim` removes, which includes the
+no-break space and the ideographic space but not the zero width space, so a
+value made only of zero width spaces is content. An optional `number` or
+`checkbox` is unanswered when its value is missing or `null`. A `false`
+checkbox is an answer, and so is the number 0.
+
+A required question that is unanswered fails with `required`. A required
+`checkbox` that is `false` fails with `required` as well, because consent
+means the box is ticked. A control character in a `text` value is reported
+before the value is judged blank, so a value that is only a line break is
+`invalid_text` and not `required`.
+
+## Form versions
+
+A form's version follows its definition. A form whose fields are all `choice`
+is version 1, and a form with any other field is version 2, whether or not it
+also holds choices. The version is stored with the form, returned as
+`form_version` by the state API, and written into the answer record. A
+version 1 form is stored, answered and recorded exactly as it was before the
+standard fields existed, so existing forms are unchanged.
+
+A submission names the version of the form it answers. Sending
+`form_version: 1` for a version 2 form, or `form_version: 2` for a version 1
+form, is rejected with 400 `invalid_request` before any answer is validated.
+
+| Reader | Version 1 form | Version 2 form |
+| --- | --- | --- |
+| Current Session and current `wippy-form` | Question card | Form of fields |
+| `wippy-form` from a release before version 2 | Question card | The notice "This form needs a newer version of the app." No fields and no Submit button |
+| `wippy/session` release before version 2 | Works as before | `GET` and `POST` of the state API answer 400 `not_a_form` ("Unsupported form version"), and `read_form` returns the tool error "Not a form: Unsupported form version" |
+
+A version 2 form needs no Web Host release beyond the one that version 1
+needs, because the controls ship inside the `wippy-form` bundle. The bundle is
+part of the `wippy/session` module, so rolling the module back to a release
+from before version 2 brings back an older component and an older state API
+together (see [Disabling and rolling back](#disabling-and-rolling-back)).
+
 ## What the agent receives
 
-The user answers on a question card (see the frontend page for the UI). The
-accepted answer becomes one ordinary user message, built entirely on the
-server — the browser never supplies its text. The message has exactly one
-visible line, followed by an invisible carrier element that holds the full
-answer as JSON:
+The user answers on a question card or a form of fields (see the frontend page
+for the UI). The accepted answer becomes one ordinary user message, built
+entirely on the server — the browser never supplies its text. The message has
+exactly one visible line, followed by an invisible carrier element that holds
+the full answer as JSON:
 
 ```text
 Answered questions about the delivery of your order.
@@ -152,14 +417,41 @@ question id, `answers[id]` has a `question` (the field's label) and an
 | `{"value": "courier", "label": "Courier", "note": "…"}` | A chosen option with the user's own note |
 | `{"other": "…"}` | The user's own free-text answer |
 | `[ ...one of the above... ]` | A multiple-selection question, in definition order, with an "Other" entry (if any) last |
+| `"Ann Lee"` | A `text`, `textarea`, `email` or `date` answer, as the stored string. Line breaks in a textarea are the JSON escape `\n` |
+| `3`, `0.5` | A `number` answer, as the stored number. An integer when the value is whole, and never written with an exponent |
+| `true`, `false` | A `checkbox` answer. An unchecked optional box that the form sent as `false` is `false`, not `null` |
 | `null` | The question was left unanswered (only possible when not required) |
 
-The record also carries `form_id`, `form_version`, and `title`. A late
+The record also carries `form_id`, `form_version` (1 for a form of choices
+only and 2 for a form with a standard field), and `title`. A late
 answer (see below) additionally carries `"late": true` and a `late_notice`.
 The stored submission keeps only the normalized answer values; the record
 itself is derived from those values plus the immutable definition on every
 read, so the record in the answer message and the one `read_form` returns
 for the same form always agree.
+
+The following record is for a version 2 form that asked a text, an email, a
+number, a date and a checkbox question, where the user left the date
+unanswered:
+
+```json
+{
+  "form_id": "<artifact-id>",
+  "form_version": 2,
+  "title": "Delivery details",
+  "late": false,
+  "answers": {
+    "name": { "question": "Your name", "answer": "Ann Lee" },
+    "email": { "question": "Email", "answer": "ann@example.org" },
+    "parcels": { "question": "Parcels", "answer": 3 },
+    "ready": { "question": "Ready on", "answer": null },
+    "terms": { "question": "I agree", "answer": true }
+  }
+}
+```
+
+In the message the record is written on one line inside the `record`
+attribute, as shown above.
 
 ## Late answers and the fresh-confirmation rule
 
@@ -195,9 +487,30 @@ another session is not visible. Its result depends on the form's state:
 
 | `status` | Meaning |
 | --- | --- |
-| `unanswered` | Returns the form's `title` and `questions` (each with its options), so an agent that lost the original `ask_user` result can restate them |
+| `unanswered` | Returns the form's `title` and `questions` (each with its options, and in a version 2 form also its `type`, limits and default), so an agent that lost the original `ask_user` result can restate them |
 | `answer_pending` | The user answered, but the answer has not been admitted into this session's history yet (see below). No answer values are returned — the agent must wait for the answer to arrive as a user message |
 | `answered` | Returns the same self-contained record described above, plus `answered_at` |
+
+The questions of an unanswered version 2 form name each question's type and
+the limits an answer must meet. A choice-only form keeps its version 1
+description, without `type`. Each question lists `required`, then the limits of
+its type. A `text` or `textarea` always lists `min_length` and `max_length`, a
+`number` always lists `integer`, and every other key appears only when the
+definition sets it:
+
+```json
+{
+  "status": "unanswered",
+  "form_id": "<artifact-id>",
+  "title": "Delivery details",
+  "questions": {
+    "name": { "question": "Your name", "type": "text", "required": true, "min_length": 0, "max_length": 40, "pattern": "[A-Za-z ]+", "default": "Ann" },
+    "parcels": { "question": "Parcels", "type": "number", "required": false, "integer": true, "min": 1, "max": 10, "step": 1, "default": 2 },
+    "ready": { "question": "Ready on", "type": "date", "required": false, "min": "2026-01-01", "max": "2026-12-31" },
+    "terms": { "question": "I agree", "type": "checkbox", "required": true, "default": false }
+  }
+}
+```
 
 Every agent, with or without the trait, also gets a bounded, deterministic
 index of the session's forms injected into its prompt (computed fresh on
@@ -287,8 +600,9 @@ never guess its content before the real answer message arrives.
 The answer message's text — the sentence and the record — is built entirely
 by the server from the immutable definition and the validated, normalized
 answers. The browser sends only structured `answers` keyed by field id; it
-never sends message text. User-supplied text (an "Other" answer or a note)
-is JSON-escaped data inside the record's `answer` object, never raw markup:
+never sends message text. User-supplied text (an "Other" answer, a note, or
+the value of a `text`, `textarea` or `email` field) is JSON-escaped data
+inside the record's `answer` object, never raw markup:
 the server escapes `'`, `<`, `>`, and `&` inside the record so user text
 cannot end the attribute, close the tag, or add markup.
 
@@ -308,7 +622,9 @@ a foreign form exists.
 
 Disabling new form creation is a config-only change: remove
 `wippy.session.forms:ask_user` from an agent's `traits:` list. There is no
-deploy step, no feature flag, and no separate kill switch for V1.
+deploy step, no feature flag, and no separate kill switch. No setting limits
+agents to choice fields either, so an agent with the trait can ask any field
+type.
 
 - **Open (unanswered) forms stay answerable.** The state API's read/write
   checks are session-ownership checks, not trait checks, so a form asked
@@ -331,17 +647,34 @@ deploy step, no feature flag, and no separate kill switch for V1.
   was not tested — treat it as an open risk, not a cleared case. Removing
   the trait is the supported way to stop new forms; downgrading the module
   itself is a separate, riskier action with this failure mode.
+- **Rolling back to a release from before version 2 makes every version 2
+  form unusable.** The earlier release accepts only form version 1, and it
+  compares the stored version exactly. The state API answers 400 `not_a_form`
+  for a version 2 form on `GET` and on `POST`, `read_form` returns an error for
+  it, and the older component shows "This form needs a newer version of the
+  app." in place of the form. An open version 2 form therefore cannot be
+  answered until the module is upgraded again. Version 1 forms keep working.
+  Answers that were already accepted stay in the chat as ordinary messages,
+  and the prompt's form index keeps listing every form by title, because it
+  reads only titles and ids. The rollback does not convert version 2 forms, so
+  before a rollback remove the trait from the agents that ask forms and have
+  users answer the open version 2 forms.
 
 ## Compatibility
 
-- **Web Host.** The question card submits through the `artifactState` client,
-  which only a Web Host release that includes Session Forms provides (see
+- **Web Host.** The question card and the form of fields submit through the
+  `artifactState` client, which only a Web Host release that includes Session
+  Forms provides (see
   [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement)).
-  On an older Host the card shows the questions with disabled options and a
-  notice that the form needs a newer Web Host, and nothing can be submitted.
-  The user's answer message and the agent's reply stay readable in the chat.
-- **Unknown form version.** A form whose `form_version` is not `1` shows a
-  notice and never a submit control.
+  A version 2 form needs no further Web Host change. On an older Host the card
+  shows the questions with disabled controls and a notice that the form needs
+  a newer Web Host, and nothing can be submitted. The user's answer message and
+  the agent's reply stay readable in the chat.
+- **Unknown form version or field type.** A form whose `form_version` is
+  neither `1` nor `2`, or that holds a field of a type the component does not
+  know, shows a notice and never a submit control.
+- **Older readers of a version 2 form.** See [Form versions](#form-versions)
+  for what an older `wippy-form` component and an older Session do with it.
 - **Missing component bundle.** The Host shows its load-failure fallback in
   place of the card. Reloading the page is the way to recover.
 - **Consumer applications on runtime v0.3.43a.** Sign-in needs
@@ -349,6 +682,52 @@ deploy step, no feature flag, and no separate kill switch for V1.
   the sign-in request with a 500 error from `user_groups_repo`, because 0.1.9
   adds the login security policies that 0.1.8 lacks. This was observed with
   a consumer that has no Session Forms and does not depend on this feature.
+
+## Error codes
+
+Every rejection carries a stable `code`, the path of the key or the id of the
+question, and a plain `message`. A message never repeats a value that the
+user or the agent wrote.
+
+### Definition errors
+
+`ask_user` returns the problems of a definition as a tool error with one line
+for each, in the form `path: code: message`. Array positions in a path start
+at 0, and a problem with the whole definition has the path `(definition)`.
+Nothing is stored when any problem is found.
+
+```text
+Invalid form definition:
+fields[1].pattern: unsupported_pattern: Lookaround, named groups and flags are not supported. Only (?: ) groups are.
+fields[2].step: invalid_step: Must be more than zero.
+```
+
+| Code | When |
+| --- | --- |
+| `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label` |
+| `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
+| `unknown_key` | A key the form or the field's type does not take |
+| `unsupported_type` | `type` is not one of the seven names. Names are case sensitive |
+| `invalid_id`, `duplicate_id` | A field id breaks the id rule, or is used twice |
+| `blank` | A required text, `submit_label` or `answered_message` has no visible character |
+| `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
+| `too_long` | Definition text is over its limit |
+| `too_few`, `too_many`, `duplicate_option` | Fields or options are missing, over 20, or repeated |
+| `too_large` | The normalized definition is over 32 KiB |
+| `invalid_range` | A limit is outside its allowed range: a length, a `min_length` above `max_length`, a `min` or `max` over 1,000,000,000,000 or with more than 6 decimals, a `min` above `max`, an `integer` number with no whole number between `min` and `max`, or a date bound that is not a real date |
+| `invalid_step` | A `step` that is not above 0, is over 1,000,000,000,000, has more than 6 decimals, or is not whole on an `integer` number (the same when `min` is not whole) |
+| `invalid_pattern` | A malformed `pattern` |
+| `unsupported_pattern` | A well-formed `pattern` outside the accepted syntax or bounds |
+| `invalid_default` | A `default` that is not a valid answer for its field |
+| `default_not_allowed` | A `checkbox` with the default `true` |
+| `text_budget_exceeded` | The text fields of the form can hold more than 16,000 characters together |
+
+### Answer errors
+
+Answer codes are returned in the 422 response of the state API. The codes and
+the response shape are listed with the
+[artifact-state HTTP API](../frontend/micro-frontends/session-forms.md#validation-errors-422).
+The rules that produce each code are in [Rules by type](#rules-by-type).
 
 ## Limits at a glance
 
@@ -364,12 +743,22 @@ deploy step, no feature flag, and no separate kill switch for V1.
 | Option text | 240 characters |
 | "Other" answer text | 2,000 characters |
 | Note text | 1,000 characters |
+| `text` answer | `max_length`, default 500, at most 2,000 characters |
+| `textarea` answer | `max_length`, default and at most 8,000 characters |
+| `min_length` | 0 up to the field's own maximum |
+| `placeholder` | 200 characters |
+| Text of one form (`text`, `textarea` and `email` fields together) | 16,000 characters, counting each field at the most it allows (an `email` counts 254) |
+| Email address | 254 characters in all, 64 before the `@`, 63 in a domain label |
+| `pattern` | 200 characters, groups nested 3 deep, repeat counts up to 100 |
+| `number` value, `min`, `max` and `step` | Between -1,000,000,000,000 and 1,000,000,000,000 |
+| `min`, `max` and `step` decimals | 6 |
+| `date` value, `min` and `max` | `0001-01-01` to `9999-12-31` |
 | Normalized definition size | 32 KiB |
 | Submission request body | 64 KiB |
 | Unresolved forms per session | 100 |
 | Form index (prompt injection) | 8 unanswered/pending + 4 answered, 8 KiB total |
 
-There is no rate limit on form submission in V1.
+There is no rate limit on form submission.
 
 ## Verifying
 
@@ -382,6 +771,28 @@ To check late-answer handling, send a plain chat message after the form is
 created but before answering it, then answer — the record should carry
 `"late": true` and the agent should ask for confirmation before acting on
 the original request.
+
+To check the standard fields, prompt the agent for a form with a name (`text`
+with a `pattern`), an email address, a whole number with a minimum and a
+maximum, a date with a range, a `textarea`, and a required `checkbox`. Then
+confirm each of the following.
+
+1. The form of fields appears with one control for each question and one
+   Submit button. Submitting it empty names the required questions and focuses
+   the first one.
+2. An invalid email address, a number above the maximum, a date outside the
+   range and an unticked required checkbox each show an error on their own
+   question when the user submits, and nothing is accepted.
+3. A value that does not match the `pattern` shows its error only after the
+   request returns, because the server is the only place that checks patterns.
+4. After a valid submission the form switches to its read-only view, the chat
+   shows one visible sentence, and the agent's next turn uses the answers.
+   When the agent calls `read_form` with the form's id, the result holds
+   `"form_version":2` and the answers as strings, numbers and `true` or
+   `false`, with `null` for a question the user skipped.
+5. After a page reload the read-only view shows the same values: a number as
+   digits, a date as `YYYY-MM-DD`, a checkbox as Yes or No, and "Skipped" for
+   an unanswered question.
 
 ## See Also
 
