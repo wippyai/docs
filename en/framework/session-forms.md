@@ -693,7 +693,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label` |
 | `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
 | `unknown_key` | A key the form or the field's type does not take |
-| `unsupported_type` | `type` is not one of the seven names, or the tool does not take it, because `ask_user` takes only `choice`. Names are case sensitive. The message lists the types that the tool takes, such as `Supported types: choice.` for a standard field sent to `ask_user`. A name that is not a type at all gets the list of all seven from either tool. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
+| `unsupported_type` | `type` is not one of the seven names, or the tool does not take it, because `ask_user` takes only `choice`. Names are case sensitive. The message lists the types that the tool takes: `Supported types: choice.` from `ask_user`, for a standard field or a name that is not a type at all, and all seven names from `ask_user_fields`. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
 | `invalid_id`, `duplicate_id` | A field id breaks the id rule, or is used twice |
 | `blank` | A required text, `submit_label` or `answered_message` has no visible character |
 | `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
