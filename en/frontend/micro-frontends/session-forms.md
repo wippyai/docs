@@ -87,17 +87,39 @@ then one Submit button whose text is the definition's `submit_label` (default
 | Type | Control | What the user does | What is sent |
 | --- | --- | --- | --- |
 | `text` | A one line text box | Types the answer. A `placeholder` shows in the empty box | The text exactly as typed, with no trimming |
-| `email` | A text box with an email keyboard hint and email autofill | Types an address | The address without surrounding whitespace |
-| `textarea` | A text area that grows with its content and starts three rows high | Types the answer. Enter adds a line and never submits | The text exactly as typed, with line breaks as `\n` |
-| `number` | A text box with a decimal keyboard hint, not a spinner | Types digits with an optional minus sign and a dot for decimals. A comma, a thousands separator, a plus sign and an exponent are errors and are never guessed | A JSON number. A whole value is sent as an integer |
-| `date` | A date picker | Types `YYYY-MM-DD`, or opens the calendar and picks a day. The calendar greys out days outside `min` and `max` | A string `YYYY-MM-DD`, with no time zone |
+| `email` | A text box with an email keyboard hint and the browser's autofill turned off, because an agent can ask for someone else's address and the browser must not offer the user's own | Types an address | The address without surrounding whitespace |
+| `textarea` | A text area that grows with its content and starts three rows high | Types the answer. A `placeholder` shows in the empty box. Enter adds a line and never submits | The text exactly as typed, with line breaks as `\n` |
+| `number` | A text box, not a spinner, whose on-screen keyboard depends on the field (see [Number keyboard](#number-keyboard)) | Types digits with an optional minus sign and a dot for decimals. A comma, a thousands separator, a plus sign and an exponent are errors and are never guessed | A JSON number. A whole value is sent as an integer |
+| `date` | A date picker | Types `YYYY-MM-DD`, or opens the calendar and picks a day. The calendar greys out days outside `min` and `max`. On a touch screen a tap on the box opens the calendar | A string `YYYY-MM-DD`, with no time zone |
 | `checkbox` | A checkbox with a clickable label | Ticks or unticks the box | `true` or `false`. An optional box left unticked sends `false` |
 | `choice` | A radio group for one answer, or a checkbox group for several | Picks options, with an Other row and its own text box when `allow_other` is set | The option values, as in the question card but without per-option notes |
+
+A `placeholder` belongs to `text` and `textarea` only. The server rejects it on
+every other type, and the other controls show none.
 
 A definition `default` prefills the control. When the user clears an optional
 prefilled value, nothing is sent for that field, and a checkbox always starts
 unticked. The controls are the theme's own PrimeVue controls, so their surface,
 border and focus styling comes from the theme.
+
+#### Number keyboard
+
+A phone shows the on-screen keyboard that the box asks for, and the digit
+keypads cannot type everything that the number parser accepts. The `numeric`
+keypad has no minus key and no separator. The `decimal` keypad has no minus key
+on iOS and shows the locale's own separator, which is a comma in many locales
+and which the parser rejects because it accepts a dot only. So the number field
+asks for a digit keypad only where the user cannot be locked out.
+
+| Field | On-screen keyboard |
+| --- | --- |
+| `integer: true` with a `min` of 0 or more | `numeric` |
+| Not `integer`, a `min` of 0 or more, and a browser locale that writes decimals with a dot | `decimal` |
+| Anything else (no `min`, a negative `min`, or a fraction in a comma-decimal locale) | The full keyboard |
+
+The parser itself does not change: a dot for decimals, an optional minus sign,
+no separators and no exponent. The message for anything else is "Enter a
+number, using a dot for decimals (for example 12 or -3.5)."
 
 #### Checks before sending
 
@@ -115,7 +137,9 @@ pattern, and a browser's regular expression engine can take a very long time
 on some patterns that the accepted syntax allows, which would freeze the tab.
 The server checks it with a linear time engine when the form is submitted, and
 a mismatch comes back as a 422 with `pattern_mismatch`. The form then shows
-the error on that field like any other.
+the error on that field like any other: the message is under the field and is
+linked to the box by `aria-describedby`, the box is marked `aria-invalid`, the
+first invalid control gets focus, and the text the user typed stays in the box.
 
 #### Read-only view
 
@@ -517,12 +541,13 @@ The fields form follows the same conventions. All the shared tokens of the
 question card apply to its root (`--wippy-form-font`, `-font-size`,
 `-small-size`, `-question-size`, `-question-weight` for the title, `-surface`,
 `-border`, `-radius`, `-padding`, `-text`, `-text-muted` and `-focus`), and it
-adds two tokens. Set them on `wippy-form` or on any ancestor.
+adds three tokens. Set them on `wippy-form` or on any ancestor.
 
 | Token | Default | Used for |
 | --- | --- | --- |
 | `--wippy-form-field-gap` | 16px compact, 20px comfortable | Space between the fields, and between the header, the fields, the errors and the button |
 | `--wippy-form-label-weight` | `500` | The weight of a field label |
+| `--wippy-form-date-width` | `20rem` | The width of the date control, which is full width only where the form is narrower than that. The calendar opens at least as wide as the control, so it follows this width. Set a larger value for a wider box and calendar |
 
 The controls are the theme's PrimeVue controls, so their surface, border and
 focus styling comes from the theme. There are no input tokens, and the
@@ -542,7 +567,8 @@ a class `w-form__<part>--<state>`, for example `field-invalid` and
 | `field-marker` | | The "(required)" text on an editable required field |
 | `field-description` | | The field's own description |
 | `field-control` | | The wrapper around the control |
-| `field-input` | | The control: the text box, the text area, the checkbox or the date picker |
+| `field-input` | `date` (on the date picker) | The control: the text box, the text area, the checkbox or the date picker. The `date` state is what `--wippy-form-date-width` bounds |
+| `field-calendar` | | The calendar panel of the date picker (class `w-form__field-calendar`). It opens in the theme plugin's overlay layer and not inside the form, so the message around a short form never clips it, and it carries the form's `w-theme-dark` or `w-theme-light` class, so it follows a forced theme. Its width follows the date control, and no rule of the component overrides it |
 | `field-error` | | The error list, linked to the control by `aria-describedby` |
 | `field-value` | `empty` | The stored answer in the read-only view ("Skipped" when empty) |
 | `field-note` | | The note on a chosen option in the read-only view |
@@ -597,34 +623,69 @@ it is not lost when the card swaps from the active view to the answered one.
 Every control has a label whose `for` points at the real input. The
 description and the error list are linked to that input by `aria-describedby`.
 For a checkbox and a date picker, whose wrapper element would otherwise take
-the attribute, the component passes it through to the real control. A choice
-is a `fieldset` with a `legend` that is described as a whole. `aria-invalid`
-and `aria-required` follow the state of the field, and a required field is
-marked with the text "(required)", never with colour alone.
+the attribute, the component passes it through to the real control. A required
+field is marked with the text "(required)", never with colour alone, and
+`aria-invalid` and `aria-required` follow the state of the field.
+
+A choice is a `fieldset` with a `legend` that is described as a whole. Every
+radio or checkbox in it, and the Other text box, carries the same
+`aria-describedby` (the field description and the error list), so a screen
+reader that lands on one input reads the error, and each carries `aria-invalid`
+while the group is in error. A single choice adds a `radiogroup` role with
+`aria-required` around its radios. A multiple choice adds no role and no
+`aria-required`, because its fieldset is already the group, and the
+"(required)" text in the legend says that it is required.
 
 The form is `novalidate`, so the browser's own validation bubble never replaces
-the form's error flow. A failed submit names every invalid field, focuses the
-first invalid control, and announces "N questions need attention." in one
-polite status region. Errors in the fields form carry no `role="alert"` of
-their own, so nothing is announced twice. After an accepted submission, focus
-moves to the status text of the read-only view. A read-only answer is plain
-text that the user can select.
+the form's error flow. A failed submit focuses the first invalid control and
+announces "N questions need attention." in one polite status region. Only
+fields in error count as questions. A form level error from a 422 is spoken as
+its own text after the count, or alone when no field is in error. As the user
+fixes questions the text is updated once for each fixed question and not once
+for each key, and it is emptied when nothing is left.
+
+Errors in the fields form carry no `role="alert"` of their own. A submit
+failure that is not a field error, such as a network error or a server error,
+is shown as a message with a Retry button. The message is a plain element and
+not a live region, so the status region announces its text once. After an
+accepted submission, focus moves to the status text of the read-only view. A
+read-only answer is plain text that the user can select.
 
 | Key | Where | Effect |
 | --- | --- | --- |
 | Enter | A one line field | Submits the form |
 | Enter | A textarea | Adds a line and does not submit |
 | Space | A checkbox | Ticks or unticks the box |
-| ArrowDown, or the calendar button | A date picker | Opens the calendar |
-| Escape | An open calendar | Closes the calendar |
+| ArrowDown, or the calendar button | The date box | Opens the calendar |
+| ArrowDown a second time | The date box with the calendar open | Moves focus into the days |
+| ArrowLeft and ArrowRight, ArrowUp and ArrowDown | A day of the calendar | Move by one day, or by one week |
+| Enter | A day of the calendar | Picks the day, closes the calendar and returns focus to the box |
+| Escape | An open calendar | Closes the calendar and keeps what the box holds |
+| A tap | The date box on a touch screen | Opens the calendar |
 
-A date picker also takes typed text in the form `YYYY-MM-DD`. The calendar
-opens inside the component's own shadow root, because the theme's PrimeVue
-plugin keeps overlays there. Text that the picker cannot parse is never
-dropped or cleared. It stays in the box, and the submit names it with
-`invalid_date`, or with `below_min` or `above_max` when it is a well-formed date
-outside the range. On a touch screen the on-screen keyboard does not open for the
-date box, so the date is chosen from the calendar.
+The date box takes typed text in the form `YYYY-MM-DD` one key at a time, and
+it always shows what the user typed, including after an error appears and
+after the box is left. A loose date that the picker understands, such as
+`2026-6-5`, is held as the full date `2026-06-05`, which is what will be saved,
+and the box shows that text once it is left. A year below 1000 keeps four
+digits (`0999-05-15`), and a typed year below 100 is reported as typed
+(`0050-03-04`), where PrimeVue alone would read it as 1950. Text that the
+picker cannot parse is never dropped or replaced by the last good date. It
+stays in the box, and the submit names it with `invalid_date`, or with
+`below_min` or `above_max` when it is a well-formed date outside the range.
+
+The calendar opens in the theme plugin's overlay layer. The layer is inside the
+component's shadow root but next to the themed container and not inside it, so
+the message around a short form never clips the calendar. Because the layer is
+outside the themed container, the calendar carries the container's
+`w-theme-dark` or `w-theme-light` class itself and follows a forced theme (see
+the `field-calendar` part). A state reload leaves an open calendar on the month
+the user navigated to.
+
+On a touch screen, which means that the primary pointer is coarse, PrimeVue
+gives the box no on-screen keyboard and the field does not open the calendar
+on focus. A tap on the box therefore opens the calendar, as the calendar button
+does. A click with a mouse and focus from a keyboard do not open it.
 
 ## Known gaps
 
@@ -656,6 +717,12 @@ date box, so the date is chosen from the calendar.
     `artifactState` client sends and returns version 2 JSON unchanged, so a
     TypeScript caller needs a type assertion for a version 2 form until the
     types are widened.
+- The calendar has two limits that come from PrimeVue.
+  - The day cells have no accessible name beyond the day number. The panel
+    itself is a dialog labelled "Choose Date".
+  - The calendar cannot show a year below 100, because PrimeVue reads one as a
+    two-digit year, so it opens on 19xx or 20xx for such a date. The box and the
+    saved answer keep the year as typed.
 - The following defaults may change in a later release:
   - The answer shape of a note (`{value, note}` or a separate field).
   - A newly opened card does not take keyboard focus on its own.
@@ -679,6 +746,12 @@ component is doing from the DOM or an end-to-end test:
 | `unsupported` | An unrecognized `form-version` (neither `1` nor `2`, from the prop or the loaded state), a field type the component does not know, or a Web Host without the `artifactState` export. It takes priority over every other value, so the card is never interactive or submittable. |
 
 A fields form reports only `loading`, `active`, `answered` and `unsupported`.
+
+The component and the Session ship together in the `wippy/session` module, so a
+current Session serves a current `wippy-form` bundle. An older component can
+meet a current Session only through a stale cached bundle, and it then reports
+`unsupported` with "This form needs a newer version of the app." for a version 2
+form until the bundle is fetched again.
 
 A missing or failed component bundle never reaches any `card-state` above. The
 `wippy-form` script never registers, or registration times out, and the Host's

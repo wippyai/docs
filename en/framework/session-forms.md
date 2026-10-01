@@ -54,14 +54,22 @@ at lint time rather than silently doing nothing.
 The trait contributes two tools and a block of prompt text. The prompt tells
 the model the following.
 
-- Use `ask_user` only when it needs a decision between concrete options, and
-  ask at most one form per turn.
-- Set `answered_message` to a short sentence in the user's voice. It becomes
-  the user's chat message when they answer.
-- Treat an answer with `"late": true` as context only, and confirm with the
-  user before acting on the earlier request.
-- Call `read_form` with a `form_id` to see an earlier form, and never write a
-  `<wippy-form-answers>` element by hand.
+- How to ask:
+  - Use `ask_user` when it needs a decision or specific details from the user
+    before it can continue, and ask at most one form per turn with all the
+    questions it needs in it.
+  - Set `answered_message` to a short sentence in the user's voice. It becomes
+    the user's chat message when they answer.
+- How to define fields:
+  - A default only prefills a field and is not the user's answer. A checkbox
+    never starts checked, so a required checkbox is the way to ask for consent.
+  - Keep the form to the questions it needs, because the text fields of one
+    form hold at most 16,000 characters together.
+- How to read answers:
+  - Treat an answer with `"late": true` as context only, and confirm with the
+    user before acting on the earlier request.
+  - Call `read_form` with a `form_id` to see an earlier form, and never write a
+    `<wippy-form-answers>` element by hand.
 
 An agent without the trait cannot call `ask_user`, but its prompt still
 includes the deterministic form index described below, and it can read a
@@ -94,7 +102,9 @@ The keys that only some types take (lengths, `pattern`, `min`, `max`, `step`,
 `integer`, `placeholder` and `default`) are listed per type under
 [Field types](#field-types). The tool's input schema is flat, so a model sees
 the keys of every type in one object. The server decides which keys each type
-takes and rejects any other with `unknown_key`.
+takes and rejects any other with `unknown_key`. For example, `placeholder`
+belongs to `text` and `textarea` only, and the server rejects it on `number`,
+`email` and every other type.
 
 The normalized definition is bounded to 32 KiB. The size is measured after
 normalization, where a plain string option expands to `{"value": .., "label":
@@ -244,30 +254,39 @@ answer against it when the form is submitted. The browser never evaluates
 it, so a mismatch is reported on the field after the user submits.
 
 The server runs patterns with RE2, which takes time proportional to the length
-of the answer. The accepted syntax is the part of RE2 that also means the same
-thing in JavaScript.
+of the answer. The accepted syntax is a small part of the RE2 syntax, small
+enough that the `ask_user` tool description lists it in full.
 
-- Literal characters, `.`, `^` and `$`.
-- Classes `[abc]`, `[^abc]` and ranges such as `[a-z]`. Put `-` first or last
-  in a class, or write `\-`. Write a `[` inside a class as `\[`. POSIX classes
-  such as `[[:alpha:]]` are not accepted.
+- Literal characters, `.`, `^` and `$`. Outside a class, a literal `{`, `}` or
+  `]` needs a backslash (`\{`, `\}` or `\]`), and the server rejects an
+  unescaped one.
+- Classes `[abc]`, `[^abc]` and ranges such as `[a-z]`. Inside a class, put `-`
+  first or last or write `\-`, and write `[` as `\[`. POSIX classes such as
+  `[[:alpha:]]` are not accepted.
 - The escapes `\d` (ASCII digits) and `\w` (ASCII letters, digits and
   underscore), which cannot start or end a range, and a backslash before one
-  of `^ $ \ . * + ? ( ) [ ] { } | /`.
+  of `^ $ \ . * + ? ( ) [ ] { } | /`, and also before `-` inside a class. A
+  backslash before any other character is rejected.
 - Groups `( )` and `(?: )`, and alternation with `|`. Groups nest at most 3
   deep.
 - The repeats `*`, `+`, `?`, `{n}`, `{n,}` and `{n,m}`, each with an optional
-  lazy `?`. A repeat count is at most 100, and a group that repeats without end
-  (`*`, `+` or `{n,}`) cannot hold a repeat without end, as in `(a+)+`.
+  lazy `?` after it, as in `a{2,5}?`. A repeat count is at most 100 and is
+  written without a leading zero, so `{1}` is a repeat and `{01}` is rejected,
+  because RE2 reads `{01}` as the text "{01}". A count of zero is `{0}`. A
+  repeat cannot be repeated again, as in `a**`, and a group that repeats
+  without end (`*`, `+` or `{n,}`) cannot hold a repeat without end, as in
+  `(a+)+`.
 
 Anything else is rejected when the form is created, including lookahead and
-lookbehind, backreferences, named groups, flags such as `(?i)`, and the
-escapes `\s`, `\S`, `\D`, `\W`, `\b`, `\B`, `\p`, `\x`, `\A`, `\z` and every
-other letter escape. A pattern is at most 200 characters. A malformed pattern
-(empty, an unclosed group, class or repeat, a repeat with nothing to repeat,
-a range out of order, or a control character) is rejected with
-`invalid_pattern`. A well-formed pattern outside the accepted syntax or bounds
-is rejected with `unsupported_pattern`. The message says what to change.
+lookbehind, backreferences, named groups, flags such as `(?i)`, the escapes
+`\s`, `\S`, `\D`, `\W`, `\b`, `\B`, `\p` and `\x`, and every other backslash
+letter such as `\n` or `\t`. A pattern is at most 200 characters. A malformed
+pattern is rejected with `invalid_pattern`, for example an empty pattern, an
+unclosed group, class or repeat, a repeat with nothing to repeat or a repeat
+that is repeated again, a range out of order, a repeat count with a leading
+zero, a literal `{`, `}` or `]` without a backslash, or a control character. A
+well-formed pattern outside the accepted syntax or bounds is rejected with
+`unsupported_pattern`. The message says what to change.
 
 ### Text budget
 
@@ -276,10 +295,13 @@ characters together. Each field counts at the most it allows, so a field
 without `max_length` counts its default (500 for `text`, 8,000 for
 `textarea`), and an `email` counts 254. A definition over the budget is
 rejected with `text_budget_exceeded` at the path `fields`, and the message
-gives the total. The budget keeps every valid submission inside the 64 KiB
-request body limit. For example, two textareas that keep their default use the
-whole budget, so a third text field cannot be added without lowering their
-`max_length`.
+gives the total. The budget keeps the text, textarea and email answers of one
+form, written as UTF-8 the way a browser writes them, inside the 64 KiB request
+body limit. It does not count the Other text and the notes of choice fields,
+which have their own limits. A client that writes non-ASCII text as JSON escape
+sequences can also use up to 12 bytes for a character and not 4. For example,
+two textareas that keep their default use the whole budget, so a third text
+field cannot be added without lowering their `max_length`.
 
 ## Answer values
 
@@ -387,6 +409,11 @@ needs, because the controls ship inside the `wippy-form` bundle. The bundle is
 part of the `wippy/session` module, so rolling the module back to a release
 from before version 2 brings back an older component and an older state API
 together (see [Disabling and rolling back](#disabling-and-rolling-back)).
+
+A current Session serves a current `wippy-form` bundle, so an older component
+can meet a current Session only through a stale cached bundle, for example in a
+browser or a Host that still holds the earlier file. It then shows the notice
+for a version 2 form until the bundle is fetched again.
 
 ## What the agent receives
 
@@ -685,9 +712,9 @@ type.
 
 Every rejection carries a stable `code`, the path of the key or the id of the
 question, and a plain `message`. A message about an answer never repeats the
-answer. A message about a definition can name the key, the field id or the
-option that is at fault, for example in `duplicate_id`, `duplicate_option`,
-`unknown_key` and `unknown_field`.
+answer, although `unknown_field` names the key that the client sent. A message
+about a definition can name the key, the field id or the option that is at
+fault, as `duplicate_id`, `duplicate_option` and `unknown_key` do.
 
 ### Definition errors
 
@@ -707,7 +734,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label` |
 | `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
 | `unknown_key` | A key the form or the field's type does not take |
-| `unsupported_type` | `type` is not one of the seven names. Names are case sensitive |
+| `unsupported_type` | `type` is not one of the seven names. Names are case sensitive. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
 | `invalid_id`, `duplicate_id` | A field id breaks the id rule, or is used twice |
 | `blank` | A required text, `submit_label` or `answered_message` has no visible character |
 | `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
@@ -716,7 +743,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `too_large` | The normalized definition is over 32 KiB |
 | `invalid_range` | A limit is outside its allowed range: a length, a `min_length` above `max_length`, a `min` or `max` over 1,000,000,000,000 or with more than 6 decimals, a `min` above `max`, an `integer` number with no whole number between `min` and `max`, or a date bound that is not a real date |
 | `invalid_step` | A `step` that is not above 0, is over 1,000,000,000,000, has more than 6 decimals, or is not whole on an `integer` number (the same when `min` is not whole) |
-| `invalid_pattern` | A malformed `pattern` |
+| `invalid_pattern` | A malformed `pattern`, including a literal `{`, `}` or `]` without a backslash and a repeat count with a leading zero |
 | `unsupported_pattern` | A well-formed `pattern` outside the accepted syntax or bounds |
 | `invalid_default` | A `default` that is not a valid answer for its field |
 | `default_not_allowed` | A `checkbox` with the default `true` |
@@ -750,7 +777,8 @@ The rules that produce each code are in [Rules by type](#rules-by-type).
 | Text of one form (`text`, `textarea` and `email` fields together) | 16,000 characters, counting each field at the most it allows (an `email` counts 254) |
 | Email address | 254 characters in all, 64 before the `@`, 63 in a domain label |
 | `pattern` | 200 characters, groups nested 3 deep, repeat counts up to 100 |
-| `number` value, `min`, `max` and `step` | Between -1,000,000,000,000 and 1,000,000,000,000 |
+| `number` value, `min` and `max` | Between -1,000,000,000,000 and 1,000,000,000,000 |
+| `number` `step` | Above 0 and at most 1,000,000,000,000 |
 | `min`, `max` and `step` decimals | 6 |
 | `date` value, `min` and `max` | `0001-01-01` to `9999-12-31` |
 | Normalized definition size | 32 KiB |
