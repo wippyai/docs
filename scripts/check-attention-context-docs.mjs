@@ -17,16 +17,28 @@ const requiredFiles = new Map([
     'fragment runtime',
     '20-pixel radius',
     '5-pixel grid',
-    'phase-gated contract',
-    'never grants consent or preselects Attention',
-    'complete `action_ref` object verbatim as one `target_ref`',
+    'attention_find_semantic',
+    'attention_context.enabled',
+    'wippy.attention.model.v1',
+    '8 KiB',
+    'at most four attempted reads per user turn',
+    "copies the complete `action_ref` object verbatim as one item of the tool's `targets` array",
+    'The older `attention_inspect` tool was removed',
+    'attention_context_set',
+    '`ui_action_capture_visual`',
+    'allow_adjustment',
+    'allow_viewport_choice',
+    '### Terminal statuses',
+    '### Limits by attachment version',
+    '### Session capability descriptor',
+    'wippy.session.capabilities.v1',
+    'The chat composer, its upload list and file previews are excluded from Attention reads and captures',
     'zero-target `select` request is valid only with `capture_region: true`',
     'Session plugin is the sole WebSocket inbox owner',
     '`visual_resolver`',
     '`userspace.contract:content_provider`',
     'time-of-check/time-of-use protections',
     'orphan-cleanup policy',
-    'update translations as the final documentation work item',
     'data-wippy-attention="exclude"',
     'data-wippy-attention="redact"',
   ]],
@@ -35,18 +47,17 @@ const requiredFiles = new Map([
     "attention.supports('message-context')",
     "attention.supports('agent-actions')",
     "attention.supports('visual-capture')",
-    'complete package-facing Attention surface',
     'Host-owned coordinator operations',
-    'phase-gated contract',
+    'fromRoot: true',
     'physical Host tree',
     'fragment runtime',
-    'legacy `defaultInclude` setting never grants per-send consent',
-    'complete candidate `action_ref` object verbatim as one tool `target_ref`',
+    'legacy `defaultInclude` setting does not replace the Session property',
+    'copied verbatim as one item of the `targets` array',
+    'The older `attention_inspect` tool was removed',
     'zero-target `select` request is valid only with `capture_region: true`',
     'registered content-provider contract',
     'SHA-256',
     'orphan cleanup',
-    'Translate accepted canonical English guidance only as the final documentation work item',
   ]],
   ['en/frontend/web-host/render-engines.md', [
     'not** an Attention Context limitation',
@@ -54,21 +65,27 @@ const requiredFiles = new Map([
   ]],
   ['en/frontend/web-host/proxy-isolation.md', [
     'Attention instrumentation across boundaries',
-    'discovery-only',
+    'fromRoot: true',
   ]],
   ['en/frontend/micro-frontends/proxy-api.md', [
     '`attention.enabled` and `attention.supports(capability)`',
-    'There are no public Attention methods',
+    'Public methods include',
   ]],
   ['en/frontend/micro-frontends/debugging.md', [
     'Attention context is missing or wrong',
     'synthetic events are intentionally ignored',
+    'GET /api/v1/sessions/capabilities',
+    'wippy.agent.traits:attention',
   ]],
   ['en/framework/agents.md', [
     'Attention context and UI actions',
     'untrusted_user_observation',
-    'release availability remains phase-gated',
-    'exact object verbatim as one tool `target_ref`',
+    'wippy.agent.traits:attention',
+    'attention_find_css',
+    "copy that exact object verbatim as one item of the tool's `targets` array",
+    'The older `attention_inspect` tool was removed',
+    'attention_context_set',
+    'ui_action_capture_visual',
     'zero-target `select` request is valid only with `capture_region: true`',
     'Session plugin is the sole WebSocket inbox owner',
     '`visual_resolver`',
@@ -76,7 +93,7 @@ const requiredFiles = new Map([
   ['en/framework/relay.md', [
     'Attention UI-action routing',
     'session_ui_action_request',
-    'release availability remains phase-gated',
+    'submitting Host tab',
     'Session plugin is the sole WebSocket inbox owner',
     'private per-call mailbox',
   ]],
@@ -121,20 +138,92 @@ const semanticRequirements = [
   ['focus object distinction', /Current focus is a separate object, not a pointer event/i],
   ['focus fields', /`event_id`, `sequence`, `focused_at`, `realm_time_ms`, an optional `candidate_id`, the complete nested `path`, and a safe accessibility `summary`/i],
   ['focusout lifecycle', /trusted `focusout` clears current focus/i],
+  ['excluded focus transfer', /unless the user moves into excluded conversation controls[\s\S]*?original timestamp[\s\S]*?Send temporarily disables the composer/i],
+  ['physical fragment focus', /Web Fragments use the physical Host observation rather than the hidden realm's native focus state/i],
   ['safe diagnostic grammar', /`transport:<allowlisted-code>:stage:<query-call\|query-await\|project-result>`/i],
   ['safe diagnostic fallback', /unrecognized exception becomes `internal-error`/i],
-  ['KB source hash', /exact validated source SHA-256/i],
-  ['KB document identity', /KB document ID/i],
-  ['KB read-back', /Read every updated document back/i],
-  ['KB retrieval count', /at least 12 concrete questions/i],
-  ['KB retrieval coverage', /setup, nested coordinate resolution, Web Fragments, message attachments, overlay actions, privacy, screenshots, errors, and migration/i],
-  ['translations last', /Translations begin only after English acceptance, KB read-back, and retrieval QA are complete/i],
-  ['publication blocked', /Public documentation publication remains blocked until it is explicitly approved and actually performed/i],
+  ['action tools take a targets array', /All four tools take `targets`, an array whose items are the `action_ref` or `target_ref` objects copied verbatim/i],
+  ['v1 envelope limit', /\| `wippy\.attention` version 1 \| `wippy\.attention\.v1` \| 32 KiB \|/],
+  ['v2 envelope limit', /\| `wippy\.attention` version 2 \| `wippy\.attention\.v2` \| 16 KiB \(16,384 bytes\) \|/],
+  ['v3 envelope limit', /\| `wippy\.attention` version 3 \| `wippy\.attention\.v3` \| 16 KiB \|/],
+  ['v4 envelope limit', /\| `wippy\.attention` version 4 \| `wippy\.attention\.v4` \| 16 KiB \|/],
+  ['visual envelope limit', /\| `wippy\.attention\.visual` version 1 \| `wippy\.attention\.visual\.v1` \| 32 KiB \|/],
+  ['expanded Attention budget', /share a budget of 256 KiB \(262,144 bytes\)/i],
+  ['path dictionary limit', /at most 4,128 shared path dictionary entries/i],
+  ['capture upload type', /upload type that serves this route must allow the `image\/png` MIME type/i],
+  ['capability descriptor route', /`GET \/api\/v1\/sessions\/capabilities`/],
+  ['capability descriptor 404', /answers `404`/],
+  ['plain message delivery', /a message without attachments uses the normal receipt-confirmed delivery/i],
+  ['tab binding', /carries the tab binding, `runtime_context`/i],
+  ['visual image path', /The visual attachment is the only way image content reaches the model/i],
+  ['uploads are listed', /listed to the model by file name, type, size and ID/i],
+  ['read withdrawal', /withdraws an earlier read in the turn only when what it observed has changed/i],
+  ['server receive time', /measured from the time the server received the result, not from browser clocks/i],
+  ['refusal keeps arguments', /A refused call keeps the model's own call ID, tool name and arguments/i],
+  ['agent sets context', /The agent can change it with the `attention_context_set` tool without asking the user/i],
 ]
 
 for (const [name, pattern] of semanticRequirements) {
   if (!pattern.test(hostPage))
     errors.push(`${hostPagePath}: missing semantic requirement: ${name}`)
+}
+
+const agentTools = [
+  'attention_find_semantic',
+  'attention_find_css',
+  'attention_get_node',
+  'attention_get_tree',
+  'attention_get_geometry',
+  'attention_get_cursor',
+  'attention_get_focus',
+  'attention_get_selection',
+  'attention_hit_test',
+  'attention_context_set',
+  'ui_action_highlight',
+  'ui_action_confirm',
+  'ui_action_select',
+  'ui_action_capture_visual',
+]
+for (const file of [hostPagePath, 'en/framework/agents.md']) {
+  const content = contents.get(file) ?? ''
+  for (const tool of agentTools) {
+    if (!content.includes(`\`${tool}\``))
+      errors.push(`${file}: tool list is missing ${tool}`)
+  }
+}
+
+// Mirrors AttentionUiActionStatus in @wippy-fe/shared.
+const terminalStatuses = [
+  'selected',
+  'confirmed',
+  'prepared',
+  'cancelled',
+  'denied',
+  'rejected',
+  'expired',
+  'stale',
+  'disconnected',
+  'permission-denied',
+  'unavailable',
+  'error',
+]
+for (const status of terminalStatuses) {
+  if (!hostPage.includes(`| \`${status}\` |`))
+    errors.push(`${hostPagePath}: terminal status table is missing ${status}`)
+}
+
+for (const field of [
+  'message_receipt',
+  'steering',
+  'attention.context',
+  'attention.browser_operations',
+  'attention.context_attachments.transport',
+  'attention.context_attachments.staging',
+  'attention.context_attachments.max_context_bytes',
+  'attention.context_attachments.handlers',
+]) {
+  if (!hostPage.includes(`| \`${field}\` |`))
+    errors.push(`${hostPagePath}: capability descriptor table is missing ${field}`)
 }
 
 for (const [name, pattern] of [
@@ -242,12 +331,17 @@ try {
     'attention.queryPoints',
     'attention.registerRoot',
     'attention.getRecentEvents',
-    'attention.getFocus',
     'attention.dispose',
   ]) {
     if (publicApi.includes(forbidden))
       throw new Error(`public example exposes private coordinator member ${forbidden}`)
   }
+  for (const method of ['getFocus', 'find', 'getGeometry', 'subscribe']) {
+    if (!publicApi.includes(`attention.${method}(`))
+      throw new Error(`public example is missing supported inspection method ${method}`)
+  }
+  if (!publicApi.includes('subscription.dispose()') || !publicApi.includes('fromRoot: true'))
+    throw new Error('public example must show same-Host scope and subscription disposal')
 }
 catch (error) {
   errors.push(`en/frontend/micro-frontends/attention-context.md: invalid public API example: ${error.message}`)
@@ -286,8 +380,21 @@ catch (error) {
 }
 
 for (const [file, content] of contents) {
+  if (/public[^.\n]*discovery-only/i.test(content))
+    errors.push(`${file}: public Attention API is no longer discovery-only`)
+  if (/disabled means no tracking|no tracking while disabled/i.test(content))
+    errors.push(`${file}: Session attachment control must not disable tracking`)
   if (/\b(?:TODO|TBD)\b/.test(content))
     errors.push(`${file}: unresolved TODO/TBD placeholder`)
+  for (const [name, pattern] of [
+    ['action reference passed as target_ref', /verbatim as one (?:tool )?`target_ref`|as the tool's `target_ref`|`target_ref` entry/i],
+    ['attention_inspect described as still present', /`attention_inspect` (?:entry )?(?:is not advertised|remains available)|compatibility `attention_inspect`/i],
+    ['visual capture described as historical compatibility only', /compatibility handling for historical content|retained for compatible historical content/i],
+    ['internal process text', /local candidate|release candidate|phase-gated|KB read-back|Retrieval QA|KB ingestion|final documentation work item|deferred for this|\bEE2-\d+/i],
+  ]) {
+    if (pattern.test(content))
+      errors.push(`${file}: contains ${name}`)
+  }
 }
 
 if (errors.length) {
