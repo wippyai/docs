@@ -106,8 +106,8 @@ See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custo
 
 ### Attention instrumentation across boundaries
 
-When Attention is enabled, the same injection chain installs Host-owned
-observation and recursive point-query capabilities at each Wippy boundary.
+The same injection chain installs bounded Host-owned observation and recursive
+inspection at each Wippy boundary, independently of Session automatic attachments.
 Parents query children in mount-local CSS-pixel coordinates and compose the
 result back into the visible Host viewport. Capability negotiation binds an
 exact Host instance and parent/child mount generation; an unsupported child is
@@ -116,8 +116,10 @@ an explicit partial boundary rather than a rendering failure.
 Web Fragments use both instrumented sides of the boundary. The reflected
 physical Host shadow tree supplies hit order, clipping, and rectangles, while
 the fragment runtime supplies semantic and package metadata. The package-facing
-`attention` export remains discovery-only; ordinary application code cannot
-register roots, query points, create snapshots, or mint target identities. See
+`attention` export supports canonical observations, tree, search, geometry and
+disposable subscriptions. Queries default to the caller subtree; `fromRoot: true`
+selects only the same application Host. Root ownership, private snapshots and
+minting identities remain internal. See
 [Attention Context](./attention-context.md) and [Attention Context for micro
 frontends](../micro-frontends/attention-context.md).
 

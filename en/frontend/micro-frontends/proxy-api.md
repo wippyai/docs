@@ -773,28 +773,28 @@ Read-only shortcuts for the same values on the snapshot. `engine: 'host'` means 
 
 ### `attention.enabled` and `attention.supports(capability)`
 
-Attention is an opt-in Host capability. The public proxy surface is deliberately
-limited to discovery:
+Attention exposes bounded inspection throughout the mounted Host lifetime.
+Automatic attachments and interactive capabilities have separate controls:
 
 ```typescript
 import { attention } from '@wippy-fe/proxy'
 
 if (attention.enabled && attention.supports('message-context')) {
-  // The Host can offer Attention as a send-time message option.
+  // Automatic attachment still follows attention_context.enabled for the Session.
 }
 ```
 
 `supports()` accepts `message-context`, `agent-actions`, or `visual-capture`.
-Agent actions and visual capture can report false even when configured if their
-runtime providers are unavailable. Both are phase-gated and are not generally
-available until their release-specific integration and E2E gates pass.
+Agent actions and visual capture can report false when their runtime providers
+are unavailable. Discovery never grants agent tools or capture consent.
 
-There are no public Attention methods for observation, root registration,
-point queries, snapshot creation, target resolution, visual capture, or
-disposal. Those operations are owned by the Host coordinator injected into
-iframes and Web Fragment runtimes. Package code cannot attach context to a
-message, open the clarification overlay, or synthesize the private recursive or
-WebSocket protocols.
+Public methods include `getCursor`, `getFocus`, `getSelection`, `atPoint`,
+`getTree`, `find`, `getGeometry`, `subscribe`, `registerSemantic` and
+`registerLayoutProvider`. A child queries its own subtree by default;
+`fromRoot: true` selects the same application tree. CSS requires a canonical
+document or shadow-root scope. Subscriptions and registrations must be disposed
+when the caller unmounts. Root identity, private snapshot creation, capture
+approval and the recursive/WebSocket protocols remain Host-owned.
 
 See [Attention Context for Micro Frontends](./attention-context.md) for semantic
 authoring and privacy annotations, and [Web Host Attention

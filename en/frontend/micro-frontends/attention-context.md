@@ -1,37 +1,84 @@
 ---
 title: "Attention Context for Micro Frontends"
-description: "Make page and web-component interfaces understandable to Wippy Attention without exposing Host-owned observation internals."
+description: "Inspect canonical UI state, register safe semantics and integrate with separate Session and agent controls."
 ---
 
 # Attention Context for Micro Frontends
 
-Wippy Attention uses ordinary accessible markup to describe what the user points at or focuses. Page applications and web components do not collect global pointer history, traverse other packages, mint target identities, or send recursive query messages. Those operations belong to the Web Host and its injected runtime.
+Wippy Attention describes the current interface through one Host-owned tree. Pages and components can query their registered subtree, or request the same application tree with `fromRoot: true`. The injected runtime owns identity, physical ancestry, observation, coordinate conversion and private transport. Packages never mint node identities or send relay messages themselves.
 
-## Discover capability
+## Inspect the current interface
 
-`@wippy-fe/proxy` exposes one read-only discovery object:
+The public API is available through `@wippy-fe/proxy`, `$W.attention` and `getWippyApi().attention`. Bounded observation and inspection remain active while the Host is mounted, including without a Session or with automatic attachments off.
 
 <!-- ATTENTION:PUBLIC-API:BEGIN -->
 ```typescript
 import { attention } from '@wippy-fe/proxy'
 
-if (attention.enabled) {
-  const canAttach = attention.supports('message-context')
-  const canClarify = attention.supports('agent-actions')
-  const canCapture = attention.supports('visual-capture')
-
-  console.log({ canAttach, canClarify, canCapture })
+const capabilities = {
+  messageContext: attention.supports('message-context'),
+  agentActions: attention.supports('agent-actions'),
+  visualCapture: attention.supports('visual-capture'),
 }
+
+const localFocus = await attention.getFocus()
+const matches = await attention.find(
+  { role: 'button', name: 'Save' },
+  { fromRoot: true, limit: 8 },
+)
+
+const nodes = matches.data?.nodes
+if (matches.outcome === 'ok' && Array.isArray(nodes) && nodes.length === 1) {
+  const node = nodes[0]
+  const geometry = await attention.getGeometry(node.ref, { fromRoot: true })
+  console.log({ capabilities, localFocus, node: node.ref, geometry })
+}
+
+const subscription = attention.subscribe(
+  { events: ['tree', 'invalidation'], fromRoot: true },
+  notification => console.log(notification),
+)
+// Call when the component unmounts.
+subscription.dispose()
 ```
 <!-- ATTENTION:PUBLIC-API:END -->
 
-`enabled` reports the master Host opt-in. `supports()` reports the capability that is both configured and available in the current runtime. Agent actions and visual capture are phase-gated; packages must tolerate false until the selected release carries their complete integration evidence.
+`supports()` reports each optional capability; discovery does not grant capture consent or agent authority. `enabled` is not the Session automatic-attachment setting. Observation, identity and private request handling remain Host-owned coordinator operations. Do not synthesize `wippy.attention.capability.v1`, `wippy.attention.relay.v2`, `wippy.ui-action.v1`, `session_ui_action_request` or `session_ui_action_result` messages.
 
-This is intentionally the complete package-facing Attention surface. Root registration, event observation, point queries, snapshot composition, target resolution, screenshots, and disposal are Host-owned coordinator operations. Do not reach through proxy globals or synthesize `wippy.attention.capability.v1`, `wippy.attention.relay.v1`, `wippy.ui-action.v1`, `session_ui_action_request`, or `session_ui_action_result` messages.
+| Method | Input and result |
+|---|---|
+| `getCursor(scope?)` | Current pointer event and canonical nodes. |
+| `getFocus(scope?)` | Current focus and canonical node. |
+| `getSelection(scope?)` | Selection text, original observation time and both canonical endpoints. |
+| `atPoint(point, scope?)` | Point in Host viewport coordinates, or an explicit canonical coordinate space. Default radius is 20 CSS pixels and grid step is 5. |
+| `getTree(options?)` | Bounded parent-before-child page with optional limit, depth and continuation. |
+| `find(query, options?)` | Semantic matching, exact node ID or explicitly scoped CSS. |
+| `getGeometry(nodeRef, scope?)` | Rectangle, clipping, visibility, coordinate space and geometry quality. |
+| `subscribe(options, listener)` | Bounded change notices and a `dispose()` method. Notices require a fresh query when details are needed. |
+
+Scope is `{ fromRoot?: boolean, node?: NodeRef }`. Tree and search options also accept their pagination fields. A `NodeRef` contains `host_instance_id`, `node_id`, `mount_id` and `generation`. Use the complete returned object. Resource IDs, labels and selectors do not identify a mounted occurrence.
+
+Default scope includes the caller and its descendants. `fromRoot: true` never reaches another Host, application, tab or outer website. Mounted offscreen nodes remain queryable. Owner-declared placeholders identify unavailable content without inventing rendered descendants.
+
+## Search modes and pagination
+
+Semantic queries use one or more of `role`, `name`, `text` and `resource_id`. Names and text use Unicode case-insensitive substring matching; roles and resource IDs match exactly. An exact-ID query is `{ node_id: returnedId }`.
+
+CSS uses `{ css: 'button', scope: returnedRootRef }`, where the reference names one live document or shadow root. It never crosses that root, an iframe or a Web Fragment. Do not mix CSS with semantic fields or create a cross-boundary selector.
+
+Selectors see a privacy-filtered structure. Excluded and sensitive subtrees do not affect `:has`, sibling positions or `:empty`; redacted nodes expose structure without attributes or text. Editable values are unavailable. Safe non-editable value attributes and live checked/selected states remain queryable. Supported pseudo-classes are `:scope`, `:root`, `:empty`, `:is`, `:where`, `:not`, `:has`, first/last/only/nth child and type selectors, `:checked`, `:disabled`, `:enabled`, `:required`, `:optional`, `:read-only`, `:read-write`, `:indeterminate`, `:focus`, `:focus-visible` and `:focus-within`. Focus matching uses current safe focus, including owned closed roots; `:focus-visible` also requires the browser to report that focus state. Other state pseudo-classes, including `:hover`, `:active` and `:visited`, return `invalid-request`.
+
+An element reference in `atPoint.coordinate_space` uses CSS pixels from its untransformed border-box origin. A shadow-root reference uses its host's border box; a document reference uses its viewport. The runtime accounts for ancestor scale, CSS zoom, iframe borders and padding, and scroll. The returned point uses Host viewport CSS pixels. Unsupported rotation, skew or perspective returns `unsupported-transform` rather than an estimated point.
+
+Every result reports `outcome`, `measured_at`, revisions and omissions. Original pointer, focus and selection event times remain distinct from query time. Treat `empty`, `cleared`, `unknown`, `partial`, `unavailable`, `stale` and `cancelled` separately.
+
+Continuation tokens are opaque, single-use and bound to the caller, scope, query, tree revision and remaining aggregate work. They expire after 30 seconds. A changed tree returns `stale` with `revision-changed`; restart explicitly. Geometry changes alone do not invalidate membership pagination. Do not reset limits by repeatedly starting broad queries.
+
+Subscriptions support `cursor`, `focus`, `selection`, `tree`, `geometry` and `invalidation`. The Host permits 16 per caller and 128 total, coalesces updates to at most 10 per second, and reports dropped updates. A `backpressure` notice requires a fresh query. Dispose subscriptions when unmounting; terminal invalidation closes them after detachment or disconnect.
 
 ## Author semantic targets
 
-Attention summaries follow the same semantics as assistive technology. Prefer native HTML first:
+Prefer native HTML, accessible names, keyboard focus and primitive ARIA state:
 
 ```html
 <section aria-labelledby="build-status-title">
@@ -40,96 +87,80 @@ Attention summaries follow the same semantics as assistive technology. Prefer na
 </section>
 ```
 
-For custom controls, provide an appropriate role, accessible name, keyboard behavior, focus state, and primitive ARIA state. Keep visible labels specific enough to distinguish adjacent controls. A target with a meaningful role and name remains understandable even when text collection is disabled.
+For additional labels, use `attention.registerSemantic(element, { role, name, text })` and call its returned disposer on unmount. Equivalent declarative fields are `data-wippy-attention-role`, `data-wippy-attention-name` and `data-wippy-attention-text`. Labels cannot change identity, ancestry, privacy or geometry.
 
-Shadow DOM does not change these requirements. Open roots and Wippy-instrumented opted-in closed roots can contribute semantic paths, but the component still owns accessible names, roles, and focus behavior. Slots are resolved through the composed tree.
+Open shadow roots and Wippy-instrumented closed roots retain separate component and shadow identities. Slots follow the composed tree. Existing component registries supply validated resource and package metadata. Two mounts of one package remain different occurrences.
+
+Layout owners can call `registerLayoutProvider({ instance_id?, root, panels, breakpoint? })`. Each panel declares its local ID, element or window, role/title and active, collapsed, drawer, floating, modal and placeholder state. Use the returned handle's update/dispose methods. The Host assigns occurrence identity; arbitrary framework internals and application state do not enter the semantic tree.
 
 ## Exclude or redact content
 
-Sensitive form controls are excluded automatically, but package authors must mark application-specific secrets and irrelevant regions.
+Sensitive controls are excluded automatically. Mark application-specific secrets and irrelevant regions:
 
 ```html
-<!-- This subtree cannot become an Attention candidate. -->
 <section data-wippy-attention="exclude">
   <p>Recovery codes</p>
 </section>
 
-<!-- Geometry remains useful, but descendant text is omitted. -->
 <article data-wippy-attention="redact" aria-label="Private account card">
   <span>Account 1234 5678</span>
 </article>
 ```
 
-Use `exclude` for secret-bearing controls, hidden implementation UI, canvas helpers, and decorative overlays that should never be described. Use `redact` when the Host may identify the region by safe ARIA metadata but must not collect its descendant text. Do not put secrets in `id`, `name`, `aria-label`, `autocomplete`, package IDs, artifact IDs, or other structural metadata.
+The Host already excludes its own chat composer, upload list and file previews from Attention reads and captures. Excluded content must not appear in search, geometry, selection or captures. Redaction retains only allowed structural information and safe labels. Do not put secrets in accessible names, IDs, resource metadata or custom labels. Registered semantics cannot turn input values, passwords or editable contents into safe text. CSS clipping alone is not a privacy boundary.
 
-## Nested pages, components, and Web Fragments
+## Nested pages and Web Fragments
 
-No special application code is needed for nesting. Each Wippy-owned boundary receives its proxy runtime, negotiates a short-lived parent/child capability, and answers point queries in its own mount-local CSS-pixel coordinate space. The parent maps requested Host points through clipping and transforms, merges successful child results, and records explicit omissions for partial boundaries.
+Wippy boundaries negotiate authenticated transport and retain complete physical ancestry. Navigation, detachment and remount retire identities and action references. Reparenting changes ancestry and invalidates prior action authority.
 
-Keep a child’s mount occurrence stable while it is visible. If a package remounts an iframe, artifact, fragment, or component, the Host increments its generation; old target references then become stale by design.
+For Web Fragments, the reflected physical Host tree supplies hit identity and geometry. The fragment runtime supplies semantic, resource and occurrence metadata. Hidden-realm native hit testing is not an Attention limitation. Translation, scroll, clipping and positive axis-aligned scaling are supported; unsupported transforms produce explicit unavailable geometry, never an invented exact crop.
 
-For Web Fragments, the reflected physical Host tree supplies hit identity and physical geometry. The injected fragment runtime supplies semantic, package, and runtime metadata. The hidden realm’s native hit-testing behavior is not a limitation of the Attention API.
+## Automatic message context
 
-## Message context is a send-time choice
+The persisted Session property `attention_context.enabled`, default false, controls automatic attachment. The user's client can change it, and an agent with the Attention trait can change it with `attention_context_set` without asking the user. The value belongs to the Session and stays when the user switches agents. A one-send opt-out leaves that default unchanged. Turning it off does not stop observation or explicit authorized reads. The legacy `defaultInclude` setting does not replace the Session property.
 
-A package can discover whether message context is available, but it cannot force the Host to attach it. The user makes a fresh explicit choice for every message. The legacy `defaultInclude` setting never grants per-send consent and must not preselect Attention. The resulting `context_attachments[]` array is created immediately before the user message is sent and committed atomically with that message.
+The Host prepares context immediately before submission and Session commits it atomically with the message. Failed required context preparation preserves the draft. Unknown bounded attachment kinds and versions remain inert. Do not add a `required` field or copy transport credentials, connection handles or screenshot references into semantic content.
 
-Unknown attachment kinds and newer versions are allowed only within global count and byte limits. They remain inert until the server has a registered handler. Package code must not add a `required` flag or copy live capability, target-authority, bearer, connection, or screenshot handles into durable content.
+Attachment v1 through v4 remain compatible; current compact v4 keeps complete retained ancestry through dictionaries. Automatic context remains bounded and never includes the full semantic tree. Explicit model tools use a separate compact result format. See [limits by attachment version](../web-host/attention-context.md#limits-by-attachment-version) and [model projection and durable context](../web-host/attention-context.md#model-projection-and-durable-context).
 
-See [Web Host Attention Context](../web-host/attention-context.md#message-attachment-contract) for the complete envelope and limits.
+## Agent inspection and clarification
 
-The Host retains at most 32 recent events within a default 60-second window. Consecutive sampled moves over the same targets compact to the latest complete move; discrete intent, focus changes, pointer-state changes, and remounts preserve boundaries. This is not dwell tracking and adds no version 1 event fields. Packages should not infer hover duration or an exhaustive movement trace from the attachment.
+An agent needs effective `wippy.agent.traits:attention` tool authority to make fresh private requests. Receiving an attachment does not grant tools. Reads work with automatic attachment, message-context capability and overlay permission off. Requests bind to the Host tab that submitted the current turn.
 
-The stored attachment and model input have different budgets. Model input includes up to six recent events, preferring the newest discrete events before the newest moves, plus current pointer and focus. It includes at most eight targets and summarizes the sampled grid instead of copying every point. When neighboring terminal child realms share a root, their representatives are prioritized before extra hits and older events; explicit partial-coverage counts disclose any remaining omissions. Exact retained paths and grid data remain in the immutable attachment. See [model projection and durable context](../web-host/attention-context.md#model-projection-and-durable-context) for the field names and path limits. Do not assume an ancestry dictionary, private context-file retrieval, or an ordinary upload can expand these model limits: those mechanisms are not implemented Attention contracts.
+The agent uses nine explicit read tools: `attention_find_semantic`, `attention_find_css`, `attention_get_node`, `attention_get_tree`, `attention_get_geometry`, `attention_get_cursor`, `attention_get_focus`, `attention_get_selection` and `attention_hit_test`. The older `attention_inspect` tool was removed. The trait also provides `attention_context_set` and the action tools `ui_action_highlight`, `ui_action_confirm`, `ui_action_select` and `ui_action_capture_visual`. The private tool projection is capped at 8 KiB and the trait bounds attempted reads. See [agent tools and limits](../web-host/attention-context.md#canonical-inspection-and-agent-tools). Packages should not imitate these tools with private WS messages.
 
-## Agent clarification belongs to the Host
+Highlight, confirmation, selection and visual capture remain separate Host interactions. The action tools take a `targets` array. Each item is the complete candidate `action_ref` object, or the `target_ref` from a read result, copied verbatim as one item of the `targets` array. Never reconstruct it from IDs or geometry. A zero-target `select` request is valid only with `capture_region: true`. Region selection alone does not authorize a screenshot. The Host owns approval, cancellation, expiry, stale-target checks and focus restoration. See [terminal statuses](../web-host/attention-context.md#terminal-statuses) for the possible results.
 
-Agent clarification is implemented but remains a phase-gated contract at release level. Packages must not depend on it until the selected release proves the targeted broker, Host overlay, stale-target handling, and both managed and compatibility E2E flows.
+## Approved visual drafts
 
-An agent may highlight candidates, ask “Is that it?”, or ask the user to select the intended target. For a candidate action, the framework copies the complete candidate `action_ref` object verbatim as one tool `target_ref` in `targets`; reconstructing it from IDs or geometry is invalid. A zero-target `select` request is valid only with `capture_region: true`, which opens Host-owned arbitrary area selection. It does not authorize a screenshot. The Host overlay projects snapshot rectangles into the current viewport and owns pointer/keyboard input, cancellation, focus restoration, expiry, stale-target checks, navigation invalidation, and reconnect behavior.
+`attention.supports('visual-capture')` reports availability, not consent. An authorized `ui_action_capture_visual` request opens Host approval, normally for a target or bounded region. Whole-viewport capture is a separate explicit choice.
 
-Do not build a competing package-level overlay in response to agent messages. The private session broker targets the authenticated Host connection and accepts only immutable target references bound to the current Host instance and mount generation. A child package cannot authorize an action by inventing a rectangle or target ID.
+After approval, the Host captures and redacts the selected area, uploads it through the ordinary file path, and prepares a removable composer file. The application's upload type must accept `image/png`, and `image/webp` when that format is requested. Capture does not send a message. Only a later user Send submits its ordinary `file_uuids`. Removing the draft removes it from the composer and invokes cleanup. Keep session isolation, authorization, expiry, SHA-256 integrity and orphan cleanup in custom integrations.
 
-## Optional visual capture
-
-Visual capture remains phase-gated at release level.
-`attention.supports('visual-capture')` is capability discovery, not consent and not a capture method; packages must treat false as normal. The default session resolver can dereference an authorized `upload` reference through the registered content-provider contract. Reference authorization, exact-byte verification, and SHA-256 integrity checks are implemented, but production capture, redaction, multimodal mapping, expiry, and orphan cleanup still require deployment evidence. A durable reference alone is not permission to read bytes.
-
-Capture denial before composition can leave semantic Attention available without a visual attachment. Once a visual reference is attached, missing or denied authorization, unavailable verification, invalid bytes, or a hash mismatch rejects the complete send before persistence; there is no silent semantic-only fallback. When an already accepted message is rendered later, expiry or a failed authorized byte read omits the image with a render diagnostic while other valid semantic context remains renderable. See [the visual failure stages](../web-host/attention-context.md#optional-visual-capture) for the exact boundary between capture, ingestion, and model rendering.
-
-If a region must never appear in visual context, mark it `data-wippy-attention="exclude"` and verify the deployed capture provider’s redaction behavior. Do not rely on CSS clipping alone as a privacy boundary.
+When a sent message includes an approved capture, the Host adds one `wippy.attention.visual` attachment that references the upload, and the model receives the image. Other uploads are listed to the model by name and metadata only. Screenshot bytes and upload references never enter semantic `wippy.attention` content. The registered content-provider contract controls authorized byte reads, and the framework `visual_resolver` supplies the verified image when the prompt is built.
 
 ## Test your package
 
-Test with real trusted input in the complete Host, not only with synthetic DOM events:
+1. Verify pointer, focus, selection, search and geometry share the expected canonical identity and complete nested path.
+2. Check both sides of a nested boundary with the default 20 CSS-pixel radius and 5-pixel grid.
+3. Exercise iframe and Web Fragment engines in managed and compatibility layouts.
+4. Remount, navigate and reparent content; confirm that retired action references fail.
+5. Check exclusion, redaction, offscreen content, scoped CSS, pagination and subscription disposal.
+6. Turn automatic attachment off and verify bounded observation and authorized fresh reads still work.
+7. Remove the agent's Attention trait; a context attachment must not restore private tools.
+8. Verify approved draft removal and later ordinary Send.
 
-1. Point at and focus the final control; verify its role, accessible name, safe text, and complete nested path.
-2. Put two child components edge to edge; point within 20 CSS pixels of their boundary and verify both can be discovered by the 5-pixel grid.
-3. Exercise iframe and Web Fragment engines. For a fragment, verify `physical-host` geometry and `fragment-realm` metadata provenance.
-4. Remount or navigate the package and verify old target references become stale.
-5. Mark a subtree `exclude` and another `redact`; verify neither leaks protected text.
-6. Turn Attention off and verify the package still works with no observer or overlay.
-7. Run the committed tests in Chromium, Firefox, and WebKit.
-
-For runtime symptoms and inspection steps, see [Debugging Wippy FE](./debugging.md#attention-context-is-missing-or-wrong).
+For diagnosis, see [Debugging Wippy FE](./debugging.md#attention-context-is-missing-or-wrong).
 
 ## Migration
 
-Attention is opt-in. Existing packages require no code change when it is disabled. To adopt it:
+Upgrade Host, proxy, Session, Framework, facade and views as a compatible set. Replace discovery-only assumptions with the public inspection API. Use `attention_context.enabled` for automatic attachments and the reusable trait for fresh agent reads. Preserve existing per-action permissions and ordinary file consent.
 
-1. Upgrade the Web Host, session, framework, facade, views, and proxy package family as one compatible release.
-2. Improve native semantics and keyboard focus before enabling collection.
-3. Add `exclude` and `redact` annotations for application-specific sensitive regions.
-4. Enable semantic message context with `defaultInclude: false` and validate the production-shaped nested fixture.
-5. Enable agent actions only after the private broker, overlay, and reconnect behavior are verified in both layouts.
-6. Enable visual capture last, with explicit consent, redaction, and reference-authorization tests.
-7. Translate accepted canonical English guidance only as the final documentation work item, after release evidence is stable.
-
-Legacy config migration preserves `feature.attention` as top-level `attention`, but new configuration should use the current top-level AppConfig field directly. Do not expose Host coordinator methods as a compatibility shim.
+Legacy `feature.attention` configuration maps to top-level `attention`; new configuration should use the top-level field. Never expose private coordinator internals as a compatibility shim.
 
 ## See Also
 
-- [Web Host Attention Context](../web-host/attention-context.md) — operator configuration and full contracts
-- [Proxy API](./proxy-api.md#attention) — package-facing discovery API
-- [Proxy & Isolation](../web-host/proxy-isolation.md) — runtime injection and nested composition
-- [Surface Portability](./surface-portability.md) — layout geometry for portable components
+- [Web Host Attention Context](../web-host/attention-context.md)
+- [Proxy API](./proxy-api.md#attention)
+- [Proxy & Isolation](../web-host/proxy-isolation.md)
+- [Surface Portability](./surface-portability.md)

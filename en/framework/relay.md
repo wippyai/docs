@@ -237,11 +237,12 @@ return { run = run }
 
 ## Attention UI-action routing
 
-**Availability:** the targeted routing and private-mailbox path are implemented,
-but release availability remains phase-gated until managed and compatibility E2E
-gates pass for the selected release.
+The private route carries both trait-authorized inspection and separately
+permitted interactive actions. Requests bind to the submitting Host tab for the
+active turn. Automatic context, message-context capability and overlay
+permission are not prerequisites for read-only inspection.
 
-Attention clarification uses the session plugin rather than a general broadcast
+Attention inspection and clarification use the session plugin rather than a general broadcast
 topic. The private broker binds each action to the authenticated user, session,
 session process, current WebSocket connection process, Host instance, request
 ID, action ID, and expiry. It sends `session_ui_action_request` directly to that

@@ -144,10 +144,12 @@ console.log({
 })
 ```
 
-If `enabled` is false, verify the facade `attention` JSON and the exact Web Host
-release selected by `fe_facade_url`. If only one capability is false, verify its
-independent configuration gate and runtime provider. Do not attempt to call an
-internal coordinator or send Attention relay messages from package code.
+For missing automatic attachments, check the Session's `attention_context.enabled`
+and the facade message-context capability. For missing interactive UI, check its
+separate permission and provider. Bounded observation and authorized explicit
+reads remain active with these controls off. Verify the Host selected by
+`fe_facade_url`, use public inspection methods, and do not send private relay
+messages or call coordinator internals from package code.
 
 **2. If a target is absent or vague:**
 
@@ -172,13 +174,30 @@ Web Fragment result should combine `physical-host` geometry with
 
 **4. If an agent overlay does not appear or immediately closes:**
 
-Agent actions are phase-gated. First confirm that the selected release declares
-the action pipeline available; an unavailable release is not a package defect.
-Confirm `agentActions.enabled`, an active authenticated WebSocket connection,
-the current session and Host instance, and a non-expired target reference. A
-navigation, remount, changed Host instance, timeout, or disconnect correctly
-returns a terminal stale, expired, or disconnected result. Reconnect does not
-revive the old request; the agent must issue a fresh action.
+First check that agent actions are available at each layer:
+
+1. Host configuration. The facade `attention` requirement must set
+   `"enabled": true` and `"agentActions": {"enabled": true}`, plus
+   `"visualCapture": {"enabled": true}` for image capture. In the browser,
+   `attention.supports('agent-actions')` and
+   `attention.supports('visual-capture')` report the result.
+2. Session. `GET /api/v1/sessions/capabilities` must report
+   `attention.context` and `attention.browser_operations` of at least 1. A
+   `404` means the Session release has no capability descriptor, and the Host
+   then sends no tab binding, so agent tools cannot reach the tab.
+3. Agent. The agent must include the `wippy.agent.traits:attention` trait,
+   which provides `ui_action_highlight`, `ui_action_confirm`,
+   `ui_action_select` and `ui_action_capture_visual`.
+
+For image capture, also check that the application's upload type accepts
+`image/png`, and `image/webp` when that format is requested.
+
+Then confirm an active authenticated WebSocket connection, the current session
+and Host instance, and a non-expired target reference. A navigation, remount,
+changed Host instance, timeout, or disconnect correctly returns a terminal
+`stale`, `expired`, or `disconnected` result. Reconnect does not revive the old
+request; the agent must issue a fresh action. See [terminal
+statuses](../web-host/attention-context.md#terminal-statuses) for every result.
 
 See [Attention Context for Micro Frontends](./attention-context.md) and [Web Host
 Attention Context](../web-host/attention-context.md#partial-results-and-errors).
