@@ -117,7 +117,7 @@ For Web Fragments, the reflected physical Host tree supplies hit identity and ge
 
 ## Automatic message context
 
-The persisted Session property `attention_context.enabled`, default false, controls automatic attachment. The user's client can change it, and an agent with the Attention trait can change it with `attention_context_set` without asking the user. The value belongs to the Session and stays when the user switches agents. A one-send opt-out leaves that default unchanged. Turning it off does not stop observation or explicit authorized reads. The legacy `defaultInclude` setting does not replace the Session property.
+The persisted Session property `attention_context.enabled`, default false, controls automatic attachment. The user's client can change it, and an agent with the Attention trait can change it with `attention_context_set` without asking the user. There is no confirmation prompt; the trait tells the model to use the tool only when the user asks for it. The value belongs to the Session and stays when the user switches agents. A one-send opt-out leaves that default unchanged. Turning it off does not stop observation or explicit authorized reads. The legacy `defaultInclude` setting does not replace the Session property.
 
 The Host prepares context immediately before submission and Session commits it atomically with the message. Failed required context preparation preserves the draft. Unknown bounded attachment kinds and versions remain inert. Do not add a `required` field or copy transport credentials, connection handles or screenshot references into semantic content.
 

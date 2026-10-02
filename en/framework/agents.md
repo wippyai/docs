@@ -374,7 +374,9 @@ In the examples, `ref` is the complete returned `NodeRef` with
 
 `attention_context_set` turns automatic pointing context on or off for the
 current Session. It takes a required boolean `enabled` and an optional
-`expected_revision`. The agent may call it without asking the user. The
+`expected_revision`. The agent may call it without asking the user; there is
+no confirmation prompt, and the trait tells the model to use the tool only when
+the user asks for it. The
 setting belongs to the Session, so it stays in effect after the user switches
 to another agent.
 
