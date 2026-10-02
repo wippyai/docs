@@ -13,7 +13,7 @@ Wippy 支持覆盖网络，可透明地承载来自函数、进程和 HTTP 客�
 
 支持的覆盖层：
 
-- `network.socks5` — 通用 SOCKS5 代理（也兼容 Tor 的 SOCKS5 监听器）
+- `network.socks5` — 通用 SOCKS5 代理
 - `network.tailscale` — tsnet 覆盖节点
 - `network.i2p` — I2P SAM v3 桥接
 
@@ -55,12 +55,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 代理条目（Tor 默认在 127.0.0.1:9050 上暴露一个）
-  - name: tor
+  # SOCKS5 代理条目
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -80,8 +79,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true` 使 SOCKS5 驱动在每次连接时生成随机凭据，从而让 Tor 为每次拨号开启新的回路。
 
 严格模式默认开启，因此该命令携带其启动时运行所依据的执行者和策略。`http_client.request` 覆盖出站调用，`network.select` 覆盖显式的覆盖层选择；缺少它们时每次检查都会失败关闭。
 
@@ -120,11 +117,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -142,14 +139,14 @@ wippy init
 wippy run probe
 ```
 
-在本地运行 Tor 时：
+代理运行时：
 
 ```
-direct IP: 203.0.113.42
-tor IP:    185.220.101.61
+direct IP: <your public IP>
+proxy IP:  <proxy exit IP>
 ```
 
-如果 Tor 未运行，`tor IP` 行将报告拨号错误 — SOCKS5 覆盖层不会静默回退到直连。
+如果代理未运行，`proxy IP` 行将报告拨号错误 — SOCKS5 覆盖层不会静默回退到直连。
 
 ## 继承
 
@@ -159,12 +156,12 @@ tor IP:    185.220.101.61
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -212,7 +209,7 @@ local pid, err = process.with_options({ network = "app:tor" })
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 

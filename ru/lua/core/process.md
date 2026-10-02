@@ -205,7 +205,7 @@ local spawner = process.with_context({request_id = "123"})
 `process.with_options(options)` создаёт spawner, который несёт опции времени spawn (например, селектор сети) вместо значений контекста:
 
 ```lua
-local spawner = process.with_options({network = "app:tor_proxy"})
+local spawner = process.with_options({network = "app:proxy"})
 ```
 
 | Опция | Тип | Описание |

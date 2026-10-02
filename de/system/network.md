@@ -1,11 +1,11 @@
 ---
 title: "Netzwerk-Overlays"
-description: "Leiten Sie ausgehende Verbindungen und Listener über SOCKS5-, Tor-, Tailscale- oder I2P-Overlays."
+description: "Leiten Sie ausgehende Verbindungen und Listener über SOCKS5-, Tailscale- oder I2P-Overlays."
 ---
 
 # Netzwerk-Overlays
 
-Netzwerk-Overlay-Einträge leiten ausgehende Verbindungen oder Listener über SOCKS5, Tor, Tailscale oder I2P. Ein ausgewähltes Overlay wird über Funktions-, Prozess- und HTTP-Grenzen hinweg weitergegeben.
+Netzwerk-Overlay-Einträge leiten ausgehende Verbindungen oder Listener über SOCKS5, Tailscale oder I2P. Ein ausgewähltes Overlay wird über Funktions-, Prozess- und HTTP-Grenzen hinweg weitergegeben.
 
 Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder Anwendungskonfigurationsfragmente und setzen voraus, dass der externe Proxy, das Tailnet oder der I2P-SAM-Dienst bereits existiert.
 
@@ -13,7 +13,7 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder A
 
 | Art | Beschreibung |
 |------|-------------|
-| `network.socks5` | Generischer SOCKS5-Proxy (deckt auch den SOCKS5-Listener von Tor ab) |
+| `network.socks5` | Generischer SOCKS5-Proxy |
 | `network.tailscale` | Tailscale-tsnet-Overlay-Knoten |
 | `network.i2p` | I2P-SAM-v3-Bridge |
 
@@ -35,7 +35,7 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder A
 | `port` | int | Proxy-Port (1-65535) |
 | `username` | string | Optionale SOCKS5-Authentifizierung |
 | `password` | string | Optionale SOCKS5-Authentifizierung |
-| `isolate_streams` | bool | Pro-Verbindung zufällige Credentials (Tor-Stream-Isolation) |
+| `isolate_streams` | bool | Pro-Verbindung zufällige Credentials, für Proxys, die Upstream-Verbindungen anhand der Credentials trennen |
 
 `host` und `port` sind erforderlich. `isolate_streams` ist standardmäßig `false`. Wenn Isolation aktiviert ist, erzeugt die Runtime für jeden Dial einen neuen Benutzernamen und ein neues Passwort, statt die konfigurierten Zugangsdaten zu verwenden.
 

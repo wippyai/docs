@@ -8,7 +8,7 @@ description: "アウトバウンドHTTPコールと生成したプロセスをSO
 アウトバウンドHTTPコール用のSOCKS5オーバーレイを構成し、継承、インバウンドリスナー、アプリケーション既定値、権限を確認します。
 
 **分類:** 実行可能なSOCKS5チュートリアルと、部分的なTailscaleレシピです。
-外部Torリスナーを利用できれば、direct/Torプローブは完全に実行できます。Tailscaleセクションは
+外部SOCKS5リスナーを利用できれば、direct/proxiedプローブは完全に実行できます。Tailscaleセクションは
 Wippy側の配線を説明しますが、アカウントのプロビジョニングはTailscale側に委ねます。
 I2Pの設定は、後述のネットワークシステムリファレンスを参照してください。
 
@@ -19,7 +19,7 @@ Wippyはオーバーレイネットワークをレジストリエントリとし
 
 Wippyは3種類のオーバーレイエントリをサポートします：
 
-- `network.socks5` — 汎用SOCKS5プロキシ（TorのSOCKS5リスナーにも使用可）
+- `network.socks5` — 汎用SOCKS5プロキシ
 - `network.tailscale` — tsnetオーバーレイノード
 - `network.i2p` — I2P SAM v3ブリッジ
 
@@ -27,15 +27,21 @@ Wippyは3種類のオーバーレイエントリをサポートします：
 
 - Wippyランタイム`v0.3.32a`。
 - `curl`と`api.ipify.org`へのアウトバウンドHTTPSアクセス。
-- `127.0.0.1:9050`でSOCKS5を公開するTorデーモン。[Tor Projectのダウンロードページ](https://www.torproject.org/download/tor/)から
-  対応パッケージをインストールして起動し、Wippyを実行する前にリスナーを確認します：
+- `127.0.0.1:1080`でリッスンするSOCKS5プロキシ。どのSOCKS5プロキシでも動作します。最も手軽なのは、
+  到達可能なホストへのSSHダイナミックフォワーディングです：
 
   ```bash
-  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ssh -N -D 1080 user@remote-host
   ```
 
-  成功するとIPアドレスを含むJSONが返ります。Tor Browserは一般にポート9150を使用します。
-  意図してそのリスナーを使う場合は、レジストリエントリと検証コマンドを同時に変更してください。
+  Wippyを実行する前にリスナーを確認します：
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:1080 https://api.ipify.org?format=json
+  ```
+
+  成功するとリモートホストのIPアドレスを含むJSONが返ります。プロキシが別のポートでリッスンしている場合は、
+  レジストリエントリと検証コマンドを同時に変更してください。
 - 空の作業ディレクトリ：
 
   ```bash
@@ -82,12 +88,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -107,8 +112,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true`を指定すると、SOCKS5ドライバーが接続ごとにランダムなクレデンシャルを生成し、Torが各ダイアルで新しいサーキットを開きます。
 
 セキュリティはデフォルトでストリクトなため、コマンドは起動時に使用するアクターとポリシーを携えます。`http_client.request`がアウトバウンドコールを、`network.select`が明示的なオーバーレイ選択をカバーします。これらがないとすべてのチェックがフェイルクローズします。
 
@@ -147,11 +150,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -169,14 +172,14 @@ wippy init
 wippy run probe
 ```
 
-Torがローカルで動作している場合：
+プロキシが動作している場合：
 
 ```
 direct IP: <your public IP>
-tor IP:    <Tor exit IP>
+proxy IP:  <proxy exit IP>
 ```
 
-Torが動作していない場合、`tor IP`行にダイアルエラーが報告されます — SOCKS5オーバーレイはダイレクト接続に静かにフォールバックしません。
+プロキシが動作していない場合、`proxy IP`行にダイアルエラーが報告されます — SOCKS5オーバーレイはダイレクト接続に静かにフォールバックしません。
 
 ## 継承
 
@@ -186,12 +189,12 @@ Torが動作していない場合、`tor IP`行にダイアルエラーが報告
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -239,7 +242,7 @@ TailscaleはHTTPリスナーも受け付けられます。クライアントで�
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 
@@ -262,14 +265,14 @@ network_service:
 
 ## トラブルシューティングとクリーンアップ
 
-- `127.0.0.1:9050`で`connection refused`になる場合は、設定したポートでTorがリッスンしていません。
-  Wippyを調べる前に、前提条件の`curl`コマンドでTorを確認してください。
+- `127.0.0.1:1080`で`connection refused`になる場合は、設定したポートでプロキシがリッスンしていません。
+  Wippyを調べる前に、前提条件の`curl`コマンドでプロキシを確認してください。
 - 直接リクエストが失敗しルーティングしたリクエストが成功する場合、通常はローカルDNS、プロキシ、
   ファイアウォールの規則が直接経路に影響しています。2つの呼び出しは独立しています。
-- ルーティングした呼び出しの`access denied`は、コマンドのセキュリティコンテキストに`app:tor`への
+- ルーティングした呼び出しの`access denied`は、コマンドのセキュリティコンテキストに`app:proxy`への
   `network.select`がないことを示します。`meta.command.security`配下に`app:probe_policy`を付けたままにしてください。
 - SOCKS5ドライバーは直接接続へフォールバックしません。デモを続行させるためだけにエラーを削除しないでください。
-- Wippyコマンドが終了したら停止し、このチュートリアル専用にTorを起動した場合だけTorも停止してください。
+- Wippyコマンドが終了したら停止し、このチュートリアル専用にSSHトンネルを開いた場合はそれも閉じてください。
   SOCKS5の例は永続的なネットワーク状態を作りません。Tailscaleエントリは`.wippy/net/tailscale/`にノード状態を
   保存する場合があります。Wippyを停止し、ローカルのtailnet IDを破棄する意図がある場合だけ`.wippy/net`を削除してください。
 

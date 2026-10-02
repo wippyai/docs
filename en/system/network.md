@@ -1,11 +1,11 @@
 ---
 title: "Network Overlays"
-description: "Route outbound connections and bind listeners through SOCKS5, Tor, Tailscale, or I2P overlays."
+description: "Route outbound connections and bind listeners through SOCKS5, Tailscale, or I2P overlays."
 ---
 
 # Network Overlays
 
-Network overlay entries route outbound connections or bind listeners through SOCKS5, Tor, Tailscale, or I2P. A selected overlay propagates across function, process, and HTTP boundaries.
+Network overlay entries route outbound connections or bind listeners through SOCKS5, Tailscale, or I2P. A selected overlay propagates across function, process, and HTTP boundaries.
 
 This page is a configuration reference. The YAML fences are entry or application-config fragments and assume the external proxy, tailnet, or I2P SAM service already exists.
 
@@ -13,7 +13,7 @@ This page is a configuration reference. The YAML fences are entry or application
 
 | Kind | Description |
 |------|-------------|
-| `network.socks5` | Generic SOCKS5 proxy (also covers Tor's SOCKS5 listener) |
+| `network.socks5` | Generic SOCKS5 proxy |
 | `network.tailscale` | Tailscale tsnet overlay node |
 | `network.i2p` | I2P SAM v3 bridge |
 
@@ -35,7 +35,7 @@ This page is a configuration reference. The YAML fences are entry or application
 | `port` | int | Proxy port (1-65535) |
 | `username` | string | Optional SOCKS5 auth |
 | `password` | string | Optional SOCKS5 auth |
-| `isolate_streams` | bool | Per-connection random credentials (Tor stream isolation) |
+| `isolate_streams` | bool | Per-connection random credentials, for proxies that separate upstream connections by credential |
 
 `host` and `port` are required. `isolate_streams` defaults to `false`. When
 isolation is enabled, the runtime generates a new username and password for

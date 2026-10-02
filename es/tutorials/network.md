@@ -10,7 +10,7 @@ la herencia, los listeners entrantes, los valores predeterminados de la aplicaci
 los permisos.
 
 **Clasificación:** Tutorial SOCKS5 ejecutable con una receta parcial de Tailscale.
-La sonda directa/Tor está completa cuando existe un listener Tor externo. La sección
+La sonda directa/enrutada está completa cuando existe un listener SOCKS5 externo. La sección
 de Tailscale explica el cableado de Wippy, pero delega deliberadamente a Tailscale el
 aprovisionamiento de la cuenta. Para configurar I2P, consulta la referencia del
 sistema de red enlazada abajo.
@@ -23,7 +23,7 @@ hasta que un descendiente la sobrescribe.
 
 Superposiciones soportadas:
 
-- `network.socks5` — proxy SOCKS5 genérico (también el listener SOCKS5 de Tor)
+- `network.socks5` — proxy SOCKS5 genérico
 - `network.tailscale` — nodo overlay tsnet
 - `network.i2p` — puente SAM v3 de I2P
 
@@ -31,17 +31,22 @@ Superposiciones soportadas:
 
 - El runtime Wippy `v0.3.32a`.
 - `curl` y acceso HTTPS saliente a `api.ipify.org`.
-- Un daemon Tor que exponga SOCKS5 en `127.0.0.1:9050`. Instala un paquete compatible
-  desde la [página de descargas de Tor Project](https://www.torproject.org/download/tor/),
-  inícialo y verifica el listener antes de ejecutar Wippy:
+- Un proxy SOCKS5 escuchando en `127.0.0.1:1080`. Sirve cualquier proxy SOCKS5; lo más
+  rápido es el reenvío dinámico de SSH hacia un host al que tengas acceso:
 
   ```bash
-  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ssh -N -D 1080 user@remote-host
   ```
 
-  Una comprobación correcta devuelve JSON con una dirección IP. Tor Browser suele
-  usar el puerto 9150; si ese es el listener que quieres utilizar, cambia juntos la
-  entrada del registro y el comando de verificación.
+  Verifica el listener antes de ejecutar Wippy:
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:1080 https://api.ipify.org?format=json
+  ```
+
+  Una comprobación correcta devuelve JSON con la dirección IP del host remoto. Si tu
+  proxy escucha en otro puerto, cambia juntos la entrada del registro y el comando de
+  verificación.
 - Un directorio de trabajo vacío:
 
   ```bash
@@ -88,12 +93,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -113,8 +117,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true` hace que el driver SOCKS5 genere credenciales aleatorias por conexión para que Tor abra un circuito nuevo en cada dial.
 
 La seguridad es estricta por defecto, así que el comando lleva el actor y la política bajo los que se ejecuta su lanzamiento. `http_client.request` cubre la llamada saliente y `network.select` cubre la elección explícita de superposición; sin ellos toda comprobación falla en cerrado.
 
@@ -153,11 +155,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -177,18 +179,18 @@ wippy init
 wippy run probe
 ```
 
-Con Tor ejecutándose localmente:
+Con el proxy en ejecución:
 
 ```
 direct IP: <your public IP>
-tor IP:    <Tor exit IP>
+proxy IP:  <proxy exit IP>
 ```
 
 Ambas líneas deben contener direcciones IP válidas. Normalmente serán diferentes;
 la prueba importante es que la solicitud enrutada solo funciona mediante el listener
 SOCKS configurado.
 
-Si Tor no está en ejecución, la línea `tor IP` reportará un error de dial — la superposición SOCKS5 no cae silenciosamente a una conexión directa.
+Si el proxy no está en ejecución, la línea `proxy IP` reportará un error de dial — la superposición SOCKS5 no cae silenciosamente a una conexión directa.
 
 ## Herencia
 
@@ -201,12 +203,12 @@ sobrescriba explícitamente:
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -255,7 +257,7 @@ Establece una superposición predeterminada en `.wippy.yaml` para que cada llama
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 ## Permisos
@@ -278,18 +280,18 @@ límite del caller. Solo se controla la nueva selección explícita en un límit
 
 ## Solución de problemas y limpieza
 
-- `connection refused` en `127.0.0.1:9050` significa que Tor no escucha en el
+- `connection refused` en `127.0.0.1:1080` significa que el proxy no escucha en el
   puerto configurado. Verifícalo con el comando `curl` de los requisitos previos
   antes de depurar Wippy.
 - Si falla la solicitud directa y funciona la enrutada, normalmente hay reglas
   locales de DNS, proxy o firewall que afectan a la ruta directa. Las dos llamadas
   son independientes.
 - `access denied` en la llamada enrutada significa que el contexto de seguridad del
-  comando carece de `network.select` para `app:tor`; mantén `app:probe_policy`
+  comando carece de `network.select` para `app:proxy`; mantén `app:probe_policy`
   adjunta bajo `meta.command.security`.
 - El driver SOCKS5 nunca recurre a una conexión directa. No elimines el error solo
   para que continúe la demostración.
-- Detén el comando Wippy cuando termine y detén el daemon Tor solo si lo iniciaste
+- Detén el comando Wippy cuando termine y cierra el túnel SSH si lo abriste
   exclusivamente para este tutorial. El ejemplo SOCKS5 no crea estado de red
   persistente. Una entrada Tailscale puede conservar el estado del nodo bajo
   `.wippy/net/tailscale/`; elimina `.wippy/net` solo después de detener Wippy y

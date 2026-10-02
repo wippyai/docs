@@ -205,7 +205,7 @@ local spawner = process.with_context({request_id = "123"})
 `process.with_options(options)` 创建一个携带启动时选项（如网络选择器）而非上下文值的启动器：
 
 ```lua
-local spawner = process.with_options({network = "app:tor_proxy"})
+local spawner = process.with_options({network = "app:proxy"})
 ```
 
 | 选项 | 类型 | 描述 |

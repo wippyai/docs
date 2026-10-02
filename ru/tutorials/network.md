@@ -13,7 +13,7 @@ Wippy поддерживает оверлейные сети, прозрачно
 
 Поддерживаемые оверлеи:
 
-- `network.socks5` — универсальный SOCKS5-прокси (в том числе SOCKS5-слушатель Tor)
+- `network.socks5` — универсальный SOCKS5-прокси
 - `network.tailscale` — оверлейный узел tsnet
 - `network.i2p` — мост I2P SAM v3
 
@@ -55,12 +55,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -80,8 +79,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true` заставляет SOCKS5-драйвер генерировать случайные учётные данные для каждого соединения, чтобы Tor открывал новую цепочку при каждом подключении.
 
 Безопасность по умолчанию строгая, поэтому команда несёт актора и политику, под которыми выполняется её запуск. `http_client.request` покрывает исходящий вызов, а `network.select` — явный выбор оверлея; без них каждая проверка завершается отказом.
 
@@ -120,11 +117,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -142,14 +139,14 @@ wippy init
 wippy run probe
 ```
 
-При запущенном локально Tor:
+При запущенном прокси:
 
 ```
-direct IP: 203.0.113.42
-tor IP:    185.220.101.61
+direct IP: <your public IP>
+proxy IP:  <proxy exit IP>
 ```
 
-Если Tor не запущен, строка `tor IP` выведет ошибку подключения — SOCKS5-оверлей не падает обратно на прямое соединение молча.
+Если прокси не запущен, строка `proxy IP` выведет ошибку подключения — SOCKS5-оверлей не падает обратно на прямое соединение молча.
 
 ## Наследование
 
@@ -159,12 +156,12 @@ tor IP:    185.220.101.61
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -212,7 +209,7 @@ local pid, err = process.with_options({ network = "app:tor" })
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 ## Разрешения

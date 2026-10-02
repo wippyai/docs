@@ -8,7 +8,7 @@ description: "Route outbound HTTP calls and spawned processes through SOCKS5, wi
 Configure a SOCKS5 overlay for outbound HTTP calls, then review inheritance, inbound listeners, application defaults, and permissions.
 
 **Classification:** Runnable SOCKS5 tutorial with a partial Tailscale recipe.
-The direct/Tor probe is complete once an external Tor listener is available. The
+The direct/proxied probe is complete once an external SOCKS5 listener is available. The
 Tailscale section explains Wippy wiring but intentionally defers account provisioning
 to Tailscale. For I2P configuration, use the network-system reference linked below.
 
@@ -18,7 +18,7 @@ Wippy represents overlay networks as registry entries. Code can select an overla
 
 Wippy supports three overlay entry kinds:
 
-- `network.socks5` — generic SOCKS5 proxy (also Tor's SOCKS5 listener)
+- `network.socks5` — generic SOCKS5 proxy
 - `network.tailscale` — tsnet overlay node
 - `network.i2p` — I2P SAM v3 bridge
 
@@ -26,18 +26,22 @@ Wippy supports three overlay entry kinds:
 
 - Wippy runtime `v0.3.32a`.
 - `curl` and outbound HTTPS access to `api.ipify.org`.
-- A Tor daemon exposing SOCKS5 on `127.0.0.1:9050`. Install a supported package from
-  the [Tor Project download page](https://www.torproject.org/download/tor/), start it,
-  and verify the listener before
-  running Wippy:
+- A SOCKS5 proxy listening on `127.0.0.1:1080`. Any SOCKS5 proxy works; the quickest is
+  SSH dynamic forwarding to a host you can reach:
 
   ```bash
-  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ssh -N -D 1080 user@remote-host
   ```
 
-  A successful check returns JSON containing an IP address. Tor Browser commonly
-  uses port 9150 instead; if that is the listener you are intentionally using,
-  change the registry entry and the verification command together.
+  Verify the listener before running Wippy:
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:1080 https://api.ipify.org?format=json
+  ```
+
+  A successful check returns JSON containing the remote host's IP address. If your
+  proxy listens on a different port, change the registry entry and the verification
+  command together.
 - An empty working directory:
 
   ```bash
@@ -84,12 +88,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -109,8 +112,6 @@ entries:
       - http_client
       - json
 ```
-
-With `isolate_streams: true`, the SOCKS5 driver creates random credentials for each connection so Tor can open a fresh circuit for each dial.
 
 Security is strict by default, so the command carries the actor and policy its launch runs under. `http_client.request` covers the outbound call and `network.select` covers the explicit overlay choice; without them every check fails closed.
 
@@ -149,11 +150,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -171,17 +172,17 @@ wippy init
 wippy run probe
 ```
 
-With Tor running locally:
+With the proxy running:
 
 ```
 direct IP: <your public IP>
-tor IP:    <Tor exit IP>
+proxy IP:  <proxy exit IP>
 ```
 
 Both lines must contain valid IP addresses. They should normally differ; the important
 proof is that the routed request succeeds only through the configured SOCKS listener.
 
-If Tor is not running, the `tor IP` line will report a dial error — the SOCKS5 overlay does not silently fall back to a direct connection.
+If the proxy is not running, the `proxy IP` line will report a dial error — the SOCKS5 overlay does not silently fall back to a direct connection.
 
 ## Inheritance
 
@@ -191,12 +192,12 @@ Overlay selection propagates through nested calls. Selecting an overlay at a `fu
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -245,7 +246,7 @@ Set a default overlay in `.wippy.yaml` so every call uses it unless overridden:
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 ## Permissions
@@ -267,17 +268,17 @@ Inherited overlays bypass this check — they were authorized at the caller's ed
 
 ## Troubleshooting and Cleanup
 
-- `connection refused` on `127.0.0.1:9050` means Tor is not listening on the
-  configured port. Verify Tor with the prerequisite `curl` command before debugging
+- `connection refused` on `127.0.0.1:1080` means the proxy is not listening on the
+  configured port. Verify it with the prerequisite `curl` command before debugging
   Wippy.
 - A direct request failure and a routed success usually indicate local DNS, proxy, or
   firewall rules affecting the direct path. The two calls are independent.
 - `access denied` for the routed call means the command security context lacks
-  `network.select` for `app:tor`; keep `app:probe_policy` attached under
+  `network.select` for `app:proxy`; keep `app:probe_policy` attached under
   `meta.command.security`.
 - The SOCKS5 driver never falls back to a direct connection. Do not remove the error
   merely to make the demo continue.
-- Stop the Wippy command when it exits and stop the Tor daemon only if you started it
+- Stop the Wippy command when it exits and close the SSH tunnel if you opened it
   solely for this tutorial. The SOCKS5 example creates no persistent network state.
   A Tailscale entry can persist node state under `.wippy/net/tailscale/`; remove the
   `.wippy/net` state directory only after stopping Wippy and only when you intend to

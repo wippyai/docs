@@ -1,11 +1,11 @@
 ---
 title: "네트워크 오버레이"
-description: "SOCKS5, Tor, Tailscale 또는 I2P 오버레이를 통해 아웃바운드 연결을 라우팅하고 리스너를 바인딩합니다."
+description: "SOCKS5, Tailscale 또는 I2P 오버레이를 통해 아웃바운드 연결을 라우팅하고 리스너를 바인딩합니다."
 ---
 
 # 네트워크 오버레이
 
-네트워크 오버레이 엔트리는 SOCKS5, Tor, Tailscale 또는 I2P를 통해 아웃바운드
+네트워크 오버레이 엔트리는 SOCKS5, Tailscale 또는 I2P를 통해 아웃바운드
 연결을 라우팅하거나 리스너를 바인딩합니다. 선택한 오버레이는 함수, 프로세스,
 HTTP 경계를 넘어 전파됩니다.
 
@@ -16,7 +16,7 @@ HTTP 경계를 넘어 전파됩니다.
 
 | 종류 | 설명 |
 |------|-------------|
-| `network.socks5` | 일반 SOCKS5 프록시 (Tor의 SOCKS5 리스너도 포함) |
+| `network.socks5` | 일반 SOCKS5 프록시 |
 | `network.tailscale` | Tailscale tsnet 오버레이 노드 |
 | `network.i2p` | I2P SAM v3 브리지 |
 
@@ -38,7 +38,7 @@ HTTP 경계를 넘어 전파됩니다.
 | `port` | int | 프록시 포트 (1-65535) |
 | `username` | string | 선택적 SOCKS5 인증 |
 | `password` | string | 선택적 SOCKS5 인증 |
-| `isolate_streams` | bool | 연결별 랜덤 자격 증명 (Tor 스트림 격리) |
+| `isolate_streams` | bool | 연결별 랜덤 자격 증명. 자격 증명별로 업스트림 연결을 분리하는 프록시용 |
 
 `host`와 `port`는 필수입니다. `isolate_streams`의 기본값은 `false`입니다. 격리를
 활성화하면 런타임은 설정된 자격 증명 대신 다이얼마다 새로운 사용자 이름과

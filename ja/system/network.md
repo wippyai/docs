@@ -1,11 +1,11 @@
 ---
 title: "ネットワークオーバーレイ"
-description: "SOCKS5、Tor、Tailscale、I2P のオーバーレイを通じて送信接続をルーティングし、リスナーをバインドします。"
+description: "SOCKS5、Tailscale、I2P のオーバーレイを通じて送信接続をルーティングし、リスナーをバインドします。"
 ---
 
 # ネットワークオーバーレイ
 
-ネットワークオーバーレイエントリは、SOCKS5、Tor、Tailscale、I2P を通じて送信接続をルーティングしたり、リスナーをバインドしたりします。選択されたオーバーレイは、関数、プロセス、HTTP の境界を越えて伝播します。
+ネットワークオーバーレイエントリは、SOCKS5、Tailscale、I2P を通じて送信接続をルーティングしたり、リスナーをバインドしたりします。選択されたオーバーレイは、関数、プロセス、HTTP の境界を越えて伝播します。
 
 このページは設定リファレンスです。YAML のコードブロックはエントリまたはアプリケーション設定の断片であり、外部プロキシ、tailnet、I2P SAM サービスがすでに存在することを前提としています。
 
@@ -13,7 +13,7 @@ description: "SOCKS5、Tor、Tailscale、I2P のオーバーレイを通じて�
 
 | 種別 | 説明 |
 |------|------|
-| `network.socks5` | 汎用 SOCKS5 プロキシ（Tor の SOCKS5 リスナーにも対応） |
+| `network.socks5` | 汎用 SOCKS5 プロキシ |
 | `network.tailscale` | Tailscale tsnet オーバーレイノード |
 | `network.i2p` | I2P SAM v3 ブリッジ |
 
@@ -35,7 +35,7 @@ description: "SOCKS5、Tor、Tailscale、I2P のオーバーレイを通じて�
 | `port` | int | プロキシポート（1～65535） |
 | `username` | string | 省略可能な SOCKS5 認証 |
 | `password` | string | 省略可能な SOCKS5 認証 |
-| `isolate_streams` | bool | 接続ごとにランダムな認証情報を使用（Tor のストリーム分離） |
+| `isolate_streams` | bool | 接続ごとにランダムな認証情報を使用。認証情報ごとにアップストリーム接続を分離するプロキシ向け |
 
 `host` と `port` は必須です。`isolate_streams` のデフォルトは `false` です。分離を有効にすると、ランタイムは設定済みの認証情報を使用せず、ダイヤルごとに新しいユーザー名とパスワードを生成します。
 

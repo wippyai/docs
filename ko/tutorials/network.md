@@ -7,7 +7,7 @@ description: "SOCKS5를 통해 아웃바운드 HTTP 호출과 생성된 프로�
 
 아웃바운드 HTTP 호출용 SOCKS5 오버레이를 구성한 다음 상속, 인바운드 리스너, 애플리케이션 기본값, 권한을 살펴봅니다.
 
-**분류:** 실행 가능한 SOCKS5 튜토리얼과 부분적인 Tailscale 구성법. 외부 Tor 리스너가 준비되면 직접/Tor 프로브는 완전하게 실행할 수 있습니다. Tailscale 섹션은 Wippy 연결 방법을 설명하지만 계정 프로비저닝은 의도적으로 Tailscale에 맡깁니다. I2P 구성은 아래에 연결된 네트워크 시스템 참조를 사용하세요.
+**분류:** 실행 가능한 SOCKS5 튜토리얼과 부분적인 Tailscale 구성법. 외부 SOCKS5 리스너가 준비되면 직접/프록시 프로브는 완전하게 실행할 수 있습니다. Tailscale 섹션은 Wippy 연결 방법을 설명하지만 계정 프로비저닝은 의도적으로 Tailscale에 맡깁니다. I2P 구성은 아래에 연결된 네트워크 시스템 참조를 사용하세요.
 
 ## 개요
 
@@ -15,7 +15,7 @@ Wippy는 오버레이 네트워크를 레지스트리 엔트리로 표현합니�
 
 Wippy는 세 가지 오버레이 엔트리 종류를 지원합니다.
 
-- `network.socks5` — 범용 SOCKS5 프록시(Tor의 SOCKS5 리스너 포함)
+- `network.socks5` — 범용 SOCKS5 프록시
 - `network.tailscale` — tsnet 오버레이 노드
 - `network.i2p` — I2P SAM v3 브리지
 
@@ -23,13 +23,19 @@ Wippy는 세 가지 오버레이 엔트리 종류를 지원합니다.
 
 - Wippy 런타임 `v0.3.32a`
 - `curl` 및 `api.ipify.org`에 대한 아웃바운드 HTTPS 접근
-- `127.0.0.1:9050`에서 SOCKS5를 제공하는 Tor 데몬. [Tor 프로젝트 다운로드 페이지](https://www.torproject.org/download/tor/)에서 지원 패키지를 설치하고 시작한 뒤, Wippy를 실행하기 전에 리스너를 확인하세요.
+- `127.0.0.1:1080`에서 수신하는 SOCKS5 프록시. 어떤 SOCKS5 프록시든 동작하며, 가장 빠른 방법은 접속 가능한 호스트로의 SSH 동적 포워딩입니다.
 
   ```bash
-  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ssh -N -D 1080 user@remote-host
   ```
 
-  확인에 성공하면 IP 주소가 포함된 JSON을 반환합니다. Tor Browser는 흔히 포트 9150을 사용합니다. 의도적으로 그 리스너를 사용한다면 레지스트리 엔트리와 확인 명령을 함께 변경하세요.
+  Wippy를 실행하기 전에 리스너를 확인하세요.
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:1080 https://api.ipify.org?format=json
+  ```
+
+  확인에 성공하면 원격 호스트의 IP 주소가 포함된 JSON을 반환합니다. 프록시가 다른 포트에서 수신한다면 레지스트리 엔트리와 확인 명령을 함께 변경하세요.
 - 빈 작업 디렉터리:
 
   ```bash
@@ -76,12 +82,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -101,8 +106,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true`를 사용하면 SOCKS5 드라이버가 연결마다 임의의 자격 증명을 생성하므로, Tor가 각 다이얼에 새 회로를 열 수 있습니다.
 
 보안은 기본적으로 엄격하므로, 명령은 실행에 사용할 액터와 정책을 지닙니다. `http_client.request`는 아웃바운드 호출을, `network.select`는 명시적인 오버레이 선택을 담당합니다. 이들이 없으면 모든 검사가 실패로 닫힙니다.
 
@@ -141,11 +144,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -163,16 +166,16 @@ wippy init
 wippy run probe
 ```
 
-Tor가 로컬에서 실행 중이면 다음과 같이 출력됩니다.
+프록시가 실행 중이면 다음과 같이 출력됩니다.
 
 ```
 direct IP: <your public IP>
-tor IP:    <Tor exit IP>
+proxy IP:  <proxy exit IP>
 ```
 
 두 줄 모두 유효한 IP 주소를 포함해야 합니다. 일반적으로 두 주소는 달라야 합니다. 핵심 증거는 라우팅된 요청이 구성된 SOCKS 리스너를 통해서만 성공한다는 것입니다.
 
-Tor가 실행 중이 아니면 `tor IP` 줄에 다이얼 오류가 표시됩니다. SOCKS5 오버레이는 직접 연결로 자동 폴백하지 않습니다.
+프록시가 실행 중이 아니면 `proxy IP` 줄에 다이얼 오류가 표시됩니다. SOCKS5 오버레이는 직접 연결로 자동 폴백하지 않습니다.
 
 ## 상속
 
@@ -182,12 +185,12 @@ Tor가 실행 중이 아니면 `tor IP` 줄에 다이얼 오류가 표시됩니�
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -235,7 +238,7 @@ Tailscale은 HTTP 리스너도 받을 수 있습니다. 오버레이를 클라�
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 ## 권한
@@ -257,11 +260,11 @@ network_service:
 
 ## 문제 해결과 정리
 
-- `127.0.0.1:9050`의 `connection refused`는 구성한 포트에서 Tor가 수신 중이 아니라는 뜻입니다. Wippy를 디버깅하기 전에 사전 요구 사항의 `curl` 명령으로 Tor를 확인하세요.
+- `127.0.0.1:1080`의 `connection refused`는 구성한 포트에서 프록시가 수신 중이 아니라는 뜻입니다. Wippy를 디버깅하기 전에 사전 요구 사항의 `curl` 명령으로 프록시를 확인하세요.
 - 직접 요청은 실패하고 라우팅 요청은 성공한다면 대개 로컬 DNS, 프록시 또는 방화벽 규칙이 직접 경로에 영향을 주는 것입니다. 두 호출은 서로 독립적입니다.
-- 라우팅 호출의 `access denied`는 명령 보안 컨텍스트에 `app:tor`에 대한 `network.select` 권한이 없다는 뜻입니다. `meta.command.security` 아래에 `app:probe_policy`를 연결해 두세요.
+- 라우팅 호출의 `access denied`는 명령 보안 컨텍스트에 `app:proxy`에 대한 `network.select` 권한이 없다는 뜻입니다. `meta.command.security` 아래에 `app:probe_policy`를 연결해 두세요.
 - SOCKS5 드라이버는 직접 연결로 폴백하지 않습니다. 데모를 계속 실행하려고 오류를 제거하지 마세요.
-- Wippy 명령이 종료되면 중지하고, 이 튜토리얼만을 위해 Tor 데몬을 시작했다면 Tor도 중지합니다. SOCKS5 예제는 지속 네트워크 상태를 만들지 않습니다. Tailscale 엔트리는 `.wippy/net/tailscale/` 아래에 노드 상태를 영속화할 수 있습니다. Wippy를 중지한 뒤 로컬 tailnet ID를 폐기하려는 경우에만 `.wippy/net` 상태 디렉터리를 제거하세요.
+- Wippy 명령이 종료되면 중지하고, 이 튜토리얼만을 위해 SSH 터널을 열었다면 터널도 닫습니다. SOCKS5 예제는 지속 네트워크 상태를 만들지 않습니다. Tailscale 엔트리는 `.wippy/net/tailscale/` 아래에 노드 상태를 영속화할 수 있습니다. Wippy를 중지한 뒤 로컬 tailnet ID를 폐기하려는 경우에만 `.wippy/net` 상태 디렉터리를 제거하세요.
 
 ## 다음 단계
 

@@ -8,7 +8,7 @@ description: "Ausgehende HTTP-Aufrufe und gestartete Prozesse über SOCKS5 route
 Konfigurieren Sie ein SOCKS5-Overlay für ausgehende HTTP-Aufrufe und lernen Sie anschließend Vererbung, eingehende Listener, Anwendungsstandards und Berechtigungen kennen.
 
 **Klassifizierung:** Ausführbares SOCKS5-Tutorial mit einem Tailscale-Teilrezept.
-Die direkte/Tor-Prüfung ist vollständig, sobald ein externer Tor-Listener verfügbar
+Die direkte/geroutete Prüfung ist vollständig, sobald ein externer SOCKS5-Listener verfügbar
 ist. Der Tailscale-Abschnitt erklärt die Wippy-Verdrahtung, überlässt die Einrichtung
 des Kontos aber bewusst Tailscale. Verwenden Sie für I2P die unten verlinkte Referenz des Netzwerksystems.
 
@@ -20,7 +20,7 @@ bis ein Nachkomme sie überschreibt.
 
 Wippy unterstützt drei Arten von Overlay-Einträgen:
 
-- `network.socks5` — generischer SOCKS5-Proxy (auch Tors SOCKS5-Listener)
+- `network.socks5` — generischer SOCKS5-Proxy
 - `network.tailscale` — tsnet-Overlay-Knoten
 - `network.i2p` — I2P SAM v3-Bridge
 
@@ -28,17 +28,22 @@ Wippy unterstützt drei Arten von Overlay-Einträgen:
 
 - Wippy-Runtime `v0.3.32a`.
 - `curl` und ausgehender HTTPS-Zugriff auf `api.ipify.org`.
-- Ein Tor-Daemon, der SOCKS5 unter `127.0.0.1:9050` bereitstellt. Installieren Sie
-  ein unterstütztes Paket von der [Download-Seite des Tor Project](https://www.torproject.org/download/tor/),
-  starten Sie es und prüfen Sie den Listener, bevor Sie Wippy ausführen:
+- Ein SOCKS5-Proxy, der unter `127.0.0.1:1080` lauscht. Jeder SOCKS5-Proxy funktioniert;
+  am schnellsten geht es mit dynamischer SSH-Weiterleitung zu einem erreichbaren Host:
 
   ```bash
-  curl --socks5-hostname 127.0.0.1:9050 https://api.ipify.org?format=json
+  ssh -N -D 1080 user@remote-host
   ```
 
-  Eine erfolgreiche Prüfung gibt JSON mit einer IP-Adresse zurück. Tor Browser
-  verwendet häufig Port 9150. Wenn Sie bewusst diesen Listener verwenden, ändern
-  Sie den Registry-Eintrag und den Prüfbefehl gemeinsam.
+  Prüfen Sie den Listener, bevor Sie Wippy ausführen:
+
+  ```bash
+  curl --socks5-hostname 127.0.0.1:1080 https://api.ipify.org?format=json
+  ```
+
+  Eine erfolgreiche Prüfung gibt JSON mit der IP-Adresse des entfernten Hosts zurück.
+  Wenn Ihr Proxy an einem anderen Port lauscht, ändern Sie den Registry-Eintrag und
+  den Prüfbefehl gemeinsam.
 - Ein leeres Arbeitsverzeichnis:
 
   ```bash
@@ -85,12 +90,11 @@ entries:
     lifecycle:
       auto_start: true
 
-  # SOCKS5 proxy entry (Tor exposes one at 127.0.0.1:9050 by default)
-  - name: tor
+  # SOCKS5 proxy entry
+  - name: proxy
     kind: network.socks5
     host: 127.0.0.1
-    port: 9050
-    isolate_streams: true
+    port: 1080
 
   - name: probe
     kind: process.lua
@@ -110,8 +114,6 @@ entries:
       - http_client
       - json
 ```
-
-`isolate_streams: true` veranlasst den SOCKS5-Treiber, pro Verbindung zufällige Zugangsdaten zu generieren, damit Tor für jeden Verbindungsaufbau einen neuen Schaltkreis öffnet.
 
 Sicherheit ist standardmäßig strikt, daher trägt der Befehl den Actor und die Richtlinie, unter denen sein Start läuft. `http_client.request` deckt den ausgehenden Aufruf ab und `network.select` die explizite Overlay-Auswahl; ohne sie schlägt jede Prüfung fehl.
 
@@ -150,11 +152,11 @@ local function main()
         io.print("direct IP: " .. direct)
     end
 
-    local routed, r_err = fetch_ip("app:tor")
+    local routed, r_err = fetch_ip("app:proxy")
     if r_err then
-        io.print("tor failed: " .. r_err)
+        io.print("proxy failed: " .. r_err)
     else
-        io.print("tor IP:    " .. routed)
+        io.print("proxy IP:  " .. routed)
     end
 
     return 0
@@ -174,14 +176,14 @@ wippy init
 wippy run probe
 ```
 
-Mit lokal laufendem Tor:
+Mit laufendem Proxy:
 
 ```
 direct IP: <your public IP>
-tor IP:    <Tor exit IP>
+proxy IP:  <proxy exit IP>
 ```
 
-Wenn Tor nicht läuft, meldet die Zeile `tor IP` einen Verbindungsfehler — das SOCKS5-Overlay fällt nicht stillschweigend auf eine direkte Verbindung zurück.
+Wenn der Proxy nicht läuft, meldet die Zeile `proxy IP` einen Verbindungsfehler — das SOCKS5-Overlay fällt nicht stillschweigend auf eine direkte Verbindung zurück.
 
 ## Vererbung
 
@@ -191,12 +193,12 @@ Die Overlay-Auswahl fließt durch verschachtelte Aufrufe. Wenn Sie das Overlay a
 local funcs = require("funcs")
 
 local result, err = funcs.new()
-    :with_options({ network = "app:tor" })
+    :with_options({ network = "app:proxy" })
     :call("app:scrape_site", url)
 ```
 
 ```lua
-local pid, err = process.with_options({ network = "app:tor" })
+local pid, err = process.with_options({ network = "app:proxy" })
     :spawn_monitored("app.workers:probe", "app:processes")
 ```
 
@@ -244,7 +246,7 @@ Einen Standard-Overlay in `.wippy.yaml` setzen, damit jeder Aufruf ihn verwendet
 ```yaml
 network_service:
   state_dir: .wippy/net
-  default_network: app:tor
+  default_network: app:proxy
 ```
 
 ## Berechtigungen
@@ -266,18 +268,18 @@ Vererbte Overlays umgehen diese Prüfung — sie wurden am Aufruf-Übergang des 
 
 ## Fehlerbehebung und Bereinigung
 
-- `connection refused` für `127.0.0.1:9050` bedeutet, dass Tor nicht am konfigurierten
-  Port lauscht. Prüfen Sie Tor mit dem `curl`-Befehl aus den Voraussetzungen, bevor
+- `connection refused` für `127.0.0.1:1080` bedeutet, dass der Proxy nicht am konfigurierten
+  Port lauscht. Prüfen Sie ihn mit dem `curl`-Befehl aus den Voraussetzungen, bevor
   Sie Wippy untersuchen.
 - Wenn die direkte Anfrage fehlschlägt, die geroutete aber erfolgreich ist, beeinflussen
   meist lokale DNS-, Proxy- oder Firewall-Regeln den direkten Pfad. Beide Aufrufe sind unabhängig.
 - `access denied` beim gerouteten Aufruf bedeutet, dass dem Sicherheitskontext des
-  Befehls `network.select` für `app:tor` fehlt. Lassen Sie `app:probe_policy` unter
+  Befehls `network.select` für `app:proxy` fehlt. Lassen Sie `app:probe_policy` unter
   `meta.command.security` eingebunden.
 - Der SOCKS5-Treiber fällt nie auf eine direkte Verbindung zurück. Entfernen Sie den
   Fehler nicht, nur damit die Demo weiterläuft.
-- Der Wippy-Befehl endet selbstständig. Beenden Sie den Tor-Daemon nur, wenn Sie ihn
-  ausschließlich für dieses Tutorial gestartet haben. Das SOCKS5-Beispiel erzeugt
+- Der Wippy-Befehl endet selbstständig. Schließen Sie den SSH-Tunnel, wenn Sie ihn
+  ausschließlich für dieses Tutorial geöffnet haben. Das SOCKS5-Beispiel erzeugt
   keinen dauerhaften Netzwerkzustand. Ein Tailscale-Eintrag kann Node-Zustand unter
   `.wippy/net/tailscale/` speichern; entfernen Sie `.wippy/net` nur nach dem Beenden
   von Wippy und nur, wenn Sie diese lokale Tailnet-Identität verwerfen möchten.

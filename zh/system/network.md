@@ -1,17 +1,17 @@
 ---
 title: "网络覆盖层"
-description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）路由出站流量并绑定监听器。覆盖层的选择按调用选择性启用，并在函数、进程和 HTTP 边界之间继承。"
+description: "通过覆盖网络（SOCKS5 代理、Tailscale mesh、I2P）路由出站流量并绑定监听器。覆盖层的选择按调用选择性启用，并在函数、进程和 HTTP 边界之间继承。"
 ---
 
 # 网络覆盖层
 
-通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）路由出站流量并绑定监听器。覆盖层的选择按调用选择性启用，并在函数、进程和 HTTP 边界之间继承。
+通过覆盖网络（SOCKS5 代理、Tailscale mesh、I2P）路由出站流量并绑定监听器。覆盖层的选择按调用选择性启用，并在函数、进程和 HTTP 边界之间继承。
 
 ## 条目种类
 
 | Kind | 描述 |
 |------|-------------|
-| `network.socks5` | 通用 SOCKS5 代理（也涵盖 Tor 的 SOCKS5 监听器） |
+| `network.socks5` | 通用 SOCKS5 代理 |
 | `network.tailscale` | Tailscale tsnet 覆盖节点 |
 | `network.i2p` | I2P SAM v3 网桥 |
 
@@ -33,7 +33,7 @@ description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）
 | `port` | int | 代理端口 (1-65535) |
 | `username` | string | 可选的 SOCKS5 认证 |
 | `password` | string | 可选的 SOCKS5 认证 |
-| `isolate_streams` | bool | 每连接随机凭证（Tor 流隔离） |
+| `isolate_streams` | bool | 每连接随机凭证，适用于按凭证区分上游连接的代理 |
 
 ## Tailscale
 

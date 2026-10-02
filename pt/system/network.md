@@ -1,11 +1,11 @@
 ---
 title: "Sobreposições de rede"
-description: "Roteie conexões de saída e vincule listeners por overlays SOCKS5, Tor, Tailscale ou I2P."
+description: "Roteie conexões de saída e vincule listeners por overlays SOCKS5, Tailscale ou I2P."
 ---
 
 # Sobreposições de rede
 
-Entradas de overlay de rede roteiam conexões de saída ou vinculam listeners por SOCKS5, Tor, Tailscale ou I2P. A seleção se propaga por limites de função, processo e HTTP.
+Entradas de overlay de rede roteiam conexões de saída ou vinculam listeners por SOCKS5, Tailscale ou I2P. A seleção se propaga por limites de função, processo e HTTP.
 
 Esta página é uma referência de configuração. Os blocos YAML são fragmentos de entrada ou de configuração da aplicação e pressupõem que o proxy, tailnet ou serviço I2P SAM externo já exista.
 
@@ -13,7 +13,7 @@ Esta página é uma referência de configuração. Os blocos YAML são fragmento
 
 | Tipo | Descrição |
 |------|-------------|
-| `network.socks5` | Proxy SOCKS5 genérico (também cobre o ouvinte SOCKS5 do Tor) |
+| `network.socks5` | Proxy SOCKS5 genérico |
 | `network.tailscale` | Nó de sobreposição Tailscale tsnet |
 | `network.i2p` | Ponte I2P SAM v3 |
 
@@ -35,7 +35,7 @@ Esta página é uma referência de configuração. Os blocos YAML são fragmento
 | `port` | int | Porta do proxy (1-65535) |
 | `username` | string | Autenticação SOCKS5 opcional |
 | `password` | string | Autenticação SOCKS5 opcional |
-| `isolate_streams` | bool | Credenciais aleatórias por conexão (isolamento de fluxos do Tor) |
+| `isolate_streams` | bool | Credenciais aleatórias por conexão, para proxies que separam conexões upstream por credencial |
 
 `host` e `port` são obrigatórios. `isolate_streams` usa `false` por padrão. Quando o isolamento está ativo, o runtime gera novos usuário e senha para cada conexão em vez de usar as credenciais configuradas.
 

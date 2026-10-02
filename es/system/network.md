@@ -1,11 +1,11 @@
 ---
 title: "Superposiciones de red"
-description: "Enruta conexiones salientes y vincula escuchadores mediante superposiciones SOCKS5, Tor, Tailscale o I2P."
+description: "Enruta conexiones salientes y vincula escuchadores mediante superposiciones SOCKS5, Tailscale o I2P."
 ---
 
 # Superposiciones de red
 
-Las entradas de superposición de red enrutan conexiones salientes o vinculan escuchadores mediante SOCKS5, Tor, Tailscale o I2P. La superposición seleccionada se propaga a través de los límites de función, proceso y HTTP.
+Las entradas de superposición de red enrutan conexiones salientes o vinculan escuchadores mediante SOCKS5, Tailscale o I2P. La superposición seleccionada se propaga a través de los límites de función, proceso y HTTP.
 
 Esta página es una referencia de configuración. Los bloques YAML son fragmentos de entrada o de configuración de la aplicación y presuponen que el proxy externo, la tailnet o el servicio SAM de I2P ya existen.
 
@@ -13,7 +13,7 @@ Esta página es una referencia de configuración. Los bloques YAML son fragmento
 
 | Tipo | Descripción |
 |------|-------------|
-| `network.socks5` | Proxy SOCKS5 genérico (también cubre el escuchador SOCKS5 de Tor) |
+| `network.socks5` | Proxy SOCKS5 genérico |
 | `network.tailscale` | Nodo de superposición Tailscale tsnet |
 | `network.i2p` | Puente I2P SAM v3 |
 
@@ -35,7 +35,7 @@ Esta página es una referencia de configuración. Los bloques YAML son fragmento
 | `port` | int | Puerto del proxy (1-65535) |
 | `username` | string | Autenticación SOCKS5 opcional |
 | `password` | string | Autenticación SOCKS5 opcional |
-| `isolate_streams` | bool | Credenciales aleatorias por conexión (aislamiento de flujos de Tor) |
+| `isolate_streams` | bool | Credenciales aleatorias por conexión, para proxies que separan las conexiones ascendentes según las credenciales |
 
 `host` y `port` son obligatorios. `isolate_streams` tiene como valor predeterminado `false`. Cuando se activa el aislamiento, el entorno de ejecución genera un nombre de usuario y una contraseña nuevos para cada conexión en lugar de usar las credenciales configuradas.
 

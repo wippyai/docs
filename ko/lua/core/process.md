@@ -215,7 +215,7 @@ local spawner = process.with_context({request_id = "123"})
 `process.with_options(options)`는 컨텍스트 값 대신 스폰 시 옵션(예: 네트워크 선택자)을 가진 스포너를 생성합니다:
 
 ```lua
-local spawner = process.with_options({network = "app:tor_proxy"})
+local spawner = process.with_options({network = "app:proxy"})
 ```
 
 | 옵션 | 타입 | 설명 |
