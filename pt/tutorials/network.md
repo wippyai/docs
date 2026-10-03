@@ -5,6 +5,8 @@ description: "Roteie chamadas HTTP de saída e processos gerados por SOCKS5, com
 
 # Redes de Sobreposição
 
+Tailscale é opcional e não está incluído nos builds padrão nem nos binários oficiais do Wippy. Compile com `make build-wippy WIPPY_FEATURES=tailscale` ou adicione a tag de build Go `tailscale`. Sem ela, entradas `network.tailscale` são rejeitadas como não suportadas. SOCKS5/Tor e I2P continuam disponíveis por padrão.
+
 Configure um overlay SOCKS5 para chamadas HTTP de saída e revise herança, listeners de entrada, padrões da aplicação e permissões.
 
 **Classificação:** tutorial SOCKS5 executável com receita Tailscale parcial. A sondagem direta/Tor é completa quando há um listener Tor externo. A seção Tailscale explica a integração Wippy, mas deixa o provisionamento da conta para o Tailscale. Para I2P, use a referência do sistema abaixo.

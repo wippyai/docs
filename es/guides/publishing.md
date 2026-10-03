@@ -324,7 +324,7 @@ Reglas:
 
 - Solo se empaquetan las variables referenciadas por las secciones seleccionadas o los perfiles publicados (seguidas transitivamente); todo lo demás necesita una entrada en `vars`.
 - Las referencias `${env:...}` en la configuración exportada se rechazan — el entorno del publicador nunca se filtra a un pack.
-- Las secciones locales de máquina `boot`, `extensions` y `workspace` no pueden exportarse.
+- Las secciones locales de máquina `boot` y `workspace` no pueden exportarse.
 - Solo el pack de la aplicación principal proporciona valores por defecto de runtime del host; los metadatos de runtime en los packs de dependencias se ignoran.
 
 En el destino, la configuración se aplica de menor a mayor: valores por defecto del pack de la app, valores por defecto integrados del runtime, archivos de configuración locales, perfiles seleccionados, sobrescrituras de CLI.

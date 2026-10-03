@@ -41,6 +41,8 @@ description: "SOCKS5、Tor、Tailscale、I2P のオーバーレイを通じて�
 
 ## Tailscale
 
+Tailscaleはオプションで、デフォルトのビルドとWippyの公式バイナリには含まれません。`make build-wippy WIPPY_FEATURES=tailscale`でビルドするか、Goの`tailscale`ビルドタグを追加してください。タグがない場合、`network.tailscale`エントリは未対応として拒否されます。SOCKS5/TorとI2Pはデフォルトで利用できます。
+
 ```yaml
 - name: tailnet
   kind: network.tailscale
