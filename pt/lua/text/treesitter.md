@@ -26,7 +26,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-O módulo treesitter é opcional — está presente apenas em builds que incluem a tag de build `treesitter`. Os binários oficiais do Wippy o incluem; para compilar a partir do código-fonte, use `make build-wippy` ou `go build -tags treesitter`. Sem a tag, `require("treesitter")` fica indisponível.
+O módulo `treesitter` é opcional e não está incluído nos builds padrão nem nos binários oficiais do Wippy. Compile com `make build-wippy WIPPY_FEATURES=treesitter` ou adicione a tag de build Go `treesitter` (requer CGO). Sem a tag, `require("treesitter")` fica indisponível.
 </note>
 
 ## Linguagens Suportadas

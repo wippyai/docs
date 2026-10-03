@@ -5,6 +5,8 @@ description: "Ausgehende HTTP-Aufrufe und gestartete Prozesse über SOCKS5 route
 
 # Netzwerk-Overlays
 
+Tailscale ist optional und in Standard-Builds sowie offiziellen Wippy-Binärdateien nicht enthalten. Bauen Sie mit `make build-wippy WIPPY_FEATURES=tailscale` oder fügen Sie das Go-Build-Tag `tailscale` hinzu. Ohne dieses Tag werden `network.tailscale`-Einträge als nicht unterstützt abgelehnt. SOCKS5/Tor und I2P bleiben standardmäßig verfügbar.
+
 Konfigurieren Sie ein SOCKS5-Overlay für ausgehende HTTP-Aufrufe und lernen Sie anschließend Vererbung, eingehende Listener, Anwendungsstandards und Berechtigungen kennen.
 
 **Klassifizierung:** Ausführbares SOCKS5-Tutorial mit einem Tailscale-Teilrezept.

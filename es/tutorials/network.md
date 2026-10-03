@@ -5,6 +5,8 @@ description: "Enruta llamadas HTTP salientes y procesos generados por SOCKS5, co
 
 # Redes Superpuestas
 
+Tailscale es opcional y está excluido de las compilaciones predeterminadas y los binarios oficiales de Wippy. Compila con `make build-wippy WIPPY_FEATURES=tailscale` o añade la etiqueta de compilación Go `tailscale`. Sin ella, las entradas `network.tailscale` se rechazan como no compatibles. SOCKS5/Tor e I2P siguen disponibles por defecto.
+
 Configura una red superpuesta SOCKS5 para llamadas HTTP salientes y revisa después
 la herencia, los listeners entrantes, los valores predeterminados de la aplicación y
 los permisos.

@@ -41,6 +41,8 @@ Esta página é uma referência de configuração. Os blocos YAML são fragmento
 
 ## Tailscale
 
+Tailscale é opcional e não está incluído nos builds padrão nem nos binários oficiais do Wippy. Compile com `make build-wippy WIPPY_FEATURES=tailscale` ou adicione a tag de build Go `tailscale`. Sem ela, entradas `network.tailscale` são rejeitadas como não suportadas. SOCKS5/Tor e I2P continuam disponíveis por padrão.
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

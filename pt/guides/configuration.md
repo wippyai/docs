@@ -554,10 +554,12 @@ Gerenciador de redes overlay (drivers SOCKS5, I2P, Tailscale).
 | `state_dir` | string | .wippy/net | Diretório de armazenamento do estado do driver |
 | `default_network` | string | | ID de rede padrão aplicado quando entradas omitem `network` |
 
+Tailscale é opcional e não está incluído nos builds padrão nem nos binários oficiais do Wippy. Compile com `make build-wippy WIPPY_FEATURES=tailscale` ou adicione a tag de build Go `tailscale`. Sem ela, entradas `network.tailscale` são rejeitadas como não suportadas. SOCKS5/Tor e I2P continuam disponíveis por padrão.
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 Veja: [Overlays de Rede](system/network.md)
@@ -592,22 +594,6 @@ Cliente do registro de módulos usado por `wippy install`/`update`.
 ```yaml
 modules:
   registry_url: https://internal-registry.example.com
-```
-
-## Extensões
-
-Extensões nativas de plugin Go carregadas no boot (somente Unix).
-
-| Campo | Tipo | Padrão | Descrição |
-|-------|------|--------|-----------|
-| `enabled` | bool | true | Carregar extensões |
-| `paths` | string[] | | Caminhos dos arquivos de plugin (relativos ao diretório de configuração) |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
 ```
 
 ## Variáveis de Ambiente
