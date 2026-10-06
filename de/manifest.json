@@ -182,6 +182,7 @@
         "title": "Web Host",
         "children": [
           {"title": "Übersicht", "path": "frontend/web-host/overview"},
+          {"title": "Attention: Schnellstart", "path": "frontend/web-host/attention-quickstart"},
           {"title": "Frontend-Facade", "path": "frontend/web-host/entry-point"},
           {"title": "Bootstrap-Ablauf", "path": "frontend/web-host/bootstrap"},
           {"title": "Multi-Panel-Layout", "path": "frontend/web-host/multi-panel-layout"},

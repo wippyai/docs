@@ -353,6 +353,20 @@ All of them are private tools in the `wippy.agent.tools` namespace. Reads work
 with automatic attachment, message-context capability and overlay permission
 off. An incoming attachment does not grant tools.
 
+Keep the agent's existing model, prompt and unrelated traits. Add the reusable
+trait as one additional item:
+
+```yaml
+traits:
+  - id: wippy.agent.traits:attention
+```
+
+The trait supplies its read guard and tools. A bare standalone agent runner
+does not create a browser connection; live reads also need the Session broker
+and a turn bound to an authenticated Host tab. See the [Attention
+quickstart](../frontend/web-host/attention-quickstart.md) for a full agent entry,
+Host configuration and public package examples.
+
 The nine read tools inspect the current interface of the Host tab that
 submitted the turn:
 
@@ -413,14 +427,19 @@ mixed batch keep their normal behavior. These limits are not a global
 provider-generation or cost limit. See [the complete
 limits](../frontend/web-host/attention-context.md#canonical-inspection-and-agent-tools).
 
-Session stores each compact read result in private function history, and later
-model generations see it again. Session withdraws an earlier read in the turn
-only when what it observed has changed. Reads of tree content are withdrawn
-when the tree revision changes, and geometry reads are withdrawn when geometry
-changes. Cursor, focus and selection reads are withdrawn only when a newer read
-of the same query exists. A withdrawn result stays in history, and the model
-sees a notice that tells it to call the tool again. Read lifetimes are measured
-from the time the server received the result, not from browser clocks.
+Session stores each compact read result in private function history. Later
+model generations can reuse it while it remains valid. A result expires after
+30 seconds, on a later user turn, after a completed browser action, or when a
+newer read replaces the same query. Tree reads also become stale when a later
+read reports a changed tree revision. Geometry reads use the geometry revision;
+point reads use both. Cursor, focus and selection use query replacement rather
+than the shared observation revision. Withdrawal uses existing `metadata.stale`
+behavior and preserves valid tool-call/result pairs. The result stays stored,
+but the model receives a stale-result notice instead of the old observation.
+Read lifetimes are measured from the time the server received the result, not
+from browser clocks. Immutable automatic attachments leave the model view
+after expiry, a later user turn, a fresh usable read or a completed browser
+action. Their stored content and hashes remain unchanged.
 
 ### Target references
 

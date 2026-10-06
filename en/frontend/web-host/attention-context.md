@@ -44,7 +44,7 @@ Visual capture saves the approved image as an ordinary upload through the Host `
 
 The automatic attachment setting belongs to the Session, so each conversation has its own value and revision. A new Session can set `attention_context_enabled` when it is created. Later, the user's client can change it with `PATCH /api/v1/sessions/{session_id}/attention-context` and a body of `{"enabled": true}` or `{"enabled": false}`, with an optional `expected_revision`. The agent can change it with the `attention_context_set` tool without asking the user: no confirmation prompt is shown, and the Attention trait tells the model to use the tool only when the user asks for it. The setting stays with the Session when the user switches to another agent. A one-message opt-out does not change the stored setting.
 
-Turning automatic attachment off does not stop observation, remove authorized inspection tools or revoke capture permission. Turning it on fails with `409 ATTENTION_CONTEXT_CAPABILITY_UNAVAILABLE` when the Session cannot render `wippy.attention` version 4, and a stale `expected_revision` fails with `409 ATTENTION_CONTEXT_REVISION_CONFLICT`. Failed context preparation keeps the draft and sends no text-only substitute.
+Turning automatic attachment off does not stop observation, remove authorized inspection tools or revoke capture permission. Turning it on fails with `409 ATTENTION_CONTEXT_CAPABILITY_UNAVAILABLE` when the Session cannot render `wippy.attention` version 4, and a stale `expected_revision` fails with `409 ATTENTION_CONTEXT_REVISION_CONFLICT`. Failed required context preparation sends no text-only substitute. With optimistic delivery, the submitted row becomes `Undelivered` and a later composer draft remains untouched.
 
 ## Canonical inspection and agent tools
 
@@ -76,7 +76,7 @@ The tools authenticate the complete private reply, then persist only a compact `
 
 The Attention trait installs a guard that runs before tool execution. It admits one read per batch and at most four attempted reads per user turn. Invalid and refused attempts count, and two invalid attempts end repair. An unchanged `attention_find_semantic`, `attention_find_css`, `attention_get_node` or `attention_get_tree` call is refused unless the tree revision changed or a UI action ran after the earlier read. If the guard cannot read complete Session history for the current turn, it refuses the read. A refused call keeps the model's own call ID, tool name and arguments. The refusal reason travels to the tool in its execution context, and the tool returns a `rejected` result with that reason without contacting the Host. Unrelated tools in a mixed batch keep their normal behavior.
 
-Session stores each compact read result in private function history, and later model generations see it again. Session withdraws an earlier read in the turn only when what it observed has changed. Reads of tree content are withdrawn when the tree revision changes, and geometry reads are withdrawn when geometry changes. Cursor, focus and selection reads are withdrawn only when a newer read of the same query exists. The model then sees a notice that the result was withdrawn, so it can call the tool again. Read lifetimes are measured from the time the server received the result, not from browser clocks. There is no full-result store and no global generation or cost limit. These limits apply only to Attention reads and do not change generic engine or provider behavior.
+Session stores each compact read result in private function history, and later model generations can reuse it while it remains valid. It withdraws a result after 30 seconds, on a later user turn, after a completed browser action, or when a newer read replaces the same query. Tree content also becomes stale when a later read reports a changed tree revision; geometry reads use the geometry revision, and point reads use both. Cursor, focus and selection use query replacement rather than the shared observation revision. Withdrawal uses the existing `metadata.stale` behavior: the record remains stored, valid tool-call/result pairs remain intact, and the model receives a stale-result notice instead of the old observation. Read lifetimes are measured from the time the server received the result, not from browser clocks. Automatic attachments stay immutable in storage, but leave the model view after expiry, a newer user turn, a fresh usable read or a completed browser action. There is no full-result store and no global generation or cost limit. These limits apply only to Attention reads and do not change generic engine or provider behavior.
 
 ## What the Host observes
 
@@ -161,13 +161,19 @@ The model renderer inserts recognized Attention data into the same user-role tur
 
 ### Message delivery
 
-On a Host with Attention enabled, a message without attachments uses the normal receipt-confirmed delivery. It also carries the tab binding, `runtime_context`, so agent tools in that turn reach the Host tab that sent the message. Only a message with context attachments uses the stricter context path. On that path the Host validates the attachments against the handlers that the Session reports. When the inline message would be too large for one WebSocket command, the Host stages the attachments with `POST /api/v1/sessions/context` and sends a one-use `context_attachments_ref` instead of the inline array.
+When the Session supports correlated message receipts, an accepted Send creates a local outgoing row and clears the composer before the receipt. Effective `interaction.can_send` still controls further input and Send. A non-steering Session blocks the composer while a turn runs. Older Sessions without correlated receipts retain their original delivery path; the Host does not invent a receipt or a delivery promise for them.
+
+A supported message carries the tab binding, `runtime_context`, so agent tools in that turn reach the Host tab that sent the message. Text, ordinary file IDs and required context are validated and committed atomically. The existing WebSocket service correlates one `received` response by `request_id`. Later permitted changes use the canonical server message ID and the existing message-update path. There is no second acknowledgement.
+
+Only a message with context attachments uses the stricter retained-context path. The Host validates the attachments against the handlers that the Session reports. Inline delivery is chosen from the complete encoded UTF-8 command, including text, files, envelope and runtime context, rather than attachment size alone. If it exceeds the supported command limit, the Host stages the context with `POST /api/v1/sessions/context` and sends a one-use `context_attachments_ref`. An exactly 32,768-byte command fits the current inline limit; a 32,769-byte command requires staging. Staging does not relax attachment-array or payload limits.
+
+A rejection shows `Undelivered` on the submitted row. A missing receipt shows `Delivery not confirmed`, because acceptance is unknown. The Host does not resend automatically or overwrite a later draft. A retained context send can use an explicit bounded retry with the original message identity; plain sends do not gain that retry guarantee. Context metadata stays out of rendered text, conversation copy and export. Submitted rows, retries and capture drafts remain Session-scoped. Existing unsent text and ordinary uploads can still carry when the user switches chats.
 
 The Host sends `runtime_context` only to a Session whose capability descriptor reports Attention support. For an older Session, plain messages are sent as before, and a message with pointing context is refused with an error so the user can send it without that context.
 
 ### Session capability descriptor
 
-`GET /api/v1/sessions/capabilities` describes the protocol features of the Session module. The Host reads it before it chooses a delivery path. The endpoint requires an authenticated user, returns `401` otherwise, and sends `Cache-Control: no-store`. A Session release without this endpoint answers `404`, and the Host then treats that Session as having no Attention support.
+`GET /api/v1/sessions/capabilities` describes the protocol features of the Session module. The Host reads it before it chooses a delivery path and caches the result only within the authenticated connection generation. Reconnect or changed authentication invalidates that cache. The endpoint requires an authenticated user, returns `401` otherwise, and sends `Cache-Control: no-store`. A Session release without this endpoint answers `404`, and the Host then treats that Session as having no Attention support.
 
 ```json
 {
@@ -295,6 +301,8 @@ An authorized `ui_action_capture_visual` request opens Host approval. Target or 
 
 Approval captures and redacts the selected area, saves it as an ordinary upload, and adds it to the composer as a removable file. It does not send a message. The user can remove the file or send it with a later message through ordinary `file_uuids`. When a sent message still includes the file, the Host also adds one `wippy.attention.visual` version 1 attachment that references that upload, and the model receives the approved image. This happens even when automatic pointing context is off. The visual attachment is the only way image content reaches the model. Semantic `wippy.attention` attachments never contain screenshot bytes or upload references.
 
+PNG is the default. A requested WebP capture must produce actual WebP bytes with `image/webp` and a `.webp` file name. A provider that cannot encode the requested format returns an unsupported result; it must not rename PNG bytes as WebP. The image-capable model and authorized resolver must also support the intended image input.
+
 The Host revalidates target identity, generation, ancestry, geometry and privacy before capture and before accepting a prepared result. Missing or stale authority, cancellation, denial, navigation and disconnect terminate the request without a draft. The provider applies exclusions and redaction and enforces byte and dimension limits. Composer drafts remain Session-scoped; removal invokes cleanup.
 
 The fresh snapshot and the final frame must still match the originally approved target rectangle. Movement between approval and snapshot, or while a frame is pending, returns `stale-target` even if the same canonical node remains live. The Host does not silently move an approved crop; a new capture requires approval again.
@@ -336,6 +344,7 @@ Before enabling Attention for users, verify all of the following against the exa
 
 ## See Also
 
+- [Attention quickstart](./attention-quickstart.md) — agent setup, public API examples and message flows
 - [Attention Context for micro frontends](../micro-frontends/attention-context.md) — public API and authoring guidance
 - [Proxy & Isolation](./proxy-isolation.md) — proxy injection and nested boundaries
 - [Render Engines](./render-engines.md) — iframe and Web Fragment delivery
