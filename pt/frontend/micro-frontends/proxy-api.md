@@ -90,7 +90,7 @@ O runtime instala alguns globais para uso próprio — `window.$W`, `window.getW
 
 ### `config`
 
-A configuração da aplicação filha entregue pelo host. É um objeto simples (não uma função) — importado diretamente e pronto para leitura síncrona. A documentação nova cobre apenas o contrato atual `wippy-context-2.0`.
+A configuração da aplicação filha entregue pelo host. É um objeto simples (não uma função) — importado diretamente e pronto para leitura síncrona. A documentação nova cobre apenas o contrato atual `wippy-context-2.1`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string // .../schemas/wippy-context-2.1.json
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1080,7 +1083,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Sobrescritas de Configuração
 
-Páginas podem sobrescrever campos selecionados da configuração voltada ao filho, por página, sem um deployment separado. O formato de sobrescrita ainda usa `customization` por compatibilidade, e o host projeta esses valores no resultado atual de `theming.global` do filho antes de a página receber a configuração `wippy-context-2.0`.
+Páginas podem sobrescrever campos selecionados da configuração voltada ao filho, por página, sem um deployment separado. O formato de sobrescrita ainda usa `customization` por compatibilidade, e o host projeta esses valores no resultado atual de `theming.global` do filho antes de a página receber a configuração `wippy-context-2.1`.
 
 ### Definindo sobrescritas
 
@@ -1237,3 +1240,9 @@ Ambos os componentes usam Shadow DOM com variáveis CSS de `@wippy-fe/theme` e i
 ```
 
 Quando o Vue monta em `#app`, ele substitui o elemento `<wippy-loading>` automaticamente.
+
+## UI policy in 1.0.62
+
+O Web Host 1.0.62 compartilha a seguinte configuração de chat com aplicativos filhos. `hostConfig` pertence ao contêiner Web Host e nunca é incluído na configuração dos filhos. Um layout gerenciado não inclui chat integrado por padrão. Aplicativos executados inteiramente como filhos usam campos de nível superior ou substituições do pacote.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

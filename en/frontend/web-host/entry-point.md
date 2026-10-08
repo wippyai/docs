@@ -48,7 +48,7 @@ if (typeof token !== 'string' || token.length === 0)
 await import(cfg.facade_url + cfg.module_file)
 
 const appConfig = {
-  $schema: `${cfg.facade_url}/schemas/wippy-context-2.0.xsd`,
+  $schema: `${cfg.facade_url}/schemas/wippy-context-2.1.json`,
   auth: {
     token,
     expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
@@ -59,6 +59,9 @@ const appConfig = {
   apiRoutes: cfg.apiRoutes,
   axiosDefaults: cfg.axiosDefaults,
   theming: cfg.theming,
+  allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
   hostConfig: cfg.hostConfig,
   context: { resourceId: '', resourceType: 'page' },
 }
@@ -198,7 +201,7 @@ The standard shell itself adds these required `AppConfig` fields:
 
 | Field | Source |
 |-------|--------|
-| `$schema` | `<facade_url>/schemas/wippy-context-2.0.xsd` |
+| `$schema` | `<facade_url>/schemas/wippy-context-2.1.json` |
 | `auth` | Token read from `@wippy_token_info`; the current shell synthesizes an expiry one day from initialization. |
 | `context` | `{ resourceId: '', resourceType: 'page' }` |
 
@@ -302,7 +305,7 @@ async function mountWippyIframe(auth) {
     throw new Error('iframe_url and iframe_origin must identify the same origin')
 
   const appConfig = {
-    $schema: `${cfg.facade_url}/schemas/wippy-context-2.0.xsd`,
+    $schema: `${cfg.facade_url}/schemas/wippy-context-2.1.json`,
     auth,
     env: cfg.env,
     routePrefix: cfg.routePrefix,
@@ -311,7 +314,10 @@ async function mountWippyIframe(auth) {
     axiosDefaults: cfg.axiosDefaults,
     tanstack: cfg.tanstack,
     theming: cfg.theming,
-    hostConfig: cfg.hostConfig,
+    allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
+  hostConfig: cfg.hostConfig,
     context: { resourceId: '', resourceType: 'page' },
   }
 
@@ -411,3 +417,9 @@ Set the `wippy/facade` parameters that produce the config response in
 ```
 
 For the full list of available parameters and their defaults, see the [Facade module reference](../../framework/facade.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

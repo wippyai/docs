@@ -75,7 +75,7 @@ WebSocket 客户端使用认证令牌连接到 `APP_WEBSOCKET_URL`。实时事�
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.1'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -83,6 +83,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query 默认值（全局 + 按角色分类）
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -201,3 +204,23 @@ Web Host 从多个来源解析配置，按优先级从低到高：
 - [Facade 入口点](./entry-point.md) —— `wippy/facade` 如何构造并交付 `AppConfig`
 - [多面板布局](./multi-panel-layout.md) —— 由 `managed-layout.js` 提供的受管布局启动路径
 - [渲染引擎](./render-engines.md) —— 页面加载后如何渲染（srcdoc iframe 与 Web Fragment）
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+显式 WC 属性对当前实例优先。`show-selector` 覆盖 `hideSessionSelector` 的反值。未配置时，WC 选择器保持隐藏，内置宿主聊天保留默认显示行为。缺失属性继承配置。`false` 和 `{}` 是显式值。标签映射替换旧配置，内置标签保留。只有成功加载的组件定义才能在其作用域中注册属性。 标签许可列表来自 AppConfig 和成功加载的组件，没有对应的 WC 覆盖属性。
+
+现有 `SetConfig` 消息通过内部事件 `configUpdated` 更新运行时配置。Proxy API 按照 `@theme` 和 `@history` 的命名方式，将通知公开为 `on('@config', callback)`。注入配置和公开配置视图会在回调之前更新。独立打包的聊天 WC 使用此订阅；内部启动读取不会调用已弃用的 `config.auth` getter。不添加新的 PostMessage 操作或 `childrenConfig`。旧 `feature` 格式和 2.0 模式仍受支持。SVG 的 `viewBox` 和 `preserveAspectRatio` 保留，同时移除脚本、事件处理属性和不安全的 URL。

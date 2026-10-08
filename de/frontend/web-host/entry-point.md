@@ -63,7 +63,7 @@ Der Konfigurationsendpunkt liefert ein JSON-Objekt zurück, das sowohl die Felde
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
+  "$schema": "wippy-context-2.1",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
@@ -142,7 +142,7 @@ Der Konfigurationsendpunkt liefert ein JSON-Objekt zurück, das sowohl die Felde
 
 | Feld | Beschreibung |
 |-------|-------------|
-| `$schema` | Version des Konfigurationsvertrags (`"wippy-context-2.0"`). |
+| `$schema` | Version des Konfigurationsvertrags (`"wippy-context-2.1"`). |
 | `auth` | Laufzeit-Bearer-Token und Ablauf, injiziert als `AppConfig.auth`. |
 | `env` | Laufzeit-URLs, injiziert als `AppConfig.env` auf oberster Ebene. |
 | `routePrefix` | API-URL-Präfix, das an Kind-Apps weitergereicht wird. |
@@ -302,3 +302,9 @@ Die `wippy/facade`-Parameter, die die obige Konfigurationsantwort erzeugen, werd
 ```
 
 Die vollständige Liste der verfügbaren Parameter und ihrer Standardwerte finden Sie in der [Referenz des Facade-Moduls](../../framework/facade.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 teilt die folgende Chat-Konfiguration mit untergeordneten Anwendungen. `hostConfig` gehört zum Web-Host-Wrapper und wird nie an Kinder übertragen. Ein verwaltetes Layout enthält standardmäßig keinen integrierten Chat. Vollständig untergeordnete Anwendungen verwenden Felder auf oberster Ebene oder Paketüberschreibungen.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

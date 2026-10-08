@@ -36,3 +36,9 @@ Nur die Wrapper-Schlüssel des Backends sind in diesem Beispiel snake case. Vers
 `meta.mountRoute` ist ein aktueller Kompatibilitäts-Bug im Backend. Das vorgesehene Backend-Feld ist `meta.mount_route`, aber bestehende Deployments benötigen `mountRoute`, bis die Backend-Korrektur ausgeliefert wird. Behandeln Sie das als eine explizite Ausnahme, nicht als Beleg dafür, dass Registry- oder Backend-Felder generell camelCase wären.
 
 Die Compliance muss diese Ausnahme versionieren, damit sie entfernt werden kann, wenn sich das Backend-Schema ändert.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 teilt die folgende Chat-Konfiguration mit untergeordneten Anwendungen. `hostConfig` gehört zum Web-Host-Wrapper und wird nie an Kinder übertragen. Ein verwaltetes Layout enthält standardmäßig keinen integrierten Chat. Vollständig untergeordnete Anwendungen verwenden Felder auf oberster Ebene oder Paketüberschreibungen.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

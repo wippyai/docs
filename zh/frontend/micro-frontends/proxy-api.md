@@ -88,7 +88,7 @@ iframe/Web Fragment 的通道。
 
 ### `config`
 
-宿主投递的子应用配置。它是一个普通对象（不是函数）—— 直接导入即可同步读取。新文档只针对当前的 `wippy-context-2.0` 契约。
+宿主投递的子应用配置。它是一个普通对象（不是函数）—— 直接导入即可同步读取。新文档只针对当前的 `wippy-context-2.1` 契约。
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -98,7 +98,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string // .../schemas/wippy-context-2.1.json
   auth: {
     token: string
     expiresAt: string
@@ -112,6 +112,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1072,7 +1075,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## 配置覆盖
 
-页面可以按页面覆盖部分面向子端的配置字段，而无需单独部署。覆盖的形态出于兼容仍然使用 `customization`，宿主会在页面接收 `wippy-context-2.0` 配置之前，把这些值投射进当前子端的 `theming.global` 结果中。
+页面可以按页面覆盖部分面向子端的配置字段，而无需单独部署。覆盖的形态出于兼容仍然使用 `customization`，宿主会在页面接收 `wippy-context-2.1` 配置之前，把这些值投射进当前子端的 `theming.global` 结果中。
 
 ### 设置覆盖
 
@@ -1229,3 +1232,9 @@ app.use(router)
 ```
 
 当 Vue 挂载到 `#app` 时，它会自动替换 `<wippy-loading>` 元素。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

@@ -75,7 +75,7 @@ WebSocket クライアントが認証トークンを使って `APP_WEBSOCKET_URL
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.1'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -83,6 +83,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query のデフォルト（グローバル + ロールベースのカテゴリーごと）
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -202,3 +205,23 @@ module.js / managed-layout.js loaded on the page
 - [ファサードのエントリーポイント](./entry-point.md) — `wippy/facade` が `AppConfig` をどう構築し配信するか
 - [マルチパネルレイアウト](./multi-panel-layout.md) — `managed-layout.js` が配信するマネージドレイアウトのブート経路
 - [レンダリングエンジン](./render-engines.md) — 読み込み後にページがどう描画されるか（srcdoc iframe と Web Fragment）
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+WC の明示的な属性がインスタンス単位で優先されます。`show-selector` は `hideSessionSelector` の反転値を上書きします。設定がない WC のセレクターは非表示のままです。組み込みホストチャットの既定値は表示です。属性がない場合は設定を継承します。`false` と `{}` は明示的な値です。タグマップは既存の設定を置き換え、組み込みタグは維持します。読み込みに成功した定義だけが、そのスコープに属性を登録します。 タグ許可リストは AppConfig と読み込みに成功したコンポーネントから取得します。WC 属性による上書きはありません。
+
+既存の `SetConfig` は内部イベント `configUpdated` を通じてランタイム設定を更新します。Proxy API は `@theme` や `@history` と同様に、通知を `on('@config', callback)` として公開します。注入された設定と公開設定はコールバックの前に更新されます。独立したバンドルのチャット WC はこの購読を使い、内部の初期化処理は非推奨の `config.auth` getter を呼びません。新しい PostMessage アクションや `childrenConfig` は追加しません。従来の `feature` 形式とスキーマ 2.0 も対応します。SVG の `viewBox` と `preserveAspectRatio` を維持し、スクリプト、イベント属性、安全でない URL は除去します。

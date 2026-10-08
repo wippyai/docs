@@ -91,7 +91,7 @@ iframe/Web Fragment.
 
 ### `config`
 
-Конфигурация дочернего приложения, доставленная хостом. Это обычный объект (не функция) — импортируется напрямую и готов к синхронному чтению. Новая документация ориентируется только на текущий контракт `wippy-context-2.0`.
+Конфигурация дочернего приложения, доставленная хостом. Это обычный объект (не функция) — импортируется напрямую и готов к синхронному чтению. Новая документация ориентируется только на текущий контракт `wippy-context-2.1`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -101,7 +101,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string // .../schemas/wippy-context-2.1.json
   auth: {
     token: string
     expiresAt: string
@@ -115,6 +115,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1082,7 +1085,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Переопределения конфигурации
 
-Страницы могут переопределять отдельные поля конфигурации, обращённые к дочернему контексту, без отдельного развёртывания. Форма переопределения по-прежнему использует `customization` ради совместимости, а хост проецирует эти значения в текущий результат `theming.global` дочернего контекста до того, как страница получит конфигурацию `wippy-context-2.0`.
+Страницы могут переопределять отдельные поля конфигурации, обращённые к дочернему контексту, без отдельного развёртывания. Форма переопределения по-прежнему использует `customization` ради совместимости, а хост проецирует эти значения в текущий результат `theming.global` дочернего контекста до того, как страница получит конфигурацию `wippy-context-2.1`.
 
 ### Задание переопределений
 
@@ -1239,3 +1242,9 @@ app.use(router)
 ```
 
 Когда Vue монтируется в `#app`, он автоматически заменяет элемент `<wippy-loading>`.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 передаёт следующие настройки чата дочерним приложениям. `hostConfig` относится к оболочке Web Host и никогда не входит в конфигурацию дочерних приложений. В управляемой компоновке нет встроенного чата по умолчанию. Приложения, которые полностью работают на дочернем уровне, используют поля верхнего уровня или переопределения пакета.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)
