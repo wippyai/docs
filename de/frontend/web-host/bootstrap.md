@@ -75,7 +75,7 @@ Der vollständige Konfigurationstyp, den sowohl `initWippyApp` als auch `SetConf
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.1'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -83,6 +83,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack-Query-Defaults (global + je rollenbasierter Kategorie)
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -202,3 +205,23 @@ module.js / managed-layout.js auf der Seite geladen
 - [Facade Entry Point](./entry-point.md) — wie `AppConfig` von `wippy/facade` gebaut und geliefert wird
 - [Multi-Panel Layout](./multi-panel-layout.md) — der Managed-Layout-Boot-Weg, den `managed-layout.js` bedient
 - [Render Engines](./render-engines.md) — wie eine Page nach dem Laden rendert (srcdoc-iframe vs. Web Fragment)
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 teilt die folgende Chat-Konfiguration mit untergeordneten Anwendungen. `hostConfig` gehört zum Web-Host-Wrapper und wird nie an Kinder übertragen. Ein verwaltetes Layout enthält standardmäßig keinen integrierten Chat. Vollständig untergeordnete Anwendungen verwenden Felder auf oberster Ebene oder Paketüberschreibungen.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+Explizite WC-Attribute haben Vorrang für die jeweilige Instanz. `show-selector` überschreibt den umgekehrten Wert von `hideSessionSelector`. Ohne Konfiguration bleibt der WC-Selektor verborgen; der integrierte Host-Chat behält seinen sichtbaren Selektor. Fehlende Attribute erben die Konfiguration. `false` und `{}` sind explizite Werte. Tag-Listen ersetzen die bisherige konfigurierte Liste. Standard-Tags bleiben erhalten. Nur erfolgreich geladene Komponenten registrieren ihre Attribute im jeweiligen Laufzeitbereich. Tag-Listen kommen aus AppConfig und erfolgreichen Komponentenladungen. Es gibt kein WC-Attribut dafür.
+
+Die vorhandene Nachricht `SetConfig` aktualisiert die Laufzeitkonfiguration über das interne Ereignis `configUpdated`. Die Proxy-API stellt diese Benachrichtigung als `on('@config', callback)` bereit, entsprechend `@theme` und `@history`. Die injizierte Konfiguration und die öffentliche Ansicht werden vor den Callbacks aktualisiert. Separat gebündelte Chat-Komponenten verwenden dieses Abonnement; interne Bootstrap-Lesezugriffe rufen den veralteten Getter `config.auth` nicht auf. Es gibt keine neue PostMessage-Aktion und kein `childrenConfig`. Das bisherige `feature`-Format und Schema 2.0 bleiben unterstützt. SVG-Attribute wie `viewBox` und `preserveAspectRatio` bleiben erhalten, während Skripte, Ereignisattribute und unsichere URLs entfernt werden.

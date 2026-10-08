@@ -36,3 +36,9 @@ proxy:
 `meta.mountRoute` 是当前后端的一处兼容性缺陷。后端预期的字段是 `meta.mount_route`，但在后端修正发布之前，现有部署需要 `mountRoute`。请把它当作一个明确的例外，而不是注册表或后端字段普遍使用驼峰命名的证据。
 
 合规检查必须为该例外标注版本，以便后端 schema 变更时可以移除它。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

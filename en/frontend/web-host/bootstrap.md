@@ -105,7 +105,7 @@ parameter that selects the module entry, and managed mode is conveyed through
 
 ```typescript
 interface AppConfig {
-  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.0.xsd
+  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.1.json
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -114,6 +114,9 @@ interface AppConfig {
   tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
   themeMode?: 'auto' | 'light' | 'dark'
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -261,3 +264,23 @@ module.js / managed-layout.js loaded on the page
 - [Facade Entry Point](./entry-point.md) — how `AppConfig` is constructed and delivered by `wippy/facade`
 - [Multi-Panel Layout](./multi-panel-layout.md) — the managed-layout boot path served by `managed-layout.js`
 - [Render Engines](./render-engines.md) — how a page renders once loaded (srcdoc iframe vs Web Fragment)
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+An explicit WC attribute wins for that instance. `show-selector` overrides the inverse of `hideSessionSelector`; without either setting, the WC selector remains hidden. Built-in host chat keeps its visible-selector default. `allow-select-model` accepts `"false"`. An absent attribute inherits config, and removing it restores inheritance. Configured tag maps replace the previous map, including `{}`. Built-in sanitizer tags remain available. Runtime tag registrations belong to the loading scope and do not mutate declared config. Only successful definitions grant their declared attributes. Tag allowlists come from AppConfig and successful component loads, with no WC attribute override.
+
+The existing `SetConfig` message updates the owning runtime through the internal `configUpdated` event. The proxy exposes the notification as `on('@config', callback)`, following the naming of `@theme` and `@history`. It refreshes raw injected config and the public config view before callbacks run. Independently bundled chat WCs use that subscription and seed their stores from raw injected config. Direct `config.auth` reads are supported and emit no warning; use `api` for ordinary authenticated HTTP requests. No new PostMessage action or `childrenConfig` is added. Legacy `feature` fields and schema 2.0 inputs remain accepted; old host-only settings stay host-only. SVG allowlists can retain `viewBox` and `preserveAspectRatio` without allowing script tags, event handlers, or unsafe URLs.

@@ -63,7 +63,7 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
+  "$schema": "wippy-context-2.1",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
@@ -142,7 +142,7 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 | 字段 | 说明 |
 |-------|-------------|
-| `$schema` | 配置契约版本（`"wippy-context-2.0"`）。 |
+| `$schema` | 配置契约版本（`"wippy-context-2.1"`）。 |
 | `auth` | 作为 `AppConfig.auth` 注入的运行时 bearer 令牌与过期时间。 |
 | `env` | 作为顶层 `AppConfig.env` 注入的运行时 URL。 |
 | `routePrefix` | 转发给子应用的 API URL 前缀。 |
@@ -302,3 +302,9 @@ Web Host 提取 `AppConfig` 载荷并继续完整初始化。完整的消息协�
 ```
 
 完整的可用参数列表及其默认值，参见 [Facade 模块参考](../../framework/facade.md)。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

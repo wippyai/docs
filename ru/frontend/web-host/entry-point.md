@@ -63,7 +63,7 @@ Web Host извлекает полезную нагрузку `AppConfig` из �
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
+  "$schema": "wippy-context-2.1",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
@@ -142,7 +142,7 @@ Web Host извлекает полезную нагрузку `AppConfig` из �
 
 | Поле | Описание |
 |-------|-------------|
-| `$schema` | Версия контракта конфигурации (`"wippy-context-2.0"`). |
+| `$schema` | Версия контракта конфигурации (`"wippy-context-2.1"`). |
 | `auth` | Рантайм-токен bearer и срок его действия, внедряемые как `AppConfig.auth`. |
 | `env` | Рантайм-URL, внедряемые как `AppConfig.env` верхнего уровня. |
 | `routePrefix` | Префикс URL API, передаваемый дочерним приложениям. |
@@ -302,3 +302,9 @@ Web Host извлекает полезную нагрузку `AppConfig` и п�
 ```
 
 Полный список доступных параметров и их умолчаний см. в [справочнике модуля фасада](../../framework/facade.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 передаёт следующие настройки чата дочерним приложениям. `hostConfig` относится к оболочке Web Host и никогда не входит в конфигурацию дочерних приложений. В управляемой компоновке нет встроенного чата по умолчанию. Приложения, которые полностью работают на дочернем уровне, используют поля верхнего уровня или переопределения пакета.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

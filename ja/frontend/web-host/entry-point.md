@@ -63,7 +63,7 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
+  "$schema": "wippy-context-2.1",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
@@ -142,7 +142,7 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 | フィールド | 説明 |
 |-------|-------------|
-| `$schema` | 設定契約のバージョン（`"wippy-context-2.0"`）。 |
+| `$schema` | 設定契約のバージョン（`"wippy-context-2.1"`）。 |
 | `auth` | `AppConfig.auth` として注入される、ランタイムのbearerトークンと有効期限。 |
 | `env` | トップレベルの `AppConfig.env` として注入されるランタイムのURL。 |
 | `routePrefix` | 子アプリに転送されるAPIのURLプレフィックス。 |
@@ -302,3 +302,9 @@ Web Hostは `AppConfig` のペイロードを抽出し、完全な初期化を�
 ```
 
 利用可能なパラメータの完全な一覧とそのデフォルトについては、[ファサードモジュールのリファレンス](../../framework/facade.md)を参照してください。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

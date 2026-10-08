@@ -75,7 +75,7 @@ WebSocket 클라이언트가 인증 토큰을 사용해 `APP_WEBSOCKET_URL`에 �
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.1'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -83,6 +83,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query 기본값 (전역 + 역할 기반 카테고리별)
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -201,3 +204,23 @@ interface AppContext {
 - [파사드 엔트리 포인트](./entry-point.md) — `wippy/facade`가 `AppConfig`를 구성하고 전달하는 방식
 - [다중 패널 레이아웃](./multi-panel-layout.md) — `managed-layout.js`가 서빙하는 managed 레이아웃 부트 경로
 - [렌더 엔진](./render-engines.md) — 로드된 페이지가 렌더링되는 방식(srcdoc iframe vs Web Fragment)
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+명시적인 WC 속성이 해당 인스턴스에서 우선합니다. `show-selector`는 `hideSessionSelector`의 반대 값을 재정의합니다. 설정이 없으면 WC 선택기는 숨겨진 상태를 유지하고 내장 호스트 채팅은 표시 기본값을 유지합니다. 속성이 없으면 구성을 상속합니다. `false`와 `{}`는 명시적인 값입니다. 태그 맵은 이전 설정을 대체하며 내장 태그는 유지합니다. 로드에 성공한 정의만 해당 범위에 속성을 등록합니다. 태그 허용 목록은 AppConfig와 로드에 성공한 컴포넌트에서 가져옵니다. WC 속성으로 재정의하지 않습니다.
+
+기존 `SetConfig` 메시지는 내부 이벤트 `configUpdated`를 통해 런타임 구성을 갱신합니다. Proxy API는 `@theme` 및 `@history`와 같이 알림을 `on('@config', callback)`으로 제공합니다. 주입된 구성과 공개 구성은 콜백 전에 갱신됩니다. 별도로 번들된 채팅 WC는 이 구독을 사용하며, 내부 초기화 코드는 사용 중단된 `config.auth` getter를 호출하지 않습니다. 새 PostMessage 작업이나 `childrenConfig`는 추가하지 않습니다. 기존 `feature` 형식과 스키마 2.0도 지원합니다. SVG의 `viewBox`와 `preserveAspectRatio`는 유지하면서 스크립트, 이벤트 속성 및 안전하지 않은 URL은 제거합니다.

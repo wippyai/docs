@@ -60,6 +60,13 @@ Some browser APIs behave **incorrectly — and silently — inside a reframed re
 | `window.scrollX/Y`, `scrollTo` | Target the hidden realm window (always `0`) | Scroll-driven UI reads the wrong geometry |
 | Web Workers, Canvas, WebGL, WASM | **Work normally** | — |
 
+The `document.elementFromPoint` row describes application code running inside
+the hidden fragment realm. It is **not** an Attention Context limitation. Wippy
+instruments both sides of a Web Fragment: the reflected physical Host shadow
+tree supplies hit identity and geometry, while `proxy-fragment.js` supplies
+fragment-runtime, package, semantic, privacy, and nested-boundary metadata. See
+[Attention Context](./attention-context.md#web-fragments).
+
 `vh`/`vw` and `matchMedia` appear here because they ask about the **window**. An app that sizes itself against its allocated *surface* instead — container queries on `wippy-surface`, and the `--wippy-surface-*` variables — resolves identically under both engines and needs no pinning. See [Surface Portability](../micro-frontends/surface-portability.md), and [Surface Migration](../micro-frontends/surface-migration.md) to convert an existing app. `position: fixed` and `elementFromPoint` have no portable form and remain genuine reasons to pin.
 
 Two detectors surface these at authoring time (they detect *app-code incompatibility*, not deployment mistakes):
@@ -86,4 +93,5 @@ The frontend app itself needs no fragment-specific code; `proxy-fragment.js` is 
 - [Views](../../framework/views.md) — the self-mounting `/@fragment` gateway and its `server` binding
 - [Micro Frontend Apps (view.page)](../frontend-registry/view-page.md) — the per-page `wippy.renderEngine` field
 - [Proxy & Isolation](./proxy-isolation.md) — the shared proxy API (both engines) and the iframe engine
+- [Attention Context](./attention-context.md) — recursive hit resolution across iframe and Web Fragment engines
 - [Web Host Overview](./overview.md) — how the host loads and renders pages

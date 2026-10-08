@@ -41,7 +41,8 @@ WippyのチャットUIは**合成可能なカスタム要素**のセットとし
 | `session-id` | string | — | この既存セッション（セッションUUID）をレンダリングする。 |
 | `start-token` | string | — | エージェントのstart token。`session-id` が設定されていない場合、マウント時に**新しい**セッションを開始する。 |
 | `agent` | string | — | セッションが開いていないときに表示される空状態で、あらかじめ選択するエージェント名（またはタイトル）。 |
-| `show-selector` | boolean | `false` | 組み込みのセッションセレクタをヘッダーにレンダリングする。 |
+| `show-selector` | boolean | 継承 | 表示は hideSessionSelector の反転値を継承します。設定がなければ false。 |
+| `allow-select-model` | boolean | 継承、未設定なら true | このインスタンスのモデル選択を上書きします。 |
 | `hide-header` | boolean | `false` | エージェント/モデルのヘッダーバーを隠す（コンパクトな埋め込み向け）。 |
 
 **イベント**（要素上で `CustomEvent` としてディスパッチされます。`event.detail` を読んでください）:
@@ -189,3 +190,9 @@ Web Hostの子の内部では、これらの要素にセットアップは不要
 - [テーマ: Webコンポーネント](./web-component-theming.md) — shadow DOMのCSSとセマンティック変数
 - [プロキシAPI](./proxy-api.md) — `host.startChat` / `host.openSession` と `@wippy-fe/proxy` のその他
 - [プロキシと分離](../web-host/proxy-isolation.md) — ホストが子にスクリプトと設定を注入する方法
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

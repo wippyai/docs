@@ -90,7 +90,7 @@ iframe/Web Fragmentのチャネルのままです。
 
 ### `config`
 
-ホストが配信する子アプリケーションの設定です。関数ではなくプレーンなオブジェクトで、直接importして同期的に読めます。新しいドキュメントは現行の `wippy-context-2.0` 契約のみを対象としています。
+ホストが配信する子アプリケーションの設定です。関数ではなくプレーンなオブジェクトで、直接importして同期的に読めます。新しいドキュメントは現行の `wippy-context-2.1` 契約のみを対象としています。
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string // .../schemas/wippy-context-2.1.json
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1078,7 +1081,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## 設定のオーバーライド
 
-ページは、別途デプロイすることなく、選択した子向けの設定フィールドをページごとにオーバーライドできます。オーバーライドの形は互換性のため引き続き `customization` を使い、ホストはページが `wippy-context-2.0` の設定を受け取る前に、それらの値を現在の子の `theming.global` の結果に投影します。
+ページは、別途デプロイすることなく、選択した子向けの設定フィールドをページごとにオーバーライドできます。オーバーライドの形は互換性のため引き続き `customization` を使い、ホストはページが `wippy-context-2.1` の設定を受け取る前に、それらの値を現在の子の `theming.global` の結果に投影します。
 
 ### オーバーライドの設定方法
 
@@ -1235,3 +1238,9 @@ app.use(router)
 ```
 
 Vueが `#app` にマウントすると、`<wippy-loading>` 要素は自動的に置き換えられます。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

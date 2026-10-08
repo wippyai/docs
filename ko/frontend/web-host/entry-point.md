@@ -63,7 +63,7 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
+  "$schema": "wippy-context-2.1",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
@@ -142,7 +142,7 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 | 필드 | 설명 |
 |-------|-------------|
-| `$schema` | 설정 계약 버전(`"wippy-context-2.0"`). |
+| `$schema` | 설정 계약 버전(`"wippy-context-2.1"`). |
 | `auth` | `AppConfig.auth`로 주입되는 런타임 bearer 토큰과 만료 시각. |
 | `env` | 최상위 `AppConfig.env`로 주입되는 런타임 URL. |
 | `routePrefix` | 자식 앱으로 전달되는 API URL 접두사. |
@@ -302,3 +302,9 @@ Web Host는 `AppConfig` 페이로드를 추출하고 전체 초기화를 진행�
 ```
 
 사용 가능한 전체 파라미터 목록과 기본값은 [파사드 모듈 레퍼런스](../../framework/facade.md)를 참고하십시오.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

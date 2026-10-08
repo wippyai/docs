@@ -1,0 +1,32 @@
+name: Documentation checks
+
+# Runs the dependency-free documentation validators in scripts/ on every pull
+# request and on every push to main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check frontend documentation
+        run: node scripts/check-frontend-docs.mjs
+
+      - name: Check Attention Context documentation
+        run: node scripts/check-attention-context-docs.mjs
+
+      - name: Check Markdown links
+        run: node scripts/check-markdown-links.mjs

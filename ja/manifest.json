@@ -182,6 +182,7 @@
         "title": "Web Host",
         "children": [
           {"title": "Web Host 概要", "path": "frontend/web-host/overview"},
+          {"title": "Attention クイックスタート", "path": "frontend/web-host/attention-quickstart"},
           {"title": "Facade エントリポイント", "path": "frontend/web-host/entry-point"},
           {"title": "ブートストラップシーケンス", "path": "frontend/web-host/bootstrap"},
           {"title": "マルチパネルレイアウト", "path": "frontend/web-host/multi-panel-layout"},

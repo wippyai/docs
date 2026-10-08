@@ -65,7 +65,8 @@ The full chat surface: header, scrollable message list, and composer.
 | `session-id` | string | — | Render this existing session (a session UUID). |
 | `start-token` | string | — | Agent start token; starts a **new** session on mount when no `session-id` is set. |
 | `agent` | string | — | Agent name (or title) to pre-select in the empty state, shown when no session is open. |
-| `show-selector` | boolean | `false` | Render the built-in session selector in the header. |
+| `show-selector` | boolean | inherited | Inherited visibility is the inverse of hideSessionSelector. Default false without config. |
+| `allow-select-model` | boolean | inherited, then true | Override model selection for this instance. |
 | `hide-header` | boolean | `false` | Hide the agent/model header bar (for compact embeds). |
 
 **Events** (dispatched as `CustomEvent`s on the element; read `event.detail`):
@@ -274,3 +275,9 @@ described in [How they load](#how-they-load).
 - [Theming: Web Components](./web-component-theming.md) — shadow-DOM CSS and semantic variables
 - [Proxy API](./proxy-api.md) — `host.startChat` / `host.openSession` and the rest of `@wippy-fe/proxy`
 - [Proxy & Isolation](../web-host/proxy-isolation.md) — how the host injects scripts and config into children
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

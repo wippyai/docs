@@ -37,3 +37,9 @@ Only the backend wrapper keys are snake case in this example. Nested frontend ob
 ## `mountRoute` casing exception
 
 The current view registry schema reads `meta.mountRoute` and stores it in the registry's internal `mount_route` field; API output uses `mountRoute` again. Treat the authored lower-camel-case field as one documented exception, not evidence that registry or backend fields are generally camelCase.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

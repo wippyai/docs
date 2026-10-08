@@ -183,11 +183,13 @@
         "title": "Web Host",
         "children": [
           {"title": "Overview", "path": "frontend/web-host/overview"},
+          {"title": "Attention quickstart", "path": "frontend/web-host/attention-quickstart"},
           {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
           {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
           {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
           {"title": "Render Engines", "path": "frontend/web-host/render-engines"},
           {"title": "Proxy & Isolation", "path": "frontend/web-host/proxy-isolation"},
+          {"title": "Attention Context", "path": "frontend/web-host/attention-context"},
           {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
           {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
           {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
@@ -202,6 +204,7 @@
           {"title": "Web Component Recipe", "path": "frontend/micro-frontends/web-component"},
           {"title": "Chat Web Components", "path": "frontend/micro-frontends/chat-web-components"},
           {"title": "Proxy API", "path": "frontend/micro-frontends/proxy-api"},
+          {"title": "Attention Context", "path": "frontend/micro-frontends/attention-context"},
           {"title": "Surface Portability", "path": "frontend/micro-frontends/surface-portability"},
           {"title": "Surface Migration", "path": "frontend/micro-frontends/surface-migration"},
           {"title": "Theme Authoring", "path": "frontend/micro-frontends/theming"},

@@ -332,6 +332,192 @@ Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The 
 
 For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
 
+## Attention context and UI actions
+
+When a user message contains a validated `wippy.attention` version 1 through 4 attachment,
+the prompt builder renders bounded candidates into the same user-role turn. The
+rendered block is marked `untrusted_user_observation`; labels, accessible text,
+and values are data and cannot supply model instructions. Unknown attachment
+kinds or versions remain inert until a handler is registered. Prompt rendering
+has its own byte budget and does not mutate the persisted attachment.
+
+Files attached to a user message are listed to the model by file name, type,
+size and ID. Their content is never inlined as an image. Image content reaches
+the model only through an approved `wippy.attention.visual` capture, described
+in [Visual capture](#visual-capture).
+
+### Attention trait and tools
+
+Add `wippy.agent.traits:attention` to an agent to give it the Attention tools.
+All of them are private tools in the `wippy.agent.tools` namespace. Reads work
+with automatic attachment, message-context capability and overlay permission
+off. An incoming attachment does not grant tools.
+
+Keep the agent's existing model, prompt and unrelated traits. Add the reusable
+trait as one additional item:
+
+```yaml
+traits:
+  - id: wippy.agent.traits:attention
+```
+
+The trait supplies its read guard and tools. A bare standalone agent runner
+does not create a browser connection; live reads also need the Session broker
+and a turn bound to an authenticated Host tab. See the [Attention
+quickstart](../frontend/web-host/attention-quickstart.md) for a full agent entry,
+Host configuration and public package examples.
+
+The nine read tools inspect the current interface of the Host tab that
+submitted the turn:
+
+| Tool | Example arguments | Purpose |
+|---|---|---|
+| `attention_find_semantic` | `{"role":"button","name":"Save"}` | Match `role`, `name`, `text` or `resource_id` across the permitted tree. |
+| `attention_find_css` | `{"selector":"button","root":ref}` | Query one known document or shadow root. |
+| `attention_get_node` | `{"node_id":"returned-canonical-id"}` | Resolve one known canonical node. |
+| `attention_get_tree` | `{"scope":ref,"limit":16,"depth":2}` | Read a bounded subtree page. |
+| `attention_get_geometry` | `{"node":ref}` | Read geometry, coordinate space and quality. |
+| `attention_get_cursor` | `{}` | Read the latest pointer observation. |
+| `attention_get_focus` | `{}` | Read the focused target. |
+| `attention_get_selection` | `{}` | Read selected text and both endpoint paths. |
+| `attention_hit_test` | `{"x":100,"y":120}` | Inspect a point, by default with a 20 CSS-pixel radius and a 5-pixel grid. |
+
+In the examples, `ref` is the complete returned `NodeRef` with
+`host_instance_id`, `node_id`, `mount_id` and `generation`. The older
+`attention_inspect` tool was removed; the explicit read tools above replace it.
+
+`attention_context_set` turns automatic pointing context on or off for the
+current Session. It takes a required boolean `enabled` and an optional
+`expected_revision`. The agent may call it without asking the user; there is
+no confirmation prompt, and the trait tells the model to use the tool only when
+the user asks for it. The
+setting belongs to the Session, so it stays in effect after the user switches
+to another agent.
+
+The four action tools ask the user to clarify or capture a target through the
+current authenticated Host connection:
+
+| Tool | Purpose | Targets |
+|---|---|---|
+| `ui_action_highlight` | Highlight candidate rectangles. | 1 to 32 |
+| `ui_action_confirm` | Ask whether a supplied candidate is the intended one. | 1 to 32 |
+| `ui_action_select` | Ask the user to select a candidate, or to select an arbitrary area when there are no targets and `capture_region: true`. | 0 to 32 |
+| `ui_action_capture_visual` | Ask the user to approve an image of a target, region or viewport. The `capture` object sets `scope` (`target`, `region` or `viewport`), `region`, `allow_adjustment`, `allow_viewport_choice` and `format` (`image/png` or `image/webp`). | 1 to 32 |
+
+The action tools and `attention_context_set` are exclusive, so each one
+cancels concurrent tool calls. See [agent clarification
+actions](../frontend/web-host/attention-context.md#agent-clarification-actions)
+for every argument and default.
+
+### Read limits and history
+
+Semantic search and CSS search are separate modes; CSS requires one canonical
+document or shadow-root reference. Search returns at most eight matches and
+tree pages at most 32 nodes. Private results use `wippy.attention.model.v1`,
+preserve complete returned ancestry through local dictionaries, and are capped
+at 8 KiB.
+
+The trait guard admits one read per batch and four attempted reads per user
+turn, including invalid and refused attempts. Two invalid attempts end repair.
+It refuses reads when trusted history cannot establish the turn boundary. A
+refused call keeps the model's own call ID, tool name and arguments. The
+refusal reason travels to the tool in its execution context, and the tool
+returns a `rejected` result without contacting the Host. Unrelated tools in a
+mixed batch keep their normal behavior. These limits are not a global
+provider-generation or cost limit. See [the complete
+limits](../frontend/web-host/attention-context.md#canonical-inspection-and-agent-tools).
+
+Session stores each compact read result in private function history. Later
+model generations can reuse it while it remains valid. A result expires after
+30 seconds, on a later user turn, after a completed browser action, or when a
+newer read replaces the same query. Tree reads also become stale when a later
+read reports a changed tree revision. Geometry reads use the geometry revision;
+point reads use both. Cursor, focus and selection use query replacement rather
+than the shared observation revision. Withdrawal uses existing `metadata.stale`
+behavior and preserves valid tool-call/result pairs. The result stays stored,
+but the model receives a stale-result notice instead of the old observation.
+Read lifetimes are measured from the time the server received the result, not
+from browser clocks. Immutable automatic attachments leave the model view
+after expiry, a later user turn, a fresh usable read or a completed browser
+action. Their stored content and hashes remain unchanged.
+
+### Target references
+
+Each item of an action tool's `targets` array is an immutable target reference
+containing the snapshot, target, Host instance, mount ID and generation, path
+digest, rectangle, and optional label. It contains no capability or bearer
+token. The prompt renderer exposes this object as a candidate's `action_ref`,
+and a read that returns exactly one actionable node exposes it as `target_ref`.
+The agent must copy that exact object verbatim as one item of the tool's
+`targets` array, and must not build one from IDs, labels or coordinates. Tool
+arguments can also include a prompt of at most 512 characters and independent
+pointer and keyboard permissions. A zero-target `select` request is valid only
+with `capture_region: true`. Here `capture_region` enables Host-owned arbitrary
+area selection; it does not authorize screenshot capture.
+
+The tools receive ephemeral `ui_action_runtime` context only at exact
+registered tool execution. The context is excluded from validated tool-call
+records, wrappers, persistence, history, and model-visible payloads. The session
+broker rejects a tool when the current turn has no eligible Host connection,
+when interactive actions are disabled, or when its target belongs to another
+Host instance. Read-only inspection has independent authority. Requests bind to
+the Host tab that submitted the current turn; reconnect requires a fresh
+authenticated binding and cannot replay an expired request.
+
+The Session plugin is the sole WebSocket inbox owner. It validates incoming
+action results and routes each accepted result to a private per-call mailbox.
+Framework tools wait on that mailbox rather than subscribing to WebSocket
+topics themselves.
+
+The tool path waits for one terminal Host result. Its status is `selected`,
+`confirmed`, `prepared`, `cancelled`, `denied`, `rejected`, `expired`, `stale`,
+`disconnected`, `permission-denied`, `unavailable` or `error`. See [terminal
+statuses](../frontend/web-host/attention-context.md#terminal-statuses) for the
+meaning of each one. The broker permits one pending action per session, caps
+expiry at 120 seconds, and accepts only the first correctly correlated terminal
+result.
+
+### Visual capture
+
+`ui_action_capture_visual` opens explicit Host approval and prepares a
+removable ordinary composer file. It never sends the message. Target or region
+capture is the default, and viewport capture is offered only when the request
+sets `allow_viewport_choice`. The approved image is uploaded as an ordinary
+file, so the application's upload type must accept `image/png`, and
+`image/webp` when that format is requested.
+
+When the user later sends a message that still includes the file, the Host adds
+one `wippy.attention.visual` attachment that references the upload. This
+happens even when automatic pointing context is off. Semantic Attention
+attachments contain no screenshot bytes or upload references.
+
+The session upload authorizer and byte resolver are implemented through the
+content-provider contract. Before persistence, the session layer validates
+reference structure, session binding, expiry, media type, size, and digest,
+then authorizes the reference and verifies the resolved bytes. An attached
+reference that cannot pass these checks rejects the complete send atomically;
+it is not silently removed to persist a semantic-only message.
+
+When rendering an accepted message, the framework emits image input only when
+an authorized `visual_resolver` returns bytes that pass media-type, size, and
+SHA-256 checks. Later expiry, denied access, an unavailable resolver, or
+invalid bytes omits the image and returns a render diagnostic without changing
+the persisted message; other valid semantic context remains renderable.
+
+Deployments must verify capture, redaction, ordinary-file authorization, expiry
+and orphan cleanup independently. A byte resolver alone does not establish
+those behaviors.
+
+### Errors during a turn
+
+A model or provider error ends only the current turn. The user sees the error
+and can send the message again in the same Session. If the Session process
+stopped because of a crash, the next message reopens it.
+
+See [Web Host Attention Context](../frontend/web-host/attention-context.md#agent-clarification-actions)
+for the overlay behavior and [Relay](./relay.md#attention-ui-action-routing) for
+connection targeting.
+
 ## Streaming
 
 Stream agent responses through `stream_target`:
@@ -501,6 +687,7 @@ Traits are reusable definitions that contribute prompts, tools, and behavior to 
 | Trait | Description |
 |-------|-------------|
 | `time_aware` | Injects current date and time into the prompt |
+| `attention` | Adds the Attention read tools, `attention_context_set` and the UI action tools. See [Attention context and UI actions](#attention-context-and-ui-actions). |
 
 The `time_aware` trait accepts context options:
 

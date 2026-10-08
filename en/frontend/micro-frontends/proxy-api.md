@@ -19,7 +19,7 @@ For how the runtime is loaded into each context, see [Proxy & Isolation](../web-
 
 ## Initialization
 
-`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
+`@wippy-fe/proxy` exports synchronous getters — `host`, `api`, `on`, `config`, `state`, `ws`, `logger`, `attention`, `sanitize`, `html`, `loadCss`, `loadWebComponent`, `loadByTagName`, `hostCss`, `define`, `classifyLink`, `installVueWarnSuppressor`, `addIcons`, `tailwindConfig`. Import what you need and use it directly. The host injects the child config before the runtime loads for both `view.page` apps and `view.component` web components, so the getters are available when application code runs. There is **no** `getWippyApi`, no `instance`, and no `GetConfig`/`SetConfig` handshake to wait on. Await only actual asynchronous operations such as HTTP calls and state reads.
 
 ```ts
 import { host, api, config, state, ws, logger } from '@wippy-fe/proxy'
@@ -91,7 +91,7 @@ The runtime installs a handful of globals for its own use — `window.$W`, `wind
 
 ### `config`
 
-The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents only the current `wippy-context-2.0` contract.
+The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents only the current `wippy-context-2.1` contract.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -101,7 +101,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: string // .../schemas/wippy-context-2.1.json
   auth: {
     token: string
     expiresAt: string
@@ -115,6 +115,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -769,6 +772,40 @@ Read-only shortcuts for the same values on the snapshot. `engine: 'host'` means 
 
 ---
 
+## Attention
+
+### `attention.enabled` and `attention.supports(capability)`
+
+Attention exposes bounded inspection throughout the mounted Host lifetime.
+Automatic attachments and interactive capabilities have separate controls:
+
+```typescript
+import { attention } from '@wippy-fe/proxy'
+
+if (attention.enabled && attention.supports('message-context')) {
+  // Automatic attachment still follows attention_context.enabled for the Session.
+}
+```
+
+`supports()` accepts `message-context`, `agent-actions`, or `visual-capture`.
+Agent actions and visual capture can report false when their runtime providers
+are unavailable. Discovery never grants agent tools or capture consent.
+
+Public methods include `getCursor`, `getFocus`, `getSelection`, `atPoint`,
+`getTree`, `find`, `getGeometry`, `subscribe`, `registerSemantic` and
+`registerLayoutProvider`. A child queries its own subtree by default;
+`fromRoot: true` selects the same application tree. CSS requires a canonical
+document or shadow-root scope. Subscriptions and registrations must be disposed
+when the caller unmounts. Root identity, private snapshot creation, capture
+approval and the recursive/WebSocket protocols remain Host-owned.
+
+See [Attention Context for Micro Frontends](./attention-context.md) for semantic
+authoring and privacy annotations, and [Web Host Attention
+Context](../web-host/attention-context.md) for the recursive and message
+contracts.
+
+---
+
 ## Events
 
 ### `on(topic, handler)` → `() => void`
@@ -831,6 +868,7 @@ class MyEl extends HTMLElement {
 | `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
 | `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
 | `@theme` | `'auto' \| 'light' \| 'dark'` | Applied theme mode propagated by the Host. |
+| `@config` | No payload | Effective child config changed. Read the refreshed config after this notification. Available with Web Host 1.0.62. |
 | `@message` | Full WS message | All WebSocket messages. Internally subscribes to `*`, `*:*`, `*:*:*`, `*:*:*:*`. |
 | `@state-error` | `{ error: string, key?: string }` | State save operation failed (quota exceeded, serialization error). |
 | `@layout-change` | `LayoutSnapshot` | Managed-layout snapshot updated; the fresh snapshot is passed to the handler. Equivalent to reading `host.layout.snapshot`. |
@@ -1137,7 +1175,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Config Overrides
 
-Pages can override selected child-facing config fields per page without a separate deployment. The override shape still uses `customization` for compatibility, and the host projects those values into the current child `theming.global` result before the page receives `wippy-context-2.0` config.
+Pages can override selected child-facing config fields per page without a separate deployment. The override shape still uses `customization` for compatibility, and the host projects those values into the current child `theming.global` result before the page receives `wippy-context-2.1` config.
 
 ### Setting overrides
 
@@ -1294,3 +1332,9 @@ Both components use Shadow DOM with CSS variables from `@wippy-fe/theme` and inc
 ```
 
 When Vue mounts into `#app` it replaces the `<wippy-loading>` element automatically.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)
