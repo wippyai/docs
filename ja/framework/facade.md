@@ -70,7 +70,7 @@ entries:
 | 値 | 効果 |
 |-------|--------|
 | `iframe` _(デフォルト)_ | ページはsrcdoc iframeとしてレンダリングされます — メイン（デフォルト）のエンジンです。 |
-| `fragment` | ページは[Web Fragment](../frontend/web-host/render-engines.md)（shadow rootに反映される`reframed`レルム）としてレンダリングされます。 |
+| `fragment` | 各 Web Fragment occurrence は独自の物理 realm iframe で実行され、shadow root に反映されます。 |
 
 オプトインできるのは正確な文字列`fragment`のみです。**それ以外の値は — `fragmnet`のようなタイプミスを含めて — `iframe`にクランプされます**（フェイルセーフですが、警告は出ません）。fragmentエンジンを有効にするには[`/@fragment`ゲートウェイ](./views.md#web-fragments-gateway)も必要ですが、これは`wippy/views`（0.5.9以上）が自ら提供するため、利用側での配線は不要です。ページは[`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine)でデプロイメントのデフォルトをページ単位に上書きできます。
 
@@ -171,13 +171,15 @@ content_fs:    app:app_fs
 | `allow_additional_tags` | `{}` | HTMLサニタイザーのタグホワイトリスト（`Record<string, string[]>`、タグ → 許可される属性） |
 | `chat` | `{}` | チャットUIのオーバーライド |
 
-次の3つは`hostConfig`配下ではなく、**トップレベル**の`AppConfig`フィールド（`hostConfig`の兄弟）として出力されます:
+次のパラメーターは `hostConfig` の下ではなく、同じ階層の**トップレベル** `AppConfig` フィールドとして出力されます:
 
 | パラメータ | 出力名 | デフォルト | 説明 |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | フロントエンドのルートオーバーライド |
 | `axios_defaults` | `axiosDefaults` | `{}` | フロントエンドaxios HTTPクライアントのデフォルト |
 | `tanstack` | `tanstack` | `{}` | TanStack Queryのデフォルト: `{ default?, content?, lists? }`。`default`はすべてのクエリに適用され、`content`は単一リソースのレンダリング、`lists`はナビゲーション/インデックスのクエリを対象とします。hostのデフォルトは`refetchOnWindowFocus:false`です |
+| `import_map` | `importMap` | `{}` | ブラウザー import map の拡張。トップレベルの `AppConfig.importMap` として出力されます。 |
+| `iconify` | `iconify` | `{}` | トップレベルの `AppConfig` フィールドとして出力される Iconify ソース。 |
 
 ## Configエンドポイント
 
@@ -225,7 +227,7 @@ content_fs:    app:app_fs
 }
 ```
 
-API URLは`PUBLIC_API_URL`環境変数から読み取られます。`APP_WEBSOCKET_URL`は`http://`を`ws://`に、または`https://`を`wss://`に置き換えて導出されます。テーミングには3つのスコープ（`global`、`host`、`children`）があります — `host.i18n`にはアプリのブランディングが含まれます。`hostConfig`キーはcamelCaseで、facadeパラメータから組み立てられます: `session_type`、`history_mode`、`render_engine`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`、加えてオプションの`additional_nav_items`、`state_cache`、`allow_additional_tags`、`chat`。`render_engine`は`renderEngine`になります（[レンダーエンジン](#render-engine)を参照）。`api_routes`、`axios_defaults`、`tanstack`パラメータは、`hostConfig`の内側ではなくその兄弟となるトップレベルの`AppConfig`フィールド（`apiRoutes`、`axiosDefaults`、`tanstack`）として出力されます。
+`api_routes`（`apiRoutes`）、`axios_defaults`（`axiosDefaults`）、`tanstack`、`iconify`、`import_map`（`importMap`）は `hostConfig` と同じ階層のトップレベル `AppConfig` フィールドとして出力されます。
 
 `facade_url`、`iframe_origin`、`iframe_url`、`login_path`、`mode`、`module_file`の各フィールドは、埋め込みページが自身を構築するために使う**シェルレベル**のフィールドであり、hostが初期化に使う子の`AppConfig`の一部ではありません。`iframe_origin`/`iframe_url`フィールドは、手動のファサードなしiframe埋め込みでのみ利用されます（[Facadeエントリポイント](../frontend/web-host/entry-point.md)を参照）。`mode`フィールドは正規化された`fe_mode`（`compat`または`managed`）で、`module_file`はファサードページが読み込むJSモジュールエントリです — compatでは`/module.js`、managedでは`/managed-layout.js`です。
 
@@ -291,3 +293,12 @@ wippy publish --embed facade:public_files
 - [Facadeエントリポイント](../frontend/web-host/entry-point.md) - ファサードがWeb Hostをブートストラップする仕組み（FE視点）
 - [CSSインジェクション](../frontend/web-host/css-injection.md) - ファサードのテーミングが子iframeへ流れる仕組み
 - [レンダーエンジン](../frontend/web-host/render-engines.md) - iframe対Web Fragmentのページレンダリング（`render_engine`スイッチ）
+
+
+任意の JSON 設定 `iconify` は AppConfig のトップレベルフィールドとして出力されます。未設定時はオンラインソースを使います。[Iconify プロバイダー](../frontend/web-host/iconify.md)を参照してください。
+
+## AppConfig import map
+
+facade requirement の名前は `import_map` で、`/facade/config` は `cfg.importMap` として返します。shell は Host module を import する前に共有 bootstrap で合成済み map を登録します。その後、初期 `initWippyApp` config に `importMap: cfg.importMap` を渡します。[ブートストラップの手順](../frontend/web-host/bootstrap.md#appconfig-import-map)を参照してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。

@@ -315,3 +315,8 @@ theming: {
 - [主题化](../micro-frontends/theming.md) —— CSS 令牌参考、Tailwind 映射与 Web 组件样式模式
 - [代理与隔离](./proxy-isolation.md) —— 代理注入流水线的工作方式，以及 `ProxyConfig` 在协议层面控制什么
 - [渲染引擎](./render-engines.md) —— 宿主 CSS 同时到达 srcdoc iframe 和 Web Fragment shadow root
+
+
+## Iconify 源和图标注入
+
+`iconifyIcons` 控制图标注入，不选择数据源。请通过 `AppConfig.iconify.providers` 配置源。默认使用在线源。请参阅 [Iconify 提供方](./iconify.md)。

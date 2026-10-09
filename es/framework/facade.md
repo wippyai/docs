@@ -70,7 +70,7 @@ entries:
 | Valor | Efecto |
 |-------|--------|
 | `iframe` _(por defecto)_ | Las paginas se renderizan como iframes srcdoc — el motor principal (por defecto). |
-| `fragment` | Las paginas se renderizan como [Web Fragments](../frontend/web-host/render-engines.md) (un realm `reframed` reflejado en un shadow root). |
+| `fragment` | Cada ocurrencia de Web Fragment se ejecuta en su propio iframe de realm físico, reflejado en un shadow root. |
 
 Solo la cadena exacta `fragment` activa la opcion; **cualquier otro valor — incluido un error tipografico como `fragmnet` — se ajusta a `iframe`** (fail-safe, pero silencioso). Habilitar el motor de fragmentos requiere ademas el [gateway `/@fragment`](./views.md#web-fragments-gateway), que `wippy/views` (≥ 0.5.9) provee por si mismo — sin cableado del consumidor. Una pagina puede sobrescribir el valor por defecto del despliegue por pagina con [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
@@ -171,15 +171,17 @@ Estos cuatro se exponen tal cual bajo `hostConfig` para el frontend:
 | `allow_additional_tags` | `{}` | Lista blanca de etiquetas del saneador HTML (`Record<string, string[]>`, etiqueta → atributos permitidos) |
 | `chat` | `{}` | Sobreescrituras de la interfaz de chat |
 
-Estos tres se emiten como campos de **nivel superior** de `AppConfig` (hermanos de `hostConfig`), no dentro de `hostConfig`:
+Estos parámetros se emiten como campos de **nivel superior** de `AppConfig` (junto a `hostConfig`), no dentro de `hostConfig`:
 
 | Parametro | Emitido como | Por defecto | Descripcion |
 |-----------|--------------|-------------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Sobreescrituras de rutas para el frontend |
 | `axios_defaults` | `axiosDefaults` | `{}` | Valores por defecto del cliente HTTP axios del frontend |
 | `tanstack` | `tanstack` | `{}` | Valores por defecto de TanStack Query: `{ default?, content?, lists? }`. `default` se aplica a todas las consultas; `content` apunta a renderizados de un solo recurso, `lists` a consultas de navegacion/indice. El valor por defecto del host es `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | Extensión del import map del navegador, emitida como `AppConfig.importMap` de nivel superior. |
+| `iconify` | `iconify` | `{}` | Fuentes de Iconify emitidas como campo de nivel superior de `AppConfig`. |
 
-Estos tres se emiten como campos top-level de `AppConfig`, no bajo `hostConfig`:
+Estos parámetros se emiten como campos de **nivel superior** de `AppConfig` (junto a `hostConfig`), no dentro de `hostConfig`:
 
 El facade registra `GET /facade/config` en el router configurado. Esa ruta se registra *en* el router publico, por lo que la URL que la pagina realmente solicita incluye el prefijo del router — con el prefijo de ejemplo `/api/public` (ver [Setup](#setup)), es `/api/public/facade/config`, que es exactamente lo que solicita la pagina del facade incluida. (El facade registra una ruta mas en el mismo router — `GET /facade/variables.css`, las `css_variables` renderizadas como hoja de estilos `text/css` para paginas fuera del Web Host; ver [Reutilizar la tematizacion del facade en paginas fuera del Web Host](#reusing-facade-theming-on-non-web-host-pages).) El frontend solicita la configuracion al cargar:
 
@@ -225,7 +227,7 @@ El facade registra `GET /facade/config` en el router configurado. Esa ruta se re
 }
 ```
 
-La URL de la API se lee de la variable de entorno `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` se deriva reemplazando `http://` por `ws://` o `https://` por `wss://`. La tematizacion tiene tres ambitos (`global`, `host`, `children`) — `host.i18n` lleva la marca de la aplicacion. Las claves de `hostConfig` estan en camelCase y se ensamblan a partir de los parametros del facade: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mas opcionalmente `additional_nav_items`, `state_cache`, `allow_additional_tags` y `chat`. `render_engine` se convierte en `renderEngine` (ver [Render engine](#render-engine)). Los parametros `api_routes`, `axios_defaults` y `tanstack` se emiten como campos de nivel superior de `AppConfig` (`apiRoutes`, `axiosDefaults`, `tanstack`), hermanos de `hostConfig`, no dentro de el.
+Estos parámetros se emiten como campos de nivel superior de `AppConfig` junto a `hostConfig`: `api_routes` como `apiRoutes`, `axios_defaults` como `axiosDefaults`, `tanstack`, `iconify` e `import_map` como `importMap`.
 
 Los campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` y `module_file` son campos **a nivel de shell** que la pagina incrustadora usa para construirse a si misma — no forman parte del `AppConfig` hijo con el que se inicializa el host. Los campos `iframe_origin`/`iframe_url` los consumen unicamente las incrustaciones manuales con iframe sin facade (ver [Punto de Entrada del Facade](../frontend/web-host/entry-point.md)). El campo `mode` es el `fe_mode` normalizado (`compat` o `managed`), y `module_file` es la entrada de modulo JS que carga la pagina del facade — `/module.js` para compat, `/managed-layout.js` para managed.
 
@@ -291,3 +293,12 @@ Sin `--embed`, las entradas `fs.directory` se excluyen del paquete publicado. La
 - [Punto de Entrada del Facade](../frontend/web-host/entry-point.md) - Como el facade arranca el Web Host (perspectiva FE)
 - [Inyeccion de CSS](../frontend/web-host/css-injection.md) - Como fluye la tematizacion del facade hacia los iframes hijos
 - [Motores de Renderizado](../frontend/web-host/render-engines.md) - Renderizado de paginas con iframe frente a Web Fragment (el conmutador `render_engine`)
+
+
+La configuración JSON opcional `iconify` se emite como un campo superior de AppConfig. Sin configuración, siguen activas las fuentes en línea. Consulte [Proveedores de Iconify](../frontend/web-host/iconify.md).
+
+## AppConfig import map
+
+El requisito del facade se llama `import_map`, y `/facade/config` lo devuelve como `cfg.importMap`. El shell registra el mapa compuesto mediante el bootstrap compartido antes de importar el módulo del Host. Después pasa `importMap: cfg.importMap` en la configuración inicial de `initWippyApp`. Consulta la [secuencia de bootstrap](../frontend/web-host/bootstrap.md#appconfig-import-map).
+
+Usa este campo solo con una versión desplegada del Host que documente su compatibilidad.

@@ -20,24 +20,51 @@ description: "wippy/facade バックエンドモジュールは、Web Hostをユ
 
 ページを簡略化すると次のようになります:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        window.initWippyApp(config, '#app')
-      })
-  </script>
-</body>
-</html>
+```javascript
+const configResponse = await fetch('/api/public/facade/config')
+if (!configResponse.ok)
+  throw new Error('Facade config request failed: ' + configResponse.status)
+const cfg = await configResponse.json()
+
+const storedAuth = localStorage.getItem('@wippy_token_info')
+if (!storedAuth)
+  throw new Error('Authentication is required before bootstrapping the host')
+const { token } = JSON.parse(storedAuth)
+if (typeof token !== 'string' || token.length === 0)
+  throw new Error('Stored authentication does not contain a token')
+
+const mapResponse = await fetch(cfg.facade_url + '/import-map.json')
+if (!mapResponse.ok)
+  throw new Error('Host import map request failed: ' + mapResponse.status)
+const hostMap = await mapResponse.json()
+await new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = cfg.facade_url + '/@wippy-fe/import-map-bootstrap.js'
+  script.onload = resolve
+  script.onerror = reject
+  document.head.appendChild(script)
+})
+window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, document.baseURI)
+
+await import(cfg.facade_url + cfg.module_file)
+window.initWippyApp({
+  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
+  env: cfg.env,
+  routePrefix: cfg.routePrefix,
+  themeMode: window.wippyThemePersist?.read() || cfg.themeMode,
+  apiRoutes: cfg.apiRoutes,
+  attention: cfg.attention,
+  allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
+  axiosDefaults: cfg.axiosDefaults,
+  iconify: cfg.iconify,
+  importMap: cfg.importMap,
+  theming: cfg.theming,
+  hostConfig: cfg.hostConfig,
+  context: { resourceId: '', resourceType: 'page' },
+}, '#app')
 ```
 
 ページは自身の設定を取得し、モジュールのinit関数に渡します。ホストはページにマウントし、ルーティングとブラウザ履歴を引き継ぎ、完全な初期化を進めます。
@@ -48,82 +75,48 @@ description: "wippy/facade バックエンドモジュールは、Web Hostをユ
 
 設定のフローは2ステップです:
 
-1. ページのインラインJavaScriptが、ページと同一オリジンで `GET /facade/config` を呼び出します。このエンドポイントは `wippy/facade` が公開ルーターに登録します。
-2. レスポンスを受け取ると、ページは設定オブジェクト全体を、読み込んだJSモジュールのinit関数（`window.initWippyApp(config, rootContainer?)`）に渡します。
+1. ページは同一オリジンの公開ルーターから `/facade/config` を取得します。
+
+2. シェルは Host の import map を取得し、共有 bootstrap を読み込み、Host map と `cfg.importMap` を合成して登録します。その後に限り `cfg.module_file` を動的 import します。シェルは返されたフィールドから `AppConfig` を作り、`wippy-context-2.2` スキーマ、`auth`、`context` を追加してから `initWippyApp` を呼び出します。
 
 Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽出し、完全な初期化を進めます。これ以降、ページのスクリプトは受動的になります。すべてのユーザー操作は、マウントされたホストの内部で行われます。
 
 このパターンにより、CDNでホストされるバンドルにデプロイ固有のURL、トークン、ブランディングが含まれることはありません。バンドルはどのデプロイでも同一です。異なるのは設定のペイロードだけです。
 
-> **シェルのフィールドと子の `AppConfig`。** `/facade/config` のレスポンスは両方を運びます。`facade_url`、`iframe_origin`、`iframe_url`、`login_path` のようなフィールドは、埋め込み側のページが自身を組み立てるために消費する**シェルレベル**のフィールドであり、子の `AppConfig` の一部ではありません。ホストが実際に初期化に使う `AppConfig` は、`auth`、`env`、`theming`、`hostConfig`、`context`、および以下に記載する他のフィールドです。
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。現行の契約は `wippy-context-2.2` です。
 
 ## `/facade/config` のレスポンス
 
-設定エンドポイントは、シェルレベルのフィールドと子の `AppConfig` の両方を運ぶJSONオブジェクトを返します。ファサードのページはそれをホストモジュールのinit関数に渡します。手動のiframe埋め込みでは、代わりに `AppConfig` の部分をPostMessageで配信します（後述）。すべてのフィールドは、`wippy/facade` がそのモジュールパラメータと実行中の環境から組み立てます:
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。現行の契約は `wippy-context-2.2` です。
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
-  "auth": {
-    "token": "eyJ...",
-    "expiresAt": "2026-06-01T12:00:00Z"
-  },
+  "login_redirect_param": "return_to",
+  "mode": "compat",
+  "module_file": "/module.js",
   "env": {
     "APP_API_URL": "https://api.example.com",
     "APP_AUTH_API_URL": "https://api.example.com",
     "APP_WEBSOCKET_URL": "wss://api.example.com"
   },
   "routePrefix": "https://api.example.com",
-  "axiosDefaults": {},
-  "apiRoutes": {},
+  "themeMode": "auto",
+  "themePersist": "localStorage",
+  "themeStorageKey": "@wippy-theme-mode",
+  "axiosDefaults": { "timeout": 30000 },
+  "apiRoutes": { "agents": { "list": "/custom/agents" } },
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
-  "theming": {
-    "global": {
-      "customCSS": "@import url('https://fonts.googleapis.com/...');",
-      "cssVariables": { "--p-primary": "#6366f1" },
-      "iconSets": {}
-    },
-    "host": {
-      "customCSS": ".wippy-host-app .chat-container { background: var(--p-content-background); }",
-      "cssVariables": {},
-      "iconSets": {},
-      "i18n": {
-        "app": {
-          "title": "My App",
-          "icon": "wippy:logo",
-          "appName": "My Application"
-        }
-      }
-    },
-    "children": {
-      "customCSS": "",
-      "cssVariables": {}
-    }
+  "iconify": {},
+  "importMap": {
+    "imports": { "example-package": "https://cdn.example.com/example-package.js" }
   },
-  "hostConfig": {
-    // 値の例 — デフォルトは下の表を参照
-    "session": { "type": "non-persistent" },
-    "history": "hash",
-    "showAdmin": true,
-    "allowSelectModel": false,
-    "startNavOpen": false,
-    "hideNavBar": false,
-    "disableRightPanel": false,
-    "hideSessionSelector": false,
-    "additionalNavItems": [],
-    "stateCache": {},
-    "allowAdditionalTags": [],
-    "chat": {}
-  },
-  "context": {
-    "resourceId": "root",
-    "resourceType": "page",
-    "route": "/"
-  }
+  "extraScripts": ["/monitoring.js"],
+  "theming": {},
+  "hostConfig": {}
 }
 ```
 
@@ -142,13 +135,15 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 | フィールド | 説明 |
 |-------|-------------|
-| `$schema` | 設定契約のバージョン（`"wippy-context-2.0"`）。 |
+| `$schema` | 設定契約のバージョン（`"wippy-context-2.2"`）。 |
 | `auth` | `AppConfig.auth` として注入される、ランタイムのbearerトークンと有効期限。 |
 | `env` | トップレベルの `AppConfig.env` として注入されるランタイムのURL。 |
 | `routePrefix` | 子アプリに転送されるAPIのURLプレフィックス。 |
 | `axiosDefaults` | 子アプリに転送されるAxiosインスタンスのデフォルト。 |
 | `apiRoutes` | 個々のAPIエンドポイントのパスをオーバーライドする（トップレベルの `AppConfig` フィールド）。 |
 | `tanstack` | TanStack Queryのデフォルト。グローバル + 役割ベースのカテゴリごと（`content`/`lists`）。トップレベルの `AppConfig` フィールド。ホストのデフォルトは `refetchOnWindowFocus:false`。 |
+| `iconify` | `cfg.iconify` から渡される、明示的に設定された Iconify ソース。 |
+| `importMap` | `cfg.importMap` からの任意のブラウザー import map 拡張。シェルは Host モジュールの import 前に登録します。 |
 | `theming` | 3つのスコープに分かれたCSSのカスタマイズ。 |
 | `hostConfig` | Web Hostの機能フラグとUIの設定。 |
 | `context` | ホストの初期ページまたはアーティファクトのコンテキスト。 |
@@ -216,47 +211,80 @@ URLと設定を得るために、ファサードの `/facade/config` エンド�
 
 JSモジュールの経路とは異なり、iframe内のホストは自身の設定を**要求**します。起動して親に `get-config` メッセージを送り、親が `set-config` で応答します。したがって親は、`load` で盲目的に設定を送るのではなく、その要求を**待ち受けます**:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <iframe id="wippy" style="width:100%;height:100vh;border:none"></iframe>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        const iframe = document.getElementById('wippy')
+```javascript
+async function mountWippyIframe(auth) {
+  const response = await fetch('/api/public/facade/config')
+  if (!response.ok)
+    throw new Error(`Facade config request failed: ${response.status}`)
+  const cfg = await response.json()
+  const iframe = document.getElementById('wippy')
+  if (!(iframe instanceof HTMLIFrameElement))
+    throw new Error('Expected <iframe id="wippy">')
 
-        // 子の @gen2-chat 設定要求を待ち受け、それに応答する。
-        window.addEventListener('message', (event) => {
-          if (event.origin !== config.iframe_origin) return
-          const msg = event.data
-          if (msg?.type === '@gen2-chat' && msg.action === 'get-config') {
-            iframe.contentWindow.postMessage(
-              { type: '@gen2-chat', action: 'set-config', ...config },
-              config.iframe_origin
-            )
-          }
-        })
+  const iframeUrl = new URL(cfg.iframe_url)
+  if (iframeUrl.origin !== cfg.iframe_origin)
+    throw new Error('iframe_url and iframe_origin must identify the same origin')
 
-        // iframe_url には既に ?waitForCustomConfig が含まれている
-        iframe.src = config.iframe_url
-      })
-  </script>
-</body>
-</html>
+  const appConfig = {
+    $schema: `${cfg.facade_url}/schemas/wippy-context-2.2.json`,
+    auth,
+    env: cfg.env,
+    routePrefix: cfg.routePrefix,
+    themeMode: cfg.themeMode,
+    apiRoutes: cfg.apiRoutes,
+    axiosDefaults: cfg.axiosDefaults,
+    iconify: cfg.iconify,
+    importMap: cfg.importMap,
+    tanstack: cfg.tanstack,
+    theming: cfg.theming,
+    hostConfig: cfg.hostConfig,
+    context: { resourceId: '', resourceType: 'page' },
+  }
+
+  function onMessage(event) {
+    if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
+      return
+
+    let message
+    try {
+      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+    }
+    catch {
+      return
+    }
+    if (message?.type === '@gen2-chat' && message.action === 'get-config') {
+      event.source.postMessage(
+        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
+        cfg.iframe_origin,
+      )
+    }
+  }
+
+  window.addEventListener('message', onMessage)
+
+  // iframe_url already includes ?waitForCustomConfig
+  iframe.src = iframeUrl.href
+
+  return function unmount() {
+    window.removeEventListener('message', onMessage)
+    iframe.remove()
+  }
+}
 ```
 
-`?waitForCustomConfig` クエリパラメータ（`iframe_url` に既に含まれています）が鍵となるシグナルです。これはWeb Hostに初期化を一時停止するよう伝えます。アプリはマウントしますが、`set-config` メッセージを受け取るまで、認証の解決やルートの読み込みを意図的に試みません。これがないと、Web HostはURLパラメータやデフォルトから認証トークンを読もうとしますが、それは埋め込みデプロイには適切ではありません。
+`?waitForCustomConfig` があると、standalone bootstrap は親の `set-config` message を待ってから import map を登録し、Host app module を import します。その時点ではアプリはまだ mount されていません。この query がない場合は通常の standalone config 経路を使います。
 
 ハンドシェイクは `@gen2-chat` PostMessageプロトコルを使用します:
 
 1. 親が `GET /facade/config` を取得し（または同等の `AppConfig` ペイロードを自ら供給し）、`iframe_url` を指すiframeを作成します。
 2. 起動中のiframeが `{ type: '@gen2-chat', action: 'get-config' }` を親に送ります。
 3. 親の `message` リスナーが、`iframe_origin` を宛先として `{ type: '@gen2-chat', action: 'set-config', ...config }` で応答します。
+
+後で設定を変更する場合は、同じ iframe に対して完全な `set-config` message を
+`iframe_origin` 宛てにもう一度送ります。Host は再 mount せずに変更を適用します。
+この iframe からの API request は iframe document の origin を使います。backend API
+を同じ origin で配信するか、backend の CORS policy で iframe document origin を許可
+してください。CORS は backend 側の設定であり、AppConfig の項目ではありません。
 
 Web Hostは `AppConfig` のペイロードを抽出し、完全な初期化を進めます。メッセージプロトコル全体（`@gen2-chat` のエンベロープと `IFrameMessageType` の列挙）については、[プロキシと分離](./proxy-isolation.md)を参照してください。この `SetConfig` のハンドシェイクは、手動のファサードなし埋め込みに固有のものです。`wippy/facade` モジュールは、代わりにWeb HostをJSモジュールとして読み込みます。
 
@@ -302,3 +330,11 @@ Web Hostは `AppConfig` のペイロードを抽出し、完全な初期化を�
 ```
 
 利用可能なパラメータの完全な一覧とそのデフォルトについては、[ファサードモジュールのリファレンス](../../framework/facade.md)を参照してください。
+
+## Host への import map の引き渡し
+
+受信側は iframe の `SetConfig` message を物理的な親 window からのものだけ受け付けます。親 origin にアクセスできる場合は `event.origin` も照合します。Web Fragment では、その occurrence 自身の `fragmentId` を宛先に指定する必要があります。
+
+facade requirement の名前は `import_map` で、`/facade/config` は `cfg.importMap` として返します。shell は Host module を import する前に共有 import-map bootstrap へこの値を渡します。その後、初期 `initWippyApp` config に `importMap: cfg.importMap` を渡します。[ブートストラップの手順](./bootstrap.md#appconfig-import-map)を参照してください。 import map の変更は既存のドキュメントには反映されません。新しいマップを使うには、ドキュメントを再読み込みするか作り直してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。

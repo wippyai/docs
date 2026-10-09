@@ -108,7 +108,68 @@ export default {
 
 The snapshot must include its provenance and hash. A dependency absent from the snapshot is bundled unless another documented build rule applies.
 
-For the Web Host 1.0.56 baseline, the canonical snapshot URL is
-`https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`. Do not substitute the local
+For the approved combined Web Host 1.0.63 candidate, the expected snapshot URL is
+`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`. Confirm the tag
+after the release is published. Do not substitute the local
 application URL, an unpinned `latest` URL, or a manually reconstructed package
 list.
+
+The candidate's PrimeVue 4.5.5 entries are generated from its public export
+patterns and recorded in the Host-root `primevue-export-inventory.json`. The
+inventory lists concrete package-relative runtime targets. Use its exact
+specifier entries; do not replace them with a wildcard external or a manually
+maintained subset. See [Host packages](../web-host/packages.md#primevue-455-browser-exports).
+
+### Host build URLs and deployment paths
+
+The Web Host package build requires `APP_URL`. Set it to the public HTTP(S)
+origin and optional deployment path. The build rejects a missing or invalid URL,
+including credentials, query strings, fragments, and traversal segments.
+Preserve a deployment path such as `/wippy`; the Host uses it when it creates
+absolute URLs in `dist/import-map.json`.
+
+For a production build served below a path, use the full package build with the
+deployment URL. Leave `APP_IGNORE_TAG` unset so the release tag remains in the
+URLs:
+
+```powershell
+$env:APP_URL = 'https://cdn.example/wippy'
+Remove-Item Env:APP_IGNORE_TAG -ErrorAction SilentlyContinue
+pnpm run build
+```
+
+For a local untagged build, set both environment values explicitly:
+
+```powershell
+$env:APP_URL = 'http://localhost:5173'
+$env:APP_IGNORE_TAG = '1'
+pnpm run build
+```
+
+`APP_IGNORE_TAG=1` removes the release-tag prefix. Use it for local testing, not
+for a versioned production deployment. `APP_URL` remains required. The
+full `pnpm run build` prepares proxy, library, and type artifacts as well as the
+site. Use `pnpm run build:site` only for a site-owned incremental change after
+those prerequisites exist. The
+`build:site` script uses Vite's absolute base `${APP_URL}/${tagPrefix}`. The
+`build:site:relative` script uses the tag prefix as Vite's relative asset base;
+it still needs `APP_URL` because the import-map values are absolute.
+
+For the candidate, `APP_URL=https://cdn.example/wippy` and tag
+`webcomponents-1.0.63` produce the import-map URL
+`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`; mapped vendor
+and dynamic-chunk URLs must keep the same origin, deployment path, and tag.
+After building, inspect `dist/import-map.json`: every `imports` value must be an
+absolute HTTP(S) URL under the configured origin and path, and none may contain
+`/undefined/`. Then request the versioned map and its mapped resources through
+the actual deployment route. A successful build alone does not verify routing.
+
+## AppConfig import-map URLs
+
+Relative map targets resolve against the created document's base URL. Prefer absolute URLs pinned to the release and deployment path, such as `https://cdn.example/wippy/vendor/` or `http://localhost:5173/vendor/`. If a mapped CDN module imports another bare specifier, map that dependency too or use a self-contained CDN module. Runtime map changes do not rewrite imports already embedded in a consumer bundle. See [Bootstrap Sequence](../web-host/bootstrap.md#appconfig-import-map).
+
+Use this field only with a deployed Host release that documents support for it.
+
+## Release tag source
+
+The build tag comes from `CI_COMMIT_TAG`; when that is unset, `APP_TAG` supplies it. Set `APP_TAG` when building a versioned artifact outside CI.

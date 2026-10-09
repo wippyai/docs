@@ -19,13 +19,9 @@ The current `wippy/facade` uses this path. It serves a page that loads a Web
 Host JS-module entry: `module.js` for **compat** mode or `managed-layout.js` for
 **managed** mode. The module then takes over the page and its browser history.
 
-1. **Page loads the module.** The script registers `window.initWippyApp` on the page's `window`.
+1. **Fetch configuration and register the map.** The facade requirement is named `import_map`; `/facade/config` exposes it as `cfg.importMap`. The shell loads the shared import-map bootstrap and registers the composed map before importing Host modules.
 
-2. **Page assembles `AppConfig` and calls `initWippyApp(appConfig, rootContainer?)`.** The shell fetches `/facade/config`, reads the bearer token from the `@wippy_token_info` localStorage entry, adds `$schema`, `auth`, and `context`, and forwards the supported response fields. There is no PostMessage handshake.
-   ```javascript
-   const events = window.initWippyApp(appConfig, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **Import the Host module and initialize the app.** The shell imports `module.js` or `managed-layout.js`, which exposes `window.initWippyApp`. It then calls `initWippyApp(appConfig, rootContainer?)` with the initial `AppConfig`, including `importMap: cfg.importMap`. There is no PostMessage handshake.
 
 3. **Initialization proceeds** — see [Internal Init Sequence](#internal-init-sequence) below.
 
@@ -36,23 +32,17 @@ with stronger isolation. It loads `iframe.html?waitForCustomConfig` and receives
 configuration through a `SetConfig` PostMessage. The current facade does not
 produce this embedding.
 
-1. **Iframe loads.** The Web Host loads in the browser. Because `?waitForCustomConfig` is present in the URL, the app mounts a minimal skeleton and suspends — it does not attempt to read auth tokens or call any API endpoints yet.
+1. **Parent prepares the iframe.** Add `?waitForCustomConfig` to the versioned `iframe.html` URL. Install a `message` listener before assigning `iframe.src`. The standalone bootstrap waits for the parent `SetConfig` before registering the import map or importing Host app modules. This happens before the Host app mounts.
 
-2. **Parent sends `SetConfig`.** The parent supplies a complete `AppConfig`. A `/facade/config` response can provide the deployment settings, but the parent must add `$schema`, `auth`, and `context` before replying:
-   ```javascript
-   iframe.contentWindow.postMessage(
-     JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
-     cfg.iframe_origin
-   )
-   ```
+2. **Parent answers `GetConfig`.** Wait for the iframe's `get-config` message.
+   Accept it only when both `event.origin` equals the trusted iframe origin and
+   `event.source` equals `iframe.contentWindow`. Then send a complete `AppConfig`
+   in a `set-config` message, using the trusted origin as `targetOrigin`. A
+   `/facade/config` response can provide deployment settings, but the parent
+   must add `$schema`, `auth`, and `context`. See the [manual iframe example](./entry-point.md#manual-facade-less-iframe-embedding)
+   for the full listener and message flow.
 
-3. **Web Host receives `AppConfig`.** The message handler validates the envelope
-   type and action, then extracts the configuration object. At Web Host 1.0.56,
-   this inbound handler does not authenticate `event.origin` or `event.source`,
-   and a later matching `SetConfig` can replace the configuration. The parent
-   must restrict who can message the iframe and treat that whole message
-   environment as trusted. Iframe DOM and style isolation is not configuration-
-   authority isolation.
+3. **Web Host receives `AppConfig`.** It validates the message envelope, accepts an iframe message only from the physical parent window, and checks `event.origin` against the parent origin when that origin is accessible. In a Web Fragment, it also requires `fragmentId` to match that occurrence’s own ID. Later valid `SetConfig` messages can update that document’s config.
 
 4. **Initialization proceeds** — the internal path is identical to Path A from this point forward.
 
@@ -105,13 +95,14 @@ parameter that selects the module entry, and managed mode is conveyed through
 
 ```typescript
 interface AppConfig {
-  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.0.xsd
+  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.2.json
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query defaults (global + per role-based category)
+  iconify?: IconifyConfig | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: AppTheming
   hostConfig: HostConfig
@@ -192,6 +183,14 @@ interface TanstackConfig {
   lists?: TanstackQueryOptions     // navigation / index / list queries
 }
 
+interface IconifyConfig {
+  providers?: Record<string, {
+    resources: string[]
+    path?: string
+    timeout?: number
+  } | null> | null
+}
+
 // JSON-safe subset of TanStack query options (no functions — config is JSON).
 interface TanstackQueryOptions {
   refetchOnWindowFocus?: boolean
@@ -217,6 +216,15 @@ interface AppContext {
 }
 ```
 
+`AppConfig.iconify` selects Iconify collection sources. The default remains online when this field is omitted. Set it explicitly to use a local collection. See [Iconify providers](./iconify.md) for the provider format and reset behavior. Explicitly configured values are projected to child applications through AppConfig.
+
+PrimeVue is available to application imports through the exact specifiers in
+the pinned Host import map. Rebuilt consumers use the Host's shared PrimeVue
+vendor graph within their JavaScript realm. Each iframe or Web Fragment has its
+own realm and module graph. The import map does not inject styles; request the
+needed PrimeVue CSS through the documented Host CSS keys. Existing embedded
+consumer bundles must be rebuilt against the new map.
+
 > **Current facade limitation.** Web Host accepts `AppConfig.tanstack`, and the
 > facade config endpoint returns the configured `tanstack` object. The standard
 > facade shell does not currently copy that field into the `AppConfig` passed to
@@ -240,12 +248,13 @@ In practice, production deployments always use `initWippyApp()` (the facade path
 The standard facade (JS-module) path:
 
 ```
-module.js / managed-layout.js loaded on the page
+facade shell fetches /facade/config (requirement import_map → cfg.importMap)
   │
-  ├─ shell assembles AppConfig from /facade/config + local auth
-  ├─ window.initWippyApp(appConfig, '#app')
-  │     appConfig = { $schema, auth, env, theming, hostConfig, context, ... }
-  │
+  ├─ fetches the Host map and loads the shared import-map bootstrap
+  ├─ registers the composed import map
+  ├─ imports module.js / managed-layout.js
+  ├─ module exposes window.initWippyApp
+  ├─ shell calls initWippyApp({ ..., importMap: cfg.importMap }, '#app')
   ├─ resolveConfig() → migrate, normalize, and populate config/auth/env state
   ├─ await GET /api/public/pages/routes
   ├─ create Vue app + router
@@ -253,7 +262,6 @@ module.js / managed-layout.js loaded on the page
   ├─ setupApp() → Pinia, Axios, PrimeVue, theming, and other providers
   ├─ mount App.vue → resolve the current URL
   └─ consuming components request WebSocket clients
-        eager connection unless hostConfig.lazyWS is true
 ```
 
 ## See Also
@@ -261,3 +269,26 @@ module.js / managed-layout.js loaded on the page
 - [Facade Entry Point](./entry-point.md) — how `AppConfig` is constructed and delivered by `wippy/facade`
 - [Multi-Panel Layout](./multi-panel-layout.md) — the managed-layout boot path served by `managed-layout.js`
 - [Render Engines](./render-engines.md) — how a page renders once loaded (srcdoc iframe vs Web Fragment)
+
+## AppConfig import map
+
+`AppConfig.importMap` is an optional top-level browser import map with standard `imports` and `scopes` fields.
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+For srcdoc page documents, the Host composes the page map, generated Host defaults, then `AppConfig.importMap`. Standalone and facade documents, and each Web Fragment occurrence, have no page-provided srcdoc map; they compose Host defaults then `AppConfig.importMap`. Each Web Fragment occurrence runs in its own physical realm iframe. Within `imports` and each scope, the last value for a matching key wins and unrelated entries remain. Configuration can replace page or Host mappings, including Vue, PrimeVue, and Wippy packages. An exact key matches one specifier. A key ending in `/` matches that specifier prefix, and its target must also end in `/`. `scopes` select mappings by the importing module URL. Relative target URLs resolve against the document base URL.
+
+Compose the map before registering the native import map and before loading modules. Omitting `importMap` from an update keeps the current extension. Set it to `null` or `{}` to clear the extension.
+
+An import-map update applies when a document is created. It does not change module resolution in an existing document. Reload that document to use the update; later-created documents use the latest configuration. Each Web Fragment occurrence has its own physical realm iframe and registers its map in that realm before loading modules.
+
+Overriding a shared Vue, PrimeVue, or Wippy entry can split module or service identity between the Host and child code. Test those integrations against the exact released map before deploying an override.
+
+Use this field only with a deployed Host release that documents support for it.

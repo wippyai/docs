@@ -20,24 +20,51 @@ description: "wippy/facade 백엔드 모듈은 Web Host를 사용자에게 전�
 
 페이지를 단순화하면 다음과 같습니다:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        window.initWippyApp(config, '#app')
-      })
-  </script>
-</body>
-</html>
+```javascript
+const configResponse = await fetch('/api/public/facade/config')
+if (!configResponse.ok)
+  throw new Error('Facade config request failed: ' + configResponse.status)
+const cfg = await configResponse.json()
+
+const storedAuth = localStorage.getItem('@wippy_token_info')
+if (!storedAuth)
+  throw new Error('Authentication is required before bootstrapping the host')
+const { token } = JSON.parse(storedAuth)
+if (typeof token !== 'string' || token.length === 0)
+  throw new Error('Stored authentication does not contain a token')
+
+const mapResponse = await fetch(cfg.facade_url + '/import-map.json')
+if (!mapResponse.ok)
+  throw new Error('Host import map request failed: ' + mapResponse.status)
+const hostMap = await mapResponse.json()
+await new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = cfg.facade_url + '/@wippy-fe/import-map-bootstrap.js'
+  script.onload = resolve
+  script.onerror = reject
+  document.head.appendChild(script)
+})
+window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, document.baseURI)
+
+await import(cfg.facade_url + cfg.module_file)
+window.initWippyApp({
+  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
+  env: cfg.env,
+  routePrefix: cfg.routePrefix,
+  themeMode: window.wippyThemePersist?.read() || cfg.themeMode,
+  apiRoutes: cfg.apiRoutes,
+  attention: cfg.attention,
+  allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
+  axiosDefaults: cfg.axiosDefaults,
+  iconify: cfg.iconify,
+  importMap: cfg.importMap,
+  theming: cfg.theming,
+  hostConfig: cfg.hostConfig,
+  context: { resourceId: '', resourceType: 'page' },
+}, '#app')
 ```
 
 페이지는 자신의 설정을 가져와 모듈의 init 함수에 넘깁니다. 호스트는 페이지에 마운트되어 라우팅과 브라우저 히스토리를 넘겨받고 전체 초기화를 진행합니다.
@@ -48,82 +75,48 @@ description: "wippy/facade 백엔드 모듈은 Web Host를 사용자에게 전�
 
 설정 흐름은 두 단계입니다:
 
-1. 페이지의 인라인 JavaScript가 페이지와 같은 출처에서 `GET /facade/config`를 호출합니다. 이 엔드포인트는 `wippy/facade`가 공개 라우터에 등록합니다.
-2. 응답이 오면 페이지는 전체 설정 객체를 로드된 JS 모듈의 init 함수(`window.initWippyApp(config, rootContainer?)`)에 넘깁니다.
+1. 페이지는 동일 출처의 공개 라우터에서 `/facade/config`를 가져옵니다.
+
+2. 셸은 Host import map을 가져오고 공유 bootstrap을 로드한 뒤 Host map과 `cfg.importMap`을 합성해 등록합니다. 그 후에만 `cfg.module_file`을 동적으로 import합니다. 셸은 반환된 필드로 `AppConfig`를 만들고 `wippy-context-2.2` 스키마, `auth`, `context`를 추가한 다음 `initWippyApp`을 호출합니다.
 
 Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 초기화를 진행합니다. 이 시점 이후 페이지 스크립트는 수동적입니다. 모든 사용자 상호작용은 마운트된 호스트 내부에서 일어납니다.
 
 이 패턴 덕분에 CDN에 호스팅된 번들에는 배포별 URL, 토큰, 브랜딩이 전혀 포함되지 않습니다. 번들은 모든 배포에서 동일하며, 설정 페이로드만 다릅니다.
 
-> **셸 필드와 자식 `AppConfig`.** `/facade/config` 응답은 둘 다 담고 있습니다. `facade_url`, `iframe_origin`, `iframe_url`, `login_path` 같은 필드는 임베딩 페이지가 자신을 구성하는 데 쓰는 **셸 수준** 필드이며, 자식 `AppConfig`의 일부가 아닙니다. 호스트가 실제로 초기화에 사용하는 `AppConfig`는 `auth`, `env`, `theming`, `hostConfig`, `context` 및 아래에 문서화된 나머지 필드입니다.
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. 현재 계약은 `wippy-context-2.2`입니다.
 
 ## `/facade/config` 응답
 
-설정 엔드포인트는 셸 수준 필드와 자식 `AppConfig`를 함께 담은 JSON 객체를 반환합니다. 파사드 페이지는 이를 호스트 모듈의 init 함수에 넘기고, 수동 iframe 임베딩에서는 대신 `AppConfig` 부분을 PostMessage로 전달합니다(아래 참고). 모든 필드는 `wippy/facade`가 자신의 모듈 파라미터와 실행 환경으로부터 조립합니다:
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. 현재 계약은 `wippy-context-2.2`입니다.
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
-  "auth": {
-    "token": "eyJ...",
-    "expiresAt": "2026-06-01T12:00:00Z"
-  },
+  "login_redirect_param": "return_to",
+  "mode": "compat",
+  "module_file": "/module.js",
   "env": {
     "APP_API_URL": "https://api.example.com",
     "APP_AUTH_API_URL": "https://api.example.com",
     "APP_WEBSOCKET_URL": "wss://api.example.com"
   },
   "routePrefix": "https://api.example.com",
-  "axiosDefaults": {},
-  "apiRoutes": {},
+  "themeMode": "auto",
+  "themePersist": "localStorage",
+  "themeStorageKey": "@wippy-theme-mode",
+  "axiosDefaults": { "timeout": 30000 },
+  "apiRoutes": { "agents": { "list": "/custom/agents" } },
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
-  "theming": {
-    "global": {
-      "customCSS": "@import url('https://fonts.googleapis.com/...');",
-      "cssVariables": { "--p-primary": "#6366f1" },
-      "iconSets": {}
-    },
-    "host": {
-      "customCSS": ".wippy-host-app .chat-container { background: var(--p-content-background); }",
-      "cssVariables": {},
-      "iconSets": {},
-      "i18n": {
-        "app": {
-          "title": "My App",
-          "icon": "wippy:logo",
-          "appName": "My Application"
-        }
-      }
-    },
-    "children": {
-      "customCSS": "",
-      "cssVariables": {}
-    }
+  "iconify": {},
+  "importMap": {
+    "imports": { "example-package": "https://cdn.example.com/example-package.js" }
   },
-  "hostConfig": {
-    // 예시 값 — 기본값은 아래 표 참고
-    "session": { "type": "non-persistent" },
-    "history": "hash",
-    "showAdmin": true,
-    "allowSelectModel": false,
-    "startNavOpen": false,
-    "hideNavBar": false,
-    "disableRightPanel": false,
-    "hideSessionSelector": false,
-    "additionalNavItems": [],
-    "stateCache": {},
-    "allowAdditionalTags": [],
-    "chat": {}
-  },
-  "context": {
-    "resourceId": "root",
-    "resourceType": "page",
-    "route": "/"
-  }
+  "extraScripts": ["/monitoring.js"],
+  "theming": {},
+  "hostConfig": {}
 }
 ```
 
@@ -142,13 +135,15 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 | 필드 | 설명 |
 |-------|-------------|
-| `$schema` | 설정 계약 버전(`"wippy-context-2.0"`). |
+| `$schema` | 설정 계약 버전(`"wippy-context-2.2"`). |
 | `auth` | `AppConfig.auth`로 주입되는 런타임 bearer 토큰과 만료 시각. |
 | `env` | 최상위 `AppConfig.env`로 주입되는 런타임 URL. |
 | `routePrefix` | 자식 앱으로 전달되는 API URL 접두사. |
 | `axiosDefaults` | 자식 앱으로 전달되는 Axios 인스턴스 기본값. |
 | `apiRoutes` | 개별 API 엔드포인트 경로 오버라이드(최상위 `AppConfig` 필드). |
 | `tanstack` | TanStack Query 기본값 — 전역 + 역할 기반 카테고리별(`content`/`lists`). 최상위 `AppConfig` 필드입니다. 호스트 기본값은 `refetchOnWindowFocus:false`입니다. |
+| `iconify` | `cfg.iconify`에서 전달되는 명시적 Iconify 공급자 소스입니다. |
+| `importMap` | `cfg.importMap`에서 전달되는 선택적 브라우저 import map 확장입니다. 셸은 Host 모듈을 import하기 전에 등록합니다. |
 | `theming` | 세 가지 스코프로 나뉜 CSS 커스터마이제이션. |
 | `hostConfig` | Web Host 기능 플래그와 UI 설정. |
 | `context` | 호스트의 초기 페이지 또는 아티팩트 컨텍스트. |
@@ -216,47 +211,80 @@ URL과 설정을 얻기 위해 파사드의 `/facade/config` 엔드포인트를 
 
 JS 모듈 경로와 달리, iframe 내부의 호스트는 자신의 설정을 **요청합니다**. 부팅한 뒤 부모에게 `get-config` 메시지를 보내고, 부모가 `set-config`로 응답합니다. 따라서 부모는 `load` 시점에 무작정 설정을 밀어 넣는 것이 아니라 요청을 **수신 대기**합니다:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <iframe id="wippy" style="width:100%;height:100vh;border:none"></iframe>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        const iframe = document.getElementById('wippy')
+```javascript
+async function mountWippyIframe(auth) {
+  const response = await fetch('/api/public/facade/config')
+  if (!response.ok)
+    throw new Error(`Facade config request failed: ${response.status}`)
+  const cfg = await response.json()
+  const iframe = document.getElementById('wippy')
+  if (!(iframe instanceof HTMLIFrameElement))
+    throw new Error('Expected <iframe id="wippy">')
 
-        // 자식의 @gen2-chat 설정 요청을 수신한 뒤 응답합니다.
-        window.addEventListener('message', (event) => {
-          if (event.origin !== config.iframe_origin) return
-          const msg = event.data
-          if (msg?.type === '@gen2-chat' && msg.action === 'get-config') {
-            iframe.contentWindow.postMessage(
-              { type: '@gen2-chat', action: 'set-config', ...config },
-              config.iframe_origin
-            )
-          }
-        })
+  const iframeUrl = new URL(cfg.iframe_url)
+  if (iframeUrl.origin !== cfg.iframe_origin)
+    throw new Error('iframe_url and iframe_origin must identify the same origin')
 
-        // iframe_url에는 이미 ?waitForCustomConfig가 포함되어 있습니다
-        iframe.src = config.iframe_url
-      })
-  </script>
-</body>
-</html>
+  const appConfig = {
+    $schema: `${cfg.facade_url}/schemas/wippy-context-2.2.json`,
+    auth,
+    env: cfg.env,
+    routePrefix: cfg.routePrefix,
+    themeMode: cfg.themeMode,
+    apiRoutes: cfg.apiRoutes,
+    axiosDefaults: cfg.axiosDefaults,
+    iconify: cfg.iconify,
+    importMap: cfg.importMap,
+    tanstack: cfg.tanstack,
+    theming: cfg.theming,
+    hostConfig: cfg.hostConfig,
+    context: { resourceId: '', resourceType: 'page' },
+  }
+
+  function onMessage(event) {
+    if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
+      return
+
+    let message
+    try {
+      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+    }
+    catch {
+      return
+    }
+    if (message?.type === '@gen2-chat' && message.action === 'get-config') {
+      event.source.postMessage(
+        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
+        cfg.iframe_origin,
+      )
+    }
+  }
+
+  window.addEventListener('message', onMessage)
+
+  // iframe_url already includes ?waitForCustomConfig
+  iframe.src = iframeUrl.href
+
+  return function unmount() {
+    window.removeEventListener('message', onMessage)
+    iframe.remove()
+  }
+}
 ```
 
-`?waitForCustomConfig` 쿼리 파라미터(이미 `iframe_url`에 포함됨)가 핵심 신호입니다. 이는 Web Host에 초기화를 멈추라고 알립니다. 앱은 마운트되지만 `set-config` 메시지를 받기 전까지 의도적으로 인증을 해석하거나 라우트를 로드하지 않습니다. 이 파라미터가 없으면 Web Host는 URL 파라미터나 기본값에서 인증 토큰을 읽으려 하는데, 이는 임베디드 배포에 적합하지 않습니다.
+`?waitForCustomConfig`가 있으면 standalone bootstrap은 부모의 `set-config` message를 기다린 뒤 import map을 등록하고 Host 앱 module을 import합니다. 이때 앱은 아직 mount되지 않았습니다. 이 query가 없으면 일반 standalone config 경로를 사용합니다.
 
 핸드셰이크는 `@gen2-chat` PostMessage 프로토콜을 사용합니다:
 
 1. 부모가 `GET /facade/config`를 가져오거나(또는 동등한 `AppConfig` 페이로드를 직접 제공하고) `iframe_url`을 가리키는 iframe을 만듭니다.
 2. 부팅 중인 iframe이 부모에게 `{ type: '@gen2-chat', action: 'get-config' }`를 보냅니다.
 3. 부모의 `message` 리스너가 `iframe_origin`을 대상으로 `{ type: '@gen2-chat', action: 'set-config', ...config }`로 응답합니다.
+
+나중에 설정을 바꿀 때는 같은 iframe에 전체 `set-config` 메시지를 다시 보내고
+`iframe_origin`을 대상으로 지정하세요. Host는 remount 없이 변경을 적용합니다. 이
+iframe의 API 요청은 iframe 문서의 origin에서 발생합니다. backend API를 같은 origin에서
+제공하거나 backend CORS 정책에서 iframe 문서 origin을 허용하세요. CORS는 backend 정책이며
+AppConfig 설정이 아닙니다.
 
 Web Host는 `AppConfig` 페이로드를 추출하고 전체 초기화를 진행합니다. 전체 메시지 프로토콜(`@gen2-chat` 봉투와 `IFrameMessageType` enum)은 [프록시와 격리](./proxy-isolation.md)를 참고하십시오. 이 `SetConfig` 핸드셰이크는 파사드를 쓰지 않는 수동 임베딩에만 해당하며, `wippy/facade` 모듈은 대신 Web Host를 JS 모듈로 로드합니다.
 
@@ -302,3 +330,11 @@ Web Host는 `AppConfig` 페이로드를 추출하고 전체 초기화를 진행�
 ```
 
 사용 가능한 전체 파라미터 목록과 기본값은 [파사드 모듈 레퍼런스](../../framework/facade.md)를 참고하십시오.
+
+## Host에 import map 전달
+
+receiver는 iframe `SetConfig` message를 물리적 부모 window에서 온 경우에만 받습니다. 부모 origin에 접근할 수 있으면 `event.origin`도 비교합니다. Web Fragment에서는 해당 occurrence의 자체 `fragmentId`를 대상으로 지정해야 합니다.
+
+facade requirement 이름은 `import_map`이고 `/facade/config`는 이를 `cfg.importMap`으로 반환합니다. shell은 Host module을 import하기 전에 공유 import-map bootstrap에 이 값을 전달합니다. 이후 초기 `initWippyApp` config에 `importMap: cfg.importMap`을 전달합니다. [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요. import map 변경은 기존 문서에 적용되지 않습니다. 새 맵을 사용하려면 문서를 다시 로드하거나 새로 만드세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

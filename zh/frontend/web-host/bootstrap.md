@@ -11,13 +11,9 @@ Web Host 收到配置之后，会在渲染任何 UI 之前运行一段固定的�
 
 这是当前 `wippy/facade` 所使用的路径。facade 提供一个页面，该页面加载 Web Host 的 JS 模块入口——**compat** 模式为 `module.js`，**managed** 模式为 `managed-layout.js`——该模块接管整个页面及其浏览器历史。
 
-1. **页面加载模块。** 脚本在页面的 `window` 上注册 `window.initWippyApp`。
+1. **获取配置并注册映射。** facade requirement 名称为 `import_map`；`/facade/config` 将其作为 `cfg.importMap` 返回。shell 加载共享 import-map bootstrap，并在导入 Host 模块前注册组合后的映射。
 
-2. **页面调用 `initWippyApp(config, rootContainer?)`。** 页面已获取 `/facade/config` 并把载荷直接作为函数参数传入。没有 PostMessage 握手。
-   ```javascript
-   const events = window.initWippyApp(config, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **导入 Host 模块并初始化应用。** shell 导入 `module.js` 或 `managed-layout.js`，该模块会提供 `window.initWippyApp`。随后 shell 使用初始 `AppConfig` 调用 `initWippyApp(appConfig, rootContainer?)`，其中包含 `importMap: cfg.importMap`。此路径没有 PostMessage 握手。
 
 3. **初始化继续进行** —— 参见下文的[内部初始化序列](#internal-init-sequence)。
 
@@ -25,17 +21,15 @@ Web Host 收到配置之后，会在渲染任何 UI 之前运行一段固定的�
 
 当你自己把完整宿主嵌入 iframe 时走这条路径——用于隔离性更强的局部页面嵌入。它加载 `iframe.html?waitForCustomConfig`，并通过 `SetConfig` PostMessage 接收配置。当前的 facade 不会产生这条路径；它是为手动插入而存在的。
 
-1. **iframe 加载。** Web Host 在浏览器中加载。由于 URL 中存在 `?waitForCustomConfig`，应用挂载一个最小骨架并挂起——它此时不会尝试读取认证令牌或调用任何 API 端点。
+1. **父级准备 iframe。** 给带版本的 `iframe.html` URL 添加 `?waitForCustomConfig`。设置 `iframe.src` 前先安装 `message` listener。standalone bootstrap 会先等待父级 `SetConfig`，再注册 import map 并导入 Host 应用模块。这发生在 Host 应用挂载之前。
 
-2. **父页面发送 `SetConfig`。** 父页面已获取 `/facade/config`（或提供了等价载荷），并通过 PostMessage 转发：
-   ```javascript
-   iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
-   )
-   ```
+2. **父页面响应 `GetConfig`。** 等待 iframe 发出的 `get-config` 消息。仅当
+   `event.origin` 等于可信 iframe 来源且 `event.source` 正是 `iframe.contentWindow`
+   时才接受。然后发送包含完整 `AppConfig` 的 `set-config` 消息，并将可信来源作为
+   `targetOrigin`。`/facade/config` 可提供部署设置，但父页面仍须添加 `$schema`、
+   `auth` 和 `context`。完整流程见[手动 iframe 示例](./entry-point.md#manual-facade-less-iframe-embedding)。
 
-3. **Web Host 收到 `AppConfig`。** 消息处理器校验信封的 type 和 action，然后提取完整的配置对象。
+3. **Web Host 收到 `AppConfig`。** 它会验证消息 envelope，iframe 消息只接受来自物理父 window 的内容；当父级 origin 可访问时，还会将 `event.origin` 与其比较。在 Web Fragment 中，还要求 `fragmentId` 与该 occurrence 自己的 ID 匹配。之后有效的 `SetConfig` 消息可以更新该文档的 config。
 
 4. **初始化继续进行** —— 从这里开始内部路径与路径 A 完全相同。
 
@@ -75,7 +69,7 @@ WebSocket 客户端使用认证令牌连接到 `APP_WEBSOCKET_URL`。实时事�
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -178,22 +172,20 @@ Web Host 从多个来源解析配置，按优先级从低到高：
 标准 facade（JS 模块）路径：
 
 ```
-页面加载 module.js / managed-layout.js
+facade shell 获取 /facade/config（requirement import_map → cfg.importMap）
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
-  │
-  ├─ 初始化 Pinia（auth store、config store）
-  ├─ 配置 Axios（baseURL、认证头）
-  ├─ 创建 Vue Router（history 模式、系统路由）
-  ├─ 安装 PrimeVue，注入主题 CSS
-  ├─ 挂载 App.vue
-  │
-  ├─ GET /api/public/pages/routes
-  │     对每个后端 mountRoute 调用 router.addRoute('app', ...)
-  │
-  ├─ 解析当前 URL → 渲染匹配的视图
-  └─ 连接 WebSocket
+  ├─ 获取 Host map 并加载共享 import-map bootstrap
+  ├─ 注册组合后的 import map
+  ├─ 导入 module.js / managed-layout.js
+  ├─ module 提供 window.initWippyApp
+  ├─ shell 调用 initWippyApp({ ..., importMap: cfg.importMap }, '#app')
+  ├─ resolveConfig() → 迁移、规范化并填充 config/auth/env state
+  ├─ 等待 GET /api/public/pages/routes
+  ├─ 创建 Vue app 和 router
+  │     static system routes + validated backend mount routes
+  ├─ setupApp() → 配置 Pinia、Axios、PrimeVue、theme 等 provider
+  ├─ 挂载 App.vue → 解析当前 URL
+  └─ consuming component 按需请求 WebSocket client
 ```
 
 ## 另请参阅
@@ -201,3 +193,38 @@ Web Host 从多个来源解析配置，按优先级从低到高：
 - [Facade 入口点](./entry-point.md) —— `wippy/facade` 如何构造并交付 `AppConfig`
 - [多面板布局](./multi-panel-layout.md) —— 由 `managed-layout.js` 提供的受管布局启动路径
 - [渲染引擎](./render-engines.md) —— 页面加载后如何渲染（srcdoc iframe 与 Web Fragment）
+
+
+## Iconify 源
+
+`AppConfig.iconify.providers` 用于配置 Iconify 源。省略此字段时使用在线默认值。显式配置的值会通过 AppConfig 传给子应用。请参阅 [Iconify 提供方](./iconify.md)。
+
+## PrimeVue 与浏览器 realm
+
+应用通过固定 Host import map 中的确切说明符导入 PrimeVue。重新构建的消费者会在
+自己的 JavaScript realm 中使用共享 PrimeVue vendor 图。每个 iframe 和 Web Fragment
+都有独立的 realm 与模块图。import map 不会注入样式；请通过文档化的 Host CSS 键
+单独请求所需的 PrimeVue CSS。已经嵌入依赖的消费者 bundle 需要使用新映射重新构建。
+
+## AppConfig import map
+
+`AppConfig.importMap` 是可选的顶层浏览器导入映射，使用标准 `imports` 和 `scopes` 字段。
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+对于 srcdoc 页面文档，Host 按页面 map、生成的 Host 默认值、`AppConfig.importMap` 的顺序合并。standalone 和 facade 文档以及每个 Web Fragment occurrence 都没有 srcdoc 页面 map；它们合并 Host 默认值和 `AppConfig.importMap`。每个 Web Fragment occurrence 都在独立的物理 realm iframe 中运行。对于 `imports` 和每个 scope，同名键采用最后一个值，其他条目保留。配置可以替换页面或 Host 映射，包括 Vue、PrimeVue 和 Wippy。精确键匹配一个 specifier。以 `/` 结尾的键匹配该 specifier 前缀，目标也必须以 `/` 结尾。`scopes` 根据导入模块 URL 选择映射。相对目标 URL 根据文档 base URL 解析。
+
+Host 必须先组合映射并注册原生 import map，再加载模块。之后追加另一张映射无法替换已注册的键。更新时省略 `importMap` 会保留当前扩展；设为 `null` 或 `{}` 会清除扩展。
+
+import map 更新在创建文档时生效。它不会改变现有文档的模块解析。重新加载该文档后才能使用更新；之后创建的文档会使用最新配置。每个 Web Fragment occurrence 都有自己的物理 realm iframe，并在该 realm 中先注册映射再加载模块。
+
+替换共享的 Vue、PrimeVue 或 Wippy 条目可能导致 Host 与子代码使用不同的模块或服务实例。部署覆盖项前，请用已发布的准确映射测试这些集成。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

@@ -378,3 +378,16 @@ WC のバンドルは実行されたものの、実プロキシも dev-proxy も
 - [web-component.md](./web-component.md) — Web コンポーネントの構築（`WippyVueElement`、`define()`、ホストレスのプレイグラウンド／テスト）
 - [theming.md](./theming.md) — `config_overrides` によるページごとのテーマオーバーライド（`theming.global.cssVariables` / `customCSS` を通じて dev-proxy にも渡ります）
 - [compliance-checklist.md](./compliance-checklist.md) — §9 ホストレスモードのチェックリストと完全な REJECT ルール
+
+## Host-less モードでの PrimeVue
+
+PrimeVue 4.5.5 の完全な import map には、公開ブラウザーランタイム export ごとに
+正確なキーがあります。`primevue/*` の wildcard は使いません。固定した Host
+リリースの完全な map をコピーし、具体的な export の一覧には
+`primevue-export-inventory.json` を参照してください。詳細は[Host パッケージ](../web-host/packages.md)を参照してください。
+
+## Standalone import map のライフサイクル
+
+Standalone の `app.html` map はその document に属し、module script より前に置きます。Web Host は新しい page document を作るときに `AppConfig.importMap` を適用します。設定更新は開いている standalone page の map を書き換えません。`app.html` を更新して page を再読み込みしてください。[ブートストラップの手順](../web-host/bootstrap.md#appconfig-import-map)を参照してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。

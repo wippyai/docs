@@ -43,6 +43,11 @@ Jeder Einstieg wird vom CDN unter `<release-tag>/<entry>` ausgeliefert (z. B. `/
 | `chat.js` | Headless-ESM-Modul, das Chat-Stores und WebSocket-Client bereitstellt. Für vollständig eigene UIs. |
 | `ws.js` | Eigenständiger WebSocket-Dienst ohne Vue- oder Pinia-Abhängigkeit. Für Low-Level-Echtzeit-Integrationen. |
 
+Der unveröffentlichte Kandidat 1.0.63 bettet die vollständige Host-Import-Map
+in `iframe.html` und `chat-iframe.html` ein, bevor Modulscripte starten. Der
+Standalone-Einstieg `chat-iframe.html` startet seine App beim Laden selbst.
+Rufen Sie danach nicht `initChatApp` auf.
+
 Bei Standard-Deployments auf `wippy/facade`-Basis referenzieren Sie diese Pfade nie direkt. Die Facade liest `fe_facade_url` aus ihrer Konfiguration, wählt den JS-Modul-Einstieg, der zu `fe_mode` passt (`module.js` für Compat, `managed-layout.js` für Managed), und baut die korrekte URL automatisch.
 
 ## CDN-Versionierung

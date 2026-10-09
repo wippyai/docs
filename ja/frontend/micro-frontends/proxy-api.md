@@ -90,7 +90,7 @@ iframe/Web Fragmentのチャネルのままです。
 
 ### `config`
 
-ホストが配信する子アプリケーションの設定です。関数ではなくプレーンなオブジェクトで、直接importして同期的に読めます。新しいドキュメントは現行の `wippy-context-2.0` 契約のみを対象としています。
+Host が配信する子アプリケーションの設定です。関数ではなくプレーンなオブジェクトで、直接 import して同期的に読めます。このページでは現行の `wippy-context-2.2` 契約を説明します。
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1078,7 +1089,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## 設定のオーバーライド
 
-ページは、別途デプロイすることなく、選択した子向けの設定フィールドをページごとにオーバーライドできます。オーバーライドの形は互換性のため引き続き `customization` を使い、ホストはページが `wippy-context-2.0` の設定を受け取る前に、それらの値を現在の子の `theming.global` の結果に投影します。
+ページは別途デプロイせずに、子向け設定の一部をページごとに上書きできます。互換性のため上書き形式では引き続き `customization` を使います。Host は子に現行の `wippy-context-2.2` 設定を渡す前に、その値を `theming.global` に反映します。
 
 ### オーバーライドの設定方法
 
@@ -1235,3 +1246,8 @@ app.use(router)
 ```
 
 Vueが `#app` にマウントすると、`<wippy-loading>` 要素は自動的に置き換えられます。
+
+
+## 子アプリの Iconify 設定
+
+Host は明示的に設定された `AppConfig.iconify` をトップレベルフィールドとして子アプリに渡します。省略時はオンラインの既定値を使います。ソースは `hostConfig` や Proxy API ではなく AppConfig で設定します。[Iconify プロバイダー](../web-host/iconify.md)を参照してください。

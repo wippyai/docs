@@ -101,7 +101,7 @@ Web 组件看到的是同一批全局变量，因为它运行在宿主页面中�
 | 枚举成员 | 线路取值 | 方向 | 说明 |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | 子 → 宿主 | 初始握手：子级请求自己的 `AppConfig` |
-| `SetConfig` | `set-config` | 宿主 → 子 | 宿主响应 `GetConfig` 投递 `AppConfig` |
+| `SetConfig` | `set-config` | 宿主 → 子 | 宿主在 `GetConfig` 后发送初始 `AppConfig`，后续配置更改也通过同一通道发送；子端无需重新挂载即可应用更新 |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | 宿主 → 子 | 宿主 URL 变化；触发子级的 `@history` 事件 |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | 宿主 → 子 | iframe 可见性变化；触发子级的 `@visibility` 事件 |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | 宿主 → 子 | 向已订阅的子级投递 WebSocket 主题事件 |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 同一个函数也可以通过 `instance.html.inject`、`$W.html` 以及 `import { html } from '@wippy-fe/proxy'` 访问。常规挂载请优先使用 `<w-iframe>`；只有在构建自定义托管基础设施时才使用 `html.inject(...)`。
+
+## Import map 与文档 realm
+
+`AppConfig.importMap` 是 Host 创建子文档时使用的全局配置。新 iframe 或 Web Fragment occurrence 会在运行模块前取得映射。每个 Web Fragment occurrence 都有自己的物理 realm iframe。后续配置更新不会改变已有文档；请重新加载或重新创建文档。请参阅[引导顺序](./bootstrap.md#appconfig-import-map)。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

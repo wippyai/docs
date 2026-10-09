@@ -70,7 +70,7 @@ entries:
 | Value | Effect |
 |-------|--------|
 | `iframe` _(default)_ | 页面渲染为 srcdoc iframe——主（默认）引擎。 |
-| `fragment` | 页面渲染为 [Web Fragments](../frontend/web-host/render-engines.md)（一个反射进 shadow root 的 `reframed` realm）。 |
+| `fragment` | 每个 Web Fragment occurrence 都在自己的物理 realm iframe 中运行，并反射到 shadow root。 |
 
 只有完全匹配的字符串 `fragment` 才会启用；**任何其他值——包括 `fragmnet` 这样的拼写错误——都会被收敛为 `iframe`**（安全兜底，但不会报错）。启用 fragment 引擎还需要 [`/@fragment` 网关](./views.md#web-fragments-gateway)，它由 `wippy/views`（≥ 0.5.9）自行提供——无需消费方配置。页面可以用 [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine) 按页覆盖部署级默认值。
 
@@ -171,13 +171,15 @@ content_fs:    app:app_fs
 | `allow_additional_tags` | `{}` | HTML 消毒器标签白名单（`Record<string, string[]>`，标签 → 允许的属性） |
 | `chat` | `{}` | 聊天 UI 覆盖项 |
 
-而这三个作为**顶层** `AppConfig` 字段输出（与 `hostConfig` 同级），不在 `hostConfig` 之内：
+以下参数作为与 `hostConfig` 同级的**顶层** `AppConfig` 字段输出，不放在 `hostConfig` 内：
 
 | Parameter | Emitted as | Default | Description |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | 前端的路由覆盖 |
 | `axios_defaults` | `axiosDefaults` | `{}` | 前端 axios HTTP 客户端默认值 |
 | `tanstack` | `tanstack` | `{}` | TanStack Query 默认值：`{ default?, content?, lists? }`。`default` 作用于所有查询；`content` 针对单资源渲染，`lists` 针对导航/索引查询。host 默认值为 `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | 浏览器 import map 扩展，作为顶层 `AppConfig.importMap` 输出。 |
+| `iconify` | `iconify` | `{}` | 作为顶层 `AppConfig` 字段输出的 Iconify 提供方来源。 |
 
 ## Config Endpoint
 
@@ -225,7 +227,7 @@ facade 在配置的路由器上注册 `GET /facade/config`。该路径注册*在
 }
 ```
 
-API URL 从 `PUBLIC_API_URL` 环境变量读取；`APP_WEBSOCKET_URL` 通过将 `http://` 替换为 `ws://` 或将 `https://` 替换为 `wss://` 得到。主题化有三个范围（`global`、`host`、`children`）— `host.i18n` 携带应用品牌信息。`hostConfig` 键采用 camelCase 并由 facade 参数组装：`session_type`、`history_mode`、`render_engine`、`show_admin`、`allow_select_model`、`start_nav_open`、`hide_nav_bar`、`disable_right_panel`、`hide_session_selector`，以及可选的 `additional_nav_items`、`state_cache`、`allow_additional_tags` 和 `chat`。`render_engine` 变为 `renderEngine`（参见 [Render engine](#render-engine)）。`api_routes`、`axios_defaults` 和 `tanstack` 参数作为顶层 `AppConfig` 字段（`apiRoutes`、`axiosDefaults`、`tanstack`）输出，与 `hostConfig` 同级，而不在其内部。
+`api_routes`（`apiRoutes`）、`axios_defaults`（`axiosDefaults`）、`tanstack`、`iconify` 和 `import_map`（`importMap`）作为与 `hostConfig` 同级的顶层 `AppConfig` 字段输出。
 
 `facade_url`、`iframe_origin`、`iframe_url`、`login_path`、`mode` 和 `module_file` 字段是**外壳级**字段，供嵌入页面构建自身使用——它们不属于 host 初始化时使用的子级 `AppConfig`。`iframe_origin`/`iframe_url` 字段仅被手动的、不经 facade 的 iframe 嵌入消费（参见 [Facade Entry Point](../frontend/web-host/entry-point.md)）。`mode` 字段是规范化后的 `fe_mode`（`compat` 或 `managed`），`module_file` 是 facade 页面加载的 JS 模块入口——compat 为 `/module.js`，managed 为 `/managed-layout.js`。
 
@@ -291,3 +293,12 @@ wippy publish --embed facade:public_files
 - [Facade Entry Point](../frontend/web-host/entry-point.md) - facade 如何引导 Web Host（前端视角）
 - [CSS Injection](../frontend/web-host/css-injection.md) - facade 主题化如何流入子 iframe
 - [Render Engines](../frontend/web-host/render-engines.md) - Iframe 与 Web Fragment 页面渲染（`render_engine` 开关）
+
+
+可选 JSON 参数 `iconify` 会作为 AppConfig 顶层字段输出。未配置时使用在线源。请参阅 [Iconify 提供方](../frontend/web-host/iconify.md)。
+
+## AppConfig import map
+
+facade requirement 名称为 `import_map`，`/facade/config` 将其作为 `cfg.importMap` 返回。shell 在导入 Host module 前通过共享 bootstrap 注册组合后的映射。随后在初始 `initWippyApp` config 中传递 `importMap: cfg.importMap`。请参阅[引导顺序](../frontend/web-host/bootstrap.md#appconfig-import-map)。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

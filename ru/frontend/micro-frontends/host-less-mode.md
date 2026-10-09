@@ -390,3 +390,16 @@ it('reads host wrapper attached by resolver as __wippyHost', () => {
 - [web-component.md](./web-component.md) — сборка веб-компонентов (`WippyVueElement`, `define()`, песочница и тесты без хоста)
 - [theming.md](./theming.md) — переопределения темы на страницу через `config_overrides` (также передаются в dev-proxy через `theming.global.cssVariables` / `customCSS`)
 - [compliance-checklist.md](./compliance-checklist.md) — §9, чек-лист режима без хоста с полными правилами REJECT
+
+## PrimeVue в режиме без хоста
+
+Полная import map PrimeVue 4.5.5 содержит отдельный точный ключ для каждого
+публичного runtime-экспорта браузера. Шаблон `primevue/*` не используется.
+Скопируйте полную карту закрепленного релиза Host, а список конкретных экспортов
+смотрите в `primevue-export-inventory.json`. Подробности приведены в разделе [Пакеты Host](../web-host/packages.md).
+
+## Жизненный цикл standalone import map
+
+Карта в `app.html` относится к этому документу и должна находиться перед его module scripts. Web Host применяет `AppConfig.importMap` при создании нового документа страницы. Обновление конфигурации не меняет карту уже открытой standalone-страницы. Измените `app.html` и перезагрузите страницу. См. [Порядок запуска](../web-host/bootstrap.md#appconfig-import-map).
+
+Используйте это поле только с развернутой версией Host, в документации которой указана поддержка.

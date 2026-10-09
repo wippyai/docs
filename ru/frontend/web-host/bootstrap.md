@@ -11,13 +11,9 @@ description: "После получения конфигурации Web Host в
 
 Это путь, который использует текущий `wippy/facade`. Фасад раздаёт страницу, загружающую точку входа Web Host в виде JS-модуля — `module.js` для режима **compat** или `managed-layout.js` для режима **managed**, — и модуль забирает себе всю страницу и её историю браузера.
 
-1. **Страница загружает модуль.** Скрипт регистрирует `window.initWippyApp` в `window` страницы.
+1. **Получить конфигурацию и зарегистрировать карту.** Требование фасада называется `import_map`; `/facade/config` возвращает его как `cfg.importMap`. Shell загружает общий bootstrap import map и регистрирует составленную карту до импорта модулей Host.
 
-2. **Страница вызывает `initWippyApp(config, rootContainer?)`.** Страница уже получила `/facade/config` и передаёт полезную нагрузку напрямую аргументом функции. Рукопожатия через PostMessage нет.
-   ```javascript
-   const events = window.initWippyApp(config, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **Импортировать модуль Host и инициализировать приложение.** Shell импортирует `module.js` или `managed-layout.js`, который предоставляет `window.initWippyApp`. Затем он вызывает `initWippyApp(appConfig, rootContainer?)` с начальной `AppConfig`, включая `importMap: cfg.importMap`. Рукопожатия PostMessage нет.
 
 3. **Инициализация продолжается** — см. [Внутреннюю последовательность инициализации](#internal-init-sequence) ниже.
 
@@ -25,17 +21,16 @@ description: "После получения конфигурации Web Host в
 
 Этот путь используется, когда вы сами встраиваете полный хост внутрь iframe — для частичного встраивания в страницу с более сильной изоляцией. Он загружает `iframe.html?waitForCustomConfig` и получает конфигурацию через PostMessage `SetConfig`. Текущий фасад этого не создаёт; путь существует для ручных вставок.
 
-1. **Iframe загружается.** Web Host загружается в браузере. Поскольку в URL присутствует `?waitForCustomConfig`, приложение монтирует минимальный каркас и приостанавливается — оно ещё не пытается читать токены аутентификации или вызывать какие-либо конечные точки API.
+1. **Родитель подготавливает iframe.** Добавьте `?waitForCustomConfig` к versioned URL `iframe.html`. Установите обработчик `message` до задания `iframe.src`. Standalone bootstrap ожидает родительский `SetConfig` до регистрации import map и импорта модулей приложения Host. Это происходит до монтирования приложения Host.
 
-2. **Родитель отправляет `SetConfig`.** Родитель уже получил `/facade/config` (или подготовил эквивалентную полезную нагрузку) и пересылает её через PostMessage:
-   ```javascript
-   iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
-   )
-   ```
+2. **Родитель отвечает на `GetConfig`.** Дождитесь сообщения `get-config` от
+   iframe. Принимайте его, только если `event.origin` совпадает с доверенным
+   origin iframe, а `event.source` — именно `iframe.contentWindow`. Затем
+   отправьте полный `AppConfig` сообщением `set-config`, указав доверенный origin
+   как `targetOrigin`. `/facade/config` содержит настройки развертывания, но
+   родитель должен добавить `$schema`, `auth` и `context`. См. [полный пример iframe](./entry-point.md#manual-facade-less-iframe-embedding).
 
-3. **Web Host получает `AppConfig`.** Обработчик сообщений проверяет тип конверта и действие, затем извлекает полный объект конфигурации.
+3. **Web Host получает `AppConfig`.** Он проверяет конверт сообщения, принимает `SetConfig` в iframe только от физического родительского окна и сравнивает `event.origin` с origin родителя, если тот доступен. В Web Fragment также требуется, чтобы `fragmentId` совпадал с собственным ID этого экземпляра. Последующие допустимые сообщения `SetConfig` могут обновлять конфигурацию этого документа.
 
 4. **Инициализация продолжается** — начиная с этого момента внутренний путь идентичен пути A.
 
@@ -75,7 +70,7 @@ WebSocket-клиент подключается к `APP_WEBSOCKET_URL`, испо
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -178,22 +173,20 @@ Web Host разрешает конфигурацию из нескольких �
 Стандартный путь через фасад (JS-модуль):
 
 ```
-на странице загружен module.js / managed-layout.js
+shell facade получает /facade/config (требование import_map → cfg.importMap)
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
-  │
-  ├─ Инициализация Pinia (хранилище аутентификации, хранилище конфигурации)
-  ├─ Настройка Axios (baseURL, заголовок аутентификации)
-  ├─ Создание Vue Router (режим истории, системные маршруты)
-  ├─ Установка PrimeVue, внедрение CSS темы
-  ├─ Монтирование App.vue
-  │
-  ├─ GET /api/public/pages/routes
-  │     router.addRoute('app', ...) для каждого mountRoute с бэкенда
-  │
-  ├─ Разрешение текущего URL → отрисовка совпавшего представления
-  └─ Подключение WebSocket
+  ├─ получает карту Host и загружает общий bootstrap import map
+  ├─ регистрирует составленную import map
+  ├─ импортирует module.js / managed-layout.js
+  ├─ модуль предоставляет window.initWippyApp
+  ├─ shell вызывает initWippyApp({ ..., importMap: cfg.importMap }, '#app')
+  ├─ resolveConfig() → мигрирует, нормализует config/auth/env
+  ├─ ожидает GET /api/public/pages/routes
+  ├─ создает Vue app и router
+  │     статические system routes + проверенные backend mount routes
+  ├─ setupApp() → Pinia, Axios, PrimeVue, theme и другие providers
+  ├─ монтирует App.vue → разрешает текущий URL
+  └─ компоненты запрашивают WebSocket-клиенты
 ```
 
 ## См. также
@@ -201,3 +194,40 @@ Web Host разрешает конфигурацию из нескольких �
 - [Точка входа фасада](./entry-point.md) — как `AppConfig` формируется и доставляется модулем `wippy/facade`
 - [Многопанельная раскладка](./multi-panel-layout.md) — путь запуска управляемой раскладки, обслуживаемый `managed-layout.js`
 - [Движки отрисовки](./render-engines.md) — как страница отрисовывается после загрузки (srcdoc iframe против Web Fragment)
+
+
+## Источники Iconify
+
+`AppConfig.iconify.providers` задает источник Iconify. Если поле не указано, используются онлайн-значения по умолчанию. Явно заданные значения передаются дочерним приложениям через AppConfig. См. [Провайдеры Iconify](./iconify.md).
+
+## PrimeVue и браузерные realms
+
+Приложения импортируют PrimeVue по точным спецификаторам из закрепленной import
+map Host. Пересобранные приложения используют общий граф vendor PrimeVue внутри
+своего JavaScript realm. У каждого iframe и Web Fragment свой realm и граф
+модулей. Import map не добавляет стили; запрашивайте нужный CSS PrimeVue через
+документированные CSS-ключи Host. Уже встроенные bundle необходимо пересобрать
+с новой картой.
+
+## AppConfig import map
+
+`AppConfig.importMap` — необязательная браузерная карта импортов верхнего уровня со стандартными полями `imports` и `scopes`.
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+Для документов страниц srcdoc Host объединяет карту страницы, сгенерированные значения Host по умолчанию, затем `AppConfig.importMap`. У standalone- и facade-документов, а также у каждого вхождения Web Fragment нет карты страницы srcdoc; они объединяют значения Host по умолчанию и `AppConfig.importMap`. Каждое вхождение Web Fragment работает в собственном физическом realm iframe. В `imports` и каждом scope последнее значение совпадающего ключа заменяет предыдущее, остальные записи сохраняются. Конфигурация может заменить записи страницы или Host, включая Vue, PrimeVue и Wippy. Точный ключ соответствует одному specifier. Ключ с завершающим `/` задаёт префикс specifier, и целевой URL тоже должен заканчиваться на `/`. `scopes` выбирают записи по URL импортирующего модуля. Относительные целевые URL разрешаются относительно базового URL документа.
+
+Host должен сформировать карту и зарегистрировать native import map до загрузки модулей. Позднее добавление другой карты не заменяет уже зарегистрированный ключ. Если в обновлении нет `importMap`, текущая настройка сохраняется. Значения `null` и `{}` очищают расширение.
+
+Обновление import map применяется при создании документа. Оно не меняет разрешение модулей в уже существующем документе. Перезагрузите его, чтобы применить обновление; новые документы используют последнюю конфигурацию. Каждый экземпляр Web Fragment работает в собственном физическом realm iframe и регистрирует карту в этом realm до загрузки модулей.
+
+Замена общей записи Vue, PrimeVue или Wippy может разделить идентичность модулей или сервисов между Host и дочерним кодом. Перед публикацией проверяйте интеграцию по точной опубликованной карте.
+
+Используйте это поле только с развернутой версией Host, в документации которой указана поддержка.

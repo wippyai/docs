@@ -70,7 +70,7 @@ entries:
 | Значение | Эффект |
 |-------|--------|
 | `iframe` _(по умолчанию)_ | Страницы рендерятся как srcdoc-iframe — основной (стандартный) движок. |
-| `fragment` | Страницы рендерятся как [Web Fragments](../frontend/web-host/render-engines.md) (реалм `reframed`, отражённый в shadow root). |
+| `fragment` | Каждый экземпляр Web Fragment работает в собственном физическом realm iframe, отраженном в shadow root. |
 
 Включает режим только точная строка `fragment`; **любое другое значение — включая опечатку вроде `fragmnet` — приводится к `iframe`** (безопасно, но молча). Для включения fragment-движка также нужен [шлюз `/@fragment`](./views.md#web-fragments-gateway), который `wippy/views` (≥ 0.5.9) предоставляет сам — настройка на стороне потребителя не требуется. Страница может переопределить умолчание развёртывания для себя через [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
@@ -171,13 +171,15 @@ content_fs:    app:app_fs
 | `allow_additional_tags` | `{}` | Белый список тегов HTML-санитайзера (`Record<string, string[]>`, тег → разрешённые атрибуты) |
 | `chat` | `{}` | Переопределения UI чата |
 
-Эти три выдаются как поля `AppConfig` **верхнего уровня** (соседи `hostConfig`), а не внутри `hostConfig`:
+Эти параметры выдаются как поля `AppConfig` **верхнего уровня** рядом с `hostConfig`, а не внутри него:
 
 | Параметр | Выдаётся как | По умолчанию | Описание |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Переопределения маршрутов для фронтенда |
 | `axios_defaults` | `axiosDefaults` | `{}` | Значения по умолчанию для HTTP-клиента axios на фронтенде |
 | `tanstack` | `tanstack` | `{}` | Значения по умолчанию TanStack Query: `{ default?, content?, lists? }`. `default` применяется ко всем запросам; `content` нацелен на рендер одиночных ресурсов, `lists` — на запросы навигации и списков. Умолчание хоста — `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | Расширение browser import map, выдаваемое как поле верхнего уровня `AppConfig.importMap`. |
+| `iconify` | `iconify` | `{}` | Источники Iconify, выдаваемые как поле верхнего уровня `AppConfig`. |
 
 ## Эндпоинт конфигурации
 
@@ -225,7 +227,7 @@ content_fs:    app:app_fs
 }
 ```
 
-API URL читается из переменной окружения `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` получается заменой `http://` на `ws://` или `https://` на `wss://`. Оформление имеет три области (`global`, `host`, `children`) — `host.i18n` содержит брендинг приложения. Ключи `hostConfig` записаны в camelCase и собираются из параметров фасада: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, плюс опциональные `additional_nav_items`, `state_cache`, `allow_additional_tags` и `chat`. `render_engine` становится `renderEngine` (см. [Движок рендеринга](#движок-рендеринга)). Параметры `api_routes`, `axios_defaults` и `tanstack` выдаются как поля `AppConfig` верхнего уровня (`apiRoutes`, `axiosDefaults`, `tanstack`), соседние с `hostConfig`, а не внутри него.
+Параметры `api_routes` (`apiRoutes`), `axios_defaults` (`axiosDefaults`), `tanstack`, `iconify` и `import_map` (`importMap`) выдаются как поля верхнего уровня `AppConfig` рядом с `hostConfig`.
 
 Поля `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` и `module_file` — поля **уровня оболочки**, используемые встраивающей страницей для сборки самой себя; они не входят в дочерний `AppConfig`, которым инициализируется хост. Поля `iframe_origin`/`iframe_url` используются только ручными встраиваниями через iframe без фасада (см. [Точка входа фасада](../frontend/web-host/entry-point.md)). Поле `mode` — нормализованный `fe_mode` (`compat` или `managed`), а `module_file` — точка входа JS-модуля, которую загружает страница фасада: `/module.js` для compat, `/managed-layout.js` для managed.
 
@@ -291,3 +293,12 @@ wippy publish --embed facade:public_files
 - [Точка входа фасада](../frontend/web-host/entry-point.md) - Как фасад загружает Web Host (со стороны фронтенда)
 - [Внедрение CSS](../frontend/web-host/css-injection.md) - Как оформление фасада попадает в дочерние iframe
 - [Движки рендеринга](../frontend/web-host/render-engines.md) - Рендеринг страниц через iframe или Web Fragment (переключатель `render_engine`)
+
+
+Необязательная JSON-настройка `iconify` выводится как поле верхнего уровня AppConfig. Без нее используются онлайн-источники. См. [Провайдеры Iconify](../frontend/web-host/iconify.md).
+
+## AppConfig import map
+
+Требование фасада называется `import_map`, а `/facade/config` возвращает его как `cfg.importMap`. Shell регистрирует составленную карту через общий bootstrap до импорта модуля Host. Затем он передает `importMap: cfg.importMap` в начальную конфигурацию `initWippyApp`. См. [Последовательность запуска](../frontend/web-host/bootstrap.md#appconfig-import-map).
+
+Используйте это поле только с развернутой версией Host, в документации которой указана поддержка.

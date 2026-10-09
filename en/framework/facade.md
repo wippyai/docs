@@ -56,7 +56,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.56` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.63` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
@@ -72,7 +72,7 @@ entries:
 | Value | Effect |
 |-------|--------|
 | `iframe` _(default)_ | Pages render as srcdoc iframes — the main (default) engine. |
-| `fragment` | Pages render as [Web Fragments](../frontend/web-host/render-engines.md) (a `reframed` realm reflected into a shadow root). |
+| `fragment` | Each Web Fragment occurrence runs in its own physical realm iframe, reflected into a shadow root. |
 
 Only the exact string `fragment` opts in; **any other value — including a typo like `fragmnet` — is clamped to `iframe`** (fail-safe, but silent). Enabling the fragment engine also requires the [`/@fragment` gateway](./views.md#web-fragments-gateway), which is self-provided by `wippy/views` (≥ 0.5.9) — no consumer wiring. A page can override the deployment default per-page with [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
@@ -175,13 +175,15 @@ These four are surfaced verbatim under `hostConfig` for the frontend:
 | `allow_additional_tags` | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes) |
 | `chat` | `{}` | Chat UI overrides |
 
-These three are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
+These parameters are emitted as top-level `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
 
 | Parameter | Emitted as | Default | Description |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Route overrides for the frontend |
 | `axios_defaults` | `axiosDefaults` | `{}` | Frontend axios HTTP client defaults |
 | `tanstack` | `tanstack` | `{}` | TanStack Query defaults: `{ default?, content?, lists? }`. `default` applies to all queries; `content` targets single-resource renders, `lists` targets navigation/index queries. Host default is `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | Browser import-map extension forwarded as top-level `AppConfig.importMap`. |
+| `iconify` | `iconify` | `{}` | Iconify provider source configuration, emitted as a top-level `AppConfig` field. The default source remains online. See [Iconify providers](../frontend/web-host/iconify.md). |
 
 ## Config Endpoint
 
@@ -189,9 +191,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.63",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.63/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "login_redirect_param": null,
     "mode": "compat",
@@ -232,7 +234,7 @@ The facade registers `GET /facade/config` on the configured public router, so th
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. `render_engine` becomes `renderEngine` (see [Render engine](#render-engine)). The `api_routes`, `axios_defaults`, and `tanstack` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`, `tanstack`), siblings of `hostConfig`, not inside it.
+These parameters are emitted as top-level `AppConfig` fields beside `hostConfig`: `api_routes` as `apiRoutes`, `axios_defaults` as `axiosDefaults`, `tanstack`, `iconify`, and `import_map` as `importMap`.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, and `module_file` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)). The `mode` field is the normalized `fe_mode` (`compat` or `managed`), and `module_file` is the JS-module entry the facade page loads — `/module.js` for compat, `/managed-layout.js` for managed.
 
@@ -298,3 +300,9 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 - [Facade Entry Point](../frontend/web-host/entry-point.md) — How the facade starts the Web Host
 - [CSS Injection](../frontend/web-host/css-injection.md) — How facade theming reaches child iframes
 - [Render Engines](../frontend/web-host/render-engines.md) — Iframe and Web Fragment page rendering
+
+## AppConfig import map
+
+The facade requirement is named `import_map`, and `/facade/config` returns it as `cfg.importMap`. The shell registers the composed map through the shared bootstrap before importing the Host module. It then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](../frontend/web-host/bootstrap.md#appconfig-import-map).
+
+Use this field only with a deployed Host release that documents support for it.

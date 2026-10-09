@@ -315,3 +315,8 @@ theming: {
 - [테마](../micro-frontends/theming.md) — CSS 토큰 레퍼런스, Tailwind 매핑, 웹 컴포넌트 스타일 패턴
 - [프록시와 격리](./proxy-isolation.md) — 프록시 주입 파이프라인의 동작 방식과 프로토콜 수준에서 `ProxyConfig`가 제어하는 대상
 - [렌더 엔진](./render-engines.md) — 호스트 CSS는 srcdoc iframe과 Web Fragment shadow root 모두에 도달합니다
+
+
+## Iconify 소스와 아이콘 주입
+
+`iconifyIcons`는 아이콘 주입을 제어하며 소스를 선택하지 않습니다. `AppConfig.iconify.providers`에서 소스를 구성합니다. 기본적으로 온라인 소스를 사용합니다. [Iconify 공급자](./iconify.md)를 참조하세요.

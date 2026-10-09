@@ -11,13 +11,9 @@ description: "웹 호스트는 설정을 받은 뒤 어떤 UI도 렌더링하기
 
 현재 `wippy/facade`가 사용하는 경로입니다. 파사드는 웹 호스트 JS 모듈 엔트리 — **compat** 모드는 `module.js`, **managed** 모드는 `managed-layout.js` — 를 로드하는 페이지를 서빙하고, 그 모듈이 페이지 전체와 브라우저 히스토리를 인수합니다.
 
-1. **페이지가 모듈을 로드합니다.** 스크립트가 페이지의 `window`에 `window.initWippyApp`을 등록합니다.
+1. **설정을 가져오고 map을 등록합니다.** facade requirement 이름은 `import_map`이고 `/facade/config`는 이를 `cfg.importMap`으로 반환합니다. shell은 공유 import-map bootstrap을 로드하고 Host module을 import하기 전에 조합된 map을 등록합니다.
 
-2. **페이지가 `initWippyApp(config, rootContainer?)`를 호출합니다.** 페이지는 `/facade/config`를 이미 가져왔고 그 페이로드를 함수 인자로 직접 전달합니다. PostMessage 핸드셰이크는 없습니다.
-   ```javascript
-   const events = window.initWippyApp(config, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **Host module을 import하고 앱을 초기화합니다.** shell은 `module.js` 또는 `managed-layout.js`를 import하며, module은 `window.initWippyApp`을 제공합니다. 그다음 `importMap: cfg.importMap`이 포함된 초기 `AppConfig`로 `initWippyApp(appConfig, rootContainer?)`을 호출합니다. PostMessage handshake는 없습니다.
 
 3. **초기화가 진행됩니다** — 아래 [내부 초기화 시퀀스](#internal-init-sequence)를 참고하세요.
 
@@ -25,17 +21,17 @@ description: "웹 호스트는 설정을 받은 뒤 어떤 UI도 렌더링하기
 
 전체 호스트를 직접 iframe 안에 임베드할 때 — 더 강한 격리가 필요한 부분 페이지 임베딩을 위해 — 취하는 경로입니다. `iframe.html?waitForCustomConfig`를 로드하고 `SetConfig` PostMessage로 설정을 받습니다. 현재 파사드는 이를 만들지 않으며, 수동 삽입을 위해 존재합니다.
 
-1. **iframe이 로드됩니다.** 웹 호스트가 브라우저에 로드됩니다. URL에 `?waitForCustomConfig`가 있으므로 앱은 최소한의 스켈레톤을 마운트하고 대기합니다 — 아직 인증 토큰을 읽거나 API 엔드포인트를 호출하지 않습니다.
+1. **부모가 iframe을 준비합니다.** 버전이 지정된 `iframe.html` URL에 `?waitForCustomConfig`를 추가합니다. `iframe.src`를 설정하기 전에 `message` listener를 등록합니다. standalone bootstrap은 import map을 등록하거나 Host 앱 module을 import하기 전에 부모의 `SetConfig`를 기다립니다. 이 과정은 Host 앱이 mount되기 전에 일어납니다.
 
-2. **부모가 `SetConfig`를 보냅니다.** 부모는 `/facade/config`를 가져왔거나(또는 동등한 페이로드를 제공하고) PostMessage로 전달합니다:
-   ```javascript
-   iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
-   )
-   ```
+2. **부모가 `GetConfig`에 응답합니다.** iframe의 `get-config` 메시지를 기다립니다.
+   `event.origin`이 신뢰하는 iframe origin과 일치하고 `event.source`가 정확히
+   `iframe.contentWindow`일 때만 수락합니다. 그런 다음 전체 `AppConfig`를
+   `set-config` 메시지로 보내고 신뢰하는 origin을 `targetOrigin`으로 지정합니다.
+   `/facade/config`는 배포 설정을 제공하지만 부모는 `$schema`, `auth`, `context`를
+   추가해야 합니다. 자세한 내용은 [전체 iframe 예제](./entry-point.md#manual-facade-less-iframe-embedding)를
+   참조하세요.
 
-3. **웹 호스트가 `AppConfig`를 받습니다.** 메시지 핸들러가 엔벨로프 타입과 액션을 검증한 뒤 전체 설정 객체를 추출합니다.
+3. **Web Host가 `AppConfig`를 받습니다.** message envelope을 검증하고 iframe message는 물리적 부모 window에서 온 것만 받습니다. 부모 origin에 접근할 수 있으면 `event.origin`도 비교합니다. Web Fragment에서는 해당 occurrence의 자체 ID와 `fragmentId`가 일치해야 합니다. 이후의 유효한 `SetConfig` message는 해당 document의 config를 업데이트할 수 있습니다.
 
 4. **초기화가 진행됩니다** — 이 시점 이후 내부 경로는 경로 A와 동일합니다.
 
@@ -75,7 +71,7 @@ WebSocket 클라이언트가 인증 토큰을 사용해 `APP_WEBSOCKET_URL`에 �
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -178,22 +174,20 @@ interface AppContext {
 표준 파사드(JS 모듈) 경로:
 
 ```
-페이지에 module.js / managed-layout.js 로드
+facade shell이 /facade/config를 가져옴 (requirement import_map → cfg.importMap)
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
-  │
-  ├─ Pinia 초기화 (auth 스토어, config 스토어)
-  ├─ Axios 설정 (baseURL, 인증 헤더)
-  ├─ Vue Router 생성 (히스토리 모드, 시스템 라우트)
-  ├─ PrimeVue 설치, 테마 CSS 주입
-  ├─ App.vue 마운트
-  │
-  ├─ GET /api/public/pages/routes
-  │     각 백엔드 mountRoute마다 router.addRoute('app', ...)
-  │
-  ├─ 현재 URL 해석 → 일치하는 뷰 렌더링
-  └─ WebSocket 연결
+  ├─ Host map을 가져오고 공유 import-map bootstrap을 로드함
+  ├─ 조합된 import map을 등록함
+  ├─ module.js / managed-layout.js를 import함
+  ├─ module이 window.initWippyApp을 제공함
+  ├─ shell이 initWippyApp({ ..., importMap: cfg.importMap }, '#app')을 호출함
+  ├─ resolveConfig() → config/auth/env state를 migrate 및 normalize함
+  ├─ GET /api/public/pages/routes를 기다림
+  ├─ Vue app과 router를 생성함
+  │     static system routes + validated backend mount routes
+  ├─ setupApp() → Pinia, Axios, PrimeVue, theme 등을 구성함
+  ├─ App.vue를 mount하고 현재 URL을 확인함
+  └─ component가 필요할 때 WebSocket client를 요청함
 ```
 
 ## 함께 보기
@@ -201,3 +195,39 @@ interface AppContext {
 - [파사드 엔트리 포인트](./entry-point.md) — `wippy/facade`가 `AppConfig`를 구성하고 전달하는 방식
 - [다중 패널 레이아웃](./multi-panel-layout.md) — `managed-layout.js`가 서빙하는 managed 레이아웃 부트 경로
 - [렌더 엔진](./render-engines.md) — 로드된 페이지가 렌더링되는 방식(srcdoc iframe vs Web Fragment)
+
+
+## Iconify 소스
+
+`AppConfig.iconify.providers`에서 Iconify 소스를 구성합니다. 생략하면 온라인 기본값을 사용합니다. 명시적으로 구성한 값은 AppConfig를 통해 하위 앱에 전달됩니다. [Iconify 공급자](./iconify.md)를 참조하세요.
+
+## PrimeVue와 브라우저 realm
+
+앱은 고정된 Host import map의 정확한 스펙파이어로 PrimeVue를 가져옵니다. 다시
+빌드한 소비자는 자신의 JavaScript realm에서 공유 PrimeVue vendor graph를 사용합니다.
+각 iframe과 Web Fragment는 별도의 realm과 모듈 graph를 가집니다. import map은
+스타일을 삽입하지 않습니다. 필요한 PrimeVue CSS는 문서화된 Host CSS key로 요청하세요.
+이미 포함된 소비자 bundle은 새 맵에 맞춰 다시 빌드해야 합니다.
+
+## AppConfig import map
+
+`AppConfig.importMap`은 표준 `imports`와 `scopes` 필드를 가진 선택적 최상위 브라우저 import map입니다.
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+srcdoc 페이지 문서에서 Host는 페이지 맵, 생성된 Host 기본값, `AppConfig.importMap` 순서로 합성합니다. standalone 및 facade 문서와 각 Web Fragment occurrence에는 srcdoc 페이지 맵이 없으므로 Host 기본값과 `AppConfig.importMap`을 합성합니다. 각 Web Fragment occurrence는 별도의 물리 realm iframe에서 실행됩니다. `imports`와 각 scope에서 일치하는 키의 마지막 값이 우선하며 다른 항목은 유지됩니다. 설정은 Vue, PrimeVue, Wippy를 포함한 페이지 또는 Host 매핑을 바꿀 수 있습니다. 정확한 키는 하나의 specifier와 일치합니다. `/`로 끝나는 키는 해당 specifier prefix와 일치하며 대상 URL도 `/`로 끝나야 합니다. `scopes`는 import하는 모듈 URL에 따라 매핑을 선택합니다. 상대 대상 URL은 문서 base URL을 기준으로 해석됩니다.
+
+모듈을 불러오기 전에 map을 구성하고 native import map을 등록해야 합니다. 나중에 다른 map을 추가해도 이미 등록한 키를 바꿀 수 없습니다. 업데이트에서 `importMap`을 생략하면 현재 확장 설정을 유지합니다. `null` 또는 `{}`를 지정하면 확장 설정을 지웁니다.
+
+import map 업데이트는 document를 만들 때 적용됩니다. 이미 열린 document의 module 해석은 바뀌지 않습니다. 업데이트를 적용하려면 그 document를 다시 불러오세요. 이후 만든 document는 최신 config를 사용합니다. 각 Web Fragment occurrence는 자체 물리 realm iframe을 가지며 해당 realm에서 module 실행 전에 map을 등록합니다.
+
+공유 Vue, PrimeVue 또는 Wippy 항목을 바꾸면 Host와 자식 코드의 모듈 또는 서비스 identity가 달라질 수 있습니다. override를 배포하기 전에 공개된 정확한 map으로 통합 동작을 확인하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

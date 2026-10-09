@@ -98,5 +98,55 @@ export default {
 
 快照必须包含其来源和哈希。快照中不存在的依赖会被打包进产物，除非另有成文的构建规则适用。
 
-对于 Web Host 1.0.56 基线，唯一的标准快照 URL 是
-`https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`。不要替换为本地应用 URL、未固定版本的 `latest` URL，或手工重建的包列表。
+获批的合并版 Web Host 1.0.63 候选使用的预期快照 URL 是
+`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`。发布后请确认标签。
+不要替换成本地应用 URL、未固定版本的 `latest` URL 或手工重建的包列表。
+
+候选版 PrimeVue 4.5.5 条目由公开导出模式生成。Host 的
+`primevue-export-inventory.json` 记录具体运行时目标。请使用准确的说明符，不要
+使用通配符或手工维护子集。请参阅 [Host 包](../web-host/packages.md)。
+
+### Host URL 和部署路径
+
+Web Host 包构建需要 `APP_URL`。请设置公开的 HTTP(S) 来源地址，以及可选的部署路径。
+构建会拒绝缺失或无效的 URL，包括凭据、查询、片段和路径遍历段。请保留 `/wippy`
+这样的路径；Host 会将它用于 `dist/import-map.json` 中的绝对 URL。
+
+若要在路径下生成生产构建，请设置部署 URL 并运行完整包构建。保留版本标签时，
+不要设置 `APP_IGNORE_TAG`：
+
+```powershell
+$env:APP_URL = 'https://cdn.example/wippy'
+Remove-Item Env:APP_IGNORE_TAG -ErrorAction SilentlyContinue
+pnpm run build
+```
+
+本地无标签构建时，请显式设置两个变量：
+
+```powershell
+$env:APP_URL = 'http://localhost:5173'
+$env:APP_IGNORE_TAG = '1'
+pnpm run build
+```
+
+`APP_IGNORE_TAG=1` 会移除版本标签前缀，仅用于本地测试，不用于带版本的生产部署。
+`APP_URL` 始终必填。`build:site` 将 `${APP_URL}/${tagPrefix}` 用作 Vite 绝对基础路径；
+完整的 `pnpm run build` 还会准备 proxy、library 和 types 产物。只有这些前置条件
+已经存在且仅修改了 site 代码时，才使用 `pnpm run build:site` 进行增量构建。
+`build:site:relative` 将标签前缀用作 Vite 相对资源基础路径，但 import map 的值仍为绝对 URL。
+
+对候选版本，`APP_URL=https://cdn.example/wippy` 和标签 `webcomponents-1.0.63` 会生成
+`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`。vendor 和动态 chunk URL
+也必须保留相同的来源、部署路径和标签。构建后检查 `dist/import-map.json`：所有
+`imports` 值必须是位于已配置来源和路径下的绝对 HTTP(S) URL，且不能包含 `/undefined/`。
+然后通过实际部署路由请求版本化 map 及其资源。构建成功本身不能证明路由可用。
+
+## AppConfig import map URL
+
+相对映射目标以新文档的 base URL 为基准解析。CDN 和本地 mirror 应使用固定版本和部署路径的绝对 URL，例如 `https://cdn.example/wippy/vendor/` 和 `http://localhost:5173/vendor/`。如果 CDN 模块导入其他 bare specifier，也要为该依赖添加映射，或使用自包含的 CDN 模块。运行时映射不会改写已打包的导入。请参阅[引导顺序](../web-host/bootstrap.md#appconfig-import-map)。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。
+
+## Release tag source
+
+构建标签取自 `CI_COMMIT_TAG`；未设置时使用 `APP_TAG`。在 CI 之外构建带版本的产物时，请设置 `APP_TAG`。

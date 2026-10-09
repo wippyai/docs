@@ -41,7 +41,9 @@ Web Fragment adapter applies its composed page sheet without that iframe flag.
 
 ² A web component inherits custom **properties** from the `:root` of wherever it is mounted: a host-chrome WC inherits **global + host** vars from the host document; a WC inside a `view.page` inherits **global + children** vars from that page realm. The inner-root bridge covers global and children/page variable names, not host-only names. Its injected custom **CSS** is always the children scope (global + children). Keep shared styling in `custom_css` / `css_variables` (global) — those reach every surface regardless of mount location.
 
-**`fs://` file support:** the six theming knobs above accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only.
+**`fs://` file support:** the six theming knobs above accept an `fs://<path>` value resolved at request time from the `content_fs` filesystem — see [Facade → Reusing facade theming on non-Web-Host pages](../../framework/facade.md#reusing-facade-theming-on-non-web-host-pages). `icon_sets` / `host_icon_sets` and every non-theming JSON parameter are inline-only. Iconify provider sources use the separate `AppConfig.iconify.providers` field; see [Iconify providers](./iconify.md).
+
+The `iconifyIcons` flag controls whether the Host loads and registers the `<iconify-icon>` custom element. It does not select the collection source and is separate from CSS injection. Configure sources through `AppConfig.iconify.providers`, and keep the default online unless the deployment explicitly selects a local source.
 
 For more than a few overrides, keep CSS and JSON in separate files behind `content_fs` and reference them with `fs://`. This keeps theme assets reviewable and reusable. Do not substitute `file://`: that is a loader-time inlining mechanism, not the facade's request-time theming contract.
 

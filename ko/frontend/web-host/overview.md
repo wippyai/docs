@@ -43,6 +43,10 @@ Page (wippy/facade HTML — module.js / managed-layout.js 로드)
 | `chat.js` | 채팅 스토어와 WebSocket 클라이언트를 노출하는 헤드리스 ESM 모듈. 완전히 커스텀한 UI를 만들 때 사용하세요. |
 | `ws.js` | Vue나 Pinia 의존성이 없는 독립 WebSocket 서비스. 저수준 실시간 통합에 사용하세요. |
 
+아직 공개되지 않은 1.0.63 후보는 모듈 스크립트 실행 전에 전체 Host import map을
+`iframe.html`과 `chat-iframe.html`에 포함합니다. 독립 `chat-iframe.html` 항목은
+로드될 때 앱을 자동 시작하므로 이후 `initChatApp`을 호출하지 마세요.
+
 표준 `wippy/facade` 기반 배포에서는 이 경로들을 직접 참조할 일이 없습니다. 파사드가 설정에서 `fe_facade_url`을 읽고, `fe_mode`에 맞는 JS 모듈 엔트리(compat은 `module.js`, managed는 `managed-layout.js`)를 선택하여 올바른 URL을 자동으로 구성합니다.
 
 ## CDN 버전 관리

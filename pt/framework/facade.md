@@ -70,7 +70,7 @@ entries:
 | Valor | Efeito |
 |-------|--------|
 | `iframe` _(padrão)_ | Páginas renderizam como iframes srcdoc — a engine principal (padrão). |
-| `fragment` | Páginas renderizam como [Web Fragments](../frontend/web-host/render-engines.md) (um realm `reframed` refletido em um shadow root). |
+| `fragment` | Cada ocorrência de Web Fragment é executada em seu próprio iframe de realm físico, refletido em um shadow root. |
 
 Somente a string exata `fragment` ativa a opção; **qualquer outro valor — incluindo um erro de digitação como `fragmnet` — é reduzido a `iframe`** (à prova de falhas, porém silencioso). Habilitar a engine de fragment também exige o [gateway `/@fragment`](./views.md#web-fragments-gateway), que é auto-provido pelo `wippy/views` (≥ 0.5.9) — sem configuração do consumidor. Uma página pode sobrescrever o padrão da implantação página a página com [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
@@ -85,7 +85,7 @@ Somente a string exata `fragment` ativa a opção; **qualquer outro valor — in
 | Valor | Efeito |
 |-------|--------|
 | `iframe` _(padrão)_ | Páginas são renderizadas como iframes srcdoc, o mecanismo principal. |
-| `fragment` | Páginas são renderizadas como [Web Fragments](../frontend/web-host/render-engines.md), um realm `reframed` refletido em shadow root. |
+| `fragment` | Cada ocorrência de Web Fragment é executada em seu próprio iframe de realm físico, refletido em um shadow root. |
 
 | Parâmetro | Padrão | Descrição |
 |-----------|---------|-------------|
@@ -174,13 +174,15 @@ Estes quatro são expostos literalmente sob `hostConfig` para o frontend:
 | `allow_additional_tags` | `{}` | Whitelist de tags do sanitizador HTML (`Record<string, string[]>`, tag → atributos permitidos) |
 | `chat` | `{}` | Sobrescritas de UI do chat |
 
-Estes três são emitidos como campos de **nível superior** do `AppConfig` (irmãos de `hostConfig`), não sob `hostConfig`:
+Estes parâmetros são emitidos como campos de **nível superior** do `AppConfig` (irmãos de `hostConfig`), não dentro de `hostConfig`:
 
 | Parâmetro | Emitido como | Padrão | Descrição |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Sobrescritas de rotas para o frontend |
 | `axios_defaults` | `axiosDefaults` | `{}` | Padrões do cliente HTTP axios do frontend |
 | `tanstack` | `tanstack` | `{}` | Padrões do TanStack Query: `{ default?, content?, lists? }`. `default` se aplica a todas as queries; `content` mira renderizações de recurso único, `lists` mira queries de navegação/índice. O padrão do host é `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | Extensão do import map do navegador, emitida como `AppConfig.importMap` de nível superior. |
+| `iconify` | `iconify` | `{}` | Fontes do Iconify emitidas como campo de nível superior de `AppConfig`. |
 
 ### Flags de Funcionalidade
 
@@ -228,7 +230,7 @@ A facade registra `GET /facade/config` no router configurado. Esse caminho é re
 }
 ```
 
-A URL da API é lida da variável de ambiente `PUBLIC_API_URL`; `APP_WEBSOCKET_URL` é derivada substituindo `http://` por `ws://` ou `https://` por `wss://`. A tematização tem três escopos (`global`, `host`, `children`) — `host.i18n` carrega a marca da aplicação. As chaves de `hostConfig` estão em camelCase e são montadas a partir dos parâmetros da facade: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, mais os opcionais `additional_nav_items`, `state_cache`, `allow_additional_tags` e `chat`. `render_engine` vira `renderEngine` (veja [Engine de renderização](#render-engine)). Os parâmetros `api_routes`, `axios_defaults` e `tanstack` são emitidos como campos de nível superior do `AppConfig` (`apiRoutes`, `axiosDefaults`, `tanstack`), irmãos de `hostConfig`, não dentro dele.
+Estes parâmetros são emitidos como campos de nível superior de `AppConfig`, ao lado de `hostConfig`: `api_routes` como `apiRoutes`, `axios_defaults` como `axiosDefaults`, `tanstack`, `iconify` e `import_map` como `importMap`.
 
 Os campos `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode` e `module_file` são campos de **nível de shell** usados pela página de embedding para se construir — eles não fazem parte do `AppConfig` filho com o qual o host se inicializa. Os campos `iframe_origin`/`iframe_url` são consumidos apenas por embeddings manuais por iframe, sem facade (veja [Ponto de Entrada da Facade](../frontend/web-host/entry-point.md)). O campo `mode` é o `fe_mode` normalizado (`compat` ou `managed`), e `module_file` é a entrada JS-module que a página da facade carrega — `/module.js` para compat, `/managed-layout.js` para managed.
 
@@ -294,3 +296,12 @@ Sem `--embed`, entradas `fs.directory` são excluídas do pacote publicado. A fl
 - [Facade Entry Point](../frontend/web-host/entry-point.md) - Como a facade inicializa o Web Host (perspectiva do FE)
 - [CSS Injection](../frontend/web-host/css-injection.md) - Como a tematização da facade flui para os iframes filhos
 - [Render Engines](../frontend/web-host/render-engines.md) - Renderização de páginas via iframe vs Web Fragment (o interruptor `render_engine`)
+
+
+A configuração JSON opcional `iconify` é emitida como campo de nível superior de AppConfig. Sem configuração, as fontes on-line permanecem ativas. Consulte [Provedores do Iconify](../frontend/web-host/iconify.md).
+
+## AppConfig import map
+
+O requisito do facade chama-se `import_map`, e `/facade/config` o devolve como `cfg.importMap`. O shell registra o mapa composto pelo bootstrap compartilhado antes de importar o módulo do Host. Depois, passa `importMap: cfg.importMap` na configuração inicial de `initWippyApp`. Consulte a [sequência de inicialização](../frontend/web-host/bootstrap.md#appconfig-import-map).
+
+Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.
