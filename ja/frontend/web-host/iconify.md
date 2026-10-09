@@ -95,8 +95,16 @@ import { Icon } from '@iconify/vue'
 
 初期設定で `iconify` を省略するとオンラインの既定値が使われます。後続の更新で省略した場合、現在の Iconify 設定は変わりません。`iconify: null` または `providers: null` は全体をオンライン既定値に戻し、名前付き設定を削除します。空キーの `null` は組み込みプロバイダーだけを戻します。名前付きプロバイダーの `null` はその名前空間を無効にします。省略したキーは現在のルートを維持し、空の `providers` はリセットではありません。
 
-許可される設定は `providers`、`resources`、`path`、`timeout` です。無効な初期設定は無視され、無効な更新は最後の有効設定を保ちます。`timeout` は設定済みオリジン全体で共有する論理リクエストの期限です。各フェイルオーバー試行は同じ期限の残り時間を使います。固定された Tabler コレクションとバイト単位で一致し、Web Crypto SHA-256 が使える場合に限り、完全なコレクション応答として認識します。この応答はクエリを除いたエンドポイント URL で保存します。それ以外の応答はクエリを含む完全な URL で保存します。安全でない HTTP などで `crypto.subtle` が使えない場合、アダプターはクエリ単位のキャッシュを使い、Iconify ストアのアイコン別ネイティブキャッシュは引き続き利用できます。アダプターのキャッシュは合計 32 URL が上限です。同じ URL のコレクションを置き換えても、保存済み応答、解決済みアイコン、negative 結果は消えません。新しいコレクションを読み込むには、新しいブラウザーコンテキストを開始してください。通信失敗や不正な応答では次のオリジンを試し、有効な応答にアイコンがない場合は not found になります。`iconifyIcons` は `<iconify-icon>` 要素の読み込みと登録を制御し、ソースは選びません。明示的な設定は AppConfig で子アプリに渡されます。Schema 2.0 と 2.1 は 2.2 に移行されます。[ブートストラップシーケンス](./bootstrap.md)、[CSS injection](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)、[Facade](../../framework/facade.md) を参照してください。
+許可される設定は `providers`、`resources`、`path`、`timeout` です。無効な初期設定は無視され、無効な更新は最後の有効設定を保ちます。`timeout` は設定済みオリジン全体で共有する論理リクエストの期限です。各フェイルオーバー試行は同じ期限の残り時間を使います。固定された Tabler コレクションとバイト単位で一致し、Web Crypto SHA-256 が使える場合に限り、完全なコレクション応答として認識します。この応答はクエリを除いたエンドポイント URL で保存します。それ以外の応答はクエリを含む完全な URL で保存します。安全でない HTTP などで `crypto.subtle` が使えない場合、アダプターはクエリ単位のキャッシュを使い、Iconify ストアのアイコン別ネイティブキャッシュは引き続き利用できます。アダプターのキャッシュは合計 32 URL が上限です。同じ URL のコレクションを置き換えても、保存済み応答、解決済みアイコン、Iconify ネイティブストアの negative 結果は消えません。設定したすべてのオリジンで失敗すると、アダプターは一時的な失敗を返しますが、ネイティブローダーが未解決の名前を missing として保存する場合があります。provider を変更しても、その名前は再リクエストされません。ネットワークから再取得するには document を再読み込みしてください。Iconify の公開 API `addIcon` と `addCollection` はアイコンデータを追加できますが、共通キャッシュをリセットするものではありません。通信失敗や不正な応答では次のオリジンを試し、有効な応答にアイコンがない場合は not found になります。`iconifyIcons` は `<iconify-icon>` 要素の読み込みと登録を制御し、ソースは選びません。明示的な設定は AppConfig で子アプリに渡されます。Schema 2.0 と 2.1 は 2.2 に移行されます。[ブートストラップシーケンス](./bootstrap.md)、[CSS injection](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)、[Facade](../../framework/facade.md) を参照してください。
 
 ## Provider trust and updates
 
-信頼できる provider origin のみを使用してください。ページはアイコン本体を SVG マークアップとして描画します。親からの `SetConfig` 更新には、現在の検証を使うために `$schema` の現行値 `wippy-context-2.2` を含めてください。provider の変更は未読み込みのアイコンに適用されます。キャッシュ済み応答や描画済みアイコンは消去されません。変更を確認するには新しい document を開いてください。
+信頼できる provider origin のみを使用してください。ページはアイコン本体を SVG マークアップとして描画します。新しい `SetConfig` には `wippy-context-2.2` を使用してください。バージョン付きの `wippy-context-2.0` と `wippy-context-2.1` は受け入れられて移行されます。schema-less 1.0 の入力には新しい `iconify` と `importMap` フィールドを含められません。provider の変更は未読み込みのアイコンに適用されます。キャッシュ済み応答や描画済みアイコンは消去されません。変更を確認するには新しい document を開いてください。
+
+## スキーマのバージョン
+
+新しい設定には `wippy-context-2.2` を使用してください。バージョン付きの `wippy-context-2.0` と `wippy-context-2.1` は移行されます。`$schema` のない入力は非推奨の legacy 変換を通ります。既知の legacy フィールドは対応付けられますが、新しい `iconify` と `importMap` フィールドは引き継がれません。生成スキーマは JSON の形とフィールド範囲を検証します。実行時にはさらに HTTP(S) origin と Host のパス規則を検証するため、スキーマを通過した値も実行時に拒否される場合があります。
+
+## 開発オーバーレイ
+
+利用側アプリを `@wippy-fe/vite-plugin` を有効にした Vite で起動してください。プラグインは `package.json` の Wippy 設定を開発オーバーレイに渡します。浮動表示の **Wippy Dev** ボタンをクリックし、**Configuration** を開いて、**App Config (JSON)** に `iconify.providers` を追加してから **Accept** をクリックします。初回起動では **Accept** の後にアプリの読み込みが完了します。承認した設定はブラウザーに保存されます。起動済みアプリの設定を後から変更した場合は、確認前にアプリを再読み込みしてください。**Accept** は設定を保存しますが、すでに使用中のアプリ設定は更新しません。Auto-accept が有効な場合、コンソールにも `Config updated (reload to apply)` と表示されます。
