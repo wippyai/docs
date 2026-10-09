@@ -101,7 +101,7 @@ Webコンポーネントも同じグローバルを見ます。ホストペー�
 | 列挙メンバー | ワイヤー上の値 | 方向 | 説明 |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | 子 → ホスト | 初回のハンドシェイク。子が自身の `AppConfig` を要求する |
-| `SetConfig` | `set-config` | ホスト → 子 | `GetConfig` への応答としてホストが `AppConfig` を配信する |
+| `SetConfig` | `set-config` | ホスト → 子 | `GetConfig` の後に初期 `AppConfig` を送り、その後の設定変更も同じ channel で送信する。子は再 mount せずに更新を適用する |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | ホスト → 子 | ホストのURLが変わった。子の `@history` イベントを発火する |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | ホスト → 子 | iframeの可視性が変わった。子の `@visibility` イベントを発火する |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | ホスト → 子 | 購読中の子にWebSocketのトピックイベントを配信する |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 同じ関数は `instance.html.inject`、`$W.html`、`import { html } from '@wippy-fe/proxy'` としてもアクセスできます。通常のマウントには `<w-iframe>` を優先し、`html.inject(...)` はカスタムのホスティング基盤を構築する場合にのみ使用してください。
+
+## Import map と document realm
+
+`AppConfig.importMap` は Host が子 document を作るときに使うグローバル設定です。新しい iframe や Web Fragment occurrence は、module の実行前に map を受け取ります。各 Web Fragment occurrence は独自の物理 realm iframe を持ちます。後の更新は既存 document を変更しないため、更新するには再読み込みまたは再作成してください。[ブートストラップの手順](./bootstrap.md#appconfig-import-map)を参照してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。

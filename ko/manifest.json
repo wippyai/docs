@@ -189,7 +189,8 @@
           {"title": "프록시 및 격리", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS 주입", "path": "frontend/web-host/css-injection"},
           {"title": "테마 지속성", "path": "frontend/web-host/theme-persistence"},
-          {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"}
+            {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"},
+            {"title": "Iconify 공급자", "path": "frontend/web-host/iconify"}
         ]
       },
       {

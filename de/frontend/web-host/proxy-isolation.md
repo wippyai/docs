@@ -101,7 +101,7 @@ Alle Nachrichtentypen sind im Enum `IFrameMessageType` definiert:
 | Enum-Mitglied | Drahtwert | Richtung | Beschreibung |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Kind → Host | Anfänglicher Handshake: Kind fordert seine `AppConfig` an |
-| `SetConfig` | `set-config` | Host → Kind | Host liefert die `AppConfig` als Antwort auf `GetConfig` |
+| `SetConfig` | `set-config` | Host → Kind | Host liefert die initiale `AppConfig` auf `GetConfig` und spätere Änderungen über denselben Kanal; das Kind übernimmt sie ohne Remount |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Kind | Host-URL geändert; löst das `@history`-Event des Kindes aus |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Kind | iframe-Sichtbarkeit geändert; löst das `@visibility`-Event des Kindes aus |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Kind | Liefert ein WebSocket-Topic-Event an abonnierte Kinder |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 Dieselbe Funktion ist als `instance.html.inject`, `$W.html` und `import { html } from '@wippy-fe/proxy'` erreichbar. Bevorzugen Sie beim normalen Mounten `<w-iframe>`; verwenden Sie `html.inject(...)` nur, wenn Sie eigene Hosting-Infrastruktur bauen.
+
+## Import-Maps und Dokument-Realms
+
+`AppConfig.importMap` ist globale Konfiguration für neu erstellte Kinddokumente. Ein neuer iframe oder ein neues Web-Fragment-Vorkommen erhält die Map, bevor seine Module starten. Jedes Web-Fragment-Vorkommen hat ein eigenes physisches Realm-iframe. Eine spätere Aktualisierung ändert kein bereits vorhandenes Dokument; laden Sie es neu oder erstellen Sie es neu. Siehe [Bootstrap-Ablauf](./bootstrap.md#appconfig-import-map).
+
+Verwende dieses Feld nur mit einem bereitgestellten Host-Release, dessen Dokumentation es unterstützt.

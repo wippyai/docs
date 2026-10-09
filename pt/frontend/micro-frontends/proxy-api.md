@@ -90,7 +90,7 @@ O runtime instala alguns globais para uso próprio — `window.$W`, `window.getW
 
 ### `config`
 
-A configuração da aplicação filha entregue pelo host. É um objeto simples (não uma função) — importado diretamente e pronto para leitura síncrona. A documentação nova cobre apenas o contrato atual `wippy-context-2.0`.
+A configuração da aplicação filha entregue pelo host. É um objeto simples (não uma função), importado diretamente e pronto para leitura síncrona. Esta página documenta o contrato atual `wippy-context-2.2`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1080,7 +1091,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Sobrescritas de Configuração
 
-Páginas podem sobrescrever campos selecionados da configuração voltada ao filho, por página, sem um deployment separado. O formato de sobrescrita ainda usa `customization` por compatibilidade, e o host projeta esses valores no resultado atual de `theming.global` do filho antes de a página receber a configuração `wippy-context-2.0`.
+Páginas podem substituir campos selecionados da configuração voltada ao filho por página, sem outro deployment. O formato continua usando `customization` por compatibilidade; o host projeta esses valores em `theming.global` antes de entregar ao filho a configuração atual `wippy-context-2.2`.
 
 ### Definindo sobrescritas
 
@@ -1237,3 +1248,8 @@ Ambos os componentes usam Shadow DOM com variáveis CSS de `@wippy-fe/theme` e i
 ```
 
 Quando o Vue monta em `#app`, ele substitui o elemento `<wippy-loading>` automaticamente.
+
+
+## Configuração Iconify para aplicações filhas
+
+O Host envia `AppConfig.iconify` configurado explicitamente como campo de nível superior. Se o campo for omitido, os padrões on-line permanecem ativos. Configure a fonte em AppConfig, não em `hostConfig` nem na API de proxy. Consulte [Provedores do Iconify](../web-host/iconify.md).

@@ -20,24 +20,51 @@ facade 会根据配置的 `fe_mode` 加载两个 JS 模块入口之一：
 
 该页面的简化版本如下：
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        window.initWippyApp(config, '#app')
-      })
-  </script>
-</body>
-</html>
+```javascript
+const configResponse = await fetch('/api/public/facade/config')
+if (!configResponse.ok)
+  throw new Error('Facade config request failed: ' + configResponse.status)
+const cfg = await configResponse.json()
+
+const storedAuth = localStorage.getItem('@wippy_token_info')
+if (!storedAuth)
+  throw new Error('Authentication is required before bootstrapping the host')
+const { token } = JSON.parse(storedAuth)
+if (typeof token !== 'string' || token.length === 0)
+  throw new Error('Stored authentication does not contain a token')
+
+const mapResponse = await fetch(cfg.facade_url + '/import-map.json')
+if (!mapResponse.ok)
+  throw new Error('Host import map request failed: ' + mapResponse.status)
+const hostMap = await mapResponse.json()
+await new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = cfg.facade_url + '/@wippy-fe/import-map-bootstrap.js'
+  script.onload = resolve
+  script.onerror = reject
+  document.head.appendChild(script)
+})
+window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, document.baseURI)
+
+await import(cfg.facade_url + cfg.module_file)
+window.initWippyApp({
+  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
+  env: cfg.env,
+  routePrefix: cfg.routePrefix,
+  themeMode: window.wippyThemePersist?.read() || cfg.themeMode,
+  apiRoutes: cfg.apiRoutes,
+  attention: cfg.attention,
+  allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
+  axiosDefaults: cfg.axiosDefaults,
+  iconify: cfg.iconify,
+  importMap: cfg.importMap,
+  theming: cfg.theming,
+  hostConfig: cfg.hostConfig,
+  context: { resourceId: '', resourceType: 'page' },
+}, '#app')
 ```
 
 页面获取自己的配置并交给模块的 init 函数。宿主挂载进页面、接管路由和浏览器历史，然后继续完整初始化。
@@ -48,82 +75,48 @@ facade 会根据配置的 `fe_mode` 加载两个 JS 模块入口之一：
 
 配置流程分两步：
 
-1. 页面的内联 JavaScript 对与页面同源的 `GET /facade/config` 发起请求。该端点由 `wippy/facade` 注册在公共路由器上。
-2. 收到响应后，页面把完整的配置对象传给已加载 JS 模块的 init 函数（`window.initWippyApp(config, rootContainer?)`）。
+1. 页面从同源公共路由器获取 `/facade/config`。
+
+2. shell 获取 Host import map，加载共享 bootstrap，并注册与 `cfg.importMap` 合并后的 Host map。之后才会动态导入 `cfg.module_file`。shell 根据返回字段构造 `AppConfig`，并在调用 `initWippyApp` 前添加 `wippy-context-2.2` schema、`auth` 和 `context`。
 
 Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始化。从这一刻起页面脚本便是被动的 —— 所有用户交互都发生在已挂载的宿主内部。
 
 这种模式意味着 CDN 托管的 bundle 从不包含部署相关的 URL、令牌或品牌信息。对每次部署来说 bundle 都完全相同。不同的只有配置载荷。
 
-> **外壳字段与子端 `AppConfig`。** `/facade/config` 响应同时携带两者。诸如 `facade_url`、`iframe_origin`、`iframe_url` 和 `login_path` 这类字段是供嵌入页面构建自身的**外壳级**字段 —— 它们不属于子端 `AppConfig`。宿主实际用来初始化的 `AppConfig` 是 `auth`、`env`、`theming`、`hostConfig`、`context` 以及下文记录的其他字段。
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。当前契约为 `wippy-context-2.2`。
 
 ## `/facade/config` 响应
 
-配置端点返回一个 JSON 对象，其中同时携带外壳级字段和子端 `AppConfig`。facade 页面把它传给宿主模块的 init 函数；而手动 iframe 嵌入则通过 PostMessage 投递 `AppConfig` 部分（见下文）。所有字段都由 `wippy/facade` 从其模块参数和运行环境中组装：
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。当前契约为 `wippy-context-2.2`。
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
-  "auth": {
-    "token": "eyJ...",
-    "expiresAt": "2026-06-01T12:00:00Z"
-  },
+  "login_redirect_param": "return_to",
+  "mode": "compat",
+  "module_file": "/module.js",
   "env": {
     "APP_API_URL": "https://api.example.com",
     "APP_AUTH_API_URL": "https://api.example.com",
     "APP_WEBSOCKET_URL": "wss://api.example.com"
   },
   "routePrefix": "https://api.example.com",
-  "axiosDefaults": {},
-  "apiRoutes": {},
+  "themeMode": "auto",
+  "themePersist": "localStorage",
+  "themeStorageKey": "@wippy-theme-mode",
+  "axiosDefaults": { "timeout": 30000 },
+  "apiRoutes": { "agents": { "list": "/custom/agents" } },
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
-  "theming": {
-    "global": {
-      "customCSS": "@import url('https://fonts.googleapis.com/...');",
-      "cssVariables": { "--p-primary": "#6366f1" },
-      "iconSets": {}
-    },
-    "host": {
-      "customCSS": ".wippy-host-app .chat-container { background: var(--p-content-background); }",
-      "cssVariables": {},
-      "iconSets": {},
-      "i18n": {
-        "app": {
-          "title": "My App",
-          "icon": "wippy:logo",
-          "appName": "My Application"
-        }
-      }
-    },
-    "children": {
-      "customCSS": "",
-      "cssVariables": {}
-    }
+  "iconify": {},
+  "importMap": {
+    "imports": { "example-package": "https://cdn.example.com/example-package.js" }
   },
-  "hostConfig": {
-    // 示例取值 —— 默认值见下表
-    "session": { "type": "non-persistent" },
-    "history": "hash",
-    "showAdmin": true,
-    "allowSelectModel": false,
-    "startNavOpen": false,
-    "hideNavBar": false,
-    "disableRightPanel": false,
-    "hideSessionSelector": false,
-    "additionalNavItems": [],
-    "stateCache": {},
-    "allowAdditionalTags": [],
-    "chat": {}
-  },
-  "context": {
-    "resourceId": "root",
-    "resourceType": "page",
-    "route": "/"
-  }
+  "extraScripts": ["/monitoring.js"],
+  "theming": {},
+  "hostConfig": {}
 }
 ```
 
@@ -142,13 +135,15 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 | 字段 | 说明 |
 |-------|-------------|
-| `$schema` | 配置契约版本（`"wippy-context-2.0"`）。 |
+| `$schema` | 配置契约版本（`"wippy-context-2.2"`）。 |
 | `auth` | 作为 `AppConfig.auth` 注入的运行时 bearer 令牌与过期时间。 |
 | `env` | 作为顶层 `AppConfig.env` 注入的运行时 URL。 |
 | `routePrefix` | 转发给子应用的 API URL 前缀。 |
 | `axiosDefaults` | 转发给子应用的 Axios 实例默认值。 |
 | `apiRoutes` | 覆盖单个 API 端点路径（顶层 `AppConfig` 字段）。 |
 | `tanstack` | TanStack Query 默认值 —— 全局 + 按角色分类（`content`/`lists`）；顶层 `AppConfig` 字段。宿主默认是 `refetchOnWindowFocus:false`。 |
+| `iconify` | 从 `cfg.iconify` 转发的显式 Iconify 提供方来源。 |
+| `importMap` | 来自 `cfg.importMap` 的可选浏览器 import map 扩展；shell 会在导入 Host 模块前注册它。 |
 | `theming` | 分为三个作用域的 CSS 定制。 |
 | `hostConfig` | Web Host 特性开关和 UI 配置。 |
 | `context` | 宿主的初始页面或制品上下文。 |
@@ -216,47 +211,79 @@ events.on('error', err => console.error('Failed to load:', err))
 
 与 JS 模块路径不同，iframe 内部的宿主会**请求**自己的配置：它启动后向父级投递一条 `get-config` 消息，父级以 `set-config` 回复。因此父级要**监听**这个请求，而不是在 `load` 时盲目推送配置：
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <iframe id="wippy" style="width:100%;height:100vh;border:none"></iframe>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        const iframe = document.getElementById('wippy')
+```javascript
+async function mountWippyIframe(auth) {
+  const response = await fetch('/api/public/facade/config')
+  if (!response.ok)
+    throw new Error(`Facade config request failed: ${response.status}`)
+  const cfg = await response.json()
+  const iframe = document.getElementById('wippy')
+  if (!(iframe instanceof HTMLIFrameElement))
+    throw new Error('Expected <iframe id="wippy">')
 
-        // 监听子级的 @gen2-chat 配置请求，然后作答。
-        window.addEventListener('message', (event) => {
-          if (event.origin !== config.iframe_origin) return
-          const msg = event.data
-          if (msg?.type === '@gen2-chat' && msg.action === 'get-config') {
-            iframe.contentWindow.postMessage(
-              { type: '@gen2-chat', action: 'set-config', ...config },
-              config.iframe_origin
-            )
-          }
-        })
+  const iframeUrl = new URL(cfg.iframe_url)
+  if (iframeUrl.origin !== cfg.iframe_origin)
+    throw new Error('iframe_url and iframe_origin must identify the same origin')
 
-        // iframe_url 已经包含 ?waitForCustomConfig
-        iframe.src = config.iframe_url
-      })
-  </script>
-</body>
-</html>
+  const appConfig = {
+    $schema: `${cfg.facade_url}/schemas/wippy-context-2.2.json`,
+    auth,
+    env: cfg.env,
+    routePrefix: cfg.routePrefix,
+    themeMode: cfg.themeMode,
+    apiRoutes: cfg.apiRoutes,
+    axiosDefaults: cfg.axiosDefaults,
+    iconify: cfg.iconify,
+    importMap: cfg.importMap,
+    tanstack: cfg.tanstack,
+    theming: cfg.theming,
+    hostConfig: cfg.hostConfig,
+    context: { resourceId: '', resourceType: 'page' },
+  }
+
+  function onMessage(event) {
+    if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
+      return
+
+    let message
+    try {
+      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+    }
+    catch {
+      return
+    }
+    if (message?.type === '@gen2-chat' && message.action === 'get-config') {
+      event.source.postMessage(
+        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
+        cfg.iframe_origin,
+      )
+    }
+  }
+
+  window.addEventListener('message', onMessage)
+
+  // iframe_url already includes ?waitForCustomConfig
+  iframe.src = iframeUrl.href
+
+  return function unmount() {
+    window.removeEventListener('message', onMessage)
+    iframe.remove()
+  }
+}
 ```
 
-`?waitForCustomConfig` 查询参数（已存在于 `iframe_url` 中）是关键信号。它告诉 Web Host 暂停初始化 —— 应用会挂载，但会有意不去解析认证或加载路由，直到收到 `set-config` 消息。没有它，Web Host 会尝试从 URL 参数或默认值中读取认证令牌，这对嵌入式部署并不合适。
+`?waitForCustomConfig` 会让 standalone bootstrap 先等待父级的 `set-config` 消息，再注册 import map 并导入 Host 应用模块。此时应用尚未挂载。没有该 query 时，使用正常的 standalone 配置流程。
 
 握手使用 `@gen2-chat` PostMessage 协议：
 
 1. 父级请求 `GET /facade/config`（或自行提供等价的 `AppConfig` 载荷），并创建指向 `iframe_url` 的 iframe。
 2. 启动中的 iframe 向父级投递 `{ type: '@gen2-chat', action: 'get-config' }`。
 3. 父级的 `message` 监听器以 `{ type: '@gen2-chat', action: 'set-config', ...config }` 回应，目标为 `iframe_origin`。
+
+后续配置更改时，向同一个 iframe 和 `iframe_origin` 再发送一条完整的 `set-config`
+消息。Host 会在不重新挂载的情况下应用更改。此 iframe 发出的 API 请求使用 iframe
+文档来源。请在相同来源提供 backend API，或配置 backend 的 CORS 策略以允许 iframe
+文档来源。CORS 属于 backend 策略，不是 AppConfig 设置。
 
 Web Host 提取 `AppConfig` 载荷并继续完整初始化。完整的消息协议（`@gen2-chat` 信封和 `IFrameMessageType` 枚举）参见[代理与隔离](./proxy-isolation.md)。这套 `SetConfig` 握手专用于手动的、无 facade 的嵌入方式；`wippy/facade` 模块则是把 Web Host 作为 JS 模块加载。
 
@@ -302,3 +329,11 @@ Web Host 提取 `AppConfig` 载荷并继续完整初始化。完整的消息协�
 ```
 
 完整的可用参数列表及其默认值，参见 [Facade 模块参考](../../framework/facade.md)。
+
+## 将 import map 传给 Host
+
+接收端只接受来自物理父 window 的 iframe `SetConfig`。当父级 origin 可访问时，也会将 `event.origin` 与其比较。在 Web Fragment 中，消息必须指向该 occurrence 自己的 `fragmentId`。
+
+facade requirement 名称为 `import_map`；`/facade/config` 将其作为 `cfg.importMap` 返回。shell 在导入 Host module 前将此值交给共享 import-map bootstrap。随后在初始 `initWippyApp` config 中传递 `importMap: cfg.importMap`。请参阅[引导顺序](./bootstrap.md#appconfig-import-map)。 import map 的更改不会影响现有文档。重新加载或重新创建文档后才能使用新映射。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

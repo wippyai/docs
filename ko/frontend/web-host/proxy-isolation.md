@@ -101,7 +101,7 @@ on('@visibility', (visible) => { /* 작업을 일시 중지하거나 재개합�
 | Enum 멤버 | 와이어 값 | 방향 | 설명 |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | 자식 → 호스트 | 초기 핸드셰이크: 자식이 자신의 `AppConfig`를 요청 |
-| `SetConfig` | `set-config` | 호스트 → 자식 | 호스트가 `GetConfig`에 대한 응답으로 `AppConfig`를 전달 |
+| `SetConfig` | `set-config` | 호스트 → 자식 | 호스트가 `GetConfig` 뒤에 초기 `AppConfig`를 보내고 이후 설정 변경도 같은 채널로 보냅니다. 자식은 다시 mount하지 않고 업데이트를 적용합니다 |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | 호스트 → 자식 | 호스트 URL 변경. 자식의 `@history` 이벤트를 발생시킴 |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | 호스트 → 자식 | iframe 가시성 변경. 자식의 `@visibility` 이벤트를 발생시킴 |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | 호스트 → 자식 | 구독 중인 자식에게 WebSocket 토픽 이벤트를 전달 |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 같은 함수를 `instance.html.inject`, `$W.html`, `import { html } from '@wippy-fe/proxy'`로도 사용할 수 있습니다. 일반적인 마운트에는 `<w-iframe>`을 사용하고, 커스텀 호스팅 인프라를 구축할 때만 `html.inject(...)`를 사용하십시오.
+
+## Import map과 문서 realm
+
+`AppConfig.importMap`은 Host가 자식 document를 만들 때 사용하는 전역 설정입니다. 새 iframe이나 Web Fragment occurrence는 module이 실행되기 전에 map을 받습니다. 각 Web Fragment occurrence는 자체 물리 realm iframe을 가집니다. 이후 config 업데이트는 기존 document를 바꾸지 않으므로 다시 불러오거나 새로 만들어야 합니다. [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

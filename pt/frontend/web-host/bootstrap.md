@@ -11,13 +11,9 @@ Depois que o Web Host recebe sua configuração, ele executa uma sequência fixa
 
 Este é o caminho que o `wippy/facade` atual usa. A facade serve uma página que carrega uma entrada de módulo JS do Web Host — `module.js` para o modo **compat** ou `managed-layout.js` para o modo **managed** — e o módulo assume a página inteira e seu histórico de navegador.
 
-1. **A página carrega o módulo.** O script registra `window.initWippyApp` no `window` da página.
+1. **Obter a configuração e registrar o mapa.** O requisito do facade chama-se `import_map`; `/facade/config` o devolve como `cfg.importMap`. O shell carrega o bootstrap compartilhado do import map e registra o mapa composto antes de importar módulos do Host.
 
-2. **A página chama `initWippyApp(config, rootContainer?)`.** A página já buscou `/facade/config` e passa o payload diretamente como argumento da função. Não há handshake por PostMessage.
-   ```javascript
-   const events = window.initWippyApp(config, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **Importar o módulo do Host e inicializar o app.** O shell importa `module.js` ou `managed-layout.js`, que expõe `window.initWippyApp`. Em seguida, chama `initWippyApp(appConfig, rootContainer?)` com a `AppConfig` inicial, incluindo `importMap: cfg.importMap`. Não há handshake de PostMessage.
 
 3. **A inicialização prossegue** — veja [Sequência Interna de Init](#internal-init-sequence) abaixo.
 
@@ -25,17 +21,16 @@ Este é o caminho que o `wippy/facade` atual usa. A facade serve uma página que
 
 Este é o caminho usado quando você mesmo embute o host completo dentro de um iframe — para embutir parcialmente em uma página com isolamento mais forte. Ele carrega `iframe.html?waitForCustomConfig` e recebe a configuração via um PostMessage `SetConfig`. A facade atual não produz isso; ele existe para inserções manuais.
 
-1. **O iframe carrega.** O Web Host carrega no navegador. Como `?waitForCustomConfig` está presente na URL, o app monta um esqueleto mínimo e suspende — ainda não tenta ler tokens de autenticação nem chamar nenhum endpoint de API.
+1. **O pai prepara o iframe.** Acrescente `?waitForCustomConfig` à URL versionada de `iframe.html`. Instale um listener de `message` antes de definir `iframe.src`. O bootstrap standalone espera o `SetConfig` do pai antes de registrar o import map ou importar módulos do app Host. Isso ocorre antes de montar o app Host.
 
-2. **O pai envia `SetConfig`.** O pai já buscou `/facade/config` (ou forneceu um payload equivalente) e o encaminha via PostMessage:
-   ```javascript
-   iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
-   )
-   ```
+2. **O pai responde a `GetConfig`.** Aguarde a mensagem `get-config` do iframe.
+   Aceite-a somente se `event.origin` for a origem confiável e `event.source` for
+   exatamente `iframe.contentWindow`. Em seguida envie um `AppConfig` completo em
+   `set-config`, usando a origem confiável como `targetOrigin`. `/facade/config`
+   fornece ajustes de implantação, mas o pai deve incluir `$schema`, `auth` e
+   `context`. Veja o [exemplo completo de iframe](./entry-point.md#manual-facade-less-iframe-embedding).
 
-3. **O Web Host recebe o `AppConfig`.** O handler de mensagens valida o tipo e a ação do envelope e então extrai o objeto de configuração completo.
+3. **O Web Host recebe `AppConfig`.** Ele valida o envelope da mensagem, aceita mensagens `SetConfig` do iframe somente da janela física do pai e compara `event.origin` com a origem do pai quando ela está acessível. Em um Web Fragment, também exige que `fragmentId` corresponda ao ID da própria ocorrência. Mensagens `SetConfig` válidas posteriores podem atualizar a configuração desse documento.
 
 4. **A inicialização prossegue** — o caminho interno é idêntico ao do Caminho A a partir deste ponto.
 
@@ -75,7 +70,7 @@ O tipo completo de configuração aceito tanto por `initWippyApp` quanto por `Se
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -178,22 +173,20 @@ Na prática, deploys de produção sempre usam `initWippyApp()` (o caminho da fa
 O caminho padrão da facade (módulo JS):
 
 ```
-module.js / managed-layout.js carregado na página
+shell facade busca /facade/config (requirement import_map → cfg.importMap)
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
-  │
-  ├─ Init do Pinia (store de auth, store de config)
-  ├─ Configura o Axios (baseURL, header de auth)
-  ├─ Cria o Vue Router (modo de histórico, rotas de sistema)
-  ├─ Instala o PrimeVue, injeta o CSS do tema
-  ├─ Monta App.vue
-  │
-  ├─ GET /api/public/pages/routes
-  │     router.addRoute('app', ...) para cada mountRoute do backend
-  │
-  ├─ Resolve a URL atual → renderiza a view correspondente
-  └─ Conecta o WebSocket
+  ├─ busca o mapa do Host e carrega o bootstrap compartilhado do import map
+  ├─ registra o import map composto
+  ├─ importa module.js / managed-layout.js
+  ├─ o módulo expõe window.initWippyApp
+  ├─ o shell chama initWippyApp({ ..., importMap: cfg.importMap }, '#app')
+  ├─ resolveConfig() → migra, normaliza e preenche config/auth/env
+  ├─ aguarda GET /api/public/pages/routes
+  ├─ cria o app Vue e o router
+  │     rotas de sistema + rotas mount do backend validadas
+  ├─ setupApp() → Pinia, Axios, PrimeVue, tema e outros providers
+  ├─ monta App.vue → resolve a URL atual
+  └─ componentes solicitam clientes WebSocket
 ```
 
 ## Veja Também
@@ -201,3 +194,40 @@ module.js / managed-layout.js carregado na página
 - [Ponto de Entrada da Facade](./entry-point.md) — como o `AppConfig` é construído e entregue pelo `wippy/facade`
 - [Layout Multi-Painel](./multi-panel-layout.md) — o caminho de boot de managed-layout servido por `managed-layout.js`
 - [Motores de Renderização](./render-engines.md) — como uma página renderiza depois de carregada (iframe srcdoc vs Web Fragment)
+
+
+## Fontes do Iconify
+
+`AppConfig.iconify.providers` configura a fonte do Iconify. Quando o campo é omitido, os padrões on-line permanecem ativos. Valores configurados explicitamente são enviados às aplicações filhas por AppConfig. Consulte [Provedores do Iconify](./iconify.md).
+
+## PrimeVue e realms do navegador
+
+Os apps importam PrimeVue pelos especificadores exatos do import map fixado do
+Host. Os consumidores recompilados usam o grafo compartilhado do PrimeVue dentro
+do próprio realm JavaScript. Cada iframe e Web Fragment tem seu próprio realm e
+grafo de módulos. O import map não injeta estilos; solicite o CSS PrimeVue
+necessário pelas chaves CSS documentadas do Host. Recompile os bundles de
+consumidores já incorporados para usar o novo mapa.
+
+## AppConfig import map
+
+`AppConfig.importMap` é um mapa de importação opcional e de nível superior do navegador, com os campos padrão `imports` e `scopes`.
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+Para documentos de páginas srcdoc, o Host combina o mapa da página, os padrões gerados do Host e depois `AppConfig.importMap`. Documentos standalone e do facade, e cada ocorrência de Web Fragment, não têm um mapa de página srcdoc; eles combinam os padrões do Host e depois `AppConfig.importMap`. Cada ocorrência de Web Fragment é executada em seu próprio iframe de realm físico. Em `imports` e em cada scope, prevalece o último valor para uma chave correspondente e as demais entradas permanecem. A configuração pode substituir mapeamentos da página ou do Host, incluindo Vue, PrimeVue e Wippy. Uma chave exata corresponde a um specifier. Uma chave terminada em `/` corresponde a esse prefixo de specifier, e o destino também precisa terminar em `/`. `scopes` seleciona mapeamentos pela URL do módulo importador. URLs de destino relativas são resolvidas em relação à URL base do documento.
+
+O Host deve compor o mapa e registrá-lo antes de carregar módulos. Adicionar outro mapa depois não substitui uma chave já registrada. Se uma atualização omitir `importMap`, a extensão atual permanece. Use `null` ou `{}` para limpar a extensão.
+
+Uma atualização do import map se aplica ao criar um documento. Ela não muda a resolução de módulos de um documento existente. Recarregue esse documento para aplicar a atualização; documentos criados depois usam a configuração mais recente. Cada ocorrência de Web Fragment tem seu próprio iframe de realm físico e registra o mapa nesse realm antes de carregar módulos.
+
+Substituir uma entrada compartilhada de Vue, PrimeVue ou Wippy pode separar a identidade de módulos ou serviços entre o Host e o código filho. Teste a integração com o mapa publicado exato antes de implantar uma substituição.
+
+Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.

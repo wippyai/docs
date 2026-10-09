@@ -368,4 +368,73 @@ export default {
 
 `peerDependencies` sind keine identische Kopie dieser Liste. Deklarieren Sie nur npm-Package-Roots, die das Artefakt tatsächlich importiert; Import-Map-Subpfade wie `@wippy-fe/log/logger` sind keine eigenen Peer-Packages.
 
-Dieser Vertrag definiert keine universelle Merge- oder Override-Präzedenz zwischen Host und App. Der Hosted-Modus verwendet die Map, die das gepinnte Web-Host-Release ausliefert. Der Standalone-Modus verwendet die vollständige kopierte Map in `app.html`.
+Siehe [Bootstrap-Ablauf](./bootstrap.md#appconfig-import-map) zur Priorität und zum Lebenszyklus der AppConfig-Import-Map.
+
+
+## Statische Iconify-Sammlung
+
+Das Host-Release enthält die statische Tabler-Sammlung unter `iconify/tabler.json`. Sie ist ein Release-Asset und kein npm-Paket. Die Bereitstellung muss `AppConfig.iconify.providers` ausdrücklich setzen, um sie zu verwenden. Siehe [Iconify-Anbieter](./iconify.md).
+
+## PrimeVue 4.5.5 Browser-Exporte
+
+Der genehmigte gemeinsame Kandidat verwendet PrimeVue 4.5.5. Das generierte
+Inventar liegt im versionierten Host-Stammverzeichnis. Der Kandidat zielt auf
+Web Host 1.0.63 und öffentliche Pakete 0.0.63.
+Diese Versionen sind noch nicht veröffentlicht; prüfen Sie die Tags vor der Nutzung.
+Datei: `primevue-export-inventory.json`.
+
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
+```
+
+Das Inventar erfasst die öffentlichen Exportmuster und jeden konkreten
+Runtime-Specifier. Es umfasst 274 JavaScript-Runtime-Einträge aus dem Root und
+allen von PrimeVue deklarierten `./*`-Pfaden. Enthalten sind Komponenten,
+Aliase, Services, Direktiven, Hilfsfunktionen und Style-Module; 129 Einträge
+sind Style-Module. Vier Exporte sind nur Typen und werden keine Browser-Map-
+Einträge. Vier Runtime-Einträge haben kein Deklarationsziel. Runtime- und
+Typ-Exporte ergeben 278 eindeutige Specifier. Die exakten Pfade und Ziele im
+Inventar sind maßgeblich; pflegen Sie keine parallele Liste.
+
+Die Map enthält exakte Keys wie `primevue` und `primevue/button`. Browser-
+Import-Maps unterstützen kein `primevue/*`-Wildcard, daher hat jeder Runtime-
+Subpfad einen eigenen Key. Der Host löst das Paket-Root über PrimeVues Manifest
+auf und erweitert die deklarierten Exportmuster zu konkreten paketrelativen
+Zielen. `@primevue/icons` und `@primeuix/*` bleiben im gemeinsamen Vendor-
+Graph und erhalten keine direkten Map-Keys. Der Kandidat verwendet
+`@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4, `@primeuix/styles` und
+`@primeuix/themes` 2.0.3 sowie `@primeuix/utils` 0.6.4. Es gibt keine direkten JSON- oder
+CSS-Exports in der Map. Ressourcen, die über den JavaScript-Graphen erreichbar
+sind, müssen trotzdem in der Host-Ausgabe enthalten sein.
+
+```typescript
+import Button from 'primevue/button'
+```
+
+Der vollständige Import-Map-Snapshot bleibt der Vertrag für Rollup-Externals.
+Ein neuer Map-Eintrag ändert kein bereits gebautes Verbraucher-Bundle. Bauen
+Sie Anwendungen und Komponenten mit der gepinnten Map neu, damit exakte
+PrimeVue-Imports den gemeinsamen Host-Graphen verwenden. JavaScript-
+Externalisierung liefert kein PrimeVue-CSS. Fordern Sie benötigte CSS-Ressourcen
+separat über die dokumentierten Host-CSS-Keys an. Die lokale Preview-CSS bleibt
+eine Voraussetzung für Phase 4.
+
+Dieses Inventar gehört zum unveröffentlichten Kandidaten. Prüfen Sie URL und
+Inhalt anhand des veröffentlichten Host-Artefakts, bevor Sie es verwenden.
+
+Das JSON hat die Felder `schemaVersion`, `package`, `counts`, `exports` und
+`entries`. `exports` beschreibt die öffentlichen PrimeVue-Muster. Das sortierte
+Array `entries` enthält die konkreten Laufzeit-Specifier und Ziele. Laufzeit-
+Einträge führen `specifier`, paketrelatives `target`, `sha256`, `kind` und bei
+vorhandener Deklaration `typesTarget` auf. Typ-Einträge stehen ebenfalls in
+`entries`, sind aber keine Import-Map-Keys.
+
+PrimeVue Chart und Editor laden `chart.js` 4.5.1 und `quill` 2.0.3 über dynamische Chunks. Der Host bündelt beide Abhängigkeiten lokal. Anwendungen mit gemappten PrimeVue-Exports installieren sie dafür nicht zusätzlich. Der Host-Snapshot hat 294 Map-Einträge, darunter 274 PrimeVue-Einträge. Der Host injiziert `@wippy-fe/vue-utils` als 295. Schlüssel; dies ist keine Zuordnung auf Anwendungsebene. Verwenden Sie den genauen fixierten Host-Snapshot als Build-Vertrag.
+
+## AppConfig-Overrides für Import-Maps
+
+`AppConfig.importMap` kann passende Einträge der Seite oder des Hosts ersetzen, auch für Vue, PrimeVue und Wippy. Exakte Schlüssel gelten für einen Specifier. Ein Schlüssel mit abschließendem Schrägstrich gilt für ein Präfix; auch das Ziel braucht den Schrägstrich. Mit `scopes` wählst du Einträge anhand der URL des importierenden Moduls. Relative Ziele beziehen sich auf die Basis-URL des Dokuments.
+
+Ein CDN-Modul kann weitere bare Specifier importieren. Ergänze dafür eigene Einträge oder verwende ein CDN-Modul, das seine Abhängigkeiten bündelt. Eine Laufzeit-Map ändert keine Abhängigkeiten, die bereits im Anwendungspaket enthalten sind.
+
+Verwende dieses Feld nur mit einem bereitgestellten Host-Release, dessen Dokumentation es unterstützt.

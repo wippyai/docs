@@ -189,7 +189,8 @@
           {"title": "Proxy y aislamiento", "path": "frontend/web-host/proxy-isolation"},
           {"title": "Inyección de CSS", "path": "frontend/web-host/css-injection"},
           {"title": "Persistencia del tema", "path": "frontend/web-host/theme-persistence"},
-          {"title": "Paquetes @wippy-fe", "path": "frontend/web-host/packages"}
+            {"title": "Paquetes @wippy-fe", "path": "frontend/web-host/packages"},
+            {"title": "Proveedores de Iconify", "path": "frontend/web-host/iconify"}
         ]
       },
       {

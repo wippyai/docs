@@ -91,7 +91,7 @@ iframe/Web Fragment.
 
 ### `config`
 
-Конфигурация дочернего приложения, доставленная хостом. Это обычный объект (не функция) — импортируется напрямую и готов к синхронному чтению. Новая документация ориентируется только на текущий контракт `wippy-context-2.0`.
+Конфигурация дочернего приложения, доставленная хостом. Это обычный объект (не функция), который можно импортировать напрямую и читать синхронно. Эта страница описывает текущий контракт `wippy-context-2.2`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -101,7 +101,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -115,6 +115,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1082,7 +1093,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Переопределения конфигурации
 
-Страницы могут переопределять отдельные поля конфигурации, обращённые к дочернему контексту, без отдельного развёртывания. Форма переопределения по-прежнему использует `customization` ради совместимости, а хост проецирует эти значения в текущий результат `theming.global` дочернего контекста до того, как страница получит конфигурацию `wippy-context-2.0`.
+Страницы могут переопределять выбранные поля конфигурации дочернего приложения для отдельной страницы без отдельного развёртывания. Форма переопределения сохраняет `customization` для совместимости; хост проецирует эти значения в `theming.global` до передачи текущей конфигурации `wippy-context-2.2` дочернему приложению.
 
 ### Задание переопределений
 
@@ -1239,3 +1250,8 @@ app.use(router)
 ```
 
 Когда Vue монтируется в `#app`, он автоматически заменяет элемент `<wippy-loading>`.
+
+
+## Настройка Iconify для дочерних приложений
+
+Host передает явно заданный `AppConfig.iconify` как поле верхнего уровня. Если поле не задано, используются онлайн-значения по умолчанию. Источник задается в AppConfig, а не в `hostConfig` или Proxy API. См. [Провайдеры Iconify](../web-host/iconify.md).

@@ -70,7 +70,7 @@ entries:
 | Value | 효과 |
 |-------|--------|
 | `iframe` _(기본값)_ | 페이지가 srcdoc iframe으로 렌더링됩니다 — 주 엔진(기본값)입니다. |
-| `fragment` | 페이지가 [Web Fragment](../frontend/web-host/render-engines.md)로 렌더링됩니다(shadow root에 반영되는 `reframed` realm). |
+| `fragment` | 각 Web Fragment occurrence는 shadow root에 반영되는 자체 물리 realm iframe에서 실행됩니다. |
 
 정확히 `fragment` 문자열만 활성화합니다. **다른 값은 — `fragmnet` 같은 오타를 포함해 — `iframe`으로 고정됩니다**(안전 측 동작이지만 경고는 없습니다). fragment 엔진을 켜려면 [`/@fragment` 게이트웨이](./views.md#web-fragments-gateway)도 필요하며, 이는 `wippy/views`(≥ 0.5.9)가 자체 제공하므로 소비자 측 배선이 필요 없습니다. 페이지는 [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine)으로 배포 기본값을 페이지 단위로 재정의할 수 있습니다.
 
@@ -178,8 +178,10 @@ content_fs:    app:app_fs
 | `api_routes` | `apiRoutes` | `{}` | 프런트엔드 라우트 오버라이드 |
 | `axios_defaults` | `axiosDefaults` | `{}` | 프런트엔드 axios HTTP 클라이언트 기본값 |
 | `tanstack` | `tanstack` | `{}` | TanStack Query 기본값: `{ default?, content?, lists? }`. `default`는 모든 쿼리에, `content`는 단일 리소스 렌더링에, `lists`는 내비게이션/인덱스 쿼리에 적용됩니다. 호스트 기본값은 `refetchOnWindowFocus:false`입니다 |
+| `import_map` | `importMap` | `{}` | 브라우저 import map 확장이 최상위 `AppConfig.importMap`으로 출력됩니다. |
+| `iconify` | `iconify` | `{}` | 최상위 `AppConfig` 필드로 출력되는 Iconify 공급자 소스입니다. |
 
-아래 세 개는 `hostConfig` 아래가 아니라 **최상위** `AppConfig` 필드로 방출됩니다.
+다음 매개변수는 `hostConfig` 아래가 아니라 `hostConfig`와 같은 **최상위** `AppConfig` 필드로 출력됩니다:
 
 facade는 구성된 라우터에 `GET /facade/config`를 등록합니다. 이 경로는 공개 라우터 *위에* 등록되므로 페이지가 실제로 가져오는 URL에는 라우터의 prefix가 포함됩니다. 예시 prefix `/api/public`([Setup](#setup) 참조)에서는 `/api/public/facade/config`가 되며, 이는 배포된 facade 페이지가 가져오는 경로와 정확히 같습니다. (facade는 같은 라우터에 라우트를 하나 더 등록합니다 — `GET /facade/variables.css`로, `css_variables`를 Web Host 외부 페이지를 위한 `text/css` 스타일시트로 렌더링합니다. [Web Host 외부 페이지에서 facade 테마 재사용](#reusing-facade-theming-on-non-web-host-pages)을 참조하세요.) 프런트엔드는 로드 시 이 구성을 가져옵니다:
 
@@ -225,7 +227,7 @@ facade는 구성된 라우터에 `GET /facade/config`를 등록합니다. 이 �
 }
 ```
 
-API URL은 `PUBLIC_API_URL` 환경 변수에서 읽어옵니다. `APP_WEBSOCKET_URL`은 `http://`를 `ws://`로 또는 `https://`를 `wss://`로 대체하여 파생됩니다. 테마는 세 가지 범위(`global`, `host`, `children`)를 가지며 — `host.i18n`은 앱 브랜딩을 담습니다. `hostConfig` 키는 camelCase이며 facade 파라미터에서 조립됩니다: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, 그리고 선택적 `additional_nav_items`, `state_cache`, `allow_additional_tags`, `chat`. `render_engine`은 `renderEngine`이 됩니다([렌더 엔진](#render-engine) 참조). `api_routes`, `axios_defaults`, `tanstack` 파라미터는 `hostConfig` 내부가 아니라 그 형제인 최상위 `AppConfig` 필드(`apiRoutes`, `axiosDefaults`, `tanstack`)로 방출됩니다.
+`api_routes`는 `apiRoutes`, `axios_defaults`는 `axiosDefaults`로 출력되며, `tanstack`, `iconify`, `import_map`은 `importMap`과 함께 `hostConfig`와 같은 최상위 `AppConfig` 필드입니다.
 
 `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, `module_file` 필드는 임베딩 페이지가 스스로를 구성하는 데 사용하는 **셸 수준** 필드로, 호스트가 초기화에 사용하는 자식 `AppConfig`의 일부가 아닙니다. `iframe_origin`/`iframe_url` 필드는 수동·facade 없는 iframe 임베딩에서만 사용됩니다([Facade 진입점](../frontend/web-host/entry-point.md) 참조). `mode` 필드는 정규화된 `fe_mode`(`compat` 또는 `managed`)이며, `module_file`은 facade 페이지가 로드하는 JS 모듈 엔트리로 compat에서는 `/module.js`, managed에서는 `/managed-layout.js`입니다.
 
@@ -291,3 +293,12 @@ wippy publish --embed facade:public_files
 - [Facade 진입점](../frontend/web-host/entry-point.md) - facade가 Web Host를 부트스트랩하는 방식(FE 관점)
 - [CSS 주입](../frontend/web-host/css-injection.md) - facade 테마가 자식 iframe으로 흐르는 방식
 - [렌더 엔진](../frontend/web-host/render-engines.md) - iframe 대 Web Fragment 페이지 렌더링(`render_engine` 스위치)
+
+
+선택적 JSON 설정 `iconify`는 AppConfig 최상위 필드로 출력됩니다. 구성하지 않으면 온라인 소스를 사용합니다. [Iconify 공급자](../frontend/web-host/iconify.md)를 참조하세요.
+
+## AppConfig import map
+
+facade requirement 이름은 `import_map`이며 `/facade/config`는 이를 `cfg.importMap`으로 반환합니다. shell은 Host module을 import하기 전에 공유 bootstrap으로 조합된 map을 등록합니다. 이후 초기 `initWippyApp` config에 `importMap: cfg.importMap`을 전달합니다. [부트스트랩 순서](../frontend/web-host/bootstrap.md#appconfig-import-map)를 참조하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

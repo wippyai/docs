@@ -88,7 +88,7 @@ iframe/Web Fragment 的通道。
 
 ### `config`
 
-宿主投递的子应用配置。它是一个普通对象（不是函数）—— 直接导入即可同步读取。新文档只针对当前的 `wippy-context-2.0` 契约。
+由宿主传递的子应用配置。它是普通对象（不是函数），可直接导入并同步读取。本页说明当前 `wippy-context-2.2` 契约。
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -98,7 +98,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -112,6 +112,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1072,7 +1083,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## 配置覆盖
 
-页面可以按页面覆盖部分面向子端的配置字段，而无需单独部署。覆盖的形态出于兼容仍然使用 `customization`，宿主会在页面接收 `wippy-context-2.0` 配置之前，把这些值投射进当前子端的 `theming.global` 结果中。
+页面无需单独部署即可按页覆盖选定的子端配置字段。为保持兼容，覆盖格式仍使用 `customization`；宿主会在向子端传递当前 `wippy-context-2.2` 配置前，将这些值映射到 `theming.global`。
 
 ### 设置覆盖
 
@@ -1229,3 +1240,8 @@ app.use(router)
 ```
 
 当 Vue 挂载到 `#app` 时，它会自动替换 `<wippy-loading>` 元素。
+
+
+## 子应用的 Iconify 配置
+
+Host 会将显式配置的 `AppConfig.iconify` 作为顶层字段传递。省略时使用在线默认值。请在 AppConfig 中配置源，不要放在 `hostConfig` 或 Proxy API 中。请参阅 [Iconify 提供方](../web-host/iconify.md)。

@@ -365,4 +365,70 @@ export default {
 
 `peerDependencies`는 이 목록의 동일한 사본이 아닙니다. 산출물이 실제로 임포트하는 npm 패키지 루트만 선언하세요. `@wippy-fe/log/logger` 같은 임포트 맵 하위 경로는 별도의 peer 패키지가 아닙니다.
 
-이 계약은 호스트 대 앱의 보편적 병합이나 오버라이드 우선순위를 정의하지 않습니다. 호스티드 모드는 핀 고정된 웹 호스트 릴리스가 전달하는 맵을 사용합니다. 스탠드얼론 모드는 `app.html`에 복사된 완전한 맵을 사용합니다.
+AppConfig import map의 우선순위와 수명 주기는 [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요.
+
+
+## 정적 Iconify 컬렉션
+
+Host 릴리스에는 정적 Tabler 컬렉션이 `iconify/tabler.json`으로 포함됩니다. npm 패키지가 아니라 릴리스 asset입니다. 사용하려면 `AppConfig.iconify.providers`를 명시적으로 구성해야 합니다. [Iconify 공급자](./iconify.md)를 참조하세요.
+
+## PrimeVue 4.5.5 브라우저 export
+
+승인된 통합 후보는 PrimeVue 4.5.5를 고정합니다. 생성된 inventory는 버전이
+지정된 Host 루트에서 제공됩니다. 통합 후보는 Web Host 1.0.63과 공개 패키지
+0.0.63을 대상으로 합니다.
+아직 공개되지 않은 버전이므로 사용 전에 태그를 확인하세요.
+`primevue-export-inventory.json`:
+
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
+```
+
+인벤토리는 공개 export 패턴과 각 구체적 런타임 스펙파이어를 기록합니다.
+PrimeVue가 선언한 루트와 모든 `./*` 경로를 포함해 JavaScript 런타임 항목은
+274개입니다. 컴포넌트, 별칭, 서비스, 지시문, 유틸리티, 스타일 모듈이 포함되며
+스타일 모듈은 129개입니다. 타입 전용 export 네 개는 브라우저 맵 키가 되지
+않습니다. 런타임 항목 네 개에는 선언 대상이 없습니다. 런타임 및 타입 export의
+고유 스펙파이어는 모두 278개입니다. 정확한 파일 경로와 대상은 인벤토리를
+기준으로 사용하고 별도의 수동 목록을 유지하지 마세요.
+
+맵에는 `primevue`, `primevue/button` 같은 정확한 키가 있습니다. 브라우저 import
+map은 `primevue/*` 와일드카드를 지원하지 않으므로 각 런타임 하위 경로에 별도 키가
+필요합니다. Host는 PrimeVue 루트 manifest에서 패키지 루트를 확인한 뒤 선언된
+export 패턴을 구체적인 패키지 상대 경로로 확장합니다. `@primevue/icons`와
+`@primeuix/*`는 공유 vendor graph에 포함되며 직접 맵 키로 노출하지 않습니다.
+후보는 `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4,
+`@primeuix/styles` 및 `@primeuix/themes` 2.0.3, `@primeuix/utils` 0.6.4를 고정합니다.
+맵에는 직접 JSON 또는 CSS export가 없습니다. JavaScript graph에서 도달할 수 있는
+리소스도 빌드된 Host 배포물에 포함해야 합니다.
+
+```typescript
+import Button from 'primevue/button'
+```
+
+전체 import-map 스냅샷이 계속 Rollup external 계약을 정의합니다. 맵에 키를
+추가해도 이미 빌드된 소비자 artifact는 바뀌지 않습니다. 고정된 맵으로 앱과
+컴포넌트를 다시 빌드해 정확한 PrimeVue import가 Host 공유 graph를 사용하도록
+하세요. JavaScript externalization은 PrimeVue CSS를 제공하지 않습니다. 필요한
+CSS는 문서화된 Host CSS key로 별도 요청하세요. 로컬 preview CSS는 Phase 4의
+선행 조건입니다.
+
+이 inventory는 아직 공개되지 않은 후보의 산출물입니다. 사용 전에 공개된 Host
+산출물과 URL 및 내용을 대조하세요.
+
+JSON의 최상위 필드는 `schemaVersion`, `package`, `counts`, `exports`,
+`entries`입니다. `exports`는 PrimeVue의 공개 패턴을 설명하고 정렬된 `entries`
+배열은 구체적인 runtime specifier와 target을 기록합니다. runtime 항목에는
+`specifier`, 패키지 기준 상대 `target`, `sha256`, `kind`, 선언이 있는 경우
+`typesTarget`이 포함됩니다. 타입 전용 항목도 `entries`에 있지만 import map 키는
+아닙니다.
+
+PrimeVue Chart와 Editor는 dynamic chunk에서 `chart.js` 4.5.1과 `quill` 2.0.3을 불러옵니다. Host는 두 의존성을 로컬에 번들합니다. 매핑된 PrimeVue export를 사용하는 앱은 해당 chunk를 위해 이 의존성을 별도로 설치하지 않아도 됩니다. Host map에는 294개 키가 있고 그중 274개는 PrimeVue 항목입니다. Host는 `@wippy-fe/vue-utils`를 295번째 키로 주입하며 이는 앱 수준 매핑이 아닙니다. 빌드 계약에는 고정된 Host snapshot을 그대로 사용하세요.
+
+## AppConfig import map override
+
+`AppConfig.importMap`은 Vue, PrimeVue, Wippy를 포함해 일치하는 페이지 또는 Host 항목을 바꿀 수 있습니다. 정확한 키는 하나의 specifier와 일치합니다. 끝에 슬래시가 있는 키는 prefix를 가리키며 대상도 슬래시로 끝나야 합니다. `scopes`는 가져오는 모듈 URL에 따라 항목을 선택합니다. 상대 대상 URL은 문서 base URL을 기준으로 합니다.
+
+CDN module이 다른 bare specifier를 가져오면 그 의존성도 map에 추가하거나 의존성이 포함된 CDN URL을 사용하세요. 런타임 map은 consumer bundle에 이미 포함된 의존성을 다시 쓰지 않습니다. 우선순위와 수명은 [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

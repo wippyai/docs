@@ -20,24 +20,51 @@ Die Facade lädt je nach konfiguriertem `fe_mode` einen von zwei JS-Modul-Einsti
 
 Eine vereinfachte Version der Seite sieht so aus:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script src="https://web-host.wippy.ai/<release-tag>/module.js"></script>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        window.initWippyApp(config, '#app')
-      })
-  </script>
-</body>
-</html>
+```javascript
+const configResponse = await fetch('/api/public/facade/config')
+if (!configResponse.ok)
+  throw new Error('Facade config request failed: ' + configResponse.status)
+const cfg = await configResponse.json()
+
+const storedAuth = localStorage.getItem('@wippy_token_info')
+if (!storedAuth)
+  throw new Error('Authentication is required before bootstrapping the host')
+const { token } = JSON.parse(storedAuth)
+if (typeof token !== 'string' || token.length === 0)
+  throw new Error('Stored authentication does not contain a token')
+
+const mapResponse = await fetch(cfg.facade_url + '/import-map.json')
+if (!mapResponse.ok)
+  throw new Error('Host import map request failed: ' + mapResponse.status)
+const hostMap = await mapResponse.json()
+await new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = cfg.facade_url + '/@wippy-fe/import-map-bootstrap.js'
+  script.onload = resolve
+  script.onerror = reject
+  document.head.appendChild(script)
+})
+window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, document.baseURI)
+
+await import(cfg.facade_url + cfg.module_file)
+window.initWippyApp({
+  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
+  env: cfg.env,
+  routePrefix: cfg.routePrefix,
+  themeMode: window.wippyThemePersist?.read() || cfg.themeMode,
+  apiRoutes: cfg.apiRoutes,
+  attention: cfg.attention,
+  allowSelectModel: cfg.allowSelectModel,
+  hideSessionSelector: cfg.hideSessionSelector,
+  allowAdditionalTags: cfg.allowAdditionalTags,
+  axiosDefaults: cfg.axiosDefaults,
+  iconify: cfg.iconify,
+  importMap: cfg.importMap,
+  theming: cfg.theming,
+  hostConfig: cfg.hostConfig,
+  context: { resourceId: '', resourceType: 'page' },
+}, '#app')
 ```
 
 Die Seite holt ihre Konfiguration und übergibt sie an die Init-Funktion des Moduls. Der Host mountet in die Seite, übernimmt Routing und Browser-History und fährt mit der vollständigen Initialisierung fort.
@@ -48,82 +75,48 @@ Die Seite holt ihre Konfiguration und übergibt sie an die Init-Funktion des Mod
 
 Der Konfigurationsfluss hat zwei Schritte:
 
-1. Das Inline-JavaScript der Seite ruft `GET /facade/config` auf derselben Origin wie die Seite auf. Diesen Endpunkt registriert `wippy/facade` auf dem öffentlichen Router.
-2. Bei der Antwort übergibt die Seite das vollständige Konfigurationsobjekt an die Init-Funktion des geladenen JS-Moduls (`window.initWippyApp(config, rootContainer?)`).
+1. Die Seite ruft `/facade/config` über den öffentlichen Router derselben Origin ab.
+
+2. Die Shell lädt die Host-Import-Map und das gemeinsame Bootstrap, registriert die Host-Map zusammen mit `cfg.importMap` und importiert erst danach `cfg.module_file` dynamisch. Die Shell erstellt `AppConfig` aus den zurückgegebenen Feldern und ergänzt das Schema `wippy-context-2.2`, `auth` und `context`, bevor sie `initWippyApp` aufruft.
 
 Der Web Host entnimmt dem Konfigurationsobjekt den `AppConfig`-Payload und fährt mit der vollständigen Initialisierung fort. Ab diesem Punkt ist das Seitenskript passiv — jede Benutzerinteraktion findet innerhalb des gemounteten Hosts statt.
 
 Dieses Muster bedeutet, dass das per CDN gehostete Bundle nie deploymentspezifische URLs, Tokens oder Branding enthält. Das Bundle ist für jedes Deployment identisch. Nur der Konfigurations-Payload unterscheidet sich.
 
-> **Shell-Felder vs. Kind-`AppConfig`.** Die Antwort von `/facade/config` trägt beides. Felder wie `facade_url`, `iframe_origin`, `iframe_url` und `login_path` sind Felder auf **Shell-Ebene**, die die einbettende Seite verwendet, um sich selbst aufzubauen — sie sind nicht Teil der Kind-`AppConfig`. Die `AppConfig`, mit der der Host tatsächlich initialisiert, sind `auth`, `env`, `theming`, `hostConfig`, `context` und die weiteren unten dokumentierten Felder.
+Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Der aktuelle Vertrag ist `wippy-context-2.2`.
 
 ## Die Antwort von `/facade/config`
 
-Der Konfigurationsendpunkt liefert ein JSON-Objekt zurück, das sowohl die Felder auf Shell-Ebene als auch die Kind-`AppConfig` trägt. Die Facade-Seite übergibt es an die Init-Funktion des Host-Moduls; eine manuelle iframe-Einbettung liefert den `AppConfig`-Teil stattdessen über PostMessage (siehe unten). Alle Felder stellt `wippy/facade` aus seinen Modulparametern und der laufenden Umgebung zusammen:
+Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Der aktuelle Vertrag ist `wippy-context-2.2`.
 
 ```json
 {
-  "$schema": "wippy-context-2.0",
   "facade_url": "https://web-host.wippy.ai/<release-tag>",
   "iframe_origin": "https://web-host.wippy.ai",
   "iframe_url": "https://web-host.wippy.ai/<release-tag>/iframe.html?waitForCustomConfig",
   "login_path": "/login.html",
-  "auth": {
-    "token": "eyJ...",
-    "expiresAt": "2026-06-01T12:00:00Z"
-  },
+  "login_redirect_param": "return_to",
+  "mode": "compat",
+  "module_file": "/module.js",
   "env": {
     "APP_API_URL": "https://api.example.com",
     "APP_AUTH_API_URL": "https://api.example.com",
     "APP_WEBSOCKET_URL": "wss://api.example.com"
   },
   "routePrefix": "https://api.example.com",
-  "axiosDefaults": {},
-  "apiRoutes": {},
+  "themeMode": "auto",
+  "themePersist": "localStorage",
+  "themeStorageKey": "@wippy-theme-mode",
+  "axiosDefaults": { "timeout": 30000 },
+  "apiRoutes": { "agents": { "list": "/custom/agents" } },
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
-  "theming": {
-    "global": {
-      "customCSS": "@import url('https://fonts.googleapis.com/...');",
-      "cssVariables": { "--p-primary": "#6366f1" },
-      "iconSets": {}
-    },
-    "host": {
-      "customCSS": ".wippy-host-app .chat-container { background: var(--p-content-background); }",
-      "cssVariables": {},
-      "iconSets": {},
-      "i18n": {
-        "app": {
-          "title": "My App",
-          "icon": "wippy:logo",
-          "appName": "My Application"
-        }
-      }
-    },
-    "children": {
-      "customCSS": "",
-      "cssVariables": {}
-    }
+  "iconify": {},
+  "importMap": {
+    "imports": { "example-package": "https://cdn.example.com/example-package.js" }
   },
-  "hostConfig": {
-    // Beispielwerte — Standardwerte in der Tabelle unten
-    "session": { "type": "non-persistent" },
-    "history": "hash",
-    "showAdmin": true,
-    "allowSelectModel": false,
-    "startNavOpen": false,
-    "hideNavBar": false,
-    "disableRightPanel": false,
-    "hideSessionSelector": false,
-    "additionalNavItems": [],
-    "stateCache": {},
-    "allowAdditionalTags": [],
-    "chat": {}
-  },
-  "context": {
-    "resourceId": "root",
-    "resourceType": "page",
-    "route": "/"
-  }
+  "extraScripts": ["/monitoring.js"],
+  "theming": {},
+  "hostConfig": {}
 }
 ```
 
@@ -142,13 +135,15 @@ Der Konfigurationsendpunkt liefert ein JSON-Objekt zurück, das sowohl die Felde
 
 | Feld | Beschreibung |
 |-------|-------------|
-| `$schema` | Version des Konfigurationsvertrags (`"wippy-context-2.0"`). |
+| `$schema` | Version des Konfigurationsvertrags (`"wippy-context-2.2"`). |
 | `auth` | Laufzeit-Bearer-Token und Ablauf, injiziert als `AppConfig.auth`. |
 | `env` | Laufzeit-URLs, injiziert als `AppConfig.env` auf oberster Ebene. |
 | `routePrefix` | API-URL-Präfix, das an Kind-Apps weitergereicht wird. |
 | `axiosDefaults` | Standardwerte der Axios-Instanz, die an Kind-Apps weitergereicht werden. |
 | `apiRoutes` | Überschreibt einzelne Pfade von API-Endpunkten (Feld auf oberster `AppConfig`-Ebene). |
 | `tanstack` | Standardwerte für TanStack Query — global + pro rollenbasierter Kategorie (`content`/`lists`); Feld auf oberster `AppConfig`-Ebene. Der Host-Standard ist `refetchOnWindowFocus:false`. |
+| `iconify` | Explizite Iconify-Quellen aus `cfg.iconify`, die weitergereicht werden. |
+| `importMap` | Optionale Browser-Import-Map-Erweiterung aus `cfg.importMap`; die Shell registriert sie vor dem Import von Host-Modulen. |
 | `theming` | CSS-Anpassung, aufgeteilt in drei Scopes. |
 | `hostConfig` | Feature-Flags und UI-Konfiguration des Web Host. |
 | `context` | Anfänglicher Seiten- oder Artefaktkontext für den Host. |
@@ -216,47 +211,81 @@ Sie können weiterhin den `/facade/config`-Endpunkt der Facade nutzen, um die UR
 
 Anders als beim JS-Modul-Weg **fordert** der Host im iframe seine Konfiguration an: Er bootet und sendet eine `get-config`-Nachricht an den Parent, und der Parent antwortet mit `set-config`. Der Parent **lauscht** also auf die Anfrage, statt die Konfiguration blind bei `load` zu pushen:
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <iframe id="wippy" style="width:100%;height:100vh;border:none"></iframe>
-  <script>
-    fetch('/facade/config')
-      .then(r => r.json())
-      .then(config => {
-        const iframe = document.getElementById('wippy')
+```javascript
+async function mountWippyIframe(auth) {
+  const response = await fetch('/api/public/facade/config')
+  if (!response.ok)
+    throw new Error(`Facade config request failed: ${response.status}`)
+  const cfg = await response.json()
+  const iframe = document.getElementById('wippy')
+  if (!(iframe instanceof HTMLIFrameElement))
+    throw new Error('Expected <iframe id="wippy">')
 
-        // Auf die @gen2-chat-Konfigurationsanfrage des Kindes lauschen und sie beantworten.
-        window.addEventListener('message', (event) => {
-          if (event.origin !== config.iframe_origin) return
-          const msg = event.data
-          if (msg?.type === '@gen2-chat' && msg.action === 'get-config') {
-            iframe.contentWindow.postMessage(
-              { type: '@gen2-chat', action: 'set-config', ...config },
-              config.iframe_origin
-            )
-          }
-        })
+  const iframeUrl = new URL(cfg.iframe_url)
+  if (iframeUrl.origin !== cfg.iframe_origin)
+    throw new Error('iframe_url and iframe_origin must identify the same origin')
 
-        // iframe_url enthält bereits ?waitForCustomConfig
-        iframe.src = config.iframe_url
-      })
-  </script>
-</body>
-</html>
+  const appConfig = {
+    $schema: `${cfg.facade_url}/schemas/wippy-context-2.2.json`,
+    auth,
+    env: cfg.env,
+    routePrefix: cfg.routePrefix,
+    themeMode: cfg.themeMode,
+    apiRoutes: cfg.apiRoutes,
+    axiosDefaults: cfg.axiosDefaults,
+    iconify: cfg.iconify,
+    importMap: cfg.importMap,
+    tanstack: cfg.tanstack,
+    theming: cfg.theming,
+    hostConfig: cfg.hostConfig,
+    context: { resourceId: '', resourceType: 'page' },
+  }
+
+  function onMessage(event) {
+    if (event.origin !== cfg.iframe_origin || event.source !== iframe.contentWindow)
+      return
+
+    let message
+    try {
+      message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+    }
+    catch {
+      return
+    }
+    if (message?.type === '@gen2-chat' && message.action === 'get-config') {
+      event.source.postMessage(
+        JSON.stringify({ type: '@gen2-chat', action: 'set-config', ...appConfig }),
+        cfg.iframe_origin,
+      )
+    }
+  }
+
+  window.addEventListener('message', onMessage)
+
+  // iframe_url already includes ?waitForCustomConfig
+  iframe.src = iframeUrl.href
+
+  return function unmount() {
+    window.removeEventListener('message', onMessage)
+    iframe.remove()
+  }
+}
 ```
 
-Der Query-Parameter `?waitForCustomConfig` (bereits in `iframe_url` enthalten) ist das entscheidende Signal. Er weist den Web Host an, die Initialisierung anzuhalten — die App mountet, versucht aber bewusst nicht, die Authentifizierung aufzulösen oder Routen zu laden, bis sie eine `set-config`-Nachricht erhält. Ohne ihn würde der Web Host versuchen, Auth-Tokens aus URL-Parametern oder Standardwerten zu lesen, was für eingebettete Deployments nicht angemessen ist.
+Mit `?waitForCustomConfig` wartet das Standalone-Bootstrap auf die `set-config`-Nachricht des Parents, bevor es die Import-Map registriert und Host-App-Module importiert. Die App ist zu diesem Zeitpunkt noch nicht gemountet. Ohne die Abfrage läuft der normale Standalone-Konfigurationspfad.
 
 Der Handshake verwendet das PostMessage-Protokoll `@gen2-chat`:
 
 1. Der Parent holt `GET /facade/config` (oder liefert selbst einen gleichwertigen `AppConfig`-Payload) und erzeugt das iframe mit Ziel `iframe_url`.
 2. Das bootende iframe sendet `{ type: '@gen2-chat', action: 'get-config' }` an den Parent.
 3. Der `message`-Listener des Parents antwortet mit `{ type: '@gen2-chat', action: 'set-config', ...config }`, gerichtet an `iframe_origin`.
+
+Bei späteren Konfigurationsänderungen senden Sie ein weiteres vollständiges
+`set-config` an denselben iframe und dieselbe `iframe_origin`. Der Host übernimmt
+die Änderung ohne Remount. API-Anfragen dieses iframes verwenden die Origin des
+iframe-Dokuments. Stellen Sie die Backend-API unter derselben Origin bereit oder
+erlauben Sie die Dokument-Origin in der CORS-Richtlinie des Backends. CORS ist
+eine Backend-Richtlinie und keine AppConfig-Einstellung.
 
 Der Web Host entnimmt den `AppConfig`-Payload und fährt mit der vollständigen Initialisierung fort. Für das vollständige Nachrichtenprotokoll (den `@gen2-chat`-Umschlag und das `IFrameMessageType`-Enum) siehe [Proxy & Isolation](./proxy-isolation.md). Dieser `SetConfig`-Handshake ist spezifisch für die manuelle, facadelose Einbettung; das Modul `wippy/facade` lädt den Web Host stattdessen als JS-Modul.
 
@@ -302,3 +331,11 @@ Die `wippy/facade`-Parameter, die die obige Konfigurationsantwort erzeugen, werd
 ```
 
 Die vollständige Liste der verfügbaren Parameter und ihrer Standardwerte finden Sie in der [Referenz des Facade-Moduls](../../framework/facade.md).
+
+## Import map an den Host weitergeben
+
+Der Empfänger akzeptiert iframe-`SetConfig` nur vom physischen Parent-Fenster. Wenn der Parent-Ursprung zugänglich ist, prüft er außerdem `event.origin` dagegen. In einem Web Fragment muss die Nachricht an die eigene `fragmentId` dieses Vorkommens gerichtet sein.
+
+Die Facade-Anforderung heißt `import_map`; `/facade/config` gibt sie als `cfg.importMap` zurück. Das Shell-Skript übergibt diesen Wert an das gemeinsame Import-Map-Bootstrap, bevor es das Host-Modul importiert. Danach übergibt es `importMap: cfg.importMap` in der anfänglichen `initWippyApp`-Konfiguration. Siehe [Bootstrap-Ablauf](./bootstrap.md#appconfig-import-map). Eine Änderung der Import-Map wirkt sich nicht auf ein vorhandenes Dokument aus. Laden Sie es neu oder erstellen Sie es neu, um die neue Map zu verwenden.
+
+Verwende dieses Feld nur mit einem bereitgestellten Host-Release, dessen Dokumentation es unterstützt.

@@ -351,3 +351,61 @@ export default {
 `peerDependencies` 并不是这份列表的完全复制。只声明该产物实际导入的 npm 包根；诸如 `@wippy-fe/log/logger` 这样的 import map 子路径不是独立的 peer 包。
 
 该契约没有定义通用的宿主与应用合并或覆盖优先级。宿主模式使用固定 Web Host 发布所交付的映射。独立模式使用 `app.html` 中完整复制的映射。
+
+
+## 静态 Iconify 集合
+
+Host 发布包在 `iconify/tabler.json` 中包含静态 Tabler 集合。它是发布资源，不是 npm 包。使用它需要显式配置 `AppConfig.iconify.providers`。请参阅 [Iconify 提供方](./iconify.md)。
+
+## PrimeVue 4.5.5 浏览器导出
+
+获批的合并候选版本固定使用 PrimeVue 4.5.5。生成的 inventory 随版本放在
+Host 根目录。合并候选目标版本为 Web Host 1.0.63 和公开包 0.0.63。这些版本尚未发布，
+使用前请确认对应标签。
+`primevue-export-inventory.json`:
+
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
+```
+
+该清单记录公开导出模式和每个具体运行时说明符。它包含 274 个 JavaScript
+运行时条目，包括根导出和 PrimeVue 声明的全部 `./*` 路径。条目涵盖组件、别名、
+服务、指令、实用工具和样式模块，其中 129 个是样式模块。四个仅含类型的导出
+不会成为浏览器映射键。另有四个运行时条目没有类型声明目标。运行时与类型导出
+共包含 278 个唯一说明符。请以清单中的确切文件和目标为准，不要另维护一份列表。
+
+映射包含 `primevue`、`primevue/button` 等确切键。浏览器 import map 不支持
+`primevue/*` 通配符，因此每个运行时子路径都有独立的键。Host 根据 PrimeVue 根
+manifest 解析包根，再将已声明的导出模式扩展为包内确切目标。`@primevue/icons`
+和 `@primeuix/*` 保留在共享 vendor 图中，不作为直接映射键。候选版本固定为
+`@primevue/icons` 4.5.5、`@primeuix/styled` 0.7.4、`@primeuix/styles` 和
+`@primeuix/themes` 2.0.3、`@primeuix/utils` 0.6.4。映射没有直接 JSON 或
+CSS 导出。JavaScript 图可达的资源也必须包含在 Host 构建产物中。
+
+```typescript
+import Button from 'primevue/button'
+```
+
+完整 import map 快照仍是 Rollup 外部化契约。新增映射键不会更改已经构建的应用。
+请用固定映射重新构建应用和组件，使确切的 PrimeVue 导入使用 Host 共享图。JavaScript
+外部化不会提供 PrimeVue CSS。请通过文档化的 Host CSS 键单独请求所需样式。本地预览
+CSS 仍是 Phase 4 的前置条件。
+
+该 inventory 属于尚未发布的候选版本。使用前，请对照已发布的 Host 产物确认其 URL
+和内容。
+
+JSON 顶层字段包括 `schemaVersion`、`package`、`counts`、`exports` 和 `entries`。
+`exports` 描述 PrimeVue 的公开模式；排序后的 `entries` 数组列出具体 runtime
+specifier 和 target。runtime 条目包含 `specifier`、包相对 `target`、`sha256`、
+`kind`，以及可用时的 `typesTarget`。仅类型条目也位于 `entries` 中，但不会成为
+import map 键。
+
+PrimeVue Chart 和 Editor 通过动态 chunk 加载 `chart.js` 4.5.1 与 `quill` 2.0.3。Host 会在本地 bundle 中包含这两个依赖。使用 PrimeVue 映射 export 的应用无需为这些 chunk 单独安装它们。Host map 有 294 个 key，其中 274 个属于 PrimeVue。Host 注入 `@wippy-fe/vue-utils` 作为第 295 个 key；它不是应用级映射。请将精确固定的 Host snapshot 用作构建契约。
+
+## AppConfig import map 覆盖项
+
+`AppConfig.importMap` 可以替换页面或 Host 中匹配的条目，包括 Vue、PrimeVue 和 Wippy。精确键匹配一个 specifier。以斜杠结尾的键映射一个前缀，目标值也必须以斜杠结尾。使用 `scopes` 按导入模块 URL 选择条目。相对目标以文档的 base URL 为基准解析。
+
+CDN 模块仍可能导入其他 bare specifier。请为这些依赖添加映射，或使用已包含这些依赖的 CDN 模块。运行时映射不会改写已嵌入应用 bundle 的依赖。优先级和生命周期请参阅[引导顺序](./bootstrap.md#appconfig-import-map)。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

@@ -11,13 +11,9 @@ Web ホストは設定を受け取った後、UI をレンダリングする前�
 
 これは現在の `wippy/facade` が使う経路です。ファサードは、Web ホストの JS モジュールエントリ — **compat** モードなら `module.js`、**managed** モードなら `managed-layout.js` — を読み込むページを配信し、そのモジュールがページ全体とブラウザー履歴を引き継ぎます。
 
-1. **ページがモジュールを読み込む。** スクリプトはページの `window` に `window.initWippyApp` を登録します。
+1. **設定を取得して map を登録する。** facade の requirement 名は `import_map` で、`/facade/config` は `cfg.importMap` として返します。shell は共有 import-map bootstrap を読み込み、Host module を import する前に合成済み map を登録します。
 
-2. **ページが `initWippyApp(config, rootContainer?)` を呼ぶ。** ページはすでに `/facade/config` を取得しており、そのペイロードを関数の引数として直接渡します。PostMessage のハンドシェイクはありません。
-   ```javascript
-   const events = window.initWippyApp(config, '#app')
-   events.on('ready', () => console.log('App ready'))
-   ```
+2. **Host module を import してアプリを初期化する。** shell は `module.js` または `managed-layout.js` を import します。module は `window.initWippyApp` を公開します。その後、`importMap: cfg.importMap` を含む初期 `AppConfig` を使って `initWippyApp(appConfig, rootContainer?)` を呼び出します。PostMessage handshake はありません。
 
 3. **初期化が進む** — 下記の [内部初期化シーケンス](#internal-init-sequence) を参照してください。
 
@@ -25,17 +21,17 @@ Web ホストは設定を受け取った後、UI をレンダリングする前�
 
 これは、ホスト全体を自分で iframe に埋め込む場合の経路です — より強い分離を伴う部分埋め込みのためのものです。`iframe.html?waitForCustomConfig` を読み込み、`SetConfig` の PostMessage で設定を受け取ります。現在のファサードはこれを生成しません。手動での挿入のために存在します。
 
-1. **iframe が読み込まれる。** Web ホストがブラウザーで読み込まれます。URL に `?waitForCustomConfig` があるため、アプリは最小限のスケルトンをマウントして待機します — 認証トークンの読み取りも API エンドポイントの呼び出しも、まだ試みません。
+1. **親が iframe を準備する。** versioned `iframe.html` URL に `?waitForCustomConfig` を付けます。`iframe.src` を設定する前に `message` listener を登録します。standalone bootstrap は、import map の登録や Host app module の import より前に、親からの `SetConfig` を待ちます。これは Host app の mount より前です。
 
-2. **親が `SetConfig` を送る。** 親はすでに `/facade/config` を取得（または同等のペイロードを用意）しており、PostMessage で転送します。
-   ```javascript
-   iframe.contentWindow.postMessage(
-     { type: '@gen2-chat', action: 'set-config', ...configPayload },
-     config.iframe_origin
-   )
-   ```
+2. **親が `GetConfig` に応答する。** iframe からの `get-config` を待ちます。
+   `event.origin` が信頼する iframe origin と一致し、`event.source` が正確に
+   `iframe.contentWindow` の場合だけ受け入れます。次に完全な `AppConfig` を
+   `set-config` message で送り、信頼済み origin を `targetOrigin` に指定します。
+   `/facade/config` は deployment 設定を提供しますが、親は `$schema`、`auth`、
+   `context` を追加する必要があります。詳細は[iframe の例](./entry-point.md#manual-facade-less-iframe-embedding)
+   を参照してください。
 
-3. **Web ホストが `AppConfig` を受け取る。** メッセージハンドラーがエンベロープの type と action を検証し、完全な設定オブジェクトを取り出します。
+3. **Web Host が `AppConfig` を受け取る。** message envelope を検証し、iframe message は物理的な親 window からのものだけを受け付けます。親の origin にアクセスできる場合は `event.origin` も照合します。Web Fragment では、その occurrence 自身の ID と `fragmentId` が一致することも確認します。後続の有効な `SetConfig` message は、その document の config を更新できます。
 
 4. **初期化が進む** — この時点から先の内部経路は経路 A と同一です。
 
@@ -75,7 +71,7 @@ WebSocket クライアントが認証トークンを使って `APP_WEBSOCKET_URL
 
 ```typescript
 interface AppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -179,22 +175,20 @@ Web ホストは複数のソースから設定を解決します。優先度の�
 標準のファサード（JS モジュール）経路:
 
 ```
-module.js / managed-layout.js loaded on the page
+facade shell が /facade/config を取得（requirement import_map → cfg.importMap）
   │
-  ├─ window.initWippyApp(config, '#app')
-  │     config.AppConfig = { $schema, auth, env, theming, hostConfig, context }
-  │
-  ├─ Init Pinia (auth store, config store)
-  ├─ Configure Axios (baseURL, auth header)
-  ├─ Create Vue Router (history mode, system routes)
-  ├─ Install PrimeVue, inject theme CSS
-  ├─ Mount App.vue
-  │
-  ├─ GET /api/public/pages/routes
-  │     router.addRoute('app', ...) for each backend mountRoute
-  │
-  ├─ Resolve current URL → render matching view
-  └─ Connect WebSocket
+  ├─ Host map を取得し共有 import-map bootstrap を読み込む
+  ├─ 合成済み import map を登録する
+  ├─ module.js / managed-layout.js を import する
+  ├─ module が window.initWippyApp を公開する
+  ├─ shell が initWippyApp({ ..., importMap: cfg.importMap }, '#app') を呼ぶ
+  ├─ resolveConfig() → config/auth/env state を migrate・normalize する
+  ├─ GET /api/public/pages/routes を待つ
+  ├─ Vue app と router を作成する
+  │     static system routes + validated backend mount routes
+  ├─ setupApp() → Pinia、Axios、PrimeVue、theme などを設定する
+  ├─ App.vue を mount し、現在の URL を解決する
+  └─ component が必要に応じて WebSocket client を要求する
 ```
 
 ## 関連項目
@@ -202,3 +196,40 @@ module.js / managed-layout.js loaded on the page
 - [ファサードのエントリーポイント](./entry-point.md) — `wippy/facade` が `AppConfig` をどう構築し配信するか
 - [マルチパネルレイアウト](./multi-panel-layout.md) — `managed-layout.js` が配信するマネージドレイアウトのブート経路
 - [レンダリングエンジン](./render-engines.md) — 読み込み後にページがどう描画されるか（srcdoc iframe と Web Fragment）
+
+
+## Iconify ソース
+
+`AppConfig.iconify.providers` で Iconify ソースを設定します。省略時はオンラインの既定値を使います。明示的に設定した値は AppConfig を通じて子アプリに渡されます。[Iconify プロバイダー](./iconify.md)を参照してください。
+
+## PrimeVue とブラウザー Realm
+
+アプリケーションは固定された Host import map の正確な指定子から PrimeVue を
+import します。再ビルドした利用側は、JavaScript realm 内の共有 PrimeVue vendor
+graph を使用します。各 iframe と Web Fragment は独自の realm と module graph を
+持ちます。import map は style を挿入しません。必要な PrimeVue CSS は文書化された
+Host CSS key から要求してください。既存の組み込み bundle は、新しい map に
+合わせて再ビルドする必要があります。
+
+## AppConfig import map
+
+`AppConfig.importMap` は、標準の `imports` と `scopes` を持つ任意のトップレベルブラウザー import map です。
+
+```typescript
+interface AppConfig {
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
+}
+```
+
+srcdoc ページのドキュメントでは、Host はページの map、生成された Host の既定値、`AppConfig.importMap` の順で合成します。standalone と facade のドキュメント、および各 Web Fragment occurrence には srcdoc ページの map がないため、Host の既定値と `AppConfig.importMap` を合成します。各 Web Fragment occurrence は独立した物理 realm iframe で実行されます。`imports` と各 scope では一致するキーの最後の値が優先され、他のエントリーは保持されます。設定は Vue、PrimeVue、Wippy を含むページまたは Host の割り当てを置き換えられます。完全一致キーは1つのspecifierに一致します。末尾が `/` のキーはspecifierのprefixに一致し、対象URLも `/` で終わる必要があります。`scopes` は import 元モジュールのURLで割り当てを選びます。相対URLはドキュメントのベースURLから解決されます。
+
+モジュールを読み込む前に map を作成し、ネイティブ import map を登録してください。後から別の map を追加しても登録済みのキーは置き換えられません。更新で `importMap` を省略すると現在の拡張を維持します。`null` または `{}` を指定すると拡張を解除します。
+
+import map の更新は document 作成時に適用されます。既存 document の module 解決は変わりません。更新を使うにはその document を再読み込みしてください。後から作成する document には最新の config が使われます。各 Web Fragment occurrence は独自の物理 realm iframe を持ち、その realm で module 読み込み前に map を登録します。
+
+Vue、PrimeVue、Wippy の共有エントリーを置き換えると、Host と子コードで module や service の identity が分かれることがあります。置き換えを公開する前に、公開済みの正確な map で統合を確認してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。
