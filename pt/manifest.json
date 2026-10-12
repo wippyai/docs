@@ -415,6 +415,10 @@
           {
             "title": "Pacotes @wippy-fe",
             "path": "frontend/web-host/packages"
+            },
+            {
+              "title": "Provedores do Iconify",
+              "path": "frontend/web-host/iconify"
           }
         ]
       },

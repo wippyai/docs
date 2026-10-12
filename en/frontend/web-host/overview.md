@@ -63,6 +63,11 @@ Choose one according to the integration. Each entry is available at
 | `chat.js` | Headless ESM module exposing chat stores and WebSocket client. Use for building completely custom UIs. |
 | `ws.js` | Standalone WebSocket service with no Vue or Pinia dependency. Use for low-level real-time integrations. |
 
+The unpublished 1.0.63 candidate embeds the complete Host import map in both
+`iframe.html` and `chat-iframe.html` before module scripts run. The standalone
+`chat-iframe.html` entry starts its app on load; do not call `initChatApp` after
+loading it.
+
 For standard `wippy/facade`-based deployments you never reference these paths directly. The facade reads `fe_facade_url` from its configuration, selects the JS-module entry that matches `fe_mode` (`module.js` for compat, `managed-layout.js` for managed), and constructs the correct URL automatically.
 
 ## CDN Versioning

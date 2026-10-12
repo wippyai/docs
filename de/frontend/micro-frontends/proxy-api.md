@@ -90,7 +90,7 @@ Die Laufzeit installiert eine Handvoll Globals für den Eigenbedarf — `window.
 
 ### `config`
 
-Die vom Host gelieferte Konfiguration der Kind-Anwendung. Es ist ein einfaches Objekt (keine Funktion) — direkt importiert und synchron lesbar. Neue Dokumente zielen nur auf den aktuellen Vertrag `wippy-context-2.0`.
+Die vom Host gelieferte Konfiguration der Kind-Anwendung. Es ist ein einfaches Objekt (keine Funktion), das direkt importiert und synchron gelesen wird. Diese Seite dokumentiert den aktuellen Vertrag `wippy-context-2.2`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1080,7 +1091,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Konfigurations-Overrides
 
-Seiten können ausgewählte kindgerichtete Konfigurationsfelder pro Seite überschreiben, ohne ein separates Deployment. Die Override-Form verwendet aus Kompatibilitätsgründen weiterhin `customization`, und der Host projiziert diese Werte in das aktuelle Kind-Ergebnis `theming.global`, bevor die Seite die `wippy-context-2.0`-Konfiguration erhält.
+Seiten können ausgewählte kindgerichtete Konfigurationsfelder pro Seite überschreiben, ohne ein separates Deployment. Die Override-Form verwendet aus Kompatibilitätsgründen weiterhin `customization`; der Host übernimmt diese Werte vor der Zustellung der aktuellen Kind-Konfiguration `wippy-context-2.2` in `theming.global`.
 
 ### Overrides setzen
 
@@ -1237,3 +1248,8 @@ Beide Komponenten verwenden Shadow DOM mit CSS-Variablen aus `@wippy-fe/theme` u
 ```
 
 Wenn Vue in `#app` mountet, ersetzt es das `<wippy-loading>`-Element automatisch.
+
+
+## Iconify-Konfiguration für untergeordnete Apps
+
+Der Host gibt ausdrücklich konfigurierte Werte aus `AppConfig.iconify` als oberstes Feld weiter. Fehlt das Feld, bleiben die Online-Standards aktiv. Konfigurieren Sie die Quelle in AppConfig, nicht in `hostConfig` oder der Proxy-API. Siehe [Iconify-Anbieter](../web-host/iconify.md).

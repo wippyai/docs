@@ -12,14 +12,16 @@ lifecycle.
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
-lockstep; this page targets Web Host 1.0.56 and public package version 0.0.56.
+lockstep; this documentation snapshot targets the approved Web Host 1.0.63 and
+public package 0.0.63 candidates. Verify the deployed release before using its
+versioned assets.
 Host-only bundles are identified separately below and are not installable npm
 packages.
 
 Install the packages you need:
 
 ```bash
-npm install @wippy-fe/proxy@0.0.56 @wippy-fe/webcomponent-vue@0.0.56 @wippy-fe/router@0.0.56
+npm install @wippy-fe/proxy@0.0.63 @wippy-fe/webcomponent-vue@0.0.63 @wippy-fe/router@0.0.63
 ```
 
 ## Accessing the host — `@wippy-fe/proxy`
@@ -339,6 +341,8 @@ These elements are also registered in the host itself for use in fatal-error sta
 
 ## Host-delivered bundles
 
+The Host release also includes a static Tabler Iconify collection at `iconify/tabler.json`. It is an asset served from the same versioned release root, not an npm package. Deployments must configure `AppConfig.iconify.providers` explicitly to use it. See [Iconify providers](./iconify.md).
+
 ### `@wippy-fe/chat` (not published to npm)
 
 A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — delivered by the Host's `chat.js` bundle. In Web Host 1.0.56 the source package is private and is not installable from npm. The iframe engine injects the shell and auto-registers the tags; the Web Fragment gateway deliberately omits `chat.js`, so fragment pages must not assume these tags are present. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
@@ -369,7 +373,8 @@ Use the same pinned `<version-tag>` as `fe_facade_url` and fetch the release art
 curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o import-map.json
 ```
 
-For this page's baseline, `<version-tag>` is `webcomponents-1.0.56`.
+For the approved combined candidate, the expected `<version-tag>` is
+`webcomponents-1.0.63`. Confirm the tag after the release is published.
 
 The exact keys of the fetched `imports` object are the JavaScript externalization contract:
 
@@ -405,4 +410,62 @@ export default {
 
 `peerDependencies` are not an identical copy of this list. Declare only npm package roots the artifact actually imports; import-map subpaths such as `@wippy-fe/log/logger` are not separate peer packages.
 
-This contract does not define a universal host-versus-app merge or override precedence. Hosted mode uses the map delivered by the pinned Web Host release. Standalone mode uses the complete copied map in `app.html`.
+See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map) for the AppConfig import-map precedence and lifecycle.
+
+## PrimeVue 4.5.5 browser exports
+
+The approved combined candidate pins PrimeVue 4.5.5. Its generated
+`primevue-export-inventory.json` is served from the versioned Host root:
+
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
+```
+
+The inventory JSON has top-level `schemaVersion`, `package`, `counts`,
+`exports`, and `entries` fields. `exports` records PrimeVue's public patterns;
+the sorted `entries` array records each concrete runtime specifier and target.
+Each runtime entry carries `specifier`, package-relative `target`, `sha256`,
+`kind`, and `typesTarget` when a declaration exists. Type-only entries are also
+listed there but are not import-map keys. It covers 274 JavaScript runtime
+entries, including the root and all
+`./*` paths declared by PrimeVue. The entries include components, aliases,
+services, directives, utilities, and style modules; 129 entries are style
+modules. Four exports are type-only and do not become browser map entries.
+Four runtime entries have no declaration target. The inventory has 278 unique
+specifiers across runtime and type-only exports. Its exact file list and
+per-entry targets are the source of truth; do not maintain a parallel list.
+
+The map contains exact keys such as `primevue` and `primevue/button`. Browser
+import maps do not support a `primevue/*` wildcard, so every runtime subpath has
+its own key. The Host resolves the package root from PrimeVue's root manifest
+and expands the declared export patterns to concrete package-relative targets.
+`@primevue/icons` and `@primeuix/*` remain in the shared vendor graph and
+are not direct map entries. The candidate pins `@primevue/icons` 4.5.5,
+`@primeuix/styled` 0.7.4, `@primeuix/styles` and `@primeuix/themes` 2.0.3, and
+`@primeuix/utils` 0.6.4. The map has no direct JSON or CSS exports. Assets
+reachable through the JavaScript graph must still be present in the built Host
+distribution.
+
+```typescript
+import Button from 'primevue/button'
+```
+
+The complete import-map snapshot remains the Rollup externalization contract.
+Adding a map entry does not change an already-built consumer. Rebuild an
+application or component against the pinned map so its exact PrimeVue imports
+resolve to the shared Host graph. JavaScript externalization does not provide
+PrimeVue CSS. Request the required CSS separately through the documented Host
+CSS keys. The local preview CSS dependency remains a Phase 4 prerequisite.
+
+This inventory belongs to the unpublished candidate. Confirm its URL and
+contents against the released Host artifact before relying on it.
+
+PrimeVue Chart and Editor load `chart.js` 4.5.1 and `quill` 2.0.3 through dynamic chunks. The Host bundles both dependencies locally, so applications using mapped PrimeVue exports do not install them for those chunks. The Host snapshot has 294 map entries, including 274 PrimeVue entries. The Host injects `@wippy-fe/vue-utils` as the 295th key; this is not an application-level mapping. Use the exact pinned Host snapshot as the build contract.
+
+## AppConfig import-map overrides
+
+`AppConfig.importMap` can replace matching page or Host entries, including Vue, PrimeVue, and Wippy packages. Exact keys match one specifier. A trailing slash maps a prefix, and the target must also end in a slash. Use `scopes` to select mappings by importing module URL. Relative targets resolve against the document base URL.
+
+A mapped CDN module may still import other bare specifiers. Add mappings for those dependencies or use a self-contained CDN module. Runtime mapping does not rewrite dependencies already embedded in a consumer bundle.
+
+Use this field only with a deployed Host release that documents support for it.

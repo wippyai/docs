@@ -43,6 +43,10 @@ Web Host CDN 从同一个带版本的目录中提供多个入口点。选哪一�
 | `chat.js` | 暴露聊天 store 和 WebSocket 客户端的无头 ESM 模块。用于构建完全自定义的 UI。 |
 | `ws.js` | 不依赖 Vue 或 Pinia 的独立 WebSocket 服务。用于底层实时集成。 |
 
+尚未发布的 1.0.63 候选版本会在模块脚本运行前，将完整 Host import map 嵌入
+`iframe.html` 和 `chat-iframe.html`。独立的 `chat-iframe.html` 会在加载时自动启动应用，
+加载后不要再调用 `initChatApp`。
+
 对于基于标准 `wippy/facade` 的部署，你永远不需要直接引用这些路径。facade 从其配置中读取 `fe_facade_url`，选择与 `fe_mode` 匹配的 JS 模块入口（compat 用 `module.js`，managed 用 `managed-layout.js`），并自动构造正确的 URL。
 
 ## CDN 版本管理

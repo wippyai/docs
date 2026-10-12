@@ -189,7 +189,8 @@
           {"title": "Proxy と分離", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS injection", "path": "frontend/web-host/css-injection"},
           {"title": "テーマの永続化", "path": "frontend/web-host/theme-persistence"},
-          {"title": "@wippy-fe パッケージ", "path": "frontend/web-host/packages"}
+            {"title": "@wippy-fe パッケージ", "path": "frontend/web-host/packages"},
+            {"title": "Iconify プロバイダー", "path": "frontend/web-host/iconify"}
         ]
       },
       {

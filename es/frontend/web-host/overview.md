@@ -43,6 +43,11 @@ Cada entrada se sirve desde el CDN en `<release-tag>/<entry>` (p. ej. `/<release
 | `chat.js` | Módulo ESM sin interfaz que expone los stores de chat y el cliente WebSocket. Úselo para construir UIs completamente personalizadas. |
 | `ws.js` | Servicio WebSocket independiente sin dependencia de Vue ni Pinia. Úselo para integraciones de tiempo real de bajo nivel. |
 
+El candidato 1.0.63, aún sin publicar, incluye el import map completo de Host
+en `iframe.html` y `chat-iframe.html` antes de ejecutar los módulos. La entrada
+independiente `chat-iframe.html` inicia su app al cargarse; no llame a
+`initChatApp` después.
+
 Para los despliegues estándar basados en `wippy/facade` nunca referencia estas rutas directamente. El facade lee `fe_facade_url` de su configuración, selecciona el punto de entrada de módulo JS que corresponde a `fe_mode` (`module.js` para compat, `managed-layout.js` para managed) y construye la URL correcta automáticamente.
 
 ## Versionado del CDN

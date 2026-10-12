@@ -351,3 +351,71 @@ export default {
 `peerDependencies` はこの一覧の同一のコピーではありません。アーティファクトが実際に import する npm パッケージのルートだけを宣言してください。`@wippy-fe/log/logger` のようなインポートマップのサブパスは、独立したピアパッケージではありません。
 
 この契約は、ホストとアプリの汎用的なマージやオーバーライドの優先順位を定義しません。ホストありモードでは、ピン留めされた Web ホストのリリースが配信するマップを使います。スタンドアロンモードでは、`app.html` にコピーされた完全なマップを使います。
+
+
+## 静的 Iconify コレクション
+
+Host リリースには静的 Tabler コレクションが `iconify/tabler.json` に含まれます。これは npm パッケージではなくリリースアセットです。使用するには `AppConfig.iconify.providers` を明示的に設定します。[Iconify プロバイダー](./iconify.md)を参照してください。
+
+## PrimeVue 4.5.5 のブラウザー向けエクスポート
+
+承認済みの統合候補では PrimeVue 4.5.5 を固定します。生成された
+inventory はバージョン付き Host のルートから配信します。統合候補は Web Host
+1.0.63 と公開パッケージ 0.0.63 を対象にしています。
+これらのバージョンは未公開です。使用前にタグを確認してください。
+`primevue-export-inventory.json`:
+
+```bash
+curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
+```
+
+このインベントリには公開 export パターンと、具体的なランタイム指定子が
+すべて記録されます。ルートと PrimeVue が宣言するすべての `./*` パスを
+含む、274 個の JavaScript ランタイム項目です。コンポーネント、エイリアス、
+サービス、ディレクティブ、ユーティリティ、style モジュールを含み、style
+モジュールは 129 個です。型専用の 4 項目はブラウザーマップに入りません。
+4 個のランタイム項目には型宣言ターゲットがありません。ランタイムと型の
+指定子は合計 278 個です。正確なファイル一覧とターゲットはインベントリを
+参照し、別の手作業リストを維持しないでください。
+
+マップには `primevue` や `primevue/button` のような正確なキーがあります。
+ブラウザーの import map は `primevue/*` のワイルドカードをサポートしない
+ため、各ランタイムサブパスには個別のキーが必要です。Host は PrimeVue
+ルートの manifest からパッケージルートを解決し、宣言された export パターンを
+パッケージ相対の具体的なターゲットへ展開します。`@primevue/icons` と
+`@primeuix/*` は共有 vendor graph に含まれ、直接のマップキーにはなりません。
+候補では `@primevue/icons` 4.5.5、`@primeuix/styled` 0.7.4、
+`@primeuix/styles` と `@primeuix/themes` 2.0.3、`@primeuix/utils` 0.6.4 を固定します。
+JSON と CSS の直接 export はありません。JavaScript graph から到達できる
+リソースも、ビルド済み Host 配布物に含める必要があります。
+
+```typescript
+import Button from 'primevue/button'
+```
+
+完全な import map のスナップショットが引き続き Rollup の external 契約です。
+マップにキーを追加しても、ビルド済みの利用側 bundle は変わりません。固定した
+マップでアプリケーションとコンポーネントを再ビルドし、正確な PrimeVue import
+が Host の共有 graph を使うようにしてください。JavaScript の external 化では
+PrimeVue CSS は配信されません。必要な CSS は文書化された Host CSS key で別に
+要求してください。ローカル preview CSS は Phase 4 の前提条件です。
+
+この inventory は未公開候補の成果物です。使用前に公開された Host 成果物と URL、
+内容を照合してください。
+
+JSON のトップレベルには `schemaVersion`、`package`、`counts`、`exports`、
+`entries` があります。`exports` は PrimeVue の公開パターン、ソート済みの
+`entries` 配列は具体的な runtime specifier と target を示します。runtime
+entry には `specifier`、package 相対 `target`、`sha256`、`kind`、宣言がある場合は
+`typesTarget` が含まれます。型のみの entry も `entries` にありますが、import map
+のキーではありません。
+
+PrimeVue Chart と Editor は dynamic chunk で `chart.js` 4.5.1 と `quill` 2.0.3 を読み込みます。Host は両方の依存関係をローカルに bundle します。PrimeVue の mapped export を使う application は、この chunk のためにこれらを別途 install する必要はありません。Host map には 294 個の key があり、そのうち 274 個は PrimeVue です。Host は `@wippy-fe/vue-utils` を 295 個目の key として注入します。これはアプリケーション側の mapping ではありません。build contract には固定済みの Host snapshot をそのまま使用してください。
+
+## AppConfig の import map 上書き
+
+`AppConfig.importMap` は Vue、PrimeVue、Wippy を含むページまたは Host の一致するエントリーを置き換えられます。完全一致キーはひとつの specifier に一致します。末尾がスラッシュのキーは prefix に一致し、値の末尾もスラッシュにします。`scopes` は import 元 module URL に応じて適用します。相対 URL はドキュメントの base URL を基準にします。
+
+CDN module が別の bare specifier を import する場合、その依存にも map エントリーを追加するか、依存を含む CDN URL を使います。実行時の map は consumer bundle にすでに含まれる依存を書き換えません。[ブートストラップの手順](./bootstrap.md#appconfig-import-map)に優先順位、解除、更新の扱いがあります。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。

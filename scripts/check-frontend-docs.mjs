@@ -132,6 +132,8 @@ for (const path of await markdownFiles(root)) {
   reject(file, content, /\bmerged import\s*map\b|\bmerged importmap\b/i, 'undocumented import-map merge claim')
   reject(file, content, /host(?:'s)? (?:own )?entr(?:y|ies) override/i, 'undocumented host-entry precedence claim')
   reject(file, content, /universal precedence[^\n]*host-provided|host-provided runtime first/i, 'undocumented universal import-map precedence claim')
+  reject(file, content, /@primevue\/core\/icons/, 'use the published @primevue/icons package name')
+  reject(file, content, /295 entries because it includes one additional application-level mapping/i, 'the 295th Host key is Host-injected @wippy-fe/vue-utils')
   reject(file, content, /\bMUST\b[^\n]*\bdist\/(?:app\.html|wippy-meta\.json)\b/, 'dist is not a universal served-output path')
   reject(file, content, /CLAUDE\.md/i, 'canonical docs must not require a particular agent-instruction filename')
   reject(file, content, /only imported specifiers|only exact bare specifiers present/i, 'Rollup externals must contain every key in the fetched target-host import map')
@@ -151,7 +153,31 @@ for (const path of await markdownFiles(root)) {
   reject(file, content, /\bpositions\s*=\s*["']?3\b/i, 'invented three-position component API; use the reviewed custom-sibling contract')
   reject(file, content, /\bproject-bound\b[^\n]{0,80}\b(?:discouraged|non-compliant|reject)\b/i, 'project-bound status must be exactly UNSUPPORTED with standard CI failure')
 
+  if (/^[^/]+\/frontend\/web-host\/bootstrap\.md$/.test(file)) {
+    for (const term of ['AppConfig.importMap', 'imports', 'scopes', 'null', 'reload', 'native import map']) {
+      if (!content.includes(term)) errors.push(`${file}: AppConfig import-map contract is missing ${term}`)
+    }
+  }
+  if (/^[^/]+\/frontend\/micro-frontends\/build-system\.md$/.test(file)) {
+    for (const term of ['CI_COMMIT_TAG', 'APP_TAG']) {
+      if (!content.includes(term)) errors.push(`${file}: release tag source is missing ${term}`)
+    }
+  }
+  if (/^[^/]+\/frontend\/web-host\/packages\.md$/.test(file)) {
+    for (const term of ['@primevue/icons', '@wippy-fe/vue-utils', '295']) {
+      if (!content.includes(term)) errors.push(`${file}: package snapshot guidance is missing ${term}`)
+    }
+  }
+  if (/^[^/]+\/frontend\/web-host\/iconify\.md$/.test(file)) {
+    for (const term of ['$schema', 'wippy-context-2.2', 'SetConfig']) {
+      if (!content.includes(term)) errors.push(`${file}: Iconify update guidance is missing ${term}`)
+    }
+  }
+
   for (const block of codeBlocks) {
+    if (/<Icon\b/.test(block.content) && !/import\s*\{\s*Icon\s*\}\s*from\s*['"]@iconify\/vue['"]/.test(block.content)) {
+      errors.push(`${file}:${lineOf(content, block.offset)} Vue Icon example must import Icon from @iconify/vue`)
+    }
     reject(file, content, /window(?:\.parent)?\.location\b/, 'copyable child code infers host context from browser location', block.content, block.offset)
     reject(file, content, /window\.parent\.postMessage\b/, 'copyable code bypasses AppConfig/router/proxy', block.content, block.offset)
     reject(file, content, /shadowRoot\.innerHTML\s*=/, 'copyable code rewrites a mounted shadow tree', block.content, block.offset)
@@ -601,8 +627,71 @@ if (!/%~dp0make\.ps1/.test(batFence) || /\bnpm(?:\.cmd)?\s+run\s+build\b/.test(b
   errors.push('micro-frontends/build-system.md: make.bat must only delegate to make.ps1')
 }
 if (!buildSystem.includes('https://web-host.wippy.ai/<release-tag>/import-map.json')
-  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json')) {
+  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json')) {
   errors.push('micro-frontends/build-system.md: canonical CDN import-map URL must be explicit')
+}
+
+const locales = ['en', 'de', 'es', 'ja', 'ko', 'pt', 'ru', 'zh']
+for (const locale of locales) {
+  const packagesPath = join(process.cwd(), locale, 'frontend', 'web-host', 'packages.md')
+  const packages = await readFile(packagesPath, 'utf8')
+  if (!packages.includes('primevue-export-inventory.json')
+    || !packages.includes('4.5.5')
+    || !packages.includes('274')
+    || !packages.includes('294')
+    || !packages.includes('schemaVersion')
+    || !packages.includes('entries')
+    || !packages.includes('chart.js')
+    || !packages.includes('quill')
+    || !packages.includes('4.5.1')
+    || !packages.includes('2.0.3')
+    || !packages.includes('1.0.63')
+    || !packages.includes('0.0.63')) {
+    errors.push(`${locale}/frontend/web-host/packages.md: PrimeVue export inventory contract is incomplete`)
+  }
+  const buildSystemPath = join(process.cwd(), locale, 'frontend', 'micro-frontends', 'build-system.md')
+  const buildSystem = await readFile(buildSystemPath, 'utf8')
+  if (!buildSystem.includes('APP_URL')
+    || !buildSystem.includes('APP_IGNORE_TAG')
+    || !buildSystem.includes('build:site:relative')
+    || !buildSystem.includes('dist/import-map.json')
+    || !buildSystem.includes('/undefined/')
+    || !/\$env:APP_URL = 'http:\/\/localhost:5173'\r?\n\$env:APP_IGNORE_TAG = '1'\r?\npnpm run build\r?\n```/.test(buildSystem)
+    || !buildSystem.includes('pnpm run build:site')) {
+    errors.push(`${locale}/frontend/micro-frontends/build-system.md: Host URL and import-map verification guidance is incomplete`)
+  }
+  const overviewPath = join(process.cwd(), locale, 'frontend', 'web-host', 'overview.md')
+  const overview = await readFile(overviewPath, 'utf8')
+  if (!overview.includes('chat-iframe.html')
+    || !overview.includes('1.0.63')
+    || !overview.includes('initChatApp')) {
+    errors.push(`${locale}/frontend/web-host/overview.md: standalone chat auto-start contract is incomplete`)
+  }
+  const bootstrapPath = join(process.cwd(), locale, 'frontend', 'web-host', 'bootstrap.md')
+  const bootstrap = await readFile(bootstrapPath, 'utf8')
+  if (!bootstrap.includes('waitForCustomConfig')
+    || !bootstrap.includes('iframe.src')
+    || !bootstrap.includes('event.origin')
+    || !bootstrap.includes('event.source')
+    || !bootstrap.includes('get-config')
+    || !bootstrap.includes('set-config')) {
+    errors.push(`${locale}/frontend/web-host/bootstrap.md: iframe handshake ordering and source checks are incomplete`)
+  }
+  const entryPointPath = join(process.cwd(), locale, 'frontend', 'web-host', 'entry-point.md')
+  const entryPoint = await readFile(entryPointPath, 'utf8')
+  if (!entryPoint.includes('iframe_origin')
+    || !entryPoint.includes('set-config')
+    || !entryPoint.includes('CORS')) {
+    errors.push(`${locale}/frontend/web-host/entry-point.md: live config and backend-origin guidance is incomplete`)
+  }
+}
+
+const primeVueDocs = await readFile(join(root, 'web-host/packages.md'), 'utf8')
+const primeVueExample = [...primeVueDocs.matchAll(/```typescript\n([\s\S]*?)```/g)]
+  .map((match) => match[1])
+  .find((block) => /from ['"]primevue\/button['"]/.test(block))
+if (!primeVueExample) {
+  errors.push('web-host/packages.md: exact PrimeVue browser subpath example is missing')
 }
 
 const webComponent = await readFile(join(root, 'micro-frontends/web-component.md'), 'utf8')

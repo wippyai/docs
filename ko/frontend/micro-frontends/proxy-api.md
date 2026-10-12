@@ -90,7 +90,7 @@ iframe/Web Fragment 채널로 남아 있습니다.
 
 ### `config`
 
-호스트가 전달하는 자식 애플리케이션 설정입니다. 함수가 아닌 평범한 객체이며, 직접 import해서 동기적으로 읽을 수 있습니다. 새 문서는 현재의 `wippy-context-2.0` 계약만을 대상으로 합니다.
+호스트가 전달하는 자식 애플리케이션 설정입니다. 함수가 아닌 평범한 객체이며 직접 import해 동기적으로 읽을 수 있습니다. 이 페이지는 현재 `wippy-context-2.2` 계약을 설명합니다.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,17 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1080,7 +1091,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Config 재정의
 
-페이지는 별도 배포 없이 자식에게 노출되는 일부 config 필드를 페이지 단위로 재정의할 수 있습니다. 재정의 형태는 호환성을 위해 여전히 `customization`을 사용하며, 호스트는 페이지가 `wippy-context-2.0` config를 받기 전에 그 값들을 현재 자식의 `theming.global` 결과에 투영합니다.
+페이지는 별도 배포 없이 자식 대상 설정 필드 일부를 페이지별로 재정의할 수 있습니다. 호환성을 위해 재정의 형식은 계속 `customization`을 사용합니다. Host는 현재 `wippy-context-2.2` 설정을 자식에 전달하기 전에 값을 `theming.global`에 반영합니다.
 
 ### 재정의 설정하기
 
@@ -1237,3 +1248,8 @@ app.use(router)
 ```
 
 Vue가 `#app`에 마운트되면 `<wippy-loading>` 요소를 자동으로 대체합니다.
+
+
+## 하위 앱의 Iconify 구성
+
+Host는 명시적으로 구성한 `AppConfig.iconify`를 최상위 필드로 전달합니다. 생략하면 온라인 기본값을 사용합니다. 소스는 `hostConfig`나 Proxy API가 아니라 AppConfig에서 구성하세요. [Iconify 공급자](../web-host/iconify.md)를 참조하세요.

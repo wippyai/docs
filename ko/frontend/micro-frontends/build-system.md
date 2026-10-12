@@ -104,4 +104,61 @@ export default {
 
 스냅샷에는 출처와 해시가 포함되어야 합니다. 스냅샷에 없는 의존성은, 문서화된 다른 빌드 규칙이 적용되지 않는 한 번들에 포함됩니다.
 
-Web Host 1.0.56 기준의 정식 스냅샷 URL은 `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json`입니다. 로컬 애플리케이션 URL, 고정되지 않은 `latest` URL, 수동으로 재구성한 패키지 목록으로 바꾸지 마세요.
+승인된 통합 Web Host 1.0.63 후보의 예상 스냅샷 URL은
+`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`입니다. 배포 후
+태그를 확인하세요. 로컬 애플리케이션 URL, 고정되지 않은 `latest` URL, 수동으로
+재구성한 패키지 목록으로 바꾸지 마세요.
+
+후보의 PrimeVue 4.5.5 항목은 공개 export 패턴에서 생성됩니다. Host의
+`primevue-export-inventory.json`은 구체적인 런타임 대상을 기록합니다. 와일드카드나
+수동 부분집합을 사용하지 말고 정확한 스펙파이어를 사용하세요. [Host 패키지](../web-host/packages.md)를 참조하세요.
+
+### Host URL과 배포 경로
+
+Web Host 패키지 빌드에는 `APP_URL`이 필요합니다. 공개 HTTP(S) origin과 선택적
+배포 경로를 설정하세요. 누락되거나 잘못된 URL, 인증 정보, query, fragment,
+경로 traversal은 빌드에서 거부됩니다. `/wippy` 같은 경로를 유지하세요. Host는
+`dist/import-map.json`의 절대 URL을 만들 때 이 경로를 사용합니다.
+
+경로 아래로 프로덕션 빌드를 만들려면 배포 URL로 전체 패키지 빌드를 실행하세요.
+release tag를 유지하려면 `APP_IGNORE_TAG`를 설정하지 않습니다.
+
+```powershell
+$env:APP_URL = 'https://cdn.example/wippy'
+Remove-Item Env:APP_IGNORE_TAG -ErrorAction SilentlyContinue
+pnpm run build
+```
+
+tag 없는 로컬 빌드에서는 두 환경 변수를 명시적으로 설정합니다.
+
+```powershell
+$env:APP_URL = 'http://localhost:5173'
+$env:APP_IGNORE_TAG = '1'
+pnpm run build
+```
+
+`APP_IGNORE_TAG=1`은 release-tag 접두사를 제거합니다. 로컬 테스트에 사용하고
+versioned production deployment에는 사용하지 마세요. `APP_URL`은 항상 필요합니다.
+전체 `pnpm run build`는 proxy, library, type artifact도 준비합니다.
+`pnpm run build:site`는 이러한 선행 조건이 갖춰진 뒤 site 코드만 변경했을 때의
+incremental build에만 사용하세요.
+`build:site`는 Vite absolute base에 `${APP_URL}/${tagPrefix}`를 사용합니다.
+`build:site:relative`는 Vite relative asset base에 tag prefix를 사용하지만,
+import-map 값은 계속 absolute URL입니다.
+
+후보에서 `APP_URL=https://cdn.example/wippy`와 tag `webcomponents-1.0.63`은
+`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`을 생성합니다.
+vendor와 dynamic chunk URL도 origin, 배포 경로, tag를 유지해야 합니다. 빌드 후
+`dist/import-map.json`에서 모든 `imports` 값이 설정한 origin과 경로 아래의 absolute
+HTTP(S) URL인지, `/undefined/`가 없는지 확인하세요. 이어 실제 배포 경로로 map과
+참조된 리소스를 요청하세요. 빌드 성공만으로 routing이 확인되지는 않습니다.
+
+## AppConfig import map URL
+
+상대 map 대상 URL은 새 문서의 base URL을 기준으로 해석됩니다. CDN과 로컬 mirror에는 버전과 배포 경로를 고정한 절대 URL을 사용하세요. 예를 들면 `https://cdn.example/wippy/vendor/`와 `http://localhost:5173/vendor/`입니다. CDN module이 다른 bare specifier를 가져오면 그 의존성도 map에 추가해야 합니다. 런타임 map은 이미 bundle에 포함된 import를 바꾸지 않습니다. [부트스트랩 순서](../web-host/bootstrap.md#appconfig-import-map)를 참조하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.
+
+## Release tag source
+
+빌드 태그는 `CI_COMMIT_TAG`에서 가져오며, 값이 없으면 `APP_TAG`를 사용합니다. CI 외부에서 버전이 지정된 산출물을 빌드할 때는 `APP_TAG`를 설정하세요.

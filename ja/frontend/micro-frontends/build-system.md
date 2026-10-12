@@ -97,4 +97,64 @@ export default {
 
 スナップショットには出所とハッシュを含めなければなりません。スナップショットに存在しない依存関係は、別のドキュメント化されたビルドルールが当てはまらない限りバンドルされます。
 
-Web Host 1.0.56 baseline の canonical URL は `https://web-host.wippy.ai/webcomponents-1.0.56/import-map.json` です。local application URL、unpinned `latest` URL、手動再構成 list に置換しないでください。
+承認済みの統合候補 Web Host 1.0.63 では、スナップショット URL は
+`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json` の予定です。
+リリース後にタグを確認してください。local application URL、unpinned `latest` URL、
+手動で再構成した list に置換しないでください。
+
+候補の PrimeVue 4.5.5 map entry は公開 export pattern から生成します。Host の
+`primevue-export-inventory.json` に具体的な runtime target を記録します。Wildcard
+や手作業の subset ではなく、正確な指定子を使ってください。[Host パッケージ](../web-host/packages.md)を参照してください。
+
+### Host URL とデプロイパス
+
+Web Host package の build には `APP_URL` が必要です。公開 HTTP(S) origin と
+必要に応じてデプロイパスを設定します。未設定または無効な URL、認証情報、
+query、fragment、path traversal は build で拒否されます。`/wippy` のような
+パスを保持してください。Host は `dist/import-map.json` の絶対 URL にこのパスを
+含めます。
+
+パス配下へ production build するには、デプロイ URL を指定して package 全体を
+build します。release tag を保持するため、`APP_IGNORE_TAG` は設定しません。
+
+```powershell
+$env:APP_URL = 'https://cdn.example/wippy'
+Remove-Item Env:APP_IGNORE_TAG -ErrorAction SilentlyContinue
+pnpm run build
+```
+
+tag なしの local build では両方を明示します。
+
+```powershell
+$env:APP_URL = 'http://localhost:5173'
+$env:APP_IGNORE_TAG = '1'
+pnpm run build
+```
+
+`APP_IGNORE_TAG=1` は release-tag prefix を除きます。local test 用であり、
+versioned production deployment には使いません。`APP_URL` は常に必要です。
+完全な `pnpm run build` は proxy、library、types の成果物も準備します。
+`pnpm run build:site` はこれらの前提がそろった後、site のみを変更した場合の
+incremental build に使います。
+`build:site` は Vite の absolute base に `${APP_URL}/${tagPrefix}` を使います。
+`build:site:relative` は Vite の relative asset base に tag prefix を使いますが、
+import-map value は引き続き absolute URL です。
+
+候補では `APP_URL=https://cdn.example/wippy` と tag
+`webcomponents-1.0.63` から
+`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json` が生成されます。
+vendor と dynamic chunk の URL も origin、デプロイパス、tag を保持します。
+build 後に `dist/import-map.json` を確認してください。全 `imports` value が設定した
+origin とパス配下の絶対 HTTP(S) URL であり、`/undefined/` を含まないことを確認します。
+次に実際のデプロイルートから map と参照先 resource を取得します。build 成功だけでは
+route を確認できません。
+
+## AppConfig import map の URL
+
+相対 target URL は作成されたドキュメントの base URL に対して解決されます。CDN とローカル mirror には、version と配置 path を固定した絶対 URL を使います。例は `https://cdn.example/wippy/vendor/` と `http://localhost:5173/vendor/` です。CDN module が別の bare specifier を import する場合は、その依存にも map が必要です。実行時 map は bundle 済み import を書き換えません。[ブートストラップの手順](../web-host/bootstrap.md#appconfig-import-map)を参照してください。
+
+このフィールドは、対応が文書化された Host リリースでのみ使用してください。
+
+## Release tag source
+
+build tag は `CI_COMMIT_TAG` を使用し、未設定の場合は `APP_TAG` を使用します。CI 外でバージョン付き成果物を作る場合は `APP_TAG` を設定してください。

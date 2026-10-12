@@ -43,6 +43,11 @@ Web ホストの CDN は、同じバージョン付きディレクトリから�
 | `chat.js` | チャットのストアと WebSocket クライアントを公開するヘッドレスの ESM モジュール。完全にカスタムな UI を作る場合に使います。 |
 | `ws.js` | Vue も Pinia も依存しないスタンドアロンの WebSocket サービス。低レベルのリアルタイム統合に使います。 |
 
+未公開の 1.0.63 候補では、module script の実行前に `iframe.html` と
+`chat-iframe.html` の両方へ完全な Host import map を埋め込みます。
+standalone の `chat-iframe.html` は読み込み時に自動起動します。読み込み後に
+`initChatApp` を呼び出さないでください。
+
 標準の `wippy/facade` ベースのデプロイでは、これらのパスを直接参照することはありません。ファサードは設定から `fe_facade_url` を読み、`fe_mode` に合った JS モジュールエントリ（compat なら `module.js`、managed なら `managed-layout.js`）を選び、正しい URL を自動的に組み立てます。
 
 ## CDN のバージョニング
