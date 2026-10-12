@@ -395,4 +395,4 @@ For the full list of available parameters and their defaults, see the [Facade mo
 
 `import_map` is the facade requirement name. The `/facade/config` response exposes it as `cfg.importMap`. The shell gives that value to the shared import-map bootstrap before importing the Host module, then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map). An import-map change does not affect an existing document; reload or recreate it to use the new map.
 
-Use this field only with a deployed Host release that documents support for it.
+For minimum versions on the direct Host and facade paths, see [Facade module](../../framework/facade.md) and [Bootstrap Sequence](./bootstrap.md).

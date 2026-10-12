@@ -6,6 +6,7 @@ description: "为 Web Host 配置在线 Iconify 源或显式本地集合。"
 # Iconify 提供方
 
 Web Host 默认使用在线 Iconify 源。只有部署需要其他源时，才配置 `AppConfig.iconify.providers`。本页介绍的本地 Tabler 集合是离线部署的显式选项，不会改变默认源。
+直接使用 `AppConfig.iconify` 需要 Web Host 1.0.63 或更高版本。通过 Facade 部署时，最低版本要求请参阅 [Facade 模块](../../framework/facade.md)。
 
 ## 配置提供方
 

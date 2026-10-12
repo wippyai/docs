@@ -6,6 +6,7 @@ description: "Web Host의 온라인 Iconify 소스 또는 명시적 로컬 컬�
 # Iconify 공급자
 
 Web Host는 기본적으로 온라인 Iconify 소스를 사용합니다. 배포에 다른 소스가 필요할 때만 `AppConfig.iconify.providers`를 구성하세요. 이 페이지의 로컬 Tabler 컬렉션은 오프라인 배포를 위한 명시적 선택 사항이며 기본 소스를 바꾸지 않습니다.
+`AppConfig.iconify`를 직접 사용하려면 Web Host 1.0.63 이상이 필요합니다. Facade 배포의 최소 버전은 [Facade 모듈](../../framework/facade.md)을 참고하십시오.
 
 ## 공급자 구성
 

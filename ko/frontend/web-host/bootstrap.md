@@ -230,4 +230,4 @@ import map 업데이트는 document를 만들 때 적용됩니다. 이미 열린
 
 공유 Vue, PrimeVue 또는 Wippy 항목을 바꾸면 Host와 자식 코드의 모듈 또는 서비스 identity가 달라질 수 있습니다. override를 배포하기 전에 공개된 정확한 map으로 통합 동작을 확인하세요.
 
-이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.
+`AppConfig.importMap`을 직접 사용하려면 Web Host 1.0.63 이상이 필요합니다.

@@ -6,6 +6,7 @@ description: "Web Host の Iconify オンラインソースまたは明示的な
 # Iconify プロバイダー
 
 Web Host は既定で Iconify のオンラインソースを使います。別のソースが必要な場合に限り `AppConfig.iconify.providers` を設定してください。このページのローカル Tabler コレクションは、オフライン環境向けの明示的な選択肢です。既定ソースは変更されません。
+`AppConfig.iconify` を直接使うには、Web Host 1.0.63 以降が必要です。Facade 経由で設定する場合の最小バージョンは、[Facade モジュール](../../framework/facade.md)を参照してください。
 
 ## プロバイダーの設定
 

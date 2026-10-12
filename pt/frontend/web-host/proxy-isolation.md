@@ -313,4 +313,4 @@ A mesma função é acessível como `instance.html.inject`, `$W.html` e `import 
 
 `AppConfig.importMap` é configuração global usada quando o Host cria documentos filhos. Um novo iframe ou uma nova ocorrência de Web Fragment recebe o mapa antes da execução dos módulos. Cada ocorrência de Web Fragment tem seu próprio iframe de realm físico. Uma atualização posterior não muda um documento existente; recarregue-o ou crie-o de novo. Consulte a [sequência de inicialização](./bootstrap.md#appconfig-import-map).
 
-Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.
+Para páginas Web Fragment transmitidas, a prontidão do `AppConfig.importMap` composto requer `wippy/views` 0.5.13 ou posterior. Versões anteriores não garantem que o mapa esteja pronto antes do carregamento dos módulos do fragmento.

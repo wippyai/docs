@@ -6,6 +6,7 @@ description: "Configure online Iconify sources or an explicit local collection f
 # Iconify providers
 
 The Web Host uses online Iconify sources by default. Configure `AppConfig.iconify.providers` only when the deployment needs a different source. The local Tabler collection described here is an explicit option for offline deployments. It does not change the default source.
+Direct use of `AppConfig.iconify` requires Web Host 1.0.63 or later. For facade deployments, see the minimum versions in [Facade module](../../framework/facade.md).
 
 ## Configure a provider
 

@@ -313,4 +313,4 @@ Dieselbe Funktion ist als `instance.html.inject`, `$W.html` und `import { html }
 
 `AppConfig.importMap` ist globale Konfiguration für neu erstellte Kinddokumente. Ein neuer iframe oder ein neues Web-Fragment-Vorkommen erhält die Map, bevor seine Module starten. Jedes Web-Fragment-Vorkommen hat ein eigenes physisches Realm-iframe. Eine spätere Aktualisierung ändert kein bereits vorhandenes Dokument; laden Sie es neu oder erstellen Sie es neu. Siehe [Bootstrap-Ablauf](./bootstrap.md#appconfig-import-map).
 
-Verwende dieses Feld nur mit einem bereitgestellten Host-Release, dessen Dokumentation es unterstützt.
+Für gestreamte Web-Fragment-Seiten erfordert die Bereitschaft der zusammengesetzten `AppConfig.importMap` `wippy/views` 0.5.13 oder neuer. Ältere Versionen garantieren nicht, dass die Map bereit ist, bevor Fragment-Module geladen werden.

@@ -313,4 +313,4 @@ const processed = await html.inject(sourceHtml, {
 
 `AppConfig.importMap`은 Host가 자식 document를 만들 때 사용하는 전역 설정입니다. 새 iframe이나 Web Fragment occurrence는 module이 실행되기 전에 map을 받습니다. 각 Web Fragment occurrence는 자체 물리 realm iframe을 가집니다. 이후 config 업데이트는 기존 document를 바꾸지 않으므로 다시 불러오거나 새로 만들어야 합니다. [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요.
 
-이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.
+스트리밍 Web Fragment 페이지에서 합성된 `AppConfig.importMap`이 준비되려면 `wippy/views` 0.5.13 이상이 필요합니다. 이전 버전은 Fragment 모듈이 로드되기 전에 map이 준비된다는 것을 보장하지 않습니다.

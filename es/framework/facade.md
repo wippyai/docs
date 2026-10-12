@@ -301,4 +301,4 @@ La configuración JSON opcional `iconify` se emite como un campo superior de App
 
 El requisito del facade se llama `import_map`, y `/facade/config` lo devuelve como `cfg.importMap`. El shell registra el mapa compuesto mediante el bootstrap compartido antes de importar el módulo del Host. Después pasa `importMap: cfg.importMap` en la configuración inicial de `initWippyApp`. Consulta la [secuencia de bootstrap](../frontend/web-host/bootstrap.md#appconfig-import-map).
 
-Usa este campo solo con una versión desplegada del Host que documente su compatibilidad.
+Los requisitos de Facade `iconify` e `import_map` necesitan `wippy/facade` 0.6.44 o posterior y Web Host 1.0.63 o posterior.

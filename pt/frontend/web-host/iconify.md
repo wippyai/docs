@@ -6,6 +6,7 @@ description: "Configure fontes on-line do Iconify ou uma coleção local para o 
 # Provedores do Iconify
 
 O Web Host usa fontes on-line do Iconify por padrão. Configure `AppConfig.iconify.providers` somente quando a implantação precisar de outra fonte. A coleção local do Tabler nesta página é uma opção explícita para implantações sem conexão. Ela não altera a fonte padrão.
+O uso direto de `AppConfig.iconify` requer Web Host 1.0.63 ou posterior. Para implantações com Facade, consulte as versões mínimas em [Módulo Facade](../../framework/facade.md).
 
 ## Configurar um provedor
 

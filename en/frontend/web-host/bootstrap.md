@@ -291,4 +291,4 @@ An import-map update applies when a document is created. It does not change modu
 
 Overriding a shared Vue, PrimeVue, or Wippy entry can split module or service identity between the Host and child code. Test those integrations against the exact released map before deploying an override.
 
-Use this field only with a deployed Host release that documents support for it.
+Using `AppConfig.importMap` directly requires Web Host 1.0.63 or later.

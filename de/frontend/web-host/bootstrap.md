@@ -233,4 +233,4 @@ Eine Import-Map-Aktualisierung wirkt beim Erstellen eines Dokuments. Sie ändert
 
 Ein Override für Vue, PrimeVue oder Wippy kann die Modul- oder Service-Identität zwischen Host und Kindcode aufteilen. Prüfe diese Integration mit der genauen veröffentlichten Map, bevor du einen Override einsetzt.
 
-Verwende dieses Feld nur mit einem bereitgestellten Host-Release, dessen Dokumentation es unterstützt.
+Die direkte Verwendung von `AppConfig.importMap` erfordert Web Host 1.0.63 oder neuer.

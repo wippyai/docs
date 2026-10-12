@@ -232,4 +232,4 @@ import map の更新は document 作成時に適用されます。既存 documen
 
 Vue、PrimeVue、Wippy の共有エントリーを置き換えると、Host と子コードで module や service の identity が分かれることがあります。置き換えを公開する前に、公開済みの正確な map で統合を確認してください。
 
-このフィールドは、対応が文書化された Host リリースでのみ使用してください。
+`AppConfig.importMap` を直接使うには、Web Host 1.0.63 以降が必要です。

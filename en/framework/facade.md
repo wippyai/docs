@@ -305,4 +305,4 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 
 The facade requirement is named `import_map`, and `/facade/config` returns it as `cfg.importMap`. The shell registers the composed map through the shared bootstrap before importing the Host module. It then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](../frontend/web-host/bootstrap.md#appconfig-import-map).
 
-Use this field only with a deployed Host release that documents support for it.
+The `iconify` and `import_map` facade requirements need `wippy/facade` 0.6.44 or later and Web Host 1.0.63 or later.

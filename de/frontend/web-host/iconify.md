@@ -6,6 +6,7 @@ description: "Online-Iconify-Quellen oder eine lokale Sammlung für den Web Host
 # Iconify-Anbieter
 
 Der Web Host verwendet standardmäßig Online-Quellen von Iconify. Konfigurieren Sie `AppConfig.iconify.providers` nur, wenn die Bereitstellung eine andere Quelle benötigt. Die hier beschriebene lokale Tabler-Sammlung ist eine ausdrückliche Option für Offline-Bereitstellungen. Sie ändert nicht die Standardquelle.
+Die direkte Verwendung von `AppConfig.iconify` erfordert Web Host 1.0.63 oder neuer. Für Facade-Bereitstellungen finden Sie die Mindestversionen im [Facade-Modul](../../framework/facade.md).
 
 ## Anbieter konfigurieren
 

@@ -230,4 +230,4 @@ Uma atualização do import map se aplica ao criar um documento. Ela não muda a
 
 Substituir uma entrada compartilhada de Vue, PrimeVue ou Wippy pode separar a identidade de módulos ou serviços entre o Host e o código filho. Teste a integração com o mapa publicado exato antes de implantar uma substituição.
 
-Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.
+O uso direto de `AppConfig.importMap` requer Web Host 1.0.63 ou posterior.

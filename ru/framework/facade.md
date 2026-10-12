@@ -301,4 +301,4 @@ wippy publish --embed facade:public_files
 
 Требование фасада называется `import_map`, а `/facade/config` возвращает его как `cfg.importMap`. Shell регистрирует составленную карту через общий bootstrap до импорта модуля Host. Затем он передает `importMap: cfg.importMap` в начальную конфигурацию `initWippyApp`. См. [Последовательность запуска](../frontend/web-host/bootstrap.md#appconfig-import-map).
 
-Используйте это поле только с развернутой версией Host, в документации которой указана поддержка.
+Для параметров Facade `iconify` и `import_map` требуются `wippy/facade` версии 0.6.44 или новее и Web Host версии 1.0.63 или новее.

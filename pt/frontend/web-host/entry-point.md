@@ -338,4 +338,4 @@ O receptor aceita `SetConfig` do iframe somente da janela física do pai. Quando
 
 O nome do requisito do facade é `import_map`; `/facade/config` o devolve como `cfg.importMap`. O shell passa esse valor ao bootstrap compartilhado do import map antes de importar o módulo do Host. Depois, passa `importMap: cfg.importMap` na configuração inicial de `initWippyApp`. Consulte a [sequência de inicialização](./bootstrap.md#appconfig-import-map). Uma alteração no import map não afeta um documento existente. Recarregue-o ou crie-o novamente para usar o novo mapa.
 
-Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.
+Consulte [Módulo Facade](../../framework/facade.md) e [Sequência de bootstrap](./bootstrap.md) para ver as versões mínimas das integrações diretas com Host e com Facade.
