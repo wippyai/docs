@@ -42,7 +42,9 @@ General displays saved choices separately from public Façade readback. "Saved c
 
 In Icons, choose Download set, search by collection name or ID, select a result, and choose Review available version. Review the exact version before choosing Download. To add SVG files, choose Add SVG, enter a custom collection name, select the files, and choose Validate and import. Confirm replacement separately for each existing icon name. The server validates copied SVG content before activation. Saved sets show local previews and revision controls.
 
-In Fonts, choose Download family, search by family name or ID, select a result, and review an exact version before downloading. The supported recipe retains normal variable Latin and Latin-ext faces, including Polish characters. It does not download every style or subset in a Fontsource package. Saved families include embedded and manually imported assets. Select a family to preview its local files at normal and bold weights. A preview does not change the application font. Check for update reviews an available version; rollback and deactivate manage the saved selection.
+The SVG importer accepts only `svg`, `g`, `defs`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`, `linearGradient`, `radialGradient`, `stop`, `clipPath`, `mask`, and `use`. It also checks element nesting and attributes, and it permits local resource references only. It rejects unsupported elements and attributes, external resource references, DTDs, comments, and processing instructions. For example, `cellphone-arrow-down-twotone` from `@iconify-json/line-md` version `1.2.16` contains `<animate>` elements, so import rejects it as an unsupported SVG element. Use static artwork that fits the supported subset.
+
+In Fonts, choose Download family, search by family name or ID, select a result, and review an exact version before downloading. The provider download recipe remains two normal variable faces, Latin and Latin-ext, including Polish characters. It does not download every style or subset in a Fontsource package. Saved families include embedded and manually imported assets. Select a family to preview its local files at normal and bold weights. A preview does not change the application font. Check for update reviews an available version; rollback and deactivate manage the saved selection.
 
 The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Downloading is a separate action and requires Allow downloads in General. Actions show pending, saved, or failed status. If a status request fails, Check operation status retries the same operation without starting another download. Advanced details contains request IDs, hashes, and diagnostic details.
 
@@ -54,15 +56,39 @@ The persistent data root uses these physical input paths:
       iconify/library/<prefix>.json
       fonts/library/<family-id>/
         fontset.json
-        files/latin.woff2
-        files/latin-ext.woff2
+        files/<face-id>.woff2
         notices/license.txt
 
 For icons, write <prefix>.json.part, close it, then rename it to <prefix>.json. The final file must be a complete supported Iconify collection, and its prefix must match the filename.
 
-For fonts, copy both WOFF2 faces and the complete OFL-1.1 notice, then write fontset.json last. The physical input manifest has only schemaVersion, id, metadata, and files at the top level. Each file entry has only path, size, and sha256. Its metadata describes the family and exactly two variable faces. The face paths in the input manifest are files/latin.woff2 and files/latin-ext.woff2. The core maps them to faces/latin.woff2 and faces/latin-ext.woff2 in its committed manifest. The committed manifest format is internal output and is not the physical input format. Use the exact sizes and lowercase SHA-256 digests of the copied files.
+For fonts, copy one or more normal WOFF2 faces to `files/<face-id>.woff2`, add the OFL-1.1 notice at `notices/license.txt`, and write `fontset.json` last. The physical manifest has only `schemaVersion`, `id`, `metadata`, and `files` at the top level. Each `files` entry has only `path`, `size`, and lowercase `sha256`, and the scanned folder must contain exactly the manifest and its declared files. The `metadata` object has `family`, `style: "normal"`, `fontDisplay: "swap"`, `license: "OFL-1.1"`, and one `faces` entry for every WOFF2 file. Each face uses `id`, `path`, `style`, `weight`, `fontDisplay`, and `unicodeRange`; variable faces also use `axes`. The input path `files/<face-id>.woff2` becomes `faces/<face-id>.woff2` in the committed manifest. The committed manifest format is internal output, not the physical input format.
 
-Each font face can be up to 20 MiB, the notice can be up to 1 MiB, and all three files together can be up to 100 MiB. The validator checks both WOFF2 files and requires the notice to be UTF-8 text that contains the expected OFL marker.
+Face IDs are 1 to 64 lowercase letters, digits, and single hyphens. Each ID must start and end with a letter or digit, and cannot contain consecutive hyphens. Use the same ID in the face path and metadata. Static faces use a decimal weight string such as `"400"` and omit `axes`. Variable faces use a weight range such as `"100 900"` and matching `axes.wght.min` and `axes.wght.max` values. The validator checks the WOFF2 header and table directory. Static files cannot contain `fvar`; variable files must contain `fvar` and declare the supported `wght` axis. It does not decompress the font to verify numeric axis bounds, static weight or glyph coverage. Supply accurate declarations for the copied font files.
+
+Declare a comma-separated Unicode range using `U+HEX` code points or `U+HEX-HEX` ranges. The validator checks the range syntax and writes it into generated CSS. Choose ranges that match the glyph coverage of each subset. The manifest has no field for a CSS URL or a `local()` fallback.
+
+The face example below shows a static face and a variable face inside `metadata.faces`. Put one file entry in `files` for each face and one for the notice, using the real byte size and SHA-256 digest of each copied file.
+
+    {
+      "id": "latin-regular",
+      "path": "files/latin-regular.woff2",
+      "style": "normal",
+      "weight": "400",
+      "fontDisplay": "swap",
+      "unicodeRange": "U+0000-00FF"
+    }
+
+    {
+      "id": "latin-variable",
+      "path": "files/latin-variable.woff2",
+      "style": "normal",
+      "weight": "100 900",
+      "axes": { "wght": { "min": 100, "max": 900 } },
+      "fontDisplay": "swap",
+      "unicodeRange": "U+0100-02FF"
+    }
+
+Each WOFF2 face can be up to 20 MiB. The notice can be up to 1 MiB and must be UTF-8 text containing the OFL-1.1 marker. A distribution can contain at most 512 files total, including the notice, so it can have up to 511 faces. The combined distribution limit is 100 MiB.
 
 The core copies input bytes to private staging and validates the copied content before it can replace an active revision. It preserves the last committed valid revision and the original user files when an input is incomplete or invalid. The content-copy guarantee covers the validated copied bytes. It does not promise to detect every filesystem link encoding.
 
@@ -89,7 +115,7 @@ Product defaults stay online. To use the local Iconify endpoint for the default 
 
 Replace the origin with the application's public origin. Named Iconify providers use the same local-origin and path pattern. Do not add a public origin as fallback when the app must work offline. The CDN modules do not write this setting.
 
-The local font service provides CSS at /cdn/fonts/<family-id>.css. Add the selected stylesheet through the existing host or facade CSS configuration that owns global, host, or child styles. The module does not overwrite those settings or change font-family declarations. Use the generated local CSS and inspect it before applying.
+The local font service provides CSS at `/cdn/fonts/<family-id>.css`. Load that stylesheet through the existing host or facade CSS setting that owns global, host, or child styles. Use the public application origin as an absolute URL so the stylesheet's root-relative WOFF2 links resolve to the same server. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In custom CSS, use `@import url("https://app.example/cdn/fonts/<family-id>.css");`. Do not paste the response CSS into AppConfig. The module does not overwrite host settings or change existing `font-family` declarations.
 
 After changing the Iconify provider, importing or replacing icons, or changing the selected font, reload affected documents. Current Iconify clients keep icons in memory, so a live provider change may leave existing pages using cached results until reload.
 
@@ -97,17 +123,26 @@ After changing the Iconify provider, importing or replacing icons, or changing t
 
 Iconify routes include GET /cdn/iconify/<prefix>.json?icons=<comma-separated-names>, /cdn/iconify/collections, /cdn/iconify/collection, /cdn/iconify/search, and /cdn/iconify/last-modified. This is a supported subset, not the full upstream API.
 
-Font routes include GET /cdn/fonts/families, /cdn/fonts/<family-id>.css, /cdn/fonts/<family-id>/<revision>/stylesheet.css, and revision-qualified WOFF2 files.
+Font routes include GET /cdn/fonts/families, /cdn/fonts/<family-id>.css, /cdn/fonts/<family-id>/<revision>/stylesheet.css, and revision-qualified WOFF2 files. The active-family stylesheet revalidates on access. Revision stylesheets and WOFF2 files use immutable cache headers. Reload open pages after changing or deleting a selected family.
 
 `GET /cdn/fonts/families` accepts an optional `limit` from 1 to 256, defaulting to 256, and an optional exclusive family ID `cursor`. Pass a non-null `next_cursor` from the response as `cursor` in the next request, and continue until `next_cursor` is null. A page can contain fewer entries than requested when selected entries lack valid font metadata, because each request reads at most two 128-entry core pages.
 
-Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PATCH /cdn/settings accepts a nonempty subset of those four setting fields and does not accept schemaVersion. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions. Select, rollback, and deactivate requests do not accept expected_selection_token. SVG import and acquisition requests have their own fields. Acquisitions require version and may include base_revision plus expected_selection_token when updating an existing selection. These actions require the host's authorized management scope.
+Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PATCH /cdn/settings accepts a nonempty subset of those four setting fields and does not accept schemaVersion. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions.
+
+To delete a custom asset and all its revisions, send DELETE /cdn/assets/{kind}/{id} with exactly one body field, expected_selection_token, copied from the current catalog entry. For example:
+
+    DELETE /cdn/assets/fonts/<family-id>
+    Content-Type: application/json
+
+    { "expected_selection_token": "<selection_token>" }
+
+The request returns 202 and an operation_id. Poll GET /cdn/operations/{operation_id} until the operation completes. The service removes the selection and then cleans up every revision. It refuses deletion while the manual source folder exists, for embedded assets, or while a related operation is active. Move or remove a manual source folder before deleting its asset. Select, rollback, and deactivate requests do not accept expected_selection_token. SVG import and acquisition requests have their own fields. Acquisitions require version and may include base_revision plus expected_selection_token when updating an existing selection. These actions require the host's authorized management scope.
 
 Mutations return 202 and an operation_id. Poll GET /cdn/operations/{operation_id} to read the final result. Catalog and revision listings use limit and cursor. An icon miss, ordinary read, input scan, panel opening, startup, or restart does not acquire an asset or contact a provider. Provider acquisition is an explicit management action, limited to the configured npm registry origin, with archive integrity checks and no package scripts.
 
 ## Limits and verification
 
-Current code bounds include 32 MiB per Iconify collection, 100,000 icons and aliases combined, 128 icon names per request, 20 MiB per font face, 100 MiB per font distribution, and a 512 MiB and 10,000-entry manual scan. The retained_bytes_limit setting counts each unique SHA-256 digest once across committed revisions and staged candidates. Its range is 32 MiB to 1 GiB. It does not limit database file size or total filesystem use. Active and previous revisions are protected from deletion. The DELETE endpoint removes eligible inactive revisions and reclaims content that no longer has a committed or staged reference. Input beyond a supported bound is rejected without replacing the active revision.
+Current code bounds include 32 MiB per Iconify collection, 100,000 icons and aliases combined, 128 icon names per request, 20 MiB per font face, 100 MiB per font distribution, and a 512 MiB manual scan with separate limits of 10,000 files and 10,000 directories across both library roots, including the roots, and at most 20,000 child entries. The retained_bytes_limit setting counts each unique SHA-256 digest once across committed revisions and staged candidates. Its range is 32 MiB to 1 GiB. It does not limit database file size or total filesystem use. Active and previous revisions are protected from individual revision deletion. The revision endpoint removes eligible inactive revisions. The custom-asset endpoint permanently removes all revisions, including active and previous ones. Both reclaim content that no longer has a committed or staged reference. Input beyond a supported bound is rejected without replacing the active revision.
 
 The current implementation prunes terminal operation records after 30 days. This is a routine implementation choice, not an approved numeric retention limit.
 
