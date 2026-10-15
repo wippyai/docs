@@ -38,15 +38,13 @@ The application must register its own page and navigation item, lazy-load `wippy
 
 `source-settings-api` is optional and application-owned. App-template supplies this endpoint to save application-wide Internet or This server choices. It joins installed modules with application-owned source adapters. The Façade resolver reads those choices and produces Iconify and CSS settings. These preferences are separate from the four core management settings. Existing resolver failure behavior uses static Façade defaults.
 
-General displays saved choices separately from public Façade readback. "Server configuration verified" means the server returns the expected settings. It does not mean every open document has applied them. Reload open application tabs after changing sources. Selecting local fonts adds their revision-qualified CSS before existing custom CSS and preserves existing `font-family` declarations.
+General displays saved choices separately from public Façade readback. "Saved choices match the current server settings" confirms the server response. Open documents still need a reload after source changes. Selecting local fonts adds their revision-qualified CSS before existing custom CSS and preserves existing `font-family` declarations.
 
-In Icons, select a collection and choose Review available version before acquiring it. To add SVG files, choose a custom collection name, select the files, and import them. Explicit replacement choices apply to existing icon names. The server validates copied SVG content before activation.
+In Icons, choose Download set, search by collection name or ID, select a result, and choose Review available version. Review the exact version before choosing Download. To add SVG files, choose Add SVG, enter a custom collection name, select the files, and choose Validate and import. Confirm replacement separately for each existing icon name. The server validates copied SVG content before activation. Saved sets show local previews and revision controls.
 
-In Fonts, browse compatible families, review an exact version, and acquire it explicitly. Installed families include embedded and manually imported assets. Their controls manage revisions and previews. A preview uses local font files and does not change the application font.
+In Fonts, choose Download family, search by family name or ID, select a result, and review an exact version before downloading. The supported recipe retains normal variable Latin and Latin-ext faces, including Polish characters. It does not download every style or subset in a Fontsource package. Saved families include embedded and manually imported assets. Select a family to preview its local files at normal and bold weights. A preview does not change the application font. Check for update reviews an available version; rollback and deactivate manage the saved selection.
 
-The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Acquisition is a separate action and requires downloads to be enabled. Mutations display an operation ID until completion, and failed operations retain their error details.
-
-Inspector runtime acceptance is still pending for this unpublished candidate.
+The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Downloading is a separate action and requires Allow downloads in General. Actions show pending, saved, or failed status. If a status request fails, Check operation status retries the same operation without starting another download. Advanced details contains request IDs, hashes, and diagnostic details.
 
 ## Store manual assets
 
