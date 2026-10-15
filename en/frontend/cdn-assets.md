@@ -20,7 +20,33 @@ Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts. Bind the core databas
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
-The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. Inspector and template integration is a separate later task.
+The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The local source candidate includes optional lazy Inspector components.
+
+## Inspector configuration
+
+The optional `wippy-cdn-admin` component discovers installed CDN modules from the protected management API. It displays General and the settings panels declared by those modules. The core does not keep a fixed list of Icons and Fonts tabs. A module panel loads when its tab is opened.
+
+The application must register its own page and navigation item, lazy-load `wippy-cdn-admin` through the existing Wippy component loader, and pass these attributes:
+
+    <wippy-cdn-admin
+      api-base="/api/v1/cdn"
+      public-base="https://your-wippy-origin.example"
+      source-settings-api="/api/v1/cdn-config/sources"
+    />
+
+`api-base` points to the existing authenticated management API. `public-base` is the application public origin used for asset previews and configuration readback. Pass it explicitly when the Host and API have different origins. The component adds no authentication listener or application route.
+
+`source-settings-api` is optional and application-owned. App-template supplies this endpoint to save application-wide Internet or This server choices. It joins installed modules with application-owned source adapters. The Façade resolver reads those choices and produces Iconify and CSS settings. These preferences are separate from the four core management settings. Existing resolver failure behavior uses static Façade defaults.
+
+General displays saved choices separately from public Façade readback. "Server configuration verified" means the server returns the expected settings. It does not mean every open document has applied them. Reload open application tabs after changing sources. Selecting local fonts adds their revision-qualified CSS before existing custom CSS and preserves existing `font-family` declarations.
+
+In Icons, select a collection and choose Review available version before acquiring it. To add SVG files, choose a custom collection name, select the files, and import them. Explicit replacement choices apply to existing icon names. The server validates copied SVG content before activation.
+
+In Fonts, browse compatible families, review an exact version, and acquire it explicitly. Installed families include embedded and manually imported assets. Their controls manage revisions and previews. A preview uses local font files and does not change the application font.
+
+The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Acquisition is a separate action and requires downloads to be enabled. Mutations display an operation ID until completion, and failed operations retain their error details.
+
+Inspector runtime acceptance is still pending for this unpublished candidate.
 
 ## Store manual assets
 
