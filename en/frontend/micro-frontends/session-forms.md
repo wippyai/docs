@@ -129,8 +129,8 @@ through.
 `<wippy-form>` submits through `artifactState`, a typed client that the Web
 Host exports from every proxy realm (`$W.artifactState()` in an iframe, or the
 named `artifactState` export from `@wippy-fe/proxy` in a host-mounted web
-component). Web Host 1.0.61 or later exports it, and no earlier release does.
-The matching npm release is `@wippy-fe/*` 0.0.61.
+component). Web Host 1.0.64 or later exports it, and no earlier release does.
+The matching npm release is `@wippy-fe/*` 0.0.64.
 
 The component checks these conditions in order, and the first match decides
 what the card shows.
@@ -138,7 +138,7 @@ what the card shows.
 | Condition | What the card shows |
 | --- | --- |
 | `form-version` prop or loaded state's `form_version` is not `1` | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
-| The Host has no `artifactState` export (a Web Host before 1.0.61) | The questions with their options disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every option is unselected, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
+| The Host has no `artifactState` export (a Web Host before 1.0.64) | The questions with their options disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every option is unselected, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
 | The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions rendered read-only, with "This form cannot be submitted here." |
 
 The older `instance.form` adapter that `artifactState` replaces is described
