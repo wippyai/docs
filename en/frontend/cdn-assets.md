@@ -96,9 +96,19 @@ The Iconify adapter includes Tabler from @iconify/json 2.2.460, based on Tabler 
 
 The fonts adapter includes Inter Variable and Outfit Variable with weights 100 to 900, and JetBrains Mono Variable with weights 100 to 800. Each has normal Latin and Latin-ext WOFF2 faces and an OFL-1.1 notice. The embedded defaults remain available without acquisition.
 
-## Apply local providers explicitly
+## Choose where files load from
 
-Product defaults stay online. To use the local Iconify endpoint for the default provider, set this in the host's AppConfig:
+Product defaults stay online. In an app with the CDN Config integration, open **CDN configuration → General → Where files load from**. Choose **This server** for Icons or Fonts, save the choices, then reload open app tabs. App-template includes this integration. You do not need to edit AppConfig or copy endpoint URLs.
+
+The application saves these choices in its existing database. Its resolver, bound to `wippy.facade:resolver`, discovers installed CDN modules and their application-owned source adapters. The Façade reads that resolver when it builds the configuration response. For Icons, the resolver supplies the local default Iconify provider. For Fonts, it adds the active families’ revision-qualified stylesheet imports before the existing custom CSS. It preserves existing font-family declarations.
+
+Choosing **Internet** restores the application’s original source settings. Installing a CDN module does not select it automatically. Before choosing **This server**, install the assets the application needs and keep **Serve saved files** on. Existing custom sources and fallback remain configured, so this choice alone does not guarantee that every request stays local.
+
+For another application, provide the source settings integration through the existing Façade resolver contract. Keep AppConfig generation in the application or Façade. CDN modules provide asset serving and management; they do not change frontend configuration on installation. The Inspector section above describes the optional source settings endpoint used by this integration.
+
+### Custom hosts without the source settings integration
+
+If a custom host does not use the source settings integration, its configuration owner can supply the local default Iconify provider directly in AppConfig:
 
     {
       "iconify": {
@@ -111,11 +121,11 @@ Product defaults stay online. To use the local Iconify endpoint for the default 
       }
     }
 
-Replace the origin with the application's public origin. Named Iconify providers use the same local-origin and path pattern. Do not add a public origin as fallback when the app must work offline. The CDN modules do not write this setting.
+Replace the origin with the application’s public origin. Named Iconify providers use the same origin and path pattern. Do not add an internet source as fallback when the application must work offline. This JSON is an alternative for custom integrations, not a required setup step in app-template.
 
-The local font service provides CSS at `/cdn/fonts/<family-id>.css`. Load that stylesheet through the existing host or facade CSS setting that owns global, host, or child styles. Use the public application origin as an absolute URL so the stylesheet's root-relative WOFF2 links resolve to the same server. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In custom CSS, use `@import url("https://app.example/cdn/fonts/<family-id>.css");`. Do not paste the response CSS into AppConfig. The module does not overwrite host settings or change existing `font-family` declarations.
+The local font service provides CSS at `/cdn/fonts/<family-id>.css`. A custom host can load it through its existing CSS configuration. Use an absolute public application URL so the stylesheet’s root-relative WOFF2 links resolve to the same server. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In custom CSS, use `@import url("https://app.example/cdn/fonts/<family-id>.css");`. Do not paste the response CSS into AppConfig.
 
-After changing the Iconify provider, importing or replacing icons, or changing the selected font, reload affected documents. Current Iconify clients keep icons in memory, so a live provider change may leave existing pages using cached results until reload.
+After changing source choices or importing, replacing, or selecting assets, reload affected documents. Current Iconify clients keep icons in memory, so existing pages may keep cached results until reload.
 
 ## Read and manage assets
 
