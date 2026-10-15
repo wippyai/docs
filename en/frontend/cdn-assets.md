@@ -26,21 +26,19 @@ The adapters do not create another listener. The host controls whether and where
 
 The optional `wippy-cdn-admin` component discovers installed CDN modules from the protected management API. It displays General and the settings panels declared by those modules. The core does not keep a fixed list of Icons and Fonts tabs. A module panel loads when its tab is opened.
 
-The application must register its own page and navigation item, lazy-load `wippy-cdn-admin` through the existing Wippy component loader, and pass these attributes:
+The application registers its own page and navigation item, then lazy-loads `wippy-cdn-admin` through the existing Wippy component loader. API requests use `api` from `@wippy-fe/proxy`, which gets the backend URL and authentication from AppConfig. No API origin or base attributes are needed, including when the Host and API have different origins.
 
     <wippy-cdn-admin
-      api-base="/api/v1/cdn"
-      public-base="https://your-wippy-origin.example"
       source-settings-api="/api/v1/cdn-config/sources"
     />
 
-`api-base` points to the existing authenticated management API. `public-base` is the application public origin used for asset previews and configuration readback. Pass it explicitly when the Host and API have different origins. The component adds no authentication listener or application route.
+Asset metadata and previews use the same proxy client. Font stylesheet links use the client’s resolved API URL. The component adds no authentication listener or application route.
 
-`source-settings-api` is optional and application-owned. App-template supplies this endpoint to save application-wide Internet or This server choices. It joins installed modules with application-owned source adapters. The Façade resolver reads those choices and produces Iconify and CSS settings. These preferences are separate from the four core management settings. Existing resolver failure behavior uses static Façade defaults.
+`source-settings-api` is an optional relative route owned by the application. It uses the same proxy client and does not select another backend origin. App-template supplies this endpoint to save application-wide Internet or This server choices. It joins installed modules with application-owned source adapters. The Façade resolver reads those choices and produces Iconify and CSS settings. These preferences are separate from the four core management settings. Existing resolver failure behavior uses static Façade defaults.
 
 General displays saved choices separately from public Façade readback. "Saved choices match the current server settings" confirms the server response. Open documents still need a reload after source changes. Selecting local fonts adds their revision-qualified CSS before existing custom CSS and preserves existing `font-family` declarations.
 
-In Icons, choose Download set, search by collection name or ID, select a result, and choose Review available version. Review the exact version before choosing Download. To add SVG files, choose Add SVG, enter a custom collection name, select the files, and choose Validate and import. Confirm replacement separately for each existing icon name. The server validates copied SVG content before activation. Saved sets show local previews and revision controls.
+In Icons, choose Download set, search by collection name or ID, select a result, and choose Review available version. Review the exact version before choosing Download. To add SVG files, choose Add SVG and select a saved set or Create a new set. For a new set, enter a New set ID. Select the files, then choose Import icons. Confirm replacement separately for each existing icon name. The server validates copied SVG content before activation. Saved sets show local previews and revision controls.
 
 The SVG importer accepts only `svg`, `g`, `defs`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`, `linearGradient`, `radialGradient`, `stop`, `clipPath`, `mask`, and `use`. It also checks element nesting and attributes, and it permits local resource references only. It rejects unsupported elements and attributes, external resource references, DTDs, comments, and processing instructions. For example, `cellphone-arrow-down-twotone` from `@iconify-json/line-md` version `1.2.16` contains `<animate>` elements, so import rejects it as an unsupported SVG element. Use static artwork that fits the supported subset.
 
