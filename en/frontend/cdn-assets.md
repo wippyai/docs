@@ -8,7 +8,7 @@ keywords:
   - offline assets
 ---
 
-> Draft for an unpublished local candidate. This page describes the current source contracts. It is not a released support guarantee.
+The Wippy CDN modules have an initial release at version 0.0.1. This page describes their setup and current source contracts.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
@@ -16,11 +16,11 @@ The family has three parts: wippy/cdn stores revisions and handles management, w
 
 ## Bind the modules
 
-Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts. Bind the core database requirement to the application's existing SQL resource. The current implementation and its recovery queries support SQLite only. PostgreSQL support is unverified. Bind data_directory to a persistent writable volume outside artifact-managed output. Keep both resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
+Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.1 from Wippy Hub. These modules are currently private and require authorized Hub access. Bind the core database requirement to the application's existing SQL resource. The current implementation and its recovery queries support SQLite only. PostgreSQL support is unverified. Bind data_directory to a persistent writable volume outside artifact-managed output. Keep both resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
-The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The local source candidate includes optional lazy Inspector components.
+The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.1 modules include optional lazy Inspector components.
 
 ## Inspector configuration
 
@@ -162,6 +162,6 @@ Current code bounds include 32 MiB per Iconify collection, 100,000 icons and ali
 
 The current implementation prunes terminal operation records after 30 days. This is a routine implementation choice, not an approved numeric retention limit.
 
-The local source candidate is unpublished. It describes selected CDN asset behavior only. It does not establish that the complete application is offline-ready.
+Offline use applies only to CDN assets that the host has selected for local serving. It does not mean that the rest of the application works without a network connection.
 
 For related frontend configuration, see [Frontend Facade](../framework/facade) and [Web Host entry point](web-host/entry-point).
