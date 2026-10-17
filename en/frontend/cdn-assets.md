@@ -8,37 +8,33 @@ keywords:
   - offline assets
 ---
 
-The Wippy CDN modules have an initial release at version 0.0.1. This page describes their setup and current source contracts.
+The next private release candidates are Host 1.0.64 (npm 0.0.64), Facade 0.6.45, and the CDN module family 0.0.2. They remain unpublished. The npm engine change and Views fragment fix are outside these candidates. This page describes the approved candidate behavior, not an available release.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
-The family has three parts: wippy/cdn stores revisions and handles management, wippy/cdn-iconify serves the supported Iconify API subset, and wippy/cdn-fonts serves font metadata, CSS, and WOFF2 files. The modules serve data. The host or facade owns AppConfig and CSS settings. Installing the modules does not change online defaults, create a UI route, or add a navigation item.
+The family has three parts: wippy/cdn stores revisions and handles management, wippy/cdn-iconify serves the supported Iconify API subset, and wippy/cdn-fonts serves font metadata, CSS, and WOFF2 files. Facade owns optional local-source discovery and saved source preferences. Installing the modules preserves online defaults and does not create an application route or navigation item.
 
 ## Bind the modules
 
-Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.1 from Wippy Hub. These modules are currently private and require authorized Hub access. Bind the core database requirement to the application's existing SQL resource. The current implementation and its recovery queries support SQLite only. PostgreSQL support is unverified. Bind data_directory to a persistent writable volume outside artifact-managed output. Keep both resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
+Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 after the private packages are published and available to your account. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
-Use Wippy 0.3.49a with `options.unpack_modules: false` in `wippy.lock`, set before running `wippy.exe install`. This release's unpacker can write duplicate YAML keys when a valid WAPP entry contains `data.kind`; the packed loader works. Keep the CDN WAPP packages packed. If this release already created unpacked module directories, remove only `.wippy/vendor/wippy/cdn`, `.wippy/vendor/wippy/cdn-iconify`, and `.wippy/vendor/wippy/cdn-fonts` before reinstalling. Preserve the versioned `.wapp` files and any edited or unrelated module directories. There is no CLI or workspace flag for this setting.
+To enable Facade source preferences, also bind `cdn_database` to `app:db`, `cdn_management_router` to `app:api`, and `cdn_management_security_scope` to `app.security:admin`. These Facade requirements store and protect the source choices. Applications do not need an app-owned source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
+
+For Wippy 0.3.49a, set `options.unpack_modules: false` in `wippy.lock` before running `wippy.exe install`, so the CDN WAPP packages remain packed. If unpacked CDN module directories already exist, remove only `.wippy/vendor/wippy/cdn`, `.wippy/vendor/wippy/cdn-iconify`, and `.wippy/vendor/wippy/cdn-fonts` before reinstalling. Preserve the versioned `.wapp` files and any edited or unrelated module directories.
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
-The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.1 modules include optional lazy Inspector components.
+The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.2 candidates include optional lazy Inspector components.
 
 ## Inspector configuration
 
 The optional `wippy-cdn-admin` component discovers installed CDN modules from the protected management API. It displays General and the settings panels declared by those modules. The core does not keep a fixed list of Icons and Fonts tabs. A module panel loads when its tab is opened.
 
-The application registers its own page and navigation item, then lazy-loads `wippy-cdn-admin` through the existing Wippy component loader. API requests use `api` from `@wippy-fe/proxy`, which gets the backend URL and authentication from AppConfig. No API origin or base attributes are needed, including when the Host and API have different origins.
+The application registers its own page and navigation item, then lazy-loads `wippy-cdn-admin` through the existing Wippy component loader. API requests use `api` from `@wippy-fe/proxy`, which gets the backend URL and authentication from AppConfig. The standard component needs no API-base or public-base attributes, including when the Host and API have different origins.
 
-    <wippy-cdn-admin
-      source-settings-api="/api/v1/cdn-config/sources"
-    />
+Source choices use the Facade endpoint at `/api/v1/cdn-config/sources`. The `source-settings-api` attribute remains an optional relative compatibility override. Facade discovers installed adapter functions and saves the complete source form with PUT. General settings also submit all three visible fields with PUT. Existing live Icons setting updates continue to use PATCH.
 
-Asset metadata and previews use the same proxy client. Font stylesheet links use the client’s resolved API URL. The component adds no authentication listener or application route.
-
-`source-settings-api` is an optional relative route owned by the application. It uses the same proxy client and does not select another backend origin. App-template supplies this endpoint to save application-wide Internet or This server choices. It joins installed modules with application-owned source adapters. The Façade resolver reads those choices and produces Iconify and CSS settings. These preferences are separate from the four core management settings. Existing resolver failure behavior uses static Façade defaults.
-
-General displays saved choices separately from public Façade readback. "Saved choices match the current server settings" confirms the server response. Open documents still need a reload after source changes. Selecting local fonts adds their revision-qualified CSS before existing custom CSS and preserves existing `font-family` declarations.
+General shows the saved choices and the effective Facade configuration separately. A saved choice does not prove that an already open application tab has reloaded. Reload affected documents after changing source choices.
 
 In Icons, choose Download set, search by collection name or ID, select a result, and choose Review available version. Review the exact version before choosing Download. To add SVG files, choose Add SVG and select a saved set or Create a new set. For a new set, enter a New set ID. Drop SVG files into the upload area or use Choose files. Each selection adds to the list; remove individual files or choose Remove all before importing. Files are not sent to the server until you choose Import icons. Confirm replacement separately for each existing icon name. The server validates copied SVG content before activation. Saved sets show local previews and revision controls.
 
@@ -49,6 +45,8 @@ In Fonts, choose Add font files to import your own normal WOFF2 faces. Drop the 
 Uploads stage one file at a time and activate the family only after validation and a guarded commit. A failed upload preserves the previous active revision. Cancel upload cancels pending admission or removes staged files; it does not undo a completed commit. If a response is lost, keep the saved operation and use the same pending-upload controls to check or cancel it. Closing the dialog does not establish completion. Browser file contents are not saved in local storage, so after a reload you may need to cancel the pending upload and select the files again. Physical-folder imports remain available below.
 
 In Fonts, choose Download family, search by family name or ID, select a result, and review an exact version before downloading. The provider download recipe remains two normal variable faces, Latin and Latin-ext, including Polish characters. It does not download every style or subset in a Fontsource package. Saved families include embedded and manually imported assets. Select a family to preview its local files at normal and bold weights. A preview does not change the application font. Check for update reviews an available version; rollback and deactivate manage the saved selection.
+
+The Fonts panel provides a copyable import for the stable active-family stylesheet and a separate `font-family` declaration with the exact family name from font metadata. Put the `@import` before other CSS rules, then add the family declaration to the selectors you choose. The import follows the active revision, so updates and rollbacks do not require a new URL. Revision previews stay pinned to the selected revision. Fonts has no source selector and does not change application CSS automatically.
 
 The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Downloading is a separate action and requires Allow downloads in General. Actions show pending, saved, or failed status. If a status request fails, Check operation status retries the same operation without starting another download. Advanced details contains request IDs, hashes, and diagnostic details.
 
@@ -104,13 +102,13 @@ The fonts adapter includes Inter Variable and Outfit Variable with weights 100 t
 
 ## Choose where files load from
 
-Product defaults stay online. In an app with the CDN Config integration, open **CDN configuration → General → Where files load from**. Choose **This server** for Icons or Fonts, save the choices, then reload open app tabs. App-template includes this integration. You do not need to edit AppConfig or copy endpoint URLs.
+Product defaults stay online. After binding the Facade source-preference requirements, open **CDN configuration → General → Where files load from** and choose **This server** for Icons. Save the source form, then reload open app tabs. The standard `wippy-cdn-admin` component uses the Facade endpoint by default. You do not need to edit AppConfig or copy endpoint URLs.
 
-The application saves these choices in its existing database. Its resolver, bound to `wippy.facade:resolver`, discovers installed CDN modules and their application-owned source adapters. The Façade reads that resolver when it builds the configuration response. For Icons, the resolver supplies the local default Iconify provider. For Fonts, it adds the active families’ revision-qualified stylesheet imports before the existing custom CSS. It preserves existing font-family declarations.
+The Facade saves source choices in the database bound to `cdn_database`. It discovers installed adapters and calls their module-owned local-source functions when a user selects **This server**. For Icons, the adapter provides a local default Iconify provider. Facade preserves the online defaults, named providers, and explicit application overrides. Applications do not need a source contract or resolver shim.
 
-Choosing **Internet** restores the application’s original source settings. Installing a CDN module does not select it automatically. Before choosing **This server**, install the assets the application needs and keep **Serve saved files** on. Existing custom sources and fallback remain configured, so this choice alone does not guarantee that every request stays local.
+Choosing **Internet** restores the Facade defaults. Installing a CDN module does not select it automatically. Before choosing **This server**, install the assets the application needs and keep **Serve saved files** on. Existing custom sources and fallback remain configured, so this choice alone does not guarantee that every request stays local.
 
-For another application, provide the source settings integration through the existing Façade resolver contract. Keep AppConfig generation in the application or Façade. CDN modules provide asset serving and management; they do not change frontend configuration on installation. The Inspector section above describes the optional source settings endpoint used by this integration.
+Facade composes local Iconify settings while it builds AppConfig. CDN modules provide asset serving and management. Fonts users copy the stable stylesheet import and exact family name into the Facade or application CSS settings they already use. The module does not insert font CSS or choose selectors for the application.
 
 ### Custom hosts without the source settings integration
 
@@ -127,9 +125,9 @@ If a custom host does not use the source settings integration, its configuration
       }
     }
 
-Replace the origin with the application’s public origin. Named Iconify providers use the same origin and path pattern. Do not add an internet source as fallback when the application must work offline. This JSON is an alternative for custom integrations, not a required setup step in app-template.
+Replace the origin with the application’s public origin. Named Iconify providers use the same origin and path pattern. Do not add an internet source as fallback when the application must work offline. This JSON is an alternative for hosts that configure Iconify directly.
 
-The local font service provides CSS at `/cdn/fonts/<family-id>.css`. A custom host can load it through its existing CSS configuration. Use an absolute public application URL so the stylesheet’s root-relative WOFF2 links resolve to the same server. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In custom CSS, use `@import url("https://app.example/cdn/fonts/<family-id>.css");`. Do not paste the response CSS into AppConfig.
+The local font service provides CSS at `/cdn/fonts/<family-id>.css`. A custom host can load the stable stylesheet through its existing CSS configuration. Generated WOFF2 URLs are relative to each stylesheet, so they keep the application’s deployment path prefix. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In CSS, put `@import url("https://app.example/cdn/fonts/<family-id>.css");` before other rules. Use the exact `metadata.family` value in the declaration for the selectors you choose. Do not paste the response CSS into AppConfig. The active stylesheet revalidates and follows updates or rollbacks; revision-qualified preview CSS and WOFF2 files remain immutable.
 
 After changing source choices or importing, replacing, or selecting assets, reload affected documents. Current Iconify clients keep icons in memory, so existing pages may keep cached results until reload.
 
@@ -141,7 +139,7 @@ Font routes include GET /cdn/fonts/families, /cdn/fonts/<family-id>.css, /cdn/fo
 
 `GET /cdn/fonts/families` accepts an optional `limit` from 1 to 256, defaulting to 256, and an optional exclusive family ID `cursor`. Pass a non-null `next_cursor` from the response as `cursor` in the next request, and continue until `next_cursor` is null. A page can contain fewer entries than requested when selected entries lack valid font metadata, because each request reads at most two 128-entry core pages.
 
-Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PATCH /cdn/settings accepts a nonempty subset of those four setting fields and does not accept schemaVersion. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions.
+Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PUT /cdn/settings replaces the three visible General fields as one complete form. The existing PATCH /cdn/settings route remains available for live Icons setting updates. PATCH accepts a nonempty subset of the four setting fields and does not accept schemaVersion. Facade source choices use their separate complete-form PUT endpoint. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions.
 
 To delete a custom asset and all its revisions, send DELETE /cdn/assets/{kind}/{id} with exactly one body field, expected_selection_token, copied from the current catalog entry. For example:
 
