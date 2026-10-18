@@ -12,7 +12,7 @@ Host 1.0.64 is available from the Web Host CDN, and its 14 public npm packages a
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
-The family has three parts: wippy/cdn stores revisions and handles management, wippy/cdn-iconify serves the supported Iconify API subset, and wippy/cdn-fonts serves font metadata, CSS, and WOFF2 files. Facade owns optional local-source discovery and saved source preferences. Installing the modules preserves online defaults and does not create an application route or navigation item.
+The family has three parts: wippy/cdn stores revisions and handles management, wippy/cdn-iconify serves the supported Iconify API subset, and wippy/cdn-fonts serves font metadata, CSS, and WOFF2 files. CDN core owns saved source preferences and discovers installed CDN adapters. Facade discovers generic configuration contributors without depending on CDN modules. Installing the modules preserves online defaults and does not create an application route or navigation item.
 
 ## Bind the modules
 
@@ -20,7 +20,7 @@ All three CDN modules require `wippy/facade >=0.6.45`. Facade 0.6.45 selects Hos
 
 Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 after the private packages are published and available to your account. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
-To enable Facade source preferences, also bind `cdn_database` to `app:db`, `cdn_management_router` to `app:api`, and `cdn_management_security_scope` to `app.security:admin`. These Facade requirements store and protect the source choices. Applications do not need an app-owned source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
+CDN core uses those same database and protected management-router bindings for source choices. It contributes selected module settings through Facade's generic configuration hook. Applications need no extra Facade CDN bindings, source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
 
 For Wippy 0.3.49a, set `options.unpack_modules: false` in `wippy.lock` before running `wippy.exe install`, so the CDN WAPP packages remain packed. If unpacked CDN module directories already exist, remove only `.wippy/vendor/wippy/cdn`, `.wippy/vendor/wippy/cdn-iconify`, and `.wippy/vendor/wippy/cdn-fonts` before reinstalling. Preserve the versioned `.wapp` files and any edited or unrelated module directories.
 
@@ -34,7 +34,7 @@ The optional `wippy-cdn-admin` component discovers installed CDN modules from th
 
 The application registers its own page and navigation item, then lazy-loads `wippy-cdn-admin` through the existing Wippy component loader. API requests use `api` from `@wippy-fe/proxy`, which gets the backend URL and authentication from AppConfig. The standard component needs no API-base or public-base attributes, including when the Host and API have different origins.
 
-Source choices use the Facade endpoint at `/api/v1/cdn-config/sources`. The `source-settings-api` attribute remains an optional relative compatibility override. Facade discovers installed adapter functions and saves the complete source form with PUT. General settings also submit all three visible fields with PUT. Existing live Icons setting updates continue to use PATCH.
+Source choices use the CDN core endpoint at `/api/v1/cdn-config/sources`. The `source-settings-api` attribute remains an optional relative compatibility override. CDN core discovers installed adapter functions and saves the complete source form with PUT. General settings also submit all three visible fields with PUT. Existing live Icons setting updates continue to use PATCH.
 
 General shows the saved choices and the effective Facade configuration separately. A saved choice does not prove that an already open application tab has reloaded. Reload affected documents after changing source choices.
 
@@ -104,13 +104,13 @@ The fonts adapter includes Inter Variable and Outfit Variable with weights 100 t
 
 ## Choose where files load from
 
-Product defaults stay online. After binding the Facade source-preference requirements, open **CDN configuration → General → Where files load from** and choose **This server** for Icons. Save the source form, then reload open app tabs. The standard `wippy-cdn-admin` component uses the Facade endpoint by default. You do not need to edit AppConfig or copy endpoint URLs.
+Product defaults stay online. After binding CDN core, open **CDN configuration**, then **General**, then **Where files load from** and choose **This server** for Icons. Save the source form, then reload open app tabs. The standard `wippy-cdn-admin` component uses the CDN core endpoint by default. You do not need to edit AppConfig or copy endpoint URLs.
 
-The Facade saves source choices in the database bound to `cdn_database`. It discovers installed adapters and calls their module-owned local-source functions when a user selects **This server**. For Icons, the adapter provides a local default Iconify provider. Facade preserves the online defaults, named providers, and explicit application overrides. Applications do not need a source contract or resolver shim.
+CDN core saves source choices in its existing database. It discovers installed adapters and calls their module-owned local-source functions when a user selects **This server**. The Iconify adapter supplies and validates its local default provider. The CDN contribution preserves named providers and existing fallback settings. An explicit application Iconify override stays authoritative, while import-map entries use local defaults, then static configuration, then application overrides. Applications do not need a source contract or resolver shim.
 
 Choosing **Internet** restores the Facade defaults. Installing a CDN module does not select it automatically. Before choosing **This server**, install the assets the application needs and keep **Serve saved files** on. Existing custom sources and fallback remain configured, so this choice alone does not guarantee that every request stays local.
 
-Facade composes local Iconify settings while it builds AppConfig. CDN modules provide asset serving and management. Fonts users copy the stable stylesheet import and exact family name into the Facade or application CSS settings they already use. The module does not insert font CSS or choose selectors for the application.
+Facade invokes registered configuration contributors while it builds AppConfig. CDN core contributes selected local settings, and the adapters provide asset serving and module-specific rules. Facade has no CDN-specific storage, routes or provider rules. Fonts users copy the stable stylesheet import and exact family name into the Facade or application CSS settings they already use. The module does not insert font CSS or choose selectors for the application.
 
 ### Custom hosts without the source settings integration
 
@@ -141,7 +141,7 @@ Font routes include GET /cdn/fonts/families, /cdn/fonts/<family-id>.css, /cdn/fo
 
 `GET /cdn/fonts/families` accepts an optional `limit` from 1 to 256, defaulting to 256, and an optional exclusive family ID `cursor`. Pass a non-null `next_cursor` from the response as `cursor` in the next request, and continue until `next_cursor` is null. A page can contain fewer entries than requested when selected entries lack valid font metadata, because each request reads at most two 128-entry core pages.
 
-Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PUT /cdn/settings replaces the three visible General fields as one complete form. The existing PATCH /cdn/settings route remains available for live Icons setting updates. PATCH accepts a nonempty subset of the four setting fields and does not accept schemaVersion. Facade source choices use their separate complete-form PUT endpoint. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions.
+Management paths are relative to the host's management router. GET /cdn/catalog/{kind} lists assets and selection tokens. GET /cdn/inputs/{kind} lists discovered manual inputs. GET /cdn/settings returns schemaVersion set to 1, the boolean fields acquisition_enabled, icon_search_enabled, and local_serving_enabled, and retained_bytes_limit as an integer from 33554432 to 1073741824 inclusive. PUT /cdn/settings replaces the three visible General fields as one complete form. The existing PATCH /cdn/settings route remains available for live Icons setting updates. PATCH accepts a nonempty subset of the four setting fields and does not accept schemaVersion. CDN source choices use their separate complete-form PUT endpoint. POST /cdn/rescan requests a rescan. DELETE /cdn/revisions/{kind}/{id}/{revision} requires a JSON body with expected_selection_token copied from that asset's catalog selection_token, for example { "expected_selection_token": "<catalog UUID>" }. It deletes eligible inactive revisions and refuses active and previous revisions.
 
 To delete a custom asset and all its revisions, send DELETE /cdn/assets/{kind}/{id} with exactly one body field, expected_selection_token, copied from the current catalog entry. For example:
 
