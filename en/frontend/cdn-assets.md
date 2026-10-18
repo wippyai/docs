@@ -8,7 +8,7 @@ keywords:
   - offline assets
 ---
 
-Host 1.0.64 is available from the Web Host CDN. Its npm 0.0.64 packages, Facade 0.6.45, and the private CDN module family 0.0.2 remain unpublished. This page describes the approved Facade and CDN candidate behavior. The npm engine change and Views fragment fix are outside these candidates.
+Host 1.0.64 is available from the Web Host CDN, and its 14 public npm packages are published as 0.0.64. Facade 0.6.45 and the private CDN module family 0.0.2 remain unpublished. This page describes the approved Facade and CDN candidate behavior. The npm engine change and Views fragment fix are outside these candidates.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
