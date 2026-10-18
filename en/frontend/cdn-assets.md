@@ -16,6 +16,8 @@ The family has three parts: wippy/cdn stores revisions and handles management, w
 
 ## Bind the modules
 
+All three CDN modules require `wippy/facade >=0.6.45`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules. Publish Facade 0.6.45 before releasing or installing these CDN candidates.
+
 Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 after the private packages are published and available to your account. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
 To enable Facade source preferences, also bind `cdn_database` to `app:db`, `cdn_management_router` to `app:api`, and `cdn_management_security_scope` to `app.security:admin`. These Facade requirements store and protect the source choices. Applications do not need an app-owned source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
