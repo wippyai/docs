@@ -8,7 +8,7 @@ keywords:
   - offline assets
 ---
 
-Host 1.0.64 is available from the Web Host CDN, and its 14 public npm packages are published as 0.0.64. Facade 0.6.45 and the private CDN module family 0.0.2 remain unpublished. This page describes the approved Facade and CDN candidate behavior. The npm engine change and Views fragment fix are outside these candidates.
+Host 1.0.64 is available from the Web Host CDN, and its 14 public npm packages are published as 0.0.64. Facade 0.6.45 and the private CDN module family 0.0.2 are published. Access to the private modules requires an authorized Hub account. The npm engine and Views fragment fix remain outside this release.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
@@ -16,17 +16,17 @@ The family has three parts: wippy/cdn stores revisions and handles management, w
 
 ## Bind the modules
 
-All three CDN modules require `wippy/facade >=0.6.45`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules. Publish Facade 0.6.45 before releasing or installing these CDN candidates.
+All three CDN modules require `wippy/facade >=0.6.45`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules.
 
-Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 after the private packages are published and available to your account. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
+Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 using a Hub account with access to the private packages. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
 CDN core uses those same database and protected management-router bindings for source choices. It contributes selected module settings through Facade's generic configuration hook. Applications need no extra Facade CDN bindings, source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
 
-For Wippy 0.3.49a, set `options.unpack_modules: false` in `wippy.lock` before running `wippy.exe install`, so the CDN WAPP packages remain packed. If unpacked CDN module directories already exist, remove only `.wippy/vendor/wippy/cdn`, `.wippy/vendor/wippy/cdn-iconify`, and `.wippy/vendor/wippy/cdn-fonts` before reinstalling. Preserve the versioned `.wapp` files and any edited or unrelated module directories.
+After changing dependency declarations, run `wippy update wippy/facade wippy/cdn wippy/cdn-iconify wippy/cdn-fonts`. Wippy resolves the published versions, writes their hashes to `wippy.lock`, and installs the packages. Keep that generated lock file. The released packages were verified in an existing application on Wippy 0.3.49a without source replacements.
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
-The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.2 candidates include optional lazy Inspector components.
+The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. Version 0.0.2 includes optional lazy Inspector components.
 
 ## Inspector configuration
 
