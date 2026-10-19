@@ -222,12 +222,12 @@ interface AppConfig {
 }
 ```
 
-Para documentos de páginas srcdoc, o Host combina o mapa da página, os padrões gerados do Host e depois `AppConfig.importMap`. Documentos standalone e do facade, e cada ocorrência de Web Fragment, não têm um mapa de página srcdoc; eles combinam os padrões do Host e depois `AppConfig.importMap`. Cada ocorrência de Web Fragment é executada em seu próprio iframe de realm físico. Em `imports` e em cada scope, prevalece o último valor para uma chave correspondente e as demais entradas permanecem. A configuração pode substituir mapeamentos da página ou do Host, incluindo Vue, PrimeVue e Wippy. Uma chave exata corresponde a um specifier. Uma chave terminada em `/` corresponde a esse prefixo de specifier, e o destino também precisa terminar em `/`. `scopes` seleciona mapeamentos pela URL do módulo importador. URLs de destino relativas são resolvidas em relação à URL base do documento.
+Para documentos de páginas srcdoc, o Host combina o mapa da página, os padrões gerados do Host e depois `AppConfig.importMap`. Documentos standalone e do facade não têm um mapa de página srcdoc; eles combinam os padrões do Host e depois `AppConfig.importMap`. Em `imports` e em cada scope, prevalece o último valor para uma chave correspondente e as demais entradas permanecem. A configuração pode substituir mapeamentos da página ou do Host, incluindo Vue, PrimeVue e Wippy. Uma chave exata corresponde a um specifier. Uma chave terminada em `/` corresponde a esse prefixo de specifier, e o destino também precisa terminar em `/`. `scopes` seleciona mapeamentos pela URL do módulo importador. URLs de destino relativas são resolvidas em relação à URL base do documento.
 
 O Host deve compor o mapa e registrá-lo antes de carregar módulos. Adicionar outro mapa depois não substitui uma chave já registrada. Se uma atualização omitir `importMap`, a extensão atual permanece. Use `null` ou `{}` para limpar a extensão.
 
-Uma atualização do import map se aplica ao criar um documento. Ela não muda a resolução de módulos de um documento existente. Recarregue esse documento para aplicar a atualização; documentos criados depois usam a configuração mais recente. Cada ocorrência de Web Fragment tem seu próprio iframe de realm físico e registra o mapa nesse realm antes de carregar módulos.
+Uma atualização do import map se aplica ao criar um documento. Ela não muda a resolução de módulos de um documento existente. Recarregue esse documento para aplicar a atualização; documentos criados depois usam a configuração mais recente. O suporte a `AppConfig.importMap` e `scopes` em Web Fragment está adiado: `wippy/views` 0.5.12 não garante que o mapa composto seja registrado antes de carregar os módulos do fragmento.
 
 Substituir uma entrada compartilhada de Vue, PrimeVue ou Wippy pode separar a identidade de módulos ou serviços entre o Host e o código filho. Teste a integração com o mapa publicado exato antes de implantar uma substituição.
 
-O uso direto de `AppConfig.importMap` requer Web Host 1.0.63 ou posterior.
+A versão base verificada do Web Host para usar `AppConfig.importMap` diretamente é 1.0.64.

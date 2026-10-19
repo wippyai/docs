@@ -224,12 +224,12 @@ interface AppConfig {
 }
 ```
 
-srcdoc ページのドキュメントでは、Host はページの map、生成された Host の既定値、`AppConfig.importMap` の順で合成します。standalone と facade のドキュメント、および各 Web Fragment occurrence には srcdoc ページの map がないため、Host の既定値と `AppConfig.importMap` を合成します。各 Web Fragment occurrence は独立した物理 realm iframe で実行されます。`imports` と各 scope では一致するキーの最後の値が優先され、他のエントリーは保持されます。設定は Vue、PrimeVue、Wippy を含むページまたは Host の割り当てを置き換えられます。完全一致キーは1つのspecifierに一致します。末尾が `/` のキーはspecifierのprefixに一致し、対象URLも `/` で終わる必要があります。`scopes` は import 元モジュールのURLで割り当てを選びます。相対URLはドキュメントのベースURLから解決されます。
+srcdoc ページのドキュメントでは、Host はページの map、生成された Host の既定値、`AppConfig.importMap` の順で合成します。standalone と facade のドキュメントには srcdoc ページの map がないため、Host の既定値と `AppConfig.importMap` を合成します。`imports` と各 scope では一致するキーの最後の値が優先され、他のエントリーは保持されます。設定は Vue、PrimeVue、Wippy を含むページまたは Host の割り当てを置き換えられます。完全一致キーは1つのspecifierに一致します。末尾が `/` のキーはspecifierのprefixに一致し、対象URLも `/` で終わる必要があります。`scopes` は import 元モジュールのURLで割り当てを選びます。相対URLはドキュメントのベースURLから解決されます。
 
 モジュールを読み込む前に map を作成し、ネイティブ import map を登録してください。後から別の map を追加しても登録済みのキーは置き換えられません。更新で `importMap` を省略すると現在の拡張を維持します。`null` または `{}` を指定すると拡張を解除します。
 
-import map の更新は document 作成時に適用されます。既存 document の module 解決は変わりません。更新を使うにはその document を再読み込みしてください。後から作成する document には最新の config が使われます。各 Web Fragment occurrence は独自の物理 realm iframe を持ち、その realm で module 読み込み前に map を登録します。
+import map の更新は document 作成時に適用されます。既存 document の module 解決は変わりません。更新を使うにはその document を再読み込みしてください。後から作成する document には最新の config が使われます。Web Fragment における `AppConfig.importMap` と `scopes` のサポートは保留中です。`wippy/views` 0.5.12 では、合成 map が Fragment の module 読み込み前に登録される保証はありません。
 
 Vue、PrimeVue、Wippy の共有エントリーを置き換えると、Host と子コードで module や service の identity が分かれることがあります。置き換えを公開する前に、公開済みの正確な map で統合を確認してください。
 
-`AppConfig.importMap` を直接使うには、Web Host 1.0.63 以降が必要です。
+`AppConfig.importMap` の直接利用について確認済みの Web Host リリース基準は 1.0.64 です。

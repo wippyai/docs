@@ -98,11 +98,11 @@ export default {
 
 快照必须包含其来源和哈希。快照中不存在的依赖会被打包进产物，除非另有成文的构建规则适用。
 
-获批的合并版 Web Host 1.0.63 候选使用的预期快照 URL 是
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`。发布后请确认标签。
+已发布的 Web Host 1.0.64 使用以下快照 URL：
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`。
 不要替换成本地应用 URL、未固定版本的 `latest` URL 或手工重建的包列表。
 
-候选版 PrimeVue 4.5.5 条目由公开导出模式生成。Host 的
+此版本的 PrimeVue 4.5.5 条目由公开导出模式生成。Host 的
 `primevue-export-inventory.json` 记录具体运行时目标。请使用准确的说明符，不要
 使用通配符或手工维护子集。请参阅 [Host 包](../web-host/packages.md)。
 
@@ -135,8 +135,8 @@ pnpm run build
 已经存在且仅修改了 site 代码时，才使用 `pnpm run build:site` 进行增量构建。
 `build:site:relative` 将标签前缀用作 Vite 相对资源基础路径，但 import map 的值仍为绝对 URL。
 
-对候选版本，`APP_URL=https://cdn.example/wippy` 和标签 `webcomponents-1.0.63` 会生成
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`。vendor 和动态 chunk URL
+对已发布版本，`APP_URL=https://cdn.example/wippy` 和标签 `webcomponents-1.0.64` 会生成
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`。vendor 和动态 chunk URL
 也必须保留相同的来源、部署路径和标签。构建后检查 `dist/import-map.json`：所有
 `imports` 值必须是位于已配置来源和路径下的绝对 HTTP(S) URL，且不能包含 `/undefined/`。
 然后通过实际部署路由请求版本化 map 及其资源。构建成功本身不能证明路由可用。

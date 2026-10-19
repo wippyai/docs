@@ -56,7 +56,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.63` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.64` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
@@ -191,9 +191,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.63",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.64",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.63/iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.64/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "login_redirect_param": null,
     "mode": "compat",
@@ -305,4 +305,4 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 
 The facade requirement is named `import_map`, and `/facade/config` returns it as `cfg.importMap`. The shell registers the composed map through the shared bootstrap before importing the Host module. It then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](../frontend/web-host/bootstrap.md#appconfig-import-map).
 
-The `iconify` and `import_map` facade requirements need `wippy/facade` 0.6.44 or later and Web Host 1.0.63 or later.
+The verified release baseline for the `iconify` and `import_map` facade requirements is `wippy/facade` 0.6.45 with Web Host 1.0.64.

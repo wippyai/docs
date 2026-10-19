@@ -359,10 +359,9 @@ Host リリースには静的 Tabler コレクションが `iconify/tabler.json`
 
 ## PrimeVue 4.5.5 のブラウザー向けエクスポート
 
-承認済みの統合候補では PrimeVue 4.5.5 を固定します。生成された
-inventory はバージョン付き Host のルートから配信します。統合候補は Web Host
-1.0.63 と公開パッケージ 0.0.63 を対象にしています。
-これらのバージョンは未公開です。使用前にタグを確認してください。
+公開済み Host は PrimeVue 4.5.5 を固定します。生成された inventory は
+バージョン付き Host のルートから配信します。公開済みの基準は Web Host
+1.0.64 と公開パッケージ 0.0.64 です。使用前にタグを確認してください。
 `primevue-export-inventory.json`:
 
 ```bash
@@ -384,7 +383,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory
 ルートの manifest からパッケージルートを解決し、宣言された export パターンを
 パッケージ相対の具体的なターゲットへ展開します。`@primevue/icons` と
 `@primeuix/*` は共有 vendor graph に含まれ、直接のマップキーにはなりません。
-候補では `@primevue/icons` 4.5.5、`@primeuix/styled` 0.7.4、
+公開済みの Host は `@primevue/icons` 4.5.5、`@primeuix/styled` 0.7.4、
 `@primeuix/styles` と `@primeuix/themes` 2.0.3、`@primeuix/utils` 0.6.4 を固定します。
 JSON と CSS の直接 export はありません。JavaScript graph から到達できる
 リソースも、ビルド済み Host 配布物に含める必要があります。
@@ -400,7 +399,7 @@ import Button from 'primevue/button'
 PrimeVue CSS は配信されません。必要な CSS は文書化された Host CSS key で別に
 要求してください。ローカル preview CSS は Phase 4 の前提条件です。
 
-この inventory は未公開候補の成果物です。使用前に公開された Host 成果物と URL、
+この inventory は公開済み Web Host 1.0.64 のものです。使用前に公開された Host 成果物と URL、
 内容を照合してください。
 
 JSON のトップレベルには `schemaVersion`、`package`、`counts`、`exports`、

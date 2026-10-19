@@ -108,13 +108,12 @@ export default {
 
 The snapshot must include its provenance and hash. A dependency absent from the snapshot is bundled unless another documented build rule applies.
 
-For the approved combined Web Host 1.0.63 candidate, the expected snapshot URL is
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`. Confirm the tag
-after the release is published. Do not substitute the local
+For the published Web Host 1.0.64 release, the snapshot URL is
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Do not substitute the local
 application URL, an unpinned `latest` URL, or a manually reconstructed package
 list.
 
-The candidate's PrimeVue 4.5.5 entries are generated from its public export
+The release's PrimeVue 4.5.5 entries are generated from its public export
 patterns and recorded in the Host-root `primevue-export-inventory.json`. The
 inventory lists concrete package-relative runtime targets. Use its exact
 specifier entries; do not replace them with a wildcard external or a manually
@@ -155,9 +154,9 @@ those prerequisites exist. The
 `build:site:relative` script uses the tag prefix as Vite's relative asset base;
 it still needs `APP_URL` because the import-map values are absolute.
 
-For the candidate, `APP_URL=https://cdn.example/wippy` and tag
-`webcomponents-1.0.63` produce the import-map URL
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`; mapped vendor
+For the published release, `APP_URL=https://cdn.example/wippy` and tag
+`webcomponents-1.0.64` produce the import-map URL
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`; mapped vendor
 and dynamic-chunk URLs must keep the same origin, deployment path, and tag.
 After building, inspect `dist/import-map.json`: every `imports` value must be an
 absolute HTTP(S) URL under the configured origin and path, and none may contain

@@ -6,11 +6,11 @@ description: "Configure online Iconify sources or an explicit local collection f
 # Iconify providers
 
 The Web Host uses online Iconify sources by default. Configure `AppConfig.iconify.providers` only when the deployment needs a different source. The local Tabler collection described here is an explicit option for offline deployments. It does not change the default source.
-Direct use of `AppConfig.iconify` requires Web Host 1.0.63 or later. For facade deployments, see the minimum versions in [Facade module](../../framework/facade.md).
+The verified Web Host release baseline for direct `AppConfig.iconify` use is 1.0.64. For facade deployments, see the verified baseline in [Facade module](../../framework/facade.md).
 
 ## Configure a provider
 
-`providers` is keyed by Iconify provider ID. Use the empty key (`""`) for the built-in provider, or a lowercase hyphenated ID for a named provider. Each value contains a non-empty ordered `resources` array of HTTP(S) origins. The Host tries those origins in order. It does not add a public source to the configured array.
+`providers` is keyed by Iconify provider ID. Use the empty key (`""`) for the built-in provider, or a lowercase hyphenated ID for a named provider. Each value contains a non-empty `resources` array of HTTP(S) origins. Stock Iconify uses these resources as alternative origins. It may remember an origin that worked and start there on later requests. The Host does not add a public source to the configured array.
 
 ```ts
 interface IconifyConfig {
@@ -114,9 +114,9 @@ The provider covers icon collection requests only. It does not make application 
 
 When `iconify` is omitted from the initial config, online defaults are used. Omitting it from a later update leaves the current Iconify config unchanged. `iconify: null` or `providers: null` resets the whole section to online built-ins and removes configured named providers. Setting the empty provider's value to `null` resets only the built-in provider. A named provider set to `null` disables that namespace. Omitted provider keys keep their current routes, and an empty `providers` object does not reset them.
 
-The generated schema checks the JSON shape and field bounds. Runtime validation also checks that resources are HTTP(S) origins and that paths follow the Host rules, so a value can pass schema validation and still be rejected at runtime. The validator accepts only `providers`, and provider entries accept only `resources`, `path`, and `timeout`. An invalid initial section is ignored and leaves online defaults active. An invalid update keeps the last valid Iconify section while other valid AppConfig fields can still update. `timeout` sets one logical-request deadline shared by all configured origins. Each failover attempt uses the remaining time from that same deadline.
+The generated schema checks the JSON shape and field bounds. Runtime validation also checks that resources are HTTP(S) origins and that paths follow the Host rules, so a value can pass schema validation and still be rejected at runtime. The validator accepts only `providers`, and provider entries accept only `resources`, `path`, and `timeout`. An invalid initial section is ignored and leaves online defaults active. An invalid update keeps the last valid Iconify section while other valid AppConfig fields can still update. The Host passes `timeout` to the stock Iconify provider API.
 
-Only a byte-for-byte match for the pinned Tabler collection is recognized as a full-collection response, and only when Web Crypto SHA-256 is available. That response is cached by endpoint URL with the query removed. Other collection responses are cached by their full query URL. Without `crypto.subtle` (as can happen on insecure HTTP origins), the adapter uses query-scoped caching and the Iconify store can still use its native per-icon cache. The combined adapter caches hold at most 32 URL entries. Replacing a collection at the same URL does not clear cached responses, resolved icons, or negative results in the native Iconify store. If all configured origins fail, the adapter reports a transient failure, but a native loader may mark unresolved names as missing. Changing providers does not make that name request again. Reload the document to retry over the network. Iconify's public `addIcon` and `addCollection` APIs can add icon data, but they do not reset the general caches. Transport or invalid-response failures try the next configured origin. A valid response that lacks the requested icon is reported as not found.
+The Host configures each Iconify store through its public `addAPIProvider` API. Stock Iconify handles icon loading, resource selection, retries, and caching. It may remember a successful resource for a provider, so later requests may start there rather than at the first configured origin. The Host does not reset or reconfigure a store after an AppConfig update. Reload the document to apply provider changes.
 
 The `iconifyIcons` setting controls whether the Host loads and registers the `<iconify-icon>` custom element. It does not control provider sources. Explicitly configured Iconify data is projected to child applications through AppConfig. The schema migration accepts `wippy-context-2.0` and `wippy-context-2.1` input and upgrades it to `wippy-context-2.2`. See [Bootstrap sequence](./bootstrap.md), [CSS injection](./css-injection.md), [Proxy API](../micro-frontends/proxy-api.md), and [Facade](../../framework/facade.md).
 
@@ -124,7 +124,7 @@ Use `wippy-context-2.2` for new configuration. Versioned `wippy-context-2.0` and
 
 ## Provider trust and updates
 
-Use only provider origins you trust. The page renders icon bodies as SVG markup. Use `wippy-context-2.2` for new `SetConfig` payloads. Versioned `wippy-context-2.0` and `wippy-context-2.1` payloads are accepted and migrated; schema-less 1.0 payloads cannot carry the newer `iconify` and `importMap` fields. A provider change affects icons that have not loaded yet; cached responses and already rendered icons are not cleared. Open a fresh document to verify a replacement provider.
+Use only provider origins you trust. The page renders icon bodies as SVG markup. Use `wippy-context-2.2` for new `SetConfig` payloads. Versioned `wippy-context-2.0` and `wippy-context-2.1` payloads are accepted and migrated; schema-less 1.0 payloads cannot carry the newer `iconify` and `importMap` fields.
 
 ## Development overlay
 

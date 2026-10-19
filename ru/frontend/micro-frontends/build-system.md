@@ -107,12 +107,11 @@ export default {
 
 Снимок должен содержать сведения о происхождении и хэш. Зависимость, отсутствующая в снимке, попадает в бандл, если не применяется другое задокументированное правило сборки.
 
-Для утвержденного общего кандидата Web Host 1.0.63 ожидаемый URL снимка —
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`. Подтвердите тег
-после публикации. Не подставляйте URL локального приложения, незакрепленный
+Для опубликованного Web Host 1.0.64 URL снимка:
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Не подставляйте URL локального приложения, незакрепленный
 `latest` или вручную восстановленный список пакетов.
 
-Записи PrimeVue 4.5.5 в кандидате генерируются из публичных шаблонов экспорта.
+Записи PrimeVue 4.5.5 в этом релизе генерируются из публичных шаблонов экспорта.
 Файл Host `primevue-export-inventory.json` содержит конкретные runtime-цели.
 Используйте точные спецификаторы, а не шаблон или ручное подмножество. См. [Пакеты Host](../web-host/packages.md).
 
@@ -150,9 +149,9 @@ pnpm run build
 `build:site:relative` использует префикс тега как относительный asset base Vite,
 но значения import map остаются абсолютными URL.
 
-Для кандидата `APP_URL=https://cdn.example/wippy` и тег
-`webcomponents-1.0.63` дают URL карты
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`. URL vendor и
+Для опубликованного релиза `APP_URL=https://cdn.example/wippy` и тег
+`webcomponents-1.0.64` дают URL карты
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`. URL vendor и
 dynamic chunks должны сохранять origin, путь и тег. После сборки проверьте
 `dist/import-map.json`: все значения `imports` должны быть абсолютными URL
 HTTP(S) под заданными origin и путем, без `/undefined/`. Затем запросите карту и

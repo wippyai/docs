@@ -48,7 +48,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -83,11 +83,11 @@ El Web Host extrae el payload de `AppConfig` del objeto de configuración y cont
 
 Este patrón significa que el bundle alojado en el CDN nunca contiene URLs, tokens ni branding específicos del despliegue. El bundle es idéntico para todos los despliegues. Solo difiere el payload de configuración.
 
-El endpoint devuelve ajustes del shell y campos seleccionados del Web Host. No devuelve un `AppConfig` completo: el shell añade `$schema`, `auth` y `context` antes de llamar a `initWippyApp`. El contrato actual es `wippy-context-2.2`.
+El endpoint devuelve ajustes del shell y campos seleccionados del Web Host. No devuelve un `AppConfig` completo: el shell añade `$schema`, `auth` y `context` antes de llamar a `initWippyApp`. Facade 0.6.45 proporciona `schema_url`: `wippy-context-2.0.xsd` para la política heredada y `wippy-context-2.1.json` para la política moderna. Si una versión anterior de Facade no incluye el campo, el shell usa el respaldo XSD 2.0. Web Host 1.0.64 acepta ambos esquemas versionados y los migra al esquema canónico 2.2.
 
 ## La respuesta de `/facade/config`
 
-El endpoint devuelve ajustes del shell y campos seleccionados del Web Host. No devuelve un `AppConfig` completo: el shell añade `$schema`, `auth` y `context` antes de llamar a `initWippyApp`. El contrato actual es `wippy-context-2.2`.
+El endpoint devuelve ajustes del shell y campos seleccionados del Web Host. No devuelve un `AppConfig` completo: el shell añade `$schema`, `auth` y `context` antes de llamar a `initWippyApp`. Facade 0.6.45 proporciona `schema_url`: `wippy-context-2.0.xsd` para la política heredada y `wippy-context-2.1.json` para la política moderna. Si una versión anterior de Facade no incluye el campo, el shell usa el respaldo XSD 2.0. Web Host 1.0.64 acepta ambos esquemas versionados y los migra al esquema canónico 2.2.
 
 ```json
 {
@@ -135,7 +135,7 @@ El endpoint devuelve ajustes del shell y campos seleccionados del Web Host. No d
 
 | Campo | Descripción |
 |-------|-------------|
-| `$schema` | Versión del contrato de configuración (`"wippy-context-2.2"`). |
+| `$schema` | `cfg.schema_url`; si no está presente: `<facade_url>/schemas/wippy-context-2.0.xsd` |
 | `auth` | Bearer token de runtime y su caducidad, inyectados como `AppConfig.auth`. |
 | `env` | URLs de runtime inyectadas como `AppConfig.env` de nivel superior. |
 | `routePrefix` | Prefijo de URL de la API reenviado a las aplicaciones hijas. |

@@ -109,12 +109,11 @@ export default {
 
 O snapshot precisa incluir sua proveniência e seu hash. Uma dependência ausente do snapshot é empacotada no bundle, a menos que outra regra de build documentada se aplique.
 
-O candidato combinado aprovado do Web Host 1.0.63 prevê o snapshot em
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`. Confirme a tag
-após a publicação. Não substitua essa URL pela aplicação local, por uma URL
+O Web Host 1.0.64 publicado usa o snapshot em
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Não substitua essa URL pela aplicação local, por uma URL
 `latest` sem fixação ou por uma lista de pacotes reconstruída manualmente.
 
-As entradas PrimeVue 4.5.5 do candidato são geradas a partir dos padrões públicos
+As entradas PrimeVue 4.5.5 desta versão são geradas a partir dos padrões públicos
 de exportação. O arquivo do Host `primevue-export-inventory.json` registra os
 destinos concretos de runtime. Use os especificadores exatos, sem curinga ou
 subconjunto manual. Consulte [Pacotes do Host](../web-host/packages.md).
@@ -154,9 +153,9 @@ incremental do site depois de esses pré-requisitos existirem.
 `build:site:relative` usa o prefixo da etiqueta como base relativa do Vite, mas
 os valores do import map continuam sendo URLs absolutas.
 
-Para o candidato, `APP_URL=https://cdn.example/wippy` e a etiqueta
-`webcomponents-1.0.63` produzem
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`. As URLs de
+Para a versão publicada, `APP_URL=https://cdn.example/wippy` e a etiqueta
+`webcomponents-1.0.64` produzem
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`. As URLs de
 vendor e dos chunks dinâmicos devem manter a mesma origem, caminho e etiqueta.
 Após a compilação, confira `dist/import-map.json`: todos os valores de `imports`
 devem ser URLs HTTP(S) absolutas sob a origem e o caminho configurados, sem

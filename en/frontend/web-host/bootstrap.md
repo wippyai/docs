@@ -95,7 +95,7 @@ parameter that selects the module entry, and managed mode is conveyed through
 
 ```typescript
 interface AppConfig {
-  $schema: string             // current facade: <facade_url>/schemas/wippy-context-2.2.json
+  $schema: string             // cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd')
   auth: AppAuthConfig
   env: AppEnv
   axiosDefaults?: Partial<AxiosDefaults>
@@ -283,12 +283,12 @@ interface AppConfig {
 }
 ```
 
-For srcdoc page documents, the Host composes the page map, generated Host defaults, then `AppConfig.importMap`. Standalone and facade documents, and each Web Fragment occurrence, have no page-provided srcdoc map; they compose Host defaults then `AppConfig.importMap`. Each Web Fragment occurrence runs in its own physical realm iframe. Within `imports` and each scope, the last value for a matching key wins and unrelated entries remain. Configuration can replace page or Host mappings, including Vue, PrimeVue, and Wippy packages. An exact key matches one specifier. A key ending in `/` matches that specifier prefix, and its target must also end in `/`. `scopes` select mappings by the importing module URL. Relative target URLs resolve against the document base URL.
+For srcdoc page documents, the Host composes the page map, generated Host defaults, then `AppConfig.importMap`. Standalone and facade documents have no page-provided srcdoc map; they compose Host defaults then `AppConfig.importMap`. Within `imports` and each scope, the last value for a matching key wins and unrelated entries remain. Configuration can replace page or Host mappings, including Vue, PrimeVue, and Wippy packages. An exact key matches one specifier. A key ending in `/` matches that specifier prefix, and its target must also end in `/`. `scopes` select mappings by the importing module URL. Relative target URLs resolve against the document base URL.
 
 Compose the map before registering the native import map and before loading modules. Omitting `importMap` from an update keeps the current extension. Set it to `null` or `{}` to clear the extension.
 
-An import-map update applies when a document is created. It does not change module resolution in an existing document. Reload that document to use the update; later-created documents use the latest configuration. Each Web Fragment occurrence has its own physical realm iframe and registers its map in that realm before loading modules.
+An import-map update applies when a document is created. It does not change module resolution in an existing document. Reload that document to use the update; later-created documents use the latest configuration. Web Fragment `AppConfig.importMap` and `scopes` support is deferred: `wippy/views` 0.5.12 does not guarantee that the composed map is registered before fragment modules load.
 
 Overriding a shared Vue, PrimeVue, or Wippy entry can split module or service identity between the Host and child code. Test those integrations against the exact released map before deploying an override.
 
-Using `AppConfig.importMap` directly requires Web Host 1.0.63 or later.
+The verified Web Host release baseline for direct `AppConfig.importMap` use is 1.0.64.

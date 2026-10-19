@@ -97,12 +97,11 @@ export default {
 
 スナップショットには出所とハッシュを含めなければなりません。スナップショットに存在しない依存関係は、別のドキュメント化されたビルドルールが当てはまらない限りバンドルされます。
 
-承認済みの統合候補 Web Host 1.0.63 では、スナップショット URL は
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json` の予定です。
-リリース後にタグを確認してください。local application URL、unpinned `latest` URL、
+公開済み Web Host 1.0.64 の snapshot URL は
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json` です。local application URL、unpinned `latest` URL、
 手動で再構成した list に置換しないでください。
 
-候補の PrimeVue 4.5.5 map entry は公開 export pattern から生成します。Host の
+この release の PrimeVue 4.5.5 map entry は公開 export pattern から生成します。Host の
 `primevue-export-inventory.json` に具体的な runtime target を記録します。Wildcard
 や手作業の subset ではなく、正確な指定子を使ってください。[Host パッケージ](../web-host/packages.md)を参照してください。
 
@@ -140,9 +139,9 @@ incremental build に使います。
 `build:site:relative` は Vite の relative asset base に tag prefix を使いますが、
 import-map value は引き続き absolute URL です。
 
-候補では `APP_URL=https://cdn.example/wippy` と tag
-`webcomponents-1.0.63` から
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json` が生成されます。
+公開済み release では `APP_URL=https://cdn.example/wippy` と tag
+`webcomponents-1.0.64` から
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json` が生成されます。
 vendor と dynamic chunk の URL も origin、デプロイパス、tag を保持します。
 build 後に `dist/import-map.json` を確認してください。全 `imports` value が設定した
 origin とパス配下の絶対 HTTP(S) URL であり、`/undefined/` を含まないことを確認します。

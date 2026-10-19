@@ -48,7 +48,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -83,11 +83,11 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 このパターンにより、CDNでホストされるバンドルにデプロイ固有のURL、トークン、ブランディングが含まれることはありません。バンドルはどのデプロイでも同一です。異なるのは設定のペイロードだけです。
 
-このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。現行の契約は `wippy-context-2.2` です。
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.45 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.64 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
 
 ## `/facade/config` のレスポンス
 
-このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。現行の契約は `wippy-context-2.2` です。
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.45 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.64 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
 
 ```json
 {
@@ -135,7 +135,7 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 | フィールド | 説明 |
 |-------|-------------|
-| `$schema` | 設定契約のバージョン（`"wippy-context-2.2"`）。 |
+| `$schema` | `cfg.schema_url`。省略時は `<facade_url>/schemas/wippy-context-2.0.xsd` を使用します。 |
 | `auth` | `AppConfig.auth` として注入される、ランタイムのbearerトークンと有効期限。 |
 | `env` | トップレベルの `AppConfig.env` として注入されるランタイムのURL。 |
 | `routePrefix` | 子アプリに転送されるAPIのURLプレフィックス。 |

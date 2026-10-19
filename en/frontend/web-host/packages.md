@@ -12,16 +12,16 @@ lifecycle.
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
-lockstep; this documentation snapshot targets the approved Web Host 1.0.63 and
-public package 0.0.63 candidates. Verify the deployed release before using its
-versioned assets.
+lockstep; this documentation snapshot covers published Web Host 1.0.64 and
+public package 0.0.64. Verify the deployed release before using its versioned
+assets.
 Host-only bundles are identified separately below and are not installable npm
 packages.
 
 Install the packages you need:
 
 ```bash
-npm install @wippy-fe/proxy@0.0.63 @wippy-fe/webcomponent-vue@0.0.63 @wippy-fe/router@0.0.63
+npm install @wippy-fe/proxy@0.0.64 @wippy-fe/webcomponent-vue@0.0.64 @wippy-fe/router@0.0.64
 ```
 
 ## Accessing the host — `@wippy-fe/proxy`
@@ -373,8 +373,8 @@ Use the same pinned `<version-tag>` as `fe_facade_url` and fetch the release art
 curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o import-map.json
 ```
 
-For the approved combined candidate, the expected `<version-tag>` is
-`webcomponents-1.0.63`. Confirm the tag after the release is published.
+For the published combined release, use the `<version-tag>`
+`webcomponents-1.0.64`.
 
 The exact keys of the fetched `imports` object are the JavaScript externalization contract:
 
@@ -414,7 +414,7 @@ See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map) for the AppConfig 
 
 ## PrimeVue 4.5.5 browser exports
 
-The approved combined candidate pins PrimeVue 4.5.5. Its generated
+The published Host release pins PrimeVue 4.5.5. Its generated
 `primevue-export-inventory.json` is served from the versioned Host root:
 
 ```bash
@@ -440,7 +440,7 @@ import maps do not support a `primevue/*` wildcard, so every runtime subpath has
 its own key. The Host resolves the package root from PrimeVue's root manifest
 and expands the declared export patterns to concrete package-relative targets.
 `@primevue/icons` and `@primeuix/*` remain in the shared vendor graph and
-are not direct map entries. The candidate pins `@primevue/icons` 4.5.5,
+are not direct map entries. The published Host release pins `@primevue/icons` 4.5.5,
 `@primeuix/styled` 0.7.4, `@primeuix/styles` and `@primeuix/themes` 2.0.3, and
 `@primeuix/utils` 0.6.4. The map has no direct JSON or CSS exports. Assets
 reachable through the JavaScript graph must still be present in the built Host
@@ -457,8 +457,8 @@ resolve to the shared Host graph. JavaScript externalization does not provide
 PrimeVue CSS. Request the required CSS separately through the documented Host
 CSS keys. The local preview CSS dependency remains a Phase 4 prerequisite.
 
-This inventory belongs to the unpublished candidate. Confirm its URL and
-contents against the released Host artifact before relying on it.
+This inventory belongs to published Web Host 1.0.64. Confirm its URL and
+contents against the deployed Host artifact before relying on it.
 
 PrimeVue Chart and Editor load `chart.js` 4.5.1 and `quill` 2.0.3 through dynamic chunks. The Host bundles both dependencies locally, so applications using mapped PrimeVue exports do not install them for those chunks. The Host snapshot has 294 map entries, including 274 PrimeVue entries. The Host injects `@wippy-fe/vue-utils` as the 295th key; this is not an application-level mapping. Use the exact pinned Host snapshot as the build contract.
 

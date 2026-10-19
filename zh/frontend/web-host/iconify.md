@@ -6,11 +6,11 @@ description: "为 Web Host 配置在线 Iconify 源或显式本地集合。"
 # Iconify 提供方
 
 Web Host 默认使用在线 Iconify 源。只有部署需要其他源时，才配置 `AppConfig.iconify.providers`。本页介绍的本地 Tabler 集合是离线部署的显式选项，不会改变默认源。
-直接使用 `AppConfig.iconify` 需要 Web Host 1.0.63 或更高版本。通过 Facade 部署时，最低版本要求请参阅 [Facade 模块](../../framework/facade.md)。
+直接使用 `AppConfig.iconify` 的已验证 Web Host 发布基线是 1.0.64。通过 Facade 部署时，请参阅 [Facade 模块](../../framework/facade.md)中的已验证基线。
 
 ## 配置提供方
 
-`providers` 使用 Iconify 提供方 ID 作为键。内置提供方使用空键 (`""`)，命名提供方使用小写字母和连字符组成的 ID。每个值都包含非空且有顺序的 HTTP(S) 源数组 `resources`。Host 按顺序尝试这些源，不会向配置数组添加公共源。
+`providers` 使用 Iconify 提供方 ID 作为键。内置提供方使用空键 (`""`)，命名提供方使用小写字母和连字符组成的 ID。每个值都包含非空的 HTTP(S) 源数组 `resources`。stock Iconify 会将这些源用作备用来源，并可能记住成功的来源，在后续请求中从该来源开始。Host 不会向配置数组添加公共源。
 
 ```ts
 interface IconifyConfig {
@@ -98,11 +98,11 @@ import { Icon } from '@iconify/vue'
 
 初始配置省略 `iconify` 时使用在线默认值。后续更新省略该字段时则保留当前 Iconify 配置。`iconify: null` 或 `providers: null` 会重置整个配置段并移除命名配置。空键设为 `null` 只重置内置提供方。命名提供方设为 `null` 会禁用该命名空间。省略的键保留当前路由。空的 `providers` 对象不会重置配置。
 
-验证器仅接受 `providers` 以及 `resources`、`path` 和 `timeout`。无效的初始配置会被忽略，无效更新会保留上次有效配置。`timeout` 为逻辑请求和所有已配置源设置一个共同截止时间。每次故障转移尝试都使用同一截止时间的剩余时长。只有与固定 Tabler 集合逐字节匹配且 Web Crypto SHA-256 可用时，响应才会被识别为完整集合。此类响应按去除查询参数的 endpoint URL 缓存。其他响应按包含查询参数的完整 URL 缓存。如果没有 `crypto.subtle`（例如不安全 HTTP），adapter 会按查询 URL 缓存，Iconify store 仍可使用其原生的逐图标缓存。adapter 两类缓存合计最多保留 32 个 URL。同一 URL 上替换集合不会清除已缓存的响应、已解析图标或 Iconify store 中的未命中结果。如果所有已配置源都失败，adapter 会返回暂时性错误，但原生 loader 可能会将未解析的名称缓存为未找到。更换 provider 不会再次请求该名称。要重新发起网络请求，请重新加载文档。Iconify 公共 API `addIcon` 和 `addCollection` 可以添加图标数据，但不会重置通用缓存。传输失败或响应无效时会尝试下一个源；有效响应中没有请求图标时会报告 not found。`iconifyIcons` 控制是否加载和注册 `<iconify-icon>` 自定义元素，不选择数据源。显式配置通过 AppConfig 传给子应用。Schema 2.0 和 2.1 输入会迁移到 2.2。请参阅[引导顺序](./bootstrap.md)、[CSS 注入](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)和[Facade](../../framework/facade.md)。
+验证器仅接受 `providers` 以及 `resources`、`path` 和 `timeout`。无效的初始配置会被忽略，无效更新会保留上次有效配置。`timeout` 会传给 stock Iconify API。Iconify 库负责加载图标、处理备用来源和缓存。Host 在文档初始化时配置 provider；更改 provider 后请重新加载文档，以应用新设置。`iconifyIcons` 控制是否加载和注册 `<iconify-icon>` 自定义元素，不选择数据源。显式配置通过 AppConfig 传给子应用。Schema 2.0 和 2.1 输入会迁移到 2.2。请参阅[引导顺序](./bootstrap.md)、[CSS 注入](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)和[Facade](../../framework/facade.md)。
 
 ## Provider trust and updates
 
-仅使用可信的 provider origin。页面会将图标内容作为 SVG 标记渲染。新的 `SetConfig` 请使用 `wippy-context-2.2`。带版本的 `wippy-context-2.0` 和 `wippy-context-2.1` 输入会被接受并迁移；不带 schema 的 1.0 输入无法包含新的 `iconify` 和 `importMap` 字段。更换 provider 只影响尚未加载的图标；缓存响应和已渲染图标不会清除。请打开新文档验证 provider 更换。
+仅使用可信的 provider origin。页面会将图标内容作为 SVG 标记渲染。新的 `SetConfig` 请使用 `wippy-context-2.2`。带版本的 `wippy-context-2.0` 和 `wippy-context-2.1` 输入会被接受并迁移；不带 schema 的 1.0 输入无法包含新的 `iconify` 和 `importMap` 字段。更改 provider 后，请重新加载文档以应用新设置。
 
 ## Schema 版本
 

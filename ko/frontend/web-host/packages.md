@@ -374,10 +374,9 @@ Host 릴리스에는 정적 Tabler 컬렉션이 `iconify/tabler.json`으로 포�
 
 ## PrimeVue 4.5.5 브라우저 export
 
-승인된 통합 후보는 PrimeVue 4.5.5를 고정합니다. 생성된 inventory는 버전이
-지정된 Host 루트에서 제공됩니다. 통합 후보는 Web Host 1.0.63과 공개 패키지
-0.0.63을 대상으로 합니다.
-아직 공개되지 않은 버전이므로 사용 전에 태그를 확인하세요.
+공개된 Host release는 PrimeVue 4.5.5를 고정합니다. 생성된 inventory는 버전이
+지정된 Host 루트에서 제공됩니다. 공개된 기준은 Web Host 1.0.64와 공개 패키지
+0.0.64입니다. 사용 전에 태그를 확인하세요.
 `primevue-export-inventory.json`:
 
 ```bash
@@ -397,7 +396,7 @@ map은 `primevue/*` 와일드카드를 지원하지 않으므로 각 런타임 �
 필요합니다. Host는 PrimeVue 루트 manifest에서 패키지 루트를 확인한 뒤 선언된
 export 패턴을 구체적인 패키지 상대 경로로 확장합니다. `@primevue/icons`와
 `@primeuix/*`는 공유 vendor graph에 포함되며 직접 맵 키로 노출하지 않습니다.
-후보는 `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4,
+공개된 Host release는 `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4,
 `@primeuix/styles` 및 `@primeuix/themes` 2.0.3, `@primeuix/utils` 0.6.4를 고정합니다.
 맵에는 직접 JSON 또는 CSS export가 없습니다. JavaScript graph에서 도달할 수 있는
 리소스도 빌드된 Host 배포물에 포함해야 합니다.
@@ -413,7 +412,7 @@ import Button from 'primevue/button'
 CSS는 문서화된 Host CSS key로 별도 요청하세요. 로컬 preview CSS는 Phase 4의
 선행 조건입니다.
 
-이 inventory는 아직 공개되지 않은 후보의 산출물입니다. 사용 전에 공개된 Host
+이 inventory는 공개된 Web Host 1.0.64의 산출물입니다. 사용 전에 공개된 Host
 산출물과 URL 및 내용을 대조하세요.
 
 JSON의 최상위 필드는 `schemaVersion`, `package`, `counts`, `exports`,

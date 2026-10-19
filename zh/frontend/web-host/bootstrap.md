@@ -219,12 +219,12 @@ interface AppConfig {
 }
 ```
 
-对于 srcdoc 页面文档，Host 按页面 map、生成的 Host 默认值、`AppConfig.importMap` 的顺序合并。standalone 和 facade 文档以及每个 Web Fragment occurrence 都没有 srcdoc 页面 map；它们合并 Host 默认值和 `AppConfig.importMap`。每个 Web Fragment occurrence 都在独立的物理 realm iframe 中运行。对于 `imports` 和每个 scope，同名键采用最后一个值，其他条目保留。配置可以替换页面或 Host 映射，包括 Vue、PrimeVue 和 Wippy。精确键匹配一个 specifier。以 `/` 结尾的键匹配该 specifier 前缀，目标也必须以 `/` 结尾。`scopes` 根据导入模块 URL 选择映射。相对目标 URL 根据文档 base URL 解析。
+对于 srcdoc 页面文档，Host 按页面 map、生成的 Host 默认值、`AppConfig.importMap` 的顺序合并。standalone 和 facade 文档没有 srcdoc 页面 map；它们合并 Host 默认值和 `AppConfig.importMap`。对于 `imports` 和每个 scope，同名键采用最后一个值，其他条目保留。配置可以替换页面或 Host 映射，包括 Vue、PrimeVue 和 Wippy。精确键匹配一个 specifier。以 `/` 结尾的键匹配该 specifier 前缀，目标也必须以 `/` 结尾。`scopes` 根据导入模块 URL 选择映射。相对目标 URL 根据文档 base URL 解析。
 
 Host 必须先组合映射并注册原生 import map，再加载模块。之后追加另一张映射无法替换已注册的键。更新时省略 `importMap` 会保留当前扩展；设为 `null` 或 `{}` 会清除扩展。
 
-import map 更新在创建文档时生效。它不会改变现有文档的模块解析。重新加载该文档后才能使用更新；之后创建的文档会使用最新配置。每个 Web Fragment occurrence 都有自己的物理 realm iframe，并在该 realm 中先注册映射再加载模块。
+import map 更新在创建文档时生效。它不会改变现有文档的模块解析。重新加载该文档后才能使用更新；之后创建的文档会使用最新配置。Web Fragment 的 `AppConfig.importMap` 和 `scopes` 支持暂缓处理：`wippy/views` 0.5.12 不保证在加载 Fragment 模块前注册组合后的映射。
 
 替换共享的 Vue、PrimeVue 或 Wippy 条目可能导致 Host 与子代码使用不同的模块或服务实例。部署覆盖项前，请用已发布的准确映射测试这些集成。
 
-直接使用 `AppConfig.importMap` 需要 Web Host 1.0.63 或更高版本。
+直接使用 `AppConfig.importMap` 的已验证 Web Host 发布基线是 1.0.64。

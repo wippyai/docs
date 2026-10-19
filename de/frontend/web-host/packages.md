@@ -377,10 +377,10 @@ Das Host-Release enthält die statische Tabler-Sammlung unter `iconify/tabler.js
 
 ## PrimeVue 4.5.5 Browser-Exporte
 
-Der genehmigte gemeinsame Kandidat verwendet PrimeVue 4.5.5. Das generierte
-Inventar liegt im versionierten Host-Stammverzeichnis. Der Kandidat zielt auf
-Web Host 1.0.63 und öffentliche Pakete 0.0.63.
-Diese Versionen sind noch nicht veröffentlicht; prüfen Sie die Tags vor der Nutzung.
+Das veröffentlichte Host-Release verwendet PrimeVue 4.5.5. Das generierte
+Inventar liegt im versionierten Host-Stammverzeichnis. Der veröffentlichte
+Web Host ist Version 1.0.64, die öffentlichen Pakete sind Version 0.0.64.
+Diese Versionen sind veröffentlicht; prüfen Sie die Tags vor der Nutzung.
 Datei: `primevue-export-inventory.json`.
 
 ```bash
@@ -401,7 +401,7 @@ Import-Maps unterstützen kein `primevue/*`-Wildcard, daher hat jeder Runtime-
 Subpfad einen eigenen Key. Der Host löst das Paket-Root über PrimeVues Manifest
 auf und erweitert die deklarierten Exportmuster zu konkreten paketrelativen
 Zielen. `@primevue/icons` und `@primeuix/*` bleiben im gemeinsamen Vendor-
-Graph und erhalten keine direkten Map-Keys. Der Kandidat verwendet
+Graph und erhalten keine direkten Map-Keys. Das veröffentlichte Host-Release verwendet
 `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4, `@primeuix/styles` und
 `@primeuix/themes` 2.0.3 sowie `@primeuix/utils` 0.6.4. Es gibt keine direkten JSON- oder
 CSS-Exports in der Map. Ressourcen, die über den JavaScript-Graphen erreichbar
@@ -419,7 +419,7 @@ Externalisierung liefert kein PrimeVue-CSS. Fordern Sie benötigte CSS-Ressource
 separat über die dokumentierten Host-CSS-Keys an. Die lokale Preview-CSS bleibt
 eine Voraussetzung für Phase 4.
 
-Dieses Inventar gehört zum unveröffentlichten Kandidaten. Prüfen Sie URL und
+Dieses Inventar gehört zum veröffentlichten Web Host 1.0.64. Prüfen Sie URL und
 Inhalt anhand des veröffentlichten Host-Artefakts, bevor Sie es verwenden.
 
 Das JSON hat die Felder `schemaVersion`, `package`, `counts`, `exports` und

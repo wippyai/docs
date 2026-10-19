@@ -301,4 +301,4 @@ wippy publish --embed facade:public_files
 
 facade requirement 名称为 `import_map`，`/facade/config` 将其作为 `cfg.importMap` 返回。shell 在导入 Host module 前通过共享 bootstrap 注册组合后的映射。随后在初始 `initWippyApp` config 中传递 `importMap: cfg.importMap`。请参阅[引导顺序](../frontend/web-host/bootstrap.md#appconfig-import-map)。
 
-Facade 的 `iconify` 和 `import_map` 要求需要 `wippy/facade` 0.6.44 或更高版本，以及 Web Host 1.0.63 或更高版本。
+Facade 的 `iconify` 和 `import_map` 要求的已验证发布基线是 `wippy/facade` 0.6.45 和 Web Host 1.0.64。

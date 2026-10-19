@@ -375,10 +375,10 @@ A versão do Host inclui a coleção estática do Tabler em `iconify/tabler.json
 
 ## Exports de navegador do PrimeVue 4.5.5
 
-O candidato combinado aprovado fixa o PrimeVue 4.5.5. O inventário gerado é
-servido na raiz versionada do Host. O candidato tem como alvo o Web Host 1.0.63
-e os pacotes públicos 0.0.63. Estas versões ainda não foram publicadas; confirme
-as etiquetas antes de as usar. Ficheiro: `primevue-export-inventory.json`.
+A versão publicada do Host fixa o PrimeVue 4.5.5. O inventário gerado é servido
+na raiz versionada do Host. A base publicada é Web Host 1.0.64 e os pacotes
+públicos 0.0.64. Confirme as etiquetas antes de as usar. Ficheiro:
+`primevue-export-inventory.json`.
 
 ```bash
 curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
@@ -398,7 +398,7 @@ navegador não aceitam o curinga `primevue/*`, então cada subcaminho de runtime
 tem sua própria chave. O Host resolve a raiz do pacote pelo manifesto do
 PrimeVue e expande os padrões declarados em destinos concretos relativos ao
 pacote. `@primevue/icons` e `@primeuix/*` permanecem no grafo compartilhado
-do vendor e não recebem chaves diretas. O candidato fixa `@primevue/icons`
+do vendor e não recebem chaves diretas. A versão publicada fixa `@primevue/icons`
 4.5.5, `@primeuix/styled` 0.7.4, `@primeuix/styles` e `@primeuix/themes` 2.0.3,
 e `@primeuix/utils` 0.6.4. O mapa não tem exports diretos JSON ou
 CSS. Os recursos alcançáveis pelo grafo JavaScript também precisam estar na
@@ -416,7 +416,7 @@ fornece CSS do PrimeVue. Solicite o CSS necessário separadamente pelas chaves
 CSS documentadas do Host. O CSS de preview local continua sendo um requisito da
 Fase 4.
 
-Este inventário pertence ao candidato ainda não publicado. Confirme o URL e o
+Este inventário corresponde ao Web Host 1.0.64 publicado. Confirme o URL e o
 conteúdo com o artefacto Host publicado antes de o usar.
 
 O JSON tem os campos de nível superior `schemaVersion`, `package`, `counts`,

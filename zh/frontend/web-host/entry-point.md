@@ -48,7 +48,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -83,11 +83,11 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 这种模式意味着 CDN 托管的 bundle 从不包含部署相关的 URL、令牌或品牌信息。对每次部署来说 bundle 都完全相同。不同的只有配置载荷。
 
-该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。当前契约为 `wippy-context-2.2`。
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.45 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.64 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
 
 ## `/facade/config` 响应
 
-该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。当前契约为 `wippy-context-2.2`。
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.45 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.64 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
 
 ```json
 {
@@ -135,7 +135,7 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 | 字段 | 说明 |
 |-------|-------------|
-| `$schema` | 配置契约版本（`"wippy-context-2.2"`）。 |
+| `$schema` | `cfg.schema_url`；若未提供，则使用 `<facade_url>/schemas/wippy-context-2.0.xsd` |
 | `auth` | 作为 `AppConfig.auth` 注入的运行时 bearer 令牌与过期时间。 |
 | `env` | 作为顶层 `AppConfig.env` 注入的运行时 URL。 |
 | `routePrefix` | 转发给子应用的 API URL 前缀。 |

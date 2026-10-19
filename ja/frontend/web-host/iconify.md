@@ -6,11 +6,11 @@ description: "Web Host の Iconify オンラインソースまたは明示的な
 # Iconify プロバイダー
 
 Web Host は既定で Iconify のオンラインソースを使います。別のソースが必要な場合に限り `AppConfig.iconify.providers` を設定してください。このページのローカル Tabler コレクションは、オフライン環境向けの明示的な選択肢です。既定ソースは変更されません。
-`AppConfig.iconify` を直接使うには、Web Host 1.0.63 以降が必要です。Facade 経由で設定する場合の最小バージョンは、[Facade モジュール](../../framework/facade.md)を参照してください。
+`AppConfig.iconify` の直接利用について確認済みの Web Host リリース基準は 1.0.64 です。Facade 経由で設定する場合は、[Facade モジュール](../../framework/facade.md)の確認済み基準を参照してください。
 
 ## プロバイダーの設定
 
-`providers` のキーは Iconify プロバイダー ID です。組み込みプロバイダーには空のキー (`""`) を使い、名前付きプロバイダーには小文字とハイフンの ID を使います。各値には空でない順序付きの HTTP(S) オリジン配列 `resources` が必要です。Host はこの順番で試行し、公開ソースを配列に追加しません。
+`providers` のキーは Iconify プロバイダー ID です。組み込みプロバイダーには空のキー (`""`) を使い、名前付きプロバイダーには小文字とハイフンの ID を使います。各値には空でない HTTP(S) origin 配列 `resources` が必要です。標準の Iconify はこれらを代替 origin として使用します。成功した origin を記憶し、後続のリクエストをそこから開始する場合があります。Host は設定した配列に公開ソースを追加しません。
 
 ```ts
 interface IconifyConfig {
@@ -96,11 +96,11 @@ import { Icon } from '@iconify/vue'
 
 初期設定で `iconify` を省略するとオンラインの既定値が使われます。後続の更新で省略した場合、現在の Iconify 設定は変わりません。`iconify: null` または `providers: null` は全体をオンライン既定値に戻し、名前付き設定を削除します。空キーの `null` は組み込みプロバイダーだけを戻します。名前付きプロバイダーの `null` はその名前空間を無効にします。省略したキーは現在のルートを維持し、空の `providers` はリセットではありません。
 
-許可される設定は `providers`、`resources`、`path`、`timeout` です。無効な初期設定は無視され、無効な更新は最後の有効設定を保ちます。`timeout` は設定済みオリジン全体で共有する論理リクエストの期限です。各フェイルオーバー試行は同じ期限の残り時間を使います。固定された Tabler コレクションとバイト単位で一致し、Web Crypto SHA-256 が使える場合に限り、完全なコレクション応答として認識します。この応答はクエリを除いたエンドポイント URL で保存します。それ以外の応答はクエリを含む完全な URL で保存します。安全でない HTTP などで `crypto.subtle` が使えない場合、アダプターはクエリ単位のキャッシュを使い、Iconify ストアのアイコン別ネイティブキャッシュは引き続き利用できます。アダプターのキャッシュは合計 32 URL が上限です。同じ URL のコレクションを置き換えても、保存済み応答、解決済みアイコン、Iconify ネイティブストアの negative 結果は消えません。設定したすべてのオリジンで失敗すると、アダプターは一時的な失敗を返しますが、ネイティブローダーが未解決の名前を missing として保存する場合があります。provider を変更しても、その名前は再リクエストされません。ネットワークから再取得するには document を再読み込みしてください。Iconify の公開 API `addIcon` と `addCollection` はアイコンデータを追加できますが、共通キャッシュをリセットするものではありません。通信失敗や不正な応答では次のオリジンを試し、有効な応答にアイコンがない場合は not found になります。`iconifyIcons` は `<iconify-icon>` 要素の読み込みと登録を制御し、ソースは選びません。明示的な設定は AppConfig で子アプリに渡されます。Schema 2.0 と 2.1 は 2.2 に移行されます。[ブートストラップシーケンス](./bootstrap.md)、[CSS injection](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)、[Facade](../../framework/facade.md) を参照してください。
+生成されたスキーマは JSON の形式とフィールドの上限を確認します。実行時検証では `resources` が HTTP(S) origin であることと、`path` が Host の規則に従うことも確認します。そのため、スキーマを通過した値が実行時に拒否される場合があります。検証器が受け付けるのは `providers` と、各プロバイダーの `resources`、`path`、`timeout` だけです。無効な初期設定は無視され、オンラインの既定値が使われます。無効な更新では最後の有効な Iconify 設定が保たれ、他の有効な AppConfig フィールドは更新できます。Host は `timeout` を標準 Iconify のプロバイダー API に渡し、各ストアを一度だけ設定します。標準の Iconify がアイコンの読み込み、リソース選択、再試行、キャッシュを処理します。成功した origin を記憶し、後続のリクエストをそこから開始する場合があります。プロバイダーの変更を適用するには document を再読み込みしてください。`iconifyIcons` は `<iconify-icon>` 要素の読み込みと登録を制御し、ソースは選びません。明示的な設定は AppConfig で子アプリに渡されます。Schema 2.0 と 2.1 は 2.2 に移行されます。[ブートストラップシーケンス](./bootstrap.md)、[CSS injection](./css-injection.md)、[Proxy API](../micro-frontends/proxy-api.md)、[Facade](../../framework/facade.md) を参照してください。
 
 ## Provider trust and updates
 
-信頼できる provider origin のみを使用してください。ページはアイコン本体を SVG マークアップとして描画します。新しい `SetConfig` には `wippy-context-2.2` を使用してください。バージョン付きの `wippy-context-2.0` と `wippy-context-2.1` は受け入れられて移行されます。schema-less 1.0 の入力には新しい `iconify` と `importMap` フィールドを含められません。provider の変更は未読み込みのアイコンに適用されます。キャッシュ済み応答や描画済みアイコンは消去されません。変更を確認するには新しい document を開いてください。
+信頼できる provider origin のみを使用してください。ページはアイコン本体を SVG マークアップとして描画します。新しい `SetConfig` には `wippy-context-2.2` を使用してください。バージョン付きの `wippy-context-2.0` と `wippy-context-2.1` は受け入れられて移行されます。schema-less 1.0 の入力には新しい `iconify` と `importMap` フィールドを含められません。
 
 ## スキーマのバージョン
 

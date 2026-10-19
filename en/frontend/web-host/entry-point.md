@@ -60,7 +60,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -100,11 +100,11 @@ The CDN-hosted bundle is identical across deployments; deployment-specific
 URLs and branding arrive in the config response, while the bearer token comes
 from browser storage.
 
-The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. The current contract is `wippy-context-2.2`.
+The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.45 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.64 accepts both versioned schemas and migrates them to canonical 2.2.
 
 ## The `/facade/config` Response
 
-The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. The current contract is `wippy-context-2.2`.
+The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.45 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.64 accepts both versioned schemas and migrates them to canonical 2.2.
 
 ```json
 {
@@ -174,7 +174,7 @@ The standard shell itself adds these required `AppConfig` fields:
 
 | Field | Source |
 |-------|--------|
-| `$schema` | `<facade_url>/schemas/wippy-context-2.2.json` |
+| `$schema` | `cfg.schema_url`; if absent, `<facade_url>/schemas/wippy-context-2.0.xsd` |
 | `auth` | Token read from `@wippy_token_info`; the current shell synthesizes an expiry one day from initialization. |
 | `context` | `{ resourceId: '', resourceType: 'page' }` |
 

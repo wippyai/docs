@@ -48,7 +48,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -83,11 +83,11 @@ Web Host извлекает полезную нагрузку `AppConfig` из �
 
 Такой подход означает, что размещённый на CDN бандл никогда не содержит URL, токенов или брендинга конкретного развёртывания. Бандл одинаков для всех развёртываний. Различается только полезная нагрузка конфигурации.
 
-Эндпоинт возвращает настройки оболочки и выбранные поля Web Host. Он не возвращает полный `AppConfig`: оболочка добавляет `$schema`, `auth` и `context` перед вызовом `initWippyApp`. Текущий контракт — `wippy-context-2.2`.
+Эндпоинт возвращает настройки оболочки и выбранные поля Web Host. Он не возвращает полный `AppConfig`: оболочка добавляет `$schema`, `auth` и `context` перед вызовом `initWippyApp`. Facade 0.6.45 передаёт `schema_url`: `wippy-context-2.0.xsd` для старой политики и `wippy-context-2.1.json` для современной политики. Если более старая версия Facade не передаёт это поле, оболочка использует резервную схему XSD 2.0. Web Host 1.0.64 принимает обе версии схемы и преобразует их в канонический формат 2.2.
 
 ## Ответ `/facade/config`
 
-Эндпоинт возвращает настройки оболочки и выбранные поля Web Host. Он не возвращает полный `AppConfig`: оболочка добавляет `$schema`, `auth` и `context` перед вызовом `initWippyApp`. Текущий контракт — `wippy-context-2.2`.
+Эндпоинт возвращает настройки оболочки и выбранные поля Web Host. Он не возвращает полный `AppConfig`: оболочка добавляет `$schema`, `auth` и `context` перед вызовом `initWippyApp`. Facade 0.6.45 передаёт `schema_url`: `wippy-context-2.0.xsd` для старой политики и `wippy-context-2.1.json` для современной политики. Если более старая версия Facade не передаёт это поле, оболочка использует резервную схему XSD 2.0. Web Host 1.0.64 принимает обе версии схемы и преобразует их в канонический формат 2.2.
 
 ```json
 {
@@ -135,7 +135,7 @@ Web Host извлекает полезную нагрузку `AppConfig` из �
 
 | Поле | Описание |
 |-------|-------------|
-| `$schema` | Версия контракта конфигурации (`"wippy-context-2.2"`). |
+| `$schema` | `cfg.schema_url`; если поле отсутствует: `<facade_url>/schemas/wippy-context-2.0.xsd` |
 | `auth` | Рантайм-токен bearer и срок его действия, внедряемые как `AppConfig.auth`. |
 | `env` | Рантайм-URL, внедряемые как `AppConfig.env` верхнего уровня. |
 | `routePrefix` | Префикс URL API, передаваемый дочерним приложениям. |

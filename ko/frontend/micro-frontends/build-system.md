@@ -104,12 +104,11 @@ export default {
 
 스냅샷에는 출처와 해시가 포함되어야 합니다. 스냅샷에 없는 의존성은, 문서화된 다른 빌드 규칙이 적용되지 않는 한 번들에 포함됩니다.
 
-승인된 통합 Web Host 1.0.63 후보의 예상 스냅샷 URL은
-`https://web-host.wippy.ai/webcomponents-1.0.63/import-map.json`입니다. 배포 후
-태그를 확인하세요. 로컬 애플리케이션 URL, 고정되지 않은 `latest` URL, 수동으로
+공개된 Web Host 1.0.64 release의 스냅샷 URL은
+`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`입니다. 로컬 애플리케이션 URL, 고정되지 않은 `latest` URL, 수동으로
 재구성한 패키지 목록으로 바꾸지 마세요.
 
-후보의 PrimeVue 4.5.5 항목은 공개 export 패턴에서 생성됩니다. Host의
+이 release의 PrimeVue 4.5.5 항목은 공개 export 패턴에서 생성됩니다. Host의
 `primevue-export-inventory.json`은 구체적인 런타임 대상을 기록합니다. 와일드카드나
 수동 부분집합을 사용하지 말고 정확한 스펙파이어를 사용하세요. [Host 패키지](../web-host/packages.md)를 참조하세요.
 
@@ -146,8 +145,8 @@ incremental build에만 사용하세요.
 `build:site:relative`는 Vite relative asset base에 tag prefix를 사용하지만,
 import-map 값은 계속 absolute URL입니다.
 
-후보에서 `APP_URL=https://cdn.example/wippy`와 tag `webcomponents-1.0.63`은
-`https://cdn.example/wippy/webcomponents-1.0.63/import-map.json`을 생성합니다.
+공개 release에서 `APP_URL=https://cdn.example/wippy`와 tag `webcomponents-1.0.64`은
+`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`을 생성합니다.
 vendor와 dynamic chunk URL도 origin, 배포 경로, tag를 유지해야 합니다. 빌드 후
 `dist/import-map.json`에서 모든 `imports` 값이 설정한 origin과 경로 아래의 absolute
 HTTP(S) URL인지, `/undefined/`가 없는지 확인하세요. 이어 실제 배포 경로로 map과

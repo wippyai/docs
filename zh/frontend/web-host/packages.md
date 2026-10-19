@@ -359,9 +359,8 @@ Host 发布包在 `iconify/tabler.json` 中包含静态 Tabler 集合。它是�
 
 ## PrimeVue 4.5.5 浏览器导出
 
-获批的合并候选版本固定使用 PrimeVue 4.5.5。生成的 inventory 随版本放在
-Host 根目录。合并候选目标版本为 Web Host 1.0.63 和公开包 0.0.63。这些版本尚未发布，
-使用前请确认对应标签。
+已发布的 Host 版本固定使用 PrimeVue 4.5.5。生成的 inventory 随版本放在
+Host 根目录。已发布的基线为 Web Host 1.0.64 和公开包 0.0.64。使用前请确认对应标签。
 `primevue-export-inventory.json`:
 
 ```bash
@@ -377,7 +376,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory
 映射包含 `primevue`、`primevue/button` 等确切键。浏览器 import map 不支持
 `primevue/*` 通配符，因此每个运行时子路径都有独立的键。Host 根据 PrimeVue 根
 manifest 解析包根，再将已声明的导出模式扩展为包内确切目标。`@primevue/icons`
-和 `@primeuix/*` 保留在共享 vendor 图中，不作为直接映射键。候选版本固定为
+和 `@primeuix/*` 保留在共享 vendor 图中，不作为直接映射键。已发布版本固定为
 `@primevue/icons` 4.5.5、`@primeuix/styled` 0.7.4、`@primeuix/styles` 和
 `@primeuix/themes` 2.0.3、`@primeuix/utils` 0.6.4。映射没有直接 JSON 或
 CSS 导出。JavaScript 图可达的资源也必须包含在 Host 构建产物中。
@@ -391,7 +390,7 @@ import Button from 'primevue/button'
 外部化不会提供 PrimeVue CSS。请通过文档化的 Host CSS 键单独请求所需样式。本地预览
 CSS 仍是 Phase 4 的前置条件。
 
-该 inventory 属于尚未发布的候选版本。使用前，请对照已发布的 Host 产物确认其 URL
+该 inventory 属于已发布的 Web Host 1.0.64。使用前，请对照已发布的 Host 产物确认其 URL
 和内容。
 
 JSON 顶层字段包括 `schemaVersion`、`package`、`counts`、`exports` 和 `entries`。

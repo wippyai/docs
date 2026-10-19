@@ -48,7 +48,7 @@ window.WippyImportMapBootstrap.register(undefined, hostMap, cfg.importMap, docum
 
 await import(cfg.facade_url + cfg.module_file)
 window.initWippyApp({
-  $schema: cfg.facade_url + '/schemas/wippy-context-2.2.json',
+  $schema: cfg.schema_url || (cfg.facade_url + '/schemas/wippy-context-2.0.xsd'),
   auth: { token, expiresAt: new Date(Date.now() + 86_400_000).toISOString() },
   env: cfg.env,
   routePrefix: cfg.routePrefix,
@@ -83,11 +83,11 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 이 패턴 덕분에 CDN에 호스팅된 번들에는 배포별 URL, 토큰, 브랜딩이 전혀 포함되지 않습니다. 번들은 모든 배포에서 동일하며, 설정 페이로드만 다릅니다.
 
-이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. 현재 계약은 `wippy-context-2.2`입니다.
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.45는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.64는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
 
 ## `/facade/config` 응답
 
-이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. 현재 계약은 `wippy-context-2.2`입니다.
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.45는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.64는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
 
 ```json
 {
@@ -135,7 +135,7 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 | 필드 | 설명 |
 |-------|-------------|
-| `$schema` | 설정 계약 버전(`"wippy-context-2.2"`). |
+| `$schema` | `cfg.schema_url`; 없으면 `<facade_url>/schemas/wippy-context-2.0.xsd`를 사용합니다. |
 | `auth` | `AppConfig.auth`로 주입되는 런타임 bearer 토큰과 만료 시각. |
 | `env` | 최상위 `AppConfig.env`로 주입되는 런타임 URL. |
 | `routePrefix` | 자식 앱으로 전달되는 API URL 접두사. |

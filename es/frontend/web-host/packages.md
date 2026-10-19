@@ -375,10 +375,10 @@ La versión de Host incluye la colección estática de Tabler en `iconify/tabler
 
 ## Exportaciones de navegador de PrimeVue 4.5.5
 
-El candidato combinado aprobado fija PrimeVue 4.5.5. El inventario generado
-se sirve desde la raíz versionada de Host. El candidato usa Web Host 1.0.63 y
-paquetes públicos 0.0.63. Estas versiones aún no se han publicado; confirme las
-etiquetas antes de usarlas. Archivo: `primevue-export-inventory.json`.
+La versión publicada de Host fija PrimeVue 4.5.5. El inventario generado se
+sirve desde la raíz versionada de Host. La versión publicada es Web Host 1.0.64
+y los paquetes públicos son 0.0.64. Confirme las etiquetas antes de usarlas.
+Archivo: `primevue-export-inventory.json`.
 
 ```bash
 curl.exe -fsS "https://web-host.wippy.ai/<release-tag>/primevue-export-inventory.json" -o primevue-export-inventory.json
@@ -400,7 +400,7 @@ subruta de ejecución tiene su propia clave. Host resuelve la raíz del paquete
 desde el manifiesto de PrimeVue y expande los patrones declarados a destinos
 concretos relativos al paquete. `@primevue/icons` y `@primeuix/*` siguen en
 el grafo compartido del proveedor y no tienen claves directas en el mapa. El
-candidato fija `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4,
+versión publicada fija `@primevue/icons` 4.5.5, `@primeuix/styled` 0.7.4,
 `@primeuix/styles` y `@primeuix/themes` 2.0.3, y `@primeuix/utils` 0.6.4. El
 mapa no tiene exportaciones directas JSON ni CSS. Los recursos alcanzables desde
 el grafo JavaScript también deben estar en la distribución compilada de Host.
@@ -417,7 +417,7 @@ de JavaScript no entrega el CSS de PrimeVue. Solicite el CSS necesario por
 separado mediante las claves CSS documentadas de Host. El CSS de vista previa
 local sigue siendo un requisito de la Fase 4.
 
-Este inventario pertenece al candidato aún no publicado. Confirme su URL y
+Este inventario corresponde al Web Host 1.0.64 publicado. Confirme su URL y
 contenido con el artefacto Host publicado antes de usarlo.
 
 El JSON contiene los campos `schemaVersion`, `package`, `counts`, `exports` y

@@ -6,11 +6,11 @@ description: "Web Host의 온라인 Iconify 소스 또는 명시적 로컬 컬�
 # Iconify 공급자
 
 Web Host는 기본적으로 온라인 Iconify 소스를 사용합니다. 배포에 다른 소스가 필요할 때만 `AppConfig.iconify.providers`를 구성하세요. 이 페이지의 로컬 Tabler 컬렉션은 오프라인 배포를 위한 명시적 선택 사항이며 기본 소스를 바꾸지 않습니다.
-`AppConfig.iconify`를 직접 사용하려면 Web Host 1.0.63 이상이 필요합니다. Facade 배포의 최소 버전은 [Facade 모듈](../../framework/facade.md)을 참고하십시오.
+`AppConfig.iconify` 직접 사용에 대해 확인된 Web Host 릴리스 기준은 1.0.64입니다. Facade 배포는 [Facade 모듈](../../framework/facade.md)의 확인된 기준을 참고하십시오.
 
 ## 공급자 구성
 
-`providers`는 Iconify 공급자 ID를 키로 사용합니다. 빈 키(`""`)는 기본 공급자에 사용하고, 이름이 있는 공급자에는 소문자와 하이픈으로 된 ID를 사용합니다. 각 값에는 비어 있지 않은 순서형 HTTP(S) origin 배열 `resources`가 필요합니다. Host는 순서대로 origin을 시도하며 공개 소스를 배열에 추가하지 않습니다.
+`providers`는 Iconify 공급자 ID를 키로 사용합니다. 빈 키(`""`)는 기본 공급자에 사용하고, 이름이 있는 공급자에는 소문자와 하이픈으로 된 ID를 사용합니다. 각 값에는 비어 있지 않은 HTTP(S) origin 배열 `resources`가 필요합니다. stock Iconify는 이 리소스를 대체 origin으로 사용합니다. 성공한 origin을 기억해 이후 요청을 그곳에서 시작할 수 있습니다. Host는 구성된 배열에 공개 소스를 추가하지 않습니다.
 
 ```ts
 interface IconifyConfig {
@@ -96,11 +96,11 @@ import { Icon } from '@iconify/vue'
 
 초기 config에서 `iconify`를 생략하면 온라인 기본값을 사용합니다. 이후 update에서 생략하면 현재 Iconify config를 유지합니다. `iconify: null` 또는 `providers: null`은 전체 설정을 온라인 기본값으로 재설정하고 이름 있는 공급자를 제거합니다. 빈 키의 `null`은 기본 공급자만 재설정합니다. 이름 있는 공급자의 `null`은 해당 namespace를 비활성화합니다. 생략한 키는 현재 경로를 유지하며 빈 `providers` 객체는 재설정하지 않습니다.
 
-검증기는 `providers`와 `resources`, `path`, `timeout`만 허용합니다. 잘못된 초기 값은 무시하고 잘못된 업데이트는 마지막 유효 설정을 유지합니다. `timeout`은 구성된 모든 origin이 공유하는 하나의 논리 요청 기한입니다. 각 failover 시도는 동일한 기한의 남은 시간을 사용합니다. 고정 Tabler 컬렉션과 바이트 단위로 일치하고 Web Crypto SHA-256을 사용할 수 있을 때만 전체 컬렉션 응답으로 인식합니다. 해당 응답은 쿼리를 제거한 endpoint URL을 키로 저장합니다. 그 외 응답은 쿼리를 포함한 전체 URL로 저장합니다. 안전하지 않은 HTTP 등으로 `crypto.subtle`을 사용할 수 없으면 adapter는 쿼리별 캐시를 사용하며 Iconify store의 아이콘별 native cache는 계속 사용할 수 있습니다. adapter 캐시의 합산 한도는 URL 32개입니다. 같은 URL의 컬렉션을 바꿔도 저장된 응답, 이미 해석된 아이콘, Iconify native store의 negative 결과는 지워지지 않습니다. 구성한 모든 origin에서 실패하면 adapter는 일시적 실패를 반환하지만 native loader는 미해결 이름을 missing으로 저장할 수 있습니다. provider를 바꿔도 해당 이름을 다시 요청하지 않습니다. 네트워크에서 다시 가져오려면 문서를 reload하세요. Iconify 공개 API `addIcon`과 `addCollection`은 아이콘 데이터를 추가할 수 있지만 일반 캐시를 reset하지 않습니다. 전송 오류나 잘못된 응답은 다음 origin을 시도하고, 유효한 응답에 아이콘이 없으면 not found로 반환합니다. `iconifyIcons`는 `<iconify-icon>` 사용자 지정 요소를 불러오고 등록하며 소스를 선택하지 않습니다. 명시 설정은 AppConfig를 통해 하위 앱에 전달됩니다. Schema 2.0과 2.1은 2.2로 마이그레이션됩니다. [부트스트랩 순서](./bootstrap.md), [CSS 주입](./css-injection.md), [Proxy API](../micro-frontends/proxy-api.md), [Facade](../../framework/facade.md)를 참조하세요.
+검증기는 `providers`와 각 공급자의 `resources`, `path`, `timeout`만 허용합니다. 잘못된 초기 설정은 무시되어 온라인 기본값이 유지됩니다. 잘못된 업데이트는 마지막 유효한 Iconify 설정을 유지하며 다른 유효한 AppConfig 필드는 업데이트될 수 있습니다. Host는 `timeout`을 stock Iconify provider API에 전달하고 각 store를 한 번만 구성합니다. stock Iconify가 아이콘 로드, 리소스 선택, 재시도, 캐시를 처리합니다. 성공한 origin을 기억해 이후 요청을 그곳에서 시작할 수 있습니다. 공급자 변경을 적용하려면 문서를 다시 로드하세요. `iconifyIcons`는 `<iconify-icon>` 사용자 지정 요소를 불러오고 등록하며 소스를 선택하지 않습니다. 명시 설정은 AppConfig를 통해 하위 앱에 전달됩니다. Schema 2.0과 2.1은 2.2로 마이그레이션됩니다. [부트스트랩 순서](./bootstrap.md), [CSS 주입](./css-injection.md), [Proxy API](../micro-frontends/proxy-api.md), [Facade](../../framework/facade.md)를 참조하세요.
 
 ## Provider trust and updates
 
-신뢰할 수 있는 provider origin만 사용하세요. 페이지는 아이콘 본문을 SVG 마크업으로 렌더링합니다. 새 `SetConfig`에는 `wippy-context-2.2`를 사용하세요. 버전이 지정된 `wippy-context-2.0`과 `wippy-context-2.1` 입력은 허용되어 마이그레이션됩니다. schema-less 1.0 입력에는 새 `iconify`와 `importMap` 필드를 포함할 수 없습니다. provider 변경은 아직 로드되지 않은 아이콘에 적용됩니다. 캐시된 응답과 이미 렌더링된 아이콘은 지워지지 않습니다. 변경을 확인하려면 새 문서를 여세요.
+신뢰할 수 있는 provider origin만 사용하세요. 페이지는 아이콘 본문을 SVG 마크업으로 렌더링합니다. 새 `SetConfig`에는 `wippy-context-2.2`를 사용하세요. 버전이 지정된 `wippy-context-2.0`과 `wippy-context-2.1` 입력은 허용되어 마이그레이션됩니다. schema-less 1.0 입력에는 새 `iconify`와 `importMap` 필드를 포함할 수 없습니다.
 
 ## 스키마 버전
 

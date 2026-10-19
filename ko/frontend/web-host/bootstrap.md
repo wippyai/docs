@@ -222,12 +222,12 @@ interface AppConfig {
 }
 ```
 
-srcdoc 페이지 문서에서 Host는 페이지 맵, 생성된 Host 기본값, `AppConfig.importMap` 순서로 합성합니다. standalone 및 facade 문서와 각 Web Fragment occurrence에는 srcdoc 페이지 맵이 없으므로 Host 기본값과 `AppConfig.importMap`을 합성합니다. 각 Web Fragment occurrence는 별도의 물리 realm iframe에서 실행됩니다. `imports`와 각 scope에서 일치하는 키의 마지막 값이 우선하며 다른 항목은 유지됩니다. 설정은 Vue, PrimeVue, Wippy를 포함한 페이지 또는 Host 매핑을 바꿀 수 있습니다. 정확한 키는 하나의 specifier와 일치합니다. `/`로 끝나는 키는 해당 specifier prefix와 일치하며 대상 URL도 `/`로 끝나야 합니다. `scopes`는 import하는 모듈 URL에 따라 매핑을 선택합니다. 상대 대상 URL은 문서 base URL을 기준으로 해석됩니다.
+srcdoc 페이지 문서에서 Host는 페이지 맵, 생성된 Host 기본값, `AppConfig.importMap` 순서로 합성합니다. standalone 및 facade 문서에는 srcdoc 페이지 맵이 없으므로 Host 기본값과 `AppConfig.importMap`을 합성합니다. `imports`와 각 scope에서 일치하는 키의 마지막 값이 우선하며 다른 항목은 유지됩니다. 설정은 Vue, PrimeVue, Wippy를 포함한 페이지 또는 Host 매핑을 바꿀 수 있습니다. 정확한 키는 하나의 specifier와 일치합니다. `/`로 끝나는 키는 해당 specifier prefix와 일치하며 대상 URL도 `/`로 끝나야 합니다. `scopes`는 import하는 모듈 URL에 따라 매핑을 선택합니다. 상대 대상 URL은 문서 base URL을 기준으로 해석됩니다.
 
 모듈을 불러오기 전에 map을 구성하고 native import map을 등록해야 합니다. 나중에 다른 map을 추가해도 이미 등록한 키를 바꿀 수 없습니다. 업데이트에서 `importMap`을 생략하면 현재 확장 설정을 유지합니다. `null` 또는 `{}`를 지정하면 확장 설정을 지웁니다.
 
-import map 업데이트는 document를 만들 때 적용됩니다. 이미 열린 document의 module 해석은 바뀌지 않습니다. 업데이트를 적용하려면 그 document를 다시 불러오세요. 이후 만든 document는 최신 config를 사용합니다. 각 Web Fragment occurrence는 자체 물리 realm iframe을 가지며 해당 realm에서 module 실행 전에 map을 등록합니다.
+import map 업데이트는 document를 만들 때 적용됩니다. 이미 열린 document의 module 해석은 바뀌지 않습니다. 업데이트를 적용하려면 그 document를 다시 불러오세요. 이후 만든 document는 최신 config를 사용합니다. Web Fragment의 `AppConfig.importMap` 및 `scopes` 지원은 보류 중입니다. `wippy/views` 0.5.12는 합성된 map이 Fragment module을 불러오기 전에 등록된다고 보장하지 않습니다.
 
 공유 Vue, PrimeVue 또는 Wippy 항목을 바꾸면 Host와 자식 코드의 모듈 또는 서비스 identity가 달라질 수 있습니다. override를 배포하기 전에 공개된 정확한 map으로 통합 동작을 확인하세요.
 
-`AppConfig.importMap`을 직접 사용하려면 Web Host 1.0.63 이상이 필요합니다.
+`AppConfig.importMap` 직접 사용에 대해 확인된 Web Host 릴리스 기준은 1.0.64입니다.
