@@ -26,6 +26,8 @@ After setting the dependency declarations, run `wippy update wippy/facade wippy/
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
+Public reads include `/cdn/iconify/...`, `/cdn/fonts/families`, family stylesheets, and WOFF2 files. Catalog, settings, status, rescan, import, deletion, and browser font upload routes under `/cdn/fonts/{id}/uploads` are protected management endpoints. They require an authenticated actor and the management policy and host firewall described above.
+
 The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.3 packages include optional lazy Inspector components.
 
 ## Inspector configuration
@@ -96,6 +98,18 @@ Each WOFF2 face can be up to 20 MiB. The notice can be up to 1 MiB and must be U
 
 The core copies input bytes to private staging and validates the copied content before it can replace an active revision. It preserves the last committed valid revision and the original user files when an input is incomplete or invalid. The content-copy guarantee covers the validated copied bytes. It does not promise to detect every filesystem link encoding.
 
+## Discover manual assets
+
+Core scans the `iconify/library` and `fonts/library` folders under the configured data directory when its writer starts. It repeats the inventory scan from a background timer that ticks every two seconds. The scan and validation run through the single writer, and a large input can take longer than one timer interval to process.
+
+Inventory completion does not mean every file passed validation or was activated. Core validates pending inputs in separate steps. Check the protected `GET /cdn/health` status for the last full scan and the content cycle status. A cycle can still be running, overdue, or report unverified files.
+
+To request a fresh scan, use the protected `POST /cdn/rescan` route and poll its operation as described below. This scans local input and verifies committed snapshots. It does not download provider assets. Provider downloads remain separate actions controlled by **Allow downloads**.
+
+The single writer process serializes scans and queued management changes. A complete valid input can create a new revision. If a replacement is incomplete or invalid, the last valid revision remains selected. Removing or renaming a source file marks that input as missing; it does not delete the saved asset or its revisions. Delete an asset explicitly when you want to remove it.
+
+After restart, Core checks each committed revision and restores missing or changed serving files from the validated bytes stored in the database. This recovery uses the stored content and does not contact a provider. If stored content fails its integrity checks, recovery reports an error instead of restoring unverified bytes.
+
 ## Built-in assets
 
 The Iconify adapter includes Tabler from @iconify/json 2.2.460, based on Tabler 3.41.1 with its MIT notice.
@@ -132,6 +146,12 @@ Replace the origin with the application’s public origin. Named Iconify provide
 The local font service provides CSS at `/cdn/fonts/<family-id>.css`. A custom host can load the stable stylesheet through its existing CSS configuration. Generated WOFF2 URLs are relative to each stylesheet, so they keep the application’s deployment path prefix. The font router allows cross-origin GET requests without credentials. For a page-level link, use `<link rel="stylesheet" href="https://app.example/cdn/fonts/<family-id>.css" crossorigin="anonymous">`. In CSS, put `@import url("https://app.example/cdn/fonts/<family-id>.css");` before other rules. Use the exact `metadata.family` value in the declaration for the selectors you choose. Do not paste the response CSS into AppConfig. The active stylesheet revalidates and follows updates or rollbacks; revision-qualified preview CSS and WOFF2 files remain immutable.
 
 After changing source choices or importing, replacing, or selecting assets, reload affected documents. Current Iconify clients keep icons in memory, so existing pages may keep cached results until reload.
+
+## Add an adapter
+
+Core discovers module descriptions and matching adapters from registry entries. A module description supplies its kind, title, public path, capabilities, and optional Inspector component. An adapter may also declare local-source behavior. CDN core passes its selected settings through Facade’s generic contributor. Fonts currently provides manual CSS snippets and no source choice. The Inspector loads a module's declared settings component when the user opens that panel.
+
+A future `wippy/cdn-npm` module could use this existing contract, but CDN 0.0.3 does not include an npm serving adapter. A package in `node_modules` is not guaranteed to be browser-ready or served by the host. Bundle browser code with the application or configure the host to serve the required files.
 
 ## Read and manage assets
 
