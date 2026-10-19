@@ -108,6 +108,10 @@ Conventions:
 - Bundle an imported specifier only when its exact key is absent.
 - Re-fetch when the Web Host tag changes or a new dependency is added, to check whether that exact specifier can be external.
 
+The PrimeVue 4.5.5 map contains one exact key for each public browser runtime
+export. It does not use a `primevue/*` import-map wildcard. See the Host's
+versioned `primevue-export-inventory.json` and [package export contract](../web-host/packages.md#primevue-455-browser-exports).
+
 Standalone `app.html` resolves the complete copied map. Hosted mode uses the map delivered by the same pinned release.
 
 ### Exposing `package.json` to dev-proxy (canonical scaffold)
@@ -401,3 +405,9 @@ Tests need to set `el.__wippyHost = fakeWrapper` *before* `connectedCallback` fi
 - [web-component.md](./web-component.md) — building web components (`WippyVueElement`, `define()`, host-less playground/tests)
 - [theming.md](./theming.md) — per-page theme overrides via `config_overrides` (also feed dev-proxy via `theming.global.cssVariables` / `customCSS`)
 - [compliance-checklist.md](./compliance-checklist.md) — §9 Host-less mode checklist with full REJECT rules
+
+## Standalone import-map lifecycle
+
+The standalone `app.html` map belongs to that document and must appear before its module scripts. A Web Host applies `AppConfig.importMap` when it creates a new page document. Updating configuration does not rewrite the map in an already-open standalone page; update `app.html` and reload that page. See [Bootstrap Sequence](../web-host/bootstrap.md#appconfig-import-map).
+
+Use this field only with a deployed Host release that documents support for it.

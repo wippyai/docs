@@ -390,3 +390,16 @@ Os testes precisam definir `el.__wippyHost = fakeWrapper` *antes* de o `connecte
 - [web-component.md](./web-component.md) — construindo web components (`WippyVueElement`, `define()`, playground/testes host-less)
 - [theming.md](./theming.md) — overrides de tema por página via `config_overrides` (que também alimentam o dev-proxy através de `theming.global.cssVariables` / `customCSS`)
 - [compliance-checklist.md](./compliance-checklist.md) — §9 checklist do modo host-less com todas as regras de REJECT
+
+## PrimeVue no modo host-less
+
+O mapa completo do PrimeVue 4.5.5 contém uma chave exata para cada export de
+runtime público do navegador. Ele não usa o curinga `primevue/*`. Copie o mapa
+completo da release fixada do Host e use `primevue-export-inventory.json` como
+referência dos exports concretos. Consulte o contrato em [Pacotes do Host](../web-host/packages.md).
+
+## Ciclo de vida do import map independente
+
+O mapa de `app.html` pertence ao documento e deve ficar antes de seus módulos. O Web Host aplica `AppConfig.importMap` ao criar um novo documento de página. Uma atualização não muda o mapa de uma página independente já aberta; atualize `app.html` e recarregue a página. Consulte [Sequência de inicialização](../web-host/bootstrap.md#appconfig-import-map).
+
+Use este campo somente com uma versão implantada do Host cuja documentação confirme o suporte.

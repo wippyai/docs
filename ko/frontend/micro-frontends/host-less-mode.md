@@ -389,3 +389,16 @@ WC 번들은 실행되었지만 실제 프록시도 dev-proxy도 `window.__WIPPY
 - [web-component.md](./web-component.md) — 웹 컴포넌트 만들기(`WippyVueElement`, `define()`, 호스트리스 플레이그라운드/테스트)
 - [theming.md](./theming.md) — `config_overrides`를 통한 페이지별 테마 오버라이드(`theming.global.cssVariables` / `customCSS`로 dev-proxy에도 전달)
 - [compliance-checklist.md](./compliance-checklist.md) — §9 호스트리스 모드 체크리스트와 전체 REJECT 규칙
+
+## 호스트리스 모드의 PrimeVue
+
+PrimeVue 4.5.5 전체 import map에는 공개 브라우저 런타임 export마다 정확한 키가
+있습니다. `primevue/*` 와일드카드는 사용하지 않습니다. 고정한 Host 릴리스의 전체
+맵을 복사하고 구체적인 export 목록은 `primevue-export-inventory.json`을 기준으로
+확인하세요. 자세한 규칙은 [Host 패키지](../web-host/packages.md)를 참조하세요.
+
+## Standalone import map 수명
+
+Standalone `app.html` map은 해당 문서에 속하며 module script보다 먼저 등록해야 합니다. Web Host는 새 page 문서를 만들 때 `AppConfig.importMap`을 적용합니다. 설정 업데이트는 이미 열린 standalone page의 map을 다시 쓰지 않습니다. `app.html`을 수정하고 page를 다시 불러오세요. [부트스트랩 순서](../web-host/bootstrap.md#appconfig-import-map)를 참조하세요.
+
+이 필드는 지원이 문서화된 Host 릴리스에서만 사용하세요.

@@ -148,7 +148,7 @@ Those members may change without becoming an application API.
 | Enum member | Wire value | Direction | Description |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Child → Host | Initial handshake: child requests its `AppConfig` |
-| `SetConfig` | `set-config` | Host → Child | Host delivers `AppConfig` in response to `GetConfig` |
+| `SetConfig` | `set-config` | Host → Child | Host sends the initial `AppConfig` after `GetConfig` and sends later config changes on the same channel; the child applies updates without remounting |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Child | Host URL changed; fires child's `@history` event |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Child | Iframe visibility changed; fires child's `@visibility` event |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Child | Delivers a WebSocket topic event to subscribed children |
@@ -361,3 +361,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 The same function is accessible as `instance.html.inject`, `$W.html`, and `import { html } from '@wippy-fe/proxy'`. Prefer `<w-iframe>` for normal mounting; use `html.inject(...)` only when building custom hosting infrastructure.
+
+## Import maps and document realms
+
+`AppConfig.importMap` is global configuration used for Host-created iframe documents. The Host registers the map before those modules run. A later config update does not change an existing document; reload or recreate it to use the update. See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map).
+
+Web Fragment support for `AppConfig.importMap` and `scopes` is deferred. With `wippy/views` 0.5.12, streamed pages do not guarantee that the composed map is registered before fragment modules load.
