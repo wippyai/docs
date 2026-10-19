@@ -42,9 +42,8 @@ Add `wippy.session.forms:ask_user` to an agent's `traits`:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait needs a `wippy/session` release that ships Session Forms. With an
-older release, an agent that references the trait fails to resolve at lint
-time.
+The trait ships in `wippy/session` 0.7.0, so the app needs that version or
+newer.
 
 The trait contributes two tools and a block of prompt text. The prompt tells
 the model the following.
@@ -247,6 +246,30 @@ JSON-escaped data inside the record, and the server escapes `'`, `<`, `>`, and
 `&` in the record, so user text cannot end the attribute, close the tag, or
 add markup. The checks that the state endpoint applies to every request are
 listed in [The artifact-state HTTP API](../frontend/micro-frontends/session-forms.md#the-artifact-state-http-api).
+
+## Upgrading
+
+`wippy/session` 0.7.0 adds Session Forms and has these breaking changes.
+
+- **New `ui_server` requirement.** The module serves the form components from
+  an HTTP server. The requirement `wippy.session.forms.ui:ui_server` defaults
+  to `app:gateway`. If your app's HTTP server has another name, set the
+  requirement to that name. If you do not, the static routes of the form
+  component break.
+- **Minimum Web Host.** The question card needs Wippy Web Host 1.0.65 or
+  newer. See
+  [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement).
+- **Foreign artifacts return 404.** Reading an artifact that belongs to
+  another user now returns 404, as for a missing artifact. It used to return
+  403.
+- **Stop settles the session idle.** When an enforced Stop ends a turn, the
+  session is stored idle and `can_send` is true.
+- **A stored `running` status reads as idle.** If no session process is
+  alive, a session stored as `running` is reported as idle.
+- **Dates are stored and returned in UTC.**
+- **`reader:list_pending_inputs` is removed.** The `reader` library no longer
+  has this method. Code that calls it must use another way to read pending
+  inputs.
 
 ## Disabling and rolling back
 
