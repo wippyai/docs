@@ -8,7 +8,7 @@ keywords:
   - offline assets
 ---
 
-Host 1.0.64 is available from the Web Host CDN, and its 14 public npm packages are published as 0.0.64. Facade 0.6.45 and the private CDN module family 0.0.2 are published. Access to the private modules requires an authorized Hub account. The npm engine and Views fragment fix remain outside this release.
+The CDN family is published as `wippy/cdn`, `wippy/cdn-iconify`, and `wippy/cdn-fonts` version `0.0.3`. Facade `0.6.45` provides generic configuration contribution, and selects Web Host `1.0.64` by default. The CDN packages are public Hub packages. The npm engine compatibility and Views fragment import-map and scopes behavior are not changed by this release.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
@@ -16,17 +16,17 @@ The family has three parts: wippy/cdn stores revisions and handles management, w
 
 ## Bind the modules
 
-All three CDN modules require `wippy/facade >=0.6.45`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules.
+All three CDN modules require `wippy/facade >=0.6.45`. The Iconify and Fonts adapters also require `wippy/cdn >=0.0.3`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules.
 
-Install wippy/cdn, wippy/cdn-iconify, and wippy/cdn-fonts at version 0.0.2 using a Hub account with access to the private packages. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
+Set `wippy/cdn`, `wippy/cdn-iconify`, and `wippy/cdn-fonts` to version `0.0.3`. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 
 CDN core uses those same database and protected management-router bindings for source choices. It contributes selected module settings through Facade's generic configuration hook. Applications need no extra Facade CDN bindings, source contract or resolver shim. The current CDN storage and recovery queries support SQLite only. PostgreSQL support is unverified.
 
-After changing dependency declarations, run `wippy update wippy/facade wippy/cdn wippy/cdn-iconify wippy/cdn-fonts`. Wippy resolves the published versions, writes their hashes to `wippy.lock`, and installs the packages. Keep that generated lock file. The released packages were verified in an existing application on Wippy 0.3.49a without source replacements.
+After setting the dependency declarations, run `wippy update wippy/facade wippy/cdn wippy/cdn-iconify wippy/cdn-fonts`. Wippy resolves the declared versions, writes their hashes to `wippy.lock`, and installs the packages. Keep that generated lock file. Check that it records version `0.0.3` for all three CDN modules and a package hash for each module.
 
 The writer process uses app:processes by default. The public adapter routers use app:gateway by default. Bind the management API to the host's existing token-authenticated router and set management_security_scope to an authorized group. The host must apply endpoint_firewall(access) to the full management scope, with deny rules taking precedence. Requests also require the exact wippy.cdn:management_access policy marker in their preserved request scope.
 
-The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. Version 0.0.2 includes optional lazy Inspector components.
+The adapters do not create another listener. The host controls whether and where to mount a management client. No UI route or navigation item is added automatically. The 0.0.3 packages include optional lazy Inspector components.
 
 ## Inspector configuration
 
@@ -48,7 +48,7 @@ Uploads stage one file at a time and activate the family only after validation a
 
 In Fonts, choose Download family, search by family name or ID, select a result, and review an exact version before downloading. The provider download recipe remains two normal variable faces, Latin and Latin-ext, including Polish characters. It does not download every style or subset in a Fontsource package. Saved families include embedded and manually imported assets. Select a family to preview its local files at normal and bold weights. A preview does not change the application font. Check for update reviews an available version; rollback and deactivate manage the saved selection.
 
-The Fonts panel provides a copyable import for the stable active-family stylesheet and a separate `font-family` declaration with the exact family name from font metadata. Put the `@import` before other CSS rules, then add the family declaration to the selectors you choose. The import follows the active revision, so updates and rollbacks do not require a new URL. Revision previews stay pinned to the selected revision. Fonts has no source selector and does not change application CSS automatically.
+The Fonts panel provides a copyable import for the stable active-family stylesheet and a separate `font-family` declaration with the exact family name from font metadata. Copy the import into the application's global CSS before other CSS rules, then add the family declaration to the selectors you choose. The import follows the active revision, so updates and rollbacks do not require a new URL. Revision previews stay pinned to the selected revision. Fonts has no source selector and does not edit CSS or change the application's font family automatically.
 
 The collection and family lists are pinned local catalogs. Opening a panel or selecting a name does not download assets. Review available version makes a protected metadata request. Downloading is a separate action and requires Allow downloads in General. Actions show pending, saved, or failed status. If a status request fails, Check operation status retries the same operation without starting another download. Advanced details contains request IDs, hashes, and diagnostic details.
 
@@ -110,7 +110,7 @@ CDN core saves source choices in its existing database. It discovers installed a
 
 Choosing **Internet** restores the Facade defaults. Installing a CDN module does not select it automatically. Before choosing **This server**, install the assets the application needs and keep **Serve saved files** on. Existing custom sources and fallback remain configured, so this choice alone does not guarantee that every request stays local.
 
-Facade invokes registered configuration contributors while it builds AppConfig. CDN core contributes selected local settings, and the adapters provide asset serving and module-specific rules. Facade has no CDN-specific storage, routes or provider rules. Fonts users copy the stable stylesheet import and exact family name into the Facade or application CSS settings they already use. The module does not insert font CSS or choose selectors for the application.
+Facade invokes registered configuration contributors while it builds AppConfig. CDN core contributes selected local settings, and the adapters provide asset serving and module-specific rules. Facade has no CDN-specific storage, routes or provider rules. Fonts users copy the stable stylesheet import into the application's global CSS and add the exact family name to selectors they choose. The module does not insert font CSS or choose selectors for the application.
 
 ### Custom hosts without the source settings integration
 
@@ -162,7 +162,7 @@ Mutations normally return 202 and an operation_id. Poll GET /cdn/operations/{ope
 
 Current code bounds include 32 MiB per Iconify collection, 100,000 icons and aliases combined, 128 icon names per request, 20 MiB per font face, 100 MiB per font distribution, and a 512 MiB manual scan with separate limits of 10,000 files and 10,000 directories across both library roots, including the roots, and at most 20,000 child entries. The retained_bytes_limit setting counts each unique SHA-256 digest once across committed revisions and staged candidates. Its range is 32 MiB to 1 GiB. It does not limit database file size or total filesystem use. Active and previous revisions are protected from individual revision deletion. The revision endpoint removes eligible inactive revisions. The custom-asset endpoint permanently removes all revisions, including active and previous ones. Both reclaim content that no longer has a committed or staged reference. Input beyond a supported bound is rejected without replacing the active revision.
 
-The current implementation prunes terminal operation records after 30 days. This is a routine implementation choice, not an approved numeric retention limit.
+The current implementation prunes terminal operation records after 30 days.
 
 Offline use applies only to CDN assets that the host has selected for local serving. It does not mean that the rest of the application works without a network connection.
 
