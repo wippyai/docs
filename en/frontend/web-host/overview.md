@@ -13,7 +13,7 @@ Feature-Sliced Design methodology. By default, it is delivered from
 `https://web-host.wippy.ai`. It hosts the user-facing pages and UI components
 of a Wippy application. Configure it through the `wippy/facade` backend module.
 Standard online deployments do not build or deploy it with the application.
-The [self-hosted Web Host candidate](./self-hosting.md) packages the same asset
+The [self-hosted Web Host](./self-hosting.md) packages the same asset
 graph as a Wippy module for delivery from the application.
 
 ![Wippy FE architecture](../diagrams/fe-arch-overview.svg)

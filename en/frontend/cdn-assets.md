@@ -118,16 +118,16 @@ The fonts adapter includes Inter Variable and Outfit Variable with weights 100 t
 
 ## Serve the Web Host locally
 
-The separate `wippy/cdn-web-host` candidate embeds the Web Host asset graph and
+The separate `wippy/cdn-web-host` module embeds the Web Host asset graph and
 serves it from the application. It does not require CDN Core or add an
 Inspector tab. A valid `public_url` lets its generic Facade contributor select
 the local Host automatically. Explicit application resolver Host overrides
 retain precedence, and leaving the URL empty preserves the current Host
 selection.
 
-See [Self-hosted Web Host](./web-host/self-hosting.md) for candidate availability,
-version pairing, dependency configuration, offline Markdown Tailwind, verification,
-and manual builds from a specific Host tag. Host delivery is separate from the
+See [Self-hosted Web Host](./web-host/self-hosting.md) for version pairing,
+dependency configuration, offline Markdown Tailwind, verification, and manual
+builds from a specific Host tag. Host delivery is separate from the
 Iconify source choice and manual font CSS setup below.
 
 ## Choose where files load from

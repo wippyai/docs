@@ -16,15 +16,9 @@ on the public Wippy CDN. The module does not download assets during startup or
 asset requests, and it does not need CDN Core, a database, or a writable asset
 directory.
 
-**Availability:** This integration is proposed in [Web Host MR !41](https://git.spiralscout.com/estimation-engine/wippy-web-host/-/merge_requests/41).
-Host `1.0.66`, module `0.0.66`, and the required Facade `0.6.46` are unpublished
-candidates. The examples below describe that candidate and require those
-packages or local replacements. Earlier Host tags do not contain this module's
-build workflow.
-
 ## Bind the module
 
-Host `1.0.N` pairs with `wippy/cdn-web-host` version `0.0.N`. The candidate
+Host `1.0.N` pairs with `wippy/cdn-web-host` version `0.0.N`. The module
 requires `wippy/facade >=0.6.46 <0.7.0`. Facade does not depend on this module;
 the module depends on the Facade contributor contract.
 
@@ -50,7 +44,7 @@ The URL must use HTTP or HTTPS with a DNS hostname or valid IPv4 address.
 Credentials, query strings, fragments, IPv6 literals, and traversal segments
 are rejected. The value is configuration, not a download source.
 
-Once the packages are published, run
+Run
 `wippy update wippy/facade wippy/cdn-web-host` to resolve the declared versions
 and retain the resulting `wippy.lock`. Use the application's existing startup
 workflow and persistent data. This integration does not require a new database.
@@ -137,8 +131,9 @@ workflow. The Makefile and Windows wrappers live in `wippy/cdn-web-host/`.
 Generated module output needs no Host submodule. Host CI does not build or
 publish Wippy modules.
 
-Use a supported release tag, Node.js 22 or later, and pnpm `10.24.0`. The
-candidate tag below must exist before this release build can run:
+Use a Host release tag that includes `wippy/cdn-web-host/Makefile`, Node.js 22
+or later, and pnpm `10.24.0`. This example builds Host `1.0.66` and module
+`0.0.66`:
 
 ```sh
 git clone --branch webcomponents-1.0.66 --single-branch git@git.spiralscout.com:estimation-engine/wippy-web-host.git web-host-1.0.66
