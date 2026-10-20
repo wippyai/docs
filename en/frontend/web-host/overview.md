@@ -9,10 +9,12 @@ This page is an architecture reference. It explains deployment boundaries and
 entry points; setup belongs in the linked facade and micro-frontend guides.
 
 The Wippy Web Host is a Vue 3 single-page application built with the
-Feature-Sliced Design methodology and delivered from
+Feature-Sliced Design methodology. By default, it is delivered from
 `https://web-host.wippy.ai`. It hosts the user-facing pages and UI components
-of a Wippy application. Configure it through the `wippy/facade` backend module;
-you do not build or deploy it with the application.
+of a Wippy application. Configure it through the `wippy/facade` backend module.
+Standard online deployments do not build or deploy it with the application.
+The [self-hosted Web Host](./self-hosting.md) packages the same asset
+graph as a Wippy module for delivery from the application.
 
 ![Wippy FE architecture](../diagrams/fe-arch-overview.svg)
 
@@ -94,6 +96,11 @@ To pin a specific Web Host version — to stay on a known-good build, or to opt 
 ```
 
 This pins the entire deployment to that build. See [CLI overrides](../../guides/cli.md) for the `-o` / `--override` syntax to set it at runtime instead.
+
+For application-hosted assets, see [Self-hosted Web Host](./self-hosting.md).
+The module depends on the required Facade version and contributes its Host URL
+through Facade's generic configuration pipeline. Facade has no dependency on
+the module, and the Web Host does not discover installed CDN modules.
 
 ## Tech Stack
 

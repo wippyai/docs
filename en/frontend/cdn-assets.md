@@ -116,6 +116,20 @@ The Iconify adapter includes Tabler from @iconify/json 2.2.460, based on Tabler 
 
 The fonts adapter includes Inter Variable and Outfit Variable with weights 100 to 900, and JetBrains Mono Variable with weights 100 to 800. Each has normal Latin and Latin-ext WOFF2 faces and an OFL-1.1 notice. The embedded defaults remain available without acquisition.
 
+## Serve the Web Host locally
+
+The separate `wippy/cdn-web-host` module embeds the Web Host asset graph and
+serves it from the application. It does not require CDN Core or add an
+Inspector tab. A valid `public_url` lets its generic Facade contributor select
+the local Host automatically. Explicit application resolver Host overrides
+retain precedence, and leaving the URL empty preserves the current Host
+selection.
+
+See [Self-hosted Web Host](./web-host/self-hosting.md) for version pairing,
+dependency configuration, offline Markdown Tailwind, verification, and manual
+builds from a specific Host tag. Host delivery is separate from the
+Iconify source choice and manual font CSS setup below.
+
 ## Choose where files load from
 
 Product defaults stay online. After binding CDN core, open **CDN configuration**, then **General**, then **Where files load from** and choose **This server** for Icons. Save the source form, then reload open app tabs. The standard `wippy-cdn-admin` component uses the CDN core endpoint by default. You do not need to edit AppConfig or copy endpoint URLs.
