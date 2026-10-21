@@ -329,7 +329,7 @@ Rules:
 
 - Only variables referenced by the selected sections or published profiles are packed (followed transitively); everything else needs a `vars` entry.
 - `${env:...}` references in exported config are rejected — publisher environment never leaks into a pack.
-- The machine-local sections `boot`, `extensions`, and `workspace` cannot be exported.
+- The machine-local sections `boot` and `workspace` cannot be exported.
 - Only the main application pack provides host runtime defaults; runtime metadata in dependency packs is ignored.
 
 At the destination, configuration precedence runs from application-pack defaults through runtime defaults, local configuration files, selected profiles, and finally CLI overrides.

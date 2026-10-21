@@ -324,7 +324,7 @@ Regeln:
 
 - Nur Variablen, die von den ausgewählten Abschnitten oder veröffentlichten Profilen referenziert werden, werden gepackt (transitiv verfolgt); alles andere braucht einen `vars`-Eintrag.
 - `${env:...}`-Referenzen in exportierter Konfiguration werden abgelehnt — die Umgebung des Veröffentlichenden gelangt nie in ein Pack.
-- Die maschinenlokalen Abschnitte `boot`, `extensions` und `workspace` können nicht exportiert werden.
+- Die maschinenlokalen Abschnitte `boot` und `workspace` können nicht exportiert werden.
 - Nur das Pack der Hauptanwendung liefert Host-Runtime-Defaults; Runtime-Metadaten in Abhängigkeits-Packs werden ignoriert.
 
 Am Zielort wird die Konfiguration von niedrigster zu höchster Priorität angewendet: App-Pack-Defaults, eingebaute Runtime-Defaults, lokale Konfigurationsdateien, ausgewählte Profile, CLI-Überschreibungen.

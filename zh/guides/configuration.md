@@ -554,10 +554,12 @@ lsp:
 | `state_dir` | string | .wippy/net | 驱动状态存储目录 |
 | `default_network` | string | | 当入口省略 `network` 时应用的默认网络 ID |
 
+Tailscale 需要显式启用，默认构建和 Wippy 官方二进制文件均不包含它。使用 `make build-wippy WIPPY_FEATURES=tailscale` 构建，或添加 Go 的 `tailscale` 构建标签。没有该标签时，`network.tailscale` 条目会被拒绝为不支持的类型。SOCKS5/Tor 和 I2P 默认可用。
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 参见：[网络覆盖](system/network.md)
@@ -592,22 +594,6 @@ dispatcher:
 ```yaml
 modules:
   registry_url: https://internal-registry.example.com
-```
-
-## 扩展
-
-启动时加载的原生 Go 插件扩展（仅 Unix）。
-
-| 字段 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `enabled` | bool | true | 加载扩展 |
-| `paths` | string[] | | 插件文件路径（相对于配置目录） |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
 ```
 
 ## 环境变量
