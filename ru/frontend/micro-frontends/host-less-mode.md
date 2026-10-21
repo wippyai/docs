@@ -283,7 +283,7 @@ API `host` (`import { host } from '@wippy-fe/proxy'`) — поверхность
 <html>
 <head>
     <!-- Обязательный полный скрипт import map опущен в этом сокращённом примере. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>

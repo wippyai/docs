@@ -48,7 +48,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 
 Vue 组件用 `useHostVisibility()` 读取该状态，或者用 `useHostVisibilityRefresh(task)` 把常规的初始加载与显现刷新结合起来。后者在挂载后运行，之后只在恰好发生 `false -> true` 时运行。不要在直挂 WC 中使用 proxy 的 `@visibility` topic；那是 iframe/Web Fragment 的消息通道。
 
-在 Draft 1 标签移除之前，请固定到确切的 CDN 标签——至少 `https://web-host.wippy.ai/webcomponents-1.0.52`。
+在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.66`，对应的 `@wippy-fe/*` 系列版本为 `0.0.66`。
 
 ## 启用受管布局
 

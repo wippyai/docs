@@ -283,7 +283,7 @@ Web components compartilham o mesmo design de modo duplo, mas são carregados co
 <html>
 <head>
     <!-- O script de import map completo obrigatório foi omitido deste exemplo abreviado. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
