@@ -97,8 +97,8 @@ export default {
 
 スナップショットには出所とハッシュを含めなければなりません。スナップショットに存在しない依存関係は、別のドキュメント化されたビルドルールが当てはまらない限りバンドルされます。
 
-公開済み Web Host 1.0.64 の snapshot URL は
-`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json` です。local application URL、unpinned `latest` URL、
+公開済み Web Host 1.0.66 の snapshot URL は
+`https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json` です。local application URL、unpinned `latest` URL、
 手動で再構成した list に置換しないでください。
 
 この release の PrimeVue 4.5.5 map entry は公開 export pattern から生成します。Host の
@@ -140,8 +140,8 @@ incremental build に使います。
 import-map value は引き続き absolute URL です。
 
 公開済み release では `APP_URL=https://cdn.example/wippy` と tag
-`webcomponents-1.0.64` から
-`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json` が生成されます。
+`webcomponents-1.0.66` から
+`https://cdn.example/wippy/webcomponents-1.0.66/import-map.json` が生成されます。
 vendor と dynamic chunk の URL も origin、デプロイパス、tag を保持します。
 build 後に `dist/import-map.json` を確認してください。全 `imports` value が設定した
 origin とパス配下の絶対 HTTP(S) URL であり、`/undefined/` を含まないことを確認します。

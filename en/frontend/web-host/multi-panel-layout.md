@@ -55,6 +55,9 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.54`, Wippy FE `0.0.54` | Surface portability contract v1 for iframe and Web Fragment pages, including managed-layout registration and reactive sizing changes. |
 | Web Host `1.0.55`, Wippy FE `0.0.55` | Managed artifact and standalone chat contracts, cold deep-link preservation, stable managed artifact rendering, and themed splitter handles. |
 | Web Host `1.0.56`, Wippy FE `0.0.56` | Managed artifact/modal rendering fixes, published artifact-open reasons, and chat selector and slot-lifecycle fixes. |
+| Web Host `1.0.57`, Wippy FE `0.0.57` | A panel collapsed or dragged to zero size is hidden and cannot take focus. Any non-zero `collapseSize` keeps the panel on screen and interactive. |
+| Web Host `1.0.61`, Wippy FE `0.0.61` | Managed panels register Web Fragment execution frames, so child navigation updates the page URL. Agent actions and the capture approval panel render above native modal dialogs. |
+| Web Host `1.0.65`, Wippy FE `0.0.65` | `@HOST/session-selector` opens the selected session in the layout's `chatPanel`, and the selector of a `@HOST/chat-wrapper` panel opens it in that panel, both through the `openSession` intent. A cold load of `/chat/<id>` opens that session. The shell and theme CSS start to load at boot, and the panel tab and splitter handle follow the dark theme. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
 feature or an application loading delay.
@@ -78,10 +81,12 @@ The latter runs after mount and then only on exact `false -> true`. Do not use
 the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
-Pin to an exact CDN tag until the Draft 1 label is removed. This reference is
-validated against `https://web-host.wippy.ai/webcomponents-1.0.56` and the
-matching `@wippy-fe/*` `0.0.56` family. Retained direct-web-component visibility
-still requires at least 1.0.52/0.0.52.
+Pin to an exact CDN tag until the Draft 1 label is removed. The current release
+is `https://web-host.wippy.ai/webcomponents-1.0.66` with the matching
+`@wippy-fe/*` `0.0.66` family. This reference was last validated against
+Web Host 1.0.56 and `0.0.56`. The release map lists the managed-layout changes
+after that release. Retained direct-web-component visibility still requires at
+least 1.0.52/0.0.52.
 
 ## Enabling Managed Layout
 
@@ -335,7 +340,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a modal. The public 0.0.56 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.66 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |

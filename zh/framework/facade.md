@@ -141,7 +141,7 @@ content_fs:    app:app_fs
 独立页面随后同时引入两者：
 
 - **`custom_css`** — 本身已是 `.css` 文件，因此可直接从其提供位置链接。
-- **`css_variables`** — 是 JSON，因此无法直接链接。facade 在 **`GET /facade/variables.css`** 处将其渲染为 base 加上生效的 Auto-light、Auto-dark、强制 Light 和强制 Dark 各个块。顶层值处处生效；`@light` / `@dark` 替换选定的名称。该样式表缓存 1 小时，并注册在与 `/facade/config` 相同的公共路由器上，因此会带上路由器前缀。
+- **`css_variables`** — 是 JSON，因此无法直接链接。facade 在 **`GET /facade/variables.css`** 处将其渲染为 base 加上生效的 Auto-light、Auto-dark、强制 Light 和强制 Dark 各个块。顶层值处处生效；`@light` / `@dark` 替换选定的名称。由于解析器可能按请求改变取值，自 Facade 0.6.46 起该样式表以 `Cache-Control: no-store` 返回。它注册在与 `/facade/config` 相同的公共路由器上，因此会带上路由器前缀。
 
 ```html
 <!-- 在 login.html 中，于 Web Host 之外提供 -->

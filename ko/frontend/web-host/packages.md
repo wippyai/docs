@@ -375,8 +375,8 @@ Host 릴리스에는 정적 Tabler 컬렉션이 `iconify/tabler.json`으로 포�
 ## PrimeVue 4.5.5 브라우저 export
 
 공개된 Host release는 PrimeVue 4.5.5를 고정합니다. 생성된 inventory는 버전이
-지정된 Host 루트에서 제공됩니다. 공개된 기준은 Web Host 1.0.64와 공개 패키지
-0.0.64입니다. 사용 전에 태그를 확인하세요.
+지정된 Host 루트에서 제공됩니다. 공개된 기준은 Web Host 1.0.66와 공개 패키지
+0.0.66입니다. 사용 전에 태그를 확인하세요.
 `primevue-export-inventory.json`:
 
 ```bash
@@ -412,7 +412,7 @@ import Button from 'primevue/button'
 CSS는 문서화된 Host CSS key로 별도 요청하세요. 로컬 preview CSS는 Phase 4의
 선행 조건입니다.
 
-이 inventory는 공개된 Web Host 1.0.64의 산출물입니다. 사용 전에 공개된 Host
+이 inventory는 공개된 Web Host 1.0.66의 산출물입니다. 사용 전에 공개된 Host
 산출물과 URL 및 내용을 대조하세요.
 
 JSON의 최상위 필드는 `schemaVersion`, `package`, `counts`, `exports`,

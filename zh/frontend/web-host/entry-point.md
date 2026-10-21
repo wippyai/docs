@@ -83,11 +83,11 @@ Web Host 从配置对象中提取 `AppConfig` 载荷，然后继续完整初始�
 
 这种模式意味着 CDN 托管的 bundle 从不包含部署相关的 URL、令牌或品牌信息。对每次部署来说 bundle 都完全相同。不同的只有配置载荷。
 
-该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.45 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.64 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.46 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.66 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
 
 ## `/facade/config` 响应
 
-该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.45 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.64 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
+该端点返回 shell 设置和部分 Web Host 字段。它不会返回完整的 `AppConfig`：shell 会在调用 `initWippyApp` 前添加 `$schema`、`auth` 和 `context`。Facade 0.6.46 会提供 `schema_url`：legacy policy 使用 `wippy-context-2.0.xsd`，modern policy 使用 `wippy-context-2.1.json`。如果较旧的 Facade 没有此字段，shell 会回退到 2.0 XSD。Web Host 1.0.66 接受这两个版本的 schema，并将其迁移为规范的 2.2 格式。
 
 ```json
 {

@@ -65,7 +65,7 @@ Choose one according to the integration. Each entry is available at
 | `chat.js` | Headless ESM module exposing chat stores and WebSocket client. Use for building completely custom UIs. |
 | `ws.js` | Standalone WebSocket service with no Vue or Pinia dependency. Use for low-level real-time integrations. |
 
-The published 1.0.64 release embeds the complete Host import map in both
+The published 1.0.66 release embeds the complete Host import map in both
 `iframe.html` and `chat-iframe.html` before module scripts run. The standalone
 `chat-iframe.html` entry starts its app on load; do not call `initChatApp` after
 loading it.

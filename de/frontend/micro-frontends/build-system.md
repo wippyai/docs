@@ -111,8 +111,8 @@ export default {
 
 Der Snapshot muss seine Herkunft und seinen Hash enthalten. Eine Abhängigkeit, die im Snapshot fehlt, wird gebundelt, sofern keine andere dokumentierte Build-Regel greift.
 
-Der veröffentlichte Web Host 1.0.64 verwendet den Snapshot unter
-`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Ersetzen Sie die URL nicht durch eine lokale
+Der veröffentlichte Web Host 1.0.66 verwendet den Snapshot unter
+`https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json`. Ersetzen Sie die URL nicht durch eine lokale
 Anwendungs-URL, `latest` oder eine rekonstruierte Liste.
 
 Die PrimeVue-4.5.5-Einträge dieses Releases werden aus den öffentlichen
@@ -156,8 +156,8 @@ Type-Artefakte. Verwenden Sie `pnpm run build:site` nur für eine inkrementelle
 Import-Map-Werte bleiben trotzdem absolut.
 
 Für das veröffentlichte Release erzeugen `APP_URL=https://cdn.example/wippy` und der Tag
-`webcomponents-1.0.64` die Map-URL
-`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`. Vendor- und
+`webcomponents-1.0.66` die Map-URL
+`https://cdn.example/wippy/webcomponents-1.0.66/import-map.json`. Vendor- und
 Dynamic-Chunk-URLs müssen Origin, Bereitstellungspfad und Tag beibehalten. Prüfen
 Sie nach dem Build `dist/import-map.json`: Jeder `imports`-Wert muss eine absolute
 HTTP(S)-URL unter Origin und Pfad sein und darf kein `/undefined/` enthalten.

@@ -64,6 +64,6 @@ Both:
 - `wippy/facade` for the Web Host entry point (see [Facade Entry Point](../web-host/entry-point.md))
 - Node.js 22.12 or newer and Vite 7 for this documentation baseline. The Host
   source package declares Node 22+ and uses Vite 7; Vite 7 itself requires
-  Node 20.19+ or 22.12+. `@wippy-fe/vite-plugin` 0.0.56 also accepts Vite 5 and
+  Node 20.19+ or 22.12+. `@wippy-fe/vite-plugin` 0.0.66 also accepts Vite 5 and
   6, but consumers choosing those versions must follow that Vite release's Node
   requirements

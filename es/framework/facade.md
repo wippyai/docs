@@ -141,7 +141,7 @@ La resolucion de `fs://` se aplica exactamente a los **seis parametros de temati
 Una pagina independiente enlaza entonces ambos:
 
 - **`custom_css`** — ya es un archivo `.css`, asi que enlacelo directamente desde donde se sirve.
-- **`css_variables`** — es JSON, asi que no es enlazable tal cual. El facade lo renderiza en **`GET /facade/variables.css`** como una base mas los bloques efectivos de Auto claro, Auto oscuro, Light forzado y Dark forzado. Los valores de nivel superior se aplican en todas partes; `@light` / `@dark` reemplazan los nombres seleccionados. La hoja se cachea 1h y se registra en el mismo router publico que `/facade/config`, por lo que lleva el prefijo del router.
+- **`css_variables`** — es JSON, asi que no es enlazable tal cual. El facade lo renderiza en **`GET /facade/variables.css`** como una base mas los bloques efectivos de Auto claro, Auto oscuro, Light forzado y Dark forzado. Los valores de nivel superior se aplican en todas partes; `@light` / `@dark` reemplazan los nombres seleccionados. Desde Facade 0.6.46, la hoja se sirve con `Cache-Control: no-store`, porque un resolver puede cambiar los valores en cada solicitud. Se registra en el mismo router publico que `/facade/config`, por lo que lleva el prefijo del router.
 
 ```html
 <!-- in login.html, served outside the Web Host -->

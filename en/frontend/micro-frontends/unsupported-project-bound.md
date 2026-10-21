@@ -36,6 +36,6 @@ field and value below:
 
 `mode` and other aliases are not accepted. The compliance workflow must make
 this marker return `UNSUPPORTED` and exit unsuccessfully; it does not grant an
-exemption. The public `@wippy-fe/*` 0.0.56 package family does not ship an
+exemption. The public `@wippy-fe/*` 0.0.66 package family does not ship an
 application-compliance CLI, so the project must implement this gate in its
 selected compliance workflow.

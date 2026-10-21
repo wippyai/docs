@@ -627,7 +627,7 @@ if (!/%~dp0make\.ps1/.test(batFence) || /\bnpm(?:\.cmd)?\s+run\s+build\b/.test(b
   errors.push('micro-frontends/build-system.md: make.bat must only delegate to make.ps1')
 }
 if (!buildSystem.includes('https://web-host.wippy.ai/<release-tag>/import-map.json')
-  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json')) {
+  || !buildSystem.includes('https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json')) {
   errors.push('micro-frontends/build-system.md: canonical CDN import-map URL must be explicit')
 }
 
@@ -645,8 +645,8 @@ for (const locale of locales) {
     || !packages.includes('quill')
     || !packages.includes('4.5.1')
     || !packages.includes('2.0.3')
-    || !packages.includes('1.0.64')
-    || !packages.includes('0.0.64')) {
+    || !packages.includes('1.0.66')
+    || !packages.includes('0.0.66')) {
     errors.push(`${locale}/frontend/web-host/packages.md: PrimeVue export inventory contract is incomplete`)
   }
   const buildSystemPath = join(process.cwd(), locale, 'frontend', 'micro-frontends', 'build-system.md')
@@ -663,7 +663,7 @@ for (const locale of locales) {
   const overviewPath = join(process.cwd(), locale, 'frontend', 'web-host', 'overview.md')
   const overview = await readFile(overviewPath, 'utf8')
   if (!overview.includes('chat-iframe.html')
-    || !overview.includes('1.0.64')
+    || !overview.includes('1.0.66')
     || !overview.includes('initChatApp')) {
     errors.push(`${locale}/frontend/web-host/overview.md: standalone chat auto-start contract is incomplete`)
   }

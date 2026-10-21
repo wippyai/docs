@@ -83,11 +83,11 @@ Web Host는 설정 객체에서 `AppConfig` 페이로드를 추출하고 전체 
 
 이 패턴 덕분에 CDN에 호스팅된 번들에는 배포별 URL, 토큰, 브랜딩이 전혀 포함되지 않습니다. 번들은 모든 배포에서 동일하며, 설정 페이로드만 다릅니다.
 
-이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.45는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.64는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.46는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.66는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
 
 ## `/facade/config` 응답
 
-이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.45는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.64는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
+이 엔드포인트는 셸 설정과 일부 Web Host 필드를 반환합니다. 완전한 `AppConfig`를 반환하지는 않습니다. 셸이 `$schema`, `auth`, `context`를 추가한 뒤 `initWippyApp`을 호출합니다. Facade 0.6.46는 정책에 따라 `schema_url`을 제공합니다. legacy policy에서는 `wippy-context-2.0.xsd`, modern policy에서는 `wippy-context-2.1.json`을 사용합니다. 이전 Facade에서 이 필드가 없으면 셸은 2.0 XSD로 대체합니다. Web Host 1.0.66는 두 버전 스키마를 모두 받아 표준 2.2 형식으로 마이그레이션합니다.
 
 ```json
 {

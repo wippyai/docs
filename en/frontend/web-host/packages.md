@@ -12,8 +12,8 @@ lifecycle.
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
-lockstep; this documentation snapshot covers published Web Host 1.0.64 and
-public package 0.0.64. Verify the deployed release before using its versioned
+lockstep; this documentation snapshot covers published Web Host 1.0.66 and
+public package 0.0.66. Verify the deployed release before using its versioned
 assets.
 Host-only bundles are identified separately below and are not installable npm
 packages.
@@ -21,7 +21,7 @@ packages.
 Install the packages you need:
 
 ```bash
-npm install @wippy-fe/proxy@0.0.64 @wippy-fe/webcomponent-vue@0.0.64 @wippy-fe/router@0.0.64
+npm install @wippy-fe/proxy@0.0.66 @wippy-fe/webcomponent-vue@0.0.66 @wippy-fe/router@0.0.66
 ```
 
 ## Accessing the host — `@wippy-fe/proxy`
@@ -155,7 +155,7 @@ class MyWidget extends WippyElement {
 customElements.define('my-widget', MyWidget)
 ```
 
-Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`. In 0.0.56, `WippyElement.hostVisible`, `onHostVisibilityChanged(visible, previous)`, and `reactive.hostVisibility` expose retained logical activity without treating the reserved attribute as a component prop.
+Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`. In 0.0.66, `WippyElement.hostVisible`, `onHostVisibilityChanged(visible, previous)`, and `reactive.hostVisibility` expose retained logical activity without treating the reserved attribute as a component prop.
 
 ### `@wippy-fe/webcomponent-vue`
 
@@ -211,7 +211,7 @@ custom element. `useHostVisibilityRefresh(task)` runs `task` after mount and
 again only on an exact `false -> true` reveal, without replacing the element.
 It serializes an in-flight task and coalesces intervening reveals into one
 trailing refresh.
-These exports are present in `@wippy-fe/webcomponent-vue` 0.0.56.
+These exports are present in `@wippy-fe/webcomponent-vue` 0.0.66.
 
 ### `@wippy-fe/layout`
 
@@ -220,7 +220,7 @@ Pure, framework-agnostic layout primitives used internally by the Web Host's man
 Provides `LayoutManager` — the core class that manages the panel tree, handles breakpoint switching, validates `HostLayoutDeclaration`, and executes mutations like `resizePanel` and `collapsePanel`. Zero Vue dependency.
 
 Direct shell authors use `LayoutManagerView` for stable panel mounts and
-`useSwapBuffer()` for retained content swaps without flashing. In 0.0.56,
+`useSwapBuffer()` for retained content swaps without flashing. In 0.0.66,
 async readiness can be guarded by both immutable buffer index and content key,
 and the splitter stack exposes `--wippy-layout-splitter-z-index`. The circular
 splitter handle remains opt-in through
@@ -239,7 +239,7 @@ Vue 3 composables wrapping the proxy layout API in reactive refs for use inside 
 
 ### `@wippy-fe/shared`
 
-Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In 0.0.56, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
+Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In 0.0.66, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
 
 ### `@wippy-fe/types-global-proxy`
 
@@ -345,9 +345,9 @@ The Host release also includes a static Tabler Iconify collection at `iconify/ta
 
 ### `@wippy-fe/chat` (not published to npm)
 
-A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — delivered by the Host's `chat.js` bundle. In Web Host 1.0.56 the source package is private and is not installable from npm. The iframe engine injects the shell and auto-registers the tags; the Web Fragment gateway deliberately omits `chat.js`, so fragment pages must not assume these tags are present. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
+A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — delivered by the Host's `chat.js` bundle. In Web Host 1.0.66 the source package is private and is not installable from npm. The iframe engine injects the shell and auto-registers the tags; the Web Fragment gateway deliberately omits `chat.js`, so fragment pages must not assume these tags are present. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
 
-In Web Host 1.0.56, `<wippy-chat>` reacts to `session-id` and `start-token` without
+In Web Host 1.0.66, `<wippy-chat>` reacts to `session-id` and `start-token` without
 requiring element replacement. Clearing or removing a previously controlled
 session starts a new token-backed chat when a token is present, while reconnects
 do not replay an already consumed token. Superseded starts are race-safe.
@@ -361,7 +361,7 @@ See [Chat Web Components](../micro-frontends/chat-web-components.md) for the ful
 
 ### `@wippy-fe/markdown-iframe` (not published to npm)
 
-Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting) built by the Web Host and dynamically imported by `<w-artifact>` when it renders Markdown in an iframe artifact. Web Host 1.0.56 has no public npm package manifest for this bundle; child apps should use their own markdown dependency rather than declaring `@wippy-fe/markdown-iframe` as an npm dependency.
+Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting) built by the Web Host and dynamically imported by `<w-artifact>` when it renders Markdown in an iframe artifact. Web Host 1.0.66 has no public npm package manifest for this bundle; child apps should use their own markdown dependency rather than declaring `@wippy-fe/markdown-iframe` as an npm dependency.
 
 ---
 
@@ -374,7 +374,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o impor
 ```
 
 For the published combined release, use the `<version-tag>`
-`webcomponents-1.0.64`.
+`webcomponents-1.0.66`.
 
 The exact keys of the fetched `imports` object are the JavaScript externalization contract:
 
@@ -457,7 +457,7 @@ resolve to the shared Host graph. JavaScript externalization does not provide
 PrimeVue CSS. Request the required CSS separately through the documented Host
 CSS keys. The local preview CSS dependency remains a Phase 4 prerequisite.
 
-This inventory belongs to published Web Host 1.0.64. Confirm its URL and
+This inventory belongs to published Web Host 1.0.66. Confirm its URL and
 contents against the deployed Host artifact before relying on it.
 
 PrimeVue Chart and Editor load `chart.js` 4.5.1 and `quill` 2.0.3 through dynamic chunks. The Host bundles both dependencies locally, so applications using mapped PrimeVue exports do not install them for those chunks. The Host snapshot has 294 map entries, including 274 PrimeVue entries. The Host injects `@wippy-fe/vue-utils` as the 295th key; this is not an application-level mapping. Use the exact pinned Host snapshot as the build contract.

@@ -143,7 +143,7 @@ Die `fs://`-Auflösung gilt für genau **sechs Theming-Parameter** — `custom_c
 Eine eigenständige Seite bindet dann beides ein:
 
 - **`custom_css`** — bereits eine `.css`-Datei und daher direkt von ihrem Auslieferungsort verlinkbar.
-- **`css_variables`** — JSON und damit nicht direkt verlinkbar. Die Facade rendert die Datei unter **`GET /facade/variables.css`** als Basis plus effektive Blöcke für Auto-Light, Auto-Dark, erzwungenes Light und erzwungenes Dark. Werte auf oberster Ebene gelten überall; `@light` / `@dark` ersetzen ausgewählte Namen. Das Stylesheet wird 1 Stunde gecacht und auf demselben öffentlichen Router registriert wie `/facade/config`, trägt also dessen Router-Prefix.
+- **`css_variables`** — JSON und damit nicht direkt verlinkbar. Die Facade rendert die Datei unter **`GET /facade/variables.css`** als Basis plus effektive Blöcke für Auto-Light, Auto-Dark, erzwungenes Light und erzwungenes Dark. Werte auf oberster Ebene gelten überall; `@light` / `@dark` ersetzen ausgewählte Namen. Seit Facade 0.6.46 wird das Stylesheet mit `Cache-Control: no-store` ausgeliefert, weil ein Resolver die Werte bei jeder Anfrage ändern kann. Es ist auf demselben öffentlichen Router registriert wie `/facade/config` und trägt also dessen Router-Prefix.
 
 ```html
 <!-- in login.html, ausgeliefert außerhalb des Web Host -->

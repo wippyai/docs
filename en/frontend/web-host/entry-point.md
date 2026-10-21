@@ -100,11 +100,11 @@ The CDN-hosted bundle is identical across deployments; deployment-specific
 URLs and branding arrive in the config response, while the bearer token comes
 from browser storage.
 
-The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.45 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.64 accepts both versioned schemas and migrates them to canonical 2.2.
+The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.46 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.66 accepts both versioned schemas and migrates them to canonical 2.2.
 
 ## The `/facade/config` Response
 
-The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.45 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.64 accepts both versioned schemas and migrates them to canonical 2.2.
+The endpoint returns shell settings and selected Web Host fields. It does not return a complete `AppConfig`: the shell adds `$schema`, `auth`, and `context` before calling `initWippyApp`. Facade 0.6.46 supplies `schema_url`: `wippy-context-2.0.xsd` for legacy policy and `wippy-context-2.1.json` for modern policy. If an older Facade omits `schema_url`, the shell uses the 2.0 XSD fallback. Web Host 1.0.66 accepts both versioned schemas and migrates them to canonical 2.2.
 
 ```json
 {
@@ -358,7 +358,7 @@ Set the `wippy/facade` parameters that produce the config response in
 - name: facade
   kind: ns.dependency
   component: wippy/facade
-  version: '0.6.37'
+  version: '0.6.46'
   parameters:
     - name: server
       value: app:gateway
