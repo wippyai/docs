@@ -118,7 +118,7 @@ Standalone `app.html` resolves the complete copied map. Hosted mode uses the map
 
 Every Wippy app's `package.json` carries metadata that determines runtime defaults — proxy injections (`wippy.proxy.injections.css.*`), per-page theming overrides (`wippy.configOverrides.customization`), iconify icon collections, etc. In hosted mode the host reads these from the registry. In host-less mode dev-proxy needs the same data to apply the same defaults.
 
-The canonical pattern is `wippyPagePlugin()` from the coherent current `@wippy-fe/vite-plugin` family (`0.0.56` at publication), added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
+The canonical pattern is `wippyPagePlugin()` from the coherent current `@wippy-fe/vite-plugin` family (`0.0.66` at publication), added once to your `vite.config.ts`. The plugin reads your `package.json` at build time and does **two** things:
 
 1. **Resolves `file://` references** in the `wippy` block (any string value of the form `"file://<relative>"` is replaced with the referenced file's UTF-8 contents — see `*.do-not-link.<ext>` naming convention in [build-system.md](./build-system.md)).
 2. **Emits two outputs** with the resolved JSON:
@@ -292,7 +292,7 @@ Web components share the same dual-mode design but are loaded as ES modules inst
 <html>
 <head>
     <!-- Required complete import-map script omitted from this abbreviated example. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.56/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>

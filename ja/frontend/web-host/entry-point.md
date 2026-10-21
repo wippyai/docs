@@ -83,11 +83,11 @@ Web Hostは設定オブジェクトから `AppConfig` のペイロードを抽�
 
 このパターンにより、CDNでホストされるバンドルにデプロイ固有のURL、トークン、ブランディングが含まれることはありません。バンドルはどのデプロイでも同一です。異なるのは設定のペイロードだけです。
 
-このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.45 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.64 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.46 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.66 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
 
 ## `/facade/config` のレスポンス
 
-このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.45 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.64 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
+このエンドポイントはシェル設定と選択された Web Host フィールドを返します。完全な `AppConfig` は返しません。シェルが `$schema`、`auth`、`context` を追加してから `initWippyApp` を呼び出します。Facade 0.6.46 はポリシーに応じた `schema_url` を返します。legacy policy では `wippy-context-2.0.xsd`、modern policy では `wippy-context-2.1.json` です。古い Facade がこのフィールドを返さない場合、シェルは 2.0 XSD にフォールバックします。Web Host 1.0.66 はどちらのバージョン付きスキーマも受け入れ、正規の 2.2 形式に移行します。
 
 ```json
 {

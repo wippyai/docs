@@ -361,7 +361,7 @@ Host リリースには静的 Tabler コレクションが `iconify/tabler.json`
 
 公開済み Host は PrimeVue 4.5.5 を固定します。生成された inventory は
 バージョン付き Host のルートから配信します。公開済みの基準は Web Host
-1.0.64 と公開パッケージ 0.0.64 です。使用前にタグを確認してください。
+1.0.66 と公開パッケージ 0.0.66 です。使用前にタグを確認してください。
 `primevue-export-inventory.json`:
 
 ```bash
@@ -399,7 +399,7 @@ import Button from 'primevue/button'
 PrimeVue CSS は配信されません。必要な CSS は文書化された Host CSS key で別に
 要求してください。ローカル preview CSS は Phase 4 の前提条件です。
 
-この inventory は公開済み Web Host 1.0.64 のものです。使用前に公開された Host 成果物と URL、
+この inventory は公開済み Web Host 1.0.66 のものです。使用前に公開された Host 成果物と URL、
 内容を照合してください。
 
 JSON のトップレベルには `schemaVersion`、`package`、`counts`、`exports`、

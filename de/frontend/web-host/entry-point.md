@@ -83,11 +83,11 @@ Der Web Host entnimmt dem Konfigurationsobjekt den `AppConfig`-Payload und fähr
 
 Dieses Muster bedeutet, dass das per CDN gehostete Bundle nie deploymentspezifische URLs, Tokens oder Branding enthält. Das Bundle ist für jedes Deployment identisch. Nur der Konfigurations-Payload unterscheidet sich.
 
-Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Facade 0.6.45 liefert `schema_url`: `wippy-context-2.0.xsd` für die Legacy-Richtlinie und `wippy-context-2.1.json` für die moderne Richtlinie. Fehlt das Feld bei einer älteren Facade, verwendet die Shell den 2.0-XSD-Fallback. Web Host 1.0.64 akzeptiert beide versionierten Schemas und migriert sie zum kanonischen 2.2-Schema.
+Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Facade 0.6.46 liefert `schema_url`: `wippy-context-2.0.xsd` für die Legacy-Richtlinie und `wippy-context-2.1.json` für die moderne Richtlinie. Fehlt das Feld bei einer älteren Facade, verwendet die Shell den 2.0-XSD-Fallback. Web Host 1.0.66 akzeptiert beide versionierten Schemas und migriert sie zum kanonischen 2.2-Schema.
 
 ## Die Antwort von `/facade/config`
 
-Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Facade 0.6.45 liefert `schema_url`: `wippy-context-2.0.xsd` für die Legacy-Richtlinie und `wippy-context-2.1.json` für die moderne Richtlinie. Fehlt das Feld bei einer älteren Facade, verwendet die Shell den 2.0-XSD-Fallback. Web Host 1.0.64 akzeptiert beide versionierten Schemas und migriert sie zum kanonischen 2.2-Schema.
+Der Endpunkt liefert Shell-Einstellungen und ausgewählte Web-Host-Felder. Er liefert keine vollständige `AppConfig`: Die Shell ergänzt `$schema`, `auth` und `context`, bevor sie `initWippyApp` aufruft. Facade 0.6.46 liefert `schema_url`: `wippy-context-2.0.xsd` für die Legacy-Richtlinie und `wippy-context-2.1.json` für die moderne Richtlinie. Fehlt das Feld bei einer älteren Facade, verwendet die Shell den 2.0-XSD-Fallback. Web Host 1.0.66 akzeptiert beide versionierten Schemas und migriert sie zum kanonischen 2.2-Schema.
 
 ```json
 {

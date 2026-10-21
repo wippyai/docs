@@ -376,8 +376,8 @@ A versão do Host inclui a coleção estática do Tabler em `iconify/tabler.json
 ## Exports de navegador do PrimeVue 4.5.5
 
 A versão publicada do Host fixa o PrimeVue 4.5.5. O inventário gerado é servido
-na raiz versionada do Host. A base publicada é Web Host 1.0.64 e os pacotes
-públicos 0.0.64. Confirme as etiquetas antes de as usar. Ficheiro:
+na raiz versionada do Host. A base publicada é Web Host 1.0.66 e os pacotes
+públicos 0.0.66. Confirme as etiquetas antes de as usar. Ficheiro:
 `primevue-export-inventory.json`.
 
 ```bash
@@ -416,7 +416,7 @@ fornece CSS do PrimeVue. Solicite o CSS necessário separadamente pelas chaves
 CSS documentadas do Host. O CSS de preview local continua sendo um requisito da
 Fase 4.
 
-Este inventário corresponde ao Web Host 1.0.64 publicado. Confirme o URL e o
+Este inventário corresponde ao Web Host 1.0.66 publicado. Confirme o URL e o
 conteúdo com o artefacto Host publicado antes de o usar.
 
 O JSON tem os campos de nível superior `schemaVersion`, `package`, `counts`,

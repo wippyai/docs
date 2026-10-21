@@ -21,7 +21,7 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `type` | string | `"widget"` in the runtime descriptor | Optional; when present, must be `"component"` or `"widget"`. Build configuration, not this field, selects the Vite plugin |
-| `tagName` | string | — | Custom element name. The 0.0.56 plugin requires a lowercase ASCII name that starts with a letter, contains a hyphen, uses only letters/digits/hyphens, and is not an HTML reserved custom-element name |
+| `tagName` | string | — | Custom element name. The 0.0.66 plugin requires a lowercase ASCII name that starts with a letter, contains a hyphen, uses only letters/digits/hyphens, and is not an HTML reserved custom-element name |
 | `props` | object | — | JSON Schema describing the component's accepted attributes |
 | `events` | object | — | JSON Schema describing the custom DOM events the component emits |
 

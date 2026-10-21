@@ -360,7 +360,7 @@ Host 发布包在 `iconify/tabler.json` 中包含静态 Tabler 集合。它是�
 ## PrimeVue 4.5.5 浏览器导出
 
 已发布的 Host 版本固定使用 PrimeVue 4.5.5。生成的 inventory 随版本放在
-Host 根目录。已发布的基线为 Web Host 1.0.64 和公开包 0.0.64。使用前请确认对应标签。
+Host 根目录。已发布的基线为 Web Host 1.0.66 和公开包 0.0.66。使用前请确认对应标签。
 `primevue-export-inventory.json`:
 
 ```bash
@@ -390,7 +390,7 @@ import Button from 'primevue/button'
 外部化不会提供 PrimeVue CSS。请通过文档化的 Host CSS 键单独请求所需样式。本地预览
 CSS 仍是 Phase 4 的前置条件。
 
-该 inventory 属于已发布的 Web Host 1.0.64。使用前，请对照已发布的 Host 产物确认其 URL
+该 inventory 属于已发布的 Web Host 1.0.66。使用前，请对照已发布的 Host 产物确认其 URL
 和内容。
 
 JSON 顶层字段包括 `schemaVersion`、`package`、`counts`、`exports` 和 `entries`。

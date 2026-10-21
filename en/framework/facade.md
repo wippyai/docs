@@ -56,7 +56,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.64` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.66` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
@@ -191,9 +191,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.64",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.64/iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "login_redirect_param": null,
     "mode": "compat",

@@ -107,8 +107,8 @@ export default {
 
 Снимок должен содержать сведения о происхождении и хэш. Зависимость, отсутствующая в снимке, попадает в бандл, если не применяется другое задокументированное правило сборки.
 
-Для опубликованного Web Host 1.0.64 URL снимка:
-`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Не подставляйте URL локального приложения, незакрепленный
+Для опубликованного Web Host 1.0.66 URL снимка:
+`https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json`. Не подставляйте URL локального приложения, незакрепленный
 `latest` или вручную восстановленный список пакетов.
 
 Записи PrimeVue 4.5.5 в этом релизе генерируются из публичных шаблонов экспорта.
@@ -150,8 +150,8 @@ pnpm run build
 но значения import map остаются абсолютными URL.
 
 Для опубликованного релиза `APP_URL=https://cdn.example/wippy` и тег
-`webcomponents-1.0.64` дают URL карты
-`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`. URL vendor и
+`webcomponents-1.0.66` дают URL карты
+`https://cdn.example/wippy/webcomponents-1.0.66/import-map.json`. URL vendor и
 dynamic chunks должны сохранять origin, путь и тег. После сборки проверьте
 `dist/import-map.json`: все значения `imports` должны быть абсолютными URL
 HTTP(S) под заданными origin и путем, без `/undefined/`. Затем запросите карту и

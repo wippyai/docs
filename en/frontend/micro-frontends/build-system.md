@@ -108,8 +108,8 @@ export default {
 
 The snapshot must include its provenance and hash. A dependency absent from the snapshot is bundled unless another documented build rule applies.
 
-For the published Web Host 1.0.64 release, the snapshot URL is
-`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. Do not substitute the local
+For the published Web Host 1.0.66 release, the snapshot URL is
+`https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json`. Do not substitute the local
 application URL, an unpinned `latest` URL, or a manually reconstructed package
 list.
 
@@ -155,8 +155,8 @@ those prerequisites exist. The
 it still needs `APP_URL` because the import-map values are absolute.
 
 For the published release, `APP_URL=https://cdn.example/wippy` and tag
-`webcomponents-1.0.64` produce the import-map URL
-`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`; mapped vendor
+`webcomponents-1.0.66` produce the import-map URL
+`https://cdn.example/wippy/webcomponents-1.0.66/import-map.json`; mapped vendor
 and dynamic-chunk URLs must keep the same origin, deployment path, and tag.
 After building, inspect `dist/import-map.json`: every `imports` value must be an
 absolute HTTP(S) URL under the configured origin and path, and none may contain

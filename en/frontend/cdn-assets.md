@@ -8,7 +8,7 @@ keywords:
   - offline assets
 ---
 
-The CDN family is published as `wippy/cdn`, `wippy/cdn-iconify`, and `wippy/cdn-fonts` version `0.0.3`. Facade `0.6.45` provides generic configuration contribution, and selects Web Host `1.0.64` by default. The CDN packages are public Hub packages. The npm engine compatibility and Views fragment import-map and scopes behavior are not changed by this release.
+The CDN family is published as `wippy/cdn`, `wippy/cdn-iconify`, and `wippy/cdn-fonts` version `0.0.3`. Facade `0.6.45` added generic configuration contribution. The current Facade, `0.6.46`, selects Web Host `1.0.66` by default. The CDN packages are public Hub packages. The npm engine compatibility and Views fragment import-map and scopes behavior are not changed by this release.
 
 The Wippy CDN module family stores validated icon collections and font files in the application. It lets a host serve selected assets from its own origin after setup. It does not make every frontend bundle or service offline-ready.
 
@@ -16,7 +16,7 @@ The family has three parts: wippy/cdn stores revisions and handles management, w
 
 ## Bind the modules
 
-All three CDN modules require `wippy/facade >=0.6.45`. The Iconify and Fonts adapters also require `wippy/cdn >=0.0.3`. Facade 0.6.45 selects Host 1.0.64 by default. Facade has no dependency on the CDN modules.
+All three CDN modules require `wippy/facade >=0.6.45`. The Iconify and Fonts adapters also require `wippy/cdn >=0.0.3`. Facade 0.6.46 selects Host 1.0.66 by default. Facade has no dependency on the CDN modules.
 
 Set `wippy/cdn`, `wippy/cdn-iconify`, and `wippy/cdn-fonts` to version `0.0.3`. Bind the core `database` requirement to `app:db`, `management_router` to `app:api`, and `management_security_scope` to `app.security:admin`. Bind `data_directory` to a persistent writable volume outside artifact-managed output. Keep these resources stable across restarts. The database stores committed bytes, manifests, settings, and selections. The volume keeps manual source files and reconstructible serving data.
 

@@ -43,7 +43,7 @@ Cada entrada se sirve desde el CDN en `<release-tag>/<entry>` (p. ej. `/<release
 | `chat.js` | Módulo ESM sin interfaz que expone los stores de chat y el cliente WebSocket. Úselo para construir UIs completamente personalizadas. |
 | `ws.js` | Servicio WebSocket independiente sin dependencia de Vue ni Pinia. Úselo para integraciones de tiempo real de bajo nivel. |
 
-La versión publicada 1.0.64 incluye el import map completo de Host
+La versión publicada 1.0.66 incluye el import map completo de Host
 en `iframe.html` y `chat-iframe.html` antes de ejecutar los módulos. La entrada
 independiente `chat-iframe.html` inicia su app al cargarse; no llame a
 `initChatApp` después.

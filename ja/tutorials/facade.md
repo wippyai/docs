@@ -28,7 +28,7 @@ Wippy UI を配信するバックエンドアプリ：
 - ファサードがインストールされていること：
 
   ```bash
-  wippy add wippy/facade@0.6.37
+  wippy add wippy/facade@0.6.46
   wippy install
   ```
 
@@ -92,26 +92,27 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
+  "schema_url": "https://web-host.wippy.ai/webcomponents-1.0.66/schemas/wippy-context-2.1.json",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
   "mode": "compat",
   "login_path": "/login.html",
-  "themeMode": "auto",
-  "themePersist": "none",
-  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
   "themeStorageKey": "@wippy-theme-mode",
+  "allowSelectModel": false,
+  "hideSessionSelector": false,
+  "allowAdditionalTags": {},
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
-    "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
-    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
+    "showAdmin": true, "hideNavBar": false, "disableRightPanel": false,
+    "startNavOpen": false, "renderEngine": "iframe",
+    "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -140,7 +141,7 @@ localStorage.setItem('@wippy_token_info', JSON.stringify({token: result.token}))
 window.location.assign('/');
 ```
 
-シェルはトークンを読み取り、`https://web-host.wippy.ai/webcomponents-1.0.56/module.js`をインポートしてHostへ渡します。
+シェルはトークンを読み取り、`https://web-host.wippy.ai/webcomponents-1.0.66/module.js`をインポートしてHostへ渡します。
 ブラウザがリダイレクトされずにHostを表示し、APIリクエストの認証に成功して初めてレンダリング完了です。
 リダイレクトを抑えるだけのプレースホルダートークンは使用しないでください。シェルは値を検証しないため、
 最初の保護されたAPIリクエストへ失敗が移るだけです。

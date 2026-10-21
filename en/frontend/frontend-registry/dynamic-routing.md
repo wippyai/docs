@@ -100,7 +100,7 @@ The round-trip keeps the host URL bar, the child router, and the browser history
 
 ## `classifyLink`
 
-In the iframe engine, `preventLinkClicks: true` installs a document-level hook that intercepts raw `<a>` clicks before the browser handles them (see [view.page](./view-page.md)). The Web Fragment adapter in Web Host 1.0.56 does not install this raw-click hook. For portable Vue navigation, use `AutoRouterLink` from `@wippy-fe/router`; it calls the same `classifyLink` API in either engine.
+In the iframe engine, `preventLinkClicks: true` installs a document-level hook that intercepts raw `<a>` clicks before the browser handles them (see [view.page](./view-page.md)). The Web Fragment adapter in Web Host 1.0.66 does not install this raw-click hook. For portable Vue navigation, use `AutoRouterLink` from `@wippy-fe/router`; it calls the same `classifyLink` API in either engine.
 
 The classifier returns one of four results:
 

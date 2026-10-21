@@ -116,8 +116,8 @@ El snapshot debe incluir su procedencia y su hash. Una dependencia ausente del
 snapshot se empaqueta en el bundle salvo que se aplique otra regla de build
 documentada.
 
-La versión publicada de Web Host 1.0.64 usa la instantánea
-`https://web-host.wippy.ai/webcomponents-1.0.64/import-map.json`. No sustituya la URL por la aplicación
+La versión publicada de Web Host 1.0.66 usa la instantánea
+`https://web-host.wippy.ai/webcomponents-1.0.66/import-map.json`. No sustituya la URL por la aplicación
 local, una URL `latest` sin fijar ni una lista reconstruida manualmente.
 
 Las entradas de PrimeVue 4.5.5 de esta versión se generan a partir de sus patrones
@@ -161,8 +161,8 @@ incrementales propios del sitio cuando esos requisitos ya estén preparados.
 los valores del import map siguen siendo URLs absolutas.
 
 Para la versión publicada, `APP_URL=https://cdn.example/wippy` con la etiqueta
-`webcomponents-1.0.64` produce
-`https://cdn.example/wippy/webcomponents-1.0.64/import-map.json`. Las URLs de
+`webcomponents-1.0.66` produce
+`https://cdn.example/wippy/webcomponents-1.0.66/import-map.json`. Las URLs de
 vendor y de chunks dinámicos deben conservar el origen, la ruta y la etiqueta.
 Después de compilar, compruebe que todos los valores de `imports` en
 `dist/import-map.json` sean URLs HTTP(S) absolutas bajo el origen y la ruta

@@ -83,11 +83,11 @@ O Web Host extrai o payload `AppConfig` do objeto de configuração e prossegue 
 
 Esse padrão significa que o bundle hospedado em CDN nunca contém URLs, tokens ou branding específicos do deployment. O bundle é idêntico para todo deployment. Apenas o payload de configuração difere.
 
-O endpoint retorna configurações do shell e campos selecionados do Web Host. Ele não retorna um `AppConfig` completo: o shell adiciona `$schema`, `auth` e `context` antes de chamar `initWippyApp`. O Facade 0.6.45 fornece `schema_url`: `wippy-context-2.0.xsd` para a política legada e `wippy-context-2.1.json` para a política moderna. Se um Facade mais antigo não incluir esse campo, o shell usa o fallback XSD 2.0. O Web Host 1.0.64 aceita ambos os schemas versionados e os migra para o formato canônico 2.2.
+O endpoint retorna configurações do shell e campos selecionados do Web Host. Ele não retorna um `AppConfig` completo: o shell adiciona `$schema`, `auth` e `context` antes de chamar `initWippyApp`. O Facade 0.6.46 fornece `schema_url`: `wippy-context-2.0.xsd` para a política legada e `wippy-context-2.1.json` para a política moderna. Se um Facade mais antigo não incluir esse campo, o shell usa o fallback XSD 2.0. O Web Host 1.0.66 aceita ambos os schemas versionados e os migra para o formato canônico 2.2.
 
 ## A Resposta de `/facade/config`
 
-O endpoint retorna configurações do shell e campos selecionados do Web Host. Ele não retorna um `AppConfig` completo: o shell adiciona `$schema`, `auth` e `context` antes de chamar `initWippyApp`. O Facade 0.6.45 fornece `schema_url`: `wippy-context-2.0.xsd` para a política legada e `wippy-context-2.1.json` para a política moderna. Se um Facade mais antigo não incluir esse campo, o shell usa o fallback XSD 2.0. O Web Host 1.0.64 aceita ambos os schemas versionados e os migra para o formato canônico 2.2.
+O endpoint retorna configurações do shell e campos selecionados do Web Host. Ele não retorna um `AppConfig` completo: o shell adiciona `$schema`, `auth` e `context` antes de chamar `initWippyApp`. O Facade 0.6.46 fornece `schema_url`: `wippy-context-2.0.xsd` para a política legada e `wippy-context-2.1.json` para a política moderna. Se um Facade mais antigo não incluir esse campo, o shell usa o fallback XSD 2.0. O Web Host 1.0.66 aceita ambos os schemas versionados e os migra para o formato canônico 2.2.
 
 ```json
 {
