@@ -141,7 +141,7 @@ content_fs:    app:app_fs
 독립 페이지는 다음 두 가지를 링크합니다:
 
 - **`custom_css`** — 이미 `.css` 파일이므로 서빙되는 위치에서 바로 링크합니다.
-- **`css_variables`** — JSON이므로 그대로는 링크할 수 없습니다. facade가 이를 **`GET /facade/variables.css`**에서 기본값과 유효 Auto-light, Auto-dark, 강제 Light, 강제 Dark 블록으로 렌더링합니다. 최상위 값은 모든 곳에 적용되며 `@light` / `@dark`가 선택된 이름을 대체합니다. 이 스타일시트는 1시간 캐시되고 `/facade/config`와 같은 공개 라우터에 등록되므로 라우터 prefix가 붙습니다.
+- **`css_variables`** — JSON이므로 그대로는 링크할 수 없습니다. facade가 이를 **`GET /facade/variables.css`**에서 기본값과 유효 Auto-light, Auto-dark, 강제 Light, 강제 Dark 블록으로 렌더링합니다. 최상위 값은 모든 곳에 적용되며 `@light` / `@dark`가 선택된 이름을 대체합니다. 리졸버가 요청마다 값을 바꿀 수 있으므로 Facade 0.6.46부터 이 스타일시트는 `Cache-Control: no-store`로 제공됩니다. `/facade/config`와 같은 공개 라우터에 등록되므로 라우터 prefix가 붙습니다.
 
 ```html
 <!-- Web Host 외부에서 서빙되는 login.html 안에서 -->

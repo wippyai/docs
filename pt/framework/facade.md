@@ -144,7 +144,7 @@ A resolução de `fs://` se aplica exatamente aos **seis parâmetros de tematiza
 Uma página independente então referencia ambos:
 
 - **`custom_css`** — já é um arquivo `.css`, então referencie-o diretamente de onde é servido.
-- **`css_variables`** — é JSON, portanto não é referenciável como está. A facade o renderiza em **`GET /facade/variables.css`** como bloco base mais os blocos efetivos Auto-light, Auto-dark, Light forçado e Dark forçado. Valores de nível superior se aplicam em todos os lugares; `@light` / `@dark` substituem nomes selecionados. A folha é cacheada por 1h e registrada no mesmo router público de `/facade/config`, portanto carrega o prefixo do router.
+- **`css_variables`** — é JSON, portanto não é referenciável como está. A facade o renderiza em **`GET /facade/variables.css`** como bloco base mais os blocos efetivos Auto-light, Auto-dark, Light forçado e Dark forçado. Valores de nível superior se aplicam em todos os lugares; `@light` / `@dark` substituem nomes selecionados. Desde a Facade 0.6.46, a folha é servida com `Cache-Control: no-store`, porque um resolver pode mudar os valores em cada requisição. Ela é registrada no mesmo router público de `/facade/config`, portanto carrega o prefixo do router.
 
 ```html
 <!-- em login.html, servido fora do Web Host -->

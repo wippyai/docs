@@ -145,7 +145,7 @@ Use `fs://` (resolved by `content_fs` at runtime), **not** `file://` — `file:/
 A standalone page then links both:
 
 - **`custom_css`** — already a `.css` file, so link it directly from where it is served.
-- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it at **`GET /facade/variables.css`** as base plus effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. Top-level values apply everywhere; `@light` / `@dark` replace selected names. The sheet is cached for 1h and registered on the same public router as `/facade/config`, so it carries the router prefix.
+- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it at **`GET /facade/variables.css`** as base plus effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. Top-level values apply everywhere; `@light` / `@dark` replace selected names. Since Facade 0.6.46, the sheet is served with `Cache-Control: no-store`, because a [request-time resolver](#request-time-resolver) can change its values for each request. The sheet is registered on the same public router as `/facade/config`, so it carries the router prefix.
 
 ```html
 <!-- in login.html, served outside the Web Host -->
@@ -237,6 +237,26 @@ The facade registers `GET /facade/config` on the configured public router, so th
 These parameters are emitted as top-level `AppConfig` fields beside `hostConfig`: `api_routes` as `apiRoutes`, `axios_defaults` as `axiosDefaults`, `tanstack`, `iconify`, and `import_map` as `importMap`.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, and `module_file` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)). The `mode` field is the normalized `fe_mode` (`compat` or `managed`), and `module_file` is the JS-module entry the facade page loads — `/module.js` for compat, `/managed-layout.js` for managed.
+
+## Request-Time Resolver
+
+An application can replace facade requirement values for each request. To do this, bind an implementation of the `wippy.facade:resolver` contract. See [Entry Kinds](../guides/entry-kinds.md) for `contract.binding` entries.
+
+The contract has one method, `resolve`. It returns a map from requirement name to a string value, for example `css_variables`, `custom_css`, `app_title`, or `theme_mode`. Each value uses the same format as the static requirement value. JSON requirements such as `css_variables` take a JSON-encoded string. A requirement that is not in the map keeps its static value. The resolver runs under the actor of the request.
+
+The `/facade/config` handler and the `/facade/variables.css` handler both call the resolver. When no implementation is bound, the handlers use the static `ns.requirement` values. When the bound resolver fails, or returns something other than a map, the handler logs a warning and uses the static values.
+
+Facade 0.6.46 gives each of the two handlers only the contract permissions that this call needs:
+
+| Action | Resource | Purpose |
+|--------|----------|---------|
+| `contract.get` | `wippy.facade:resolver` | Read the resolver contract definition. |
+| `contract.open` | `*` | Open the implementation that the application bound to the resolver contract. The policy allows any binding ID because the application chooses the binding. The handler opens only the resolver implementation. |
+| `contract.call` | `resolve` | Call the `resolve` method. The handler cannot call other methods. |
+
+Before 0.6.46, the handlers did not have these permissions. The facade skipped a bound resolver and used the static values. An application that binds a resolver needs Facade 0.6.46 or newer.
+
+Resolver output can change for each request. For this reason, Facade 0.6.46 serves `/facade/variables.css` with `Cache-Control: no-store`. Earlier releases sent `Cache-Control: public, max-age=3600`.
 
 ## Navigation Sidebar
 
