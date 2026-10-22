@@ -282,7 +282,7 @@ dev-proxy는 `resolveDevConfig()` 중에 이 JSON을 읽어 개발 오버레이 
 <html>
 <head>
     <!-- 이 축약된 예시에서는 필수인 완전한 import-map 스크립트를 생략했습니다. -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
