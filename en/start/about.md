@@ -1,11 +1,11 @@
 ---
-title: What Is Wippy? Concepts and Runtime Overview
-description: Learn how Wippy uses actors, a central registry, and durable workflows to support applications that change while running.
+title: What Is Wippy? The Runtime for AI-Native Applications
+description: Wippy is an open-source, self-hosted runtime for AI-native applications. Learn how actors, a central registry and durable workflows let you build AI agents and complete applications on one runtime.
 ---
 
 # About Wippy
 
-Wippy is an open-source actor-model runtime for applications whose behavior changes while they run. It is designed for automation systems, AI agents, plugin architectures, and other applications that need to evolve without rebuilding or redeploying the runtime.
+Wippy is an open-source runtime for AI-native applications. AI agents, durable workflows, and the application around them run on one self-hosted runtime, from a single tool to a complex multi-agent product. Applications can be extended while they run, by people or by agents, without rebuilding or redeploying the runtime.
 
 The foundation is the actor model. Code runs in isolated processes that communicate through messages, with each process managing its own state. Supervised process services can be restarted according to their lifecycle policy.
 
