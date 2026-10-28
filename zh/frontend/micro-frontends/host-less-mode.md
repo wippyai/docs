@@ -271,7 +271,7 @@ web 组件采用同样的双模式设计，但它们作为 ES 模块加载而不
 <html>
 <head>
     <!-- 这段缩略示例中省略了必需的完整 import map 脚本。 -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>

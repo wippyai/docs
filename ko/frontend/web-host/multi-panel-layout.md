@@ -61,7 +61,7 @@ Vue 컴포넌트는 `useHostVisibility()`로 상태를 읽거나, 일반적인 �
 실행되고 그다음에는 정확히 `false -> true`일 때만 실행됩니다. 직접 WC에서 프록시
 `@visibility` 토픽을 사용하지 마세요. 그것은 iframe/Web Fragment 메시지 채널입니다.
 
-초안 1 표시가 사라질 때까지 정확한 CDN 태그 — 최소 `https://web-host.wippy.ai/webcomponents-1.0.52` — 에 고정하세요.
+초안 1 표시가 사라질 때까지 정확한 CDN 태그에 고정하세요. 현재 릴리스는 `https://web-host.wippy.ai/webcomponents-1.0.66`이며, 이에 맞는 `@wippy-fe/*` 제품군은 `0.0.66`입니다.
 
 ## managed 레이아웃 활성화
 
