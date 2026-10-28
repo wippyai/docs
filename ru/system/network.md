@@ -37,6 +37,8 @@ description: "Маршрутизация исходящего трафика и 
 
 ## Tailscale
 
+Tailscale включается отдельно и отсутствует в сборках по умолчанию и официальных бинарных файлах Wippy. Используйте `make build-wippy WIPPY_FEATURES=tailscale` или добавьте тег сборки Go `tailscale`. Без него записи `network.tailscale` отклоняются как неподдерживаемые. SOCKS5/Tor и I2P доступны по умолчанию.
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

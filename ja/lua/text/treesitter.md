@@ -25,7 +25,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-`treesitter`モジュールはオプションであり、`treesitter`ビルドタグを含むビルドにのみ存在します。Wippyの公式バイナリには含まれています。ソースからビルドする場合は`make build-wippy`または`go build -tags treesitter`を使用してください。タグがない場合、`require("treesitter")`は利用できません。
+`treesitter`モジュールはオプションで、デフォルトのビルドとWippyの公式バイナリには含まれません。`make build-wippy WIPPY_FEATURES=treesitter`でビルドするか、Goの`treesitter`ビルドタグを追加してください（CGOが必要）。タグがない場合、`require("treesitter")`は利用できません。
 </note>
 
 ## サポート言語

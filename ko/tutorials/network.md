@@ -5,6 +5,8 @@ description: "SOCKS5를 통해 아웃바운드 HTTP 호출과 생성된 프로�
 
 # 네트워크 오버레이
 
+Tailscale은 선택 사항이며 기본 빌드와 공식 Wippy 바이너리에 포함되지 않습니다. `make build-wippy WIPPY_FEATURES=tailscale`로 빌드하거나 Go `tailscale` 빌드 태그를 추가하세요. 태그가 없으면 `network.tailscale` 항목은 지원되지 않는 것으로 거부됩니다. SOCKS5/Tor와 I2P는 기본으로 제공됩니다.
+
 아웃바운드 HTTP 호출용 SOCKS5 오버레이를 구성한 다음 상속, 인바운드 리스너, 애플리케이션 기본값, 권한을 살펴봅니다.
 
 **분류:** 실행 가능한 SOCKS5 튜토리얼과 부분적인 Tailscale 구성법. 외부 Tor 리스너가 준비되면 직접/Tor 프로브는 완전하게 실행할 수 있습니다. Tailscale 섹션은 Wippy 연결 방법을 설명하지만 계정 프로비저닝은 의도적으로 Tailscale에 맡깁니다. I2P 구성은 아래에 연결된 네트워크 시스템 참조를 사용하세요.

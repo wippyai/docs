@@ -43,6 +43,8 @@ each dial instead of using the configured credentials.
 
 ## Tailscale
 
+Tailscale is opt-in and excluded from default builds and official Wippy binaries. Build with `make build-wippy WIPPY_FEATURES=tailscale` or add the Go `tailscale` build tag. Without it, `network.tailscale` entries are rejected as unsupported. SOCKS5/Tor and I2P remain available by default.
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

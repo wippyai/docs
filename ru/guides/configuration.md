@@ -554,10 +554,12 @@ lsp:
 | `state_dir` | string | .wippy/net | Каталог хранения состояния драйверов |
 | `default_network` | string | | ID сети по умолчанию, применяемый когда в записях не указан `network` |
 
+Tailscale включается отдельно и отсутствует в сборках по умолчанию и официальных бинарных файлах Wippy. Используйте `make build-wippy WIPPY_FEATURES=tailscale` или добавьте тег сборки Go `tailscale`. Без него записи `network.tailscale` отклоняются как неподдерживаемые. SOCKS5/Tor и I2P доступны по умолчанию.
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 См.: [Сетевые оверлеи](system/network.md)
@@ -592,22 +594,6 @@ dispatcher:
 ```yaml
 modules:
   registry_url: https://internal-registry.example.com
-```
-
-## Расширения
-
-Нативные Go-плагины, загружаемые при старте (только Unix).
-
-| Поле | Тип | По умолчанию | Описание |
-|------|-----|--------------|----------|
-| `enabled` | bool | true | Загружать расширения |
-| `paths` | string[] | | Пути к файлам плагинов (относительно каталога конфигурации) |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
 ```
 
 ## Переменные окружения
