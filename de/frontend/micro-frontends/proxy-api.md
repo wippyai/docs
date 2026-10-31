@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1253,3 +1256,9 @@ Wenn Vue in `#app` mountet, ersetzt es das `<wippy-loading>`-Element automatisch
 ## Iconify-Konfiguration für untergeordnete Apps
 
 Der Host gibt ausdrücklich konfigurierte Werte aus `AppConfig.iconify` als oberstes Feld weiter. Fehlt das Feld, bleiben die Online-Standards aktiv. Konfigurieren Sie die Quelle in AppConfig, nicht in `hostConfig` oder der Proxy-API. Siehe [Iconify-Anbieter](../web-host/iconify.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 teilt die folgende Chat-Konfiguration mit untergeordneten Anwendungen. `hostConfig` gehört zum Web-Host-Wrapper und wird nie an Kinder übertragen. Ein verwaltetes Layout enthält standardmäßig keinen integrierten Chat. Vollständig untergeordnete Anwendungen verwenden Felder auf oberster Ebene oder Paketüberschreibungen.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

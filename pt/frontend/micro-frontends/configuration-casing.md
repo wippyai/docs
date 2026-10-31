@@ -36,3 +36,9 @@ Apenas as chaves do wrapper do backend estão em snake case neste exemplo. Objet
 `meta.mountRoute` é um bug atual de compatibilidade do backend. O campo pretendido no backend é `meta.mount_route`, mas os deployments existentes exigem `mountRoute` até que a correção do backend seja lançada. Trate isso como uma exceção explícita, não como evidência de que campos do registry ou do backend sejam geralmente camelCase.
 
 A conformidade deve versionar essa exceção para que ela possa ser removida quando o schema do backend mudar.
+
+## UI policy in 1.0.62
+
+O Web Host 1.0.62 compartilha a seguinte configuração de chat com aplicativos filhos. `hostConfig` pertence ao contêiner Web Host e nunca é incluído na configuração dos filhos. Um layout gerenciado não inclui chat integrado por padrão. Aplicativos executados inteiramente como filhos usam campos de nível superior ou substituições do pacote.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

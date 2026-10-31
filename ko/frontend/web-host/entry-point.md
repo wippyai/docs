@@ -338,3 +338,9 @@ receiver는 iframe `SetConfig` message를 물리적 부모 window에서 온 경�
 facade requirement 이름은 `import_map`이고 `/facade/config`는 이를 `cfg.importMap`으로 반환합니다. shell은 Host module을 import하기 전에 공유 import-map bootstrap에 이 값을 전달합니다. 이후 초기 `initWippyApp` config에 `importMap: cfg.importMap`을 전달합니다. [부트스트랩 순서](./bootstrap.md#appconfig-import-map)를 참조하세요. import map 변경은 기존 문서에 적용되지 않습니다. 새 맵을 사용하려면 문서를 다시 로드하거나 새로 만드세요.
 
 Host 직접 통합과 Facade 경로의 최소 버전은 [Facade 모듈](../../framework/facade.md) 및 [부트스트랩 순서](./bootstrap.md)를 참고하십시오.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1251,3 +1254,9 @@ Vueが `#app` にマウントすると、`<wippy-loading>` 要素は自動的に
 ## 子アプリの Iconify 設定
 
 Host は明示的に設定された `AppConfig.iconify` をトップレベルフィールドとして子アプリに渡します。省略時はオンラインの既定値を使います。ソースは `hostConfig` や Proxy API ではなく AppConfig で設定します。[Iconify プロバイダー](../web-host/iconify.md)を参照してください。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

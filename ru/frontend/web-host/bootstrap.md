@@ -78,6 +78,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // значения по умолчанию TanStack Query (глобальные + по категориям на основе ролей)
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -231,3 +234,23 @@ Host должен сформировать карту и зарегистрир�
 Замена общей записи Vue, PrimeVue или Wippy может разделить идентичность модулей или сервисов между Host и дочерним кодом. Перед публикацией проверяйте интеграцию по точной опубликованной карте.
 
 Проверенная базовая версия Web Host для прямого использования `AppConfig.importMap` — 1.0.64.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 передаёт следующие настройки чата дочерним приложениям. `hostConfig` относится к оболочке Web Host и никогда не входит в конфигурацию дочерних приложений. В управляемой компоновке нет встроенного чата по умолчанию. Приложения, которые полностью работают на дочернем уровне, используют поля верхнего уровня или переопределения пакета.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+Явные атрибуты WC имеют приоритет для конкретного экземпляра. `show-selector` переопределяет обратное значение `hideSessionSelector`. Без настройки селектор WC остаётся скрытым, а встроенный чат сохраняет видимый селектор по умолчанию. Отсутствующий атрибут наследует конфигурацию. `false` и `{}` считаются явными значениями. Карта тегов заменяет предыдущую настройку; встроенные теги сохраняются. Только успешно загруженные компоненты регистрируют атрибуты в своей области. Списки тегов берутся из AppConfig и успешно загруженных компонентов. Отдельного атрибута WC для них нет.
+
+Существующее сообщение `SetConfig` обновляет конфигурацию через внутреннее событие `configUpdated`. Proxy API предоставляет уведомление как `on('@config', callback)`, по аналогии с `@theme` и `@history`. Внедрённая конфигурация и публичное представление обновляются до вызова обработчиков. Отдельно собранные компоненты чата используют эту подписку и инициализируют хранилища исходной внедрённой конфигурацией. Прямое чтение `config.auth` поддерживается и не вызывает предупреждений; для обычных авторизованных HTTP-запросов используйте `api`. Новая команда PostMessage и `childrenConfig` не добавляются. Старый формат `feature` и схема 2.0 поддерживаются. Атрибуты SVG `viewBox` и `preserveAspectRatio` сохраняются, а скрипты, обработчики событий и небезопасные URL удаляются.

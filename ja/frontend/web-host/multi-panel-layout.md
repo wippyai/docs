@@ -450,3 +450,9 @@ Draft 1 時点で、以下はまだ実装されていません。
 - [ファサードのエントリーポイント](./entry-point.md) — ファサードが JS モジュールのエントリを読み込み、設定を配信する仕組み
 - [ブートストラップのシーケンス](./bootstrap.md) — ホストが起動時にマネージドレイアウトのエントリへ振り分ける仕組み
 - [パッケージ](./packages.md) — `@wippy-fe/layout`、`@wippy-fe/vue-host`、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

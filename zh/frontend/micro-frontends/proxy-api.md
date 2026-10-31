@@ -112,6 +112,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1245,3 +1248,9 @@ app.use(router)
 ## 子应用的 Iconify 配置
 
 Host 会将显式配置的 `AppConfig.iconify` 作为顶层字段传递。省略时使用在线默认值。请在 AppConfig 中配置源，不要放在 `hostConfig` 或 Proxy API 中。请参阅 [Iconify 提供方](../web-host/iconify.md)。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

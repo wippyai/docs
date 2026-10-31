@@ -337,3 +337,9 @@ Web Host 提取 `AppConfig` 载荷并继续完整初始化。完整的消息协�
 facade requirement 名称为 `import_map`；`/facade/config` 将其作为 `cfg.importMap` 返回。shell 在导入 Host module 前将此值交给共享 import-map bootstrap。随后在初始 `initWippyApp` config 中传递 `importMap: cfg.importMap`。请参阅[引导顺序](./bootstrap.md#appconfig-import-map)。 import map 的更改不会影响现有文档。重新加载或重新创建文档后才能使用新映射。
 
 直接集成 Host 和通过 Facade 集成所需的最低版本，请参阅 [Facade 模块](../../framework/facade.md)和[引导顺序](./bootstrap.md)。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

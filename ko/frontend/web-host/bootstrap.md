@@ -79,6 +79,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query 기본값 (전역 + 역할 기반 카테고리별)
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -231,3 +234,23 @@ import map 업데이트는 document를 만들 때 적용됩니다. 이미 열린
 공유 Vue, PrimeVue 또는 Wippy 항목을 바꾸면 Host와 자식 코드의 모듈 또는 서비스 identity가 달라질 수 있습니다. override를 배포하기 전에 공개된 정확한 map으로 통합 동작을 확인하세요.
 
 `AppConfig.importMap` 직접 사용에 대해 확인된 Web Host 릴리스 기준은 1.0.64입니다.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+명시적인 WC 속성이 해당 인스턴스에서 우선합니다. `show-selector`는 `hideSessionSelector`의 반대 값을 재정의합니다. 설정이 없으면 WC 선택기는 숨겨진 상태를 유지하고 내장 호스트 채팅은 표시 기본값을 유지합니다. 속성이 없으면 구성을 상속합니다. `false`와 `{}`는 명시적인 값입니다. 태그 맵은 이전 설정을 대체하며 내장 태그는 유지합니다. 로드에 성공한 정의만 해당 범위에 속성을 등록합니다. 태그 허용 목록은 AppConfig와 로드에 성공한 컴포넌트에서 가져옵니다. WC 속성으로 재정의하지 않습니다.
+
+기존 `SetConfig` 메시지는 내부 이벤트 `configUpdated`를 통해 런타임 구성을 갱신합니다. Proxy API는 `@theme` 및 `@history`와 같이 알림을 `on('@config', callback)`으로 제공합니다. 주입된 구성과 공개 구성은 콜백 전에 갱신됩니다. 별도로 번들된 채팅 WC는 이 구독을 사용하고 주입된 원시 구성으로 저장소를 초기화합니다. `config.auth` 직접 읽기는 지원되며 경고를 발생시키지 않습니다. 일반적인 인증 HTTP 요청에는 `api`를 사용하세요. 새 PostMessage 작업이나 `childrenConfig`는 추가하지 않습니다. 기존 `feature` 형식과 스키마 2.0도 지원합니다. SVG의 `viewBox`와 `preserveAspectRatio`는 유지하면서 스크립트, 이벤트 속성 및 안전하지 않은 URL은 제거합니다.

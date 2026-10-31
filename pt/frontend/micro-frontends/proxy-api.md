@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1253,3 +1256,9 @@ Quando o Vue monta em `#app`, ele substitui o elemento `<wippy-loading>` automat
 ## Configuração Iconify para aplicações filhas
 
 O Host envia `AppConfig.iconify` configurado explicitamente como campo de nível superior. Se o campo for omitido, os padrões on-line permanecem ativos. Configure a fonte em AppConfig, não em `hostConfig` nem na API de proxy. Consulte [Provedores do Iconify](../web-host/iconify.md).
+
+## UI policy in 1.0.62
+
+O Web Host 1.0.62 compartilha a seguinte configuração de chat com aplicativos filhos. `hostConfig` pertence ao contêiner Web Host e nunca é incluído na configuração dos filhos. Um layout gerenciado não inclui chat integrado por padrão. Aplicativos executados inteiramente como filhos usam campos de nível superior ou substituições do pacote.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

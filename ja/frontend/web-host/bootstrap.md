@@ -79,6 +79,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // TanStack Query のデフォルト（グローバル + ロールベースのカテゴリーごと）
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -233,3 +236,23 @@ import map の更新は document 作成時に適用されます。既存 documen
 Vue、PrimeVue、Wippy の共有エントリーを置き換えると、Host と子コードで module や service の identity が分かれることがあります。置き換えを公開する前に、公開済みの正確な map で統合を確認してください。
 
 `AppConfig.importMap` の直接利用について確認済みの Web Host リリース基準は 1.0.64 です。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+WC の明示的な属性がインスタンス単位で優先されます。`show-selector` は `hideSessionSelector` の反転値を上書きします。設定がない WC のセレクターは非表示のままです。組み込みホストチャットの既定値は表示です。属性がない場合は設定を継承します。`false` と `{}` は明示的な値です。タグマップは既存の設定を置き換え、組み込みタグは維持します。読み込みに成功した定義だけが、そのスコープに属性を登録します。 タグ許可リストは AppConfig と読み込みに成功したコンポーネントから取得します。WC 属性による上書きはありません。
+
+既存の `SetConfig` は内部イベント `configUpdated` を通じてランタイム設定を更新します。Proxy API は `@theme` や `@history` と同様に、通知を `on('@config', callback)` として公開します。注入された設定と公開設定はコールバックの前に更新されます。独立したバンドルのチャット WC はこの購読を使い、注入された生の設定でストアを初期化します。`config.auth` の直接読み取りはサポートされ、警告は出ません。通常の認証済み HTTP リクエストには `api` を使ってください。新しい PostMessage アクションや `childrenConfig` は追加しません。従来の `feature` 形式とスキーマ 2.0 も対応します。SVG の `viewBox` と `preserveAspectRatio` を維持し、スクリプト、イベント属性、安全でない URL は除去します。

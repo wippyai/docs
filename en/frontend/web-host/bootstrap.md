@@ -105,6 +105,9 @@ interface AppConfig {
   iconify?: IconifyConfig | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -292,3 +295,23 @@ An import-map update applies when a document is created. It does not change modu
 Overriding a shared Vue, PrimeVue, or Wippy entry can split module or service identity between the Host and child code. Test those integrations against the exact released map before deploying an override.
 
 The verified Web Host release baseline for direct `AppConfig.importMap` use is 1.0.64.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+An explicit WC attribute wins for that instance. `show-selector` overrides the inverse of `hideSessionSelector`; without either setting, the WC selector remains hidden. Built-in host chat keeps its visible-selector default. `allow-select-model` accepts `"false"`. An absent attribute inherits config, and removing it restores inheritance. Configured tag maps replace the previous map, including `{}`. Built-in sanitizer tags remain available. Runtime tag registrations belong to the loading scope and do not mutate declared config. Only successful definitions grant their declared attributes. Tag allowlists come from AppConfig and successful component loads, with no WC attribute override.
+
+The existing `SetConfig` message updates the owning runtime through the internal `configUpdated` event. The proxy exposes the notification as `on('@config', callback)`, following the naming of `@theme` and `@history`. It refreshes raw injected config and the public config view before callbacks run. Independently bundled chat WCs use that subscription and seed their stores from raw injected config. Direct `config.auth` reads are supported and emit no warning; use `api` for ordinary authenticated HTTP requests. No new PostMessage action or `childrenConfig` is added. Legacy `feature` fields and schema 2.0 inputs remain accepted; old host-only settings stay host-only. SVG allowlists can retain `viewBox` and `preserveAspectRatio` without allowing script tags, event handlers, or unsafe URLs.

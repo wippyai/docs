@@ -115,6 +115,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1255,3 +1258,9 @@ app.use(router)
 ## Настройка Iconify для дочерних приложений
 
 Host передает явно заданный `AppConfig.iconify` как поле верхнего уровня. Если поле не задано, используются онлайн-значения по умолчанию. Источник задается в AppConfig, а не в `hostConfig` или Proxy API. См. [Провайдеры Iconify](../web-host/iconify.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 передаёт следующие настройки чата дочерним приложениям. `hostConfig` относится к оболочке Web Host и никогда не входит в конфигурацию дочерних приложений. В управляемой компоновке нет встроенного чата по умолчанию. Приложения, которые полностью работают на дочернем уровне, используют поля верхнего уровня или переопределения пакета.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

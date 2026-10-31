@@ -78,6 +78,9 @@ interface AppConfig {
   apiRoutes?: ApiRoutesOverride
   tanstack?: TanstackConfig    // padrões do TanStack Query (global + por categoria baseada em papel)
   theming: AppTheming
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   hostConfig: HostConfig
   context: AppContext
 }
@@ -231,3 +234,23 @@ Uma atualização do import map se aplica ao criar um documento. Ela não muda a
 Substituir uma entrada compartilhada de Vue, PrimeVue ou Wippy pode separar a identidade de módulos ou serviços entre o Host e o código filho. Teste a integração com o mapa publicado exato antes de implantar uma substituição.
 
 A versão base verificada do Web Host para usar `AppConfig.importMap` diretamente é 1.0.64.
+
+## UI policy in 1.0.62
+
+O Web Host 1.0.62 compartilha a seguinte configuração de chat com aplicativos filhos. `hostConfig` pertence ao contêiner Web Host e nunca é incluído na configuração dos filhos. Um layout gerenciado não inclui chat integrado por padrão. Aplicativos executados inteiramente como filhos usam campos de nível superior ou substituições do pacote.
+
+```typescript
+// Shared reader: host override, shared root field, then default.
+const value = config.hostConfig?.[key] ?? config[key] ?? fallback
+
+// Child override in package.json (no hostConfig in child payloads).
+const configOverrides = {
+  allowSelectModel: false,
+  hideSessionSelector: true,
+  allowAdditionalTags: { svg: ['viewBox', 'preserveAspectRatio'], path: ['d'] },
+}
+```
+
+Os atributos explícitos do WC têm prioridade nessa instância. `show-selector` substitui o inverso de `hideSessionSelector`. Sem configuração, o seletor do WC continua oculto; o chat integrado mantém seu seletor visível. Atributos ausentes herdam a configuração. `false` e `{}` são valores explícitos. Os mapas de tags substituem o mapa configurado anterior e preservam as tags integradas. Apenas definições carregadas com sucesso registram seus atributos no próprio escopo. As listas de tags vêm de AppConfig e dos componentes carregados com sucesso. Não existe atributo WC para essas listas.
+
+A mensagem existente `SetConfig` atualiza a configuração pelo evento interno `configUpdated`. A API do proxy expõe a notificação como `on('@config', callback)`, seguindo `@theme` e `@history`. A configuração injetada e a visão pública são atualizadas antes dos callbacks. Os componentes de chat compilados separadamente usam essa assinatura e inicializam seus stores com a configuração injetada bruta. Leituras diretas de `config.auth` são suportadas e não emitem aviso; use `api` para requisições HTTP autenticadas comuns. Não há nova ação PostMessage nem `childrenConfig`. O formato antigo `feature` e o esquema 2.0 continuam aceitos. Os atributos SVG `viewBox` e `preserveAspectRatio` são preservados, enquanto scripts, atributos de eventos e URLs inseguras são removidos.

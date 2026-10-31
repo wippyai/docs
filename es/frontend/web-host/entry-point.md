@@ -339,3 +339,9 @@ El receptor solo acepta `SetConfig` del iframe desde la ventana física del padr
 El requisito del facade se llama `import_map`; `/facade/config` lo devuelve como `cfg.importMap`. El shell entrega ese valor al bootstrap compartido del import map antes de importar el módulo del Host. Después pasa `importMap: cfg.importMap` en la configuración inicial de `initWippyApp`. Consulta la [secuencia de bootstrap](./bootstrap.md#appconfig-import-map). Un cambio del import map no afecta a un documento existente. Recárguelo o vuelva a crearlo para usar el nuevo mapa.
 
 Consulte [Módulo Facade](../../framework/facade.md) y [Secuencia de bootstrap](./bootstrap.md) para conocer las versiones mínimas de las integraciones directas con Host y con Facade.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 comparte la siguiente configuración de chat con las aplicaciones hijas. `hostConfig` pertenece al contenedor Web Host y nunca se incluye en los datos de los hijos. Un diseño administrado no incluye un chat integrado de forma predeterminada. Las aplicaciones que funcionan completamente como hijos usan campos de nivel superior o sustituciones del paquete.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

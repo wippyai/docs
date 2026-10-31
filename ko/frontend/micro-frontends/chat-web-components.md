@@ -41,7 +41,8 @@ Wippy 채팅 UI는 **조합 가능한 커스텀 엘리먼트** 집합으로 제�
 | `session-id` | string | — | 이 기존 세션(세션 UUID)을 렌더링합니다. |
 | `start-token` | string | — | 에이전트 시작 토큰. `session-id`가 설정되지 않은 경우 마운트 시 **새** 세션을 시작합니다. |
 | `agent` | string | — | 세션이 열려 있지 않을 때 표시되는 빈 상태에서 미리 선택할 에이전트 이름(또는 제목)입니다. |
-| `show-selector` | boolean | `false` | 헤더에 내장 세션 선택기를 렌더링합니다. |
+| `show-selector` | boolean | 상속 | 표시 여부는 hideSessionSelector의 반대 값을 상속합니다. 설정이 없으면 false입니다. |
+| `allow-select-model` | boolean | 상속, 없으면 true | 이 인스턴스의 모델 선택을 재정의합니다. |
 | `hide-header` | boolean | `false` | 에이전트/모델 헤더 바를 숨깁니다(컴팩트 임베드용). |
 
 **이벤트** (엘리먼트에서 `CustomEvent`로 디스패치됩니다. `event.detail`을 읽으세요):
@@ -189,3 +190,9 @@ Web Host 자식 내부에서 이 엘리먼트들은 설정이 필요 없습니�
 - [Theming: Web Components](./web-component-theming.md) — shadow DOM CSS와 시맨틱 변수
 - [Proxy API](./proxy-api.md) — `host.startChat` / `host.openSession`과 `@wippy-fe/proxy`의 나머지
 - [Proxy & Isolation](../web-host/proxy-isolation.md) — 호스트가 자식에 스크립트와 설정을 주입하는 방식
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

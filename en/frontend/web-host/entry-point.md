@@ -289,6 +289,9 @@ async function mountWippyIframe(auth) {
     importMap: cfg.importMap,
     tanstack: cfg.tanstack,
     theming: cfg.theming,
+    allowSelectModel: cfg.allowSelectModel,
+    hideSessionSelector: cfg.hideSessionSelector,
+    allowAdditionalTags: cfg.allowAdditionalTags,
     hostConfig: cfg.hostConfig,
     context: { resourceId: '', resourceType: 'page' },
   }
@@ -396,3 +399,9 @@ For the full list of available parameters and their defaults, see the [Facade mo
 `import_map` is the facade requirement name. The `/facade/config` response exposes it as `cfg.importMap`. The shell gives that value to the shared import-map bootstrap before importing the Host module, then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map). An import-map change does not affect an existing document; reload or recreate it to use the new map.
 
 For minimum versions on the direct Host and facade paths, see [Facade module](../../framework/facade.md) and [Bootstrap Sequence](./bootstrap.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

@@ -338,3 +338,9 @@ Web Hostは `AppConfig` のペイロードを抽出し、完全な初期化を�
 facade requirement の名前は `import_map` で、`/facade/config` は `cfg.importMap` として返します。shell は Host module を import する前に共有 import-map bootstrap へこの値を渡します。その後、初期 `initWippyApp` config に `importMap: cfg.importMap` を渡します。[ブートストラップの手順](./bootstrap.md#appconfig-import-map)を参照してください。 import map の変更は既存のドキュメントには反映されません。新しいマップを使うには、ドキュメントを再読み込みするか作り直してください。
 
 Host を直接使う場合と Facade 経由で使う場合の最小バージョンは、[Facade モジュール](../../framework/facade.md)と[ブートストラップの手順](./bootstrap.md)を参照してください。
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

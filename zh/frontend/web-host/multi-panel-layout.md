@@ -450,3 +450,9 @@ const router = createAppRouter([...])
 - [Facade 入口点](./entry-point.md) —— facade 如何加载 JS 模块入口并交付配置
 - [引导序列](./bootstrap.md) —— 宿主在启动时如何派发到受管布局入口
 - [包](./packages.md) —— `@wippy-fe/layout`、`@wippy-fe/vue-host`、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

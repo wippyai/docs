@@ -41,7 +41,8 @@ La superficie de chat completa: cabecera, lista de mensajes desplazable y compos
 | `session-id` | string | — | Renderiza esta sesión existente (un UUID de sesión). |
 | `start-token` | string | — | Token de inicio del agente; inicia una **nueva** sesión al montar cuando no hay `session-id` establecido. |
 | `agent` | string | — | Nombre (o título) del agente que se preselecciona en el estado vacío, mostrado cuando no hay ninguna sesión abierta. |
-| `show-selector` | boolean | `false` | Renderiza el selector de sesiones integrado en la cabecera. |
+| `show-selector` | boolean | heredado | La visibilidad heredada es el inverso de hideSessionSelector. Sin configuración, false. |
+| `allow-select-model` | boolean | heredado, luego true | Sobrescribe la selección de modelo para esta instancia. |
 | `hide-header` | boolean | `false` | Oculta la barra de cabecera de agente/modelo (para embebidos compactos). |
 
 **Eventos** (despachados como `CustomEvent` sobre el elemento; lea `event.detail`):
@@ -189,3 +190,9 @@ Dentro de un hijo del Web Host, los elementos no necesitan configuración. La au
 - [Temas: Web Components](./web-component-theming.md) — CSS de shadow DOM y variables semánticas
 - [API del Proxy](./proxy-api.md) — `host.startChat` / `host.openSession` y el resto de `@wippy-fe/proxy`
 - [Proxy y Aislamiento](../web-host/proxy-isolation.md) — cómo inyecta el host scripts y configuración en los hijos
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 comparte la siguiente configuración de chat con las aplicaciones hijas. `hostConfig` pertenece al contenedor Web Host y nunca se incluye en los datos de los hijos. Un diseño administrado no incluye un chat integrado de forma predeterminada. Las aplicaciones que funcionan completamente como hijos usan campos de nivel superior o sustituciones del paquete.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

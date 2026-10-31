@@ -517,3 +517,9 @@ Stand Draft 1 sind folgende Punkte noch nicht implementiert:
 - [Facade Entry Point](./entry-point.md) — wie die Facade den JS-Modul-Einstieg lädt und die Konfiguration liefert
 - [Bootstrap Sequence](./bootstrap.md) — wie der Host beim Start zum Managed-Layout-Einstieg verzweigt
 - [Packages](./packages.md) — `@wippy-fe/layout`, `@wippy-fe/vue-host`, `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 teilt die folgende Chat-Konfiguration mit untergeordneten Anwendungen. `hostConfig` gehört zum Web-Host-Wrapper und wird nie an Kinder übertragen. Ein verwaltetes Layout enthält standardmäßig keinen integrierten Chat. Vollständig untergeordnete Anwendungen verwenden Felder auf oberster Ebene oder Paketüberschreibungen.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

@@ -114,6 +114,9 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
   iconify?: {
     providers?: Record<string, {
       resources: string[]
@@ -1253,3 +1256,9 @@ Vue가 `#app`에 마운트되면 `<wippy-loading>` 요소를 자동으로 대체
 ## 하위 앱의 Iconify 구성
 
 Host는 명시적으로 구성한 `AppConfig.iconify`를 최상위 필드로 전달합니다. 생략하면 온라인 기본값을 사용합니다. 소스는 `hostConfig`나 Proxy API가 아니라 AppConfig에서 구성하세요. [Iconify 공급자](../web-host/iconify.md)를 참조하세요.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)
