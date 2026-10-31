@@ -259,6 +259,30 @@ Omitting `css-variables` is the normal facade-respecting path. Per-instance colo
 
 For the full theming model — semantic variables, dark/light flipping, and how the host injects shadow-DOM CSS — see [Theming: Web Components](./web-component-theming.md).
 
+### Cancelled tool calls
+
+In Web Host 1.0.66, the built-in chat and the chat elements show a tool call
+that the Session cancelled as cancelled, with the Stop icon. They do not show
+it as an error. This applies when Stop, a failed turn, an agent handoff, or a
+command bus failure cancels the call, and also after a reload. Two classes mark
+the cancelled state:
+
+| Class | Element |
+|-------|---------|
+| `chat-message--cancelled` | The content of a single tool row |
+| `chat-tool-group__badge--cancelled` | A badge in a group of tool rows |
+
+The default style is a muted left border. A theme that restyles
+`chat-message--success`, `chat-message--error`, or
+`chat-tool-group__badge--success` for tool rows may need rules for the new
+classes as well.
+
+The Host reads `outcome: "cancelled"` on the `function_error` event, and
+`status: "error"` with `outcome: "cancelled"` on the stored `function` row.
+The live state needs a Session that sends `outcome` on the event, which is
+`wippy/session` 0.6.9 or newer. Session 0.6.8 sends `status: "cancelled"` on
+the event instead, and the Host does not read it.
+
 ## Runtime wiring
 
 Inside a srcdoc iframe child, the elements require no additional setup. Auth

@@ -46,6 +46,8 @@ HTTP 경계를 넘어 전파됩니다.
 
 ## Tailscale
 
+Tailscale은 선택 사항이며 기본 빌드와 공식 Wippy 바이너리에 포함되지 않습니다. `make build-wippy WIPPY_FEATURES=tailscale`로 빌드하거나 Go `tailscale` 빌드 태그를 추가하세요. 태그가 없으면 `network.tailscale` 항목은 지원되지 않는 것으로 거부됩니다. SOCKS5/Tor와 I2P는 기본으로 제공됩니다.
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

@@ -271,7 +271,7 @@ web 组件采用同样的双模式设计，但它们作为 ES 模块加载而不
 <html>
 <head>
     <!-- 这段缩略示例中省略了必需的完整 import map 脚本。 -->
-    <script src="https://web-host.wippy.ai/webcomponents-1.0.44/dev-proxy.js" data-role="@wippy/scripts"></script>
+    <script src="https://web-host.wippy.ai/webcomponents-1.0.66/dev-proxy.js" data-role="@wippy/scripts"></script>
 </head>
 <body>
     <my-component prop1="value"></my-component>
@@ -378,3 +378,15 @@ WC bundle 运行了，但真实 proxy 和 dev-proxy 都没有初始化 `window._
 - [web-component.md](./web-component.md) —— 构建 web 组件（`WippyVueElement`、`define()`、无宿主 playground／测试）
 - [theming.md](./theming.md) —— 通过 `config_overrides` 实现逐页主题覆盖（同样经由 `theming.global.cssVariables` / `customCSS` 供给 dev-proxy）
 - [compliance-checklist.md](./compliance-checklist.md) —— §9 无宿主模式检查清单，含完整的 REJECT 规则
+
+## 无宿主模式中的 PrimeVue
+
+PrimeVue 4.5.5 的完整 import map 为每个公开浏览器运行时导出提供确切的键，不使用
+`primevue/*` 通配符。请复制固定 Host 发布版的完整映射，并使用
+`primevue-export-inventory.json` 查找具体导出。完整规则见 [Host 包](../web-host/packages.md)。
+
+## Standalone import map 生命周期
+
+`app.html` 中的映射属于该文档，必须位于模块脚本之前。Web Host 创建新的页面文档时会应用 `AppConfig.importMap`。配置更新不会改写已经打开的 standalone 页面映射；请更新 `app.html` 并重新加载页面。请参阅[引导顺序](../web-host/bootstrap.md#appconfig-import-map)。
+
+仅在文档明确支持此字段的已部署 Host 版本中使用。

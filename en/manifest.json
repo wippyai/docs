@@ -167,6 +167,7 @@
     "title": "Frontend",
     "children": [
       {"title": "Frontend Contract: Start Here", "path": "frontend/overview"},
+      {"title": "Local CDN Assets", "path": "frontend/cdn-assets"},
       {"title": "Platform Topology", "path": "frontend/platform-topology"},
       {"title": "Portable UI Contract", "path": "frontend/portable-ui-contract"},
       {"title": "The Design Layer", "path": "frontend/design-layer"},
@@ -184,6 +185,7 @@
         "children": [
           {"title": "Overview", "path": "frontend/web-host/overview"},
           {"title": "Attention quickstart", "path": "frontend/web-host/attention-quickstart"},
+          {"title": "Self-hosted Web Host", "path": "frontend/web-host/self-hosting"},
           {"title": "Frontend Facade", "path": "frontend/web-host/entry-point"},
           {"title": "Bootstrap Sequence", "path": "frontend/web-host/bootstrap"},
           {"title": "Multi-Panel Layout", "path": "frontend/web-host/multi-panel-layout"},
@@ -192,7 +194,8 @@
           {"title": "Attention Context", "path": "frontend/web-host/attention-context"},
           {"title": "CSS Injection", "path": "frontend/web-host/css-injection"},
           {"title": "Theme Persistence", "path": "frontend/web-host/theme-persistence"},
-          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"}
+          {"title": "@wippy-fe Packages", "path": "frontend/web-host/packages"},
+          {"title": "Iconify Providers", "path": "frontend/web-host/iconify"}
         ]
       },
       {

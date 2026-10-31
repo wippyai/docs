@@ -101,7 +101,7 @@ Todos los tipos de mensaje se definen en el enum `IFrameMessageType`:
 | Miembro del enum | Valor de cable | Dirección | Descripción |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Hijo → Host | Handshake inicial: el hijo solicita su `AppConfig` |
-| `SetConfig` | `set-config` | Host → Hijo | El host entrega el `AppConfig` en respuesta a `GetConfig` |
+| `SetConfig` | `set-config` | Host → Hijo | El host envía el `AppConfig` inicial tras `GetConfig` y los cambios posteriores por el mismo canal; el hijo los aplica sin volver a montarse |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Hijo | La URL del host cambió; dispara el evento `@history` del hijo |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Hijo | La visibilidad del iframe cambió; dispara el evento `@visibility` del hijo |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Hijo | Entrega un evento de topic de WebSocket a los hijos suscritos |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 La misma función es accesible como `instance.html.inject`, `$W.html` e `import { html } from '@wippy-fe/proxy'`. Prefiera `<w-iframe>` para el montaje normal; use `html.inject(...)` solo cuando construya infraestructura de alojamiento a medida.
+
+## Mapas de importación y realms de documentos
+
+`AppConfig.importMap` es configuración global para los documentos iframe que crea el Host. El Host registra el mapa antes de ejecutar esos módulos. Una actualización posterior no cambia un documento existente; recárgalo o créalo de nuevo. Consulta la [secuencia de bootstrap](./bootstrap.md#appconfig-import-map).
+
+El soporte de `AppConfig.importMap` y `scopes` en Web Fragment está aplazado. Con `wippy/views` 0.5.12, las páginas transmitidas no garantizan que el mapa compuesto se registre antes de cargar los módulos del fragmento.

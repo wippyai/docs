@@ -7,7 +7,7 @@ description: "Add interface awareness to an agent, query safe UI state and prepa
 
 Attention lets an agent answer questions about the interface the user is working in. It can resolve “this button,” inspect selected text, find a named control across nested pages, or ask the user to confirm a target. A page can also use the public API without a chat Session. Semantic inspection does not take screenshots, click controls or run application commands.
 
-The examples assume a Wippy Host with the Attention API, matching proxy packages, and compatible Session, Agent and LLM modules. Live agent tools require an authenticated Session and its browser broker. Add the trait to an existing agent; keep its registered model and other traits.
+The examples target Web Host 1.0.67, `@wippy-fe/proxy` and `@wippy-fe/shared` 0.0.67, `wippy/facade` 0.6.49, `wippy/session` 0.6.17 and `wippy/agent` 0.5.9. These are the published contract versions used for this guide, rather than minimum-version guarantees. Use their matching LLM and views dependencies. Live agent tools require an authenticated Session and its browser broker. Add the trait to an existing agent; keep its registered model and other traits.
 
 ## Choose the control you need
 

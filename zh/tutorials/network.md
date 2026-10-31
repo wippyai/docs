@@ -5,6 +5,8 @@ description: "通过 SOCKS5、Tailscale 或 I2P 覆盖层路由出站 HTTP 调�
 
 # 网络覆盖层
 
+Tailscale 需要显式启用，默认构建和 Wippy 官方二进制文件均不包含它。使用 `make build-wippy WIPPY_FEATURES=tailscale` 构建，或添加 Go 的 `tailscale` 构建标签。没有该标签时，`network.tailscale` 条目会被拒绝为不支持的类型。SOCKS5/Tor 和 I2P 默认可用。
+
 通过 SOCKS5、Tailscale 或 I2P 覆盖层路由出站 HTTP 调用和生成的进程。
 
 ## 概述

@@ -57,10 +57,10 @@ After changing the Attention pages in `en/frontend` or `en/framework`, run:
 node scripts/check-attention-context-docs.mjs
 ```
 
-The check confirms that the pages keep the documented Attention contract, for
-example the complete agent tool list, the terminal action statuses, the
-attachment limits for each version, and the `targets` array wording for action
-references. It also rejects removed or outdated wording.
+The check validates the structured attachment example: envelope fields, UTF-8
+byte length, SHA-256 digest and canonical JSON. It also rejects live authority
+fields in durable example content. API behavior and prose are reviewed against
+the published modules; this check does not qualify a running deployment.
 
 ## Link validation
 

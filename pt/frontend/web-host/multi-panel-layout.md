@@ -62,7 +62,7 @@ carregamento inicial comum com refreshes de revelação através de
 em uma transição exata de `false -> true`. Não use o tópico `@visibility` do proxy
 em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
 
-Fixe uma tag exata do CDN — no mínimo `https://web-host.wippy.ai/webcomponents-1.0.52` — até o rótulo Draft 1 ser removido.
+Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.66`, com a família `@wippy-fe/*` `0.0.66` correspondente.
 
 ## Habilitando o Layout Gerenciado
 

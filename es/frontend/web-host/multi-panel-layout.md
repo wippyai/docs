@@ -65,7 +65,7 @@ inicial ordinaria con refrescos de revelación mediante
 solo en un `false -> true` exacto. No use el topic `@visibility` del proxy en un
 WC directo; es el canal de mensajes de iframe/Web Fragment.
 
-Fije un tag exacto del CDN, al menos `https://web-host.wippy.ai/webcomponents-1.0.52`, hasta que se retire la etiqueta Draft 1.
+Fije un tag exacto del CDN hasta que se retire la etiqueta Draft 1. La versión actual es `https://web-host.wippy.ai/webcomponents-1.0.66`, con la familia `@wippy-fe/*` `0.0.66` correspondiente.
 
 ## Habilitar el layout managed
 

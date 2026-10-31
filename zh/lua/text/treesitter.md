@@ -23,7 +23,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-treesitter 模块是可选的——仅在包含 `treesitter` 构建标签的构建中存在。Wippy 官方二进制文件已包含它；如需从源码构建，请使用 `make build-wippy` 或 `go build -tags treesitter`。没有该标签时，`require("treesitter")` 不可用。
+`treesitter` 模块需要显式启用，默认构建和 Wippy 官方二进制文件均不包含它。使用 `make build-wippy WIPPY_FEATURES=treesitter` 构建，或添加 Go 的 `treesitter` 构建标签（需要 CGO）。没有该标签时，`require("treesitter")` 不可用。
 </note>
 
 ## 支持的语言

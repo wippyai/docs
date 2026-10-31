@@ -91,7 +91,7 @@ The runtime installs a handful of globals for its own use — `window.$W`, `wind
 
 ### `config`
 
-The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents only the current `wippy-context-2.1` contract.
+The child application configuration delivered by the host. It is a plain object (not a function), imported directly and ready to read synchronously. This page documents the current `wippy-context-2.2` contract.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -101,7 +101,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: string // .../schemas/wippy-context-2.1.json
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -118,6 +118,17 @@ interface ChildAppConfig {
   allowSelectModel?: boolean
   hideSessionSelector?: boolean
   allowAdditionalTags?: Record<string, string[]>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -137,6 +148,8 @@ interface ChildAppConfig {
   mountRoutes?: Record<string, string>
 }
 ```
+
+The host projects an explicitly configured `AppConfig.iconify` section to the child through this top-level field. When omitted, the child keeps the online Iconify defaults. Configure the source in `AppConfig`, not in `hostConfig` or the proxy API. See [Iconify providers](../web-host/iconify.md).
 
 For dynamic pages, if the host URL is `/c/page-id/something/else?foo=1`:
 - `config.context?.route` carries `/something/else?foo=1`.
@@ -1175,7 +1188,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Config Overrides
 
-Pages can override selected child-facing config fields per page without a separate deployment. The override shape still uses `customization` for compatibility, and the host projects those values into the current child `theming.global` result before the page receives `wippy-context-2.1` config.
+Pages can override selected child-facing config fields per page without a separate deployment. The override shape still uses `customization` for compatibility, and the host projects those values into the current child `theming.global` result before the page receives `wippy-context-2.2` config.
 
 ### Setting overrides
 

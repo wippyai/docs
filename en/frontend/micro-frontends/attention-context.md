@@ -14,6 +14,7 @@ The public API is available through `@wippy-fe/proxy`, `$W.attention` and `getWi
 <!-- ATTENTION:PUBLIC-API:BEGIN -->
 ```typescript
 import { attention } from '@wippy-fe/proxy'
+import { isAttentionInspectionNode } from '@wippy-fe/shared'
 
 const capabilities = {
   messageContext: attention.supports('message-context'),
@@ -27,8 +28,10 @@ const matches = await attention.find(
   { fromRoot: true, limit: 8 },
 )
 
-const nodes = matches.data?.nodes
-if (matches.outcome === 'ok' && Array.isArray(nodes) && nodes.length === 1) {
+const nodes = Array.isArray(matches.data?.nodes)
+  ? matches.data.nodes.filter(isAttentionInspectionNode)
+  : []
+if (matches.outcome === 'ok' && nodes.length === 1) {
   const node = nodes[0]
   const geometry = await attention.getGeometry(node.ref, { fromRoot: true })
   console.log({ capabilities, localFocus, node: node.ref, geometry })
@@ -117,7 +120,7 @@ For Web Fragments, the reflected physical Host tree supplies hit identity and ge
 
 ## Automatic message context
 
-The persisted Session property `attention_context.enabled`, default false, controls automatic attachment. The user's client can change it, and an agent with the Attention trait can change it with `attention_context_set` without asking the user. There is no confirmation prompt; the trait tells the model to use the tool only when the user asks for it. The value belongs to the Session and stays when the user switches agents. A one-send opt-out leaves that default unchanged. Turning it off does not stop observation or explicit authorized reads. The legacy `defaultInclude` setting does not replace the Session property.
+The persisted Session property `attention_context.enabled`, default false, controls automatic attachment. The user's client can change it. When the user requests a change, an agent with the Attention trait can use `attention_context_set` without an additional confirmation prompt. The value belongs to the Session and stays when the user switches agents. A one-send opt-out leaves that default unchanged. Turning it off does not stop observation or explicit authorized reads. The legacy `defaultInclude` setting does not replace the Session property.
 
 The Host prepares context for the submitted message and Session commits it atomically with the text and ordinary file IDs. With correlated receipts, Send clears the composer and shows an outgoing row before acceptance. Failed required preparation marks that row `Undelivered`; it never sends a text-only substitute or replaces a later draft. A missing receipt means `Delivery not confirmed`, and does not prove rejection. Older Sessions retain their original delivery path. Unknown bounded attachment kinds and versions remain inert. Do not add a `required` field or copy transport credentials, connection handles or screenshot references into semantic content.
 

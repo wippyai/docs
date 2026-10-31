@@ -24,7 +24,7 @@ Wippy UI를 제공하는 백엔드 앱을 만듭니다:
 - 설치된 파사드:
 
   ```bash
-  wippy add wippy/facade@0.6.37
+  wippy add wippy/facade@0.6.46
   wippy install
   ```
 
@@ -91,26 +91,27 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
+  "schema_url": "https://web-host.wippy.ai/webcomponents-1.0.66/schemas/wippy-context-2.1.json",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
   "mode": "compat",
   "login_path": "/login.html",
-  "themeMode": "auto",
-  "themePersist": "none",
-  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
   "themeStorageKey": "@wippy-theme-mode",
+  "allowSelectModel": false,
+  "hideSessionSelector": false,
+  "allowAdditionalTags": {},
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
-    "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
-    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
+    "showAdmin": true, "hideNavBar": false, "disableRightPanel": false,
+    "startNavOpen": false, "renderEngine": "iframe",
+    "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -134,7 +135,7 @@ localStorage.setItem('@wippy_token_info', JSON.stringify({token: result.token}))
 window.location.assign('/');
 ```
 
-셸은 토큰을 읽고 `https://web-host.wippy.ai/webcomponents-1.0.56/module.js`를 임포트한 뒤 Host에 토큰을 전달합니다. 브라우저가 리디렉션 없이 Host를 표시하고 API 요청이 성공적으로 인증될 때 렌더링이 완료된 것입니다. 리디렉션만 막기 위해 자리표시자 토큰을 사용하지 마세요. 셸은 토큰을 검증하지 않으므로 실패 시점이 첫 번째 보호 API 요청으로 이동할 뿐입니다.
+셸은 토큰을 읽고 `https://web-host.wippy.ai/webcomponents-1.0.66/module.js`를 임포트한 뒤 Host에 토큰을 전달합니다. 브라우저가 리디렉션 없이 Host를 표시하고 API 요청이 성공적으로 인증될 때 렌더링이 완료된 것입니다. 리디렉션만 막기 위해 자리표시자 토큰을 사용하지 마세요. 셸은 토큰을 검증하지 않으므로 실패 시점이 첫 번째 보호 API 요청으로 이동할 뿐입니다.
 
 ## 구성
 

@@ -25,7 +25,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-`treesitter` 모듈은 선택 사항이며 `treesitter` 빌드 태그를 포함한 빌드에만 존재합니다. 공식 Wippy 바이너리에는 포함되어 있습니다. 소스 빌드에서는 `make build-wippy` 또는 `go build -tags treesitter`를 사용할 수 있습니다. 태그가 없으면 `require("treesitter")`를 사용할 수 없습니다.
+`treesitter` 모듈은 선택 사항이며 기본 빌드와 공식 Wippy 바이너리에 포함되지 않습니다. `make build-wippy WIPPY_FEATURES=treesitter`로 빌드하거나 Go `treesitter` 빌드 태그를 추가하세요(CGO 필요). 태그가 없으면 `require("treesitter")`를 사용할 수 없습니다.
 </note>
 
 ## 지원 언어
