@@ -94,7 +94,7 @@ The first argument to `generate()` can be a string prompt, a prompt builder, or 
 | `tokens` | table | Token usage: `prompt_tokens`, `completion_tokens`, `thinking_tokens`, `total_tokens`, plus optional `cache_read_input_tokens`, `cache_read_tokens`, `cache_creation_input_tokens`, `cache_write_tokens` |
 | `finish_reason` | string | Why generation stopped: `"stop"`, `"length"`, `"tool_call"`, `"filtered"`, `"error"` |
 | `tool_calls` | table? | Array of tool calls (if model invoked tools) |
-| `metadata` | table | Provider-specific metadata |
+| `metadata` | table | Provider-specific metadata, including `route` (resolved route), `adjusted` (options removed or changed by route facts) and, on Claude and Bedrock, `input_transformations` (thinking blocks the API dropped) |
 | `usage_record` | table? | Usage tracking record |
 
 ## Prompt Builder
@@ -461,7 +461,69 @@ entries:
 | `max_tokens` | Maximum context window |
 | `output_tokens` | Maximum output tokens |
 | `pricing` | Cost per million tokens: `input`, `output` |
-| `providers` | Array with `id` (provider entry) and `provider_model` (provider-specific model name) |
+| `providers` | Array of routes: `id` (provider entry), `provider_model` (provider-specific model name), optional route facts, `options` and `context` (see [Provider Routes](#provider-routes)) |
+
+### Provider Routes
+
+Each entry in `providers` is a route to one provider. Besides `id` and `provider_model`, a route can declare what the model accepts on the wire, request defaults, and connection settings:
+
+```yaml
+    providers:
+      - id: wippy.llm.claude:provider
+        provider_model: claude-sonnet-5-5
+        thinking: always
+        sampling: false
+        forced_tool_choice: false
+        structured_output: native
+        options:
+          thinking_effort: 40
+```
+
+| Field | Description |
+|-------|-------------|
+| `thinking` | How thinking is encoded: `adaptive`, `budget`, `none`, or `always` |
+| `sampling` | `false` when the model rejects `temperature`, `top_p` and `top_k`; they are removed from requests |
+| `forced_tool_choice` | `false` when the model rejects `tool_choice = "any"` or a named tool |
+| `structured_output` | `native` (JSON schema output) or `tool` (a structured-output tool) |
+| `options` | Request defaults for this route; caller options override them |
+| `context` | Connection settings passed to the provider (for example `beta_features`) |
+
+Missing facts keep each driver's defaults. A value a driver cannot honor fails with `invalid_request` naming the fact and the supported values.
+
+#### Thinking
+
+| Value | Use for | Effort 0 or unset | Effort above 0 |
+|-------|---------|-------------------|----------------|
+| `always` | Models whose thinking cannot be turned off: Claude Opus, Sonnet and Haiku 5.5, Opus 5, Sonnet 5, Fable | Thinking on, model's default effort | Thinking on, effort from `thinking_effort` |
+| `adaptive` | Models where thinking is optional: Claude Opus 4.6, 4.7, 4.8, Sonnet 4.6 | No thinking fields sent | Adaptive thinking, effort from `thinking_effort` |
+| `budget` | Models with token-budget thinking, such as Claude Haiku 4.5 | No thinking fields sent | Thinking budget derived from `thinking_effort` |
+| `none` | Models without thinking | No thinking fields sent | `thinking_effort` is removed and reported in `metadata.adjusted` |
+
+`always` is supported by the Claude and Bedrock drivers. Declare `none` only for models that do not think when the thinking field is omitted. A route that declares `adaptive` for a 5.5 model keeps working, but sends no thinking object at effort 0; change it to `always`.
+
+`thinking_effort` maps to effort levels: below 20 is `low`, 20 to 50 `medium`, 51 to 79 `high`, 80 to 99 `xhigh`, 100 `max`. To give default agents a fixed effort on an `always` route, set `options.thinking_effort` on the route.
+
+#### Thinking Blocks Across Agents
+
+A Claude thinking block is bound to the conversation that produced it: the system prompt, the tool list, every earlier message, and the model. When a request replays earlier thinking blocks and sends a thinking object (`always`, or `adaptive` and `budget` with effort above 0), the Claude and Bedrock drivers ask the API to drop blocks that no longer match instead of rejecting the request, so an agent handoff or a history edit does not fail. Blocks from another model are passed back unchanged; the API drops what the current model cannot read. Dropped blocks are listed in `response.metadata.input_transformations`.
+
+Claude Sonnet 5.5's `between_tools` thinking cannot carry this setting, so a conversation using it fails after a history edit on accounts where the check is enforced. Routes that must survive handoffs use `thinking: always` with a low `options.thinking_effort` instead.
+
+#### Provider Request Fields
+
+`options.request` carries provider wire fields that the generate options do not model. The driver maps every option first, then merges `request` into the request body: maps merge, other values replace, and `request` wins on conflict.
+
+```yaml
+        options:
+          request:
+            output_config:
+              task_budget: { type: tokens, total: 64000 }
+```
+
+- Fields the driver builds itself (messages, system prompt, tools, tool choice, streaming) and, for structured output, the fields that carry the output schema cannot be set; such a request fails with `invalid_request` naming the field.
+- `request` is raw wire data: route facts, the `output_tokens` cap and `metadata.adjusted` describe the generate options, not `request`.
+- On a catalog model, `request` comes from the route; a caller passing `request` is rejected. Direct calls with `provider_id` may pass it.
+- `request` applies to `generate` and `structured_output`.
 
 ### Local Models
 
