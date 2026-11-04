@@ -32,6 +32,8 @@ When a dispatched entry is submitted, its `kind` selects the registered handler.
 
 Entries can be added, updated, or removed while the system runs. For dispatched kinds, a registry transaction asks participating handlers to accept or reject each operation before commit. A rejection discards the transaction and applies the inverse transition. Related topology changes produce one new registry version.
 
+Lua changesets apply against their snapshot version and reject concurrent changes with a retryable conflict. `changes:plan()` previews expanded changes without applying them, then binds the next apply to the reviewed inputs. See [Planning and Concurrency](lua/core/registry.md#planning-and-concurrency).
+
 Version history supports backward and forward transitions when history is enabled. Memory history is the default and lasts for the process lifetime; SQLite and PostgreSQL backends persist history across restarts.
 
 YAML and JSON definition files are source manifests that the boot loader converts into entries. They are not serialized registry snapshots. See [Registry module](lua/core/registry.md) for programmatic access.

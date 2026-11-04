@@ -38,6 +38,8 @@ The native executor runs commands directly on the host operating system.
 | `default_work_dir` | string | - | Working directory for all commands |
 | `default_env` | map | - | Environment variables (merged with per-command env) |
 | `command_whitelist` | string[] | - | If set, only these exact commands are allowed |
+| `process_group` | bool | false | Default process-group setting for native children |
+| `confine` | object | - | Entry-owned limits that each launch may only narrow |
 
 <note>
 Native executors use a clean environment by default. Only explicitly configured environment variables are passed to child processes.
@@ -47,6 +49,23 @@ Commands are parsed into an executable and argument list; they are not run
 through a shell. Pipes, redirects, variable expansion, and other shell syntax
 have no special meaning. To run a shell expression, allow and invoke the shell
 explicitly, including its command flag and the expression as arguments.
+
+### Native Confinement
+
+An `exec.native` entry's `confine` block sets the maximum authority available to its children:
+
+| Field | Description |
+|-------|-------------|
+| `work_dir_roots` | Allowed absolute working-directory roots |
+| `home` | `private` creates a private home |
+| `fs.read`, `fs.write`, `fs.exec` | Absolute directory grants; writes imply reads |
+| `env.allow` | Caller-supplied environment names allowed through |
+| `env.set` | Entry-owned values callers cannot replace |
+| `network` | `none` denies socket creation and use |
+| `limits.mem_mb`, `limits.pids`, `limits.wall_s` | Positive memory, task, and wall-time ceilings |
+| `tree.kill_on_owner_exit` | Clean up descendants when the owner ends |
+
+Lua launch options may only narrow these limits. Unsupported guarantees fail before the target runs; they are never silently ignored. Linux filesystem restrictions require Landlock ABI 5, and memory/task limits require delegated cgroup v2. macOS rejects filesystem, network-denial, and aggregate memory/task restrictions; Windows rejects filesystem, total network-denial, and task restrictions. Docker does not support this `confine` block.
 
 ## Docker Executor
 
@@ -94,6 +113,11 @@ the command explicitly invokes a shell.
 | `cap_add` | string[] | - | Linux capabilities to add |
 | `pids_limit` | int | 0 | Max processes (0 = unlimited) |
 | `tmpfs` | map | - | Tmpfs mounts for writable paths |
+| `labels_from_env` | map | - | Container label keys mapped to required per-process environment names |
+
+`labels_from_env` freezes labels when the process is created. Values must come from explicit per-process `env`, not executor defaults or the ambient environment. Missing, empty, oversized, or NUL-containing values reject creation. Labels are visible to Docker clients, so use nonsecret identity values. The mapping allows at most 64 labels, with keys up to 256 bytes and values up to 4096 bytes.
+
+Per-process `mounts` are also supported through the [Exec Module](lua/dynamic/exec.md#creating-a-process), with a separate `exec.mount` permission for each source path.
 
 ## Command Whitelist
 

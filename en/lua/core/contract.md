@@ -11,6 +11,8 @@ description: "Invoke services through typed contracts. Call remote APIs, workflo
 
 The `contract` module opens typed service bindings for remote APIs, workflows, and functions. Contracts support schema validation, asynchronous calls, and call-context propagation. This page is an API reference; IDs and values such as `current_user` represent application-owned entries and surrounding handler state.
 
+Methods such as `say_hello`, `add`, `multiply`, and `process` in these examples are declared by the application's contracts; they are not built-in methods. The runtime generates their `_async` variants.
+
 ## Loading
 
 ```lua

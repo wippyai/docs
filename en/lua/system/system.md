@@ -18,6 +18,14 @@ This is an API reference. Most snippets show one isolated operation; controls su
 local system = require("system")
 ```
 
+## Runtime Version
+
+```lua
+local version = system.version()
+```
+
+Returns the local runtime's build identity as one string, including `dev` for an unversioned build. It is not a cluster-wide version or an ordered version value. No `system.read` permission is required.
+
 ## Shutdown
 
 Request system shutdown with an exit code. Calling this function from any process or actor terminates the entire system:
@@ -31,6 +39,17 @@ local ok, err = system.exit(0)
 | `code` | integer | Exit code (0 = success), defaults to 0 |
 
 **Returns:** `boolean, error`
+
+## OS Process Identity
+
+```lua
+local uid, uid_err = system.process.uid()
+if uid_err then return nil, uid_err end
+local gid, gid_err = system.process.gid()
+if gid_err then return nil, gid_err end
+```
+
+These return the operating-system user and group IDs the runtime process runs as. Each requires `system.read` on `uid` or `gid`, respectively. Windows returns non-retryable `errors.UNAVAILABLE`.
 
 ## Listing Modules
 

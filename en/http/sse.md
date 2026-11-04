@@ -37,6 +37,8 @@ end
 
 Each event requires a `name` and `data` field. The `data` value is JSON-encoded automatically.
 
+When the HTTP server starts shutting down, direct streaming handlers are canceled at their next yield, loop iteration, or function call. Stream writes and flushes return a retryable `errors.CANCELED` error until execution ends. The response completes with its committed status; no final event is required.
+
 <tip>
 Direct streaming is suitable for short-lived request-response flows like progress updates. For long-lived connections managed by background processes, use the SSE Relay.
 </tip>
@@ -74,6 +76,8 @@ if monitor_err then return nil, monitor_err end
 <tip>
 The relay monitors the target process. If the target exits, the SSE stream closes automatically and the client receives a `done` event.
 </tip>
+
+When the HTTP server starts shutting down, the relay sends a `done` event with reason `"server shutdown"` and closes the stream. This also applies to detached streams. Clients can reconnect after the server becomes available.
 
 ## Configuration
 

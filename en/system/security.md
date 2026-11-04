@@ -417,11 +417,20 @@ entries:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `store` | required | Backing key-value store reference |
+| `subject_lookup` | none | Function entry that resolves current actor metadata and authority on validation |
 | `token_length` | 32 | Token size in bytes (256 bits) |
 | `default_expiration` | 24h | Default token TTL |
 | `token_key` | none | HMAC-SHA256 signing key (direct value, or `${env:NAME}` to pull from the [env registry](system/env.md)) |
 
 Use `token_key: ${env:NAME}` in production to avoid embedding secrets in entries. The legacy `token_key_env` directive also reads the environment registry but preserves the inline or zero value for a missing or empty lookup; a modern placeholder without a default fails when its variable is missing. The legacy directive is deprecated.
+
+### Live Subject Authority
+
+Set `subject_lookup` to a function entry ID to resolve current authority each time a token is validated. The function receives `subject_id`, `authority_only = true`, `actor_meta`, and `token_meta` from the stored token. It must return the matching `subject_id` and a `groups` list (which may be empty), with optional `policies` and `meta`. Returned metadata replaces the actor metadata recorded at issuance.
+
+An optional `ceiling` with `groups` and `policies` limits the resolved authority: both scopes must allow an operation, and either can deny it. Omitting `ceiling` leaves the current authority unrestricted by a ceiling; an empty ceiling grants nothing. A different subject ID, missing groups, or a lookup failure rejects validation.
+
+Without `subject_lookup`, validation reconstructs the actor and policy references from the token. A scope with a ceiling cannot be serialized as policy IDs alone, so using it to mint another token or cross the current Temporal security envelope returns an error.
 
 ### Creating Tokens
 
@@ -474,7 +483,7 @@ if err then
     return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "Invalid token" })
 end
 
--- Actor and scope are reconstructed from stored data
+-- Actor and scope use live authority when subject_lookup is configured
 print(actor:id())  -- "user:123"
 ```
 

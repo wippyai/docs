@@ -262,11 +262,11 @@ local result, err = future:result()
 
 ### `is_canceled`
 
-Returns `true` if the future has been marked canceled by its provider. See the cancellation limitation below.
+Returns `true` after cancellation is requested. This does not mean the operation has finished. See the cancellation limitation below.
 
 ```lua
 if future:is_canceled() then
-    print("Operation was canceled")
+    print("Cancellation requested")
 end
 ```
 
@@ -274,7 +274,7 @@ end
 
 ### `result`
 
-Returns the cached result when complete or `nil` while the operation is pending.
+Returns the cached result when complete or `nil, nil` while the operation is pending. Native futures complete only after the call frame and its owned resources are released. Requesting cancellation does not replace the eventual result; it may still be a success. Temporal workflow futures retain their recorded behavior: a marked-canceled future returns `errors.CANCELED`.
 
 ```lua
 local value, err = future:result()
@@ -316,7 +316,7 @@ if err then return nil, err end
 **Returns:** `boolean, error`
 
 <warning>
-In runtime v0.3.32a, function and contract futures share one process-global cancellation callback. When both providers are loaded, <code>cancel()</code> and <code>is_canceled()</code> are not a stable cross-provider contract. Do not use cancellation for application correctness; time out locally and ignore a late result until the runtime separates provider cancellation.
+Function and contract futures share one process-global cancellation callback. When both providers are loaded, <code>cancel()</code> is not a stable cross-provider contract. Do not use cancellation for application correctness; time out locally and ignore a late result until the runtime separates provider cancellation.
 </warning>
 
 ## Parallel Operations

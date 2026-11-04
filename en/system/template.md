@@ -43,6 +43,8 @@ At runtime `development_mode`, the left and right expression delimiters, and
 accepted and validated in this release, but are not applied by the in-memory
 Jet loader. Changing them does not alter parsing or discover templates.
 
+Adding, updating, or removing a template invalidates the set's compiled cache, including when `development_mode` is false. Subsequent renders use the updated sources.
+
 ## Templates
 
 Templates belong to a set and are identified by name for internal resolution.

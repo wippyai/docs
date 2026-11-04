@@ -425,6 +425,8 @@ local dbtype, err = db:type()
 
 Run a `SELECT` query and return its rows.
 
+Native timestamps returned by the driver become UTC RFC3339 strings with up to nanosecond precision. Zero fractions are omitted and trailing fractional zeros are trimmed. Text columns remain unchanged. This applies to prepared and transactional queries too; compare timestamps as instants or in SQL, not by string ordering.
+
 ```lua
 local rows, err = db:query("SELECT id, name FROM users WHERE active = ?", {1})
 ```
@@ -1550,11 +1552,17 @@ Database access is subject to security policy evaluation.
 | Resource not found | `errors.NOT_FOUND` | no |
 | Resource not database | `errors.INVALID` | no |
 | Invalid parameters | `errors.INVALID` | no |
-| SQL syntax error | `errors.UNKNOWN` | nil |
+| PostgreSQL syntax/input error | `errors.INVALID` | no |
+| SQLite syntax error or corrupt database | `errors.INTERNAL` | no |
+| Unique/primary-key violation | `errors.CONFLICT` | no |
+| PostgreSQL serialization/deadlock or SQLite busy/locked | `errors.CONFLICT` | yes |
+| Driver context canceled or deadline exceeded | `errors.CANCELED` / `errors.TIMEOUT` | no |
 | Statement closed | `errors.INVALID` | no |
 | Transaction not active | `errors.INVALID` | no |
 | Invalid savepoint name | `errors.INVALID` | no |
-| Query execution error | `errors.UNKNOWN` | nil |
+| Unclassified driver error | `errors.UNKNOWN` | nil |
+
+PostgreSQL errors include `err:details().sqlstate` and available `schema`, `table`, `column`, `constraint`, and `data_type` fields. SQLite errors include numeric `sqlite_code` and `sqlite_extended_code`. Connection and I/O failures can be `errors.UNAVAILABLE`; a non-retryable failure may leave a write's outcome unknown, so do not retry every unavailable error automatically.
 
 See [Error Handling](lua/core/errors.md) for working with errors.
 

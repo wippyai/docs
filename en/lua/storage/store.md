@@ -274,18 +274,18 @@ Security policy evaluation applies to store operations.
 | `store.key.has` | Store ID | `key` | Check key existence |
 | `store.key.list` | Store ID | `prefix` | List entries |
 
-Permission denials from `store.get`, `get`, `set`, `delete`, and `has` raise a Lua error. The `info`, `entry`, `list`, and `put` methods instead return an `errors.PERMISSION_DENIED` error. Grant the required actions before calling code that cannot tolerate a raised denial.
+Permission denials from the handle methods `get`, `set`, `delete`, and `has` raise a Lua error. Acquisition with `store.get()` and the `info`, `entry`, `list`, and `put` methods return an `errors.PERMISSION_DENIED` error.
 
 ## Errors
 
-`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`), except that a permission denial in `store.get`, `get`, `set`, `has` and `delete` raises a Lua error instead.
+`store.get()` and all methods on the store handle (`get`, `entry`, `set`, `put`, `list`, `has`, `delete`, `info`) return structured errors (use `err:kind()`), except that a permission denial in the handle methods `get`, `set`, `has`, and `delete` raises a Lua error instead.
 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Empty resource ID | `errors.INVALID` | no |
 | Resource not found | `errors.INTERNAL` | no |
 | Store released | `errors.INVALID` | no |
-| Permission denied (`entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (`store.get`, `entry`, `put`, `list`, `info`) | `errors.PERMISSION_DENIED` | no |
 | `only_if_absent` and key exists | `errors.ALREADY_EXISTS` | no |
 | `if_version` mismatch | `errors.CONFLICT` | yes |
 | Conditional write on a store without support | `errors.INVALID` | no |

@@ -164,7 +164,7 @@ The runtime checks the general permission first and the queue-specific permissio
 | Message argument missing or an empty table | `errors.INVALID` | no |
 | No delivery context | `errors.INVALID` | no |
 | Message released or already settled | `errors.INVALID` | no |
-| Publish not allowed | `errors.INVALID` | no |
+| Publish not allowed | `errors.PERMISSION_DENIED` | no |
 | Publish failed | `errors.INTERNAL` | no |
 | Queue or driver not found for `info` | `errors.INTERNAL` | no |
 

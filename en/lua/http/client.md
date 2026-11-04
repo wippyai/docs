@@ -131,7 +131,7 @@ if err then return nil, err end
 | `files` | table | File uploads (array of file definitions) |
 | `cookies` | table | Request cookies `{name = "value"}` |
 | `auth` | table | Basic auth `{user = "name", pass = "secret"}` |
-| `timeout` | number/string | Timeout: number in seconds, or string like `"30s"`, `"1m"` |
+| `timeout` | number/string | Whole seconds as a number (fractional parts are truncated), or an exact duration string such as `"250ms"`, `"1.5s"`, or `"1m"` |
 | `stream` | boolean | Stream response body instead of buffering |
 | `max_response_body` | number | Max response size in bytes (0 = default) |
 | `unix_socket` | string | Connect via Unix socket path |
@@ -212,7 +212,7 @@ if err then return nil, err end
 
 \* Either `content` or `reader` is required.
 
-The pinned runtime fully reads a `reader` into memory before dispatch, does not close it, and does not surface a non-EOF read failure separately; it can send the bytes accumulated before that failure. Prefer `content` for already-bounded data, and close caller-owned readers after the request. The `content_type` field is parsed but not forwarded by runtime `v0.3.32a`, so uploaded parts use the transport default.
+The runtime fully reads a `reader` into memory before dispatch, does not close it, and does not surface a non-EOF read failure separately; it can send the bytes accumulated before that failure. Prefer `content` for already-bounded data, and close caller-owned readers after the request. The `content_type` field is parsed but not forwarded to the transport, so uploaded parts use the transport default.
 
 Reader-backed files are supported only by single-request calls in this release. `request_batch` forwards the `content` field but drops a parsed `reader`, so batch file uploads must provide `content`.
 

@@ -5,7 +5,7 @@ description: "SQL database connection pooling and configuration. Supports Postgr
 
 # Database System
 
-Wippy provides pooled SQL database entries for PostgreSQL and MySQL, plus a single-connection SQLite entry.
+Wippy provides SQL database entries for PostgreSQL, MySQL, and SQLite with configurable connection pools.
 
 This page is a configuration reference. Unless a fence includes `version`, `namespace`, and `entries`, treat it as a fragment to place inside an existing entry list.
 
@@ -82,6 +82,7 @@ A private in-memory SQLite database (<code>file: ":memory:"</code>) is scoped to
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `file` | string | required | Database file path or `:memory:` |
+| `foreign_keys` | bool | false | Enforce SQLite foreign keys on every connection |
 | `pool` | object | - | Connection pool settings; `max_open` and `max_idle` are forced to `1` for `:memory:` |
 | `max_mutation_changes` | int | 100000 | Rows one transaction may hold in the committed-mutation observer |
 | `max_mutation_bytes` | int | 67108864 | Logical bytes one transaction may hold in the observer (64 MiB) |
@@ -183,6 +184,8 @@ options:
 ### SQLite {id="options-sqlite"}
 
 SQLite does not apply the `options` map to its DSN. File databases always open with `mode=rwc`, and journal mode is always set to `WAL`. The `options` field is accepted but ignored.
+
+Set the top-level `foreign_keys: true` field to enable foreign-key enforcement for every pooled connection, including in-memory databases. It is disabled by default; setting it in `options` has no effect.
 
 ## Examples
 

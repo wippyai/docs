@@ -229,7 +229,7 @@ local function main()
         io.flush()
         local input = io.readline()
         if not input or input == "quit" or input == "exit" then break end
-        if input == "" then goto continue end
+        if not input:find("%S") then goto continue end
 
         conversation:add_user(input)
 
@@ -246,7 +246,7 @@ local function main()
 
         io.print(response.result)
         io.print("")
-        conversation:add_assistant(response.result)
+        conversation:add_assistant(response.result, response.metadata)
 
         ::continue::
     end
@@ -356,11 +356,11 @@ local function main()
         io.flush()
         local input = io.readline()
         if not input or input == "quit" or input == "exit" then break end
-        if input == "" then goto continue end
+        if not input:find("%S") then goto continue end
 
         conversation:add_user(input)
 
-        local response, gen_err = runner:step(conversation)
+        local response, gen_err = runner:step(conversation, { drop_stale_thinking = true })
         if gen_err then
             io.print("Error: " .. tostring(gen_err))
             goto continue
@@ -368,7 +368,12 @@ local function main()
 
         io.print(response.result)
         io.print("")
-        conversation:add_assistant(response.result)
+        for _, note in ipairs(response.context_notes or {}) do
+            conversation:add_message(note.role, note.content, note.name, note.metadata)
+        end
+        local metadata = response.metadata or {}
+        metadata.prefix_fingerprint = response.prefix_fingerprint
+        conversation:add_assistant(response.result or "", metadata)
 
         ::continue::
     end
@@ -405,7 +410,7 @@ local agent_context = require("agent_context")
 local STREAM_TOPIC = "stream"
 local stream_sequence = 0
 
-local function stream_response(runner, conversation)
+local function stream_response(runner, conversation, route_pin)
     stream_sequence = stream_sequence + 1
     local topic = STREAM_TOPIC .. ":" .. tostring(stream_sequence)
     local stream_ch = process.listen(topic)
@@ -413,6 +418,8 @@ local function stream_response(runner, conversation)
 
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
+            route = route_pin,
+            drop_stale_thinking = true,
             stream_target = {
                 reply_to = process.pid(),
                 topic = topic,
@@ -460,7 +467,7 @@ local function stream_response(runner, conversation)
         end
     end
 
-    return finish(full_text, nil, nil)
+    return finish(full_text, nil, "Stream closed before completion")
 end
 
 local function main()
@@ -480,20 +487,23 @@ local function main()
         io.flush()
         local input = io.readline()
         if not input or input == "quit" or input == "exit" then break end
-        if input == "" then goto continue end
+        if not input:find("%S") then goto continue end
 
         conversation:add_user(input)
 
-        local text, _, gen_err = stream_response(runner, conversation)
+        local text, response, gen_err = stream_response(runner, conversation)
         if gen_err then
             io.print("Error: " .. tostring(gen_err))
             goto continue
         end
 
         io.print("")
-        if text and text ~= "" then
-            conversation:add_assistant(text)
+        for _, note in ipairs(response.context_notes or {}) do
+            conversation:add_message(note.role, note.content, note.name, note.metadata)
         end
+        local metadata = response.metadata or {}
+        metadata.prefix_fingerprint = response.prefix_fingerprint
+        conversation:add_assistant(response.result or text or "", metadata)
 
         ::continue::
     end
@@ -510,7 +520,8 @@ Key patterns:
 - `channel.select` waits on both the stream channel and completion channel.
 - Each turn uses a unique topic and removes its listener after both the runner and
   that turn's stream report completion.
-- The process accumulates streamed text for the conversation history.
+- The process displays streamed text, then stores the response and its metadata.
+  It keeps `context_notes` before that response so later requests replay the same prefix.
 
 Run the streaming phase with the same command:
 
@@ -656,7 +667,7 @@ local agent_context = require("agent_context")
 local STREAM_TOPIC = "stream"
 local stream_sequence = 0
 
-local function stream_response(runner, conversation)
+local function stream_response(runner, conversation, route_pin)
     stream_sequence = stream_sequence + 1
     local topic = STREAM_TOPIC .. ":" .. tostring(stream_sequence)
     local stream_ch = process.listen(topic)
@@ -664,6 +675,8 @@ local function stream_response(runner, conversation)
 
     coroutine.spawn(function()
         local response, err = runner:step(conversation, {
+            route = route_pin,
+            drop_stale_thinking = true,
             stream_target = {
                 reply_to = process.pid(),
                 topic = topic,
@@ -711,7 +724,7 @@ local function stream_response(runner, conversation)
         end
     end
 
-    return finish(full_text, nil, nil)
+    return finish(full_text, nil, "Stream closed before completion")
 end
 
 local function execute_tools(tool_calls)
@@ -738,8 +751,9 @@ local function execute_tools(tool_calls)
 end
 
 local function run_turn(runner, conversation)
+    local route_pin = nil
     while true do
-        local text, response, err = stream_response(runner, conversation)
+        local text, response, err = stream_response(runner, conversation, route_pin)
         if err then
             io.print("")
             return nil, err
@@ -749,21 +763,30 @@ local function run_turn(runner, conversation)
             io.print("")
         end
 
-        local tool_calls = response and response.tool_calls
+        if response.truncation_reason then
+            return nil, "Agent output was truncated"
+        end
+        route_pin = response.route_pin
+        for _, note in ipairs(response.context_notes or {}) do
+            conversation:add_message(note.role, note.content, note.name, note.metadata)
+        end
+        local metadata = response.metadata or {}
+        metadata.prefix_fingerprint = response.prefix_fingerprint
+        conversation:add_assistant(response.result or text or "", metadata)
+
+        local tool_calls = response.tool_calls
         if not tool_calls or #tool_calls == 0 then
             return text, nil
         end
 
-        if text and text ~= "" then
-            conversation:add_assistant(text)
-        end
-
-        local results = execute_tools(tool_calls)
-
         for _, tc in ipairs(tool_calls) do
-            local result = results[tc.id]
-            local result_str = json.encode(result) or "{}"
-            conversation:add_function_call(tc.name, tc.arguments, tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id, {
+                provider_metadata = tc.provider_metadata,
+            })
+        end
+        local results = execute_tools(tool_calls)
+        for _, tc in ipairs(tool_calls) do
+            local result_str = json.encode(results[tc.id]) or "{}"
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -786,7 +809,7 @@ local function main()
         io.flush()
         local input = io.readline()
         if not input or input == "quit" or input == "exit" then break end
-        if input == "" then goto continue end
+        if not input:find("%S") then goto continue end
 
         conversation:add_user(input)
 
@@ -795,9 +818,7 @@ local function main()
             io.print("Error: " .. tostring(gen_err))
             goto continue
         end
-        if text and text ~= "" then
-            conversation:add_assistant(text)
-        end
+        -- run_turn has already appended the response and its context notes.
 
         ::continue::
     end
@@ -811,10 +832,15 @@ return { main = main }
 The tool-execution loop:
 
 1. Call `runner:step()` with streaming.
-2. If the response contains `tool_calls`, execute each tool with `funcs.call()`.
-3. Add the tool calls and results to the conversation.
-4. Call the runner again so it can incorporate the results.
+2. Store `context_notes`, then the assistant response with thinking metadata and `prefix_fingerprint`.
+3. Append all tool calls together, execute them, then append their results with the original IDs.
+4. Pass `route_pin` into the next step so a fallback route receives its own tool results.
 5. Return the final text when the response contains no more tool calls.
+
+This tutorial executes its two simple tools sequentially. For tool wrappers,
+parallel execution and per-result persistence, use the [tool caller](../framework/agents.md#tool-execution).
+Time-aware traits also require the host to render and retain one [turn context
+note](../framework/agents.md#built-in-traits); the runner does not inject it per step.
 
 ### Run the Agent
 

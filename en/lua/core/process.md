@@ -65,7 +65,7 @@ local pid, err = process.spawn_linked_monitored(id, host, ...)
 | `host` | string | Host ID (e.g., `"app:processes"`) |
 | `...` | any | Arguments passed to spawned process |
 
-All variants require `process.spawn` on the process ID. The monitored variants also require `process.spawn.monitored`, and the linked variants require `process.spawn.linked`. At runtime v0.3.32a, only the module-level `spawn()` checks `process.host` on the host ID; the specialized module-level variants do not perform that host permission check.
+All variants require `process.spawn` on the process ID and `process.host` on the host ID. The monitored variants also require `process.spawn.monitored`, and the linked variants require `process.spawn.linked`.
 
 ## Process Control
 
@@ -128,6 +128,7 @@ local events = process.events()  -- Lifecycle events from @events topic
 | `process.event.CANCEL` | Cancellation requested |
 | `process.event.EXIT` | Monitored process exited |
 | `process.event.LINK_DOWN` | Linked process terminated abnormally |
+| `process.event.MONITOR_DOWN` | A monitored process's node departed; distinct from a linked-process failure |
 | `process.event.OUTDATED` | The process's code or an imported dependency changed in the registry |
 
 ### Event Fields
@@ -199,6 +200,10 @@ process.upgrade(nil, preserved_state)
 ```
 
 `process.upgrade` is a terminal control transfer: it clears the current execution and starts the requested definition with the same PID. Code after the call does not run in the old execution.
+
+Unread messages from the inbox and listeners, and unread lifecycle events, survive in admission order. Consumed messages are not replayed. The replacement recreates its listeners and receives the original envelopes through its own handlers. Explicit `unlisten()` discards that listener's buffered messages.
+
+Process-owned context values survive, but coroutine state, application-created channels, timers, sockets, and their queued results belong to the old execution and must be recreated. A failed upgrade terminates the process; this handoff does not persist messages across process exit.
 
 ## Context Spawner
 
@@ -291,10 +296,10 @@ The optional `scope` argument selects the name's consistency guarantee and defau
 |----------|------------|-----------|
 | `process.registry.LOCAL` | this node only | Instant, node-local |
 | `process.registry.EVENTUAL` | cluster-wide | Eventually consistent (gossip) |
-| `process.registry.CONSISTENT` | cluster-wide | Linearizable singleton (Raft) |
-| `process.registry.STRONG` | cluster-wide | Consistent + every live node acknowledges |
+| `process.registry.CONSISTENT` | cluster-wide | Raft-committed ownership; local reads may lag |
+| `process.registry.STRONG` | cluster-wide | Consistent + acknowledgments from the captured registry observers |
 
-On a standalone node, only `LOCAL` is available; cluster scopes require [clustering](guides/cluster.md).
+All four scopes work on a standalone node. `EVENTUAL` has no gossip peers; `CONSISTENT` and `STRONG` use serialized in-memory local storage, with self as the only observer. These registrations last only for the runtime's lifetime. Enabling clustering selects clustered backends on the next boot and does not migrate existing registrations.
 
 ### register
 
@@ -308,7 +313,7 @@ local ok, err = process.registry.register(name, pid, scope)
 | `pid` | string | no | self | PID to register; defaults to the calling process |
 | `scope` | number | no | `LOCAL` | One of the scope constants above |
 
-Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration blocks until every live node acknowledges or the reservation deadline expires; on timeout it returns an error.
+Returns `true` on success, or `nil, error` on failure. Conflicts (name already registered to a different PID) return `errors.ALREADY_EXISTS`. Registering the same name to the same PID is idempotent. A `STRONG` registration waits for the registry observers captured from the leader's Raft configuration; a missing acknowledgment expires the attempt.
 
 Registering on behalf of a different PID additionally requires the `process.registry.foreign` permission on the target PID.
 
@@ -316,9 +321,15 @@ Registering on behalf of a different PID additionally requires the `process.regi
 
 ```lua
 local pid, err = process.registry.lookup(name)
+local local_pid, local_err = process.registry.lookup(name, process.registry.LOCAL)
+local eventual_pid, eventual_err = process.registry.lookup(
+    name, process.registry.EVENTUAL, {timeout = "5s"}
+)
 ```
 
-Returns the registered PID string, or `nil, error` with kind `errors.NOT_FOUND` when the name is not registered.
+Without a scope, lookup checks global ownership, then `EVENTUAL`, then `LOCAL`. These are independent namespaces; `CONSISTENT` and `STRONG` share the global namespace. An explicit scope disables fallback and does not strengthen read freshness.
+
+Returns the PID string or `nil, error`. With `EVENTUAL`, a positive duration-string `timeout` waits for an absent binding without polling; expiry returns retryable `errors.NOT_FOUND`. Other scopes reject a timeout. Unavailable registries, lookup failures, and caller cancellation remain errors rather than being reported as an absent name.
 
 ### unregister
 

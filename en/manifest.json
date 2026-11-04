@@ -68,6 +68,7 @@
         "children": [
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
+          {"title": "TOML", "path": "lua/data/toml"},
           {"title": "Base64", "path": "lua/data/base64"},
           {"title": "Compress", "path": "lua/data/compress"},
           {"title": "Archive", "path": "lua/data/archive"},
