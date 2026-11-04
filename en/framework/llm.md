@@ -507,7 +507,7 @@ Missing facts keep each driver's defaults. A value a driver cannot honor fails w
 
 A Claude thinking block is bound to the conversation that produced it: the system prompt, the tool list, every earlier message, and the model. When a request replays earlier thinking blocks and sends a thinking object (`always`, or `adaptive` and `budget` with effort above 0), the Claude and Bedrock drivers ask the API to drop blocks that no longer match instead of rejecting the request, so an agent handoff or a history edit does not fail. Blocks from another model are passed back unchanged; the API drops what the current model cannot read. Dropped blocks are listed in `response.metadata.input_transformations`.
 
-Claude Sonnet 5.5's `between_tools` thinking cannot carry this setting, so a conversation using it fails after a history edit on accounts where the check is enforced. Routes that must survive handoffs use `thinking: always` with a low `options.thinking_effort` instead.
+Claude Sonnet 5.5's `between_tools` thinking cannot carry this setting. Agent hosts that pass `drop_stale_thinking`, including session and dataflow, remove blocks bound to an earlier prefix before such a request, so those blocks are lost rather than failing. A direct caller replaying blocks on `between_tools` still fails after a history edit on accounts where the check is enforced. Routes that should keep thinking across handoffs use `thinking: always` with a low `options.thinking_effort`.
 
 #### Provider Request Fields
 
