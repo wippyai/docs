@@ -591,4 +591,4 @@ Tree-sitter queries use S-expression patterns:
   (#match? @var "^_"))  ; regex match
 ```
 
-See [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) for complete documentation.
+See [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html#query-syntax) for complete documentation.

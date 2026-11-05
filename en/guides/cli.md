@@ -26,7 +26,7 @@ Available on all commands:
 | `--profiler` | `-p` | Enable pprof on localhost:6060 |
 | `--memory-limit` | `-m` | Memory limit (e.g., 1G, 512M) |
 
-Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 1 GB default.
+Memory-limit precedence is `--memory-limit`, then `GOMEMLIMIT`, then the 2 GiB default.
 
 The global `--config` option may be passed multiple times to compose config files. Files merge left to right: later files override matching values and keep everything else. Every explicitly named file must exist; without `--config`, the default `.wippy.yaml` is optional. The first file anchors the directory used to resolve relative paths. Configuration applies in order: file composition, then `--profile` selections, then `--set` overrides. See [Configuration](guides/configuration.md#config-composition).
 
@@ -47,6 +47,8 @@ wippy init --src-dir ./src --modules-dir .wippy
 | `--modules-dir` | | .wippy | Modules directory |
 | `--lock-file` | `-l` | wippy.lock | Lock file path |
 
+Directory precedence is explicit flags, then the selected existing lock file, then `directories` in the working directory's `wippy.yaml`, then defaults. Re-running `init` preserves the existing dependency graph, options, and replacements.
+
 ## wippy run
 
 Start the runtime or execute a command.
@@ -66,15 +68,19 @@ wippy run --exec app:worker                 # Start runtime and execute a single
 | `--override` | `-o` | Override entry values (`namespace:entry:field=value`); `field` may be `kind` to change the entry kind |
 | `--set` | | Override a config value (`section.path=value`, repeatable, takes precedence over the config file) |
 | `--exec` | `-x` | Execute process and exit (`namespace:entry`) |
-| `--host` | | Terminal host ID for `--exec` (auto-detected if only one `terminal.host` exists) |
+| `--host` | | Terminal host ID; overrides `meta.command.host`, then falls back to the sole `terminal.host` |
 | `--registry` | | Registry URL for hub modules |
 | `--profile` | | Apply a runtime profile from `.wippy.yaml` or packed runtime metadata (repeatable, applied in order) |
 
 Running a hub module (`wippy run org/module`) resolves it once, records it in `wippy.lock`, and vendors the verified packs locally. Subsequent runs of the same reference start from the lock — no network needed. A version selector that no longer matches the lock is rejected with a hint to run `wippy update`.
 
+With persistent registry history, a recorded deployment can also be restored without `wippy.lock`. The runtime restores its exact recorded modules and packed defaults, using verified local artifacts first. Missing artifacts require Hub access. The host configuration must select the history store; packed defaults cannot redirect it. A requested module reference must match the recorded root and version.
+
 For a local application, `wippy run` repairs a stale lock before any runtime service starts. It loads the source dependency declarations, and when the lock already satisfies them it re-resolves the graph from local and installed evidence only (verified-offline access, no network). If that offline resolution matches the lock, boot continues unchanged. If it succeeds but differs, it becomes the candidate graph; the hub is asked to resolve only when the offline pass fails or the lock no longer satisfies the source declarations. Packs the candidate graph is missing are downloaded and verified, and only then is `wippy.lock` rewritten. A lock that selects a deployment root is authoritative and is never re-resolved.
 
 `--exec` blocks until the launched process produces its result, then propagates the process exit code as the CLI exit code. Ctrl-C during `--exec` cancels the running process and the runtime still shuts down gracefully; a second signal forces exit.
+
+A failed required startup gate also exits nonzero in server mode. See [Supervision](guides/supervision.md#completion-gates).
 
 `--set` writes any runtime configuration value from the command line, merged over `.wippy.yaml` per leaf:
 
@@ -99,7 +105,7 @@ wippy test acme/module@1.2.3   # Run tests from a hub module
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--override` | `-o` | Override entry values (`namespace:entry:field=value`) |
-| `--host` | | Terminal host ID (auto-detected if only one `terminal.host` exists) |
+| `--host` | | Terminal host ID; overrides `meta.command.host`, then falls back to the sole `terminal.host` |
 | `--registry` | | Registry URL for hub modules |
 | `--set` | | Override a config value (`section.path=value`, repeatable) |
 | `--profile` | | Apply a runtime profile (repeatable, applied in order) |
@@ -131,6 +137,7 @@ and are skipped.
 | `--json` | | `false` | JSON output |
 | `--no-color` | | `false` | Disable colored output |
 | `--cache-reset` | | `false` | Clear Lua cache before linting |
+| `--strict-any` | | config | Require narrowing before using `any`; overrides `lua.type_system.strict_any` |
 | `--profile` | | | Apply a workspace profile from the merged runtime config (repeatable) |
 | `--set` | | | Override a merged runtime config value (`section.path=value`, repeatable) |
 
@@ -172,6 +179,8 @@ wippy install --refresh acme/http        # Re-fetch a specific module
 ## wippy update
 
 Update dependencies and regenerate lock file.
+
+Directory selection follows the same precedence as `wippy init`. A lock with a deployment root resolves from that application; it does not scan unrelated host source unless `workspace.include_host_dependencies: true` is set.
 
 ```bash
 wippy update                      # Update all
@@ -220,6 +229,7 @@ wippy pack app.wapp --embed app:assets --bytecode "**"
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--lock-file` | `-l` | Lock file path |
+| `--module` | | Pack only the selected lock module (`org/name`) |
 | `--description` | `-d` | Pack description |
 | `--tags` | `-t` | Pack tags (comma-separated) |
 | `--meta` | | Custom metadata (key=value) |
@@ -265,6 +275,7 @@ This command reads `wippy.yaml` from the current directory.
 | `--module-visibility` | Visibility for newly created modules (`--create` only): `public` or `private` (default: private) |
 | `--module-type` | Module type: `library`, `application`, `agent`, or `plugin` (overrides `type:` in wippy.yaml) |
 | `--module-display-name` | Display name for newly created modules (`--create` only) |
+| `--wapp` | Upload an existing sealed `.wapp` unchanged; version comes from its metadata |
 
 The module type is normally declared as `type:` in `wippy.yaml` (see [Publishing](./publishing.md#wippyyaml)); `--module-type` overrides it for a single publish. When neither is set, newly created modules default to `application` with a deprecation warning.
 
@@ -449,6 +460,7 @@ wippy run list
 | `short` | No | Short description shown in `wippy run list` |
 | `main` | No | Mark this entry as the default entrypoint. When a pack or hub module is run without a command name, the single `main` entry of that use case is executed; a lone entrypoint is picked even without `main`, and several entrypoints with no `main` is an error |
 | `use_case` | No | Entrypoint category, default `run`. The entry declaring `use_case: test` is what `wippy test` executes |
+| `host` | No | Fully qualified `terminal.host` ID used when `--host` is omitted |
 | `security` | No | Security context the command runs under when launched from the CLI |
 
 Any process entry kind works (`process.lua`, `process.wasm`). Command names are not checked for uniqueness; when several loaded entries declare the same name, the first match in registry order runs. Arguments after the command name are passed to the process as string payloads.

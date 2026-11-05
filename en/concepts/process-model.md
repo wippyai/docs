@@ -128,6 +128,8 @@ process.upgrade("app.workers:v2", current_state)
 
 The first argument is the new registry entry (or nil to reload the current definition). Additional arguments pass to the new version, letting you carry state across the upgrade. The process resumes execution with the new code immediately.
 
+Unread inbox and listener messages, unread lifecycle events, and process-owned context values survive the handoff. The new execution recreates listeners, timers, sockets, and application channels; consumed messages and old coroutine state are not replayed.
+
 The runtime caches compiled prototypes to avoid repeated compilation. If an upgrade fails, the process crashes and normal supervision behavior applies; a monitoring parent can restart it or escalate the failure.
 
 ## Scheduling

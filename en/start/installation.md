@@ -34,6 +34,8 @@ wippy init
 
 `wippy init` writes the dependency lock and its source and module directory settings. It does not scaffold application source files or registry entries. Follow [Hello World](tutorials/hello-world.md) to create a runnable application, then start it with `wippy run`.
 
+Directory settings come from explicit flags, an existing lock, `directories` in `wippy.yaml`, or the defaults (`./src` and `.wippy`), in that order.
+
 The runtime includes HTTP, SQL, storage, and process-hosting capabilities. Add framework modules from the Hub when the application needs them:
 
 ```bash

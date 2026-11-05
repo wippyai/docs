@@ -30,7 +30,7 @@ YAML definitions are loaded into the registry at startup. The registry is the so
 
 ### Definition File Format
 
-A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The optional `version` marker is conventionally `"1.0"`; the v0.3.32a loader does not require it.
+A definition file contains a `namespace` and either an `entries` array or top-level `name` and `kind` fields. The optional `version` marker is conventionally `"1.0"`; the loader does not require it.
 
 ```yaml
 version: "1.0"
@@ -231,6 +231,10 @@ supervisor:
 ```
 
 See the [Configuration Guide](guides/configuration.md) for runtime configuration fields.
+
+### wippy.yaml
+
+The module manifest may declare `directories.src` and `directories.modules`. `wippy init` selects directories from explicit flags, an existing lock, this manifest, then defaults. `wippy update` also uses manifest directories when creating a missing lock. See [Dependency Management](guides/dependency-management.md).
 
 ### wippy.lock
 

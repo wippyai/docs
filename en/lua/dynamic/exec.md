@@ -81,11 +81,17 @@ local proc = executor:exec("./deploy.sh production", {
 | `options.work_dir` | string | Working directory |
 | `options.env` | table | Environment variables |
 | `options.pty` | table | Allocate a pseudo-terminal for the child |
-| `options.process_group` | boolean | Start the child in its own process group so signals also reach descendants; unsupported on Windows |
+| `options.process_group` | boolean | Start the child in its own process group so signals also reach descendants; unsupported on Windows and confined native launches |
+| `options.mounts` | table[] | Docker bind mounts: `{source, target, read_only?}`; requires `exec.mount` on each source |
+| `options.confine` | table | Narrow the native executor's configured confinement limits |
 
 **Returns:** `Process, error`
 
 The process is created but not started.
+
+Mount sources must be clean absolute paths on the Docker daemon's host; targets must be absolute container paths. Duplicate targets are rejected. Native execution does not support these mounts. Mount authorization checks the supplied source path and does not resolve symlinks.
+
+`confine` may narrow `fs.read`, `fs.write`, `fs.exec`, `env.allow`, `network` (`"none"`), `limits` (`mem_mb`, `pids`, `wall_s`), and `tree.kill_on_owner_exit`. Omitted fields inherit the entry's limits; empty lists deny that class. It cannot add authority, raise limits, or set entry-only `work_dir_roots`, `home`, or `env.set`. See [Native Confinement](system/exec.md#native-confinement).
 
 ### Command Parsing
 
@@ -121,7 +127,7 @@ local proc = executor:exec("/bin/bash --noprofile --norc", {
 | `height` | number | 24 | Initial PTY rows, 1 to 65535 |
 | `term` | string | none | Child `TERM` value |
 
-Width times height may not exceed 262,144 cells. A PTY-backed process merges the child's output into a single terminal stream; drive it with [resize](#resize) and [attach_terminal](#attach_terminal) rather than the stdin/stdout pipe methods.
+Width times height may not exceed 262,144 cells. A PTY-backed process merges the child's output into a single terminal stream. To present it on the caller's terminal and forward input, use [terminal](#terminal).
 
 ## start / wait
 
@@ -284,44 +290,24 @@ local ok, err = proc:resize(120, 40)
 
 **Returns:** `boolean, error`
 
-Use it to set the initial geometry before handing the process to a terminal session. Once a session owns the process, send it a `resize` event instead.
+For a `TerminalProcess`, send a `resize` event instead.
 
-## attach_terminal
+## terminal
 
-Attach an unstarted PTY-backed process to the calling process's terminal and return a `TerminalSession`.
+`executor:terminal(cmd, options?)` creates and starts a PTY process in the caller's current terminal. It returns `TerminalProcess, error` after startup and terminal setup succeed. It accepts the same options and command and mount permissions as `exec()`, and allocates the PTY automatically.
 
 ```lua
 local exec = require("exec")
 local tty = require("tty")
-
-local executor = assert(exec.get("app:exec"))
-local proc = assert(executor:exec("/bin/bash --noprofile --norc", {
-    pty = {term = "xterm-256color"},
-}))
-local session = assert(proc:attach_terminal())
-```
-
-**Returns:** `TerminalSession, error`
-
-The call consumes the process: the session becomes its sole lifecycle owner and the original handle can no longer be used. The session opens a surface on the current terminal port and owns PTY emulation, input encoding, resize, graceful and forced termination, and reaping. It needs a terminal port — a [terminal host](system/terminal.md) process, or a process spawned with a [viewport grant](lua/system/tty.md#viewport) — and fails when the port has no input controller or already has an open surface.
-
-### TerminalSession
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `send(event)` | `boolean, error` | Forward one canonical TTY event to the child |
-| `done()` | channel | Channel that fires once when the child finishes |
-| `status()` | `string, error` | `"running"` or `"done"`, with the failure error when it failed |
-| `close()` | `boolean, error` | Request termination of a running child |
-
-`send` accepts the key, mouse, resize, focus, and paste records described in [TTY](lua/system/tty.md#event-types). Sending after the child has finished returns an error.
-
-```lua
 local channel = require("channel")
 
+local executor = assert(exec.get("app:exec"))
+local terminal = assert(executor:terminal("/bin/bash --noprofile --norc", {
+    pty = {term = "xterm-256color"},
+}))
 local events = assert(tty.events())
 assert(tty.start())
-local done = session:done()
+local done = terminal:done()
 
 while true do
     local selected = channel.select({
@@ -330,11 +316,31 @@ while true do
     })
     if not selected.ok or selected.channel == done then break end
     if selected.value.type == "close" then break end
-    assert(session:send(selected.value))
+    local ok, err = terminal:send(selected.value)
+    if not ok then break end
 end
 
-assert(session:close())
+assert(terminal:close())
+-- If completion was not already selected, wait for terminal finalization.
+done:receive()
+executor:release()
 ```
+
+The handle owns PTY emulation, input encoding, resize, termination, and reaping. It needs a terminal port — a [terminal host](system/terminal.md) process, or a process spawned with a [viewport grant](lua/system/tty.md#viewport) — and fails when the port has no input controller or already has an open surface.
+
+### TerminalProcess
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `send(event)` | `boolean, error` | Forward one canonical TTY event to the child |
+| `done()` | channel | One completion result after reaping, output drain, and terminal finalization, then closes |
+| `pid()` | `integer, error` | Host process ID; `errors.UNAVAILABLE` when the backend has no host PID |
+| `status()` | `string, error` | `"running"` or `"done"`, with the failure error when it failed |
+| `close()` | `boolean, error` | Request termination without blocking; await `done()` for completion |
+
+`send` accepts the key, mouse, resize, focus, and paste records described in [TTY](lua/system/tty.md#event-types). Sending after completion returns an error.
+
+The completion result has an optional `exit` record (`code`, optional `signal` and `error`) and a separate `terminal_error` for proxy or shutdown failures. `close()` requests SIGHUP, escalates to SIGKILL if needed, and reaps the child. Repeated calls are harmless.
 
 ## Permissions
 
@@ -344,11 +350,14 @@ Exec operations are subject to security policy evaluation.
 |--------|----------|-------------|
 | `exec.get` | Executor ID | Acquire an executor resource |
 | `exec.run` | Command | Execute a specific command |
+| `exec.mount` | Source path | Authorize each Docker bind mount, with `target` and `read_only` attributes |
 
 `exec.run` is evaluated against the raw command string, with the requested options as metadata:
 
 | Key | Type | Description |
 |-----|------|-------------|
+| `executor` | string | Acquired executor registry ID |
+| `process_group` | boolean? | Requested process-group option |
 | `work_dir` | string | Requested working directory, empty when unset |
 | `env_names` | string[] | Names of the environment variables passed, sorted; values are not exposed |
 | `pty.requested` | boolean | Whether a PTY was requested |
@@ -363,7 +372,10 @@ A policy can therefore allow plain commands while restricting the ones that ask 
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Invalid ID | `errors.INVALID` | no |
-| Permission denied | `errors.INVALID` | no |
+| Command or mount permission denied | `errors.PERMISSION_DENIED` | no |
+| Invalid or widened confinement | `errors.INVALID` | no |
+| Working directory outside confinement | `errors.PERMISSION_DENIED` | no |
+| Unsupported confinement or setup failure | `errors.UNAVAILABLE` | no |
 | Process closed | `errors.INVALID` | no |
 | Process not started | `errors.INVALID` | no |
 | Already started | `errors.INVALID` | no |

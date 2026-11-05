@@ -69,6 +69,7 @@ entries:
 | `delegates` | array | Delegate agent references |
 | `memory` | array | Static memory items (strings) |
 | `memory_contract` | table | Dynamic memory configuration |
+| `agent_options` | table | Host options, including `checkpoint`, `turn_context` and loop settings |
 
 ## Agent Context
 
@@ -179,6 +180,12 @@ end
 | `context` | table | Runtime context merged with agent context |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
 | `tool_call` | string | `"auto"`, `"any"`, `"none"`, or a tool name |
+| `context_id` | string | Conversation ID for LLM usage tracking |
+| `route` | table | Previous response's `route_pin`, retained for the current turn |
+| `drop_stale_thinking` | boolean | Strip thinking bound to an earlier system/tool prefix |
+| `thinking_is_current` | function | Optional `(message, fingerprint) -> boolean` replacing the fingerprint comparison |
+| `checkpoint` | table | `{ token_threshold, compact }`; callback returns a replacement conversation builder |
+| `cancel` | channel | Host closes it to cancel in-flight generation |
 
 ### Step Response
 
@@ -189,6 +196,22 @@ end
 | `finish_reason` | string | Stop reason |
 | `tool_calls` | table? | Tool calls to execute |
 | `delegate_calls` | table? | Delegate invocations |
+| `metadata` | table? | Provider metadata, including `thinking_blocks` and `content_positions` |
+| `context_notes` | array? | Positional notes sent after the supplied conversation and before the output |
+| `prefix_fingerprint` | string? | SHA-256 of the system text and tool definitions actually sent |
+| `route_pin` | table? | Route retained after fallback, or the pin passed to this step |
+
+Pass `response.route_pin` back as `route` on later steps of the same turn, and clear it for a new turn. This keeps tool results on the route that produced their calls after a fallback. Closing `cancel` returns a stopped response with any text streamed so far and `finish_reason = "cancelled"`.
+
+### Persisting Step Context
+
+Persist `context_notes` in order after the supplied conversation and before the assistant text or calls. These developer messages carry `metadata.preserve_position = true`; replay their content and metadata unchanged. `context_notes` replaces the earlier `memory_prompt` response field. Discard notes when discarding the step's output. Recall cooldown reads `metadata.memory_ids` from the persisted notes.
+
+Store `prefix_fingerprint` as `metadata.prefix_fingerprint` on assistant rows carrying thinking, together with `metadata.thinking_blocks` and any `metadata.content_positions`. Set `drop_stale_thinking = true` on subsequent steps. The runner removes blocks through the last stale message, including messages without a fingerprint. It works on copies and recomputes the fingerprint if a checkpoint replaces the conversation.
+
+The fingerprint covers the compiled system prompt, ordinary conversation system text and provider-visible tool definitions. It excludes the model and registry-only metadata. It reflects the Claude/Bedrock prefix; equality on other drivers is necessary but does not prove identical wire input. Edits to earlier conversation messages are not detected. Hosts with a checkpoint epoch can supply `thinking_is_current(message, fingerprint)` to check both.
+
+The current tool round keeps its thinking, with stale blocks marked for the driver to bind or omit. An older stale turn with an unanswered call fails before dispatch. See [thinking block binding](./llm.md#thinking-blocks-across-agents) for provider handling.
 
 ### Runner Stats
 
@@ -285,32 +308,58 @@ Tools can also be referenced with custom aliases and context:
 
 ## Tool Execution
 
-When an agent step returns `tool_calls`, execute the calls and add their results to the conversation:
+When an agent step returns `tool_calls`, execute them through the tool caller. Declare its import and the `json` module on the calling entry:
+
+```yaml
+modules: [json]
+imports:
+  tool_caller: wippy.agent.tools:caller
+```
+
+This loop handles registered tools; a host using delegates must also settle `delegate_calls`.
 
 ```lua
 local json = require("json")
-local funcs = require("funcs")
+local tool_caller = require("tool_caller")
 
 local function execute_and_continue(runner, conversation)
+    local caller = tool_caller.new():set_strategy(tool_caller.STRATEGY.PARALLEL)
+    local route_pin = nil
     while true do
-        local response, err = runner:step(conversation)
+        local response, err = runner:step(conversation, {
+            route = route_pin,
+            drop_stale_thinking = true,
+        })
         if err then return nil, err end
+        if response.truncation_reason then return nil, "Agent output was truncated" end
+        route_pin = response.route_pin
+
+        for _, note in ipairs(response.context_notes or {}) do
+            conversation:add_message(note.role, note.content, note.name, note.metadata)
+        end
+        local metadata = response.metadata or {}
+        metadata.prefix_fingerprint = response.prefix_fingerprint
+        conversation:add_assistant(response.result or "", metadata)
 
         local tool_calls = response.tool_calls
         if not tool_calls or #tool_calls == 0 then
             return response.result, nil
         end
 
+        -- Keep the response's calls together, then append results in call order.
         for _, tc in ipairs(tool_calls) do
-            local result, call_err = funcs.call(tc.registry_id, tc.arguments)
-            local result_str
-            if call_err then
-                result_str = json.encode({ error = tostring(call_err) })
-            else
-                result_str = json.encode(result)
-            end
-
-            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id, {
+                provider_metadata = tc.provider_metadata,
+            })
+        end
+        local validated, validation_err = caller:validate(tool_calls)
+        if validation_err then return nil, validation_err end
+        local results, execute_err = caller:execute({}, validated)
+        if execute_err then return nil, execute_err end
+        for _, tc in ipairs(tool_calls) do
+            local result = results[tc.id]
+            local result_str = json.encode(result.error
+                and { error = tostring(result.error) } or result.result)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -324,11 +373,28 @@ end
 | `id` | string | Unique call identifier |
 | `name` | string | Tool name (alias or llm_alias) |
 | `arguments` | table | Parsed arguments |
-| `registry_id` | string | Full registry ID for `funcs.call()` |
+| `registry_id` | string | Full registry ID for execution |
+| `provider_metadata` | table? | Pass unchanged in `add_function_call` options |
 
 <note>
-Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The <code>registry_id</code> field maps directly to the tool's entry in the registry.
+The caller validates calls and applies execution context. Hosts can configure wrappers with <code>set_tool_wrappers(runner.tool_wrappers)</code> and supply their refs with <code>set_wrapper_context(...)</code>. Its default strategy is <code>SEQUENTIAL</code>; select <code>PARALLEL</code> to run a batch concurrently. A result of <code>{ success = false, error = "non-empty text" }</code> sets <code>ToolExecResult.error</code> while preserving the original result. An <code>error</code> field alone remains ordinary result data.
 </note>
+
+### Result Listener
+
+Register a listener to persist results as calls finish:
+
+```lua
+local caller = tool_caller.new():set_strategy(tool_caller.STRATEGY.PARALLEL)
+caller:set_result_listener(function(call_id, result)
+    local _, err = store:save_observation(call_id, result)
+    if err then return nil, err end
+end)
+```
+
+Here `store:save_observation` is the host's persistence function. The listener receives each call ID once, including validation failures, tool errors and cancellation, before `after_execute` wrappers. Parallel delivery follows completion order; sequential delivery finishes before the next call starts. The listener runs synchronously, so Stop waits for it to return. Keep it short and do not mutate the result.
+
+Raising or returning a non-nil second value fails delivery. The caller cancels running calls, starts no more, skips `after_execute`, and returns `nil, error` naming the failed ID. Already accepted results remain accepted. `set_result_listener(nil)` removes the listener. Hosts can pass a cancel channel as the third argument to `execute(context, validated, cancel)`.
 
 For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
 
@@ -675,8 +741,8 @@ Traits are reusable definitions that contribute prompts, tools, and behavior to 
     prompt: You are a helpful assistant.
     model: gpt-4o
     traits:
-      - time_aware
-      - id: custom_trait
+      - wippy.agent.traits:time_aware
+      - id: app:custom_trait
         context:
           key: value
 ```
@@ -685,18 +751,39 @@ Traits are reusable definitions that contribute prompts, tools, and behavior to 
 
 | Trait | Description |
 |-------|-------------|
-| `time_aware` | Injects current date and time into the prompt |
-| `attention` | Adds the Attention read tools, `attention_context_set` and the UI action tools. See [Attention context and UI actions](#attention-context-and-ui-actions). |
+| `wippy.agent.traits:time_aware` | Declares per-turn time context for the host to render and store |
+| `wippy.agent.traits:attention` | Adds the Attention read tools, `attention_context_set` and the UI action tools. See [Attention context and UI actions](#attention-context-and-ui-actions). |
 
 The `time_aware` trait accepts context options:
 
 ```yaml
     traits:
-      - id: time_aware
+      - id: wippy.agent.traits:time_aware
         context:
           timezone: America/New_York
-          time_interval: 15
+          time_format: "2006-01-02 15:04 MST"
 ```
+
+The build function contributes `agent_options.turn_context.time = { timezone, format }` and no prompt text. `timezone` defaults to UTC; `time_format` is an optional Go time layout. The legacy `time_interval` is ignored. Hosts render once per user turn with `wippy.agent:turn_context` and persist the note after the user message:
+
+```yaml
+modules: [time]
+imports:
+  turn_context: wippy.agent:turn_context
+```
+
+```lua
+local turn_context = require("turn_context")
+local time = require("time")
+
+local note, err = turn_context.render(runner.agent_options, time.now())
+if err then return nil, err end
+if note then
+    conversation:add_system(note, { preserve_position = true })
+end
+```
+
+Keep this note unchanged on later steps. Session and Dataflow hosts persist it automatically. Unknown or empty timezones and invalid formats fail rendering; a malformed `time_format` fails trait compilation.
 
 The `wippy/session` module, version 0.6.3 or newer, provides two traits for live session input:
 
@@ -711,10 +798,54 @@ the public interaction state.
 ### Custom Traits
 
 Traits are registry entries with `meta.type: agent.trait`. They can contribute:
+
 - **prompt** - static text appended to the system prompt
 - **build_func_id** - function called at compile time to contribute tools, prompts, delegates
-- **prompt_func_id** - function called at each step to inject dynamic content
+- **prompt_func_id** - function called at each step whose returned system text must stay stable across the conversation
 - **step_func_id** - function called at each step for side effects
+
+Changing per-step context belongs in persisted positional notes. Lifecycle messages from `activate` and `before_step` must use `developer` or `system`; Session and Dataflow reject other roles. A failed prompt function fails the step before provider dispatch.
+
+### Behaviors and Compaction
+
+Put `behaviors` directly on the trait registry entry, alongside `meta`; do not nest it under `data`. Attach a trait to set per-agent checkpoint defaults:
+
+```yaml
+entries:
+  - name: compaction
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      name: Compaction
+    behaviors:
+      compaction:
+        handles: [checkpoint]
+        checkpoint:
+          token_threshold: 12000
+          model: class:fast
+          temperature: 0.2
+          max_tokens: 3000
+
+  - name: assistant
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      name: assistant
+    prompt: You are a helpful assistant.
+    model: gpt-4o
+    traits: [app:compaction]
+    agent_options:
+      checkpoint:
+        token_threshold: 16000
+```
+
+This behavior has no checkpoint handler and configures the host's default summarizer. Only behaviors without a checkpoint handler (`handlers.checkpoint` or the shared `handler`) promote `model`, `temperature`, Session's `max_tool_result_chars`, `max_conversation_chars`, `max_tool_results`, `max_tool_results_chars`, and Dataflow's `max_row_chars` into `agent_options.checkpoint`. With a handler, those keys remain local to its binding. The keys `enabled`, `function_id`, `max_memory_chars`, `max_tokens`, `strict` and `token_threshold` are promoted either way. Other checkpoint keys are not promoted.
+
+Behavior options merge in this order: trait options, behavior options, attachment options, phase options. Maps compile in key order; arrays retain declaration order. Checkpoint scheduling merges trait defaults, explicit `agent_options.checkpoint`, then host `config.checkpoint`. Session-wide defaults precede the agent values. Maps merge recursively; lists replace, including empty lists. False, zero and empty strings are explicit overrides.
+
+The detached effective checkpoint options override binding defaults and reach both the binding and function fallback. Bindings run first; a strict binding failure prevents fallback. Absent configuration does not enable checkpointing. See [Sessions](./sessions.md#checkpoints) and [Dataflow](./dataflow.md#agent-checkpoints) for scheduling and sizing.
+
+Tool wrappers must preserve every original call ID exactly once, even when redirecting tools or reordering calls. Missing, duplicated or added IDs fail validation before execution.
 
 ## Memory
 
@@ -751,7 +882,7 @@ Configure dynamic memory recall through an external implementation:
         min_conversation_length: 2
 ```
 
-The memory contract is called during `runner:step()` to recall relevant items based on the conversation context. Results are injected as developer messages.
+The memory contract is called during eligible steps to recall relevant background context. Results are sent as positional developer messages and returned in `context_notes` for the host to persist. Recall failures do not stop generation; `memory_recall_error` describes the failure. An empty memory list is not an error.
 
 | Option | Default | Description |
 |--------|---------|-------------|

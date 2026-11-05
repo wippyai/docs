@@ -10,7 +10,7 @@ description: "Manage authentication actors, authorization scopes, and access pol
 
 The `security` module exposes authentication actors, authorization scopes, policies, and token stores. This page is an API reference with partial authorization recipes. Registry IDs, actors, request metadata, token values, application objects such as `user` and `doc`, and callbacks such as `show_admin_features` come from the surrounding application; the examples are not a complete authentication deployment.
 
-Wippy runs in strict security mode by default. The executable entry must enable `security`, have an actor and scope, and authorize the exact operations it calls. In particular, construction and scope changes need `security.actor.create` or `security.scope.create`; registry lookup needs `security.policy.get` or `security.policy_group.get`; token work needs `security.token_store.get` plus the operation-specific token permission. `new_actor`, `new_scope`, `scope:with`, `scope:without`, and permission-denied `token_store` acquisition raise a Lua error instead of returning a structured `error`. Grant these prerequisites in the entry's security context rather than trying to recover after a denial. See [Security Model](system/security.md) for configuration.
+Wippy runs in strict security mode by default. The executable entry must enable `security`, have an actor and scope, and authorize the exact operations it calls. In particular, construction and scope changes need `security.actor.create` or `security.scope.create`; registry lookup needs `security.policy.get` or `security.policy_group.get`; token work needs `security.token_store.get` plus the operation-specific token permission. `new_actor`, `new_scope`, `scope:with`, and `scope:without` raise a Lua error on denial. Token-store acquisition returns `nil, errors.PERMISSION_DENIED`. See [Security Model](system/security.md) for configuration.
 
 ## Loading
 
@@ -204,7 +204,7 @@ end
 return store:close()
 ```
 
-The caller owns an acquired token store until `close()` is called. Close it after the final operation on every checked success or error path; repeated closes are safe. A permission denial during acquisition raises a Lua error, while lookup and resource failures return `nil, error`.
+The caller owns an acquired token store until `close()` is called. Close it after the final operation on every checked success or error path; repeated closes are safe. Permission denials, lookup failures, and resource failures during acquisition return `nil, error`.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -391,13 +391,13 @@ See [Security Model](system/security.md) for policy configuration.
 |-----------|------|-----------|
 | No context | `errors.INTERNAL` | no |
 | Empty token store ID | `errors.INVALID` | no |
-| Permission denied (`policy`, `named_scope`, token `create`/`validate`/`revoke`) | `errors.INVALID` | no |
-| Permission denied (`new_scope`, `new_actor`, `token_store`, `scope:with`/`without`) | raised as a Lua error | no |
+| Permission denied (`policy`, `named_scope`, `token_store`, token `create`/`validate`/`revoke`) | `errors.PERMISSION_DENIED` | no |
+| Permission denied (`new_scope`, `new_actor`, `scope:with`/`without`) | raised as a Lua error | no |
 | Policy not found | `errors.INTERNAL` | no |
 | Token store not found | `errors.INTERNAL` | no |
 | Token store closed | `errors.INTERNAL` | no |
 | Invalid expiration format | `errors.INVALID` | no |
-| Token validation failed | `errors.INTERNAL` | no |
+| Token validation failed | Preserved from the underlying error; `errors.INTERNAL` when unclassified | Preserved when supplied |
 
 ```lua
 local store, err = security.token_store("app:tokens")

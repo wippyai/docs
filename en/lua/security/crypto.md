@@ -190,7 +190,9 @@ local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 
 **Returns:** `table, error`
 
-Whenever present, `exp` and `nbf` are validated against the JWT library's current wall clock, not the workflow time reference. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present. Do not use either time-dependent result for replay-sensitive workflow control; perform the check in an activity or validate time against an explicitly replay-safe value.
+Whenever present, `exp` and `nbf` are validated. ES256 verification in a workflow uses the workflow time reference; other algorithms retain wall-clock validation. For those algorithms, perform time-dependent checks in an activity before using the result for workflow control. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present.
+
+ES256 signing in a workflow records the generated signature as a side effect so replay returns the same token.
 
 Always pass the algorithm expected by the issuer; verification restricts the token to that exact method. Treat returned claims as authenticated data, not automatically authorized application input, and still validate issuer, audience, subject, and application-specific constraints.
 

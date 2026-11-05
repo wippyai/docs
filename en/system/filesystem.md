@@ -29,6 +29,7 @@ Filesystem entries expose directory-backed or read-only embedded storage to runt
 | `directory` | string | required | Root path |
 | `auto_init` | bool | false | Create directory if missing |
 | `mode` | string | 0755 | Unix permission mode (octal) |
+| `link_policy` | string | `contained` | Symbolic-link policy: `contained` or `owner_safe` |
 | `base` | string | - | Relative-path base: `project` (process working directory) or `module` (owning module load root) |
 
 Absolute paths are used as given, whatever `base` says.
@@ -40,8 +41,10 @@ Any other value is rejected with `invalid directory base`.
 The mode restricts all file operations. Execute bits are added automatically when all read bits are set and no execute bit is.
 
 <note>
-Paths are normalized and validated. It is not possible to access files outside the configured root directory.
+With the default <code>contained</code> policy, operations stay inside the configured root directory.
 </note>
+
+On Unix, `owner_safe` also permits reads through links to external regular files when the target and every canonical parent are owned by the process UID or root and are not group- or other-writable. Policy refusals return permission errors, including from `exists()`. Writes, removals, renames, and directory traversal remain contained; removing a link changes the link itself. On Windows and other unsupported systems, `owner_safe` behaves as `contained`.
 
 ## Embedded Filesystem
 

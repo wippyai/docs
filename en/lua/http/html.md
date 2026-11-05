@@ -386,7 +386,7 @@ local clean = policy:sanitize(dirty)
 
 **Returns:** `string`
 
-`sanitize` returns only a string. In runtime `v0.3.32a`, the underlying fragment parser can turn malformed input that it cannot parse into an empty string, and the Lua wrapper cannot distinguish that case from valid input whose content the policy removed. Treat sanitization as output filtering, not input validation; validate required content separately when an empty result matters.
+`sanitize` returns only a string and does not expose parser errors. Treat sanitization as output filtering, not input validation; validate required content separately when an empty result matters.
 
 ## Errors
 

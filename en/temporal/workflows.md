@@ -570,6 +570,8 @@ end
 
 Workflows receive signals via the process messaging system. Signals are durable - they survive workflow replays.
 
+New executions retain all accepted signals and child-exit events instead of dropping them at fixed queue limits. Replaying histories that used the old limits preserves their recorded behavior.
+
 ### Inbox Pattern
 
 Receive all messages through the process inbox:
@@ -971,7 +973,7 @@ Force-terminate a running workflow:
 local ok, err = process.terminate(workflow_pid)
 ```
 
-Monitored callers receive an EXIT event with an error.
+Monitored callers receive an EXIT event with an error. Calls from workflow code terminate the Temporal execution through a recorded activity; `process.cancel()` remains a cancellation request. Older histories that recorded cancellation for `process.terminate()` replay that original command.
 
 ### Cancel
 
@@ -980,6 +982,10 @@ Request graceful cancellation with an optional reason:
 ```lua
 local ok, err = process.cancel(workflow_pid, "cancelled by operator")
 ```
+
+### Continue as New
+
+In a workflow, `process.upgrade(nil, state)` continues as a new run of the current definition. Unread ordinary inbox and listener messages, plus accepted pending signals, are carried to the new run. Recreate listeners in the new execution; consumed messages are not replayed.
 
 ## Concurrent Work
 
@@ -1078,17 +1084,13 @@ local result = workflow.exec("app:child", input)
 local v = workflow.version("change-1", 1, 2)
 ```
 
+`os.time()` uses the workflow's deterministic clock. Filesystem and other external I/O belong in activities.
+
 ### Non-Deterministic (Avoid)
 
 ```lua
--- Don't use wall clock time
-local now = os.time()              -- non-deterministic
-
 -- Don't use random directly
 local r = math.random()            -- non-deterministic
-
--- Don't do I/O in workflow code
-local file = io.open("data.txt")   -- non-deterministic
 
 -- Don't use global mutable state
 counter = counter + 1               -- non-deterministic across replays
