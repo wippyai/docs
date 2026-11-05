@@ -157,17 +157,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
 | `payload` | table | JWT 클레임 (커스텀 헤더용 `_header`) |
-| `key` | string | 비밀 (HMAC) 또는 PEM 개인 키 (RSA) |
-| `alg` | string? | HS256, HS384, HS512, RS256 (기본값: HS256) |
+| `key` | string | 비밀 (HMAC) 또는 PEM 개인 키 (RSA, EC P-256) |
+| `alg` | string? | HS256, HS384, HS512, RS256, ES256 (기본값: HS256) |
 
 **반환:** `string, error`
 
-문서에 나온 알고리즘 이름 중 하나만 전달하세요. 이 고정 런타임에서 지원하지 않는 값을 `encode`에 전달하면 오류 대신 HS256으로 폴백합니다. 호출 전에 설정 가능한 알고리즘을 검증하고 신뢰할 수 없는 필드를 `_header`에 복사하지 마세요. 특히 입력이 `alg` 같은 예약 JWT 헤더를 재정의하게 해서는 안 됩니다.
+문서에 나온 알고리즘 이름 중 하나를 전달하세요. 지원하지 않는 값은 `INVALID` 오류를 반환합니다. `_header`는 테이블이어야 합니다. `_header`에 `alg`를 지정하면 값이 `alg` 인수와 같아야 하며, 다르면 `encode`가 `INVALID` 오류를 반환합니다. ES256에는 PEM 형식의 EC P-256 키(SEC1 또는 PKCS#8, 예: Apple `.p8` 키)가 필요합니다. 신뢰할 수 없는 필드를 `_header`에 복사하지 마세요.
 
 ### 검증
 
@@ -175,12 +176,13 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | 파라미터 | 타입 | 설명 |
 |----------|------|------|
 | `token` | string | 검증할 JWT 토큰 |
-| `key` | string | 비밀 (HMAC) 또는 PEM 공개 키 (RSA) |
+| `key` | string | 비밀 (HMAC) 또는 PEM 공개 키 (RSA, EC P-256) |
 | `alg` | string? | 예상 알고리즘 (기본값: HS256) |
 | `require_exp` | boolean? | `exp` 클레임이 반드시 존재해야 함 (기본값: true), 존재하는 `exp`는 항상 검증됩니다 |
 

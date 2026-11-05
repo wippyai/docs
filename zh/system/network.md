@@ -37,6 +37,8 @@ description: "通过覆盖网络（SOCKS5 代理、Tor、Tailscale mesh、I2P）
 
 ## Tailscale
 
+Tailscale 需要显式启用，默认构建和 Wippy 官方二进制文件均不包含它。使用 `make build-wippy WIPPY_FEATURES=tailscale` 构建，或添加 Go 的 `tailscale` 构建标签。没有该标签时，`network.tailscale` 条目会被拒绝为不支持的类型。SOCKS5/Tor 和 I2P 默认可用。
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

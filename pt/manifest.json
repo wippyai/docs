@@ -385,6 +385,10 @@
             "path": "frontend/web-host/overview"
           },
           {
+            "title": "Início rápido do Attention",
+            "path": "frontend/web-host/attention-quickstart"
+          },
+          {
             "title": "Ponto de entrada da facade",
             "path": "frontend/web-host/entry-point"
           },
@@ -415,6 +419,10 @@
           {
             "title": "Pacotes @wippy-fe",
             "path": "frontend/web-host/packages"
+            },
+            {
+              "title": "Provedores do Iconify",
+              "path": "frontend/web-host/iconify"
           }
         ]
       },

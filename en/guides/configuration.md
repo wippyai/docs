@@ -138,7 +138,7 @@ Entry storage and version history. The registry holds all configuration entries.
 | `history_path` | string | .wippy/registry.db | SQLite file path (used when `history_type: sqlite`) |
 | `history_dsn` | string | | Postgres DSN (used when `history_type: postgres`) |
 | `history_schema` | string | | Postgres schema name (used when `history_type: postgres`) |
-| `event_wait_timeout` | duration | 30s | Per-operation wait for listener acknowledgement during a registry apply |
+| `event_wait_timeout` | duration | 0 (no fixed cap) | Wait for listener acknowledgement during a registry apply; bounded by the operation context |
 | `dispatch_internal_kinds` | string[] | `[registry.entry, ns.dependency, ns.requirement, ns.definition]` | Entry kinds handled internally instead of dispatched to component listeners |
 | `dependency_resolve_timeout` | duration | 0 (none) | Bound on dependency resolution |
 | `dependency_download_timeout` | duration | 0 (none) | Bound on each module download and download-URL request |
@@ -188,6 +188,8 @@ workspace:
 
 Replacements are never written to `wippy.lock`. See [Local Development with Replacements](guides/dependency-management.md#local-development-with-replacements).
 
+`workspace.include_host_dependencies` is a boolean, default `false`. Enable it to include host source dependencies when booting or updating a published application selected by the lock. Source-only applications continue to scan their own declarations.
+
 ## Relay
 
 Message routing between processes across nodes.
@@ -231,8 +233,8 @@ Lua VM caching and expression evaluation.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `cache.enabled` | bool | `type_system.enabled` | Persist compiled bytecode/typecheck cache to disk; follows `type_system.enabled` unless set explicitly |
-| `cache.dir` | string | `.wippy/cache/lua` | Cache directory path (relative to the config/working directory) |
+| `cache.enabled` | bool | true | Persist compiled bytecode/typecheck cache to disk |
+| `cache.dir` | string | `~/.wippy/cache/lua` | Defaults to the machine cache's `lua` directory (`WIPPY_CACHE_DIR` overrides the cache root); explicit relative paths use the config directory |
 | `cache.mode` | string | `readwrite` | Cache mode: `readwrite` (default), `readonly`, `off`; unknown values fall back to `readwrite` |
 | `cache.compile.enabled` | bool | true | Persist compiled bytecode (when `cache.enabled`) |
 | `cache.typecheck.enabled` | bool | true | Persist typecheck results (when `cache.enabled`) |
@@ -241,7 +243,8 @@ Lua VM caching and expression evaluation.
 | `cache.prune_interval` | int | 256 | Writes between cache prune passes |
 | `type_system.enabled` | bool | false | Enable static type checking |
 | `type_system.strict` | bool | false | Treat type warnings as errors |
-| `invalidation_wait_timeout` | duration | `registry.event_wait_timeout` (30s) | Wait for code invalidation to be acknowledged after an entry changes |
+| `type_system.strict_any` | bool | false | Require narrowing before using `any`; shared by compilation checks, lint, and LSP |
+| `invalidation_wait_timeout` | duration | 30s | Wait for code invalidation acknowledgment; inherits a positive `registry.event_wait_timeout` when set |
 | `eval.max_steps` | int | 10000 | Default scheduler-step budget for an `eval` run; negative values are rejected |
 | `eval.cache_size` | int | 256 | Compiled-program cache entries for evaluated source |
 | `eval.cache_ttl` | duration | 0 (no expiry) | Lifetime of a cached compiled program |
@@ -256,6 +259,15 @@ lua:
 ```
 
 See: [Lua Overview](lua/overview.md)
+
+## WASM Runtime
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cache.enabled` | bool | true | Persist compiled WASM and Asyncify transforms; false uses memory only |
+| `cache.dir` | string | `~/.wippy/cache/wasm` | Cache directory; `WIPPY_CACHE_DIR` overrides the default cache root |
+
+These fields belong under `wasm:`. Explicit relative paths resolve against the config directory. An unusable directory logs a warning and falls back to an in-memory cache.
 
 ## Scheduler
 
@@ -309,7 +321,7 @@ Distributed tracing and metrics export via OTLP.
 | `process.enabled` | bool | true | Trace process lifecycle |
 | `process.trace_lifecycle` | bool | true | Emit spans for spawn/terminate |
 | `interceptor.enabled` | bool | true | Trace function calls |
-| `interceptor.order` | int | 100 | Decoded compatibility field; runtime v0.3.32a registers the interceptor at order 100 regardless of this value |
+| `interceptor.order` | int | 100 | Decoded compatibility field; the runtime registers the interceptor at order 100 regardless of this value |
 | `queue.enabled` | bool | true | Trace queue publish/consume |
 | `temporal.enabled` | bool | false | Trace Temporal workflows |
 
@@ -563,10 +575,12 @@ Overlay network manager (SOCKS5, I2P, Tailscale drivers).
 | `state_dir` | string | .wippy/net | Driver state storage directory |
 | `default_network` | string | | Default network ID applied when entries omit `network` |
 
+Tailscale is opt-in and excluded from default builds and official Wippy binaries. Build with `make build-wippy WIPPY_FEATURES=tailscale` or add the Go `tailscale` build tag. Without it, `network.tailscale` entries are rejected as unsupported. SOCKS5/Tor and I2P remain available by default.
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 See: [Network Overlays](system/network.md)
@@ -603,27 +617,11 @@ modules:
   registry_url: https://internal-registry.example.com
 ```
 
-## Extensions
-
-Native Go plugin extensions loaded at boot (Unix only).
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `enabled` | bool | true | Load extensions |
-| `paths` | string[] | | Plugin file paths (relative to config dir) |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
-```
-
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `GOMEMLIMIT` | Memory limit fallback when `--memory-limit` flag is not set (precedence: `--memory-limit` flag > `GOMEMLIMIT` > 1G default) |
+| `GOMEMLIMIT` | Memory limit fallback when `--memory-limit` flag is not set (precedence: `--memory-limit` flag > `GOMEMLIMIT` > 2G default) |
 
 ## See Also
 

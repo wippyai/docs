@@ -56,7 +56,7 @@ local child = assert(process.with_options({terminal = assert(view:grant())})
 
 A grant is one-shot: process admission consumes it, a rejected start leaves it unresolved, and a host that cannot attach terminals rejects the spawn rather than dropping the option.
 
-Byte-oriented programs join the same model through `exec`. A child allocates a PTY process and calls `process:attach_terminal()`; that adapter owns PTY emulation, input encoding, resize, and termination, and presents onto whichever port the child holds — physical or virtual.
+Byte-oriented programs join the same model through `exec`. A child calls `executor:terminal(cmd, options)` to start a PTY process; the returned `TerminalProcess` owns PTY emulation, input encoding, resize, and termination, and presents onto whichever port the child holds — physical or virtual.
 
 ```text
 physical terminal -> shell surface -> viewport -> child process -> PTY proxy

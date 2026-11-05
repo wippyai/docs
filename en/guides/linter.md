@@ -15,6 +15,7 @@ wippy lint --level hint           # Show all diagnostics including hints
 wippy lint --json                 # Output in JSON format
 wippy lint --ns app               # Check only the app namespace
 wippy lint --summary              # Group results by error code
+wippy lint --strict-any           # Require narrowing of any values
 ```
 
 ## What Gets Checked
@@ -29,6 +30,8 @@ The linter validates all Lua entry kinds:
 Bytecode entries hold compiled bytecode (fs/path/hash), not source, so they cannot be parsed or type-checked; the linter only checks source-bearing Lua entries (their `.bc` variants are skipped, though they may still appear in the total entry count).
 
 Each entry is parsed, type-checked, and analyzed for correctness issues.
+
+`any` is gradual by default. Set `lua.type_system.strict_any: true` in runtime configuration to require narrowing before use as a concrete type. `--strict-any` overrides that setting for one lint run; `--strict-any=false` explicitly disables it. See [Types](lua/types.md#any-and-unknown).
 
 ## Severity Levels
 
@@ -246,12 +249,11 @@ Example GitHub Actions step:
 | `--summary` | | false | Group by error code |
 | `--no-color` | | false | Disable colored output |
 | `--rules` | | false | Enable lint rules (W-series style/quality checks) |
+| `--strict-any` | | config | Override `lua.type_system.strict_any` for this run |
 | `--cache-reset` | | false | Clear cache before linting |
 | `--profile` | | | Apply a workspace profile from merged runtime configuration; repeat to apply profiles in order |
 | `--set` | | | Override a merged configuration value as `section.path=value`; repeat for multiple overrides |
 | `--lock-file` | `-l` | wippy.lock | Path to lock file |
-| `--profile` | | | Apply a workspace profile from the merged runtime config (repeatable, applied in order) |
-| `--set` | | | Override a merged runtime config value (`section.path=value`, repeatable) |
 
 ## See Also
 

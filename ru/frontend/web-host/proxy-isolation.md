@@ -101,7 +101,7 @@ on('@visibility', (visible) => { /* приостановить или возоб
 | Член перечисления | Значение в протоколе | Направление | Описание |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Потомок → Хост | Начальное рукопожатие: потомок запрашивает свой `AppConfig` |
-| `SetConfig` | `set-config` | Хост → Потомок | Хост доставляет `AppConfig` в ответ на `GetConfig` |
+| `SetConfig` | `set-config` | Хост → Потомок | Хост отправляет начальный `AppConfig` после `GetConfig` и передает последующие изменения по тому же каналу; потомок применяет их без перемонтирования |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Хост → Потомок | URL хоста изменился; порождает событие `@history` у потомка |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Хост → Потомок | Видимость iframe изменилась; порождает событие `@visibility` у потомка |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Хост → Потомок | Доставляет событие темы WebSocket подписанным потомкам |
@@ -308,3 +308,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 Та же функция доступна как `instance.html.inject`, `$W.html` и `import { html } from '@wippy-fe/proxy'`. Для обычного монтирования предпочтительнее `<w-iframe>`; применяйте `html.inject(...)` только при построении собственной инфраструктуры размещения.
+
+## Import map и realm документа
+
+`AppConfig.importMap` — глобальная конфигурация для iframe-документов, создаваемых Host. Host регистрирует карту до запуска модулей. Последующее обновление не меняет существующий документ; перезагрузите или создайте его заново. См. [Последовательность запуска](./bootstrap.md#appconfig-import-map).
+
+Поддержка `AppConfig.importMap` и `scopes` в Web Fragment отложена. Для потоковых страниц `wippy/views` 0.5.12 не гарантирует регистрацию составленной карты до загрузки модулей фрагмента.

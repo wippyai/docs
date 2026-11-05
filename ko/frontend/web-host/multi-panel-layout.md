@@ -61,7 +61,7 @@ Vue 컴포넌트는 `useHostVisibility()`로 상태를 읽거나, 일반적인 �
 실행되고 그다음에는 정확히 `false -> true`일 때만 실행됩니다. 직접 WC에서 프록시
 `@visibility` 토픽을 사용하지 마세요. 그것은 iframe/Web Fragment 메시지 채널입니다.
 
-초안 1 표시가 사라질 때까지 정확한 CDN 태그 — 최소 `https://web-host.wippy.ai/webcomponents-1.0.52` — 에 고정하세요.
+초안 1 표시가 사라질 때까지 정확한 CDN 태그에 고정하세요. 현재 릴리스는 `https://web-host.wippy.ai/webcomponents-1.0.66`이며, 이에 맞는 `@wippy-fe/*` 제품군은 `0.0.66`입니다.
 
 ## managed 레이아웃 활성화
 
@@ -500,3 +500,9 @@ const router = createAppRouter([...])
 - [파사드 엔트리 포인트](./entry-point.md) — 파사드가 JS 모듈 엔트리를 로드하고 설정을 전달하는 방식
 - [부트스트랩 시퀀스](./bootstrap.md) — 호스트가 부팅 시 managed 레이아웃 엔트리로 디스패치하는 방식
 - [패키지](./packages.md) — `@wippy-fe/layout`, `@wippy-fe/vue-host`, `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

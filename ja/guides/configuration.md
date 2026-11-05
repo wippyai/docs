@@ -554,10 +554,12 @@ lsp:
 | `state_dir` | string | .wippy/net | ドライバ状態ストレージディレクトリ |
 | `default_network` | string | | エントリで `network` を省略した場合に適用されるデフォルトネットワークID |
 
+Tailscaleはオプションで、デフォルトのビルドとWippyの公式バイナリには含まれません。`make build-wippy WIPPY_FEATURES=tailscale`でビルドするか、Goの`tailscale`ビルドタグを追加してください。タグがない場合、`network.tailscale`エントリは未対応として拒否されます。SOCKS5/TorとI2Pはデフォルトで利用できます。
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 参照: [ネットワークオーバーレイ](system/network.md)
@@ -592,22 +594,6 @@ dispatcher:
 ```yaml
 modules:
   registry_url: https://internal-registry.example.com
-```
-
-## 拡張機能
-
-起動時に読み込まれるネイティブGoプラグイン拡張機能（Unixのみ）。
-
-| フィールド | 型 | デフォルト | 説明 |
-|------------|-----|------------|------|
-| `enabled` | bool | true | 拡張機能を読み込む |
-| `paths` | string[] | | プラグインファイルパス（設定ディレクトリからの相対パス） |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
 ```
 
 ## 環境変数

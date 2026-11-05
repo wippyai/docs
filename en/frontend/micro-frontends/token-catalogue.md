@@ -83,11 +83,11 @@ ToggleSwitch geometry, and any shadow or motion property classified
 `theme-variable`. This prevents color coverage from hiding geometry gaps.
 
 <!-- GENERATED:TOKEN-CATALOGUE:BEGIN -->
-Generated from @wippy-fe/theme 0.0.56; schema 1.0.0; implementation 1.0.56.
+Generated from @wippy-fe/theme 0.0.66; schema 1.0.0; implementation 1.0.66.
 
 Compatibility: Tailwind 3.4.19, tailwindcss-primeui 0.6.1, PrimeVue 4.5.5, @primeuix/styles 2.0.3, @primeuix/styled 0.7.4, reference @primeuix/themes 2.0.3.
 
-Source hashes: theme contract `b910b2d9fd11d82747da7adb13067deefb4319f8d88cf7551ce7a84e5e20b76a`; theme config `9b484e9da76871d11edda5a555b0d0443a262acd80fb42c74c4fd78e2b23b5ae`; Tailwind config `f1e862105254f082a78823ea685e3c6dc3ff5822516b7434a1e1141c976adc1d`; reference theme sources `aura/index.mjs=d1a1a574cf1a15aad8aee4cb3fa169aa97bf4029e9f858b84245e7f0b933d5ca; aura/base/index.mjs=9fec80a7ffbd5fb0229da666c1472c27c9a0a6a7ef3bb0a84bd7b070601e4198; aura/inputtext/index.mjs=5c5a4af9bacf0d585120b119bb7bfb02c7deedd9714b131d7009ff6e95f818e8; aura/toggleswitch/index.mjs=1e068fd0ede48eeeca4d10571940d65dadb3450b2ee51a39d09b33dda9da6e66; aura/button/index.mjs=44d8fd7f7ae163ce2653de8c6eb8af097fc453b4c60f702fcf76845be6ec9393`.
+Source hashes: theme contract `9ba820d3bd9d4dedacb4b441fcdba50bb708fb0853b9d614edf23cc6815bfb21`; theme config `9b484e9da76871d11edda5a555b0d0443a262acd80fb42c74c4fd78e2b23b5ae`; Tailwind config `f1e862105254f082a78823ea685e3c6dc3ff5822516b7434a1e1141c976adc1d`; reference theme sources `aura/index.mjs=d1a1a574cf1a15aad8aee4cb3fa169aa97bf4029e9f858b84245e7f0b933d5ca; aura/base/index.mjs=9fec80a7ffbd5fb0229da666c1472c27c9a0a6a7ef3bb0a84bd7b070601e4198; aura/inputtext/index.mjs=5c5a4af9bacf0d585120b119bb7bfb02c7deedd9714b131d7009ff6e95f818e8; aura/toggleswitch/index.mjs=1e068fd0ede48eeeca4d10571940d65dadb3450b2ee51a39d09b33dda9da6e66; aura/button/index.mjs=44d8fd7f7ae163ce2653de8c6eb8af097fc453b4c60f702fcf76845be6ec9393`.
 
 | Stable ID | Token | Layer | Official path | Default | Light | Dark | Declared coverage | Package coverage | Purpose | PrimeVue consumers | Portable-contract consumers | Stability |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

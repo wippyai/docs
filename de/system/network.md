@@ -41,6 +41,8 @@ Diese Seite ist eine Konfigurationsreferenz. Die YAML-Blöcke sind Entry- oder A
 
 ## Tailscale
 
+Tailscale ist optional und in Standard-Builds sowie offiziellen Wippy-Binärdateien nicht enthalten. Bauen Sie mit `make build-wippy WIPPY_FEATURES=tailscale` oder fügen Sie das Go-Build-Tag `tailscale` hinzu. Ohne dieses Tag werden `network.tailscale`-Einträge als nicht unterstützt abgelehnt. SOCKS5/Tor und I2P bleiben standardmäßig verfügbar.
+
 ```yaml
 - name: tailnet
   kind: network.tailscale

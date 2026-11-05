@@ -85,7 +85,7 @@ request_logger("req-123"):info("message")
 
 **Returns:** `Logger`
 
-The original logger is unchanged. Child loggers can be chained with additional `with` and `named` calls.
+The original logger is unchanged. Child loggers can be chained with additional `with` and `named` calls. They retain their name and fields, but resolve the active execution logger at each write, so a shared child logger uses the current caller's logging context.
 
 ### `logger:named`
 

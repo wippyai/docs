@@ -24,9 +24,11 @@ A process is normally addressed by its PID. In a cluster, it can also be registe
 | **Local** | this node | instant, no coordination | node-local helpers |
 | **Eventual** | cluster-wide | converges after gossip; conflicts resolve and notify the loser | service, group, and bounded presence names |
 | **Consistent** | cluster-wide | linearizable singleton via Raft | the standard cluster-wide named service |
-| **Strong** | cluster-wide | Consistent, plus every live node acknowledges before the name is active | control-plane singletons and locks |
+| **Strong** | cluster-wide | Consistent, plus acknowledgments from the leader's captured registry observers before activation | control-plane singletons and locks |
 
-The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](lua/core/process.md). Local names are removed when the process exits; Consistent and Strong names are also reaped on process exit or node departure. Eventual names are removed explicitly or when their origin node leaves, not automatically when only the owning process exits.
+The scopes are ordered as `Local < Eventual < Consistent < Strong` by consistency and coordination cost. Select the least costly scope that meets the required guarantee. Names are registered through [`process.registry`](lua/core/process.md). All scopes release names when the owning process exits; cluster bindings also release on node departure.
+
+All four scopes work without clustering, using local in-memory backends and self as the only Strong observer. Those registrations do not survive a runtime restart. Local, Eventual, and global ownership are independent namespaces; Consistent and Strong share global ownership. An exact-scope lookup selects a namespace without strengthening read freshness.
 
 ## Routing
 

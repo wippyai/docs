@@ -85,23 +85,27 @@ curl http://localhost:8087/api/public/facade/config
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
+  "schema_url": "https://web-host.wippy.ai/webcomponents-1.0.66/schemas/wippy-context-2.1.json",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
   "mode": "compat",
   "login_path": "/login.html",
+  "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
   "themeStorageKey": "@wippy-theme-mode",
-  "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
+  "allowSelectModel": false,
+  "hideSessionSelector": false,
+  "allowAdditionalTags": {},
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
-    "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
-    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
+    "showAdmin": true, "hideNavBar": false, "disableRightPanel": false,
+    "startNavOpen": false, "renderEngine": "iframe",
+    "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```

@@ -315,3 +315,8 @@ theming: {
 - [テーマ](../micro-frontends/theming.md) — CSSトークンのリファレンス、Tailwindのマッピング、Webコンポーネントのスタイルパターン
 - [プロキシと分離](./proxy-isolation.md) — プロキシ注入パイプラインの仕組みと、`ProxyConfig` がプロトコルレベルで制御するもの
 - [レンダリングエンジン](./render-engines.md) — ホストのCSSはsrcdoc iframeとWeb Fragmentのshadow rootの両方に届く
+
+
+## Iconify ソースとアイコン注入
+
+`iconifyIcons` はアイコン注入を制御し、ソースは選択しません。`AppConfig.iconify.providers` でソースを設定します。既定ではオンラインソースを使います。[Iconify プロバイダー](./iconify.md)を参照してください。

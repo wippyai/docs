@@ -136,7 +136,7 @@ Closing is idempotent. After the channel is closed, `receive()` returns
 | Empty system | `errors.INVALID` | no |
 | Empty send kind | `errors.INVALID` | no |
 | Empty path | `errors.INVALID` | no |
-| Policy denied | `errors.INVALID` | no |
+| Policy denied | `errors.PERMISSION_DENIED` | no |
 | Missing execution or process context | `errors.INTERNAL` | no |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

@@ -5,6 +5,8 @@ description: "アウトバウンドHTTPコールと生成したプロセスをSO
 
 # ネットワークオーバーレイ
 
+Tailscaleはオプションで、デフォルトのビルドとWippyの公式バイナリには含まれません。`make build-wippy WIPPY_FEATURES=tailscale`でビルドするか、Goの`tailscale`ビルドタグを追加してください。タグがない場合、`network.tailscale`エントリは未対応として拒否されます。SOCKS5/TorとI2Pはデフォルトで利用できます。
+
 アウトバウンドHTTPコール用のSOCKS5オーバーレイを構成し、継承、インバウンドリスナー、アプリケーション既定値、権限を確認します。
 
 **分類:** 実行可能なSOCKS5チュートリアルと、部分的なTailscaleレシピです。

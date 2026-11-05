@@ -104,6 +104,25 @@ The child's own code is identical whether it runs at the top level or nested sev
 
 See [`<w-iframe>`](#w-iframe-custom-element), [`<w-artifact>`](#w-artifact-custom-element), and [Advanced HTML Injection](#advanced-html-injection) below for the mechanics.
 
+### Attention instrumentation across boundaries
+
+The same injection chain installs bounded Host-owned observation and recursive
+inspection at each Wippy boundary, independently of Session automatic attachments.
+Parents query children in mount-local CSS-pixel coordinates and compose the
+result back into the visible Host viewport. Capability negotiation binds an
+exact Host instance and parent/child mount generation; an unsupported child is
+an explicit partial boundary rather than a rendering failure.
+
+Web Fragments use both instrumented sides of the boundary. The reflected
+physical Host shadow tree supplies hit order, clipping, and rectangles, while
+the fragment runtime supplies semantic and package metadata. The package-facing
+`attention` export supports canonical observations, tree, search, geometry and
+disposable subscriptions. Queries default to the caller subtree; `fromRoot: true`
+selects only the same application Host. Root ownership, private snapshots and
+minting identities remain internal. See
+[Attention Context](./attention-context.md) and [Attention Context for micro
+frontends](../micro-frontends/attention-context.md).
+
 ## Internals — do not read or override
 
 `proxy.js` or `proxy-fragment.js` installs the following globals for its own use. **Application and
@@ -148,7 +167,7 @@ Those members may change without becoming an application API.
 | Enum member | Wire value | Direction | Description |
 |-------------|------------|-----------|-------------|
 | `GetConfig` | `get-config` | Child → Host | Initial handshake: child requests its `AppConfig` |
-| `SetConfig` | `set-config` | Host → Child | Host delivers `AppConfig` in response to `GetConfig` |
+| `SetConfig` | `set-config` | Host → Child | Host sends the initial `AppConfig` after `GetConfig` and sends later config changes on the same channel; the child applies updates without remounting |
 | `UrlWasUpdatedInParent` | `url-was-updated-in-parent` | Host → Child | Host URL changed; fires child's `@history` event |
 | `VisibilityWasUpdatedInParent` | `visibility-was-updated-in-parent` | Host → Child | Iframe visibility changed; fires child's `@visibility` event |
 | `TopicWasReceivedInParent` | `topic-was-received-in-parent` | Host → Child | Delivers a WebSocket topic event to subscribed children |
@@ -361,3 +380,9 @@ const processed = await html.inject(sourceHtml, {
 ```
 
 The same function is accessible as `instance.html.inject`, `$W.html`, and `import { html } from '@wippy-fe/proxy'`. Prefer `<w-iframe>` for normal mounting; use `html.inject(...)` only when building custom hosting infrastructure.
+
+## Import maps and document realms
+
+`AppConfig.importMap` is global configuration used for Host-created iframe documents. The Host registers the map before those modules run. A later config update does not change an existing document; reload or recreate it to use the update. See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map).
+
+Web Fragment support for `AppConfig.importMap` and `scopes` is deferred. With `wippy/views` 0.5.12, streamed pages do not guarantee that the composed map is registered before fragment modules load.

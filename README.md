@@ -49,6 +49,19 @@ The dependency-free check rejects known misleading examples such as stale
 Wippy frontend package versions, raw product controls, direct parent-window
 routing, unsafe shadow-root rewrites, and invalid theme guidance.
 
+## Attention Context documentation validation
+
+After changing the Attention pages in `en/frontend` or `en/framework`, run:
+
+```bash
+node scripts/check-attention-context-docs.mjs
+```
+
+The check validates the structured attachment example: envelope fields, UTF-8
+byte length, SHA-256 digest and canonical JSON. It also rejects live authority
+fields in durable example content. API behavior and prose are reviewed against
+the published modules; this check does not qualify a running deployment.
+
 ## Link validation
 
 After changing Markdown links, run:
@@ -61,6 +74,9 @@ The checker follows the production documentation engine's URL rules: explicit
 `./` and `../` links are page-relative, while established bare paths may resolve
 from the locale root. It rejects unresolved local Markdown targets, manifest
 paths without pages, and duplicate page paths in a locale's navigation tree.
+
+The `Documentation checks` workflow in `.github/workflows/docs-checks.yml` runs
+all three checks on every pull request and on every push to `main`.
 
 ## Contributing
 

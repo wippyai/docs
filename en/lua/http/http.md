@@ -352,7 +352,7 @@ local ip = addr:match("^%[([^%]]+)%]:%d+$")
     or addr:match("^([^:]+):%d+$")
     or addr
 
--- Rate limiting by IP
+-- Rate limiting by IP with an application-provided rate_limiter
 if rate_limiter:is_limited(ip) then
     local type_err = res:set_content_type(http.CONTENT.JSON)
     if type_err then return nil, type_err end
@@ -612,6 +612,12 @@ local message_err = res:write_event({name = "message", data = {
 if message_err then return nil, message_err end
 ```
 
+### Streams and Server Shutdown
+
+Calling `set_transfer()` or the first `write_event()` makes the response a stream. When the HTTP server starts shutting down, the handler ends at its next yield, loop iteration, or function call. Until then, `write()`, `write_json()`, `write_event()`, and `flush()` return a retryable `errors.CANCELED` error.
+
+The response completes with its committed status, including when no body has been written yet. Ordinary non-streaming requests retain their graceful completion window.
+
 ## Constants
 
 ### HTTP Methods
@@ -705,5 +711,6 @@ http.ERROR.STREAM_ERROR   -- Body stream error
 | Not multipart | `errors.INVALID` | no |
 | Headers already sent | `errors.INVALID` | no |
 | Write failed | `errors.INTERNAL` | no |
+| Stream ended by server shutdown | `errors.CANCELED` | yes |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

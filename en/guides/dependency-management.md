@@ -41,7 +41,7 @@ modules:
 
 ### wippy.yaml
 
-Module metadata for publishing. Required only when you publish your own module:
+Module metadata for publishing. Its optional `directories` block also supplies defaults to `wippy init` and `wippy update` when the selected lock file does not exist:
 
 ```yaml
 organization: acme
@@ -127,7 +127,7 @@ Entry authors never write these fields; they are assigned during loading and can
 wippy init
 ```
 
-Creates a `wippy.lock` with default directories.
+Creates `wippy.lock`. Directory settings come from explicit flags, the selected existing lock, `wippy.yaml`, or defaults, in that order. Repeated initialization preserves the dependency graph, options, and replacements.
 
 ### Adding Dependencies
 
@@ -171,6 +171,16 @@ wippy install --refresh            # Re-fetch every module (--force and --repair
 ```
 
 ## Module Storage
+
+### Offline Boot and Restore
+
+Boot reuses verified local packs without contacting the Hub. Persistent registry history records the exact dependency resolution, so a deployment can restart without a lock file when its recorded artifacts are available locally. Missing artifacts require Hub access; local replacement trees must still exist.
+
+When a lock selects a new version or digest for a recorded module, startup uses the new pin without requiring the superseded artifact. Keep the configured history store and verified artifacts together when preparing an offline deployment.
+
+For a lock-selected application, host source dependencies are excluded by default. Set `workspace.include_host_dependencies: true` in runtime configuration to combine them with the application's graph during boot and updates.
+
+### Installed Packs
 
 Downloaded modules are stored under the `.wippy/vendor/` directory:
 

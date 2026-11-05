@@ -556,10 +556,12 @@ Gestor de red superpuesta (drivers SOCKS5, I2P, Tailscale).
 | `state_dir` | string | .wippy/net | Directorio de almacenamiento del estado del driver |
 | `default_network` | string | | ID de red por defecto aplicado cuando las entradas omiten `network` |
 
+Tailscale es opcional y está excluido de las compilaciones predeterminadas y los binarios oficiales de Wippy. Compila con `make build-wippy WIPPY_FEATURES=tailscale` o añade la etiqueta de compilación Go `tailscale`. Sin ella, las entradas `network.tailscale` se rechazan como no compatibles. SOCKS5/Tor e I2P siguen disponibles por defecto.
+
 ```yaml
 network_service:
   state_dir: /var/lib/wippy/net
-  default_network: app:tailscale
+  default_network: app:proxy
 ```
 
 Ver: [Redes Superpuestas](system/network.md)
@@ -594,22 +596,6 @@ Cliente del registro de módulos usado por `wippy install`/`update`.
 ```yaml
 modules:
   registry_url: https://internal-registry.example.com
-```
-
-## Extensiones
-
-Extensiones de plugin nativo de Go cargadas al inicio (solo Unix).
-
-| Campo | Tipo | Por defecto | Descripción |
-|-------|------|---------|-------------|
-| `enabled` | bool | true | Cargar extensiones |
-| `paths` | string[] | | Rutas de archivos de plugin (relativas al directorio de configuración) |
-
-```yaml
-extensions:
-  enabled: true
-  paths:
-    - ./extensions/myplugin.so
 ```
 
 ## Variables de Entorno

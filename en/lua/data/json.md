@@ -40,7 +40,7 @@ json.encode({"a", "b"})     -- '["a","b"]'
 
 -- Objects (string keys)
 local user = {name = "Alice", age = 30}
-json.encode(user)           -- JSON object with name="Alice" and age=30; member order is unspecified
+json.encode(user)           -- '{"age":30,"name":"Alice"}'
 
 -- Nested structures
 local order = {
@@ -52,7 +52,7 @@ local order = {
     total = 99.50
 }
 json.encode(order)
--- Structurally equivalent JSON; object-member order is unspecified
+-- Object keys are sorted lexicographically at every nesting level
 ```
 
 | Parameter | Type | Description |
@@ -65,13 +65,16 @@ Encoding follows these rules:
 
 - `nil` becomes `null`
 - Empty tables become `[]` (or `{}` if created with string keys)
-- Tables with sequential 1-based keys become arrays
-- Tables with string keys become objects
-- Mixed numeric and string keys cause an error
-- Sparse arrays (gaps in indices) cause an error
+- Positive integer keys are array positions, regardless of size
+- Nil elements inside the table's array part become `null`: `{1, nil, 3}` encodes as `[1,null,3]`; trailing nil elements are omitted
+- Integer keys stored beyond the array part must continue it without gaps; otherwise encoding fails with a sparse-array error naming the key and array length
+- String keys and zero, negative, or fractional numeric keys become object keys, sorted lexicographically
+- Mixing positive integer array positions with object keys causes an error
 - Inf/NaN numbers become `null`
 - Recursive table references cause an error
 - Maximum nesting depth is 128 levels
+
+Sparse encoding depends on table storage and insertion order. Use string keys for maps indexed by timestamps or large IDs: `{[1730000000]="ts"}` is a sparse array, while `{["1730000000"]="ts"}` is an object. Zero and negative integer keys are retained: `{[0]="z", [-1]="m"}` encodes as `{"-1":"m","0":"z"}`.
 
 ## Decoding
 
@@ -122,6 +125,19 @@ end
 | `str` | string | JSON string to decode |
 
 **Returns:** `any, error`
+
+JSON `null` becomes Lua `nil`. Interior null array elements keep their positions, but trailing null elements and null object values are lost on a round trip.
+
+Pass a Lua type value as the second argument to validate the decoded result:
+
+```lua
+type User = {id: string, nickname: string?}
+local user, err = json.decode('{"id":"u1","nickname":null}', User)
+if err then return nil, err end
+local id: string = user.id
+```
+
+Typed decoding returns `nil, errors.INVALID` for malformed JSON, an invalid type argument, a type mismatch, or top-level `null`, even with a nullable target. Nullable fields and array elements are allowed. An omitted or nil second argument uses ordinary decoding.
 
 ## Schema Validation
 
@@ -211,11 +227,12 @@ if decode_err then return nil, decode_err end
 | Condition | Kind | Retryable |
 |-----------|------|-----------|
 | Recursive table reference | `errors.INTERNAL` | no |
-| Sparse array (gaps in indices) | `errors.INTERNAL` | no |
+| Gap before an integer key stored beyond the array part | `errors.INTERNAL` | no |
 | Mixed key types in table | `errors.INTERNAL` | no |
 | Nesting exceeds 128 levels | `errors.INTERNAL` | no |
 | Invalid JSON syntax | `errors.INTERNAL` | no |
 | Input not a string or empty string (decode) | `errors.INVALID` | no |
+| Typed decode: invalid type, malformed JSON, mismatch, or top-level null | `errors.INVALID` | no |
 | Schema compilation failed | `errors.INVALID` | no |
 | Validation failed | `errors.INVALID` | no |
 

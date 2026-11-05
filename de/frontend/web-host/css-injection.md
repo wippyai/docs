@@ -315,3 +315,8 @@ Diese Variablen wirken nur auf das Host-Chrome. Die Styles der Kind-iframes blei
 - [Theming](../micro-frontends/theming.md) — Referenz der CSS-Tokens, Tailwind-Zuordnung und Style-Muster für Web Components
 - [Proxy & Isolation](./proxy-isolation.md) — wie die Proxy-Injektions-Pipeline funktioniert und was `ProxyConfig` auf Protokollebene steuert
 - [Render-Engines](./render-engines.md) — Host-CSS erreicht sowohl srcdoc-iframes als auch Web-Fragment-Shadow-Roots
+
+
+## Iconify-Quelle und Icon-Injection
+
+`iconifyIcons` steuert die Icon-Injection. Es wählt keine Quelle aus. Konfigurieren Sie die Quelle mit `AppConfig.iconify.providers`; standardmäßig bleiben Online-Quellen aktiv. Siehe [Iconify-Anbieter](./iconify.md).

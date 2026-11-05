@@ -159,17 +159,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `payload` | table | Claims JWT (`_header` para header customizado) |
-| `key` | string | Secret (HMAC) ou chave privada PEM (RSA) |
-| `alg` | string? | HS256, HS384, HS512, RS256 (padrão: HS256) |
+| `key` | string | Secret (HMAC) ou chave privada PEM (RSA, EC P-256) |
+| `alg` | string? | HS256, HS384, HS512, RS256, ES256 (padrão: HS256) |
 
 **Retorna:** `string, error`
 
-Passe somente um dos nomes de algoritmos documentados. Nesta versão do runtime, um valor não aceito passado para `encode` usa HS256 como fallback, em vez de retornar erro. Valide qualquer algoritmo configurável antes da chamada e não copie campos não confiáveis para `_header`; em particular, não permita que a entrada sobrescreva headers JWT reservados, como `alg`.
+Passe um dos nomes de algoritmos documentados. Um valor não aceito retorna um erro `INVALID`. `_header` deve ser uma tabela. Se `_header` definir `alg`, o valor deve ser igual ao argumento `alg`; caso contrário, `encode` retorna um erro `INVALID`. ES256 exige uma chave EC P-256 em PEM (SEC1 ou PKCS#8, por exemplo uma chave `.p8` da Apple). Não copie campos não confiáveis para `_header`.
 
 ### Verify
 
@@ -177,12 +178,13 @@ Passe somente um dos nomes de algoritmos documentados. Nesta versão do runtime,
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `token` | string | Token JWT para verificar |
-| `key` | string | Secret (HMAC) ou chave publica PEM (RSA) |
+| `key` | string | Secret (HMAC) ou chave publica PEM (RSA, EC P-256) |
 | `alg` | string? | Algoritmo esperado (padrão: HS256) |
 | `require_exp` | boolean? | Exigir a presença de uma claim `exp` (padrão: true); uma `exp` presente é sempre validada |
 

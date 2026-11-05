@@ -315,3 +315,8 @@ theming: {
 - [Оформление](../micro-frontends/theming.md) — справочник CSS-токенов, сопоставление с Tailwind и шаблоны стилей веб-компонентов
 - [Прокси и изоляция](./proxy-isolation.md) — как работает конвейер инъекции прокси и чем `ProxyConfig` управляет на уровне протокола
 - [Движки рендеринга](./render-engines.md) — CSS хоста доходит и до srcdoc-iframe, и до shadow root Web Fragment
+
+
+## Источник Iconify и инъекция значков
+
+`iconifyIcons` управляет инъекцией значков, но не выбирает источник. Настройте источник через `AppConfig.iconify.providers`. По умолчанию используются онлайн-источники. См. [Провайдеры Iconify](./iconify.md).

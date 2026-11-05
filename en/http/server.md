@@ -118,6 +118,8 @@ lifecycle:
 | `stop_timeout` | Max time for graceful shutdown |
 | `requires` | Start after these entries are ready (`depends_on` is the legacy spelling) |
 
+The server waits for its initial routes before accepting requests. During graceful shutdown, ordinary requests may finish within the stop deadline. SSE relays and Lua streaming responses end when shutdown begins; see [Server-Sent Events](http/sse.md) and [HTTP response streaming](lua/http/http.md#streams-and-server-shutdown). Connections still open after the deadline are closed.
+
 ## Connecting Components
 
 Routers and static handlers reference the server via metadata:

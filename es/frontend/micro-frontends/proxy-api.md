@@ -90,7 +90,7 @@ El runtime instala unas cuantas globales para su propio uso: `window.$W`, `windo
 
 ### `config`
 
-La configuración de la aplicación hija entregada por el host. Es un objeto plano (no una función): se importa directamente y está lista para leerse de forma síncrona. Los documentos nuevos apuntan únicamente al contrato actual `wippy-context-2.0`.
+La configuración de la aplicación hija que entrega el host. Es un objeto simple (no una función), se importa directamente y está listo para leerse de forma síncrona. Esta página documenta el contrato actual `wippy-context-2.2`.
 
 ```typescript
 import { config } from '@wippy-fe/proxy'
@@ -100,7 +100,7 @@ const token = config.auth.token
 
 ```typescript
 interface ChildAppConfig {
-  $schema: 'wippy-context-2.0'
+  $schema: 'wippy-context-2.2'
   auth: {
     token: string
     expiresAt: string
@@ -114,6 +114,20 @@ interface ChildAppConfig {
   axiosDefaults?: Partial<AxiosDefaults>
   routePrefix?: string
   apiRoutes?: Record<string, string>
+  allowSelectModel?: boolean
+  hideSessionSelector?: boolean
+  allowAdditionalTags?: Record<string, string[]>
+  iconify?: {
+    providers?: Record<string, {
+      resources: string[]
+      path?: string
+      timeout?: number
+    } | null> | null
+  } | null
+  importMap?: {
+    imports?: Record<string, string>
+    scopes?: Record<string, Record<string, string>>
+  } | null
   themeMode?: 'auto' | 'light' | 'dark'
   theming: {
     global?: {
@@ -1080,7 +1094,7 @@ const processed = await html.inject(sourceHtml, {
 
 ## Anulaciones de configuración
 
-Las páginas pueden anular campos seleccionados de la configuración orientada a hijos por página, sin un despliegue aparte. La forma de la anulación sigue usando `customization` por compatibilidad, y el host proyecta esos valores en el resultado actual de `theming.global` del hijo antes de que la página reciba la configuración `wippy-context-2.0`.
+Las páginas pueden anular campos seleccionados de la configuración orientada a hijos por página, sin un despliegue aparte. La forma de la anulación sigue usando `customization` por compatibilidad; el host proyecta esos valores en `theming.global` antes de entregar la configuración actual `wippy-context-2.2` al hijo.
 
 ### Establecer anulaciones
 
@@ -1237,3 +1251,14 @@ Ambos componentes usan Shadow DOM con variables CSS de `@wippy-fe/theme` e inclu
 ```
 
 Cuando Vue se monta en `#app`, reemplaza automáticamente el elemento `<wippy-loading>`.
+
+
+## Configuración Iconify para aplicaciones secundarias
+
+El Host envía los valores configurados explícitamente en `AppConfig.iconify` como un campo de nivel superior. Si se omite, siguen activos los valores en línea. Configure la fuente en AppConfig, no en `hostConfig` ni en la API de proxy. Consulte [Proveedores de Iconify](../web-host/iconify.md).
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 comparte la siguiente configuración de chat con las aplicaciones hijas. `hostConfig` pertenece al contenedor Web Host y nunca se incluye en los datos de los hijos. Un diseño administrado no incluye un chat integrado de forma predeterminada. Las aplicaciones que funcionan completamente como hijos usan campos de nivel superior o sustituciones del paquete.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

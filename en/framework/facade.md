@@ -56,7 +56,7 @@ entries:
 |-----------|----------|---------|-------------|
 | `server` | yes | — | HTTP server for static and page serving |
 | `router` | yes | — | Public API router for config endpoint |
-| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.56` | Base CDN URL for the frontend bundle |
+| `fe_facade_url` | no | `https://web-host.wippy.ai/webcomponents-1.0.66` | Base CDN URL for the frontend bundle |
 | `fe_entry_path` | no | `/iframe.html` | Path to the **iframe** entry on the bundle, used by the iframe embedding mode. The current facade's page loads the JS-module entry (`module.js`/`managed-layout.js`) instead; this iframe path remains available for manual, facade-less iframe embeddings. |
 | `fe_mode` | no | `compat` | Which shell the facade page loads: `compat` loads `module.js` (the default chat shell); `managed` loads `managed-layout.js` (opt-in declarative multi-panel layout). Surfaced on `/facade/config` as `mode`/`module_file`. |
 | `host_config_layout` | no | `{}` | JSON layout config emitted as `hostConfig.layout`; consumed by the **managed** shell only. |
@@ -72,7 +72,7 @@ entries:
 | Value | Effect |
 |-------|--------|
 | `iframe` _(default)_ | Pages render as srcdoc iframes — the main (default) engine. |
-| `fragment` | Pages render as [Web Fragments](../frontend/web-host/render-engines.md) (a `reframed` realm reflected into a shadow root). |
+| `fragment` | Each Web Fragment occurrence runs in its own physical realm iframe, reflected into a shadow root. |
 
 Only the exact string `fragment` opts in; **any other value — including a typo like `fragmnet` — is clamped to `iframe`** (fail-safe, but silent). Enabling the fragment engine also requires the [`/@fragment` gateway](./views.md#web-fragments-gateway), which is self-provided by `wippy/views` (≥ 0.5.9) — no consumer wiring. A page can override the deployment default per-page with [`wippy.renderEngine`](../frontend/frontend-registry/view-page.md#render-engine).
 
@@ -145,7 +145,7 @@ Use `fs://` (resolved by `content_fs` at runtime), **not** `file://` — `file:/
 A standalone page then links both:
 
 - **`custom_css`** — already a `.css` file, so link it directly from where it is served.
-- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it at **`GET /facade/variables.css`** as base plus effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. Top-level values apply everywhere; `@light` / `@dark` replace selected names. The sheet is cached for 1h and registered on the same public router as `/facade/config`, so it carries the router prefix.
+- **`css_variables`** — JSON, so it is not linkable as-is. The facade renders it at **`GET /facade/variables.css`** as base plus effective Auto-light, Auto-dark, forced Light, and forced Dark blocks. Top-level values apply everywhere; `@light` / `@dark` replace selected names. Since Facade 0.6.46, the sheet is served with `Cache-Control: no-store`, because a [request-time resolver](#request-time-resolver) can change its values for each request. The sheet is registered on the same public router as `/facade/config`, so it carries the router prefix.
 
 ```html
 <!-- in login.html, served outside the Web Host -->
@@ -175,13 +175,15 @@ These four are surfaced verbatim under `hostConfig` for the frontend:
 | `allow_additional_tags` | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes) |
 | `chat` | `{}` | Chat UI overrides |
 
-These three are emitted as **top-level** `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
+These parameters are emitted as top-level `AppConfig` fields (siblings of `hostConfig`), not under `hostConfig`:
 
 | Parameter | Emitted as | Default | Description |
 |-----------|------------|---------|-------------|
 | `api_routes` | `apiRoutes` | `{}` | Route overrides for the frontend |
 | `axios_defaults` | `axiosDefaults` | `{}` | Frontend axios HTTP client defaults |
 | `tanstack` | `tanstack` | `{}` | TanStack Query defaults: `{ default?, content?, lists? }`. `default` applies to all queries; `content` targets single-resource renders, `lists` targets navigation/index queries. Host default is `refetchOnWindowFocus:false` |
+| `import_map` | `importMap` | `{}` | Browser import-map extension forwarded as top-level `AppConfig.importMap`. |
+| `iconify` | `iconify` | `{}` | Iconify provider source configuration, emitted as a top-level `AppConfig` field. The default source remains online. See [Iconify providers](../frontend/web-host/iconify.md). |
 
 ## Config Endpoint
 
@@ -189,9 +191,9 @@ The facade registers `GET /facade/config` on the configured public router, so th
 
 ```json
 {
-    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.56",
+    "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
     "iframe_origin": "https://web-host.wippy.ai",
-    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.56/iframe.html?waitForCustomConfig",
+    "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
     "login_path": "/login.html",
     "login_redirect_param": null,
     "mode": "compat",
@@ -232,9 +234,29 @@ The facade registers `GET /facade/config` on the configured public router, so th
 }
 ```
 
-The API URL is read from the `PUBLIC_API_URL` environment variable; `APP_WEBSOCKET_URL` is derived by replacing `http://` with `ws://` or `https://` with `wss://`. Theming has three scopes (`global`, `host`, `children`) — `host.i18n` carries app branding. `hostConfig` keys are camelCased and assembled from facade parameters: `session_type`, `history_mode`, `render_engine`, `show_admin`, `allow_select_model`, `start_nav_open`, `hide_nav_bar`, `disable_right_panel`, `hide_session_selector`, plus optional `additional_nav_items`, `state_cache`, `allow_additional_tags`, and `chat`. `render_engine` becomes `renderEngine` (see [Render engine](#render-engine)). The `api_routes`, `axios_defaults`, and `tanstack` parameters are emitted as top-level `AppConfig` fields (`apiRoutes`, `axiosDefaults`, `tanstack`), siblings of `hostConfig`, not inside it.
+These parameters are emitted as top-level `AppConfig` fields beside `hostConfig`: `api_routes` as `apiRoutes`, `axios_defaults` as `axiosDefaults`, `tanstack`, `iconify`, and `import_map` as `importMap`.
 
 The `facade_url`, `iframe_origin`, `iframe_url`, `login_path`, `mode`, and `module_file` fields are **shell-level** fields used by the embedding page to build itself — they are not part of the child `AppConfig` that the host initializes with. The `iframe_origin`/`iframe_url` fields are consumed only by manual, facade-less iframe embeddings (see [Facade Entry Point](../frontend/web-host/entry-point.md)). The `mode` field is the normalized `fe_mode` (`compat` or `managed`), and `module_file` is the JS-module entry the facade page loads — `/module.js` for compat, `/managed-layout.js` for managed.
+
+## Request-Time Resolver
+
+An application can replace facade requirement values for each request. To do this, bind an implementation of the `wippy.facade:resolver` contract. See [Entry Kinds](../guides/entry-kinds.md) for `contract.binding` entries.
+
+The contract has one method, `resolve`. It returns a map from requirement name to a string value, for example `css_variables`, `custom_css`, `app_title`, or `theme_mode`. Each value uses the same format as the static requirement value. JSON requirements such as `css_variables` take a JSON-encoded string. A requirement that is not in the map keeps its static value. The resolver runs under the actor of the request.
+
+The `/facade/config` handler and the `/facade/variables.css` handler both call the resolver. When no implementation is bound, the handlers use the static `ns.requirement` values. When the bound resolver fails, or returns something other than a map, the handler logs a warning and uses the static values.
+
+Facade 0.6.46 gives each of the two handlers only the contract permissions that this call needs:
+
+| Action | Resource | Purpose |
+|--------|----------|---------|
+| `contract.get` | `wippy.facade:resolver` | Read the resolver contract definition. |
+| `contract.open` | `*` | Open the implementation that the application bound to the resolver contract. The policy allows any binding ID because the application chooses the binding. The handler opens only the resolver implementation. |
+| `contract.call` | `resolve` | Call the `resolve` method. The handler cannot call other methods. |
+
+Before 0.6.46, the handlers did not have these permissions. The facade skipped a bound resolver and used the static values. An application that binds a resolver needs Facade 0.6.46 or newer.
+
+Resolver output can change for each request. For this reason, Facade 0.6.46 serves `/facade/variables.css` with `Cache-Control: no-store`. Earlier releases sent `Cache-Control: public, max-age=3600`.
 
 ## Navigation Sidebar
 
@@ -298,3 +320,9 @@ Without `--embed`, `fs.directory` entries are excluded from the published packag
 - [Facade Entry Point](../frontend/web-host/entry-point.md) — How the facade starts the Web Host
 - [CSS Injection](../frontend/web-host/css-injection.md) — How facade theming reaches child iframes
 - [Render Engines](../frontend/web-host/render-engines.md) — Iframe and Web Fragment page rendering
+
+## AppConfig import map
+
+The facade requirement is named `import_map`, and `/facade/config` returns it as `cfg.importMap`. The shell registers the composed map through the shared bootstrap before importing the Host module. It then passes `importMap: cfg.importMap` in the initial `initWippyApp` configuration. See [Bootstrap Sequence](../frontend/web-host/bootstrap.md#appconfig-import-map).
+
+The verified release baseline for the `iconify` and `import_map` facade requirements is `wippy/facade` 0.6.45 with Web Host 1.0.64.

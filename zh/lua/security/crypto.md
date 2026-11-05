@@ -153,15 +153,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
 | `payload` | table | JWT 声明（`_header` 用于自定义头） |
-| `key` | string | 密钥（HMAC）或 PEM 私钥（RSA） |
-| `alg` | string? | HS256、HS384、HS512、RS256（默认：HS256） |
+| `key` | string | 密钥（HMAC）或 PEM 私钥（RSA、EC P-256） |
+| `alg` | string? | HS256、HS384、HS512、RS256、ES256（默认：HS256） |
 
 **返回值:** `string, error`
+
+请传入文档中列出的算法名之一。不支持的值会返回 `INVALID` 错误。`_header` 必须是表。如果 `_header` 设置了 `alg`，其值必须与 `alg` 参数一致，否则 `encode` 返回 `INVALID` 错误。ES256 需要 PEM 格式的 EC P-256 密钥（SEC1 或 PKCS#8，例如 Apple `.p8` 密钥）。不要将不可信字段复制到 `_header`。
 
 ### 验证
 
@@ -169,12 +172,13 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | 参数 | 类型 | 描述 |
 |-----------|------|-------------|
 | `token` | string | 要验证的 JWT 令牌 |
-| `key` | string | 密钥（HMAC）或 PEM 公钥（RSA） |
+| `key` | string | 密钥（HMAC）或 PEM 公钥（RSA、EC P-256） |
 | `alg` | string? | 预期算法（默认：HS256） |
 | `require_exp` | boolean? | 要求存在 `exp` 声明（默认：true）；存在的 `exp` 始终会被验证 |
 

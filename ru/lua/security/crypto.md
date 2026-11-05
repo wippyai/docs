@@ -153,15 +153,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
 | `payload` | table | JWT claims (поле `_header` для пользовательского заголовка) |
-| `key` | string | Секрет (HMAC) или приватный ключ PEM (RSA) |
-| `alg` | string? | HS256, HS384, HS512, RS256 (по умолчанию HS256) |
+| `key` | string | Секрет (HMAC) или приватный ключ PEM (RSA, EC P-256) |
+| `alg` | string? | HS256, HS384, HS512, RS256, ES256 (по умолчанию HS256) |
 
 **Возвращает:** `string, error`
+
+Передавайте одно из документированных имён алгоритма. Неподдерживаемое значение возвращает ошибку `INVALID`. `_header` должен быть таблицей. Если `_header` задаёт `alg`, значение должно совпадать с аргументом `alg`, иначе `encode` возвращает ошибку `INVALID`. Для ES256 нужен ключ EC P-256 в PEM (SEC1 или PKCS#8, например ключ Apple `.p8`). Не копируйте недоверенные поля в `_header`.
 
 ### Проверка
 
@@ -169,12 +172,13 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | Параметр | Тип | Описание |
 |----------|-----|----------|
 | `token` | string | JWT-токен для проверки |
-| `key` | string | Секрет (HMAC) или публичный ключ PEM (RSA) |
+| `key` | string | Секрет (HMAC) или публичный ключ PEM (RSA, EC P-256) |
 | `alg` | string? | Ожидаемый алгоритм (по умолчанию HS256) |
 | `require_exp` | boolean? | Требовать наличие claim `exp` (по умолчанию true); присутствующий `exp` проверяется всегда |
 

@@ -69,11 +69,15 @@ Add as post-match middleware on a router:
     - websocket_relay
   post_options:
     wsrelay.allowed.origins: "https://app.example.com"
+    wsrelay.read.limit: "8388608"
 ```
 
 | Option | Description |
 |--------|-------------|
 | `wsrelay.allowed.origins` | Comma-separated allowed origins |
+| `wsrelay.read.limit` | Maximum client message size in bytes; default `32768` (32 KiB) |
+
+Option values are strings; quote numeric values in YAML. A message over the limit closes the connection with status `1009` (message too big). Invalid or nonpositive limits fall back to the default and log a warning. Messages are buffered whole, so raising the limit increases memory use per connection.
 
 <note>
 If no origins configured, only same-origin requests are allowed.
@@ -184,7 +188,8 @@ Send messages back using the client PID. Any topic you choose is wrapped as `{to
 
 ```lua
 -- Send a structured message (any topic name)
-process.send(client_pid, "update", json.encode({event = "update", value = 42}))
+local _, send_err = process.send(client_pid, "update", {event = "update", value = 42})
+if send_err then return nil, send_err end
 
 -- Close connection (payload is the close reason string)
 local _, close_err = process.send(client_pid, "ws.close", "Session ended")
