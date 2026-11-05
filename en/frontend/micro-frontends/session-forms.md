@@ -131,8 +131,9 @@ Host exports from every proxy realm (`$W.artifactState()` in an iframe, or the
 named `artifactState` export from `@wippy-fe/proxy` in a host-mounted web
 component). Web Host 1.0.65 or later exports it, and no earlier release does.
 The matching npm release is `@wippy-fe/*` 0.0.65. The `wippy/session` module
-release that ships the forms is 0.7.0.
-<!-- Confirm these version numbers when the Web Host tag is cut. This page merges after that tag. -->
+release that ships the forms is the one that adds Session Forms.
+<!-- TODO: name the Session version here when the release PR exists. -->
+<!-- Confirm the Web Host and npm version numbers when the Web Host tag is cut. This page merges after that tag. -->
 
 The component checks these conditions in order, and the first match decides
 what the card shows.
@@ -143,8 +144,8 @@ what the card shows.
 | The Host has no `artifactState` export (a Web Host before 1.0.65) | The questions with their options disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every option is unselected, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
 | The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions rendered read-only, with "This form cannot be submitted here." |
 
-The older `instance.form` adapter that `artifactState` replaces is described
-under [`artifactState` and the deprecated
+The older `instance.form` adapter that `artifactState` replaces always sends
+`form_version: 1`, so forms use `artifactState`. It is described under [`artifactState` and the deprecated
 `instance.form`](#artifactstate-and-the-deprecated-instanceform).
 
 ## The artifact-state HTTP API
@@ -325,6 +326,8 @@ legacy `{ success: false, errors }` shape. Every other failure (401, 404, 409,
 5xx, network) rethrows the same error that `artifactState` would throw. New
 code should call `instance.artifactState(artifactId)` directly and not this
 deprecated shim.
+
+The deprecated `instance.form.submit()` always sends `form_version: 1`, so forms use `artifactState(artifactId)`.
 
 ## Styling API
 

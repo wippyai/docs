@@ -42,8 +42,9 @@ Add `wippy.session.forms:ask_user` to an agent's `traits`:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait ships in `wippy/session` 0.7.0, so the app needs that version or
-newer.
+The trait ships with Session Forms, so the app needs a `wippy/session` release
+that includes them.
+<!-- TODO: name the Session version here when the release PR exists. -->
 
 The trait contributes two tools and a block of prompt text. The prompt tells
 the model the following.
@@ -230,7 +231,7 @@ setting.
 | --- | --- |
 | The session is idle | The answer is admitted at once, and a new turn starts |
 | A turn is running | The answer is pending, and `read_form` reports `answer_pending`. It is admitted when the turn ends, in acceptance order together with any typed input the session held during the turn |
-| The user pressed Stop | The answer is admitted into the history and no turn starts. The same happens when the session plugin has to cancel or terminate a session that does not stop in time |
+| The user pressed Stop | Stop cancels the turn's in-flight model and tool calls. The answer is admitted into the history and no turn starts. The same happens when the session plugin has to cancel or terminate a session that does not stop in time |
 | The session is finishing, or its process is not running | The answer stays pending until the process starts again. The session plugin starts stopped sessions that hold pending answers |
 
 Once admitted, the answer's message is dated at the moment of admission, so
@@ -249,7 +250,8 @@ listed in [The artifact-state HTTP API](../frontend/micro-frontends/session-form
 
 ## Upgrading
 
-`wippy/session` 0.7.0 adds Session Forms and has these breaking changes.
+The `wippy/session` release that adds Session Forms has these breaking changes.
+<!-- TODO: name the Session version here when the release PR exists. -->
 
 - **New `ui_server` requirement.** The module serves the form components from
   an HTTP server. The requirement `wippy.session.forms.ui:ui_server` defaults
