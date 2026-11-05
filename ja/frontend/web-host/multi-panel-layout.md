@@ -48,7 +48,7 @@ description: "マネージドレイアウトモードは、標準の Wippy ク�
 
 Vue コンポーネントは `useHostVisibility()` でこの状態を読むか、`useHostVisibilityRefresh(task)` によって通常の初期読み込みと再表示時のリフレッシュを組み合わせます。後者はマウント後に実行され、その後は厳密な `false -> true` のときにのみ実行されます。直接の WC でプロキシの `@visibility` トピックを使ってはいけません。それは iframe / Web Fragment のメッセージチャネルです。
 
-Draft 1 のラベルが外れるまでは、CDN の正確なタグ — 少なくとも `https://web-host.wippy.ai/webcomponents-1.0.52` — にピン留めしてください。
+Draft 1 のラベルが外れるまでは、CDN の正確なタグにピン留めしてください。現在のリリースは `https://web-host.wippy.ai/webcomponents-1.0.66` で、対応する `@wippy-fe/*` ファミリーは `0.0.66` です。
 
 ## マネージドレイアウトの有効化
 
@@ -450,3 +450,9 @@ Draft 1 時点で、以下はまだ実装されていません。
 - [ファサードのエントリーポイント](./entry-point.md) — ファサードが JS モジュールのエントリを読み込み、設定を配信する仕組み
 - [ブートストラップのシーケンス](./bootstrap.md) — ホストが起動時にマネージドレイアウトのエントリへ振り分ける仕組み
 - [パッケージ](./packages.md) — `@wippy-fe/layout`、`@wippy-fe/vue-host`、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 は次のチャット設定を子アプリケーションと共有します。`hostConfig` は Web Host ラッパー専用であり、子へのデータには含まれません。管理レイアウトには標準のチャットがありません。子として動作するアプリは、トップレベルの設定またはパッケージの上書きを使用します。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

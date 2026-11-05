@@ -159,17 +159,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `payload` | table | JWT claims (`_header` for custom header) |
-| `key` | string | Secret (HMAC) or PEM private key (RSA) |
-| `alg` | string? | HS256, HS384, HS512, RS256 (default: HS256) |
+| `key` | string | Secret (HMAC) or PEM private key (RSA, EC P-256) |
+| `alg` | string? | HS256, HS384, HS512, RS256, ES256 (default: HS256) |
 
 **Returns:** `string, error`
 
-Pass only one of the documented algorithm names. At this runtime pin, an unsupported value passed to `encode` falls back to HS256 instead of returning an error. Validate any configurable algorithm before this call, and do not copy untrusted fields into `_header`; in particular, do not let input override reserved JWT headers such as `alg`.
+Pass one of the documented algorithm names. An unsupported value returns an `INVALID` error. `_header` must be a table. If `_header` sets `alg`, the value must equal the `alg` argument, otherwise `encode` returns an `INVALID` error. ES256 requires an EC P-256 key in PEM (SEC1 or PKCS#8, for example an Apple `.p8` key). Do not copy untrusted fields into `_header`.
 
 ### Verify
 
@@ -177,18 +178,21 @@ Pass only one of the documented algorithm names. At this runtime pin, an unsuppo
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `token` | string | JWT token to verify |
-| `key` | string | Secret (HMAC) or PEM public key (RSA) |
+| `key` | string | Secret (HMAC) or PEM public key (RSA, EC P-256) |
 | `alg` | string? | Expected algorithm (default: HS256) |
 | `require_exp` | boolean? | Require an `exp` claim to be present (default: true); an `exp` that is present is always validated |
 
 **Returns:** `table, error`
 
-Whenever present, `exp` and `nbf` are validated against the JWT library's current wall clock, not the workflow time reference. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present. Do not use either time-dependent result for replay-sensitive workflow control; perform the check in an activity or validate time against an explicitly replay-safe value.
+Whenever present, `exp` and `nbf` are validated. ES256 verification in a workflow uses the workflow time reference; other algorithms retain wall-clock validation. For those algorithms, perform time-dependent checks in an activity before using the result for workflow control. Setting `require_exp = false` permits a missing `exp` claim; it does not disable validation of a claim that is present.
+
+ES256 signing in a workflow records the generated signature as a side effect so replay returns the same token.
 
 Always pass the algorithm expected by the issuer; verification restricts the token to that exact method. Treat returned claims as authenticated data, not automatically authorized application input, and still validate issuer, audience, subject, and application-specific constraints.
 

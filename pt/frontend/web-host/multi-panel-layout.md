@@ -62,7 +62,7 @@ carregamento inicial comum com refreshes de revelação através de
 em uma transição exata de `false -> true`. Não use o tópico `@visibility` do proxy
 em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
 
-Fixe uma tag exata do CDN — no mínimo `https://web-host.wippy.ai/webcomponents-1.0.52` — até o rótulo Draft 1 ser removido.
+Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.66`, com a família `@wippy-fe/*` `0.0.66` correspondente.
 
 ## Habilitando o Layout Gerenciado
 
@@ -510,3 +510,9 @@ Na Draft 1, os itens a seguir ainda não estão implementados:
 - [Ponto de Entrada da Facade](./entry-point.md) — como a facade carrega a entrada de módulo JS e entrega a configuração
 - [Sequência de Bootstrap](./bootstrap.md) — como o host despacha para a entrada de layout gerenciado no boot
 - [Pacotes](./packages.md) — `@wippy-fe/layout`, `@wippy-fe/vue-host`, `@wippy-fe/webcomponent-core`, `@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+O Web Host 1.0.62 compartilha a seguinte configuração de chat com aplicativos filhos. `hostConfig` pertence ao contêiner Web Host e nunca é incluído na configuração dos filhos. Um layout gerenciado não inclui chat integrado por padrão. Aplicativos executados inteiramente como filhos usam campos de nível superior ou substituições do pacote.
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

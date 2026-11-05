@@ -25,7 +25,7 @@ local treesitter = require("treesitter")
 ```
 
 <note>
-The `treesitter` module is optional and is present only in builds that include the `treesitter` build tag. Official Wippy binaries include it. Source builds can use `make build-wippy` or `go build -tags treesitter`; without the tag, `require("treesitter")` is unavailable.
+The `treesitter` module is opt-in and excluded from default builds and official Wippy binaries. Build with `make build-wippy WIPPY_FEATURES=treesitter` or add the Go `treesitter` build tag (CGO required). Without the tag, `require("treesitter")` is unavailable.
 </note>
 
 ## Supported Languages
@@ -591,4 +591,4 @@ Tree-sitter queries use S-expression patterns:
   (#match? @var "^_"))  ; regex match
 ```
 
-See [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax) for complete documentation.
+See [Tree-sitter Query Syntax](https://tree-sitter.github.io/tree-sitter/using-parsers/queries/1-syntax.html#query-syntax) for complete documentation.

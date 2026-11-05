@@ -19,23 +19,29 @@ local i: integer = 42         -- integer is subtype of number
 local s: string = "hello"
 local b: boolean = true
 local a: any = "anything"     -- dynamic member and method access
-local u: unknown = { source = "example" }  -- must narrow before use
+local u: unknown = { source = "example" }  -- unresolved value type
 ```
 
 ### `any` and `unknown`
 
-```lua
--- any: dynamic member and method access
-local a: any = get_data()
-a.foo.bar.baz()              -- no error, may crash at runtime
-local s: string = a          -- ERROR: any is not assignable to string
+By default, `any` is gradual: assignments, arguments, and return values may cross a concrete type boundary without a type error. `unknown` also permits these conversions, with a hint when it flows into a declared type. Neither conversion validates the value at runtime.
 
--- unknown: safe unknown, must narrow before use as a concrete type
+```lua
+local a: any = get_data()
+a.foo.bar.baz()              -- dynamic access; may fail at runtime
+local s: string = a          -- accepted by default
+
 local u: unknown = get_data()
-u.foo                        -- no error: member access on unknown behaves like any
-local n: number = u          -- ERROR: unknown not assignable to number, narrow first
-if type(u) == "table" then
-    -- u narrowed to table here
+local n: number = u          -- accepted with an implicit-unknown hint
+```
+
+Set `lua.type_system.strict_any: true` in runtime configuration, or run `wippy lint --strict-any`, to require narrowing before `any` or `unknown` is accepted as a concrete type:
+
+```lua
+local u: unknown = get_data()
+local n: number = u          -- ERROR with strict_any enabled
+if type(u) == "number" then
+    local n: number = u      -- OK after narrowing
 end
 ```
 

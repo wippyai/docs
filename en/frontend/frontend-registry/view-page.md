@@ -85,10 +85,10 @@ frontend defaults without converting keys.
 
 In the iframe engine, `proxy.injections` configures the assets added by the
 srcdoc proxy. If it is omitted, that adapter uses permissive defaults and
-enables most injections. Web Host 1.0.56 carries `proxy.enabled` as metadata but
+enables most injections. Web Host 1.0.66 carries `proxy.enabled` as metadata but
 does not use it as a runtime toggle.
 
-Web Host 1.0.56 does not translate these flags to the Fragment engine. The
+Web Host 1.0.66 does not translate these flags to the Fragment engine. The
 Fragment gateway always supplies `loading.js`, `proxy-fragment.js`, and the four
 Host stylesheets (theme config, iframe scrollbar styles, PrimeVue/Tailwind, and
 Markdown); its proxy also installs error capture unconditionally. A page that
@@ -102,7 +102,7 @@ see the page's fallback behavior.
 #### Recommended explicit injection values
 
 These are the flags a micro frontend app typically declares for its iframe
-delivery path. They are not the runtime defaults, and Web Host 1.0.56's Fragment
+delivery path. They are not the runtime defaults, and Web Host 1.0.66's Fragment
 gateway does not use them.
 
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme

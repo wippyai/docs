@@ -7,8 +7,8 @@ description: "Wippy-specific integration recipes for registering a Vue micro fro
 
 This page presents two condensed Vue integration recipes adapted from the public
 [`wippyai/app`](https://github.com/wippyai/app) repository: a **micro frontend
-app** and a **web component**. The snippets target Web Host 1.0.56 and the
-public `@wippy-fe/*` 0.0.56 package family. They focus on the Wippy-specific
+app** and a **web component**. The snippets target Web Host 1.0.66 and the
+public `@wippy-fe/*` 0.0.66 package family. They focus on the Wippy-specific
 metadata, entry code, and registry declarations; they omit ordinary Vite
 scaffolding, dependency installation, and backend setup. Use the linked
 repository for complete applications rather than treating these excerpts as
@@ -20,10 +20,10 @@ standalone projects.
   [`wippy/facade`](../../framework/facade.md) modules wired up.
 - Node.js 22.12 or newer and Vite 7 for these examples. Vite 7 requires Node
   20.19+ or 22.12+; this documentation uses the Node 22 release line.
-- `@wippy-fe/vite-plugin` 0.0.56 also accepts Vite 5 and 6. If you select one of
+- `@wippy-fe/vite-plugin` 0.0.66 also accepts Vite 5 and 6. If you select one of
   those versions, follow that Vite release's Node requirements.
 - A coherent `@wippy-fe/*` package family selected for the target Web Host. For
-  this baseline, use public packages at exactly `0.0.56` with Web Host `1.0.56`.
+  this baseline, use public packages at exactly `0.0.66` with Web Host `1.0.66`.
 - The target Web Host's `import-map.json`. Externalize every listed key,
   including unused ones, and bundle an imported exact specifier only when it is
   absent.

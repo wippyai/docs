@@ -252,10 +252,19 @@ With release notes:
 wippy publish --version 1.0.0 --release-notes "Initial release"
 ```
 
+To publish an existing pack without changing its digest:
+
+```bash
+wippy publish --wapp http-utils.wapp
+```
+
+The pack must match the module identity in `wippy.yaml`, contain exactly one `ns.definition`, and declare a valid version. A version supplied by the manifest or `--version` must match. `--wapp` cannot be combined with `--label` or an explicit `--embed`.
+
 ### Publish Flags
 
 | Flag | Description |
 |------|-------------|
+| `--wapp <path>` | Upload an existing pack byte for byte; use its declared version |
 | `--label <name>` | Publish as a mutable label (e.g. `latest`, `beta`) instead of an immutable version |
 | `--protected` | Mark the published version as protected (cannot be deleted or overwritten) |
 | `--registry <url>` | Override the registry URL for this publish |

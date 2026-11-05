@@ -40,7 +40,8 @@ Wippy 聊天 UI 以一组**可组合的自定义元素**形式提供，因此任
 | `session-id` | string | — | 渲染这个已有会话（会话 UUID）。 |
 | `start-token` | string | — | Agent 启动令牌；未设置 `session-id` 时在挂载时启动一个**新**会话。 |
 | `agent` | string | — | 在空状态中预选的 agent 名称（或标题），在没有打开会话时显示。 |
-| `show-selector` | boolean | `false` | 在头部渲染内置的会话选择器。 |
+| `show-selector` | boolean | 继承 | 继承的可见性是 hideSessionSelector 的反值。未配置时为 false。 |
+| `allow-select-model` | boolean | 继承，未设置时为 true | 覆盖当前实例的模型选择设置。 |
 | `hide-header` | boolean | `false` | 隐藏 agent/模型头部栏（用于紧凑嵌入）。 |
 
 **事件**（作为 `CustomEvent` 在元素上派发；读取 `event.detail`）：
@@ -184,3 +185,9 @@ document.querySelector('wippy-session-selector')
 - [主题化：Web Components](./web-component-theming.md) —— shadow DOM CSS 与语义变量
 - [Proxy API](./proxy-api.md) —— `host.startChat` / `host.openSession` 以及 `@wippy-fe/proxy` 的其余部分
 - [代理与隔离](../web-host/proxy-isolation.md) —— 宿主如何向子上下文注入脚本和配置
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

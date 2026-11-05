@@ -315,3 +315,8 @@ Estas variables solo afectan al chrome del host. Los estilos de los iframes hijo
 - [Temas](../micro-frontends/theming.md) — referencia de tokens CSS, mapeo de Tailwind y patrones de estilo de web components
 - [Proxy y Aislamiento](./proxy-isolation.md) — cómo funciona el pipeline de inyección del proxy y qué controla `ProxyConfig` a nivel de protocolo
 - [Motores de Renderizado](./render-engines.md) — el CSS del host llega tanto a los iframes srcdoc como a los shadow roots de Web Fragment
+
+
+## Fuente de Iconify e inyección de iconos
+
+`iconifyIcons` controla la inyección de iconos. No selecciona una fuente. Configure la fuente con `AppConfig.iconify.providers`; las fuentes en línea siguen activas de forma predeterminada. Consulte [Proveedores de Iconify](./iconify.md).

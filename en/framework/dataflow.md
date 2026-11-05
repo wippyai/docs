@@ -1,6 +1,6 @@
 ---
 title: "Dataflow"
-description: "The wippy/dataflow module provides a workflow orchestration engine based on directed acyclic graphs (DAGs). Workflows are composed of nodes —…"
+description: "Compose persistent workflows with functions, agents, cycles, parallel processing, and recovery."
 ---
 
 # Dataflow
@@ -29,7 +29,7 @@ entries:
     version: "*"
 ```
 
-The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. The module requires a database resource at `app:db` for workflow persistence and runs migrations automatically via `wippy/migration`.
+The dataflow module depends on `wippy/agent`, `wippy/llm`, and `wippy/session` — these are resolved automatically when you run `wippy install`. Workflow persistence uses the `target_db` dependency parameter (default `app:db`) and runs migrations via `wippy/migration`.
 
 The module publishes an `env.variable` entry `userspace.dataflow.env:web_host_origin` (default `https://front.wippy.ai`) that downstream flows can read for building public URLs. Override it through the env router or a requirement.
 
@@ -73,8 +73,8 @@ Nodes chain automatically when no explicit routing is defined. Output of each no
 ```lua
 local result, err = flow.create()
     :with_input({ text = "Hello world" })
-    :func("app:tokenize")
-    :func("app:translate", { args = { target_lang = "fr" } })
+    :func("app:tokenize"):to("translate", "text")
+    :func("app:translate", { args = { target_lang = "fr" } }):as("translate")
     :func("app:format_output")
     :run()
 ```
@@ -125,6 +125,9 @@ flow.create()
     :func("app:dev"):as("dev")
         :to("@success")
         :error_to("@fail")
+
+    :func("app:logger"):as("logger"):to("@success")
+    :func("app:checker"):as("checker"):to("@success")
 
     :run()
 ```
@@ -240,12 +243,12 @@ Transform data before it reaches a node:
     input_transform = {
         task = "inputs.task",
         config = "inputs.settings",
-        priority = "output.score > 0.8 ? 'high' : 'normal'"
+        priority = "inputs.analysis.score > 0.8 ? 'high' : 'normal'"
     }
 })
 ```
 
-Context variables available in transforms: `input` (workflow input), `inputs` (all incoming node inputs), `output` (current node's output when routing).
+Node input transforms use `input` (the sole incoming value, or the default input when there are several) and `inputs` (incoming values by discriminator). Inline route transforms use `output` (the sending node's result).
 
 ### Inline Route Transforms
 
@@ -281,6 +284,19 @@ Executes a registered `function.lua` entry:
 | `context` | table | Execution context passed to function |
 | `input_transform` | string/table | Expression to transform inputs |
 | `metadata` | table | Node metadata (e.g., `{ title = "..." }`) |
+| `start_to_close_timeout` | number/string | Per-attempt timeout: milliseconds or a duration string |
+| `schedule_to_close_timeout` | number/string | Overall attempt/retry window, retained across restarts |
+| `retry_policy` | table | Retry settings; omitted by default for a single attempt |
+
+An empty `retry_policy` allows three attempts, starting with a one-second backoff
+and multiplier 2. The policy accepts `initial_interval`, `backoff_coefficient`,
+`maximum_interval`, `maximum_attempts` and `non_retryable_error_types`.
+Unlimited attempts (`maximum_attempts = 0`) require a positive
+`schedule_to_close_timeout`. Cancellation and explicitly non-retryable errors
+stop retries. Successful calls are not retried for later routing or control
+failures. Retry-enabled calls receive `attempt` and a stable `idempotency_key`
+in their execution context; a crash after reserving an attempt consumes it.
+Other node types reject these retry and timeout options.
 
 If the function returns `{ _control = { commands = [...] } }`, the orchestrator spawns a child workflow. This is how nested flows work.
 
@@ -313,14 +329,17 @@ Executes an agent with tool calling and optional structured exit:
 | Option | Type | Description |
 |--------|------|-------------|
 | `model` | string | Override model |
-| `arena.prompt` | string | System prompt |
+| `arena.prompt` | string | Additional system prompt; also used as the first user message when conversation input is empty |
 | `arena.max_iterations` | number | Max reasoning loops (default: 32) |
 | `arena.min_iterations` | number | Min iterations before exit (default: 1) |
+| `arena.max_unproductive_steps` | number | Consecutive turns with no call or answer before failure (default: 3) |
 | `arena.tool_calling` | string | `"auto"`, `"any"` (requires `exit_schema`), `"none"` (rejects `exit_schema`) |
 | `arena.tools` | array | Tool registry IDs |
 | `arena.exit_schema` | table | JSON schema for structured exit |
 | `arena.exit_func_id` | string | Function to validate exit output |
 | `arena.context` | table | Additional context |
+| `active_traits` | array | Active trait overlay, persisted across recovery |
+| `active_tools` | array | Active tool overlay, persisted across recovery |
 | `inputs` | table | Input requirements |
 | `show_tool_calls` | boolean | Include tool calls in output |
 | `input_transform` | string/table | Transform inputs |
@@ -344,6 +363,122 @@ Executes an agent with tool calling and optional structured exit:
 
 **Exit validation:** When `exit_func_id` is set, the function validates the agent's exit output. On validation failure, the agent receives the error as observation and continues (up to `max_iterations`).
 
+#### Tool Execution and Recovery
+
+Calls from one model response execute in parallel. The host uses the tool caller's
+result listener to commit each ordinary tool result as it finishes; recovery runs
+only calls without committed results. All calls replay together before their
+results. A completed external effect whose result did not commit can run again,
+so tools with external writes need idempotency.
+
+Agent and model inputs choose the selection only until the first commit, which
+stores it in node configuration. `_control.config` switches commit with their
+results. Recovery reloads that selection, including trait/tool overlays, before
+another lifecycle hook, checkpoint or model step. A successful fallback route
+also persists across iterations and recovery; an agent or model switch clears it.
+
+#### Stable Conversation
+
+The node folds its conversation inputs into one first user message and stores it
+once as `agent.input`. Later inputs and restarts cannot change that message.
+With no conversation input, a nonblank `arena.prompt` supplies the first user
+message on every driver. With neither, the node sends no user message; a
+positional note can supply content, and without one the node fails before dispatch.
+
+For `agent_options.turn_context`, the host renders one time note before the first
+request and stores it as a positional system `agent.memory` row with key
+`turn_context`. It follows the stored input through every iteration, restart and
+checkpoint. It is not included in the summary.
+
+Recall notes from `context_notes` become `agent.memory` rows with
+`metadata.llm_meta.preserve_position` and `memory_ids`, before the action row.
+Lifecycle messages from `activate` and `before_step` must be `developer` or
+`system`. They are stored where sent, with `metadata.role`,
+`metadata.lifecycle_phase` and positional metadata. Other roles fail the node.
+Restart activation appends a new note; it does not rebuild the earlier one.
+
+Action rows keep `thinking_blocks`, `content_positions` when present, and
+`prefix_fingerprint` under `metadata.llm_meta`. Each step sets
+`drop_stale_thinking = true`. Checkpoint cuts remove complete earlier rounds,
+so surviving actions use the default fingerprint comparison; the node supplies
+no `thinking_is_current` predicate.
+
+#### Agent Checkpoints
+
+Checkpoint options merge trait defaults, explicit `agent_options.checkpoint`,
+then raw node `config.checkpoint`. Maps merge recursively and lists replace,
+including empty lists. `enabled = false` disables checkpointing; nonpositive
+thresholds disable automatic scheduling. No checkpoint configuration means no
+implicit checkpointing. With the fluent builder, configure defaults on the
+agent or a [compaction trait](./agents.md#behaviors-and-compaction): `:agent()`
+does not forward a `checkpoint` option in this release. Raw node commands can
+set `config.checkpoint` directly.
+
+Scheduling compares the latest action's `tokens.context_tokens` with
+`token_threshold` using strict `>`. It counts the full prompt, including cached
+input, rather than cumulative usage or only uncached `prompt_tokens`. A
+`memory.compact = true` behavior proposal requests a checkpoint without waiting
+for the threshold, but cannot override an explicit disable or missing provider.
+
+Checkpoints run after tool results settle and before the next model request.
+No cut is made while the newest action has an unanswered call on a continuing
+node. A requested checkpoint waits for that round to close; compaction on a
+finish round commits with completion. A successful summary replaces all rows
+through the newest-row cut, calls and results together. Future requests contain
+the stored input, time note, summary marker and rows after the cut.
+
+Each new summary receives the previous summary plus the rows after its cut,
+so earlier state rolls forward. The stored input, time note and checkpoint-skip
+audit rows are excluded. The host passes `history` rows with `data_id`, `type`,
+`content`, `content_type` and `metadata`, plus `dataflow_id`, `node_id`,
+`scenario_id`, `iteration`, `prompt_tokens`, `context_tokens`, `history_count`,
+`checkpoint_before_data_id` and effective `options` to a function fallback.
+Checkpoint bindings also receive host/agent refs and a `since_checkpoint`
+run-context selector. Bindings run before the function fallback; a strict
+binding failure prevents fallback.
+
+The default summarizer uses `model = "class:fast"`, `temperature = 0.2` and
+`max_row_chars = 2000`. The per-row clamp does not apply to the earlier summary;
+the host sets no additional input-size limit. `max_memory_chars` defaults to
+8192 characters and caps stored summary text without splitting a character.
+Absent `max_tokens`, the output budget is the smallest of twice that character
+cap, one eighth of the resolved model's context window, and 16000 tokens.
+Explicit or derived output budgets are capped at the model's output limit.
+The prompt asks for at most `min(max_memory_chars, floor(max_tokens * 3 / 4))`
+characters. On a class route, sizing uses only the first model's limits.
+
+Blank summaries and summaries stopped at `max_tokens` fail without moving the
+cut. Longer completed summaries are cut at `max_memory_chars` and marked
+`checkpoint_memory_truncated`. Non-strict failures leave an audit observation
+and are retried when new rows arrive, not repeatedly for the same rows within
+one process. Host `strict = true` fails the node; when the node is already
+completing, a failed requested checkpoint is recorded as a skip instead.
+
+#### Recovery Limits
+
+- Recovery does not make external writes exactly once. Lifecycle hooks and
+  durable behavior controls may replay and need stable IDs for idempotency.
+- After recovery of a partially completed tool round, `after_execute` wrappers
+  see only calls recovery ran. If all results committed but the round's closing
+  commit did not, wrappers run for the whole round. Stored scalar and failure
+  results can lose their original Lua shape (for example, SQLite reads `true`
+  back as `1`).
+- A checkpoint guards the newest open round; older unanswered calls are
+  summarized with their rounds. Bounded `get_prompt` views can separate calls
+  from results and must not be sent directly to a provider.
+- Older stored runs can restart their cache once on upgrade. A resumed run past
+  its first iteration gets no new time note. Old history with text between a
+  call and its result is not repaired at render time and can fail at the provider.
+- One tool call can return only one `_control.delegate`, with `input_data`.
+  Multiple delegates for one call fail the node; an empty list keeps the ordinary result.
+- Checkpoints compact conversation; they do not provide durable memory storage
+  or a hard spending limit. A large summarizer input can still exceed its model.
+
+Agent/trait/tool changes and checkpoints deliberately edit the prefix. Memory
+clear/delete controls remove only rows added by memory directives; deleting a
+different existing row fails. A crash before a step commits loses that step and
+its notes, and recovery repeats from the last committed history.
+
 ### Cycle Node
 
 Iterates a function or template repeatedly with persistent state:
@@ -352,7 +487,9 @@ Iterates a function or template repeatedly with persistent state:
 :cycle({
     func_id = "app:content_cycle",
     max_iterations = 3,
+    continue_condition = "not result.approved",
     initial_state = {
+        task = task,
         entry_id = entry_id,
         content_prompt = prompt,
         min_score = 8.0,
@@ -389,13 +526,21 @@ function my_cycle(cycle_context)
 
     -- spawn child workflow for this iteration
     -- task is read from state since cycle_context.input is nil after iteration 1
-    return flow.create()
+    local next_iteration, err = flow.create()
         :with_input({ task = cycle_context.state.task })
         :agent("app:worker")
         :agent("app:qa")
         :run()
+    if err then return nil, err end
+    next_iteration.state = cycle_context.state
+    return next_iteration
 end
 ```
+
+For the child workflow above, `continue_condition` checks the collected result
+after the children finish. An explicit `continue` returned by the function or
+child result takes precedence. Exceeding `max_iterations` while continuation is
+still requested fails the cycle.
 
 | Option | Type | Description |
 |--------|------|-------------|
@@ -427,7 +572,7 @@ Map-reduce pattern over arrays:
     iteration_input_key = "spec",
     passthrough_keys = { "task" },
     batch_size = 10,
-    on_error = "collect_errors",
+    on_error = "continue",
     filter = "successes",
     unwrap = true,
     template = flow.template()
@@ -453,7 +598,8 @@ Map-reduce pattern over arrays:
 | `template` | FlowBuilder | Template for each item (required, must route to `@success`) |
 | `iteration_input_key` | string | Input key for current item (default: `"default"`) |
 | `batch_size` | number | Items per parallel batch (default: 1 = sequential) |
-| `on_error` | string | `"collect_errors"` (default) or `"fail_fast"` |
+| `scheduling` | string | `"batch"` (default) or `"rolling"`; rolling fills free slots and requires `on_error = "continue"` |
+| `on_error` | string | `"continue"` (default) or `"fail_fast"`; `"collect_errors"` is a compatibility alias for `"continue"` |
 | `filter` | string | `"all"` (default), `"successes"`, `"failures"` |
 | `unwrap` | boolean | Return raw results instead of wrapped metadata (default: false) |
 | `passthrough_keys` | array | Input keys forwarded to every iteration |
@@ -507,7 +653,7 @@ The node yields with `wait_for_signal = true` and persists that yield in the wor
 - Signals can be pre-queued before `:start()`: if a matching `NODE_SIGNAL` commit arrives before the signal node reaches the yield, it is delivered the moment the yield is tracked.
 - Only one signal satisfies each yield. If a second signal with the same `signal_id` arrives before the yield is satisfied, it overwrites the first.
 - When multiple signal yields share the same `signal_id`, the first matching yield receives the data.
-- If the `signal_id` field is absent, matching falls back to the node's discriminator.
+- Raw `NODE_SIGNAL` data matches by `payload.key`, falling back to `payload.discriminator`.
 - Delivered signal data is passed to the node's output as the signal payload.
 
 #### Durability and recovery
@@ -670,6 +816,7 @@ local c, err = client.new()
 | `pending` | Waiting for inputs |
 | `ready` | Inputs collected, ready to execute |
 | `running` | Actively executing |
+| `waiting` | Persisted wait; execution can resume after a signal, timer or recovery |
 | `paused` | Yielded, waiting for child workflow |
 | `completed` | Finished successfully |
 | `failed` | Failed |
@@ -731,6 +878,11 @@ Both `:run()` and `:start()` follow standard Lua error conventions:
 - Failure: `nil, error_message`
 
 Error categories: compilation errors, client errors, workflow creation errors, execution errors, and workflow failures.
+
+The lower-level `client:execute()` returns its result alongside a `WorkflowFailed`
+error on workflow failure. Optional `error_details` identify failing nodes;
+native node errors retain kind, message, retryability and details in `cause`.
+Routed errors retain `node_error` alongside any transformed `error`.
 
 ## See Also
 

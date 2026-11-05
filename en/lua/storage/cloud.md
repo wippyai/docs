@@ -570,7 +570,7 @@ Security policy evaluation applies to cloud storage operations.
 | Object overwritten during a ranged read (surfaced by `archive`) | `errors.INTERNAL` | no |
 | Provider does not support multipart uploads | `errors.UNAVAILABLE` | no |
 | Provider supplies no ETag for `open_reader` | `errors.UNAVAILABLE` | no |
-| Permission denied | raised as a Lua error, not returned | - |
+| Permission denied during acquisition | `errors.PERMISSION_DENIED` (returned as `nil, error`) | no |
 | Provider operation failed | `errors.UNKNOWN` | unset |
 
 See [Error Handling](lua/core/errors.md) for working with errors.

@@ -159,17 +159,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `payload` | table | JWTクレーム（カスタムヘッダーには`_header`） |
-| `key` | string | シークレット（HMAC）またはPEM秘密鍵（RSA） |
-| `alg` | string? | HS256、HS384、HS512、RS256（デフォルト: HS256） |
+| `key` | string | シークレット（HMAC）またはPEM秘密鍵（RSA、EC P-256） |
+| `alg` | string? | HS256、HS384、HS512、RS256、ES256（デフォルト: HS256） |
 
 **戻り値:** `string, error`
 
-文書化されているアルゴリズム名のいずれか一つだけを渡してください。このランタイムの固定バージョンでは、未対応の値を`encode`に渡すとエラーではなくHS256へフォールバックします。設定可能なアルゴリズムは呼び出し前に検証し、信頼できないフィールドを`_header`へコピーしないでください。特に、入力から`alg`などの予約済みJWTヘッダーを上書きさせないでください。
+文書化されているアルゴリズム名のいずれかを渡してください。未対応の値は`INVALID`エラーを返します。`_header`はテーブルである必要があります。`_header`で`alg`を指定する場合、その値は引数`alg`と一致する必要があり、一致しない場合`encode`は`INVALID`エラーを返します。ES256にはPEM形式のEC P-256鍵（SEC1またはPKCS#8、例: Appleの`.p8`鍵）が必要です。信頼できないフィールドを`_header`へコピーしないでください。
 
 ### 検証
 
@@ -177,12 +178,13 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `token` | string | 検証するJWTトークン |
-| `key` | string | シークレット（HMAC）またはPEM公開鍵（RSA） |
+| `key` | string | シークレット（HMAC）またはPEM公開鍵（RSA、EC P-256） |
 | `alg` | string? | 期待するアルゴリズム（デフォルト: HS256） |
 | `require_exp` | boolean? | `exp`クレームの存在を必須にする（デフォルト: true）。存在する`exp`は常に検証されます |
 

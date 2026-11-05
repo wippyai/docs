@@ -69,9 +69,10 @@ The composition rules validated on every apply:
 
 - An entry may be created only if no durable entry and no overlay entry holds its ID.
 - Only the owning identity may update or delete its overlay entries.
+- An overlay may shadow a durable entry with update or delete. Only one shadow may exist per entry, durable writes to that entry are blocked, and deleting the owned shadow reveals the current durable version again.
 - Overlay entries may not carry registry-owned metadata, and may not use kinds claimed by registry directives.
 - A delete may not remove an entry that a surviving entry depends on.
-- Dependency edges may not cross owner boundaries, and durable entries may not depend on overlay entries.
+- Dependency edges may not cross owner boundaries, and durable entries may not depend on newly created overlay entries. Shadowed durable entries may retain durable dependents.
 
 ## Version Chain
 
@@ -136,7 +137,7 @@ sequenceDiagram
     end
 ```
 
-By default, the registry waits 30 seconds for listeners to accept or reject each operation. `registry.event_wait_timeout` changes this per-operation timeout. On rejection, the registry rolls back by computing and applying the inverse delta.
+By default, listener acknowledgment waits are bounded by the operation context, with no fixed timeout. `registry.event_wait_timeout` can impose a per-operation cap. A missing handler fails immediately. On rejection, the registry rolls back by computing and applying the inverse delta.
 
 ### Non-propagating Entries
 
@@ -171,7 +172,7 @@ External dependency access is a request-scoped context value, not a global flag:
 | `DependencyAccessOnline` | External resolution and artifact download are permitted |
 | `DependencyAccessVerifiedOffline` | External access is forbidden; resolution uses locked manifests and locally present artifacts |
 
-`LoadState()` defaults to verified-offline when the context specifies nothing, so boot replays a stored graph without reaching the network. Restoring a deployment baseline switches the context to online because it must fetch the modules that baseline names. Under verified-offline a manifest provider serving only locked modules replaces the hub provider, and a missing artifact fails as missing evidence rather than triggering a download.
+`LoadState()` defaults to verified-offline when the context specifies nothing. Boot first prepares the recorded deployment's artifacts, using verified local copies and allowing downloads only when needed, then replays the stored graph. This restore can operate without a lock file. Under verified-offline access, missing evidence fails instead of triggering a download; modules superseded by current lock pins do not require their old artifacts.
 
 ## Version History
 

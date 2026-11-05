@@ -138,6 +138,15 @@ return copied
 | `"a"` | Append |
 | `"wx"` | Exclusive write (fails if file exists) |
 
+The third argument also accepts `{mode = "w", atomic = true}`:
+
+```lua
+local ok, err = vol:writefile("/config.json", encoded, {atomic = true})
+if err then return nil, err end
+```
+
+Atomic writes replace the whole file or leave it untouched. They require mode `"w"`, string data of at most 8 MiB, and a filesystem with atomic-write support (`fs.directory` on Linux and macOS). Unsupported filesystems return `errors.UNAVAILABLE`; invalid options return `errors.INVALID`. If publication succeeds but the durability sync fails, the error is `errors.UNAVAILABLE` with `err:details().published == true`: the new content is already in place.
+
 Use a file handle for streaming writes:
 
 ```lua
@@ -193,6 +202,17 @@ print(info.size, info.modified, info.type)
 
 **Stat fields:** `name`, `size`, `mode`, `modified`, `is_dir`, `type`
 
+OS-backed files can also expose these optional fields, including through `file:stat()`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `dev` | integer or string | Device ID |
+| `ino` | integer or string | Inode number |
+| `ctime_ns` | integer | Status-change time, nanoseconds since the Unix epoch |
+| `mtime_ns` | integer | Modification time, nanoseconds since the Unix epoch |
+
+Linux, macOS, and FreeBSD expose all four fields; Windows exposes only `mtime_ns`. Virtual filesystems omit them. Device and inode values above 2^53 are decimal strings to preserve their value. The existing `modified` field remains a timestamp in seconds.
+
 ## Directory Operations
 
 ```lua
@@ -218,7 +238,7 @@ return removed
 
 Entry fields: `name`, `type` ("file" or "directory")
 
-`mkdir` creates one directory and does not create missing parents. `remove` accepts files and empty directories only.
+`mkdir` creates one directory and does not create missing parents. `remove` accepts files and empty directories, and unlinks a symbolic link without removing its target, including links to nonempty directories.
 
 ## File Handle Methods
 
@@ -290,7 +310,7 @@ fs.seek.END       -- from end
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `readfile(path)` / `read_file(path)` | `string, error` | Read entire file |
-| `writefile(path, data, mode?)` / `write_file(path, data, mode?)` | `boolean, error` | Write a string or reader-backed value |
+| `writefile(path, data, options?)` / `write_file(path, data, options?)` | `boolean, error` | Write a string or reader-backed value; options are a mode string or `{mode, atomic}` table |
 | `exists(path)` | `boolean, error` | Check if path exists |
 | `stat(path)` | `table, error` | Get file info |
 | `isdir(path)` | `boolean, error` | Check if directory |

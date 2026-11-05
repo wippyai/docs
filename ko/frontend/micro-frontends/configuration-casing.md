@@ -36,3 +36,9 @@ proxy:
 `meta.mountRoute`는 현재 백엔드 호환성 버그입니다. 의도된 백엔드 필드는 `meta.mount_route`이지만, 백엔드 수정이 배포되기 전까지 기존 배포 환경은 `mountRoute`를 요구합니다. 이를 명시적인 단일 예외로 취급하고, Registry나 백엔드 필드가 일반적으로 camelCase라는 근거로 삼지 마십시오.
 
 컴플라이언스는 백엔드 스키마가 변경될 때 제거할 수 있도록 이 예외에 버전을 지정해야 합니다.
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62는 다음 채팅 설정을 하위 애플리케이션과 공유합니다. `hostConfig`는 Web Host 래퍼에 속하며 하위 구성에 포함되지 않습니다. 관리형 레이아웃에는 기본 채팅이 없습니다. 하위에서 완전히 실행되는 앱은 최상위 설정 또는 패키지 재정의를 사용합니다.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

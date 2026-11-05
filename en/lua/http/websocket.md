@@ -108,7 +108,7 @@ client:send(binary_data, websocket.BINARY)
 | `data` | string | Message content |
 | `type` | number | `websocket.TEXT` (1) or `websocket.BINARY` (2) |
 
-Yields until the message is sent. Returns no values.
+Yields until the send completes. Returns `true, nil` on success or `false, error` on failure.
 
 ### Ping
 
@@ -118,7 +118,7 @@ Send a ping frame.
 client:ping()
 ```
 
-Yields until the ping is sent. Returns no values.
+Yields until the ping completes. Returns `true, nil` on success or `false, error` on failure.
 
 ## Receiving Messages
 
@@ -317,7 +317,7 @@ local function connect_chat(room_id, token, on_message)
         return nil, err
     end
 
-    -- Join room. Runtime v0.3.32a does not expose transport send failures.
+    -- Join room.
     local join_payload, encode_err = json.encode({
         type = "join",
         room = room_id
@@ -326,7 +326,11 @@ local function connect_chat(room_id, token, on_message)
         client:close()
         return nil, encode_err
     end
-    client:send(join_payload)
+    local sent, send_err = client:send(join_payload)
+    if not sent then
+        client:close()
+        return nil, send_err
+    end
 
     -- Message loop
     local ch, channel_err = client:channel()
@@ -438,9 +442,10 @@ See [Security Model](system/security.md) for policy configuration.
 | Invalid connection ID returned by the dispatcher | `errors.INTERNAL` | no |
 | Subscription failed | `errors.INTERNAL` | yes |
 | Missing process context during subscription | `errors.INTERNAL` | no |
+| Send or ping failed | `errors.INTERNAL` | no |
 | Close failed | `errors.INTERNAL` | no |
 
-An empty URL, a non-table options value, invalid argument types, and a missing execution context or process PID when requesting the receive channel raise Lua errors. They are not returned as structured errors. Runtime `v0.3.32a` does not expose send or ping transport failures to Lua callers.
+An empty URL, a non-table options value, invalid argument types, and a missing execution context or process PID when requesting the receive channel raise Lua errors. They are not returned as structured errors.
 
 ```lua
 local client, err = websocket.connect(url)

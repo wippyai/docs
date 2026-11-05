@@ -65,7 +65,8 @@ The full chat surface: header, scrollable message list, and composer.
 | `session-id` | string | — | Render this existing session (a session UUID). |
 | `start-token` | string | — | Agent start token; starts a **new** session on mount when no `session-id` is set. |
 | `agent` | string | — | Agent name (or title) to pre-select in the empty state, shown when no session is open. |
-| `show-selector` | boolean | `false` | Render the built-in session selector in the header. |
+| `show-selector` | boolean | inherited | Inherited visibility is the inverse of hideSessionSelector. Default false without config. |
+| `allow-select-model` | boolean | inherited, then true | Override model selection for this instance. |
 | `hide-header` | boolean | `false` | Hide the agent/model header bar (for compact embeds). |
 
 **Events** (dispatched as `CustomEvent`s on the element; read `event.detail`):
@@ -258,6 +259,30 @@ Omitting `css-variables` is the normal facade-respecting path. Per-instance colo
 
 For the full theming model — semantic variables, dark/light flipping, and how the host injects shadow-DOM CSS — see [Theming: Web Components](./web-component-theming.md).
 
+### Cancelled tool calls
+
+In Web Host 1.0.66, the built-in chat and the chat elements show a tool call
+that the Session cancelled as cancelled, with the Stop icon. They do not show
+it as an error. This applies when Stop, a failed turn, an agent handoff, or a
+command bus failure cancels the call, and also after a reload. Two classes mark
+the cancelled state:
+
+| Class | Element |
+|-------|---------|
+| `chat-message--cancelled` | The content of a single tool row |
+| `chat-tool-group__badge--cancelled` | A badge in a group of tool rows |
+
+The default style is a muted left border. A theme that restyles
+`chat-message--success`, `chat-message--error`, or
+`chat-tool-group__badge--success` for tool rows may need rules for the new
+classes as well.
+
+The Host reads `outcome: "cancelled"` on the `function_error` event, and
+`status: "error"` with `outcome: "cancelled"` on the stored `function` row.
+The live state needs a Session that sends `outcome` on the event, which is
+`wippy/session` 0.6.9 or newer. Session 0.6.8 sends `status: "cancelled"` on
+the event instead, and the Host does not read it.
+
 ## Runtime wiring
 
 Inside a srcdoc iframe child, the elements require no additional setup. Auth
@@ -274,3 +299,9 @@ described in [How they load](#how-they-load).
 - [Theming: Web Components](./web-component-theming.md) — shadow-DOM CSS and semantic variables
 - [Proxy API](./proxy-api.md) — `host.startChat` / `host.openSession` and the rest of `@wippy-fe/proxy`
 - [Proxy & Isolation](../web-host/proxy-isolation.md) — how the host injects scripts and config into children
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 shares the following chat policy with child applications. `hostConfig` belongs to the Web Host wrapper and is never included in child payloads. A managed layout has no built-in chat by default. Applications that live entirely in a child use top-level policy or package overrides.
+
+[UI policy, precedence, and compatibility](../web-host/bootstrap.md#ui-policy-in-1062)

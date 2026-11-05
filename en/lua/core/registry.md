@@ -101,7 +101,7 @@ Each entry in `state.entries` has the four author-facing fields plus:
 - `registry.owner` - deployment source that supplied the entry
 - `registry.root` - `true` when the entry is a dependency declaration selected by the deployment
 
-`state.resolution` describes the module graph of a `registry.snapshot()` view. It is absent on snapshots that carry no graph of their own, including `registry.snapshot_at()` and overlay snapshots:
+`state.resolution` describes the snapshot's module graph. Historical snapshots include the resolution recorded for that version when available. Reading it requires `registry.resolution.get` on resource `""`; denial omits the table without failing entry reads. Overlay snapshots carry no resolution.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -111,8 +111,11 @@ Each entry in `state.entries` has the four author-facing fields plus:
 | `roots` | array | Authored dependency declarations used as solver inputs |
 | `references` | array | Root-shaped declarations folded into an existing root for the same component; omitted when empty |
 | `modules` | array | Selected modules |
+| `lock` | table | Recorded lock selection: `root_module`, `modules`, and a deterministic `digest`; omitted when no lock selection is recorded |
 
 `roots` and `references` entries have `id`, `component` and `version`. `modules` entries have `name` and `version`, plus `version_id`, `source`, `digest`, `size_bytes` and `protected` when set.
+
+`resolution.modules` describes the effective selection; `resolution.lock.modules` describes the pinned selection. They can differ after a live update.
 
 ## Versions
 
@@ -162,7 +165,21 @@ changes:delete("test:old_entry")
 local new_version, err = changes:apply()
 ```
 
-**Permission:** `registry.apply` for `changes:apply()`
+**Permission:** `registry.apply` on every changed entry ID, for both `changes:plan()` and `changes:apply()`.
+
+### Planning and Concurrency
+
+`changes:plan()` expands a durable changeset without applying entries or advancing history. It returns `base`, `digest`, `changes`, `history`, `effects`, and the permitted `resolution` metadata.
+
+```lua
+local plan, err = changes:plan()
+if err then return nil, err end
+-- Inspect plan.changes before applying the same changeset.
+local version, apply_err = changes:apply()
+if apply_err then return nil, apply_err end
+```
+
+A durable apply fails with retryable `errors.CONFLICT` if the registry moved since its snapshot. After planning, it also rejects changes to the reviewed inputs, such as artifacts or source trees. Reopen the snapshot and rebuild on conflict. Mutating a planned changeset drops its plan binding. Overlay changesets do not support `plan()`.
 
 ### Deleting Entries
 
@@ -185,6 +202,7 @@ An empty list, a table that references itself, and a value that is neither a str
 | `changes:update(entry)` | Add update operation |
 | `changes:delete(id)` | Add delete operation |
 | `changes:ops()` | Get pending operations |
+| `changes:plan()` | Preview a durable changeset and bind its next apply to the result |
 | `changes:apply()` | Apply changes, returns new Version |
 
 ## Apply Version
@@ -264,11 +282,11 @@ return nil, last_err
 - The owner string is required and must not be blank.
 - A changeset must be non-empty and must not name the same entry twice.
 - `create` fails when the ID already exists in durable state or in any overlay.
-- `update` and `delete` only work on entries this owner created; any other ID fails with `errors.NOT_FOUND`.
+- `update` or `delete` may shadow a durable entry with `registry.overlay.shadow` permission on that ID. Only one overlay may shadow it, and durable writes to it are blocked while the shadow exists. Deleting an existing shadow releases it and restores the current durable entry.
 - Overlay entries cannot set `dependency_root` or any other registry-owned metadata.
 - Overlay entries cannot use kinds owned by a registry directive, such as `ns.dependency`.
 - A delete that removes an entry a surviving entry depends on is rejected.
-- Dependencies cannot cross overlay owner boundaries, and durable entries cannot depend on overlay entries.
+- Dependencies cannot cross overlay owner boundaries, and durable entries cannot depend on newly created overlay entries. A shadowed durable entry may retain durable dependents.
 
 The rest surface as `errors.CONFLICT` or `errors.INVALID`, and none are retryable: only the generation mismatch above is.
 
@@ -279,13 +297,15 @@ The rest surface as `errors.CONFLICT` or `errors.INVALID`, and none are retryabl
 | Permission | Resource | Description |
 |------------|----------|-------------|
 | `registry.get` | entry ID | Read entry (also filters find/entries results) |
-| `registry.apply` | - | Apply changeset |
+| `registry.apply` | entry ID | Plan or apply each durable operation |
+| `registry.resolution.get` | `""` | Read resolution and lock selection in snapshot state or plans |
 | `registry.apply_version` | - | Apply/rollback version |
 | `registry.overlay.get` | owner ID | Open and read an overlay snapshot |
 | `registry.overlay.apply` | owner ID | Apply an overlay changeset |
 | `registry.overlay.create.<kind>` | entry ID | Create an overlay entry of that kind |
 | `registry.overlay.update.<kind>` | entry ID | Update an overlay entry of that kind |
 | `registry.overlay.delete.<kind>` | entry ID | Delete an overlay entry of that kind |
+| `registry.overlay.shadow` | durable entry ID | Shadow a durable entry, in addition to the per-kind action |
 
 ## Errors
 
@@ -297,6 +317,7 @@ The rest surface as `errors.CONFLICT` or `errors.INVALID`, and none are retryabl
 | Invalid parameter | `errors.INVALID` |
 | No changes to apply | `errors.INVALID` |
 | Overlay changed during apply | `errors.CONFLICT` (retryable) |
+| Durable snapshot or reviewed plan is stale | `errors.CONFLICT` (retryable) |
 | Overlay entry owned elsewhere or conflicts with durable state | `errors.CONFLICT` |
 | Registry not available | `errors.INTERNAL` |
 

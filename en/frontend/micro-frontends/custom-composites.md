@@ -96,7 +96,7 @@ shape. A module compliance implementation must validate a real contract
 against the selected theme manifest, verify the hashes and complete property
 set, and check that every evidence reference resolves to the named passing
 result or capture from the same candidate build. The public `@wippy-fe/*`
-0.0.56 package family does not provide a module-compliance CLI. Accessibility
+0.0.66 package family does not provide a module-compliance CLI. Accessibility
 evidence binds the
 component `sourceSha256`, hashed files, zero unexpected console errors, and a
 passed result. Visual evidence binds canonical before/after/diff files, hashes,

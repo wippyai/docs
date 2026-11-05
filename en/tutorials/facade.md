@@ -29,7 +29,7 @@ A backend app that serves the Wippy UI:
 - The facade installed:
 
   ```bash
-  wippy add wippy/facade@0.6.37
+  wippy add wippy/facade@0.6.46
   wippy install
   ```
 
@@ -99,26 +99,27 @@ Selected fields from the response are shown below:
 
 ```json
 {
-  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.58",
+  "facade_url": "https://web-host.wippy.ai/webcomponents-1.0.66",
+  "schema_url": "https://web-host.wippy.ai/webcomponents-1.0.66/schemas/wippy-context-2.1.json",
   "iframe_origin": "https://web-host.wippy.ai",
-  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.58/iframe.html?waitForCustomConfig",
+  "iframe_url": "https://web-host.wippy.ai/webcomponents-1.0.66/iframe.html?waitForCustomConfig",
   "module_file": "/module.js",
   "mode": "compat",
   "login_path": "/login.html",
-  "themeMode": "auto",
-  "themePersist": "none",
-  "themeStorageKey": "@wippy-theme-mode",
   "env": { "APP_API_URL": "", "APP_AUTH_API_URL": "", "APP_WEBSOCKET_URL": "" },
   "themeMode": "auto",
   "themePersist": "none",
   "themeStorageKey": "@wippy-theme-mode",
+  "allowSelectModel": false,
+  "hideSessionSelector": false,
+  "allowAdditionalTags": {},
   "theming": {
     "host": { "i18n": { "app": { "title": "Verify App", "icon": "wippy:logo", "appName": "Wippy AI" } } }
   },
   "hostConfig": {
-    "showAdmin": true, "allowSelectModel": false, "hideNavBar": false,
-    "disableRightPanel": false, "startNavOpen": false, "hideSessionSelector": false,
-    "renderEngine": "iframe", "session": { "type": "non-persistent" }, "history": "hash"
+    "showAdmin": true, "hideNavBar": false, "disableRightPanel": false,
+    "startNavOpen": false, "renderEngine": "iframe",
+    "session": { "type": "non-persistent" }, "history": "hash"
   }
 }
 ```
@@ -147,7 +148,7 @@ window.location.assign('/');
 ```
 
 The shell reads the token, imports
-`https://web-host.wippy.ai/webcomponents-1.0.56/module.js`, and passes the token to the
+`https://web-host.wippy.ai/webcomponents-1.0.66/module.js`, and passes the token to the
 Host. Rendering is complete only when the browser shows the Host without redirecting
 and its API requests authenticate successfully. Do not use a placeholder token merely
 to suppress the redirect: the shell does not validate it, so the failure only moves to

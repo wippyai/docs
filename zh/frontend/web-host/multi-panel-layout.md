@@ -48,7 +48,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 
 Vue 组件用 `useHostVisibility()` 读取该状态，或者用 `useHostVisibilityRefresh(task)` 把常规的初始加载与显现刷新结合起来。后者在挂载后运行，之后只在恰好发生 `false -> true` 时运行。不要在直挂 WC 中使用 proxy 的 `@visibility` topic；那是 iframe/Web Fragment 的消息通道。
 
-在 Draft 1 标签移除之前，请固定到确切的 CDN 标签——至少 `https://web-host.wippy.ai/webcomponents-1.0.52`。
+在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.66`，对应的 `@wippy-fe/*` 系列版本为 `0.0.66`。
 
 ## 启用受管布局
 
@@ -450,3 +450,9 @@ const router = createAppRouter([...])
 - [Facade 入口点](./entry-point.md) —— facade 如何加载 JS 模块入口并交付配置
 - [引导序列](./bootstrap.md) —— 宿主在启动时如何派发到受管布局入口
 - [包](./packages.md) —— `@wippy-fe/layout`、`@wippy-fe/vue-host`、`@wippy-fe/webcomponent-core`、`@wippy-fe/webcomponent-vue`
+
+## UI policy in 1.0.62
+
+Web Host 1.0.62 与子应用共享以下聊天配置。`hostConfig` 属于 Web Host 包装器，绝不会包含在子应用配置中。托管布局默认没有内置聊天。完全运行在子级的应用使用顶层配置或包级覆盖。
+
+[UI policy, precedence, and compatibility](./bootstrap.md#ui-policy-in-1062)

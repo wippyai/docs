@@ -159,17 +159,18 @@ local plaintext, err = crypto.decrypt.chacha20(encrypted, key, aad)
 local token, err = crypto.jwt.encode(payload, secret)
 local token, err = crypto.jwt.encode(payload, secret, "HS256")
 local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
+local token, err = crypto.jwt.encode(payload, ec_private_key_pem, "ES256")
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `payload` | table | JWT-Claims (`_header` für benutzerdefinierten Header) |
-| `key` | string | Secret (HMAC) oder PEM-privater Schlüssel (RSA) |
-| `alg` | string? | HS256, HS384, HS512, RS256 (Standard: HS256) |
+| `key` | string | Secret (HMAC) oder PEM-privater Schlüssel (RSA, EC P-256) |
+| `alg` | string? | HS256, HS384, HS512, RS256, ES256 (Standard: HS256) |
 
 **Gibt zurück:** `string, error`
 
-Übergeben Sie nur einen der dokumentierten Algorithmusnamen. In dieser Runtime-Version fällt ein von `encode` nicht unterstützter Wert auf HS256 zurück, statt einen Fehler zurückzugeben. Validieren Sie konfigurierbare Algorithmen vor diesem Aufruf und übernehmen Sie keine nicht vertrauenswürdigen Felder in `_header`; insbesondere dürfen Eingaben reservierte JWT-Header wie `alg` nicht überschreiben.
+Übergeben Sie einen der dokumentierten Algorithmusnamen. Ein nicht unterstützter Wert gibt einen `INVALID`-Fehler zurück. `_header` muss eine Tabelle sein. Setzt `_header` den Wert `alg`, muss er dem Argument `alg` entsprechen, sonst gibt `encode` einen `INVALID`-Fehler zurück. ES256 erfordert einen EC-P-256-Schlüssel im PEM-Format (SEC1 oder PKCS#8, zum Beispiel einen Apple-`.p8`-Schlüssel). Übernehmen Sie keine nicht vertrauenswürdigen Felder in `_header`.
 
 ### Verifizieren
 
@@ -177,12 +178,13 @@ local token, err = crypto.jwt.encode(payload, private_key_pem, "RS256")
 local claims, err = crypto.jwt.verify(token, secret)
 local claims, err = crypto.jwt.verify(token, secret, "HS256", false)
 local claims, err = crypto.jwt.verify(token, public_key_pem, "RS256")
+local claims, err = crypto.jwt.verify(token, ec_public_key_pem, "ES256")
 ```
 
 | Parameter | Typ | Beschreibung |
 |-----------|------|-------------|
 | `token` | string | Zu verifizierender JWT-Token |
-| `key` | string | Secret (HMAC) oder PEM-öffentlicher Schlüssel (RSA) |
+| `key` | string | Secret (HMAC) oder PEM-öffentlicher Schlüssel (RSA, EC P-256) |
 | `alg` | string? | Erwarteter Algorithmus (Standard: HS256) |
 | `require_exp` | boolean? | Verlangt, dass ein `exp`-Claim vorhanden ist (Standard: true); ein vorhandener `exp` wird immer validiert |
 

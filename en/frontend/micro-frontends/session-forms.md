@@ -215,9 +215,15 @@ through.
 `<wippy-form>` submits through `artifactState`, a typed client that the Web
 Host exports from every proxy realm (`$W.artifactState()` in an iframe, or the
 named `artifactState` export from `@wippy-fe/proxy` in a host-mounted web
-component). Web Host 1.0.61 or later exports it, and no earlier release does.
-The matching npm release is `@wippy-fe/*` 0.0.61. Version 2 forms add no Web
-Host requirement, because the controls ship inside the `wippy-form` bundle.
+component). Web Host 1.0.65 or later exports it, and no earlier release does.
+Version 2 forms add no Web Host requirement, because the controls ship inside
+the `wippy-form` bundle. The matching npm release for version 1 forms is
+`@wippy-fe/*` 0.0.65. Version 2 forms need a later `@wippy-fe` types package.
+<!-- TODO: name the @wippy-fe version here when the types package for version 2 forms is published. -->
+The `wippy/session` module release that ships the forms is the one that adds
+Session Forms.
+<!-- TODO: name the Session version here when the release PR exists. -->
+<!-- Confirm the Web Host and npm version numbers when the Web Host tag is cut. This page merges after that tag. -->
 
 The component checks these conditions in order, and the first match decides
 what the card shows.
@@ -225,11 +231,11 @@ what the card shows.
 | Condition | What the card shows |
 | --- | --- |
 | `form-version` prop or loaded state's `form_version` is neither `1` nor `2`, or a field has a type the component does not know | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
-| The Host has no `artifactState` export (a Web Host before 1.0.61) | The questions with their controls disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every control is empty, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
+| The Host has no `artifactState` export (a Web Host before 1.0.65) | The questions with their controls disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every control is empty, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
 | The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions rendered read-only, with "This form cannot be submitted here." |
 
-The older `instance.form` adapter that `artifactState` replaces is described
-under [`artifactState` and the deprecated
+The older `instance.form` adapter that `artifactState` replaces always sends
+`form_version: 1`, so forms use `artifactState`. It is described under [`artifactState` and the deprecated
 `instance.form`](#artifactstate-and-the-deprecated-instanceform).
 
 ## The artifact-state HTTP API
@@ -467,10 +473,26 @@ field until the next submit.
 
 ## The `artifactState` proxy client
 
-```typescript
-const client = (await $W.artifactState())('artifact-uuid')
-// or, inside a web component: import { artifactState } from '@wippy-fe/proxy'
+In a host-mounted web component, `artifactState` is the factory itself:
 
+```typescript
+import { artifactState } from '@wippy-fe/proxy'
+
+const client = artifactState(artifactId)
+```
+
+In an iframe, `window.$W.artifactState()` (or `getWippyApi()`) returns a
+promise for the factory:
+
+```typescript
+const factory = await window.$W.artifactState()
+const client = factory(artifactId)
+// or: const { artifactState } = await window.getWippyApi()
+```
+
+Both forms give the same client:
+
+```typescript
 const state = await client.get()
 const result = await client.submit({
   form_version: state.form_version,
@@ -697,11 +719,12 @@ does. A click with a mouse and focus from a keyboard do not open it.
     not answer on click. The user picks options and sends the whole form with
     the Submit button. A choice-only form keeps the question card with its
     notes.
-  - In the `@wippy-fe/proxy` 0.0.61 types, a form field is a `choice` and an
+  - In the published `@wippy-fe/proxy` types, a form field is a `choice` and an
     answer is a choice answer, while `form_version` is any number. At run time
     the `artifactState` client sends and returns version 2 JSON unchanged, so a
     TypeScript caller needs a type assertion for the fields and answers of a
     version 2 form until the types are widened.
+    <!-- TODO: name the @wippy-fe version here when the types package for version 2 forms is published. -->
 - The calendar has two limits that come from PrimeVue.
   - The day cells have no accessible name beyond the day number. The panel
     itself is a dialog labelled "Choose Date".

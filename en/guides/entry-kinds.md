@@ -722,6 +722,7 @@ Supervisor-managed service entries expose lifecycle configuration. The block bel
 ```yaml
 lifecycle:
   auto_start: true          # Start automatically
+  startup: required        # required, optional, or complete
   start_timeout: 10s        # Max startup time
   stop_timeout: 10s         # Max shutdown time
   stable_threshold: 5s      # Uninterrupted run time before retry accounting resets
@@ -735,7 +736,7 @@ lifecycle:
 ```
 
 <note>
-Use <code>depends_on</code> to ensure entries start in the correct order. The supervisor starts a dependent entry only after each of its dependencies has completed its own start.
+Use <code>requires</code> to order service startup. The legacy <code>depends_on</code> field is also accepted. A dependent waits for each prerequisite to start, or to finish successfully when the prerequisite uses <code>startup: complete</code>. See [Supervision](guides/supervision.md).
 </note>
 
 ## Entry Reference Format

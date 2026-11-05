@@ -69,6 +69,7 @@ entries:
 | `delegates` | array | Delegate agent references |
 | `memory` | array | Static memory items (strings) |
 | `memory_contract` | table | Dynamic memory configuration |
+| `agent_options` | table | Host options, including `checkpoint`, `turn_context` and loop settings |
 
 ## Agent Context
 
@@ -179,6 +180,12 @@ end
 | `context` | table | Runtime context merged with agent context |
 | `stream_target` | table | Streaming: `{ reply_to, topic }` |
 | `tool_call` | string | `"auto"`, `"any"`, `"none"`, or a tool name |
+| `context_id` | string | Conversation ID for LLM usage tracking |
+| `route` | table | Previous response's `route_pin`, retained for the current turn |
+| `drop_stale_thinking` | boolean | Strip thinking bound to an earlier system/tool prefix |
+| `thinking_is_current` | function | Optional `(message, fingerprint) -> boolean` replacing the fingerprint comparison |
+| `checkpoint` | table | `{ token_threshold, compact }`; callback returns a replacement conversation builder |
+| `cancel` | channel | Host closes it to cancel in-flight generation |
 
 ### Step Response
 
@@ -189,6 +196,22 @@ end
 | `finish_reason` | string | Stop reason |
 | `tool_calls` | table? | Tool calls to execute |
 | `delegate_calls` | table? | Delegate invocations |
+| `metadata` | table? | Provider metadata, including `thinking_blocks` and `content_positions` |
+| `context_notes` | array? | Positional notes sent after the supplied conversation and before the output |
+| `prefix_fingerprint` | string? | SHA-256 of the system text and tool definitions actually sent |
+| `route_pin` | table? | Route retained after fallback, or the pin passed to this step |
+
+Pass `response.route_pin` back as `route` on later steps of the same turn, and clear it for a new turn. This keeps tool results on the route that produced their calls after a fallback. Closing `cancel` returns a stopped response with any text streamed so far and `finish_reason = "cancelled"`.
+
+### Persisting Step Context
+
+Persist `context_notes` in order after the supplied conversation and before the assistant text or calls. These developer messages carry `metadata.preserve_position = true`; replay their content and metadata unchanged. `context_notes` replaces the earlier `memory_prompt` response field. Discard notes when discarding the step's output. Recall cooldown reads `metadata.memory_ids` from the persisted notes.
+
+Store `prefix_fingerprint` as `metadata.prefix_fingerprint` on assistant rows carrying thinking, together with `metadata.thinking_blocks` and any `metadata.content_positions`. Set `drop_stale_thinking = true` on subsequent steps. The runner removes blocks through the last stale message, including messages without a fingerprint. It works on copies and recomputes the fingerprint if a checkpoint replaces the conversation.
+
+The fingerprint covers the compiled system prompt, ordinary conversation system text and provider-visible tool definitions. It excludes the model and registry-only metadata. It reflects the Claude/Bedrock prefix; equality on other drivers is necessary but does not prove identical wire input. Edits to earlier conversation messages are not detected. Hosts with a checkpoint epoch can supply `thinking_is_current(message, fingerprint)` to check both.
+
+The current tool round keeps its thinking, with stale blocks marked for the driver to bind or omit. An older stale turn with an unanswered call fails before dispatch. See [thinking block binding](./llm.md#thinking-blocks-across-agents) for provider handling.
 
 ### Runner Stats
 
@@ -285,32 +308,58 @@ Tools can also be referenced with custom aliases and context:
 
 ## Tool Execution
 
-When an agent step returns `tool_calls`, execute the calls and add their results to the conversation:
+When an agent step returns `tool_calls`, execute them through the tool caller. Declare its import and the `json` module on the calling entry:
+
+```yaml
+modules: [json]
+imports:
+  tool_caller: wippy.agent.tools:caller
+```
+
+This loop handles registered tools; a host using delegates must also settle `delegate_calls`.
 
 ```lua
 local json = require("json")
-local funcs = require("funcs")
+local tool_caller = require("tool_caller")
 
 local function execute_and_continue(runner, conversation)
+    local caller = tool_caller.new():set_strategy(tool_caller.STRATEGY.PARALLEL)
+    local route_pin = nil
     while true do
-        local response, err = runner:step(conversation)
+        local response, err = runner:step(conversation, {
+            route = route_pin,
+            drop_stale_thinking = true,
+        })
         if err then return nil, err end
+        if response.truncation_reason then return nil, "Agent output was truncated" end
+        route_pin = response.route_pin
+
+        for _, note in ipairs(response.context_notes or {}) do
+            conversation:add_message(note.role, note.content, note.name, note.metadata)
+        end
+        local metadata = response.metadata or {}
+        metadata.prefix_fingerprint = response.prefix_fingerprint
+        conversation:add_assistant(response.result or "", metadata)
 
         local tool_calls = response.tool_calls
         if not tool_calls or #tool_calls == 0 then
             return response.result, nil
         end
 
+        -- Keep the response's calls together, then append results in call order.
         for _, tc in ipairs(tool_calls) do
-            local result, call_err = funcs.call(tc.registry_id, tc.arguments)
-            local result_str
-            if call_err then
-                result_str = json.encode({ error = tostring(call_err) })
-            else
-                result_str = json.encode(result)
-            end
-
-            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id)
+            conversation:add_function_call(tc.name, json.encode(tc.arguments), tc.id, {
+                provider_metadata = tc.provider_metadata,
+            })
+        end
+        local validated, validation_err = caller:validate(tool_calls)
+        if validation_err then return nil, validation_err end
+        local results, execute_err = caller:execute({}, validated)
+        if execute_err then return nil, execute_err end
+        for _, tc in ipairs(tool_calls) do
+            local result = results[tc.id]
+            local result_str = json.encode(result.error
+                and { error = tostring(result.error) } or result.result)
             conversation:add_function_result(tc.name, result_str, tc.id)
         end
     end
@@ -324,13 +373,215 @@ end
 | `id` | string | Unique call identifier |
 | `name` | string | Tool name (alias or llm_alias) |
 | `arguments` | table | Parsed arguments |
-| `registry_id` | string | Full registry ID for `funcs.call()` |
+| `registry_id` | string | Full registry ID for execution |
+| `provider_metadata` | table? | Pass unchanged in `add_function_call` options |
 
 <note>
-Use <code>funcs.call(tc.registry_id, tc.arguments)</code> to execute tools. The <code>registry_id</code> field maps directly to the tool's entry in the registry.
+The caller validates calls and applies execution context. Hosts can configure wrappers with <code>set_tool_wrappers(runner.tool_wrappers)</code> and supply their refs with <code>set_wrapper_context(...)</code>. Its default strategy is <code>SEQUENTIAL</code>; select <code>PARALLEL</code> to run a batch concurrently. A result of <code>{ success = false, error = "non-empty text" }</code> sets <code>ToolExecResult.error</code> while preserving the original result. An <code>error</code> field alone remains ordinary result data.
 </note>
 
+### Result Listener
+
+Register a listener to persist results as calls finish:
+
+```lua
+local caller = tool_caller.new():set_strategy(tool_caller.STRATEGY.PARALLEL)
+caller:set_result_listener(function(call_id, result)
+    local _, err = store:save_observation(call_id, result)
+    if err then return nil, err end
+end)
+```
+
+Here `store:save_observation` is the host's persistence function. The listener receives each call ID once, including validation failures, tool errors and cancellation, before `after_execute` wrappers. Parallel delivery follows completion order; sequential delivery finishes before the next call starts. The listener runs synchronously, so Stop waits for it to return. Keep it short and do not mutate the result.
+
+Raising or returning a non-nil second value fails delivery. The caller cancels running calls, starts no more, skips `after_execute`, and returns `nil, error` naming the failed ID. Already accepted results remain accepted. `set_result_listener(nil)` removes the listener. Hosts can pass a cancel channel as the third argument to `execute(context, validated, cancel)`.
+
 For how agent tool access and observability are secured, see the [Security Model](concepts/security-model.md).
+
+## Attention context and UI actions
+
+When a user message contains a validated `wippy.attention` version 1 through 4 attachment,
+the prompt builder renders bounded candidates into the same user-role turn. The
+rendered block is marked `untrusted_user_observation`; labels, accessible text,
+and values are data and cannot supply model instructions. Unknown attachment
+kinds or versions remain inert until a handler is registered. Prompt rendering
+has its own byte budget and does not mutate the persisted attachment.
+
+Files attached to a user message are listed to the model by file name, type,
+size and ID. Their content is never inlined as an image. Image content reaches
+the model only through an approved `wippy.attention.visual` capture, described
+in [Visual capture](#visual-capture).
+
+### Attention trait and tools
+
+Add `wippy.agent.traits:attention` to an agent to give it the Attention tools.
+All of them are private tools in the `wippy.agent.tools` namespace. Reads work
+with automatic attachment, message-context capability and overlay permission
+off. An incoming attachment does not grant tools.
+
+Keep the agent's existing model, prompt and unrelated traits. Add the reusable
+trait as one additional item:
+
+```yaml
+traits:
+  - id: wippy.agent.traits:attention
+```
+
+The trait supplies its read guard and tools. A bare standalone agent runner
+does not create a browser connection; live reads also need the Session broker
+and a turn bound to an authenticated Host tab. See the [Attention
+quickstart](../frontend/web-host/attention-quickstart.md) for a full agent entry,
+Host configuration and public package examples.
+
+The nine read tools inspect the current interface of the Host tab that
+submitted the turn:
+
+| Tool | Example arguments | Purpose |
+|---|---|---|
+| `attention_find_semantic` | `{"role":"button","name":"Save"}` | Match `role`, `name`, `text` or `resource_id` across the permitted tree. |
+| `attention_find_css` | `{"selector":"button","root":ref}` | Query one known document or shadow root. |
+| `attention_get_node` | `{"node_id":"returned-canonical-id"}` | Resolve one known canonical node. |
+| `attention_get_tree` | `{"scope":ref,"limit":16,"depth":2}` | Read a bounded subtree page. |
+| `attention_get_geometry` | `{"node":ref}` | Read geometry, coordinate space and quality. |
+| `attention_get_cursor` | `{}` | Read the latest pointer observation. |
+| `attention_get_focus` | `{}` | Read the focused target. |
+| `attention_get_selection` | `{}` | Read selected text and both endpoint paths. |
+| `attention_hit_test` | `{"x":100,"y":120}` | Inspect a point, by default with a 20 CSS-pixel radius and a 5-pixel grid. |
+
+In the examples, `ref` is the complete returned `NodeRef` with
+`host_instance_id`, `node_id`, `mount_id` and `generation`. The older
+`attention_inspect` tool was removed; the explicit read tools above replace it.
+
+`attention_context_set` turns automatic pointing context on or off for the
+current Session. It takes a required boolean `enabled` and an optional
+`expected_revision`. The trait instructs the agent to call it only when the user requests a change.
+There is no additional confirmation prompt. The setting belongs to the Session,
+so it stays in effect after the user switches
+to another agent.
+
+The four action tools ask the user to clarify or capture a target through the
+current authenticated Host connection:
+
+| Tool | Purpose | Targets |
+|---|---|---|
+| `ui_action_highlight` | Highlight candidate rectangles. | 1 to 32 |
+| `ui_action_confirm` | Ask whether a supplied candidate is the intended one. | 1 to 32 |
+| `ui_action_select` | Ask the user to select a candidate, or to select an arbitrary area when there are no targets and `capture_region: true`. | 0 to 32 |
+| `ui_action_capture_visual` | Ask the user to approve an image of a target, region or viewport. The `capture` object sets `scope` (`target`, `region` or `viewport`), `region`, `allow_adjustment`, `allow_viewport_choice` and `format` (`image/png` or `image/webp`). | 1 to 32 |
+
+The action tools and `attention_context_set` are exclusive, so each one
+cancels concurrent tool calls. See [agent clarification
+actions](../frontend/web-host/attention-context.md#agent-clarification-actions)
+for every argument and default.
+
+### Read limits and history
+
+Semantic search and CSS search are separate modes; CSS requires one canonical
+document or shadow-root reference. Search returns at most eight matches and
+tree pages at most 32 nodes. Private results use `wippy.attention.model.v1`,
+preserve complete returned ancestry through local dictionaries, and are capped
+at 8 KiB.
+
+The trait guard admits one read per batch and four attempted reads per user
+turn, including invalid and refused attempts. Two invalid attempts end repair.
+It refuses reads when trusted history cannot establish the turn boundary. A
+refused call keeps the model's own call ID, tool name and arguments. The
+refusal reason travels to the tool in its execution context, and the tool
+returns a `rejected` result without contacting the Host. Unrelated tools in a
+mixed batch keep their normal behavior. These limits are not a global
+provider-generation or cost limit. See [the complete
+limits](../frontend/web-host/attention-context.md#canonical-inspection-and-agent-tools).
+
+Session stores each compact read result in private function history. Later
+model generations can reuse it while it remains valid. A result expires after
+30 seconds, on a later user turn, after a completed browser action, or when a
+newer read replaces the same query. Tree reads also become stale when a later
+read reports a changed tree revision. Geometry reads use the geometry revision;
+point reads use both. Cursor, focus and selection use query replacement rather
+than the shared observation revision. Withdrawal uses existing `metadata.stale`
+behavior and preserves valid tool-call/result pairs. The result stays stored,
+but the model receives a stale-result notice instead of the old observation.
+Read lifetimes are measured from the time the server received the result, not
+from browser clocks. Immutable automatic attachments leave the model view
+after expiry, a later user turn, a fresh usable read or a completed browser
+action. Their stored content and hashes remain unchanged.
+
+### Target references
+
+Each item of an action tool's `targets` array is an immutable target reference
+containing the snapshot, target, Host instance, mount ID and generation, path
+digest, rectangle, and optional label. It contains no capability or bearer
+token. The prompt renderer exposes this object as a candidate's `action_ref`,
+and a read that returns exactly one actionable node exposes it as `target_ref`.
+The agent must copy that exact object verbatim as one item of the tool's
+`targets` array, and must not build one from IDs, labels or coordinates. Tool
+arguments can also include a prompt of at most 512 characters and independent
+pointer and keyboard permissions. A zero-target `select` request is valid only
+with `capture_region: true`. Here `capture_region` enables Host-owned arbitrary
+area selection; it does not authorize screenshot capture.
+
+The tools receive ephemeral `ui_action_runtime` context only at exact
+registered tool execution. The context is excluded from validated tool-call
+records, wrappers, persistence, history, and model-visible payloads. The session
+broker rejects a tool when the current turn has no eligible Host connection,
+when interactive actions are disabled, or when its target belongs to another
+Host instance. Read-only inspection has independent authority. Requests bind to
+the Host tab that submitted the current turn; reconnect requires a fresh
+authenticated binding and cannot replay an expired request.
+
+The Session plugin is the sole WebSocket inbox owner. It validates incoming
+action results and routes each accepted result to a private per-call mailbox.
+Framework tools wait on that mailbox rather than subscribing to WebSocket
+topics themselves.
+
+The tool path waits for one terminal Host result. Its status is `selected`,
+`confirmed`, `prepared`, `cancelled`, `denied`, `rejected`, `expired`, `stale`,
+`disconnected`, `permission-denied`, `unavailable` or `error`. See [terminal
+statuses](../frontend/web-host/attention-context.md#terminal-statuses) for the
+meaning of each one. The broker permits one pending action per session, caps
+expiry at 120 seconds, and accepts only the first correctly correlated terminal
+result.
+
+### Visual capture
+
+`ui_action_capture_visual` opens explicit Host approval and prepares a
+removable ordinary composer file. It never sends the message. Target or region
+capture is the default, and viewport capture is offered only when the request
+sets `allow_viewport_choice`. The approved image is uploaded as an ordinary
+file, so the application's upload type must accept `image/png`, and
+`image/webp` when that format is requested.
+
+When the user later sends a message that still includes the file, the Host adds
+one `wippy.attention.visual` attachment that references the upload. This
+happens even when automatic pointing context is off. Semantic Attention
+attachments contain no screenshot bytes or upload references.
+
+The session upload authorizer and byte resolver are implemented through the
+content-provider contract. Before persistence, the session layer validates
+reference structure, session binding, expiry, media type, size, and digest,
+then authorizes the reference and verifies the resolved bytes. An attached
+reference that cannot pass these checks rejects the complete send atomically;
+it is not silently removed to persist a semantic-only message.
+
+When rendering an accepted message, the framework emits image input only when
+an authorized `visual_resolver` returns bytes that pass media-type, size, and
+SHA-256 checks. Later expiry, denied access, an unavailable resolver, or
+invalid bytes omits the image and returns a render diagnostic without changing
+the persisted message; other valid semantic context remains renderable.
+
+Deployments must verify capture, redaction, ordinary-file authorization, expiry
+and orphan cleanup independently. A byte resolver alone does not establish
+those behaviors.
+
+### Errors during a turn
+
+A model or provider error ends only the current turn. The user sees the error
+and can send the message again in the same Session. If the Session process
+stopped because of a crash, the next message reopens it.
+
+See [Web Host Attention Context](../frontend/web-host/attention-context.md#agent-clarification-actions)
+for the overlay behavior and [Relay](./relay.md#attention-ui-action-routing) for
+connection targeting.
 
 ## Streaming
 
@@ -490,8 +741,8 @@ Traits are reusable definitions that contribute prompts, tools, and behavior to 
     prompt: You are a helpful assistant.
     model: gpt-4o
     traits:
-      - time_aware
-      - id: custom_trait
+      - wippy.agent.traits:time_aware
+      - id: app:custom_trait
         context:
           key: value
 ```
@@ -500,17 +751,39 @@ Traits are reusable definitions that contribute prompts, tools, and behavior to 
 
 | Trait | Description |
 |-------|-------------|
-| `time_aware` | Injects current date and time into the prompt |
+| `wippy.agent.traits:time_aware` | Declares per-turn time context for the host to render and store |
+| `wippy.agent.traits:attention` | Adds the Attention read tools, `attention_context_set` and the UI action tools. See [Attention context and UI actions](#attention-context-and-ui-actions). |
 
 The `time_aware` trait accepts context options:
 
 ```yaml
     traits:
-      - id: time_aware
+      - id: wippy.agent.traits:time_aware
         context:
           timezone: America/New_York
-          time_interval: 15
+          time_format: "2006-01-02 15:04 MST"
 ```
+
+The build function contributes `agent_options.turn_context.time = { timezone, format }` and no prompt text. `timezone` defaults to UTC; `time_format` is an optional Go time layout. The legacy `time_interval` is ignored. Hosts render once per user turn with `wippy.agent:turn_context` and persist the note after the user message:
+
+```yaml
+modules: [time]
+imports:
+  turn_context: wippy.agent:turn_context
+```
+
+```lua
+local turn_context = require("turn_context")
+local time = require("time")
+
+local note, err = turn_context.render(runner.agent_options, time.now())
+if err then return nil, err end
+if note then
+    conversation:add_system(note, { preserve_position = true })
+end
+```
+
+Keep this note unchanged on later steps. Session and Dataflow hosts persist it automatically. Unknown or empty timezones and invalid formats fail rendering; a malformed `time_format` fails trait compilation.
 
 The `wippy/session` module, version 0.6.3 or newer, provides two traits for live session input:
 
@@ -525,10 +798,54 @@ the public interaction state.
 ### Custom Traits
 
 Traits are registry entries with `meta.type: agent.trait`. They can contribute:
+
 - **prompt** - static text appended to the system prompt
 - **build_func_id** - function called at compile time to contribute tools, prompts, delegates
-- **prompt_func_id** - function called at each step to inject dynamic content
+- **prompt_func_id** - function called at each step whose returned system text must stay stable across the conversation
 - **step_func_id** - function called at each step for side effects
+
+Changing per-step context belongs in persisted positional notes. Lifecycle messages from `activate` and `before_step` must use `developer` or `system`; Session and Dataflow reject other roles. A failed prompt function fails the step before provider dispatch.
+
+### Behaviors and Compaction
+
+Put `behaviors` directly on the trait registry entry, alongside `meta`; do not nest it under `data`. Attach a trait to set per-agent checkpoint defaults:
+
+```yaml
+entries:
+  - name: compaction
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      name: Compaction
+    behaviors:
+      compaction:
+        handles: [checkpoint]
+        checkpoint:
+          token_threshold: 12000
+          model: class:fast
+          temperature: 0.2
+          max_tokens: 3000
+
+  - name: assistant
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      name: assistant
+    prompt: You are a helpful assistant.
+    model: gpt-4o
+    traits: [app:compaction]
+    agent_options:
+      checkpoint:
+        token_threshold: 16000
+```
+
+This behavior has no checkpoint handler and configures the host's default summarizer. Only behaviors without a checkpoint handler (`handlers.checkpoint` or the shared `handler`) promote `model`, `temperature`, Session's `max_tool_result_chars`, `max_conversation_chars`, `max_tool_results`, `max_tool_results_chars`, and Dataflow's `max_row_chars` into `agent_options.checkpoint`. With a handler, those keys remain local to its binding. The keys `enabled`, `function_id`, `max_memory_chars`, `max_tokens`, `strict` and `token_threshold` are promoted either way. Other checkpoint keys are not promoted.
+
+Behavior options merge in this order: trait options, behavior options, attachment options, phase options. Maps compile in key order; arrays retain declaration order. Checkpoint scheduling merges trait defaults, explicit `agent_options.checkpoint`, then host `config.checkpoint`. Session-wide defaults precede the agent values. Maps merge recursively; lists replace, including empty lists. False, zero and empty strings are explicit overrides.
+
+The detached effective checkpoint options override binding defaults and reach both the binding and function fallback. Bindings run first; a strict binding failure prevents fallback. Absent configuration does not enable checkpointing. See [Sessions](./sessions.md#checkpoints) and [Dataflow](./dataflow.md#agent-checkpoints) for scheduling and sizing.
+
+Tool wrappers must preserve every original call ID exactly once, even when redirecting tools or reordering calls. Missing, duplicated or added IDs fail validation before execution.
 
 ## Memory
 
@@ -565,7 +882,7 @@ Configure dynamic memory recall through an external implementation:
         min_conversation_length: 2
 ```
 
-The memory contract is called during `runner:step()` to recall relevant items based on the conversation context. Results are injected as developer messages.
+The memory contract is called during eligible steps to recall relevant background context. Results are sent as positional developer messages and returned in `context_notes` for the host to persist. Recall failures do not stop generation; `memory_recall_error` describes the failure. An empty memory list is not an error.
 
 | Option | Default | Description |
 |--------|---------|-------------|

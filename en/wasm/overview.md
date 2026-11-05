@@ -34,6 +34,10 @@ registered. See the Rust/WASM tutorial for a project with a compiled component.
 5. Function arguments and return values are mapped between Lua tables and WIT types
 6. Supported dispatcher-bridged operations, including clock polling and outgoing HTTP, yield so the scheduler can run other work
 
+## Compilation Cache
+
+Compiled code and Asyncify transforms are cached across loads and restarts. The disk cache is enabled by default at `~/.wippy/cache/wasm` (`WIPPY_CACHE_DIR` overrides the cache root). Set `wasm.cache.dir` to change the directory or `wasm.cache.enabled: false` to use memory only. An unusable cache directory logs a warning and falls back to memory.
+
 ## Component Model
 
 Wippy supports the WebAssembly Component Model with WIT (WebAssembly Interface Types). Component modules map these types between the host and guest:

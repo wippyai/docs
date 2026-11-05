@@ -60,6 +60,10 @@ questions:
       - id: wippy.session.forms:ask_user
 ```
 
+The trait ships with Session Forms, so the app needs a `wippy/session` release
+that includes them.
+<!-- TODO: name the Session version here when the release PR exists. -->
+
 To let the agent also ask for text, numbers, email addresses, dates and
 checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
 
@@ -617,7 +621,7 @@ setting.
 | --- | --- |
 | The session is idle | The answer is admitted at once, and a new turn starts |
 | A turn is running | The answer is pending, and `read_form` reports `answer_pending`. It is admitted when the turn ends, in acceptance order together with any typed input the session held during the turn |
-| The user pressed Stop | The answer is admitted into the history and no turn starts. The same happens when the session plugin has to cancel or terminate a session that does not stop in time |
+| The user pressed Stop | Stop cancels the turn's in-flight model and tool calls. The answer is admitted into the history and no turn starts. The same happens when the session plugin has to cancel or terminate a session that does not stop in time |
 | The session is finishing, or its process is not running | The answer stays pending until the process starts again. The session plugin starts stopped sessions that hold pending answers |
 
 Once admitted, the answer's message is dated at the moment of admission, so
@@ -634,6 +638,31 @@ and the server escapes `'`, `<`, `>`, and `&` in the record, so user text
 cannot end the attribute, close the tag, or add markup. The checks that the
 state endpoint applies to every request are listed in
 [The artifact-state HTTP API](../frontend/micro-frontends/session-forms.md#the-artifact-state-http-api).
+
+## Upgrading
+
+The `wippy/session` release that adds Session Forms has these breaking changes.
+<!-- TODO: name the Session version here when the release PR exists. -->
+
+- **New `ui_server` requirement.** The module serves the form components from
+  an HTTP server. The requirement `wippy.session.forms.ui:ui_server` defaults
+  to `app:gateway`. If your app's HTTP server has another name, set the
+  requirement to that name. If you do not, the static routes of the form
+  component break.
+- **Minimum Web Host.** The question card needs Wippy Web Host 1.0.65 or
+  newer. See
+  [Host requirement](../frontend/micro-frontends/session-forms.md#host-requirement).
+- **Foreign artifacts return 404.** Reading an artifact that belongs to
+  another user now returns 404, as for a missing artifact. It used to return
+  403.
+- **Stop settles the session idle.** When an enforced Stop ends a turn, the
+  session is stored idle and `can_send` is true.
+- **A stored `running` status reads as idle.** If no session process is
+  alive, a session stored as `running` is reported as idle.
+- **Dates are stored and returned in UTC.**
+- **`reader:list_pending_inputs` is removed.** The `reader` library no longer
+  has this method. Code that calls it must use another way to read pending
+  inputs.
 
 ## Disabling and rolling back
 

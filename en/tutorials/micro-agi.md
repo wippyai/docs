@@ -517,6 +517,7 @@ Uses the same coroutine + channel pattern from the [LLM Agent tutorial](tutorial
 ```lua
 coroutine.spawn(function()
     local response, err = session.runner:step(session.conversation, {
+        drop_stale_thinking = true,
         stream_target = {
             reply_to = process.pid(),
             topic = STREAM_TOPIC,
@@ -525,6 +526,12 @@ coroutine.spawn(function()
     done_ch:send({ response = response, err = err })
 end)
 ```
+
+When adapting the loop to Agent 0.5.11, keep each response's `context_notes`
+before its output and store `metadata.thinking_blocks`, `content_positions`
+and `prefix_fingerprint` on its assistant row. Append all calls before their
+results and pass `response.route_pin` as `route` on later steps of the same
+turn. The [LLM Agent tutorial](./llm-agent.md#phase-5-tools) shows that loop.
 
 ### Tool Execution
 
@@ -575,18 +582,26 @@ end
 
 The conversation is preserved across reloads because it lives in the prompt builder, not in the runner.
 
+Loading tools changes the system/tool prefix. Store the fingerprint with each
+response and use `drop_stale_thinking` so known stale thinking is removed before
+the next request. The fingerprint does not detect edits to earlier messages.
+
 ### Context Compression
 
-When prompt tokens exceed 300K (75% of the 400K context window), the conversation is compressed using GPT-4.1 Nano:
+For the 400K model card above, a 300K threshold leaves room for output. With the
+current LLM, check normalized `context_tokens`, which includes cached input:
 
 ```lua
-if response.tokens and response.tokens.prompt_tokens
-    and response.tokens.prompt_tokens > PROMPT_TOKEN_LIMIT then
+if response.tokens and response.tokens.context_tokens
+    and response.tokens.context_tokens > PROMPT_TOKEN_LIMIT then
     try_compress()
 end
 ```
 
-Compression extracts message content, calls `compress.to_size()` targeting 4000 characters, and replaces the conversation with a summary:
+Once all calls have results, compression can serialize the conversation and
+call `compress.to_size()` targeting 4000 characters. Include call arguments,
+results and context notes in `full_text`. A positional developer summary leaves
+conversation content for drivers that reject a system-only request:
 
 ```lua
 local summary, compress_err = compress.to_size(COMPRESS_MODEL, full_text, COMPRESS_TARGET)
@@ -594,8 +609,15 @@ if compress_err then
     return nil, compress_err
 end
 session.conversation = prompt.new()
-session.conversation:add_system("Conversation summary:\n\n" .. summary)
+session.conversation:add_developer("Conversation summary:\n\n" .. summary, {
+    preserve_position = true,
+})
 ```
+
+This deliberately replaces the prefix and its earlier thinking. These are
+adaptation snippets for the released framework; they do not establish that the
+published Micro AGI package implements the same history handling. For durable
+rolling summaries and recovery, see [Dataflow checkpoints](../framework/dataflow.md#agent-checkpoints).
 
 ## Security Model
 

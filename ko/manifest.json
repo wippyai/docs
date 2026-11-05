@@ -182,6 +182,7 @@
         "title": "웹 호스트",
         "children": [
           {"title": "개요", "path": "frontend/web-host/overview"},
+          {"title": "Attention 빠른 시작", "path": "frontend/web-host/attention-quickstart"},
           {"title": "프런트엔드 Facade", "path": "frontend/web-host/entry-point"},
           {"title": "부트스트랩 순서", "path": "frontend/web-host/bootstrap"},
           {"title": "멀티 패널 레이아웃", "path": "frontend/web-host/multi-panel-layout"},
@@ -189,7 +190,8 @@
           {"title": "프록시 및 격리", "path": "frontend/web-host/proxy-isolation"},
           {"title": "CSS 주입", "path": "frontend/web-host/css-injection"},
           {"title": "테마 지속성", "path": "frontend/web-host/theme-persistence"},
-          {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"}
+            {"title": "@wippy-fe 패키지", "path": "frontend/web-host/packages"},
+            {"title": "Iconify 공급자", "path": "frontend/web-host/iconify"}
         ]
       },
       {
