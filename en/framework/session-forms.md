@@ -318,12 +318,12 @@ enough that the input schema of the `ask_user_fields` tool lists it in full.
   `(a+)+`.
 
 A pattern also counts at most 100 with every repeat written out. A literal, a
-class, `.`, `^` and `$` count 1, and so does a repeat of zero, as in `a{0}`,
-and an empty group. `a{n}` and `a{m,n}` count n times what they
-repeat, `a{m,}` counts m + 1 times, and `*`, `+` and `?` count what they repeat
-once. Nested repeats multiply, and items in a row and alternatives add up, so
-`(ab){5}` counts 10 and `(a{5}){3}` counts 15. The limit keeps the check short,
-because the server runs it while it holds the lock that accepts the answer.
+class, `.`, `^`, `$` and an empty group count 1. `a{n}` and `a{m,n}` count n
+times what they repeat, `a{m,}` counts m + 1 times, and `*`, `+`, `?` and a
+repeat of zero count what they repeat once, so `(ab){0}` counts 2. Nested
+repeats multiply, and items in a row and alternatives add up, so `(ab){5}`
+counts 10 and `(a{5}){3}` counts 15. The limit keeps the check short, because
+the server runs it while it holds the lock that accepts the answer.
 
 Anything else is rejected when the form is created, including lookahead and
 lookbehind, backreferences, named groups, flags such as `(?i)`, the escapes
