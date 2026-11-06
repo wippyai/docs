@@ -318,7 +318,8 @@ enough that the input schema of the `ask_user_fields` tool lists it in full.
   `(a+)+`.
 
 A pattern also counts at most 100 with every repeat written out. A literal, a
-class, `.`, `^` and `$` count 1. `a{n}` and `a{m,n}` count n times what they
+class, `.`, `^` and `$` count 1, and so does a repeat of zero, as in `a{0}`,
+and an empty group. `a{n}` and `a{m,n}` count n times what they
 repeat, `a{m,}` counts m + 1 times, and `*`, `+` and `?` count what they repeat
 once. Nested repeats multiply, and items in a row and alternatives add up, so
 `(ab){5}` counts 10 and `(a{5}){3}` counts 15. The limit keeps the check short,
@@ -370,13 +371,17 @@ leaves unanswered is left out, and a value of `null` counts as not sent.
 An answer that breaks a rule is refused with the code in the right column, and
 the whole submission is then rejected with a 422 response and nothing is
 stored. The rules of a type run in the order of its rows, and the first
-failure is the one reported for the question.
+failure is the one reported for the question. One check for `text` and
+`textarea` runs before all the others: a value of more than four bytes for each
+character that `max_length` allows is refused with `too_long` before the server
+reads it as UTF-8 or looks for control characters. An oversized value that also
+holds a control character gets `too_long`, not `invalid_text`.
 
 | Type | Rule | Code |
 | --- | --- | --- |
 | `text`, `textarea` | The value is a string | `invalid_type` |
-| `text`, `textarea` | The value is valid UTF-8 and has no control character. A `text` answer allows no tab or line break. A `textarea` answer allows tabs and line feeds (`\n`) and refuses carriage returns | `invalid_text` |
-| `text`, `textarea` | At most `max_length` characters, counted as sent | `too_long` |
+| `text`, `textarea` | The value is valid UTF-8 and has no control character. A `text` answer allows no tab or line break. A `textarea` answer allows tabs and line feeds (`\n`) and refuses carriage returns. This check comes after the size check in the next row | `invalid_text` |
+| `text`, `textarea` | At most `max_length` characters, counted as sent. A value of more than `max_length` times 4 bytes is refused with this code first, before the row above is checked | `too_long` |
 | `text`, `textarea` | At least `min_length` characters, checked only when the question is answered | `too_short` |
 | `text` | The whole value matches `pattern` | `pattern_mismatch` |
 | `email` | The value is a string | `invalid_type` |
@@ -726,7 +731,7 @@ fields[2].step: invalid_step: Must be more than zero.
 
 | Code | When |
 | --- | --- |
-| `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label` |
+| `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label`, or the `options` of a `choice` field |
 | `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
 | `unknown_key` | A key the form or the field's type does not take |
 | `unsupported_type` | `type` is not one of the seven names, or the tool does not take it, because `ask_user` takes only `choice`. Names are case sensitive. The message lists the types that the tool takes: `Supported types: choice.` from `ask_user`, for a standard field or a name that is not a type at all, and all seven names from `ask_user_fields`. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
@@ -734,7 +739,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `blank` | A required text, `submit_label` or `answered_message` has no visible character |
 | `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
 | `too_long` | Definition text is over its limit |
-| `too_few`, `too_many`, `duplicate_option` | Fields or options are missing, over 20, or repeated |
+| `too_few`, `too_many`, `duplicate_option` | `fields` or `options` is an empty list (a missing list is `required`), a list is over 20, or an option is repeated |
 | `too_large` | The normalized definition is over 32 KiB |
 | `invalid_range` | A limit is outside its allowed range: a length, a `min_length` above `max_length`, a `min` or `max` over 1,000,000,000,000 or with more than 6 decimals, a `min` above `max`, an `integer` number with no whole number between `min` and `max`, or a date bound that is not a real date |
 | `invalid_step` | A `step` that is not above 0, is over 1,000,000,000,000, has more than 6 decimals, or is not whole on an `integer` number (the same when `min` is not whole) |

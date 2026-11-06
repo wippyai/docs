@@ -218,7 +218,8 @@ named `artifactState` export from `@wippy-fe/proxy` in a host-mounted web
 component). Web Host 1.0.65 or later exports it, and no earlier release does.
 Version 2 forms add no Web Host requirement, because the controls ship inside
 the `wippy-form` bundle. The matching npm release for version 1 forms is
-`@wippy-fe/*` 0.0.65. Version 2 forms need a later `@wippy-fe` types package.
+`@wippy-fe/*` 0.0.65. Only the TypeScript types for version 2 forms need a later
+`@wippy-fe` types package. A version 2 form works at run time without it.
 <!-- TODO: name the @wippy-fe version here when the types package for version 2 forms is published. -->
 The `wippy/session` module release that ships the forms is the one that adds
 Session Forms.
@@ -232,7 +233,7 @@ what the card shows.
 | --- | --- |
 | `form-version` prop or loaded state's `form_version` is neither `1` nor `2`, or a field has a type the component does not know | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
 | The Host has no `artifactState` export (a Web Host before 1.0.65) | The questions with their controls disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every control is empty, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
-| The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions rendered read-only, with "This form cannot be submitted here." |
+| The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions with their controls disabled and empty, with "This form cannot be submitted here." |
 
 The older `instance.form` adapter that `artifactState` replaces always sends
 `form_version: 1`, so forms use `artifactState`. It is described under [`artifactState` and the deprecated
@@ -740,7 +741,7 @@ to wait for a state in an end-to-end test.
 | `card-state` | Meaning |
 | --- | --- |
 | `loading` | Before the artifact's first `GET` resolves. `<wippy-loading>` shows instead of the card. |
-| `active` | Answerable. A question, the review step, or briefly, the submitting state. |
+| `active` | Answerable. A question, or briefly, the submitting state. |
 | `review` | The review step of a several-question form, before "Send answers". |
 | `answered` | The read-only summary of an accepted submission. |
 | `unsupported` | An unrecognized `form-version` (neither `1` nor `2`, from the prop or the loaded state), a field type the component does not know, or a Web Host without the `artifactState` export. It takes priority over every other value, so the card is never interactive or submittable. |
