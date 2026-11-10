@@ -69,6 +69,7 @@
           {"title": "JSON", "path": "lua/data/json"},
           {"title": "YAML", "path": "lua/data/yaml"},
           {"title": "TOML", "path": "lua/data/toml"},
+          {"title": "XML", "path": "lua/data/xml"},
           {"title": "Base64", "path": "lua/data/base64"},
           {"title": "Compress", "path": "lua/data/compress"},
           {"title": "Archive", "path": "lua/data/archive"},
