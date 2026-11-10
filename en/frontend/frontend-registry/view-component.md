@@ -21,8 +21,8 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `type` | string | `"widget"` in the runtime descriptor | Optional; when present, must be `"component"` or `"widget"`. Build configuration, not this field, selects the Vite plugin |
-| `tagName` | string | — | Custom element name. The 0.0.66 plugin requires a lowercase ASCII name that starts with a letter, contains a hyphen, uses only letters/digits/hyphens, and is not an HTML reserved custom-element name |
-| `props` | object | — | JSON Schema describing the component's accepted attributes |
+| `tagName` | string | — | Custom element name. The 0.0.68 plugin requires a lowercase ASCII name that starts with a letter, contains a hyphen, uses only letters/digits/hyphens, and is not an HTML reserved custom-element name |
+| `props` | object | — | JSON Schema describing the component's accepted attributes. Declare it even when the component takes no props (`{ "type": "object", "properties": {} }`): `loadWebComponent()` rejects an artifact-delivered component package that has no `wippy.props`. Registry autoload does not check it |
 | `events` | object | — | JSON Schema describing the custom DOM events the component emits |
 
 ### `wippy.type` in `package.json`
@@ -128,7 +128,7 @@ These fields are set by the operator in the `meta` block of the `_index.yaml` re
 | `secure` | boolean | `false` | Requires authentication |
 | `url` | string | — | Static mount path for the component's built bundle |
 | `base_path` | string | `""` | Optional subpath appended to `url` to form the project root; the resolved bundle URL composes as `<url>/<base_path>/<entry_point>`. Honored identically to pages, though current app-template component entries omit it |
-| `entry_point` | string | `wippy.browser` → `index.js` | FE-authored as the top-level `browser` field in `package.json` (baked into `wippy-meta.json`); the YAML key overrides the bundled value, falling back to `index.js`. Entry module file; the host injects this as a `<script type="module">` |
+| `entry_point` | string | `browser` → `index.js` | FE-authored as the top-level `browser` field in `package.json` (baked into `wippy-meta.json`); the YAML key overrides the bundled value, falling back to `index.js`. Entry module file; the host injects this as a `<script type="module">` |
 
 A minimal entry looks like this:
 

@@ -14,7 +14,7 @@ description: "Theming reference covers the full CSS variable catalog. This doc c
 Shadow DOM blocks CSS cascade — stylesheets written outside your component do not apply inside it. However, CSS custom properties (variables) **do** cross the shadow boundary. This means:
 
 - Custom properties inherit across the shadow boundary. WippyElement also bridges every configured variable name through its forced-theme inner root, so locally loaded `theme-config.css` defaults cannot reset configured values.
-- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in — you must load them explicitly via `hostCssKeys`.
+- PrimeVue component styles, Tailwind utilities, and other rule-based stylesheets do **not** cascade in — load host assets explicitly via `hostCssKeys`, and deliver the Tailwind utilities your component uses through its own compiled `inlineCss`. No host CSS key carries Tailwind utilities.
 
 ---
 
@@ -22,7 +22,7 @@ Shadow DOM blocks CSS cascade — stylesheets written outside your component do 
 
 **L1 — Global:** CSS custom properties cross the shadow boundary. WippyElement enumerates the effective global/children/page variable maps, including `@light` / `@dark`, and installs a generic inheritance bridge before the injected custom CSS layer.
 
-**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to load these explicitly into the shadow root.
+**L2 — Scoped:** Same as L1 for custom properties. Stylesheet-based CSS (PrimeVue, Tailwind) does not cascade — use `hostCssKeys` to load the PrimeVue asset into the shadow root, and `inlineCss` for the Tailwind utilities compiled in your build.
 
 **L3 — Per-page config_overrides:** CSS vars set via operator `config_overrides` reach the WC host and inner theme root through the same generic bridge.
 
@@ -75,7 +75,7 @@ Choose independently:
 - A presentation-neutral canvas/SVG/chart with no standard product controls, host semantic tokens, or utility classes may omit PrimeVue, the theme asset, and Tailwind.
 - Any button, input, form, table, dialog, menu, tag, tooltip, or feedback control requires its PrimeVue equivalent, `PrimeVuePlugin`, and `primeVueCssUrl`.
 - Host semantic tokens, dark mode, or themed chrome require `themeConfigUrl`.
-- Tailwind is required when source authors Tailwind utility classes.
+- Tailwind is required in the component's own build when source authors Tailwind utility classes; the compiled utilities reach the shadow root through `inlineCss`, not through a host CSS key.
 - Scrollable content requires `iframeCssUrl`.
 
 ### `inlineCss` — build-time CSS

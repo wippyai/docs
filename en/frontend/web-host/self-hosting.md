@@ -28,7 +28,7 @@ Add the dependency where the application declares its modules:
 - name: cdn_web_host
   kind: ns.dependency
   component: wippy/cdn-web-host
-  version: "0.0.66"
+  version: "0.0.68"
   parameters:
     - name: server
       value: app:gateway
@@ -58,7 +58,7 @@ The Web Host does not discover CDN modules.
 With the example above, the contributor supplies:
 
 ```text
-fe_facade_url = https://app.example/cdn/web-host/webcomponents-1.0.66
+fe_facade_url = https://app.example/cdn/web-host/webcomponents-1.0.68
 host_policy_mode = shared
 ```
 
@@ -119,7 +119,7 @@ separate Views fragment import-map and scopes limitation.
 
 An external prefix changes the Host asset URLs only. For example,
 `public_url=https://app.example/tenant` selects
-`https://app.example/tenant/cdn/web-host/webcomponents-1.0.66`. Configure the
+`https://app.example/tenant/cdn/web-host/webcomponents-1.0.68`. Configure the
 reverse proxy to forward that asset path to the application's versioned
 router. This does not relocate Facade's own root-relative bootstrap, config,
 or CSS routes below `/tenant`.
@@ -132,12 +132,12 @@ Generated module output needs no Host submodule. Host CI does not build or
 publish Wippy modules.
 
 Use a Host release tag that includes `wippy/cdn-web-host/Makefile`, Node.js 22
-or later, and pnpm `10.24.0`. This example builds Host `1.0.66` and module
-`0.0.66`:
+or later, and pnpm `10.24.0`. This example builds Host `1.0.68` and module
+`0.0.68`:
 
 ```sh
-git clone --branch webcomponents-1.0.66 --single-branch git@git.spiralscout.com:estimation-engine/wippy-web-host.git web-host-1.0.66
-cd web-host-1.0.66
+git clone --branch webcomponents-1.0.68 --single-branch git@git.spiralscout.com:estimation-engine/wippy-web-host.git web-host-1.0.68
+cd web-host-1.0.68
 corepack enable
 corepack prepare pnpm@10.24.0 --activate
 pnpm install --frozen-lockfile

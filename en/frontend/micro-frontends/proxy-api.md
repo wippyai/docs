@@ -536,7 +536,7 @@ const stopLayoutChanges = on('@layout-change', (snapshot) => {
 layout.resizePanel('right', '40%')
 layout.collapsePanel('nav')
 layout.expandPanel('nav')
-layout.movePanel('right', { relativeTo: 'main', position: 'after' })
+layout.movePanel('right', { relativeTo: 'main', position: 'right' })  // position: 'left' | 'right' | 'top' | 'bottom' | 'center' | 'none'
 layout.removePanel('right')
 layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} replaces content wholesale
 layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} shallow-merges into existing props
@@ -726,7 +726,7 @@ only when that path initiated it; report other stream failures normally.
 To default all requests to the fetch adapter:
 
 ```jsonc
-// In package.json → wippy.configOverrides, or window.__WIPPY_CONFIG_OVERRIDES__
+// In package.json → wippy.configOverrides, or registry meta.config_overrides
 {
   "axiosDefaults": { "adapter": "fetch" }
 }
@@ -878,7 +878,7 @@ class MyEl extends HTMLElement {
 
 | Topic | Handler payload | Description |
 |-------|-----------------|-------------|
-| `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
+| `@history` | `{ path: string, navId?: number }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
 | `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
 | `@theme` | `'auto' \| 'light' \| 'dark'` | Applied theme mode propagated by the Host. |
 | `@config` | No payload | Effective child config changed. Read the refreshed config after this notification. Available with Web Host 1.0.62. |
@@ -1194,20 +1194,22 @@ Pages can override selected child-facing config fields per page without a separa
 
 **Registry pages (recommended):** Set `meta.config_overrides` in the page's `_index.yaml`. The host includes it in the content API response and injects it automatically.
 
-**Standalone packages:** Set `wippy.configOverrides` in the page's `package.json`.
+**Standalone packages and host-less mode:** Set `wippy.configOverrides` in the page's `package.json`. In host-less mode the development proxy applies its `customization` part.
 
-**Manual / testing:** Set `window.__WIPPY_CONFIG_OVERRIDES__` in a `<script>` tag that runs before `proxy.js`.
-
-```typescript
-window.__WIPPY_CONFIG_OVERRIDES__ = {
-  customization: {
-    cssVariables: {
-      '--p-primary': '#ff6b00',
-    },
-    customCSS: '.my-page-header { border-radius: 12px; }',
-  },
+```json
+{
+  "wippy": {
+    "configOverrides": {
+      "customization": {
+        "cssVariables": { "--p-primary": "#ff6b00" },
+        "customCSS": ".my-page-header { border-radius: 12px; }"
+      }
+    }
+  }
 }
 ```
+
+The host merges overrides before it sends config to the page. The page runtime does not read `window.__WIPPY_CONFIG_OVERRIDES__`; assigning that global has no effect.
 
 ### Merge rules
 
@@ -1216,9 +1218,9 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 | `cssVariables` | **Replaces** the host's values — the page provides its own theme |
 | `customCSS` | **Replaces** the host's value |
 | `iconSets` | **Merged** additively |
-| `axiosDefaults` | **Deep merged** |
+| `axiosDefaults` | **Shallow merged** — top-level keys merge; a nested object such as `headers` is replaced as a whole |
 | `routePrefix` | **Replaced** |
-| `apiRoutes` | **Deep merged** |
+| `apiRoutes` | **Replaced** — supply the complete route map |
 
 Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits it automatically, recursively down the sub-tree. So a page's overrides (especially theming) propagate to everything beneath it, not just to the page itself.
 

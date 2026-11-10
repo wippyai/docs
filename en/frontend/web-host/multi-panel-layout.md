@@ -82,8 +82,8 @@ the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
 Pin to an exact CDN tag until the Draft 1 label is removed. The current release
-is `https://web-host.wippy.ai/webcomponents-1.0.66` with the matching
-`@wippy-fe/*` `0.0.66` family. This reference was last validated against
+is `https://web-host.wippy.ai/webcomponents-1.0.68` with the matching
+`@wippy-fe/*` `0.0.68` family. This reference was last validated against
 Web Host 1.0.56 and `0.0.56`. The release map lists the managed-layout changes
 after that release. Retained direct-web-component visibility still requires at
 least 1.0.52/0.0.52.
@@ -240,15 +240,19 @@ coordinators:
 A coordinator component receives the panel-scoped host wrapper and can subscribe to bus channels immediately in `onMount`:
 
 ```typescript
-import { WippyElement } from '@wippy-fe/webcomponent-core'
+import { getWippyHost, WippyElement } from '@wippy-fe/webcomponent-core'
+// ProxyApiInstance is an ambient global type (from @wippy-fe/types-global-proxy) — reference it without an import.
 
 class MyCoordinator extends WippyElement {
   private offOpenChat: (() => void) | null = null
 
   protected onMount() {
-    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
-      this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
-      this.host?.layout.expandPanel('right')
+    // `this.host` is typed `unknown`; read the same panel-scoped wrapper with a type argument.
+    const host = getWippyHost<ProxyApiInstance['host']>(this)
+    this.offOpenChat = host?.layout.on('open-chat', ({ payload }) => {
+      const { token } = payload as { token: string }
+      host.layout.updatePanel('right', { route: `/open-chat/${token}` })
+      host.layout.expandPanel('right')
     }) ?? null
   }
   protected onUnmount() {
@@ -310,12 +314,11 @@ The `sourcePanelId` on received messages is set by the host from the publishing 
 **Important:** Components that import `host` directly from `@wippy-fe/proxy` bypass panel scoping — bus calls go through but lose `sourcePanelId`. Always use the panel-scoped wrapper instead:
 
 ```typescript
-// raw HTMLElement
+// raw HTMLElement or WippyElement subclass. `this.host` on WippyElement is the
+// same panel-scoped wrapper, but it is typed `unknown`, so pass the type argument.
 import { getWippyHost } from '@wippy-fe/webcomponent-core'
-const host = getWippyHost(this)
-
-// WippyElement subclass — this.host is already panel-scoped
-this.host?.layout.broadcast('open-chat', { token: 'abc' })
+const panelHost = getWippyHost<ProxyApiInstance['host']>(this)
+panelHost?.layout.broadcast('open-chat', { token: 'abc' })
 
 // Vue component
 import { useHost } from '@wippy-fe/webcomponent-vue'
@@ -340,7 +343,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a modal. The public 0.0.66 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.68 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
