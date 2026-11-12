@@ -384,7 +384,7 @@ Limits must be at least 1; `max_bytes` may be 0.
 | `max_tag_bytes` | integer | 1 MiB | One start tag with its attributes, or one comment |
 | `max_node_bytes` | integer | 8 MiB | Serialized size of one tree written by `encode`, `w:node` or `w:element` |
 
-The limits mirror the reader's. Raise `max_node_bytes` to encode a larger tree in one call, or write it incrementally with `start_element`, which has no size limit. `reader:copy` streams and is not bound by `max_node_bytes`.
+The limits mirror the reader's. Raise `max_node_bytes` to encode a larger tree in one call, or write it incrementally with `start_element` to avoid the per-tree `max_node_bytes` limit. `reader:copy` also streams without that per-tree limit. The depth, attribute, namespace and tag limits still apply to streamed output.
 
 Indentation is meant for data documents. An element written as a whole tree is indented inside only when all of its children are elements. When writing incrementally, a line break precedes a child element or closing tag until text is written into the parent.
 
@@ -412,9 +412,11 @@ HTML is not XML. Only well-formed XHTML parses.
 | Element table outside the rules above | `errors.INVALID` | `element` |
 | Method not valid in the current state | `errors.INVALID` | `state` |
 | Stream read or write failed | `errors.INTERNAL` | `io` |
+| XML dispatcher queue is full | `errors.UNAVAILABLE` | `io` |
+| XML dispatcher has stopped | `errors.UNAVAILABLE` | `state` |
 | Operation canceled | `errors.CANCELED` | `canceled` |
 
-Failures are final. Once a `next`, `node`, `skip`, `copy` or `records:read` fails, or any writer method fails, every later call on that reader, records or writer returns the same error, and the reader's accessors return `nil`. Calling a cursor method on the wrong event, such as `node` on a `text` event, is a `state` error that does not end the reader.
+Parsing, limit and stream I/O failures are final: later operations on that reader, records or writer return the stored error, and the reader's accessors return `nil`. Calling a cursor method on the wrong event, such as `node` on a `text` event, is a `state` error that does not end the reader. Dispatcher admission errors reject a command before it executes; they are distinct from a parsing or stream I/O failure.
 
 Parse errors carry the position and the open elements:
 
