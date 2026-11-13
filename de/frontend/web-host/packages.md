@@ -379,7 +379,7 @@ Das Host-Release enthält die statische Tabler-Sammlung unter `iconify/tabler.js
 
 Das veröffentlichte Host-Release verwendet PrimeVue 4.5.5. Das generierte
 Inventar liegt im versionierten Host-Stammverzeichnis. Der veröffentlichte
-Web Host ist Version 1.0.68, die öffentlichen Pakete sind Version 0.0.68.
+Web Host ist Version 1.0.69, die öffentlichen Pakete sind Version 0.0.69.
 Diese Versionen sind veröffentlicht; prüfen Sie die Tags vor der Nutzung.
 Datei: `primevue-export-inventory.json`.
 
@@ -419,7 +419,7 @@ Externalisierung liefert kein PrimeVue-CSS. Fordern Sie benötigte CSS-Ressource
 separat über die dokumentierten Host-CSS-Keys an. Die lokale Preview-CSS bleibt
 eine Voraussetzung für Phase 4.
 
-Dieses Inventar gehört zum veröffentlichten Web Host 1.0.68. Prüfen Sie URL und
+Dieses Inventar gehört zum veröffentlichten Web Host 1.0.69. Prüfen Sie URL und
 Inhalt anhand des veröffentlichten Host-Artefakts, bevor Sie es verwenden.
 
 Das JSON hat die Felder `schemaVersion`, `package`, `counts`, `exports` und

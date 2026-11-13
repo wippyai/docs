@@ -37,6 +37,7 @@ El layout managed abarca el Web Host, el facade y varios paquetes `@wippy-fe/*`.
 | Web Host `1.0.50`, Wippy FE `0.0.50` | Intents tipados de compat, `@HOST/compat-coordinator`, sincronización de la URL del navegador y de Atrás/Adelante, pestañas de panel incorporadas, paneles flotantes anclados y `useSwapBuffer()`. |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Control reactivo y seguro frente a carreras de sesión/token de `<wippy-chat>`, asas de splitter tematizadas opcionales, restricciones de tamaño solo en el eje de división, correcciones de geometría y apilado de drawers, y el source map del proxy empaquetado. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidad tipada de WC retenidos y `useHostVisibilityRefresh()`, disponibilidad inmediata de la página en lugar de esperar al respaldo de 14 segundos, rechazo de claves de renderizador obsoletas, actualizaciones de props de componente en el sitio, y la capa aislada del splitter con `--wippy-layout-splitter-z-index`. |
+| Web Host `1.0.69`, Wippy FE `0.0.69` | Las opciones `closable`, `emptyState` y `startToken` de `@HOST/chat-wrapper`, `@HOST/panel-tab` con `mode: 'auto'`, la clase `wippy-host-app` en la raíz managed y las llamadas de chat y navegación de una página actual pero oculta, que llegan a los coordinadores. |
 
 La revelación de página a los 14 segundos es un respaldo del Web Host `1.0.52`,
 no una característica de 1.0.51 ni un retardo de carga de la aplicación. El
@@ -65,7 +66,7 @@ inicial ordinaria con refrescos de revelación mediante
 solo en un `false -> true` exacto. No use el topic `@visibility` del proxy en un
 WC directo; es el canal de mensajes de iframe/Web Fragment.
 
-Fije un tag exacto del CDN hasta que se retire la etiqueta Draft 1. La versión actual es `https://web-host.wippy.ai/webcomponents-1.0.66`, con la familia `@wippy-fe/*` `0.0.66` correspondiente.
+Fije un tag exacto del CDN hasta que se retire la etiqueta Draft 1. La versión actual es `https://web-host.wippy.ai/webcomponents-1.0.69`, con la familia `@wippy-fe/*` `0.0.69` correspondiente.
 
 ## Habilitar el layout managed
 
@@ -132,6 +133,50 @@ Exactamente un panel del árbol de layout debe llevar `main: true`. La propiedad
 | `@HOST/panel-tab` | Pestaña de borde para revelar un panel colapsado; decláre­la bajo `floating` |
 
 Un `@HOST/<id>` desconocido provoca un `LayoutValidationError` al cargar la declaración, en lugar de renderizar en silencio un slot vacío.
+
+### Opciones de `@HOST/chat-wrapper`
+
+Tres opciones están pensadas para un layout cuyo propio coordinador gestiona el panel de chat. Las tres están desactivadas por defecto.
+
+```yaml
+panels:
+  chat:
+    kind: builtin
+    id: '@HOST/chat-wrapper'
+    props:
+      showSelector: true          # default true
+      closable: true              # default false
+      emptyState: { kind: component, tagName: my-chat-empty }
+      startToken: agent-start-token
+```
+
+| Opción | Qué hace |
+|--------|----------|
+| `closable` | Añade un botón Cerrar (nombre accesible `Close chat`) arriba a la derecha del chat. En un slot drawer cierra el drawer; en un slot en línea colapsa la columna. No se muestra en un slot en línea que no sea `collapsible`. |
+| `emptyState` | Una definición de panel que se muestra en lugar del estado vacío propio del chat mientras no hay ninguna sesión abierta. Use un `component` con un nombre de custom element válido, o el `@HOST/nav-sidebar` o el `@HOST/panel-tab` incorporados. Se ejecuta en el contexto del panel de chat: `data-wippy-panel-id` es el id del panel de chat, y recibe el mismo `host` con alcance de panel y el mismo bus que cualquier panel `kind: component`. Cualquier otra definición se ignora con una advertencia, y el chat muestra su propio estado vacío. |
+| `startToken` | Inicia una sesión a partir de un start token, como hace `<wippy-chat start-token>`. También funciona mientras el panel está oculto, por ejemplo en un drawer cerrado o en una columna colapsada. |
+
+Cómo se comporta `startToken`:
+
+- El panel canjea el token por una sesión nueva cuando se monta con un token, cuando el token cambia y cuando se vacía `sessionId` mientras hay un token definido. Mientras `sessionId` tiene un valor, el token no se usa.
+- Cuando la sesión está lista, el panel la muestra, define `props.sessionId` en el snapshot del layout, conserva `startToken` y publica un intent `openSession` atribuido al panel.
+- Una selección en el selector de sesiones cancela un inicio en curso, define `{ sessionId: <picked>, startToken: null }` y publica el mismo intent. Un coordinador distingue una selección de un inicio terminado por `props.startToken` del panel de chat en el snapshot del layout: `null` tras una selección, todavía definido tras un inicio terminado.
+- Un inicio fallido muestra un toast de error y vacía `startToken`, de modo que el layout emite un `change`. Definir de nuevo el mismo token inicia un canje nuevo.
+- Montar de nuevo el panel con el mismo id de panel no inicia una segunda sesión. Se cierra un inicio cuya sesión ya nadie puede mostrar. Un caso queda abierto: un inicio que terminó mientras el contenido del panel estaba sustituido conserva su sesión cuando el panel se elimina después.
+- Con `@HOST/compat-coordinator` enrutando sesiones (`chatPanel` o `artifactPanel` definido), el `openSession` de un inicio terminado expande el panel, de modo que un inicio en una columna colapsada abre la columna.
+- `startToken` forma parte de la definición del panel, por lo que está en el snapshot del layout que recibe cada frame hijo.
+
+Para Attention, el panel cuenta como visible cuando el layout lo presenta y su columna no está colapsada. Una columna colapsada no es visible, aunque el panel siga presentado. Mientras `showSelector` es `true`, el panel mantiene observada la lista de sesiones, de modo que el selector se actualiza como en el shell de compat. Estas opciones están pensadas para una entrada de `panels`: en un chat-wrapper flotante no se registra el estado en vivo del panel.
+
+### Modos de `@HOST/panel-tab`
+
+| `mode` | Revela con | Se oculta mientras el destino está visible |
+|--------|------------|---------------------------------------------|
+| `collapse` (por defecto) | `expandPanel` | No |
+| `drawer` | `openDrawer` | No |
+| `auto` | `openDrawer` cuando el destino está en un drawer, `expandPanel` cuando está en una columna colapsada | Sí: el drawer está abierto, o la columna no está colapsada |
+
+`auto` sirve para un panel que es un drawer en una pantalla estrecha y una columna colapsable en una ancha. Sigue el slot del destino en el breakpoint actual, y un destino que no está en el layout activo oculta la pestaña.
 
 ## Layouts indexados por breakpoint
 
@@ -414,6 +459,14 @@ su pista. Los montajes de drawer siguen la geometría animada del drawer y se
 promueven por encima de su ancla y de su backdrop solo mientras están abiertos,
 sin remontar su contenido.
 
+## Ámbito de CSS solo para el host
+
+La raíz del layout managed tiene la clase `wippy-host-app`, igual que la raíz de compat. Limite bajo ella el CSS exclusivo del host, por ejemplo `.wippy-host-app .chat-message { ... }`.
+
+- Las páginas en iframe no tienen la clase, así que estas reglas no las alcanzan.
+- Las ventanas flotantes y los modales se renderizan al final de `<body>`, fuera de la raíz, por lo que una regla bajo `.wippy-host-app` no los alcanza. Limite en cambio una regla para una ventana flotante con su atributo `[data-wippy-floating="<id>"]`.
+- Las páginas web component y los paneles `kind: component` están dentro de la raíz, por lo que una regla bajo `.wippy-host-app` también coincide con su contenido, salvo que ese contenido esté en un shadow root.
+
 ## Estilos del splitter y del asa
 
 El área de impacto del splitter es más ancha que su línea visible y vive en la
@@ -466,6 +519,8 @@ El shell managed renderiza **solo el layout que usted declara**. A partir del We
 | `onRouteChanged(route, navId?)` | Dirige la URL del navegador del host | Actualiza el estado de ruta del panel; `routeSync` proyecta la ruta del panel principal a la URL del navegador |
 
 Si todavía no hay un coordinador disponible, los intents de arranque se retienen en una cola acotada hasta la primera suscripción de un coordinador. Una declaración sin manejador la informa la tabla de paridad del arranque. Los intents reservados solo son legibles por las entradas de `coordinators` y no pueden ser falsificados por paneles ordinarios.
+
+Una página que es actual pero está oculta, por ejemplo en un drawer cerrado o en una columna colapsada, sigue publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` y `host.navigate()` como intents, de modo que los coordinadores los reciben. Estas llamadas ya no recurren al tratamiento de compat, que podía iniciar una sesión que ningún panel mostraba. Una página que un panel ha sustituido ya no es actual, y sus llamadas se descartan.
 
 ## Enfoque de gestión de estado
 
