@@ -20,10 +20,12 @@ These fields are authored by the FE developer in the `wippy` block of `package.j
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `title` | string | — | Label shown in the navigation sidebar and browser tab |
-| `icon` | string | — | Iconify icon reference, e.g. `tabler:layout-dashboard` |
+| `title` | string | — | Page title in the page descriptor. The navigation sidebar does not read it (see below) |
+| `icon` | string | — | Iconify icon reference, e.g. `tabler:layout-dashboard`. Recorded in `wippy-meta.json`; the navigation sidebar does not read it (see below) |
 | `type` | string | — | Must be `"page"` |
 | `path` | string | — | Path to the built HTML entry file within the bundle output directory |
+
+> **The navigation list reads the registry entry only.** `GET /api/public/pages/list` takes `title` and `icon` from `meta.title` and `meta.icon` in `_index.yaml`. It does not fall back to the `package.json` values. An announced page with no `meta.title` and no `meta.icon` gets a navigation item with no label and no icon, so set both in the registry entry.
 
 ### Render engine
 
@@ -85,12 +87,12 @@ frontend defaults without converting keys.
 
 In the iframe engine, `proxy.injections` configures the assets added by the
 srcdoc proxy. If it is omitted, that adapter uses permissive defaults and
-enables most injections. Web Host 1.0.66 carries `proxy.enabled` as metadata but
+enables every injection. Web Host 1.0.69 carries `proxy.enabled` as metadata but
 does not use it as a runtime toggle.
 
-Web Host 1.0.66 does not translate these flags to the Fragment engine. The
+Web Host 1.0.69 does not translate these flags to the Fragment engine. The
 Fragment gateway always supplies `loading.js`, `proxy-fragment.js`, and the four
-Host stylesheets (theme config, iframe scrollbar styles, PrimeVue/Tailwind, and
+Host stylesheets (theme config, iframe scrollbar styles, PrimeVue, and
 Markdown); its proxy also installs error capture unconditionally. A page that
 can fall back to iframe should still declare its iframe injection intent
 explicitly.
@@ -102,7 +104,7 @@ see the page's fallback behavior.
 #### Recommended explicit injection values
 
 These are the flags a micro frontend app typically declares for its iframe
-delivery path. They are not the runtime defaults, and Web Host 1.0.66's Fragment
+delivery path. They are not the runtime defaults, and Web Host 1.0.69's Fragment
 gateway does not use them.
 
 - `css.themeConfig` (`true`) — CSS custom properties for the active theme
@@ -155,9 +157,9 @@ Unlike `url` and `base_path`, `entry_point` is not a deploy-only field. It is au
 |---|---|---|---|
 | `announced` | boolean | — | `true` → page appears in `GET /api/public/pages/list` and the nav sidebar |
 | `secure` | boolean | `false` | `true` → requires authentication; unauthenticated requests get a 401 |
-| `inline` | boolean | `false` | `true` → page is hidden from all listings (sidebar, API); use for embedded artifact viewers or auxiliary routes |
+| `inline` | boolean | `false` | `true` → page is left out of the navigation tree; use for embedded artifact viewers or auxiliary routes. An announced inline page still appears in the list API with `hidden: 1` |
 
-`announced: false` hides the page from navigation but does not prevent loading. The page can still be embedded or reached through its route. `inline: true` is stricter — it suppresses the page from all public-facing listings.
+`announced: false` hides the page from navigation and from `GET /api/public/pages/list`, but does not prevent loading. The page can still be embedded or reached through its route. `inline: true` does not remove an announced page from the list API: the response marks it `hidden: 1`. The Web Host leaves hidden pages out of the navigation tree, and it uses the first hidden page that has no group as its navigation widget. Set `announced: false` to keep a page out of the list response.
 
 ### Mount Route
 

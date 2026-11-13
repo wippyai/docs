@@ -26,14 +26,14 @@ standalone project scaffold or backend setup.
 
 ```ts
 import { createApp } from 'vue'
-import PrimeVue from '@wippy-fe/theme/primevue-plugin'
+import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { createAppRouter } from '@wippy-fe/router'
 import { config } from '@wippy-fe/proxy'
 import App from './App.vue'
 import { routes } from './routes'
 
 const app = createApp(App)
-app.use(PrimeVue)
+app.use(PrimeVuePlugin)
 app.use(createAppRouter(routes, {
   initialPath: config.context?.route ?? '/',
 }))

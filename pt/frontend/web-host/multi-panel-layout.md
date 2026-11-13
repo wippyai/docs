@@ -37,6 +37,7 @@ O layout gerenciado abrange o Web Host, a facade e vários pacotes `@wippy-fe/*`
 | Web Host `1.0.50`, Wippy FE `0.0.50` | Intents de compat tipados, `@HOST/compat-coordinator`, sincronização de URL do navegador e Voltar/Avançar, abas de painel embutidas, painéis flutuantes ancorados e `useSwapBuffer()`. |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corrida de sessão/token do `<wippy-chat>`, alças de splitter tematizadas opcionais, restrições de tamanho apenas no eixo de divisão, correções de geometria/empilhamento de drawer e o source map do proxy empacotado. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidade tipada de WC retido e `useHostVisibilityRefresh()`, prontidão imediata de página em vez de esperar o fallback de 14 segundos, rejeição de chave de renderer obsoleta, atualizações de props de componente in-place e a camada isolada de splitter com `--wippy-layout-splitter-z-index`. |
+| Web Host `1.0.69`, Wippy FE `0.0.69` | As opções `closable`, `emptyState` e `startToken` de `@HOST/chat-wrapper`, `@HOST/panel-tab` com `mode: 'auto'`, a classe `wippy-host-app` na raiz gerenciada e as chamadas de chat e navegação de uma página atual, mas oculta, que chegam aos coordenadores. |
 
 A revelação de página em 14 segundos é um fallback do Web Host `1.0.52`, não uma
 feature da 1.0.51 nem um atraso de carregamento da aplicação. O dimensionamento
@@ -62,7 +63,7 @@ carregamento inicial comum com refreshes de revelação através de
 em uma transição exata de `false -> true`. Não use o tópico `@visibility` do proxy
 em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
 
-Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.66`, com a família `@wippy-fe/*` `0.0.66` correspondente.
+Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.69`, com a família `@wippy-fe/*` `0.0.69` correspondente.
 
 ## Habilitando o Layout Gerenciado
 
@@ -129,6 +130,50 @@ Exatamente um painel da árvore de layout precisa carregar `main: true`. A propr
 | `@HOST/panel-tab` | Aba de borda para revelar um painel colapsado; declare em `floating` |
 
 Um `@HOST/<id>` desconhecido causa um `LayoutValidationError` no carregamento da declaração, em vez de renderizar silenciosamente um slot vazio.
+
+### Opções de `@HOST/chat-wrapper`
+
+Três opções destinam-se a um layout cujo próprio coordenador gerencia o painel de chat. As três vêm desativadas por padrão.
+
+```yaml
+panels:
+  chat:
+    kind: builtin
+    id: '@HOST/chat-wrapper'
+    props:
+      showSelector: true          # default true
+      closable: true              # default false
+      emptyState: { kind: component, tagName: my-chat-empty }
+      startToken: agent-start-token
+```
+
+| Opção | O que faz |
+|-------|-----------|
+| `closable` | Adiciona um botão Fechar (nome acessível `Close chat`) no canto superior direito do chat. Em um slot drawer, fecha o drawer; em um slot inline, recolhe a coluna. Não aparece em um slot inline que não seja `collapsible`. |
+| `emptyState` | Uma definição de painel exibida no lugar do estado vazio próprio do chat enquanto nenhuma sessão está aberta. Use um `component` com um nome de custom element válido, ou o `@HOST/nav-sidebar` ou o `@HOST/panel-tab` embutidos. Ela é executada no contexto do painel de chat: `data-wippy-panel-id` é o id do painel de chat, e ela recebe o mesmo `host` com escopo de painel e o mesmo barramento que qualquer painel `kind: component`. Qualquer outra definição é ignorada com um aviso, e o chat mostra seu próprio estado vazio. |
+| `startToken` | Inicia uma sessão a partir de um start token, como faz `<wippy-chat start-token>`. Também funciona enquanto o painel está oculto, por exemplo em um drawer fechado ou em uma coluna recolhida. |
+
+Como `startToken` se comporta:
+
+- O painel troca o token por uma nova sessão quando é montado com um token, quando o token muda e quando `sessionId` é limpo enquanto há um token definido. Enquanto `sessionId` tem um valor, o token não é usado.
+- Quando a sessão está pronta, o painel a exibe, define `props.sessionId` no snapshot do layout, mantém `startToken` e publica um intent `openSession` atribuído ao painel.
+- Uma escolha no seletor de sessões cancela um início em andamento, define `{ sessionId: <picked>, startToken: null }` e publica o mesmo intent. Um coordenador distingue uma escolha de um início concluído por `props.startToken` do painel de chat no snapshot do layout: `null` após uma escolha, ainda definido após um início concluído.
+- Um início com falha mostra um toast de erro e limpa `startToken`, de modo que o layout dispara um `change`. Definir o mesmo token de novo inicia uma nova troca.
+- Montar o painel de novo para o mesmo id de painel não inicia uma segunda sessão. Um início cuja sessão ninguém mais pode exibir é fechado. Um caso permanece aberto: um início concluído enquanto o conteúdo do painel estava trocado mantém sua sessão quando o painel é removido depois.
+- Com `@HOST/compat-coordinator` roteando sessões (`chatPanel` ou `artifactPanel` definido), o `openSession` de um início concluído expande o painel, de modo que um início em uma coluna recolhida abre a coluna.
+- `startToken` faz parte da definição do painel, portanto está no snapshot do layout que cada frame filho recebe.
+
+Para o Attention, o painel conta como visível quando o layout o apresenta e sua coluna não está recolhida. Uma coluna recolhida não é visível, mesmo que o painel continue apresentado. Enquanto `showSelector` é `true`, o painel mantém a lista de sessões observada, de modo que o seletor é atualizado como no shell compat. Essas opções destinam-se a uma entrada de `panels`: em um chat-wrapper flutuante, o estado ao vivo do painel não é registrado.
+
+### Modos de `@HOST/panel-tab`
+
+| `mode` | Revela com | Oculta-se enquanto o destino está visível |
+|--------|------------|--------------------------------------------|
+| `collapse` (padrão) | `expandPanel` | Não |
+| `drawer` | `openDrawer` | Não |
+| `auto` | `openDrawer` quando o destino está em um drawer, `expandPanel` quando está em uma coluna recolhida | Sim: o drawer está aberto, ou a coluna não está recolhida |
+
+`auto` serve para um painel que é um drawer em uma tela estreita e uma coluna recolhível em uma larga. Ele segue o slot do destino no breakpoint atual, e um destino que não está no layout ativo oculta a aba.
 
 ## Layouts Indexados por Breakpoint
 
@@ -254,9 +299,7 @@ coordinators:
 
 Mantenha `routeSync: true` ao usar o contrato de navegação padrão. Sem um
 coordenador ou lógica equivalente do consumidor, deep links, Voltar/Avançar e a
-navegação do `@HOST/nav-sidebar` não têm rota de painel para acionar. Intents
-levantados durante o boot do filho são mantidos em uma fila limitada até o
-primeiro coordenador assinar.
+navegação do `@HOST/nav-sidebar` não têm rota de painel para acionar. Intents levantados antes de um coordenador se inscrever, por exemplo durante o boot do filho, são mantidos. Cada coordenador declarado tem sua própria fila limitada (32 intents) e recebe cada intent uma vez, na ordem em que foram levantados. Um coordenador que se inscreve primeiro não consome os intents dos outros, e um coordenador que nunca é montado não bloqueia ninguém: ele só enche a própria fila. Um intent cuja página foi substituída enquanto ele esperava é descartado.
 
 `@HOST/` é reservado nos dois sentidos: painéis comuns não podem publicar tráfego
 de sistema, e apenas entradas em `coordinators` o recebem através de APIs de host
@@ -408,6 +451,14 @@ preencher sua trilha. Mounts de drawer seguem a geometria animada do drawer e s�
 promovidos acima da sua âncora e do backdrop apenas enquanto abertos, sem
 remontar o conteúdo.
 
+## Escopo de CSS somente do host
+
+A raiz do layout gerenciado tem a classe `wippy-host-app`, como a raiz compat. Limite sob ela o CSS exclusivo do host, por exemplo `.wippy-host-app .chat-message { ... }`.
+
+- Páginas em iframe não têm a classe, então essas regras não as alcançam.
+- Janelas flutuantes e modais são renderizados no fim de `<body>`, fora da raiz, então uma regra sob `.wippy-host-app` não os alcança. Limite uma regra para uma janela flutuante com o atributo `[data-wippy-floating="<id>"]`.
+- Páginas web component e painéis `kind: component` ficam dentro da raiz, então uma regra sob `.wippy-host-app` também corresponde ao conteúdo deles, a menos que esse conteúdo esteja em um shadow root.
+
 ## Estilização do splitter e da alça
 
 A área de acerto do splitter é mais larga do que sua linha visível e vive na pilha
@@ -458,7 +509,9 @@ O shell gerenciado renderiza **apenas o layout que você declarou**. A partir do
 | `navigate(url)` | Empurra o router raiz do compat | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
 | `onRouteChanged(route, navId?)` | Aciona a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
 
-Se ainda não houver coordenador disponível, os intents de boot são mantidos em uma fila limitada até a primeira assinatura de coordenador. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
+Se um coordenador declarado ainda não estiver disponível, seus intents esperam em sua própria fila limitada. Uma declaração sem nenhuma entrada em `coordinators` não enfileira nada. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
+
+Uma página que é atual, mas está oculta, por exemplo em um drawer fechado ou em uma coluna recolhida, continua publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` e `host.navigate()` como intents, de modo que os coordenadores os recebem. Essas chamadas não recorrem mais ao tratamento compat, que podia iniciar uma sessão que nenhum painel exibia. Uma página que um painel substituiu não é mais atual, e suas chamadas são descartadas.
 
 ## Abordagem de Gerenciamento de Estado
 
