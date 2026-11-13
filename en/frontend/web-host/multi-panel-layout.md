@@ -332,9 +332,7 @@ coordinators:
 
 Keep `routeSync: true` when using the standard navigation contract. Without a
 coordinator or equivalent consumer logic, deep links, Back/Forward, and
-`@HOST/nav-sidebar` navigation have no panel route to drive. Intents raised
-during child boot are held in a bounded queue until the first coordinator
-subscribes.
+`@HOST/nav-sidebar` navigation have no panel route to drive. Intents raised before a coordinator has subscribed, for example during child boot, are held. Each declared coordinator has its own bounded queue (32 intents) and receives every intent once, in the order raised. A coordinator that subscribes first does not use up the intents of the others, and a coordinator that never mounts blocks no one: it fills only its own queue. An intent whose page was replaced while it waited is discarded.
 
 `@HOST/` is reserved in both directions: ordinary panels cannot publish system
 traffic, and only entries under `coordinators` receive it through supported
@@ -541,7 +539,7 @@ The managed shell renders **only your declared layout**. Starting with Web Host 
 | `navigate(url)` | Pushes the compat root router | Publishes an intent; `routeSync` applies it to the main panel and keeps browser history aligned |
 | `onRouteChanged(route, navId?)` | Drives the host browser URL | Updates panel route state; `routeSync` projects the main panel route to the browser URL |
 
-If no coordinator is available yet, boot-time intents are held in a bounded queue for the first coordinator subscription. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
+If a declared coordinator is not available yet, its intents wait in its own bounded queue. A declaration with no `coordinators` entry queues nothing. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
 
 A page that is current but hidden, for example in a closed drawer or a collapsed column, still publishes `host.startChat()`, `host.openSession()`, `host.openArtifact()` and `host.navigate()` as intents, so the coordinators receive them. These calls no longer fall through to the compat handling, which could start a session that no panel showed. A page that a panel has replaced is not current, and its calls are dropped.
 

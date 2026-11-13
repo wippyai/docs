@@ -279,7 +279,7 @@ coordinators:
       wsActions: true
 ```
 
-使用标准导航契约时请保持 `routeSync: true`。没有协调器或等价的消费方逻辑时，深链接、前进／后退以及 `@HOST/nav-sidebar` 导航就没有可驱动的面板路由。子应用启动期间产生的 intent 会保存在一个有界队列中，直到第一个协调器订阅为止。
+使用标准导航契约时请保持 `routeSync: true`。没有协调器或等价的消费方逻辑时，深链接、前进／后退以及 `@HOST/nav-sidebar` 导航就没有可驱动的面板路由。在协调器订阅之前产生的 intent（例如子应用启动期间的 intent）会被保存。每个已声明的协调器都有自己的有界队列（32 个 intent），并按产生顺序恰好收到每个 intent 一次。最先订阅的协调器不会用掉其他协调器的 intent，从不挂载的协调器也不会阻塞任何其他协调器，它只会填满自己的队列。等待期间其页面已被替换的 intent 会被丢弃。
 
 `@HOST/` 在两个方向上都是保留的：普通面板不能发布系统流量，而只有 `coordinators` 下的条目才能通过受支持的 host API 收到它。该边界对 iframe/Web Fragment 面板强制生效。挂载在宿主域中的直挂组件共享宿主 DOM，不构成安全沙箱。启动时，若缺少协调器处理、模态框目标面、主面板 URL 绑定或已声明的协调器标签，宿主会打印一张对照表；声明完整时不会产生警告。
 
@@ -451,7 +451,7 @@ if (host.layout.snapshot) {
 | `navigate(url)` | 推入 compat 根路由器 | 发布一个 intent；`routeSync` 把它应用到主面板并保持浏览器历史一致 |
 | `onRouteChanged(route, navId?)` | 驱动宿主浏览器 URL | 更新面板路由状态；`routeSync` 把主面板路由投射到浏览器 URL |
 
-如果尚无可用的协调器，启动时的 intent 会保存在一个有界队列中，等待第一个协调器订阅。声明了却没有处理器的情况会由启动对照表报告。保留 intent 只能被 `coordinators` 条目读取，普通面板无法伪造。
+如果已声明的协调器尚不可用，它的 intent 会在它自己的有界队列中等待。没有 `coordinators` 条目的声明不会让任何 intent 入队。声明了却没有处理器的情况会由启动对照表报告。保留 intent 只能被 `coordinators` 条目读取，普通面板无法伪造。
 
 当前但被隐藏的页面（例如在关闭的抽屉或折叠的列中）仍会把 `host.startChat()`、`host.openSession()`、`host.openArtifact()` 和 `host.navigate()` 作为 intent 发布，因此协调器会收到它们。这些调用不再回落到 compat 处理，而 compat 处理可能启动一个没有任何面板显示的会话。被面板替换的页面不再是当前页面，它的调用会被丢弃。
 

@@ -302,9 +302,7 @@ coordinators:
 Belassen Sie `routeSync: true`, wenn Sie den Standard-Navigationsvertrag
 verwenden. Ohne einen Koordinator oder äquivalente Logik beim Konsumenten haben
 Deep Links, Vor/Zurück und die Navigation über `@HOST/nav-sidebar` keine
-Panel-Route, die sie steuern könnten. Intents, die während des Child-Boots
-ausgelöst werden, werden in einer begrenzten Warteschlange gehalten, bis der
-erste Koordinator sie abonniert.
+Panel-Route, die sie steuern könnten. Intents, die ausgelöst werden, bevor ein Koordinator abonniert hat, zum Beispiel während des Child-Boots, werden gehalten. Jeder deklarierte Koordinator hat seine eigene begrenzte Warteschlange (32 Intents) und erhält jeden Intent einmal, in der Reihenfolge, in der er ausgelöst wurde. Ein Koordinator, der zuerst abonniert, verbraucht die Intents der anderen nicht, und ein Koordinator, der nie mountet, blockiert niemanden: Er füllt nur seine eigene Warteschlange. Ein Intent, dessen Page ersetzt wurde, während er wartete, wird verworfen.
 
 `@HOST/` ist in beide Richtungen reserviert: Gewöhnliche Panels können keinen
 System-Verkehr veröffentlichen, und nur Einträge unter `coordinators` empfangen
@@ -518,7 +516,7 @@ Die Managed-Shell rendert **nur Ihr deklariertes Layout**. Ab Web Host 1.0.50 ve
 | `navigate(url)` | Pusht den Compat-Root-Router | Veröffentlicht einen Intent; `routeSync` wendet ihn auf das Haupt-Panel an und hält die Browser-History im Gleichklang |
 | `onRouteChanged(route, navId?)` | Steuert die Browser-URL des Hosts | Aktualisiert den Routenzustand des Panels; `routeSync` projiziert die Route des Haupt-Panels auf die Browser-URL |
 
-Ist noch kein Koordinator verfügbar, werden Boot-Zeit-Intents in einer begrenzten Warteschlange für die erste Koordinator-Subscription gehalten. Eine Deklaration ohne Handler wird von der Boot-Paritätstabelle gemeldet. Reservierte Intents sind nur für `coordinators`-Einträge lesbar und können von gewöhnlichen Panels nicht gefälscht werden.
+Ist ein deklarierter Koordinator noch nicht verfügbar, warten seine Intents in seiner eigenen begrenzten Warteschlange. Eine Deklaration ohne `coordinators`-Eintrag legt nichts in eine Warteschlange. Eine Deklaration ohne Handler wird von der Boot-Paritätstabelle gemeldet. Reservierte Intents sind nur für `coordinators`-Einträge lesbar und können von gewöhnlichen Panels nicht gefälscht werden.
 
 Eine Page, die aktuell, aber verborgen ist, zum Beispiel in einem geschlossenen Drawer oder einer eingeklappten Spalte, veröffentlicht `host.startChat()`, `host.openSession()`, `host.openArtifact()` und `host.navigate()` weiterhin als Intents, sodass die Koordinatoren sie erhalten. Diese Aufrufe fallen nicht mehr auf die Compat-Behandlung zurück, die eine Session starten konnte, die kein Panel zeigte. Eine Page, die ein Panel ersetzt hat, ist nicht mehr aktuell, und ihre Aufrufe werden verworfen.
 

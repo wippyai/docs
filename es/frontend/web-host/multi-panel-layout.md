@@ -303,8 +303,7 @@ coordinators:
 Mantenga `routeSync: true` cuando use el contrato de navegación estándar. Sin un
 coordinador o lógica equivalente del consumidor, los enlaces profundos,
 Atrás/Adelante y la navegación de `@HOST/nav-sidebar` no tienen ninguna ruta de
-panel que dirigir. Los intents lanzados durante el arranque del hijo se retienen
-en una cola acotada hasta que se suscribe el primer coordinador.
+panel que dirigir. Los intents lanzados antes de que un coordinador se haya suscrito, por ejemplo durante el arranque del hijo, se retienen. Cada coordinador declarado tiene su propia cola acotada (32 intents) y recibe cada intent una vez, en el orden en que se lanzaron. Un coordinador que se suscribe primero no consume los intents de los demás, y un coordinador que nunca se monta no bloquea a nadie: solo llena su propia cola. Un intent cuya página fue sustituida mientras esperaba se descarta.
 
 `@HOST/` está reservado en ambas direcciones: los paneles ordinarios no pueden
 publicar tráfico del sistema, y solo las entradas bajo `coordinators` lo reciben
@@ -518,7 +517,7 @@ El shell managed renderiza **solo el layout que usted declara**. A partir del We
 | `navigate(url)` | Hace push en el router raíz de compat | Publica un intent; `routeSync` lo aplica al panel principal y mantiene alineado el historial del navegador |
 | `onRouteChanged(route, navId?)` | Dirige la URL del navegador del host | Actualiza el estado de ruta del panel; `routeSync` proyecta la ruta del panel principal a la URL del navegador |
 
-Si todavía no hay un coordinador disponible, los intents de arranque se retienen en una cola acotada hasta la primera suscripción de un coordinador. Una declaración sin manejador la informa la tabla de paridad del arranque. Los intents reservados solo son legibles por las entradas de `coordinators` y no pueden ser falsificados por paneles ordinarios.
+Si un coordinador declarado todavía no está disponible, sus intents esperan en su propia cola acotada. Una declaración sin ninguna entrada en `coordinators` no pone nada en cola. Una declaración sin manejador la informa la tabla de paridad del arranque. Los intents reservados solo son legibles por las entradas de `coordinators` y no pueden ser falsificados por paneles ordinarios.
 
 Una página que es actual pero está oculta, por ejemplo en un drawer cerrado o en una columna colapsada, sigue publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` y `host.navigate()` como intents, de modo que los coordinadores los reciben. Estas llamadas ya no recurren al tratamiento de compat, que podía iniciar una sesión que ningún panel mostraba. Una página que un panel ha sustituido ya no es actual, y sus llamadas se descartan.
 

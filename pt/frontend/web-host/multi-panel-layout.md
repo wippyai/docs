@@ -299,9 +299,7 @@ coordinators:
 
 Mantenha `routeSync: true` ao usar o contrato de navegação padrão. Sem um
 coordenador ou lógica equivalente do consumidor, deep links, Voltar/Avançar e a
-navegação do `@HOST/nav-sidebar` não têm rota de painel para acionar. Intents
-levantados durante o boot do filho são mantidos em uma fila limitada até o
-primeiro coordenador assinar.
+navegação do `@HOST/nav-sidebar` não têm rota de painel para acionar. Intents levantados antes de um coordenador se inscrever, por exemplo durante o boot do filho, são mantidos. Cada coordenador declarado tem sua própria fila limitada (32 intents) e recebe cada intent uma vez, na ordem em que foram levantados. Um coordenador que se inscreve primeiro não consome os intents dos outros, e um coordenador que nunca é montado não bloqueia ninguém: ele só enche a própria fila. Um intent cuja página foi substituída enquanto ele esperava é descartado.
 
 `@HOST/` é reservado nos dois sentidos: painéis comuns não podem publicar tráfego
 de sistema, e apenas entradas em `coordinators` o recebem através de APIs de host
@@ -511,7 +509,7 @@ O shell gerenciado renderiza **apenas o layout que você declarou**. A partir do
 | `navigate(url)` | Empurra o router raiz do compat | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
 | `onRouteChanged(route, navId?)` | Aciona a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
 
-Se ainda não houver coordenador disponível, os intents de boot são mantidos em uma fila limitada até a primeira assinatura de coordenador. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
+Se um coordenador declarado ainda não estiver disponível, seus intents esperam em sua própria fila limitada. Uma declaração sem nenhuma entrada em `coordinators` não enfileira nada. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
 
 Uma página que é atual, mas está oculta, por exemplo em um drawer fechado ou em uma coluna recolhida, continua publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` e `host.navigate()` como intents, de modo que os coordenadores os recebem. Essas chamadas não recorrem mais ao tratamento compat, que podia iniciar uma sessão que nenhum painel exibia. Uma página que um painel substituiu não é mais atual, e suas chamadas são descartadas.
 
