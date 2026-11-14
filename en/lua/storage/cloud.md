@@ -1,6 +1,6 @@
 ---
 title: "Cloud Storage"
-description: "Access S3-compatible object storage. Upload, download, list, and manage objects, presign download, upload and multipart-part URLs, and read objects…"
+description: "S3-compatible storage: upload, download, copy, metadata, presigned URLs, multipart uploads and ranged readers."
 ---
 
 # Cloud Storage
@@ -10,7 +10,7 @@ description: "Access S3-compatible object storage. Upload, download, list, and m
 <secondary-label ref="external"/>
 <secondary-label ref="permissions"/>
 
-Access S3-compatible object storage. Upload, download, list, and manage objects, presign download, upload and multipart-part URLs, and read objects with random access.
+Access S3-compatible object storage. Upload, download, copy, list, and manage objects, presign download, upload and multipart-part URLs, and read objects with random access.
 
 For storage configuration, see [Cloud Storage](system/cloudstorage.md).
 
@@ -297,6 +297,35 @@ Result fields:
 
 A missing object returns a `not_found` error.
 
+## Copying Objects
+
+Available in runtime v0.3.62a. `storage:copy_object(src_key, dst_key, options?)` copies an object within the same storage on the provider. An existing destination is replaced unless a condition prevents it.
+
+```lua
+local storage, storage_err = cloudstorage.get("app.infra:files")
+if storage_err then return nil, storage_err end
+local result, copy_err = storage:copy_object("reports/daily.json", "archive/daily.json")
+storage:release()
+if copy_err then return nil, copy_err end
+return result.etag
+```
+
+**Returns:** `{etag: string, last_modified?: number}, error`; `last_modified` is Unix seconds when provided.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `metadata_directive` | `"COPY"` | `"COPY"` preserves source metadata; `"REPLACE"` replaces it |
+| `metadata` | None | Destination string-to-string user metadata; requires `"REPLACE"` |
+| `content_type` | Provider default with `"REPLACE"` | Destination Content-Type; requires `"REPLACE"` |
+| `if_match` | None | Source ETag condition |
+| `if_none_match` | None | Destination condition: `"*"` requires an absent destination where supported |
+
+Copying a key onto itself requires `metadata_directive = "REPLACE"` and refreshes `last_modified`. Pass the source's content type and user metadata from `head_object` when preserving them during replacement. `"REPLACE"` drops the source Cache-Control, Content-Disposition and Content-Encoding headers; `"COPY"` retains them.
+
+Sources above 5 GiB use multipart copying with source ETag pinning. Their resulting ETag is the multipart ETag. The runtime attempts to abort the multipart upload if copying fails.
+
+Empty keys, unknown directives, metadata options without `"REPLACE"`, and a same-key `"COPY"` return `errors.INVALID`. Failed conditions return `errors.CONFLICT`; unsupported providers return non-retryable `errors.UNAVAILABLE`. Other provider failures follow the [error classification](#errors) below.
+
 ## Deleting Objects
 
 Remove multiple objects:
@@ -534,6 +563,7 @@ The reader is closed automatically at task scope if it is not closed explicitly.
 | `upload_object(key, content, opts?)` | `boolean, error` | Upload string or file content |
 | `download_object(key, writer, opts?)` | `boolean, error` | Download to file writer |
 | `head_object(key)` | `table, error` | Fetch object metadata |
+| `copy_object(src_key, dst_key, opts?)` | `table, error` | Copy an object server-side |
 | `list_objects(opts?)` | `table, error` | List objects with prefix filter |
 | `delete_objects(keys)` | `boolean, error` | Delete multiple objects |
 | `presigned_get_url(key, opts?)` | `string, error` | Generate temporary download URL |
@@ -571,6 +601,16 @@ Security policy evaluation applies to cloud storage operations.
 | Provider does not support multipart uploads | `errors.UNAVAILABLE` | no |
 | Provider supplies no ETag for `open_reader` | `errors.UNAVAILABLE` | no |
 | Permission denied during acquisition | `errors.PERMISSION_DENIED` (returned as `nil, error`) | no |
-| Provider operation failed | `errors.UNKNOWN` | unset |
+| Provider rejects credentials or permission | `errors.PERMISSION_DENIED` | no |
+| Provider rejects malformed input | `errors.INVALID` | no |
+| Provider reports a conflicting operation | `errors.CONFLICT` | no |
+| Provider throttling | `errors.RATE_LIMITED` | yes |
+| Provider server failure or unreachable endpoint | `errors.UNAVAILABLE` | SDK policy |
+| Provider or transport timeout | `errors.TIMEOUT` | SDK policy |
+| Caller deadline expired | `errors.TIMEOUT` | no |
+| Caller canceled | `errors.CANCELED` | no |
+| Other provider failure | `errors.INTERNAL` | no |
+
+From runtime v0.3.62a, every S3 operation that reaches the provider applies the same classification. Missing buckets, keys, uploads and versions return `errors.NOT_FOUND`. Failures carry `err:details()` fields `code`, `status_code`, `request_id`, `operation` and `bucket` when known. Retryability follows the AWS SDK verdict where available; check `err:retryable()` rather than retrying every error of a given kind. Per-key `delete_objects` failures also carry `failed`; mixed error kinds are reported as `errors.INTERNAL`.
 
 See [Error Handling](lua/core/errors.md) for working with errors.

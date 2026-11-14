@@ -33,6 +33,18 @@ Each entry is parsed, type-checked, and analyzed for correctness issues.
 
 `any` is gradual by default. Set `lua.type_system.strict_any: true` in runtime configuration to require narrowing before use as a concrete type. `--strict-any` overrides that setting for one lint run; `--strict-any=false` explicitly disables it. See [Types](lua/types.md#any-and-unknown).
 
+### Recursive Tables and Guards
+
+Runtime v0.3.62a improves inference for tables that contain themselves, including `table.insert(nodes, nodes)` and mutually referring tables. Direct self-references converge to recursive types:
+
+```lua
+local nodes = {}
+nodes[1] = nodes
+local depth: integer = #nodes[1][1][1]
+```
+
+Type guards apply to the exact path they guard. Excluding `string` for a root value does not exclude `string` for one of its fields; sibling fields keep separate identities.
+
 ## Severity Levels
 
 Diagnostics have three severity levels:

@@ -31,7 +31,7 @@ S3-compatible object storage with presigned URLs, multipart uploads and ranged r
 | `access_key_id` | string | No | AWS access key ID (inline or `${env:NAME}`) |
 | `secret_access_key` | string | No | AWS secret access key (inline or `${env:NAME}`) |
 
-Credentials resolve from the [environment registry](system/env.md) at decode time. Both `access_key_id` and `secret_access_key` must resolve to non-empty values for static credentials to apply; otherwise the AWS SDK default credential chain is used (IAM roles, instance profiles, etc.).
+Credentials resolve from the [environment registry](system/env.md) at decode time. A static credential declaration through an access key, secret key or their `_env` directives requires both values to resolve to non-empty strings. An unresolved directive or incomplete pair rejects the configuration. The AWS SDK default credential chain (IAM roles, instance profiles, etc.) applies when static credentials are omitted.
 
 Requests are signed with AWS Signature Version 4 by the AWS SDK using the resolved credentials. No signing configuration is required.
 
@@ -90,6 +90,10 @@ Parts of an upload that is never completed or aborted stay stored and billed. Ap
   ]
 }
 ```
+
+## Server-Side Copies
+
+Runtime v0.3.62a adds `storage:copy_object` for duplicating objects within one storage. The provider handles the transfer; sources larger than 5 GiB use multipart copying. Metadata directives and source/destination conditions are described in [Copying Objects](lua/storage/cloud.md#copying-objects).
 
 ## Ranged Reads
 

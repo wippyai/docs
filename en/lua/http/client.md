@@ -464,6 +464,8 @@ Up to nine redirects are followed; the tenth fails with `stopped after 10 redire
 
 Every hop is authorized on its own. Before following a redirect the client evaluates `http_client.request` against the target URL and applies the private-IP check to it, so a permitted URL cannot be used to reach a denied one by redirection. A hop that fails either check aborts the request.
 
+From runtime v0.3.62a, a denied redirect target or connection address returns non-retryable `errors.PERMISSION_DENIED`. `err:details().url` identifies the denied URL. The same classification applies to individual errors from `request_batch`.
+
 See [Security Model](system/security.md) for policy configuration.
 
 ## Errors
