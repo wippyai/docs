@@ -222,6 +222,19 @@ if decode_err then return nil, decode_err end
 
 **Returns:** `boolean, error`
 
+### Structured Validation Failures
+
+From runtime v0.3.62a, `validate` and `validate_string` report the most specific failing schema rules. The error kind is `errors.INVALID` and `err:details()` contains:
+
+| Field | Meaning |
+|-------|---------|
+| `errors` | Up to 50 violations, each with `instance_path`, `keyword`, `message` and `schema_path` |
+| `total` | Full number of leaf violations before the limit |
+
+The message begins `validation failed: <instance path>: <keyword>: <text>`. The root path is `/`. Missing required and dependent-required properties point to the missing property; extra properties point to the extra property. A `propertyNames` failure points to the offending property name and carries the failing sub-schema keyword.
+
+Violations are ordered by rule priority (`required`, additional/unevaluated properties, enum/const, type, then other rules), with deeper paths first within each priority. Conditional sub-results from `if`, `not` and `contains` are not reported as independent violations.
+
 ## Errors
 
 | Condition | Kind | Retryable |
