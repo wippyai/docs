@@ -15,10 +15,10 @@ Lua strings and their `#` length are byte-oriented. `utf8` operates on codepoint
 
 | Call | Result |
 |------|--------|
-| `utf8.char(codepoint, ...)` | Encode codepoints into a string |
-| `utf8.len(s)` | Count codepoints, or return `nil, byte_position` for invalid UTF-8 |
-| `utf8.codepoint(s, i?, j?)` | Read codepoints whose leading bytes are in the inclusive positive byte-position range; `i` defaults to `1`, `j` to `i` |
-| `utf8.codes(s)` | Iterator yielding 1-based byte positions and codepoints |
+| `utf8.char(codepoint, ...)` | Encode values from `0` to `0x7FFFFFFF`, using up to six bytes |
+| `utf8.len(s, i?, j?, lax?)` | Count codepoints starting in the inclusive byte-position range, or return `nil, byte_position` for invalid UTF-8; defaults to the entire string |
+| `utf8.codepoint(s, i?, j?, lax?)` | Read codepoints whose leading bytes are in the inclusive byte-position range; `i` defaults to `1`, `j` to `i` |
+| `utf8.codes(s, lax?)` | Iterator yielding 1-based byte positions and codepoints |
 | `utf8.offset(s, n, i?)` | Byte position of the `n`th codepoint from `i`, or `nil` when it is outside the string |
 | `utf8.charpattern` | Lua pattern for a UTF-8 byte sequence |
 
@@ -31,6 +31,10 @@ for byte_position, codepoint in utf8.codes(s) do
     print(byte_position, codepoint) -- 1/72, 2/228, 4/8364
 end
 ```
+
+`len` and `codepoint` accept negative byte positions relative to the end of the string.
+
+Decoding is strict by default: values above `U+10FFFF`, surrogates and malformed byte sequences are invalid. Set `lax` to `true` to accept extended encodings up to `0x7FFFFFFF`, including surrogates. Overlong and incomplete encodings remain invalid. `utf8.char` can produce these extended encodings, so use lax decoding when reading them back.
 
 ## Byte Offsets
 
