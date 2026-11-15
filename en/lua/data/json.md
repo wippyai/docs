@@ -64,6 +64,8 @@ json.encode(order)
 Encoding follows these rules:
 
 - `nil` becomes `null`
+- `json.null` becomes `null`, including inside objects and at the end of arrays
+- A `json.raw` value embeds its validated JSON with its member order
 - Empty tables become `[]` (or `{}` if created with string keys)
 - Positive integer keys are array positions, regardless of size
 - Nil elements inside the table's array part become `null`: `{1, nil, 3}` encodes as `[1,null,3]`; trailing nil elements are omitted
@@ -139,6 +141,37 @@ local id: string = user.id
 
 Typed decoding returns `nil, errors.INVALID` for malformed JSON, an invalid type argument, a type mismatch, or top-level `null`, even with a nullable target. Nullable fields and array elements are allowed. An omitted or nil second argument uses ordinary decoding.
 
+### `decode_with_nulls` and `null`
+
+Use `json.decode_with_nulls(str)` when an explicit JSON null must remain distinct from a missing member. It returns `any, error` and represents nulls with the immutable `json.null` value:
+
+```lua
+local data, err = json.decode_with_nulls('{"nickname":null,"items":[1,null]}')
+if err then return nil, err end
+assert(data.nickname == json.null)
+assert(data.missing == nil)
+assert(#data.items == 2)
+assert(json.encode(data) == '{"items":[1,null],"nickname":null}')
+```
+
+`json.null` is truthy. Compare it explicitly with `== json.null` when checking for null; use `== nil` for an absent member. Top-level null also decodes to `json.null`.
+
+### `raw`
+
+`json.raw(text)` returns an immutable JSON value that `encode` embeds with its object member order and number/string spelling. Insignificant whitespace is removed. Use it to embed a schema or other document whose order should reach the recipient:
+
+```lua
+local schema, err = json.raw('{"properties":{"zeta":{"type":"string"},"alpha":{"type":"number"}}}')
+if err then return nil, err end
+local body, encode_err = json.encode({parameters = schema})
+if encode_err then return nil, encode_err end
+-- zeta appears before alpha in body
+```
+
+**Returns:** `any, error`. Input must contain exactly one JSON value, unique object member names, valid UTF-8 and numbers within float64 range. Invalid input returns `nil, errors.INVALID`. Decode the JSON text when you need to inspect or edit its fields.
+
+Null and raw values survive direct Lua-to-Lua payload transfer. For persistence or transport through Go data, encode null-containing data to JSON text and restore it with `decode_with_nulls`. Store a raw value as its JSON text and recreate it with `raw` to retain member order. Go-data and msgpack conversions do not retain the marker identity or raw member order.
+
 ## Schema Validation
 
 ### `validate`
@@ -183,7 +216,7 @@ if schema_err then return nil, schema_err end
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `schema` | table or string | JSON Schema definition |
+| `schema` | table, string or json.raw value | JSON Schema definition |
 | `data` | any | Value to validate |
 
 **Returns:** `boolean, error`
@@ -217,7 +250,7 @@ if decode_err then return nil, decode_err end
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `schema` | table or string | JSON Schema definition |
+| `schema` | table, string or json.raw value | JSON Schema definition |
 | `json_str` | string | JSON string to validate |
 
 **Returns:** `boolean, error`
@@ -245,6 +278,7 @@ Violations are ordered by rule priority (`required`, additional/unevaluated prop
 | Nesting exceeds 128 levels | `errors.INTERNAL` | no |
 | Invalid JSON syntax | `errors.INTERNAL` | no |
 | Input not a string or empty string (decode) | `errors.INVALID` | no |
+| Invalid input to raw, including duplicate members or out-of-range numbers | `errors.INVALID` | no |
 | Typed decode: invalid type, malformed JSON, mismatch, or top-level null | `errors.INVALID` | no |
 | Schema compilation failed | `errors.INVALID` | no |
 | Validation failed | `errors.INVALID` | no |
