@@ -114,6 +114,7 @@
         "title": "Text & Templates",
         "children": [
           {"title": "Text", "path": "lua/text/text"},
+          {"title": "UTF-8", "path": "lua/text/utf8"},
           {"title": "Template", "path": "lua/text/template"},
           {"title": "TreeSitter", "path": "lua/text/treesitter"}
         ]
