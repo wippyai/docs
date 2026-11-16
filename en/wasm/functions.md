@@ -95,6 +95,20 @@ entries:
 | `wasi` | No | WASI configuration |
 | `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
+## Core WIT Records
+
+The `wit` field on raw/core modules can declare named records:
+
+```yaml
+wit: |
+  record point { x: s32, y: s32 }
+  translate: func(p: point, delta: s32) -> point;
+```
+
+Records can reference other records, lists and options, with declarations in any order. Each record needs at least one field; duplicate fields, unknown types and recursive records are rejected. Line comments, nested block comments and quoted annotation text are excluded when reading declarations.
+
+Core guests must implement the canonical ABI: record parameters flatten into core arguments, and results exceeding one flat slot return a pointer to an aligned return area. For example, a result containing `u8` followed by `u64` places the second field at offset 8.
+
 ## Worker Pools
 
 Each WASM function uses a pool of pre-compiled instances. The pool type controls concurrency and resource usage.

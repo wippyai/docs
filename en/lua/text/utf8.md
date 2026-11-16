@@ -36,6 +36,15 @@ end
 
 Decoding is strict by default: values above `U+10FFFF`, surrogates and malformed byte sequences are invalid. Set `lax` to `true` to accept extended encodings up to `0x7FFFFFFF`, including surrogates. Overlong and incomplete encodings remain invalid. `utf8.char` can produce these extended encodings, so use lax decoding when reading them back.
 
+Lua string literals also support `\xXX` byte escapes, `\u{...}` character escapes and `\z` to skip following whitespace. Character escapes use the same encoding as `utf8.char`:
+
+```lua
+assert("\u{E4}" == utf8.char(228))
+assert("\x41" == "A")
+```
+
+Unknown or malformed escape sequences raise compile errors. Write `\\` for a literal backslash.
+
 ## Byte Offsets
 
 For `utf8.offset`, positive `n` counts forward from byte position `i`, which defaults to `1`. Negative `n` counts backwards and defaults to starting at `#s + 1`. A negative `i` is relative to the end of the string. `n = 0` finds the leading byte of the sequence containing `i`; the end sentinel is also accepted.
