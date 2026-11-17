@@ -66,7 +66,7 @@ bei exakt `false -> true`. Verwenden Sie in einer direkten WC nicht das
 Proxy-Topic `@visibility`; das ist der Nachrichtenkanal für iframes/Web
 Fragments.
 
-Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.69` mit der passenden `@wippy-fe/*`-Familie `0.0.69`.
+Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.70` mit der passenden `@wippy-fe/*`-Familie `0.0.70`.
 
 ## Managed Layout aktivieren
 

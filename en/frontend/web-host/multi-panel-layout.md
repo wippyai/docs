@@ -84,8 +84,8 @@ the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
 Pin to an exact CDN tag until the Draft 1 label is removed. The current release
-is `https://web-host.wippy.ai/webcomponents-1.0.69` with the matching
-`@wippy-fe/*` `0.0.69` family. This reference was last validated against
+is `https://web-host.wippy.ai/webcomponents-1.0.70` with the matching
+`@wippy-fe/*` `0.0.70` family. This reference was last validated against
 Web Host 1.0.56 and `0.0.56`. The release map lists the managed-layout changes
 after that release. Retained direct-web-component visibility still requires at
 least 1.0.52/0.0.52.
@@ -387,7 +387,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a modal. The public 0.0.69 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.70 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |

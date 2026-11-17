@@ -50,7 +50,7 @@ description: "マネージドレイアウトモードは、標準の Wippy ク�
 
 Vue コンポーネントは `useHostVisibility()` でこの状態を読むか、`useHostVisibilityRefresh(task)` によって通常の初期読み込みと再表示時のリフレッシュを組み合わせます。後者はマウント後に実行され、その後は厳密な `false -> true` のときにのみ実行されます。直接の WC でプロキシの `@visibility` トピックを使ってはいけません。それは iframe / Web Fragment のメッセージチャネルです。
 
-Draft 1 のラベルが外れるまでは、CDN の正確なタグにピン留めしてください。現在のリリースは `https://web-host.wippy.ai/webcomponents-1.0.69` で、対応する `@wippy-fe/*` ファミリーは `0.0.69` です。
+Draft 1 のラベルが外れるまでは、CDN の正確なタグにピン留めしてください。現在のリリースは `https://web-host.wippy.ai/webcomponents-1.0.70` で、対応する `@wippy-fe/*` ファミリーは `0.0.70` です。
 
 ## マネージドレイアウトの有効化
 
