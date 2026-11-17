@@ -13,6 +13,27 @@ description: "Пакеты @wippy-fe/* публикуются в npm и испо
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## Обновление с Web Host 1.0.69 до 1.0.70
+
+Web Host 1.0.70 работает в паре с публичными пакетами `@wippy-fe/*` версии `0.0.70`. Приложение, в котором ничего не меняется, продолжает работать. Эти варианты поведения отличаются от 1.0.69.
+
+- Веб-компоненты, которые не подключились к новым возможностям, сохраняют прежние события `load` и `ready` с тем же смыслом и в то же время.
+- Markdown, который отображает Wippy, и HTML-санитайзеры Wippy добавляют внешним ссылкам HTTP(S) атрибуты `target="_blank"` и `rel="nofollow noopener noreferrer"`. Ссылки, которые страница создаёт сама, сохраняют атрибуты, записанные страницей. См. [Proxy API](../micro-frontends/proxy-api.md).
+- Атрибут `sandbox` iframe страницы теперь содержит `allow-popups-to-escape-sandbox`. Ссылка, которая открывает новую вкладку, открывает её вне песочницы iframe. Где откроется ссылка, по-прежнему определяет её `target`.
+- Хост заново читает свои маршруты монтирования во время работы, как описано в [Dynamic Routing](../frontend-registry/dynamic-routing.md). Дочернее приложение заменяет свои `mountRoutes` каждой полученной картой, а не объединяет карты, и `host.classifyLink()` читает текущую карту.
+- `createAppRouter()` из `@wippy-fe/router` сообщает хосту маршрут только после завершения навигации. Раньше сообщалась и навигация, которую остановил guard.
+- В боковой панели хоста страница, у которой `order` отсутствует или равен `null`, теперь сортируется как 9999, после страниц с `order`. Раньше `null` сортировался как 0.
+
+Приложение может подключиться к этим возможностям. Каждая из них выключена, пока приложение её не использует.
+
+| Возможность | Где описана |
+|-------------|-------------|
+| `lazyVueConfig`, `wippyMountState`, событие `wippy-mounted` и `preloadImplementation()` для веб-компонентов Vue | [Web Component Recipe](../micro-frontends/web-component.md) |
+| Ленивый стартовый шаблон в `@wippy-fe/webcomponent-vue/starter/` и `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, свойство `replace` у `AutoRouterLink` и отменяемое событие `nav-request` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `usePageList()` и `useAppNav()` из `@wippy-fe/vue-host`, а также `PageOutlet` и `pageOutletRoute` из `@wippy-fe/router` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `withExternalLinkTarget()` из `@wippy-fe/shared` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## Доступ к хосту — `@wippy-fe/proxy`
 
 И приложения-микрофронтенды (`view.page`), и веб-компоненты (`view.component`) общаются с хостом одинаково: синхронными именованными импортами из `@wippy-fe/proxy`, используемыми напрямую. Ни `await` для их получения, ни рукопожатия — хост внедряет конфигурацию до запуска вашего кода.
@@ -376,7 +397,7 @@ export default {
 
 В опубликованной версии Host закреплена PrimeVue 4.5.5. Сгенерированный
 inventory поставляется в корне версионного Host. Опубликованная базовая версия —
-Web Host 1.0.69 и публичные пакеты 0.0.69. Перед использованием проверьте теги.
+Web Host 1.0.70 и публичные пакеты 0.0.70. Перед использованием проверьте теги.
 `primevue-export-inventory.json`:
 
 ```bash
@@ -413,7 +434,7 @@ import Button from 'primevue/button'
 Запрашивайте нужный CSS отдельно через документированные CSS-ключи Host.
 Локальная preview CSS остается условием Фазы 4.
 
-Этот inventory относится к опубликованному Web Host 1.0.69. Перед использованием
+Этот inventory относится к опубликованному Web Host 1.0.70. Перед использованием
 сверьте его URL и содержимое с опубликованным артефактом Host.
 
 JSON содержит поля верхнего уровня `schemaVersion`, `package`, `counts`,

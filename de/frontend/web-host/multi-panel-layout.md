@@ -38,6 +38,7 @@ Das Managed Layout erstreckt sich über den Web Host, die Facade und mehrere `@w
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Reaktive und race-sichere Session-/Token-Steuerung von `<wippy-chat>`, optionale gethemte Splitter-Griffe, Größenbeschränkungen nur auf der Split-Achse, Korrekturen an Drawer-Geometrie und -Stapelung sowie die mitgelieferte Proxy-Source-Map. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Typisierte Sichtbarkeit beibehaltener WCs und `useHostVisibilityRefresh()`, sofortige Page-Bereitschaft statt Warten auf den 14-Sekunden-Fallback, Zurückweisung veralteter Renderer-Keys, In-place-Updates von Komponenten-Props und die isolierte Splitter-Schicht mit `--wippy-layout-splitter-z-index`. |
 | Web Host `1.0.69`, Wippy FE `0.0.69` | Die Optionen `closable`, `emptyState` und `startToken` von `@HOST/chat-wrapper`, `@HOST/panel-tab` mit `mode: 'auto'`, die Klasse `wippy-host-app` am Managed-Root sowie Chat- und Navigationsaufrufe einer verborgenen aktuellen Page, die die Koordinatoren erreichen. |
+| Web Host `1.0.70`, Wippy FE `0.0.70` | `host.navigate(url, { replace: true })` und das Flag `replace` an den Intents `navigate` und `routeChanged`, das `@HOST/compat-coordinator` beachtet. |
 
 Die 14-Sekunden-Page-Einblendung ist ein Fallback von Web Host `1.0.52`, kein
 Feature von 1.0.51 und keine Ladeverzögerung der Anwendung. Split-Achsen-Sizing
@@ -65,7 +66,7 @@ bei exakt `false -> true`. Verwenden Sie in einer direkten WC nicht das
 Proxy-Topic `@visibility`; das ist der Nachrichtenkanal für iframes/Web
 Fragments.
 
-Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.69` mit der passenden `@wippy-fe/*`-Familie `0.0.69`.
+Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.70` mit der passenden `@wippy-fe/*`-Familie `0.0.70`.
 
 ## Managed Layout aktivieren
 
@@ -513,12 +514,14 @@ Die Managed-Shell rendert **nur Ihr deklariertes Layout**. Ab Web Host 1.0.50 ve
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, Top-Level `state` / `ws` / `on` | Funktioniert | Funktioniert direkt; Managed mountet die globalen Toast- und Bestätigungsoberflächen |
 | `openArtifact(id, ...)` | Öffnet im rechten Panel oder in einem Modal | Veröffentlicht einen Intent; der Compat-Koordinator zielt auf `artifactPanel` oder `modalId` |
 | `startChat(token)` / `openSession(uuid)` | Öffnet und zeigt die Session | Veröffentlicht einen Intent; der Compat-Koordinator löst Start-Tokens auf und aktualisiert das deklarierte `chatPanel` |
-| `navigate(url)` | Pusht den Compat-Root-Router | Veröffentlicht einen Intent; `routeSync` wendet ihn auf das Haupt-Panel an und hält die Browser-History im Gleichklang |
-| `onRouteChanged(route, navId?)` | Steuert die Browser-URL des Hosts | Aktualisiert den Routenzustand des Panels; `routeSync` projiziert die Route des Haupt-Panels auf die Browser-URL |
+| `navigate(url, { replace? })` | Pusht den Compat-Root-Router oder ersetzt dessen aktuellen Eintrag mit `replace: true` | Veröffentlicht einen Intent; `routeSync` wendet ihn auf das Haupt-Panel an und hält die Browser-History im Gleichklang |
+| `onRouteChanged(route, navId?, { replace? })` | Steuert die Browser-URL des Hosts | Aktualisiert den Routenzustand des Panels; `routeSync` projiziert die Route des Haupt-Panels auf die Browser-URL |
 
 Ist ein deklarierter Koordinator noch nicht verfügbar, warten seine Intents in seiner eigenen begrenzten Warteschlange. Eine Deklaration ohne `coordinators`-Eintrag legt nichts in eine Warteschlange. Eine Deklaration ohne Handler wird von der Boot-Paritätstabelle gemeldet. Reservierte Intents sind nur für `coordinators`-Einträge lesbar und können von gewöhnlichen Panels nicht gefälscht werden.
 
 Eine Page, die aktuell, aber verborgen ist, zum Beispiel in einem geschlossenen Drawer oder einer eingeklappten Spalte, veröffentlicht `host.startChat()`, `host.openSession()`, `host.openArtifact()` und `host.navigate()` weiterhin als Intents, sodass die Koordinatoren sie erhalten. Diese Aufrufe fallen nicht mehr auf die Compat-Behandlung zurück, die eine Session starten konnte, die kein Panel zeigte. Eine Page, die ein Panel ersetzt hat, ist nicht mehr aktuell, und ihre Aufrufe werden verworfen.
+
+`host.navigate(url, { replace: true })` veröffentlicht einen `navigate`-Intent mit `replace: true`. `@HOST/compat-coordinator` ersetzt dann den aktuellen History-Eintrag, statt einen hinzuzufügen, sodass Zurück den verlassenen Eintrag überspringt. Das Haupt-Panel folgt der neuen URL wie nach einem Push. Rufen Sie die Methode auf, nachdem sich die Host-URL geändert hat, zum Beispiel aus einem `@history`-Event, weil ein Replace, der eintrifft, während eine andere Navigation noch läuft, auf dem Eintrag davor landen kann. Auch ein `routeChanged`-Intent des Haupt-Panels kann `replace: true` tragen, wenn eine App ihre Route ersetzt. `@HOST/compat-coordinator` beachtet beide Flags, wenn die URL-Synchronisation aktiv ist. Ein eigener Koordinator sollte den Browser-Eintrag ersetzen, wenn einer der beiden Intents das Flag trägt, und sonst pushen.
 
 ## Ansatz für State Management
 

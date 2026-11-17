@@ -59,6 +59,7 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.61`, Wippy FE `0.0.61` | Managed panels register Web Fragment execution frames, so child navigation updates the page URL. Agent actions and the capture approval panel render above native modal dialogs. |
 | Web Host `1.0.65`, Wippy FE `0.0.65` | `@HOST/session-selector` opens the selected session in the layout's `chatPanel`, and the selector of a `@HOST/chat-wrapper` panel opens it in that panel, both through the `openSession` intent. A cold load of `/chat/<id>` opens that session. The shell and theme CSS start to load at boot, and the panel tab and splitter handle follow the dark theme. |
 | Web Host `1.0.69`, Wippy FE `0.0.69` | `@HOST/chat-wrapper` options `closable`, `emptyState` and `startToken`, `@HOST/panel-tab` `mode: 'auto'`, the `wippy-host-app` class on the managed root, and chat and navigation calls from a hidden current page that reach the coordinators. |
+| Web Host `1.0.70`, Wippy FE `0.0.70` | `host.navigate(url, { replace: true })`, and the `replace` flag on the `navigate` and `routeChanged` intents that `@HOST/compat-coordinator` honors. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
 feature or an application loading delay.
@@ -83,8 +84,8 @@ the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
 Pin to an exact CDN tag until the Draft 1 label is removed. The current release
-is `https://web-host.wippy.ai/webcomponents-1.0.69` with the matching
-`@wippy-fe/*` `0.0.69` family. This reference was last validated against
+is `https://web-host.wippy.ai/webcomponents-1.0.70` with the matching
+`@wippy-fe/*` `0.0.70` family. This reference was last validated against
 Web Host 1.0.56 and `0.0.56`. The release map lists the managed-layout changes
 after that release. Retained direct-web-component visibility still requires at
 least 1.0.52/0.0.52.
@@ -386,7 +387,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a modal. The public 0.0.69 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.70 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
@@ -536,12 +537,14 @@ The managed shell renders **only your declared layout**. Starting with Web Host 
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, top-level `state` / `ws` / `on` | Works | Works directly; managed mounts the global toast and confirmation surfaces |
 | `openArtifact(id, ...)` | Opens in the right panel or a modal | Publishes an intent; the compat coordinator targets `artifactPanel` or `modalId` |
 | `startChat(token)` / `openSession(uuid)` | Opens and displays the session | Publishes an intent; the compat coordinator resolves start tokens and updates the declared `chatPanel` |
-| `navigate(url)` | Pushes the compat root router | Publishes an intent; `routeSync` applies it to the main panel and keeps browser history aligned |
-| `onRouteChanged(route, navId?)` | Drives the host browser URL | Updates panel route state; `routeSync` projects the main panel route to the browser URL |
+| `navigate(url, { replace? })` | Pushes the compat root router, or replaces its current entry with `replace: true` | Publishes an intent; `routeSync` applies it to the main panel and keeps browser history aligned |
+| `onRouteChanged(route, navId?, { replace? })` | Drives the host browser URL | Updates panel route state; `routeSync` projects the main panel route to the browser URL |
 
 If a declared coordinator is not available yet, its intents wait in its own bounded queue. A declaration with no `coordinators` entry queues nothing. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
 
 A page that is current but hidden, for example in a closed drawer or a collapsed column, still publishes `host.startChat()`, `host.openSession()`, `host.openArtifact()` and `host.navigate()` as intents, so the coordinators receive them. These calls no longer fall through to the compat handling, which could start a session that no panel showed. A page that a panel has replaced is not current, and its calls are dropped.
+
+`host.navigate(url, { replace: true })` publishes a `navigate` intent with `replace: true`. `@HOST/compat-coordinator` then replaces the current history entry instead of adding one, so Back skips the entry that was left. The main panel follows the new URL as it does after a push. Make the call after the host URL has changed, for example from an `@history` event, because a replace that arrives while another navigation is still in progress can land on the entry before it. A `routeChanged` intent of the main panel can also carry `replace: true` when an app replaces its route. `@HOST/compat-coordinator` honors both flags when URL sync is enabled. A coordinator of your own should replace the browser entry when either intent carries the flag, and push when it is absent.
 
 ## State Management Approach
 

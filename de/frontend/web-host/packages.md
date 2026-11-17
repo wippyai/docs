@@ -13,6 +13,27 @@ Installieren Sie die Packages, die Sie brauchen:
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## Upgrade von Web Host 1.0.69 auf 1.0.70
+
+Web Host 1.0.70 gehört zu den öffentlichen `@wippy-fe/*`-Packages in Version `0.0.70`. Eine App, die nichts ändert, läuft weiter. Diese Verhaltensweisen unterscheiden sich von 1.0.69.
+
+- Web Components, die sich nicht anmelden, behalten die bisherigen Events `load` und `ready` mit derselben Bedeutung und demselben Zeitpunkt.
+- Markdown, das Wippy rendert, und die HTML-Sanitizer von Wippy versehen externe HTTP(S)-Links mit `target="_blank"` und `rel="nofollow noopener noreferrer"`. Anker, die eine Page selbst rendert, behalten die Attribute, die die Page geschrieben hat. Siehe [Proxy API](../micro-frontends/proxy-api.md).
+- Das Attribut `sandbox` von Page-iframes enthält jetzt `allow-popups-to-escape-sandbox`. Ein Link, der einen neuen Tab öffnet, öffnet ihn außerhalb der iframe-Sandbox. Das `target` des Links bestimmt weiterhin, wo er sich öffnet.
+- Der Host liest seine Mount-Routen im laufenden Betrieb erneut, wie unter [Dynamic Routing](../frontend-registry/dynamic-routing.md) beschrieben. Ein Child ersetzt seine `mountRoutes` mit jeder Map, die es erhält, statt die Maps zusammenzuführen, und `host.classifyLink()` liest die aktuelle Map.
+- `createAppRouter()` aus `@wippy-fe/router` meldet dem Host eine Route erst, wenn eine Navigation abgeschlossen ist. Früher wurde auch eine Navigation gemeldet, die ein Guard gestoppt hatte.
+- In der Host-Sidebar sortiert eine Page, deren `order` fehlt oder `null` ist, jetzt als 9999, nach den Pages mit `order`. Früher sortierte `null` als 0.
+
+Eine App kann sich für diese Features anmelden. Jedes ist ausgeschaltet, bis die App es verwendet.
+
+| Feature | Beschrieben in |
+|---------|----------------|
+| `lazyVueConfig`, `wippyMountState`, das Event `wippy-mounted` und `preloadImplementation()` für Vue-Web-Components | [Web Component Recipe](../micro-frontends/web-component.md) |
+| Der Lazy-Starter in `@wippy-fe/webcomponent-vue/starter/` und `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, die Prop `replace` von `AutoRouterLink` und das abbrechbare Event `nav-request` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `usePageList()` und `useAppNav()` aus `@wippy-fe/vue-host` sowie `PageOutlet` und `pageOutletRoute` aus `@wippy-fe/router` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `withExternalLinkTarget()` aus `@wippy-fe/shared` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## Zugriff auf den Host — `@wippy-fe/proxy`
 
 Sowohl Micro-Frontend-Apps (`view.page`) als auch Web Components (`view.component`) sprechen auf dieselbe Weise mit dem Host: synchrone benannte Imports aus `@wippy-fe/proxy`, direkt verwendet. Kein `await`, um sie zu erhalten, und kein Handshake — der Host injiziert die Konfiguration, bevor Ihr Code läuft.
@@ -379,7 +400,7 @@ Das Host-Release enthält die statische Tabler-Sammlung unter `iconify/tabler.js
 
 Das veröffentlichte Host-Release verwendet PrimeVue 4.5.5. Das generierte
 Inventar liegt im versionierten Host-Stammverzeichnis. Der veröffentlichte
-Web Host ist Version 1.0.69, die öffentlichen Pakete sind Version 0.0.69.
+Web Host ist Version 1.0.70, die öffentlichen Pakete sind Version 0.0.70.
 Diese Versionen sind veröffentlicht; prüfen Sie die Tags vor der Nutzung.
 Datei: `primevue-export-inventory.json`.
 
@@ -419,7 +440,7 @@ Externalisierung liefert kein PrimeVue-CSS. Fordern Sie benötigte CSS-Ressource
 separat über die dokumentierten Host-CSS-Keys an. Die lokale Preview-CSS bleibt
 eine Voraussetzung für Phase 4.
 
-Dieses Inventar gehört zum veröffentlichten Web Host 1.0.69. Prüfen Sie URL und
+Dieses Inventar gehört zum veröffentlichten Web Host 1.0.70. Prüfen Sie URL und
 Inhalt anhand des veröffentlichten Host-Artefakts, bevor Sie es verwenden.
 
 Das JSON hat die Felder `schemaVersion`, `package`, `counts`, `exports` und

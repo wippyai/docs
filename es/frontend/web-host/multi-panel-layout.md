@@ -38,6 +38,7 @@ El layout managed abarca el Web Host, el facade y varios paquetes `@wippy-fe/*`.
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Control reactivo y seguro frente a carreras de sesión/token de `<wippy-chat>`, asas de splitter tematizadas opcionales, restricciones de tamaño solo en el eje de división, correcciones de geometría y apilado de drawers, y el source map del proxy empaquetado. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidad tipada de WC retenidos y `useHostVisibilityRefresh()`, disponibilidad inmediata de la página en lugar de esperar al respaldo de 14 segundos, rechazo de claves de renderizador obsoletas, actualizaciones de props de componente en el sitio, y la capa aislada del splitter con `--wippy-layout-splitter-z-index`. |
 | Web Host `1.0.69`, Wippy FE `0.0.69` | Las opciones `closable`, `emptyState` y `startToken` de `@HOST/chat-wrapper`, `@HOST/panel-tab` con `mode: 'auto'`, la clase `wippy-host-app` en la raíz managed y las llamadas de chat y navegación de una página actual pero oculta, que llegan a los coordinadores. |
+| Web Host `1.0.70`, Wippy FE `0.0.70` | `host.navigate(url, { replace: true })` y el indicador `replace` en los intents `navigate` y `routeChanged`, que `@HOST/compat-coordinator` respeta. |
 
 La revelación de página a los 14 segundos es un respaldo del Web Host `1.0.52`,
 no una característica de 1.0.51 ni un retardo de carga de la aplicación. El
@@ -66,7 +67,7 @@ inicial ordinaria con refrescos de revelación mediante
 solo en un `false -> true` exacto. No use el topic `@visibility` del proxy en un
 WC directo; es el canal de mensajes de iframe/Web Fragment.
 
-Fije un tag exacto del CDN hasta que se retire la etiqueta Draft 1. La versión actual es `https://web-host.wippy.ai/webcomponents-1.0.69`, con la familia `@wippy-fe/*` `0.0.69` correspondiente.
+Fije un tag exacto del CDN hasta que se retire la etiqueta Draft 1. La versión actual es `https://web-host.wippy.ai/webcomponents-1.0.70`, con la familia `@wippy-fe/*` `0.0.70` correspondiente.
 
 ## Habilitar el layout managed
 
@@ -514,12 +515,14 @@ El shell managed renderiza **solo el layout que usted declara**. A partir del We
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, `state` / `ws` / `on` de nivel superior | Funciona | Funciona directamente; managed monta las superficies globales de toast y de confirmación |
 | `openArtifact(id, ...)` | Abre en el panel derecho o en un modal | Publica un intent; el coordinador de compat apunta a `artifactPanel` o a `modalId` |
 | `startChat(token)` / `openSession(uuid)` | Abre y muestra la sesión | Publica un intent; el coordinador de compat resuelve los tokens de inicio y actualiza el `chatPanel` declarado |
-| `navigate(url)` | Hace push en el router raíz de compat | Publica un intent; `routeSync` lo aplica al panel principal y mantiene alineado el historial del navegador |
-| `onRouteChanged(route, navId?)` | Dirige la URL del navegador del host | Actualiza el estado de ruta del panel; `routeSync` proyecta la ruta del panel principal a la URL del navegador |
+| `navigate(url, { replace? })` | Hace push en el router raíz de compat, o reemplaza su entrada actual con `replace: true` | Publica un intent; `routeSync` lo aplica al panel principal y mantiene alineado el historial del navegador |
+| `onRouteChanged(route, navId?, { replace? })` | Dirige la URL del navegador del host | Actualiza el estado de ruta del panel; `routeSync` proyecta la ruta del panel principal a la URL del navegador |
 
 Si un coordinador declarado todavía no está disponible, sus intents esperan en su propia cola acotada. Una declaración sin ninguna entrada en `coordinators` no pone nada en cola. Una declaración sin manejador la informa la tabla de paridad del arranque. Los intents reservados solo son legibles por las entradas de `coordinators` y no pueden ser falsificados por paneles ordinarios.
 
 Una página que es actual pero está oculta, por ejemplo en un drawer cerrado o en una columna colapsada, sigue publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` y `host.navigate()` como intents, de modo que los coordinadores los reciben. Estas llamadas ya no recurren al tratamiento de compat, que podía iniciar una sesión que ningún panel mostraba. Una página que un panel ha sustituido ya no es actual, y sus llamadas se descartan.
+
+`host.navigate(url, { replace: true })` publica un intent `navigate` con `replace: true`. Entonces `@HOST/compat-coordinator` reemplaza la entrada actual del historial en lugar de añadir una, de modo que Atrás omite la entrada que se dejó. El panel principal sigue la nueva URL igual que después de un push. Haga la llamada después de que haya cambiado la URL del host, por ejemplo desde un evento `@history`, porque un reemplazo que llega mientras otra navegación sigue en curso puede aplicarse a la entrada anterior. Un intent `routeChanged` del panel principal también puede llevar `replace: true` cuando una app reemplaza su ruta. `@HOST/compat-coordinator` respeta ambos indicadores cuando la sincronización de URL está activada. Un coordinador propio debe reemplazar la entrada del navegador cuando alguno de los dos intents lleve el indicador, y hacer push cuando falte.
 
 ## Enfoque de gestión de estado
 

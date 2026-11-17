@@ -246,7 +246,8 @@ frame.srcdoc = sourceHtml
 | `loading` | — | Fired before fetch/process/render starts. |
 | `load` | — | Fired after the sandbox iframe loads. |
 | `error` | Original error | Fired when fetch, injection, or load fails. |
-| `nav-owner-route` | `{ path: string, navId?: number }` | Child route change when `nav-owner` is set. The event bubbles and is `composed`. |
+| `nav-owner-route` | `{ path: string, navId?: number, replace?: boolean }` | Child route change when `nav-owner` is set. `replace` is `true` when the child reported its route with `{ replace: true }`. The event bubbles and is `composed`. |
+| `nav-request` | `{ url: string, replace?: true }` | The child called `host.navigate(url)` and `nav-owner` is set. `replace: true` is present only when the child passed `{ replace: true }`. The event is cancelable, bubbles and is `composed`. |
 | `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Bridge message from the child. |
 
 | Method | Description |
@@ -265,6 +266,22 @@ frame.addEventListener('nav-owner-route', (event) => {
   myRouter.push(path)
 })
 ```
+
+A child's `host.navigate(url)` is a request for a Host route, not a route of the child. When `nav-owner` is set, `<w-iframe>` first dispatches a cancelable `nav-request` event. A parent that shows pages inside its own shell cancels the event and routes the URL itself, so the reader stays in the shell. If no listener cancels the event, the URL goes to the Host as before. Without `nav-owner`, no `nav-request` is dispatched. The event is dispatched synchronously, so a listener must call `preventDefault()` before its first `await`. When the child passed `{ replace: true }`, the parent should replace its own history entry, as the Host would:
+
+```typescript
+frame.addEventListener('nav-request', (event) => {
+  const { url, replace } = event.detail
+  if (url.startsWith('/reports/')) {
+    event.preventDefault()
+    replace ? myRouter.replace(url) : myRouter.push(url)
+  }
+})
+```
+
+In fragment mode a nested page's DOM sits inside the shadow tree of its parent, so the `nav-owner-route` and `nav-request` events of a nested `nav-owner` frame also bubble through every outer `<w-artifact>`. A listener that acts only for its own frame can check `event.composedPath()[0]`.
+
+The iframe of a page has the `sandbox` attribute `allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads`. Since Web Host 1.0.70 it includes `allow-popups-to-escape-sandbox`, so a link that opens a new tab opens it outside the iframe sandbox.
 
 ### Parent-child bridge
 
@@ -332,7 +349,8 @@ If you omit `options.timeoutMs`, `host.bridge.request()` (and the parent-side `f
 | `loading` | Before fetch starts | — |
 | `load` | After iframe loads | — |
 | `error` | Fetch or render fails | Original error |
-| `nav-owner-route` | Nav-owner child route changes | `{ path: string, navId?: number }` |
+| `nav-owner-route` | Nav-owner child route changes | `{ path: string, navId?: number, replace?: boolean }` |
+| `nav-request` | A nav-owner child calls `host.navigate(url)`. Cancelable: call `preventDefault()` to handle the URL yourself. | `{ url: string, replace?: true }` |
 | `wippy-message` | Bridge message from nested iframe | `{ channel, payload, requestId?, respond?, reject? }` |
 
 ### CSS status and parts

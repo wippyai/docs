@@ -38,6 +38,7 @@ description: "マネージドレイアウトモードは、標準の Wippy ク�
 | Web ホスト `1.0.51`、Wippy FE `0.0.51` | リアクティブかつ競合状態に安全な `<wippy-chat>` のセッション／トークン制御、オプトインのテーマ対応スプリッターハンドル、分割軸のみのサイズ制約、ドロワーのジオメトリ／重なりの修正、同梱されたプロキシのソースマップ。 |
 | Web ホスト `1.0.52`、Wippy FE `0.0.52` | 型付きの保持 WC の可視性と `useHostVisibilityRefresh()`、14秒のフォールバックを待たない即時のページ準備完了、古いレンダラーキーの拒否、コンポーネント prop のインプレース更新、`--wippy-layout-splitter-z-index` を伴う分離されたスプリッターレイヤー。 |
 | Web ホスト `1.0.69`、Wippy FE `0.0.69` | `@HOST/chat-wrapper` のオプション `closable`、`emptyState`、`startToken`、`@HOST/panel-tab` の `mode: 'auto'`、マネージドのルートにある `wippy-host-app` クラス、そして非表示の現在のページからのチャットおよびナビゲーションの呼び出しがコーディネーターに届くこと。 |
+| Web ホスト `1.0.70`、Wippy FE `0.0.70` | `host.navigate(url, { replace: true })`、および `@HOST/compat-coordinator` が尊重する `navigate` と `routeChanged` インテントの `replace` フラグ。 |
 
 14秒のページ表示は Web ホスト `1.0.52` のフォールバックであり、1.0.51 の機能でもアプリケーションの読み込み遅延でもありません。分割軸のサイズ指定とリアクティブなチャットは 1.0.51 で入りました。保持された可視性、キー付きの準備完了、スプリッターのレイヤー化は 1.0.52 で入りました。
 
@@ -49,7 +50,7 @@ description: "マネージドレイアウトモードは、標準の Wippy ク�
 
 Vue コンポーネントは `useHostVisibility()` でこの状態を読むか、`useHostVisibilityRefresh(task)` によって通常の初期読み込みと再表示時のリフレッシュを組み合わせます。後者はマウント後に実行され、その後は厳密な `false -> true` のときにのみ実行されます。直接の WC でプロキシの `@visibility` トピックを使ってはいけません。それは iframe / Web Fragment のメッセージチャネルです。
 
-Draft 1 のラベルが外れるまでは、CDN の正確なタグにピン留めしてください。現在のリリースは `https://web-host.wippy.ai/webcomponents-1.0.69` で、対応する `@wippy-fe/*` ファミリーは `0.0.69` です。
+Draft 1 のラベルが外れるまでは、CDN の正確なタグにピン留めしてください。現在のリリースは `https://web-host.wippy.ai/webcomponents-1.0.70` で、対応する `@wippy-fe/*` ファミリーは `0.0.70` です。
 
 ## マネージドレイアウトの有効化
 
@@ -448,12 +449,14 @@ if (host.layout.snapshot) {
 | `setContext`、`toast`、`confirm`、`handleError`、`logout`、`bridge.*`、トップレベルの `state` / `ws` / `on` | 動作します | 直接動作します。マネージドはグローバルなトーストと確認のサーフェスをマウントします |
 | `openArtifact(id, ...)` | 右パネルまたはモーダルで開きます | インテントを発行します。compat コーディネーターが `artifactPanel` または `modalId` を対象にします |
 | `startChat(token)` / `openSession(uuid)` | セッションを開いて表示します | インテントを発行します。compat コーディネーターが開始トークンを解決し、宣言された `chatPanel` を更新します |
-| `navigate(url)` | compat のルートルーターへ push します | インテントを発行します。`routeSync` がそれをメインパネルへ適用し、ブラウザー履歴との整合を保ちます |
-| `onRouteChanged(route, navId?)` | ホストのブラウザー URL を駆動します | パネルのルート状態を更新します。`routeSync` がメインパネルのルートをブラウザー URL へ投影します |
+| `navigate(url, { replace? })` | compat のルートルーターへ push します。`replace: true` の場合は現在のエントリを置き換えます | インテントを発行します。`routeSync` がそれをメインパネルへ適用し、ブラウザー履歴との整合を保ちます |
+| `onRouteChanged(route, navId?, { replace? })` | ホストのブラウザー URL を駆動します | パネルのルート状態を更新します。`routeSync` がメインパネルのルートをブラウザー URL へ投影します |
 
 宣言されたコーディネーターがまだ利用できない場合、そのインテントはそのコーディネーター専用の上限付きキューで待機します。`coordinators` のエントリがない宣言は、何もキューに入れません。ハンドラーのない宣言は、起動時の対応表で報告されます。予約されたインテントは `coordinators` のエントリだけが読め、通常のパネルが偽造することはできません。
 
 現在のページが非表示（たとえば閉じたドロワーや折りたたまれた列）であっても、`host.startChat()`、`host.openSession()`、`host.openArtifact()`、`host.navigate()` はインテントとして発行されるため、コーディネーターに届きます。これらの呼び出しは、どのパネルも表示しないセッションを開始しかねなかった compat の処理には、もうフォールスルーしません。パネルに置き換えられたページは現在のページではなく、その呼び出しは破棄されます。
+
+`host.navigate(url, { replace: true })` は、`replace: true` を持つ `navigate` インテントを発行します。すると `@HOST/compat-coordinator` は、履歴エントリを追加する代わりに現在のエントリを置き換えるため、「戻る」は離れたエントリを飛ばします。メインパネルは、push の後と同じように新しい URL に従います。ホストの URL が変わった後、たとえば `@history` イベントから呼び出してください。別のナビゲーションがまだ進行中のときに届いた置き換えは、1 つ前のエントリに適用されることがあるためです。アプリがルートを置き換えるとき、メインパネルの `routeChanged` インテントも `replace: true` を持てます。URL 同期が有効な場合、`@HOST/compat-coordinator` は両方のフラグを尊重します。独自のコーディネーターは、どちらかのインテントにフラグがあればブラウザーのエントリを置き換え、なければ push してください。
 
 ## 状態管理のアプローチ
 

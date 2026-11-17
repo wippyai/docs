@@ -38,6 +38,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 | Web Host `1.0.51`，Wippy FE `0.0.51` | 响应式且竞态安全的 `<wippy-chat>` 会话／令牌控制、可选启用的主题化分隔条手柄、仅限分割轴的尺寸约束、抽屉几何／层叠修复，以及打包的 proxy source map。 |
 | Web Host `1.0.52`，Wippy FE `0.0.52` | 类型化的保留式 WC 可见性与 `useHostVisibilityRefresh()`、立即的页面就绪而非等待 14 秒回退、过期渲染器 key 拒绝、就地组件 prop 更新，以及带 `--wippy-layout-splitter-z-index` 的独立分隔条层。 |
 | Web Host `1.0.69`，Wippy FE `0.0.69` | `@HOST/chat-wrapper` 的 `closable`、`emptyState` 和 `startToken` 选项，`@HOST/panel-tab` 的 `mode: 'auto'`，受管布局根元素上的 `wippy-host-app` 类，以及隐藏的当前页面发出的聊天和导航调用会到达协调器。 |
+| Web Host `1.0.70`，Wippy FE `0.0.70` | `host.navigate(url, { replace: true })`，以及 `@HOST/compat-coordinator` 遵循的 `navigate` 与 `routeChanged` intent 上的 `replace` 标志。 |
 
 14 秒页面显现是 Web Host `1.0.52` 的回退机制，不是 1.0.51 的特性，也不是应用的加载延迟。分割轴尺寸约束和响应式聊天在 1.0.51 落地；保留式可见性、带 key 的就绪判定和分隔条分层在 1.0.52 落地。
 
@@ -49,7 +50,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 
 Vue 组件用 `useHostVisibility()` 读取该状态，或者用 `useHostVisibilityRefresh(task)` 把常规的初始加载与显现刷新结合起来。后者在挂载后运行，之后只在恰好发生 `false -> true` 时运行。不要在直挂 WC 中使用 proxy 的 `@visibility` topic；那是 iframe/Web Fragment 的消息通道。
 
-在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.69`，对应的 `@wippy-fe/*` 系列版本为 `0.0.69`。
+在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.70`，对应的 `@wippy-fe/*` 系列版本为 `0.0.70`。
 
 ## 启用受管布局
 
@@ -448,12 +449,14 @@ if (host.layout.snapshot) {
 | `setContext`、`toast`、`confirm`、`handleError`、`logout`、`bridge.*`、顶层 `state` / `ws` / `on` | 可用 | 直接可用；受管模式会挂载全局 toast 和确认面 |
 | `openArtifact(id, ...)` | 在右侧面板或模态框中打开 | 发布一个 intent；compat 协调器指向 `artifactPanel` 或 `modalId` |
 | `startChat(token)` / `openSession(uuid)` | 打开并显示会话 | 发布一个 intent；compat 协调器解析启动令牌并更新已声明的 `chatPanel` |
-| `navigate(url)` | 推入 compat 根路由器 | 发布一个 intent；`routeSync` 把它应用到主面板并保持浏览器历史一致 |
-| `onRouteChanged(route, navId?)` | 驱动宿主浏览器 URL | 更新面板路由状态；`routeSync` 把主面板路由投射到浏览器 URL |
+| `navigate(url, { replace? })` | 推入 compat 根路由器；带 `replace: true` 时替换其当前条目 | 发布一个 intent；`routeSync` 把它应用到主面板并保持浏览器历史一致 |
+| `onRouteChanged(route, navId?, { replace? })` | 驱动宿主浏览器 URL | 更新面板路由状态；`routeSync` 把主面板路由投射到浏览器 URL |
 
 如果已声明的协调器尚不可用，它的 intent 会在它自己的有界队列中等待。没有 `coordinators` 条目的声明不会让任何 intent 入队。声明了却没有处理器的情况会由启动对照表报告。保留 intent 只能被 `coordinators` 条目读取，普通面板无法伪造。
 
 当前但被隐藏的页面（例如在关闭的抽屉或折叠的列中）仍会把 `host.startChat()`、`host.openSession()`、`host.openArtifact()` 和 `host.navigate()` 作为 intent 发布，因此协调器会收到它们。这些调用不再回落到 compat 处理，而 compat 处理可能启动一个没有任何面板显示的会话。被面板替换的页面不再是当前页面，它的调用会被丢弃。
+
+`host.navigate(url, { replace: true })` 会发布带有 `replace: true` 的 `navigate` intent。随后 `@HOST/compat-coordinator` 会替换当前历史记录条目，而不是新增一条，因此“后退”会跳过被离开的条目。主面板会像 push 之后一样跟随新的 URL。请在宿主 URL 已经变化之后再调用，例如在 `@history` 事件中调用，因为在另一次导航仍在进行时到达的替换可能落在前一个条目上。当应用替换自己的路由时，主面板的 `routeChanged` intent 也可以带有 `replace: true`。启用 URL 同步时，`@HOST/compat-coordinator` 会遵循这两个标志。你自己的协调器应在任一 intent 带有该标志时替换浏览器条目，没有该标志时再 push。
 
 ## 状态管理方式
 

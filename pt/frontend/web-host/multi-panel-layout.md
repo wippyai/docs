@@ -38,6 +38,7 @@ O layout gerenciado abrange o Web Host, a facade e vários pacotes `@wippy-fe/*`
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Controle reativo e seguro contra corrida de sessão/token do `<wippy-chat>`, alças de splitter tematizadas opcionais, restrições de tamanho apenas no eixo de divisão, correções de geometria/empilhamento de drawer e o source map do proxy empacotado. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Visibilidade tipada de WC retido e `useHostVisibilityRefresh()`, prontidão imediata de página em vez de esperar o fallback de 14 segundos, rejeição de chave de renderer obsoleta, atualizações de props de componente in-place e a camada isolada de splitter com `--wippy-layout-splitter-z-index`. |
 | Web Host `1.0.69`, Wippy FE `0.0.69` | As opções `closable`, `emptyState` e `startToken` de `@HOST/chat-wrapper`, `@HOST/panel-tab` com `mode: 'auto'`, a classe `wippy-host-app` na raiz gerenciada e as chamadas de chat e navegação de uma página atual, mas oculta, que chegam aos coordenadores. |
+| Web Host `1.0.70`, Wippy FE `0.0.70` | `host.navigate(url, { replace: true })` e a flag `replace` nos intents `navigate` e `routeChanged`, que o `@HOST/compat-coordinator` respeita. |
 
 A revelação de página em 14 segundos é um fallback do Web Host `1.0.52`, não uma
 feature da 1.0.51 nem um atraso de carregamento da aplicação. O dimensionamento
@@ -63,7 +64,7 @@ carregamento inicial comum com refreshes de revelação através de
 em uma transição exata de `false -> true`. Não use o tópico `@visibility` do proxy
 em um WC direto; ele é o canal de mensagens de iframe/Web Fragment.
 
-Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.69`, com a família `@wippy-fe/*` `0.0.69` correspondente.
+Fixe uma tag exata do CDN até o rótulo Draft 1 ser removido. A versão atual é `https://web-host.wippy.ai/webcomponents-1.0.70`, com a família `@wippy-fe/*` `0.0.70` correspondente.
 
 ## Habilitando o Layout Gerenciado
 
@@ -506,12 +507,14 @@ O shell gerenciado renderiza **apenas o layout que você declarou**. A partir do
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, `state` / `ws` / `on` de nível superior | Funciona | Funciona diretamente; o gerenciado monta as surfaces globais de toast e confirmação |
 | `openArtifact(id, ...)` | Abre no painel direito ou em um modal | Publica um intent; o coordenador de compat mira `artifactPanel` ou `modalId` |
 | `startChat(token)` / `openSession(uuid)` | Abre e exibe a sessão | Publica um intent; o coordenador de compat resolve tokens de início e atualiza o `chatPanel` declarado |
-| `navigate(url)` | Empurra o router raiz do compat | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
-| `onRouteChanged(route, navId?)` | Aciona a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
+| `navigate(url, { replace? })` | Empurra o router raiz do compat ou, com `replace: true`, substitui a entrada atual | Publica um intent; `routeSync` o aplica ao painel principal e mantém o histórico do navegador alinhado |
+| `onRouteChanged(route, navId?, { replace? })` | Aciona a URL do navegador do host | Atualiza o estado de rota do painel; `routeSync` projeta a rota do painel principal na URL do navegador |
 
 Se um coordenador declarado ainda não estiver disponível, seus intents esperam em sua própria fila limitada. Uma declaração sem nenhuma entrada em `coordinators` não enfileira nada. Uma declaração sem handler é reportada pela tabela de paridade do boot. Intents reservados são legíveis apenas por entradas em `coordinators` e não podem ser forjados por painéis comuns.
 
 Uma página que é atual, mas está oculta, por exemplo em um drawer fechado ou em uma coluna recolhida, continua publicando `host.startChat()`, `host.openSession()`, `host.openArtifact()` e `host.navigate()` como intents, de modo que os coordenadores os recebem. Essas chamadas não recorrem mais ao tratamento compat, que podia iniciar uma sessão que nenhum painel exibia. Uma página que um painel substituiu não é mais atual, e suas chamadas são descartadas.
+
+`host.navigate(url, { replace: true })` publica um intent `navigate` com `replace: true`. O `@HOST/compat-coordinator` então substitui a entrada atual do histórico em vez de adicionar uma, de modo que Voltar ignora a entrada que foi deixada. O painel principal segue a nova URL como faz após um push. Faça a chamada depois que a URL do host mudar, por exemplo a partir de um evento `@history`, porque uma substituição que chega enquanto outra navegação ainda está em andamento pode cair na entrada anterior. Um intent `routeChanged` do painel principal também pode levar `replace: true` quando um app substitui sua rota. O `@HOST/compat-coordinator` respeita as duas flags quando a sincronização de URL está ativada. Um coordenador próprio deve substituir a entrada do navegador quando qualquer um dos intents levar a flag e fazer push quando ela estiver ausente.
 
 ## Abordagem de Gerenciamento de Estado
 
