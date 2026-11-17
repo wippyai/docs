@@ -126,6 +126,9 @@ The endpoint returns shell settings and selected Web Host fields. It does not re
   "themeStorageKey": "@wippy-theme-mode",
   "axiosDefaults": { "timeout": 30000 },
   "apiRoutes": { "agents": { "list": "/custom/agents" } },
+  "allowSelectModel": false,
+  "hideSessionSelector": false,
+  "allowAdditionalTags": {},
   "tanstack": { "lists": { "refetchOnWindowFocus": true } },
   "iconify": {},
   "importMap": {
@@ -164,6 +167,7 @@ The endpoint returns shell settings and selected Web Host fields. It does not re
 | `themeMode` | Initial theme mode: `auto`, `light`, or `dark`. A persisted choice takes precedence in the standard shell. |
 | `axiosDefaults` | Axios instance defaults forwarded to child apps. |
 | `apiRoutes` | Override individual API endpoint paths (top-level `AppConfig` field). |
+| `allowSelectModel`, `hideSessionSelector`, `allowAdditionalTags` | Shared chat policy as root fields. See the `hostConfig` note below for the legacy copy. |
 | `tanstack` | TanStack Query defaults returned by the endpoint. See the forwarding limitation below. |
 | `iconify` | Explicit Iconify provider sources forwarded from `cfg.iconify`. |
 | `importMap` | Optional browser import-map extension from `cfg.importMap`; the shell registers it before importing Host modules. |
@@ -209,15 +213,25 @@ The standard shell itself adds these required `AppConfig` fields:
 | `history` | `"hash"` \| `"browser"` | `"hash"` | Vue Router history mode |
 | `renderEngine` | `"iframe"` \| `"fragment"` | `"iframe"` | Render engine for packaged `view.page` applications |
 | `showAdmin` | boolean | `true` | Show admin features in UI |
-| `allowSelectModel` | boolean | `false` | Show LLM model picker |
+| `allowSelectModel` | boolean | `false` | Show LLM model picker. Legacy policy only (see below) |
 | `startNavOpen` | boolean | `false` | Expand nav sidebar on load |
 | `hideNavBar` | boolean | `false` | Hide left navigation sidebar entirely |
 | `disableRightPanel` | boolean | `false` | Disable right artifact panel |
-| `hideSessionSelector` | boolean | `false` | Hide the chat session picker |
+| `hideSessionSelector` | boolean | `false` | Hide the chat session picker. Legacy policy only (see below) |
 | `additionalNavItems` | array | `[]` | Extra items injected into the sidebar |
 | `stateCache` | object | `{}` | LRU cache config for child page state |
-| `allowAdditionalTags` | object | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes) |
+| `allowAdditionalTags` | object | `{}` | HTML sanitizer tag whitelist (`Record<string, string[]>`, tag → allowed attributes). Legacy policy only (see below) |
 | `chat` | object | `{}` | Chat UI overrides (paste-to-file behavior, etc.) |
+
+The facade always returns `allowSelectModel`, `hideSessionSelector`, and
+`allowAdditionalTags` as root fields of the response. It also copies them into
+`hostConfig` only under the legacy policy. The `host_policy_mode` parameter
+selects the policy: `auto` (default) uses the root-only policy for an official
+CDN Web Host 1.0.62 or newer and the legacy copy for an older, private, or
+unversioned Host URL; `shared` forces root-only; `legacy` forces the copy. With
+the default Web Host, read these three settings from the response root, not
+from `hostConfig`. The facade omits `additionalNavItems`, `stateCache`, and
+`chat` from `hostConfig` when they are empty.
 
 ## Authentication Flow
 

@@ -37,6 +37,7 @@ Das Managed Layout erstreckt sich über den Web Host, die Facade und mehrere `@w
 | Web Host `1.0.50`, Wippy FE `0.0.50` | Typisierte Compat-Intents, `@HOST/compat-coordinator`, Synchronisation von Browser-URL und Vor/Zurück, eingebaute Panel-Tabs, verankerte schwebende Panels und `useSwapBuffer()`. |
 | Web Host `1.0.51`, Wippy FE `0.0.51` | Reaktive und race-sichere Session-/Token-Steuerung von `<wippy-chat>`, optionale gethemte Splitter-Griffe, Größenbeschränkungen nur auf der Split-Achse, Korrekturen an Drawer-Geometrie und -Stapelung sowie die mitgelieferte Proxy-Source-Map. |
 | Web Host `1.0.52`, Wippy FE `0.0.52` | Typisierte Sichtbarkeit beibehaltener WCs und `useHostVisibilityRefresh()`, sofortige Page-Bereitschaft statt Warten auf den 14-Sekunden-Fallback, Zurückweisung veralteter Renderer-Keys, In-place-Updates von Komponenten-Props und die isolierte Splitter-Schicht mit `--wippy-layout-splitter-z-index`. |
+| Web Host `1.0.69`, Wippy FE `0.0.69` | Die Optionen `closable`, `emptyState` und `startToken` von `@HOST/chat-wrapper`, `@HOST/panel-tab` mit `mode: 'auto'`, die Klasse `wippy-host-app` am Managed-Root sowie Chat- und Navigationsaufrufe einer verborgenen aktuellen Page, die die Koordinatoren erreichen. |
 
 Die 14-Sekunden-Page-Einblendung ist ein Fallback von Web Host `1.0.52`, kein
 Feature von 1.0.51 und keine Ladeverzögerung der Anwendung. Split-Achsen-Sizing
@@ -64,7 +65,7 @@ bei exakt `false -> true`. Verwenden Sie in einer direkten WC nicht das
 Proxy-Topic `@visibility`; das ist der Nachrichtenkanal für iframes/Web
 Fragments.
 
-Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.66` mit der passenden `@wippy-fe/*`-Familie `0.0.66`.
+Pinnen Sie auf ein exaktes CDN-Tag, bis der Draft-1-Hinweis entfernt ist. Das aktuelle Release ist `https://web-host.wippy.ai/webcomponents-1.0.69` mit der passenden `@wippy-fe/*`-Familie `0.0.69`.
 
 ## Managed Layout aktivieren
 
@@ -131,6 +132,50 @@ Genau ein Panel im Layout-Baum muss `main: true` tragen. Die Zuständigkeit für
 | `@HOST/panel-tab` | Rand-Tab, um ein eingeklapptes Panel wieder einzublenden; unter `floating` deklarieren |
 
 Ein unbekanntes `@HOST/<id>` verursacht beim Laden der Deklaration einen `LayoutValidationError`, statt stillschweigend einen leeren Slot zu rendern.
+
+### Optionen von `@HOST/chat-wrapper`
+
+Drei Optionen sind für ein Layout gedacht, dessen eigener Koordinator das Chat-Panel verwaltet. Alle drei sind standardmäßig aus.
+
+```yaml
+panels:
+  chat:
+    kind: builtin
+    id: '@HOST/chat-wrapper'
+    props:
+      showSelector: true          # default true
+      closable: true              # default false
+      emptyState: { kind: component, tagName: my-chat-empty }
+      startToken: agent-start-token
+```
+
+| Option | Wirkung |
+|--------|---------|
+| `closable` | Fügt oben rechts im Chat einen Schließen-Button hinzu (Accessible Name `Close chat`). In einem Drawer-Slot schließt er den Drawer, in einem Inline-Slot klappt er die Spalte ein. In einem Inline-Slot, der nicht `collapsible` ist, wird er nicht angezeigt. |
+| `emptyState` | Eine Panel-Definition, die anstelle des eigenen Leerzustands des Chats erscheint, solange keine Session offen ist. Verwenden Sie eine `component` mit gültigem Custom-Element-Namen oder die eingebauten `@HOST/nav-sidebar` oder `@HOST/panel-tab`. Sie läuft im Kontext des Chat-Panels: `data-wippy-panel-id` ist die ID des Chat-Panels, und sie erhält denselben panelbezogenen `host` und Bus wie jedes `kind: component`-Panel. Jede andere Definition wird mit einer Warnung ignoriert, und der Chat zeigt seinen eigenen Leerzustand. |
+| `startToken` | Startet eine Session aus einem Start-Token, wie es `<wippy-chat start-token>` tut. Das funktioniert auch, solange das Panel verborgen ist, zum Beispiel in einem geschlossenen Drawer oder einer eingeklappten Spalte. |
+
+So verhält sich `startToken`:
+
+- Das Panel tauscht das Token gegen eine neue Session, wenn es mit einem Token mountet, wenn sich das Token ändert und wenn `sessionId` geleert wird, während ein Token gesetzt ist. Solange `sessionId` einen Wert hat, wird das Token nicht verwendet.
+- Ist die Session bereit, zeigt das Panel sie an, setzt `props.sessionId` im Layout-Snapshot, behält `startToken` und veröffentlicht einen `openSession`-Intent, der dem Panel zugeordnet ist.
+- Eine Auswahl im Session-Selector bricht einen laufenden Start ab, setzt `{ sessionId: <picked>, startToken: null }` und veröffentlicht denselben Intent. Ein Koordinator unterscheidet eine Auswahl von einem abgeschlossenen Start anhand von `props.startToken` des Chat-Panels im Layout-Snapshot: nach einer Auswahl `null`, nach einem abgeschlossenen Start weiterhin gesetzt.
+- Ein fehlgeschlagener Start zeigt einen Fehler-Toast und leert `startToken`, sodass das Layout ein `change` auslöst. Wird dasselbe Token erneut gesetzt, beginnt ein neuer Tausch.
+- Mountet das Panel für dieselbe Panel-ID erneut, startet es keine zweite Session. Ein Start, dessen Session niemand mehr anzeigen kann, wird geschlossen. Ein Fall bleibt offen: Ein Start, der abgeschlossen wurde, während der Inhalt des Panels ausgetauscht war, behält seine Session, wenn das Panel danach entfernt wird.
+- Routet `@HOST/compat-coordinator` Sessions (`chatPanel` oder `artifactPanel` gesetzt), klappt der `openSession` eines abgeschlossenen Starts das Panel auf, sodass ein Start in einer eingeklappten Spalte die Spalte öffnet.
+- `startToken` ist Teil der Panel-Definition und steht daher im Layout-Snapshot, den jeder Child-Frame erhält.
+
+Für Attention gilt das Panel als sichtbar, wenn das Layout es präsentiert und seine Spalte nicht eingeklappt ist. Eine eingeklappte Spalte ist nicht sichtbar, auch wenn das Panel präsentiert bleibt. Solange `showSelector` `true` ist, hält das Panel die Session-Liste beobachtet, sodass sich der Selector wie in der Compat-Shell aktualisiert. Diese Optionen sind für einen Eintrag unter `panels` gedacht: In einem schwebenden Chat-Wrapper wird der Live-Zustand des Panels nicht aufgezeichnet.
+
+### Modi von `@HOST/panel-tab`
+
+| `mode` | Blendet ein mit | Blendet sich aus, solange das Ziel sichtbar ist |
+|--------|-----------------|--------------------------------------------------|
+| `collapse` (Default) | `expandPanel` | Nein |
+| `drawer` | `openDrawer` | Nein |
+| `auto` | `openDrawer`, wenn das Ziel in einem Drawer liegt, `expandPanel`, wenn es in einer eingeklappten Spalte liegt | Ja: der Drawer ist offen oder die Spalte nicht eingeklappt |
+
+`auto` eignet sich für ein Panel, das auf einem schmalen Bildschirm ein Drawer und auf einem breiten eine einklappbare Spalte ist. Es folgt dem Slot des Ziels beim aktuellen Breakpoint, und ein Ziel, das nicht im aktiven Layout liegt, blendet den Tab aus.
 
 ## Layouts nach Breakpoint
 
@@ -257,9 +302,7 @@ coordinators:
 Belassen Sie `routeSync: true`, wenn Sie den Standard-Navigationsvertrag
 verwenden. Ohne einen Koordinator oder äquivalente Logik beim Konsumenten haben
 Deep Links, Vor/Zurück und die Navigation über `@HOST/nav-sidebar` keine
-Panel-Route, die sie steuern könnten. Intents, die während des Child-Boots
-ausgelöst werden, werden in einer begrenzten Warteschlange gehalten, bis der
-erste Koordinator sie abonniert.
+Panel-Route, die sie steuern könnten. Intents, die ausgelöst werden, bevor ein Koordinator abonniert hat, zum Beispiel während des Child-Boots, werden gehalten. Jeder deklarierte Koordinator hat seine eigene begrenzte Warteschlange (32 Intents) und erhält jeden Intent einmal, in der Reihenfolge, in der er ausgelöst wurde. Ein Koordinator, der zuerst abonniert, verbraucht die Intents der anderen nicht, und ein Koordinator, der nie mountet, blockiert niemanden: Er füllt nur seine eigene Warteschlange. Ein Intent, dessen Page ersetzt wurde, während er wartete, wird verworfen.
 
 `@HOST/` ist in beide Richtungen reserviert: Gewöhnliche Panels können keinen
 System-Verkehr veröffentlichen, und nur Einträge unter `coordinators` empfangen
@@ -414,6 +457,14 @@ können. Drawer-Mounts folgen der animierten Drawer-Geometrie und werden nur im
 geöffneten Zustand über ihren Anker und ihr Backdrop gehoben, ohne ihren Inhalt
 neu zu mounten.
 
+## Host-only-CSS-Scope
+
+Das Wurzelelement des Managed Layouts hat die Klasse `wippy-host-app`, wie die Compat-Wurzel. Begrenzen Sie CSS nur für den Host darauf, zum Beispiel `.wippy-host-app .chat-message { ... }`.
+
+- iframe-Pages haben die Klasse nicht, diese Regeln erreichen sie also nicht.
+- Schwebende Fenster und Modals werden am Ende von `<body>` gerendert, außerhalb der Wurzel, sodass eine Regel unter `.wippy-host-app` sie nicht erreicht. Begrenzen Sie eine Regel für ein schwebendes Fenster stattdessen über sein Attribut `[data-wippy-floating="<id>"]`.
+- Web-Component-Pages und `kind: component`-Panels liegen innerhalb der Wurzel, eine Regel unter `.wippy-host-app` trifft daher auch ihren Inhalt, sofern dieser nicht in einem Shadow Root liegt.
+
 ## Styling von Splitter und Griff
 
 Die Trefferfläche des Splitters ist breiter als seine sichtbare Linie und liegt im
@@ -465,7 +516,9 @@ Die Managed-Shell rendert **nur Ihr deklariertes Layout**. Ab Web Host 1.0.50 ve
 | `navigate(url)` | Pusht den Compat-Root-Router | Veröffentlicht einen Intent; `routeSync` wendet ihn auf das Haupt-Panel an und hält die Browser-History im Gleichklang |
 | `onRouteChanged(route, navId?)` | Steuert die Browser-URL des Hosts | Aktualisiert den Routenzustand des Panels; `routeSync` projiziert die Route des Haupt-Panels auf die Browser-URL |
 
-Ist noch kein Koordinator verfügbar, werden Boot-Zeit-Intents in einer begrenzten Warteschlange für die erste Koordinator-Subscription gehalten. Eine Deklaration ohne Handler wird von der Boot-Paritätstabelle gemeldet. Reservierte Intents sind nur für `coordinators`-Einträge lesbar und können von gewöhnlichen Panels nicht gefälscht werden.
+Ist ein deklarierter Koordinator noch nicht verfügbar, warten seine Intents in seiner eigenen begrenzten Warteschlange. Eine Deklaration ohne `coordinators`-Eintrag legt nichts in eine Warteschlange. Eine Deklaration ohne Handler wird von der Boot-Paritätstabelle gemeldet. Reservierte Intents sind nur für `coordinators`-Einträge lesbar und können von gewöhnlichen Panels nicht gefälscht werden.
+
+Eine Page, die aktuell, aber verborgen ist, zum Beispiel in einem geschlossenen Drawer oder einer eingeklappten Spalte, veröffentlicht `host.startChat()`, `host.openSession()`, `host.openArtifact()` und `host.navigate()` weiterhin als Intents, sodass die Koordinatoren sie erhalten. Diese Aufrufe fallen nicht mehr auf die Compat-Behandlung zurück, die eine Session starten konnte, die kein Panel zeigte. Eine Page, die ein Panel ersetzt hat, ist nicht mehr aktuell, und ihre Aufrufe werden verworfen.
 
 ## Ansatz für State Management
 

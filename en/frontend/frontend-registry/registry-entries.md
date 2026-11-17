@@ -100,6 +100,10 @@ A component author writes display metadata once in the `wippy` block of
 author defaults. The operator sets routing and access policy in YAML and can
 also override display fields there.
 
+The page navigation list is an exception. `GET /api/public/pages/list` takes
+`title` and `icon` from the registry entry only and does not fall back to
+`wippy-meta.json`. Set `meta.title` and `meta.icon` for every announced page.
+
 ## Common Fields
 
 These fields appear in the `meta` block for both `view.page` and `view.component` entries.
@@ -109,7 +113,7 @@ These fields appear in the `meta` block for both `view.page` and `view.component
 | `type` | string | — | `view.page` or `view.component` (required) |
 | `name` | string | entry name | Identifier used in API responses |
 | `title` | string | — | Human-readable display name |
-| `icon` | string | — | Iconify reference, e.g. `tabler:layout-dashboard` |
+| `icon` | string | — | Iconify reference, e.g. `tabler:layout-dashboard`. Read for `view.page` entries only, for the navigation item |
 | `announced` | boolean | — | Controls visibility in listing APIs; semantics differ by type (see below) |
 | `secure` | boolean | `false` | Requires authentication to access |
 | `url` | string | — | Base URL prefix for static file serving (CDN origin or local mount path) |
@@ -133,7 +137,7 @@ For micro frontend apps, the three fields compose to produce the HTML URL the We
 
 For example, with `url: /app`, `base_path: app/main`, `entry_point: app.html`, the host fetches `/app/app/main/app.html`.
 
-The separation between `base_path` and `entry_point` is intentional. The Web Host injects `<url>/<base_path>/` as an HTML `<base>` tag into the loaded page, which governs how the browser resolves all relative URLs inside that page. The entry file may sit in a subdirectory of the base — what matters is that the base points to the common root from which all resources can be reached relatively.
+The separation between `base_path` and `entry_point` is intentional. The Web Host injects an HTML `<base>` tag that points at the directory of the entry file: `<url>/<base_path>/` plus the directory part of `entry_point`. Relative URLs inside the page therefore resolve as they would if the browser had loaded the entry file directly. The entry file may sit in a subdirectory of `base_path` — what matters is that `base_path` names a served directory that contains every file the page references.
 
 For example, if a bundle has this layout:
 
@@ -146,7 +150,7 @@ static/
     app.js
 ```
 
-and `index.html` references `../shared/vendor.js`, then `base_path` must point to `static/` (the directory containing both `app/` and `shared/`), not to `app/`. Setting `base_path: app` would make `../shared/vendor.js` resolve outside the served directory and 404.
+and `index.html` references `../shared/vendor.js`, the `<base>` tag is `<url>/<base_path>/app/`, so the reference resolves to `<url>/<base_path>/shared/vendor.js`. `base_path` must therefore point to `static/` (the directory containing both `app/` and `shared/`), not to `app/`. With `base_path` set to the `app` directory itself and `entry_point: index.html`, `../shared/vendor.js` resolves above `base_path` and returns 404 unless that parent directory is served too.
 
 In the common case where all assets sit alongside the entry file, `base_path` and the directory containing `entry_point` are the same level, so the distinction is invisible. It only matters when a bundle shares resources across sibling directories.
 

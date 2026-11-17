@@ -69,7 +69,7 @@ it renders anything conventional, and the ladder only goes one way:
 | consumes semantic tokens or dark mode | `themeConfigUrl` |
 | can scroll | `iframeCssUrl` |
 | renders markdown | `markdownCssUrl` |
-| chooses Tailwind utilities for routine layout or spacing | `primeVueCssUrl` (the Host bundles Tailwind with this asset) |
+| chooses Tailwind utilities for routine layout or spacing | no host CSS key: compile the utilities in the component's own build with the Wippy preset and deliver them through `inlineCss` |
 | renders anything **PrimeVue** ships a component for — button, input, form, table, dialog, menu, tag, tooltip, any feedback control | `primeVueCssUrl` **and** `PrimeVuePlugin` |
 
 A chart on a canvas is the archetypal legitimate opt-out: it has no classic UI,
@@ -77,9 +77,10 @@ so it needs none of the backbone. Give that same chart a toolbar and it is no
 longer presentation-neutral — the button is a PrimeVue button, and the whole
 integration comes with it.
 
-Note the coupling: **Tailwind utilities are delivered with `primeVueCssUrl`.**
-There is no separate Tailwind host CSS key, so in practice a component that
-chooses Tailwind is loading the PrimeVue asset too. Prefer utilities for
+Note the boundary: **no host CSS key delivers Tailwind utilities.**
+`primeVueCssUrl` carries the PrimeVue component classes (`.p-*`) only, so a
+component that writes utilities such as `flex` or `gap-2` compiles them in its
+own build and ships them through `inlineCss`. Prefer utilities for
 ordinary layout and spacing when they keep the component clear, but portable
 module-owned CSS remains valid when a utility is not the best expression of the
 design. (`preflightCssUrl` is not part of the key union; if Tailwind preflight

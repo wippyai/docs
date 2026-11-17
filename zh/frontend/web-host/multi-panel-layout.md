@@ -37,6 +37,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 | Web Host `1.0.50`，Wippy FE `0.0.50` | 类型化 compat intent、`@HOST/compat-coordinator`、浏览器 URL 与前进／后退同步、内置面板标签页、锚定式浮动面板，以及 `useSwapBuffer()`。 |
 | Web Host `1.0.51`，Wippy FE `0.0.51` | 响应式且竞态安全的 `<wippy-chat>` 会话／令牌控制、可选启用的主题化分隔条手柄、仅限分割轴的尺寸约束、抽屉几何／层叠修复，以及打包的 proxy source map。 |
 | Web Host `1.0.52`，Wippy FE `0.0.52` | 类型化的保留式 WC 可见性与 `useHostVisibilityRefresh()`、立即的页面就绪而非等待 14 秒回退、过期渲染器 key 拒绝、就地组件 prop 更新，以及带 `--wippy-layout-splitter-z-index` 的独立分隔条层。 |
+| Web Host `1.0.69`，Wippy FE `0.0.69` | `@HOST/chat-wrapper` 的 `closable`、`emptyState` 和 `startToken` 选项，`@HOST/panel-tab` 的 `mode: 'auto'`，受管布局根元素上的 `wippy-host-app` 类，以及隐藏的当前页面发出的聊天和导航调用会到达协调器。 |
 
 14 秒页面显现是 Web Host `1.0.52` 的回退机制，不是 1.0.51 的特性，也不是应用的加载延迟。分割轴尺寸约束和响应式聊天在 1.0.51 落地；保留式可见性、带 key 的就绪判定和分隔条分层在 1.0.52 落地。
 
@@ -48,7 +49,7 @@ description: "受管布局模式用完全声明式的面板树取代标准 Wippy
 
 Vue 组件用 `useHostVisibility()` 读取该状态，或者用 `useHostVisibilityRefresh(task)` 把常规的初始加载与显现刷新结合起来。后者在挂载后运行，之后只在恰好发生 `false -> true` 时运行。不要在直挂 WC 中使用 proxy 的 `@visibility` topic；那是 iframe/Web Fragment 的消息通道。
 
-在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.66`，对应的 `@wippy-fe/*` 系列版本为 `0.0.66`。
+在 Draft 1 标签移除之前，请固定到确切的 CDN 标签。当前版本是 `https://web-host.wippy.ai/webcomponents-1.0.69`，对应的 `@wippy-fe/*` 系列版本为 `0.0.69`。
 
 ## 启用受管布局
 
@@ -115,6 +116,50 @@ host_config:
 | `@HOST/panel-tab` | 用于展开已折叠面板的边缘标签；声明在 `floating` 下 |
 
 未知的 `@HOST/<id>` 会在声明加载时触发 `LayoutValidationError`，而不是静默渲染一个空槽位。
+
+### `@HOST/chat-wrapper` 选项
+
+三个选项面向由自身协调器管理聊天面板的布局。三个选项默认都是关闭的。
+
+```yaml
+panels:
+  chat:
+    kind: builtin
+    id: '@HOST/chat-wrapper'
+    props:
+      showSelector: true          # default true
+      closable: true              # default false
+      emptyState: { kind: component, tagName: my-chat-empty }
+      startToken: agent-start-token
+```
+
+| 选项 | 作用 |
+|------|------|
+| `closable` | 在聊天右上角添加关闭按钮（可访问名称为 `Close chat`）。在抽屉槽位中它关闭抽屉，在内联槽位中它折叠该列。在不可 `collapsible` 的内联槽位中不显示。 |
+| `emptyState` | 在没有打开会话时，替代聊天自身空状态而显示的面板定义。使用带有有效自定义元素名称的 `component`，或内置的 `@HOST/nav-sidebar` 或 `@HOST/panel-tab`。它在聊天面板的上下文中运行：`data-wippy-panel-id` 是聊天面板的 id，并且它获得与任何 `kind: component` 面板相同的面板作用域 `host` 和总线。其他任何定义都会被忽略并给出警告，聊天显示自身的空状态。 |
+| `startToken` | 像 `<wippy-chat start-token>` 一样，通过启动令牌启动会话。面板隐藏时也有效，例如在关闭的抽屉或折叠的列中。 |
+
+`startToken` 的行为如下：
+
+- 面板在带令牌挂载时、令牌变化时，以及在设置了令牌的情况下 `sessionId` 被清空时，将令牌换成新会话。只要 `sessionId` 有值，就不使用令牌。
+- 会话就绪后，面板显示它，在布局快照中设置 `props.sessionId`，保留 `startToken`，并发布归属于该面板的 `openSession` intent。
+- 在会话选择器中选择会取消正在进行的启动，设置 `{ sessionId: <picked>, startToken: null }`，并发布同样的 intent。协调器通过布局快照中聊天面板的 `props.startToken` 区分选择和已完成的启动：选择之后为 `null`，已完成的启动之后仍保持已设置。
+- 启动失败时会显示错误 toast 并清空 `startToken`，因此布局触发 `change`。再次设置相同的令牌会开始新的交换。
+- 以相同的面板 id 重新挂载面板不会启动第二个会话。会话已无人能显示的启动会被关闭。有一种情况仍保持打开：在面板内容被换出期间完成的启动，在面板之后被移除时会保留其会话。
+- 当 `@HOST/compat-coordinator` 负责路由会话时（设置了 `chatPanel` 或 `artifactPanel`），已完成启动的 `openSession` 会展开面板，因此在折叠的列中启动会打开该列。
+- `startToken` 是面板定义的一部分，因此它在每个子框架收到的布局快照中。
+
+对于 Attention，当布局展示面板且其所在的列未折叠时，面板才算可见。折叠的列不可见，即使面板仍处于展示状态。`showSelector` 为 `true` 时，面板会持续观察会话列表，因此选择器的刷新方式与 compat 外壳相同。这些选项用于 `panels` 中的条目：在浮动的 chat-wrapper 中，不记录面板的实时状态。
+
+### `@HOST/panel-tab` 模式
+
+| `mode` | 通过什么显示 | 目标显示时是否隐藏 |
+|--------|--------------|---------------------|
+| `collapse`（默认） | `expandPanel` | 否 |
+| `drawer` | `openDrawer` | 否 |
+| `auto` | 目标在抽屉中时用 `openDrawer`，目标在折叠的列中时用 `expandPanel` | 是：抽屉已打开，或该列未折叠 |
+
+`auto` 适用于在窄屏上是抽屉、在宽屏上是可折叠列的面板。它跟随目标在当前断点下的槽位，不在活动布局中的目标会隐藏该标签。
 
 ## 按断点索引的布局
 
@@ -234,7 +279,7 @@ coordinators:
       wsActions: true
 ```
 
-使用标准导航契约时请保持 `routeSync: true`。没有协调器或等价的消费方逻辑时，深链接、前进／后退以及 `@HOST/nav-sidebar` 导航就没有可驱动的面板路由。子应用启动期间产生的 intent 会保存在一个有界队列中，直到第一个协调器订阅为止。
+使用标准导航契约时请保持 `routeSync: true`。没有协调器或等价的消费方逻辑时，深链接、前进／后退以及 `@HOST/nav-sidebar` 导航就没有可驱动的面板路由。在协调器订阅之前产生的 intent（例如子应用启动期间的 intent）会被保存。每个已声明的协调器都有自己的有界队列（32 个 intent），并按产生顺序恰好收到每个 intent 一次。最先订阅的协调器不会用掉其他协调器的 intent，从不挂载的协调器也不会阻塞任何其他协调器，它只会填满自己的队列。等待期间其页面已被替换的 intent 会被丢弃。
 
 `@HOST/` 在两个方向上都是保留的：普通面板不能发布系统流量，而只有 `coordinators` 下的条目才能通过受支持的 host API 收到它。该边界对 iframe/Web Fragment 面板强制生效。挂载在宿主域中的直挂组件共享宿主 DOM，不构成安全沙箱。启动时，若缺少协调器处理、模态框目标面、主面板 URL 绑定或已声明的协调器标签，宿主会打印一张对照表；声明完整时不会产生警告。
 
@@ -352,6 +397,14 @@ Web Host 对受管页面展示面采用同样的带 key 就绪纪律，并设有
 
 `minSize` 和 `maxSize` 只约束当前的分割轴：水平树中是宽度，垂直树中是高度。它们不限制交叉轴，因此导航、聊天和其他满高挂载可以填满自己的轨道。抽屉挂载遵循带动画的抽屉几何，仅在打开时被提升到其锚点和背景遮罩之上，且不重新挂载其内容。
 
+## 仅限宿主的 CSS 作用域
+
+受管布局的根元素带有 `wippy-host-app` 类，与 compat 根元素相同。请把仅限宿主的 CSS 限定在该类之下，例如 `.wippy-host-app .chat-message { ... }`。
+
+- iframe 页面没有这个类，所以这些规则不会作用到它们。
+- 浮动窗口和模态框渲染在 `<body>` 末尾，位于根元素之外，所以 `.wippy-host-app` 之下的规则不会作用到它们。请改用浮动窗口的 `[data-wippy-floating="<id>"]` 属性来限定规则。
+- web 组件页面和 `kind: component` 面板位于根元素之内，所以 `.wippy-host-app` 之下的规则也会匹配它们的内容，除非该内容位于 shadow root 中。
+
 ## 分隔条与手柄样式
 
 分隔条的命中区域比它的可见线条更宽，并位于该包独立的层叠栈中。`--wippy-layout-splitter-z-index` 默认为 `700`，低于抽屉和模态框背景遮罩。圆形手柄需要主动启用：
@@ -398,7 +451,9 @@ if (host.layout.snapshot) {
 | `navigate(url)` | 推入 compat 根路由器 | 发布一个 intent；`routeSync` 把它应用到主面板并保持浏览器历史一致 |
 | `onRouteChanged(route, navId?)` | 驱动宿主浏览器 URL | 更新面板路由状态；`routeSync` 把主面板路由投射到浏览器 URL |
 
-如果尚无可用的协调器，启动时的 intent 会保存在一个有界队列中，等待第一个协调器订阅。声明了却没有处理器的情况会由启动对照表报告。保留 intent 只能被 `coordinators` 条目读取，普通面板无法伪造。
+如果已声明的协调器尚不可用，它的 intent 会在它自己的有界队列中等待。没有 `coordinators` 条目的声明不会让任何 intent 入队。声明了却没有处理器的情况会由启动对照表报告。保留 intent 只能被 `coordinators` 条目读取，普通面板无法伪造。
+
+当前但被隐藏的页面（例如在关闭的抽屉或折叠的列中）仍会把 `host.startChat()`、`host.openSession()`、`host.openArtifact()` 和 `host.navigate()` 作为 intent 发布，因此协调器会收到它们。这些调用不再回落到 compat 处理，而 compat 处理可能启动一个没有任何面板显示的会话。被面板替换的页面不再是当前页面，它的调用会被丢弃。
 
 ## 状态管理方式
 

@@ -58,6 +58,7 @@ Managed layout spans the Web Host, facade, and several `@wippy-fe/*` packages. U
 | Web Host `1.0.57`, Wippy FE `0.0.57` | A panel collapsed or dragged to zero size is hidden and cannot take focus. Any non-zero `collapseSize` keeps the panel on screen and interactive. |
 | Web Host `1.0.61`, Wippy FE `0.0.61` | Managed panels register Web Fragment execution frames, so child navigation updates the page URL. Agent actions and the capture approval panel render above native modal dialogs. |
 | Web Host `1.0.65`, Wippy FE `0.0.65` | `@HOST/session-selector` opens the selected session in the layout's `chatPanel`, and the selector of a `@HOST/chat-wrapper` panel opens it in that panel, both through the `openSession` intent. A cold load of `/chat/<id>` opens that session. The shell and theme CSS start to load at boot, and the panel tab and splitter handle follow the dark theme. |
+| Web Host `1.0.69`, Wippy FE `0.0.69` | `@HOST/chat-wrapper` options `closable`, `emptyState` and `startToken`, `@HOST/panel-tab` `mode: 'auto'`, the `wippy-host-app` class on the managed root, and chat and navigation calls from a hidden current page that reach the coordinators. |
 
 The 14-second page reveal is a Web Host `1.0.52` fallback, not a 1.0.51
 feature or an application loading delay.
@@ -82,8 +83,8 @@ the proxy `@visibility` topic in a direct WC; it is the iframe/Web Fragment
 message channel.
 
 Pin to an exact CDN tag until the Draft 1 label is removed. The current release
-is `https://web-host.wippy.ai/webcomponents-1.0.66` with the matching
-`@wippy-fe/*` `0.0.66` family. This reference was last validated against
+is `https://web-host.wippy.ai/webcomponents-1.0.69` with the matching
+`@wippy-fe/*` `0.0.69` family. This reference was last validated against
 Web Host 1.0.56 and `0.0.56`. The release map lists the managed-layout changes
 after that release. Retained direct-web-component visibility still requires at
 least 1.0.52/0.0.52.
@@ -153,6 +154,50 @@ Exactly one panel in the layout tree must carry `main: true`. Browser URL owners
 | `@HOST/panel-tab` | Edge tab for revealing a collapsed panel; declare under `floating` |
 
 An unknown `@HOST/<id>` causes a `LayoutValidationError` at declaration-load rather than silently rendering an empty slot.
+
+### `@HOST/chat-wrapper` Options
+
+Three options are for a layout whose own coordinator owns the chat panel. All three are off by default.
+
+```yaml
+panels:
+  chat:
+    kind: builtin
+    id: '@HOST/chat-wrapper'
+    props:
+      showSelector: true          # default true
+      closable: true              # default false
+      emptyState: { kind: component, tagName: my-chat-empty }
+      startToken: agent-start-token
+```
+
+| Option | What it does |
+|--------|--------------|
+| `closable` | Adds a Close button (accessible name `Close chat`) at the top right of the chat. In a drawer slot it closes the drawer; in an inline slot it collapses the column. It is not shown in an inline slot that is not `collapsible`. |
+| `emptyState` | A panel def shown instead of the chat's own empty state while no session is open. Use a `component` with a valid custom element name, or the built-in `@HOST/nav-sidebar` or `@HOST/panel-tab`. It runs in the chat panel's context: `data-wippy-panel-id` is the chat panel's id, and it gets the same panel-scoped `host` and bus as any `kind: component` panel. Any other def is ignored with a warning, and the chat shows its own empty state. |
+| `startToken` | Starts a session from a start token, as `<wippy-chat start-token>` does. It also works while the panel is hidden, for example in a closed drawer or a collapsed column. |
+
+How `startToken` behaves:
+
+- The panel exchanges the token for a new session when it mounts with a token, when the token changes, and when `sessionId` is cleared while a token is set. While `sessionId` has a value, the token is not used.
+- When the session is ready, the panel shows it, sets `props.sessionId` in the layout snapshot, keeps `startToken`, and publishes an `openSession` intent attributed to the panel.
+- A pick in the session selector cancels a running start and sets `{ sessionId: <picked>, startToken: null }`, then publishes the same intent. A coordinator tells a pick from a finished start by `props.startToken` of the chat panel in the layout snapshot: `null` after a pick, still set after a finished start.
+- A failed start shows an error toast and clears `startToken`, so the layout fires a `change`. Setting the same token again starts a new exchange.
+- Mounting the panel again for the same panel id does not start a second session. A start whose session nobody can show any more is closed. One case stays open: a start that finished while the panel's content was swapped away keeps its session when the panel is then removed.
+- With `@HOST/compat-coordinator` routing sessions (`chatPanel` or `artifactPanel` set), the `openSession` of a finished start expands the panel, so a start in a collapsed column opens the column.
+- `startToken` is part of the panel def, so it is in the layout snapshot that every child frame receives.
+
+The panel counts as visible for attention when the layout presents it and its column is not collapsed. A collapsed column is not visible, even though the panel stays presented. While `showSelector` is `true`, the panel keeps the session list observed, so the selector refreshes as in the compat shell. These options are meant for a `panels` entry: in a floating chat-wrapper the panel's live state is not recorded.
+
+### `@HOST/panel-tab` Modes
+
+| `mode` | Reveals with | Hides while the target is shown |
+|--------|--------------|---------------------------------|
+| `collapse` (default) | `expandPanel` | No |
+| `drawer` | `openDrawer` | No |
+| `auto` | `openDrawer` when the target is in a drawer, `expandPanel` when it is in a collapsed column | Yes: the drawer is open, or the column is not collapsed |
+
+`auto` suits a panel that is a drawer on a narrow screen and a collapsible column on a wide one. It follows the target's slot at the current breakpoint, and a target that is not in the active layout hides the tab.
 
 ## Breakpoint-Keyed Layouts
 
@@ -240,15 +285,19 @@ coordinators:
 A coordinator component receives the panel-scoped host wrapper and can subscribe to bus channels immediately in `onMount`:
 
 ```typescript
-import { WippyElement } from '@wippy-fe/webcomponent-core'
+import { getWippyHost, WippyElement } from '@wippy-fe/webcomponent-core'
+// ProxyApiInstance is an ambient global type (from @wippy-fe/types-global-proxy) — reference it without an import.
 
 class MyCoordinator extends WippyElement {
   private offOpenChat: (() => void) | null = null
 
   protected onMount() {
-    this.offOpenChat = this.host?.layout.on('open-chat', ({ payload }) => {
-      this.host?.layout.updatePanel('right', { route: `/open-chat/${payload.token}` })
-      this.host?.layout.expandPanel('right')
+    // `this.host` is typed `unknown`; read the same panel-scoped wrapper with a type argument.
+    const host = getWippyHost<ProxyApiInstance['host']>(this)
+    this.offOpenChat = host?.layout.on('open-chat', ({ payload }) => {
+      const { token } = payload as { token: string }
+      host.layout.updatePanel('right', { route: `/open-chat/${token}` })
+      host.layout.expandPanel('right')
     }) ?? null
   }
   protected onUnmount() {
@@ -283,9 +332,7 @@ coordinators:
 
 Keep `routeSync: true` when using the standard navigation contract. Without a
 coordinator or equivalent consumer logic, deep links, Back/Forward, and
-`@HOST/nav-sidebar` navigation have no panel route to drive. Intents raised
-during child boot are held in a bounded queue until the first coordinator
-subscribes.
+`@HOST/nav-sidebar` navigation have no panel route to drive. Intents raised before a coordinator has subscribed, for example during child boot, are held. Each declared coordinator has its own bounded queue (32 intents) and receives every intent once, in the order raised. A coordinator that subscribes first does not use up the intents of the others, and a coordinator that never mounts blocks no one: it fills only its own queue. An intent whose page was replaced while it waited is discarded.
 
 `@HOST/` is reserved in both directions: ordinary panels cannot publish system
 traffic, and only entries under `coordinators` receive it through supported
@@ -310,12 +357,11 @@ The `sourcePanelId` on received messages is set by the host from the publishing 
 **Important:** Components that import `host` directly from `@wippy-fe/proxy` bypass panel scoping — bus calls go through but lose `sourcePanelId`. Always use the panel-scoped wrapper instead:
 
 ```typescript
-// raw HTMLElement
+// raw HTMLElement or WippyElement subclass. `this.host` on WippyElement is the
+// same panel-scoped wrapper, but it is typed `unknown`, so pass the type argument.
 import { getWippyHost } from '@wippy-fe/webcomponent-core'
-const host = getWippyHost(this)
-
-// WippyElement subclass — this.host is already panel-scoped
-this.host?.layout.broadcast('open-chat', { token: 'abc' })
+const panelHost = getWippyHost<ProxyApiInstance['host']>(this)
+panelHost?.layout.broadcast('open-chat', { token: 'abc' })
 
 // Vue component
 import { useHost } from '@wippy-fe/webcomponent-vue'
@@ -340,7 +386,7 @@ host?.layout.broadcast('open-chat', { token: 'abc' })
 | `.updatePanel(id, def)` | Patch panel definition at runtime; `props` shallow-merges, top-level fields replace |
 | `.addFloating(id, def)` | Add a floating panel |
 | `.removeFloating(id)` | Remove a floating panel |
-| `.openModal(id, def)` | Open a modal. The public 0.0.66 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
+| `.openModal(id, def)` | Open a modal. The public 0.0.69 TypeScript API requires `def`; the host merges it over any declaration with the same id. Native `<dialog>.showModal()` is the default; pass `useNativeDialog: false` for the legacy div overlay. Re-opening an open id is a silent no-op. |
 | `.closeModal(id)` | Close an open modal |
 | `.broadcast(channel, payload)` | Publish to all panels |
 | `.send(target, channel, payload)` | Publish to one panel |
@@ -433,6 +479,14 @@ so navigation, chat, and other full-height mounts can fill their track. Drawer
 mounts follow the animated drawer geometry and are promoted above their anchor
 and backdrop only while open, without remounting their content.
 
+## Host-only CSS scope
+
+The managed layout root has the class `wippy-host-app`, as the compat root does. Scope host-only CSS under it, for example `.wippy-host-app .chat-message { ... }`.
+
+- Iframe pages do not have the class, so these rules do not reach them.
+- Floating windows and modals are rendered at the end of `<body>`, outside the root, so a rule under `.wippy-host-app` does not reach them. Scope a rule for a floating window with its `[data-wippy-floating="<id>"]` attribute instead.
+- Web component pages and `kind: component` panels are inside the root, so a rule under `.wippy-host-app` also matches their content unless that content is in a shadow root.
+
 ## Splitter and handle styling
 
 The splitter hit area is wider than its visible line and lives in the package's
@@ -485,7 +539,9 @@ The managed shell renders **only your declared layout**. Starting with Web Host 
 | `navigate(url)` | Pushes the compat root router | Publishes an intent; `routeSync` applies it to the main panel and keeps browser history aligned |
 | `onRouteChanged(route, navId?)` | Drives the host browser URL | Updates panel route state; `routeSync` projects the main panel route to the browser URL |
 
-If no coordinator is available yet, boot-time intents are held in a bounded queue for the first coordinator subscription. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
+If a declared coordinator is not available yet, its intents wait in its own bounded queue. A declaration with no `coordinators` entry queues nothing. A declaration with no handler is reported by the boot parity table. Reserved intents are readable only by `coordinators` entries and cannot be forged by ordinary panels.
+
+A page that is current but hidden, for example in a closed drawer or a collapsed column, still publishes `host.startChat()`, `host.openSession()`, `host.openArtifact()` and `host.navigate()` as intents, so the coordinators receive them. These calls no longer fall through to the compat handling, which could start a session that no panel showed. A page that a panel has replaced is not current, and its calls are dropped.
 
 ## State Management Approach
 

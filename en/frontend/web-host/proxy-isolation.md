@@ -62,7 +62,7 @@ When the host loads a `view.page`, it builds a `srcdoc` and injects, **in order,
 <script src="/.../proxy.js"></script>
 ```
 
-Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides arrive as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
+Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides are already merged into that config global by the host; the page reads no separate override global (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
 
 ### Web Fragment engine
 
@@ -135,7 +135,7 @@ The names are listed here to prevent collisions:
 | `window.getWippyApi` / `window.initWippyApi` | Async "resolve the instance" functions. Internal (`initWippyApi` is deprecated). |
 | `window.__WIPPY_APP_API__` | The resolved proxy instance. |
 | `window.__WIPPY_APP_CONFIG__` | The child `AppConfig` snapshot. |
-| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS-injection flags and per-page overrides. |
+| `window.__WIPPY_PROXY_CONFIG__` | CSS-injection flags. |
 | `window.__WIPPY_WEB_COMPONENT_CACHE__` | Loaded-component cache. |
 
 Two entry points make up the public JavaScript API: `initWippyApp(config, rootContainer?)` mounts the whole Web Host (the module-embed entry the facade uses; see [Facade Entry Point](./entry-point.md)), and **`@wippy-fe/proxy`** is the sync API for child apps and components. Everything in the table above is internal.
