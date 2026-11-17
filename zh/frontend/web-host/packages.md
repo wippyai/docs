@@ -13,6 +13,27 @@ description: "@wippy-fe/* 包发布在 npm 上，用于构建子微前端——�
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## 从 Web Host 1.0.69 升级到 1.0.70
+
+Web Host 1.0.70 与公开的 `@wippy-fe/*` 包 `0.0.70` 配套。不做任何修改的应用可以继续运行。以下行为与 1.0.69 不同。
+
+- 没有选择加入的 Web 组件保留原有的 `load` 和 `ready` 事件，含义和时机不变。
+- Wippy 渲染的 Markdown 和 Wippy 的 HTML 清理器会给外部 HTTP(S) 链接加上 `target="_blank"` 和 `rel="nofollow noopener noreferrer"`。页面自己渲染的锚点保留页面写下的属性。参见 [Proxy API](../micro-frontends/proxy-api.md)。
+- 页面 iframe 的 `sandbox` 属性现在包含 `allow-popups-to-escape-sandbox`。打开新标签页的链接会在 iframe 沙箱之外打开它。链接在哪里打开，仍由链接的 `target` 决定。
+- 宿主在运行期间会重新读取挂载路由，详见 [Dynamic Routing](../frontend-registry/dynamic-routing.md)。子应用用收到的每一份映射替换自己的 `mountRoutes`，而不是合并映射，并且 `host.classifyLink()` 读取当前映射。
+- `@wippy-fe/router` 的 `createAppRouter()` 只在导航完成时才向宿主报告路由。以前，被守卫中止的导航也会被报告。
+- 在宿主侧边栏中，`order` 缺失或为 `null` 的页面现在按 9999 排序，排在有 `order` 的页面之后。以前 `null` 按 0 排序。
+
+应用可以选择加入这些功能。每个功能在应用使用之前都是关闭的。
+
+| 功能 | 说明所在页面 |
+|------|--------------|
+| 用于 Vue Web 组件的 `lazyVueConfig`、`wippyMountState`、`wippy-mounted` 事件和 `preloadImplementation()` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `@wippy-fe/webcomponent-vue/starter/` 中的懒加载入门模板和 `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`、`host.onRouteChanged(path, navId, { replace: true })`、`AutoRouterLink` 的 `replace` 属性和可取消的 `nav-request` 事件 | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/vue-host` 的 `usePageList()` 和 `useAppNav()`，以及 `@wippy-fe/router` 的 `PageOutlet` 和 `pageOutletRoute` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/shared` 的 `withExternalLinkTarget()` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## 访问宿主 —— `@wippy-fe/proxy`
 
 微前端应用（`view.page`）和 web 组件（`view.component`）与宿主对话的方式相同：从 `@wippy-fe/proxy` 同步具名导入，直接使用。获取它们不需要 `await`，也没有握手——宿主在你的代码运行之前就注入了配置。

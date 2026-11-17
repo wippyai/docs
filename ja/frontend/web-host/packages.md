@@ -13,6 +13,27 @@ description: "@wippy-fe/* パッケージは npm へ公開されており、子�
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## Web ホスト 1.0.69 から 1.0.70 へのアップグレード
+
+Web ホスト 1.0.70 は、公開 `@wippy-fe/*` パッケージの `0.0.70` と対になります。何も変更しないアプリは、そのまま動作します。次の挙動が 1.0.69 と異なります。
+
+- オプトインしない Web コンポーネントは、従来の `load` イベントと `ready` イベントを、同じ意味と同じタイミングのまま保ちます。
+- Wippy が描画する Markdown と Wippy の HTML サニタイザーは、外部の HTTP(S) リンクに `target="_blank"` と `rel="nofollow noopener noreferrer"` を付けます。ページが自分で描画するアンカーは、ページが書いた属性をそのまま保ちます。[Proxy API](../micro-frontends/proxy-api.md) を参照してください。
+- ページの iframe の `sandbox` 属性に `allow-popups-to-escape-sandbox` が加わりました。新しいタブを開くリンクは、iframe のサンドボックスの外で開きます。開く場所は、引き続きリンクの `target` が決めます。
+- ホストは、実行中にマウントルートを再度読み込みます。詳しくは [Dynamic Routing](../frontend-registry/dynamic-routing.md) を参照してください。子は、受け取るマップごとに自分の `mountRoutes` を置き換え、マップをマージしません。また `host.classifyLink()` は現在のマップを読みます。
+- `@wippy-fe/router` の `createAppRouter()` は、ナビゲーションが完了したときだけルートをホストへ報告します。以前は、ガードが止めたナビゲーションも報告されていました。
+- ホストのサイドバーでは、`order` がない、または `null` のページは 9999 として並び、`order` のあるページの後ろに来ます。以前は `null` は 0 として並んでいました。
+
+アプリはこれらの機能にオプトインできます。各機能は、アプリが使うまでオフです。
+
+| 機能 | 説明のあるページ |
+|------|------------------|
+| Vue Web コンポーネント向けの `lazyVueConfig`、`wippyMountState`、`wippy-mounted` イベント、`preloadImplementation()` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `@wippy-fe/webcomponent-vue/starter/` の遅延読み込みスターターと `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`、`host.onRouteChanged(path, navId, { replace: true })`、`AutoRouterLink` の `replace` prop、キャンセル可能な `nav-request` イベント | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/vue-host` の `usePageList()` と `useAppNav()`、`@wippy-fe/router` の `PageOutlet` と `pageOutletRoute` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/shared` の `withExternalLinkTarget()` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## ホストへのアクセス — `@wippy-fe/proxy`
 
 マイクロフロントエンドアプリ（`view.page`）も Web コンポーネント（`view.component`）も、ホストとの対話は同じ方法です。`@wippy-fe/proxy` からの同期的な名前付き import を直接使います。取得に `await` は不要で、ハンドシェイクもありません — ホストはあなたのコードが動く前に設定を注入します。

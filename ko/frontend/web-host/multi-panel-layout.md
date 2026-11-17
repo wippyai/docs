@@ -38,6 +38,7 @@ managed 레이아웃은 웹 호스트, 파사드, 여러 `@wippy-fe/*` 패키지
 | 웹 호스트 `1.0.51`, Wippy FE `0.0.51` | 반응형이며 경쟁 조건에 안전한 `<wippy-chat>` 세션/토큰 제어, 옵트인 테마 스플리터 핸들, 분할 축 전용 크기 제약, 드로어 지오메트리/스태킹 수정, 패키징된 프록시 소스 맵. |
 | 웹 호스트 `1.0.52`, Wippy FE `0.0.52` | 타입이 정의된 유지형 WC 가시성과 `useHostVisibilityRefresh()`, 14초 폴백을 기다리는 대신 즉시 페이지 준비, 오래된 렌더러 키 거부, 컴포넌트 prop의 제자리 갱신, `--wippy-layout-splitter-z-index`를 갖는 격리된 스플리터 레이어. |
 | 웹 호스트 `1.0.69`, Wippy FE `0.0.69` | `@HOST/chat-wrapper`의 `closable`, `emptyState`, `startToken` 옵션, `@HOST/panel-tab`의 `mode: 'auto'`, managed 루트의 `wippy-host-app` 클래스, 그리고 숨겨진 현재 페이지의 채팅 및 탐색 호출이 코디네이터에 도달하는 동작. |
+| 웹 호스트 `1.0.70`, Wippy FE `0.0.70` | `host.navigate(url, { replace: true })`, 그리고 `@HOST/compat-coordinator`가 따르는 `navigate`·`routeChanged` 인텐트의 `replace` 플래그. |
 
 14초 페이지 노출은 웹 호스트 `1.0.52`의 폴백이며, 1.0.51의 기능도 아니고
 애플리케이션 로딩 지연도 아닙니다. 분할 축 크기 지정과 반응형 채팅은 1.0.51에,
@@ -497,12 +498,14 @@ managed 셸은 **여러분이 선언한 레이아웃만** 렌더링합니다. �
 | `setContext`, `toast`, `confirm`, `handleError`, `logout`, `bridge.*`, 최상위 `state` / `ws` / `on` | 동작 | 직접 동작. managed는 전역 토스트와 확인 서피스를 마운트합니다 |
 | `openArtifact(id, ...)` | 우측 패널이나 모달에서 열림 | 인텐트를 발행. compat 코디네이터가 `artifactPanel` 또는 `modalId`를 대상으로 함 |
 | `startChat(token)` / `openSession(uuid)` | 세션을 열고 표시 | 인텐트를 발행. compat 코디네이터가 시작 토큰을 해석하고 선언된 `chatPanel`을 갱신 |
-| `navigate(url)` | compat 루트 라우터에 push | 인텐트를 발행. `routeSync`가 이를 메인 패널에 적용하고 브라우저 히스토리를 맞춰 유지 |
-| `onRouteChanged(route, navId?)` | 호스트 브라우저 URL을 구동 | 패널 라우트 상태를 갱신. `routeSync`가 메인 패널 라우트를 브라우저 URL에 투영 |
+| `navigate(url, { replace? })` | compat 루트 라우터에 push, `replace: true`이면 현재 항목을 교체 | 인텐트를 발행. `routeSync`가 이를 메인 패널에 적용하고 브라우저 히스토리를 맞춰 유지 |
+| `onRouteChanged(route, navId?, { replace? })` | 호스트 브라우저 URL을 구동 | 패널 라우트 상태를 갱신. `routeSync`가 메인 패널 라우트를 브라우저 URL에 투영 |
 
 선언된 코디네이터가 아직 없다면 그 인텐트는 해당 코디네이터 전용의 제한된 큐에서 대기합니다. `coordinators` 항목이 없는 선언은 아무것도 큐에 넣지 않습니다. 핸들러가 없는 선언은 부팅 패리티 표에 보고됩니다. 예약 인텐트는 `coordinators` 항목만 읽을 수 있으며 일반 패널이 위조할 수 없습니다.
 
 현재 페이지이면서 숨겨진 페이지(예: 닫힌 드로어나 접힌 열)도 `host.startChat()`, `host.openSession()`, `host.openArtifact()`, `host.navigate()`를 인텐트로 계속 발행하므로 코디네이터가 이를 받습니다. 이 호출들은 더 이상 compat 처리로 넘어가지 않습니다. compat 처리는 어떤 패널도 표시하지 않는 세션을 시작할 수 있었습니다. 패널이 교체한 페이지는 현재 페이지가 아니며, 그 호출은 버려집니다.
+
+`host.navigate(url, { replace: true })`는 `replace: true`가 있는 `navigate` 인텐트를 발행합니다. 그러면 `@HOST/compat-coordinator`는 히스토리 항목을 추가하는 대신 현재 항목을 교체하므로, 뒤로 가기는 떠난 항목을 건너뜁니다. 메인 패널은 push 후와 같이 새 URL을 따릅니다. 호스트 URL이 바뀐 뒤에 호출하세요. 예를 들어 `@history` 이벤트에서 호출합니다. 다른 탐색이 아직 진행 중일 때 도착한 교체는 바로 앞 항목에 적용될 수 있기 때문입니다. 앱이 자신의 라우트를 교체할 때는 메인 패널의 `routeChanged` 인텐트도 `replace: true`를 가질 수 있습니다. URL 동기화가 켜져 있으면 `@HOST/compat-coordinator`는 두 플래그를 모두 따릅니다. 직접 만든 코디네이터는 두 인텐트 중 하나에 플래그가 있으면 브라우저 항목을 교체하고, 없으면 push해야 합니다.
 
 ## 상태 관리 접근법
 

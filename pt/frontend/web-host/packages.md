@@ -13,6 +13,27 @@ Instale os pacotes de que precisa:
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## Atualizar do Web Host 1.0.69 para o 1.0.70
+
+O Web Host 1.0.70 combina com os pacotes públicos `@wippy-fe/*` na versão `0.0.70`. Um app que não muda nada continua funcionando. Estes comportamentos diferem do 1.0.69.
+
+- Os web components que não aderem continuam com os eventos antigos `load` e `ready`, com o mesmo significado e o mesmo momento.
+- O Markdown que o Wippy renderiza e os sanitizadores de HTML do Wippy dão aos links HTTP(S) externos `target="_blank"` e `rel="nofollow noopener noreferrer"`. As âncoras que uma página renderiza por conta própria mantêm os atributos que a página escreveu. Veja [Proxy API](../micro-frontends/proxy-api.md).
+- O atributo `sandbox` dos iframes de página agora inclui `allow-popups-to-escape-sandbox`. Um link que abre uma nova aba a abre fora do sandbox do iframe. O `target` do link continua decidindo onde ele abre.
+- O host lê de novo suas rotas de montagem enquanto executa, como descrito em [Dynamic Routing](../frontend-registry/dynamic-routing.md). Um filho substitui seus `mountRoutes` a cada mapa que recebe, em vez de mesclar os mapas, e `host.classifyLink()` lê o mapa atual.
+- `createAppRouter()` de `@wippy-fe/router` informa uma rota ao host somente quando uma navegação termina. Antes, uma navegação que um guard interrompeu também era informada.
+- Na barra lateral do host, uma página cujo `order` falta ou é `null` agora é ordenada como 9999, depois das páginas com `order`. Antes, `null` era ordenado como 0.
+
+Um app pode aderir a estes recursos. Cada um fica desligado até o app usá-lo.
+
+| Recurso | Descrito em |
+|---------|-------------|
+| `lazyVueConfig`, `wippyMountState`, o evento `wippy-mounted` e `preloadImplementation()` para web components Vue | [Web Component Recipe](../micro-frontends/web-component.md) |
+| O starter com carregamento tardio em `@wippy-fe/webcomponent-vue/starter/` e `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, a prop `replace` de `AutoRouterLink` e o evento cancelável `nav-request` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `usePageList()` e `useAppNav()` de `@wippy-fe/vue-host`, e `PageOutlet` e `pageOutletRoute` de `@wippy-fe/router` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `withExternalLinkTarget()` de `@wippy-fe/shared` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## Acessando o host — `@wippy-fe/proxy`
 
 Tanto micro frontend apps (`view.page`) quanto web components (`view.component`) conversam com o host da mesma forma: imports nomeados síncronos de `@wippy-fe/proxy`, usados diretamente. Sem `await` para obtê-los e sem handshake — o host injeta a configuração antes de o seu código rodar.

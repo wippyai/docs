@@ -13,6 +13,27 @@ description: "@wippy-fe/* 패키지는 npm에 배포되어 있으며 자식 마�
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## 웹 호스트 1.0.69에서 1.0.70으로 업그레이드
+
+웹 호스트 1.0.70은 공개 `@wippy-fe/*` 패키지 `0.0.70`과 짝을 이룹니다. 아무것도 바꾸지 않는 앱은 그대로 동작합니다. 다음 동작이 1.0.69와 다릅니다.
+
+- 옵트인하지 않은 웹 컴포넌트는 기존 `load`, `ready` 이벤트를 같은 의미와 같은 시점으로 유지합니다.
+- Wippy가 렌더링하는 Markdown과 Wippy의 HTML 새니타이저는 외부 HTTP(S) 링크에 `target="_blank"`와 `rel="nofollow noopener noreferrer"`를 붙입니다. 페이지가 직접 렌더링하는 앵커는 페이지가 작성한 속성을 그대로 유지합니다. [Proxy API](../micro-frontends/proxy-api.md)를 참고하세요.
+- 페이지 iframe의 `sandbox` 속성에 이제 `allow-popups-to-escape-sandbox`가 들어 있습니다. 새 탭을 여는 링크는 iframe 샌드박스 밖에서 탭을 엽니다. 어디에서 열지는 여전히 링크의 `target`이 정합니다.
+- 호스트는 실행 중에 마운트 라우트를 다시 읽습니다. 자세한 내용은 [Dynamic Routing](../frontend-registry/dynamic-routing.md)을 참고하세요. 자식은 받은 맵마다 자신의 `mountRoutes`를 교체하며 맵을 병합하지 않습니다. 또한 `host.classifyLink()`는 현재 맵을 읽습니다.
+- `@wippy-fe/router`의 `createAppRouter()`는 탐색이 끝났을 때만 호스트에 라우트를 보고합니다. 이전에는 가드가 중단시킨 탐색도 보고되었습니다.
+- 호스트 사이드바에서 `order`가 없거나 `null`인 페이지는 이제 9999로 정렬되어, `order`가 있는 페이지 뒤에 옵니다. 이전에는 `null`이 0으로 정렬되었습니다.
+
+앱은 이러한 기능을 옵트인할 수 있습니다. 각 기능은 앱이 사용하기 전까지 꺼져 있습니다.
+
+| 기능 | 설명된 곳 |
+|------|-----------|
+| Vue 웹 컴포넌트용 `lazyVueConfig`, `wippyMountState`, `wippy-mounted` 이벤트, `preloadImplementation()` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `@wippy-fe/webcomponent-vue/starter/`의 지연 로딩 스타터와 `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, `AutoRouterLink`의 `replace` prop, 취소 가능한 `nav-request` 이벤트 | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/vue-host`의 `usePageList()`와 `useAppNav()`, `@wippy-fe/router`의 `PageOutlet`과 `pageOutletRoute` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `@wippy-fe/shared`의 `withExternalLinkTarget()` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## 호스트에 접근하기 — `@wippy-fe/proxy`
 
 마이크로 프론트엔드 앱(`view.page`)과 웹 컴포넌트(`view.component`)는 같은 방식으로 호스트와 대화합니다. `@wippy-fe/proxy`에서 동기 명명 임포트를 가져와 바로 사용합니다. 이를 얻는 데 `await`도, 핸드셰이크도 필요 없습니다 — 호스트가 여러분의 코드가 실행되기 전에 설정을 주입합니다.

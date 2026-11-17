@@ -7,7 +7,9 @@ description: "How the Web Host registers backend mount routes, synchronizes chil
 
 The Web Host combines statically defined system routes with page mount routes
 fetched from the backend at startup. A new `view.page` entry with a `mountRoute`
-claim therefore takes effect without a Web Host bundle change.
+claim therefore takes effect without a Web Host bundle change. Since Web Host
+1.0.70, the Host also reads the routes again while it runs (see
+[Live mount routes](#live-mount-routes)).
 
 ![Mount route sync](../diagrams/mountroute-sync.svg)
 
@@ -34,6 +36,21 @@ for (const [mountRoute, pageId] of Object.entries(data.routes)) {
 ```
 
 After this point, navigating to `/home/anything` causes the router to render the `main` page through its selected engine, and navigating to `/demo/anything` does the same for the `iframe-demo` page — without any hard-coded knowledge of those paths in the host bundle.
+
+## Live mount routes
+
+After startup, the Host keeps its mount routes current. It reads `/pages/routes` again and applies the result in these cases:
+
+- The WebSocket topic `pages` reports that the page list changed. The Host waits 150 ms after the last signal before it reads, so a burst of signals causes one read. A map that did not change is skipped.
+- The WebSocket reconnects.
+- The WebSocket connects for the first time. The startup read happens before the WebSocket joins, and a `pages` signal sent in between is lost, so the Host reads once more when the socket first connects.
+- A navigation matches no route. The Host reads the routes once and retries, so a page that was published a moment ago opens even before its `pages` signal arrives. A path that still matches nothing proceeds as before. With a root mount every path matches, so only the WebSocket refresh applies. On browser Back or Forward, the retry replaces the current history entry, so the entries after it stay reachable.
+
+The Host checks a new map completely before it changes anything. A failed read, a reply without a `routes` map and a map with conflicts are logged, and the Host keeps its current routes. The app does not fail, unlike at startup, where a conflict stops the Host.
+
+When the page that the user has open keeps its page id but gets a new mount route, the Host moves the current route to the new address, so the next internal navigation of the page uses the new prefix. Each applied change sends the child config again, so every child frame receives the new `mountRoutes`. A child replaces its `mountRoutes` with each map it receives and passes the map on to its own nested children.
+
+The WebSocket listener is attached to the client that exists when the Host starts. It does not follow a client that is created again after a token change. The Host sets the token once and clears it only on logout, so this does not happen while a user stays signed in.
 
 ## Claiming a Path with `mountRoute`
 
@@ -62,6 +79,10 @@ duplicate is **not** silently ignored.
 
 Vue Router route-resolution precedence still applies between a root catch-all (`/:part(.*)*`) and a more-specific system route (`chat`, `c`, `web`, `page`, `keeper`, `login`, `logout`) or a longer literal-prefix mount: the more-specific route matches. That priority is not duplicate-route handling.
 
+### The sub-path that a mount-route page receives
+
+A page that the Host shows at a mount route gets a sub-path that the Host rebuilds from the route, not the address as typed. The Host joins the `part` segments with `/` and writes the query again with `URLSearchParams`. A key without a value gets `=` (`?flag` becomes `?flag=`), a repeated key becomes one comma-joined value (`?a=1&a=2` becomes `?a=1%2C2`), and a `#hash` is not passed. When the page reports such a route back, it differs from the address that the browser shows, so the Host pushes it as a new history entry, without the hash. A page that needs a hash or repeated keys should not rely on them in mount-route addresses.
+
 ## The URL Sync Loop
 
 Once a page is loaded in its runtime context, the child application navigates
@@ -88,7 +109,7 @@ host.onRouteChanged('/profile', navId)   // internal route only; the host prepen
 
 The proxy serializes this over an internal wire envelope. That protocol is not an application API: do not copy it or call `window.parent.postMessage` directly.
 
-The host's message handler intercepts this, calls `router.push(path)` to update the URL bar via an SPA route change (adding a browser-history entry) without triggering a full page reload, and then posts back:
+The host's message handler intercepts this, calls `router.push(path)` to update the URL bar via an SPA route change (adding a browser-history entry) without triggering a full page reload, and then posts back. If the child passed `{ replace: true }` as the third argument of `host.onRouteChanged()`, the host replaces the current entry instead of adding one:
 
 ### Host → Child: `UrlWasUpdatedInParent`
 
@@ -113,7 +134,7 @@ The classifier returns one of four results:
 
 The classifier checks the page's local router first, so a link the child can resolve itself stays in-app.
 
-`classifyLink` consults the same routes list fetched at startup. If the child
+`classifyLink` consults the live mount routes that the child last received. If the child
 router does not claim `/demo/step-2`, the link is classified as `host-nav`
 because `/demo/:part(.*)*` is a registered mount route — the host navigates to
 the `iframe-demo` page rather than doing a full page reload.

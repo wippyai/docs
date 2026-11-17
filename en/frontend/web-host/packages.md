@@ -24,6 +24,27 @@ Install the packages you need:
 npm install @wippy-fe/proxy@0.0.69 @wippy-fe/webcomponent-vue@0.0.69 @wippy-fe/router@0.0.69
 ```
 
+## Upgrading from Web Host 1.0.69 to 1.0.70
+
+Web Host 1.0.70 pairs with the public `@wippy-fe/*` packages at `0.0.70`. An app that changes nothing keeps working. These behaviors differ from 1.0.69.
+
+- Web components that do not opt in keep the legacy `load` and `ready` events with the same meaning and timing.
+- Markdown that Wippy renders and the Wippy HTML sanitizers give external HTTP(S) links `target="_blank"` and `rel="nofollow noopener noreferrer"`. Anchors that a page renders itself keep the attributes the page wrote. See [External links rendered by a page](../micro-frontends/proxy-api.md#external-links-rendered-by-a-page).
+- The `sandbox` attribute of page iframes now includes `allow-popups-to-escape-sandbox`. A link that opens a new tab opens it outside the iframe sandbox. The `target` of the link still decides where it opens.
+- The Host reads its mount routes again while it runs, as described in [Dynamic Routing](../frontend-registry/dynamic-routing.md). A child replaces its `mountRoutes` with each map it receives instead of merging the maps, and `host.classifyLink()` reads the current map.
+- `createAppRouter()` from `@wippy-fe/router` reports a route to the Host only when a navigation finishes. Before, a navigation that a guard stopped was reported as well.
+- In the Host sidebar, a page whose `order` is missing or `null` now sorts as 9999, after the pages that have an order. Before, `null` sorted as 0.
+
+An app can opt in to these features. Each one is off until the app uses it.
+
+| Feature | Where it is described |
+|---------|-----------------------|
+| `lazyVueConfig`, `wippyMountState`, the `wippy-mounted` event and `preloadImplementation()` for Vue web components | [Web component readiness](../micro-frontends/web-component.md#web-component-readiness) |
+| The lazy starter in `@wippy-fe/webcomponent-vue/starter/` and `wippyComponentPlugin({ lazyEntries })` | [Lazy components](../micro-frontends/web-component.md#lazy-components) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, the `replace` prop of `AutoRouterLink` and the cancelable `nav-request` event | [Replacing a history entry](../micro-frontends/proxy-api.md#replacing-a-history-entry) |
+| `usePageList()` and `useAppNav()` from `@wippy-fe/vue-host`, and `PageOutlet` and `pageOutletRoute` from `@wippy-fe/router` | [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation) |
+| `withExternalLinkTarget()` from `@wippy-fe/shared` | [External links rendered by a page](../micro-frontends/proxy-api.md#external-links-rendered-by-a-page) |
+
 ## Accessing the host — `@wippy-fe/proxy`
 
 Both micro frontend apps (`view.page`) and web components (`view.component`) talk to the host the same way: synchronous named imports from `@wippy-fe/proxy`, used directly. Application code does not await an API getter or manage the runtime handshake; the selected engine's proxy adapter initializes the API before the app bundle runs.
@@ -106,6 +127,8 @@ const router = createAppRouter(
 ```
 
 `createAppRouter()` uses memory history so the same app remains portable across iframe, Fragment, and `auto` delivery. Pass `config.context?.route` as `initialPath`; the factory synchronizes its internal route with the host via `@history` events. Direct `createWebHistory()` is Fragment-only and must not be used by an app that can fall back to iframe.
+
+In 0.0.70, `AutoRouterLink` passes its `replace` prop to `host.navigate()` for a link to another Host page. The package also exports `PageOutlet`, `pageOutletRoute` and `useHostedPage`, which show a listed page inside an app's own shell. See [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation).
 
 ### `@wippy-fe/theme`
 
@@ -216,6 +239,8 @@ It serializes an in-flight task and coalesces intervening reveals into one
 trailing refresh.
 These exports are present in `@wippy-fe/webcomponent-vue` 0.0.69.
 
+In 0.0.70, the package also exports `lazyVueConfig()`. A Vue element can use it to load its implementation on demand and to report when its root has mounted through `wippyMountState` and the `wippy-mounted` event. The package ships a runnable starter in `starter/`. See [Web component readiness](../micro-frontends/web-component.md#web-component-readiness) and [Lazy components](../micro-frontends/web-component.md#lazy-components).
+
 ### `@wippy-fe/layout`
 
 Pure, framework-agnostic layout primitives used internally by the Web Host's managed-layout engine. Most child app developers use this indirectly through `@wippy-fe/vue-host` composables. Direct use is appropriate when building layout-aware tooling or custom shells.
@@ -240,9 +265,13 @@ Vue 3 composables wrapping the proxy layout API in reactive refs for use inside 
 | `useWippyBreakpoint()` | Active breakpoint name |
 | `useWippyMainRoute()` | Reactive ref to the main panel's current route |
 
+In 0.0.70, the package also provides `usePageList({ filter? })`, a live copy of the pages that the viewer may open, and `useAppNav({ items, pages, groups, router, host })`, which returns `{ tree, activeKey, open }` for an app-owned navigation. The package now depends on `@wippy-fe/shared` and re-exports its navigation rules. See [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation).
+
 ### `@wippy-fe/shared`
 
 Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In 0.0.69, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
+
+In 0.0.70, it also exports `withExternalLinkTarget()` and the framework-free navigation rules `buildNavTree`, `pagePath`, `matchPage`, `matchHostPath`, `activeKey`, `pageNavItems`, `visibleItems` and `parsePages`, with the types `PageInfo`, `NavItem`, `NavNode`, `NavTarget`, `NavGroup` and `PageMatch`. The Host sidebar builds its tree with `buildNavTree`, so a page sits in the same place in the sidebar and in an app that uses the same rules.
 
 ### `@wippy-fe/types-global-proxy`
 
@@ -293,7 +322,7 @@ Vite plugins that handle the build-time requirements for Wippy micro-frontends. 
 
 `wippyPagePlugin()` — for `view.page` modules. Reads and validates the `wippy` field in `package.json`, resolves supported `file://` references, emits `wippy-meta.json`, and injects host-less package metadata into the built HTML. It does **not** configure Rollup externals; the application must match its externals to the target Web Host import map.
 
-`wippyComponentPlugin()` — for `view.component` modules. Similar to `wippyPagePlugin()` but targets web component output format (ESM, no HTML shell). Also emits `wippy-meta.json` with the component's `tagName` and schema.
+`wippyComponentPlugin()` — for `view.component` modules. Similar to `wippyPagePlugin()` but targets web component output format (ESM, no HTML shell). Also emits `wippy-meta.json` with the component's `tagName` and schema. In 0.0.70 it accepts the option `lazyEntries`, which checks that a lazy entry keeps its registration apart from its implementation. See [Lazy components](../micro-frontends/web-component.md#lazy-components).
 
 ```typescript
 // vite.config.ts for a view.page module
