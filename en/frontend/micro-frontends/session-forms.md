@@ -685,7 +685,14 @@ left. Any other text stays in the box exactly as typed, and the submit names it
 with `invalid_date` (for example `0000-01-01` or `2026-06-05 suffix`), or with
 `below_min` or `above_max` when it is a well-formed date outside the range.
 Text that the picker cannot parse is never dropped or replaced by the last good
-date. A day picked in the calendar is saved as picked.
+date. A day picked in the calendar is saved as picked, with a four-digit year.
+
+The calendar covers the years 100 to 9999. Its first day is the later of the
+field's `min` and 0100-01-01, so a field whose whole range is before year 100
+has a calendar with no enabled day. A date before year 100 is still a valid
+answer and can be typed, but the calendar does not show it: with such a date in
+the box, the calendar opens with no date selected. Any other real date in the
+box, typed or stored, is the date the calendar opens on.
 
 The calendar opens in the theme plugin's overlay layer. The layer is inside the
 component's shadow root but next to the themed container and not inside it, so
@@ -734,9 +741,10 @@ does. A click with a mouse and focus from a keyboard do not open it.
 - The calendar has two limits that come from PrimeVue.
   - The day cells have no accessible name beyond the day number. The panel
     itself is a dialog labelled "Choose Date".
-  - The calendar cannot show a year below 100, because PrimeVue reads one as a
-    two-digit year, so it opens on 19xx or 20xx for such a date. The box and the
-    saved answer keep the year as typed.
+  - The calendar covers the years 100 to 9999 only, because PrimeVue reads a
+    year below 100 as a two-digit year. For a date before year 100 the calendar
+    opens with no date selected. The box and the saved answer keep the year as
+    typed.
 
 ## Diagnostics
 
