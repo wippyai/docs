@@ -221,9 +221,9 @@ the `wippy-form` bundle. The matching npm release for version 1 forms is
 `@wippy-fe/*` 0.0.65. Only the TypeScript types for version 2 forms need a later
 `@wippy-fe` types package. A version 2 form works at run time without it.
 <!-- TODO: name the @wippy-fe version here when the types package for version 2 forms is published. -->
-The `wippy/session` module release that ships the forms is the one that adds
-Session Forms.
-<!-- TODO: name the Session version here when the release PR exists. -->
+Session Forms arrived in `wippy/session` 0.7.0. Version 2 forms
+(`ask_user_fields`) need a later release.
+<!-- TODO: name the Session version here (expected 0.7.1) when Release Please opens the release PR. -->
 <!-- Confirm the Web Host and npm version numbers when the Web Host tag is cut. This page merges after that tag. -->
 
 The component checks these conditions in order, and the first match decides
@@ -333,7 +333,7 @@ following response leaves them out:
 A different number, in either direction, is rejected with 400
 `invalid_request` before any answer is checked.
 
-`request_id` is a non-empty string of at most 128 characters. It should be
+`request_id` is a non-empty string of at most 128 UTF-8 bytes. It should be
 generated once, at the moment the user attempts submission, and reused
 unchanged on any retry of that same attempt. The server recognizes a same-id,
 same-answers retry as a replay (`replayed: true` in the response) and not as a
@@ -412,7 +412,7 @@ Waiting for the assistant."
 | 409 `request_conflict` | Same `request_id`, different normalized answers than the first attempt with that id |
 | 409 `already_submitted` | The form was already answered by a different request |
 | 409 `version_conflict` | `expected_content_version` no longer matches the current revision |
-| 413 | Request body over 64 KiB |
+| 413 `payload_too_large` | Request body over 64 KiB ("The submission is larger than 64 KiB."). The text budget of a form does not count `number` answers, so a valid form with many long `number` answers next to full-length text can reach this. `<wippy-form>` shows the message as a final error with no Retry |
 | 415 | `Content-Type` is not `application/json` |
 | 422 | Field validation failed. `errors` is keyed by field id, and `form_errors` is a list (see [Validation errors](#validation-errors-422)) |
 | 500 | Internal error, including a form whose stored `pattern` no longer compiles (nothing the user can fix); no mutation was applied |
@@ -584,17 +584,19 @@ a class `w-form__<part>--<state>`, for example `field-invalid` and
 | `field-marker` | | The "(required)" text on an editable required field |
 | `field-description` | | The field's own description |
 | `field-control` | | The wrapper around the control |
+| `field-row` | | The row of an editable checkbox: its control and its label side by side |
 | `field-input` | `date` (on the date picker) | The control: the text box, the text area, the checkbox or the date picker. The `date` state is what `--wippy-form-date-width` bounds |
 | `field-calendar` | | The calendar panel of the date picker (class `w-form__field-calendar`). It opens in the theme plugin's overlay layer and not inside the form, so the message around a short form never clips it, and it carries the form's `w-theme-dark` or `w-theme-light` class, so it follows a forced theme. Its width follows the date control, and no rule of the component overrides it |
 | `field-error` | | The error list, linked to the control by `aria-describedby` |
 | `field-value` | `empty` | The stored answer in the read-only view ("Skipped" when empty) |
+| `field-item` | | One chosen answer of a choice in the read-only view |
 | `field-note` | | The note on a chosen option in the read-only view |
 | `field-options` | | A choice's group of rows |
 | `field-option` | `other` | One radio or checkbox row |
 | `field-option-input`, `field-option-label`, `field-option-description` | | The pieces of one row |
 | `field-other`, `field-other-input` | | The label and the text box of the Other row |
 | `status` | | The delivery and answered time lines in the read-only view |
-| `send` | | The Submit button |
+| `send` | `sending` | The Submit button. The `sending` state lasts while a send is in flight: the label reads "Sending…", a spinner icon turns beside it (still under `prefers-reduced-motion`), and the pointer shows `cursor: progress`. An offline form is blocked but not `sending` |
 
 The `card-state` host attribute is reflected as for the card, with the values
 `loading`, `active`, `answered` and `unsupported`. A fields form never reports
@@ -640,7 +642,8 @@ radio or checkbox in it, and the Other text box, carries the same
 `aria-describedby` (the field description and the error list), so a screen
 reader that lands on one input reads the error, and each carries `aria-invalid`
 while the group is in error. A single choice adds a `radiogroup` role with
-`aria-required` around its radios. A multiple choice adds no role and no
+`aria-required` around its radios, and the field label names that group through
+`aria-labelledby`. The read-only view is never disabled. A multiple choice adds no role and no
 `aria-required`, because its fieldset is already the group, and the
 "(required)" text in the legend says that it is required.
 
@@ -673,14 +676,16 @@ read-only answer is plain text that the user can select.
 
 The date box takes typed text in the form `YYYY-MM-DD` one key at a time, and
 it always shows what the user typed, including after an error appears and
-after the box is left. A loose date that the picker understands, such as
-`2026-6-5`, is held as the full date `2026-06-05`, which is what will be saved,
-and the box shows that text once it is left. A year below 1000 keeps four
-digits (`0999-05-15`), and a typed year below 100 is reported as typed
-(`0050-03-04`), where PrimeVue alone would read it as 1950. Text that the
-picker cannot parse is never dropped or replaced by the last good date. It
-stays in the box, and the submit names it with `invalid_date`, or with
+after the box is left. The component judges the typed text on its own. A
+complete loose date `Y-M-D` (a year of 1 to 4 digits, a month and a day of 1 or
+2 digits, nothing else) that is a real day from year 1 to 9999 is saved as
+`YYYY-MM-DD`. For example, `2026-6-5` is saved as `2026-06-05`, and `50-3-4` is
+saved as `0050-03-04`, not as 1950. The box shows the saved text once it is
+left. Any other text stays in the box exactly as typed, and the submit names it
+with `invalid_date` (for example `0000-01-01` or `2026-06-05 suffix`), or with
 `below_min` or `above_max` when it is a well-formed date outside the range.
+Text that the picker cannot parse is never dropped or replaced by the last good
+date. A day picked in the calendar is saved as picked.
 
 The calendar opens in the theme plugin's overlay layer. The layer is inside the
 component's shadow root but next to the themed container and not inside it, so

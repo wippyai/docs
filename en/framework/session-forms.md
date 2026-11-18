@@ -60,9 +60,8 @@ questions:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait ships with Session Forms, so the app needs a `wippy/session` release
-that includes them.
-<!-- TODO: name the Session version here when the release PR exists. -->
+The trait ships with Session Forms, so the app needs `wippy/session` 0.7.0 or
+newer.
 
 To let the agent also ask for text, numbers, email addresses, dates and
 checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
@@ -71,6 +70,10 @@ checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
     traits:
       - id: wippy.session.forms:ask_user_fields
 ```
+
+The `ask_user_fields` trait needs the `wippy/session` release that adds version
+2 forms.
+<!-- TODO: name the Session version here (expected 0.7.1) when Release Please opens the release PR. -->
 
 Each tool's input schema lists only its own field types. The server applies
 the same limit, so when a model ignores the schema and sends a standard field
@@ -346,7 +349,11 @@ rejected with `text_budget_exceeded` at the path `fields`, and the message
 gives the total. The budget keeps the text, textarea and email answers of one
 form, written as UTF-8 the way a browser writes them, inside the 64 KiB request
 body limit. It does not count the Other text and the notes of choice fields,
-which have their own limits. A client that writes non-ASCII text as JSON escape
+which have their own limits. It does not count `number` answers either, so a
+valid form with many long `number` answers next to full-length text can exceed
+the request limit. The server then answers 413 `payload_too_large` ("The
+submission is larger than 64 KiB."), and the form shows that message as a final
+error with no Retry. A client that writes non-ASCII text as JSON escape
 sequences can also use up to 12 bytes for a character and not 4. For example,
 two textareas that keep their default use the whole budget, so a third text
 field cannot be added without lowering their `max_length`.
@@ -371,9 +378,9 @@ leaves unanswered is left out, and a value of `null` counts as not sent.
 An answer that breaks a rule is refused with the code in the right column, and
 the whole submission is then rejected with a 422 response and nothing is
 stored. The rules of a type run in the order of its rows, and the first
-failure is the one reported for the question. One check for `text` and
-`textarea` runs before all the others: a value of more than four bytes for each
-character that `max_length` allows is refused with `too_long` before the server
+failure is the one reported for the question. The type check runs first. For
+`text` and `textarea`, a size check runs right after it: a value of more than
+four bytes for each character that `max_length` allows is refused with `too_long` before the server
 reads it as UTF-8 or looks for control characters. An oversized value that also
 holds a control character gets `too_long`, not `invalid_text`.
 
@@ -412,7 +419,8 @@ The domain has at least two labels separated by dots, and each label is
 letters, digits and hyphens, does not start or end with a hyphen, and has at
 most 63 characters. Quoted local parts, comments, address literals, display
 names, several addresses and non-ASCII characters are refused, and so is a
-control character or line break anywhere. The check says nothing about whether
+control character or line break inside the address. Surrounding whitespace,
+line breaks included, is trimmed first. The check says nothing about whether
 the mailbox exists.
 
 The `step` check works on the decimal digits of the numbers, with no floating
@@ -427,7 +435,9 @@ An optional `text`, `textarea`, `email` or `date` question is unanswered when
 its value is missing, `null`, empty or only whitespace. Whitespace here is
 what JavaScript's `String.prototype.trim` removes, which includes the
 no-break space and the ideographic space but not the zero width space, so a
-value made only of zero width spaces is content. An optional `number` or
+value made only of zero width spaces is content. As with `text`, an `email`
+over 2,032 bytes or a `date` over 512 bytes is refused before the blank test.
+An optional `number` or
 `checkbox` is unanswered when its value is missing or `null`. A `false`
 checkbox is an answer, and so is the number 0.
 
@@ -653,8 +663,7 @@ state endpoint applies to every request are listed in
 
 ## Upgrading
 
-The `wippy/session` release that adds Session Forms has these breaking changes.
-<!-- TODO: name the Session version here when the release PR exists. -->
+`wippy/session` 0.7.0 adds Session Forms and has these breaking changes.
 
 - **New `ui_server` requirement.** The module serves the form components from
   an HTTP server. The requirement `wippy.session.forms.ui:ui_server` defaults
@@ -693,7 +702,8 @@ new forms with standard fields and keep choice questions, replace
   Forms while form artifacts exist. The module registers the `wippy-form` and
   `wippy-form-answers` components, and an older module can fail to start with
   `failed to load state: unresolved dependencies after retry: …`.
-- Rolling back to a release from before version 2 makes every version 2 form
+- Rolling back to a release from before version 2 (Session 0.7.0 is the last
+  one) makes every version 2 form
   unusable. The earlier release accepts only form version 1, and it compares
   the stored version exactly. The state API answers 400 `not_a_form` for a
   version 2 form on `GET` and on `POST`, `read_form` returns an error for it,
