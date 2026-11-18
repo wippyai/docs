@@ -57,18 +57,17 @@ declarations win regardless of `<head>` source order. Constructable stylesheets
 cannot contain `@import`, so the proxy extracts those rules into an ordinary
 `<head>` style whose cascade follows normal document order:
 
-The `view.page` iframe pipeline is `themeConfig` → `primevue`/`tailwind` →
-`iframe` → `markdown` → `customVariables` → `customCss` in logical cascade
+The `view.page` iframe pipeline is `themeConfig` → `iframe` → `primevue` →
+`markdown` → `customVariables` → `customCss` in logical cascade
 order. Configuration precedence is separate: facade theme → page
-`config_overrides` → runtime override decides **which values** become
+`config_overrides` decides **which values** become
 `customVariables` and `customCss`, not where the resulting styles sit in the
 iframe cascade.
 
 ```
 1. theme-config.css      — CSS custom properties (--p-primary-*, --p-surface-*, --p-secondary-*)
-2. primevue.css          — PrimeVue component styles scoped via those variables
-   tailwind.css          — Tailwind utility classes (same bundle as primevue.css)
-3. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
+2. iframe.css            — Default themed scrollbar styling (historical name; no iframe layout reset)
+3. primevue.css          — PrimeVue component styles (.p-* classes) that consume those variables; no general Tailwind utility classes
 4. markdown.css          — .data-body rendering styles for Markdown content
 5. cssVariables          — effective base + Auto/forced mode blocks from AppConfig.theming.global.cssVariables (adopted stylesheet)
 6. customCSS             — Non-@import CSS in an adopted stylesheet; extracted @import rules use a head style
@@ -131,7 +130,7 @@ meta:
 |------|---------|-----------------|
 | `themeConfig` | `true` | `theme-config.css` — all `--p-primary-*`, `--p-surface-*`, `--p-secondary-*`, and PrimeVue semantic variables. Disabling it removes this platform theme layer; enabled `customVariables` and `customCss` still apply independently. |
 | `iframe` | `true` | `iframe.css` — default themed scrollbar styling. The name is historical and does not imply iframe layout rules. Keep enabled for every page for scrollbar consistency. |
-| `primevue` | `true` | `primevue.css` + `tailwind.css` — PrimeVue component styles and Tailwind v3 utilities. Disable only while the entire artifact has no PrimeVue-like product UI. Framework choice alone is not an exception. |
+| `primevue` | `true` | `primevue.css` — PrimeVue component styles (the `.p-*` classes), compiled from the Wippy Tailwind sources. It does not contain general Tailwind utility classes such as `flex` or `gap-2`; a page compiles the utilities it uses in its own build with the Wippy Tailwind preset. Disable only while the entire artifact has no PrimeVue-like product UI. Framework choice alone is not an exception. |
 | `markdown` | `true` | `markdown.css` — `.data-body` markdown rendering styles used by chat artifact display. |
 | `customCss` | `true` | The `customCSS` string from the child-projected `AppConfig.theming.global`. |
 | `customVariables` | `true` | The child-projected `cssVariables` map, compiled as effective base, Auto-light/dark, and forced Light/Dark blocks for every configured custom-property name. |
@@ -152,7 +151,7 @@ These flags sit alongside `css` in the `injections` block:
 | `historyPolyfill` | `true` | **No-op today.** The history polyfill is intentionally disabled for `srcdoc` iframes (`window.location` is non-configurable), so this flag has no runtime effect. The runtime always installs a history *guard* instead, which stubs `window.history` methods and warns to use memory-history routing — apps must use memory mode (e.g. `createAppRouter` memory history). Setting this flag does **not** make SPA route changes observable by the host. |
 | `errorCapture` | `true` | Attach `window.onerror` and `window.onunhandledrejection` handlers that forward uncaught errors to the host via `logger.captureException`. Enable in production for centralized error collection. |
 
-If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables most injections. Vite micro frontend apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
+If a page omits `wippy.proxy.injections`, the iframe proxy has permissive runtime defaults and enables every injection listed above. Vite micro frontend apps should still declare the explicit values they rely on so a package review can see whether the app expects host CSS, link interception, body-size reporting, or error capture.
 
 ### Web Fragment delivery
 
@@ -210,7 +209,7 @@ Available `hostCss` keys:
 | Key | Content | Bundle impact |
 |-----|---------|---------------|
 | `hostCss.themeConfigUrl` | CSS variables (`--p-primary-*`, light + dark) | Small |
-| `hostCss.primeVueCssUrl` | PrimeVue components + Tailwind utilities | Large |
+| `hostCss.primeVueCssUrl` | PrimeVue component styles (`.p-*` classes); no general Tailwind utility classes | Large |
 | `hostCss.markdownCssUrl` | `.data-body` markdown rendering styles | Small |
 | `hostCss.iframeCssUrl` | Scrollbar styling using `--p-surface-*` | Tiny |
 | `hostCss.preflightCssUrl` | Tailwind/PrimeVue preflight base reset (normalize/reset) | Small |
@@ -273,18 +272,22 @@ Child pages do not receive `theming.host` or `theming.children` as separate scop
 
 ### Per-page overrides
 
-Individual pages can override variables via `window.__WIPPY_CONFIG_OVERRIDES__` (set in the page's registry entry as `meta.config_overrides`, or in `package.json` as `wippy.configOverrides`):
+Individual pages can override variables in the page's registry entry as `meta.config_overrides`, or in `package.json` as `wippy.configOverrides`:
 
-```typescript
-window.__WIPPY_CONFIG_OVERRIDES__ = {
-  customization: {
-    cssVariables: {
-      '--p-primary': '#ff6b00',
-    },
-    customCSS: '.my-page-header { border-radius: 12px; }',
-  },
-}
+```yaml
+- name: orders
+  kind: registry.entry
+  meta:
+    type: view.page
+    config_overrides:
+      customization:
+        cssVariables:
+          "--p-primary": "#ff6b00"
+        customCSS: |
+          .my-page-header { border-radius: 12px; }
 ```
+
+The host merges these values before the page receives its config. The page runtime does not read `window.__WIPPY_CONFIG_OVERRIDES__`; assigning that global has no effect.
 
 Backend YAML `config_overrides.customization` is the per-page authoring surface. Its `cssVariables` and `customCSS` keys project into frontend `theming.global.cssVariables` and `customCSS` before the page receives AppConfig, replacing the inherited child values for that page. Because the override is merged into `theming.global`, it **propagates down the whole nested sub-tree**: every child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits the theme, recursively. So a page (or a module shipping several such pages) themes everything beneath it, not just itself.
 

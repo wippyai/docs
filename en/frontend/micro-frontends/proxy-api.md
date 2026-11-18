@@ -271,7 +271,7 @@ host.openSession('abc-123-uuid', { sidebar: false })
 
 ---
 
-### `host.navigate(url)`
+### `host.navigate(url, options?)`
 
 Requests SPA navigation from the host. Supported patterns:
 
@@ -281,7 +281,7 @@ Requests SPA navigation from the host. Supported patterns:
 - Any mount route claimed by a page with `mountRoute` in its registry entry
 
 ```typescript
-host.navigate(url: string): void
+host.navigate(url: string, options?: { replace?: boolean }): void
 ```
 
 ```typescript
@@ -289,6 +289,8 @@ host.navigate('/c/my-page-id')
 host.navigate('/chat/session-uuid')
 host.navigate('/keeper')
 ```
+
+By default the Host adds a browser history entry. With `{ replace: true }` it replaces the current entry instead. See [Replacing a history entry](#replacing-a-history-entry).
 
 > **Managed-layout caveat.** `startChat`, `openSession`, `openArtifact`, and
 > `navigate` act directly on the standard compat shell. In `fe_mode = managed`
@@ -300,15 +302,39 @@ host.navigate('/keeper')
 
 ---
 
-### `host.onRouteChanged(internalRoute, navId?)` — low-level router integration
+### `host.onRouteChanged(internalRoute, navId?, options?)` — low-level router integration
 
 Notifies the host when the page's internal route changes. The host updates the browser URL bar to include the child's route. This call is **required** — without it the host URL stays on the page root and the browser back button does not work for child navigation.
 
 ```typescript
-host.onRouteChanged(internalRoute: string, navId?: number): void
+host.onRouteChanged(internalRoute: string, navId?: number, options?: { replace?: boolean }): void
 ```
 
+An ordinary route report adds a browser history entry. Pass `{ replace: true }` as the third argument to sync a completed replacement in the app with the Host's browser history. See [Replacing a history entry](#replacing-a-history-entry).
+
 Portable Vue applications use `createAppRouter()` from `@wippy-fe/router`; the package owns this call, the matching `@history` subscription, normalization, and echo-loop suppression. Do not wire those pieces manually in application code. This method remains documented for platform adapter authors and non-Vue integrations.
+
+---
+
+### Replacing a history entry
+
+Web Host 1.0.70 adds the `replace` option. Without it nothing changes: the Host adds a browser history entry for each navigation and each reported route.
+
+`host.navigate(url, { replace: true })` replaces the Host's current history entry. The browser Back button then skips the entry that was left. Use it when the reader should not come back to that entry, for example when you move them from a blank list to the item it opens.
+
+```typescript
+host.navigate(`/sessions/${id}`, { replace: true })
+```
+
+The option works from iframe pages, fragment pages and web component pages, from a nested `<w-artifact>`, and from the Host realm. It works in the compat shell and in a managed layout. In a managed layout the `navigate` intent carries `replace: true`, and `@HOST/compat-coordinator` calls `router.replace`. A coordinator of your own that handles `navigate` should do the same. See [Multi-Panel Layout](../web-host/multi-panel-layout.md).
+
+The Host replaces the entry that is current when it handles the call. If another navigation has not finished yet, for example the one that your own route report started a moment before, the replace can land on the entry before it. Call `host.navigate()` after the Host URL has changed, for example from an `@history` event.
+
+A Host released before this option ignores it and adds an entry.
+
+`host.onRouteChanged(path, navId, { replace: true })` reports a route to the Host and replaces its entry. When `PageOutlet` from `@wippy-fe/router` replaces the route of an app that uses `createAppRouter()`, the router makes this call for you. `AutoRouterLink` from `@wippy-fe/router` passes its `replace` prop to `host.navigate()` when the link goes to another Host page.
+
+A `<w-artifact>` or `<w-iframe>` with the `nav-owner` attribute dispatches a cancelable `nav-request` event when its child calls `host.navigate()`. When the child passes `{ replace: true }`, the event detail is `{ url, replace: true }`. See [`<w-iframe>` Custom Element](../web-host/proxy-isolation.md#w-iframe-custom-element).
 
 ---
 
@@ -435,7 +461,29 @@ document.addEventListener('click', (ev) => {
 })
 ```
 
-For Vue apps, replace `RouterLink` from `vue-router` with `RouterLink` from `@wippy-fe/router` — it uses `classifyLink` internally and is prop-compatible with the real `RouterLink`.
+For Vue apps, replace `RouterLink` from `vue-router` with `RouterLink` from `@wippy-fe/router` — it uses `classifyLink` internally and is prop-compatible with the real `RouterLink`. Its `replace` prop applies to a link to another Host page as well: the click calls `host.navigate(path, { replace: true })`.
+
+---
+
+### External links rendered by a page
+
+In Web Host 1.0.70, the HTML that Wippy produces gives each external HTTP(S) link `target="_blank"` and `rel="nofollow noopener noreferrer"`. This applies to the Wippy Markdown renderer, the chat message sanitizer and `sanitize()` from `@wippy-fe/proxy`. A link is external when its `href` is an absolute `http:` or `https:` URL, or a protocol-relative URL such as `//example.com/path`, and its origin differs from the origin of the page. Relative paths, links on the origin of the page, `mailto:` links and `#hash` links keep the attributes they have.
+
+Wippy does not change anchors that a page renders itself. They keep the `target` and `rel` that the page wrote. A page that renders its own anchors can apply the same policy with `withExternalLinkTarget()` from `@wippy-fe/shared`:
+
+```typescript
+import { withExternalLinkTarget } from '@wippy-fe/shared'
+
+const attributes = withExternalLinkTarget({ href, class: 'reference' })
+// External href: { href, class: 'reference', target: '_blank', rel: 'nofollow noopener noreferrer' }
+// Any other href: the same object, unchanged
+```
+
+For an external link, the helper sets `target` to `_blank`, also when the page passed another value, and adds `nofollow`, `noopener` and `noreferrer` to `rel`. It removes an `opener` token and keeps other tokens. It returns a new object for an external link and the object that you passed in for any other link. Pass the result to your template or element renderer.
+
+The second argument is an optional base URL that the helper uses to resolve an `href` such as `//example.com/path`. It defaults to the base URI of the document.
+
+Since Web Host 1.0.70, page iframes include `allow-popups-to-escape-sandbox` in their `sandbox` attribute, so a link that opens a new tab opens it outside the iframe sandbox. The `target` of the link controls where it opens.
 
 ---
 
@@ -536,7 +584,7 @@ const stopLayoutChanges = on('@layout-change', (snapshot) => {
 layout.resizePanel('right', '40%')
 layout.collapsePanel('nav')
 layout.expandPanel('nav')
-layout.movePanel('right', { relativeTo: 'main', position: 'after' })
+layout.movePanel('right', { relativeTo: 'main', position: 'right' })  // position: 'left' | 'right' | 'top' | 'bottom' | 'center' | 'none'
 layout.removePanel('right')
 layout.updatePanel('right', { kind: 'page', id: 'chat-panel' })  // {kind,id} replaces content wholesale
 layout.updatePanel('right', { props: { artifactId: 'abc-123' } })  // {props} shallow-merges into existing props
@@ -726,7 +774,7 @@ only when that path initiated it; report other stream failures normally.
 To default all requests to the fetch adapter:
 
 ```jsonc
-// In package.json → wippy.configOverrides, or window.__WIPPY_CONFIG_OVERRIDES__
+// In package.json → wippy.configOverrides, or registry meta.config_overrides
 {
   "axiosDefaults": { "adapter": "fetch" }
 }
@@ -878,7 +926,7 @@ class MyEl extends HTMLElement {
 
 | Topic | Handler payload | Description |
 |-------|-----------------|-------------|
-| `@history` | `{ path: string }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
+| `@history` | `{ path: string, navId?: number }` | Host URL changed (SPA navigation). Fires when the parent pushes a new route. |
 | `@visibility` | `boolean` | Iframe/Web Fragment visibility changed. Direct web components use the typed host-visibility contract instead. |
 | `@theme` | `'auto' \| 'light' \| 'dark'` | Applied theme mode propagated by the Host. |
 | `@config` | No payload | Effective child config changed. Read the refreshed config after this notification. Available with Web Host 1.0.62. |
@@ -1169,6 +1217,8 @@ sanitize(dialogBody, { extraTags: { 'iconify-icon': ['icon'] } })
 
 `sanitize` re-reads the tag allowlist on every call, so tags registered after import are still picked up.
 
+In Web Host 1.0.70, `sanitize` gives each external HTTP(S) link `target="_blank"` and `rel="nofollow noopener noreferrer"`. See [External links rendered by a page](#external-links-rendered-by-a-page).
+
 ### `html.inject(sourceHtml, options)` → `Promise<string>`
 
 Applies the source-HTML-to-srcdoc transform without mounting an element. Prefer `<w-iframe>` for normal use; use this only when building custom hosting infrastructure.
@@ -1194,20 +1244,22 @@ Pages can override selected child-facing config fields per page without a separa
 
 **Registry pages (recommended):** Set `meta.config_overrides` in the page's `_index.yaml`. The host includes it in the content API response and injects it automatically.
 
-**Standalone packages:** Set `wippy.configOverrides` in the page's `package.json`.
+**Standalone packages and host-less mode:** Set `wippy.configOverrides` in the page's `package.json`. In host-less mode the development proxy applies its `customization` part.
 
-**Manual / testing:** Set `window.__WIPPY_CONFIG_OVERRIDES__` in a `<script>` tag that runs before `proxy.js`.
-
-```typescript
-window.__WIPPY_CONFIG_OVERRIDES__ = {
-  customization: {
-    cssVariables: {
-      '--p-primary': '#ff6b00',
-    },
-    customCSS: '.my-page-header { border-radius: 12px; }',
-  },
+```json
+{
+  "wippy": {
+    "configOverrides": {
+      "customization": {
+        "cssVariables": { "--p-primary": "#ff6b00" },
+        "customCSS": ".my-page-header { border-radius: 12px; }"
+      }
+    }
+  }
 }
 ```
+
+The host merges overrides before it sends config to the page. The page runtime does not read `window.__WIPPY_CONFIG_OVERRIDES__`; assigning that global has no effect.
 
 ### Merge rules
 
@@ -1216,9 +1268,9 @@ window.__WIPPY_CONFIG_OVERRIDES__ = {
 | `cssVariables` | **Replaces** the host's values — the page provides its own theme |
 | `customCSS` | **Replaces** the host's value |
 | `iconSets` | **Merged** additively |
-| `axiosDefaults` | **Deep merged** |
+| `axiosDefaults` | **Shallow merged** — top-level keys merge; a nested object such as `headers` is replaced as a whole |
 | `routePrefix` | **Replaced** |
-| `apiRoutes` | **Deep merged** |
+| `apiRoutes` | **Replaced** — supply the complete route map |
 
 Every nested child the page embeds — `<w-iframe>`, `<w-artifact>`, and `html.inject` content — is built from the page's already-merged config and inherits it automatically, recursively down the sub-tree. So a page's overrides (especially theming) propagate to everything beneath it, not just to the page itself.
 
@@ -1268,6 +1320,38 @@ const router = createAppRouter(routes, {
 })
 app.use(router)
 ```
+
+`createAppRouter()` reports a route to the host only when a navigation finishes. A navigation that a guard stops, or that a newer navigation replaces, is not reported. A host update (`@history`) to the route that the app already shows starts no navigation.
+
+### App-owned page navigation
+
+An app can list the registry pages that the viewer may open, show its own navigation, and open those pages inside the app. This is opt in. It does not change the Host sidebar. The README of `@wippy-fe/vue-host` describes `usePageList` and `useAppNav` in full. The package list in [@wippy-fe Packages](../web-host/packages.md) names the exports of each package.
+
+- `usePageList({ filter? })` from `@wippy-fe/vue-host` keeps a live copy of the page list. It reads `api/public/pages/list`, or the address that the `apiRoutes.pages` override gives. It reads again after each WebSocket signal on the topic `pages` and after each reconnect. It returns `{ pages, ready, error, refresh }`.
+- `useAppNav({ items, pages, groups, router, host })` returns `{ tree, activeKey, open }`. The tree has the items that the app passes in `items` and the pages of the chosen registry `groups`. It uses the same ordering rules as the Host sidebar. The app's own page and the pages in `exclude` never become generated items.
+- `PageOutlet` and `pageOutletRoute({ pageList })` from `@wippy-fe/router` show any listed page inside the app. The outlet renders `<w-artifact type="page" nav-owner>` and maps the routes of the page back to the app router, so deep links and the Back button work.
+
+```typescript
+import { createAppRouter, pageOutletRoute } from '@wippy-fe/router'
+import { useAppNav, usePageList } from '@wippy-fe/vue-host'
+import { config } from '@wippy-fe/proxy'
+import { useRouter } from 'vue-router'
+
+const pageList = usePageList()
+const router = createAppRouter([...appRoutes, pageOutletRoute({ pageList })], {
+  initialPath: config.context?.route,
+})
+
+// In a component of the app:
+const nav = useAppNav({ items: appItems, pages: pageList, groups: ['Dashboards'], router: useRouter() })
+// nav.tree is the list to render. nav.open(item) opens an item.
+```
+
+A page lives at the literal start of its mount route, for example `/reports/usage` for `/reports/usage/:part(.*)*`. A page with the root mount `/:part(.*)*` lives at `/` and covers every path that nothing else claims. A page without a mount route, or with one that the Host does not accept, lives at `/page/<id>`.
+
+The outlet cancels the `nav-request` event for URLs of listed pages and opens them in the app. With `{ replace: true }` it replaces the history entry of the app. When the open page leaves the list, the outlet shows the listed page that now covers the address, or an unavailable state when none does. A page whose mount route changes is followed to its new address. The outlet never shows the app's own page. Web component (ESM) pages show without route sync.
+
+Pass an unfiltered list to `useAppNav` and `PageOutlet`, and use `groups` to choose what the navigation lists. Keep `wippy.proxy.injections.preventLinkClicks` set to `false` in the `package.json` of the app, and link to hosted pages with the `RouterLink` of `vue-router` or with `router.push`. With `preventLinkClicks` on, the proxy sends clicks on paths that a Host mount route claims to the Host. `AutoRouterLink` also treats those paths as Host links.
 
 ---
 

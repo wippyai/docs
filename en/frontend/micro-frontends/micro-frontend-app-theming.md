@@ -21,7 +21,7 @@ With iframe delivery, the host injects CSS through the proxy pipeline and puts
 custom variables and CSS in document-level adopted stylesheets. With Web
 Fragment delivery, the framework gateway supplies the platform CSS and the
 fragment adapter puts custom variables and CSS in the reflected head as
-ordinary `<style>` elements. The current runtime schema is `wippy-context-2.0`:
+ordinary `<style>` elements. The current runtime schema is `wippy-context-2.2`:
 facade theming is represented as `theming.global`, `theming.host`, and
 `theming.children`; either page engine receives its effective child-facing
 theme as `config.theming.global`.
@@ -87,7 +87,7 @@ micro frontend app requests in the `package.json` `wippy` block:
     "injections": {
       "css": {
         "themeConfig":      true,   // --p-* CSS vars (theme-config.css)
-        "primevue":         true,   // PrimeVue component CSS and Tailwind utilities
+        "primevue":         true,   // PrimeVue component CSS (.p-* classes only)
         "markdown":         false,  // .data-body markdown styles
         "iframe":           true,   // Scrollbar styling
         "customCss":        true,   // Child-projected theming.global.customCSS
@@ -102,8 +102,8 @@ micro frontend app requests in the `package.json` `wippy` block:
 The iframe proxy has broad runtime defaults when flags are omitted. **Enable these flags to receive theme CSS** in your micro frontend app (a theming-focused recap, not the authoritative flag list):
 
 - `css.themeConfig` — the full `--p-*` CSS variable system (`theme-config.css`). Enable to inherit the theme palette.
-- `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue.
-- `css.customCss` — the host-composed child-facing custom CSS: facade **global + children** custom CSS merged into `config.theming.global.customCSS`, plus any per-page override. The flag gates this injection rather than naming a single scope. Enable to receive facade/per-page custom CSS.
+- `css.primevue` — PrimeVue component styles. Enable for apps using PrimeVue. The stylesheet holds the `.p-*` component classes only. It does not hold general Tailwind utility classes; compile the utilities your page uses in the page's own build with the Wippy Tailwind preset.
+- `css.customCss` — the host-composed child-facing custom CSS: facade **global + children** custom CSS merged into `config.theming.global.customCSS`. A per-page `customCSS` override replaces that merged value for the page. The flag gates this injection rather than naming a single scope. Enable to receive facade/per-page custom CSS.
 - `css.customVariables` — child-projected `config.theming.global.cssVariables` as effective base, Auto-light, Auto-dark, forced Light, and forced Dark blocks. Enable to receive theme variable overrides.
 - `css.markdown` — `.data-body` markdown styles. Enable only if your page renders markdown content.
 
@@ -123,17 +123,15 @@ When the host applies AppConfig (last writer wins):
 
 1. `theme-config.css` defaults (dev-time fallback)
 2. Facade `theming.global` and child-facing `theming.children`
-3. Page `wippy.configOverrides` (declarative, baked into the page)
-4. `window.__WIPPY_CONFIG_OVERRIDES__` (runtime, if set before proxy loads)
+3. Page overrides: registry `meta.config_overrides`, or `wippy.configOverrides` baked into the page
 
-For `cssVariables`: the override map **replaces** the inherited child map — write the full set you want. For `icons`/`iconSets`: additive merge. For `axiosDefaults`, `routePrefix`, and `apiRoutes`: the host applies the current `AppConfigOverrides` merge rules for those fields.
+For `cssVariables` and `customCSS`: the override **replaces** the inherited child value — write the full set you want. A page `customCSS` therefore drops the facade custom CSS for that page. For `icons`/`iconSets`: additive merge. For `axiosDefaults`, `routePrefix`, and `apiRoutes`: see the merge rules in [Proxy API — Config overrides](./proxy-api.md#config-overrides).
 
-### Runtime overrides (`window.__WIPPY_CONFIG_OVERRIDES__`)
+### No runtime override global
 
-For query-param or feature-flag–driven theming, set
-`window.__WIPPY_CONFIG_OVERRIDES__` before `proxy.js` runs.
+The host merges page overrides before it sends config to the page. The page runtime does not read `window.__WIPPY_CONFIG_OVERRIDES__`; assigning that global has no effect. In host-less mode, the development proxy applies `wippy.configOverrides.customization` from the page's `package.json`.
 
-This pre-proxy global is an embedding/host-less integration escape hatch. In a hosted child, `window.location` belongs to the selected page engine—`about:srcdoc` under iframe delivery—and is not host route or query context. Use declarative page `config_overrides` or AppConfig supplied by the host. Never infer host state from child or parent browser locations.
+In a hosted child, `window.location` belongs to the selected page engine—`about:srcdoc` under iframe delivery—and is not host route or query context. Use declarative page `config_overrides` or AppConfig supplied by the host. Never infer host state from child or parent browser locations.
 
 ---
 

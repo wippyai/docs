@@ -51,15 +51,15 @@ entries:
     kind: db.sql.sqlite
     file: "/var/data/cache.db"  # Use :memory: for in-memory
     pool:
-      max_open: 4
-      max_idle: 2
+      max_open: 1
+      max_idle: 1
       max_lifetime: "1h"
     lifecycle:
       auto_start: true
 ```
 
 <note>
-A private in-memory SQLite database (<code>file: ":memory:"</code>) is scoped to one physical connection, so <code>max_open</code> and <code>max_idle</code> are forced to <code>1</code>. A file-backed database honors the configured <code>pool</code> settings, which a CDC snapshot read transaction needs so it does not consume the only writer connection. Journal mode is always <code>WAL</code>.
+SQLite application operations are serialized through one physical connection. For file-backed and in-memory databases, <code>max_open</code> and <code>max_idle</code> are forced to <code>1</code>; <code>max_lifetime</code> still applies. CDC snapshots use a separate read-only pool. File-backed databases use <code>WAL</code> journal mode.
 </note>
 
 ## Connection Fields
@@ -83,13 +83,40 @@ A private in-memory SQLite database (<code>file: ":memory:"</code>) is scoped to
 |-------|------|---------|-------------|
 | `file` | string | required | Database file path or `:memory:` |
 | `foreign_keys` | bool | false | Enforce SQLite foreign keys on every connection |
-| `pool` | object | - | Connection pool settings; `max_open` and `max_idle` are forced to `1` for `:memory:` |
+| `pool` | object | - | Application pool settings; `max_open` and `max_idle` are forced to `1` |
 | `max_mutation_changes` | int | 100000 | Rows one transaction may hold in the committed-mutation observer |
 | `max_mutation_bytes` | int | 67108864 | Logical bytes one transaction may hold in the observer (64 MiB) |
+| `checkpoint` | object | See below | Background WAL checkpoint settings for managed writable files |
 | `options` | map | - | Accepted but ignored |
 | `lifecycle` | object | - | Lifecycle configuration |
 
 `max_mutation_changes` and `max_mutation_bytes` bound the in-memory committed-mutation observer that feeds a [`db.cdc.sqlite`](system/cdc.md) source. Zero on either field selects the default; negative values are rejected. The bounds are conservative rather than exact: SQLite delivers a complete row to the pre-update hook, so one row can materialize before the bound rejects the candidate.
+
+### SQLite WAL Checkpoints
+
+From runtime v0.3.62a, managed writable SQLite files checkpoint WAL in a background worker. Their committing connections use `wal_autocheckpoint=0`, keeping checkpoint work off transaction commits.
+
+| Setting | Default | Behavior |
+|---------|---------|----------|
+| `checkpoint.interval` | `1s` | Interval between background PASSIVE checkpoints |
+| `checkpoint.max_wal_pages` | `16384` | WAL-page threshold for attempting a TRUNCATE checkpoint |
+
+```yaml
+- name: cache_db
+  kind: db.sql.sqlite
+  file: data/cache.db
+  checkpoint:
+    interval: 500ms
+    max_wal_pages: 8192
+```
+
+PASSIVE backfill runs on a dedicated maintenance connection. From runtime v0.3.65a, a WAL above the configured threshold gets 50 ms writer turns to let backfill catch up under sustained writes. The worker returns the application connection between turns while the storage operation continues. After backfill finishes, it reserves the writer, checks the current frame counts, and runs TRUNCATE only when no frames remain to be copied.
+
+Reader lock waits use a separate 50 ms maintenance busy timeout. Active snapshots or new commits can defer truncation beyond the configured page threshold, which is a soft limit. Writer turns schedule access to the connection; foreground commit latency still depends on storage. Pool shutdown stops the worker and attempts a final TRUNCATE.
+
+From runtime v0.3.65a, writable attached WAL databases are discovered through the application connection and backfilled through temporary attachments on the maintenance connection. The application connection is returned before backfill starts. Read-only attachments are skipped, and files removed after detaching are left removed.
+
+In-memory and read-only main databases have no background worker and retain the ordinary 1000-page automatic checkpoint policy. Application transactions retain their existing synchronization settings and deadlines.
 
 ### Secret and Environment Values
 

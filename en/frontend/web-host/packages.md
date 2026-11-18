@@ -12,8 +12,8 @@ lifecycle.
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
-lockstep; this documentation snapshot covers published Web Host 1.0.66 and
-public package 0.0.66. Verify the deployed release before using its versioned
+lockstep; this documentation snapshot covers published Web Host 1.0.70 and
+public package 0.0.70. Verify the deployed release before using its versioned
 assets.
 Host-only bundles are identified separately below and are not installable npm
 packages.
@@ -21,8 +21,29 @@ packages.
 Install the packages you need:
 
 ```bash
-npm install @wippy-fe/proxy@0.0.66 @wippy-fe/webcomponent-vue@0.0.66 @wippy-fe/router@0.0.66
+npm install @wippy-fe/proxy@0.0.70 @wippy-fe/webcomponent-vue@0.0.70 @wippy-fe/router@0.0.70
 ```
+
+## Upgrading from Web Host 1.0.69 to 1.0.70
+
+Web Host 1.0.70 pairs with the public `@wippy-fe/*` packages at `0.0.70`. An app that changes nothing keeps working. These behaviors differ from 1.0.69.
+
+- Web components that do not opt in keep the legacy `load` and `ready` events with the same meaning and timing.
+- Markdown that Wippy renders and the Wippy HTML sanitizers give external HTTP(S) links `target="_blank"` and `rel="nofollow noopener noreferrer"`. Anchors that a page renders itself keep the attributes the page wrote. See [External links rendered by a page](../micro-frontends/proxy-api.md#external-links-rendered-by-a-page).
+- The `sandbox` attribute of page iframes now includes `allow-popups-to-escape-sandbox`. A link that opens a new tab opens it outside the iframe sandbox. The `target` of the link still decides where it opens.
+- The Host reads its mount routes again while it runs, as described in [Dynamic Routing](../frontend-registry/dynamic-routing.md). A child replaces its `mountRoutes` with each map it receives instead of merging the maps, and `host.classifyLink()` reads the current map.
+- `createAppRouter()` from `@wippy-fe/router` reports a route to the Host only when a navigation finishes. Before, a navigation that a guard stopped was reported as well.
+- In the Host sidebar, a page whose `order` is missing or `null` now sorts as 9999, after the pages that have an order. Before, `null` sorted as 0.
+
+An app can opt in to these features. Each one is off until the app uses it.
+
+| Feature | Where it is described |
+|---------|-----------------------|
+| `lazyVueConfig`, `wippyMountState`, the `wippy-mounted` event and `preloadImplementation()` for Vue web components | [Web component readiness](../micro-frontends/web-component.md#web-component-readiness) |
+| The lazy starter in `@wippy-fe/webcomponent-vue/starter/` and `wippyComponentPlugin({ lazyEntries })` | [Lazy components](../micro-frontends/web-component.md#lazy-components) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, the `replace` prop of `AutoRouterLink` and the cancelable `nav-request` event | [Replacing a history entry](../micro-frontends/proxy-api.md#replacing-a-history-entry) |
+| `usePageList()` and `useAppNav()` from `@wippy-fe/vue-host`, and `PageOutlet` and `pageOutletRoute` from `@wippy-fe/router` | [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation) |
+| `withExternalLinkTarget()` from `@wippy-fe/shared` | [External links rendered by a page](../micro-frontends/proxy-api.md#external-links-rendered-by-a-page) |
 
 ## Accessing the host — `@wippy-fe/proxy`
 
@@ -107,6 +128,8 @@ const router = createAppRouter(
 
 `createAppRouter()` uses memory history so the same app remains portable across iframe, Fragment, and `auto` delivery. Pass `config.context?.route` as `initialPath`; the factory synchronizes its internal route with the host via `@history` events. Direct `createWebHistory()` is Fragment-only and must not be used by an app that can fall back to iframe.
 
+In 0.0.70, `AutoRouterLink` passes its `replace` prop to `host.navigate()` for a link to another Host page. The package also exports `PageOutlet`, `pageOutletRoute` and `useHostedPage`, which show a listed page inside an app's own shell. See [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation).
+
 ### `@wippy-fe/theme`
 
 Theme CSS variables, the Tailwind CSS configuration object, and PrimeVue styling integration. Exposes `PrimeVuePlugin` for installing PrimeVue into a Vue app with the correct Wippy theme preset. Provides the `theme-config.css` file containing all `--p-primary-*`, `--p-surface-*`, and `--p-secondary-*` palette variables, and the Tailwind config that maps those variables to utility classes.
@@ -119,7 +142,8 @@ Framework-agnostic base class for building Wippy web components. Provides `Wippy
 
 ```typescript
 import { api } from '@wippy-fe/proxy'
-import { WippyElement } from '@wippy-fe/webcomponent-core'
+import { getWippyHost, WippyElement } from '@wippy-fe/webcomponent-core'
+// ProxyApiInstance is an ambient global type from @wippy-fe/types-global-proxy (tsconfig "types") — no import
 
 class MyWidget extends WippyElement {
   private offUpdate: (() => void) | null = null
@@ -128,7 +152,9 @@ class MyWidget extends WippyElement {
   protected onMount(_shadow: ShadowRoot, container: HTMLElement) {
     const epoch = ++this.loadEpoch
     void this.loadName(container, epoch)
-    this.offUpdate = this.host?.layout.on('update', ({ payload }) => {
+    // `this.host` is typed `unknown`; read the same panel-scoped wrapper with a type argument.
+    const host = getWippyHost<ProxyApiInstance['host']>(this)
+    this.offUpdate = host?.layout.on('update', ({ payload }) => {
       // react to cross-panel messages
     }) ?? null
   }
@@ -155,7 +181,7 @@ class MyWidget extends WippyElement {
 customElements.define('my-widget', MyWidget)
 ```
 
-Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`. In 0.0.66, `WippyElement.hostVisible`, `onHostVisibilityChanged(visible, previous)`, and `reactive.hostVisibility` expose retained logical activity without treating the reserved attribute as a component prop.
+Also exports `getWippyHost(el)`, `getWippyHostBus(el)`, and `getWippyPanelId(el)` for raw `HTMLElement` subclasses that do not extend `WippyElement`. In 0.0.70, `WippyElement.hostVisible`, `onHostVisibilityChanged(visible, previous)`, and `reactive.hostVisibility` expose retained logical activity without treating the reserved attribute as a component prop.
 
 ### `@wippy-fe/webcomponent-vue`
 
@@ -193,8 +219,8 @@ import { useProps, useEvents, useHost } from '@wippy-fe/webcomponent-vue'
 // Read props declared in wippyConfig.propsSchema
 const props = useProps<{ label: string }>()
 
-// Emit events to the host
-const emit = useEvents()
+// Emit events to the host. The type argument maps each event name to its detail type.
+const emit = useEvents<{ selected: { id: number } }>()
 emit('selected', { id: 42 })
 
 // Access the panel-scoped host wrapper
@@ -211,7 +237,9 @@ custom element. `useHostVisibilityRefresh(task)` runs `task` after mount and
 again only on an exact `false -> true` reveal, without replacing the element.
 It serializes an in-flight task and coalesces intervening reveals into one
 trailing refresh.
-These exports are present in `@wippy-fe/webcomponent-vue` 0.0.66.
+These exports are present in `@wippy-fe/webcomponent-vue` 0.0.70.
+
+In 0.0.70, the package also exports `lazyVueConfig()`. A Vue element can use it to load its implementation on demand and to report when its root has mounted through `wippyMountState` and the `wippy-mounted` event. The package ships a runnable starter in `starter/`. See [Web component readiness](../micro-frontends/web-component.md#web-component-readiness) and [Lazy components](../micro-frontends/web-component.md#lazy-components).
 
 ### `@wippy-fe/layout`
 
@@ -237,9 +265,13 @@ Vue 3 composables wrapping the proxy layout API in reactive refs for use inside 
 | `useWippyBreakpoint()` | Active breakpoint name |
 | `useWippyMainRoute()` | Reactive ref to the main panel's current route |
 
+In 0.0.70, the package also provides `usePageList({ filter? })`, a live copy of the pages that the viewer may open, and `useAppNav({ items, pages, groups, router, host })`, which returns `{ tree, activeKey, open }` for an app-owned navigation. The package now depends on `@wippy-fe/shared` and re-exports its navigation rules. See [App-owned page navigation](../micro-frontends/proxy-api.md#app-owned-page-navigation).
+
 ### `@wippy-fe/shared`
 
-Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In 0.0.66, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
+Cross-boundary contract types, global-name constants, and dependency-free DOM helpers shared between the host and the `@wippy-fe/*` packages. It exports the layout-bus types (`BroadcastEnvelope`, `LayoutBusBound`, `PanelTarget`, `DropPosition`, `SizeValue`, `PixelSize`) and global-name constants (`GLOBAL_API_PROVIDER`, `GLOBAL_CONFIG_VAR`, …). In 0.0.70, it also exports `readWippyVisibility`, `setWippyVisibility`, and `WIPPY_VISIBILITY_ATTRIBUTE` for the retained-WC contract. It does **not** export `AppConfig` / `ProxyApiInstance` / `HostApi` — those are ambient types from `@wippy-fe/types-global-proxy` (below).
+
+In 0.0.70, it also exports `withExternalLinkTarget()` and the framework-free navigation rules `buildNavTree`, `pagePath`, `matchPage`, `matchHostPath`, `activeKey`, `pageNavItems`, `visibleItems` and `parsePages`, with the types `PageInfo`, `NavItem`, `NavNode`, `NavTarget`, `NavGroup` and `PageMatch`. The Host sidebar builds its tree with `buildNavTree`, so a page sits in the same place in the sidebar and in an app that uses the same rules.
 
 ### `@wippy-fe/types-global-proxy`
 
@@ -290,7 +322,7 @@ Vite plugins that handle the build-time requirements for Wippy micro-frontends. 
 
 `wippyPagePlugin()` — for `view.page` modules. Reads and validates the `wippy` field in `package.json`, resolves supported `file://` references, emits `wippy-meta.json`, and injects host-less package metadata into the built HTML. It does **not** configure Rollup externals; the application must match its externals to the target Web Host import map.
 
-`wippyComponentPlugin()` — for `view.component` modules. Similar to `wippyPagePlugin()` but targets web component output format (ESM, no HTML shell). Also emits `wippy-meta.json` with the component's `tagName` and schema.
+`wippyComponentPlugin()` — for `view.component` modules. Similar to `wippyPagePlugin()` but targets web component output format (ESM, no HTML shell). Also emits `wippy-meta.json` with the component's `tagName` and schema. In 0.0.70 it accepts the option `lazyEntries`, which checks that a lazy entry keeps its registration apart from its implementation. See [Lazy components](../micro-frontends/web-component.md#lazy-components).
 
 ```typescript
 // vite.config.ts for a view.page module
@@ -345,7 +377,7 @@ The Host release also includes a static Tabler Iconify collection at `iconify/ta
 
 ### `@wippy-fe/chat` (not published to npm)
 
-A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — delivered by the Host's `chat.js` bundle. In Web Host 1.0.66 the source package is private and is not installable from npm. The iframe engine injects the shell and auto-registers the tags; the Web Fragment gateway deliberately omits `chat.js`, so fragment pages must not assume these tags are present. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
+A set of composable chat custom elements — `<wippy-chat>`, `<wippy-chat-messages>`, `<wippy-chat-input>`, and `<wippy-session-selector>` — delivered by the Host's `chat.js` bundle. In Web Host 1.0.70 the source package is private and is not installable from npm. The iframe engine injects the shell and auto-registers the tags; the Web Fragment gateway deliberately omits `chat.js`, so fragment pages must not assume these tags are present. The heavy chat internals (Vue + PrimeVue/Shiki/markdown) are code-split and lazy-loaded on first mount.
 
 In Web Host 1.0.66, `<wippy-chat>` reacts to `session-id` and `start-token` without
 requiring element replacement. Clearing or removing a previously controlled
@@ -361,7 +393,7 @@ See [Chat Web Components](../micro-frontends/chat-web-components.md) for the ful
 
 ### `@wippy-fe/markdown-iframe` (not published to npm)
 
-Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting) built by the Web Host and dynamically imported by `<w-artifact>` when it renders Markdown in an iframe artifact. Web Host 1.0.66 has no public npm package manifest for this bundle; child apps should use their own markdown dependency rather than declaring `@wippy-fe/markdown-iframe` as an npm dependency.
+Heavy markdown rendering bundle (markdown-it + Shiki syntax highlighting) built by the Web Host and dynamically imported by `<w-artifact>` when it renders Markdown in an iframe artifact. Web Host 1.0.70 has no public npm package manifest for this bundle; child apps should use their own markdown dependency rather than declaring `@wippy-fe/markdown-iframe` as an npm dependency.
 
 ---
 
@@ -374,7 +406,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o impor
 ```
 
 For the published combined release, use the `<version-tag>`
-`webcomponents-1.0.66`.
+`webcomponents-1.0.70`.
 
 The exact keys of the fetched `imports` object are the JavaScript externalization contract:
 
@@ -457,7 +489,7 @@ resolve to the shared Host graph. JavaScript externalization does not provide
 PrimeVue CSS. Request the required CSS separately through the documented Host
 CSS keys. The local preview CSS dependency remains a Phase 4 prerequisite.
 
-This inventory belongs to published Web Host 1.0.66. Confirm its URL and
+This inventory belongs to published Web Host 1.0.70. Confirm its URL and
 contents against the deployed Host artifact before relying on it.
 
 PrimeVue Chart and Editor load `chart.js` 4.5.1 and `quill` 2.0.3 through dynamic chunks. The Host bundles both dependencies locally, so applications using mapped PrimeVue exports do not install them for those chunks. The Host snapshot has 294 map entries, including 274 PrimeVue entries. The Host injects `@wippy-fe/vue-utils` as the 295th key; this is not an application-level mapping. Use the exact pinned Host snapshot as the build contract.

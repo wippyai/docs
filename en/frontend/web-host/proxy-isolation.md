@@ -62,7 +62,7 @@ When the host loads a `view.page`, it builds a `srcdoc` and injects, **in order,
 <script src="/.../proxy.js"></script>
 ```
 
-Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides arrive as `window.__WIPPY_CONFIG_OVERRIDES__` (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
+Because the config global is set **before** `proxy.js` runs, the runtime initializes synchronously and the `@wippy-fe/proxy` getters work immediately — no handshake. Pages don't reference these scripts directly; the `<script data-role="@wippy/scripts">` placeholder is replaced by the host with the correct ordered tags. Per-page overrides are already merged into that config global by the host; the page reads no separate override global (see [Proxy API — Config overrides](../micro-frontends/proxy-api.md#config-overrides)).
 
 ### Web Fragment engine
 
@@ -135,7 +135,7 @@ The names are listed here to prevent collisions:
 | `window.getWippyApi` / `window.initWippyApi` | Async "resolve the instance" functions. Internal (`initWippyApi` is deprecated). |
 | `window.__WIPPY_APP_API__` | The resolved proxy instance. |
 | `window.__WIPPY_APP_CONFIG__` | The child `AppConfig` snapshot. |
-| `window.__WIPPY_PROXY_CONFIG__` / `window.__WIPPY_CONFIG_OVERRIDES__` | CSS-injection flags and per-page overrides. |
+| `window.__WIPPY_PROXY_CONFIG__` | CSS-injection flags. |
 | `window.__WIPPY_WEB_COMPONENT_CACHE__` | Loaded-component cache. |
 
 Two entry points make up the public JavaScript API: `initWippyApp(config, rootContainer?)` mounts the whole Web Host (the module-embed entry the facade uses; see [Facade Entry Point](./entry-point.md)), and **`@wippy-fe/proxy`** is the sync API for child apps and components. Everything in the table above is internal.
@@ -246,7 +246,8 @@ frame.srcdoc = sourceHtml
 | `loading` | — | Fired before fetch/process/render starts. |
 | `load` | — | Fired after the sandbox iframe loads. |
 | `error` | Original error | Fired when fetch, injection, or load fails. |
-| `nav-owner-route` | `{ path: string, navId?: number }` | Child route change when `nav-owner` is set. The event bubbles and is `composed`. |
+| `nav-owner-route` | `{ path: string, navId?: number, replace?: boolean }` | Child route change when `nav-owner` is set. `replace` is `true` when the child reported its route with `{ replace: true }`. The event bubbles and is `composed`. |
+| `nav-request` | `{ url: string, replace?: true }` | The child called `host.navigate(url)` and `nav-owner` is set. `replace: true` is present only when the child passed `{ replace: true }`. The event is cancelable, bubbles and is `composed`. |
 | `wippy-message` | `{ channel, payload, requestId?, respond?, reject? }` | Bridge message from the child. |
 
 | Method | Description |
@@ -265,6 +266,22 @@ frame.addEventListener('nav-owner-route', (event) => {
   myRouter.push(path)
 })
 ```
+
+A child's `host.navigate(url)` is a request for a Host route, not a route of the child. When `nav-owner` is set, `<w-iframe>` first dispatches a cancelable `nav-request` event. A parent that shows pages inside its own shell cancels the event and routes the URL itself, so the reader stays in the shell. If no listener cancels the event, the URL goes to the Host as before. Without `nav-owner`, no `nav-request` is dispatched. The event is dispatched synchronously, so a listener must call `preventDefault()` before its first `await`. When the child passed `{ replace: true }`, the parent should replace its own history entry, as the Host would:
+
+```typescript
+frame.addEventListener('nav-request', (event) => {
+  const { url, replace } = event.detail
+  if (url.startsWith('/reports/')) {
+    event.preventDefault()
+    replace ? myRouter.replace(url) : myRouter.push(url)
+  }
+})
+```
+
+In fragment mode a nested page's DOM sits inside the shadow tree of its parent, so the `nav-owner-route` and `nav-request` events of a nested `nav-owner` frame also bubble through every outer `<w-artifact>`. A listener that acts only for its own frame can check `event.composedPath()[0]`.
+
+The iframe of a page has the `sandbox` attribute `allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads`. Since Web Host 1.0.70 it includes `allow-popups-to-escape-sandbox`, so a link that opens a new tab opens it outside the iframe sandbox.
 
 ### Parent-child bridge
 
@@ -332,7 +349,8 @@ If you omit `options.timeoutMs`, `host.bridge.request()` (and the parent-side `f
 | `loading` | Before fetch starts | — |
 | `load` | After iframe loads | — |
 | `error` | Fetch or render fails | Original error |
-| `nav-owner-route` | Nav-owner child route changes | `{ path: string, navId?: number }` |
+| `nav-owner-route` | Nav-owner child route changes | `{ path: string, navId?: number, replace?: boolean }` |
+| `nav-request` | A nav-owner child calls `host.navigate(url)`. Cancelable: call `preventDefault()` to handle the URL yourself. | `{ url: string, replace?: true }` |
 | `wippy-message` | Bridge message from nested iframe | `{ channel, payload, requestId?, respond?, reject? }` |
 
 ### CSS status and parts

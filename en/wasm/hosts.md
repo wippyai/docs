@@ -52,6 +52,14 @@ Enable imports in your entry configuration:
 
 Only declare the imports your module actually needs.
 
+### Synchronous Compilation
+
+The runtime can omit Asyncify instrumentation for an isolated function runtime when every declared host profile is known to complete without suspending. The built-in eligible profiles are `wasi:io`, `wasi:cli`, `wasi:clocks` and `wasi:random`. Streams obtained through these profiles are standard I/O; filesystem, sockets and HTTP imports require the asynchronous path.
+
+`wasi:poll`, filesystem, sockets, HTTP, actor, `funcs` and unknown profiles retain Asyncify. Shared function runtimes also retain normal asynchronous-import discovery because sibling entries can register additional hosts. The default retained-memory policy uses isolated component runtimes; explicitly disabling retained-memory recycling uses the shared path.
+
+This selection is automatic. Cancellation and execution deadlines still apply to synchronous guests.
+
 ## WASI Imports
 
 Each `wasi:*` import enables a group of related WASI Preview 2 interfaces.

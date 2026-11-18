@@ -13,6 +13,27 @@ Instale los paquetes que necesite:
 npm install @wippy-fe/proxy @wippy-fe/webcomponent-vue @wippy-fe/router
 ```
 
+## Actualizar de Web Host 1.0.69 a 1.0.70
+
+Web Host 1.0.70 se empareja con los paquetes públicos `@wippy-fe/*` en la versión `0.0.70`. Una app que no cambia nada sigue funcionando. Estos comportamientos difieren de 1.0.69.
+
+- Los web components que no se acogen siguen con los eventos heredados `load` y `ready`, con el mismo significado y el mismo momento.
+- El Markdown que renderiza Wippy y los sanitizadores de HTML de Wippy dan a los enlaces HTTP(S) externos `target="_blank"` y `rel="nofollow noopener noreferrer"`. Los anclajes que una página renderiza por sí misma conservan los atributos que la página escribió. Consulte [Proxy API](../micro-frontends/proxy-api.md).
+- El atributo `sandbox` de los iframes de página ahora incluye `allow-popups-to-escape-sandbox`. Un enlace que abre una pestaña nueva la abre fuera del sandbox del iframe. El `target` del enlace sigue decidiendo dónde se abre.
+- El host vuelve a leer sus rutas de montaje mientras se ejecuta, como se describe en [Dynamic Routing](../frontend-registry/dynamic-routing.md). Un hijo reemplaza sus `mountRoutes` con cada mapa que recibe en lugar de combinar los mapas, y `host.classifyLink()` lee el mapa actual.
+- `createAppRouter()` de `@wippy-fe/router` informa una ruta al host solo cuando termina una navegación. Antes también se informaba una navegación que un guard había detenido.
+- En la barra lateral del host, una página cuyo `order` falta o es `null` ahora se ordena como 9999, después de las páginas con `order`. Antes `null` se ordenaba como 0.
+
+Una app puede acogerse a estas funciones. Cada una está desactivada hasta que la app la usa.
+
+| Función | Se describe en |
+|---------|----------------|
+| `lazyVueConfig`, `wippyMountState`, el evento `wippy-mounted` y `preloadImplementation()` para web components de Vue | [Web Component Recipe](../micro-frontends/web-component.md) |
+| El starter diferido de `@wippy-fe/webcomponent-vue/starter/` y `wippyComponentPlugin({ lazyEntries })` | [Web Component Recipe](../micro-frontends/web-component.md) |
+| `host.navigate(url, { replace: true })`, `host.onRouteChanged(path, navId, { replace: true })`, la prop `replace` de `AutoRouterLink` y el evento cancelable `nav-request` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `usePageList()` y `useAppNav()` de `@wippy-fe/vue-host`, y `PageOutlet` y `pageOutletRoute` de `@wippy-fe/router` | [Proxy API](../micro-frontends/proxy-api.md) |
+| `withExternalLinkTarget()` de `@wippy-fe/shared` | [Proxy API](../micro-frontends/proxy-api.md) |
+
 ## Acceder al host: `@wippy-fe/proxy`
 
 Tanto las apps de micro frontend (`view.page`) como los web components (`view.component`) hablan con el host de la misma forma: imports nombrados y síncronos desde `@wippy-fe/proxy`, usados directamente. Sin `await` para obtenerlos y sin handshake: el host inyecta la configuración antes de que su código se ejecute.
@@ -376,8 +397,8 @@ La versión de Host incluye la colección estática de Tabler en `iconify/tabler
 ## Exportaciones de navegador de PrimeVue 4.5.5
 
 La versión publicada de Host fija PrimeVue 4.5.5. El inventario generado se
-sirve desde la raíz versionada de Host. La versión publicada es Web Host 1.0.66
-y los paquetes públicos son 0.0.66. Confirme las etiquetas antes de usarlas.
+sirve desde la raíz versionada de Host. La versión publicada es Web Host 1.0.70
+y los paquetes públicos son 0.0.70. Confirme las etiquetas antes de usarlas.
 Archivo: `primevue-export-inventory.json`.
 
 ```bash
@@ -417,7 +438,7 @@ de JavaScript no entrega el CSS de PrimeVue. Solicite el CSS necesario por
 separado mediante las claves CSS documentadas de Host. El CSS de vista previa
 local sigue siendo un requisito de la Fase 4.
 
-Este inventario corresponde al Web Host 1.0.66 publicado. Confirme su URL y
+Este inventario corresponde al Web Host 1.0.70 publicado. Confirme su URL y
 contenido con el artefacto Host publicado antes de usarlo.
 
 El JSON contiene los campos `schemaVersion`, `package`, `counts`, `exports` y

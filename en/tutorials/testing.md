@@ -132,6 +132,8 @@ resolve. The `imports` map controls what `require(...)` resolves to inside the t
 wippy test
 ```
 
+Positional arguments after the optional source are passed to the test entrypoint. For example, `wippy test storage` forwards `storage`; `wippy test acme/http storage` forwards it to the Hub module's test entrypoint. A `.wapp` source follows the same rule. To pass a flag-shaped argument through to the runner, use `--`, for example `wippy test -- storage --verbose`. The selected test runner defines what those arguments mean.
+
 Output for the suite above:
 
 ```

@@ -95,6 +95,20 @@ entries:
 | `wasi` | No | WASI configuration |
 | `options.limits` | No | Execution limits (`limits` remains a deprecated compatibility spelling) |
 
+## Core WIT Records
+
+The `wit` field on raw/core modules can declare named records:
+
+```yaml
+wit: |
+  record point { x: s32, y: s32 }
+  translate: func(p: point, delta: s32) -> point;
+```
+
+Records can reference other records, lists and options, with declarations in any order. Each record needs at least one field; duplicate fields, unknown types and recursive records are rejected. Line comments, nested block comments and quoted annotation text are excluded when reading declarations.
+
+Core guests must implement the canonical ABI: record parameters flatten into core arguments, and results exceeding one flat slot return a pointer to an aligned return area. For example, a result containing `u8` followed by `u64` places the second field at offset 8.
+
 ## Worker Pools
 
 Each WASM function uses a pool of pre-compiled instances. The pool type controls concurrency and resource usage.
@@ -208,12 +222,13 @@ The `wasi-http` transport maps HTTP requests to WASM and writes results back to 
 
 ## Execution Limits
 
-The `options.limits` block bounds a function's execution time, its warm-worker memory, and the sockets it may open:
+The `options.limits` block bounds a function's execution time, linear memory, retained warm-worker memory, and the sockets it may open:
 
 ```yaml
 options:
   limits:
     max_execution_ms: 5000
+    memory_bytes: 268435456
     max_retained_memory_bytes: 134217728
     retained_memory_check_interval: 32
     max_open_sockets: 8
@@ -223,12 +238,19 @@ options:
 | Field | Default | Description |
 |-------|---------|-------------|
 | `max_execution_ms` | unlimited | Wall-clock budget for one call. When exceeded, the execution is cancelled and an error is returned. |
+| `memory_bytes` | `0` (unlimited) | Aggregate linear-memory ceiling for one function instance. A nonzero value must be a multiple of 64 KiB and at most 4 GiB. |
 | `max_retained_memory_bytes` | `67108864` (64 MiB) | Post-call recycling trigger. A warm worker whose linear memory exceeds this is retired after the call instead of being reused. An explicit `0` disables retained-memory recycling. |
 | `retained_memory_check_interval` | `16` with the built-in limit, every call with an explicit limit | Number of calls between post-call memory inspections. |
 | `max_open_sockets` | `16` | Concurrently open connections per instance for the `socket` host. |
 | `socket_timeout_ms` | `30000` | Deadline for a `socket` dial and for each send/receive. |
 
 Negative values are rejected at boot.
+
+`memory_bytes` prevents an instance from being created when its initial linear memory exceeds the ceiling. Guest `memory.grow` returns `-1` when growth would exceed it. Retained instances keep their charge across calls; closing an instance releases it. Each instance has an independent budget, even when several instances use the same compiled module. The ceiling covers guest linear memory, including Asyncify storage; host buffers, compiled code and unused backing capacity are outside it, so it is not a process RSS limit.
+
+`max_retained_memory_bytes` is a separate recycling policy checked after calls. It does not prevent memory growth during a call. Set `memory_bytes` when admission must be enforced while the guest executes.
+
+Guest execution deadlines return non-retryable `errors.TIMEOUT`; cancellation returns non-retryable `errors.CANCELED`. Other engine failures retain their existing error classification.
 
 The root `limits` and `meta.options.limits` spellings are accepted temporarily
 with a deprecation warning. Keep `pool` at the entry root; it has not moved

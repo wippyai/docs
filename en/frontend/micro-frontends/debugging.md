@@ -81,16 +81,20 @@ Open the dev overlay FAB → toggle the CSS injections you need → check "Auto-
 A non-empty token is not sufficient. Use distinct values so a stock-palette reset or accidental family alias is obvious:
 
 ```yaml
-css_variables:
-  "--p-primary": "#dc2626"
-  "--p-secondary": "#7c3aed"
-  "--p-accent": "#0d9488"
-  "--p-danger": "#be123c"
-  "--p-success": "#15803d"
-  "--p-warn": "#c2410c"
-  "--p-info": "#0369a1"
-  "--p-help": "#9333ea"
-  "--theme-diagnostic-sentinel": "#123456"
+# The facade parameter is a JSON string, not a YAML map.
+- name: css_variables
+  value: |
+    {
+      "--p-primary": "#dc2626",
+      "--p-secondary": "#7c3aed",
+      "--p-accent": "#0d9488",
+      "--p-danger": "#be123c",
+      "--p-success": "#15803d",
+      "--p-warn": "#c2410c",
+      "--p-info": "#0369a1",
+      "--p-help": "#9333ea",
+      "--theme-diagnostic-sentinel": "#123456"
+    }
 ```
 
 Then compare, in this order:
