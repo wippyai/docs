@@ -688,8 +688,10 @@ Text that the picker cannot parse is never dropped or replaced by the last good
 date. A day picked in the calendar is saved as picked, with a four-digit year.
 
 The calendar covers the years 100 to 9999. Its first day is the later of the
-field's `min` and 0100-01-01, so a field whose whole range is before year 100
-has a calendar with no enabled day. A date before year 100 is still a valid
+field's `min` and 0100-01-01, and its last day is the earlier of the field's
+`max` and 9999-12-31, so a field whose whole range is before year 100 has a
+calendar with no enabled day. Its navigation can show earlier years, but no day
+before year 100 can be picked. A date before year 100 is still a valid
 answer and can be typed, but the calendar does not show it: with such a date in
 the box, the calendar opens with no date selected. Any other real date in the
 box, typed or stored, is the date the calendar opens on.
