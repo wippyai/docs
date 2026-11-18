@@ -680,10 +680,8 @@ state endpoint applies to every request are listed in
   session is stored idle and `can_send` is true.
 - **A stored `running` status reads as idle.** If no session process is
   alive, a session stored as `running` is reported as idle.
-- **Dates are stored and returned in UTC.**
-- **`reader:list_pending_inputs` is removed.** The `reader` library no longer
-  has this method. Code that calls it must use another way to read pending
-  inputs.
+- **Sessions finish when the last client leaves.** A session process finishes
+  10 seconds after its last client disconnects.
 
 ## Disabling and rolling back
 
