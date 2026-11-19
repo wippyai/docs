@@ -153,9 +153,10 @@ normalization, where a plain string option expands to `{"value": .., "label":
 limit even when it looks compact. In that case the tool error reports the
 actual normalized size. Labels and descriptions are never parsed as Markdown or
 HTML. The one exception is text in backticks, which the form shows as inline
-code in these places: the form description in both layouts, and the questions
-and options of the question card. The form title is plain text in both layouts.
-The fields form shows its field labels and field descriptions as plain text.
+code in these places: the form description and the choice option labels in
+both layouts, and the questions of the question card. The form title is plain
+text in both layouts. The fields form shows its field labels and field
+descriptions as plain text.
 Control characters other than tabs and newlines (in multi-line fields) are
 rejected.
 
