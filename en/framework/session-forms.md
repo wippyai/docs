@@ -72,7 +72,7 @@ checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
 
 The `ask_user_fields` trait needs the `wippy/session` release that adds version
 2 forms.
-<!-- TODO: name the Session version here (expected 0.7.1) when Release Please opens the release PR. -->
+<!-- TODO: name the Session version here when Release Please opens the release PR. -->
 
 Each tool's input schema lists only its own field types. The server applies
 the same limit, so when a model ignores the schema and sends a standard field
@@ -152,9 +152,12 @@ normalization, where a plain string option expands to `{"value": .., "label":
 ..}`, so a definition with many short string options can be well over the
 limit even when it looks compact. In that case the tool error reports the
 actual normalized size. Labels and descriptions are never parsed as Markdown or
-HTML. The question card shows text in backticks as inline code, and the form of
-fields shows all of it as plain text. Control characters other than tabs and
-newlines (in multi-line fields) are rejected.
+HTML. The one exception is text in backticks, which the form shows as inline
+code in these places: the form description in both layouts, and the questions
+and options of the question card. The form title is plain text in both layouts.
+The fields form shows its field labels and field descriptions as plain text.
+Control characters other than tabs and newlines (in multi-line fields) are
+rejected.
 
 A successful call of either tool ends the agent's turn and returns the text
 below. Both trait prompts tell the agent not to add a follow-up, because the
@@ -344,8 +347,9 @@ which have their own limits. It does not count `number` answers either, so a
 valid form with many long `number` answers next to full-length text can exceed
 the request limit. The server then answers 413 `payload_too_large` ("The
 submission is larger than 64 KiB."), and the form shows that message as a final
-error with no Retry. For example, two textareas that keep their default use the whole budget, so a third text
-field cannot be added without lowering their `max_length`.
+error with no Retry. For example, two textareas that keep their default use the
+whole budget, so a third text field cannot be added without lowering their
+`max_length`.
 
 ## Answer values
 
@@ -368,9 +372,10 @@ An answer that breaks a rule is refused with the code in the right column, and
 the whole submission is then rejected with a 422 response and nothing is
 stored. The rules of a type run in the order of its rows, and the first
 failure is the one reported for the question. The type check runs first. For
-`text` and `textarea`, the size check of `too_long` runs next and before the
-`invalid_text` check, so an oversized value that also holds a control character
-gets `too_long`.
+`text` and `textarea`, a value of more than 4 bytes for each allowed character
+gets `too_long` next, before the `invalid_text` check. A value that is over
+`max_length` but within that byte limit and holds a control character gets
+`invalid_text`. For example, `"aa\n"` with a `max_length` of 1 is `invalid_text`.
 
 | Type | Rule | Code |
 | --- | --- | --- |
@@ -417,6 +422,9 @@ accepted and 0.25 is refused, and with `min` 0.5 and `step` 0.25 the value
 0.75 is accepted. A value cannot have more decimals than its `step` and `min`
 allow.
 
+Without `min`, the `step` grid starts at 0. A field with a negative `max` and a
+`step` therefore needs a `min`. Without one, no value can be allowed.
+
 ### Unanswered and required questions
 
 An optional `text`, `textarea`, `email` or `date` question is unanswered when
@@ -425,8 +433,8 @@ what JavaScript's `String.prototype.trim` removes, which includes the
 no-break space and the ideographic space but not the zero width space, so a
 value made only of zero width spaces is content. As with `text`, an `email`
 over 2,032 bytes or a `date` over 512 bytes is refused before the blank test.
-An optional `number` or `checkbox` is unanswered when its value is missing or `null`. A `false`
-checkbox is an answer, and so is the number 0.
+An optional `number` or `checkbox` is unanswered when its value is missing or
+`null`. A `false` checkbox is an answer, and so is the number 0.
 
 A required question that is unanswered fails with `required`. A required
 `checkbox` that is `false` fails with `required` as well, because consent

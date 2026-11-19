@@ -9,8 +9,9 @@ description: "The wippy-form question card and fields form and the wippy-form-an
 Session form that an agent asked with the `ask_user` or `ask_user_fields` tool
 (see [Session Forms (framework)](../../framework/session-forms.md) for the
 tools and the answer contract). `<wippy-form>` is the interactive question card
-or form of fields. `<wippy-form-answers>` is an invisible carrier that keeps a form's answer record reachable to the agent without
-showing it to the user twice. Like the chat elements in
+or form of fields. `<wippy-form-answers>` is an invisible carrier that keeps a
+form's answer record reachable to the agent without showing it to the user
+twice. Like the chat elements in
 [Chat Web Components](./chat-web-components.md), both are host-provided
 elements to consume, so an application that embeds a chat surface does not
 author or bundle either one.
