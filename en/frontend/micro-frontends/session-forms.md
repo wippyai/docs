@@ -1,29 +1,35 @@
 ---
 title: "Session Forms"
-description: "The wippy-form question card and the wippy-form-answers carrier element: what they render, how they load, and the artifact-state HTTP API behind them."
+description: "The wippy-form question card and fields form and the wippy-form-answers carrier element: what they render, how they load, and the artifact-state HTTP API behind them."
 ---
 
 # Session Forms
 
 `wippy/session` ships two `view.component` web components that render a
-Session `ask_user` form (see
-[Session Forms (framework)](../../framework/session-forms.md) for the
-`ask_user` tool and the answer contract). `<wippy-form>` is the interactive
-question card. `<wippy-form-answers>` is an invisible carrier that keeps a
+Session form that an agent asked with the `ask_user` or `ask_user_fields` tool
+(see [Session Forms (framework)](../../framework/session-forms.md) for the
+tools and the answer contract). `<wippy-form>` is the interactive question card
+or form of fields. `<wippy-form-answers>` is an invisible carrier that keeps a
 form's answer record reachable to the agent without showing it to the user
 twice. Like the chat elements in
 [Chat Web Components](./chat-web-components.md), both are host-provided
 elements to consume, so an application that embeds a chat surface does not
 author or bundle either one.
 
-## `<wippy-form>`: the question card
+## `<wippy-form>`: the question card and the fields form
 
-For a version 1 definition the component renders a question card.
+The component chooses its layout from the definition. When every field has
+`type: "choice"` (a version 1 form), it renders a question card. When at least
+one field is a standard field (`text`, `textarea`, `number`, `email`, `date`
+or `checkbox`, which makes it a version 2 form), it renders the
+[fields form](#fields-form), one form of labelled controls with a single Submit
+button. A version 2 form that also holds choices shows those choices in the
+fields form, as plain radio or checkbox groups.
 
 | Prop (HTML attribute) | Type | Default | Description |
 | --- | --- | --- | --- |
-| `form-version` | `number` | `1` | Definition schema version. A value other than `1`, whether it comes from this prop or from the loaded state's own `form_version`, shows a compatibility notice and no submit control. |
-| `definition` | `object` | `null` | The immutable form definition: `title`, optional `description`, optional `submit_label`, optional `answered_message` (never displayed), and `fields`. |
+| `form-version` | `number` | `1` | Definition schema version. `1` is a form of choices only and `2` is a form with at least one standard field. Any other value, from this prop or from the loaded state's `form_version`, shows a compatibility notice (see [Host requirement](#host-requirement)). |
+| `definition` | `object` | `null` | The immutable form definition: `title`, optional `description`, optional `submit_label`, optional `answered_message` (never displayed), and `fields`. Each field is `{ id, type, label, description?, required }` plus the keys of its type (see [Field types](../../framework/session-forms.md#field-types)). |
 | `state` | `string` | `"active"` | Package-tag lifecycle: `"active"` (answerable) or `"idle"` (already answered, read-only). Changing it reloads canonical state from the Host. |
 
 The component owns its own data loading, submission, and offline detection. A
@@ -38,7 +44,7 @@ host only needs to mount the tag with these attributes.
   retries once automatically after a network failure with no response, and
   handles a 422 field-error response and a 409 already-submitted response.
 
-### Behavior
+### Question card behavior
 
 - The card shows one question at a time, with a `‹ n/total ›` counter on a
   form that has several questions. Answering (a click or a number key) moves to
@@ -70,6 +76,70 @@ intercept typing in the surrounding chat composer.
 | Shift+Enter | Adds a line |
 | Escape | Leaves a note or Other box and keeps the typed draft with that answer |
 | Arrow keys | Move between rows and between questions |
+
+### Fields form
+
+A version 2 form renders as one form. It shows the title and the optional
+description, then one labelled control for each field in definition order,
+then one Submit button whose text is the definition's `submit_label` (default
+"Submit"). A required field shows the text "(required)" next to its label.
+
+| Type | Control | What the user does | What is sent |
+| --- | --- | --- | --- |
+| `text` | A one line text box | Types the answer. A `placeholder` shows in the empty box | The text exactly as typed, with no trimming |
+| `email` | A text box with an email keyboard hint and the browser's autofill turned off, because an agent can ask for someone else's address and the browser must not offer the user's own | Types an address | The address without surrounding whitespace |
+| `textarea` | A text area that grows with its content and starts three rows high | Types the answer. A `placeholder` shows in the empty box. Enter adds a line and never submits | The text exactly as typed, with line breaks as `\n` |
+| `number` | A text box, not a spinner, whose on-screen keyboard depends on the field (see [Number keyboard](#number-keyboard)) | Types digits with an optional minus sign and a dot for decimals. A comma, a thousands separator, a plus sign and an exponent are errors and are never guessed | A JSON number. A whole value is sent as an integer |
+| `date` | A date picker | Types `YYYY-MM-DD`, or opens the calendar and picks a day. The calendar greys out days outside `min` and `max`. On a touch screen a tap on the box opens the calendar | A string `YYYY-MM-DD`, with no time zone |
+| `checkbox` | A checkbox with a clickable label | Ticks or unticks the box | `true` or `false`. An optional box left unticked sends `false` |
+| `choice` | A radio group for one answer, or a checkbox group for several | Picks options, with an Other row and its own text box when `allow_other` is set | The option values, as in the question card but without per-option notes |
+
+A definition `default` prefills the control. When the user clears an optional
+prefilled value, nothing is sent for that field, and a checkbox always starts
+unticked. The controls are the theme's own PrimeVue controls, so their surface,
+border and focus styling comes from the theme.
+
+#### Number keyboard
+
+The digit keypads of a phone cannot type everything that the number parser
+accepts, so the box asks for one only where the user cannot be locked out. It
+asks for the `numeric` keypad when `integer` is `true` and `min` is 0 or more.
+It asks for the `decimal` keypad when the field is not `integer`, `min` is 0 or
+more, and the browser locale writes decimals with a dot. In every other case it
+asks for the full keyboard.
+
+The parser accepts a dot for decimals, an optional minus sign, no separators and
+no exponent. The message for anything else is "Enter a number, using a dot for
+decimals (for example 12 or -3.5)."
+
+#### Checks before sending
+
+When the user presses Submit, the form checks every answer before it sends a
+request. A failed check shows an error on the field, keeps the typed value in
+place, and focuses the first invalid control. The error clears when the user
+changes the answer. The browser uses the server's own rules and error codes for
+these checks: required answers, text length and control characters, email
+syntax, number bounds, `integer` and `step`, and date format and range. It also
+reports `invalid_number` and `invalid_date` for typed text that is not a number
+or a date. The server checks every answer again, so the browser's checks only
+save a round trip.
+
+The browser does not check a text field's `pattern`. An agent writes the
+pattern, and a browser's regular expression engine can take a very long time
+on some patterns that the accepted syntax allows, which would freeze the tab.
+The server checks it with a linear time engine when the form is submitted, and
+a mismatch comes back as a 422 with `pattern_mismatch`. The form shows the
+error on that field like any other, and the text the user typed stays in the
+box.
+
+#### Read-only view
+
+After an answer is accepted, or when the form is opened already answered, the
+form shows each question with the stored answer as plain text. Text and
+textarea answers keep their line breaks, a number shows as digits, a date shows
+as `YYYY-MM-DD`, a checkbox shows as Yes or No, and a question left unanswered
+shows "Skipped". The delivery status and the answered time follow, as in the
+question card.
 
 ### Events
 
@@ -130,23 +200,22 @@ through.
 Host exports from every proxy realm (`$W.artifactState()` in an iframe, or the
 named `artifactState` export from `@wippy-fe/proxy` in a host-mounted web
 component). Web Host 1.0.65 or later exports it, and no earlier release does.
-The matching npm release is `@wippy-fe/*` 0.0.65. The `wippy/session` module
-release that ships the forms is the one that adds Session Forms.
-<!-- TODO: name the Session version here when the release PR exists. -->
-<!-- Confirm the Web Host and npm version numbers when the Web Host tag is cut. This page merges after that tag. -->
+Version 2 forms add no Web Host requirement, because the controls ship inside
+the `wippy-form` bundle. The matching npm release for version 1 forms is
+`@wippy-fe/*` 0.0.65. Only the TypeScript types for version 2 forms need a later
+`@wippy-fe` types package, and a version 2 form works at run time without it.
+Session Forms arrived in `wippy/session` 0.7.0. Version 2 forms need the later
+release named in
+[Enabling a trait](../../framework/session-forms.md#enabling-a-trait).
 
 The component checks these conditions in order, and the first match decides
 what the card shows.
 
 | Condition | What the card shows |
 | --- | --- |
-| `form-version` prop or loaded state's `form_version` is not `1` | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
-| The Host has no `artifactState` export (a Web Host before 1.0.65) | The questions with their options disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every option is unselected, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
-| The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions rendered read-only, with "This form cannot be submitted here." |
-
-The older `instance.form` adapter that `artifactState` replaces always sends
-`form_version: 1`, so forms use `artifactState`. It is described under [`artifactState` and the deprecated
-`instance.form`](#artifactstate-and-the-deprecated-instanceform).
+| `form-version` prop or loaded state's `form_version` is neither `1` nor `2`, or a field has a type the component does not know | "This form needs a newer version of the app." The card reflects `card-state="unsupported"`. |
+| The Host has no `artifactState` export (a Web Host before 1.0.65) | The questions with their controls disabled, no submit control, and `card-state="unsupported"`. The notice reads "This form needs a newer Web Host. If you already answered it, your answer is in the chat." When the Host passes `state="idle"` (the form was answered), it reads "This form was answered. Your answer is in the chat." instead. Every control is empty, because the saved answer cannot be read without the artifact-state API. The user's one-line answer message and the agent's reply stay readable in the chat, and the hidden answer record never appears. |
+| The Host exports `artifactState`, but the element has no `data-wippy-artifact-id` attribute (the Host sets it on the artifact elements it mounts) | The questions with their controls disabled and empty, with "This form cannot be submitted here." |
 
 ## The artifact-state HTTP API
 
@@ -201,6 +270,32 @@ form, and it is `null` for an unanswered one. It is derived from the message
 history and not from a stored flag. Responses always carry
 `Cache-Control: no-store`.
 
+`form_version` is the form's own version, `1` for a form of choices only and
+`2` for a form with a standard field. `definition` is the normalized
+definition with the defaults filled in, so a `text` field always carries its
+`min_length` and `max_length` and a `number` field always carries `integer`.
+Once the form is answered, `data` holds the accepted answers as one JSON value
+for each answered question, in definition order, and leaves out the questions
+the user skipped. A standard field's value is a string, a number or a boolean
+(see [Answer values](../../framework/session-forms.md#answer-values)), and
+a number is written as an integer when it is whole and without an exponent
+otherwise. The other keys are the same as for a version 1 form, and the
+following response leaves them out:
+
+```json
+{
+  "form_version": 2,
+  "status": "idle",
+  "data": {
+    "name": "Ann Lee",
+    "email": "ann@example.org",
+    "parcels": 3,
+    "ready": "2026-05-06",
+    "terms": true
+  }
+}
+```
+
 ### `POST /api/v1/artifact/{id}/state`
 
 ```json
@@ -212,7 +307,11 @@ history and not from a stored flag. Responses always carry
 }
 ```
 
-`request_id` is a non-empty string of at most 128 characters. It should be
+`form_version` must equal the `form_version` that `GET` returned for the form.
+A different number, in either direction, is rejected with 400
+`invalid_request` before any answer is checked.
+
+`request_id` is a non-empty string of at most 128 UTF-8 bytes. It should be
 generated once, at the moment the user attempts submission, and reused
 unchanged on any retry of that same attempt. The server recognizes a same-id,
 same-answers retry as a replay (`replayed: true` in the response) and not as a
@@ -220,6 +319,36 @@ conflict. `answers` must be an object keyed by field id.
 `expected_content_version` is optional. When it is present, it is checked
 against the artifact's current revision, so a stale client cannot silently
 overwrite a form's state.
+
+The server compares the normalized answers when it decides whether a retry is a
+replay. A retry that writes `3.0` for `3`, or an email address with
+surrounding spaces, is still a replay, while a `text` or `textarea` answer is
+compared exactly, so changing a trailing space under the same `request_id`
+gives 409 `request_conflict`.
+
+A version 2 form takes the same envelope. Each answer is one JSON value keyed
+by field id (see [Answer values](../../framework/session-forms.md#answer-values)
+for the rules of each type):
+
+```json
+{
+  "form_version": 2,
+  "request_id": "client-generated-uuid",
+  "expected_content_version": 1,
+  "answers": {
+    "name": "Ann Lee",
+    "email": "ann@example.org",
+    "parcels": 3,
+    "ready": "2026-05-06",
+    "notes": "Ring twice.\nLeave it at the back door.",
+    "terms": true
+  }
+}
+```
+
+A client that builds this body by hand sends a `number` as a JSON number, never
+as a string such as `"3"`. A number literal that is too large to read, such as
+`1e400`, makes the whole body invalid and the response is 400 `invalid_request`.
 
 Success:
 
@@ -244,19 +373,57 @@ Waiting for the assistant."
 | Status | Meaning |
 | --- | --- |
 | 200 | Accepted (or an exact replay of an already-accepted submission, `replayed: true`) |
-| 400 | Malformed JSON, missing/invalid envelope fields, a missing/invalid artifact id, or `not_a_form` for an artifact that exists but is not a session form |
+| 400 | Malformed JSON, missing/invalid envelope fields, a `form_version` that is not the form's own, a missing/invalid artifact id, or `not_a_form` for an artifact that exists but is not a session form or is a form version the Session does not know |
 | 401 | No authenticated actor |
 | 403 | Authenticated, but no read/write permission on the form's session |
 | 404 | Artifact or session not found, or not owned by the caller. All three cases return the same response, so the endpoint does not reveal that a foreign form exists |
 | 409 `request_conflict` | Same `request_id`, different normalized answers than the first attempt with that id |
 | 409 `already_submitted` | The form was already answered by a different request |
 | 409 `version_conflict` | `expected_content_version` no longer matches the current revision |
-| 413 | Request body over 64 KiB |
+| 413 `payload_too_large` | Request body over 64 KiB (see [Text budget](../../framework/session-forms.md#text-budget)). `<wippy-form>` shows the message as a final error with no Retry |
 | 415 | `Content-Type` is not `application/json` |
-| 422 | Field validation failed, with `errors` keyed by field id and a `form_errors` list |
-| 500 | Internal error; no mutation was applied |
+| 422 | Field validation failed. `errors` is keyed by field id, and `form_errors` is a list (see [Validation errors](#validation-errors-422)) |
+| 500 | Internal error, including a form whose stored `pattern` no longer compiles (nothing the user can fix); no mutation was applied |
 
-Submissions are not rate-limited server-side, so the API never returns `429`.
+There is no `429`, because submissions are not rate-limited on the server.
+
+### Validation errors (422)
+
+A submission that breaks any rule is rejected as a whole. Nothing is stored,
+and the response names the first problem of every failing question:
+
+```json
+{
+  "success": false,
+  "code": "validation_failed",
+  "message": "Some answers are not valid.",
+  "errors": {
+    "email": [{ "code": "invalid_email", "message": "Enter a valid email address." }],
+    "parcels": [{ "code": "above_max", "message": "Is above the maximum." }]
+  },
+  "form_errors": [
+    { "code": "unknown_field", "field": "ghost", "message": "\"ghost\" is not a question in this form." }
+  ]
+}
+```
+
+`errors` maps a field id to a list that holds one `{ code, message }`, and
+`form_errors` lists problems that belong to no field of the form (an answer
+keyed by an id the form does not have is `unknown_field`) and is `[]` when
+there are none. A message never repeats an answer. A `form_errors` message can
+name a key that the client sent, as the `unknown_field` message above does.
+
+The codes of the standard fields, and the rule behind each one, are in
+[Rules by type](../../framework/session-forms.md#rules-by-type). When a question
+breaks several rules, the code of the first one is returned. A `choice` field
+keeps its version 1 codes: `invalid_option`, `other_not_allowed`,
+`multiple_other`, `duplicate_selection` and `blank` (an empty Other answer),
+besides `invalid_type`, `invalid_text` and `too_long`.
+
+`<wippy-form>` shows each error on its own field, and it shows a `form_errors`
+entry as a form level error. It focuses the first invalid control and announces
+how many questions need attention. Changing an answer clears the error of that
+field until the next submit.
 
 ## The `artifactState` proxy client
 
@@ -325,9 +492,9 @@ shim over `artifactState(appConfig.context.resourceId)`. A 422 maps to the
 legacy `{ success: false, errors }` shape. Every other failure (401, 404, 409,
 5xx, network) rethrows the same error that `artifactState` would throw. New
 code should call `instance.artifactState(artifactId)` directly and not this
-deprecated shim.
-
-The deprecated `instance.form.submit()` always sends `form_version: 1`, so forms use `artifactState(artifactId)`.
+deprecated shim. The shim always sends `form_version: 1`, so for a version 2
+form the server answers 400 `invalid_request`. Use `artifactState` and send the
+`form_version` that `get()` returned.
 
 ## Styling API
 
@@ -338,31 +505,170 @@ package's own README (`frontend/wippy-form/README.md` in the `wippy/session`
 source). `<wippy-form-answers>` exposes no styling API because it renders
 nothing.
 
+### Fields form styling
+
+The fields form follows the same conventions. All the shared tokens of the
+question card apply to its root (`--wippy-form-font`, `-font-size`,
+`-small-size`, `-question-size`, `-question-weight` for the title, `-surface`,
+`-border`, `-radius`, `-padding`, `-text`, `-text-muted` and `-focus`), and it
+adds three tokens. Set them on `wippy-form` or on any ancestor.
+
+| Token | Default | Used for |
+| --- | --- | --- |
+| `--wippy-form-field-gap` | 16px | Space between the fields, and between the header, the fields, the errors and the button |
+| `--wippy-form-label-weight` | `500` | The weight of a field label |
+| `--wippy-form-date-width` | `20rem` | The width of the date control, which is full width only where the form is narrower than that. The calendar opens at least as wide as the control |
+
+The controls are the theme's PrimeVue controls, so their surface, border and
+focus styling comes from the theme. There are no input tokens, and the
+component overrides no `.p-*` class. A state adds a part `<part>-<state>` and
+a class `w-form__<part>--<state>`, for example `field-invalid` and
+`w-form__field--invalid`.
+
+| Part | States | What it is |
+| --- | --- | --- |
+| `card`, `fields` | `answered` and `unsupported` (on `card`) | The whole form. The same element carries both parts and the `w-form` class |
+| `title` | | The form title with an icon (shared with the card) |
+| `form-description` | | The form's own description |
+| `notice` | | The "asked earlier" and offline lines |
+| `fields-error` | | Form level errors from a 422 |
+| `field` | `required`, `invalid`, `readonly`, `disabled`, `group`, `inline` | One field. `group` marks a choice (a fieldset) and `inline` marks a checkbox |
+| `field-label` | | The label, or the legend of a choice |
+| `field-marker` | | The "(required)" text on an editable required field |
+| `field-description` | | The field's own description |
+| `field-control` | | The wrapper around the control |
+| `field-row` | | The row of an editable checkbox: its control and its label side by side |
+| `field-input` | `date` (on the date picker) | The control: the text box, the text area, the checkbox or the date picker. The `date` state is what `--wippy-form-date-width` bounds |
+| `field-calendar` | | The calendar panel of the date picker (class `w-form__field-calendar`). It opens in the theme plugin's overlay layer and not inside the form, so the message around a short form never clips it. It carries the form's `w-theme-dark` or `w-theme-light` class, so it follows a forced theme |
+| `field-error` | | The error list, linked to the control by `aria-describedby` |
+| `field-value` | `empty` | The stored answer in the read-only view ("Skipped" when empty) |
+| `answer-item`, `answer-own`, `answer-note` | | One chosen answer of a choice in the read-only view, its "Own answer:" prefix and its note, as in the answered card |
+| `field-options` | | A choice's group of rows |
+| `field-option` | `other` | One radio or checkbox row |
+| `field-option-input`, `field-option-label`, `field-option-description` | | The pieces of one row |
+| `field-other`, `field-other-input` | | The label and the text box of the Other row |
+| `status` | | The delivery and answered time lines in the read-only view |
+| `send` | `sending` | The Submit button. The `sending` state lasts while a send is in flight, and the label reads "Sending…". An offline form is blocked but not `sending` |
+
+The `card-state` host attribute is reflected as for the card, with the values
+`loading`, `active`, `answered` and `unsupported`. A fields form never reports
+`review` and has no `collapsed` attribute. A restyle looks like this:
+
+```css
+wippy-form {
+  --wippy-form-field-gap: 24px;
+  --wippy-form-label-weight: 600;
+}
+
+wippy-form::part(field-description) {
+  font-size: 0.875rem;
+}
+```
+
 ## Accessibility
+
+### Question card
 
 A single-selection question is a `role="radiogroup"` with `aria-required` when
 required. It is one Tab stop, and arrow keys move between its rows. A
 multiple-selection question is a `role="group"` where every row is its own Tab
 stop, because each row is an independent checkbox. A field-level error is a
 `role="alert"` element linked to its group or text box through
-`aria-describedby`. One polite live region announces question and review
-navigation, tick changes, and submission and validation results without moving
-focus, and after a submission is accepted, focus moves to the read-only
-summary's status text.
+`aria-describedby`, and a form-level error and a failed send are each announced
+by their own alert. One polite live region announces question and review
+navigation, ticking and unticking, and a saved note without moving focus.
+After a submission is accepted, focus moves to the read-only summary's status
+text.
+
+### Fields form
+
+Every control has a label whose `for` points at the real input. The
+description and the error list are linked to that input by `aria-describedby`.
+For a checkbox and a date picker, whose wrapper element would otherwise take
+the attribute, the component passes it through to the real control. A required
+field is marked with the text "(required)", never with colour alone, and
+`aria-invalid` and `aria-required` follow the state of the field.
+
+A choice is a `fieldset` with a `legend` that is described as a whole. Every
+radio or checkbox in it, and the Other text box, carries the same
+`aria-describedby` (the field description and the error list), so a screen
+reader that lands on one input reads the error, and each carries `aria-invalid`
+while the group is in error. A single choice adds a `radiogroup` role with
+`aria-required` around its radios, and the field label names that group through
+`aria-labelledby`. A multiple choice adds no role and no
+`aria-required`, because its fieldset is already the group, and the
+"(required)" text in the legend says that it is required.
+
+The form is `novalidate`, so the browser's own validation bubble never replaces
+the form's error flow. A failed submit focuses the first invalid control and
+announces "N questions need attention." in one polite status region. Only
+fields in error count as questions. A form level error from a 422 is spoken as
+its own text after the count, or alone when no field is in error. As the user
+fixes questions the text is updated once for each fixed question and not once
+for each key, and it is emptied when nothing is left.
+
+Errors in the fields form carry no `role="alert"` of their own. A submit
+failure that is not a field error, such as a network error or a server error,
+is shown as a message with a Retry button. The message is a plain element and
+not a live region, so the status region announces its text once. After an
+accepted submission, focus moves to the status text of the read-only view. A
+read-only answer is plain text that the user can select.
+
+| Key | Where | Effect |
+| --- | --- | --- |
+| Enter | A one line field | Submits the form |
+| ArrowDown, or the calendar button | The date box | Opens the calendar |
+| ArrowDown a second time | The date box with the calendar open | Moves focus into the days |
+| ArrowLeft and ArrowRight, ArrowUp and ArrowDown | A day of the calendar | Move by one day, or by one week |
+| Enter | A day of the calendar | Picks the day, closes the calendar and returns focus to the box |
+| Escape | An open calendar | Closes the calendar and keeps what the box holds |
+
+The date box takes typed text in the form `YYYY-MM-DD` one key at a time, and
+it always shows what the user typed. A complete loose date `Y-M-D` (a year of 1 to 4 digits, a month and a day of 1 or
+2 digits, nothing else) that is a real day from year 1 to 9999 is saved as
+`YYYY-MM-DD`. For example, `2026-6-5` is saved as `2026-06-05`, and `50-3-4` is
+saved as `0050-03-04`, not as 1950. The box shows the saved text once it is
+left. Any other text stays in the box exactly as typed, and the submit names it
+with `invalid_date` (for example `0000-01-01` or `2026-06-05 suffix`), or with
+`below_min` or `above_max` when it is a well-formed date outside the range. A
+day picked in the calendar is saved as picked, with a four-digit year.
+
+The calendar covers the years 100 to 9999, because PrimeVue reads a year below
+100 as a two-digit year. No day before year 100 can be picked, so a field whose
+whole range is before year 100 has a calendar with no enabled day. A date before
+year 100 is still a valid answer and can be typed, but the calendar opens with no
+date selected. Any other real date in the box is the date the calendar opens on.
 
 ## Known gaps
 
-- The tick boxes, radio marks, and input edges use the theme's existing
-  surface-300/700 border colors, which give roughly 1.3 to 1.4:1 contrast,
-  with no local override. The fix belongs in the theme and not in this
-  component.
-- The two "Send" buttons and the two composer send buttons are unstyled
-  PrimeVue defaults. They follow the theme's own primary button color and not
-  `--wippy-form-accent`, so retinting `--wippy-form-accent` alone leaves them
-  on the old color while rows, the counter, key badges, and the focus ring
-  follow the new one.
-- The Notes and Other text boxes use the theme's own `.p-textarea` colors, and
-  there are no `--wippy-form-input-bg` or `--wippy-form-input-border` tokens.
+- Some styling follows the theme and not a component token.
+  - The tick boxes, radio marks, and input edges use the theme's existing
+    surface-300/700 border colors, which give roughly 1.3 to 1.4:1 contrast,
+    with no local override. The fix belongs in the theme and not in this
+    component.
+  - The two "Send" buttons and the two composer send buttons are unstyled
+    PrimeVue defaults. They follow the theme's own primary button color and
+    not `--wippy-form-accent`, so retinting `--wippy-form-accent` alone leaves
+    them on the old color while rows, the counter, key badges, and the focus
+    ring follow the new one.
+  - The Notes and Other text boxes, and every control of the fields form, use
+    the theme's own `.p-textarea` and PrimeVue colors, and there are no
+    `--wippy-form-input-bg` or `--wippy-form-input-border` tokens.
+  - The error text and the "(required)" marker of the fields form take their
+    colour from the theme's severity utilities, which are tuned for contrast
+    in light and dark, and not from `--wippy-form-danger`.
+- Some behavior is limited.
+  - A choice that sits in a version 2 form has no per-option notes and does
+    not answer on click. The user picks options and sends the whole form with
+    the Submit button. A choice-only form keeps the question card with its
+    notes.
+  - In the published `@wippy-fe/proxy` types, a form field is a `choice` and an
+    answer is a choice answer, while `form_version` is any number. At run time
+    the `artifactState` client sends and returns version 2 JSON unchanged, so a
+    TypeScript caller needs a type assertion for the fields and answers of a
+    version 2 form until the types are widened.
+- The calendar day cells have no accessible name beyond the day number, a limit
+  that comes from PrimeVue. The panel itself is a dialog labelled "Choose Date".
 
 ## Diagnostics
 
@@ -372,10 +678,12 @@ to wait for a state in an end-to-end test.
 | `card-state` | Meaning |
 | --- | --- |
 | `loading` | Before the artifact's first `GET` resolves. `<wippy-loading>` shows instead of the card. |
-| `active` | Answerable. A question, the review step, or briefly, the submitting state. |
+| `active` | Answerable. A question, or briefly, the submitting state. |
 | `review` | The review step of a several-question form, before "Send answers". |
 | `answered` | The read-only summary of an accepted submission. |
-| `unsupported` | An unrecognized `form-version` (from the prop or the loaded state), or a Web Host without the `artifactState` export. It takes priority over every other value, and the card is never interactive or submittable. |
+| `unsupported` | An unrecognized `form-version` (neither `1` nor `2`, from the prop or the loaded state), a field type the component does not know, or a Web Host without the `artifactState` export. It takes priority over every other value, so the card is never interactive or submittable. |
+
+A fields form reports only `loading`, `active`, `answered` and `unsupported`.
 
 A missing or failed component bundle never reaches any `card-state` above. The
 `wippy-form` script never registers, or registration times out, and the Host's
@@ -389,8 +697,8 @@ that tried to mount the tag. Reload the page to recover.
 ## See also
 
 - [Session Forms (framework)](../../framework/session-forms.md): the
-  `ask_user` and `read_form` tools, the trait, and how an answer is admitted
-  into the conversation
+  `ask_user`, `ask_user_fields` and `read_form` tools, the two traits, and how
+  an answer is admitted into the conversation
 - [Chat Web Components](./chat-web-components.md): other host-provided,
   auto-registered elements delivered the same way
 - [Proxy API](./proxy-api.md): the rest of `@wippy-fe/proxy` and
