@@ -527,7 +527,7 @@ a class `w-form__<part>--<state>`, for example `field-invalid` and
 | Part | States | What it is |
 | --- | --- | --- |
 | `card`, `fields` | `answered` and `unsupported` (on `card`) | The whole form. The same element carries both parts and the `w-form` class |
-| `fields-title` | | The form title |
+| `title` | | The form title with an icon (shared with the card) |
 | `form-description` | | The form's own description |
 | `notice` | | The "asked earlier" and offline lines |
 | `fields-error` | | Form level errors from a 422 |
@@ -541,8 +541,7 @@ a class `w-form__<part>--<state>`, for example `field-invalid` and
 | `field-calendar` | | The calendar panel of the date picker (class `w-form__field-calendar`). It opens in the theme plugin's overlay layer and not inside the form, so the message around a short form never clips it. It carries the form's `w-theme-dark` or `w-theme-light` class, so it follows a forced theme |
 | `field-error` | | The error list, linked to the control by `aria-describedby` |
 | `field-value` | `empty` | The stored answer in the read-only view ("Skipped" when empty) |
-| `field-item` | | One chosen answer of a choice in the read-only view |
-| `field-note` | | The note on a chosen option in the read-only view |
+| `answer-item`, `answer-own`, `answer-note` | | One chosen answer of a choice in the read-only view, its "Own answer:" prefix and its note, as in the answered card |
 | `field-options` | | A choice's group of rows |
 | `field-option` | `other` | One radio or checkbox row |
 | `field-option-input`, `field-option-label`, `field-option-description` | | The pieces of one row |
