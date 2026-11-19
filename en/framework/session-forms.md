@@ -60,8 +60,7 @@ questions:
       - id: wippy.session.forms:ask_user
 ```
 
-The trait ships with Session Forms, so the app needs `wippy/session` 0.7.0 or
-newer.
+The app needs `wippy/session` 0.7.0 or newer.
 
 To let the agent also ask for text, numbers, email addresses, dates and
 checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
@@ -83,13 +82,11 @@ to `ask_user`, the call fails with `unsupported_type` and the message
 fields. To use them, switch the agent to `ask_user_fields`.
 
 Attach one of the two traits. The two tools have different names because the
-agent compiler keeps only the last tool of a given name. With one shared name,
-an agent with both traits would get whichever tool the compiler read last.
-With the different names, an agent with both traits gets both tools and both
-prompts. It works, but the prompt repeats most of its instructions.
+agent compiler keeps only the last tool of a given name. An agent with both
+traits gets both tools and both prompts, and the prompts repeat most of their
+instructions.
 
-A trait needs a `wippy/session` release that ships it, and `ask_user_fields`
-ships only in the releases that support the standard fields. With an older
+An older `wippy/session` release has no `ask_user_fields` trait. With that
 release, an agent that references the trait fails to resolve at lint time.
 
 Each trait contributes its form tool, `read_form` and a block of prompt text.
@@ -148,8 +145,7 @@ The keys that only some types take (lengths, `pattern`, `min`, `max`, `step`,
 [Field types](#field-types), and only `ask_user_fields` takes them. Its input
 schema is flat, so a model sees the keys of every type in one object. The
 server decides which keys each type takes and rejects any other with
-`unknown_key`. For example, `placeholder` belongs to `text` and `textarea`
-only, and the server rejects it on `number`, `email` and every other type.
+`unknown_key`.
 
 The normalized definition is bounded to 32 KiB. The size is measured after
 normalization, where a plain string option expands to `{"value": .., "label":
@@ -190,11 +186,10 @@ instead.` To change a question, ask a new form.
 
 Every field has an `id`, a `type` and a `label`, and optionally a
 `description` and `required`, as listed in the table above. Each type then
-adds its own keys, which are listed in this section. `ask_user` takes only the
-`choice` type, and `ask_user_fields` takes every type in this section. A key that a type does
-not take is rejected with `unknown_key`, for example `min_length` on a
-`number` or `default` on a `choice`. A form can mix types in any order.
-Lengths count characters (Unicode code points), not bytes.
+adds its own keys. A key that a type does not take is rejected with
+`unknown_key`, for example `min_length` on a `number`, `default` on a `choice`
+or `placeholder` on anything but `text` and `textarea`. A form can mix types in
+any order. Lengths count characters (Unicode code points), not bytes.
 
 ### `choice`
 
@@ -240,8 +235,7 @@ never with floating point arithmetic.
 
 ### `email`
 
-An email address. An email takes no keys besides `default`. Its limits are
-fixed at 254 characters in all and 64 before the `@`.
+An email address. An email takes no keys besides `default`.
 
 | Key | Default | Rule |
 | --- | --- | --- |
@@ -283,8 +277,7 @@ user, so an answer exists only when the user submits the form, and a
 question whose prefilled value the user clears is unanswered. Because a default
 must never agree to something on the user's behalf, a `checkbox` can only have
 the default `false`. A default of `true` is rejected with
-`default_not_allowed`, and a `choice` field with a `default` is rejected with
-`unknown_key`.
+`default_not_allowed`.
 
 ### Patterns
 
@@ -325,9 +318,7 @@ class, `.`, `^`, `$` and an empty group count 1. `a{n}` and `a{m,n}` count n
 times what they repeat, `a{m,}` counts m + 1 times, and `*`, `+`, `?` and a
 repeat of zero count what they repeat once, so `(ab){0}` counts 2. Nested
 repeats multiply, and items in a row and alternatives add up, so `(ab){5}`
-counts 10 and `(a{5}){3}` counts 15. The limit keeps the check short, because
-the server runs it while it holds the lock that accepts the answer.
-
+counts 10 and `(a{5}){3}` counts 15.
 Anything else is rejected when the form is created, including lookahead and
 lookbehind, backreferences, named groups, flags such as `(?i)`, the escapes
 `\s`, `\S`, `\D`, `\W`, `\b`, `\B`, `\p` and `\x`, and every other backslash
@@ -353,9 +344,7 @@ which have their own limits. It does not count `number` answers either, so a
 valid form with many long `number` answers next to full-length text can exceed
 the request limit. The server then answers 413 `payload_too_large` ("The
 submission is larger than 64 KiB."), and the form shows that message as a final
-error with no Retry. A client that writes non-ASCII text as JSON escape
-sequences can also use up to 12 bytes for a character and not 4. For example,
-two textareas that keep their default use the whole budget, so a third text
+error with no Retry. For example, two textareas that keep their default use the whole budget, so a third text
 field cannot be added without lowering their `max_length`.
 
 ## Answer values
@@ -379,16 +368,15 @@ An answer that breaks a rule is refused with the code in the right column, and
 the whole submission is then rejected with a 422 response and nothing is
 stored. The rules of a type run in the order of its rows, and the first
 failure is the one reported for the question. The type check runs first. For
-`text` and `textarea`, a size check runs right after it: a value of more than
-four bytes for each character that `max_length` allows is refused with `too_long` before the server
-reads it as UTF-8 or looks for control characters. An oversized value that also
-holds a control character gets `too_long`, not `invalid_text`.
+`text` and `textarea`, the size check of `too_long` runs next and before the
+`invalid_text` check, so an oversized value that also holds a control character
+gets `too_long`.
 
 | Type | Rule | Code |
 | --- | --- | --- |
 | `text`, `textarea` | The value is a string | `invalid_type` |
-| `text`, `textarea` | The value is valid UTF-8 and has no control character. A `text` answer allows no tab or line break. A `textarea` answer allows tabs and line feeds (`\n`) and refuses carriage returns. This check comes after the size check in the next row | `invalid_text` |
-| `text`, `textarea` | At most `max_length` characters, counted as sent. A value of more than `max_length` times 4 bytes is refused with this code first, before the row above is checked | `too_long` |
+| `text`, `textarea` | The value is valid UTF-8 and has no control character. A `text` answer allows no tab or line break. A `textarea` answer allows tabs and line feeds (`\n`) and refuses carriage returns | `invalid_text` |
+| `text`, `textarea` | At most `max_length` characters, counted as sent. A value of more than 4 bytes for each allowed character is refused with this code first, before the UTF-8 check | `too_long` |
 | `text`, `textarea` | At least `min_length` characters, checked only when the question is answered | `too_short` |
 | `text` | The whole value matches `pattern` | `pattern_mismatch` |
 | `email` | The value is a string | `invalid_type` |
@@ -437,8 +425,7 @@ what JavaScript's `String.prototype.trim` removes, which includes the
 no-break space and the ideographic space but not the zero width space, so a
 value made only of zero width spaces is content. As with `text`, an `email`
 over 2,032 bytes or a `date` over 512 bytes is refused before the blank test.
-An optional `number` or
-`checkbox` is unanswered when its value is missing or `null`. A `false`
+An optional `number` or `checkbox` is unanswered when its value is missing or `null`. A `false`
 checkbox is an answer, and so is the number 0.
 
 A required question that is unanswered fails with `required`. A required
@@ -469,19 +456,13 @@ form, is rejected with 400 `invalid_request` before any answer is validated.
 | Reader | Version 1 form | Version 2 form |
 | --- | --- | --- |
 | Current Session and current `wippy-form` | Question card | Form of fields |
-| `wippy-form` from a release before version 2 | Question card | The notice "This form needs a newer version of the app." No fields and no Submit button |
+| `wippy-form` from a release before version 2 (for example a stale cached bundle) | Question card | The notice "This form needs a newer version of the app." No fields and no Submit button |
 | `wippy/session` release before version 2 | Works as before | `GET` and `POST` of the state API answer 400 `not_a_form` ("Unsupported form version"), and `read_form` returns the tool error "Not a form: Unsupported form version" |
 
-A version 2 form needs no Web Host release beyond the one that version 1
-needs, because the controls ship inside the `wippy-form` bundle. The bundle is
-part of the `wippy/session` module, so rolling the module back to a release
-from before version 2 brings back an older component and an older state API
-together (see [Disabling and rolling back](#disabling-and-rolling-back)).
-
-A current Session serves a current `wippy-form` bundle, so an older component
-can meet a current Session only through a stale cached bundle, for example in a
-browser or a Host that still holds the earlier file. It then shows the notice
-for a version 2 form until the bundle is fetched again.
+The controls ship inside the `wippy-form` bundle, which is part of the
+`wippy/session` module. A rollback to a release from before version 2 therefore
+brings back an older component and an older state API together (see
+[Disabling and rolling back](#disabling-and-rolling-back)).
 
 ## What the agent receives
 
@@ -700,21 +681,15 @@ new forms with standard fields and keep choice questions, replace
   Forms while form artifacts exist. The module registers the `wippy-form` and
   `wippy-form-answers` components, and an older module can fail to start with
   `failed to load state: unresolved dependencies after retry: …`.
-- Rolling back to a release from before version 2 (Session 0.7.0 is the last
-  one) makes every version 2 form
-  unusable. The earlier release accepts only form version 1, and it compares
-  the stored version exactly. The state API answers 400 `not_a_form` for a
-  version 2 form on `GET` and on `POST`, `read_form` returns an error for it,
-  and the older component shows "This form needs a newer version of the app."
-  in place of the form. An open version 2 form therefore cannot be answered
-  until the module is upgraded again. Version 1 forms keep working. Answers
-  that were already accepted stay in the chat as ordinary messages, and the
-  prompt's form index keeps listing every form by title, because it reads only
-  titles and ids. The rollback does not convert version 2 forms. Before a
-  rollback, have users answer the open version 2 forms, and switch every agent
-  with `ask_user_fields` to `ask_user` or remove the trait. A release from
-  before version 2 has no `ask_user_fields` trait, so an agent that still
-  references it fails to resolve at lint time.
+- Rolling back to a release from before version 2 makes every version 2 form
+  unusable (see the table in [Form versions](#form-versions)). An open version 2
+  form cannot be answered until the module is upgraded again. Version 1 forms
+  keep working. Answers that were already accepted stay in the chat as ordinary
+  messages, and the prompt's form index keeps listing every form by title. The
+  rollback does not convert version 2 forms. Before a rollback, have users
+  answer the open version 2 forms, and switch every agent with
+  `ask_user_fields` to `ask_user` or remove the trait (see
+  [Enabling a trait](#enabling-a-trait)).
 
 ## Error codes
 
@@ -727,8 +702,8 @@ fault, as `duplicate_id`, `duplicate_option` and `unknown_key` do.
 ### Definition errors
 
 `ask_user` and `ask_user_fields` return the problems of a definition as a tool
-error with one line for each, in the form `path: code: message`. Array positions in a path start
-at 0, and a problem with the whole definition has the path `(definition)`.
+error with one line for each, in the form `path: code: message`. Array positions
+in a path start at 0, and a problem with the whole definition has the path `(definition)`.
 Nothing is stored when any problem is found.
 
 ```text
@@ -742,7 +717,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `required` | A required key is missing: `title`, `fields`, or a field's `id`, `type` or `label`, or the `options` of a `choice` field |
 | `invalid_type` | A value has the wrong JSON type, including a length key that is not a whole number |
 | `unknown_key` | A key the form or the field's type does not take |
-| `unsupported_type` | `type` is not one of the seven names, or the tool does not take it, because `ask_user` takes only `choice`. Names are case sensitive. The message lists the types that the tool takes: `Supported types: choice.` from `ask_user`, for a standard field or a name that is not a type at all, and all seven names from `ask_user_fields`. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
+| `unsupported_type` | `type` is not one of the seven names, or the tool does not take it. Names are case sensitive. The message lists the types that the tool takes, for example `Supported types: choice.` from `ask_user`. This is the only error reported for the type of that field, so a field of an unknown type is not also told that it needs `options` |
 | `invalid_id`, `duplicate_id` | A field id breaks the id rule, or is used twice |
 | `blank` | A required text, `submit_label` or `answered_message` has no visible character |
 | `control_characters`, `invalid_text` | Definition text has a control character (only descriptions may hold tabs and line feeds), or is not valid UTF-8 |
@@ -751,7 +726,7 @@ fields[2].step: invalid_step: Must be more than zero.
 | `too_large` | The normalized definition is over 32 KiB |
 | `invalid_range` | A limit is outside its allowed range: a length, a `min_length` above `max_length`, a `min` or `max` over 1,000,000,000,000 or with more than 6 decimals, a `min` above `max`, an `integer` number with no whole number between `min` and `max`, or a date bound that is not a real date |
 | `invalid_step` | A `step` that is not above 0, is over 1,000,000,000,000, has more than 6 decimals, or is not whole on an `integer` number (the same when `min` is not whole) |
-| `invalid_pattern` | A malformed `pattern`, including a literal `{`, `}` or `]` without a backslash and a repeat count with a leading zero |
+| `invalid_pattern` | A malformed `pattern` (see [Patterns](#patterns)) |
 | `unsupported_pattern` | A well-formed `pattern` outside the accepted syntax or bounds |
 | `invalid_default` | A `default` that is not a valid answer for its field |
 | `default_not_allowed` | A `checkbox` with the default `true` |
@@ -781,7 +756,7 @@ original request.
 To check that `ask_user` stays limited to choices, prompt the same agent to ask
 for an email address. It can ask with a choice question or in plain text, but
 no form of fields should appear. If the agent sends a standard field anyway,
-the tool error names `unsupported_type` and `Supported types: choice.`.
+the tool error names `unsupported_type`.
 
 To check the standard fields, give an agent the
 `wippy.session.forms:ask_user_fields` trait, and prompt it for a form with a
