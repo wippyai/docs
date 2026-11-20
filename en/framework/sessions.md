@@ -388,7 +388,8 @@ sends the same messages as before.
 
 A chat client must also declare an approval surface for the session. The
 declaration says that the client has a transcript that can show approval cards.
-Approval needs a live surface for the session from any connection. The Wippy
+Approval needs a live surface for the session from any connection, or the
+grace period after the last one went away. The Wippy
 Web Host declares one while `<wippy-chat>` or `<wippy-chat-messages>` is
 mounted, and so does its own chat. A `chat.js` UI can declare one too.
 `<wippy-chat-input>` and `<wippy-session-selector>` declare none.
@@ -416,7 +417,7 @@ the arguments and **Details**. The card offers only what the Session offered:
 When the session accepts messages during a turn (`while_running: steer`),
 sending a message while a card waits skips the approval. The call does not run,
 and the model continues with the message. Under the default `block` policy, the
-Session refuses a message until the user decides or presses Stop.
+Session refuses a message while the turn is running. Stop ends the turn.
 
 A tool grant covers the tool at its deployment fingerprint. The fingerprint
 covers the registry entry (kind, meta and data). A change only to code that the
@@ -445,7 +446,8 @@ have not started. Later calls ask again.
 A request waits for `timeout_seconds`. When the time runs out, the call does
 not run and the turn ends.
 
-The Session asks for a decision only while a client surface is live. If a
+The Session asks for a decision only while a client surface is live, or during
+the grace period. If a
 client declared a surface before and none is live now, the request stays
 pending for a 120 second grace period, or until its deadline, whichever comes
 first.

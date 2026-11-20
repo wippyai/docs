@@ -296,7 +296,8 @@ a notice.
 Every transcript the Host renders shows a waiting call as a card: the full
 Host, `chat-iframe.html`, `<wippy-chat>` and `<wippy-chat-messages>`. A
 transcript keeps the approval surface of its session declared while it is
-mounted. The Session asks for a decision only while a surface is live. A live
+mounted. The Session asks for a decision only while a surface is live, or during the
+grace period. A live
 surface for the session from any connection is enough: `<wippy-chat>`,
 `<wippy-chat-messages>`, the Host's own chat, or a `chat.js` UI that declares
 one. `<wippy-chat-input>` and `<wippy-session-selector>` declare none. When no
@@ -338,8 +339,8 @@ What the card does:
   with **Review**, and `Alt+Shift+A` does the same. Typing stays enabled.
   When the session accepts messages during a turn (`while_running: steer`),
   sending a message skips the approval, and the call does not run. Under the
-  default `block` policy, sending is refused until the user decides or presses
-  Stop.
+  default `block` policy, sending is refused while the turn is running. Stop ends
+  the turn.
 - **Grants.** A chip lists the Approve all grants of the session. **Revoke**
   removes one.
 - **Decided calls.** A decided call becomes a compact row, for example
@@ -356,7 +357,7 @@ that the app places, or a `chat.js` UI, can still decide as the user.
 A custom UI built on `chat.js` takes the same duties. It checks the capability,
 declares its surface with `setToolApprovalUi(sessionId, true)`, withdraws it
 when its transcript unmounts, and decides with `respondToolApproval` and
-`revokeToolApprovalGrant`. Without a live surface the Session does not ask.
+`revokeToolApprovalGrant`. Without a live surface, and outside the grace period, the Session does not ask.
 
 The cards expose `--wippy-host-approval-*` tokens, `.chat-approval*` classes and
 `approval*` shadow parts. The theme package documents them in its

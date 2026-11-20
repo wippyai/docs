@@ -406,8 +406,10 @@ the user in every session the user owns. Tool approval does not protect against
 such a script. An artifact is model-authored, because a tool stores its content
 from model text. So when a session is protected by
 [tool approval](../../framework/sessions.md#tool-approval), the Host runs that
-session's interactive artifacts isolated. Inline artifacts are sanitized HTML
-without script, so the Host does not frame them and does not make them wait. This needs a Web Host release that supports it
+session's interactive artifacts isolated. In Host transcripts, inline HTML and markdown are
+sanitized without script and render without a frame or an isolation wait. Packages
+(non-string content, including Session forms) go to the package loader and wait
+for the isolation decision. This needs a Web Host release that supports it
 <!-- version: set at release -->.
 
 The Host decides from server data and from `toolApproval.isolateAgentContent`,

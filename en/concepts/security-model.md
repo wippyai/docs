@@ -96,8 +96,8 @@ grant restores it. A new, copied or forked session starts with no grants.
 because a tool stores their content from model text. In a protected session the
 Web Host runs interactive HTML and markdown artifacts in an opaque sandbox,
 without the user's token and with only the config handshake, size, log and
-own-state relays. Inline artifacts are sanitized HTML without script, so the
-Host does not frame them. The Session refuses artifact content that the Host
+own-state relays. In Host transcripts, inline HTML and markdown are
+sanitized without script and render without a frame or an isolation wait. The Session refuses artifact content that the Host
 cannot isolate, such as packaged web content, and the model gets an
 `isolation_required:` error. See
 [Proxy & Isolation](frontend/web-host/proxy-isolation.md#protected-sessions-and-isolated-artifacts).
