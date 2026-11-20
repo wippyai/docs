@@ -332,7 +332,7 @@ on is a protected session.
 Tool approval needs a Session release that supports it
 <!-- version: set at release -->. An older Session ignores the trait and sends
 no approval events. The messages between the Session and a chat client are in
-the [tool approval protocol](https://github.com/wippyai/session/blob/main/docs/tool-approval-protocol.md).
+the [tool approval protocol](https://github.com/wippyai/session/blob/master/docs/tool-approval-protocol.md).
 
 ### Turn it on
 
@@ -374,11 +374,11 @@ traits:
 
 ### Sticky activation
 
-The first agent step that has the trait stores the settings in the session.
-After that, the session stays protected. Switching to an agent without the
-trait does not turn approval off, and the stricter `require` value wins. Grants
-do not apply while the active agent lacks the trait or does not allow their
-scope.
+Each step of an agent that has the trait stores that agent's settings in the
+session. After the first one, the session stays protected. The stored `require`
+never goes back from `all` to `marked`. An agent without the trait does not turn
+approval off: the stored settings stay in force. Grants do not apply while the
+active agent lacks the trait or does not allow their scope.
 
 ### Capability flag
 
@@ -388,10 +388,17 @@ sends the same messages as before.
 
 A chat client must also declare an approval surface for the session. The
 declaration says that the client has a transcript that can show approval cards.
-The Wippy Web Host does this while a transcript is mounted. With a client that
-declares no surface, every call that needs approval settles at once as not run
-(`approval_ui_unavailable`), and the turn ends with a notice (error code
-`tool_approval_unavailable`).
+Approval needs a live surface for the session from any connection. The Wippy
+Web Host declares one while `<wippy-chat>` or `<wippy-chat-messages>` is
+mounted, and so does its own chat. A `chat.js` UI can declare one too.
+`<wippy-chat-input>` and `<wippy-session-selector>` declare none.
+
+When no surface is live and none was ever declared, every call that needs
+approval settles at once as not run (`approval_ui_unavailable`), and the turn
+ends with a notice (error code `tool_approval_unavailable`). This is also what
+happens with a client that does not support tool approval, such as an older
+Host. After a declared surface goes away, the request waits for the grace
+period below.
 
 ### What the user sees
 
@@ -401,22 +408,37 @@ the arguments and **Details**. The card offers only what the Session offered:
 | Control | Effect |
 |---------|--------|
 | **Approve** | The call runs. |
-| **Approve all** | Approves every pending call that the button covers. It shows its scope: `batch` (the calls of one model response), `tool` (this tool, for the rest of the session) or `session` (every tool of the agent and every agent it can delegate to). Scope `batch` creates no grant. Scope `tool` or `session` creates a grant, and later calls in that scope run without a card. |
+| **Approve all** | Approves every pending call that the button covers. It shows its scope: `batch` (the calls of one model response), `tool` (this tool, for the rest of the session) or `session` (the eligible tools and delegation targets that **Details** lists). Scope `batch` creates no grant. Scope `tool` or `session` creates a grant, and later calls in that scope run without a card. |
 | **Deny** | The call does not run, and no call of the batch runs. The turn ends. |
 | **Deny with a reason** | The call does not run. The user's text (1 to 2,000 characters) goes to the model, and the turn continues. |
 | **Stop** | The chat Stop button ends the waiting call as cancelled and ends the turn. |
 
-Sending a message while a card waits skips the approval. The call does not
-run, and the model continues with the message.
+When the session accepts messages during a turn (`while_running: steer`),
+sending a message while a card waits skips the approval. The call does not run,
+and the model continues with the message. Under the default `block` policy, the
+Session refuses a message until the user decides or presses Stop.
 
-A tool grant covers the tool at its deployment fingerprint. If the tool
-changes, the grant pauses and the call asks again. A session grant covers
-exactly the tools that **Details** lists. A grant lasts for the rest of the
-session and survives new turns and Session restarts. It ends when the user
-revokes it, when the session is deleted, or when the session gets another
-owner. A new, copied or forked session starts with no grants. A revocation
-stops the calls of a batch that was not yet released. It never reverses calls
-that already started.
+A tool grant covers the tool at its deployment fingerprint. The fingerprint
+covers the registry entry (kind, meta and data). A change only to code that the
+entry points to does not change it. A session grant covers exactly the tools and
+delegation targets that **Details** lists.
+
+A grant lasts for the rest of the session and survives new turns and Session
+restarts. It ends when the user revokes it, when the session is deleted, or when
+the session gets another owner. A new, copied or forked session starts with no
+grants.
+
+A grant pauses in these cases:
+
+- The tool changes, or its author sets `approve_all: false`. Only a new Approve
+  all gives the authority back.
+- An agent step does not permit the grant, for example when the model hands off
+  to an agent without the trait. Only a user switch back to an agent that
+  permits it restores the grant.
+
+A revocation stops only the calls that the grant allowed in a batch that is not
+yet released. It never stops calls that were already released, even ones that
+have not started. Later calls ask again.
 
 ### Timeouts and grace period
 
@@ -454,7 +476,7 @@ digest or grant ID.
 | `approval_ui_unavailable` | No live surface after the grace period, or none declared. | Ends, with a notice |
 | `limit` | The per-turn cap was reached. | Ends, with a notice |
 | `changed_before_run` | The tool entry or the call changed before release. | Continues |
-| `revoked` | The grant that allowed the call was revoked before release. | Continues |
+| `revoked` | The grant that allowed the call was revoked, or the session changed owner, before release. | Continues |
 | `repeated_denied_call` | Same call as one denied earlier in the turn. | Continues |
 | `approval_check_failed` | The Session could not prepare a valid call for the check. | Continues |
 
@@ -463,9 +485,10 @@ digest or grant ID.
 A pending approval does not survive a Session process restart. Recovery closes
 the unfinished batch. A pending request becomes `interrupted`, and the model
 sees the `interrupted` result. After a crash, an approved call of a batch that
-was never released, and every call of a batch released before the crash, get
-the plain text `interrupted, outcome unknown`, because the Session cannot know
-whether the call ran. No call runs again after a restart.
+was never released, and a call of a batch released before the crash, get the
+plain text `interrupted, outcome unknown` when they were still pending at the
+crash, because the Session cannot know whether the call ran. A row that already
+ended keeps its result. No call runs again after a restart.
 
 ### Operator switch
 
@@ -494,7 +517,8 @@ returns.
 
 The Web Host cannot isolate JSON or packaged web content. In a protected
 session the Session refuses a `_control.artifacts` item that holds such
-content, whether new or as an update. It allows HTML, markdown, a JSON string,
+content, whether new or as an update. That includes a number or a boolean, and
+text that parses as a JSON number, boolean or `null`. It allows HTML, markdown, a JSON string,
 a Session form tag (`wippy-form`) without `on*` props, and `view_ref` items.
 One refused item refuses the whole list, and nothing is written. The tool call
 fails with an error that starts with `isolation_required:`, and the model can

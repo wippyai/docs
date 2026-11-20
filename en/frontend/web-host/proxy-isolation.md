@@ -406,7 +406,8 @@ the user in every session the user owns. Tool approval does not protect against
 such a script. An artifact is model-authored, because a tool stores its content
 from model text. So when a session is protected by
 [tool approval](../../framework/sessions.md#tool-approval), the Host runs that
-session's artifacts isolated. This needs a Web Host release that supports it
+session's interactive artifacts isolated. Inline artifacts are sanitized HTML
+without script, so the Host does not frame them and does not make them wait. This needs a Web Host release that supports it
 <!-- version: set at release -->.
 
 The Host decides from server data and from `toolApproval.isolateAgentContent`,
@@ -420,24 +421,26 @@ never from a value a child sends:
   Session, which cannot protect a session, it does not isolate.
 - The artifact's session in the Host's chat store also counts, because the read
   is a snapshot and the session can become protected after it.
-- No artifact content mounts before the decision is known.
-- When a session becomes protected, its mounted artifacts are mounted again,
-  isolated.
+- No interactive or package artifact content mounts before the decision is
+  known.
+- When a session becomes protected, its mounted interactive artifacts are
+  mounted again, isolated.
 
 ### What an isolated artifact gets
 
-HTML and markdown artifacts, including `view_ref` pages that the server
-renders, run in a `srcdoc` frame with
+Interactive HTML and markdown artifacts (`inline-interactive` and
+`standalone`), including `view_ref` pages that the server renders, run in a `srcdoc` frame with
 `sandbox="allow-scripts allow-forms allow-downloads"`.
 
 - **Opaque origin.** The frame has no `allow-same-origin`, so its script cannot
-  read `window.parent`, the Host's storage or its cookies. It has no
+  read the Host's DOM, storage or cookies. It can still get a reference to the
+  parent window. It has no
   `allow-popups`, so it cannot open a window outside the sandbox.
 - **No token.** The config handshake is answered with an empty `auth` and no
   `axiosDefaults`. Calls through `api` carry no token.
 - **Relay allowlist.** The Host handles only the config handshake, the size
-  report, log lines and the frame's own page state (`state.*` without a
-  `scope`). It drops every other message: `ws.send`, `startChat`, `openSession`,
+  report, log lines and the frame's own page state (`state.*`; a
+  `scope` is ignored). It drops every other message: `ws.send`, `startChat`, `openSession`,
   `setContext`, `navigate`, `confirm`, `toast`, title changes, `on(...)`
   subscriptions, bridge events, theme changes, `host.layout` commands and
   `logout`. The managed-layout receiver and the parent-website listeners
@@ -449,9 +452,10 @@ relay.
 ### Packages are not mounted
 
 Package artifacts run in the Host realm or with the token, so they cannot be
-isolated. In a protected session the Host does not mount web-page packages (on
-either render engine), ES module packages or component tag packages. A notice
-shows in their place. The Session also refuses to store them
+isolated. Wherever artifacts run isolated, which is a protected session or any
+session with `'all'`, the Host does not mount web-page packages (on either
+render engine), ES module packages or component tag packages. A notice shows in
+their place. In a protected session the Session also refuses to store them
 (`isolation_required:`). The exception is a Session form tag (`wippy-form`)
 without `on*` props. It shows model data as text only, so it still renders. The
 Host does not mount a `wippy-form` that has a prop whose name starts with `on`
@@ -465,7 +469,8 @@ the page's `toolApproval.isolateAgentContent`, so a page cannot pass its token
 on to an artifact it embeds. Known limit: a `<w-artifact>` that is already
 mounted is not mounted again when its session becomes protected later, because
 the page's realm gets no protection updates. With `'all'` the element is
-isolated from its first mount.
+isolated from its first mount. A `<w-artifact>` with `type="page"` or a custom
+`url` is app content and is never isolated.
 
 ### The `isolateAgentContent` option
 
@@ -514,7 +519,8 @@ The option needs a Web Host with AppConfig schema `wippy-context-2.3`
 ### The token goes to one origin
 
 Independent of isolation, the Host API client and the proxy's `api` client send
-the user's token only to the origin of the app API (`APP_API_URL`). Both use one
+the user's token only to the origin of the API client's base URL. That is
+`APP_API_URL`, or a `baseURL` that the app sets in `axiosDefaults`. Both use one
 check, which resolves the URL against `document.baseURI` as the browser does. An
 absolute URL, a protocol-relative URL and a `baseURL` set on one request count
 by where they go. A request to another origin, for example from a web-page

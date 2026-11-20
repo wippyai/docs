@@ -67,7 +67,8 @@ Agents are LLM-powered processes with tool use. They make decisions at runtime t
 
 An agent can ask the user before a tool call runs. The `wippy/session` module
 provides this as the `wippy.session.traits:tool_approval` trait, and the chat
-shows each waiting call as a card with Approve, Approve all and Deny. See
+shows each waiting call as a card with Approve, Deny and, when the Session
+offers it, Approve all. See
 [Sessions](framework/sessions.md#tool-approval) for the options.
 
 **What it protects against.** Approval protects against the model, against tool
@@ -81,24 +82,36 @@ that already runs as the user in the browser, such as an app page that holds the
 user's token. Such code can call the Session and its REST API as the user.
 
 **Grants are narrow.** An Approve all decision can create a grant. A grant is
-tied to the session owner, the session and the tool's deployment fingerprint. It
-covers only the tools listed in the card. It ends when the user revokes it, when
-the session is deleted, or when the session gets another owner. A grant pauses
-when the tool changes or when the user switches to an agent that does not
-allow it. A new, copied or forked session starts with no grants.
+tied to the session owner, the session and the tool's deployment fingerprint.
+The fingerprint covers the registry entry (kind, meta and data), not code that
+the entry only points to. A grant covers only the tools listed in the card. It
+ends when the user revokes it, when the session is deleted, or when the session
+gets another owner. A grant pauses when the tool changes, when its author sets
+`approve_all: false`, or when an agent step does not permit it, including a
+handoff by the model. A tool change or `approve_all: false` needs a new Approve
+all. After an agent step, only a user switch back to an agent that permits the
+grant restores it. A new, copied or forked session starts with no grants.
 
 **Protected sessions isolate model content.** Artifacts are model-authored,
 because a tool stores their content from model text. In a protected session the
-Web Host runs HTML and markdown artifacts in an opaque sandbox, without the
-user's token and without access to the Host's relays. The Session refuses
-artifact content that the Host cannot isolate, such as packaged web content, and
-the model gets an `isolation_required:` error. See
+Web Host runs interactive HTML and markdown artifacts in an opaque sandbox,
+without the user's token and with only the config handshake, size, log and
+own-state relays. Inline artifacts are sanitized HTML without script, so the
+Host does not frame them. The Session refuses artifact content that the Host
+cannot isolate, such as packaged web content, and the model gets an
+`isolation_required:` error. See
 [Proxy & Isolation](frontend/web-host/proxy-isolation.md#protected-sessions-and-isolated-artifacts).
-By default only protected sessions are isolated. An app can set
-`toolApproval.isolateAgentContent: 'all'` to isolate every session.
+
+**Remaining risk with the default isolation.** By default only protected
+sessions are isolated. An artifact of an unprotected session keeps the token, so
+it can approve calls or revoke grants in the user's protected sessions. An app
+can set `toolApproval.isolateAgentContent: 'all'` to isolate every session,
+which closes this risk.
 
 **The token goes to one origin.** The Web Host sends the user's token only to
-the origin of the app API. A request to another origin goes without it.
+the origin of the API client's base URL. That is `APP_API_URL`, or a `baseURL`
+that the app sets in `axiosDefaults`. A request to another origin goes without
+the token.
 
 **Scope.** Approval checks tool calls of chat sessions. It does not check
 Dataflow, Temporal workflows, CLI loops, direct `funcs.call`, or tools that a

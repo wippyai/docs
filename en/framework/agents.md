@@ -276,7 +276,7 @@ return { handler = handler }
 | `meta.llm_alias` | string | Name exposed to the LLM |
 | `meta.llm_description` | string | Description exposed to the LLM |
 | `meta.exclusive` | boolean | If true, cancels concurrent tool calls |
-| `meta.approval` | string/table | Asks the user before the call runs. See [Requiring Approval for a Tool](#requiring-approval-for-a-tool) |
+| `meta.approval` | string/table/boolean | Asks the user before the call runs. See [Requiring Approval for a Tool](#requiring-approval-for-a-tool) |
 
 ### Requiring Approval for a Tool
 
@@ -302,9 +302,9 @@ this tool with one decision:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `approval` | string or object | `required` marks the tool. `true` marks it too, and `false` does not. |
+| `approval` | string, object or boolean | `required` marks the tool. `true` marks it too, and `false` does not. |
 | `approval.required` | boolean | `true` marks the tool. An absent or `false` value leaves it unmarked. |
-| `approval.approve_all` | boolean | `true` offers Approve all for this tool, with scope `tool`, even when the agent sets `approve_all: "off"`. |
+| `approval.approve_all` | boolean | `true` offers Approve all for this tool with at least scope `tool`, also when the agent sets `approve_all: "off"`. The scope is `session` when the agent sets `session`. A `tool` or `session` scope needs the current agent to have the trait. `false` never offers Approve all, and no grant covers the tool. |
 
 A mistake in the field never stops a turn. An unknown string, a value of the
 wrong type for `required`, or a wrong type for `approval` makes the tool ask
@@ -849,8 +849,10 @@ context option is optional:
           max_requests_per_turn: 10
 ```
 
-With `require: marked`, only tools that set `meta.approval` ask. With
-`require: all`, every tool call asks. Mark a tool as described in
+With `require: marked`, calls to marked tools need approval, and delegation
+calls never do. With `require: all`, every call needs approval. A matching grant or a
+repeat of a call that the user denied earlier in the turn settles without a
+card. Mark a tool as described in
 [Requiring Approval for a Tool](#requiring-approval-for-a-tool). See
 [Sessions](./sessions.md#tool-approval) for the options, defaults, what the
 user sees and what the model sees. This trait needs a Session release that
