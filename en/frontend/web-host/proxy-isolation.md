@@ -399,6 +399,128 @@ const processed = await html.inject(sourceHtml, {
 
 The same function is accessible as `instance.html.inject`, `$W.html`, and `import { html } from '@wippy-fe/proxy'`. Prefer `<w-iframe>` for normal mounting; use `html.inject(...)` only when building custom hosting infrastructure.
 
+## Protected sessions and isolated artifacts
+
+Any script that holds the user's token, or runs in the Host origin, can act as
+the user in every session the user owns. Tool approval does not protect against
+such a script. An artifact is model-authored, because a tool stores its content
+from model text. So when a session is protected by
+[tool approval](../../framework/sessions.md#tool-approval), the Host runs that
+session's artifacts isolated. This needs a Web Host release that supports it
+<!-- version: set at release -->.
+
+The Host decides from server data and from `toolApproval.isolateAgentContent`,
+never from a value a child sends:
+
+- The artifact read (`GET /api/v1/artifact/{id}`) carries `session_id` and
+  `tool_approval: { active }`, copied from the artifact's session. `active: true`
+  isolates the artifact, and `active: false` does not.
+- A read without that field isolates when the Session declares the
+  `tool_approval` capability, so a missing field fails closed. With an older
+  Session, which cannot protect a session, it does not isolate.
+- The artifact's session in the Host's chat store also counts, because the read
+  is a snapshot and the session can become protected after it.
+- No artifact content mounts before the decision is known.
+- When a session becomes protected, its mounted artifacts are mounted again,
+  isolated.
+
+### What an isolated artifact gets
+
+HTML and markdown artifacts, including `view_ref` pages that the server
+renders, run in a `srcdoc` frame with
+`sandbox="allow-scripts allow-forms allow-downloads"`.
+
+- **Opaque origin.** The frame has no `allow-same-origin`, so its script cannot
+  read `window.parent`, the Host's storage or its cookies. It has no
+  `allow-popups`, so it cannot open a window outside the sandbox.
+- **No token.** The config handshake is answered with an empty `auth` and no
+  `axiosDefaults`. Calls through `api` carry no token.
+- **Relay allowlist.** The Host handles only the config handshake, the size
+  report, log lines and the frame's own page state (`state.*` without a
+  `scope`). It drops every other message: `ws.send`, `startChat`, `openSession`,
+  `setContext`, `navigate`, `confirm`, `toast`, title changes, `on(...)`
+  subscriptions, bridge events, theme changes, `host.layout` commands and
+  `logout`. The managed-layout receiver and the parent-website listeners
+  (`History`, `CmdDownloadToFs`) also ignore these frames.
+
+Isolated content cannot use the proxy API features that need the token or the
+relay.
+
+### Packages are not mounted
+
+Package artifacts run in the Host realm or with the token, so they cannot be
+isolated. In a protected session the Host does not mount web-page packages (on
+either render engine), ES module packages or component tag packages. A notice
+shows in their place. The Session also refuses to store them
+(`isolation_required:`). The exception is a Session form tag (`wippy-form`)
+without `on*` props. It shows model data as text only, so it still renders. The
+Host does not mount a `wippy-form` that has a prop whose name starts with `on`
+in any letter case, because every prop becomes an attribute and such a prop
+would run script.
+
+### `<w-artifact>` in a page
+
+A `<w-artifact>` follows the same rules. It reads the artifact itself and uses
+the page's `toolApproval.isolateAgentContent`, so a page cannot pass its token
+on to an artifact it embeds. Known limit: a `<w-artifact>` that is already
+mounted is not mounted again when its session becomes protected later, because
+the page's realm gets no protection updates. With `'all'` the element is
+isolated from its first mount.
+
+### The `isolateAgentContent` option
+
+`toolApproval` is an AppConfig field (schema `wippy-context-2.3`) that the Host
+and all children share:
+
+```ts
+toolApproval: {
+  display: 'compact',               // or 'expanded': how approval cards start
+  isolateAgentContent: 'protected', // or 'all': where artifacts run isolated
+}
+```
+
+Both fields are optional. The defaults are shown above.
+
+| `isolateAgentContent` | Isolated artifacts |
+|-----------------------|--------------------|
+| `'protected'` (default) | Artifacts of protected sessions. |
+| `'all'` | Artifacts of every session. |
+
+Any other value counts as `'protected'`.
+
+**Remaining risk with `'protected'`.** Artifacts of unprotected sessions keep
+the token and the relay. Model-authored content from such a session can still
+act as the user. It can send an approval decision or revoke a grant in a
+protected session of the same user. Set `'all'` to close this.
+
+### Setting it through the facade
+
+The facade requirement `tool_approval` passes the `toolApproval` block to the
+Host as JSON. The default is `{}`, which keeps the Host defaults. Invalid JSON
+keeps the Host defaults too. The Host validates the values.
+
+```yaml
+- name: facade
+  kind: ns.dependency
+  component: wippy/facade
+  parameters:
+    - name: tool_approval
+      value: '{"display":"compact","isolateAgentContent":"all"}'
+```
+
+The option needs a Web Host with AppConfig schema `wippy-context-2.3`
+<!-- version: set at release -->. An older Host ignores it.
+
+### The token goes to one origin
+
+Independent of isolation, the Host API client and the proxy's `api` client send
+the user's token only to the origin of the app API (`APP_API_URL`). Both use one
+check, which resolves the URL against `document.baseURI` as the browser does. An
+absolute URL, a protocol-relative URL and a `baseURL` set on one request count
+by where they go. A request to another origin, for example from a web-page
+package with a foreign `baseUrl`, goes without the token. A 401 from another
+origin does not log the user out.
+
 ## Import maps and document realms
 
 `AppConfig.importMap` is global configuration used for Host-created iframe documents. The Host registers the map before those modules run. A later config update does not change an existing document; reload or recreate it to use the update. See [Bootstrap Sequence](./bootstrap.md#appconfig-import-map).
