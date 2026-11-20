@@ -276,6 +276,44 @@ return { handler = handler }
 | `meta.llm_alias` | string | Name exposed to the LLM |
 | `meta.llm_description` | string | Description exposed to the LLM |
 | `meta.exclusive` | boolean | If true, cancels concurrent tool calls |
+| `meta.approval` | string/table | Asks the user before the call runs. See [Requiring Approval for a Tool](#requiring-approval-for-a-tool) |
+
+### Requiring Approval for a Tool
+
+A tool marks itself as one that needs the user's approval with `meta.approval`.
+Use the short form:
+
+```yaml
+    meta:
+      type: tool
+      approval: required
+```
+
+Or the object form, which can also let the user approve every later call of
+this tool with one decision:
+
+```yaml
+    meta:
+      type: tool
+      approval:
+        required: true
+        approve_all: true
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `approval` | string or object | `required` marks the tool. `true` marks it too, and `false` does not. |
+| `approval.required` | boolean | `true` marks the tool. An absent or `false` value leaves it unmarked. |
+| `approval.approve_all` | boolean | `true` offers Approve all for this tool, with scope `tool`, even when the agent sets `approve_all: "off"`. |
+
+A mistake in the field never stops a turn. An unknown string, a value of the
+wrong type for `required`, or a wrong type for `approval` makes the tool ask
+for approval. A wrong type for `approve_all` removes Approve all for the tool.
+Unknown object keys are ignored.
+
+The field does nothing unless the session is protected, which an agent with the
+`tool_approval` trait does. See
+the [tool approval trait](#tool-approval-trait) below.
 
 ### Referencing Tools in Agents
 
@@ -794,6 +832,29 @@ The `wippy/session` module, version 0.6.3 or newer, provides two traits for live
 
 See [Sessions](./sessions.md) for policy order, tool scopes, Stop behavior, and
 the public interaction state.
+
+#### Tool approval trait
+
+The same module provides `wippy.session.traits:tool_approval`, which asks the
+user before a marked tool call runs. List it in the agent's traits. Every
+context option is optional:
+
+```yaml
+    traits:
+      - id: wippy.session.traits:tool_approval
+        context:
+          require: marked      # or all
+          approve_all: "off"   # or batch, tool, session
+          timeout_seconds: 900
+          max_requests_per_turn: 10
+```
+
+With `require: marked`, only tools that set `meta.approval` ask. With
+`require: all`, every tool call asks. Mark a tool as described in
+[Requiring Approval for a Tool](#requiring-approval-for-a-tool). See
+[Sessions](./sessions.md#tool-approval) for the options, defaults, what the
+user sees and what the model sees. This trait needs a Session release that
+supports tool approval <!-- version: set at release -->.
 
 ### Custom Traits
 
