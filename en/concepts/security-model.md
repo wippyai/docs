@@ -63,6 +63,49 @@ Agents are LLM-powered processes with tool use. They make decisions at runtime t
 
 **Self-modification boundaries.** An agent permitted to create tools in one namespace can be denied write access to its own definition in another. Registry writes are policy-checked actions, so a deny policy on the agent's own namespace prevents it from editing itself or granting itself new access.
 
+## Tool Approval
+
+An agent can ask the user before a tool call runs. The `wippy/session` module
+provides this as the `wippy.session.traits:tool_approval` trait, and the chat
+shows each waiting call as a card with Approve, Approve all and Deny. See
+[Sessions](framework/sessions.md#tool-approval) for the options.
+
+**What it protects against.** Approval protects against the model, against tool
+results, and against other users. A call that needs
+approval does not run until the session owner decides, in the owner's own
+authenticated connection. The Session accepts a decision only from the user who
+owns the session. Nothing a client puts in the message counts as identity.
+
+**What it does not protect against.** Approval does not protect against code
+that already runs as the user in the browser, such as an app page that holds the
+user's token. Such code can call the Session and its REST API as the user.
+
+**Grants are narrow.** An Approve all decision can create a grant. A grant is
+tied to the session owner, the session and the tool's deployment fingerprint. It
+covers only the tools listed in the card. It ends when the user revokes it, when
+the session is deleted, or when the session gets another owner. A grant pauses
+when the tool changes or when the user switches to an agent that does not
+allow it. A new, copied or forked session starts with no grants.
+
+**Protected sessions isolate model content.** Artifacts are model-authored,
+because a tool stores their content from model text. In a protected session the
+Web Host runs HTML and markdown artifacts in an opaque sandbox, without the
+user's token and without access to the Host's relays. The Session refuses
+artifact content that the Host cannot isolate, such as packaged web content, and
+the model gets an `isolation_required:` error. See
+[Proxy & Isolation](frontend/web-host/proxy-isolation.md#protected-sessions-and-isolated-artifacts).
+By default only protected sessions are isolated. An app can set
+`toolApproval.isolateAgentContent: 'all'` to isolate every session.
+
+**The token goes to one origin.** The Web Host sends the user's token only to
+the origin of the app API. A request to another origin goes without it.
+
+**Scope.** Approval checks tool calls of chat sessions. It does not check
+Dataflow, Temporal workflows, CLI loops, direct `funcs.call`, or tools that a
+delegated child agent calls. An operator can switch the approval gate off for
+every session with the `tool_approval_enforcement` requirement. This is a
+security downgrade meant for rollback.
+
 ## Multi-Tenant Enforcement
 
 For deployments where multiple customers share a single Wippy instance, isolation is enforced by policy evaluation before any operation runs, not by application code checking tenant IDs.
@@ -122,6 +165,7 @@ Tools consumed over MCP run through the same function-call path and policy check
 | API key management | Stored in the environment system, read internally by providers, not exposed to process code |
 | Agent tool control | Tools limited to the agent's definition; each call checked via `funcs.call` policy |
 | External tools (MCP) | Same function-call path and policy checks; exposed tools gated by scoped tokens |
+| User approval of tool calls | Opt-in trait; the session owner decides in the owner's own connection; grants tied to owner, session and tool fingerprint; protected sessions isolate model content |
 | Agent audit trail | OpenTelemetry tracing (when enabled) plus usage-tracker records |
 | Multi-tenant isolation | Per-tenant policies and scopes evaluated by the runtime before each operation |
 | Concurrency limits | Bounded by host worker pools; no per-tenant CPU/memory ceilings built in |
