@@ -68,6 +68,7 @@ The full chat surface: header, scrollable message list, and composer.
 | `show-selector` | boolean | inherited | Inherited visibility is the inverse of hideSessionSelector. Default false without config. |
 | `allow-select-model` | boolean | inherited, then true | Override model selection for this instance. |
 | `hide-header` | boolean | `false` | Hide the agent/model header bar (for compact embeds). |
+| `tool-approval-display` | string | AppConfig `toolApproval.display`, then `compact` | How tool approval cards start: `compact` or `expanded`. See [Tool approval cards](#tool-approval-cards). |
 
 **Events** (dispatched as `CustomEvent`s on the element; read `event.detail`):
 
@@ -282,6 +283,85 @@ The Host reads `outcome: "cancelled"` on the `function_error` event, and
 The live state needs a Session that sends `outcome` on the event, which is
 `wippy/session` 0.6.9 or newer. Session 0.6.8 sends `status: "cancelled"` on
 the event instead, and the Host does not read it.
+
+## Tool approval cards
+
+With a Session that declares `tool_approval: 1` in
+`GET /api/v1/sessions/capabilities`, an agent can require the user to approve a
+tool call before it runs. Tool approval cards need a Web Host release that
+supports them <!-- version: set at release -->. With an older Host, a call that
+needs approval does not run (`approval_ui_unavailable`), and the turn ends with
+a notice.
+
+Every transcript the Host renders shows a waiting call as a card: the full
+Host, `chat-iframe.html`, `<wippy-chat>` and `<wippy-chat-messages>`. A
+transcript keeps the approval surface of its session declared while it is
+mounted. The Session asks for a decision only while a surface is live, or during the
+grace period. A live
+surface for the session from any connection is enough: `<wippy-chat>`,
+`<wippy-chat-messages>`, the Host's own chat, or a `chat.js` UI that declares
+one. `<wippy-chat-input>` and `<wippy-session-selector>` declare none. When no
+surface is live and none was ever declared, calls that need approval settle at
+once as not run. After a declared surface goes away, the request waits for a
+120 second grace period or its deadline.
+
+The `tool-approval-display` attribute of `<wippy-chat>` sets how cards start:
+
+| Value | Card |
+|-------|------|
+| `compact` | Two lines: the summary with **Details**, then the buttons. This is the default. |
+| `expanded` | The card starts with **Details** open. |
+
+The attribute overrides the AppConfig `toolApproval.display` for this chat. A
+missing or invalid value uses the AppConfig value, and then `compact`.
+
+```html
+<wippy-chat session-id="019eb2ae-1234-5678-abcd-ef1234567890"
+            tool-approval-display="expanded"></wippy-chat>
+```
+
+What the card does:
+
+- **Buttons.** **Approve** (`1`), **Approve all** (`2`, only when the Session
+  offers it, with its scope label), **Deny** (`3`), and a pen button that
+  opens a reason field (`Shift+3`) to deny with feedback. The card offers only
+  what the Session offered.
+- **Committed state only.** The card shows a decided state only from committed
+  data. A refusal shows the server message with **Retry**. After 30 seconds
+  without a reply the card says "Decision not confirmed". While the socket is
+  down the buttons are disabled.
+- **Trusted input only.** A decision leaves the Host only for a real click or
+  key press. A script cannot decide through `click()` or a synthetic event.
+  A card ignores activation for 500 ms after it appears or moves. The keys work
+  only while focus is inside the card, and never in an input or during IME
+  composition.
+- **Composer.** While the session waits, a status line says "Approval needed"
+  with **Review**, and `Alt+Shift+A` does the same. Typing stays enabled.
+  When the session accepts messages during a turn (`while_running: steer`),
+  sending a message skips the approval, and the call does not run. Under the
+  default `block` policy, sending is refused while the turn is running. Stop ends
+  the turn.
+- **Grants.** A chip lists the Approve all grants of the session. **Revoke**
+  removes one.
+- **Decided calls.** A decided call becomes a compact row, for example
+  "Approved, 12:04" or "Denied". A call that a grant allowed keeps its tool chip
+  with an "Auto-approved" mark. A call that did not run shows "Not run" with the
+  reason.
+
+The Host's relays refuse `tool_approval`, `tool_approval_grant_revoke` and
+`tool_approval_surface` from child pages and components, and they remove
+approval data from the events they relay. These guards cover only the Host's
+relays. Code that holds the user's token, such as an app page, a `<wippy-chat>`
+that the app places, or a `chat.js` UI, can still decide as the user.
+
+A custom UI built on `chat.js` takes the same duties. It checks the capability,
+declares its surface with `setToolApprovalUi(sessionId, true)`, withdraws it
+when its transcript unmounts, and decides with `respondToolApproval` and
+`revokeToolApprovalGrant`. Without a live surface, and outside the grace period, the Session does not ask.
+
+The cards expose `--wippy-host-approval-*` tokens, `.chat-approval*` classes and
+`approval*` shadow parts. The theme package documents them in its
+`THEMING.md`, under "Tool approval card".
 
 ## Runtime wiring
 
