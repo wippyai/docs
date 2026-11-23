@@ -154,9 +154,11 @@ For the Web Host to autoload a component, all three conditions must hold simulta
 
 2. **`auto_register: true`** — the host's `loadGlobalAutoloadWidgets` function queries the list endpoint with `?auto_register=true`. Components without this flag are excluded from that filtered response.
 
-3. **The tag is not yet registered** — before injecting the script, the host checks `customElements.get(tagName)`. If the tag is already defined (e.g. from a previous navigation), the host skips the injection to avoid double-defining.
+3. **The tag is not yet registered** — before injecting the script, the Host checks `customElements.get(tagName)`. Web Host 1.0.71 checks the entry URL before it reuses a known registration or grants sanitizer attributes. An existing native definition can still satisfy autoload when the Host has no entry URL claim for the tag.
 
-If any gate is missing the component is silently absent. To verify: `curl /api/public/components/list?auto_register=true` — your tag must appear in the response.
+To check whether the registry lists your component for autoload, request
+`/api/public/components/list?auto_register=true` and look for its tag in the
+response.
 
 ## The Autoload Sequence
 
@@ -191,3 +193,6 @@ await loadByTagName('example-heavy-chart')
 ```
 
 Lazy registration lets the initial page load stay lightweight. The component still needs `announced: true` for `loadByTagName()` to resolve it through the API — the `GET /components/by-tag/{tag}` endpoint returns `404 "Component is not announced"` when the flag is `false`.
+
+See [registration timeouts and Retry](../micro-frontends/proxy-api.md#web-components)
+for how this call shares work with global autoload.

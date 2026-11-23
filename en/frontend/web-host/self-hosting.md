@@ -22,8 +22,8 @@ Host `1.0.N` pairs with `wippy/cdn-web-host` version `0.0.N`. The module
 requires `wippy/facade >=0.6.46 <0.7.0`. Facade does not depend on this module;
 the module depends on the Facade contributor contract.
 
-Module version `0.0.69` was never published. The published versions go from
-`0.0.68` to `0.0.70`. Host `1.0.70` pairs with module `0.0.70`.
+Host `1.0.71` pairs with the published module `0.0.71`. Module version `0.0.69`
+was never published.
 
 Add the dependency where the application declares its modules:
 
@@ -31,7 +31,7 @@ Add the dependency where the application declares its modules:
 - name: cdn_web_host
   kind: ns.dependency
   component: wippy/cdn-web-host
-  version: "0.0.70"
+  version: "0.0.71"
   parameters:
     - name: server
       value: app:gateway
@@ -61,7 +61,7 @@ The Web Host does not discover CDN modules.
 With the example above, the contributor supplies:
 
 ```text
-fe_facade_url = https://app.example/cdn/web-host/webcomponents-1.0.70
+fe_facade_url = https://app.example/cdn/web-host/webcomponents-1.0.71
 host_policy_mode = shared
 ```
 
@@ -122,7 +122,7 @@ separate Views fragment import-map and scopes limitation.
 
 An external prefix changes the Host asset URLs only. For example,
 `public_url=https://app.example/tenant` selects
-`https://app.example/tenant/cdn/web-host/webcomponents-1.0.70`. Configure the
+`https://app.example/tenant/cdn/web-host/webcomponents-1.0.71`. Configure the
 reverse proxy to forward that asset path to the application's versioned
 router. This does not relocate Facade's own root-relative bootstrap, config,
 or CSS routes below `/tenant`.
@@ -136,12 +136,12 @@ publish Wippy modules.
 
 Use a Host release tag that includes `wippy/cdn-web-host/Makefile`, Node.js 22
 or later, and the pnpm version that the tag pins in the `packageManager` field
-of `package.json`. Host `1.0.70` pins pnpm `10.34.9`. Host `1.0.69` pins pnpm
-`10.24.0`. This example builds Host `1.0.70` and module `0.0.70`:
+of `package.json`. Host `1.0.71` pins pnpm `10.34.9`. This example builds Host
+`1.0.71` and module `0.0.71`.
 
 ```sh
-git clone --branch webcomponents-1.0.70 --single-branch git@git.spiralscout.com:estimation-engine/wippy-web-host.git web-host-1.0.70
-cd web-host-1.0.70
+git clone --branch webcomponents-1.0.71 --single-branch git@git.spiralscout.com:estimation-engine/wippy-web-host.git web-host-1.0.71
+cd web-host-1.0.71
 corepack enable
 corepack prepare pnpm@10.34.9 --activate
 pnpm install --frozen-lockfile

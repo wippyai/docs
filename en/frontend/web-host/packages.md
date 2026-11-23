@@ -12,8 +12,8 @@ lifecycle.
 Public `@wippy-fe/*` packages provide the contracts used by `view.page`
 applications and `view.component` web components. Web Host source also consumes
 workspace builds of several of these packages. Public packages are versioned in
-lockstep; this documentation snapshot covers published Web Host 1.0.70 and
-public package 0.0.70. Verify the deployed release before using its versioned
+lockstep. This reference covers Web Host 1.0.71 and public packages at 0.0.71.
+Verify the deployed release before using its versioned
 assets.
 Host-only bundles are identified separately below and are not installable npm
 packages.
@@ -21,8 +21,21 @@ packages.
 Install the packages you need:
 
 ```bash
-npm install @wippy-fe/proxy@0.0.70 @wippy-fe/webcomponent-vue@0.0.70 @wippy-fe/router@0.0.70
+npm install @wippy-fe/proxy@0.0.71 @wippy-fe/webcomponent-vue@0.0.71 @wippy-fe/router@0.0.71
 ```
+
+## Upgrading from Web Host 1.0.70 to 1.0.71
+
+Facade `0.6.54` selects Web Host `1.0.71` by default. For a self-hosted deployment,
+use [`wippy/cdn-web-host` `0.0.71`](./self-hosting.md).
+
+- Retry can recover a failed or stalled web component registration entry. If a
+  shared dependency remains stalled, reload the page. Components that bundle
+  `define()` need a rebuild with `@wippy-fe/proxy` `0.0.71` for safe late
+  registration after Retry. See [Web component registration](../micro-frontends/web-component.md#registration).
+- Built-in and embedded chat reconcile live tool calls with stored history after
+  a refresh or reconnect. See [Tool call rows](../micro-frontends/chat-web-components.md#tool-call-rows)
+  for Session compatibility and limits.
 
 ## Upgrading from Web Host 1.0.69 to 1.0.70
 
@@ -406,7 +419,7 @@ curl.exe -fsS "https://web-host.wippy.ai/<version-tag>/import-map.json" -o impor
 ```
 
 For the published combined release, use the `<version-tag>`
-`webcomponents-1.0.70`.
+`webcomponents-1.0.71`.
 
 The exact keys of the fetched `imports` object are the JavaScript externalization contract:
 
@@ -489,7 +502,7 @@ resolve to the shared Host graph. JavaScript externalization does not provide
 PrimeVue CSS. Request the required CSS separately through the documented Host
 CSS keys. The local preview CSS dependency remains a Phase 4 prerequisite.
 
-This inventory belongs to published Web Host 1.0.70. Confirm its URL and
+This inventory belongs to published Web Host 1.0.71. Confirm its URL and
 contents against the deployed Host artifact before relying on it.
 
 PrimeVue Chart and Editor load `chart.js` 4.5.1 and `quill` 2.0.3 through dynamic chunks. The Host bundles both dependencies locally, so applications using mapped PrimeVue exports do not install them for those chunks. The Host snapshot has 294 map entries, including 274 PrimeVue entries. The Host injects `@wippy-fe/vue-utils` as the 295th key; this is not an application-level mapping. Use the exact pinned Host snapshot as the build contract.

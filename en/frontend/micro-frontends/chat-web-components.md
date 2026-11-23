@@ -232,6 +232,28 @@ Stop is confirmed by a session `update` carrying its request ID after the stop
 state is committed. Rejected commands return an `error` event with the same
 request ID. The built-in chat and the chat web components share these handlers.
 
+## Tool call rows
+
+Web Host 1.0.71 uses the same tool call row for live events and stored history
+in built-in chat and the chat web components. With `wippy/session` 0.6.5 or
+later, each tool event carries the stored row ID as `message_id`. Chat uses that
+ID to update the row after a refresh or reconnect.
+
+Session versions 0.2.0 through 0.6.4 send the provider call ID. Chat matches it
+to a running row for the same tool within the active turn. The next history read
+assigns the stored ID. A completed live result stays visible if history still
+reports it as pending. When the turn ends or the socket disconnects, open rows
+stop matching later calls. Chat refreshes any rows that were still running so
+they can show the stored result, including cancellation after Stop.
+
+A Session notice, such as the notice after Stop, stays visible through history
+reads. It can still repeat while a message waits for admission or when the client
+and server clocks differ.
+
+With an older Session, a delayed start event can briefly show a second row if
+history has already returned the completed call. The next history read
+reconciles the rows.
+
 ## Theming
 
 Each element renders in a shadow root, so host page styles do not leak in or out. Two mechanisms apply theme:

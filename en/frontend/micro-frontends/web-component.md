@@ -165,6 +165,15 @@ customElements.define('my-page-alias', await entry.webComponent())
 
 Registration does not load the implementation of a lazy component. It runs only the small entry module.
 
+Web Host 1.0.71 shares registration attempts for matching tags and entry URLs.
+An entry claims its tag for the current document. Use another tag for a different
+entry. If a request times out, the entry may still finish evaluating in the
+browser. The SDK's `define()` helper accepts a late registration from the same
+entry without defining the tag twice.
+
+Use the matching Host import of `define()`, or rebuild bundles that include the
+helper with `@wippy-fe/proxy` `0.0.71`. See [registration timeouts and Retry](./proxy-api.md#web-components).
+
 ### Mount
 
 Mount reporting is opt in. A Vue element opts in by returning `lazyVueConfig(load, options)` from `static get vueConfig()`. The importer `load` returns the mount configuration with the real `rootComponent`. It may also return `plugins`, `piniaPlugins` and `providers`.

@@ -1168,7 +1168,17 @@ await loadByTagName('wc-slow-pkg', { timeoutMs: 60_000 })
 document.body.appendChild(document.createElement('wc-thread-picker'))
 ```
 
-`options.timeoutMs` overrides the default 30-second deadline for waiting on `customElements.define` after the script is appended. Surfaces stuck or broken components (404, parse error, missing `define` call) as a rejection rather than an indefinite hang.
+With Web Host 1.0.71, `options.timeoutMs` covers registry lookup and tag
+registration. The default is 30 seconds. Concurrent calls for the same tag and
+entry URL share one attempt, including work started by global autoload or the
+DOM scanner. A caller can shorten the shared deadline. A longer timeout leaves
+the existing deadline in place.
+
+A script error or an expired deadline rejects the promise. The Host clears the
+pending attempt, removes its script and aborts requests where possible. Retry
+requests the entry again while preserving `declare-tag` and `wippy-version`.
+The browser can still share its imported modules. Reload the page if one of
+those imports remains stalled.
 
 ### `loadWebComponent(componentId, tagName?)` → `Promise<void>`
 
@@ -1190,7 +1200,9 @@ For pages that need multiple components, the proxy scans for these script tags o
 </script>
 ```
 
-Same deduplication and allowlist auto-update behavior as `loadByTagName`.
+The DOM scanner shares registration attempts with `loadByTagName`. The tag and
+its declared attributes join the sanitizer allowlist after successful
+registration.
 
 ---
 
