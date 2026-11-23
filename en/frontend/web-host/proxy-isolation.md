@@ -451,6 +451,11 @@ Interactive HTML and markdown artifacts (`inline-interactive` and
 Isolated content cannot use the proxy API features that need the token or the
 relay.
 
+Known limit: a `view_ref` page that loads its own data through the API, such as
+the dataflow "Workflow state" page of a delegation, shows no data where
+artifacts run isolated. Registered pages stay isolated too, because the model
+chooses which page opens and with which parameters.
+
 ### Packages are not mounted
 
 Package artifacts run in the Host realm or with the token, so they cannot be
