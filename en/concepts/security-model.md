@@ -63,6 +63,62 @@ Agents are LLM-powered processes with tool use. They make decisions at runtime t
 
 **Self-modification boundaries.** An agent permitted to create tools in one namespace can be denied write access to its own definition in another. Registry writes are policy-checked actions, so a deny policy on the agent's own namespace prevents it from editing itself or granting itself new access.
 
+## Tool Approval
+
+An agent can ask the user before a tool call runs. The `wippy/session` module
+provides this as the `wippy.session.traits:tool_approval` trait, and the chat
+shows each waiting call as a card with Approve, Deny and, when the Session
+offers it, Approve all. See
+[Sessions](framework/sessions.md#tool-approval) for the options.
+
+**What it protects against.** Approval protects against the model, against tool
+results, and against other users. A call that needs
+approval does not run until the session owner decides, in the owner's own
+authenticated connection. The Session accepts a decision only from the user who
+owns the session. Nothing a client puts in the message counts as identity.
+
+**What it does not protect against.** Approval does not protect against code
+that already runs as the user in the browser, such as an app page that holds the
+user's token. Such code can call the Session and its REST API as the user.
+
+**Grants are narrow.** An Approve all decision can create a grant. A grant is
+tied to the session owner, the session and the tool's deployment fingerprint.
+The fingerprint covers the registry entry (kind, meta and data), not code that
+the entry only points to. A grant covers only the tools listed in the card. It
+ends when the user revokes it, when the session is deleted, or when the session
+gets another owner. A grant pauses when the tool changes, when its author sets
+`approve_all: false`, or when an agent step does not permit it, including a
+handoff by the model. A tool change or `approve_all: false` needs a new Approve
+all. After an agent step, only a user switch back to an agent that permits the
+grant restores it. A new, copied or forked session starts with no grants.
+
+**Protected sessions isolate model content.** Artifacts are model-authored,
+because a tool stores their content from model text. In a protected session the
+Web Host runs interactive HTML and markdown artifacts in an opaque sandbox,
+without the user's token and with only the config handshake, size, log and
+own-state relays. In Host transcripts, inline HTML and markdown are
+sanitized without script and render without a frame or an isolation wait. The Session refuses artifact content that the Host
+cannot isolate, such as packaged web content, and the model gets an
+`isolation_required:` error. See
+[Proxy & Isolation](frontend/web-host/proxy-isolation.md#protected-sessions-and-isolated-artifacts).
+
+**Remaining risk with the default isolation.** By default only protected
+sessions are isolated. An artifact of an unprotected session keeps the token, so
+it can approve calls or revoke grants in the user's protected sessions. An app
+can set `toolApproval.isolateAgentContent: 'all'` to isolate every session,
+which closes this risk.
+
+**The token goes to one origin.** The Web Host sends the user's token only to
+the origin of the API client's base URL. That is `APP_API_URL`, or a `baseURL`
+that the app sets in `axiosDefaults`. A request to another origin goes without
+the token.
+
+**Scope.** Approval checks tool calls of chat sessions. It does not check
+Dataflow, Temporal workflows, CLI loops, direct `funcs.call`, or tools that a
+delegated child agent calls. An operator can switch the approval gate off for
+every session with the `tool_approval_enforcement` requirement. This is a
+security downgrade meant for rollback.
+
 ## Multi-Tenant Enforcement
 
 For deployments where multiple customers share a single Wippy instance, isolation is enforced by policy evaluation before any operation runs, not by application code checking tenant IDs.
@@ -122,6 +178,7 @@ Tools consumed over MCP run through the same function-call path and policy check
 | API key management | Stored in the environment system, read internally by providers, not exposed to process code |
 | Agent tool control | Tools limited to the agent's definition; each call checked via `funcs.call` policy |
 | External tools (MCP) | Same function-call path and policy checks; exposed tools gated by scoped tokens |
+| User approval of tool calls | Opt-in trait; the session owner decides in the owner's own connection; grants tied to owner, session and tool fingerprint; protected sessions isolate model content |
 | Agent audit trail | OpenTelemetry tracing (when enabled) plus usage-tracker records |
 | Multi-tenant isolation | Per-tenant policies and scopes evaluated by the runtime before each operation |
 | Concurrency limits | Bounded by host worker pools; no per-tenant CPU/memory ceilings built in |
