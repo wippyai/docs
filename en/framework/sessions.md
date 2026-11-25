@@ -329,9 +329,8 @@ Tool approval asks the user before a tool call runs. The user approves the
 call, approves all calls of a kind, or denies it. A session where approval is
 on is a protected session.
 
-Tool approval needs a Session release that supports it
-<!-- version: set at release -->. An older Session ignores the trait and sends
-no approval events. The messages between the Session and a chat client are in
+Tool approval needs `wippy/session` 0.7.3 or newer. An older Session ignores
+the trait and sends no approval events. The messages between the Session and a chat client are in
 the [tool approval protocol](https://github.com/wippyai/session/blob/master/docs/tool-approval-protocol.md).
 
 ### Turn it on

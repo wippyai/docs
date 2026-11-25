@@ -409,8 +409,7 @@ from model text. So when a session is protected by
 session's interactive artifacts isolated. In Host transcripts, inline HTML and markdown are
 sanitized without script and render without a frame or an isolation wait. Packages
 (non-string content, including Session forms) go to the package loader and wait
-for the isolation decision. This needs a Web Host release that supports it
-<!-- version: set at release -->.
+for the isolation decision. This needs Web Host 1.0.72 or newer.
 
 The Host decides from server data and from `toolApproval.isolateAgentContent`,
 never from a value a child sends:
@@ -520,8 +519,9 @@ keeps the Host defaults too. The Host validates the values.
       value: '{"display":"compact","isolateAgentContent":"all"}'
 ```
 
-The option needs a Web Host with AppConfig schema `wippy-context-2.3`
-<!-- version: set at release -->. An older Host ignores it.
+The option needs Web Host 1.0.72 or newer (AppConfig schema
+`wippy-context-2.3`) and `wippy/facade` 0.6.55 or newer, which adds the
+`tool_approval` parameter. An older Host ignores it.
 
 ### The token goes to one origin
 

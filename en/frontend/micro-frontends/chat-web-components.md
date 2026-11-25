@@ -288,8 +288,8 @@ the event instead, and the Host does not read it.
 
 With a Session that declares `tool_approval: 1` in
 `GET /api/v1/sessions/capabilities`, an agent can require the user to approve a
-tool call before it runs. Tool approval cards need a Web Host release that
-supports them <!-- version: set at release -->. With an older Host, a call that
+tool call before it runs. Tool approval cards need Web Host 1.0.72 or newer.
+With an older Host, a call that
 needs approval does not run (`approval_ui_unavailable`), and the turn ends with
 a notice.
 

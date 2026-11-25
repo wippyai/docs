@@ -855,8 +855,8 @@ repeat of a call that the user denied earlier in the turn settles without a
 card. Mark a tool as described in
 [Requiring Approval for a Tool](#requiring-approval-for-a-tool). See
 [Sessions](./sessions.md#tool-approval) for the options, defaults, what the
-user sees and what the model sees. This trait needs a Session release that
-supports tool approval <!-- version: set at release -->.
+user sees and what the model sees. This trait needs `wippy/session` 0.7.3 or
+newer.
 
 ### Custom Traits
 
