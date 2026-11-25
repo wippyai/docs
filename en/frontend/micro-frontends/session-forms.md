@@ -204,8 +204,8 @@ Version 2 forms add no Web Host requirement, because the controls ship inside
 the `wippy-form` bundle. The matching npm release for version 1 forms is
 `@wippy-fe/*` 0.0.65. Only the TypeScript types for version 2 forms need a later
 `@wippy-fe` types package, and a version 2 form works at run time without it.
-Session Forms arrived in `wippy/session` 0.7.0. Version 2 forms need the later
-release named in
+Session Forms arrived in `wippy/session` 0.7.0. Version 2 forms need
+`wippy/session` 0.7.3 or newer. See
 [Enabling a trait](../../framework/session-forms.md#enabling-a-trait).
 
 The component checks these conditions in order, and the first match decides
