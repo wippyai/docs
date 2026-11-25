@@ -70,9 +70,7 @@ checkboxes, give it the `ask_user_fields` trait in place of `ask_user`:
       - id: wippy.session.forms:ask_user_fields
 ```
 
-The `ask_user_fields` trait needs the `wippy/session` release that adds version
-2 forms.
-<!-- TODO: name the Session version here when Release Please opens the release PR. -->
+The `ask_user_fields` trait needs `wippy/session` 0.7.3 or newer.
 
 Each tool's input schema lists only its own field types. The server applies
 the same limit, so when a model ignores the schema and sends a standard field
